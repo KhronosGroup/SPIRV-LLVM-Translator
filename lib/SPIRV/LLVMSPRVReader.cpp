@@ -47,10 +47,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
 #include "llvm/Support/FileSystem.h"
-#endif
-#include "llvm/Support/raw_ostream.h"
 
 #include "SPRVUtil.h"
 #include "SPRVType.h"
@@ -231,60 +228,35 @@ mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
 
 static void
 dumpLLVM(Module *M, const std::string &FName) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::error_code EC;
   raw_fd_ostream FS(FName, EC, sys::fs::F_None);
   if (EC) {
     FS << *M;
     FS.close();
   }
-#else
-  std::string Err;
-  raw_fd_ostream FS(FName.c_str(), Err);
-  FS << *M;
-  FS.close();
-#endif
 }
 
 static MDNode*
 getMDNodeStringIntVec(LLVMContext *Context, const std::string& Str,
     const std::vector<SPRVWord>& IntVals) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::vector<Metadata*> ValueVec;
-#else
-  std::vector<Value*> ValueVec;
-#endif
   ValueVec.push_back(MDString::get(*Context, Str));
   for (auto &I:IntVals)
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), I)));
-#else
-    ValueVec.push_back(ConstantInt::get(Type::getInt32Ty(*Context), I)); 
-#endif
   return MDNode::get(*Context, ValueVec);
 }
 
 static MDNode*
 getMDTwoInt(LLVMContext *Context, unsigned Int1, unsigned Int2) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::vector<Metadata*> ValueVec;
   ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), Int1)));
   ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), Int2)));
-#else
-  std::vector<Value*> ValueVec;
-  ValueVec.push_back(ConstantInt::get(Type::getInt32Ty(*Context), Int1));
-  ValueVec.push_back(ConstantInt::get(Type::getInt32Ty(*Context), Int2));
-#endif
   return MDNode::get(*Context, ValueVec);
 }
 
 static MDNode*
 getMDString(LLVMContext *Context, const std::string& Str) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::vector<Metadata*> ValueVec;
-#else
-  std::vector<Value*> ValueVec;
-#endif
   if (!Str.empty())
     ValueVec.push_back(MDString::get(*Context, Str));
   return MDNode::get(*Context, ValueVec);
@@ -306,15 +278,9 @@ addNamedMetadataString(LLVMContext *Context, Module *M,
 
 static void
 addOCLKernelArgumentMetadata(LLVMContext *Context,
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::vector<llvm::Metadata*> &KernelMD, const std::string &MDName,
     SPRVFunction *BF, std::function<Metadata *(SPRVFunctionParameter *)>Func){
   std::vector<Metadata*> ValueVec;
-#else
-  std::vector<llvm::Value*> &KernelMD, const std::string &MDName,
-    SPRVFunction *BF, std::function<Value *(SPRVFunctionParameter *)>Func){
-  std::vector<Value*> ValueVec;
-#endif
     ValueVec.push_back(MDString::get(*Context, MDName));
   BF->foreachArgument([&](SPRVFunctionParameter *Arg) {
     ValueVec.push_back(Func(Arg));
@@ -544,11 +510,7 @@ SPRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   }
   std::vector<Instruction *> Deletes;
   std::vector<Instruction *> Uses;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   for (auto UI = GV->user_begin(), UE = GV->user_end(); UI != UE; ++UI) {
-#else
-  for (auto UI = GV->use_begin(), UE = GV->use_end(); UI != UE; ++UI) {
-#endif
     assert (isa<LoadInst>(*UI) && "Unsupported use");
     auto LD = dyn_cast<LoadInst>(*UI);
     if (!IsVec) {
@@ -556,11 +518,7 @@ SPRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
       Deletes.push_back(LD);
       continue;
     }
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     for (auto LDUI = LD->user_begin(), LDUE = LD->user_end(); LDUI != LDUE;
-#else
-    for (auto LDUI = LD->use_begin(), LDUE = LD->use_end(); LDUI != LDUE;
-#endif
         ++LDUI) {
       assert(isa<ExtractElementInst>(*LDUI) && "Unsupported use");
       auto EEI = dyn_cast<ExtractElementInst>(*LDUI);
@@ -1608,13 +1566,8 @@ SPRVToLLVM::transKernelMetadata() {
     assert(F && "Invalid translated function");
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     std::vector<llvm::Metadata*> KernelMD;
     KernelMD.push_back(ValueAsMetadata::get(F));
-#else
-    std::vector<llvm::Value*> KernelMD;
-    KernelMD.push_back(F);
-#endif
     // Generate metadata for kernel_arg_address_spaces
     addOCLKernelArgumentMetadata(Context, KernelMD,
         SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF,
@@ -1625,11 +1578,7 @@ SPRVToLLVM::transKernelMetadata() {
         AS = SPIRSPRVAddrSpaceMap::rmap(ArgTy->getPointerStorageClass());
       else if (ArgTy->isTypeOCLImage() || ArgTy->isTypePipe())
         AS = SPIRAS_Global;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
       return ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), AS));
-#else
-      return ConstantInt::get(Type::getInt32Ty(*Context), AS);
-#endif
     });
     // Generate metadata for kernel_arg_access_qual
     addOCLKernelArgumentMetadata(Context, KernelMD,
@@ -1704,22 +1653,12 @@ SPRVToLLVM::transKernelMetadata() {
     }
     // Generate metadata for vec_type_hint
     if (auto EM = BF->getExecutionMode(SPRVEM_VecTypeHint)) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
       std::vector<Metadata*> ValueVec;
-#else
-      std::vector<Value*> ValueVec;
-#endif
       ValueVec.push_back(MDString::get(*Context, SPIR_MD_VEC_TYPE_HINT));
       Type *VecHintTy = transType(BM->get<SPRVType>(EM->getLiterals()[0]));
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
       ValueVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
       ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),
           VecHintTy->isIntegerTy() && EM->getStringLiteral()[0] != 'u'?1:0)));
-#else
-      ValueVec.push_back(UndefValue::get(VecHintTy));
-      ValueVec.push_back(ConstantInt::get(Type::getInt32Ty(*Context),
-        VecHintTy->isIntegerTy() && EM->getStringLiteral()[0] != 'u' ? 1 : 0));
-#endif
       KernelMD.push_back(MDNode::get(*Context, ValueVec));
     }
 

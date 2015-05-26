@@ -37,9 +37,7 @@
 //===----------------------------------------------------------------------===//
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/ToolOutputFile.h"
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
 #include "llvm/Support/FileSystem.h"
-#endif
 
 #include "LLVMSPRVInternal.h"
 
@@ -58,7 +56,6 @@ removeFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
 
 void
 saveLLVMModule(Module *M, const std::string &OutputFile) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::error_code EC;
   tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
@@ -68,18 +65,6 @@ saveLLVMModule(Module *M, const std::string &OutputFile) {
 
   WriteBitcodeToFile(M, Out.os());
   Out.keep();
-#else
-  std::string Err;
-  OwningPtr<tool_output_file> Out(new tool_output_file(OutputFile.c_str(), Err,
-    sys::fs::F_Binary));
-  if (!Err.empty()) {
-    SPRVDBG(errs() << "Fails to open output file: " << Err;)
-        return;
-    }
-
-  WriteBitcodeToFile(M, Out->os());
-  Out->keep();
-#endif
 }
 
 std::string

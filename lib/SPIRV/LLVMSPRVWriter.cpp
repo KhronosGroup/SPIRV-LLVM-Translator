@@ -39,11 +39,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/Triple.h"
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
 #include "llvm/IR/Verifier.h"
-#else
-#include "llvm/Analysis/Verifier.h"
-#endif
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -85,34 +81,15 @@ namespace SPRV{
 
 bool SPRVDbgSaveRegularizedModule = false;
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
 static int
 getMDOperandAsInt(MDNode* N, unsigned I) {
   auto *C = dyn_cast_or_null<ConstantAsMetadata>(N->getOperand(I));
   return C->getValue()->getUniqueInteger().getZExtValue();
 }
-#else
-// Convert a value to int
-static void
-convertValue(Value* V, unsigned& I) {
-  I = dyn_cast<ConstantInt>(V)->getZExtValue();
-}
-
-static int
-getMDOperandAsInt(MDNode* N, unsigned I) {
-  unsigned V;
-  convertValue(N->getOperand(I), V);
-  return V;
-}
-#endif
 
 static std::string
 getMDOperandAsString(MDNode* N, unsigned I) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   Metadata* Op = N->getOperand(I);
-#else
-  Value* Op = N->getOperand(I);
-#endif
   if (!Op)
     return "";
   if (MDString* Str = dyn_cast<MDString>(Op)) {
@@ -123,11 +100,7 @@ getMDOperandAsString(MDNode* N, unsigned I) {
 
 static Type*
 getMDOperandAsType(MDNode* N, unsigned I) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   return dyn_cast<ValueAsMetadata>(N->getOperand(I))->getType();
-#else
-  return N->getOperand(I)->getType();
-#endif
 }
 
 static void
@@ -255,11 +228,7 @@ private:
       Function *InvF = nullptr;
       Value *Ctx = nullptr;
       getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx);
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
       for (auto II = CallBlkBind->user_begin(), EE = CallBlkBind->user_end();
-#else
-      for (auto II = CallBlkBind->use_begin(), EE = CallBlkBind->use_end();
-#endif
           II != EE;) {
         auto BlkUser = *II;
         ++II;
@@ -343,11 +312,7 @@ private:
     auto F = Ret->getParent()->getParent();
     auto changed = false;
     auto needInline = false;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
-#else
-    for (auto UI = F->use_begin(), UE = F->use_end(); UI != UE;) {
-#endif
       auto U = *UI;
       ++UI;
       dumpUsers(U);
@@ -774,11 +739,7 @@ LLVMToSPRV::transOCLBuiltinsToVariables() {
         SPIRAS_Constant);
     BuiltinGVMap[BV] = BVKind;
     std::vector<Instruction *> InstList;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     for (auto UI = I->user_begin(), UE = I->user_end(); UI != UE; ++UI) {
-#else
-    for (auto UI = I->use_begin(), UE = I->use_end(); UI != UE; ++UI) {
-#endif
       auto CI = dyn_cast<CallInst>(*UI);
       assert(CI && "invalid instruction");
       Value * NewValue = new LoadInst(BV, "", CI);
@@ -837,11 +798,7 @@ LLVMToSPRV::lowerConstantExpressions() {
           WorkList.push_front(ReplInst);
           std::vector<Instruction *> Users;
           // Do not replace use during iteration of use. Do it in another loop.
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
           for (auto UI = CE->user_begin(), UE = CE->user_end(); UI != UE; ++UI){
-#else
-          for (auto UI = CE->use_begin(), UE = CE->use_end(); UI != UE; ++UI){
-#endif
             SPRVDBG(dbgs() << "[lowerConstantExpressions] Use: " <<
                 **UI << '\n';)
             if (auto InstUser = dyn_cast<Instruction>(*UI)) {
@@ -1554,12 +1511,8 @@ LLVMToSPRV::regularize() {
     }
 
   std::string Err;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)){
-#else
-  if (verifyModule(*M, ReturnStatusAction, &Err)){
-#endif
     SPRVDBG(errs() << "Fails to verify module: " << Err;)
     return false;
   }
@@ -1616,11 +1569,7 @@ LLVMToSPRV::oclGetKernelMetadata(Function *F) {
     MDNode *KernelMD = KernelMDs->getOperand(I);
     if (KernelMD->getNumOperands() == 0)
       continue;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     Function *Kernel = dyn_cast<Function>(dyn_cast<ValueAsMetadata>(KernelMD->getOperand(0))->getValue());
-#else
-    Function *Kernel = dyn_cast<Function>(KernelMD->getOperand(0)); 
-#endif
     if (Kernel == F)
       return KernelMD;
   }
@@ -1805,11 +1754,7 @@ void
 LLVMToSPRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
     Function* F) {
   for (auto &I : ChangedType) {
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE; ++UI) {
-#else
-    for (auto UI = F->use_begin(), UE = F->use_end(); UI != UE; ++UI) {
-#endif
       auto Call = dyn_cast<CallInst>(*UI);
       if (!Call)
         continue;
@@ -1883,11 +1828,7 @@ LLVMToSPRV::translate() {
 
 llvm::IntegerType* LLVMToSPRV::getSizetType() {
   return IntegerType::getIntNTy(M->getContext(),
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     M->getDataLayout()->getPointerSizeInBits());
-#else
-    M->getPointerSize() == Module::Pointer32 ? 32 : 64);
-#endif
 }
 
 std::vector<Value *> LLVMToSPRV::getArguments(CallInst* CI) {
@@ -2234,11 +2175,7 @@ LLVMToSPRV::transOCLKernelMetadata() {
     MDNode *KernelMD = KernelMDs->getOperand(I);
     if (KernelMD->getNumOperands() == 0)
       continue;
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
     Function *Kernel = dyn_cast<Function>(dyn_cast<ValueAsMetadata>(KernelMD->getOperand(0))->getValue());
-#else
-    Function *Kernel = dyn_cast<Function>(KernelMD->getOperand(0));
-#endif
     SPRVFunction *BF = static_cast<SPRVFunction *>(getTranslatedValue(Kernel));
     assert(BF && "Kernel function should be translated first");
     assert(Kernel && oclIsKernel(Kernel)
@@ -2366,11 +2303,7 @@ RegularizeLLVMForSPRV(Module *M, SPRVErrorCode &ErrCode, std::string &ErrMsg) {
 void
 LLVMToSPRV::dumpUsers(Value* V) {
   SPRVDBG(dbgs() << "Users of " << *V << " :\n");
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   for (auto UI = V->user_begin(), UE = V->user_end();
-#else
-  for (auto UI = V->use_begin(), UE = V->use_end();
-#endif
       UI != UE; ++UI)
     SPRVDBG(dbgs() << "  " << **UI << '\n');
 }

@@ -43,13 +43,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/IR/LLVMContext.h"
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
 #include "llvm/Support/FileSystem.h"
 #include "llvm/IR/Verifier.h"
-#else
-#include "llvm/ADT/OwningPtr.h"
-#include "llvm/Analysis/Verifier.h"
-#endif
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
@@ -110,26 +105,16 @@ convertLLVMToSPRV() {
     return -1;
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   ErrorOr<std::unique_ptr<Module>> MOrErr =
     getStreamedBitcodeModule(InputFile, DS, Context);
   std::unique_ptr<Module> M(std::move(*MOrErr));
-#else
-  OwningPtr<Module> M(getStreamedBitcodeModule(InputFile, DS,
-      Context, &Err));
-#endif
   if (!M) {
     errs() << "Fails to load bitcode: " << Err;
     return -1;
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   if (std::error_code EC = M->materializeAllPermanently()){
     errs() << "Fails to materialize: " << EC.message();
-#else
-  if (M->MaterializeAllPermanently(&Err)){
-    errs() << "Fails to materialize: " << Err;
-#endif
     return -1;
   }
 
@@ -164,12 +149,8 @@ convertSPRVToLLVM() {
   SPRVDBG(dbgs() << "Converted LLVM module:\n" << *M);
 
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)){
-#else
-  if (verifyModule(*M, ReturnStatusAction, &Err)){
-#endif
     errs() << "Fails to verify module: " << Err;
     return -1;
   }
@@ -181,7 +162,6 @@ convertSPRVToLLVM() {
       OutputFile = removeExt(InputFile) + ".bc";
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::error_code EC;
   tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
@@ -191,17 +171,6 @@ convertSPRVToLLVM() {
 
   WriteBitcodeToFile(M, Out.os());
   Out.keep();
-#else
-  OwningPtr<tool_output_file> Out(new tool_output_file(OutputFile.c_str(), Err,
-      sys::fs::F_Binary));
-  if (!Err.empty()) {
-    errs() << "Fails to open output file: " << Err;
-    return -1;
-  }
-
-  WriteBitcodeToFile(M, Out->os());
-  Out->keep();
-#endif
   delete M;
   return 0;
 }
@@ -218,26 +187,16 @@ regularizeLLVM() {
     return -1;
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   ErrorOr<std::unique_ptr<Module>> MOrErr =
     getStreamedBitcodeModule(InputFile, DS, Context);
   std::unique_ptr<Module> M(std::move(*MOrErr));
-#else
-  OwningPtr<Module> M(getStreamedBitcodeModule(InputFile, DS,
-    Context, &Err));
-#endif
   if (!M) {
     errs() << "Fails to load bitcode: " << Err;
     return -1;
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   if (std::error_code EC = M->materializeAllPermanently()){
     errs() << "Fails to materialize: " << EC.message();
-#else
-  if (M->MaterializeAllPermanently(&Err)){
-    errs() << "Fails to materialize: " << Err;
-#endif
     return -1;
   }
 
@@ -253,7 +212,6 @@ regularizeLLVM() {
     return ErrCode;
   }
 
-#if (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 6)
   std::error_code EC;
   tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
@@ -263,17 +221,6 @@ regularizeLLVM() {
 
   WriteBitcodeToFile(M.get(), Out.os());
   Out.keep();
-#else
-  OwningPtr<tool_output_file> Out(new tool_output_file(OutputFile.c_str(), Err,
-    sys::fs::F_Binary));
-  if (!Err.empty()) {
-    SPRVDBG(errs() << "Fails to open output file: " << Err;)
-    return -1;
-  }
-
-  WriteBitcodeToFile(M.get(), Out->os());
-  Out->keep();
-#endif
   return 0;
 }
 
