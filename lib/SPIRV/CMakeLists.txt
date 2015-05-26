@@ -1,0 +1,22 @@
+add_llvm_library(LLVMSPIRV
+  SPRVBasicBlock.cpp
+  SPRVBuiltin.cpp
+  SPRVDebug.cpp
+  SPRVDecorate.cpp
+  SPRVEnum.cpp
+  SPRVEntry.cpp
+  SPRVFunction.cpp
+  SPRVInstruction.cpp
+  SPRVModule.cpp
+  SPRVStream.cpp
+  SPRVType.cpp
+  SPRVUtil.cpp
+  SPRVValue.cpp
+  LLVMSPRVReader.cpp
+  LLVMSPRVUtil.cpp
+  LLVMSPRVWriter.cpp
+  spir_name_mangler/FunctionDescriptor.cpp
+  spir_name_mangler/Mangler.cpp
+  spir_name_mangler/ManglingUtils.cpp
+  spir_name_mangler/ParameterType.cpp
+  )
