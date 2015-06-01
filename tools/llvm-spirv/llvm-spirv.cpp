@@ -1,4 +1,4 @@
-//===-- llvm-bil.cpp - The LLVM/SPIRV translator utility -----*- C++ -*-===//
+//===-- llvm-spirv.cpp - The LLVM/SPIR-V translator utility -----*- C++ -*-===//
 //
 //
 //                     The LLVM/SPRV Translator
@@ -30,37 +30,39 @@
 // THE SOFTWARE.
 //
 //===----------------------------------------------------------------------===//
-//
-//  Common Usage:
-//  llvm-bil          - Read LLVM bitcode from stdin, write SPIRV to stdout
-//  llvm-bil x.bc     - Read LLVM bitcode from the x.bc file, write SPIRV to x.bil file
-//  llvm-bil -r       - Read SPIRV from stdin, write LLVM bitcode to stdout
-//  llvm-bil -r x.bil - Read SPIRV from the x.bil file, write SPIRV to the x.bc file
-//
-//  Options:
-//      --help   - Output command line options
-//
+/// \file
+///
+///  Common Usage:
+///  llvm-spirv          - Read LLVM bitcode from stdin, write SPIRV to stdout
+///  llvm-spirv x.bc     - Read LLVM bitcode from the x.bc file, write SPIR-V
+///                        to x.bil file
+///  llvm-spirv -r       - Read SPIRV from stdin, write LLVM bitcode to stdout
+///  llvm-spirv -r x.bil - Read SPIRV from the x.bil file, write SPIR-V to
+///                        the x.bc file
+///
+///  Options:
+///      --help   - Output command line options
+///
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/DataStream.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
-#include "../../lib/SPIRV/SPRVDebug.h"
-#include "../../lib/SPIRV/SPRVError.h"
-#include "../../lib/SPIRV/LLVMSPRV.h"
+#include "SPIRV.h"
 
 #include <memory>
 #include <fstream>
 
+#define DEBUG_TYPE "spirv"
+
 using namespace llvm;
-using namespace SPRV;
 
 static cl::opt<std::string>
 InputFile(cl::Positional, cl::desc("<input file>"), cl::init("-"));
@@ -70,20 +72,11 @@ OutputFile("o", cl::desc("Override output filename"),
                cl::value_desc("filename"));
 
 static cl::opt<bool>
-IsReverse("r", cl::desc("Reverse translation (SPRV to LLVM)"));
+IsReverse("r", cl::desc("Reverse translation (SPIR-V to LLVM)"));
 
 static cl::opt<bool>
-IsRegularization("s", cl::desc("Regularize LLVM to be representable by SPRV"));
-
-#ifdef _SPRVDBG
-static cl::opt<bool, true>
-UseTextFormat("t", cl::desc("Use text format for SPIRV for debugging purpose"),
-    cl::location(SPRV::SPRVDbgUseTextFormat));
-
-static cl::opt<bool, true>
-EnableDbgOutput("d", cl::desc("Enable debug output"),
-    cl::location(SPRV::SPRVDbgEnable));
-#endif
+IsRegularization("s", cl::desc(
+    "Regularize LLVM to be representable by SPIR-V"));
 
 static std::string
 removeExt(const std::string& FileName) {
@@ -97,7 +90,6 @@ static int
 convertLLVMToSPRV() {
   LLVMContext Context;
 
-  SPRVErrorCode ErrCode;
   std::string Err;
   DataStreamer *DS = getDataFileStreamer(InputFile, &Err);
   if (!DS) {
@@ -126,9 +118,9 @@ convertLLVMToSPRV() {
   }
 
   std::ofstream OFS(OutputFile, std::ios::binary);
-  if (!WriteSPRV(M.get(), OFS, ErrCode, Err)) {
+  if (!WriteSPRV(M.get(), OFS, Err)) {
     errs() << "Fails to save LLVM as SPRV: " << Err << '\n';
-    return ErrCode;
+    return -1;
   }
   return 0;
 }
@@ -138,15 +130,14 @@ convertSPRVToLLVM() {
   LLVMContext Context;
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
-  SPRVErrorCode ErrCode;
   std::string Err;
 
-  if (!ReadSPRV(Context, IFS, M, ErrCode, Err)) {
+  if (!ReadSPRV(Context, IFS, M, Err)) {
     errs() << "Fails to load SPIRV as LLVM Module: " << Err << '\n';
-    return ErrCode;
+    return -1;
   }
 
-  SPRVDBG(dbgs() << "Converted LLVM module:\n" << *M);
+  DEBUG(dbgs() << "Converted LLVM module:\n" << *M);
 
 
   raw_string_ostream ErrorOS(Err);
@@ -179,7 +170,6 @@ static int
 regularizeLLVM() {
   LLVMContext Context;
 
-  SPRVErrorCode ErrCode;
   std::string Err;
   DataStreamer *DS = getDataFileStreamer(InputFile, &Err);
   if (!DS) {
@@ -207,9 +197,9 @@ regularizeLLVM() {
       OutputFile = removeExt(InputFile) + ".regularized.bc";
   }
 
-  if (!RegularizeLLVMForSPRV(M.get(), ErrCode, Err)) {
+  if (!RegularizeLLVMForSPRV(M.get(), Err)) {
     errs() << "Fails to save LLVM as SPRV: " << Err << '\n';
-    return ErrCode;
+    return -1;
   }
 
   std::error_code EC;
@@ -227,7 +217,7 @@ regularizeLLVM() {
 
 int
 main(int ac, char** av) {
-  cl::ParseCommandLineOptions(ac, av, "LLVM/SPRV translator");
+  cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
 
   if (!IsReverse && !IsRegularization)
     return convertLLVMToSPRV();

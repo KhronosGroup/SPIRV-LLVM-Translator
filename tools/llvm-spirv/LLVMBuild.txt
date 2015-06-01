@@ -19,4 +19,4 @@
 type = Tool
 name = llvm-spirv
 parent = Tools
-required_libraries = Analysis BitReader BitWriter SPIRV IPO
+required_libraries = Analysis BitReader BitWriter SPIRVLib IPO
