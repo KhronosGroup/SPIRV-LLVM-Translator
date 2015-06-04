@@ -490,8 +490,8 @@ protected:
     SPRVEntry::validate();
   }
 private:
+  SPRVType *PipeType;                          // Pipe Type
   SPRVAccessQualifierKind AccessQualifier;     // Access Qualifier
-  SPRVType *PipeType;                    // Pipe Type
 };
 }
 #endif // SPRVTYPE_HPP_

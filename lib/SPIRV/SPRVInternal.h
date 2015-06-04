@@ -218,7 +218,7 @@ _SPRV_OP(get_enqueued_num_sub_group_size, NumEnqueuedSubgroups)
 _SPRV_OP(get_sub_group_id, SubgroupId)
 _SPRV_OP(get_sub_group_local_id, SubgroupLocalInvocationId)
 #undef _SPRV_OP
-};
+}
 
 typedef SPRVMap<std::string, SPRVBuiltinVariableKind> SPIRSPRVBuiltinVariableMap;
 
@@ -301,7 +301,7 @@ _SPRV_OP(ndrange_1D, BuildNDRange)
 _SPRV_OP(ndrange_2D, BuildNDRange)
 _SPRV_OP(ndrange_3D, BuildNDRange)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<std::string, SPRVOpCode, SPRVInstruction>
   SPIRSPRVBuiltinInstMap;
 
@@ -313,7 +313,7 @@ _SPRV_OP(AvailableExternallyLinkage, Import)
 _SPRV_OP(PrivateLinkage, Count)
 _SPRV_OP(InternalLinkage, Count)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>
   SPIRSPRVLinkageTypeMap;
 
@@ -327,7 +327,7 @@ _SPRV_OP(StructRet, Sret)
 _SPRV_OP(NoAlias, NoAlias)
 _SPRV_OP(NoCapture, NoCapture)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<Attribute::AttrKind, SPRVFuncParamAttrKind>
   SPIRSPRVFuncParamAttrMap;
 
@@ -339,7 +339,7 @@ _SPRV_OP(ReadOnly, Const)
 _SPRV_OP(AlwaysInline, Inline)
 _SPRV_OP(NoInline, NoInline)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>
   SPIRSPRVFuncCtlMaskMap;
 
@@ -350,7 +350,7 @@ _SPRV_OP(Local, WorkgroupLocalMemory)
 _SPRV_OP(Global, WorkgroupGlobalMemory)
 _SPRV_OP(Image, ImageMemory)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<SPIRMemFenceFlagKind, SPRVMemorySemanticsMaskKind>
   SPIRSPRVMemFenceFlagMap;
 
@@ -372,7 +372,7 @@ _SPRV_OP(image2d_array_msaa_depth_t, 1, 1, 1, 1, 1)
 _SPRV_OP(image3d_t,                  2, 1, 0, 0, 0)
 _SPRV_OP(sampler_t,                  0, 2, 0, 0, 0)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<std::string, SPRVTypeSamplerDescriptor>
   SPIRSPRVImageSamplerTypeMap;
 
@@ -384,7 +384,7 @@ _SPRV_OP(z, Z)
 _SPRV_OP(p, P)
 _SPRV_OP(n, N)
 #undef _SPRV_OP
-};
+}
 typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
   SPIRSPRVFPRoundingModeMap;
 

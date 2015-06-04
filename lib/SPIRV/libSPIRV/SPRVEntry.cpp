@@ -48,7 +48,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
-#include <strstream>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -216,10 +216,15 @@ SPRVEntry::getIds(const std::vector<SPRVValue *> ValueVec)const {
   return IdVec;
 }
 
+SPRVEntry *
+SPRVEntry::getEntry(SPRVId TheId) const {
+  return Module->getEntry(TheId);
+}
+
 void
 SPRVEntry::validateFunctionControlMask(SPRVWord TheFCtlMask)
   const {
-  SPRVCK(TheFCtlMask >= 0 && TheFCtlMask <= (unsigned)SPRVFCM_Max,
+  SPRVCK(TheFCtlMask <= (unsigned)SPRVFCM_Max,
       InvalidFunctionControlMask, "");
 }
 
@@ -268,7 +273,6 @@ SPRVEntry::takeDecorates(SPRVEntry *E){
 
 void
 SPRVEntry::addMemberDecorate(const SPRVMemberDecorate *Dec){
-  auto Kind = Dec->getDecorateKind();
   assert(canHaveMemberDecorates() && MemberDecorates.find(Dec->getPair()) ==
       MemberDecorates.end());
   MemberDecorates[Dec->getPair()] = Dec;
@@ -325,8 +329,7 @@ SPRVEntry::getDecorate(SPRVDecorateKind Kind, size_t Index) const {
   auto Range = Decorates.equal_range(Kind);
   std::set<SPRVWord> Value;
   for (auto I = Range.first, E = Range.second; I != E; ++I) {
-    assert((Index >= 0 && Index < I->second->getLiteralCount()) &&
-      "Invalid index");
+    assert(Index < I->second->getLiteralCount() && "Invalid index");
     Value.insert(I->second->getLiteral(Index));
   }
   return Value;
@@ -517,8 +520,8 @@ void
 SPRVMemoryModel::validate() const {
   unsigned AM = Module->getAddressingModel();
   unsigned MM = Module->getMemoryModel();
-  SPRVCK(0 <= AM && AM < SPRVAM_Count, InvalidAddressingModel, "Actual is "+AM );
-  SPRVCK(0 <= MM && MM < SPRVMM_Count, InvalidMemoryModel, "Actual is "+MM);
+  SPRVCK(AM < SPRVAM_Count, InvalidAddressingModel, "Actual is "+AM );
+  SPRVCK(MM < SPRVMM_Count, InvalidMemoryModel, "Actual is "+MM);
 }
 
 void

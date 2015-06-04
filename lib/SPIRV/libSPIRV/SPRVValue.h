@@ -194,13 +194,13 @@ class SPRVConstantBool: public SPRVConstantEmpty<OC> {
 public:
   // Complete constructor
   SPRVConstantBool(SPRVModule *M, SPRVType *TheType, SPRVId TheId)
-    :SPRVConstantEmpty(M, TheType, TheId){}
+    :SPRVConstantEmpty<OC>(M, TheType, TheId){}
   // Incomplete constructor
   SPRVConstantBool(){}
 protected:
   void validate() const {
     SPRVConstantEmpty<OC>::validate();
-    assert(Type->isTypeBool() && "Invalid type");
+    assert(this->Type->isTypeBool() && "Invalid type");
   }
 };
 

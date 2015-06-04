@@ -746,7 +746,6 @@ LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
   SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName <<
       '\n');
   SPRVExtInstSetKind BSK = SPRVBIS_Count;
-  SPRVWord EP = SPRVWORD_MAX;
   BSK = BM->getBuiltinSet(BuiltinSetId);
   bool Found = false;
   switch (BSK) {
@@ -1082,7 +1081,7 @@ LLVMToSPRV::transConstant(Value *V) {
     return BI;
   }
 
-  if (auto Undef = dyn_cast<UndefValue>(V)) {
+  if (isa<UndefValue>(V)) {
     return BM->addUndef(transType(V->getType()));
   }
 
@@ -1561,7 +1560,7 @@ LLVMToSPRV::regularize() {
             "range",
         };
         for (auto &MDName:MDs) {
-          if (auto MD = II->getMetadata(MDName)) {
+          if (II->getMetadata(MDName)) {
             II->setMetadata(MDName, nullptr);
           }
         }
@@ -1597,7 +1596,6 @@ bool
 LLVMToSPRV::oclRegularizeConvert(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName,
     std::set<Value *>& ValuesForDeleting) {
-  SPRVOpCode OC = SPRVOC_OpNop;
   auto TargetTy = CI->getType();
   auto SrcTy = CI->getArgOperand(0)->getType();
   if (isa<VectorType>(TargetTy))
@@ -1860,7 +1858,7 @@ LLVMToSPRV::translate() {
     if (oclIsBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
         || I->getName().startswith(SPCV_CAST))
       continue;
-    SPRVFunction *BF = transFunction(I);
+    transFunction(I);
     // Creating all basic blocks before creating any instruction.
     for (Function::iterator FI = I->begin(), FE = I->end(); FI != FE; ++FI) {
       transValue(FI, nullptr);
@@ -2058,7 +2056,6 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       SPRVType *SPRetTy = nullptr;
       Type *RetTy = CI->getType();
       auto F = CI->getCalledFunction();
-      auto FT = F->getFunctionType();
       if (!RetTy->isVoidTy()) {
         SPRetTy = transType(RetTy);
       } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
@@ -2222,7 +2219,8 @@ Type* getLLVMTypeFromStr(LLVMContext *c, const std::string Str)
   //check for vector type
   if ((pos = tyStr.find_first_of("0123456789")) != std::string::npos) {
     std::string vecstr = tyStr.substr(pos);
-    sscanf(vecstr.data(), "%d", &vecSize);
+    std::istringstream IS(vecstr);
+    IS >> vecSize;
     tyStr = tyStr.substr(0, pos);
   }
 

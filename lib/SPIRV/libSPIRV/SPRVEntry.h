@@ -197,19 +197,20 @@ public:
 
   // Incomplete constructor
   SPRVEntry(SPRVOpCode TheOpCode)
-    :OpCode(TheOpCode), Id(SPRVID_INVALID), Attrib(SPRVEA_DEFAULT),
-     Module(NULL), WordCount(0){}
+    :Module(NULL), OpCode(TheOpCode), Id(SPRVID_INVALID),
+     Attrib(SPRVEA_DEFAULT), WordCount(0){}
 
   SPRVEntry()
-    :OpCode(SPRVOC_OpNop), Id(SPRVID_INVALID), Attrib(SPRVEA_DEFAULT),
-     Module(NULL), WordCount(0){}
+    :Module(NULL), OpCode(SPRVOC_OpNop), Id(SPRVID_INVALID),
+     Attrib(SPRVEA_DEFAULT), WordCount(0){}
 
 
   virtual ~SPRVEntry(){}
 
   bool exist(SPRVId)const;
   template<class T>
-  T* get(SPRVId TheId)const { return Module->get<T>(TheId);}
+  T* get(SPRVId TheId)const { return static_cast<T*>(getEntry(TheId));}
+  SPRVEntry *getEntry(SPRVId) const;
   SPRVEntry *getOrCreate(SPRVId TheId) const;
   SPRVValue *getValue(SPRVId TheId)const;
   std::vector<SPRVValue *> getValues(const std::vector<SPRVId>&)const;
@@ -307,12 +308,12 @@ protected:
     return MemberDecorates;
   }
 
-  SPRVOpCode OpCode;
   SPRVModule *Module;
+  SPRVOpCode OpCode;
   SPRVId Id;
   std::string Name;
-  SPRVWord WordCount;
   unsigned Attrib;
+  SPRVWord WordCount;
 
   DecorateMapType Decorates;
   MemberDecorateMapType MemberDecorates;
@@ -345,13 +346,13 @@ template<SPRVOpCode TheOpCode>
 class SPRVEntryOpCodeOnly:public SPRVEntryNoId<TheOpCode> {
 public:
   SPRVEntryOpCodeOnly(){
-    WordCount = 1;
+    SPRVEntry::WordCount = 1;
     validate();
   }
 protected:
   _SPRV_DEF_ENCDEC0
   void validate()const {
-    assert(isValid(OpCode));
+    assert(isValid(SPRVEntry::OpCode));
   }
 };
 

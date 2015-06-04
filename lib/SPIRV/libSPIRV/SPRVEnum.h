@@ -47,9 +47,9 @@ namespace SPRV{
 
 typedef uint32_t SPRVWord;
 typedef uint32_t SPRVId;
-#define SPRVID_MAX       ~0UL
-#define SPRVID_INVALID   ~0UL
-#define SPRVWORD_MAX     ~0UL
+#define SPRVID_MAX       ~0U
+#define SPRVID_INVALID   ~0U
+#define SPRVWORD_MAX     ~0U
 
 inline bool
 isValid(SPRVId Id) { return Id != SPRVID_INVALID;}

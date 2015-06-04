@@ -63,10 +63,11 @@
 #include <cstdlib>
 #include <functional>
 #include <fstream>
-#include <strstream>
+#include <iostream>
 #include <map>
 #include <set>
-#include <iostream>
+#include <sstream>
+#include <string>
 
 #define DEBUG_TYPE "spirv"
 
@@ -84,16 +85,6 @@ static bool DbgSaveTmpLLVM = true;
 static const char *DbgTmpLLVMFileName = "_tmp_llvmbil.ll";
 
 typedef std::pair < unsigned, AttributeSet > AttributeWithIndex;
-
-static std::vector<AttributeWithIndex>
-getAttrVec(const AttributeSet &PAL) {
-  std::vector<AttributeWithIndex> AttrVec;
-  for (unsigned I = 0, E = PAL.getNumSlots(); I != E; ++I){
-    AttrVec.push_back(std::make_pair(PAL.getSlotIndex(I),
-        PAL.getSlotAttributes(I)));
-  }
-  return AttrVec;
-}
 
 static bool
 isOpenCLKernel(SPRVFunction *BF) {
@@ -565,7 +556,6 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
       return "double";
     default:
       assert(0 && "invalid floating pointer bitwidth");
-      unsigned size = T->getFloatBitWidth();
       return std::string("float") + T->getFloatBitWidth() + "_t";
     }
     break;
@@ -783,7 +773,7 @@ SPRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
           ArgTys, Name);
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), ST->getPointerOperand());
-      auto newCI = CallInst::Create(newF, Args, CI->getName(), CI);
+      CallInst::Create(newF, Args, CI->getName(), CI);
       ST->dropAllReferences();
       ST->removeFromParent();
       CI->dropAllReferences();
@@ -859,7 +849,6 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
       return mapValue(BV, ConstantInt::get(LT, BConst->getZExtIntValue(),
           static_cast<SPRVTypeInt*>(BT)->isSigned()));
     case SPRVOC_OpTypeFloat: {
-      struct llvm::fltSemantics;
       const llvm::fltSemantics *FS = nullptr;
       switch (BT->getFloatBitWidth()) {
       case 16:
@@ -1461,8 +1450,10 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
     auto NDRangeInst = static_cast<SPRVBuildNDRange *>(BI);
     auto EleTy = ((NDRangeInst->getOperands())[0])->getType();
     int Dim = EleTy->isTypeVector() ? EleTy->getVectorComponentCount() : 1;
-    return std::string(OCL_BUILTIN_NDRANGE_PREFIX) +
-        std::to_string(Dim) + "D";
+    // cygwin does not have std::to_string
+    ostringstream OS;
+    OS << Dim;
+    return std::string(OCL_BUILTIN_NDRANGE_PREFIX) + OS.str() + "D";
   }
   return SPIRSPRVBuiltinInstMap::rmap(OC);
 }

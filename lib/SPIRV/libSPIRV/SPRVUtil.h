@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPRVUTIL_HPP_
-#define SPRVUTIL_HPP_
+#ifndef SPRVUTIL_H_
+#define SPRVUTIL_H_
 
 #include <algorithm>
 #include <cassert>
@@ -94,7 +94,7 @@ public:
 
   static bool find(Ty1 Key, Ty2 *Val = nullptr) {
     const SPRVMap& Map = getMap();
-    MapTy::const_iterator Loc = Map.Map.find(Key);
+    typename MapTy::const_iterator Loc = Map.Map.find(Key);
     if(Loc == Map.Map.end())
       return false;
     if (Val)
@@ -104,7 +104,7 @@ public:
 
   static bool rfind(Ty2 Key, Ty1 *Val = nullptr) {
     const SPRVMap& Map = getRMap();
-    RevMapTy::const_iterator Loc = Map.RevMap.find(Key);
+    typename RevMapTy::const_iterator Loc = Map.RevMap.find(Key);
     if (Loc == Map.RevMap.end())
       return false;
     if (Val)
@@ -153,7 +153,7 @@ operator+(const std::string& s, unsigned n) {
 template<class MapTy>
 unsigned mapBitMask(unsigned BM) {
   unsigned Res = 0;
-  MapTy::foreach([&](MapTy::KeyTy K, MapTy::ValueTy V){
+  MapTy::foreach([&](typename MapTy::KeyTy K, typename MapTy::ValueTy V){
     Res |= BM & (unsigned)K ? (unsigned)V : 0;
   });
   return Res;
@@ -162,7 +162,7 @@ unsigned mapBitMask(unsigned BM) {
 template<class MapTy>
 unsigned rmapBitMask(unsigned BM) {
   unsigned Res = 0;
-  MapTy::foreach([&](MapTy::KeyTy K, MapTy::ValueTy V){
+  MapTy::foreach([&](typename MapTy::KeyTy K, typename MapTy::ValueTy V){
     Res |= BM & (unsigned)V ? (unsigned)K : 0;
   });
   return Res;

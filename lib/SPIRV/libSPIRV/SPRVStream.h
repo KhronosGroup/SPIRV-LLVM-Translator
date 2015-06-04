@@ -68,10 +68,10 @@ public:
   SPRVEntry *getEntry();
   void validate()const;
 
-  SPRVWord WordCount;
-  SPRVOpCode OpCode;
   std::istream &IS;
   SPRVModule &M;
+  SPRVWord WordCount;
+  SPRVOpCode OpCode;
   SPRVEntry *Scope; // A function or basic block
 };
 
@@ -118,7 +118,7 @@ operator>>(const SPRVDecoder& I, T *&P) {
 
 template<typename IterTy>
 const SPRVDecoder&
-operator>>(const SPRVDecoder& Decoder, std::pair<IterTy,IterTy> &Range) {
+operator>>(const SPRVDecoder& Decoder, const std::pair<IterTy,IterTy> &Range) {
   for (IterTy I = Range.first, E = Range.second; I != E; ++I)
     Decoder >> *I;
   return Decoder;
@@ -131,7 +131,6 @@ operator>>(const SPRVDecoder& I, std::vector<T> &V) {
     I >> V[i];
   return I;
 }
-
 
 template<typename T>
 const SPRVEncoder&

@@ -260,6 +260,8 @@ public:
 
 private:
   SPRVErrorLog ErrLog;
+  SPRVId NextId;
+  SPRVTypeInt *BoolType;
   SPRVVersionKind SPRVVersion;
   SPRVGeneratorKind SPRVGenerator;
   SPRVInstructionSchemaKind InstSchema;
@@ -271,7 +273,6 @@ private:
   SPRVAddressingModelKind AddrModel;
   SPRVMemoryModelKind MemoryModel;
 
-  SPRVId NextId;
   typedef std::map<SPRVId, SPRVEntry *> SPRVIdToEntryMap;
   typedef std::vector<SPRVEntry *> SPRVEntryVector;
   typedef std::set<SPRVId> SPRVIdSet;
@@ -292,7 +293,6 @@ private:
   SPRVFunctionVector FuncVec;
   SPRVConstantVector ConstVec;
   SPRVVariableVec VariableVec;
-  SPRVTypeInt *BoolType;
   SPRVEntryVector EntryNoId;         // Entries without id
   SPRVIdToBuiltinSetMap IdBuiltinMap;
   SPRVIdSet NamedId;

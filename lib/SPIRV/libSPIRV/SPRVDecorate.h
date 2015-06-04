@@ -126,7 +126,7 @@ public:
   };
   // Incomplete constructor
   SPRVDecorationGroup():SPRVEntry(OC){}
-  void SPRVDecorationGroup::encodeAll(std::ostream &O) const;
+  void encodeAll(std::ostream &O) const;
   _SPRV_DCL_ENCDEC
   // Move the given decorates to the decoration group
   void takeDecorates(SPRVDecorateSet &Decs) {

@@ -97,7 +97,7 @@ public:
   SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC, SPRVType *TheType,
       SPRVId TheId, SPRVBasicBlock *TheBB);
   // Complete constructor for instruction with module, type and id
-  SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
       SPRVType *TheType, SPRVId TheId, SPRVBasicBlock *TheBB,
       SPRVModule *TheBM);
   // Complete constructor for instruction with id but no type
@@ -325,9 +325,9 @@ protected:
         && "Inconsistent operand types");
   }
 private:
+  std::vector<SPRVWord> MemoryAccess;
   SPRVId PtrId;
   SPRVId ValId;
-  std::vector<SPRVWord> MemoryAccess;
 };
 
 class SPRVLoad:public SPRVInstruction, public SPRVMemoryAccess {
@@ -338,13 +338,14 @@ public:
       const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *TheBB)
     :SPRVInstruction(FixedWords + TheMemoryAccess.size() , SPRVOC_OpLoad,
         TheBB->getValueType(PointerId)->getPointerElementType(), TheId, TheBB),
-        PtrId(PointerId), SPRVMemoryAccess(TheMemoryAccess),
+        SPRVMemoryAccess(TheMemoryAccess), PtrId(PointerId),
         MemoryAccess(TheMemoryAccess) {
       validate();
       assert(TheBB && "Invalid BB");
     }
   // Incomplete constructor
-  SPRVLoad():SPRVInstruction(SPRVOC_OpLoad), SPRVMemoryAccess(), PtrId(NULL){}
+  SPRVLoad():SPRVInstruction(SPRVOC_OpLoad), SPRVMemoryAccess(),
+      PtrId(SPRVID_INVALID){}
 
   SPRVValue *getSrc() const { return Module->get<SPRVValue>(PtrId);}
 
@@ -389,7 +390,7 @@ public:
       Op1(SPRVID_INVALID), Op2(SPRVID_INVALID){}
 
   SPRVValue *getOperand(unsigned i) {
-    assert(i <= 1 && i >= 0);
+    assert(i <= 1);
     return getValue(i ? Op2 : Op1);
   }
 
@@ -422,20 +423,20 @@ protected:
     if (isBinaryOpCode(OpCode)) {
       assert(getValueType(Op1)== getValueType(Op2) && 
              "Invalid type for binary instruction");
-      assert(op1Ty->isTypeInt() || op2Ty->isTypeFloat() &&
+      assert((op1Ty->isTypeInt() || op2Ty->isTypeFloat()) &&
                "Invalid type for Binary instruction");
-      assert(op1Ty->getBitWidth() == op2Ty->getBitWidth()  &&
+      assert((op1Ty->getBitWidth() == op2Ty->getBitWidth()) &&
                "Inconsistent BitWidth");
     } else if (isShiftOpCode(OpCode)) {
-      assert(op1Ty->isTypeInt() || op2Ty->isTypeInt() &&
+      assert((op1Ty->isTypeInt() || op2Ty->isTypeInt()) &&
           "Invalid type for shift instruction");
     } else if (isLogicalOpCode(OpCode)) {
-      assert(op1Ty->isTypeBool() || op2Ty->isTypeBool() &&
+      assert((op1Ty->isTypeBool() || op2Ty->isTypeBool()) &&
           "Invalid type for logical instruction");
     } else if (isBitwiseOpCode(OpCode)) {
-      assert(op1Ty->isTypeInt() || op2Ty->isTypeInt() &&
+      assert((op1Ty->isTypeInt() || op2Ty->isTypeInt()) &&
           "Invalid type for bitwise instruction");
-      assert(op1Ty->getIntegerBitWidth() == op2Ty->getIntegerBitWidth()  &&
+      assert((op1Ty->getIntegerBitWidth() == op2Ty->getIntegerBitWidth()) &&
           "Inconsistent BitWidth");
     } else {
       assert(0 && "Invalid op code!");
@@ -701,7 +702,7 @@ public:
       Op1(SPRVID_INVALID), Op2(SPRVID_INVALID){}
 
   SPRVValue *getOperand(unsigned i) {
-    assert(i <= 1 && i >= 0);
+    assert(i <= 1);
     return getValue(i ? Op2 : Op1);
   }
   virtual std::vector<SPRVValue *> getOperands() {
@@ -909,12 +910,12 @@ protected:
 
       assert(getType() == getValueType(Op)  &&
         "Inconsistent type");
-      assert(resTy->isTypeInt() || resTy->isTypeFloat() &&
+      assert((resTy->isTypeInt() || resTy->isTypeFloat()) &&
         "Invalid type for Generic Negate instruction");
-      assert(resTy->getBitWidth() == opTy->getBitWidth() &&
+      assert((resTy->getBitWidth() == opTy->getBitWidth()) &&
         "Invalid bitwidth for Generic Negate instruction");
-      assert(Type->isTypeVector() ? (Type->getVectorComponentCount() ==
-          getValueType(Op)->getVectorComponentCount()): 1 &&
+      assert((Type->isTypeVector() ? (Type->getVectorComponentCount() ==
+          getValueType(Op)->getVectorComponentCount()): 1) &&
           "Invalid vector component Width for Generic Negate instruction");
     }
   }
@@ -1309,7 +1310,7 @@ public:
   }
   // Incomplete constructor
   SPRVCopyMemorySized() :SPRVInstruction(OC), SPRVMemoryAccess(),
-      Target(SPRVID_INVALID), Size(0), Source(SPRVID_INVALID) {
+      Target(SPRVID_INVALID), Source(SPRVID_INVALID), Size(0) {
     setHasNoId();
     setHasNoType();
   }
@@ -1338,9 +1339,9 @@ protected:
   }
 
   std::vector<SPRVWord> MemoryAccess;
-  SPRVId Size;
-  SPRVId Source;
   SPRVId Target;
+  SPRVId Source;
+  SPRVId Size;
 };
 
 class SPRVVectorExtractDynamic:public SPRVInstruction {
@@ -1547,8 +1548,8 @@ public:
       SPRVExecutionScopeKind TheScope,
       const std::vector<SPRVValue *> &TheOperands, SPRVBasicBlock *BB):
         SPRVInstruction(TheOperands.size() + FixedWords, OC, TheType, TheId,
-            BB), SPRVComponentOperands(TheOperands),
-        SPRVComponentExecutionScope(TheScope){
+            BB), SPRVComponentExecutionScope(TheScope),
+            SPRVComponentOperands(TheOperands){
     validate();
     assert(BB && "Invalid BB");
   }

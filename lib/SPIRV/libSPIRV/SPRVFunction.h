@@ -148,8 +148,8 @@ private:
   }
   void decodeBB(SPRVDecoder &);
 
-  SPRVWord FCtrlMask;                          // Function control mask
   SPRVTypeFunction *FuncType;                  // Function type
+  SPRVWord FCtrlMask;                          // Function control mask
 
   std::vector<SPRVFunctionParameter *> Parameters;
   typedef std::vector<SPRVBasicBlock *> SPRVLBasicBlockVector;
