@@ -346,7 +346,7 @@ private:
       }
         // Insert event arguments if there are not.
         if (!isa<IntegerType>(Args[3]->getType())) {
-          Args.insert(Args.begin() + 3, getInt64(M, 0));
+          Args.insert(Args.begin() + 3, getInt32(M, 0));
           Args.insert(Args.begin() + 4, Constant::getNullValue(
               getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_EVENT_T)));
         }

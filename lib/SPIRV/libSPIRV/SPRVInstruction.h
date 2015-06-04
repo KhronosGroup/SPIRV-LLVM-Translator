@@ -450,9 +450,9 @@ template<SPRVOpCode TheOpCode>
 class SPRVBinaryInst:public SPRVBinary {
 public:
   // Complete constructor
-  SPRVBinaryInst(SPRVId TheId, SPRVId TheOp1, SPRVId TheOp2,
+  SPRVBinaryInst(SPRVId TheId, SPRVType *TheType, SPRVId TheOp1, SPRVId TheOp2,
       SPRVBasicBlock *TheBB)
-    :SPRVBinary(TheOpCode, TheId, TheOp1, TheOp2, TheBB){}
+    :SPRVBinary(TheOpCode, TheType, TheId, TheOp1, TheOp2, TheBB){}
   // Incomplete constructor
   SPRVBinaryInst():SPRVBinary(TheOpCode){}
 };
@@ -927,8 +927,8 @@ class SPRVUnaryInst:public SPRVUnary {
 public:
   // Complete constructor
   SPRVUnaryInst(SPRVType *TheType, SPRVId TheId, SPRVId TheOp,
-      SPRVBasicBlock *TheBB)
-    :SPRVUnary(TheOpCode, TheType, TheId, TheOp, TheBB){}
+      SPRVBasicBlock *TheBB, SPRVModule *TheModule)
+    :SPRVUnary(TheOpCode, TheType, TheId, TheOp, TheBB, TheModule){}
   // Incomplete constructor
   SPRVUnaryInst():SPRVUnary(TheOpCode){}
 };
