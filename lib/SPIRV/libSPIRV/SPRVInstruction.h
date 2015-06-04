@@ -116,12 +116,7 @@ public:
   SPRVInstruction *getPrevious() const { return BB->getPrevious(this);}
   SPRVInstruction *getNext() const { return BB->getNext(this);}
   virtual std::vector<SPRVValue *> getOperands();
-  std::vector<SPRVType *> getOperandTypes() {
-    std::vector<SPRVType *> Tys;
-    for (auto &I:getOperands())
-      Tys.push_back(I->getType());
-    return Tys;
-  }
+  std::vector<SPRVType*> getOperandTypes();
 
   void setParent(SPRVBasicBlock *);
   void setScope(SPRVEntry *);
@@ -1806,6 +1801,7 @@ _SPRV_OP(CaptureEventProfilingInfo, false)
 _SPRV_OP(GetDefaultQueue, true)
 _SPRV_OP(BuildNDRange, true)
 #undef _SPRV_OP
+
 }
 
 #endif // SPRVINSTRUCTION_HPP_

@@ -33,11 +33,10 @@
 //===----------------------------------------------------------------------===//
 /// \file SPIRV.h
 //===----------------------------------------------------------------------===//
-#ifndef LLVM_LIB_TARGET_SPIRV_SPIRV_H
-#define LLVM_LIB_TARGET_SPIRV_SPIRV_H
+#ifndef LLVM_SUPPORT_SPIRV_H
+#define LLVM_SUPPORT_SPIRV_H
 
 #include "llvm/IR/Module.h"
-#include "llvm/Pass.h"
 
 namespace llvm {
 

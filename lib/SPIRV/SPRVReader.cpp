@@ -1,6 +1,6 @@
-//===- LLVMSPRVReader.cpp – Converts SPIR-V to LLVM -------------*- C++ -*-===//
+//===- SPRVReader.cpp – Converts SPIR-V to LLVM -----------------*- C++ -*-===//
 //
-//                     The LLVM/SPIRV Translator
+//                     The LLVM/SPIR-V Translator
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -36,6 +36,15 @@
 /// This file implements conversion of SPIR-V binary to LLVM IR.
 ///
 //===----------------------------------------------------------------------===//
+#include "SPRVUtil.h"
+#include "SPRVType.h"
+#include "SPRVValue.h"
+#include "SPRVModule.h"
+#include "SPRVFunction.h"
+#include "SPRVBasicBlock.h"
+#include "SPRVInstruction.h"
+#include "SPRVExtInst.h"
+#include "SPRVInternal.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -50,17 +59,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
-
-#include "SPRVUtil.h"
-#include "SPRVType.h"
-#include "SPRVValue.h"
-#include "SPRVModule.h"
-#include "SPRVFunction.h"
-#include "SPRVBasicBlock.h"
-#include "SPRVInstruction.h"
-#include "SPRVExtInst.h"
-#include "SPRVInternal.h"
-#include "NameMangleAPI.h"
 
 #include <cstdlib>
 #include <functional>
@@ -97,138 +95,9 @@ getAttrVec(const AttributeSet &PAL) {
   return AttrVec;
 }
 
-// Translated uniqued OCL builtin name to its original name, and set
-// argument attributes and unsigned args.
-static void
-getOCLBuiltinArgInfo(std::string& UnmangledName,
-    std::set<int> &UnsignedArgs, unsigned& Attr) {
-  if (UnmangledName.find("write_imageui") == 0)
-      UnsignedArgs.insert(2);
-  else if (UnmangledName.find("get_") == 0 ||
-      UnmangledName.find("barrier") == 0 ||
-      UnmangledName.find("vload") == 0 ||
-      UnmangledName.find("vstore") == 0 ||
-      UnmangledName.find("async_work_group") == 0 ||
-      UnmangledName == "prefetch" ||
-      UnmangledName == "nan" ||
-      UnmangledName.find("shuffle") == 0 ||
-      UnmangledName.find("ndrange_") == 0)
-    UnsignedArgs.insert(-1);
-  else if (UnmangledName.find("atomic") == 0) {
-    Attr = SPIR::ATTR_VOLATILE;
-    if (UnmangledName == "atomic_umax" ||
-        UnmangledName == "atomic_umin") {
-      UnsignedArgs.insert(-1);
-      UnmangledName.erase(7, 1);
-    }
-  } else if (UnmangledName.find("uconvert_") == 0) {
-    UnsignedArgs.insert(0);
-    UnmangledName.erase(0, 1);
-  } else if (UnmangledName.find("s_") == 0) {
-    UnmangledName.erase(0, 2);
-  } else if (UnmangledName.find("u_") == 0) {
-    UnsignedArgs.insert(-1);
-    UnmangledName.erase(0, 2);
-  }
-}
-
 static bool
 isOpenCLKernel(SPRVFunction *BF) {
   return BF->getModule()->isEntryPoint(SPRVEMDL_Kernel, BF->getId());
-}
-
-//ToDo: add translation of all LLVM types
-static SPIR::RefParamType
-transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
-  if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
-    switch(IntTy->getBitWidth()) {
-    case 8:
-      return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
-          SPIR::PRIMITIVE_CHAR:SPIR::PRIMITIVE_UCHAR));
-    case 16:
-      return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
-          SPIR::PRIMITIVE_SHORT:SPIR::PRIMITIVE_USHORT));
-    case 32:
-      return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
-          SPIR::PRIMITIVE_INT:SPIR::PRIMITIVE_UINT));
-    case 64:
-      return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
-          SPIR::PRIMITIVE_LONG:SPIR::PRIMITIVE_ULONG));
-    default:
-      assert(0 && "invliad int size");
-    }
-  }
-  if (Ty->isHalfTy())
-    return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_HALF));
-  if (Ty->isFloatTy())
-    return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_FLOAT));
-  if (Ty->isDoubleTy())
-    return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_DOUBLE));
-  if (Ty->isVectorTy()) {
-    return SPIR::RefParamType(new SPIR::VectorType(
-        transTypeDesc(Ty->getVectorElementType(), Signed),
-        Ty->getVectorNumElements()));
-  }
-  if (Ty->isPointerTy()) {
-    if (auto StructTy = dyn_cast<StructType>(Ty->getPointerElementType())) {
-      SPRVDBG(dbgs() << "ptr to struct: " << *Ty << '\n');
-#define _SPRV_OP(x,y) .Case("opencl."#x"_t", SPIR::PRIMITIVE_##y##_T)
-      return SPIR::RefParamType(new SPIR::PrimitiveType(
-          StringSwitch<SPIR::TypePrimitiveEnum>(StructTy->getStructName())
-          _SPRV_OP(image1d, IMAGE_1D)
-          _SPRV_OP(image1d_array, IMAGE_1D_ARRAY)
-          _SPRV_OP(image1d_buffer, IMAGE_1D_BUFFER)
-          _SPRV_OP(image2d, IMAGE_2D)
-          _SPRV_OP(image2d_array, IMAGE_2D_ARRAY)
-          _SPRV_OP(image3d, IMAGE_3D)
-          _SPRV_OP(image2d_msaa, IMAGE_2D_MSAA)
-          _SPRV_OP(image2d_array_msaa, IMAGE_2D_ARRAY_MSAA)
-          _SPRV_OP(image2d_msaa_depth, IMAGE_2D_MSAA_DEPTH)
-          _SPRV_OP(image2d_array_msaa_depth, IMAGE_2D_ARRAY_MSAA_DEPTH)
-          _SPRV_OP(image2d_depth, IMAGE_2D_DEPTH)
-          _SPRV_OP(image2d_array_depth, IMAGE_2D_ARRAY_DEPTH)
-          _SPRV_OP(event, EVENT)
-          _SPRV_OP(pipe, PIPE)
-          _SPRV_OP(reserve_id, RESERVE_ID)
-          _SPRV_OP(queue, QUEUE)
-          _SPRV_OP(clk_event, CLK_EVENT)
-          _SPRV_OP(sampler, SAMPLER)
-          .Case("struct.ndrange_t", SPIR::PRIMITIVE_NDRANGE_T)
-          ));
-#undef _SPRV_OP
-    }
-    auto PT = new SPIR::PointerType(transTypeDesc(
-      Ty->getPointerElementType(), Signed));
-    PT->setAddressSpace(static_cast<SPIR::TypeAttributeEnum>(
-      Ty->getPointerAddressSpace() + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
-    for (unsigned I = SPIR::ATTR_QUALIFIER_FIRST,
-        E = SPIR::ATTR_QUALIFIER_LAST; I != E; ++I)
-      PT->setQualifier(static_cast<SPIR::TypeAttributeEnum>(I), I & Attr);
-    return SPIR::RefParamType(PT);
-  }
-  SPRVDBG(dbgs() << "[transTypeDesc] " << *Ty << '\n');
-  assert (0 && "not implemented");
-  return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
-}
-
-// If SignedArgIndices contains -1, all integer arment is signed.
-static void
-mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  assert(isOpenCLBuiltinSet(BuiltinSet) && "Not OpenCL builtin set");
-  SPIR::NameMangler Mangler(BuiltinSet == SPRVBIS_OpenCL12 ? SPIR::SPIR12 :
-      SPIR::SPIR20);
-  SPIR::FunctionDescriptor FD;
-  FD.name = UnmangledName;
-  std::set<int> UnsignedArgs;
-  unsigned Attr = 0;
-  getOCLBuiltinArgInfo(FD.name, UnsignedArgs, Attr);
-  for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
-    FD.parameters.emplace_back(transTypeDesc(ArgTypes[I],
-        !UnsignedArgs.count(-1) && !UnsignedArgs.count(I),
-        Attr));
-  }
-  Mangler.mangle(FD, MangledName);
 }
 
 static void
@@ -891,7 +760,7 @@ SPRVToLLVM::postProcessOCL() {
       }
 
       auto AI = F->arg_begin();
-      if (hasFunctionPointerArg(F, AI) && isSPRVSupportFunction(F))
+      if (hasFunctionPointerArg(F, AI) && isSPRVFunction(F))
         if (!postProcessOCLBuiltinWithFuncPointer(F, AI))
           return false;
     }
@@ -929,7 +798,7 @@ SPRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
 bool
 SPRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
     Function::arg_iterator I) {
-  auto Name = removeSPRVPrefix(F->getName());
+  auto Name = undecorateSPRVFunction(F->getName());
   mutateFunction (F, [=](CallInst *CI, std::vector<Value *> &Args) {
     auto ALoc = Args.begin();
     for (auto E = Args.end(); ALoc != E; ++ALoc) {
@@ -939,14 +808,20 @@ SPRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
     }
     assert (ALoc != Args.end());
     Value *Ctx = nullptr;
+    Value *CtxLen = nullptr;
+    Value *CtxAlign = nullptr;
     if (Name == OCL_BUILTIN_ENQUEUE_KERNEL) {
+      assert(Args.end() - ALoc > 3);
       Ctx = ALoc[1];
-      Args.erase(ALoc + 1);
+      CtxLen = ALoc[2];
+      CtxAlign = ALoc[3];
+      Args.erase(ALoc + 1, ALoc + 4);
     }
-    *ALoc = addBlockBind(M, dyn_cast<Function>(*ALoc), Ctx, 0, 0, CI);
+    *ALoc = addBlockBind(M, dyn_cast<Function>(*ALoc), Ctx, CtxLen, CtxAlign,
+        CI);
 
     return Name;
-  });
+  }, true);
   return true;
 }
 
@@ -1541,13 +1416,26 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
     SPRVInstruction* BI, BasicBlock* BB) {
   std::string MangledName;
   std::vector<Type*> ArgTys = transTypeVector(BI->getOperandTypes());
+  bool HasFuncPtrArg = false;
+  for (auto& I:ArgTys) {
+    if (isa<FunctionType>(I)) {
+      I = PointerType::get(I, SPIRAS_Private);
+      HasFuncPtrArg = true;
+    }
+  }
   Type* RetTy = BI->hasType() ? transType(BI->getType()) :
       Type::getVoidTy(*Context);
   transOCLBuiltinFromInstPreproc(BI, RetTy, ArgTys);
+  if (!HasFuncPtrArg)
   mangle(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
+  else
+    MangledName = decorateSPRVFunction(FuncName);
   Function* Func = M->getFunction(MangledName);
-  if (!Func) {
-    FunctionType* FT = FunctionType::get(RetTy, ArgTys, false);
+  FunctionType* FT = FunctionType::get(RetTy, ArgTys, false);
+  if (!Func || Func->getFunctionType() != FT) {
+    DEBUG(for (auto& I:ArgTys) {
+      dbgs() << *I << '\n';
+    });
     Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())

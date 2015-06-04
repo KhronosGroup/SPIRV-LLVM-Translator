@@ -388,7 +388,8 @@ _SPRV_OP(n, N)
 typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
   SPIRSPRVFPRoundingModeMap;
 
-#define SPRV_BUILTIN_PREFIX                 "spirv."
+#define SPRV_BUILTIN_PREFIX                 "__spirv_"
+#define SPRV_BUILTIN_POSTFIX                "__"
 #define SPIR_MD_KERNELS                     "opencl.kernels"
 #define SPIR_MD_ENABLE_FP_CONTRACT          "opencl.enable.FP_CONTRACT"
 #define SPIR_MD_SPIR_VERSION                "opencl.spir.version"
@@ -461,14 +462,14 @@ PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
 void getFunctionTypeParameterTypes(llvm::FunctionType* FT,
     std::vector<Type*>& ArgTys);
 Function *getOrCreateFunction(Module *M, Type *RetTy,
-    ArrayRef<Type *> ArgTypes, StringRef Name);
+    ArrayRef<Type *> ArgTypes, StringRef Name, bool Mangle = false);
 std::vector<Value *> getArguments(CallInst* CI);
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
 
-std::string addSPRVPrefix(const std::string S);
-std::string removeSPRVPrefix(const std::string S);
-bool isSPRVSupportFunction(Function *F);
+std::string decorateSPRVFunction(const std::string &S);
+std::string undecorateSPRVFunction(const std::string &S);
+bool isSPRVFunction(Function *F, std::string *UndecName = nullptr);
 
 bool oclIsBuiltin(const StringRef& Name, std::string* DemangledName = nullptr);
 
@@ -482,22 +483,24 @@ bool hasFunctionPointerArg(Function *F, Function::arg_iterator& AI);
 /// Mutates function call instruction by changing the arguments.
 /// \param ArgMutate mutates the function arguments.
 void mutateCallInst(Module *M, CallInst *CI,
-    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate);
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    bool Mangle = false);
 
 /// Mutate function by change the arguments.
 /// \param ArgMutate mutates the function arguments.
 void mutateFunction(Function *F,
-    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate);
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    bool Mangle = false);
 
 /// Add a call instruction at \p Pos.
 CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
-    ArrayRef<Value *> Args, Instruction *Pos,
+    ArrayRef<Value *> Args, Instruction *Pos, bool Mangle = false,
     StringRef InstName = SPIR_TEMP_NAME_PREFIX_CALL);
 
 /// Add a call of spir_block_bind function.
 CallInst *
-addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, unsigned CtxLen,
-    unsigned CtxAlign, Instruction *InsPos,
+addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
+    Value *CtxAlign, Instruction *InsPos,
     StringRef InstName = SPIR_TEMP_NAME_PREFIX_BLOCK);
 
 /// Get a 64 bit integer constant.
@@ -506,6 +509,9 @@ ConstantInt *getInt64(Module *M, int64_t value);
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
 
+
+void mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
+    ArrayRef<Type*> ArgTypes, std::string &MangledName);
 }
 namespace llvm {
 

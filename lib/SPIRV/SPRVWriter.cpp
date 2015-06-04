@@ -1,6 +1,6 @@
-//===- LLVMSPRVWriter.cpp – Converts LLVM to SPIR-V -------------*- C++ -*-===//
+//===- SPRVWriter.cpp – Converts LLVM to SPIR-V -----------------*- C++ -*-===//
 //
-//                     The LLVM/SPIRV Translator
+//                     The LLVM/SPIR-V Translator
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -33,10 +33,22 @@
 //===----------------------------------------------------------------------===//
 /// \file
 ///
-/// This file implements conversion of LLVM intermediate language to SPIRV
+/// This file implements conversion of LLVM intermediate language to SPIR-V
 /// binary.
 ///
 //===----------------------------------------------------------------------===//
+
+#include "SPRVModule.h"
+#include "SPRVEnum.h"
+#include "SPRVEntry.h"
+#include "SPRVType.h"
+#include "SPRVValue.h"
+#include "SPRVFunction.h"
+#include "SPRVBasicBlock.h"
+#include "SPRVInstruction.h"
+#include "SPRVExtInst.h"
+#include "SPRVUtil.h"
+#include "SPRVInternal.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
@@ -57,24 +69,14 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Transforms/IPO.h"
 
-#include "SPRVModule.h"
-#include "SPRVEnum.h"
-#include "SPRVEntry.h"
-#include "SPRVType.h"
-#include "SPRVValue.h"
-#include "SPRVFunction.h"
-#include "SPRVBasicBlock.h"
-#include "SPRVInstruction.h"
-#include "SPRVExtInst.h"
-#include "SPRVUtil.h"
-#include "SPRVInternal.h"
-
 #include <iostream>
 #include <list>
 #include <memory>
 #include <set>
 #include <sstream>
 #include <vector>
+
+#define DEBUG_TYPE "spirv"
 
 using namespace llvm;
 using namespace SPRV;
@@ -175,7 +177,7 @@ public:
     FN.push_back(SPIR_INTRINSIC_GET_BLOCK_CONTEXT);
     FN.push_back(SPIR_INTRINSIC_BLOCK_BIND);
     eraseFunctions(FN);
-    SPRVDBG(dbgs() << "------- After OCLLowerBlocks ------------\n" << *M);
+    DEBUG(dbgs() << "------- After OCLLowerBlocks ------------\n" << *M);
   }
 private:
   const static int MaxIter = 1000;
@@ -189,7 +191,7 @@ private:
     int Iter = MaxIter;
     while(lowerBlockBind(F) && Iter > 0){
       Iter--;
-      SPRVDBG(dbgs() << "-------------- after iteration " << MaxIter - Iter <<
+      DEBUG(dbgs() << "-------------- after iteration " << MaxIter - Iter <<
           " --------------\n" << *M << '\n');
     }
     assert(Iter > 0 && "Too many iterations");
@@ -224,7 +226,7 @@ private:
     bool changed = false;
     for (auto I = BlockBindFunc->user_begin(), E = BlockBindFunc->user_end();
         I != E;) {
-      SPRVDBG(dbgs() << "[lowerBlockBind] " << **I << '\n');
+      DEBUG(dbgs() << "[lowerBlockBind] " << **I << '\n');
       // Handle spir_block_bind(bitcast(block_func), context_len,
       // context_align, context)
       auto CallBlkBind = dyn_cast<CallInst>(*I);
@@ -232,7 +234,10 @@ private:
       ++I;
       Function *InvF = nullptr;
       Value *Ctx = nullptr;
-      getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx);
+      Value *CtxLen = nullptr;
+      Value *CtxAlign = nullptr;
+      getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx, &CtxLen,
+          &CtxAlign);
       for (auto II = CallBlkBind->user_begin(), EE = CallBlkBind->user_end();
           II != EE;) {
         auto BlkUser = *II;
@@ -256,7 +261,7 @@ private:
             lowerGetBlockContext(CI, Ctx);
             changed = true;
           } else if (oclIsBuiltin(Name, &DemangledName)) {
-            lowerBlockBuiltin(CI, InvF, Ctx, DemangledName);
+            lowerBlockBuiltin(CI, InvF, Ctx, CtxLen, CtxAlign, DemangledName);
             changed = true;
           }
           else {
@@ -275,7 +280,7 @@ private:
       getBlockInvokeFuncAndContext(CallGetBlkCtx->getArgOperand(0), nullptr,
           &Ctx);
     CallGetBlkCtx->replaceAllUsesWith(Ctx);
-    SPRVDBG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => " <<
+    DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => " <<
         *Ctx << "\n\n");
     erase(CallGetBlkCtx);
   }
@@ -294,7 +299,7 @@ private:
       auto Cast = dyn_cast<BitCastInst>(CallInv);
       if (Cast)
         CallInv = dyn_cast<Instruction>(*CallInv->use_begin());
-      SPRVDBG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
+      DEBUG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
       // Handle ret = block_func_ptr(context_ptr, args)
       auto CI = dyn_cast<CallInst>(CallInv);
       assert(CI);
@@ -306,7 +311,7 @@ private:
       }
       assert(F->getType() == InvokeF->getType());
       CI->replaceUsesOfWith(F, InvokeF);
-      SPRVDBG(dbgs() << " => " << *CI << "\n\n");
+      DEBUG(dbgs() << " => " << *CI << "\n\n");
       erase(Cast);
       erase(CallInv);
       changed = true;
@@ -316,22 +321,41 @@ private:
   }
 
   void
-  lowerBlockBuiltin(CallInst *CI, Function *InvF, Value *Ctx,
-      const std::string& DemangledName) {
+  lowerBlockBuiltin(CallInst *CI, Function *InvF, Value *Ctx, Value *CtxLen,
+      Value *CtxAlign, const std::string& DemangledName) {
     mutateCallInst (M, CI, [=](CallInst *CI, std::vector<Value *> &Args) {
-    auto ALoc = Args.begin();
-    for (auto E = Args.end(); ALoc != E; ++ALoc) {
-      if (isPointerToOpaqueStructType((*ALoc)->getType(),
+      size_t I = 0;
+      size_t E = Args.size();
+      for (; I != E; ++I) {
+        if (isPointerToOpaqueStructType(Args[I]->getType(),
           SPIR_TYPE_NAME_BLOCK_T)) {
         break;
       }
     }
-    assert (ALoc != Args.end());
-    *ALoc = InvF;
-    if (DemangledName == OCL_BUILTIN_ENQUEUE_KERNEL)
-      Args.insert(ALoc + 1, Ctx);
+      assert (I < E);
+      Args[I] = InvF;
+      if (DemangledName == OCL_BUILTIN_ENQUEUE_KERNEL) {
+        if (I + 1 == E) {
+          Args.push_back(Ctx);
+          Args.push_back(CtxLen);
+          Args.push_back(CtxAlign);
+        } else {
+          Args.insert(Args.begin() + I + 1, CtxAlign);
+          Args.insert(Args.begin() + I + 1, CtxLen);
+          Args.insert(Args.begin() + I + 1, Ctx);
+      }
+        // Insert event arguments if there are not.
+        if (!isa<IntegerType>(Args[3]->getType())) {
+          Args.insert(Args.begin() + 3, getInt64(M, 0));
+          Args.insert(Args.begin() + 4, Constant::getNullValue(
+              getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_EVENT_T)));
+        }
+        if (!isPointerToOpaqueStructType(Args[5]->getType()))
+          Args.insert(Args.begin() + 5, Constant::getNullValue(
+              getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_EVENT_T)));
+      }
 
-      return addSPRVPrefix(DemangledName);
+      return decorateSPRVFunction(DemangledName);
     });
   }
   /// Transform return of a block.
@@ -360,7 +384,7 @@ private:
     }
     if (!needInline)
       return changed;
-    SPRVDBG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
+    DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
     F->addFnAttr(Attribute::AlwaysInline);
     legacy::PassManager PassMgr;
     PassMgr.add(createAlwaysInlinerPass(/*InsertLifetime=*/ false));
@@ -379,13 +403,18 @@ private:
   }
 
   void
-  getBlockInvokeFuncAndContext(Value *Blk, Function **PInvF, Value **PCtx){
+  getBlockInvokeFuncAndContext(Value *Blk, Function **PInvF, Value **PCtx,
+      Value **PCtxLen = nullptr, Value **PCtxAlign = nullptr){
     Function *InvF = nullptr;
     Value *Ctx = nullptr;
+    Value *CtxLen = nullptr;
+    Value *CtxAlign = nullptr;
     if (auto CallBlkBind = dyn_cast<CallInst>(Blk)) {
       assert(CallBlkBind->getCalledFunction()->getName() ==
           SPIR_INTRINSIC_BLOCK_BIND && "Invalid block");
       InvF = dyn_cast<Function>(removeCast(CallBlkBind->getArgOperand(0)));
+      CtxLen = CallBlkBind->getArgOperand(1);
+      CtxAlign = CallBlkBind->getArgOperand(2);
       Ctx = CallBlkBind->getArgOperand(3);
     } else if (auto F = dyn_cast<Function>(removeCast(Blk))) {
       InvF = F;
@@ -393,13 +422,17 @@ private:
     } else {
       assert(0 && "Invalid block");
     }
-    SPRVDBG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n' <<
+    DEBUG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n' <<
         "  Block context: " << *Ctx << '\n');
     assert(InvF && Ctx && "Invalid block");
     if (PInvF)
       *PInvF = InvF;
     if (PCtx)
       *PCtx = Ctx;
+    if (PCtxLen)
+      *PCtxLen = CtxLen;
+    if (PCtxAlign)
+      *PCtxAlign = CtxAlign;
   }
   void
   erase(Instruction *I) {
@@ -1465,7 +1498,8 @@ LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
       BB);
   }
 
-  if (oclIsBuiltin(MangledName, &DemangledName))
+  if (oclIsBuiltin(MangledName, &DemangledName) ||
+      isSPRVFunction(F, &DemangledName))
     if (auto BV = transOCLBuiltinToInst(CI, MangledName, DemangledName, BB))
       return BV;
 

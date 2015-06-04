@@ -112,3 +112,17 @@ SPRVInstruction::getOperands() {
   return Empty;
 }
 
+std::vector<SPRVType*>
+SPRVInstruction::getOperandTypes() {
+  std::vector<SPRVType*> Tys;
+  for (auto& I : getOperands()) {
+    SPRVType* Ty = nullptr;
+    if (I->getOpCode() == SPRVOC_OpFunction)
+      Ty = reinterpret_cast<SPRVFunction*>(I)->getFunctionType();
+    else
+      Ty = I->getType();
+
+    Tys.push_back(Ty);
+  }
+  return Tys;
+}
