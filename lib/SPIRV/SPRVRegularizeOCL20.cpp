@@ -80,7 +80,7 @@ RegularizeOCL20::visitCallInst(CallInst& CI) {
     return;
 
   std::string DemangledName;
-  if (!oclIsBuiltin(F->getName(), &DemangledName))
+  if (!oclIsBuiltin(F->getName(), 20, &DemangledName))
     return;
 }
 

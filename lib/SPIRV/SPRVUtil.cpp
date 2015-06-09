@@ -262,17 +262,35 @@ undecorateSPRVFunction(const std::string& S) {
   return S.substr(Start, End - Start);
 }
 
-bool
-oclIsBuiltin(const StringRef& Name,
-    std::string* DemangledName) {
+bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
+                  std::string *DemangledName) {
   if (!Name.startswith("_Z"))
     return false;
   if (!DemangledName)
     return true;
-  size_t Start = Name.find_first_not_of("0123456789", 2);
-  size_t Len = 0;
-  Name.substr(2, Start - 2).getAsInteger(10, Len);
-  *DemangledName = Name.substr(Start, Len);
+  // OpenCL C++ built-ins are declared in cl namespace.
+  // TODO: consider using 'St' abbriviation for cl namespace mangling.
+  // Similar to ::std:: in C++.
+  if (SrcLangVer == 21) {
+    if (!Name.startswith("_ZN"))
+      return false;
+    // Skip CV and ref qualifiers.
+    size_t NameSpaceStart = Name.find_first_not_of("rVKRO", 3);
+    // All built-ins are in the ::cl:: namespace.
+    if (Name.substr(NameSpaceStart, 3) != "2cl")
+      return false;
+    size_t DemangledNameLenStart = NameSpaceStart + 3;
+    size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
+    size_t Len = 0;
+    Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
+        .getAsInteger(10, Len);
+    *DemangledName = Name.substr(Start, Len);
+  } else {
+    size_t Start = Name.find_first_not_of("0123456789", 2);
+    size_t Len = 0;
+    Name.substr(2, Start - 2).getAsInteger(10, Len);
+    *DemangledName = Name.substr(Start, Len);
+  }
   return true;
 }
 
