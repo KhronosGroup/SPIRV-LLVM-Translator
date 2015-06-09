@@ -471,7 +471,13 @@ std::string decorateSPRVFunction(const std::string &S);
 std::string undecorateSPRVFunction(const std::string &S);
 bool isSPRVFunction(Function *F, std::string *UndecName = nullptr);
 
-bool oclIsBuiltin(const StringRef& Name, std::string* DemangledName = nullptr);
+/// \param Name LLVM function name
+/// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
+/// and 21.
+/// \param DemangledName demanged name of the OpenCL built-in function
+/// \returns true if Name is the name of the OpenCL built-in function,
+/// false for other functions
+bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12, std::string* DemangledName = nullptr);
 
 /// \returns true if \p T is a function pointer type.
 bool isFunctionPointerType(Type *T);

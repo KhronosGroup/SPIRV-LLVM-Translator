@@ -97,8 +97,9 @@ public:
   SPRVMemoryModelKind getMemoryModel() { return MemoryModel;}
   unsigned getNumFunctions() const { return FuncVec.size();}
   unsigned getNumVariables() const { return VariableVec.size();}
-  SPRVSourceLanguageKind getSourceLanguage(SPRVWord * Ver) const {
-    *Ver = SrcLangVer;
+  SPRVSourceLanguageKind getSourceLanguage(SPRVWord * Ver = nullptr) const {
+    if (Ver)
+      *Ver = SrcLangVer;
     return SrcLang;
   }
   const std::string &getSourceExtension() const { return SrcExtension;}

@@ -260,7 +260,7 @@ private:
             // Handle context_ptr = spir_get_block_context(block)
             lowerGetBlockContext(CI, Ctx);
             changed = true;
-          } else if (oclIsBuiltin(Name, &DemangledName)) {
+          } else if (oclIsBuiltin(Name, 20, &DemangledName)) {
             lowerBlockBuiltin(CI, InvF, Ctx, CtxLen, CtxAlign, DemangledName);
             changed = true;
           }
@@ -476,7 +476,8 @@ private:
 class LLVMToSPRV {
 public:
   LLVMToSPRV(Module *LLVMModule, SPRVModule *TheSPRVModule)
-    :M(LLVMModule), BM(TheSPRVModule), BuiltinSetId(SPRVID_INVALID){
+      : M(LLVMModule), BM(TheSPRVModule), BuiltinSetId(SPRVID_INVALID),
+        SrcLangVer(0) {
     RegularizedModuleTmpFile = "regularized.bc";
   }
   SPRVType *transType(Type *T);
@@ -524,6 +525,7 @@ private:
   LLVMToSPRVValueMap ValueMap;
   //ToDo: support multiple builtin sets. Currently assume one builtin set.
   SPRVId BuiltinSetId;
+  SPRVWord SrcLangVer;
   std::string RegularizedModuleTmpFile;
 
   SPRVType *mapType(Type *T, SPRVType *BT) {
@@ -659,12 +661,11 @@ LLVMToSPRV::oclIsKernel(Function *F) {
 bool
 LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
   std::string DemangledName;
-  if (!oclIsBuiltin(F->getName(), &DemangledName))
+  if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName))
     return false;
-  SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName <<
-      '\n');
-  SPRVWord Ver = 0;
-  if (BM->getSourceLanguage(&Ver) ==  SPRVSL_OpenCL)
+  SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
+  SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
+  if (SourceLang == SPRVSL_OpenCL)
     return DemangledName == "barrier" ||
         DemangledName == "mem_fence" ||
         DemangledName == "dot" ||
@@ -734,17 +735,17 @@ LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
     SPRVWord *EntryPoint) {
   std::string OrigName = F->getName();
   std::string DemangledName;
-  if (OrigName != "printf" && !oclIsBuiltin(OrigName, &DemangledName))
+  if (OrigName != "printf" &&
+      !oclIsBuiltin(OrigName, SrcLangVer, &DemangledName))
     return false;
   if (OrigName == "printf")
     DemangledName = OrigName;
   else {
-    SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName <<
-        '\n');
+    SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
     transOCLVectorLoadStoreName(DemangledName);
   }
-  SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName <<
-      '\n');
+  SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName
+                    << '\n');
   SPRVExtInstSetKind BSK = SPRVBIS_Count;
   BSK = BM->getBuiltinSet(BuiltinSetId);
   bool Found = false;
@@ -778,7 +779,7 @@ LLVMToSPRV::transOCLBuiltinsToVariables() {
   std::vector<Function *> WorkList;
   for (auto I = M->begin(), E = M->end(); I != E; ++I) {
     std::string DemangledName;
-    if (!oclIsBuiltin(I->getName(), &DemangledName))
+    if (!oclIsBuiltin(I->getName(), SrcLangVer, &DemangledName))
       continue;
     SPRVDBG(bildbgs() << "Function: demangled name: " << DemangledName <<
         '\n');
@@ -1497,7 +1498,7 @@ LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
       BB);
   }
 
-  if (oclIsBuiltin(MangledName, &DemangledName) ||
+  if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName) ||
       isSPRVFunction(F, &DemangledName))
     if (auto BV = transOCLBuiltinToInst(CI, MangledName, DemangledName, BB))
       return BV;
@@ -1535,7 +1536,7 @@ LLVMToSPRV::regularize() {
           // Remove useless convert function
           std::string DemangledName;
           auto MangledName = Call->getCalledFunction()->getName();
-          if (oclIsBuiltin(MangledName, &DemangledName)) {
+          if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName)) {
             if (DemangledName.find("convert_") == 0)
               if (!oclRegularizeConvert(Call, MangledName, DemangledName,
                   ValuesForDeleting))
@@ -1829,15 +1830,15 @@ LLVMToSPRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
 
 bool
 LLVMToSPRV::translate() {
-  if (!regularize())
-    return false;
-  if (!transOCLBuiltinsToVariables())
-    return false;
   if (!transSourceLanguage())
     return false;
   if (!transSourceExtension())
     return false;
+  if (!regularize())
+    return false;
   if (!transCompileFlag())
+    return false;
+  if (!transOCLBuiltinsToVariables())
     return false;
   if (!transBuiltinSet())
     return false;
@@ -2015,7 +2016,7 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
     Function* F) {
   auto Name = F->getName();
   std::string Demangled;
-  if (!oclIsBuiltin(Name, &Demangled))
+  if (!oclIsBuiltin(Name, SrcLangVer, &Demangled))
     return;
   if (Demangled.find(OCL_BUILTIN_PREFIX_READ_IMAGE) != 0 ||
       Name.find(OCL_MANGLED_TYPE_NAME_SAMPLER) == std::string::npos)
@@ -2344,7 +2345,8 @@ LLVMToSPRV::transSourceLanguage() {
   MDNode *MD = NamedMD->getOperand(0);
   unsigned Major = getMDOperandAsInt(MD, 0);
   unsigned Minor = getMDOperandAsInt(MD, 1);
-  BM->setSourceLanguage(SPRVSL_OpenCL, Major * 10 + Minor);
+  SrcLangVer = Major * 10 + Minor;
+  BM->setSourceLanguage(SPRVSL_OpenCL, SrcLangVer);
   return true;
 }
 

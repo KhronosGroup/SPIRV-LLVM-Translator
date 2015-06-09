@@ -744,7 +744,9 @@ SPRVToLLVM::postProcessOCL() {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL] " << *F << '\n');
-      if (F->getReturnType()->isStructTy() && oclIsBuiltin(F->getName())) {
+      SPRVWord SrcLangVer = 0;
+      BM->getSourceLanguage(&SrcLangVer);
+      if (F->getReturnType()->isStructTy() && oclIsBuiltin(F->getName(), SrcLangVer)) {
         if (!postProcessOCLBuiltinReturnStruct(F))
           return false;
       }
@@ -1760,6 +1762,13 @@ SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
     else {
       UnmangledName = OCL20Map::map(static_cast<SPRVBuiltinOCL20Kind>(
           EntryPoint));
+    }
+  } else if (Set == SPRVBIS_OpenCL21) {
+    if (EntryPoint == OCL21_Printf)
+      IsPrintf = true;
+    else {
+      UnmangledName =
+          OCL21Map::map(static_cast<SPRVBuiltinOCL21Kind>(EntryPoint));
     }
   }
 
