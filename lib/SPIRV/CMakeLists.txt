@@ -22,3 +22,5 @@ add_llvm_library(LLVMSPIRVLib
   SPRVRegularizeOCL20.cpp
   SPRVWriter.cpp
   )
+
+add_dependencies(LLVMSPIRVLib intrinsics_gen)
