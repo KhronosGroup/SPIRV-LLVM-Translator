@@ -1418,7 +1418,7 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
       Type::getVoidTy(*Context);
   transOCLBuiltinFromInstPreproc(BI, RetTy, ArgTys);
   if (!HasFuncPtrArg)
-  mangle(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
+    mangle(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
   else
     MangledName = decorateSPRVFunction(FuncName);
   Function* Func = M->getFunction(MangledName);
