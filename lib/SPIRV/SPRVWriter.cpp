@@ -997,7 +997,8 @@ LLVMToSPRV::transFunction(Function *F) {
     BM->setName(BF, F->getName());
   if (oclIsKernel(F))
     BM->addEntryPoint(SPRVEMDL_Kernel, BF->getId());
-  else if (F->getLinkage() != GlobalValue::InternalLinkage)
+  else if (F->getLinkage() != GlobalValue::InternalLinkage &&
+           F->getLinkage() != GlobalValue::LinkOnceODRLinkage)
     BF->setLinkageType(SPIRSPRVLinkageTypeMap::map(F->getLinkage()));
   auto Attrs = F->getAttributes();
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
