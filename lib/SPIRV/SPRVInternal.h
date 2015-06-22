@@ -311,6 +311,7 @@ SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>::init() {
 _SPRV_OP(ExternalLinkage, Export)
 _SPRV_OP(AvailableExternallyLinkage, Import)
 _SPRV_OP(PrivateLinkage, Count)
+_SPRV_OP(LinkOnceODRLinkage, Count)
 _SPRV_OP(InternalLinkage, Count)
 #undef _SPRV_OP
 }
