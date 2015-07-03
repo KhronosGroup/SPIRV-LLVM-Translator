@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation.
+ */
 #ifndef __NAME_MANGLE_API_H__
 #define __NAME_MANGLE_API_H__
 

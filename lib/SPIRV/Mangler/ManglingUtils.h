@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation.
+ */
 
 #ifndef __MANGLING_UTILS_H__
 #define __MANGLING_UTILS_H__

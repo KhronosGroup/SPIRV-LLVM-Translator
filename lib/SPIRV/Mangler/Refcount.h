@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation
+ */
 
 #ifndef __REF_COUNT_H__
 #define __REF_COUNT_H__
