@@ -1,3 +1,5 @@
+Contributed by: Intel Corporation.
+
 SPIR Name Mangler
 =================
 

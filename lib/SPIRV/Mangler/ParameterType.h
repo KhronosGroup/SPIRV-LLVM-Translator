@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation.
+ */
 
 #ifndef __PARAMETER_TYPE_H__
 #define __PARAMETER_TYPE_H__

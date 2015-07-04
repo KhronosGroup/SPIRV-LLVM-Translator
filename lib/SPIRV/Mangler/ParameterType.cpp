@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation.
+ */
 #include "ParameterType.h"
 #include "ManglingUtils.h"
 #include <assert.h>

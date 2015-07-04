@@ -6,6 +6,9 @@
 // License. See LICENSE.TXT for details.
 //
 //===---------------------------------------------------------------------===//
+/*
+ * Contributed by: Intel Corporation.
+ */
 
 #ifndef __FUNCTION_DESCRIPTOR_H__
 #define __FUNCTION_DESCRIPTOR_H__
