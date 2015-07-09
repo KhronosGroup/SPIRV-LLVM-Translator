@@ -412,6 +412,7 @@ typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
 #define OCL_TYPE_NAME_SAMPLER_T             "sampler_t"
 #define SPIR_TYPE_NAME_SAMPLER_T            "opencl.sampler_t"
 #define SPIR_TYPE_NAME_EVENT_T              "opencl.event_t"
+#define SPIR_TYPE_NAME_CLK_EVENT_T          "opencl.clk_event_t"
 #define SPIR_TYPE_NAME_PIPE_T               "opencl.pipe_t"
 #define SPIR_TYPE_NAME_PREFIX_IMAGE_T       "opencl.image"
 #define SPIR_TYPE_NAME_BLOCK_T              "opencl.block"
@@ -464,7 +465,8 @@ PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
 void getFunctionTypeParameterTypes(llvm::FunctionType* FT,
     std::vector<Type*>& ArgTys);
 Function *getOrCreateFunction(Module *M, Type *RetTy,
-    ArrayRef<Type *> ArgTypes, StringRef Name, bool Mangle = false);
+    ArrayRef<Type *> ArgTypes, StringRef Name, bool Mangle = false,
+    AttributeSet *Attrs = nullptr, bool takeName = true);
 std::vector<Value *> getArguments(CallInst* CI);
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
@@ -488,22 +490,26 @@ bool isFunctionPointerType(Type *T);
 /// \param AI points to the function pointer type argument if returns true.
 bool hasFunctionPointerArg(Function *F, Function::arg_iterator& AI);
 
+/// \returns true if function \p F has array type argument.
+bool hasArrayArg(Function *F);
+
 /// Mutates function call instruction by changing the arguments.
 /// \param ArgMutate mutates the function arguments.
 void mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle = false);
+    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
 
 /// Mutate function by change the arguments.
 /// \param ArgMutate mutates the function arguments.
 void mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle = false);
+    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
 
 /// Add a call instruction at \p Pos.
 CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
-    ArrayRef<Value *> Args, Instruction *Pos, bool Mangle = false,
-    StringRef InstName = SPIR_TEMP_NAME_PREFIX_CALL);
+    ArrayRef<Value *> Args, AttributeSet *Attrs, Instruction *Pos,
+    bool Mangle = false, StringRef InstName = SPIR_TEMP_NAME_PREFIX_CALL,
+    bool TakeFuncName = true);
 
 /// Add a call of spir_block_bind function.
 CallInst *
@@ -520,6 +526,27 @@ ConstantInt *getInt32(Module *M, int value);
 
 void mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName);
+
+SPIRAddressSpace getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode);
+
+Constant *
+getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);
+
+/// Get a constant int or a constant int array.
+/// \param T is the type of the constant. It should be an integer type or
+//  an integer pointer type.
+/// \param Len is the length of the array.
+/// \param V is the value to fill the array.
+Value *
+getScalarOrArrayConstantInt(Instruction *P, Type *T, unsigned Len, uint64_t V,
+    bool isSigned = false);
+
+/// Get the array from GEP.
+/// \param V is a GEP whose pointer operand is a pointer to an array of size
+/// \param Size.
+Value *
+getScalarOrArray(Value *V, unsigned Size, Instruction *Pos);
+
 }
 namespace llvm {
 

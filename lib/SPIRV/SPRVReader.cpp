@@ -212,6 +212,12 @@ public:
   bool postProcessOCLBuiltinWithFuncPointer(Function *F,
       Function::arg_iterator I);
 
+  /// \brief Post-process OpenCL builtin functions having array argument.
+  ///
+  /// These functions are translated to functions with array type argument
+  /// first, then post-processed to have pointer arguments.
+  bool postProcessOCLBuiltinWithArrayArguments(Function *F);
+
   typedef DenseMap<SPRVType *, Type *> SPRVToLLVMTypeMap;
   typedef DenseMap<SPRVValue *, Value *> SPRVToLLVMValueMap;
   typedef DenseMap<SPRVFunction *, Function *> SPRVToLLVMFunctionMap;
@@ -435,7 +441,7 @@ SPRVToLLVM::transFPType(SPRVType* T) {
   case 32: return Type::getFloatTy(*Context);
   case 64: return Type::getDoubleTy(*Context);
   default:
-    assert(0 && "Invalid type");
+    llvm_unreachable("Invalid type");
     return nullptr;
   }
 }
@@ -491,7 +497,7 @@ SPRVToLLVM::transType(SPRVType *T) {
     else if (ST->IsOCLSampler())
       return mapType(T, Type::getInt32Ty(*Context));
     else
-      assert(0 && "Unsupported sampler type");
+      llvm_unreachable("Unsupported sampler type");
     return nullptr;
   }
   case SPRVOC_OpTypeStruct: {
@@ -510,13 +516,14 @@ SPRVToLLVM::transType(SPRVType *T) {
         "opencl.pipe_t"), SPIRAS_Global));
     }
   default: {
-    if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
+    auto OC = T->getOpCode();
+    if (isOpaqueGenericTypeOpCode(OC)) {
       return mapType(T, PointerType::get(
           llvm::StructType::create(*Context,
-              BuiltinOpaqueGenericTypeOpCodeMap::rmap(T->getOpCode())),
-          SPIRAS_Private));
+              BuiltinOpaqueGenericTypeOpCodeMap::rmap(OC)),
+              getOCLOpaqueTypeAddrSpace(OC)));
     }
-    assert(0 && "Not implemented");
+    llvm_unreachable("Not implemented");
     }
   }
   return 0;
@@ -541,7 +548,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
     case 64:
       return Prefix + "long";
     default:
-      assert(0 && "invalid integer size");
+      llvm_unreachable("invalid integer size");
       return Prefix + std::string("int") + T->getIntegerBitWidth() + "_t";
     }
   }
@@ -555,7 +562,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
     case 64:
       return "double";
     default:
-      assert(0 && "invalid floating pointer bitwidth");
+      llvm_unreachable("invalid floating pointer bitwidth");
       return std::string("float") + T->getFloatBitWidth() + "_t";
     }
     break;
@@ -569,7 +576,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
   case SPRVOC_OpTypeOpaque:
       return T->getName();
   case SPRVOC_OpTypeFunction:
-    assert(0 && "Unsupported");
+    llvm_unreachable("Unsupported");
     return "function";
   case SPRVOC_OpTypeStruct: {
     auto Name = T->getName();
@@ -588,7 +595,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
         return BuiltinOpaqueGenericTypeOpCodeMap::rmap(T->getOpCode());
       }
-      assert(0 && "Not implemented");
+      llvm_unreachable("Not implemented");
       return "unknown";
   }
 }
@@ -743,17 +750,31 @@ SPRVToLLVM::postProcessOCL() {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
-      DEBUG(dbgs() << "[postProcessOCL] " << *F << '\n');
+      DEBUG(dbgs() << "[postProcessOCL sret] " << *F << '\n');
       SPRVWord SrcLangVer = 0;
       BM->getSourceLanguage(&SrcLangVer);
       if (F->getReturnType()->isStructTy() && oclIsBuiltin(F->getName(), SrcLangVer)) {
         if (!postProcessOCLBuiltinReturnStruct(F))
           return false;
       }
-
+    }
+  }
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    auto F = I++;
+    if (F->hasName() && F->isDeclaration()) {
+      DEBUG(dbgs() << "[postProcessOCL func ptr] " << *F << '\n');
       auto AI = F->arg_begin();
       if (hasFunctionPointerArg(F, AI) && isSPRVFunction(F))
         if (!postProcessOCLBuiltinWithFuncPointer(F, AI))
+          return false;
+    }
+  }
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    auto F = I++;
+    if (F->hasName() && F->isDeclaration()) {
+      DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
+      if (hasArrayArg(F))
+        if (!postProcessOCLBuiltinWithArrayArguments(F))
           return false;
     }
   }
@@ -764,18 +785,20 @@ bool
 SPRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
   std::string Name = F->getName();
   F->setName(Name + ".old");
-  for (auto I = F->user_begin(), E = F->user_end(); I != E; ++I) {
-    if (auto CI = dyn_cast<CallInst>(*I)) {
+  for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
+    if (auto CI = dyn_cast<CallInst>(*I++)) {
       auto ST = dyn_cast<StoreInst>(*(CI->user_begin()));
       std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(), PointerType::get(F->getReturnType(),
           SPIRAS_Private));
       auto newF = getOrCreateFunction(M, Type::getVoidTy(*Context),
-          ArgTys, Name);
+          ArgTys, Name, false);
+      newF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), ST->getPointerOperand());
-      CallInst::Create(newF, Args, CI->getName(), CI);
+      auto NewCI = CallInst::Create(newF, Args, CI->getName(), CI);
+      NewCI->setCallingConv(CI->getCallingConv());
       ST->dropAllReferences();
       ST->removeFromParent();
       CI->dropAllReferences();
@@ -814,6 +837,28 @@ SPRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
 
     return Name;
   }, true);
+  return true;
+}
+
+bool
+SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F) {
+  DEBUG(dbgs() << "[postProcessOCLBuiltinWithArrayArguments] " << *F << '\n');
+  auto Name = F->getName();
+  auto Attrs = F->getAttributes();
+  mutateFunction (F, [=](CallInst *CI, std::vector<Value *> &Args) {
+    auto FBegin = CI->getParent()->getParent()->begin()->getFirstInsertionPt();
+    for (auto &I:Args) {
+      auto T = I->getType();
+      if (!T->isArrayTy())
+        continue;
+      auto Alloca = new AllocaInst(T, "", FBegin);
+      auto Store = new StoreInst(I, Alloca, false, CI);
+      auto Zero = ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
+      Value *Index[] = {Zero, Zero};
+      I = GetElementPtrInst::CreateInBounds(Alloca, Index, "", CI);
+    }
+    return Name;
+  }, false, &Attrs);
   return true;
 }
 
@@ -869,7 +914,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
           APInt(BT->getFloatBitWidth(), BConst->getZExtIntValue()))));
     }
     default:
-      assert(0 && "Not implemented");
+      llvm_unreachable("Not implemented");
       return NULL;
     }
   }
@@ -900,7 +945,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
       return mapValue(BV, ConstantArray::get(
           dyn_cast<ArrayType>(transType(BCC->getType())), CV));
     default:
-      assert(0 && "not implemented");
+      llvm_unreachable("not implemented");
       return nullptr;
     }
   }
@@ -1094,8 +1139,9 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
       FuncName += ".i64";
 
     FunctionType *FT = FunctionType::get(VoidTy, ArgTy, false);
-    Function *Func = Function::Create(FT, GlobalValue::ExternalLinkage,
-        FuncName, M);
+    Function *Func = dyn_cast<Function>(M->getOrInsertFunction(FuncName, FT));
+    assert(Func && Func->getFunctionType() == FT && "Function type mismatch");
+    Func->setLinkage(GlobalValue::ExternalLinkage);
 
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
@@ -1290,7 +1336,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   }
 
   SPRVDBG(bildbgs() << "Cannot translate " << *BV << '\n';)
-  assert(0 && "Translation of SPIRV instruction not implemented");
+  llvm_unreachable("Translation of SPIRV instruction not implemented");
   return NULL;
   }
 }
@@ -1387,7 +1433,7 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
       RetTy = VectorType::get(IntegerType::getInt32Ty(*Context),
           BT->getVectorComponentCount());
     else
-      assert(0 && "invalid compare instruction");
+      llvm_unreachable("invalid compare instruction");
   }
 }
 
@@ -1451,10 +1497,12 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
   if (OC == SPRVOC_OpBuildNDRange) {
     auto NDRangeInst = static_cast<SPRVBuildNDRange *>(BI);
     auto EleTy = ((NDRangeInst->getOperands())[0])->getType();
-    int Dim = EleTy->isTypeVector() ? EleTy->getVectorComponentCount() : 1;
+    int Dim = EleTy->isTypeArray() ? EleTy->getArrayLength() : 1;
     // cygwin does not have std::to_string
     ostringstream OS;
     OS << Dim;
+    assert((EleTy->isTypeInt() && Dim == 1) ||
+        (EleTy->isTypeArray() && Dim >= 2 && Dim <= 3));
     return std::string(OCL_BUILTIN_NDRANGE_PREFIX) + OS.str() + "D";
   }
   return SPIRSPRVBuiltinInstMap::rmap(OC);
@@ -1833,7 +1881,7 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
     FuncName = "barrier";
     MemSema = CtlB->getMemSemantic();
   } else {
-    assert(0 && "Invalid instruction");
+    llvm_unreachable("Invalid instruction");
   }
   std::string MangledName;
   Type* Int32Ty = Type::getInt32Ty(*Context);

@@ -200,7 +200,7 @@ private:
   void
   lowerGetBlockInvoke() {
     if (auto F = M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE)) {
-      for (auto UI = F->use_begin(), UE = F->use_end(); UI != UE;) {
+      for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
         auto CI = dyn_cast<CallInst>(*UI);
         assert(CI && "Invalid usage of spir_get_block_invoke");
         lowerGetBlockInvoke(CI);
@@ -211,7 +211,7 @@ private:
   void
   lowerGetBlockContext() {
     if (auto F = M->getFunction(SPIR_INTRINSIC_GET_BLOCK_CONTEXT)) {
-      for (auto UI = F->use_begin(), UE = F->use_end(); UI != UE;) {
+      for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
         auto CI = dyn_cast<CallInst>(*UI);
         assert(CI && "Invalid usage of spir_get_block_context");
         lowerGetBlockContext(CI);
@@ -289,16 +289,16 @@ private:
   lowerGetBlockInvoke(CallInst *CallGetBlkInvoke,
       Function *InvokeF = nullptr) {
     bool changed = false;
-    for (auto UI = CallGetBlkInvoke->use_begin(),
-        UE = CallGetBlkInvoke->use_end();
+    for (auto UI = CallGetBlkInvoke->user_begin(),
+        UE = CallGetBlkInvoke->user_end();
         UI != UE;) {
       // Handle block_func_ptr = bitcast(spir_get_block_invoke(block))
-      auto CallInv =dyn_cast<Instruction>(*UI);
+      auto CallInv = dyn_cast<Instruction>(*UI);
       ++UI;
       assert(CallInv);
       auto Cast = dyn_cast<BitCastInst>(CallInv);
       if (Cast)
-        CallInv = dyn_cast<Instruction>(*CallInv->use_begin());
+        CallInv = dyn_cast<Instruction>(*CallInv->user_begin());
       DEBUG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
       // Handle ret = block_func_ptr(context_ptr, args)
       auto CI = dyn_cast<CallInst>(CallInv);
@@ -347,16 +347,14 @@ private:
         // Insert event arguments if there are not.
         if (!isa<IntegerType>(Args[3]->getType())) {
           Args.insert(Args.begin() + 3, getInt32(M, 0));
-          Args.insert(Args.begin() + 4, Constant::getNullValue(
-              getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_EVENT_T)));
+          Args.insert(Args.begin() + 4, getOCLNullClkEventPtr());
         }
-        if (!isPointerToOpaqueStructType(Args[5]->getType()))
-          Args.insert(Args.begin() + 5, Constant::getNullValue(
-              getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_EVENT_T)));
+        if (!isOCLClkEventPtrType(Args[5]->getType()))
+          Args.insert(Args.begin() + 5, getOCLNullClkEventPtr());
       }
 
       return decorateSPRVFunction(DemangledName);
-    });
+    }, false, nullptr, false);
   }
   /// Transform return of a block.
   /// The function returning a block is inlined since the context cannot be
@@ -420,7 +418,7 @@ private:
       InvF = F;
       Ctx = Constant::getNullValue(IntegerType::getInt8PtrTy(M->getContext()));
     } else {
-      assert(0 && "Invalid block");
+      llvm_unreachable("Invalid block");
     }
     DEBUG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n' <<
         "  Block context: " << *Ctx << '\n');
@@ -470,6 +468,26 @@ private:
     for (auto &I : L) {
       erase(M->getFunction(I));
     }
+  }
+
+  llvm::PointerType* getOCLClkEventType() {
+    return getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
+        SPIRAS_Global);
+  }
+
+  llvm::PointerType* getOCLClkEventPtrType() {
+    return PointerType::get(getOCLClkEventType(), SPIRAS_Generic);
+  }
+
+  bool isOCLClkEventPtrType(Type *T) {
+    if (!isa<PointerType>(T))
+      return false;
+    auto ET = T->getPointerElementType();
+    return isPointerToOpaqueStructType(ET, SPIR_TYPE_NAME_CLK_EVENT_T);
+  }
+
+  llvm::Constant* getOCLNullClkEventPtr() {
+    return Constant::getNullValue(getOCLClkEventPtrType());
   }
 };
 
@@ -635,6 +653,7 @@ private:
   void eraseFunctions(const std::vector<std::string> &L);
   SPRV::SPRVInstruction* transUnaryInst(UnaryInstruction* U,
       SPRVBasicBlock* BB);
+  void transOCLNDRangeArgs(std::vector<SPRVWord>& SPArgs);
 };
 
 SPRVValue *
@@ -661,7 +680,8 @@ LLVMToSPRV::oclIsKernel(Function *F) {
 bool
 LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
   std::string DemangledName;
-  if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName))
+  if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName) &&
+      !isSPRVFunction(F, &DemangledName))
     return false;
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
   SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
@@ -674,7 +694,7 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
         DemangledName.find("async_work_group") == 0 ||
         DemangledName == "wait_group_events" ||
         SPIRSPRVBuiltinInstMap::find(DemangledName);
-  assert(0 && "not supported");
+  llvm_unreachable("not supported");
   return false;
 }
 
@@ -763,7 +783,7 @@ LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
                                                      EntryPoint);
     break;
   default:
-    assert(0 && "not supported");
+    llvm_unreachable("not supported");
   }
   assert(Found && "Invalid builtin function");
   if (Found && BuiltinSet)
@@ -904,6 +924,7 @@ LLVMToSPRV::transType(Type *T) {
   if (T->isPointerTy()) {
     auto ET = T->getPointerElementType();
     auto ST = dyn_cast<StructType>(ET);
+    auto AddrSpc = T->getPointerAddressSpace();
     if (ST && !ST->isSized()) {
       SPRVOpCode OpCode;
       StringRef STName = ST->getName();
@@ -913,6 +934,7 @@ LLVMToSPRV::transType(Type *T) {
         ST->setName(STName);
       }
       if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
+        assert(AddrSpc == SPIRAS_Global);
         auto FirstDotPos = STName.find_first_of(SPIR_TYPE_NAME_DELIMITER, 0);
         assert (FirstDotPos != std::string::npos);
         auto SecondDotPos = STName.find_first_of(SPIR_TYPE_NAME_DELIMITER,
@@ -931,18 +953,22 @@ LLVMToSPRV::transType(Type *T) {
           return mapType(T, BM->addSamplerType(nullptr, SamplerDesc));
         }
       } else if (STName == SPIR_TYPE_NAME_SAMPLER_T) {
+        assert(AddrSpc == SPIRAS_Global);
         SPRVTypeSamplerDescriptor SamplerDesc(0, 0, 0, 0, 0);
         SPIRSPRVImageSamplerTypeMap::find(STName, &SamplerDesc);
         return mapType(T, BM->addSamplerType(nullptr, SamplerDesc));
       } else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
-        if (OpCode == SPRVOC_OpTypePipe)
+        assert(AddrSpc == getOCLOpaqueTypeAddrSpace(OpCode));
+        if (OpCode == SPRVOC_OpTypePipe) {
           return mapType(T, BM->addPipeType());
+        }
         return mapType(T, BM->addOpaqueGenericType(OpCode));
       }
-    } else 
+    } else  {
       return mapType(T, BM->addPointerType(SPIRSPRVAddrSpaceMap::map(
-        static_cast<SPIRAddressSpace>(T->getPointerAddressSpace())),
+        static_cast<SPIRAddressSpace>(AddrSpc)),
         transType(ET)));
+    }
   }
 
   if (T->isVectorTy())
@@ -967,7 +993,10 @@ LLVMToSPRV::transType(Type *T) {
     std::vector<SPRVType *> MT;
     for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I)
       MT.push_back(transType(ST->getElementType(I)));
-    return mapType(T, BM->addStructType(MT, ST->getName(), ST->isPacked()));
+    std::string Name;
+    if (ST->hasName())
+      Name = ST->getName();
+    return mapType(T, BM->addStructType(MT, Name, ST->isPacked()));
   }
 
   if (FunctionType *FT = dyn_cast<FunctionType>(T)) {
@@ -979,7 +1008,7 @@ LLVMToSPRV::transType(Type *T) {
     return mapType(T, BM->addFunctionType(RT, PT));
   }
 
-  assert(0 && "Not implemented!");
+  llvm_unreachable("Not implemented!");
   return 0;
 }
 
@@ -1376,7 +1405,7 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
   if (CallInst *CI = dyn_cast<CallInst>(V))
     return mapValue(V, transCallInst(CI, BB));
 
-  assert(0 && "Not implemented");
+  llvm_unreachable("Not implemented");
   return nullptr;
 }
 
@@ -1932,7 +1961,7 @@ LLVMToSPRV::transOCLAtomic(CallInst *CI, const std::string &MangledName,
     MemSema = static_cast<SPRVWord>(SPRVMSM_WorkgroupLocalMemory);
     break;
   default:
-    assert(0 && "Invalid address space");
+    llvm_unreachable("Invalid address space");
   }
   return BM->addAtomicInst(SPIRSPRVBuiltinInstMap::map(NewName),
       transType(CI->getType()), Args, SPRVES_Workgroup,
@@ -2026,6 +2055,37 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
       SPIR_TYPE_NAME_SAMPLER_T);
 }
 
+// SPIR-V ndrange structure requires 3 members in the following order:
+//   global work offset
+//   global work size
+//   local work size
+// The arguments need to add missing members.
+void LLVMToSPRV::transOCLNDRangeArgs(std::vector<SPRVWord>& SPArgs) {
+#if 0
+  switch (SPArgs.size()) {
+  case 1: {
+    // Has global work size.
+    auto SizetTy = transType(getSizetType());
+    SPArgs.push_back(BM->addConstant(SizetTy, 1)->getId());
+    SPArgs.insert(SPArgs.begin(), BM->addConstant(SizetTy, 0)->getId());
+  }
+    break;
+  case 2: {
+    // Has global and local work size.
+    auto SizetTy = transType(getSizetType());
+    SPArgs.insert(SPArgs.begin(), BM->addConstant(SizetTy, 0)->getId());
+  }
+    break;
+  case 3: {
+    // Do nothing
+  }
+    break;
+  default:
+    llvm_unreachable("Invalid number of arguments");
+  }
+#endif
+}
+
 SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     CallInst* CI, SPRVBasicBlock* BB) {
@@ -2069,26 +2129,7 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
         SPArgs.push_back(transValue(I, BB)->getId());
       }
       if (OC == SPRVOC_OpBuildNDRange) {
-        switch (SPArgs.size()) {
-        case 1: {
-          auto SizetTy = transType(getSizetType());
-          SPArgs.push_back(BM->addConstant(SizetTy, 1)->getId());
-          SPArgs.push_back(BM->addConstant(SizetTy, 0)->getId());
-        }
-        break;
-        case 2: {
-          auto SizetTy = transType(getSizetType());
-          SPArgs.push_back(BM->addConstant(SizetTy, 0)->getId());
-        }
-        break;
-        case 3: {
-          std::swap(SPArgs[0], SPArgs[2]);
-          std::swap(SPArgs[0], SPArgs[1]);
-        }
-        break;
-        default:
-          assert (0 && "Invalid number of arguments");
-        }
+        transOCLNDRangeArgs(SPArgs);
       }
       auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
       if (!SPRetTy || !SPRetTy->isTypeStruct())

@@ -167,7 +167,7 @@ mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed) {
       Stem = "long";
       break;
     default:
-      assert(0 && "Invalid integer type");
+      llvm_unreachable("Invalid integer type");
       Stem = std::string("int") + W + "_t";
       break;
     }
@@ -180,7 +180,7 @@ mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed) {
     ss << mapSPRVTypeToOpenCLType(eleTy, Signed) << size;
     return ss.str();
   }
-  assert(0 && "Invalid type");
+  llvm_unreachable("Invalid type");
   return "unknown_type";
 }
 
@@ -221,7 +221,7 @@ isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name) {
 
 Function *
 getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
-    StringRef Name, bool Mangle) {
+    StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
   std::string MangledName = Name;
   if (Mangle)
     mangle(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
@@ -231,11 +231,21 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
       false);
   Function *F = M->getFunction(MangledName);
   if (!F || F->getFunctionType() != FT) {
-    F = Function::Create(FT,
+    auto NewF = Function::Create(FT,
       GlobalValue::ExternalLinkage,
       MangledName,
       M);
+    if (F && takeName)
+      NewF->takeName(F);
+    DEBUG(dbgs() << "[getOrCreateFunction] ";
+      if (F)
+        dbgs() << *F << " => ";
+      dbgs() << *NewF << '\n';
+      );
+    F = NewF;
     F->setCallingConv(CallingConv::SPIR_FUNC);
+    if (Attrs)
+      F->setAttributes(*Attrs);
   }
   return F;
 }
@@ -315,18 +325,32 @@ hasFunctionPointerArg(Function *F, Function::arg_iterator& AI) {
   return false;
 }
 
+bool
+hasArrayArg(Function *F) {
+  for (auto I = F->arg_begin(), E = F->arg_end(); I != E; ++I) {
+    DEBUG(dbgs() << "[hasArrayArg] " << *I << '\n');
+    if (I->getType()->isArrayTy()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void
 mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle) {
+    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
   DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
   auto NewName = ArgMutate(CI, Args);
-  auto InstName = CI->getName();
-  CI->setName(InstName + ".old");
-  auto NewCI = addCallInst(M, NewName, CI->getType(), Args, CI, Mangle,
-      InstName);
+  StringRef InstName;
+  if (!CI->getType()->isVoidTy() && CI->hasName()) {
+    InstName = CI->getName();
+    CI->setName(InstName + ".old");
+  }
+  auto NewCI = addCallInst(M, NewName, CI->getType(), Args, Attrs, CI, Mangle,
+      InstName, TakeFuncName);
   DEBUG(dbgs() << " => " << *NewCI << '\n');
   CI->replaceAllUsesWith(NewCI);
   CI->dropAllReferences();
@@ -336,11 +360,11 @@ mutateCallInst(Module *M, CallInst *CI,
 void
 mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle) {
+    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
   auto M = F->getParent();
-  for (auto I = F->user_begin(), E = F->user_end(); I != E; ++I) {
-    if (auto CI = dyn_cast<CallInst>(*I))
-      mutateCallInst(M, CI, ArgMutate, Mangle);
+  for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
+    if (auto CI = dyn_cast<CallInst>(*I++))
+      mutateCallInst(M, CI, ArgMutate, Mangle, Attrs, TakeFuncName);
   }
   if (F->use_empty()) {
     F->dropAllReferences();
@@ -350,10 +374,18 @@ mutateFunction(Function *F,
 
 CallInst *
 addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
-    Instruction *Pos, bool Mangle, StringRef InstName) {
-  auto SupportF = getOrCreateFunction(M, RetTy, getTypes(Args),
-      FuncName, Mangle);
-  return CallInst::Create(SupportF, Args, InstName, Pos);
+    AttributeSet *Attrs, Instruction *Pos, bool Mangle, StringRef InstName,
+    bool TakeFuncName) {
+  auto F = getOrCreateFunction(M, RetTy, getTypes(Args),
+      FuncName, Mangle, Attrs, TakeFuncName);
+  auto CI = CallInst::Create(F, Args, InstName, Pos);
+  CI->setCallingConv(F->getCallingConv());
+  return CI;
+}
+
+Constant *
+castToInt8Ptr(Constant *V, unsigned Addr = 0) {
+  return ConstantExpr::getBitCast(V, Type::getInt8PtrTy(V->getContext(), Addr));
 }
 
 CallInst *
@@ -363,13 +395,13 @@ addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
       SPIRAS_Private);
   auto &Ctx = M->getContext();
   Value *BlkArgs[] = {
-      InvokeFunc,
-      CtxLen ? CtxLen : UndefValue::get(Type::getInt64Ty(Ctx)),
-      CtxAlign ? CtxAlign : UndefValue::get(Type::getInt64Ty(Ctx)),
+      castToInt8Ptr(InvokeFunc),
+      CtxLen ? CtxLen : UndefValue::get(Type::getInt32Ty(Ctx)),
+      CtxAlign ? CtxAlign : UndefValue::get(Type::getInt32Ty(Ctx)),
       BlkCtx ? BlkCtx : UndefValue::get(Type::getInt8PtrTy(Ctx))
   };
-  return addCallInst(M, SPIR_INTRINSIC_BLOCK_BIND, BlkTy, BlkArgs, InsPos,
-      false, InstName);
+  return addCallInst(M, SPIR_INTRINSIC_BLOCK_BIND, BlkTy, BlkArgs, nullptr,
+      InsPos, false, InstName);
 }
 
 ConstantInt *
@@ -391,13 +423,70 @@ isSPRVFunction(Function *F, std::string *UndecoratedName) {
   return true;
 }
 
+/// Additional information for mangling a function argument type.
+struct OCLTypeMangleInfo {
+  bool IsSigned;
+  bool IsVoidPtr;
+  bool IsEnum;
+  SPIR::TypePrimitiveEnum Enum;
+  unsigned Attr;
+  OCLTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
+      Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
+};
+
+/// Information for mangling an OpenCL builtin function.
+struct OCLBuiltinMangleInfo {
+  std::string UnmangledName;
+  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
+  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
+                              // pointer
+  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
+  std::map<int, unsigned> Attrs;                   // argument attributes
+  void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
+  void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
+  void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
+    EnumArgs[Ndx] = Enum;}
+  void setArgAttr(int Ndx, unsigned Attr) {
+    Attrs[Ndx] = Attr;}
+  bool isArgUnsigned(int Ndx) {
+    return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);}
+  bool isArgVoidPtr(int Ndx) {
+    return VoidPtrArgs.count(-1) || VoidPtrArgs.count(Ndx);}
+  bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
+    auto Loc = EnumArgs.find(Ndx);
+    if (Loc == EnumArgs.end())
+      Loc = EnumArgs.find(-1);
+    if (Loc == EnumArgs.end())
+      return false;
+    if (Enum)
+      *Enum = Loc->second;
+    return true;
+  }
+  unsigned getArgAttr(int Ndx) {
+    auto Loc = Attrs.find(Ndx);
+    if (Loc == Attrs.end())
+      Loc = Attrs.find(-1);
+    if (Loc == Attrs.end())
+      return 0;
+    return Loc->second;
+  }
+  OCLTypeMangleInfo getTypeMangleInfo(int Ndx) {
+    OCLTypeMangleInfo Info;
+    Info.IsSigned = !isArgUnsigned(Ndx);
+    Info.IsVoidPtr = isArgVoidPtr(Ndx);
+    Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
+    Info.Attr = getArgAttr(Ndx);
+    return Info;
+  }
+};
+
 // Translated uniqued OCL builtin name to its original name, and set
 // argument attributes and unsigned args.
 static void
-getOCLBuiltinArgInfo(std::string& UnmangledName,
-    std::set<int> &UnsignedArgs, unsigned& Attr) {
+getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
+  std::string &UnmangledName = Info.UnmangledName;
   if (UnmangledName.find("write_imageui") == 0)
-      UnsignedArgs.insert(2);
+      Info.addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("vload") == 0 ||
@@ -405,30 +494,50 @@ getOCLBuiltinArgInfo(std::string& UnmangledName,
       UnmangledName.find("async_work_group") == 0 ||
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
-      UnmangledName.find("shuffle") == 0 ||
-      UnmangledName.find("ndrange_") == 0)
-    UnsignedArgs.insert(-1);
+      UnmangledName.find("shuffle") == 0)
+    Info.addUnsignedArg(-1);
   else if (UnmangledName.find("atomic") == 0) {
-    Attr = SPIR::ATTR_VOLATILE;
+    Info.setArgAttr(0, SPIR::ATTR_VOLATILE);
     if (UnmangledName == "atomic_umax" ||
         UnmangledName == "atomic_umin") {
-      UnsignedArgs.insert(-1);
+      Info.addUnsignedArg(-1);
       UnmangledName.erase(7, 1);
     }
   } else if (UnmangledName.find("uconvert_") == 0) {
-    UnsignedArgs.insert(0);
+    Info.addUnsignedArg(0);
     UnmangledName.erase(0, 1);
   } else if (UnmangledName.find("s_") == 0) {
     UnmangledName.erase(0, 2);
   } else if (UnmangledName.find("u_") == 0) {
-    UnsignedArgs.insert(-1);
+    Info.addUnsignedArg(-1);
     UnmangledName.erase(0, 2);
+  } else if (UnmangledName == "capture_event_profiling_info") {
+    Info.addVoidPtrArg(2);
+    Info.setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFORMATION);
+  } else if (UnmangledName == "enqueue_kernel") {
+    Info.setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS);
+    Info.addUnsignedArg(3);
+  } else if (UnmangledName == "enqueue_marker") {
+    Info.setArgAttr(2, SPIR::ATTR_CONST);
+    Info.addUnsignedArg(1);
+  } else if (UnmangledName.find("ndrange_") == 0) {
+    Info.addUnsignedArg(-1);
+    if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
+      Info.setArgAttr(-1, SPIR::ATTR_CONST);
+    }
   }
 }
 
-//ToDo: add translation of all LLVM types
+/// Translates LLVM type to descriptor for mangler.
+/// \param Signed indicates integer type should be translated as signed.
+/// \param VoidPtr indicates i8* should be translated as void*.
 static SPIR::RefParamType
-transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
+transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
+  bool Signed = Info.IsSigned;
+  unsigned Attr = Info.Attr;
+  bool VoidPtr = Info.IsVoidPtr;
+  if (Info.IsEnum)
+    return SPIR::RefParamType(new SPIR::PrimitiveType(Info.Enum));
   if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch(IntTy->getBitWidth()) {
     case 8:
@@ -444,7 +553,7 @@ transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
       return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
           SPIR::PRIMITIVE_LONG:SPIR::PRIMITIVE_ULONG));
     default:
-      assert(0 && "invliad int size");
+      llvm_unreachable("invliad int size");
     }
   }
   if (Ty->isVoidTy())
@@ -457,11 +566,15 @@ transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
     return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_DOUBLE));
   if (Ty->isVectorTy()) {
     return SPIR::RefParamType(new SPIR::VectorType(
-        transTypeDesc(Ty->getVectorElementType(), Signed),
+        transTypeDesc(Ty->getVectorElementType(), Info),
         Ty->getVectorNumElements()));
   }
+  if (Ty->isArrayTy()) {
+    return transTypeDesc(PointerType::get(Ty->getArrayElementType(), 0), Info);
+  }
   if (Ty->isPointerTy()) {
-    if (auto StructTy = dyn_cast<StructType>(Ty->getPointerElementType())) {
+    auto ET = Ty->getPointerElementType();
+    if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       if (StructTy->getStructName() == "opencl.block")
         return SPIR::RefParamType(new SPIR::BlockType);
@@ -491,12 +604,13 @@ transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
           ));
 #undef _SPRV_OP
     }
-    auto PT = new SPIR::PointerType(transTypeDesc(
-      Ty->getPointerElementType(), Signed));
+    if (VoidPtr && ET->isIntegerTy(8))
+      ET = Type::getVoidTy(ET->getContext());
+    auto PT = new SPIR::PointerType(transTypeDesc(ET, Info));
     PT->setAddressSpace(static_cast<SPIR::TypeAttributeEnum>(
       Ty->getPointerAddressSpace() + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
     for (unsigned I = SPIR::ATTR_QUALIFIER_FIRST,
-        E = SPIR::ATTR_QUALIFIER_LAST; I != E; ++I)
+        E = SPIR::ATTR_QUALIFIER_LAST; I <= E; ++I)
       PT->setQualifier(static_cast<SPIR::TypeAttributeEnum>(I), I & Attr);
     return SPIR::RefParamType(PT);
   }
@@ -505,24 +619,124 @@ transTypeDesc(Type *Ty, bool Signed = true, unsigned Attr = 0) {
   return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
 }
 
+// The name mangler mangles certain OCL builtin names incorrectly.
+// Fix mangled names.
+void
+fixOCLBuiltinName(std::string &MangledName) {
+  if (MangledName == "_Z10ndrange_2DPKmPKmPKm")
+    MangledName = "_Z10ndrange_2DPKmS0_S0_";
+  else if (MangledName == "_Z10ndrange_3DPKmPKmPKm")
+    MangledName = "_Z10ndrange_3DPKmS0_S0_";
+}
+
 // If SignedArgIndices contains -1, all integer arment is signed.
 void
 mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
+  DEBUG(dbgs() << "[mangle] " << UnmangledName << " => ");
   assert(isOpenCLBuiltinSet(BuiltinSet) && "Not OpenCL builtin set");
   SPIR::NameMangler Mangler(BuiltinSet == SPRVBIS_OpenCL12 ? SPIR::SPIR12 :
       SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
   FD.name = UnmangledName;
-  std::set<int> UnsignedArgs;
-  unsigned Attr = 0;
-  getOCLBuiltinArgInfo(FD.name, UnsignedArgs, Attr);
+  OCLBuiltinMangleInfo BtnInfo;
+  BtnInfo.UnmangledName = UnmangledName;
+  getOCLBuiltinArgInfo(BtnInfo);
   for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
-    FD.parameters.emplace_back(transTypeDesc(ArgTypes[I],
-        !UnsignedArgs.count(-1) && !UnsignedArgs.count(I),
-        Attr));
+    auto T = ArgTypes[I];
+    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
   }
+  if (FD.parameters.empty())
+    FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
+        SPIR::PRIMITIVE_VOID)));
   Mangler.mangle(FD, MangledName);
+  fixOCLBuiltinName(MangledName);
+  DEBUG(dbgs() << MangledName << '\n');
+}
+
+Value *
+getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
+  if (!V->getType()->isPointerTy())
+    return V;
+  auto GEP = dyn_cast<GetElementPtrInst>(V);
+  assert (GEP);
+  auto P = GEP->getPointerOperand();
+  assert(P->getType()->getPointerElementType()->getArrayNumElements() == Size);
+  assert(GEP->getNumIndices() == 2);
+  auto Index0 = GEP->getOperand(1);
+  assert(dyn_cast<ConstantInt>(Index0)->getZExtValue() == 0);
+  auto Index1 = GEP->getOperand(2);
+  assert(dyn_cast<ConstantInt>(Index1)->getZExtValue() == 0);
+  return new LoadInst(P, "", Pos);
+}
+
+void
+MangleOpenCLBuiltin(const std::string &UnmangledName,
+    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
+  mangle(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
+}
+
+SPIRAddressSpace
+getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode) {
+  switch (OpCode) {
+  case SPRVOC_OpTypePipe:
+  case SPRVOC_OpTypeQueue:
+  case SPRVOC_OpTypeEvent:
+  case SPRVOC_OpTypeDeviceEvent:
+  case SPRVOC_OpTypeReserveId:
+  case SPRVOC_OpTypeSampler:
+    return SPIRAS_Global;
+  default:
+    return SPIRAS_Private;
+  }
+}
+
+Constant *
+getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned) {
+  if (auto IT = dyn_cast<IntegerType>(T))
+    return ConstantInt::get(IT, V);
+  if (auto VT = dyn_cast<VectorType>(T)) {
+    std::vector<Constant *> EV(VT->getVectorNumElements(),
+        getScalarOrVectorConstantInt(VT->getVectorElementType(), V, isSigned));
+    return ConstantVector::get(EV);
+  }
+  llvm_unreachable("Invalid type");
+  return nullptr;
+}
+
+Value *
+getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len, uint64_t V,
+    bool isSigned) {
+  if (auto IT = dyn_cast<IntegerType>(T)) {
+    assert(Len == 1 && "Invalid length");
+    return ConstantInt::get(IT, V, isSigned);
+  }
+  if (auto PT = dyn_cast<PointerType>(T)) {
+    auto ET = PT->getPointerElementType();
+    auto AT = ArrayType::get(ET, Len);
+    std::vector<Constant *> EV(Len, ConstantInt::get(ET, V, isSigned));
+    auto CA = ConstantArray::get(AT, EV);
+    auto Alloca = new AllocaInst(AT, "", Pos);
+    new StoreInst(CA, Alloca, Pos);
+    auto Zero = ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
+    Value *Index[] = {Zero, Zero};
+    auto Ret = GetElementPtrInst::CreateInBounds(Alloca, Index, "", Pos);
+    DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Alloca: " <<
+        *Alloca << ", Return: " << *Ret << '\n');
+    return Ret;
+  }
+  if (auto AT = dyn_cast<ArrayType>(T)) {
+    auto ET = AT->getArrayElementType();
+    assert(AT->getArrayNumElements() == Len);
+    std::vector<Constant *> EV(Len, ConstantInt::get(ET, V, isSigned));
+    auto Ret = ConstantArray::get(AT, EV);
+    DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Array type: " <<
+        *AT << ", Return: " << *Ret << '\n');
+    return Ret;
+  }
+  llvm_unreachable("Invalid type");
+  return nullptr;
 }
 
 }
+

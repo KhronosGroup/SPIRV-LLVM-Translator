@@ -48,7 +48,9 @@ namespace SPIR {
     "queue_t",
     "ndrange_t",
     "clk_event_t",
-    "sampler_t"
+    "sampler_t",
+    "kernel_enqueue_flags",
+    "clk_profiling_information",
   };
 
   const char* mangledTypes[PRIMITIVE_NUM] = {
@@ -84,7 +86,9 @@ namespace SPIR {
     "9ocl_queue",                    //PRIMITIVE_QUEUE_T
     "9ndrange_t",                    //PRIMITIVE_NDRANGE_T
     "12ocl_clkevent",                //PRIMITIVE_CLK_EVENT_T
-    "11ocl_sampler"                  //PRIMITIVE_SAMPLER_T
+    "11ocl_sampler",                 //PRIMITIVE_SAMPLER_T
+    "20kernel_enqueue_flags",        //PRIMITIVE_KERNEL_ENQUEUE_FLAGS
+    "25clk_profiling_information",   //PRIMITIVE_CLK_PROFILING_INFORMATION
   };
 
   const char* readableAttribute[ATTR_NUM] = {
