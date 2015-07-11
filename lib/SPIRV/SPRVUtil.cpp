@@ -513,9 +513,9 @@ getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
     UnmangledName.erase(0, 2);
   } else if (UnmangledName == "capture_event_profiling_info") {
     Info.addVoidPtrArg(2);
-    Info.setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFORMATION);
+    Info.setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
   } else if (UnmangledName == "enqueue_kernel") {
-    Info.setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS);
+    Info.setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
     Info.addUnsignedArg(3);
   } else if (UnmangledName == "enqueue_marker") {
     Info.setArgAttr(2, SPIR::ATTR_CONST);

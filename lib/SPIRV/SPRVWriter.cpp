@@ -653,7 +653,6 @@ private:
   void eraseFunctions(const std::vector<std::string> &L);
   SPRV::SPRVInstruction* transUnaryInst(UnaryInstruction* U,
       SPRVBasicBlock* BB);
-  void transOCLNDRangeArgs(std::vector<SPRVWord>& SPArgs);
 };
 
 SPRVValue *
@@ -2055,36 +2054,6 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
       SPIR_TYPE_NAME_SAMPLER_T);
 }
 
-// SPIR-V ndrange structure requires 3 members in the following order:
-//   global work offset
-//   global work size
-//   local work size
-// The arguments need to add missing members.
-void LLVMToSPRV::transOCLNDRangeArgs(std::vector<SPRVWord>& SPArgs) {
-#if 0
-  switch (SPArgs.size()) {
-  case 1: {
-    // Has global work size.
-    auto SizetTy = transType(getSizetType());
-    SPArgs.push_back(BM->addConstant(SizetTy, 1)->getId());
-    SPArgs.insert(SPArgs.begin(), BM->addConstant(SizetTy, 0)->getId());
-  }
-    break;
-  case 2: {
-    // Has global and local work size.
-    auto SizetTy = transType(getSizetType());
-    SPArgs.insert(SPArgs.begin(), BM->addConstant(SizetTy, 0)->getId());
-  }
-    break;
-  case 3: {
-    // Do nothing
-  }
-    break;
-  default:
-    llvm_unreachable("Invalid number of arguments");
-  }
-#endif
-}
 
 SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
@@ -2127,9 +2096,6 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       std::vector<SPRVWord> SPArgs;
       for (auto I:Args) {
         SPArgs.push_back(transValue(I, BB)->getId());
-      }
-      if (OC == SPRVOC_OpBuildNDRange) {
-        transOCLNDRangeArgs(SPArgs);
       }
       auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
       if (!SPRetTy || !SPRetTy->isTypeStruct())
