@@ -221,7 +221,8 @@ protected:
   void validate() const {
     SPRVConstantEmpty::validate();
     assert((Type->isTypeComposite() || Type->isTypeOpaque() ||
-        Type->isTypeEvent() || Type->isTypePointer()) && "Invalid type");
+        Type->isTypeEvent() || Type->isTypePointer() ||
+        Type->isTypeDeviceEvent()) && "Invalid type");
   }
 };
 

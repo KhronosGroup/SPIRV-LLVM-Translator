@@ -57,12 +57,15 @@ public:
 
   MangleError visit(const BlockType* p) {
     m_stream << "U" << "13block_pointerFv";
-    for (unsigned int i=0; i < p->getNumOfParams(); ++i) {
-      MangleError err = p->getParam(i)->accept(this);
-      if (err != MANGLE_SUCCESS) {
-        return err;
+    if (p->getNumOfParams() == 0)
+      m_stream << "v";
+    else
+      for (unsigned int i=0; i < p->getNumOfParams(); ++i) {
+        MangleError err = p->getParam(i)->accept(this);
+        if (err != MANGLE_SUCCESS) {
+          return err;
+        }
       }
-    }
     m_stream << "E";
     return MANGLE_SUCCESS;
   }

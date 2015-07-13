@@ -82,6 +82,7 @@ public:
   bool isTypeBool() const;
   bool isTypeComposite() const;
   bool isTypeEvent() const;
+  bool isTypeDeviceEvent() const;
   bool isTypeFloat() const;
   bool isTypeOCLImage() const;
   bool isTypeOCLSampler() const;

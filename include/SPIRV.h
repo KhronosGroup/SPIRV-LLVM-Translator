@@ -53,6 +53,10 @@ bool ReadSPRV(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
 /// SPRV.
 bool RegularizeLLVMForSPRV(llvm::Module *M, std::string &ErrMsg);
 
+/// \brief Mangle OpenCL builtin function function name.
+void MangleOpenCLBuiltin(const std::string &UnmangledName,
+    ArrayRef<Type*> ArgTypes, std::string &MangledName);
+
 } // End namespace llvm
 
 #endif

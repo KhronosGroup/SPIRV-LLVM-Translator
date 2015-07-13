@@ -57,6 +57,8 @@ public:
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
+  void visitCallNDRange(Module *M, CallInst *CI,
+      const std::string &DemangledName);
   static char ID;
 };
 
@@ -75,6 +77,7 @@ RegularizeOCL20::runOnModule(Module& M) {
 void
 RegularizeOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
+  auto M = CI.getParent()->getParent()->getParent();
   auto F = CI.getCalledFunction();
   if (!F)
     return;
@@ -82,6 +85,50 @@ RegularizeOCL20::visitCallInst(CallInst& CI) {
   std::string DemangledName;
   if (!oclIsBuiltin(F->getName(), 20, &DemangledName))
     return;
+
+  if (DemangledName.find("ndrange_") == 0) {
+    visitCallNDRange(M, &CI, DemangledName);
+  }
+}
+
+void
+RegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
+    const std::string &DemangledName) {
+  assert(DemangledName.find("ndrange_") == 0);
+  auto Len = atoi(DemangledName.substr(8, 1).c_str());
+  assert (Len >= 1 && Len <= 3);
+  // SPIR-V ndrange structure requires 3 members in the following order:
+  //   global work offset
+  //   global work size
+  //   local work size
+  // The arguments need to add missing members.
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    for (size_t I = 1, E = Args.size(); I != E; ++I)
+      Args[I] = getScalarOrArray(Args[I], Len, CI);
+    switch (Args.size()) {
+    case 2: {
+      // Has global work size.
+      auto T = Args[1]->getType();
+      Args.push_back(getScalarOrArrayConstantInt(CI, T, Len, 1));
+      Args.insert(Args.begin() + 1, getScalarOrArrayConstantInt(CI, T, Len, 0));
+    }
+      break;
+    case 3: {
+      // Has global and local work size.
+      auto T = Args[1]->getType();
+      Args.insert(Args.begin() + 1, getScalarOrArrayConstantInt(CI, T, Len, 0));
+    }
+      break;
+    case 4: {
+      // Do nothing
+    }
+      break;
+    default:
+      assert(0 && "Invalid number of arguments");
+    }
+    return DemangledName;
+  }, true, &Attrs);
 }
 
 }

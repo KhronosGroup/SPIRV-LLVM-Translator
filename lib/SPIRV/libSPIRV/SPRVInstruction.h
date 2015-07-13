@@ -234,7 +234,8 @@ protected:
     assert(isValid(StorageClass));
     assert(Initializer.size() == 1 || Initializer.empty());
   }
-  void setWordCount(SPRVWord WordCount) {
+  void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Initializer.resize(WordCount - 4);
   }
   _SPRV_DEF_ENCDEC4(Type, Id, StorageClass, Initializer)
@@ -601,7 +602,7 @@ public:
   }
 protected:
   void setWordCount(SPRVWord TheWordCount) {
-    WordCount = TheWordCount;
+    SPRVEntry::setWordCount(TheWordCount);
     BranchWeights.resize(TheWordCount - 4);
   }
   _SPRV_DEF_ENCDEC4(ConditionId, TrueLabelId, FalseLabelId, BranchWeights)
@@ -669,7 +670,7 @@ public:
     }
   }
   void setWordCount(SPRVWord TheWordCount) {
-    WordCount = TheWordCount;
+    SPRVEntry::setWordCount(TheWordCount);
     Pairs.resize(TheWordCount - FixedWordCount);
   }
   _SPRV_DEF_ENCDEC3(Type, Id, Pairs)
@@ -856,7 +857,7 @@ public:
     }
   }
   void setWordCount(SPRVWord TheWordCount) {
-    WordCount = TheWordCount;
+    SPRVEntry::setWordCount(TheWordCount);
     Pairs.resize(TheWordCount - FixedWordCount);
   }
   _SPRV_DEF_ENCDEC3(Select, Default, Pairs)
@@ -983,6 +984,7 @@ public:
 
 protected:
   void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Indices.resize(TheWordCount - 4);
   }
   _SPRV_DEF_ENCDEC4(Type, Id, Base, Indices)
@@ -1030,6 +1032,7 @@ public:
     return ArgTypes;
   }
   void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Args.resize(TheWordCount - FixedWordCount);
   }
   void validate()const {
@@ -1149,6 +1152,7 @@ public:
   const std::vector<SPRVWord>& getIndices()const { return Indices;}
 protected:
   void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Indices.resize(TheWordCount - 4);
   }
   _SPRV_DEF_ENCDEC4(Type, Id, Composite, Indices)
@@ -1478,7 +1482,7 @@ public:
     setHasNoType();
   }
   void setWordCount(SPRVWord TheWordCount) {
-    WordCount = TheWordCount;
+    SPRVEntry::setWordCount(TheWordCount);
     MemSema.resize(WordCount - FixedWC);
   }
   SPRVExecutionScopeKind getExecScope() const {
@@ -1555,8 +1559,8 @@ public:
   }
   SPRVGroupInstGeneric(SPRVOpCode OC):SPRVInstruction(OC){}
   _SPRV_DEF_ENCDEC4(Type, Id, ExecScope, Operands)
-  void setWordCount(SPRVWord TheCount) {
-    WordCount = TheCount;
+  void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Operands.resize(WordCount - FixedWords);
   }
   void validate() {
@@ -1616,8 +1620,8 @@ public:
   SPRVAtomicOperatorGeneric(SPRVOpCode TheOC):SPRVInstruction(TheOC){}
   _SPRV_DEF_ENCDEC6(Type, Id, Operands[0], ExecScope, MemSema,
       std::make_pair(Operands.begin() + 1, Operands.end()))
-  void setWordCount(SPRVWord TheCount) {
-    WordCount = TheCount;
+  void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     Operands.resize(WordCount - FixedWords);
   }
   void validate() {
@@ -1753,8 +1757,8 @@ public:
       setHasNoType();
     }
   }
-  void setWordCount(SPRVWord TheWC) {
-    WordCount = TheWC;
+  void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
     auto NumOps = WordCount - 1;
     if (hasId())
       --NumOps;

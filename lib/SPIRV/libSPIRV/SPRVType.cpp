@@ -186,6 +186,11 @@ SPRVType::isTypeEvent()const {
 }
 
 bool
+SPRVType::isTypeDeviceEvent()const {
+  return OpCode == SPRVOC_OpTypeDeviceEvent;
+}
+
+bool
 SPRVType::isTypeSampler()const {
   return OpCode == SPRVOC_OpTypeSampler;
 }
