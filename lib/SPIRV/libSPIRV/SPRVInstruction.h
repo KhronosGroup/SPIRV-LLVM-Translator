@@ -1597,6 +1597,7 @@ _SPRV_OP(AtomicLoad)
 _SPRV_OP(AtomicStore)
 _SPRV_OP(AtomicExchange)
 _SPRV_OP(AtomicCompareExchange)
+_SPRV_OP(AtomicCompareExchangeWeak)
 _SPRV_OP(AtomicIIncrement)
 _SPRV_OP(AtomicIDecrement)
 _SPRV_OP(AtomicIAdd)
@@ -1673,8 +1674,7 @@ enum SPRVOpKind {
 };
 
 template<SPRVOpCode OC = SPRVOC_OpNop,
-    bool HasId = true,
-    bool IsGroupInst = false>
+    bool HasId = true>
 class SPRVInstTemplate:public SPRVInstruction {
 public:
   // Instruction without Id
@@ -1703,7 +1703,6 @@ public:
       setHasNoId();
       setHasNoType();
     }
-    setGroupInst(IsGroupInst);
   }
   void setWordCount(SPRVWord TheWordCount) {
     SPRVEntry::setWordCount(TheWordCount);
@@ -1724,20 +1723,36 @@ public:
   }
 
   // Get operands which are values.
-  // Drop execution scope literal.
+  // Drop execution scope and group operation literals.
   std::vector<SPRVValue *> getOperands() {
     std::vector<SPRVWord> VOps = Ops;
-    if (GroupInst)
+    if (hasGroupOperation()) {
+      assert(hasExecScope());
+      VOps.erase(VOps.begin(), VOps.begin() + 2);
+    } else if (hasExecScope())
       VOps.erase(VOps.begin());
+
     return getValues(VOps);
   }
 
-  bool isGroupInst() const {
-    return GroupInst;
+  bool hasExecScope() const {
+    return SPRV::hasExecScope(OpCode);
   }
 
-  void setGroupInst(bool groupInst) {
-    GroupInst = groupInst;
+  bool hasGroupOperation() const {
+    return SPRV::hasGroupOperation(OpCode);
+  }
+
+  SPRVGroupOperationKind getGroupOperation() const {
+    if (!hasGroupOperation())
+      return SPRVGO_Count;
+    return static_cast<SPRVGroupOperationKind>(Ops[1]);
+  }
+
+  SPRVExecutionScopeKind getExecutionScope() const {
+    if(!hasExecScope())
+      return SPRVES_Count;
+    return static_cast<SPRVExecutionScopeKind>(Ops[0]);
   }
 
 protected:
@@ -1758,7 +1773,6 @@ protected:
     D >> Ops;
   }
   std::vector<SPRVWord> Ops;
-  bool GroupInst;
 };
 
 #define _SPRV_OP(x, y) \
@@ -1790,10 +1804,6 @@ _SPRV_OP(CommitWritePipe, false)
 _SPRV_OP(IsValidReserveId, true)
 _SPRV_OP(GetNumPipePackets, true)
 _SPRV_OP(GetMaxPipePackets, true)
-#undef _SPRV_OP
-
-#define _SPRV_OP(x, y) \
-  typedef SPRVInstTemplate<SPRVOC_Op##x, y, true> SPRV##x;
 // Group instructions
 _SPRV_OP(WaitGroupEvents, false)
 _SPRV_OP(GroupAll, true)

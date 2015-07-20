@@ -137,6 +137,20 @@ inline bool isModuleScopeAllowedOpCode(SPRVOpCode OpCode) {
       OpCode == SPRVOC_OpConvertPtrToU ||
       OpCode == SPRVOC_OpConvertUToPtr;
 }
+
+inline bool hasExecScope(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return (SPRVOC_OpGroupAll <= OC &&
+            OC <= SPRVOC_OpGroupSMax) ||
+      (SPRVOC_OpGroupReserveReadPipePackets <= OC &&
+          OC <= SPRVOC_OpGroupCommitWritePipe);
+}
+
+inline bool hasGroupOperation(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return SPRVOC_OpGroupIAdd <= OC && OC <= SPRVOC_OpGroupSMax;
+}
+
 }
 
 

@@ -706,8 +706,9 @@ private:
   // Transform OpenCL group builtin function names from work_group_
   // and sub_group_ to group_.
   // \param ES is the translated execution scope.
-  void transOCLGroupBuiltinName(std::string &DemangledName,
-      SPRVExecutionScopeKind &ES);
+  // \param GO is the translated group operation.
+  void transOCLGroupBuiltinName(std::string &DemangledName, Function *F,
+      SPRVExecutionScopeKind &ES, SPRVGroupOperationKind &GO);
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
@@ -751,7 +752,8 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
   SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
   if (SourceLang == SPRVSL_OpenCL) {
     SPRVExecutionScopeKind ES = SPRVES_Count;
-    transOCLGroupBuiltinName(DemangledName, ES);
+    SPRVGroupOperationKind GO = SPRVGO_Count;
+    transOCLGroupBuiltinName(DemangledName, F, ES, GO);
     return DemangledName == "barrier" ||
         DemangledName == "mem_fence" ||
         DemangledName == "dot" ||
@@ -1268,19 +1270,49 @@ LLVMToSPRV::transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB) {
 
 void
 LLVMToSPRV::transOCLGroupBuiltinName(std::string &DemangledName,
-    SPRVExecutionScopeKind &ES) {
+    Function *F, SPRVExecutionScopeKind &ES, SPRVGroupOperationKind &GO) {
+  ES = SPRVES_Count;
+  GO = SPRVGO_Count;
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
     return;
   if (DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0) {
     DemangledName.erase(0, strlen(kOCLBuiltinName::WorkPrefix));
     ES = SPRVES_Workgroup;
-    return;
-  }
-  if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
+  } else if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
     DemangledName.erase(0, strlen(kOCLBuiltinName::SubPrefix));
     ES = SPRVES_Subgroup;
+  } else
     return;
-  }
+
+  StringRef GroupOp = DemangledName;
+  GroupOp = GroupOp.drop_front(strlen(kSPRVFuncName::GroupPrefix));
+  SPIRSPRVGroupOperationMap::foreach_conditional([&](const std::string &S,
+      SPRVGroupOperationKind G){
+    if (!GroupOp.startswith(S))
+      return true; // continue
+    GO = G;
+    StringRef Op = GroupOp.drop_front(S.size() + 1);
+    assert(!Op.empty() && "Invalid OpenCL group builtin function");
+    char OpTyC = 0;
+    auto NeedSign = Op == "max" || Op == "min";
+    auto OpTy = F->getReturnType();
+    if (OpTy->isFloatingPointTy())
+      OpTyC = 'f';
+    else if (OpTy->isIntegerTy()) {
+      if (!NeedSign)
+        OpTyC = 'i';
+      else {
+        if (isFuncParamSigned(F->getName()))
+          OpTyC = 's';
+        else
+          OpTyC = 'u';
+      }
+    } else
+      llvm_unreachable("Invalid OpenCL group builtin argument type");
+
+    DemangledName = std::string(kSPRVFuncName::GroupPrefix) + OpTyC + Op.str();
+    return false; // break out of loop
+  });
 }
 
 SPRV::SPRVInstruction* LLVMToSPRV::transUnaryInst(UnaryInstruction* U,
@@ -2197,8 +2229,9 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     CallInst* CI, SPRVBasicBlock* BB) {
   auto OC = SPRVOC_OpNop;
   SPRVExecutionScopeKind ES = SPRVES_Count;
+  SPRVGroupOperationKind GO = SPRVGO_Count;
   std::string Name = DemangledName;
-  transOCLGroupBuiltinName(Name, ES);
+  transOCLGroupBuiltinName(Name, CI->getCalledFunction(), ES, GO);
   if (SPIRSPRVBuiltinInstMap::find(Name, &OC)) {
     if (isCmpOpCode(OC)) {
       assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
@@ -2219,7 +2252,9 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       return BM->addBinaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB),
         transValue(CI->getArgOperand(1), BB), BB);
-    } else if (CI->getNumArgOperands() == 1 && !CI->getType()->isVoidTy()) {
+    } else if (CI->getNumArgOperands() == 1 &&
+        !CI->getType()->isVoidTy() &&
+        !isValid(ES)) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB), BB);
     } else {
@@ -2236,6 +2271,8 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       std::vector<SPRVWord> SPArgs;
       if (ES != SPRVES_Count)
         SPArgs.push_back(ES);
+      if (GO != SPRVGO_Count)
+        SPArgs.push_back(GO);
       for (auto I:Args) {
         SPArgs.push_back(transValue(I, BB)->getId());
       }

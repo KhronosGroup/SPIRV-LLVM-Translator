@@ -391,6 +391,20 @@ enum SPRVMemoryAccessKind {
   _SPRV_OP(Count)
 #undef _SPRV_OP
 };
+
+enum SPRVGroupOperationKind {
+#define _SPRV_OP(x) SPRVGO_##x,
+  _SPRV_OP(Reduce)
+  _SPRV_OP(InclusiveScan)
+  _SPRV_OP(ExclusiveScan)
+  _SPRV_OP(Count)
+#undef _SPRV_OP
+};
+
+inline bool isValid(SPRVGroupOperationKind G) {
+  return (unsigned)G < (unsigned)SPRVGO_Count;
+}
+
 }
 
 

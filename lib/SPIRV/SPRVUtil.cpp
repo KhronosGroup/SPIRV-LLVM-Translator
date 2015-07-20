@@ -224,7 +224,7 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
   std::string MangledName = Name;
   if (Mangle)
-    mangle(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
+    mangleOCLBuiltin(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
   FunctionType *FT = FunctionType::get(
       RetTy,
       ArgTypes,
@@ -436,13 +436,12 @@ struct OCLTypeMangleInfo {
 };
 
 /// Information for mangling an OpenCL builtin function.
-struct OCLBuiltinMangleInfo {
-  std::string UnmangledName;
-  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
-  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
-                              // pointer
-  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
-  std::map<int, unsigned> Attrs;                   // argument attributes
+class OCLBuiltinMangleInfo {
+public:
+  /// Translated uniqued OCL builtin name to its original name, and set
+  /// argument attributes and unsigned args.
+  OCLBuiltinMangleInfo(const std::string &UniqName);
+  const std::string &getUnmangledName() const { return UnmangledName;}
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
   void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
@@ -479,15 +478,20 @@ struct OCLBuiltinMangleInfo {
     Info.Attr = getArgAttr(Ndx);
     return Info;
   }
+private:
+  std::string UnmangledName;
+  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
+  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
+                              // pointer
+  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
+  std::map<int, unsigned> Attrs;                   // argument attributes
 };
 
-// Translated uniqued OCL builtin name to its original name, and set
-// argument attributes and unsigned args.
-static void
-getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
-  std::string &UnmangledName = Info.UnmangledName;
+OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
+  UnmangledName = UniqName;
+  size_t Pos = std::string::npos;
   if (UnmangledName.find("write_imageui") == 0)
-      Info.addUnsignedArg(2);
+      addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
       UnmangledName.find("vload") == 0 ||
@@ -496,37 +500,42 @@ getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
       UnmangledName.find("shuffle") == 0)
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
   else if (UnmangledName.find("atomic") == 0) {
-    Info.setArgAttr(0, SPIR::ATTR_VOLATILE);
+    setArgAttr(0, SPIR::ATTR_VOLATILE);
     if (UnmangledName == "atomic_umax" ||
         UnmangledName == "atomic_umin") {
-      Info.addUnsignedArg(-1);
+      addUnsignedArg(-1);
       UnmangledName.erase(7, 1);
     }
   } else if (UnmangledName.find("uconvert_") == 0) {
-    Info.addUnsignedArg(0);
+    addUnsignedArg(0);
     UnmangledName.erase(0, 1);
   } else if (UnmangledName.find("s_") == 0) {
     UnmangledName.erase(0, 2);
   } else if (UnmangledName.find("u_") == 0) {
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
     UnmangledName.erase(0, 2);
   } else if (UnmangledName == "capture_event_profiling_info") {
-    Info.addVoidPtrArg(2);
-    Info.setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
+    addVoidPtrArg(2);
+    setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
   } else if (UnmangledName == "enqueue_kernel") {
-    Info.setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
-    Info.addUnsignedArg(3);
+    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
+    addUnsignedArg(3);
   } else if (UnmangledName == "enqueue_marker") {
-    Info.setArgAttr(2, SPIR::ATTR_CONST);
-    Info.addUnsignedArg(1);
+    setArgAttr(2, SPIR::ATTR_CONST);
+    addUnsignedArg(1);
   } else if (UnmangledName.find("ndrange_") == 0) {
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
     if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
-      Info.setArgAttr(-1, SPIR::ATTR_CONST);
+      setArgAttr(-1, SPIR::ATTR_CONST);
     }
-  }
+  } else if ((Pos = UnmangledName.find("umax")) != std::string::npos ||
+             (Pos = UnmangledName.find("umin")) != std::string::npos) {
+    addUnsignedArg(-1);
+    UnmangledName.erase(Pos, 1);
+  } else if (UnmangledName.find("broadcast") != std::string::npos)
+    addUnsignedArg(-1);
 }
 
 /// Translates LLVM type to descriptor for mangler.
@@ -657,19 +666,16 @@ fixOCLBuiltinName(std::string &MangledName) {
     MangledName = "_Z10ndrange_3DPKmS0_S0_";
 }
 
-// If SignedArgIndices contains -1, all integer arment is signed.
 void
-mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
+mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet, const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  DEBUG(dbgs() << "[mangle] " << UnmangledName << " => ");
+  DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   assert(isOpenCLBuiltinSet(BuiltinSet) && "Not OpenCL builtin set");
   SPIR::NameMangler Mangler(BuiltinSet == SPRVBIS_OpenCL12 ? SPIR::SPIR12 :
       SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
-  FD.name = UnmangledName;
-  OCLBuiltinMangleInfo BtnInfo;
-  BtnInfo.UnmangledName = UnmangledName;
-  getOCLBuiltinArgInfo(BtnInfo);
+  OCLBuiltinMangleInfo BtnInfo(UniqName);
+  FD.name = BtnInfo.getUnmangledName();
   for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
     auto T = ArgTypes[I];
     FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
@@ -701,7 +707,7 @@ getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
 void
 MangleOpenCLBuiltin(const std::string &UnmangledName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  mangle(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
+  mangleOCLBuiltin(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
 }
 
 SPIRAddressSpace

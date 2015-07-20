@@ -341,6 +341,18 @@ _SPRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
 _SPRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
 _SPRV_OP(get_pipe_num_packets, GetNumPipePackets)
 _SPRV_OP(get_pipe_max_packets, GetMaxPipePackets)
+// CL 2.0 workgroup builtins
+_SPRV_OP(group_all, GroupAll)
+_SPRV_OP(group_any, GroupAny)
+_SPRV_OP(group_broadcast, GroupBroadcast)
+_SPRV_OP(group_iadd, GroupIAdd)
+_SPRV_OP(group_fadd, GroupFAdd)
+_SPRV_OP(group_fmin, GroupFMin)
+_SPRV_OP(group_umin, GroupUMin)
+_SPRV_OP(group_smin, GroupSMin)
+_SPRV_OP(group_fmax, GroupFMax)
+_SPRV_OP(group_umax, GroupUMax)
+_SPRV_OP(group_smax, GroupSMax)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, SPRVOpCode, SPRVInstruction>
@@ -408,6 +420,17 @@ SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>::init() {
 }
 typedef SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>
   SPIRSPRVMemScopeMap;
+
+template<> inline void
+SPRVMap<std::string, SPRVGroupOperationKind>::init() {
+#define _SPRV_OP(x,y) add(#x, SPRVGO_##y);
+  _SPRV_OP(reduce, Reduce)
+  _SPRV_OP(scan_inclusive, InclusiveScan)
+  _SPRV_OP(scan_exclusive, ExclusiveScan)
+#undef _SPRV_OP
+}
+typedef SPRVMap<std::string, SPRVGroupOperationKind>
+  SPIRSPRVGroupOperationMap;
 
 template<> inline void
 SPRVMap<std::string, SPRVTypeSamplerDescriptor>::init() {
@@ -603,9 +626,14 @@ ConstantInt *getInt64(Module *M, int64_t value);
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
 
-
-void mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName);
+/// Mangle name for OCL builtin functions.
+/// \param UniqName is unique unmangled name for OCL builtin functions,
+///        which is transformed and unique version of original unmangled
+///        names. Mostly for functions which have different semantics for
+///        signed/unsigned integer arguments, e.g. s_max/u_max.
+void mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet,
+    const std::string &UniqName, ArrayRef<Type*> ArgTypes,
+    std::string &MangledName);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode);
 

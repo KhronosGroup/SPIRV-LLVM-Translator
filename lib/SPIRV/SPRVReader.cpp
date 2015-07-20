@@ -329,6 +329,12 @@ private:
 
   // Transform OpenCL group builtin function names from group_
   // to workgroup_ and sub_group_.
+  // Insert group operation part: reduce_/inclusive_scan_/exclusive_scan_
+  // Transform the operation part:
+  //    fadd/iadd/sadd => add
+  //    fmax/smax => max
+  //    fmin/smin => min
+  // Keep umax/umin unchanged.
   // \param ES is the execution scope.
   void transOCLGroupBuiltinName(std::string &Name, SPRVInstruction *ES);
   Value *oclTransConstantSampler(SPRV::SPRVConstantSampler* BCS);
@@ -403,7 +409,7 @@ SPRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   std::vector<Type*> ArgTy;
   if (IsVec)
     ArgTy.push_back(Type::getInt32Ty(*Context));
-  mangle(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
+  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
     FunctionType *FT = FunctionType::get(ReturnTy, ArgTy, false);
@@ -486,7 +492,7 @@ SPRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
     return;
 
   auto IT = static_cast<SPRVInstTemplate<> *>(Inst);
-  auto ES = static_cast<SPRVExecutionScopeKind>(IT->getOpWords()[0]);
+  auto ES = IT->getExecutionScope();
   std::string Prefix;
   switch(ES) {
   case SPRVES_Workgroup:
@@ -498,7 +504,21 @@ SPRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
   default:
     llvm_unreachable("Invalid execution scope");
   }
-  DemangledName = Prefix + DemangledName;
+
+  auto GO = IT->getGroupOperation();
+  if (!isValid(GO)) {
+    DemangledName = Prefix + DemangledName;
+    return;
+  }
+
+  StringRef Op = DemangledName;
+  Op = Op.drop_front(strlen(kSPRVFuncName::GroupPrefix));
+  bool Unsigned = Op.front() == 'u';
+  if (!Unsigned)
+    Op = Op.drop_front(1);
+  DemangledName = Prefix + kSPRVFuncName::GroupPrefix +
+      SPIRSPRVGroupOperationMap::rmap(GO) + '_' + Op.str();
+
 }
 
 Type *
@@ -1536,7 +1556,7 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
       Type::getVoidTy(*Context);
   transOCLBuiltinFromInstPreproc(BI, RetTy, ArgTys);
   if (!HasFuncPtrArg)
-    mangle(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
+    mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
   else
     MangledName = decorateSPRVFunction(FuncName);
   Function* Func = M->getFunction(MangledName);
@@ -1825,7 +1845,7 @@ SPRVToLLVM::transOCLAtomic(SPRVAtomicOperatorGeneric *BA, BasicBlock *BB) {
   std::string MangledName;
   std::vector<Type *> ArgTys = transTypeVector(BA->getOperandTypes());
   Type * RetTy = ArgTys[0]->getPointerElementType();
-  mangle(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
+  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
     FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
@@ -1926,9 +1946,9 @@ SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
   } else if (UnmangledName.find("read_image") == 0) {
     auto ModifiedArgTypes = ArgTypes;
     ModifiedArgTypes[1] = getOrCreateOpaquePtrType(M, "opencl.sampler_t");
-    mangle(Set, UnmangledName, ModifiedArgTypes, MangledName);
+    mangleOCLBuiltin(Set, UnmangledName, ModifiedArgTypes, MangledName);
   } else {
-    mangle(Set, UnmangledName, ArgTypes, MangledName);
+    mangleOCLBuiltin(Set, UnmangledName, ArgTypes, MangledName);
   }
   SPRVDBG(bildbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: " <<
       UnmangledName << " MangledName: " << MangledName << '\n');
@@ -1983,7 +2003,7 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
   Type* Int32Ty = Type::getInt32Ty(*Context);
   Type* VoidTy = Type::getVoidTy(*Context);
   Type* ArgTy[] = {Int32Ty};
-  mangle(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
+  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
     FunctionType *FT = FunctionType::get(VoidTy, ArgTy, false);
