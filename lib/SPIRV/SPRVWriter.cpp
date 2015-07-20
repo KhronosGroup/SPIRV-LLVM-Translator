@@ -52,6 +52,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -144,7 +145,63 @@ foreachKernelArgMD(MDNode *MD, SPRVFunction *BF,
     Func(getMDOperandAsString(MD, I), BA);
   }
 }
-void dumpUsers(Value* V) {
+
+/// Create an LLVM type from OpenCL builtin type name string.
+static Type*
+getLLVMTypeFromOCLBuiltinTypeNameStr(LLVMContext &C, const std::string &Str) {
+  return StringSwitch<Type *>(Str)
+      .Cases("char",    "uchar",    Type::getInt8Ty(C))
+      .Cases("short",   "ushort",   Type::getInt16Ty(C))
+      .Cases("int",     "uint",    Type::getInt32Ty(C))
+      .Cases("long",    "ulong",    Type::getInt64Ty(C))
+      .Case("float",                Type::getFloatTy(C))
+      .Case("half",                 Type::getHalfTy(C))
+      .Case("double",               Type::getDoubleTy(C))
+      .Default(                     nullptr);
+}
+
+/// Creates an LLVM type from the kernel_arg_base_type MDString.
+static Type*
+getLLVMTypeFromOCLTypeNameStr(Module *M, LLVMContext &C,
+    const std::string &Str) {
+  int VecSize = 0;
+  Type *Ty = nullptr;
+  bool IsPtr = false;
+  std::string TyStr;
+  size_t Pos = Str.find_first_of('*');
+  if (Pos != std::string::npos) {
+    TyStr = Str.substr(0, Pos - 1);
+    IsPtr = true;
+  } else
+    TyStr = Str;
+  Pos = TyStr.find_last_of(' ');
+  if (Pos != std::string::npos)
+    TyStr = TyStr.substr(Pos + 1, Str.length());
+
+  //check for vector type
+  if ((Pos = TyStr.find_first_of("0123456789")) != std::string::npos) {
+    std::string vecstr = TyStr.substr(Pos);
+    std::istringstream IS(vecstr);
+    IS >> VecSize;
+    TyStr = TyStr.substr(0, Pos);
+  }
+
+  Ty = getLLVMTypeFromOCLBuiltinTypeNameStr(C, Str);
+  if (!Ty) {
+    Ty = M->getTypeByName(std::string(kLLVMTypeName::StructPrefix) + Str);
+  }
+  assert(Ty && "Incorrect KERNEL_BASE_ARG_TYPE metadata");
+
+  if (VecSize)
+    Ty = VectorType::get(Ty, VecSize);
+  if (IsPtr)
+    Ty = PointerType::get(Ty, SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
+
+  return Ty;
+}
+
+static void
+dumpUsers(Value* V) {
   SPRVDBG(dbgs() << "Users of " << *V << " :\n");
   for (auto UI = V->use_begin(), UE = V->use_end();
       UI != UE; ++UI)
@@ -334,7 +391,7 @@ private:
     }
       assert (I < E);
       Args[I] = InvF;
-      if (DemangledName == OCL_BUILTIN_ENQUEUE_KERNEL) {
+      if (DemangledName == kOCLBuiltinName::EnqueueKernel) {
         if (I + 1 == E) {
           Args.push_back(Ctx);
           Args.push_back(CtxLen);
@@ -624,6 +681,8 @@ private:
       const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *oclTransMemFence(CallInst *Call,
       const std::string &DeMangledName, SPRVBasicBlock *BB);
+  SPRVValue *oclTransWorkGroupBarrier(CallInst *Call,
+      const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *transOCLBuiltinToInst(CallInst *Call,
       const std::string &MangledName,
       const std::string &DemangledName, SPRVBasicBlock *BB);
@@ -643,6 +702,12 @@ private:
   void mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       Function* F);
   bool oclIsSamplerType(llvm::Type* RT);
+
+  // Transform OpenCL group builtin function names from work_group_
+  // and sub_group_ to group_.
+  // \param ES is the translated execution scope.
+  void transOCLGroupBuiltinName(std::string &DemangledName,
+      SPRVExecutionScopeKind &ES);
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
@@ -684,7 +749,9 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
     return false;
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
   SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
-  if (SourceLang == SPRVSL_OpenCL)
+  if (SourceLang == SPRVSL_OpenCL) {
+    SPRVExecutionScopeKind ES = SPRVES_Count;
+    transOCLGroupBuiltinName(DemangledName, ES);
     return DemangledName == "barrier" ||
         DemangledName == "mem_fence" ||
         DemangledName == "dot" ||
@@ -693,6 +760,7 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
         DemangledName.find("async_work_group") == 0 ||
         DemangledName == "wait_group_events" ||
         SPIRSPRVBuiltinInstMap::find(DemangledName);
+  }
   llvm_unreachable("not supported");
   return false;
 }
@@ -932,7 +1000,25 @@ LLVMToSPRV::transType(Type *T) {
         STName = SPIR_TYPE_NAME_EVENT_T;
         ST->setName(STName);
       }
-      if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
+      if (STName.find(SPIR_TYPE_NAME_PIPE_T) == 0) {
+        assert(AddrSpc == SPIRAS_Global);
+        SmallVector<StringRef, 4> SubStrs;
+        const char Delims[] = {SPIR_TYPE_NAME_DELIMITER, 0};
+        STName.split(SubStrs, Delims);
+        std::string Acc = "read_only";
+        if (SubStrs.size() > 2) {
+          Acc = SubStrs[2];
+        }
+        std::string DTStr = "char";
+        if (SubStrs.size() > 3)
+          DTStr = SubStrs[3];
+        auto DT = transType(
+            getLLVMTypeFromOCLTypeNameStr(M, M->getContext(), DTStr));
+        auto PipeT = BM->addPipeType();
+        PipeT->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(Acc));
+        PipeT->setPipeType(DT);
+        return mapType(T, PipeT);
+      } else if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
         assert(AddrSpc == SPIRAS_Global);
         auto FirstDotPos = STName.find_first_of(SPIR_TYPE_NAME_DELIMITER, 0);
         assert (FirstDotPos != std::string::npos);
@@ -1178,6 +1264,23 @@ LLVMToSPRV::transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB) {
       transType(resTy), transValue(Cmp->getOperand(0), BB),
       transValue(Cmp->getOperand(1), BB), BB);
   return BI;
+}
+
+void
+LLVMToSPRV::transOCLGroupBuiltinName(std::string &DemangledName,
+    SPRVExecutionScopeKind &ES) {
+  if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
+    return;
+  if (DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::WorkPrefix));
+    ES = SPRVES_Workgroup;
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::SubPrefix));
+    ES = SPRVES_Subgroup;
+    return;
+  }
 }
 
 SPRV::SPRVInstruction* LLVMToSPRV::transUnaryInst(UnaryInstruction* U,
@@ -1718,6 +1821,15 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByArgBaseTypeMetadata(
         auto AccStr = getMDOperandAsString(AccMD, I);
         ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
             Ty + SPIR_TYPE_NAME_DELIMITER + AccStr);
+      } else if (STName == SPIR_TYPE_NAME_PIPE_T) {
+        auto Ty = STName.str();
+        auto AccMD = oclGetArgAccessQualifierMetadata(F);
+        auto AccStr = getMDOperandAsString(AccMD, I);
+        auto BaseTyMD = oclGetArgBaseTypeMetadata(F);
+        auto BaseTyStr = getMDOperandAsString(BaseTyMD, I);
+        ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
+            Ty + SPIR_TYPE_NAME_DELIMITER + AccStr
+               + SPIR_TYPE_NAME_DELIMITER + BaseTyStr);
       }
     }
   }
@@ -1886,7 +1998,7 @@ LLVMToSPRV::translate() {
 
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
     if (oclIsBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
-        || I->getName().startswith(SPCV_CAST))
+        || I->getName().startswith(SPCV_CAST) || I->getName().startswith(LLVM_MEMCPY))
       continue;
     transFunction(I);
     // Creating all basic blocks before creating any instruction.
@@ -2021,7 +2133,7 @@ LLVMToSPRV::oclTransBarrier(CallInst *CI,
   assert(CI->getNumArgOperands() == 1);
   auto MemFenceFlagVal = CI->getArgOperand(0);
   assert(isa<ConstantInt>(MemFenceFlagVal));
-  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup,
+  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup, SPRVMS_Workgroup,
     mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>(
     MemFenceFlagVal)->getZExtValue()), BB);
   return CB;
@@ -2039,6 +2151,31 @@ LLVMToSPRV::oclTransMemFence(CallInst *CI,
   return MB;
 }
 
+SPRVValue *
+LLVMToSPRV::oclTransWorkGroupBarrier(CallInst *CI,
+    const std::string &DemangledName, SPRVBasicBlock *BB) {
+  assert(CI->getNumArgOperands() == 1 || CI->getNumArgOperands() == 3);
+  Value *MemFenceFlagVal = CI->getArgOperand(0);
+  assert(isa<ConstantInt>(MemFenceFlagVal));
+
+  if (CI->getNumArgOperands() == 1){
+    return BM->addControlBarrierInst(SPRVES_Workgroup, SPRVMS_Workgroup,
+      mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>
+      (MemFenceFlagVal)->getZExtValue()), BB);
+  }
+
+  Value *MemScopeVal = CI->getArgOperand(1);
+  assert(isa<ConstantInt>(MemScopeVal));
+  assert(dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue() < SPIRMS_Count);
+
+  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup,
+    SPIRSPRVMemScopeMap::map(static_cast<SPIRMemScopeKind>(
+    dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue())),
+    mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>
+    (MemFenceFlagVal)->getZExtValue()), BB);
+  return CB;
+}
+
 void
 LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
     llvm::FunctionType* FT, std::map<unsigned, Type*>& ChangedType,
@@ -2047,7 +2184,7 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
   std::string Demangled;
   if (!oclIsBuiltin(Name, SrcLangVer, &Demangled))
     return;
-  if (Demangled.find(OCL_BUILTIN_PREFIX_READ_IMAGE) != 0 ||
+  if (Demangled.find(kOCLBuiltinName::ReadImage) != 0 ||
       Name.find(OCL_MANGLED_TYPE_NAME_SAMPLER) == std::string::npos)
     return;
   ChangedType[1] = getOrCreateOpaquePtrType(F->getParent(),
@@ -2059,7 +2196,10 @@ SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     CallInst* CI, SPRVBasicBlock* BB) {
   auto OC = SPRVOC_OpNop;
-  if (SPIRSPRVBuiltinInstMap::find(DemangledName, &OC)) {
+  SPRVExecutionScopeKind ES = SPRVES_Count;
+  std::string Name = DemangledName;
+  transOCLGroupBuiltinName(Name, ES);
+  if (SPIRSPRVBuiltinInstMap::find(Name, &OC)) {
     if (isCmpOpCode(OC)) {
       assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
       auto ResultTy = CI->getType();
@@ -2094,6 +2234,8 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
         Args.erase(Args.begin());
       }
       std::vector<SPRVWord> SPArgs;
+      if (ES != SPRVES_Count)
+        SPArgs.push_back(ES);
       for (auto I:Args) {
         SPArgs.push_back(transValue(I, BB)->getId());
       }
@@ -2117,6 +2259,8 @@ LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
     return oclTransBarrier(CI, DemangledName, BB);
   if (DemangledName.find("mem_fence") != std::string::npos)
     return oclTransMemFence(CI, DemangledName, BB);
+  if (DemangledName == "work_group_barrier")
+    return oclTransWorkGroupBarrier(CI, DemangledName, BB);
   if (DemangledName.find("convert_") == 0)
     return transOCLConvert(CI, MangledName, DemangledName, BB);
   if (DemangledName.find("atom") == 0)
@@ -2213,43 +2357,6 @@ LLVMToSPRV::transFPContractMetadata() {
   return true;
 }
 
-/// Creates an llvm type based on the "kernel_arg_type" MDString
-Type* getLLVMTypeFromStr(LLVMContext *c, const std::string Str)
-{
-  int vecSize = 0;
-  Type *ty = NULL;
-  size_t pos = Str.find_first_of('*');
-  assert(pos != std::string::npos && "Invalid argument type");
-  std::string tyStr = Str.substr(0, pos - 1);
-  pos = tyStr.find_last_of(' ');
-  if (pos != std::string::npos)
-    tyStr = tyStr.substr(pos + 1, Str.length());
-
-  //check for vector type
-  if ((pos = tyStr.find_first_of("0123456789")) != std::string::npos) {
-    std::string vecstr = tyStr.substr(pos);
-    std::istringstream IS(vecstr);
-    IS >> vecSize;
-    tyStr = tyStr.substr(0, pos);
-  }
-
-  if (tyStr == "int")
-    ty = Type::getInt16Ty(*c);
-  else if (tyStr == "float")
-    ty = Type::getFloatTy(*c);
-  else if (tyStr == "half")
-    ty = Type::getHalfTy(*c);
-  else if (tyStr == "double")
-    ty = Type::getDoubleTy(*c);
-  else
-    assert("Incorrect KERNEL_ARG_TYPE metadata");
-
-  if (vecSize)
-    return PointerType::get(VectorType::get(ty, vecSize),
-    SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
-
-  return PointerType::get(ty, SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
-}
 
 bool
 LLVMToSPRV::transOCLKernelMetadata() {
@@ -2295,31 +2402,7 @@ LLVMToSPRV::transOCLKernelMetadata() {
       } else if (Name == SPIR_MD_KERNEL_ARG_ACCESS_QUAL) {
         // Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_TYPE) {
-        foreachKernelArgMD(MD, BF,
-            [this, MD, &argAccessQual](const std::string &Str,
-                SPRVFunctionParameter *BA){
-          if (BA->getType()->isTypePipe()) {
-            Type *argDataType = getLLVMTypeFromStr(&MD->getContext(), Str);
-            unsigned i = BA->getArgNo();
-            SPRVTypePipe *BP = static_cast<SPRVTypePipe*>(BA->getType());
-            if (!BP->getPipeType()) {
-              BP->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(
-                  argAccessQual[i]));
-              BP->setPipeType(transType(argDataType));
-            }
-            else {
-              // ToDo: Figure out a way to store different pipe types
-              // (with different accessqualifer/pipedatatype) in the
-              // TypeMap .Update BA type with the new pipe type
-              SPRVTypePipe *BP = static_cast<SPRVTypePipe*>(
-                  transType(llvm::StructType::create(M->getContext(),
-                      "opencl.pipe_t")));
-              BP->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(
-                  argAccessQual[i]));
-              BP->setPipeType(transType(argDataType));
-            }
-          }
-        });
+        // Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_BASE_TYPE) {
         //Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_TYPE_QUAL) {

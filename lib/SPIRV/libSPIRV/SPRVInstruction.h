@@ -422,7 +422,7 @@ protected:
     }
 
     if (isBinaryOpCode(OpCode)) {
-      assert(getValueType(Op1)== getValueType(Op2) && 
+      assert(getValueType(Op1)== getValueType(Op2) &&
              "Invalid type for binary instruction");
       assert((op1Ty->isTypeInt() || op2Ty->isTypeFloat()) &&
                "Invalid type for Binary instruction");
@@ -1462,17 +1462,12 @@ protected:
 class SPRVControlBarrier:public SPRVInstruction {
 public:
   static const SPRVOpCode OC = SPRVOC_OpControlBarrier;
-  static const SPRVWord FixedWC = 2;
   // Complete constructor
-  SPRVControlBarrier(SPRVExecutionScopeKind TheScope, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(2, OC, TheBB), ExecScope(TheScope){
-    validate();
-    assert(TheBB && "Invalid BB");
-  }
-  SPRVControlBarrier(SPRVExecutionScopeKind TheScope, SPRVWord TheMemSema,
+  SPRVControlBarrier(SPRVExecutionScopeKind TheScope,
+      SPRVMemoryScopeKind TheMemScope, SPRVWord TheMemSema,
       SPRVBasicBlock *TheBB)
-    :SPRVInstruction(3, OC, TheBB), ExecScope(TheScope){
-    MemSema.push_back(TheMemSema);
+    :SPRVInstruction(4, OC, TheBB),ExecScope(TheScope),
+     MemScope(TheMemScope), MemSema(TheMemSema){
     validate();
     assert(TheBB && "Invalid BB");
   }
@@ -1483,29 +1478,31 @@ public:
   }
   void setWordCount(SPRVWord TheWordCount) {
     SPRVEntry::setWordCount(TheWordCount);
-    MemSema.resize(WordCount - FixedWC);
   }
   SPRVExecutionScopeKind getExecScope() const {
     return ExecScope;
   }
+  SPRVMemoryScopeKind getMemScope() const {
+    return MemScope;
+  }
   bool hasMemSemantic() const {
-    return MemSema.size() > 0;
+    return MemSema != 0;
   }
   SPRVWord getMemSemantic() const {
-    assert(MemSema.size() == 1);
-    return MemSema[0];
+    return MemSema;
   }
 protected:
-  _SPRV_DEF_ENCDEC2(ExecScope, MemSema)
+  _SPRV_DEF_ENCDEC3(ExecScope, MemScope, MemSema)
   void validate()const {
     assert(OpCode == OC);
-    assert(WordCount == 2 || WordCount == 3);
-    assert(MemSema.size() == 0 || MemSema.size() == 1);
+    assert(WordCount == 4);
     SPRVInstruction::validate();
     isValid(ExecScope);
+    isValid(MemScope);
   }
   SPRVExecutionScopeKind ExecScope;
-  std::vector<SPRVWord> MemSema;
+  SPRVMemoryScopeKind MemScope;
+  SPRVWord MemSema;
 };
 
 class SPRVMemoryBarrier:public SPRVInstruction {
@@ -1544,63 +1541,6 @@ protected:
   SPRVWord MemSemantic;
 };
 
-class SPRVGroupInstGeneric: public SPRVInstruction,
-  public SPRVComponentExecutionScope, public SPRVComponentOperands {
-public:
-  const static SPRVWord FixedWords = 4;
-  SPRVGroupInstGeneric(SPRVOpCode OC, SPRVType *TheType, SPRVId TheId,
-      SPRVExecutionScopeKind TheScope,
-      const std::vector<SPRVValue *> &TheOperands, SPRVBasicBlock *BB):
-        SPRVInstruction(TheOperands.size() + FixedWords, OC, TheType, TheId,
-            BB), SPRVComponentExecutionScope(TheScope),
-            SPRVComponentOperands(TheOperands){
-    validate();
-    assert(BB && "Invalid BB");
-  }
-  SPRVGroupInstGeneric(SPRVOpCode OC):SPRVInstruction(OC){}
-  _SPRV_DEF_ENCDEC4(Type, Id, ExecScope, Operands)
-  void setWordCount(SPRVWord TheWordCount) {
-    SPRVEntry::setWordCount(TheWordCount);
-    Operands.resize(WordCount - FixedWords);
-  }
-  void validate() {
-    SPRVInstruction::validate();
-    assert(isValid(ExecScope));
-    assert(Operands.size() + FixedWords == WordCount);
-  }
-  virtual std::vector<SPRVValue *> getOperands() {
-    return getCompOperands();
-  }
-};
-
-template<SPRVOpCode OC>
-class SPRVGroupInst: public SPRVGroupInstGeneric {
-public:
-  SPRVGroupInst(SPRVType *TheType, SPRVId TheId,
-      SPRVExecutionScopeKind TheScope,
-      const std::vector<SPRVValue *> &TheOperands, SPRVBasicBlock *BB):
-        SPRVGroupInstGeneric(OC, TheType, TheId, TheScope, TheOperands, BB){}
-  SPRVGroupInst():SPRVGroupInstGeneric(OC){}
-};
-
-#define _SPRV_OP(x) typedef SPRVGroupInst<SPRVOC_Op##x> SPRV##x;
-_SPRV_OP(WaitGroupEvents) /* ToDo: Remove Id and Type */
-_SPRV_OP(GroupAll)
-_SPRV_OP(GroupAny)
-_SPRV_OP(GroupBroadcast)
-_SPRV_OP(GroupIAdd)
-_SPRV_OP(GroupFAdd)
-_SPRV_OP(GroupFMin)
-_SPRV_OP(GroupUMin)
-_SPRV_OP(GroupSMin)
-_SPRV_OP(GroupFMax)
-_SPRV_OP(GroupUMax)
-_SPRV_OP(GroupSMax)
-_SPRV_OP(GroupReserveReadPipePackets)
-_SPRV_OP(GroupReserveWritePipePackets)
-_SPRV_OP(GroupCommitReadPipe)
-_SPRV_OP(GroupCommitWritePipe)
-#undef _SPRV_OP
 
 class SPRVAtomicOperatorGeneric: public SPRVInstruction,
   public SPRVComponentOperands, public SPRVComponentExecutionScope,
@@ -1732,7 +1672,9 @@ enum SPRVOpKind {
   SPRVOPK_Count
 };
 
-template<SPRVOpCode OC=SPRVOC_OpNop, bool HasId = true>
+template<SPRVOpCode OC = SPRVOC_OpNop,
+    bool HasId = true,
+    bool IsGroupInst = false>
 class SPRVInstTemplate:public SPRVInstruction {
 public:
   // Instruction without Id
@@ -1740,6 +1682,7 @@ public:
       SPRVBasicBlock *TheBB)
     :SPRVInstruction(TheOps.size() + 1, TheOC, TheBB),
      Ops(TheOps){
+    init();
     validate();
     assert(TheBB && "Invalid BB");
   }
@@ -1748,14 +1691,19 @@ public:
       const std::vector<SPRVWord> &TheOps, SPRVBasicBlock *TheBB)
     :SPRVInstruction(TheOps.size() + 3, TheOC, TheType, TheId, TheBB),
      Ops(TheOps){
+    init();
     validate();
     assert(TheBB && "Invalid BB");
   }
   SPRVInstTemplate():SPRVInstruction(OC){
+    init();
+  }
+  void init(){
     if (!HasId) {
       setHasNoId();
       setHasNoType();
     }
+    setGroupInst(IsGroupInst);
   }
   void setWordCount(SPRVWord TheWordCount) {
     SPRVEntry::setWordCount(TheWordCount);
@@ -1766,9 +1714,32 @@ public:
       --NumOps;
     Ops.resize(NumOps);
   }
-  std::vector<SPRVValue *> getOperands() {
-    return getValues(Ops);
+
+  std::vector<SPRVWord> &getOpWords() {
+    return Ops;
   }
+
+  const std::vector<SPRVWord> &getOpWords() const {
+    return Ops;
+  }
+
+  // Get operands which are values.
+  // Drop execution scope literal.
+  std::vector<SPRVValue *> getOperands() {
+    std::vector<SPRVWord> VOps = Ops;
+    if (GroupInst)
+      VOps.erase(VOps.begin());
+    return getValues(VOps);
+  }
+
+  bool isGroupInst() const {
+    return GroupInst;
+  }
+
+  void setGroupInst(bool groupInst) {
+    GroupInst = groupInst;
+  }
+
 protected:
   virtual void encode(std::ostream &O) const {
     auto E = getEncoder(O);
@@ -1787,10 +1758,12 @@ protected:
     D >> Ops;
   }
   std::vector<SPRVWord> Ops;
+  bool GroupInst;
 };
 
 #define _SPRV_OP(x, y) \
   typedef SPRVInstTemplate<SPRVOC_Op##x, y> SPRV##x;
+// CL 2.0 enqueue kernel builtins
 _SPRV_OP(EnqueueMarker, true)
 _SPRV_OP(EnqueueKernel, true)
 _SPRV_OP(GetKernelNDrangeSubGroupCount, true)
@@ -1805,6 +1778,39 @@ _SPRV_OP(SetUserEventStatus, false)
 _SPRV_OP(CaptureEventProfilingInfo, false)
 _SPRV_OP(GetDefaultQueue, true)
 _SPRV_OP(BuildNDRange, true)
+// CL 2.0 pipe builtins
+_SPRV_OP(ReadPipe, true)
+_SPRV_OP(WritePipe, true)
+_SPRV_OP(ReservedReadPipe, true)
+_SPRV_OP(ReservedWritePipe, true)
+_SPRV_OP(ReserveReadPipePackets, true)
+_SPRV_OP(ReserveWritePipePackets, true)
+_SPRV_OP(CommitReadPipe, false)
+_SPRV_OP(CommitWritePipe, false)
+_SPRV_OP(IsValidReserveId, true)
+_SPRV_OP(GetNumPipePackets, true)
+_SPRV_OP(GetMaxPipePackets, true)
+#undef _SPRV_OP
+
+#define _SPRV_OP(x, y) \
+  typedef SPRVInstTemplate<SPRVOC_Op##x, y, true> SPRV##x;
+// Group instructions
+_SPRV_OP(WaitGroupEvents, false)
+_SPRV_OP(GroupAll, true)
+_SPRV_OP(GroupAny, true)
+_SPRV_OP(GroupBroadcast, true)
+_SPRV_OP(GroupIAdd, true)
+_SPRV_OP(GroupFAdd, true)
+_SPRV_OP(GroupFMin, true)
+_SPRV_OP(GroupUMin, true)
+_SPRV_OP(GroupSMin, true)
+_SPRV_OP(GroupFMax, true)
+_SPRV_OP(GroupUMax, true)
+_SPRV_OP(GroupSMax, true)
+_SPRV_OP(GroupReserveReadPipePackets, true)
+_SPRV_OP(GroupReserveWritePipePackets, true)
+_SPRV_OP(GroupCommitReadPipe, false)
+_SPRV_OP(GroupCommitWritePipe, false)
 #undef _SPRV_OP
 
 }

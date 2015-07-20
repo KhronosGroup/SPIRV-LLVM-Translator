@@ -165,6 +165,12 @@ bool
 SPRVType::isTypePipe()const {
   return OpCode == SPRVOC_OpTypePipe;
 }
+
+bool
+SPRVType::isTypeReserveId() const {
+  return OpCode == SPRVOC_OpTypeReserveId;
+}
+
 bool
 SPRVType::isTypeInt()const {
   return OpCode == SPRVOC_OpTypeInt;

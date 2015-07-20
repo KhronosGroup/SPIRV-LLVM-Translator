@@ -336,7 +336,7 @@ hasArrayArg(Function *F) {
   return false;
 }
 
-void
+CallInst *
 mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
@@ -355,6 +355,7 @@ mutateCallInst(Module *M, CallInst *CI,
   CI->replaceAllUsesWith(NewCI);
   CI->dropAllReferences();
   CI->removeFromParent();
+  return NewCI;
 }
 
 void
@@ -415,7 +416,7 @@ getInt32(Module *M, int value) {
 }
 
 bool
-isSPRVFunction(Function *F, std::string *UndecoratedName) {
+isSPRVFunction(const Function *F, std::string *UndecoratedName) {
   if (!F->hasName() || !F->getName().startswith(SPRV_BUILTIN_PREFIX))
     return false;
   if (UndecoratedName)
@@ -488,7 +489,7 @@ getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
   if (UnmangledName.find("write_imageui") == 0)
       Info.addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
-      UnmangledName.find("barrier") == 0 ||
+      UnmangledName.find("work_group_barrier") == 0 ||
       UnmangledName.find("vload") == 0 ||
       UnmangledName.find("vstore") == 0 ||
       UnmangledName.find("async_work_group") == 0 ||
@@ -572,16 +573,36 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   if (Ty->isArrayTy()) {
     return transTypeDesc(PointerType::get(Ty->getArrayElementType(), 0), Info);
   }
+  if (Ty->isStructTy()) {
+    auto Name = Ty->getStructName();
+    if (Name.startswith(kLLVMTypeName::StructPrefix))
+      Name = Name.drop_front(sizeof(kLLVMTypeName::StructPrefix));
+    // ToDo: Create a better unique name for struct without name
+    if (Name.empty())
+      Name = std::string("struct_") +
+      std::to_string(reinterpret_cast<size_t>(Ty));
+    return SPIR::RefParamType(new SPIR::UserDefinedType(Name));
+  }
+
   if (Ty->isPointerTy()) {
     auto ET = Ty->getPointerElementType();
+    SPIR::ParamType *EPT = nullptr;
     if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
-      if (StructTy->getStructName() == "opencl.block")
-        return SPIR::RefParamType(new SPIR::BlockType);
+      auto TyName = StructTy->getStructName();
+      if (TyName.startswith(SPIR_TYPE_NAME_PREFIX_IMAGE_T) ||
+          TyName.startswith(SPIR_TYPE_NAME_PIPE_T)) {
+        auto DelimPos = TyName.find_first_of(SPIR_TYPE_NAME_DELIMITER,
+            strlen(SPIR_TYPE_NAME_PREFIX));
+        if (DelimPos != StringRef::npos)
+          TyName = TyName.substr(0, DelimPos);
+      }
+      DEBUG(dbgs() << "  type name: " << TyName << '\n');
 
-#define _SPRV_OP(x,y) .Case("opencl."#x"_t", SPIR::PRIMITIVE_##y##_T)
-      return SPIR::RefParamType(new SPIR::PrimitiveType(
-          StringSwitch<SPIR::TypePrimitiveEnum>(StructTy->getStructName())
+#define _SPRV_OP(x,y) .Case("opencl."#x"_t", \
+    new SPIR::PrimitiveType(SPIR::PRIMITIVE_##y##_T))
+      if (StructTy->isOpaque())
+        EPT = StringSwitch<SPIR::ParamType *>(TyName)
           _SPRV_OP(image1d, IMAGE_1D)
           _SPRV_OP(image1d_array, IMAGE_1D_ARRAY)
           _SPRV_OP(image1d_buffer, IMAGE_1D_BUFFER)
@@ -600,10 +621,17 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
           _SPRV_OP(queue, QUEUE)
           _SPRV_OP(clk_event, CLK_EVENT)
           _SPRV_OP(sampler, SAMPLER)
-          .Case("struct.ndrange_t", SPIR::PRIMITIVE_NDRANGE_T)
-          ));
+          .Case("opencl.block",
+              new SPIR::BlockType)
+          .Case("struct.ndrange_t",
+              new SPIR::PrimitiveType(SPIR::PRIMITIVE_NDRANGE_T))
+          .Default(nullptr)
+          ;
 #undef _SPRV_OP
     }
+    if (EPT)
+      return SPIR::RefParamType(EPT);
+
     if (VoidPtr && ET->isIntegerTy(8))
       ET = Type::getVoidTy(ET->getContext());
     auto PT = new SPIR::PointerType(transTypeDesc(ET, Info));
@@ -683,9 +711,10 @@ getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode) {
   case SPRVOC_OpTypeQueue:
   case SPRVOC_OpTypeEvent:
   case SPRVOC_OpTypeDeviceEvent:
-  case SPRVOC_OpTypeReserveId:
   case SPRVOC_OpTypeSampler:
     return SPIRAS_Global;
+  case SPRVOC_OpTypeReserveId:
+    return SPIRAS_Private;
   default:
     return SPIRAS_Private;
   }

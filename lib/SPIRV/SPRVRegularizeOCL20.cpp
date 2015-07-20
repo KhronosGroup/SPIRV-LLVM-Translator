@@ -39,6 +39,7 @@
 
 #include "SPRVInternal.h"
 #include "llvm/IR/InstVisitor.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
@@ -57,7 +58,11 @@ public:
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
+  void visitCallGetFence(CallInst *CI,
+      const std::string &DemangledName);
   void visitCallNDRange(Module *M, CallInst *CI,
+      const std::string &DemangledName);
+  void visitCallReadWritePipe(Module *M, CallInst *CI,
       const std::string &DemangledName);
   static char ID;
 };
@@ -85,16 +90,58 @@ RegularizeOCL20::visitCallInst(CallInst& CI) {
   std::string DemangledName;
   if (!oclIsBuiltin(F->getName(), 20, &DemangledName))
     return;
-
-  if (DemangledName.find("ndrange_") == 0) {
-    visitCallNDRange(M, &CI, DemangledName);
+  DEBUG(dbgs() << "DemangledName == " << DemangledName.c_str() << '\n');
+  if (DemangledName == kOCLBuiltinName::GetFence){
+    visitCallGetFence(&CI, DemangledName);
+    return;
   }
+  if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
+    visitCallNDRange(M, &CI, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::ReadPipe) == 0 ||
+      DemangledName.find(kOCLBuiltinName::WritePipe) == 0) {
+    visitCallReadWritePipe(M, &CI, DemangledName);
+  }
+}
+
+void
+RegularizeOCL20::visitCallGetFence(CallInst *CI,
+    const std::string &DemangledName) {
+  assert(DemangledName == kOCLBuiltinName::GetFence);
+  int fence = 0;
+  Value *V = const_cast<Value *>(CI->getArgOperand(0));
+  PointerType *SrcPtrTy = cast<PointerType>(V->getType());
+  unsigned InAS = SrcPtrTy->getAddressSpace();
+  switch (InAS) {
+    case SPIRAS_Global:
+      fence = SPIRMFF_Global; //SPIRV's Global MEM Fence
+      break;
+    case SPIRAS_Local:
+      fence = SPIRMFF_Local; //SPIRV's Local MEM Fence
+      break;
+    case SPIRAS_Private:
+    case SPIRAS_Generic:
+    case SPIRAS_Constant:
+    default:
+      break;
+  }
+  CI->replaceAllUsesWith(ConstantInt::get(CI->getType(), fence, false));
+
+  auto F = CI->getCalledFunction();
+  CI->dropAllReferences();
+  CI->removeFromParent();
+  if (F->use_empty()) {
+    F->dropAllReferences();
+    F->removeFromParent();
+  }
+  return;
 }
 
 void
 RegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
     const std::string &DemangledName) {
-  assert(DemangledName.find("ndrange_") == 0);
+  assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
   auto Len = atoi(DemangledName.substr(8, 1).c_str());
   assert (Len >= 1 && Len <= 3);
   // SPIR-V ndrange structure requires 3 members in the following order:
@@ -128,6 +175,32 @@ RegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
       assert(0 && "Invalid number of arguments");
     }
     return DemangledName;
+  }, true, &Attrs);
+}
+
+// Remove pipe packet size and align arguments.
+// Remove address space cast or bit cast.
+// Add reserved_ prefix to reserved read/write pipe function.
+void
+RegularizeOCL20::visitCallReadWritePipe(Module* M, CallInst* CI,
+    const std::string& DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    assert(Args.size() == 4 || Args.size() == 6);
+    assert(Args[Args.size() - 2]->getType()->isIntegerTy());
+    assert(Args[Args.size() - 1]->getType()->isIntegerTy());
+    Args.erase(Args.begin() + Args.size() - 2, Args.end());
+    auto &P = Args[Args.size() - 1];
+    if (isa<AddrSpaceCastInst>(P) ||
+        isa<BitCastInst>(P))
+      P = cast<CastInst>(P)->getOperand(0);
+    std::string NewName;
+    if (Args.size() > 2 &&
+        DemangledName.find(kSPRVFuncName::ReservedPrefix) != 0)
+      NewName = std::string(kSPRVFuncName::ReservedPrefix) + DemangledName;
+    else
+      NewName =DemangledName;
+    return NewName;
   }, true, &Attrs);
 }
 

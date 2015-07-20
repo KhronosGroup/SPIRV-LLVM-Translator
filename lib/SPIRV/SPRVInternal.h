@@ -63,6 +63,14 @@ namespace SPRV{
 
 // Ad hoc function used by LLVM/SPIRV converter for type casting
 #define SPCV_CAST "spcv.cast"
+#define LLVM_MEMCPY "llvm.memcpy"
+
+namespace kOCLTypeQualifierName {
+  const static char *Const      = "const";
+  const static char *Volatile   = "volatile";
+  const static char *Restrict   = "restrict";
+  const static char *Pipe       = "pipe";
+}
 
 template<> inline void
 SPRVMap<unsigned, SPRVOpCode>::init() {
@@ -163,6 +171,15 @@ _SPRV_OP(Image, 4)
 #undef _SPRV_OP
 };
 
+enum SPIRMemScopeKind {
+  SPIRMS_work_item,
+  SPIRMS_work_group,
+  SPIRMS_device,
+  SPIRMS_all_svm_devices,
+  SPIRMS_sub_group,
+  SPIRMS_Count,
+};
+
 template<> inline void
 SPRVMap<SPIRAddressSpace, SPRVStorageClassKind>::init() {
 #define _SPRV_OP(x,y) add(SPIRAS_##x, SPRVSC_##y);
@@ -227,6 +244,8 @@ typedef SPRVMap<std::string, SPRVBuiltinVariableKind> SPIRSPRVBuiltinVariableMap
 // A uniqued OCL builtin function name may be different from the real
 // OCL builtin function name. e.g. instead of atomic_min, atomic_umin
 // is used for atomic_min with unsigned integer parameter.
+// work_group_ and sub_group_ functions are unified as group_ functions
+// except work_group_barrier.
 class SPRVInstruction;
 template<> inline void
 SPRVMap<std::string, SPRVOpCode, SPRVInstruction>::init() {
@@ -301,6 +320,27 @@ _SPRV_OP(get_default_queue, GetDefaultQueue)
 _SPRV_OP(ndrange_1D, BuildNDRange)
 _SPRV_OP(ndrange_2D, BuildNDRange)
 _SPRV_OP(ndrange_3D, BuildNDRange)
+// Generic Address Space Casts
+_SPRV_OP(to_global, GenericCastToPtr)
+_SPRV_OP(to_local, GenericCastToPtr)
+_SPRV_OP(to_private, GenericCastToPtr)
+_SPRV_OP(work_group_barrier, ControlBarrier)
+// CL 2.0 pipe builtins
+_SPRV_OP(read_pipe, ReadPipe)
+_SPRV_OP(write_pipe, WritePipe)
+_SPRV_OP(reserved_read_pipe, ReservedReadPipe)
+_SPRV_OP(reserved_write_pipe, ReservedWritePipe)
+_SPRV_OP(reserve_read_pipe, ReserveReadPipePackets)
+_SPRV_OP(reserve_write_pipe, ReserveWritePipePackets)
+_SPRV_OP(commit_read_pipe, CommitReadPipe)
+_SPRV_OP(commit_write_pipe, CommitWritePipe)
+_SPRV_OP(is_valid_reserve_id, IsValidReserveId)
+_SPRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
+_SPRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
+_SPRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
+_SPRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
+_SPRV_OP(get_pipe_num_packets, GetNumPipePackets)
+_SPRV_OP(get_pipe_max_packets, GetMaxPipePackets)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, SPRVOpCode, SPRVInstruction>
@@ -357,6 +397,19 @@ typedef SPRVMap<SPIRMemFenceFlagKind, SPRVMemorySemanticsMaskKind>
   SPIRSPRVMemFenceFlagMap;
 
 template<> inline void
+SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>::init() {
+#define _SPRV_OP(x,y) add(SPIRMS_##x, SPRVMS_##y);
+  _SPRV_OP(work_item, Invocation)
+  _SPRV_OP(work_group, Workgroup)
+  _SPRV_OP(device, Device)
+  _SPRV_OP(all_svm_devices, CrossDevice)
+  _SPRV_OP(sub_group, Subgroup)
+#undef _SPRV_OP
+}
+typedef SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>
+  SPIRSPRVMemScopeMap;
+
+template<> inline void
 SPRVMap<std::string, SPRVTypeSamplerDescriptor>::init() {
 #define _SPRV_OP(x,...) {SPRVTypeSamplerDescriptor S(__VA_ARGS__); \
   add("opencl."#x, S);}
@@ -389,6 +442,10 @@ _SPRV_OP(n, N)
 }
 typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
   SPIRSPRVFPRoundingModeMap;
+
+namespace kLLVMTypeName {
+  const static char *StructPrefix = "struct.";
+}
 
 #define SPRV_BUILTIN_PREFIX                 "__spirv_"
 #define SPRV_BUILTIN_POSTFIX                "__"
@@ -424,10 +481,31 @@ typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
 #define SPIR_TEMP_NAME_PREFIX_BLOCK         "block"
 #define SPIR_TEMP_NAME_PREFIX_CALL          "call"
 
-#define OCL_BUILTIN_PREFIX_READ_IMAGE       "read_image"
 #define OCL_MANGLED_TYPE_NAME_SAMPLER       "ocl_sampler"
-#define OCL_BUILTIN_ENQUEUE_KERNEL          "enqueue_kernel"
-#define OCL_BUILTIN_NDRANGE_PREFIX          "ndrange_"
+
+namespace kOCLBuiltinName {
+  const static char *Barrier            = "barrier";
+  const static char *EnqueueKernel      = "enqueue_kernel";
+  const static char *GetFence           = "get_fence";
+  const static char *NDRangePrefix      = "ndrange_";
+  const static char *ToGlobal           = "to_global";
+  const static char *ToLocal            = "to_local";
+  const static char *ToPrivate          = "to_private";
+  const static char *ReadImage          = "read_image";
+  const static char *ReadPipe           = "read_pipe";
+  const static char *WriteImage         = "write_image";
+  const static char *WorkGroupBarrier   = "work_group_barrier";
+  const static char *WritePipe          = "write_pipe";
+  const static char *WorkGroupPrefix    = "work_group_";
+  const static char *SubGroupPrefix     = "sub_group_";
+  const static char *WorkPrefix         = "work_";
+  const static char *SubPrefix          = "sub_";
+}
+
+namespace kSPRVFuncName {
+  const static char *ReservedPrefix     = "reserved_";
+  const static char *GroupPrefix        = "group_";
+}
 
 enum Spir2SamplerKind {
   CLK_ADDRESS_NONE            = 0x0000,
@@ -473,7 +551,7 @@ bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
 
 std::string decorateSPRVFunction(const std::string &S);
 std::string undecorateSPRVFunction(const std::string &S);
-bool isSPRVFunction(Function *F, std::string *UndecName = nullptr);
+bool isSPRVFunction(const Function *F, std::string *UndecName = nullptr);
 
 /// \param Name LLVM function name
 /// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
@@ -481,7 +559,8 @@ bool isSPRVFunction(Function *F, std::string *UndecName = nullptr);
 /// \param DemangledName demanged name of the OpenCL built-in function
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
-bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12, std::string* DemangledName = nullptr);
+bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12,
+    std::string* DemangledName = nullptr);
 
 /// \returns true if \p T is a function pointer type.
 bool isFunctionPointerType(Type *T);
@@ -495,7 +574,8 @@ bool hasArrayArg(Function *F);
 
 /// Mutates function call instruction by changing the arguments.
 /// \param ArgMutate mutates the function arguments.
-void mutateCallInst(Module *M, CallInst *CI,
+/// \return mutated call instruction.
+CallInst *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
 
