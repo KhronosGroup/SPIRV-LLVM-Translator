@@ -60,7 +60,8 @@ SPRVMap<SPRVOpCode, std::string>::init() {
 SPRV_DEF_NAMEMAP(SPRVOpCode, OpCodeNameMap)
 
 inline bool isAtomicOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpAtomicInit &&
+  assert(SPRVOC_OpAtomicTestSet < SPRVOC_OpAtomicXor);
+  return (unsigned)OpCode >= SPRVOC_OpAtomicTestSet &&
       (unsigned)OpCode <= SPRVOC_OpAtomicXor;
 }
 inline bool isBinaryOpCode(SPRVOpCode OpCode) {

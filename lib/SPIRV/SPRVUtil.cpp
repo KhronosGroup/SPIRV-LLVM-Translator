@@ -585,7 +585,7 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   if (Ty->isStructTy()) {
     auto Name = Ty->getStructName();
     if (Name.startswith(kLLVMTypeName::StructPrefix))
-      Name = Name.drop_front(sizeof(kLLVMTypeName::StructPrefix));
+      Name = Name.drop_front(strlen(kLLVMTypeName::StructPrefix));
     // ToDo: Create a better unique name for struct without name
     if (Name.empty())
       Name = std::string("struct_") +
@@ -771,6 +771,13 @@ getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len, uint64_t V,
   }
   llvm_unreachable("Invalid type");
   return nullptr;
+}
+
+void
+dumpUsers(Value* V, StringRef Prompt) {
+  DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
+  for (auto UI = V->user_begin(), UE = V->user_end(); UI != UE; ++UI)
+    DEBUG(dbgs() << "  " << **UI << '\n');
 }
 
 }

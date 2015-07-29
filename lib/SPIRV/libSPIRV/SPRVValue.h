@@ -100,6 +100,11 @@ public:
     SPRVEntry::validate();
     assert((!hasType() || Type) && "Invalid type");
   }
+
+  void setType(SPRVType *Ty) {
+    Type = Ty;
+  }
+
 protected:
   void setHasNoType() { Attrib |= SPRVEA_NOTYPE;}
 

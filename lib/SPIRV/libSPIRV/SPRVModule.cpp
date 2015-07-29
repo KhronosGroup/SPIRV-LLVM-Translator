@@ -187,9 +187,6 @@ public:
   // Instruction creation functions
   virtual SPRVInstruction *addAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool);
-  virtual SPRVInstruction *addAtomicInst(SPRVOpCode OC, SPRVType *TheType,
-      const std::vector<SPRVValue *> &Operands, SPRVExecutionScopeKind Scope,
-      SPRVWord MemSema, SPRVBasicBlock *);
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB);
@@ -878,14 +875,6 @@ SPRVModuleImpl::addAccessChainInst(SPRVType *Type, SPRVValue *Base,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addAtomicInst(SPRVOpCode OC, SPRVType *TheType,
-    const std::vector<SPRVValue *> &Operands, SPRVExecutionScopeKind Scope,
-    SPRVWord MemSema, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVAtomicOperatorGeneric(OC, TheType, getId(),
-    Scope, MemSema, Operands, BB), BB);
-}
-
-SPRVInstruction *
 SPRVModuleImpl::addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
     SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
     SPRVValue *Event, SPRVBasicBlock *BB) {
@@ -1151,12 +1140,8 @@ SPRVModuleImpl::getIds(const std::vector<SPRVValue *> &ValueVec)const {
 SPRVInstruction*
 SPRVModuleImpl::addInstTemplate(SPRVOpCode OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
-  SPRVInstruction *Ins = nullptr;
-  if (Ty)
-    Ins = new SPRVInstTemplate<>(OC, Ty, getId(), Ops, BB);
-  else
-    Ins = new SPRVInstTemplate<>(OC, Ops, BB);
-
+  SPRVId Id = Ty ? getId() : SPRVID_INVALID;
+  auto Ins = SPRVInstTemplateBase::create(OC, Ops, BB, Id, Ty);
   return BB->addInstruction(Ins);
 }
 

@@ -19,5 +19,5 @@
 type = Library
 name = SPIRVLib
 parent = Libraries
-required_libraries = Core Support IPO
+required_libraries = Core Support Analysis IPO
 

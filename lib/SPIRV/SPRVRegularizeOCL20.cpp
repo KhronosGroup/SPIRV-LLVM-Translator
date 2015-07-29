@@ -35,12 +35,13 @@
 // This file implements regularization of OCL20 builtin functions.
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "regocl20"
+#define DEBUG_TYPE "spvcl20"
 
 #include "SPRVInternal.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
 #include "llvm/Support/Debug.h"
@@ -50,10 +51,11 @@ using namespace llvm;
 using namespace SPRV;
 
 namespace SPRV {
-class RegularizeOCL20: public ModulePass, public InstVisitor<RegularizeOCL20> {
+class SPRVRegularizeOCL20: public ModulePass,
+  public InstVisitor<SPRVRegularizeOCL20> {
 public:
-  RegularizeOCL20():ModulePass(ID) {
-    initializeRegularizeOCL20Pass(*PassRegistry::getPassRegistry());
+  SPRVRegularizeOCL20():ModulePass(ID) {
+    initializeSPRVRegularizeOCL20Pass(*PassRegistry::getPassRegistry());
   }
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
@@ -62,25 +64,45 @@ public:
       const std::string &DemangledName);
   void visitCallNDRange(Module *M, CallInst *CI,
       const std::string &DemangledName);
-  void visitCallReadWritePipe(Module *M, CallInst *CI,
+
+  /// Remove pipe packet size and align arguments.
+  /// Remove address space cast or bit cast.
+  /// Add reserved_ prefix to reserved read/write pipe function.
+  void visitCallPipe(Module *M, CallInst *CI,
+      const std::string &DemangledName);
+
+  /// Transform atom_cmpxchg/atomic_cmpxchg to atomic_compare_exchange.
+  /// In atom_cmpxchg/atomic_cmpxchg, the expected value parameter is a value.
+  /// However in atomic_compare_exchange it is a pointer. The transformation
+  /// adds an alloca instruction, store the expected value in the pointer, and
+  /// pass the pointer as argument.
+  void visitCallAtomic(Module *M, CallInst *CI,
       const std::string &DemangledName);
   static char ID;
 };
 
-char RegularizeOCL20::ID = 0;
+char SPRVRegularizeOCL20::ID = 0;
 
 void
-RegularizeOCL20::getAnalysisUsage(AnalysisUsage& AU) {
+SPRVRegularizeOCL20::getAnalysisUsage(AnalysisUsage& AU) {
 }
 
 bool
-RegularizeOCL20::runOnModule(Module& M) {
+SPRVRegularizeOCL20::runOnModule(Module& M) {
   visit(M);
+
+  DEBUG(dbgs() << "After RegularizeOCL20:\n" << M);
+
+  std::string Err;
+  raw_string_ostream ErrorOS(Err);
+  if (verifyModule(M, &ErrorOS)){
+    DEBUG(errs() << "Fails to verify module: " << Err);
+  }
   return true;
 }
 
 void
-RegularizeOCL20::visitCallInst(CallInst& CI) {
+SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto M = CI.getParent()->getParent()->getParent();
   auto F = CI.getCalledFunction();
@@ -99,14 +121,19 @@ RegularizeOCL20::visitCallInst(CallInst& CI) {
     visitCallNDRange(M, &CI, DemangledName);
     return;
   }
-  if (DemangledName.find(kOCLBuiltinName::ReadPipe) == 0 ||
-      DemangledName.find(kOCLBuiltinName::WritePipe) == 0) {
-    visitCallReadWritePipe(M, &CI, DemangledName);
+  if (DemangledName.find("pipe") != std::string::npos) {
+    visitCallPipe(M, &CI, DemangledName);
+    return;
+  }
+  if (DemangledName == "atom_cmpxchg" ||
+      DemangledName == "atomic_cmpxchg") {
+    visitCallAtomic(M, &CI, DemangledName);
+    return;
   }
 }
 
 void
-RegularizeOCL20::visitCallGetFence(CallInst *CI,
+SPRVRegularizeOCL20::visitCallGetFence(CallInst *CI,
     const std::string &DemangledName) {
   assert(DemangledName == kOCLBuiltinName::GetFence);
   int fence = 0;
@@ -131,15 +158,11 @@ RegularizeOCL20::visitCallGetFence(CallInst *CI,
   auto F = CI->getCalledFunction();
   CI->dropAllReferences();
   CI->removeFromParent();
-  if (F->use_empty()) {
-    F->dropAllReferences();
-    F->removeFromParent();
-  }
   return;
 }
 
 void
-RegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
+SPRVRegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
     const std::string &DemangledName) {
   assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
   auto Len = atoi(DemangledName.substr(8, 1).c_str());
@@ -178,37 +201,51 @@ RegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
   }, true, &Attrs);
 }
 
-// Remove pipe packet size and align arguments.
-// Remove address space cast or bit cast.
-// Add reserved_ prefix to reserved read/write pipe function.
 void
-RegularizeOCL20::visitCallReadWritePipe(Module* M, CallInst* CI,
+SPRVRegularizeOCL20::visitCallPipe(Module* M, CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    assert(Args.size() == 4 || Args.size() == 6);
     assert(Args[Args.size() - 2]->getType()->isIntegerTy());
     assert(Args[Args.size() - 1]->getType()->isIntegerTy());
     Args.erase(Args.begin() + Args.size() - 2, Args.end());
+
+    std::string NewName = DemangledName;
+    if (DemangledName.find(kOCLBuiltinName::ReadPipe) != 0 &&
+        DemangledName.find(kOCLBuiltinName::WritePipe) != 0)
+      return NewName;
+
+    assert(Args.size() == 2 || Args.size() == 4);
     auto &P = Args[Args.size() - 1];
     if (isa<AddrSpaceCastInst>(P) ||
         isa<BitCastInst>(P))
       P = cast<CastInst>(P)->getOperand(0);
-    std::string NewName;
     if (Args.size() > 2 &&
         DemangledName.find(kSPRVFuncName::ReservedPrefix) != 0)
       NewName = std::string(kSPRVFuncName::ReservedPrefix) + DemangledName;
-    else
-      NewName =DemangledName;
     return NewName;
+  }, true, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallAtomic(Module *M, CallInst* CI,
+    const std::string& DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    auto &CmpVal = Args[1];
+    auto Alloca = new AllocaInst(CmpVal->getType(), "",
+        CI->getParent()->getParent()->begin());
+    auto Store = new StoreInst(CmpVal, Alloca, CI);
+    CmpVal = Alloca;
+    return "atomic_compare_exchange_strong";
   }, true, &Attrs);
 }
 
 }
 
-INITIALIZE_PASS(RegularizeOCL20, "regocl20", "Regularize OCL 2.0 module",
+INITIALIZE_PASS(SPRVRegularizeOCL20, "regocl20", "Regularize OCL 2.0 module",
     false, false)
 
-ModulePass *llvm::createRegularizeOCL20() {
-  return new RegularizeOCL20();
+ModulePass *llvm::createSPRVRegularizeOCL20() {
+  return new SPRVRegularizeOCL20();
 }

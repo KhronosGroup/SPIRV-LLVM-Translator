@@ -194,9 +194,6 @@ public:
   // Instruction creation functions
   virtual SPRVInstruction *addAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool) = 0;
-  virtual SPRVInstruction *addAtomicInst(SPRVOpCode OC, SPRVType *TheType,
-      const std::vector<SPRVValue *> &Operands, SPRVExecutionScopeKind Scope,
-      SPRVWord MemSema, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB) = 0;

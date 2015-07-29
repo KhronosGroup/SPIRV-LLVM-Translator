@@ -88,7 +88,6 @@ SPRVMap<unsigned, SPRVOpCode>::init() {
     _SPRV_OP(PtrToInt, ConvertPtrToU)
     _SPRV_OP(IntToPtr, ConvertUToPtr)
     _SPRV_OP(BitCast, Bitcast)
-
     _SPRV_OP(GetElementPtr, AccessChain)
   /*Binary*/
     _SPRV_OP(Add, IAdd)
@@ -180,6 +179,14 @@ enum SPIRMemScopeKind {
   SPIRMS_Count,
 };
 
+enum SPIRMemoryOrderKind {
+  SPIRMO_relaxed,
+  SPIRMO_acquire,
+  SPIRMO_release,
+  SPIRMO_acq_rel,
+  SPIRMO_seq_cst
+};
+
 template<> inline void
 SPRVMap<SPIRAddressSpace, SPRVStorageClassKind>::init() {
 #define _SPRV_OP(x,y) add(SPIRAS_##x, SPRVSC_##y);
@@ -266,22 +273,24 @@ _SPRV_OP(xor, Xor)
 #undef _SPRV_OP
 #define _SPRV_OP(x,y) add("atomic_"#x, SPRVOC_OpAtomic##y);
 // CL 2.0 atomic builtins
-_SPRV_OP(init, Init)
-_SPRV_OP(load, Load)
-_SPRV_OP(store, Store)
-_SPRV_OP(xchg, Exchange)
-_SPRV_OP(cmpxchg, CompareExchange)
+_SPRV_OP(flag_test_and_set, TestSet)
+_SPRV_OP(load_explicit, Load)
+_SPRV_OP(store_explicit, Store)
+_SPRV_OP(exchange_explicit, Exchange)
+_SPRV_OP(compare_exchange_strong_explicit, CompareExchange)
+_SPRV_OP(compare_exchange_weak_explicit, CompareExchangeWeak)
 _SPRV_OP(inc, IIncrement)
 _SPRV_OP(dec, IDecrement)
-_SPRV_OP(add, IAdd)
-_SPRV_OP(sub, ISub)
-_SPRV_OP(umin, UMin)
-_SPRV_OP(umax, UMax)
-_SPRV_OP(min, IMin)
-_SPRV_OP(max, IMax)
-_SPRV_OP(and, And)
-_SPRV_OP(or, Or)
-_SPRV_OP(xor, Xor)
+_SPRV_OP(fetch_add_explicit, IAdd)
+_SPRV_OP(fetch_sub_explicit, ISub)
+_SPRV_OP(fetch_umin_explicit, UMin)
+_SPRV_OP(fetch_umax_explicit, UMax)
+_SPRV_OP(fetch_min_explicit, IMin)
+_SPRV_OP(fetch_max_explicit, IMax)
+_SPRV_OP(fetch_and_explicit, And)
+_SPRV_OP(fetch_or_explicit, Or)
+_SPRV_OP(fetch_xor_explicit, Xor)
+_SPRV_OP(work_item_fence, WorkItemFence)
 #undef _SPRV_OP
 #define _SPRV_OP(x,y) add(#x, SPRVOC_Op##y);
 _SPRV_OP(dot, Dot)
@@ -507,6 +516,7 @@ namespace kLLVMTypeName {
 #define OCL_MANGLED_TYPE_NAME_SAMPLER       "ocl_sampler"
 
 namespace kOCLBuiltinName {
+  const static char *AtomicPrefix       = "atomic_";
   const static char *Barrier            = "barrier";
   const static char *EnqueueKernel      = "enqueue_kernel";
   const static char *GetFence           = "get_fence";
@@ -516,13 +526,13 @@ namespace kOCLBuiltinName {
   const static char *ToPrivate          = "to_private";
   const static char *ReadImage          = "read_image";
   const static char *ReadPipe           = "read_pipe";
+  const static char *SubGroupPrefix     = "sub_group_";
+  const static char *SubPrefix          = "sub_";
   const static char *WriteImage         = "write_image";
   const static char *WorkGroupBarrier   = "work_group_barrier";
   const static char *WritePipe          = "write_pipe";
   const static char *WorkGroupPrefix    = "work_group_";
-  const static char *SubGroupPrefix     = "sub_group_";
   const static char *WorkPrefix         = "work_";
-  const static char *SubPrefix          = "sub_";
 }
 
 namespace kSPRVFuncName {
@@ -655,12 +665,17 @@ getScalarOrArrayConstantInt(Instruction *P, Type *T, unsigned Len, uint64_t V,
 Value *
 getScalarOrArray(Value *V, unsigned Size, Instruction *Pos);
 
+void
+dumpUsers(Value* V, StringRef Prompt = "");
+
 }
 namespace llvm {
 
-void initializeRegularizeOCL20Pass(PassRegistry&);
+void initializeSPRVRegularizeOCL20Pass(PassRegistry&);
+void initializeSPRVLowerOCLBlocksPass(PassRegistry&);
 
-ModulePass *createRegularizeOCL20();
+ModulePass *createSPRVRegularizeOCL20();
+ModulePass *createSPRVLowerOCLBlocks();
 
 }
 #endif

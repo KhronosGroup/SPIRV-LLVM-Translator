@@ -190,7 +190,6 @@ public:
   Instruction *transOCLBuiltinFromInst(const std::string& FuncName,
       SPRVInstruction* BI, BasicBlock* BB);
   Instruction *transOCLBuiltinFromInst(SPRVInstruction *BI, BasicBlock *BB);
-  Instruction *transOCLAtomic(SPRVAtomicOperatorGeneric* BA, BasicBlock *BB);
   Instruction *transOCLBarrierFence(SPRVInstruction* BI, BasicBlock *BB);
   Instruction *transOCLDot(SPRVDot *BD, BasicBlock *BB);
   void transOCLVectorLoadStore(std::string& UnmangledName,
@@ -224,7 +223,7 @@ public:
   /// Pipe packet size and alignment is added as function arguments.
   /// Data poiter argument is casted to i8* in generic address space.
   /// \return transformed call instruction.
-  CallInst *postProcessOCLReadWritePipe(CallInst *CI,
+  CallInst *postProcessOCLPipe(SPRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
   typedef DenseMap<SPRVType *, Type *> SPRVToLLVMTypeMap;
@@ -320,7 +319,7 @@ private:
   void transFlags(llvm::Value* V);
   Instruction *transCmpInst(SPRVValue* BV, BasicBlock* BB, Function* F);
   void transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
-      std::vector<Type *> &ArgTys);
+      std::vector<SPRVValue *> &Args);
   Instruction* transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
       CallInst* CI, BasicBlock* BB, const std::string &DemangledName);
   std::string transOCLImageTypeName(SPRV::SPRVTypeSampler* ST);
@@ -930,12 +929,27 @@ SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F) {
 }
 
 CallInst *
-SPRVToLLVM::postProcessOCLReadWritePipe(CallInst* CI,
+SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
+  auto OC = BI->getOpCode();
+  auto IT = static_cast<SPRVInstTemplateBase *>(BI);
+  int PipeOpIndex = IT->hasExecScope()?1:0;
+  auto PipeTy = static_cast<SPRVTypePipe *>(
+      IT->getOpValue(PipeOpIndex)->getType());
+  auto DT = getTranslatedType(PipeTy->getPipeType());
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    assert(Args.size() == 2 || Args.size() == 4);
-    auto &P = Args[Args.size() - 1];
+    auto Int32Ty = IntegerType::getInt32Ty(*Context);
+    auto DL = M->getDataLayout();
+    Args.push_back(ConstantInt::get(Int32Ty, DL->getTypeSizeInBits(DT) / 8));
+    Args.push_back(ConstantInt::get(Int32Ty, DL->getABITypeAlignment(DT)));
+    if (!(OC == SPRVOC_OpReadPipe ||
+          OC == SPRVOC_OpWritePipe ||
+          OC == SPRVOC_OpReservedReadPipe ||
+          OC == SPRVOC_OpReservedWritePipe))
+      return FuncName;
+
+    auto &P = Args[Args.size() - 3];
     auto T = P->getType();
     assert(isa<PointerType>(T));
     auto ET = T->getPointerElementType();
@@ -944,10 +958,6 @@ SPRVToLLVM::postProcessOCLReadWritePipe(CallInst* CI,
       auto NewTy = PointerType::getInt8PtrTy(*Context, SPIRAS_Generic);
       P = CastInst::CreatePointerBitCastOrAddrSpaceCast(P, NewTy, "", CI);
     }
-    auto Int32Ty = IntegerType::getInt32Ty(*Context);
-    auto DL = M->getDataLayout();
-    Args.push_back(ConstantInt::get(Int32Ty, DL->getTypeSizeInBits(ET) / 8));
-    Args.push_back(ConstantInt::get(Int32Ty, DL->getABITypeAlignment(ET)));
     return FuncName;
   }, true, &Attrs);
 }
@@ -1401,10 +1411,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     break;
 
   default:
-  if (BV->isAtomic()) {
-    return mapValue(BV, transOCLAtomic(
-      static_cast<SPRVAtomicOperatorGeneric *>(BV), BB));
-  } else if (isSPRVCmpInstTransToLLVMInst(static_cast<SPRVInstruction*>(BV))) {
+  if (isSPRVCmpInstTransToLLVMInst(static_cast<SPRVInstruction*>(BV))) {
     return mapValue(BV, transCmpInst(BV, BB, F));
   } else if (SPIRSPRVBuiltinInstMap::rfind(BV->getOpCode(), nullptr)) {
     return mapValue(BV, transOCLBuiltinFromInst(
@@ -1508,19 +1515,22 @@ SPRVToLLVM::transFunction(SPRVFunction *BF) {
 /// Optimizer should be able to remove the redundant trunc/zext
 void
 SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
-    std::vector<Type *> &ArgTys) {
+    std::vector<SPRVValue *> &Args) {
   if (!BI->hasType())
     return;
   auto BT = BI->getType();
+  auto OC = BI->getOpCode();
   if (isCmpOpCode(BI->getOpCode())) {
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
     else if (BT->isTypeVectorBool())
       RetTy = VectorType::get(IntegerType::getInt32Ty(*Context),
           BT->getVectorComponentCount());
-    else
-      llvm_unreachable("invalid compare instruction");
-  }
+  } else if (OC == SPRVOC_OpAtomicIIncrement ||
+             OC == SPRVOC_OpAtomicIDecrement) {
+    Args.erase(Args.begin() + Args.size() - 2, Args.end());
+  } else
+    llvm_unreachable("invalid compare instruction");
 }
 
 Instruction*
@@ -1532,11 +1542,8 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
     return CastInst::Create(Instruction::Trunc, CI, transType(BI->getType()),
         "cvt", BB);
   }
-  if (OC == SPRVOC_OpReadPipe ||
-      OC == SPRVOC_OpWritePipe ||
-      OC == SPRVOC_OpReservedReadPipe ||
-      OC == SPRVOC_OpReservedWritePipe)
-    return postProcessOCLReadWritePipe(CI, DemangledName);
+  if (DemangledName.find("pipe") != std::string::npos)
+    return postProcessOCLPipe(BI, CI, DemangledName);
   return CI;
 }
 
@@ -1544,7 +1551,12 @@ Instruction *
 SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
     SPRVInstruction* BI, BasicBlock* BB) {
   std::string MangledName;
-  std::vector<Type*> ArgTys = transTypeVector(BI->getOperandTypes());
+  auto Ops = BI->getOperands();
+  Type* RetTy = BI->hasType() ? transType(BI->getType()) :
+      Type::getVoidTy(*Context);
+  transOCLBuiltinFromInstPreproc(BI, RetTy, Ops);
+  std::vector<Type*> ArgTys = transTypeVector(
+      SPRVInstruction::getOperandTypes(Ops));
   bool HasFuncPtrArg = false;
   for (auto& I:ArgTys) {
     if (isa<FunctionType>(I)) {
@@ -1552,9 +1564,6 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
       HasFuncPtrArg = true;
     }
   }
-  Type* RetTy = BI->hasType() ? transType(BI->getType()) :
-      Type::getVoidTy(*Context);
-  transOCLBuiltinFromInstPreproc(BI, RetTy, ArgTys);
   if (!HasFuncPtrArg)
     mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
   else
@@ -1571,7 +1580,7 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
       Func->addFnAttr(Attribute::NoUnwind);
   }
   auto Call = CallInst::Create(Func,
-      transValue(BI->getOperands(), BB->getParent(), BB), "", BB);
+      transValue(Ops, BB->getParent(), BB), "", BB);
   Call->setName(BI->getName());
   setAttrByCalledFunc(Call);
   SPRVDBG(bildbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
@@ -1836,31 +1845,6 @@ SPRVToLLVM::transAlign(SPRVValue *BV, Value *V) {
     return true;
   }
   return true;
-}
-
-Instruction *
-SPRVToLLVM::transOCLAtomic(SPRVAtomicOperatorGeneric *BA, BasicBlock *BB) {
-  assert(BB && "Invalid BB");
-  std::string FuncName = SPIRSPRVBuiltinInstMap::rmap(BA->getOpCode());
-  std::string MangledName;
-  std::vector<Type *> ArgTys = transTypeVector(BA->getOperandTypes());
-  Type * RetTy = ArgTys[0]->getPointerElementType();
-  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
-  Function *Func = M->getFunction(MangledName);
-  if (!Func) {
-    FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
-    Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
-    Func->setCallingConv(CallingConv::SPIR_FUNC);
-    if (isFuncNoUnwind())
-      Func->addFnAttr(Attribute::NoUnwind);
-  }
-  auto Call = CallInst::Create(Func, transValue(BA->getOperands(),
-      BB->getParent(), BB), "", BB);
-  Call->setName(BA->getName());
-  setAttrByCalledFunc(Call);
-  SPRVDBG(bildbgs() << "[transAtomic] " << *BA << " -> ";
-    dbgs() << *Call << '\n';)
-  return Call;
 }
 
 void
