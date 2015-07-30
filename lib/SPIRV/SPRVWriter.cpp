@@ -147,60 +147,6 @@ foreachKernelArgMD(MDNode *MD, SPRVFunction *BF,
   }
 }
 
-/// Create an LLVM type from OpenCL builtin type name string.
-static Type*
-getLLVMTypeFromOCLBuiltinTypeNameStr(LLVMContext &C, const std::string &Str) {
-  return StringSwitch<Type *>(Str)
-      .Cases("char",    "uchar",    Type::getInt8Ty(C))
-      .Cases("short",   "ushort",   Type::getInt16Ty(C))
-      .Cases("int",     "uint",    Type::getInt32Ty(C))
-      .Cases("long",    "ulong",    Type::getInt64Ty(C))
-      .Case("float",                Type::getFloatTy(C))
-      .Case("half",                 Type::getHalfTy(C))
-      .Case("double",               Type::getDoubleTy(C))
-      .Default(                     nullptr);
-}
-
-/// Creates an LLVM type from the kernel_arg_base_type MDString.
-static Type*
-getLLVMTypeFromOCLTypeNameStr(Module *M, LLVMContext &C,
-    const std::string &Str) {
-  int VecSize = 0;
-  Type *Ty = nullptr;
-  bool IsPtr = false;
-  std::string TyStr;
-  size_t Pos = Str.find_first_of('*');
-  if (Pos != std::string::npos) {
-    TyStr = Str.substr(0, Pos - 1);
-    IsPtr = true;
-  } else
-    TyStr = Str;
-  Pos = TyStr.find_last_of(' ');
-  if (Pos != std::string::npos)
-    TyStr = TyStr.substr(Pos + 1, Str.length());
-
-  //check for vector type
-  if ((Pos = TyStr.find_first_of("0123456789")) != std::string::npos) {
-    std::string vecstr = TyStr.substr(Pos);
-    std::istringstream IS(vecstr);
-    IS >> VecSize;
-    TyStr = TyStr.substr(0, Pos);
-  }
-
-  Ty = getLLVMTypeFromOCLBuiltinTypeNameStr(C, Str);
-  if (!Ty) {
-    Ty = M->getTypeByName(std::string(kLLVMTypeName::StructPrefix) + Str);
-  }
-  assert(Ty && "Incorrect KERNEL_BASE_ARG_TYPE metadata");
-
-  if (VecSize)
-    Ty = VectorType::get(Ty, VecSize);
-  if (IsPtr)
-    Ty = PointerType::get(Ty, SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
-
-  return Ty;
-}
-
 /// Information for translating OCL builtin.
 struct OCLBuiltinTransInfo {
   std::string UniqName;
@@ -917,7 +863,7 @@ LLVMToSPRV::transBinaryInst(BinaryOperator* B, SPRVBasicBlock* BB) {
   case Instruction::Xor:
     TheBilOpCode =
         B->getOperand(0)->getType()->isIntegerTy(1) ?
-            _SPRV_OPL(Xor) : _SPRV_OPB(Xor);
+            _SPRV_OPL(NotEqual) : _SPRV_OPB(Xor);
     break;
   default:
     TheBilOpCode = OpCodeMap::map(ThellvmOpCode);
@@ -1265,19 +1211,12 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
         transValue(Sel->getTrueValue(), BB),
         transValue(Sel->getFalseValue(), BB),BB));
 
-  if (AllocaInst *Alc = dyn_cast<AllocaInst>(V)) {
-    if (Alc->isArrayAllocation())
-      return mapValue(V, BM->addVariableArrayInst(
-      transType(Alc->getType()), Alc->getName(),
-      SPRVSC_Function, (dyn_cast<ConstantInt>(
-      Alc->getArraySize())->getZExtValue()), BB));
-    else
-      return mapValue(V, BM->addVariable(
+  if (AllocaInst *Alc = dyn_cast<AllocaInst>(V))
+    return mapValue(V, BM->addVariable(
       transType(Alc->getType()), false,
       SPIRSPRVLinkageTypeMap::map(GlobalValue::InternalLinkage),
       nullptr, Alc->getName(),
       SPRVSC_Function, BB));
-  }
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
     std::vector<std::pair<SPRVWord, SPRVBasicBlock *>> Pairs;

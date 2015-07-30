@@ -775,7 +775,7 @@ BinaryOperator *SPRVToLLVM::transShiftLogicalBitwiseInst(SPRVValue* BV,
     ThellvmOpCode = Instruction::And;
     break;
   case SPRVOC_OpBitwiseXor:
-  case SPRVOC_OpLogicalXor:
+  case SPRVOC_OpLogicalNotEqual:
     ThellvmOpCode = Instruction::Xor;
     break;
   default:
@@ -1070,18 +1070,6 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     if (BVar->isBuiltin(&BVKind))
       BuiltinGVMap[LVar] = BVKind;
     return mapValue(BV, LVar);
-  }
-  break;
-
-  case SPRVOC_OpVariableArray: {
-    auto BVA = static_cast<SPRVVariableArray*>(BV);
-    assert(BVA->getStorageClass() == SPRVSC_Function &&
-        "Invalid Storage Class");
-    return mapValue(BV, new AllocaInst(transType(
-      BVA->getType()->getPointerElementType()),
-      llvm::ConstantInt::get(llvm::Type::getInt64Ty(
-      *Context), BVA->getArraySize()),
-      BVA->getName(), BB));
   }
   break;
 

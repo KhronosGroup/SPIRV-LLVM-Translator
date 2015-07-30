@@ -257,38 +257,6 @@ protected:
   std::vector<SPRVId> Initializer;
 };
 
-class SPRVVariableArray:public SPRVInstruction {
-public:
-  // Complete constructor
-  SPRVVariableArray(SPRVType *TheType, SPRVId TheId,
-    const std::string &TheName, SPRVStorageClassKind TheStorageClass,
-    SPRVWord TheLength, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(5, SPRVOC_OpVariableArray, TheType, TheId, TheBB),
-    StorageClass(TheStorageClass), Length(TheLength){
-    Name = TheName;
-    validate();
-    assert(TheBB && "Invalid BB");
-  }
-  // Incomplete constructor
-  SPRVVariableArray() :SPRVInstruction(SPRVOC_OpVariableArray),
-    StorageClass(SPRVSC_Count), Length(0){}
-
-  SPRVStorageClassKind getStorageClass() const { return StorageClass; }
- 
-  SPRVWord getArraySize() const { return Length; }
-
-protected:
-  void validate() const {
-    SPRVValue::validate();
-    assert(isValid(StorageClass));
-  }
-
-  _SPRV_DEF_ENCDEC4(Type, Id, StorageClass, Length)
-
-  SPRVStorageClassKind StorageClass;
-  SPRVWord Length;
-};
-
 class SPRVStore:public SPRVInstruction, public SPRVMemoryAccess {
 public:
   const static SPRVWord FixedWords = 4;
@@ -490,7 +458,8 @@ _SPRV_OP(ShiftRightLogical)
 _SPRV_OP(ShiftRightArithmetic)
 _SPRV_OP(LogicalAnd)
 _SPRV_OP(LogicalOr)
-_SPRV_OP(LogicalXor)
+_SPRV_OP(LogicalEqual)
+_SPRV_OP(LogicalNotEqual)
 _SPRV_OP(BitwiseAnd)
 _SPRV_OP(BitwiseOr)
 _SPRV_OP(BitwiseXor)
@@ -965,6 +934,7 @@ _SPRV_OP(Bitcast)
 _SPRV_OP(SNegate)
 _SPRV_OP(FNegate)
 _SPRV_OP(Not)
+_SPRV_OP(LogicalNot)
 _SPRV_OP(IsNan)
 _SPRV_OP(IsInf)
 _SPRV_OP(IsFinite)

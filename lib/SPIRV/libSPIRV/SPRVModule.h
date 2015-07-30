@@ -250,8 +250,6 @@ public:
   virtual SPRVInstruction *addVariable(SPRVType *, bool, SPRVLinkageTypeKind,
       SPRVValue *, const std::string &, SPRVStorageClassKind, SPRVBasicBlock *)
     = 0;
-  virtual SPRVInstruction *addVariableArrayInst(SPRVType *, const std::string &,
-      SPRVStorageClassKind, SPRVWord, SPRVBasicBlock *) = 0;
   virtual SPRVValue *addVectorShuffleInst(SPRVType *Type, SPRVValue *Vec1,
       SPRVValue *Vec2, const std::vector<SPRVWord> &Components,
       SPRVBasicBlock *BB) = 0;

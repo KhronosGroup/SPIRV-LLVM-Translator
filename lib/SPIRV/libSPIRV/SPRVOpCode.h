@@ -46,14 +46,14 @@
 namespace SPRV{
 
 enum SPRVOpCode {
-#define _SPRV_OP(x) SPRVOC_Op##x,
+#define _SPRV_OP(x, y) SPRVOC_Op##x = y,
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
 };
 
 template<> inline void
 SPRVMap<SPRVOpCode, std::string>::init() {
-#define _SPRV_OP(x) add(SPRVOC_Op##x, #x);
+#define _SPRV_OP(x, ...) add(SPRVOC_Op##x, #x);
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
 }

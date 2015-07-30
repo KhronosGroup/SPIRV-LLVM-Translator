@@ -242,8 +242,6 @@ public:
       SPRVBasicBlock *);
   virtual SPRVInstruction *addVariable(SPRVType *, bool, SPRVLinkageTypeKind,
     SPRVValue *, const std::string &, SPRVStorageClassKind, SPRVBasicBlock *);
-  virtual SPRVInstruction *addVariableArrayInst(SPRVType *, const std::string &,
-    SPRVStorageClassKind, SPRVWord, SPRVBasicBlock *);
   virtual SPRVValue *addVectorShuffleInst(SPRVType *Type, SPRVValue *Vec1,
       SPRVValue *Vec2, const std::vector<SPRVWord> &Components,
       SPRVBasicBlock *BB);
@@ -919,13 +917,6 @@ SPRVModuleImpl::addCopyMemorySizedInst(SPRVValue *TheTarget,
     TheMemoryAccess, BB), BB);
 }
 
-SPRVInstruction *
-SPRVModuleImpl::addVariableArrayInst(SPRVType *Type, const std::string &Name,
-SPRVStorageClassKind StorageClass, SPRVWord Length, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVVariableArray(Type, getId(), Name, 
-      StorageClass, Length, BB), BB);
-}
-
 SPRVInstruction*
 SPRVModuleImpl::addVariable(SPRVType *Type, bool IsConstant,
     SPRVLinkageTypeKind LinkageType, SPRVValue *Initializer,
@@ -975,8 +966,6 @@ operator<< (std::ostream &O, SPRVModule &M) {
     O << SPRVSourceExtension(&M);
   if (!M.getExtension().empty())
     O << SPRVExtension(&M);
-  if (!M.getCompileFlag().empty())
-    O << SPRVCompileFlag(&M);
 
   for (auto &I:MI.EntryPoints)
     for (auto &II:I.second)
