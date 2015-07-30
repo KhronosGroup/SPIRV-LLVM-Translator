@@ -383,6 +383,10 @@ private:
   // and sub_group_ to group_.
   bool getOCLGroupBuiltinTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
       const std::string &DemangledName);
+  // Transform OpenCL read_pipe/write_pipe builtin function names
+  // with reserve_id argument to reserved_read_pipe/reserved_write_pipe.
+  bool getOCLPipeBuiltinTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &DemangledName);
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
@@ -688,14 +692,8 @@ LLVMToSPRV::transType(Type *T) {
         if (SubStrs.size() > 2) {
           Acc = SubStrs[2];
         }
-        std::string DTStr = "char";
-        if (SubStrs.size() > 3)
-          DTStr = SubStrs[3];
-        auto DT = transType(
-            getLLVMTypeFromOCLTypeNameStr(M, M->getContext(), DTStr));
         auto PipeT = BM->addPipeType();
         PipeT->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(Acc));
-        PipeT->setPipeType(DT);
         return mapType(T, PipeT);
       } else if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
         assert(AddrSpc == SPIRAS_Global);
@@ -946,6 +944,21 @@ LLVMToSPRV::transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB) {
 }
 
 bool
+LLVMToSPRV::getOCLPipeBuiltinTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string &DemangledName) {
+  std::string NewName = DemangledName;
+  if (DemangledName.find(kOCLBuiltinName::ReadPipe) != 0 &&
+      DemangledName.find(kOCLBuiltinName::WritePipe) != 0)
+    return false;
+
+  if (CI->getNumArgOperands() > 4 &&
+      DemangledName.find(kSPRVFuncName::ReservedPrefix) != 0)
+    NewName = std::string(kSPRVFuncName::ReservedPrefix) + DemangledName;
+  Info.UniqName = NewName;
+  return true;
+}
+
+bool
 LLVMToSPRV::getOCLGroupBuiltinTransInfo(OCLBuiltinTransInfo &Info,
     CallInst *CI, const std::string &OrigDemangledName) {
   auto F = CI->getCalledFunction();
@@ -1129,6 +1142,8 @@ void LLVMToSPRV::getOCLBuiltinTransInfo(OCLBuiltinTransInfo &Info,
   if (getOCLLegacyAtomicTransInfo(Info, CI, MangledName, DemangledName))
     return;
   if (getOCLCpp11AtomicTransInfo(Info, CI, MangledName, DemangledName))
+    return;
+  if (getOCLPipeBuiltinTransInfo(Info, CI, DemangledName))
     return;
   Info.UniqName = DemangledName;
   return;
@@ -1685,11 +1700,8 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByArgBaseTypeMetadata(
         auto Ty = STName.str();
         auto AccMD = oclGetArgAccessQualifierMetadata(F);
         auto AccStr = getMDOperandAsString(AccMD, I);
-        auto BaseTyMD = oclGetArgBaseTypeMetadata(F);
-        auto BaseTyStr = getMDOperandAsString(BaseTyMD, I);
         ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
-            Ty + SPIR_TYPE_NAME_DELIMITER + AccStr
-               + SPIR_TYPE_NAME_DELIMITER + BaseTyStr);
+            Ty + SPIR_TYPE_NAME_DELIMITER + AccStr);
       }
     }
   }

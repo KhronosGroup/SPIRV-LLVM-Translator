@@ -479,8 +479,6 @@ SPRVToLLVM::transOCLPipeTypeName(SPRV::SPRVTypePipe* PT) {
   std::string Name = SPIR_TYPE_NAME_PIPE_T;
   Name = Name + SPIR_TYPE_NAME_DELIMITER +
       SPIRSPRVAccessQualifierMap::rmap(PT->getAccessQualifier());
-  Name = Name + SPIR_TYPE_NAME_DELIMITER +
-      transTypeToOCLTypeName(PT->getPipeType());
   return Name;
 }
 
@@ -651,8 +649,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
     return Name;
   }
   case SPRVOC_OpTypePipe:
-    return transTypeToOCLTypeName(
-        static_cast<SPRVTypePipe *>(T)->getPipeType(), IsSigned);
+    return "pipe";
   case SPRVOC_OpTypeSampler:
     return SPIRSPRVImageSamplerTypeMap::rmap(static_cast<SPRVTypeSampler *>(T)
         ->getDescriptor()).substr(7);
@@ -931,18 +928,9 @@ SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F) {
 CallInst *
 SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
-  auto OC = BI->getOpCode();
-  auto IT = static_cast<SPRVInstTemplateBase *>(BI);
-  int PipeOpIndex = IT->hasExecScope()?1:0;
-  auto PipeTy = static_cast<SPRVTypePipe *>(
-      IT->getOpValue(PipeOpIndex)->getType());
-  auto DT = getTranslatedType(PipeTy->getPipeType());
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  auto OC = BI->getOpCode();
   return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    auto Int32Ty = IntegerType::getInt32Ty(*Context);
-    auto DL = M->getDataLayout();
-    Args.push_back(ConstantInt::get(Int32Ty, DL->getTypeSizeInBits(DT) / 8));
-    Args.push_back(ConstantInt::get(Int32Ty, DL->getABITypeAlignment(DT)));
     if (!(OC == SPRVOC_OpReadPipe ||
           OC == SPRVOC_OpWritePipe ||
           OC == SPRVOC_OpReservedReadPipe ||
@@ -1526,11 +1514,12 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
     else if (BT->isTypeVectorBool())
       RetTy = VectorType::get(IntegerType::getInt32Ty(*Context),
           BT->getVectorComponentCount());
+    else
+       llvm_unreachable("invalid compare instruction");
   } else if (OC == SPRVOC_OpAtomicIIncrement ||
              OC == SPRVOC_OpAtomicIDecrement) {
     Args.erase(Args.begin() + Args.size() - 2, Args.end());
-  } else
-    llvm_unreachable("invalid compare instruction");
+  }
 }
 
 Instruction*

@@ -65,12 +65,6 @@ public:
   void visitCallNDRange(Module *M, CallInst *CI,
       const std::string &DemangledName);
 
-  /// Remove pipe packet size and align arguments.
-  /// Remove address space cast or bit cast.
-  /// Add reserved_ prefix to reserved read/write pipe function.
-  void visitCallPipe(Module *M, CallInst *CI,
-      const std::string &DemangledName);
-
   /// Transform atom_cmpxchg/atomic_cmpxchg to atomic_compare_exchange.
   /// In atom_cmpxchg/atomic_cmpxchg, the expected value parameter is a value.
   /// However in atomic_compare_exchange it is a pointer. The transformation
@@ -119,10 +113,6 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   }
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
     visitCallNDRange(M, &CI, DemangledName);
-    return;
-  }
-  if (DemangledName.find("pipe") != std::string::npos) {
-    visitCallPipe(M, &CI, DemangledName);
     return;
   }
   if (DemangledName == "atom_cmpxchg" ||
@@ -198,32 +188,6 @@ SPRVRegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
       assert(0 && "Invalid number of arguments");
     }
     return DemangledName;
-  }, true, &Attrs);
-}
-
-void
-SPRVRegularizeOCL20::visitCallPipe(Module* M, CallInst* CI,
-    const std::string& DemangledName) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    assert(Args[Args.size() - 2]->getType()->isIntegerTy());
-    assert(Args[Args.size() - 1]->getType()->isIntegerTy());
-    Args.erase(Args.begin() + Args.size() - 2, Args.end());
-
-    std::string NewName = DemangledName;
-    if (DemangledName.find(kOCLBuiltinName::ReadPipe) != 0 &&
-        DemangledName.find(kOCLBuiltinName::WritePipe) != 0)
-      return NewName;
-
-    assert(Args.size() == 2 || Args.size() == 4);
-    auto &P = Args[Args.size() - 1];
-    if (isa<AddrSpaceCastInst>(P) ||
-        isa<BitCastInst>(P))
-      P = cast<CastInst>(P)->getOperand(0);
-    if (Args.size() > 2 &&
-        DemangledName.find(kSPRVFuncName::ReservedPrefix) != 0)
-      NewName = std::string(kSPRVFuncName::ReservedPrefix) + DemangledName;
-    return NewName;
   }, true, &Attrs);
 }
 
