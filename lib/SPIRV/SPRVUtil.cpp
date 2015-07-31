@@ -224,7 +224,7 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
   std::string MangledName = Name;
   if (Mangle)
-    mangle(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
+    mangleOCLBuiltin(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
   FunctionType *FT = FunctionType::get(
       RetTy,
       ArgTypes,
@@ -336,7 +336,7 @@ hasArrayArg(Function *F) {
   return false;
 }
 
-void
+CallInst *
 mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
@@ -355,6 +355,7 @@ mutateCallInst(Module *M, CallInst *CI,
   CI->replaceAllUsesWith(NewCI);
   CI->dropAllReferences();
   CI->removeFromParent();
+  return NewCI;
 }
 
 void
@@ -415,7 +416,7 @@ getInt32(Module *M, int value) {
 }
 
 bool
-isSPRVFunction(Function *F, std::string *UndecoratedName) {
+isSPRVFunction(const Function *F, std::string *UndecoratedName) {
   if (!F->hasName() || !F->getName().startswith(SPRV_BUILTIN_PREFIX))
     return false;
   if (UndecoratedName)
@@ -435,13 +436,12 @@ struct OCLTypeMangleInfo {
 };
 
 /// Information for mangling an OpenCL builtin function.
-struct OCLBuiltinMangleInfo {
-  std::string UnmangledName;
-  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
-  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
-                              // pointer
-  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
-  std::map<int, unsigned> Attrs;                   // argument attributes
+class OCLBuiltinMangleInfo {
+public:
+  /// Translated uniqued OCL builtin name to its original name, and set
+  /// argument attributes and unsigned args.
+  OCLBuiltinMangleInfo(const std::string &UniqName);
+  const std::string &getUnmangledName() const { return UnmangledName;}
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
   void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
@@ -478,54 +478,64 @@ struct OCLBuiltinMangleInfo {
     Info.Attr = getArgAttr(Ndx);
     return Info;
   }
+private:
+  std::string UnmangledName;
+  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
+  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
+                              // pointer
+  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
+  std::map<int, unsigned> Attrs;                   // argument attributes
 };
 
-// Translated uniqued OCL builtin name to its original name, and set
-// argument attributes and unsigned args.
-static void
-getOCLBuiltinArgInfo(OCLBuiltinMangleInfo &Info) {
-  std::string &UnmangledName = Info.UnmangledName;
+OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
+  UnmangledName = UniqName;
+  size_t Pos = std::string::npos;
   if (UnmangledName.find("write_imageui") == 0)
-      Info.addUnsignedArg(2);
+      addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
-      UnmangledName.find("barrier") == 0 ||
+      UnmangledName.find("work_group_barrier") == 0 ||
       UnmangledName.find("vload") == 0 ||
       UnmangledName.find("vstore") == 0 ||
       UnmangledName.find("async_work_group") == 0 ||
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
       UnmangledName.find("shuffle") == 0)
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
   else if (UnmangledName.find("atomic") == 0) {
-    Info.setArgAttr(0, SPIR::ATTR_VOLATILE);
+    setArgAttr(0, SPIR::ATTR_VOLATILE);
     if (UnmangledName == "atomic_umax" ||
         UnmangledName == "atomic_umin") {
-      Info.addUnsignedArg(-1);
+      addUnsignedArg(-1);
       UnmangledName.erase(7, 1);
     }
   } else if (UnmangledName.find("uconvert_") == 0) {
-    Info.addUnsignedArg(0);
+    addUnsignedArg(0);
     UnmangledName.erase(0, 1);
   } else if (UnmangledName.find("s_") == 0) {
     UnmangledName.erase(0, 2);
   } else if (UnmangledName.find("u_") == 0) {
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
     UnmangledName.erase(0, 2);
   } else if (UnmangledName == "capture_event_profiling_info") {
-    Info.addVoidPtrArg(2);
-    Info.setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
+    addVoidPtrArg(2);
+    setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
   } else if (UnmangledName == "enqueue_kernel") {
-    Info.setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
-    Info.addUnsignedArg(3);
+    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
+    addUnsignedArg(3);
   } else if (UnmangledName == "enqueue_marker") {
-    Info.setArgAttr(2, SPIR::ATTR_CONST);
-    Info.addUnsignedArg(1);
+    setArgAttr(2, SPIR::ATTR_CONST);
+    addUnsignedArg(1);
   } else if (UnmangledName.find("ndrange_") == 0) {
-    Info.addUnsignedArg(-1);
+    addUnsignedArg(-1);
     if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
-      Info.setArgAttr(-1, SPIR::ATTR_CONST);
+      setArgAttr(-1, SPIR::ATTR_CONST);
     }
-  }
+  } else if ((Pos = UnmangledName.find("umax")) != std::string::npos ||
+             (Pos = UnmangledName.find("umin")) != std::string::npos) {
+    addUnsignedArg(-1);
+    UnmangledName.erase(Pos, 1);
+  } else if (UnmangledName.find("broadcast") != std::string::npos)
+    addUnsignedArg(-1);
 }
 
 /// Translates LLVM type to descriptor for mangler.
@@ -572,16 +582,36 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   if (Ty->isArrayTy()) {
     return transTypeDesc(PointerType::get(Ty->getArrayElementType(), 0), Info);
   }
+  if (Ty->isStructTy()) {
+    auto Name = Ty->getStructName();
+    if (Name.startswith(kLLVMTypeName::StructPrefix))
+      Name = Name.drop_front(strlen(kLLVMTypeName::StructPrefix));
+    // ToDo: Create a better unique name for struct without name
+    if (Name.empty())
+      Name = std::string("struct_") +
+      std::to_string(reinterpret_cast<size_t>(Ty));
+    return SPIR::RefParamType(new SPIR::UserDefinedType(Name));
+  }
+
   if (Ty->isPointerTy()) {
     auto ET = Ty->getPointerElementType();
+    SPIR::ParamType *EPT = nullptr;
     if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
-      if (StructTy->getStructName() == "opencl.block")
-        return SPIR::RefParamType(new SPIR::BlockType);
+      auto TyName = StructTy->getStructName();
+      if (TyName.startswith(SPIR_TYPE_NAME_PREFIX_IMAGE_T) ||
+          TyName.startswith(SPIR_TYPE_NAME_PIPE_T)) {
+        auto DelimPos = TyName.find_first_of(SPIR_TYPE_NAME_DELIMITER,
+            strlen(SPIR_TYPE_NAME_PREFIX));
+        if (DelimPos != StringRef::npos)
+          TyName = TyName.substr(0, DelimPos);
+      }
+      DEBUG(dbgs() << "  type name: " << TyName << '\n');
 
-#define _SPRV_OP(x,y) .Case("opencl."#x"_t", SPIR::PRIMITIVE_##y##_T)
-      return SPIR::RefParamType(new SPIR::PrimitiveType(
-          StringSwitch<SPIR::TypePrimitiveEnum>(StructTy->getStructName())
+#define _SPRV_OP(x,y) .Case("opencl."#x"_t", \
+    new SPIR::PrimitiveType(SPIR::PRIMITIVE_##y##_T))
+      if (StructTy->isOpaque())
+        EPT = StringSwitch<SPIR::ParamType *>(TyName)
           _SPRV_OP(image1d, IMAGE_1D)
           _SPRV_OP(image1d_array, IMAGE_1D_ARRAY)
           _SPRV_OP(image1d_buffer, IMAGE_1D_BUFFER)
@@ -600,10 +630,17 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
           _SPRV_OP(queue, QUEUE)
           _SPRV_OP(clk_event, CLK_EVENT)
           _SPRV_OP(sampler, SAMPLER)
-          .Case("struct.ndrange_t", SPIR::PRIMITIVE_NDRANGE_T)
-          ));
+          .Case("opencl.block",
+              new SPIR::BlockType)
+          .Case("struct.ndrange_t",
+              new SPIR::PrimitiveType(SPIR::PRIMITIVE_NDRANGE_T))
+          .Default(nullptr)
+          ;
 #undef _SPRV_OP
     }
+    if (EPT)
+      return SPIR::RefParamType(EPT);
+
     if (VoidPtr && ET->isIntegerTy(8))
       ET = Type::getVoidTy(ET->getContext());
     auto PT = new SPIR::PointerType(transTypeDesc(ET, Info));
@@ -629,19 +666,16 @@ fixOCLBuiltinName(std::string &MangledName) {
     MangledName = "_Z10ndrange_3DPKmS0_S0_";
 }
 
-// If SignedArgIndices contains -1, all integer arment is signed.
 void
-mangle(SPRVExtInstSetKind BuiltinSet, const std::string &UnmangledName,
+mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet, const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  DEBUG(dbgs() << "[mangle] " << UnmangledName << " => ");
+  DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   assert(isOpenCLBuiltinSet(BuiltinSet) && "Not OpenCL builtin set");
   SPIR::NameMangler Mangler(BuiltinSet == SPRVBIS_OpenCL12 ? SPIR::SPIR12 :
       SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
-  FD.name = UnmangledName;
-  OCLBuiltinMangleInfo BtnInfo;
-  BtnInfo.UnmangledName = UnmangledName;
-  getOCLBuiltinArgInfo(BtnInfo);
+  OCLBuiltinMangleInfo BtnInfo(UniqName);
+  FD.name = BtnInfo.getUnmangledName();
   for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
     auto T = ArgTypes[I];
     FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
@@ -673,7 +707,7 @@ getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
 void
 MangleOpenCLBuiltin(const std::string &UnmangledName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  mangle(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
+  mangleOCLBuiltin(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
 }
 
 SPIRAddressSpace
@@ -683,9 +717,10 @@ getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode) {
   case SPRVOC_OpTypeQueue:
   case SPRVOC_OpTypeEvent:
   case SPRVOC_OpTypeDeviceEvent:
-  case SPRVOC_OpTypeReserveId:
   case SPRVOC_OpTypeSampler:
     return SPIRAS_Global;
+  case SPRVOC_OpTypeReserveId:
+    return SPIRAS_Private;
   default:
     return SPIRAS_Private;
   }
@@ -736,6 +771,13 @@ getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len, uint64_t V,
   }
   llvm_unreachable("Invalid type");
   return nullptr;
+}
+
+void
+dumpUsers(Value* V, StringRef Prompt) {
+  DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
+  for (auto UI = V->user_begin(), UE = V->user_end(); UI != UE; ++UI)
+    DEBUG(dbgs() << "  " << **UI << '\n');
 }
 
 }

@@ -46,21 +46,22 @@
 namespace SPRV{
 
 enum SPRVOpCode {
-#define _SPRV_OP(x) SPRVOC_Op##x,
+#define _SPRV_OP(x, y) SPRVOC_Op##x = y,
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
 };
 
 template<> inline void
 SPRVMap<SPRVOpCode, std::string>::init() {
-#define _SPRV_OP(x) add(SPRVOC_Op##x, #x);
+#define _SPRV_OP(x, ...) add(SPRVOC_Op##x, #x);
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
 }
 SPRV_DEF_NAMEMAP(SPRVOpCode, OpCodeNameMap)
 
 inline bool isAtomicOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpAtomicInit &&
+  assert(SPRVOC_OpAtomicTestSet < SPRVOC_OpAtomicXor);
+  return (unsigned)OpCode >= SPRVOC_OpAtomicTestSet &&
       (unsigned)OpCode <= SPRVOC_OpAtomicXor;
 }
 inline bool isBinaryOpCode(SPRVOpCode OpCode) {
@@ -137,6 +138,20 @@ inline bool isModuleScopeAllowedOpCode(SPRVOpCode OpCode) {
       OpCode == SPRVOC_OpConvertPtrToU ||
       OpCode == SPRVOC_OpConvertUToPtr;
 }
+
+inline bool hasExecScope(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return (SPRVOC_OpGroupAll <= OC &&
+            OC <= SPRVOC_OpGroupSMax) ||
+      (SPRVOC_OpGroupReserveReadPipePackets <= OC &&
+          OC <= SPRVOC_OpGroupCommitWritePipe);
+}
+
+inline bool hasGroupOperation(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return SPRVOC_OpGroupIAdd <= OC && OC <= SPRVOC_OpGroupSMax;
+}
+
 }
 
 

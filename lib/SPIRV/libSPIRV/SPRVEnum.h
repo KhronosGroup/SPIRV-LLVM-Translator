@@ -330,6 +330,21 @@ inline bool isValid(SPRVExecutionScopeKind Kind) {
   return (unsigned)Kind < (unsigned)SPRVES_Count;
 }
 
+enum SPRVMemoryScopeKind {
+#define _SPRV_OP(x) SPRVMS_##x,
+_SPRV_OP(CrossDevice)
+_SPRV_OP(Device)
+_SPRV_OP(Workgroup)
+_SPRV_OP(Subgroup)
+_SPRV_OP(Invocation)
+_SPRV_OP(Count)
+#undef _SPRV_OP
+};
+
+inline bool isValid(SPRVMemoryScopeKind Kind) {
+  return (unsigned)Kind < (unsigned)SPRVMS_Count;
+}
+
 enum SPRVMemorySemanticsMaskKind {
 #define _SPRV_OP(x, y) SPRVMSM_##x = y,
 _SPRV_OP(Relaxed, 1)
@@ -376,6 +391,20 @@ enum SPRVMemoryAccessKind {
   _SPRV_OP(Count)
 #undef _SPRV_OP
 };
+
+enum SPRVGroupOperationKind {
+#define _SPRV_OP(x) SPRVGO_##x,
+  _SPRV_OP(Reduce)
+  _SPRV_OP(InclusiveScan)
+  _SPRV_OP(ExclusiveScan)
+  _SPRV_OP(Count)
+#undef _SPRV_OP
+};
+
+inline bool isValid(SPRVGroupOperationKind G) {
+  return (unsigned)G < (unsigned)SPRVGO_Count;
+}
+
 }
 
 

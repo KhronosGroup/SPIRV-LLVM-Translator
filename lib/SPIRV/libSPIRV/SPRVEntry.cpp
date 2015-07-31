@@ -73,7 +73,7 @@ SPRVEntry::create(SPRVOpCode OpCode) {
   };
 
   static TableEntry Table[] = {
-#define _SPRV_OP(x) {SPRVOC_Op##x, &SPRV::create<SPRV##x>},
+#define _SPRV_OP(x,...) {SPRVOC_Op##x, &SPRV::create<SPRV##x>},
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
   };
@@ -568,11 +568,6 @@ SPRVExtension::decode(std::istream &I) {
   getDecoder(I) >> S;
   Module->setExtension(S);
 }
-
-SPRVCompileFlag::SPRVCompileFlag(SPRVModule *M)
-  :SPRVEntryNoId(M, 1 + getSizeInWords(M->getCompileFlag())){}
-
-_SPRV_IMP_ENCDEC1(SPRVCompileFlag, Module->getCompileFlag())
 
 } // namespace SPRV
 

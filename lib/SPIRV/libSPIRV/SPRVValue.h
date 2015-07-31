@@ -100,6 +100,11 @@ public:
     SPRVEntry::validate();
     assert((!hasType() || Type) && "Invalid type");
   }
+
+  void setType(SPRVType *Ty) {
+    Type = Ty;
+  }
+
 protected:
   void setHasNoType() { Attrib |= SPRVEA_NOTYPE;}
 
@@ -220,9 +225,13 @@ public:
 protected:
   void validate() const {
     SPRVConstantEmpty::validate();
-    assert((Type->isTypeComposite() || Type->isTypeOpaque() ||
-        Type->isTypeEvent() || Type->isTypePointer() ||
-        Type->isTypeDeviceEvent()) && "Invalid type");
+    assert((Type->isTypeComposite() ||
+            Type->isTypeOpaque() ||
+            Type->isTypeEvent() ||
+            Type->isTypePointer() ||
+            Type->isTypeReserveId() ||
+            Type->isTypeDeviceEvent()) &&
+            "Invalid type");
   }
 };
 

@@ -83,6 +83,7 @@ public:
   bool isTypeComposite() const;
   bool isTypeEvent() const;
   bool isTypeDeviceEvent() const;
+  bool isTypeReserveId() const;
   bool isTypeFloat() const;
   bool isTypeOCLImage() const;
   bool isTypeOCLSampler() const;
@@ -457,28 +458,19 @@ _SPRV_OP(Queue)
 class SPRVTypePipe :public SPRVType {
 public:
   // Complete constructor
-  SPRVTypePipe(SPRVModule *M, SPRVId TheId, SPRVType *ThePipeType,
-      SPRVAccessQualifierKind AccessQual)
-    :SPRVType(M, 4, SPRVOC_OpTypePipe, TheId), PipeType(ThePipeType),
+  SPRVTypePipe(SPRVModule *M, SPRVId TheId,
+      SPRVAccessQualifierKind AccessQual = SPRVAC_ReadOnly)
+    :SPRVType(M, 3, SPRVOC_OpTypePipe, TheId),
      AccessQualifier(AccessQual){
        validate();
      }
 
-  SPRVTypePipe(SPRVModule *M, SPRVId TheId)
-    :SPRVType(M, 4, SPRVOC_OpTypePipe, TheId), PipeType(NULL){
-  }
-
   // Incomplete constructor
-  SPRVTypePipe() :SPRVType(SPRVOC_OpTypePipe), PipeType(NULL),
+  SPRVTypePipe() :SPRVType(SPRVOC_OpTypePipe),
     AccessQualifier(SPRVAC_ReadOnly){}
 
-  SPRVType *getPipeType() const { return PipeType; }
   SPRVAccessQualifierKind getAccessQualifier() const {
       return AccessQualifier; 
-  }
-  void setPipeType(SPRVType *ThePipeType) {
-    PipeType = ThePipeType;
-    PipeType->validate();
   }
   void setPipeAcessQualifier(SPRVAccessQualifierKind AccessQual) {
     AccessQualifier = AccessQual;
@@ -486,12 +478,11 @@ public:
   }
 
 protected:
-  _SPRV_DEF_ENCDEC3(Id, PipeType, AccessQualifier)
+  _SPRV_DEF_ENCDEC2(Id, AccessQualifier)
   void validate()const {
     SPRVEntry::validate();
   }
 private:
-  SPRVType *PipeType;                          // Pipe Type
   SPRVAccessQualifierKind AccessQualifier;     // Access Qualifier
 };
 }

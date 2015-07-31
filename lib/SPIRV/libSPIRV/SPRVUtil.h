@@ -92,6 +92,15 @@ public:
       F(I.first, I.second);
   }
 
+  // For each key/value in the map executes function \p F.
+  // If \p F returns false break the iteration.
+  static void foreach_conditional(std::function<bool(const Ty1&, Ty2)>F) {
+    for (auto &I:getMap().Map) {
+      if (!F(I.first, I.second))
+        break;
+    }
+  }
+
   static bool find(Ty1 Key, Ty2 *Val = nullptr) {
     const SPRVMap& Map = getMap();
     typename MapTy::const_iterator Loc = Map.Map.find(Key);

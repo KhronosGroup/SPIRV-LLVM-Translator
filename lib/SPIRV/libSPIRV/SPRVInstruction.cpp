@@ -113,9 +113,9 @@ SPRVInstruction::getOperands() {
 }
 
 std::vector<SPRVType*>
-SPRVInstruction::getOperandTypes() {
+SPRVInstruction::getOperandTypes(const std::vector<SPRVValue *> &Ops) {
   std::vector<SPRVType*> Tys;
-  for (auto& I : getOperands()) {
+  for (auto& I : Ops) {
     SPRVType* Ty = nullptr;
     if (I->getOpCode() == SPRVOC_OpFunction)
       Ty = reinterpret_cast<SPRVFunction*>(I)->getFunctionType();
@@ -126,3 +126,9 @@ SPRVInstruction::getOperandTypes() {
   }
   return Tys;
 }
+
+std::vector<SPRVType*>
+SPRVInstruction::getOperandTypes() {
+  return getOperandTypes(getOperands());
+}
+

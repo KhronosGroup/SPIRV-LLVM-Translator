@@ -52,6 +52,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -75,6 +76,7 @@
 #include <set>
 #include <sstream>
 #include <vector>
+#include <functional>
 
 #define DEBUG_TYPE "spirv"
 
@@ -144,350 +146,14 @@ foreachKernelArgMD(MDNode *MD, SPRVFunction *BF,
     Func(getMDOperandAsString(MD, I), BA);
   }
 }
-void dumpUsers(Value* V) {
-  SPRVDBG(dbgs() << "Users of " << *V << " :\n");
-  for (auto UI = V->use_begin(), UE = V->use_end();
-      UI != UE; ++UI)
-    SPRVDBG(dbgs() << "  " << **UI << '\n');
-}
 
-/// Lower SPIR2 blocks to function calls.
-///
-/// SPIR2 representation of blocks:
-///
-/// block = spir_block_bind(bitcast(block_func), context_len, context_align,
-///   context)
-/// block_func_ptr = bitcast(spir_get_block_invoke(block))
-/// context_ptr = spir_get_block_context(block)
-/// ret = block_func_ptr(context_ptr, args)
-///
-/// Propagates block_func to each spir_get_block_invoke through def-use chain of
-/// spir_block_bind, so that
-/// ret = block_func(context, args)
-class OCLLowerBlocks {
-public:
-  OCLLowerBlocks(Module *Module):M(Module){}
-
-  void run() {
-    lowerBlockBind();
-    lowerGetBlockInvoke();
-    lowerGetBlockContext();
-    std::vector<std::string> FN;
-    FN.push_back(SPIR_INTRINSIC_GET_BLOCK_INVOKE);
-    FN.push_back(SPIR_INTRINSIC_GET_BLOCK_CONTEXT);
-    FN.push_back(SPIR_INTRINSIC_BLOCK_BIND);
-    eraseFunctions(FN);
-    DEBUG(dbgs() << "------- After OCLLowerBlocks ------------\n" << *M);
-  }
-private:
-  const static int MaxIter = 1000;
-  Module *M;
-
-  void
-  lowerBlockBind() {
-    auto F = M->getFunction(SPIR_INTRINSIC_BLOCK_BIND);
-    if (!F)
-      return;
-    int Iter = MaxIter;
-    while(lowerBlockBind(F) && Iter > 0){
-      Iter--;
-      DEBUG(dbgs() << "-------------- after iteration " << MaxIter - Iter <<
-          " --------------\n" << *M << '\n');
-    }
-    assert(Iter > 0 && "Too many iterations");
-  }
-
-  void
-  lowerGetBlockInvoke() {
-    if (auto F = M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE)) {
-      for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
-        auto CI = dyn_cast<CallInst>(*UI);
-        assert(CI && "Invalid usage of spir_get_block_invoke");
-        lowerGetBlockInvoke(CI);
-        ++UI;
-      }
-    }
-  }
-  void
-  lowerGetBlockContext() {
-    if (auto F = M->getFunction(SPIR_INTRINSIC_GET_BLOCK_CONTEXT)) {
-      for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
-        auto CI = dyn_cast<CallInst>(*UI);
-        assert(CI && "Invalid usage of spir_get_block_context");
-        lowerGetBlockContext(CI);
-        ++UI;
-      }
-    }
-  }
-  /// Lower calls of spir_block_bind.
-  /// Return true if the Module is changed.
-  bool
-  lowerBlockBind(Function *BlockBindFunc) {
-    bool changed = false;
-    for (auto I = BlockBindFunc->user_begin(), E = BlockBindFunc->user_end();
-        I != E;) {
-      DEBUG(dbgs() << "[lowerBlockBind] " << **I << '\n');
-      // Handle spir_block_bind(bitcast(block_func), context_len,
-      // context_align, context)
-      auto CallBlkBind = dyn_cast<CallInst>(*I);
-      assert(CallBlkBind);
-      ++I;
-      Function *InvF = nullptr;
-      Value *Ctx = nullptr;
-      Value *CtxLen = nullptr;
-      Value *CtxAlign = nullptr;
-      getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx, &CtxLen,
-          &CtxAlign);
-      for (auto II = CallBlkBind->user_begin(), EE = CallBlkBind->user_end();
-          II != EE;) {
-        auto BlkUser = *II;
-        ++II;
-        SPRVDBG(dbgs() << "  Block user: " << *BlkUser << '\n');
-        if (auto Ret = dyn_cast<ReturnInst>(BlkUser)) {
-          bool Inlined = false;
-          changed |= lowerReturnBlock(Ret, CallBlkBind, Inlined);
-          if (Inlined)
-            return true;
-        } else if (auto CI = dyn_cast<CallInst>(BlkUser)){
-          auto CallBindF = CI->getCalledFunction();
-          auto Name = CallBindF->getName();
-          std::string DemangledName;
-          if (Name == SPIR_INTRINSIC_GET_BLOCK_INVOKE) {
-            assert(CI->getArgOperand(0) == CallBlkBind);
-            changed |= lowerGetBlockInvoke(CI, cast<Function>(InvF));
-          } else if (Name == SPIR_INTRINSIC_GET_BLOCK_CONTEXT) {
-            assert(CI->getArgOperand(0) == CallBlkBind);
-            // Handle context_ptr = spir_get_block_context(block)
-            lowerGetBlockContext(CI, Ctx);
-            changed = true;
-          } else if (oclIsBuiltin(Name, 20, &DemangledName)) {
-            lowerBlockBuiltin(CI, InvF, Ctx, CtxLen, CtxAlign, DemangledName);
-            changed = true;
-          }
-          else {
-            assert(0);
-          }
-        }
-      }
-      erase(CallBlkBind);
-    }
-    return changed;
-  }
-
-  void
-  lowerGetBlockContext(CallInst *CallGetBlkCtx, Value *Ctx = nullptr) {
-    if (!Ctx)
-      getBlockInvokeFuncAndContext(CallGetBlkCtx->getArgOperand(0), nullptr,
-          &Ctx);
-    CallGetBlkCtx->replaceAllUsesWith(Ctx);
-    DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => " <<
-        *Ctx << "\n\n");
-    erase(CallGetBlkCtx);
-  }
-
-  bool
-  lowerGetBlockInvoke(CallInst *CallGetBlkInvoke,
-      Function *InvokeF = nullptr) {
-    bool changed = false;
-    for (auto UI = CallGetBlkInvoke->user_begin(),
-        UE = CallGetBlkInvoke->user_end();
-        UI != UE;) {
-      // Handle block_func_ptr = bitcast(spir_get_block_invoke(block))
-      auto CallInv = dyn_cast<Instruction>(*UI);
-      ++UI;
-      assert(CallInv);
-      auto Cast = dyn_cast<BitCastInst>(CallInv);
-      if (Cast)
-        CallInv = dyn_cast<Instruction>(*CallInv->user_begin());
-      DEBUG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
-      // Handle ret = block_func_ptr(context_ptr, args)
-      auto CI = dyn_cast<CallInst>(CallInv);
-      assert(CI);
-      auto F = CI->getCalledValue();
-      if (InvokeF == nullptr) {
-        getBlockInvokeFuncAndContext(CallGetBlkInvoke->getArgOperand(0),
-            &InvokeF, nullptr);
-        assert(InvokeF);
-      }
-      assert(F->getType() == InvokeF->getType());
-      CI->replaceUsesOfWith(F, InvokeF);
-      DEBUG(dbgs() << " => " << *CI << "\n\n");
-      erase(Cast);
-      erase(CallInv);
-      changed = true;
-    }
-    erase(CallGetBlkInvoke);
-    return changed;
-  }
-
-  void
-  lowerBlockBuiltin(CallInst *CI, Function *InvF, Value *Ctx, Value *CtxLen,
-      Value *CtxAlign, const std::string& DemangledName) {
-    mutateCallInst (M, CI, [=](CallInst *CI, std::vector<Value *> &Args) {
-      size_t I = 0;
-      size_t E = Args.size();
-      for (; I != E; ++I) {
-        if (isPointerToOpaqueStructType(Args[I]->getType(),
-          SPIR_TYPE_NAME_BLOCK_T)) {
-        break;
-      }
-    }
-      assert (I < E);
-      Args[I] = InvF;
-      if (DemangledName == OCL_BUILTIN_ENQUEUE_KERNEL) {
-        if (I + 1 == E) {
-          Args.push_back(Ctx);
-          Args.push_back(CtxLen);
-          Args.push_back(CtxAlign);
-        } else {
-          Args.insert(Args.begin() + I + 1, CtxAlign);
-          Args.insert(Args.begin() + I + 1, CtxLen);
-          Args.insert(Args.begin() + I + 1, Ctx);
-      }
-        // Insert event arguments if there are not.
-        if (!isa<IntegerType>(Args[3]->getType())) {
-          Args.insert(Args.begin() + 3, getInt32(M, 0));
-          Args.insert(Args.begin() + 4, getOCLNullClkEventPtr());
-        }
-        if (!isOCLClkEventPtrType(Args[5]->getType()))
-          Args.insert(Args.begin() + 5, getOCLNullClkEventPtr());
-      }
-
-      return decorateSPRVFunction(DemangledName);
-    }, false, nullptr, false);
-  }
-  /// Transform return of a block.
-  /// The function returning a block is inlined since the context cannot be
-  /// passed to another function.
-  /// Returns true of module is changed.
-  bool
-  lowerReturnBlock(ReturnInst *Ret, Value *CallBlkBind, bool &Inlined) {
-    auto F = Ret->getParent()->getParent();
-    auto changed = false;
-    auto needInline = false;
-    for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
-      auto U = *UI;
-      ++UI;
-      dumpUsers(U);
-      auto Inst = dyn_cast<Instruction>(U);
-      if (Inst && Inst->use_empty()) {
-        erase(Inst);
-        changed = true;
-        continue;
-      }
-      auto CI = dyn_cast<CallInst>(U);
-      if(!CI || CI->getCalledFunction() != F)
-        continue;
-      needInline = true;
-    }
-    if (!needInline)
-      return changed;
-    DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
-    F->addFnAttr(Attribute::AlwaysInline);
-    legacy::PassManager PassMgr;
-    PassMgr.add(createAlwaysInlinerPass(/*InsertLifetime=*/ false));
-    PassMgr.run(*M);
-    Inlined = true;
-    return true;
-  }
-
-  Value *
-  removeCast(Value *V) {
-    auto Cast = dyn_cast<ConstantExpr>(V);
-    if (Cast && Cast->isCast()) {
-      return Cast->getOperand(0);
-    }
-    return V;
-  }
-
-  void
-  getBlockInvokeFuncAndContext(Value *Blk, Function **PInvF, Value **PCtx,
-      Value **PCtxLen = nullptr, Value **PCtxAlign = nullptr){
-    Function *InvF = nullptr;
-    Value *Ctx = nullptr;
-    Value *CtxLen = nullptr;
-    Value *CtxAlign = nullptr;
-    if (auto CallBlkBind = dyn_cast<CallInst>(Blk)) {
-      assert(CallBlkBind->getCalledFunction()->getName() ==
-          SPIR_INTRINSIC_BLOCK_BIND && "Invalid block");
-      InvF = dyn_cast<Function>(removeCast(CallBlkBind->getArgOperand(0)));
-      CtxLen = CallBlkBind->getArgOperand(1);
-      CtxAlign = CallBlkBind->getArgOperand(2);
-      Ctx = CallBlkBind->getArgOperand(3);
-    } else if (auto F = dyn_cast<Function>(removeCast(Blk))) {
-      InvF = F;
-      Ctx = Constant::getNullValue(IntegerType::getInt8PtrTy(M->getContext()));
-    } else {
-      llvm_unreachable("Invalid block");
-    }
-    DEBUG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n' <<
-        "  Block context: " << *Ctx << '\n');
-    assert(InvF && Ctx && "Invalid block");
-    if (PInvF)
-      *PInvF = InvF;
-    if (PCtx)
-      *PCtx = Ctx;
-    if (PCtxLen)
-      *PCtxLen = CtxLen;
-    if (PCtxAlign)
-      *PCtxAlign = CtxAlign;
-  }
-  void
-  erase(Instruction *I) {
-    if (!I)
-      return;
-    if (I->use_empty()) {
-      I->dropAllReferences();
-      I->removeFromParent();
-    } else
-      dumpUsers(I);
-  }
-  void
-  erase(ConstantExpr *I) {
-    if (!I)
-      return;
-    if (I->use_empty()) {
-      I->dropAllReferences();
-      I->destroyConstant();
-    } else
-      dumpUsers(I);
-  }
-  void
-  erase(Function *F) {
-    if (!F)
-      return;
-    if (!F->use_empty()) {
-      dumpUsers(F);
-      return;
-    }
-    F->dropAllReferences();
-    F->removeFromParent();
-  }
-  void
-  eraseFunctions(std::vector<std::string> &L) {
-    for (auto &I : L) {
-      erase(M->getFunction(I));
-    }
-  }
-
-  llvm::PointerType* getOCLClkEventType() {
-    return getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
-        SPIRAS_Global);
-  }
-
-  llvm::PointerType* getOCLClkEventPtrType() {
-    return PointerType::get(getOCLClkEventType(), SPIRAS_Generic);
-  }
-
-  bool isOCLClkEventPtrType(Type *T) {
-    if (!isa<PointerType>(T))
-      return false;
-    auto ET = T->getPointerElementType();
-    return isPointerToOpaqueStructType(ET, SPIR_TYPE_NAME_CLK_EVENT_T);
-  }
-
-  llvm::Constant* getOCLNullClkEventPtr() {
-    return Constant::getNullValue(getOCLClkEventPtrType());
+/// Information for translating OCL builtin.
+struct OCLBuiltinTransInfo {
+  std::string UniqName;
+  /// Postprocessor of operands
+  std::function<void(std::vector<SPRVWord>&)> PostProc;
+  OCLBuiltinTransInfo(){
+    PostProc = [](std::vector<SPRVWord>&){};
   }
 };
 
@@ -618,11 +284,24 @@ private:
   SPRVValue *transOCLAsyncGroupCopy(CallInst *Call,
       const std::string &MangledName,
       const std::string &DeMangledName, SPRVBasicBlock *BB);
-  SPRVValue *transOCLAtomic(CallInst *Call, const std::string &MangledName,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
+
+  /// Transform OCL legacy atomic builtin functions for extensions:
+  ///   cl_khr_int64_base_atomics
+  ///   cl_khr_int64_extended_atomics
+  /// \return true if the called function is a legacy atomic builtin.
+  bool getOCLLegacyAtomicTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &MangledName, const std::string &DeMangledName);
+
+  /// Transform OCL C++11 atomic builtin functions.
+  /// \return true if the called function is a C++11 atomic builtin.
+  bool getOCLCpp11AtomicTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &MangledName, const std::string &DeMangledName);
+
   SPRVValue *oclTransBarrier(CallInst *Call,
       const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *oclTransMemFence(CallInst *Call,
+      const std::string &DeMangledName, SPRVBasicBlock *BB);
+  SPRVValue *oclTransWorkGroupBarrier(CallInst *Call,
       const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *transOCLBuiltinToInst(CallInst *Call,
       const std::string &MangledName,
@@ -639,10 +318,21 @@ private:
   void transOCLVectorLoadStoreName(std::string& DemangledName,
       const std::string& Stem, bool AlwaysN);
   SPRVInstruction *transOCLBuiltinToInstByMap(const std::string& DemangledName,
-      CallInst* CI, SPRVBasicBlock* BB);
+      const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB);
   void mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       Function* F);
   bool oclIsSamplerType(llvm::Type* RT);
+
+  void getOCLBuiltinTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &MangledName, const std::string &DemangledName);
+  // Transform OpenCL group builtin function names from work_group_
+  // and sub_group_ to group_.
+  bool getOCLGroupBuiltinTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &DemangledName);
+  // Transform OpenCL read_pipe/write_pipe builtin function names
+  // with reserve_id argument to reserved_read_pipe/reserved_write_pipe.
+  bool getOCLPipeBuiltinTransInfo(OCLBuiltinTransInfo &Info, CallInst *CI,
+      const std::string &DemangledName);
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
@@ -653,6 +343,10 @@ private:
   void eraseFunctions(const std::vector<std::string> &L);
   SPRV::SPRVInstruction* transUnaryInst(UnaryInstruction* U,
       SPRVBasicBlock* BB);
+
+  /// Add a 32 bit integer constant.
+  /// \return Id of the constant.
+  SPRVId addInt32(int);
 };
 
 SPRVValue *
@@ -684,7 +378,7 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
     return false;
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
   SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
-  if (SourceLang == SPRVSL_OpenCL)
+  if (SourceLang == SPRVSL_OpenCL) {
     return DemangledName == "barrier" ||
         DemangledName == "mem_fence" ||
         DemangledName == "dot" ||
@@ -692,7 +386,10 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
         DemangledName.find("atomic_") == 0 ||
         DemangledName.find("async_work_group") == 0 ||
         DemangledName == "wait_group_events" ||
+        DemangledName.find("work_group_") == 0 ||
+        DemangledName.find("sub_group_") == 0 ||
         SPIRSPRVBuiltinInstMap::find(DemangledName);
+  }
   llvm_unreachable("not supported");
   return false;
 }
@@ -932,7 +629,19 @@ LLVMToSPRV::transType(Type *T) {
         STName = SPIR_TYPE_NAME_EVENT_T;
         ST->setName(STName);
       }
-      if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
+      if (STName.find(SPIR_TYPE_NAME_PIPE_T) == 0) {
+        assert(AddrSpc == SPIRAS_Global);
+        SmallVector<StringRef, 4> SubStrs;
+        const char Delims[] = {SPIR_TYPE_NAME_DELIMITER, 0};
+        STName.split(SubStrs, Delims);
+        std::string Acc = "read_only";
+        if (SubStrs.size() > 2) {
+          Acc = SubStrs[2];
+        }
+        auto PipeT = BM->addPipeType();
+        PipeT->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(Acc));
+        return mapType(T, PipeT);
+      } else if (STName.find(SPIR_TYPE_NAME_PREFIX_IMAGE_T) == 0) {
         assert(AddrSpc == SPIRAS_Global);
         auto FirstDotPos = STName.find_first_of(SPIR_TYPE_NAME_DELIMITER, 0);
         assert (FirstDotPos != std::string::npos);
@@ -1154,7 +863,7 @@ LLVMToSPRV::transBinaryInst(BinaryOperator* B, SPRVBasicBlock* BB) {
   case Instruction::Xor:
     TheBilOpCode =
         B->getOperand(0)->getType()->isIntegerTy(1) ?
-            _SPRV_OPL(Xor) : _SPRV_OPB(Xor);
+            _SPRV_OPL(NotEqual) : _SPRV_OPB(Xor);
     break;
   default:
     TheBilOpCode = OpCodeMap::map(ThellvmOpCode);
@@ -1178,6 +887,212 @@ LLVMToSPRV::transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB) {
       transType(resTy), transValue(Cmp->getOperand(0), BB),
       transValue(Cmp->getOperand(1), BB), BB);
   return BI;
+}
+
+bool
+LLVMToSPRV::getOCLPipeBuiltinTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string &DemangledName) {
+  std::string NewName = DemangledName;
+  if (DemangledName.find(kOCLBuiltinName::ReadPipe) != 0 &&
+      DemangledName.find(kOCLBuiltinName::WritePipe) != 0)
+    return false;
+
+  if (CI->getNumArgOperands() > 4 &&
+      DemangledName.find(kSPRVFuncName::ReservedPrefix) != 0)
+    NewName = std::string(kSPRVFuncName::ReservedPrefix) + DemangledName;
+  Info.UniqName = NewName;
+  return true;
+}
+
+bool
+LLVMToSPRV::getOCLGroupBuiltinTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string &OrigDemangledName) {
+  auto F = CI->getCalledFunction();
+  std::vector<SPRVWord> PreOps;
+  std::string DemangledName = OrigDemangledName;
+  if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
+    return false;
+  if (DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::WorkPrefix));
+    PreOps.push_back(SPRVES_Workgroup);
+  } else if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::SubPrefix));
+    PreOps.push_back(SPRVES_Subgroup);
+  } else
+    return false;
+
+  StringRef GroupOp = DemangledName;
+  GroupOp = GroupOp.drop_front(strlen(kSPRVFuncName::GroupPrefix));
+  SPIRSPRVGroupOperationMap::foreach_conditional([&](const std::string &S,
+      SPRVGroupOperationKind G){
+    if (!GroupOp.startswith(S))
+      return true; // continue
+    PreOps.push_back(G);
+    StringRef Op = GroupOp.drop_front(S.size() + 1);
+    assert(!Op.empty() && "Invalid OpenCL group builtin function");
+    char OpTyC = 0;
+    auto NeedSign = Op == "max" || Op == "min";
+    auto OpTy = F->getReturnType();
+    if (OpTy->isFloatingPointTy())
+      OpTyC = 'f';
+    else if (OpTy->isIntegerTy()) {
+      if (!NeedSign)
+        OpTyC = 'i';
+      else {
+        if (isFuncParamSigned(F->getName()))
+          OpTyC = 's';
+        else
+          OpTyC = 'u';
+      }
+    } else
+      llvm_unreachable("Invalid OpenCL group builtin argument type");
+
+    DemangledName = std::string(kSPRVFuncName::GroupPrefix) + OpTyC + Op.str();
+    return false; // break out of loop
+  });
+  Info.UniqName = DemangledName;
+  Info.PostProc = [=](std::vector<SPRVWord> &Ops){
+    Ops.insert(Ops.begin(), PreOps.begin(), PreOps.end());
+  };
+  return true;
+}
+
+bool
+LLVMToSPRV::getOCLLegacyAtomicTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string &MangledName,
+    const std::string &DemangledName) {
+  StringRef Stem = DemangledName;
+  if (Stem.startswith("atom_"))
+    Stem = Stem.drop_front(strlen("atom_"));
+  else if (Stem.startswith("atomic_"))
+    Stem = Stem.drop_front(strlen("atomic_"));
+  else
+    return false;
+
+  std::string Sign;
+  std::string Postfix;
+  std::string Prefix;
+  if (Stem == "add" ||
+      Stem == "sub" ||
+      Stem == "and" ||
+      Stem == "or" ||
+      Stem == "xor" ||
+      Stem == "min" ||
+      Stem == "max") {
+    if (Stem == "min" || Stem == "max") {
+      auto LastChar = MangledName.back();
+      if (LastChar == 'j' || LastChar == 'm')
+        Sign = 'u';
+    }
+    Prefix = "fetch_";
+    Postfix = "_explicit";
+  } else if (Stem == "xchg") {
+    Stem = "exchange";
+    Postfix = "_explicit";
+  }
+  else if (Stem == "cmpxchg") {
+    Stem = "compare_exchange_strong";
+    Postfix = "_explicit";
+  }
+  else if (Stem == "inc" ||
+           Stem == "dec") {
+    // do nothing
+  } else
+    return false;
+
+  Info.UniqName = "atomic_" + Prefix + Sign + Stem.str() + Postfix;
+
+  std::vector<int> PostOps;
+  PostOps.push_back(SPIRMO_seq_cst);
+  if (Stem.startswith("compare_exchange"))
+    PostOps.push_back(SPIRMO_seq_cst);
+  PostOps.push_back(SPIRMS_device);
+
+  Info.PostProc = [=](std::vector<SPRVWord> &Ops){
+    for (auto &I:PostOps)
+      Ops.push_back(addInt32(I));
+  };
+  return true;
+}
+
+static size_t
+getOCLCpp11AtomicMaxNumOps(StringRef Name) {
+  return StringSwitch<size_t>(Name)
+      .Cases("load", "flag_test_and_set", 3)
+      .Cases("store", "exchange",  4)
+      .StartsWith("compare_exchange", 6)
+      .StartsWith("fetch", 4)
+      .Default(0);
+}
+
+bool
+LLVMToSPRV::getOCLCpp11AtomicTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string &MangledName,
+    const std::string &DemangledName) {
+  StringRef Stem = DemangledName;
+  if (Stem.startswith("atomic_"))
+    Stem = Stem.drop_front(strlen("atomic_"));
+  else
+    return false;
+
+  std::string NewStem = Stem;
+  std::vector<int> PostOps;
+  if (Stem.startswith("store") ||
+      Stem.startswith("load") ||
+      Stem.startswith("exchange") ||
+      Stem.startswith("compare_exchange") ||
+      Stem.startswith("fetch") ||
+      Stem.startswith("flag")) {
+    if (Stem.startswith("fetch_min") ||
+        Stem.startswith("fetch_max")) {
+      auto LastChar = MangledName.back();
+      if (LastChar == 'j' || LastChar == 'm')
+        NewStem.insert(NewStem.begin() + strlen("fetch_"), 'u');
+    } else if (Stem.startswith("flag_clear")) {
+      NewStem = "store";
+      PostOps.push_back(0);
+    }
+
+    if (!Stem.endswith("_explicit")) {
+      NewStem = NewStem + "_explicit";
+      PostOps.push_back(SPIRMO_seq_cst);
+      if (Stem.startswith("compare_exchange"))
+        PostOps.push_back(SPIRMO_seq_cst);
+      PostOps.push_back(SPIRMS_device);
+    } else {
+      auto MaxOps = getOCLCpp11AtomicMaxNumOps(
+          Stem.drop_back(strlen("_explicit")));
+      if (CI->getNumArgOperands() < MaxOps)
+        PostOps.push_back(SPIRMS_device);
+    }
+  } else if (Stem == "work_item_fence") {
+    // do nothing
+  } else
+    return false;
+
+  Info.UniqName = std::string("atomic_") + NewStem;
+  Info.PostProc = [=](std::vector<SPRVWord> &Ops){
+    for (auto &I:PostOps){
+      Ops.push_back(addInt32(I));
+    }
+  };
+
+  return true;
+}
+
+void LLVMToSPRV::getOCLBuiltinTransInfo(OCLBuiltinTransInfo &Info,
+    CallInst *CI, const std::string & MangledName,
+    const std::string &DemangledName) {
+  if (getOCLGroupBuiltinTransInfo(Info, CI, DemangledName))
+    return;
+  if (getOCLLegacyAtomicTransInfo(Info, CI, MangledName, DemangledName))
+    return;
+  if (getOCLCpp11AtomicTransInfo(Info, CI, MangledName, DemangledName))
+    return;
+  if (getOCLPipeBuiltinTransInfo(Info, CI, DemangledName))
+    return;
+  Info.UniqName = DemangledName;
+  return;
 }
 
 SPRV::SPRVInstruction* LLVMToSPRV::transUnaryInst(UnaryInstruction* U,
@@ -1213,17 +1128,10 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
     return BB;
   }
 
-  if (auto BV = transConstant(V))
-    return mapValue(V, BV);
+  if (auto F = dyn_cast<Function>(V))
+    return transFunction(F);
 
-  if (Argument *Arg = dyn_cast<Argument>(V)) {
-    unsigned ArgNo = Arg->getArgNo();
-    SPRVFunction *BF = BB->getParent();
-    //assert(BF->existArgument(ArgNo));
-    return mapValue(V, BF->getArgument(ArgNo));
-  }
-
-  if (GlobalVariable *GV = dyn_cast<GlobalVariable>(V)) {
+  if (auto GV = dyn_cast<GlobalVariable>(V)) {
     auto BVar = static_cast<SPRVVariable *>(BM->addVariable(
         transType(GV->getType()), GV->isConstant(),
         SPIRSPRVLinkageTypeMap::map(GV->getLinkage()),
@@ -1241,8 +1149,18 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
     return BVar;
   }
 
-  if (Function *F = dyn_cast<Function>(V))
-    return transFunction(F);
+  if (isa<Constant>(V)) {
+    auto BV = transConstant(V);
+    assert(BV);
+    return mapValue(V, BV);
+  }
+
+  if (auto Arg = dyn_cast<Argument>(V)) {
+    unsigned ArgNo = Arg->getArgNo();
+    SPRVFunction *BF = BB->getParent();
+    //assert(BF->existArgument(ArgNo));
+    return mapValue(V, BF->getArgument(ArgNo));
+  }
 
   if (CreateForward)
     return mapValue(V, BM->addForward());
@@ -1293,19 +1211,12 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
         transValue(Sel->getTrueValue(), BB),
         transValue(Sel->getFalseValue(), BB),BB));
 
-  if (AllocaInst *Alc = dyn_cast<AllocaInst>(V)) {
-    if (Alc->isArrayAllocation())
-      return mapValue(V, BM->addVariableArrayInst(
-      transType(Alc->getType()), Alc->getName(),
-      SPRVSC_Function, (dyn_cast<ConstantInt>(
-      Alc->getArraySize())->getZExtValue()), BB));
-    else
-      return mapValue(V, BM->addVariable(
+  if (AllocaInst *Alc = dyn_cast<AllocaInst>(V))
+    return mapValue(V, BM->addVariable(
       transType(Alc->getType()), false,
       SPIRSPRVLinkageTypeMap::map(GlobalValue::InternalLinkage),
       nullptr, Alc->getName(),
       SPRVSC_Function, BB));
-  }
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
     std::vector<std::pair<SPRVWord, SPRVBasicBlock *>> Pairs;
@@ -1554,8 +1465,14 @@ LLVMToSPRV::regularize() {
   lowerConstantExpressions();
 
   std::set<Value *> ValuesForDeleting;
-  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
-    for (auto BI = I->begin(), BE = I->end(); BI != BE; ++BI) {
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = I++;
+    if (F->isDeclaration() && F->use_empty()) {
+      F->eraseFromParent();
+      continue;
+    }
+
+    for (auto BI = F->begin(), BE = F->end(); BI != BE; ++BI) {
       for (auto II = BI->begin(), IE = BI->end(); II != IE; ++II) {
         if (auto Call = dyn_cast<CallInst>(II)) {
           Call->setTailCall(false);
@@ -1713,6 +1630,12 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByArgBaseTypeMetadata(
     } else if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();
       if (STName.startswith(SPIR_TYPE_NAME_PREFIX_IMAGE_T)) {
+        auto Ty = STName.str();
+        auto AccMD = oclGetArgAccessQualifierMetadata(F);
+        auto AccStr = getMDOperandAsString(AccMD, I);
+        ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
+            Ty + SPIR_TYPE_NAME_DELIMITER + AccStr);
+      } else if (STName == SPIR_TYPE_NAME_PIPE_T) {
         auto Ty = STName.str();
         auto AccMD = oclGetArgAccessQualifierMetadata(F);
         auto AccStr = getMDOperandAsString(AccMD, I);
@@ -1886,7 +1809,7 @@ LLVMToSPRV::translate() {
 
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
     if (oclIsBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
-        || I->getName().startswith(SPCV_CAST))
+        || I->getName().startswith(SPCV_CAST) || I->getName().startswith(LLVM_MEMCPY))
       continue;
     transFunction(I);
     // Creating all basic blocks before creating any instruction.
@@ -1937,34 +1860,6 @@ LLVMToSPRV::transOCLGroupBuiltins(CallInst *CI, const std::string &MangledName,
   return BM->addGroupInst(SPIRSPRVBuiltinInstMap::map(DemangledName),
       transType(CI->getType()),
       SPRVES_Workgroup, BArgs, BB);
-}
-
-SPRVValue *
-LLVMToSPRV::transOCLAtomic(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  std::string NewName = DemangledName;
-  if (DemangledName == "atomic_min" || DemangledName == "atomic_max") {
-    auto LastChar = MangledName.back();
-    if (LastChar == 'j' || LastChar == 'm')
-      NewName.insert(7, "u");
-  }
-  std::vector<SPRVValue *> Args;
-  for (unsigned I = 0, E = CI->getNumArgOperands(); I != E; ++I)
-    Args.push_back(transValue(CI->getArgOperand(I), BB));
-  SPRVWord MemSema = SPRVWORD_MAX;
-  switch (CI->getArgOperand(0)->getType()->getPointerAddressSpace()) {
-  case SPIRAS_Global:
-    MemSema = static_cast<SPRVWord>(SPRVMSM_WorkgroupGlobalMemory);
-    break;
-  case SPIRAS_Local:
-    MemSema = static_cast<SPRVWord>(SPRVMSM_WorkgroupLocalMemory);
-    break;
-  default:
-    llvm_unreachable("Invalid address space");
-  }
-  return BM->addAtomicInst(SPIRSPRVBuiltinInstMap::map(NewName),
-      transType(CI->getType()), Args, SPRVES_Workgroup,
-      MemSema, BB);
 }
 
 SPRVWord LLVMToSPRV::oclGetVectorLoadWidth(const std::string& DemangledName) {
@@ -2021,7 +1916,7 @@ LLVMToSPRV::oclTransBarrier(CallInst *CI,
   assert(CI->getNumArgOperands() == 1);
   auto MemFenceFlagVal = CI->getArgOperand(0);
   assert(isa<ConstantInt>(MemFenceFlagVal));
-  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup,
+  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup, SPRVMS_Workgroup,
     mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>(
     MemFenceFlagVal)->getZExtValue()), BB);
   return CB;
@@ -2039,6 +1934,31 @@ LLVMToSPRV::oclTransMemFence(CallInst *CI,
   return MB;
 }
 
+SPRVValue *
+LLVMToSPRV::oclTransWorkGroupBarrier(CallInst *CI,
+    const std::string &DemangledName, SPRVBasicBlock *BB) {
+  assert(CI->getNumArgOperands() == 1 || CI->getNumArgOperands() == 3);
+  Value *MemFenceFlagVal = CI->getArgOperand(0);
+  assert(isa<ConstantInt>(MemFenceFlagVal));
+
+  if (CI->getNumArgOperands() == 1){
+    return BM->addControlBarrierInst(SPRVES_Workgroup, SPRVMS_Workgroup,
+      mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>
+      (MemFenceFlagVal)->getZExtValue()), BB);
+  }
+
+  Value *MemScopeVal = CI->getArgOperand(1);
+  assert(isa<ConstantInt>(MemScopeVal));
+  assert(dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue() < SPIRMS_Count);
+
+  SPRVValue * CB = BM->addControlBarrierInst(SPRVES_Workgroup,
+    SPIRSPRVMemScopeMap::map(static_cast<SPIRMemScopeKind>(
+    dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue())),
+    mapBitMask<SPIRSPRVMemFenceFlagMap>(dyn_cast<ConstantInt>
+    (MemFenceFlagVal)->getZExtValue()), BB);
+  return CB;
+}
+
 void
 LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
     llvm::FunctionType* FT, std::map<unsigned, Type*>& ChangedType,
@@ -2047,19 +1967,21 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
   std::string Demangled;
   if (!oclIsBuiltin(Name, SrcLangVer, &Demangled))
     return;
-  if (Demangled.find(OCL_BUILTIN_PREFIX_READ_IMAGE) != 0 ||
+  if (Demangled.find(kOCLBuiltinName::ReadImage) != 0 ||
       Name.find(OCL_MANGLED_TYPE_NAME_SAMPLER) == std::string::npos)
     return;
   ChangedType[1] = getOrCreateOpaquePtrType(F->getParent(),
       SPIR_TYPE_NAME_SAMPLER_T);
 }
 
-
 SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
-    CallInst* CI, SPRVBasicBlock* BB) {
+    const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB) {
   auto OC = SPRVOC_OpNop;
-  if (SPIRSPRVBuiltinInstMap::find(DemangledName, &OC)) {
+  OCLBuiltinTransInfo Info;
+  getOCLBuiltinTransInfo(Info, CI, MangledName, DemangledName);
+
+  if (SPIRSPRVBuiltinInstMap::find(Info.UniqName, &OC)) {
     if (isCmpOpCode(OC)) {
       assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
       auto ResultTy = CI->getType();
@@ -2079,7 +2001,10 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       return BM->addBinaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB),
         transValue(CI->getArgOperand(1), BB), BB);
-    } else if (CI->getNumArgOperands() == 1 && !CI->getType()->isVoidTy()) {
+    } else if (CI->getNumArgOperands() == 1 &&
+        !CI->getType()->isVoidTy() &&
+        Info.UniqName.find("group_") != 0 &&
+        Info.UniqName.find("atomic_") != 0) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB), BB);
     } else {
@@ -2097,6 +2022,7 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       for (auto I:Args) {
         SPArgs.push_back(transValue(I, BB)->getId());
       }
+      Info.PostProc(SPArgs);
       auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
       if (!SPRetTy || !SPRetTy->isTypeStruct())
         return SPI;
@@ -2117,10 +2043,10 @@ LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
     return oclTransBarrier(CI, DemangledName, BB);
   if (DemangledName.find("mem_fence") != std::string::npos)
     return oclTransMemFence(CI, DemangledName, BB);
+  if (DemangledName == "work_group_barrier")
+    return oclTransWorkGroupBarrier(CI, DemangledName, BB);
   if (DemangledName.find("convert_") == 0)
     return transOCLConvert(CI, MangledName, DemangledName, BB);
-  if (DemangledName.find("atom") == 0)
-    return transOCLAtomic(CI, MangledName, DemangledName, BB);
   if (DemangledName.find("vload") == 0 ||
       DemangledName.find("vstore") == 0)
     return transOCLVectorLoadStore(CI, MangledName, DemangledName, BB);
@@ -2128,7 +2054,7 @@ LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
     return transOCLAsyncGroupCopy(CI, MangledName, DemangledName, BB);
   if (DemangledName == "wait_group_events")
     return transOCLGroupBuiltins(CI, MangledName, DemangledName, BB);
-  return transOCLBuiltinToInstByMap(DemangledName, CI, BB);
+  return transOCLBuiltinToInstByMap(DemangledName, MangledName, CI, BB);
 }
 
 void
@@ -2213,43 +2139,6 @@ LLVMToSPRV::transFPContractMetadata() {
   return true;
 }
 
-/// Creates an llvm type based on the "kernel_arg_type" MDString
-Type* getLLVMTypeFromStr(LLVMContext *c, const std::string Str)
-{
-  int vecSize = 0;
-  Type *ty = NULL;
-  size_t pos = Str.find_first_of('*');
-  assert(pos != std::string::npos && "Invalid argument type");
-  std::string tyStr = Str.substr(0, pos - 1);
-  pos = tyStr.find_last_of(' ');
-  if (pos != std::string::npos)
-    tyStr = tyStr.substr(pos + 1, Str.length());
-
-  //check for vector type
-  if ((pos = tyStr.find_first_of("0123456789")) != std::string::npos) {
-    std::string vecstr = tyStr.substr(pos);
-    std::istringstream IS(vecstr);
-    IS >> vecSize;
-    tyStr = tyStr.substr(0, pos);
-  }
-
-  if (tyStr == "int")
-    ty = Type::getInt16Ty(*c);
-  else if (tyStr == "float")
-    ty = Type::getFloatTy(*c);
-  else if (tyStr == "half")
-    ty = Type::getHalfTy(*c);
-  else if (tyStr == "double")
-    ty = Type::getDoubleTy(*c);
-  else
-    assert("Incorrect KERNEL_ARG_TYPE metadata");
-
-  if (vecSize)
-    return PointerType::get(VectorType::get(ty, vecSize),
-    SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
-
-  return PointerType::get(ty, SPIRSPRVAddrSpaceMap::map(SPIRAS_Global));
-}
 
 bool
 LLVMToSPRV::transOCLKernelMetadata() {
@@ -2295,31 +2184,7 @@ LLVMToSPRV::transOCLKernelMetadata() {
       } else if (Name == SPIR_MD_KERNEL_ARG_ACCESS_QUAL) {
         // Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_TYPE) {
-        foreachKernelArgMD(MD, BF,
-            [this, MD, &argAccessQual](const std::string &Str,
-                SPRVFunctionParameter *BA){
-          if (BA->getType()->isTypePipe()) {
-            Type *argDataType = getLLVMTypeFromStr(&MD->getContext(), Str);
-            unsigned i = BA->getArgNo();
-            SPRVTypePipe *BP = static_cast<SPRVTypePipe*>(BA->getType());
-            if (!BP->getPipeType()) {
-              BP->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(
-                  argAccessQual[i]));
-              BP->setPipeType(transType(argDataType));
-            }
-            else {
-              // ToDo: Figure out a way to store different pipe types
-              // (with different accessqualifer/pipedatatype) in the
-              // TypeMap .Update BA type with the new pipe type
-              SPRVTypePipe *BP = static_cast<SPRVTypePipe*>(
-                  transType(llvm::StructType::create(M->getContext(),
-                      "opencl.pipe_t")));
-              BP->setPipeAcessQualifier(SPIRSPRVAccessQualifierMap::map(
-                  argAccessQual[i]));
-              BP->setPipeType(transType(argDataType));
-            }
-          }
-        });
+        // Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_BASE_TYPE) {
         //Do nothing
       } else if (Name == SPIR_MD_KERNEL_ARG_TYPE_QUAL) {
@@ -2381,12 +2246,15 @@ LLVMToSPRV::dumpUsers(Value* V) {
 void
 LLVMToSPRV::oclRegularize() {
   legacy::PassManager PassMgr;
-  PassMgr.add(createRegularizeOCL20());
+  PassMgr.add(createSPRVRegularizeOCL20());
+  PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.run(*M);
-
-  OCLLowerBlocks LowerBlocks(M);
-  LowerBlocks.run();
 }
+
+SPRVId LLVMToSPRV::addInt32(int I) {
+  return transValue(getInt32(M, I), nullptr, false)->getId();
+}
+
 }
 
 bool

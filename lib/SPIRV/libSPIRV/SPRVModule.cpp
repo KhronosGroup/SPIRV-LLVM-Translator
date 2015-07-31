@@ -90,7 +90,8 @@ public:
   SPRVVariable *getVariable(unsigned I) const { return VariableVec[I];}
   virtual SPRVValue *getValue(SPRVId TheId) const;
   virtual std::vector<SPRVValue *> getValues(const std::vector<SPRVId>&)const;
-  virtual std::vector<SPRVId> getIds(const std::vector<SPRVEntry *>)const;
+  virtual std::vector<SPRVId> getIds(const std::vector<SPRVEntry *>&)const;
+  virtual std::vector<SPRVId> getIds(const std::vector<SPRVValue *>&)const;
   virtual SPRVType *getValueType(SPRVId TheId)const;
   virtual std::vector<SPRVType *> getValueTypes(const std::vector<SPRVId>&)
       const;
@@ -186,9 +187,6 @@ public:
   // Instruction creation functions
   virtual SPRVInstruction *addAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool);
-  virtual SPRVInstruction *addAtomicInst(SPRVOpCode OC, SPRVType *TheType,
-      const std::vector<SPRVValue *> &Operands, SPRVExecutionScopeKind Scope,
-      SPRVWord MemSema, SPRVBasicBlock *);
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB);
@@ -219,12 +217,11 @@ public:
     const std::vector<SPRVWord>&, SPRVBasicBlock *);
   virtual SPRVInstruction *addCopyMemorySizedInst(SPRVValue *, SPRVValue *,
       SPRVValue *, const std::vector<SPRVWord>&, SPRVBasicBlock *);
-  virtual SPRVInstruction *addControlBarrierInst(SPRVExecutionScopeKind Kind,
-      SPRVBasicBlock *BB);
   virtual SPRVInstruction *addControlBarrierInst(
-      SPRVExecutionScopeKind ExecKind, SPRVWord MemSema, SPRVBasicBlock *BB);
+      SPRVExecutionScopeKind ExecKind, SPRVMemoryScopeKind MemKind,
+      SPRVWord MemSema, SPRVBasicBlock *BB);
   virtual SPRVInstruction *addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
-      SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> Ops,
+      SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB);
   virtual SPRVInstruction *addInstruction(SPRVInstruction *Inst,
       SPRVBasicBlock *BB);
@@ -245,8 +242,6 @@ public:
       SPRVBasicBlock *);
   virtual SPRVInstruction *addVariable(SPRVType *, bool, SPRVLinkageTypeKind,
     SPRVValue *, const std::string &, SPRVStorageClassKind, SPRVBasicBlock *);
-  virtual SPRVInstruction *addVariableArrayInst(SPRVType *, const std::string &,
-    SPRVStorageClassKind, SPRVWord, SPRVBasicBlock *);
   virtual SPRVValue *addVectorShuffleInst(SPRVType *Type, SPRVValue *Vec1,
       SPRVValue *Vec2, const std::vector<SPRVWord> &Components,
       SPRVBasicBlock *BB);
@@ -730,10 +725,11 @@ SPRVModuleImpl::addSwitchInst(SPRVValue *Select, SPRVBasicBlock *Default,
 
 SPRVInstruction *
 SPRVModuleImpl::addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
-    SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> Ops,
+    SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
     SPRVBasicBlock *BB) {
-  return BB->addInstruction(new SPRVGroupInstGeneric(OpCode, Type, getId(),
-      Scope, Ops, BB));
+  auto WordOps = getIds(Ops);
+  WordOps.insert(WordOps.begin(), Scope);
+  return addInstTemplate(OpCode, WordOps, BB, Type);
 }
 
 // Assumes instructions can be used to represent constant expressions.
@@ -847,15 +843,10 @@ SPRVModuleImpl::addCmpInst(SPRVOpCode TheOpCode, SPRVType *TheType,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addControlBarrierInst(SPRVExecutionScopeKind Kind,
-    SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVControlBarrier(Kind, BB), BB);
-}
-
-SPRVInstruction *
 SPRVModuleImpl::addControlBarrierInst(SPRVExecutionScopeKind ExecKind,
-    SPRVWord MemSema, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVControlBarrier(ExecKind, MemSema, BB), BB);
+    SPRVMemoryScopeKind MemKind, SPRVWord MemSema, SPRVBasicBlock *BB) {
+  return addInstruction(
+      new SPRVControlBarrier(ExecKind, MemKind, MemSema, BB), BB);
 }
 
 SPRVInstruction *
@@ -879,14 +870,6 @@ SPRVModuleImpl::addAccessChainInst(SPRVType *Type, SPRVValue *Base,
       Indices, BB, this), BB);
   return addInstruction(new SPRVAccessChain(Type, getId(), Base,
     Indices, BB, this), BB);
-}
-
-SPRVInstruction *
-SPRVModuleImpl::addAtomicInst(SPRVOpCode OC, SPRVType *TheType,
-    const std::vector<SPRVValue *> &Operands, SPRVExecutionScopeKind Scope,
-    SPRVWord MemSema, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVAtomicOperatorGeneric(OC, TheType, getId(),
-    Scope, MemSema, Operands, BB), BB);
 }
 
 SPRVInstruction *
@@ -932,13 +915,6 @@ SPRVModuleImpl::addCopyMemorySizedInst(SPRVValue *TheTarget,
     const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *BB) {
   return addInstruction(new SPRVCopyMemorySized(TheTarget, TheSource, TheSize,
     TheMemoryAccess, BB), BB);
-}
-
-SPRVInstruction *
-SPRVModuleImpl::addVariableArrayInst(SPRVType *Type, const std::string &Name,
-SPRVStorageClassKind StorageClass, SPRVWord Length, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVVariableArray(Type, getId(), Name, 
-      StorageClass, Length, BB), BB);
 }
 
 SPRVInstruction*
@@ -990,8 +966,6 @@ operator<< (std::ostream &O, SPRVModule &M) {
     O << SPRVSourceExtension(&M);
   if (!M.getExtension().empty())
     O << SPRVExtension(&M);
-  if (!M.getCompileFlag().empty())
-    O << SPRVCompileFlag(&M);
 
   for (auto &I:MI.EntryPoints)
     for (auto &II:I.second)
@@ -1137,7 +1111,15 @@ SPRVModuleImpl::getValueTypes(const std::vector<SPRVId>& IdVec)const {
 }
 
 std::vector<SPRVId>
-SPRVModuleImpl::getIds(const std::vector<SPRVEntry *> ValueVec)const {
+SPRVModuleImpl::getIds(const std::vector<SPRVEntry *> &ValueVec)const {
+  std::vector<SPRVId> IdVec;
+  for (auto i:ValueVec)
+    IdVec.push_back(i->getId());
+  return IdVec;
+}
+
+std::vector<SPRVId>
+SPRVModuleImpl::getIds(const std::vector<SPRVValue *> &ValueVec)const {
   std::vector<SPRVId> IdVec;
   for (auto i:ValueVec)
     IdVec.push_back(i->getId());
@@ -1147,12 +1129,8 @@ SPRVModuleImpl::getIds(const std::vector<SPRVEntry *> ValueVec)const {
 SPRVInstruction*
 SPRVModuleImpl::addInstTemplate(SPRVOpCode OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
-  SPRVInstruction *Ins = nullptr;
-  if (Ty)
-    Ins = new SPRVInstTemplate<>(OC, Ty, getId(), Ops, BB);
-  else
-    Ins = new SPRVInstTemplate<>(OC, Ops, BB);
-
+  SPRVId Id = Ty ? getId() : SPRVID_INVALID;
+  auto Ins = SPRVInstTemplateBase::create(OC, Ops, BB, Id, Ty);
   return BB->addInstruction(Ins);
 }
 

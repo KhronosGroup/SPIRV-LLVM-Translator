@@ -1,4 +1,4 @@
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
   ${CMAKE_CURRENT_SOURCE_DIR}/Mangler
   ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -17,9 +17,10 @@ add_llvm_library(LLVMSPIRVLib
   Mangler/Mangler.cpp
   Mangler/ManglingUtils.cpp
   Mangler/ParameterType.cpp
-  SPRVUtil.cpp
+  SPRVLowerOCLBlocks.cpp
   SPRVReader.cpp
   SPRVRegularizeOCL20.cpp
+  SPRVUtil.cpp
   SPRVWriter.cpp
   )
 
