@@ -48,14 +48,20 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
-#include <vector>
-#include <map>
 #include <iostream>
+#include <map>
+#include <utility>
+#include <vector>
 
 namespace SPRV{
 
+typedef std::vector<SPRVValue *> ValueVec;
+typedef std::pair<ValueVec::iterator, ValueVec::iterator> ValueRange;
+
 class SPRVBasicBlock;
 class SPRVFunction;
+
+bool isSpecConstantOpAllowedOp(SPRVOpCode OC);
 
 class SPRVComponentExecutionScope {
 public:
@@ -110,8 +116,9 @@ public:
   SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC, SPRVType *TheType,
       SPRVBasicBlock *TheBB);
   // Incomplete constructor
-  SPRVInstruction(SPRVOpCode TheOC):SPRVValue(TheOC), BB(NULL){}
+  SPRVInstruction(SPRVOpCode TheOC = SPRVOC_OpNop):SPRVValue(TheOC), BB(NULL){}
 
+  virtual bool isInst() const { return true;}
   SPRVBasicBlock *getParent() const {return BB;}
   SPRVInstruction *getPrevious() const { return BB->getPrevious(this);}
   SPRVInstruction *getNext() const { return BB->getNext(this);}
@@ -163,6 +170,186 @@ protected:
   }
 private:
   SPRVBasicBlock *BB;
+};
+
+class SPRVInstTemplateBase:public SPRVInstruction {
+public:
+  // Instruction with Id
+  static SPRVInstTemplateBase *create(SPRVOpCode TheOC, SPRVType *TheType,
+      SPRVId TheId, const std::vector<SPRVWord> &TheOps, SPRVBasicBlock *TheBB,
+      SPRVModule *TheModule){
+    auto Inst = static_cast<SPRVInstTemplateBase *>(SPRVEntry::create(TheOC));
+    Inst->init();
+    assert((TheBB || TheModule) && "Invalid BB or Module");
+    if (TheBB)
+      Inst->setBasicBlock(TheBB);
+    else {
+      assert(isSpecConstantOpAllowedOp(TheOC) &&
+          "Invalid op code for constant expression");
+      Inst->setModule(TheModule);
+    }
+    Inst->setOpWords(TheOps);
+    Inst->setId(TheId);
+    Inst->setType(TheType);
+    Inst->validate();
+    return Inst;
+  }
+  SPRVInstTemplateBase(SPRVOpCode OC = SPRVOC_OpNop)
+    :SPRVInstruction(OC), HasVariWC(false){
+    init();
+  }
+  virtual ~SPRVInstTemplateBase(){}
+  virtual void init() {}
+  virtual void initImpl(SPRVOpCode OC, bool HasId = true, SPRVWord WC = 0,
+      bool VariWC = false){
+    OpCode = OC;
+    if (!HasId) {
+      setHasNoId();
+      setHasNoType();
+    }
+    if (WC)
+      SPRVEntry::setWordCount(WC);
+    setHasVariableWordCount(VariWC);
+  }
+  /// \return Expected number of operands. If the instruction has variable
+  /// number of words, return the minimum.
+  SPRVWord getExpectedNumOperands() const {
+    assert(WordCount > 0 && "Word count not initialized");
+    auto Exp = WordCount - 1;
+    if (hasId())
+      --Exp;
+    if (hasType())
+      --Exp;
+    return Exp;
+  }
+  virtual void setOpWords(const std::vector<SPRVWord> &TheOps) {
+    SPRVWord WC = TheOps.size() + 1;
+    if (hasId())
+      ++WC;
+    if (hasType())
+      ++WC;
+    if (WordCount) {
+      if (WordCount == WC) {
+        // do nothing
+      } else {
+        assert(HasVariWC && WC >= WordCount && "Invalid word count");
+        SPRVEntry::setWordCount(WC);
+      }
+    } else
+      SPRVEntry::setWordCount(WC);
+    Ops = TheOps;
+  }
+  virtual void setWordCount(SPRVWord TheWordCount) {
+    SPRVEntry::setWordCount(TheWordCount);
+    auto NumOps = WordCount - 1;
+    if (hasId())
+      --NumOps;
+    if (hasType())
+      --NumOps;
+    Ops.resize(NumOps);
+  }
+
+  std::vector<SPRVWord> &getOpWords() {
+    return Ops;
+  }
+
+  const std::vector<SPRVWord> &getOpWords() const {
+    return Ops;
+  }
+
+  SPRVWord getOpWord(int I) const {
+    return Ops[I];
+  }
+
+  SPRVValue *getOpValue(int I) {
+    return getValue(Ops[I]);
+  }
+
+  // Get operands which are values.
+  // Drop execution scope and group operation literals.
+  virtual std::vector<SPRVValue *> getOperands() {
+    std::vector<SPRVWord> VOps = Ops;
+    if (hasGroupOperation()) {
+      assert(hasExecScope());
+      VOps.erase(VOps.begin(), VOps.begin() + 2);
+    } else if (hasExecScope())
+      VOps.erase(VOps.begin());
+
+    return getValues(VOps);
+  }
+
+  virtual SPRVValue *getOperand(unsigned I) {
+    if (hasGroupOperation()) {
+      assert(hasExecScope());
+      I += 2;
+    } else if (hasExecScope())
+      ++I;
+    return getValue(Ops[I]);
+  }
+
+  bool hasExecScope() const {
+    return SPRV::hasExecScope(OpCode);
+  }
+
+  bool hasGroupOperation() const {
+    return SPRV::hasGroupOperation(OpCode);
+  }
+
+  SPRVGroupOperationKind getGroupOperation() const {
+    if (!hasGroupOperation())
+      return SPRVGO_Count;
+    return static_cast<SPRVGroupOperationKind>(Ops[1]);
+  }
+
+  SPRVExecutionScopeKind getExecutionScope() const {
+    if(!hasExecScope())
+      return SPRVES_Count;
+    return static_cast<SPRVExecutionScopeKind>(Ops[0]);
+  }
+
+  bool hasVariableWordCount() const {
+    return HasVariWC;
+  }
+
+  void setHasVariableWordCount(bool VariWC) {
+    HasVariWC = VariWC;
+  }
+
+protected:
+  virtual void encode(std::ostream &O) const {
+    auto E = getEncoder(O);
+    if (hasType())
+      E << Type;
+    if (hasId())
+      E << Id;
+    E << Ops;
+  }
+  virtual void decode(std::istream &I) {
+    auto D = getDecoder(I);
+    if (hasType())
+      D >> Type;
+    if (hasId())
+      D >> Id;
+    D >> Ops;
+  }
+  std::vector<SPRVWord> Ops;
+  bool HasVariWC;
+};
+
+template<typename BT        = SPRVInstTemplateBase,
+         SPRVOpCode OC      = SPRVOC_OpNop,
+         bool HasId         = true,
+         SPRVWord WC        = 0,
+         bool HasVariableWC = false>
+class SPRVInstTemplate:public BT {
+public:
+  typedef BT BaseTy;
+  SPRVInstTemplate(){
+    init();
+  }
+  virtual void init() {
+    this->initImpl(OC, HasId, WC, HasVariableWC);
+  }
 };
 
 class SPRVMemoryAccess {
@@ -357,35 +544,11 @@ private:
   std::vector<SPRVWord> MemoryAccess;
 };
 
-class SPRVBinary:public SPRVInstruction {
-public:
-  // Complete constructor
-  SPRVBinary(SPRVOpCode TheOpCode, SPRVType *TheType, SPRVId TheId,
-      SPRVId TheOp1, SPRVId TheOp2, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(5, TheOpCode, TheType, TheId, TheBB), Op1(TheOp1),
-     Op2(TheOp2){
-    validate();
-    assert(TheBB && "Invalid BB");
-  }
-  // Incomplete constructor
-  SPRVBinary(SPRVOpCode TheOpCode):SPRVInstruction(TheOpCode),
-      Op1(SPRVID_INVALID), Op2(SPRVID_INVALID){}
-
-  SPRVValue *getOperand(unsigned i) {
-    assert(i <= 1);
-    return getValue(i ? Op2 : Op1);
-  }
-
-  virtual std::vector<SPRVValue *> getOperands() {
-    std::vector<SPRVValue *> Operands;
-    Operands.push_back(getValue(Op1));
-    Operands.push_back(getValue(Op2));
-    return Operands;
-  }
-
+class SPRVBinary:public SPRVInstTemplateBase {
 protected:
-  _SPRV_DEF_ENCDEC4(Type, Id, Op1, Op2)
   void validate()const {
+    SPRVId Op1 = Ops[0];
+    SPRVId Op2 = Ops[1];
     SPRVType *op1Ty, *op2Ty;
     SPRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
@@ -424,19 +587,10 @@ protected:
       assert(0 && "Invalid op code!");
     }
   }
-  SPRVId Op1;
-  SPRVId Op2;
 };
 
-template<SPRVOpCode TheOpCode>
-class SPRVBinaryInst:public SPRVBinary {
-public:
-  // Complete constructor
-  SPRVBinaryInst(SPRVId TheId, SPRVType *TheType, SPRVId TheOp1, SPRVId TheOp2,
-      SPRVBasicBlock *TheBB)
-    :SPRVBinary(TheOpCode, TheType, TheId, TheOp1, TheOp2, TheBB){}
-  // Incomplete constructor
-  SPRVBinaryInst():SPRVBinary(TheOpCode){}
+template<SPRVOpCode OC>
+class SPRVBinaryInst:public SPRVInstTemplate<SPRVBinary, OC, true, 5, false> {
 };
 
 /* ToDo: SMod and FMod to be added */
@@ -670,33 +824,11 @@ protected:
   std::vector<SPRVId> Pairs;
 };
 
-class SPRVCompare:public SPRVInstruction {
-public:
-  // Complete constructor
-  SPRVCompare(SPRVOpCode TheOpCode, SPRVType *TheBoolType, SPRVId TheId,
-      SPRVId TheOp1, SPRVId TheOp2, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(5, TheOpCode, TheBoolType, TheId, TheBB), Op1(TheOp1),
-     Op2(TheOp2){
-    validate();
-    assert(TheBB && "Invalid BB");
-  }
-  // Incomplete constructor
-  SPRVCompare(SPRVOpCode TheOpCode):SPRVInstruction(TheOpCode),
-      Op1(SPRVID_INVALID), Op2(SPRVID_INVALID){}
-
-  SPRVValue *getOperand(unsigned i) {
-    assert(i <= 1);
-    return getValue(i ? Op2 : Op1);
-  }
-  virtual std::vector<SPRVValue *> getOperands() {
-    std::vector<SPRVValue *> Operands;
-    Operands.push_back(getValue(Op1));
-    Operands.push_back(getValue(Op2));
-    return Operands;
-  }
+class SPRVCompare:public SPRVInstTemplateBase {
 protected:
-  _SPRV_DEF_ENCDEC4(Type, Id, Op1, Op2)
   void validate()const {
+    auto Op1 = Ops[0];
+    auto Op2 = Ops[1];
     SPRVType *op1Ty, *op2Ty, *resTy;
     SPRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
@@ -720,19 +852,10 @@ protected:
         "Invalid type for compare instruction");
     assert(op1Ty == op2Ty && "Inconsistent types");
   }
-  SPRVId Op1;
-  SPRVId Op2;
 };
 
-template<SPRVOpCode TheOpCode>
-class SPRVCmpInst:public SPRVCompare {
-public:
-  // Complete constructor
-  SPRVCmpInst(SPRVType *TheBoolType, SPRVId TheId, SPRVId TheOp1, SPRVId TheOp2,
-      SPRVBasicBlock *TheBB)
-    :SPRVCompare(TheOpCode, TheBoolType, TheId, TheOp1, TheOp2, TheBB){}
-  // Incomplete constructor
-  SPRVCmpInst():SPRVCompare(TheOpCode){}
+template<SPRVOpCode OC>
+class SPRVCmpInst:public SPRVInstTemplate<SPRVCompare, OC, true, 5, false> {
 };
 
 #define _SPRV_OP(x) typedef SPRVCmpInst<SPRVOC_Op##x> SPRV##x;
@@ -858,30 +981,10 @@ protected:
   std::vector<SPRVWord> Pairs;
 };
 
-class SPRVUnary:public SPRVInstruction {
-public:
-  // Complete constructor
-  SPRVUnary(SPRVOpCode TheOpCode, SPRVType *TheType, SPRVId TheId,
-      SPRVId TheOp, SPRVBasicBlock *TheBB, SPRVModule *TheModule)
-    :SPRVInstruction(4, TheOpCode, TheType, TheId, TheBB, TheModule), Op(TheOp){
-    validate();
-    assert(TheModule && "Invalid module");
-  }
-  // Incomplete constructor
-  SPRVUnary(SPRVOpCode TheOpCode):SPRVInstruction(TheOpCode),
-      Op(SPRVID_INVALID) {}
-
-  SPRVValue *getOperand() {
-    return getValue(Op);
-  }
-  std::vector<SPRVValue *> getOperands() {
-    std::vector<SPRVValue *> Res;
-    Res.push_back(getOperand());
-    return Res;
-  }
+class SPRVUnary:public SPRVInstTemplateBase {
 protected:
-  _SPRV_DEF_ENCDEC3(Type, Id, Op)
   void validate()const {
+    auto Op = Ops[0];
     SPRVInstruction::validate();
     if (getValue(Op)->isForward())
       return;
@@ -902,18 +1005,10 @@ protected:
           "Invalid vector component Width for Generic Negate instruction");
     }
   }
-  SPRVId Op;
 };
 
-template<SPRVOpCode TheOpCode>
-class SPRVUnaryInst:public SPRVUnary {
-public:
-  // Complete constructor
-  SPRVUnaryInst(SPRVType *TheType, SPRVId TheId, SPRVId TheOp,
-      SPRVBasicBlock *TheBB, SPRVModule *TheModule)
-    :SPRVUnary(TheOpCode, TheType, TheId, TheOp, TheBB, TheModule){}
-  // Incomplete constructor
-  SPRVUnaryInst():SPRVUnary(TheOpCode){}
+template<SPRVOpCode OC>
+class SPRVUnaryInst:public SPRVInstTemplate<SPRVUnary, OC, true, 4, false> {
 };
 
 #define _SPRV_OP(x) typedef SPRVUnaryInst<SPRVOC_Op##x> SPRV##x;
@@ -944,45 +1039,34 @@ _SPRV_OP(Any)
 _SPRV_OP(All)
 #undef _SPRV_OP
 
-template<SPRVOpCode TheOpCode>
-class SPRVAccessChainGeneric:public SPRVInstruction {
+class SPRVAccessChainBase :public SPRVInstTemplateBase {
 public:
-  // Complete constructor
-  SPRVAccessChainGeneric(SPRVType *TheType, SPRVId TheId, SPRVValue *TheBase,
-      const std::vector<SPRVValue *>& TheIndices, SPRVBasicBlock *TheBB,
-      SPRVModule *TheModule):
-        SPRVInstruction(TheIndices.size() + 4, TheOpCode, TheType, TheId, TheBB,
-            TheModule), Base(TheBase->getId()) {
-    Indices = getIds(TheIndices);
-    validate();
-    assert(TheModule && "Invalid Module");
-  }
-  // Incomplete constructor
-  SPRVAccessChainGeneric():SPRVInstruction(TheOpCode), Base(SPRVID_INVALID){}
-
-  SPRVValue *getBase() { return getValue(Base);}
+  SPRVValue *getBase() { return this->getValue(this->Ops[0]);}
   std::vector<SPRVValue *> getIndices()const {
-    return getValues(Indices);
+    std::vector<SPRVWord> IndexWords(this->Ops.begin() + 1, this->Ops.end());
+    return this->getValues(IndexWords);
   }
-
-protected:
-  void setWordCount(SPRVWord TheWordCount) {
-    SPRVEntry::setWordCount(TheWordCount);
-    Indices.resize(TheWordCount - 4);
+  bool isInBounds() {
+    return OpCode == SPRVOC_OpInBoundsAccessChain ||
+        OpCode == SPRVOC_OpInBoundsPtrAccessChain;
   }
-  _SPRV_DEF_ENCDEC4(Type, Id, Base, Indices)
-  // ToDo: validate the result type is consistent with the base type and indices
-  // need to trace through the base type for struct types
-  void validate()const {
-    SPRVInstruction::validate();
+  bool hasPtrIndex() {
+    return OpCode == SPRVOC_OpPtrAccessChain ||
+        OpCode == SPRVOC_OpInBoundsPtrAccessChain;
   }
-  SPRVId Base;
-  std::vector<SPRVId> Indices;
 };
 
-typedef SPRVAccessChainGeneric<SPRVOC_OpAccessChain> SPRVAccessChain;
-typedef SPRVAccessChainGeneric<SPRVOC_OpInBoundsAccessChain>
+template<SPRVOpCode OC, unsigned FixedWC>
+class SPRVAccessChainGeneric
+    :public SPRVInstTemplate<SPRVAccessChainBase, OC, true, FixedWC, true> {
+};
+
+typedef SPRVAccessChainGeneric<SPRVOC_OpAccessChain, 4> SPRVAccessChain;
+typedef SPRVAccessChainGeneric<SPRVOC_OpInBoundsAccessChain, 4>
   SPRVInBoundsAccessChain;
+typedef SPRVAccessChainGeneric<SPRVOC_OpPtrAccessChain, 5> SPRVPtrAccessChain;
+typedef SPRVAccessChainGeneric<SPRVOC_OpInBoundsPtrAccessChain, 5>
+  SPRVInBoundsPtrAccessChain;
 
 template<SPRVOpCode OC, SPRVWord FixedWordCount>
 class SPRVFunctionCallGeneric: public SPRVInstruction {
@@ -1586,164 +1670,16 @@ enum SPRVOpKind {
   SPRVOPK_Count
 };
 
-class SPRVInstTemplateBase:public SPRVInstruction {
+class SPRVDevEnqInstBase:public SPRVInstTemplateBase {
 public:
-  // Instruction with Id
-  static SPRVInstTemplateBase *create(SPRVOpCode TheOC,
-      const std::vector<SPRVWord> &TheOps, SPRVBasicBlock *TheBB,
-      SPRVId TheId = SPRVID_INVALID, SPRVType *TheType = nullptr){
-    auto Inst = static_cast<SPRVInstTemplateBase *>(SPRVEntry::create(TheOC));
-    Inst->init();
-    assert(TheBB && "Invalid BB");
-    Inst->setBasicBlock(TheBB);
-    Inst->setOpWords(TheOps);
-    Inst->setId(TheId);
-    Inst->setType(TheType);
-    Inst->validate();
-    return Inst;
-  }
-  SPRVInstTemplateBase(SPRVOpCode OC):SPRVInstruction(OC), HasVariWC(false){
-    init();
-  }
-  virtual void init() {}
-  virtual void initImpl(bool HasId = true, SPRVWord WC = 0,
-      bool VariWC = false){
-    if (!HasId) {
-      setHasNoId();
-      setHasNoType();
-    }
-    if (WC)
-      SPRVEntry::setWordCount(WC);
-    setHasVariableWordCount(VariWC);
-  }
-  /// \return Expected number of operands. If the instruction has variable
-  /// number of words, return the minimum.
-  SPRVWord getExpectedNumOperands() const {
-    assert(WordCount > 0 && "Word count not initialized");
-    auto Exp = WordCount - 1;
-    if (hasId())
-      --Exp;
-    if (hasType())
-      --Exp;
-    return Exp;
-  }
-  virtual void setOpWords(const std::vector<SPRVWord> &TheOps) {
-    SPRVWord WC = TheOps.size() + 1;
-    if (hasId())
-      ++WC;
-    if (hasType())
-      ++WC;
-    if (WordCount)
-      assert((WordCount == WC ||
-             (HasVariWC && WC >= WordCount)) && "Invalid word count");
-    else
-      SPRVEntry::setWordCount(WC);
-    Ops = TheOps;
-  }
-  virtual void setWordCount(SPRVWord TheWordCount) {
-    SPRVEntry::setWordCount(TheWordCount);
-    auto NumOps = WordCount - 1;
-    if (hasId())
-      --NumOps;
-    if (hasType())
-      --NumOps;
-    Ops.resize(NumOps);
-  }
-
-  std::vector<SPRVWord> &getOpWords() {
-    return Ops;
-  }
-
-  const std::vector<SPRVWord> &getOpWords() const {
-    return Ops;
-  }
-
-  SPRVWord getOpWord(int I) const {
-    return Ops[I];
-  }
-
-  SPRVValue *getOpValue(int I) {
-    return getValue(Ops[I]);
-  }
-
-  // Get operands which are values.
-  // Drop execution scope and group operation literals.
-  virtual std::vector<SPRVValue *> getOperands() {
-    std::vector<SPRVWord> VOps = Ops;
-    if (hasGroupOperation()) {
-      assert(hasExecScope());
-      VOps.erase(VOps.begin(), VOps.begin() + 2);
-    } else if (hasExecScope())
-      VOps.erase(VOps.begin());
-
-    return getValues(VOps);
-  }
-
-  bool hasExecScope() const {
-    return SPRV::hasExecScope(OpCode);
-  }
-
-  bool hasGroupOperation() const {
-    return SPRV::hasGroupOperation(OpCode);
-  }
-
-  SPRVGroupOperationKind getGroupOperation() const {
-    if (!hasGroupOperation())
-      return SPRVGO_Count;
-    return static_cast<SPRVGroupOperationKind>(Ops[1]);
-  }
-
-  SPRVExecutionScopeKind getExecutionScope() const {
-    if(!hasExecScope())
-      return SPRVES_Count;
-    return static_cast<SPRVExecutionScopeKind>(Ops[0]);
-  }
-
-  bool hasVariableWordCount() const {
-    return HasVariWC;
-  }
-
-  void setHasVariableWordCount(bool VariWC) {
-    HasVariWC = VariWC;
-  }
-
-protected:
-  virtual void encode(std::ostream &O) const {
-    auto E = getEncoder(O);
-    if (hasType())
-      E << Type;
-    if (hasId())
-      E << Id;
-    E << Ops;
-  }
-  virtual void decode(std::istream &I) {
-    auto D = getDecoder(I);
-    if (hasType())
-      D >> Type;
-    if (hasId())
-      D >> Id;
-    D >> Ops;
-  }
-  std::vector<SPRVWord> Ops;
-  bool HasVariWC;
-};
-
-template<SPRVOpCode OC          = SPRVOC_OpNop,
-          bool HasId            = true,
-          SPRVWord WC           = 0,
-          bool HasVariableWC    = false>
-class SPRVInstTemplate:public SPRVInstTemplateBase {
-public:
-  SPRVInstTemplate():SPRVInstTemplateBase(OC){
-    init();
-  }
-  virtual void init() {
-    initImpl(HasId, WC, HasVariableWC);
+  CapVec getRequiriedCapability() const {
+    return getVec(SPRVCAP_DeviceEnqueue);
   }
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVOC_Op##x, __VA_ARGS__> SPRV##x;
+  typedef SPRVInstTemplate<SPRVDevEnqInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
 // CL 2.0 enqueue kernel builtins
 _SPRV_OP(EnqueueMarker, true, 7)
 _SPRV_OP(EnqueueKernel, true, 13, true)
@@ -1759,6 +1695,18 @@ _SPRV_OP(SetUserEventStatus, false, 3)
 _SPRV_OP(CaptureEventProfilingInfo, false, 4)
 _SPRV_OP(GetDefaultQueue, true, 3)
 _SPRV_OP(BuildNDRange, true, 6)
+#undef _SPRV_OP
+
+class SPRVPipeInstBase:public SPRVInstTemplateBase {
+public:
+  CapVec getRequiriedCapability() const {
+    return getVec(SPRVCAP_Pipe);
+  }
+};
+
+#define _SPRV_OP(x, ...) \
+  typedef SPRVInstTemplate<SPRVPipeInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
 // CL 2.0 pipe builtins
 _SPRV_OP(ReadPipe, true, 7)
 _SPRV_OP(WritePipe, true, 7)
@@ -1771,6 +1719,18 @@ _SPRV_OP(CommitWritePipe, false, 5)
 _SPRV_OP(IsValidReserveId, true, 4)
 _SPRV_OP(GetNumPipePackets, true, 6)
 _SPRV_OP(GetMaxPipePackets, true, 6)
+#undef _SPRV_OP
+
+class SPRVGroupInstBase:public SPRVInstTemplateBase {
+public:
+  CapVec getRequiriedCapability() const {
+    return getVec(SPRVCAP_Groups);
+  }
+};
+
+#define _SPRV_OP(x, ...) \
+  typedef SPRVInstTemplate<SPRVGroupInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
 // Group instructions
 _SPRV_OP(WaitGroupEvents, false, 4)
 _SPRV_OP(GroupAll, true, 5)
@@ -1788,6 +1748,18 @@ _SPRV_OP(GroupReserveReadPipePackets, true, 8)
 _SPRV_OP(GroupReserveWritePipePackets, true, 8)
 _SPRV_OP(GroupCommitReadPipe, false, 6)
 _SPRV_OP(GroupCommitWritePipe, false, 6)
+#undef _SPRV_OP
+
+class SPRVAtomicInstBase:public SPRVInstTemplateBase {
+public:
+  CapVec getRequiriedCapability() const {
+    return getVec(SPRVCAP_Int64Atomics);
+  }
+};
+
+#define _SPRV_OP(x, ...) \
+  typedef SPRVInstTemplate<SPRVAtomicInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
 // Atomic builtins
 _SPRV_OP(AtomicTestSet, true, 6)
 _SPRV_OP(AtomicLoad, true, 6)
@@ -1809,6 +1781,41 @@ _SPRV_OP(AtomicXor, true, 7)
 _SPRV_OP(AtomicWorkItemFence, false, 4)
 #undef _SPRV_OP
 
+class SPRVImageInstBase:public SPRVInstTemplateBase {
+public:
+  CapVec getRequiriedCapability() const {
+    return getVec(SPRVCAP_ImageBasic);
+  }
+};
+
+#define _SPRV_OP(x, ...) \
+  typedef SPRVInstTemplate<SPRVImageInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
+// Image instructions
+_SPRV_OP(SampledImage, true, 5)
+_SPRV_OP(ImageSampleImplicitLod, true, 5, true)
+_SPRV_OP(ImageSampleExplicitLod, true, 5, true)
+_SPRV_OP(ImageRead, true, 5)
+_SPRV_OP(ImageWrite, false, 4)
+_SPRV_OP(ImageQueryArraySize, true, 4)
+_SPRV_OP(ImageQueryFormat, true, 4)
+_SPRV_OP(ImageQueryOrder, true, 4)
+_SPRV_OP(ImageQuerySizeLod, true, 5)
+_SPRV_OP(ImageQuerySize, true, 4)
+_SPRV_OP(ImageQueryLod, true, 5)
+_SPRV_OP(ImageQueryLevels, true, 4)
+_SPRV_OP(ImageQuerySamples, true, 4)
+#undef _SPRV_OP
+
+#define _SPRV_OP(x, ...) \
+  typedef SPRVInstTemplate<SPRVInstTemplateBase, SPRVOC_Op##x, __VA_ARGS__> \
+      SPRV##x;
+// Other instructions
+_SPRV_OP(SpecConstantOp, true, 4, true)
+#undef _SPRV_OP
+
+SPRVSpecConstantOp *createSpecConstantOpInst(SPRVInstruction *Inst);
+SPRVInstruction *createInstFromSpecConstantOp(SPRVSpecConstantOp *C);
 }
 
 #endif // SPRVINSTRUCTION_HPP_

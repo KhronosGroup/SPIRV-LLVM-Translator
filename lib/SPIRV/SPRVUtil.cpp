@@ -219,6 +219,21 @@ isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name) {
   return false;
 }
 
+bool
+isOCLImageType(llvm::Type* Ty, StringRef *Name) {
+  if (auto PT = dyn_cast<PointerType>(Ty))
+    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+      if (ST->isOpaque()) {
+        auto FullName = ST->getName();
+        if (FullName.find(kSPR2TypeName::ImagePrefix) == 0) {
+          if (Name)
+            *Name = FullName.drop_front(strlen(kSPR2TypeName::OCLPrefix));
+          return true;
+        }
+      }
+  return false;
+}
+
 Function *
 getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
@@ -261,14 +276,14 @@ getArguments(CallInst* CI) {
 
 std::string
 decorateSPRVFunction(const std::string &S) {
-  return std::string(SPRV_BUILTIN_PREFIX) + S + SPRV_BUILTIN_POSTFIX;
+  return std::string(kSPRVName::Prefix) + S + kSPRVName::Postfix;
 }
 
 std::string
 undecorateSPRVFunction(const std::string& S) {
-  assert (S.find(SPRV_BUILTIN_PREFIX) == 0);
-  const size_t Start = strlen(SPRV_BUILTIN_PREFIX);
-  auto End = S.rfind(SPRV_BUILTIN_POSTFIX);
+  assert (S.find(kSPRVName::Prefix) == 0);
+  const size_t Start = strlen(kSPRVName::Prefix);
+  auto End = S.rfind(kSPRVName::Postfix);
   return S.substr(Start, End - Start);
 }
 
@@ -358,6 +373,33 @@ mutateCallInst(Module *M, CallInst *CI,
   return NewCI;
 }
 
+Instruction *
+mutateCallInst(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &,
+        Type *&RetTy)>ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
+    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+  DEBUG(dbgs() << "[mutateCallInst] " << *CI);
+
+  auto Args = getArguments(CI);
+  Type *RetTy = CI->getType();
+  auto NewName = ArgMutate(CI, Args, RetTy);
+  StringRef InstName;
+  if (CI->hasName()) {
+    InstName = CI->getName();
+    CI->setName(InstName + ".old");
+  }
+  auto NewCI = addCallInst(M, NewName, RetTy, Args, Attrs,
+      CI, Mangle, InstName.str() + ".tmp", TakeFuncName);
+  auto NewI = RetMutate(NewCI);
+  NewI->takeName(CI);
+  DEBUG(dbgs() << " => " << *NewI << '\n');
+  CI->replaceAllUsesWith(NewI);
+  CI->dropAllReferences();
+  CI->removeFromParent();
+  return NewI;
+}
+
 void
 mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
@@ -417,7 +459,7 @@ getInt32(Module *M, int value) {
 
 bool
 isSPRVFunction(const Function *F, std::string *UndecoratedName) {
-  if (!F->hasName() || !F->getName().startswith(SPRV_BUILTIN_PREFIX))
+  if (!F->hasName() || !F->getName().startswith(kSPRVName::Prefix))
     return false;
   if (UndecoratedName)
     *UndecoratedName = undecorateSPRVFunction(F->getName());
@@ -429,10 +471,11 @@ struct OCLTypeMangleInfo {
   bool IsSigned;
   bool IsVoidPtr;
   bool IsEnum;
+  bool IsSampler;
   SPIR::TypePrimitiveEnum Enum;
   unsigned Attr;
   OCLTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
-      Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
+      IsSampler(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
 };
 
 /// Information for mangling an OpenCL builtin function.
@@ -444,6 +487,7 @@ public:
   const std::string &getUnmangledName() const { return UnmangledName;}
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
+  void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}
   void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
     EnumArgs[Ndx] = Enum;}
   void setArgAttr(int Ndx, unsigned Attr) {
@@ -452,6 +496,8 @@ public:
     return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);}
   bool isArgVoidPtr(int Ndx) {
     return VoidPtrArgs.count(-1) || VoidPtrArgs.count(Ndx);}
+  bool isArgSampler(int Ndx) {
+    return SamplerArgs.count(Ndx);}
   bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
     auto Loc = EnumArgs.find(Ndx);
     if (Loc == EnumArgs.end())
@@ -475,6 +521,7 @@ public:
     Info.IsSigned = !isArgUnsigned(Ndx);
     Info.IsVoidPtr = isArgVoidPtr(Ndx);
     Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
+    Info.IsSampler = isArgSampler(Ndx);
     Info.Attr = getArgAttr(Ndx);
     return Info;
   }
@@ -483,6 +530,7 @@ private:
   std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
   std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
                               // pointer
+  std::set<int> SamplerArgs;  // sampler arguments
   std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
   std::map<int, unsigned> Attrs;                   // argument attributes
 };
@@ -493,15 +541,19 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
   if (UnmangledName.find("write_imageui") == 0)
       addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
+      UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
-      UnmangledName.find("vload") == 0 ||
       UnmangledName.find("vstore") == 0 ||
       UnmangledName.find("async_work_group") == 0 ||
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
-      UnmangledName.find("shuffle") == 0)
+      UnmangledName.find("shuffle") == 0){
     addUnsignedArg(-1);
-  else if (UnmangledName.find("atomic") == 0) {
+    if (UnmangledName.find("get_fence") == 0){
+      setArgAttr(0, SPIR::ATTR_CONST);
+      addVoidPtrArg(0);
+    }
+  } else if (UnmangledName.find("atomic") == 0) {
     setArgAttr(0, SPIR::ATTR_VOLATILE);
     if (UnmangledName == "atomic_umax" ||
         UnmangledName == "atomic_umin") {
@@ -525,6 +577,9 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
   } else if (UnmangledName == "enqueue_marker") {
     setArgAttr(2, SPIR::ATTR_CONST);
     addUnsignedArg(1);
+  } else if (UnmangledName.find("vload") == 0) {
+    addUnsignedArg(-1);
+    setArgAttr(1, SPIR::ATTR_CONST);
   } else if (UnmangledName.find("ndrange_") == 0) {
     addUnsignedArg(-1);
     if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
@@ -536,6 +591,10 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
     UnmangledName.erase(Pos, 1);
   } else if (UnmangledName.find("broadcast") != std::string::npos)
     addUnsignedArg(-1);
+  else if (UnmangledName.find(kOCLBuiltinName::SampledReadImage) == 0) {
+    UnmangledName.erase(0, strlen(kOCLBuiltinName::Sampled));
+    addSamplerArg(1);
+  }
 }
 
 /// Translates LLVM type to descriptor for mangler.
@@ -548,6 +607,9 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   bool VoidPtr = Info.IsVoidPtr;
   if (Info.IsEnum)
     return SPIR::RefParamType(new SPIR::PrimitiveType(Info.Enum));
+  if (Info.IsSampler)
+    return SPIR::RefParamType(new SPIR::PrimitiveType(
+        SPIR::PRIMITIVE_SAMPLER_T));
   if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch(IntTy->getBitWidth()) {
     case 8:
@@ -599,10 +661,10 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
     if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
-      if (TyName.startswith(SPIR_TYPE_NAME_PREFIX_IMAGE_T) ||
+      if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
           TyName.startswith(SPIR_TYPE_NAME_PIPE_T)) {
-        auto DelimPos = TyName.find_first_of(SPIR_TYPE_NAME_DELIMITER,
-            strlen(SPIR_TYPE_NAME_PREFIX));
+        auto DelimPos = TyName.find_first_of(kSPR2TypeName::Delimiter,
+            strlen(kSPR2TypeName::OCLPrefix));
         if (DelimPos != StringRef::npos)
           TyName = TyName.substr(0, DelimPos);
       }
@@ -656,16 +718,6 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
 }
 
-// The name mangler mangles certain OCL builtin names incorrectly.
-// Fix mangled names.
-void
-fixOCLBuiltinName(std::string &MangledName) {
-  if (MangledName == "_Z10ndrange_2DPKmPKmPKm")
-    MangledName = "_Z10ndrange_2DPKmS0_S0_";
-  else if (MangledName == "_Z10ndrange_3DPKmPKmPKm")
-    MangledName = "_Z10ndrange_3DPKmS0_S0_";
-}
-
 void
 mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet, const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
@@ -684,7 +736,6 @@ mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet, const std::string &UniqName,
     FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_VOID)));
   Mangler.mangle(FD, MangledName);
-  fixOCLBuiltinName(MangledName);
   DEBUG(dbgs() << MangledName << '\n');
 }
 
@@ -778,6 +829,17 @@ dumpUsers(Value* V, StringRef Prompt) {
   DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
   for (auto UI = V->user_begin(), UE = V->user_end(); UI != UE; ++UI)
     DEBUG(dbgs() << "  " << **UI << '\n');
+}
+
+Type *
+getSPRVSampledImageType(Module *M, Type *ImageType) {
+  StringRef ImgTyName;
+  if (isOCLImageType(ImageType, &ImgTyName))
+    return getOrCreateOpaquePtrType(M,
+        std::string(kSPRVTypeName::SampledImg) + kSPRVTypeName::Delimiter
+        + ImgTyName.str());
+  llvm_unreachable("Invalid image type");
+  return nullptr;
 }
 
 }

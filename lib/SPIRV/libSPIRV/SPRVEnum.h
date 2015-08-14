@@ -87,21 +87,56 @@ enum SPRVSourceLanguageKind {
 };
 
 enum SPRVCapabilityKind {
-#define _SPRV_OP(x) SPRVCAP_##x,
-  _SPRV_OP(Default)
-  _SPRV_OP(Matrix)
-  _SPRV_OP(Shader)
-  _SPRV_OP(Geom)
-  _SPRV_OP(Tess)
-  _SPRV_OP(Addr)
-  _SPRV_OP(Link)
-  _SPRV_OP(Kernel)
-  _SPRV_OP(Count)
-#undef _SPRV_OP
+  SPRVCAP_Matrix            = 0,
+  SPRVCAP_Shader            = 1,
+  SPRVCAP_Geom              = 2,
+  SPRVCAP_Tess              = 3,
+  SPRVCAP_Addresses         = 4,
+  SPRVCAP_Linkage           = 5,
+  SPRVCAP_Kernel            = 6,
+  SPRVCAP_Vector16          = 7,
+  SPRVCAP_Float16Buffer     = 8,
+  SPRVCAP_Float16           = 9,
+  SPRVCAP_Float64           = 10,
+  SPRVCAP_Int64             = 11,
+  SPRVCAP_Int64Atomics      = 12,
+  SPRVCAP_ImageBasic        = 13,
+  SPRVCAP_ImageReadWrite    = 14,
+  SPRVCAP_ImageMipmap       = 15,
+  SPRVCAP_ImageSRGBWrite    = 16,
+  SPRVCAP_Pipe              = 17,
+  SPRVCAP_Groups            = 18,
+  SPRVCAP_DeviceEnqueue     = 19,
+  SPRVCAP_LiteralSampler    = 20,
+  SPRVCAP_AtomicStorage     = 21,
+  SPRVCAP_Int16             = 22,
+  SPRVCAP_Count             = 23,
+  SPRVCAP_GeomTess          = 254,
+  SPRVCAP_None              = 255,
 };
+
+template<typename K>
+SPRVCapabilityKind
+getCapability(K Key) {
+  return SPRVMap<K, SPRVCapabilityKind>::map(Key);
+}
 
 enum SPRVExecutionModelKind {
 #define _SPRV_OP(x,y) SPRVEMDL_##x,
+  _SPRV_OP(Vertex, Shader)
+  _SPRV_OP(TessellationControl, Tess)
+  _SPRV_OP(TessellationEvalulation, Shader)
+  _SPRV_OP(Geometry, Geom)
+  _SPRV_OP(Fragment, Shader)
+  _SPRV_OP(GLCompute, Shader)
+  _SPRV_OP(Kernel, Kernel)
+  _SPRV_OP(Count, Count)
+#undef _SPRV_OP
+};
+
+template<> inline void
+SPRVMap<SPRVExecutionModelKind, SPRVCapabilityKind>::init() {
+#define _SPRV_OP(x,y) add(SPRVEMDL_##x, SPRVCAP_##y);
   _SPRV_OP(Vertex, Shader)
   _SPRV_OP(TessellationControl, Tess)
   _SPRV_OP(TessellationEvalulation, Shader)
@@ -137,6 +172,43 @@ enum SPRVExecutionModeKind {
   _SPRV_OP(DepthLess, Shader)
   _SPRV_OP(DepthUnchanged, Shader)
   _SPRV_OP(LocalSize, Default)
+  _SPRV_OP(LocalSizeHint, Kernel)
+  _SPRV_OP(InputPoints, Geom)
+  _SPRV_OP(InputLines, Geom)
+  _SPRV_OP(InputLinesAdjacency, Geom)
+  _SPRV_OP(InputTriangles, Geom)
+  _SPRV_OP(InputQuads, Geom)
+  _SPRV_OP(InputIsolines, Geom)
+  _SPRV_OP(OutputVertices, GeomTess)
+  _SPRV_OP(OutputPoints, Geom)
+  _SPRV_OP(OutputLineStrip, Geom)
+  _SPRV_OP(OutputTriangleStrip, Geom)
+  _SPRV_OP(VecTypeHint, Kernel)
+  _SPRV_OP(ContractionOff, Kernel)
+  _SPRV_OP(Count, Count)
+#undef _SPRV_OP
+};
+
+template<> inline void
+SPRVMap<SPRVExecutionModeKind, SPRVCapabilityKind>::init() {
+#define _SPRV_OP(x,y) add(SPRVEM_##x, SPRVCAP_##y);
+  _SPRV_OP(Invocations, Geom)
+  _SPRV_OP(SpacingEqual, Tess)
+  _SPRV_OP(SpacingFractionEven, Tess)
+  _SPRV_OP(SpacingFractionOdd, Tess)
+  _SPRV_OP(VertexOrderCw, Tess)
+  _SPRV_OP(VertexOrderCcw, Tess)
+  _SPRV_OP(PixelCenterInteger, Shader)
+  _SPRV_OP(OriginUpperLeft, Shader)
+  _SPRV_OP(EarlyFragmentTests, Shader)
+  _SPRV_OP(PointMode, Tess)
+  _SPRV_OP(Xfb, Shader)
+  _SPRV_OP(DepthReplacing, Shader)
+  _SPRV_OP(DepthAny, Shader)
+  _SPRV_OP(DepthGreater, Shader)
+  _SPRV_OP(DepthLess, Shader)
+  _SPRV_OP(DepthUnchanged, Shader)
+  _SPRV_OP(LocalSize, None)
   _SPRV_OP(LocalSizeHint, Kernel)
   _SPRV_OP(InputPoints, Geom)
   _SPRV_OP(InputLines, Geom)
@@ -199,12 +271,30 @@ enum SPRVMemoryModelKind {
 
 enum SPRVStorageClassKind {
 #define _SPRV_OP(x,y) SPRVSC_##x,
-  _SPRV_OP(UniformConstant, Default)
+  _SPRV_OP(UniformConstant, None)
   _SPRV_OP(Input, Shader)
   _SPRV_OP(Uniform, Shader)
   _SPRV_OP(Output, Shader)
-  _SPRV_OP(WorkgroupLocal, Default)
-  _SPRV_OP(WorkgroupGlobal, Default)
+  _SPRV_OP(WorkgroupLocal, None)
+  _SPRV_OP(WorkgroupGlobal, None)
+  _SPRV_OP(PrivateGlobal, Shader)
+  _SPRV_OP(Function, Shader)
+  _SPRV_OP(Generic, Kernel)
+  _SPRV_OP(Private, Kernel)
+  _SPRV_OP(AtomicCounter, Shader)
+  _SPRV_OP(Count, Count)
+#undef _SPRV_OP
+};
+
+template<> inline void
+SPRVMap<SPRVStorageClassKind, SPRVCapabilityKind>::init() {
+#define _SPRV_OP(x,y) add(SPRVSC_##x, SPRVCAP_##y);
+  _SPRV_OP(UniformConstant, None)
+  _SPRV_OP(Input, Shader)
+  _SPRV_OP(Uniform, Shader)
+  _SPRV_OP(Output, Shader)
+  _SPRV_OP(WorkgroupLocal, None)
+  _SPRV_OP(WorkgroupGlobal, None)
   _SPRV_OP(PrivateGlobal, Shader)
   _SPRV_OP(Function, Shader)
   _SPRV_OP(Generic, Kernel)

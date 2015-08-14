@@ -64,6 +64,11 @@ public:
   }
   bool isByVal()const { return hasAttr(SPRVFPA_ByVal);}
   bool isZext()const { return hasAttr(SPRVFPA_Zext);}
+  CapVec getRequiredCapability() const {
+    if (hasLinkageType() && getLinkageType() == SPRVLT_Import)
+      return getVec(SPRVCAP_Linkage);
+    return CapVec();
+  }
 protected:
   void validate()const {
     SPRVValue::validate();

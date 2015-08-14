@@ -84,11 +84,11 @@ public:
   bool isTypeEvent() const;
   bool isTypeDeviceEvent() const;
   bool isTypeReserveId() const;
-  bool isTypeFloat() const;
+  bool isTypeFloat(unsigned Bits = 0) const;
+  bool isTypeImage() const;
   bool isTypeOCLImage() const;
-  bool isTypeOCLSampler() const;
   bool isTypePipe()const;
-  bool isTypeInt() const;
+  bool isTypeInt(unsigned Bits = 0) const;
   bool isTypeOpaque() const;
   bool isTypePointer() const;
   bool isTypeSampler() const;
@@ -126,15 +126,16 @@ protected:
 
 class SPRVTypeInt:public SPRVType {
 public:
+  static const SPRVOpCode OC = SPRVOC_OpTypeInt;
   // Complete constructor
   SPRVTypeInt(SPRVModule *M, SPRVId TheId, unsigned TheBitWidth,
       bool ItIsSigned)
-    :SPRVType(M, 4, SPRVOC_OpTypeInt, TheId), BitWidth(TheBitWidth),
+    :SPRVType(M, 4, OC , TheId), BitWidth(TheBitWidth),
      IsSigned(ItIsSigned){
      validate();
      }
   // Incomplete constructor
-  SPRVTypeInt():SPRVType(SPRVOC_OpTypeInt), BitWidth(0), IsSigned(false){}
+  SPRVTypeInt():SPRVType(OC), BitWidth(0), IsSigned(false){}
 
   unsigned getBitWidth() const { return BitWidth;}
   bool isSigned() const { return IsSigned;}
@@ -152,11 +153,12 @@ private:
 
 class SPRVTypeFloat:public SPRVType {
 public:
+  static const SPRVOpCode OC = SPRVOC_OpTypeFloat;
   // Complete constructor
   SPRVTypeFloat(SPRVModule *M, SPRVId TheId, unsigned TheBitWidth)
-    :SPRVType(M, 3, SPRVOC_OpTypeFloat, TheId), BitWidth(TheBitWidth){}
+    :SPRVType(M, 3, OC, TheId), BitWidth(TheBitWidth){}
   // Incomplete constructor
-  SPRVTypeFloat():SPRVType(SPRVOC_OpTypeFloat), BitWidth(0){}
+  SPRVTypeFloat():SPRVType(OC), BitWidth(0){}
 
   unsigned getBitWidth() const { return BitWidth;}
 
@@ -187,7 +189,13 @@ public:
 
   SPRVType *getElementType() const { return ElemType;}
   SPRVStorageClassKind getStorageClass() const { return StorageClass;}
-
+  CapVec getRequiredCapability() const {
+    auto Cap = getVec(SPRVCAP_Addresses);
+    if (ElemType->isTypeFloat(16))
+      Cap.push_back(SPRVCAP_Float16Buffer);
+    Cap.push_back(getCapability(StorageClass));
+    return Cap;
+  }
 protected:
   _SPRV_DEF_ENCDEC3(Id, StorageClass, ElemType)
   void validate()const {
@@ -216,6 +224,11 @@ public:
   SPRVType *getComponentType() const { return CompType;}
   SPRVWord getComponentCount() const { return CompCount;}
   bool isValidIndex(SPRVWord Index) const { return Index < CompCount;}
+  CapVec getRequiredCapability() const {
+    if (CompCount >= 8)
+      return getVec(SPRVCAP_Vector16);
+    return CapVec();
+  }
 
 protected:
   _SPRV_DEF_ENCDEC3(Id, CompType, CompCount)
@@ -269,80 +282,112 @@ protected:
   }
 };
 
-struct SPRVTypeSamplerDescriptor {
-  SPRVWord Dimensionality;
-  SPRVWord Content;
+struct SPRVTypeImageDescriptor {
+  SPRVWord Dim;
+  SPRVWord Depth;
   SPRVWord Arrayed;
-  SPRVWord Compare;
-  SPRVWord Multisampled;
-  static std::tuple<SPRVWord, SPRVWord, SPRVWord, SPRVWord, SPRVWord>
-    getAsTuple (const SPRVTypeSamplerDescriptor &Desc) {
-    return std::make_tuple(Desc.Dimensionality, Desc.Content, Desc.Arrayed,
-      Desc.Compare, Desc.Multisampled);
+  SPRVWord MS;
+  SPRVWord Sampled;
+  SPRVWord Format;
+  static std::tuple<std::tuple<SPRVWord, SPRVWord, SPRVWord, SPRVWord,
+    SPRVWord>, SPRVWord>
+    getAsTuple (const SPRVTypeImageDescriptor &Desc) {
+    return std::make_tuple(std::make_tuple(Desc.Dim, Desc.Depth, Desc.Arrayed,
+      Desc.MS, Desc.Sampled), Desc.Format);
   }
-  SPRVTypeSamplerDescriptor():Dimensionality(0), Content(0), Arrayed(0),
-      Compare(0), Multisampled(0){}
-  SPRVTypeSamplerDescriptor(SPRVWord Dim, SPRVWord Cont, SPRVWord Arr,
-      SPRVWord Comp,  SPRVWord Mult):Dimensionality(Dim), Content(Cont),
-          Arrayed(Arr), Compare(Comp), Multisampled(Mult){}
+  SPRVTypeImageDescriptor():Dim(0), Depth(0), Arrayed(0),
+      MS(0), Sampled(0), Format(0){}
+  SPRVTypeImageDescriptor(SPRVWord Dim, SPRVWord Cont, SPRVWord Arr,
+      SPRVWord Comp,  SPRVWord Mult, SPRVWord F):Dim(Dim), Depth(Cont),
+          Arrayed(Arr), MS(Comp), Sampled(Mult), Format(F){}
 };
+
+template<> inline void
+SPRVMap<std::string, SPRVTypeImageDescriptor>::init() {
+#define _SPRV_OP(x,...) {SPRVTypeImageDescriptor S(__VA_ARGS__); \
+  add("opencl."#x, S);}
+_SPRV_OP(image1d_t,                  0, 0, 0, 0, 0, 0)
+_SPRV_OP(image1d_buffer_t,           5, 0, 0, 0, 0, 0)
+_SPRV_OP(image1d_array_t,            0, 0, 1, 0, 0, 0)
+_SPRV_OP(image2d_t,                  1, 0, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_t,            1, 0, 1, 0, 0, 0)
+_SPRV_OP(image2d_depth_t,            1, 1, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_depth_t,      1, 1, 1, 0, 0, 0)
+_SPRV_OP(image2d_msaa_t,             1, 0, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_t,       1, 0, 1, 1, 0, 0)
+_SPRV_OP(image2d_msaa_depth_t,       1, 1, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_depth_t, 1, 1, 1, 1, 0, 0)
+_SPRV_OP(image3d_t,                  2, 0, 0, 0, 0, 0)
+#undef _SPRV_OP
+}
+typedef SPRVMap<std::string, SPRVTypeImageDescriptor>
+  OCLSPRVImageTypeMap;
 
 // Comparision function required to use the struct as map key.
 inline bool
-operator<(const SPRVTypeSamplerDescriptor &A,
-    const SPRVTypeSamplerDescriptor &B){
-  return SPRVTypeSamplerDescriptor::getAsTuple(A) <
-      SPRVTypeSamplerDescriptor::getAsTuple(B);
+operator<(const SPRVTypeImageDescriptor &A,
+    const SPRVTypeImageDescriptor &B){
+  return SPRVTypeImageDescriptor::getAsTuple(A) <
+      SPRVTypeImageDescriptor::getAsTuple(B);
 }
 
-// The type for OpenGL sampler, OpenCL image and sampler.
-class SPRVTypeSampler:public SPRVType {
+class SPRVTypeImage:public SPRVType {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpTypeSampler;
+  const static SPRVOpCode OC = SPRVOC_OpTypeImage;
   const static SPRVWord FixedWC = 8;
-  SPRVTypeSampler(SPRVModule *M, SPRVId TheId, SPRVId TheSampledType,
-      const SPRVTypeSamplerDescriptor &TheDesc)
+  SPRVTypeImage(SPRVModule *M, SPRVId TheId, SPRVId TheSampledType,
+      const SPRVTypeImageDescriptor &TheDesc)
     :SPRVType(M, FixedWC, OC, TheId), SampledType(TheSampledType),
      Desc(TheDesc){
     validate();
   }
-  SPRVTypeSampler(SPRVModule *M, SPRVId TheId, SPRVId TheSampledType,
-      const SPRVTypeSamplerDescriptor &TheDesc, SPRVAccessQualifierKind TheAcc)
+  SPRVTypeImage(SPRVModule *M, SPRVId TheId, SPRVId TheSampledType,
+      const SPRVTypeImageDescriptor &TheDesc, SPRVAccessQualifierKind TheAcc)
     :SPRVType(M, FixedWC + 1, OC, TheId), SampledType(TheSampledType),
      Desc(TheDesc){
     Acc.push_back(TheAcc);
     validate();
   }
-  SPRVTypeSampler():SPRVType(OC), SampledType(SPRVID_INVALID),
-    Desc(SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX){
+  SPRVTypeImage():SPRVType(OC), SampledType(SPRVID_INVALID),
+    Desc(SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX,
+        SPRVWORD_MAX, SPRVWORD_MAX){
   }
-  const SPRVTypeSamplerDescriptor &getDescriptor()const {
+  const SPRVTypeImageDescriptor &getDescriptor()const {
     return Desc;
   }
-  bool IsOCLImage()const {
-    return SampledType == 0 && Desc.Content == 1;
-  }
-  bool IsOCLSampler()const {
-    return SampledType == 0 && Desc.Content == 2;
+  bool isOCLImage()const {
+    return get<SPRVType>(SampledType)->isTypeVoid() &&
+        Desc.Sampled == 0 &&
+        Desc.Format == 0;
   }
   bool hasAccessQualifier() const { return !Acc.empty();}
   SPRVAccessQualifierKind getAccessQualifier() const {
     assert(hasAccessQualifier());
     return Acc[0];
   }
+  CapVec getRequiredCapability() const {
+    CapVec CV;
+    CV.push_back(SPRVCAP_ImageBasic);
+    if (Acc.size() > 0 && Acc[0] == SPRVAC_ReadWrite)
+      CV.push_back(SPRVCAP_ImageReadWrite);
+    if (Desc.MS)
+      CV.push_back(SPRVCAP_ImageMipmap);
+    return CV;
+  }
 protected:
-  _SPRV_DEF_ENCDEC8(Id, SampledType, Desc.Dimensionality, Desc.Content,
-      Desc.Arrayed, Desc.Compare, Desc.Multisampled, Acc)
+  _SPRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth,
+      Desc.Arrayed, Desc.MS, Desc.Sampled, Desc.Format, Acc)
   // The validation assumes OpenCL image or sampler type.
   void validate()const {
     assert(OpCode == OC);
     assert(WordCount == FixedWC + Acc.size());
-    assert(SampledType == 0);
-    assert(Desc.Dimensionality <= 5);
-    assert(Desc.Content <= 2);
+    assert(get<SPRVType>(SampledType)->isTypeVoid());
+    assert(Desc.Dim <= 5);
+    assert(Desc.Depth <= 1);
     assert(Desc.Arrayed <= 1);
-    assert(Desc.Compare <= 1);
-    assert(Desc.Multisampled <= 1);
+    assert(Desc.MS <= 1);
+    assert(Desc.Sampled == 0); // For OCL only
+    assert(Desc.Format == 0);  // For OCL only
     assert(Acc.size() <= 1);
   }
   void setWordCount(SPRVWord TheWC) {
@@ -351,8 +396,55 @@ protected:
   }
 private:
   SPRVId SampledType;
-  SPRVTypeSamplerDescriptor Desc;
+  SPRVTypeImageDescriptor Desc;
   std::vector<SPRVAccessQualifierKind> Acc;
+};
+
+class SPRVTypeSampler:public SPRVType {
+public:
+  const static SPRVOpCode OC = SPRVOC_OpTypeSampler;
+  const static SPRVWord FixedWC = 2;
+  SPRVTypeSampler(SPRVModule *M, SPRVId TheId)
+    :SPRVType(M, FixedWC, OC, TheId){
+    validate();
+  }
+  SPRVTypeSampler():SPRVType(OC){
+  }
+protected:
+  _SPRV_DEF_ENCDEC1(Id)
+  void validate()const {
+    assert(OpCode == OC);
+    assert(WordCount == FixedWC);
+  }
+};
+
+class SPRVTypeSampledImage:public SPRVType {
+public:
+  const static SPRVOpCode OC = SPRVOC_OpTypeSampledImage;
+  const static SPRVWord FixedWC = 3;
+  SPRVTypeSampledImage(SPRVModule *M, SPRVId TheId, SPRVTypeImage *TheImgTy)
+    :SPRVType(M, FixedWC, OC, TheId), ImgTy(TheImgTy){
+    validate();
+  }
+  SPRVTypeSampledImage():SPRVType(OC), ImgTy(nullptr){
+  }
+
+  const SPRVTypeImage *getImageType() const {
+    return ImgTy;
+  }
+
+  void setImageType(SPRVTypeImage *TheImgTy) {
+    ImgTy = TheImgTy;
+  }
+
+protected:
+  SPRVTypeImage *ImgTy;
+  _SPRV_DEF_ENCDEC2(Id, ImgTy)
+  void validate()const {
+    assert(OpCode == OC);
+    assert(WordCount == FixedWC);
+    assert(ImgTy && ImgTy->isTypeImage());
+  }
 };
 
 class SPRVTypeStruct:public SPRVType {
@@ -476,7 +568,9 @@ public:
     AccessQualifier = AccessQual;
     assert(isValid(AccessQualifier));
   }
-
+  CapVec getRequiredCapability() const {
+    return getVec(SPRVCAP_Pipe);
+  }
 protected:
   _SPRV_DEF_ENCDEC2(Id, AccessQualifier)
   void validate()const {
@@ -485,5 +579,15 @@ protected:
 private:
   SPRVAccessQualifierKind AccessQualifier;     // Access Qualifier
 };
+
+template<typename T2, typename T1>
+bool
+isType(const T1 *Ty, unsigned Bits = 0) {
+  bool Is = Ty->getOpCode() == T2::OC;
+  if (Bits == 0)
+    return Is;
+  return static_cast<const T2*>(Ty)->getBitWidth() == Bits;
+}
+
 }
 #endif // SPRVTYPE_HPP_

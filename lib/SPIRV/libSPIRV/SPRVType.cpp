@@ -145,20 +145,14 @@ SPRVType::isTypeComposite() const {
 }
 
 bool
-SPRVType::isTypeFloat()const {
-  return OpCode == SPRVOC_OpTypeFloat;
+SPRVType::isTypeFloat(unsigned Bits)const {
+  return isType<SPRVTypeFloat>(this, Bits);
 }
 
 bool
 SPRVType::isTypeOCLImage()const {
-  return isTypeSampler() && static_cast<const SPRVTypeSampler *>(this)->
-    IsOCLImage();
-}
-
-bool
-SPRVType::isTypeOCLSampler()const {
-  return isTypeSampler() && static_cast<const SPRVTypeSampler *>(this)->
-    IsOCLSampler();
+  return isTypeImage() && static_cast<const SPRVTypeImage *>(this)->
+    isOCLImage();
 }
 
 bool
@@ -172,8 +166,8 @@ SPRVType::isTypeReserveId() const {
 }
 
 bool
-SPRVType::isTypeInt()const {
-  return OpCode == SPRVOC_OpTypeInt;
+SPRVType::isTypeInt(unsigned Bits)const {
+  return isType<SPRVTypeInt>(this, Bits);
 }
 
 bool
@@ -199,6 +193,11 @@ SPRVType::isTypeDeviceEvent()const {
 bool
 SPRVType::isTypeSampler()const {
   return OpCode == SPRVOC_OpTypeSampler;
+}
+
+bool
+SPRVType::isTypeImage()const {
+  return OpCode == SPRVOC_OpTypeImage;
 }
 
 bool

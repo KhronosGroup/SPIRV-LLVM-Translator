@@ -170,6 +170,13 @@ namespace SPIR {
     return primitiveSupportedVersions[t];
   }
 
+  const char* mangledPrimitiveStringfromName(std::string type) {
+    for (size_t i = 0; i < (sizeof(PrimitiveNames) / sizeof(PrimitiveNames[0])); i++)
+      if (type.compare(PrimitiveNames[i]) == 0)
+        return mangledTypes[i];
+    return NULL;
+  }
+
   const char* getSPIRVersionAsString(SPIRversion version) {
     switch (version) {
       case SPIR12: return "SPIR 1.2";

@@ -122,8 +122,9 @@ inline bool isOpaqueGenericTypeOpCode(SPRVOpCode OpCode) {
 }
 
 inline bool isGenericNegateOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpSNegate &&
-      (unsigned)OpCode <= SPRVOC_OpNot;
+  return (unsigned)OpCode == SPRVOC_OpSNegate ||
+      (unsigned)OpCode == SPRVOC_OpFNegate ||
+      (unsigned)OpCode == SPRVOC_OpNot;
 }
 
 inline bool isAccessChainOpCode(SPRVOpCode OpCode) {

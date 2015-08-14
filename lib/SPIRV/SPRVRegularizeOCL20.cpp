@@ -38,6 +38,7 @@
 #define DEBUG_TYPE "spvcl20"
 
 #include "SPRVInternal.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
@@ -54,25 +55,44 @@ namespace SPRV {
 class SPRVRegularizeOCL20: public ModulePass,
   public InstVisitor<SPRVRegularizeOCL20> {
 public:
-  SPRVRegularizeOCL20():ModulePass(ID) {
+  SPRVRegularizeOCL20():ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeSPRVRegularizeOCL20Pass(*PassRegistry::getPassRegistry());
   }
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
-  void visitCallGetFence(CallInst *CI,
-      const std::string &DemangledName);
-  void visitCallNDRange(Module *M, CallInst *CI,
-      const std::string &DemangledName);
+  void visitCallGetFence(CallInst *CI, const std::string &DemangledName);
+  void visitCallNDRange(CallInst *CI, const std::string &DemangledName);
 
   /// Transform atom_cmpxchg/atomic_cmpxchg to atomic_compare_exchange.
   /// In atom_cmpxchg/atomic_cmpxchg, the expected value parameter is a value.
   /// However in atomic_compare_exchange it is a pointer. The transformation
   /// adds an alloca instruction, store the expected value in the pointer, and
   /// pass the pointer as argument.
-  void visitCallAtomic(Module *M, CallInst *CI,
+  void visitCallAtomic(CallInst *CI, const std::string &DemangledName);
+
+  /// Transform read_image with sampler arguments.
+  /// read_image(image, sampler, ...) =>
+  ///   sampled_image = __spirv_SampledImage__(image, sampler);
+  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
+  void visitCallReadImage(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
+
+  /// Transform get_image_{width|height|depth|dim}.
+  /// get_image_xxx(...) =>
+  ///   dimension = __spirv_ImageQuerySizeLod__(...);
+  ///   return dimension.{x|y|z};
+  void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
+      const std::string &DemangledName);
+
+  void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
+    I.dropAllReferences();
+    I.eraseFromParent();
+  }
   static char ID;
+private:
+  Module *M;
+  LLVMContext *Ctx;
 };
 
 char SPRVRegularizeOCL20::ID = 0;
@@ -82,14 +102,16 @@ SPRVRegularizeOCL20::getAnalysisUsage(AnalysisUsage& AU) {
 }
 
 bool
-SPRVRegularizeOCL20::runOnModule(Module& M) {
-  visit(M);
+SPRVRegularizeOCL20::runOnModule(Module& Module) {
+  M = &Module;
+  Ctx = &M->getContext();
+  visit(*M);
 
-  DEBUG(dbgs() << "After RegularizeOCL20:\n" << M);
+  DEBUG(dbgs() << "After RegularizeOCL20:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)){
     DEBUG(errs() << "Fails to verify module: " << Err);
   }
   return true;
@@ -98,61 +120,40 @@ SPRVRegularizeOCL20::runOnModule(Module& M) {
 void
 SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
-  auto M = CI.getParent()->getParent()->getParent();
   auto F = CI.getCalledFunction();
   if (!F)
     return;
 
+  auto MangledName = F->getName();
   std::string DemangledName;
-  if (!oclIsBuiltin(F->getName(), 20, &DemangledName))
+  if (!oclIsBuiltin(MangledName, 20, &DemangledName))
     return;
   DEBUG(dbgs() << "DemangledName == " << DemangledName.c_str() << '\n');
-  if (DemangledName == kOCLBuiltinName::GetFence){
-    visitCallGetFence(&CI, DemangledName);
-    return;
-  }
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
-    visitCallNDRange(M, &CI, DemangledName);
+    visitCallNDRange(&CI, DemangledName);
     return;
   }
   if (DemangledName == "atom_cmpxchg" ||
       DemangledName == "atomic_cmpxchg") {
-    visitCallAtomic(M, &CI, DemangledName);
+    visitCallAtomic(&CI, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
+    visitCallReadImage(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::GetImageWidth ||
+      DemangledName == kOCLBuiltinName::GetImageHeight ||
+      DemangledName == kOCLBuiltinName::GetImageDepth ||
+      DemangledName == kOCLBuiltinName::GetImageDim) {
+    visitCallGetImageSize(&CI, MangledName, DemangledName);
     return;
   }
 }
 
-void
-SPRVRegularizeOCL20::visitCallGetFence(CallInst *CI,
-    const std::string &DemangledName) {
-  assert(DemangledName == kOCLBuiltinName::GetFence);
-  int fence = 0;
-  Value *V = const_cast<Value *>(CI->getArgOperand(0));
-  PointerType *SrcPtrTy = cast<PointerType>(V->getType());
-  unsigned InAS = SrcPtrTy->getAddressSpace();
-  switch (InAS) {
-    case SPIRAS_Global:
-      fence = SPIRMFF_Global; //SPIRV's Global MEM Fence
-      break;
-    case SPIRAS_Local:
-      fence = SPIRMFF_Local; //SPIRV's Local MEM Fence
-      break;
-    case SPIRAS_Private:
-    case SPIRAS_Generic:
-    case SPIRAS_Constant:
-    default:
-      break;
-  }
-  CI->replaceAllUsesWith(ConstantInt::get(CI->getType(), fence, false));
-
-  auto F = CI->getCalledFunction();
-  CI->dropAllReferences();
-  CI->removeFromParent();
-  return;
-}
 
 void
-SPRVRegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
+SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
     const std::string &DemangledName) {
   assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
   auto Len = atoi(DemangledName.substr(8, 1).c_str());
@@ -192,7 +193,7 @@ SPRVRegularizeOCL20::visitCallNDRange(Module *M, CallInst *CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomic(Module *M, CallInst* CI,
+SPRVRegularizeOCL20::visitCallAtomic(CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -203,6 +204,49 @@ SPRVRegularizeOCL20::visitCallAtomic(Module *M, CallInst* CI,
     CmpVal = Alloca;
     return "atomic_compare_exchange_strong";
   }, true, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallReadImage(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  if (MangledName.find(kMangledName::Sampler) == StringRef::npos)
+    return;
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    auto SampledImgTy = getSPRVSampledImageType(M, Args[0]->getType());
+    Value *SampledImgArgs[] = {Args[0], Args[1]};
+    auto SampledImg = addCallInst(M,
+        decorateSPRVFunction(kSPRVName::SampledImage), SampledImgTy,
+        SampledImgArgs, nullptr, CI, false, kSPRVName::TempSampledImage,
+        false);
+
+    Args[0] = SampledImg;
+    Args.erase(Args.begin() + 1, Args.begin() + 2);
+    return decorateSPRVFunction(kSPRVName::ImageSampleExplicitLod);
+  }, false, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI,
+    [=](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+      if (DemangledName != kOCLBuiltinName::GetImageDim)
+        Ret = VectorType::get(Type::getInt32Ty(*Ctx), 3);
+      return decorateSPRVFunction(kSPRVName::ImageQuerySizeLod);
+    },
+    [=](CallInst *NCI)->Instruction * {
+      if (DemangledName == kOCLBuiltinName::GetImageDim)
+        return NCI;
+      auto I = StringSwitch<unsigned>(DemangledName)
+          .Case(kOCLBuiltinName::GetImageWidth, 0)
+          .Case(kOCLBuiltinName::GetImageHeight, 1)
+          .Case(kOCLBuiltinName::GetImageDepth, 2);
+      return ExtractElementInst::Create(NCI, getInt32(M, I), "",
+          NCI->getNextNode());
+    },
+  false, &Attrs);
 }
 
 }

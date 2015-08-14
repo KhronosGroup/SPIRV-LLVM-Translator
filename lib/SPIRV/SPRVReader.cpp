@@ -50,6 +50,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
@@ -57,13 +58,16 @@
 #include "llvm/IR/Type.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/Dwarf.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <set>
 #include <sstream>
@@ -153,10 +157,107 @@ addOCLKernelArgumentMetadata(LLVMContext *Context,
   KernelMD.push_back(MDNode::get(*Context, ValueVec));
 }
 
+class SPRVToLLVMDbgTran {
+public:
+  SPRVToLLVMDbgTran(SPRVModule *TBM, Module *TM)
+  :BM(TBM), M(TM), SpDbg(BM), Builder(*M){
+    Enable = BM->hasDebugInfo();
+  }
+
+  void createCompileUnit() {
+    if (!Enable)
+      return;
+    auto File = SpDbg.getEntryPointFileStr(SPRVEMDL_Kernel, 0);
+    std::string BaseName;
+    std::string Path;
+    splitFileName(File, BaseName, Path);
+    Builder.createCompileUnit(dwarf::DW_LANG_C99,
+      BaseName, Path, "spirv", false, "", 0, "", DIBuilder::LineTablesOnly);
+  }
+
+  void addDbgInfoVersion() {
+    if (!Enable)
+      return;
+    M->addModuleFlag(Module::Warning, "Dwarf Version",
+        dwarf::DWARF_VERSION);
+    M->addModuleFlag(Module::Warning, "Debug Info Version",
+        DEBUG_METADATA_VERSION);
+  }
+
+  DIFile getDIFile(const std::string &FileName){
+    return getOrInsert(FileMap, FileName, [=](){
+      std::string BaseName;
+      std::string Path;
+      splitFileName(FileName, BaseName, Path);
+      if (!BaseName.empty())
+        return Builder.createFile(BaseName, Path);
+      else
+        return DIFile();
+    });
+  }
+
+  DISubprogram getDISubprogram(SPRVFunction *SF, Function *F){
+    return getOrInsert(FuncMap, F, [=](){
+      auto DF = getDIFile(SpDbg.getFunctionFileStr(SF));
+      auto FN = F->getName();
+      auto LN = SpDbg.getFunctionLineNo(SF);
+      Metadata *Args[] = {DIType()};
+      return Builder.createFunction(DF, FN, FN, DF, LN,
+        Builder.createSubroutineType(DF, Builder.getOrCreateTypeArray(Args)),
+        Function::isInternalLinkage(F->getLinkage()),
+        true, LN, 0, 0, NULL, NULL, NULL);
+    });
+  }
+
+  void transDbgInfo(SPRVValue *SV, Value *V) {
+    if (!Enable || !SV->hasLine())
+      return;
+    if (auto I = dyn_cast<Instruction>(V)) {
+      assert(SV->isInst() && "Invalid instruction");
+      auto SI = static_cast<SPRVInstruction *>(SV);
+      assert(SI->getParent() &&
+             SI->getParent()->getParent() &&
+             "Invalid instruction");
+      auto Line = SV->getLine();
+      I->setDebugLoc(DebugLoc::get(Line->getLine(), Line->getColumn(),
+          getDISubprogram(SI->getParent()->getParent(),
+              I->getParent()->getParent())));
+    }
+  }
+
+  void finalize() {
+    if (!Enable)
+      return;
+    Builder.finalize();
+  }
+
+private:
+  SPRVModule *BM;
+  Module *M;
+  SPRVDbgInfo SpDbg;
+  DIBuilder Builder;
+  bool Enable;
+  std::unordered_map<std::string, DIFile> FileMap;
+  std::unordered_map<Function *, DISubprogram> FuncMap;
+
+  void splitFileName(const std::string &FileName,
+      std::string &BaseName,
+      std::string &Path) {
+    auto Loc = FileName.find_last_of("/\\");
+    if (Loc != std::string::npos) {
+      BaseName = FileName.substr(Loc + 1);
+      Path = FileName.substr(0, Loc);
+    } else {
+      BaseName = FileName;
+      Path = ".";
+    }
+  }
+};
+
 class SPRVToLLVM {
 public:
   SPRVToLLVM(Module *LLVMModule, SPRVModule *TheSPRVModule)
-    :M(LLVMModule), BM(TheSPRVModule){
+    :M(LLVMModule), BM(TheSPRVModule), DbgTran(BM, M){
     if (M)
       Context = &M->getContext();
   }
@@ -226,6 +327,23 @@ public:
   CallInst *postProcessOCLPipe(SPRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
+  /// \brief Post-process OpImageSampleExplicitLod.
+  ///   sampled_image = __spirv_SampledImage__(image, sampler);
+  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
+  /// =>
+  ///   read_image(image, sampler, ...)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLReadImage(SPRVInstruction *BI, CallInst *CI,
+      const std::string &DemangledName);
+
+  /// \brief Post-process OpImageQuerySizeLod.
+  ///   __spirv_ImageQuerySizeLod__(...);
+  /// =>
+  ///   get_image_dim(...)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst *CI,
+      const std::string &DemangledName);
+
   typedef DenseMap<SPRVType *, Type *> SPRVToLLVMTypeMap;
   typedef DenseMap<SPRVValue *, Value *> SPRVToLLVMValueMap;
   typedef DenseMap<SPRVFunction *, Function *> SPRVToLLVMFunctionMap;
@@ -244,6 +362,7 @@ private:
   SPRVToLLVMValueMap ValueMap;
   SPRVToLLVMFunctionMap FuncMap;
   SPRVToLLVMPlaceholderMap PlaceholderMap;
+  SPRVToLLVMDbgTran DbgTran;
 
   Type *mapType(SPRVType *BT, Type *T) {
     SPRVDBG(dbgs() << *T << '\n';)
@@ -322,9 +441,10 @@ private:
       std::vector<SPRVValue *> &Args);
   Instruction* transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
       CallInst* CI, BasicBlock* BB, const std::string &DemangledName);
-  std::string transOCLImageTypeName(SPRV::SPRVTypeSampler* ST);
+  std::string transOCLImageTypeName(SPRV::SPRVTypeImage* ST);
+  std::string transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST);
   std::string transOCLPipeTypeName(SPRV::SPRVTypePipe* ST);
-  std::string transOCLImageTypeAccessQualifier(SPRV::SPRVTypeSampler* ST);
+  std::string transOCLImageTypeAccessQualifier(SPRV::SPRVTypeImage* ST);
 
   // Transform OpenCL group builtin function names from group_
   // to workgroup_ and sub_group_.
@@ -467,17 +587,26 @@ SPRVToLLVM::transFPType(SPRVType* T) {
 }
 
 std::string
-SPRVToLLVM::transOCLImageTypeName(SPRV::SPRVTypeSampler* ST) {
-  auto Name = SPIRSPRVImageSamplerTypeMap::rmap(ST->getDescriptor());
-  Name = Name + SPIR_TYPE_NAME_DELIMITER +
+SPRVToLLVM::transOCLImageTypeName(SPRV::SPRVTypeImage* ST) {
+  auto Name = OCLSPRVImageTypeMap::rmap(ST->getDescriptor());
+  Name = Name + kSPR2TypeName::Delimiter +
       SPIRSPRVAccessQualifierMap::rmap(ST->getAccessQualifier());
+  return Name;
+}
+
+std::string
+SPRVToLLVM::transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST) {
+  auto Name = OCLSPRVImageTypeMap::rmap(
+      ST->getImageType()->getDescriptor());
+  Name = std::string(kSPRVTypeName::SampledImg) + kSPR2TypeName::Delimiter
+       + StringRef(Name).drop_front(strlen(kSPR2TypeName::OCLPrefix)).str();
   return Name;
 }
 
 std::string
 SPRVToLLVM::transOCLPipeTypeName(SPRV::SPRVTypePipe* PT) {
   std::string Name = SPIR_TYPE_NAME_PIPE_T;
-  Name = Name + SPIR_TYPE_NAME_DELIMITER +
+  Name = Name + kSPR2TypeName::Delimiter +
       SPIRSPRVAccessQualifierMap::rmap(PT->getAccessQualifier());
   return Name;
 }
@@ -485,7 +614,7 @@ SPRVToLLVM::transOCLPipeTypeName(SPRV::SPRVTypePipe* PT) {
 void
 SPRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
     SPRVInstruction *Inst) {
-  if (DemangledName.find(kSPRVFuncName::GroupPrefix) != 0)
+  if (DemangledName.find(kSPRVName::GroupPrefix) != 0)
     return;
 
   auto IT = static_cast<SPRVInstTemplate<> *>(Inst);
@@ -509,11 +638,11 @@ SPRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
   }
 
   StringRef Op = DemangledName;
-  Op = Op.drop_front(strlen(kSPRVFuncName::GroupPrefix));
+  Op = Op.drop_front(strlen(kSPRVName::GroupPrefix));
   bool Unsigned = Op.front() == 'u';
   if (!Unsigned)
     Op = Op.drop_front(1);
-  DemangledName = Prefix + kSPRVFuncName::GroupPrefix +
+  DemangledName = Prefix + kSPRVName::GroupPrefix +
       SPIRSPRVGroupOperationMap::rmap(GO) + '_' + Op.str();
 
 }
@@ -554,16 +683,21 @@ SPRVToLLVM::transType(SPRVType *T) {
       PT.push_back(transType(FT->getParameterType(I)));
     return mapType(T, FunctionType::get(RT, PT, false));
     }
-  case SPRVOC_OpTypeSampler: {
-    auto ST = static_cast<SPRVTypeSampler *>(T);
-    if (ST->IsOCLImage())
+  case SPRVOC_OpTypeImage: {
+    auto ST = static_cast<SPRVTypeImage *>(T);
+    if (ST->isOCLImage())
       return mapType(T, getOrCreateOpaquePtrType(M,
           transOCLImageTypeName(ST)));
-    else if (ST->IsOCLSampler())
-      return mapType(T, Type::getInt32Ty(*Context));
     else
-      llvm_unreachable("Unsupported sampler type");
+      llvm_unreachable("Unsupported image type");
     return nullptr;
+  }
+  case SPRVOC_OpTypeSampler:
+    return mapType(T, Type::getInt32Ty(*Context));
+  case SPRVOC_OpTypeSampledImage: {
+    auto ST = static_cast<SPRVTypeSampledImage *>(T);
+    return mapType(T, getOrCreateOpaquePtrType(M,
+        transOCLSampledImageTypeName(ST)));
   }
   case SPRVOC_OpTypeStruct: {
     auto ST = static_cast<SPRVTypeStruct *>(T);
@@ -651,7 +785,9 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
   case SPRVOC_OpTypePipe:
     return "pipe";
   case SPRVOC_OpTypeSampler:
-    return SPIRSPRVImageSamplerTypeMap::rmap(static_cast<SPRVTypeSampler *>(T)
+    return "sampler_t";
+  case SPRVOC_OpTypeImage:
+    return OCLSPRVImageTypeMap::rmap(static_cast<SPRVTypeImage *>(T)
         ->getDescriptor()).substr(7);
   default:
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
@@ -727,7 +863,7 @@ SPRVToLLVM::transValue(SPRVValue *BV, Function *F, BasicBlock *BB,
 Value *
 SPRVToLLVM::transConvertInst(SPRVValue* BV, Function* F, BasicBlock* BB) {
   SPRVUnary* BC = static_cast<SPRVUnary*>(BV);
-  auto Src = transValue(BC->getOperand(), F, BB, BB ? true : false);
+  auto Src = transValue(BC->getOperand(0), F, BB, BB ? true : false);
   auto Dst = transType(BC->getType());
   CastInst::CastOps CO = Instruction::BitCast;
   bool IsExt = Dst->getScalarSizeInBits()
@@ -763,28 +899,10 @@ BinaryOperator *SPRVToLLVM::transShiftLogicalBitwiseInst(SPRVValue* BV,
     BasicBlock* BB,Function* F) {
   SPRVBinary* BBN = static_cast<SPRVBinary*>(BV);
   assert(BB && "Invalid BB");
-  unsigned ThellvmOpCode;
-  SPRVOpCode TheBilOpCode = BBN->getOpCode();
-  switch (TheBilOpCode) {
-  case SPRVOC_OpBitwiseOr:
-  case SPRVOC_OpLogicalOr:
-    ThellvmOpCode = Instruction::Or;
-    break;
-  case SPRVOC_OpBitwiseAnd:
-  case SPRVOC_OpLogicalAnd:
-    ThellvmOpCode = Instruction::And;
-    break;
-  case SPRVOC_OpBitwiseXor:
-  case SPRVOC_OpLogicalNotEqual:
-    ThellvmOpCode = Instruction::Xor;
-    break;
-  default:
-    ThellvmOpCode = OpCodeMap::rmap(BBN->getOpCode());
-  }
   Instruction::BinaryOps BO = static_cast<Instruction::BinaryOps>(
-      ThellvmOpCode);
-  auto Inst = BinaryOperator::Create(BO, transValue(
-      BBN->getOperand(0), F, BB),
+      OpCodeMap::rmap(BBN->getOpCode()));
+  auto Inst = BinaryOperator::Create(BO,
+      transValue(BBN->getOperand(0), F, BB),
       transValue(BBN->getOperand(1), F, BB), BV->getName(), BB);
   return Inst;
 }
@@ -950,6 +1068,41 @@ SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
   }, true, &Attrs);
 }
 
+// ToDo: Handle unsigned integer return type. May need spec change.
+CallInst *
+SPRVToLLVM::postProcessOCLReadImage(SPRVInstruction *BI, CallInst* CI,
+    const std::string &FuncName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    CallInst *CallSampledImg = cast<CallInst>(Args[0]);
+    auto Img = CallSampledImg->getArgOperand(0);
+    assert(isOCLImageType(Img->getType()));
+    auto Sampler = CallSampledImg->getArgOperand(1);
+    Args[0] = Img;
+    Args.insert(Args.begin() + 1, Sampler);
+    if (CallSampledImg->hasOneUse()) {
+      CallSampledImg->replaceAllUsesWith(
+          UndefValue::get(CallSampledImg->getType()));
+      CallSampledImg->dropAllReferences();
+      CallSampledImg->eraseFromParent();
+    }
+    Type *T = CI->getType();
+    if (auto VT = dyn_cast<VectorType>(T))
+      T = VT->getElementType();
+    return std::string(kOCLBuiltinName::SampledReadImage)
+      + (T->isFloatingPointTy()?'f':'i');
+  }, true, &Attrs);
+}
+
+CallInst *
+SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
+    const std::string &FuncName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    return kOCLBuiltinName::GetImageDim;
+  }, true, &Attrs);
+}
+
 Value *
 SPRVToLLVM::oclTransConstantSampler(SPRV::SPRVConstantSampler* BCS) {
   auto Lit = (BCS->getAddrMode() << 1) |
@@ -972,8 +1125,12 @@ SPRVToLLVM::oclTransConstantSampler(SPRV::SPRVConstantSampler* BCS) {
 Value *
 SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     BasicBlock *BB, bool CreatePlaceHolder){
+
+  auto OC = BV->getOpCode();
+  IntBoolOpMap::rfind(OC, &OC);
+
   // Translation of non-instruction values
-  switch(BV->getOpCode()) {
+  switch(OC) {
   case SPRVOC_OpConstant: {
     SPRVConstant *BConst = static_cast<SPRVConstant *>(BV);
     SPRVType *BT = BV->getType();
@@ -1042,6 +1199,12 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   case SPRVOC_OpConstantSampler: {
     auto BCS = static_cast<SPRVConstantSampler*>(BV);
     return mapValue(BV, oclTransConstantSampler(BCS));
+  }
+
+  case SPRVOC_OpSpecConstantOp: {
+    auto BI = createInstFromSpecConstantOp(
+        static_cast<SPRVSpecConstantOp*>(BV));
+    return mapValue(BV, transValue(BI, nullptr, nullptr, false));
   }
 
   case SPRVOC_OpUndef:
@@ -1256,11 +1419,15 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     break;
 
   case SPRVOC_OpAccessChain:
-  case SPRVOC_OpInBoundsAccessChain: {
-    SPRVAccessChain *AC = static_cast<SPRVAccessChain *>(BV);
+  case SPRVOC_OpInBoundsAccessChain:
+  case SPRVOC_OpPtrAccessChain:
+  case SPRVOC_OpInBoundsPtrAccessChain: {
+    auto AC = static_cast<SPRVAccessChainBase *>(BV);
     auto Base = transValue(AC->getBase(), F, BB);
     auto Index = transValue(AC->getIndices(), F, BB);
-    auto IsInbound = BV->getOpCode() == SPRVOC_OpInBoundsAccessChain;
+    if (!AC->hasPtrIndex())
+      Index.insert(Index.begin(), getInt32(M, 0));
+    auto IsInbound = AC->isInBounds();
     Value *V = nullptr;
     if (BB) {
       auto GEP = GetElementPtrInst::Create(Base, Index, BV->getName(), BB);
@@ -1366,14 +1533,14 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   case SPRVOC_OpSNegate: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateNSWNeg(
-      transValue(BC->getOperand(), F, BB),
+      transValue(BC->getOperand(0), F, BB),
       BV->getName(), BB));
     }
 
   case SPRVOC_OpFNegate: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateFNeg(
-      transValue(BC->getOperand(), F, BB),
+      transValue(BC->getOperand(0), F, BB),
       BV->getName(), BB));
     }
     break;
@@ -1381,7 +1548,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   case SPRVOC_OpNot: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateNot(
-      transValue(BC->getOperand(), F, BB),
+      transValue(BC->getOperand(0), F, BB),
       BV->getName(), BB));
     }
     break;
@@ -1521,6 +1688,10 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
   }
   if (DemangledName.find("pipe") != std::string::npos)
     return postProcessOCLPipe(BI, CI, DemangledName);
+  if (OC == SPRVOC_OpImageSampleExplicitLod)
+    return postProcessOCLReadImage(BI, CI, DemangledName);
+  if (OC == SPRVOC_OpImageQuerySizeLod)
+    return postProcessOCLGetImageSize(BI, CI, DemangledName);
   return CI;
 }
 
@@ -1598,6 +1769,24 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
   }
   auto Name = SPIRSPRVBuiltinInstMap::rmap(OC);
   transOCLGroupBuiltinName(Name, BI);
+
+  SPRVType *T = nullptr;
+  switch(OC) {
+  case SPRVOC_OpImageRead:
+    T = BI->getType();
+    break;
+  case SPRVOC_OpImageWrite:
+    T = BI->getOperands()[2]->getType();
+    break;
+  default:
+    // do nothing
+    break;
+  }
+  if (T && T->isTypeVector())
+    T = T->getVectorComponentType();
+  if (T)
+    Name += T->isTypeFloat()?'f':'i';
+
   return Name;
 }
 
@@ -1612,6 +1801,9 @@ bool
 SPRVToLLVM::translate() {
   if (!transAddressingModel())
     return false;
+
+  DbgTran.createCompileUnit();
+  DbgTran.addDbgInfoVersion();
 
   for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
     auto BV = BM->getVariable(I);
@@ -1636,6 +1828,8 @@ SPRVToLLVM::translate() {
     return false;
   if (!postProcessOCL())
     return false;
+
+  DbgTran.finalize();
   return true;
 }
 
@@ -1664,6 +1858,7 @@ bool
 SPRVToLLVM::transDecoration(SPRVValue *BV, Value *V) {
   if (!transAlign(BV, V))
     return false;
+  DbgTran.transDbgInfo(BV, V);
   return true;
 }
 
@@ -1685,7 +1880,7 @@ SPRVToLLVM::transFPContractMetadata() {
 }
 
 std::string SPRVToLLVM::transOCLImageTypeAccessQualifier(
-    SPRV::SPRVTypeSampler* ST) {
+    SPRV::SPRVTypeImage* ST) {
   return SPIRSPRVAccessQualifierMap::rmap(ST->getAccessQualifier());
 }
 
@@ -1721,7 +1916,7 @@ SPRVToLLVM::transKernelMetadata() {
       if (!Arg->getType()->isTypeOCLImage())
         Qual = "none";
       else {
-        auto ST = static_cast<SPRVTypeSampler *>(Arg->getType());
+        auto ST = static_cast<SPRVTypeImage *>(Arg->getType());
         Qual = transOCLImageTypeAccessQualifier(ST);
       }
       return MDString::get(*Context, Qual);
@@ -2000,6 +2195,11 @@ SPRVToLLVM::transSourceLanguage() {
 bool
 SPRVToLLVM::transSourceExtension() {
   std::string OCLExtensions = BM->getSourceExtension();
+  auto ExtSet = rmap<OclExt::Kind>(getSet(OCLExtensions));
+  auto CapSet = rmap<OclExt::Kind>(BM->getCapability());
+  for (auto &I:CapSet)
+    ExtSet.insert(I);
+  OCLExtensions = getStr(map<std::string>(ExtSet));
   std::string OCLOptionalCoreFeatures;
   bool First = true;
   static const char *OCLOptCoreFeatureNames[] = {
@@ -2077,6 +2277,7 @@ llvm::ReadSPRV(LLVMContext &C, std::istream &IS, Module *&M,
   M = new Module("", C);
   std::unique_ptr<SPRVModule> BM(SPRVModule::createSPRVModule());
 
+  BM->setAutoAddCapability(false);
   IS >> *BM;
 
   SPRVToLLVM BTL(M, BM.get());
