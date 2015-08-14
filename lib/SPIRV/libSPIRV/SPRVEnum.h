@@ -385,10 +385,11 @@ _SPRV_OP(Invalid, 255)
 };
 
 enum SPRVMemoryAccessKind {
-#define _SPRV_OP(x) SPRVMA_##x,
-  _SPRV_OP(Volatile)
-  _SPRV_OP(Aligned)
-  _SPRV_OP(Count)
+#define _SPRV_OP(x, y) SPRVMA_##x = y,
+  _SPRV_OP(None, 0x0)
+  _SPRV_OP(Volatile, 0x1)
+  _SPRV_OP(Aligned, 0x2)
+  _SPRV_OP(Count, 0x4)
 #undef _SPRV_OP
 };
 
