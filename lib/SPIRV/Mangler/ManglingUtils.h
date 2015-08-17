@@ -25,6 +25,8 @@ namespace SPIR {
 
   const SPIRversion getSupportedVersion(TypePrimitiveEnum t);
   const char* getSPIRVersionAsString(SPIRversion version);
+
+  const char* mangledPrimitiveStringfromName(std::string type);
 } // End SPIR namespace
 
 #endif //__MANGLING_UTILS_H__

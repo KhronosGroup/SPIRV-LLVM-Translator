@@ -43,8 +43,11 @@
 #include "SPRVEntry.h"
 
 #include <iostream>
-#include <vector>
+#include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace SPRV{
 
@@ -61,7 +64,9 @@ class SPRVTypeFunction;
 class SPRVTypeInt;
 class SPRVTypeOpaque;
 class SPRVTypePointer;
+class SPRVTypeImage;
 class SPRVTypeSampler;
+class SPRVTypeSampledImage;
 class SPRVTypeStruct;
 class SPRVTypeVector;
 class SPRVTypeVoid;
@@ -75,10 +80,11 @@ class SPRVGroupMemberDecorate;
 class SPRVGroupDecorateGeneric;
 
 typedef SPRVBasicBlock SPRVLabel;
-struct SPRVTypeSamplerDescriptor;
+struct SPRVTypeImageDescriptor;
 
 class SPRVModule {
 public:
+  typedef std::set<SPRVCapabilityKind> SPRVCapSet;
   static SPRVModule* createSPRVModule();
   SPRVModule();
   virtual ~SPRVModule();
@@ -89,6 +95,7 @@ public:
   template<class T> T* get(SPRVId Id) const {
     return static_cast<T*>(getEntry(Id));}
   virtual SPRVEntry *getEntry(SPRVId) const = 0;
+  virtual bool hasDebugInfo() const = 0;
 
   // Error handling functions
   virtual SPRVErrorLog &getErrorLog() = 0;
@@ -96,14 +103,18 @@ public:
 
   // Module query functions
   virtual SPRVAddressingModelKind getAddressingModel() = 0;
+  virtual const SPRVCapSet &getCapability() const = 0;
   virtual SPRVExtInstSetKind getBuiltinSet(SPRVId) const = 0;
   virtual std::string &getCompileFlag() = 0;
   virtual const std::string &getCompileFlag() const = 0;
+  virtual SPRVFunction *getEntryPoint(SPRVExecutionModelKind, unsigned) const
+    = 0;
   virtual const std::string &getExtension() const = 0;
   virtual SPRVFunction *getFunction(unsigned) const = 0;
   virtual SPRVVariable *getVariable(unsigned) const = 0;
   virtual SPRVMemoryModelKind getMemoryModel() = 0;
   virtual unsigned getNumFunctions() const = 0;
+  virtual unsigned getNumEntryPoints(SPRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
   virtual SPRVSourceLanguageKind getSourceLanguage(SPRVWord *) const = 0;
   virtual const std::string &getSourceExtension() const = 0;
@@ -128,16 +139,18 @@ public:
   virtual void setSourceLanguage(SPRVSourceLanguageKind, SPRVWord) = 0;
   virtual void setSourceExtension(const std::string &) = 0;
   virtual void optimizeDecorates() = 0;
+  virtual void setAutoAddCapability(bool E){ AutoAddCapability = E;}
+  virtual void setValidateCapability(bool E){ ValidateCapability = E;}
 
   // Object creation functions
   template<class T> T *add(T *Entry) { addEntry(Entry); return Entry;}
   virtual SPRVEntry *addEntry(SPRVEntry *) = 0;
   virtual SPRVBasicBlock *addBasicBlock(SPRVFunction *,
       SPRVId Id = SPRVID_INVALID) = 0;
-  virtual SPRVString *addString(const std::string &Str) = 0;
+  virtual SPRVString *getString(const std::string &Str) = 0;
   virtual SPRVMemberName *addMemberName(SPRVTypeStruct *ST,
       SPRVWord MemberNumber, const std::string &Name) = 0;
-  virtual SPRVLine *addLineNo(SPRVEntry *E, SPRVString *FileName, SPRVWord Line,
+  virtual SPRVLine *addLine(SPRVEntry *E, SPRVString *FileName, SPRVWord Line,
       SPRVWord Column) = 0;
   virtual const SPRVDecorateGeneric *addDecorate(const SPRVDecorateGeneric*)
     = 0;
@@ -164,10 +177,12 @@ public:
   virtual SPRVTypeFloat *addFloatType(unsigned) = 0;
   virtual SPRVTypeFunction *addFunctionType(SPRVType *,
       const std::vector<SPRVType *> &) = 0;
-  virtual SPRVTypeSampler *addSamplerType(SPRVType *,
-      const SPRVTypeSamplerDescriptor &) = 0;
-  virtual SPRVTypeSampler *addSamplerType(SPRVType *,
-      const SPRVTypeSamplerDescriptor &, SPRVAccessQualifierKind) = 0;
+  virtual SPRVTypeImage *addImageType(SPRVType *,
+      const SPRVTypeImageDescriptor &) = 0;
+  virtual SPRVTypeImage *addImageType(SPRVType *,
+      const SPRVTypeImageDescriptor &, SPRVAccessQualifierKind) = 0;
+  virtual SPRVTypeSampler *addSamplerType() = 0;
+  virtual SPRVTypeSampledImage *addSampledImageType(SPRVTypeImage *T) = 0;
   virtual SPRVTypeInt *addIntegerType(unsigned) = 0;
   virtual SPRVTypeOpaque *addOpaqueType(const std::string &) = 0;
   virtual SPRVTypePointer *addPointerType(SPRVStorageClassKind, SPRVType *) = 0;
@@ -192,7 +207,7 @@ public:
       SPRVWord ParametricMode, SPRVWord FilterMode) = 0;
 
   // Instruction creation functions
-  virtual SPRVInstruction *addAccessChainInst(SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addPtrAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool) = 0;
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
@@ -206,6 +221,10 @@ public:
       const std::vector<SPRVWord> &, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addExtInst(SPRVType *, SPRVWord, SPRVWord,
       const std::vector<SPRVValue *> &, SPRVBasicBlock *) = 0;
+  virtual void addCapability(SPRVCapabilityKind) = 0;
+  /// Used by SPIRV entries to add required capability internally.
+  /// Should not be used by users directly.
+  virtual void addCapabilityInternal(SPRVCapabilityKind) = 0;
   virtual SPRVInstruction *addCallInst(SPRVFunction*,
       const std::vector<SPRVValue *>, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addCompositeExtractInst(SPRVType *, SPRVValue *,
@@ -260,9 +279,22 @@ public:
   // I/O functions
   friend std::ostream & operator<<(std::ostream &O, SPRVModule& M);
   friend std::istream & operator>>(std::istream &I, SPRVModule& M);
+protected:
+  bool AutoAddCapability;
+  bool ValidateCapability;
 };
 
-
+class SPRVDbgInfo {
+public:
+  SPRVDbgInfo(SPRVModule *TM);
+  std::string getEntryPointFileStr(SPRVExecutionModelKind, unsigned);
+  std::string getFunctionFileStr(SPRVFunction *);
+  unsigned getFunctionLineNo(SPRVFunction *);
+private:
+  std::unordered_map<SPRVFunction *, SPRVLine *> FuncMap;
+  const std::string ModuleFileStr;
+  SPRVModule *M;
+};
 }
 
 

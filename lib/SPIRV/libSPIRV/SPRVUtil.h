@@ -44,8 +44,11 @@
 #include <cassert>
 #include <functional>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace SPRV{
 
@@ -60,8 +63,7 @@ public:
   typedef Ty1 KeyTy;
   typedef Ty2 ValueTy;
   // Initialize map entries
-  virtual void init();
-  virtual ~SPRVMap(){}
+  void init();
 
   static Ty2 map(Ty1 Key) {
     Ty2 Val;
@@ -128,7 +130,7 @@ protected:
   typedef std::map<Ty1, Ty2> MapTy;
   typedef std::map<Ty2, Ty1> RevMapTy;
 
-  virtual void add(Ty1 V1, Ty2 V2) {
+  void add(Ty1 V1, Ty2 V2) {
     if (IsReverse) {
       RevMap[V2] = V1;
       return;
@@ -140,6 +142,94 @@ protected:
   bool IsReverse;
 };
 
+inline std::vector<std::string>
+getVec(const std::string &S, char Delim) {
+  std::vector<std::string> Strs;
+  std::stringstream SS(S);
+  std::string Item;
+  while (std::getline(SS, Item, Delim))
+    Strs.push_back(Item);
+  return Strs;
+}
+
+inline std::unordered_set<std::string>
+getUnordSet(const std::string &S, char Delim = ' ') {
+  std::unordered_set<std::string> Strs;
+  std::stringstream SS(S);
+  std::string Item;
+  while (std::getline(SS, Item, Delim))
+    Strs.insert(Item);
+  return Strs;
+}
+
+inline std::set<std::string>
+getSet(const std::string &S, char Delim = ' ') {
+  std::set<std::string> Strs;
+  std::stringstream SS(S);
+  std::string Item;
+  while (std::getline(SS, Item, Delim))
+    Strs.insert(Item);
+  return Strs;
+}
+
+template<typename VT, typename KT>
+std::unordered_set<VT>
+map(const std::unordered_set<KT> &KSet) {
+  VT V;
+  std::unordered_set<VT> VSet;
+  for (auto &I:KSet)
+    if (SPRVMap<KT, VT>::find(I, &V))
+      VSet.insert(V);
+  return VSet;
+}
+
+template<typename VT, typename KT>
+std::set<VT>
+map(const std::set<KT> &KSet) {
+  VT V;
+  std::set<VT> VSet;
+  for (auto &I:KSet)
+    if (SPRVMap<KT, VT>::find(I, &V))
+      VSet.insert(V);
+  return VSet;
+}
+
+template<typename KT, typename VT>
+std::unordered_set<KT>
+rmap(const std::unordered_set<VT> &KSet) {
+  KT V;
+  std::unordered_set<KT> VSet;
+  for (auto &I:KSet)
+    if (SPRVMap<KT, VT>::rfind(I, &V))
+      VSet.insert(V);
+  return VSet;
+}
+
+template<typename KT, typename VT>
+std::set<KT>
+rmap(const std::set<VT> &KSet) {
+  KT V;
+  std::set<KT> VSet;
+  for (auto &I:KSet)
+    if (SPRVMap<KT, VT>::rfind(I, &V))
+      VSet.insert(V);
+  return VSet;
+}
+
+template<typename K>
+std::string
+getName(K Key) {
+  std::string Name;
+  if (SPRVMap<K, std::string>::find(Key, &Name))
+    return Name;
+  return "";
+}
+
+template<typename K>
+bool getByName(const std::string &Name, K &Key) {
+  return SPRVMap<K, std::string>::rfind(Name, &Key);
+}
+
 // Add a number as a string to a string
 template<class T>
 std::string
@@ -150,6 +240,16 @@ concat(const std::string& s, const T& n) {
 }
 
 inline std::string
+concat(const std::string &S1, const std::string &S2, char Delim = ' ') {
+  std::string S;
+  if (S1.empty())
+    S = S2;
+  else if (!S2.empty())
+    S = S1 + Delim + S2;
+  return S;
+}
+
+inline std::string
 operator+(const std::string& s, int n) {
   return concat(s, n);
 }
@@ -157,6 +257,21 @@ operator+(const std::string& s, int n) {
 inline std::string
 operator+(const std::string& s, unsigned n) {
   return concat(s, n);
+}
+
+template<typename T>
+std::string
+getStr(const T &C, char Delim = ' ') {
+  std::stringstream SS;
+  bool First = true;
+  for (auto &I:C) {
+    if (!First)
+      SS << Delim;
+    else
+      First = false;
+    SS << I;
+  }
+  return SS.str();
 }
 
 template<class MapTy>
@@ -180,6 +295,56 @@ unsigned rmapBitMask(unsigned BM) {
 // Get the number of words used for encoding a string literal in SPRV
 inline size_t
 getSizeInWords(const std::string& Str) { return Str.length()/4 + 1;}
+
+template<typename T>
+inline std::vector<T>
+getVec(T Op1) {
+  std::vector<T> V;
+  V.push_back(Op1);
+  return V;
+}
+
+template<typename T>
+inline std::vector<T>
+getVec(T Op1, T Op2) {
+  std::vector<T> V;
+  V.push_back(Op1);
+  V.push_back(Op2);
+  return V;
+}
+
+template<typename T>
+inline std::vector<T>
+getVec(T Op1, T Op2, T Op3) {
+  std::vector<T> V;
+  V.push_back(Op1);
+  V.push_back(Op2);
+  V.push_back(Op3);
+  return V;
+}
+
+template<typename T>
+inline std::vector<T>
+getVec(T Op1, const std::vector<T> &Ops2) {
+  std::vector<T> V;
+  V.push_back(Op1);
+  V.insert(V.end(), Ops2.begin(), Ops2.end());
+  return V;
+}
+
+template<typename MapTy, typename FuncTy>
+typename MapTy::mapped_type
+getOrInsert(
+    MapTy &Map,
+    typename MapTy::key_type Key,
+    FuncTy Func){
+  typename MapTy::iterator Loc = Map.find(Key);
+  if (Loc != Map.end())
+    return Loc->second;
+  typename MapTy::mapped_type  NF = Func();
+  Map[Key] = NF;
+  return NF;
+}
 
 }
 

@@ -48,10 +48,12 @@
 #include "SPRVStream.h"
 
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace SPRV{
 
-SPRVModule::SPRVModule()
+SPRVModule::SPRVModule():AutoAddCapability(true), ValidateCapability(false)
 {}
 
 SPRVModule::~SPRVModule()
@@ -65,7 +67,7 @@ public:
     InstSchema(SPRVISCH_Default),
     SrcLang(SPRVSL_OpenCL),
     SrcLangVer(12),
-    MemoryModel(SPRVMM_OpenCL12) {
+    MemoryModel(SPRVMM_OpenCL12){
     AddrModel = sizeof(size_t) == 32 ? SPRVAM_Physical32 : SPRVAM_Physical64;
   };
   virtual ~SPRVModuleImpl();
@@ -75,6 +77,7 @@ public:
   bool exist(SPRVId, SPRVEntry **) const;
   SPRVId getId(SPRVId Id = SPRVID_INVALID, unsigned Increment = 1);
   virtual SPRVEntry *getEntry(SPRVId Id) const;
+  bool hasDebugInfo() const { return !LineVec.empty();}
 
   // Error handling functions
   SPRVErrorLog &getErrorLog() { return ErrLog;}
@@ -83,6 +86,7 @@ public:
   // Module query functions
   SPRVAddressingModelKind getAddressingModel() { return AddrModel;}
   SPRVExtInstSetKind getBuiltinSet(SPRVId SetId) const;
+  const SPRVCapSet &getCapability() const { return CapSet;}
   const std::string &getCompileFlag() const { return CompileFlag;}
   std::string &getCompileFlag() { return CompileFlag;}
   const std::string &getExtension() const { return SPRVExt;}
@@ -96,6 +100,19 @@ public:
   virtual std::vector<SPRVType *> getValueTypes(const std::vector<SPRVId>&)
       const;
   SPRVMemoryModelKind getMemoryModel() { return MemoryModel;}
+  unsigned getNumEntryPoints(SPRVExecutionModelKind EM) const {
+    auto Loc = EntryPointVec.find(EM);
+    if (Loc == EntryPointVec.end())
+      return 0;
+    return Loc->second.size();
+  }
+  SPRVFunction *getEntryPoint(SPRVExecutionModelKind EM, unsigned I) const {
+    auto Loc = EntryPointVec.find(EM);
+    if (Loc == EntryPointVec.end())
+      return nullptr;
+    assert(I < Loc->second.size());
+    return get<SPRVFunction>(Loc->second[I]);
+  }
   unsigned getNumFunctions() const { return FuncVec.size();}
   unsigned getNumVariables() const { return VariableVec.size();}
   SPRVSourceLanguageKind getSourceLanguage(SPRVWord * Ver = nullptr) const {
@@ -125,11 +142,13 @@ public:
   template<class T> void addTo(std::vector<T *> &V, SPRVEntry *E);
   virtual SPRVEntry *addEntry(SPRVEntry *E);
   virtual SPRVBasicBlock *addBasicBlock(SPRVFunction *, SPRVId);
-  virtual SPRVString *addString(const std::string &Str);
+  virtual SPRVString *getString(const std::string &Str);
   virtual SPRVMemberName *addMemberName(SPRVTypeStruct *ST,
       SPRVWord MemberNumber, const std::string &Name);
-  virtual SPRVLine *addLineNo(SPRVEntry *E, SPRVString *FileName, SPRVWord Line,
+  virtual SPRVLine *addLine(SPRVEntry *E, SPRVString *FileName, SPRVWord Line,
       SPRVWord Column);
+  virtual void addCapability(SPRVCapabilityKind);
+  virtual void addCapabilityInternal(SPRVCapabilityKind);
   virtual const SPRVDecorateGeneric *addDecorate(const SPRVDecorateGeneric *);
   virtual SPRVDecorationGroup *addDecorationGroup();
   virtual SPRVDecorationGroup *addDecorationGroup(SPRVDecorationGroup *Group);
@@ -157,10 +176,12 @@ public:
   virtual SPRVTypeInt *addIntegerType(unsigned BitWidth);
   virtual SPRVTypeOpaque *addOpaqueType(const std::string &);
   virtual SPRVTypePointer *addPointerType(SPRVStorageClassKind, SPRVType *);
-  virtual SPRVTypeSampler *addSamplerType(SPRVType *,
-      const SPRVTypeSamplerDescriptor &);
-  virtual SPRVTypeSampler *addSamplerType(SPRVType *,
-      const SPRVTypeSamplerDescriptor &, SPRVAccessQualifierKind);
+  virtual SPRVTypeImage *addImageType(SPRVType *,
+      const SPRVTypeImageDescriptor &);
+  virtual SPRVTypeImage *addImageType(SPRVType *,
+      const SPRVTypeImageDescriptor &, SPRVAccessQualifierKind);
+  virtual SPRVTypeSampler *addSamplerType();
+  virtual SPRVTypeSampledImage *addSampledImageType(SPRVTypeImage *T);
   virtual SPRVTypeStruct *addStructType(const std::vector<SPRVType *>&,
       const std::string &, bool);
   virtual SPRVTypeVector *addVectorType(SPRVType *, SPRVWord);
@@ -185,7 +206,7 @@ public:
       SPRVWord ParametricMode, SPRVWord FilterMode);
 
   // Instruction creation functions
-  virtual SPRVInstruction *addAccessChainInst(SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addPtrAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool);
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
@@ -272,6 +293,7 @@ private:
   typedef std::map<SPRVId, SPRVEntry *> SPRVIdToEntryMap;
   typedef std::vector<SPRVEntry *> SPRVEntryVector;
   typedef std::set<SPRVId> SPRVIdSet;
+  typedef std::vector<SPRVId> SPRVIdVec;
   typedef std::vector<SPRVFunction *> SPRVFunctionVector;
   typedef std::vector<SPRVType *> SPRVTypeVec;
   typedef std::vector<SPRVValue *> SPRVConstantVector;
@@ -283,6 +305,8 @@ private:
   typedef std::vector<SPRVGroupDecorateGeneric *> SPRVGroupDecVec;
   typedef std::map<SPRVId, SPRVExtInstSetKind> SPRVIdToBuiltinSetMap;
   typedef std::map<SPRVExecutionModelKind, SPRVIdSet> SPRVExecModelIdSetMap;
+  typedef std::map<SPRVExecutionModelKind, SPRVIdVec> SPRVExecModelIdVecMap;
+  typedef std::unordered_map<std::string, SPRVString*> SPRVStringMap;
 
   SPRVTypeVec TypeVec;
   SPRVIdToEntryMap IdEntryMap;
@@ -298,7 +322,10 @@ private:
   SPRVDecorateSet DecorateSet;
   SPRVDecGroupVec DecGroupVec;
   SPRVGroupDecVec GroupDecVec;
-  SPRVExecModelIdSetMap EntryPoints;
+  SPRVExecModelIdSetMap EntryPointSet;
+  SPRVExecModelIdVecMap EntryPointVec;
+  SPRVStringMap StrMap;
+  SPRVCapSet CapSet;
 
   void layoutEntry(SPRVEntry* Entry);
 };
@@ -316,9 +343,11 @@ SPRVModuleImpl::~SPRVModuleImpl() {
 }
 
 SPRVLine*
-SPRVModuleImpl::addLineNo(SPRVEntry* E, SPRVString* FileName,
+SPRVModuleImpl::addLine(SPRVEntry* E, SPRVString* FileName,
     SPRVWord Line, SPRVWord Column) {
-  return add(new SPRVLine(E, FileName->getId(), Line, Column));
+  auto L = add(new SPRVLine(E, FileName->getId(), Line, Column));
+  E->setLine(L);
+  return L;
 }
 
 // Creates decoration group and group decorates from decorates shared by
@@ -357,6 +386,17 @@ SPRVModuleImpl::addSamplerConstant(SPRVType* TheType,
     SPRVWord AddrMode, SPRVWord ParametricMode, SPRVWord FilterMode) {
   return addConstant(new SPRVConstantSampler(this, TheType, getId(), AddrMode,
       ParametricMode, FilterMode));
+}
+
+void
+SPRVModuleImpl::addCapability(SPRVCapabilityKind Cap) {
+  CapSet.insert(Cap);
+}
+
+void
+SPRVModuleImpl::addCapabilityInternal(SPRVCapabilityKind Cap) {
+  if (AutoAddCapability)
+    CapSet.insert(Cap);
 }
 
 void
@@ -409,6 +449,18 @@ SPRVModuleImpl::addEntry(SPRVEntry *Entry) {
   Entry->setModule(this);
 
   layoutEntry(Entry);
+  if (AutoAddCapability) {
+    for (auto &I:Entry->getRequiredCapability()) {
+      if (I != SPRVCAP_None)
+        addCapability(I);
+    }
+  }
+  if (ValidateCapability) {
+    for (auto &I:Entry->getRequiredCapability()) {
+      if (I != SPRVCAP_None)
+        assert(CapSet.count(I));
+    }
+  }
   return Entry;
 }
 
@@ -460,8 +512,8 @@ SPRVModuleImpl::isEntryPoint(SPRVExecutionModelKind ExecModel, SPRVId EP)
   const {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EP != SPRVID_INVALID && "Invalid function id");
-  auto Loc = EntryPoints.find(ExecModel);
-  if (Loc == EntryPoints.end())
+  auto Loc = EntryPointSet.find(ExecModel);
+  if (Loc == EntryPointSet.end())
     return false;
   return Loc->second.count(EP);
 }
@@ -581,18 +633,28 @@ SPRVModuleImpl::addPipeType() {
   return addType(new SPRVTypePipe(this, getId()));
 }
 
-SPRVTypeSampler *
-SPRVModuleImpl::addSamplerType(SPRVType *SampledType,
-    const SPRVTypeSamplerDescriptor &Desc) {
-  return addType(new SPRVTypeSampler(this, getId(),
+SPRVTypeImage *
+SPRVModuleImpl::addImageType(SPRVType *SampledType,
+    const SPRVTypeImageDescriptor &Desc) {
+  return addType(new SPRVTypeImage(this, getId(),
     SampledType ? SampledType->getId() : 0, Desc));
 }
 
-SPRVTypeSampler *
-SPRVModuleImpl::addSamplerType(SPRVType *SampledType,
-    const SPRVTypeSamplerDescriptor &Desc, SPRVAccessQualifierKind Acc) {
-  return addType(new SPRVTypeSampler(this, getId(),
+SPRVTypeImage *
+SPRVModuleImpl::addImageType(SPRVType *SampledType,
+    const SPRVTypeImageDescriptor &Desc, SPRVAccessQualifierKind Acc) {
+  return addType(new SPRVTypeImage(this, getId(),
     SampledType ? SampledType->getId() : 0, Desc, Acc));
+}
+
+SPRVTypeSampler *
+SPRVModuleImpl::addSamplerType() {
+  return addType(new SPRVTypeSampler(this, getId()));
+}
+
+SPRVTypeSampledImage *
+SPRVModuleImpl::addSampledImageType(SPRVTypeImage *T) {
+  return addType(new SPRVTypeSampledImage(this, getId(), T));
 }
 
 SPRVFunction *
@@ -627,7 +689,8 @@ SPRVModuleImpl::addEntryPoint(SPRVExecutionModelKind ExecModel,
     SPRVId EntryPoint){
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EntryPoint != SPRVID_INVALID && "Invalid entry point");
-  EntryPoints[ExecModel].insert(EntryPoint);
+  EntryPointSet[ExecModel].insert(EntryPoint);
+  EntryPointVec[ExecModel].push_back(EntryPoint);
 }
 
 SPRVForward *
@@ -732,12 +795,12 @@ SPRVModuleImpl::addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
   return addInstTemplate(OpCode, WordOps, BB, Type);
 }
 
-// Assumes instructions can be used to represent constant expressions.
-// ToDo: needs to follow up on SPIRV spec changes to allow this.
 SPRVInstruction *
 SPRVModuleImpl::addInstruction(SPRVInstruction *Inst, SPRVBasicBlock *BB) {
   if (BB)
     return BB->addInstruction(Inst);
+  if (Inst->getOpCode() != SPRVOC_OpSpecConstantOp)
+    Inst = createSpecConstantOpInst(Inst);
   return static_cast<SPRVInstruction *>(addConstant(Inst));
 }
 
@@ -780,8 +843,8 @@ SPRVModuleImpl::addCallInst(SPRVFunction* TheFunction,
 SPRVInstruction *
 SPRVModuleImpl::addBinaryInst(SPRVOpCode TheOpCode, SPRVType *Type,
     SPRVValue *Op1, SPRVValue *Op2, SPRVBasicBlock *BB){
-  return addInstruction(new SPRVBinary(TheOpCode, Type, getId(), Op1->getId(),
-    Op2->getId(), BB), BB);
+  return addInstruction(SPRVInstTemplateBase::create(TheOpCode, Type, getId(),
+      getVec(Op1->getId(), Op2->getId()), BB, this), BB);
 }
 
 SPRVInstruction *
@@ -797,8 +860,8 @@ SPRVModuleImpl::addReturnValueInst(SPRVValue *ReturnValue, SPRVBasicBlock *BB) {
 SPRVInstruction *
 SPRVModuleImpl::addUnaryInst(SPRVOpCode TheOpCode, SPRVType *TheType,
     SPRVValue *Op, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVUnary(TheOpCode, TheType, getId(),
-      Op->getId(), BB, this), BB);
+  return addInstruction(SPRVInstTemplateBase::create(TheOpCode,
+      TheType, getId(), getVec(Op->getId()), BB, this), BB);
 }
 
 SPRVInstruction *
@@ -838,8 +901,8 @@ SPRVModuleImpl::addBranchConditionalInst(SPRVValue *Condition,
 SPRVInstruction *
 SPRVModuleImpl::addCmpInst(SPRVOpCode TheOpCode, SPRVType *TheType,
     SPRVValue *Op1, SPRVValue *Op2, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVCompare(TheOpCode, TheType, getId(),
-      Op1->getId(), Op2->getId(), BB), BB);
+  return addInstruction(SPRVInstTemplateBase::create(TheOpCode,
+      TheType, getId(), getVec(Op1->getId(), Op2->getId()), BB, this), BB);
 }
 
 SPRVInstruction *
@@ -863,13 +926,12 @@ SPRVModuleImpl::addSelectInst(SPRVValue *Condition, SPRVValue *Op1,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addAccessChainInst(SPRVType *Type, SPRVValue *Base,
+SPRVModuleImpl::addPtrAccessChainInst(SPRVType *Type, SPRVValue *Base,
     std::vector<SPRVValue *> Indices, SPRVBasicBlock *BB, bool IsInBounds){
-  if (IsInBounds)
-    return addInstruction(new SPRVInBoundsAccessChain(Type, getId(), Base,
-      Indices, BB, this), BB);
-  return addInstruction(new SPRVAccessChain(Type, getId(), Base,
-    Indices, BB, this), BB);
+  return addInstruction(SPRVInstTemplateBase::create(
+    IsInBounds?SPRVOC_OpInBoundsPtrAccessChain:SPRVOC_OpPtrAccessChain,
+    Type, getId(), getVec(Base->getId(), Base->getIds(Indices)),
+    BB, this), BB);
 }
 
 SPRVInstruction *
@@ -966,12 +1028,14 @@ operator<< (std::ostream &O, SPRVModule &M) {
     O << SPRVSourceExtension(&M);
   if (!M.getExtension().empty())
     O << SPRVExtension(&M);
+  for (auto &I:MI.CapSet)
+    O << SPRVCapability(&M, I);
 
-  for (auto &I:MI.EntryPoints)
+  for (auto &I:MI.EntryPointVec)
     for (auto &II:I.second)
       O << SPRVEntryPoint(&M, I.first, II);
 
-  for (auto &I:MI.EntryPoints)
+  for (auto &I:MI.EntryPointVec)
     for (auto &II:I.second)
       MI.get<SPRVFunction>(II)->encodeExecutionModes(O);
 
@@ -1043,8 +1107,13 @@ SPRVModuleImpl::addGroupMemberDecorate(
 }
 
 SPRVString*
-SPRVModuleImpl::addString(const std::string& Str) {
-  return add(new SPRVString(this, getId(), Str));
+SPRVModuleImpl::getString(const std::string& Str) {
+  auto Loc = StrMap.find(Str);
+  if (Loc != StrMap.end())
+    return Loc->second;
+  auto S = add(new SPRVString(this, getId(), Str));
+  StrMap[Str] = S;
+  return S;
 }
 
 SPRVMemberName*
@@ -1130,8 +1199,33 @@ SPRVInstruction*
 SPRVModuleImpl::addInstTemplate(SPRVOpCode OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
   SPRVId Id = Ty ? getId() : SPRVID_INVALID;
-  auto Ins = SPRVInstTemplateBase::create(OC, Ops, BB, Id, Ty);
+  auto Ins = SPRVInstTemplateBase::create(OC, Ty, Id, Ops, BB, this);
   return BB->addInstruction(Ins);
+}
+
+SPRVDbgInfo::SPRVDbgInfo(SPRVModule *TM)
+:M(TM){
+}
+
+std::string
+SPRVDbgInfo::getEntryPointFileStr(SPRVExecutionModelKind EM, unsigned I) {
+  if (M->getNumEntryPoints(EM) == 0)
+    return "";
+  return getFunctionFileStr(M->getEntryPoint(EM, I));
+}
+
+std::string
+SPRVDbgInfo::getFunctionFileStr(SPRVFunction *F) {
+  if (F->hasLine())
+    return F->getLine()->getFileNameStr();
+  return "";
+}
+
+unsigned
+SPRVDbgInfo::getFunctionLineNo(SPRVFunction *F) {
+  if (F->hasLine())
+    return F->getLine()->getLine();
+  return 0;
 }
 
 }

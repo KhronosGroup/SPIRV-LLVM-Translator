@@ -105,6 +105,21 @@ public:
     Type = Ty;
   }
 
+  CapVec getRequiredCapability() const {
+    CapVec CV;
+    if (!hasType())
+      return CV;
+    if (Type->isTypeFloat(16))
+      CV.push_back(SPRVCAP_Float16);
+    else if (Type->isTypeFloat(64))
+      CV.push_back(SPRVCAP_Float64);
+    else if (Type->isTypeInt(16))
+      CV.push_back(SPRVCAP_Int16);
+    else if (Type->isTypeInt(64))
+      CV.push_back(SPRVCAP_Int64);
+    return CV;
+  }
+
 protected:
   void setHasNoType() { Attrib |= SPRVEA_NOTYPE;}
 
@@ -306,7 +321,9 @@ public:
   SPRVWord getNormalized() const {
     return Normalized;
   }
-
+  CapVec getRequiredCapability() const {
+    return getVec(SPRVCAP_LiteralSampler);
+  }
 protected:
   SPRVWord AddrMode;
   SPRVWord Normalized;
@@ -315,7 +332,7 @@ protected:
     SPRVValue::validate();
     assert(OpCode == OC);
     assert(WordCount == WC);
-    assert(Type->isTypeOCLSampler());
+    assert(Type->isTypeSampler());
   }
   _SPRV_DEF_ENCDEC5(Type, Id, AddrMode, Normalized, FilterMode)
 };

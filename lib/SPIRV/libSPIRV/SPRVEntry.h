@@ -60,6 +60,8 @@ class SPRVValue;
 class SPRVDecorate;
 class SPRVForward;
 class SPRVMemberDecorate;
+class SPRVLine;
+class SPRVString;
 
 // Add declaration of encode/decode functions to a class.
 // Used inside class definition.
@@ -104,6 +106,11 @@ class SPRVMemberDecorate;
       u << v << w << r << s; } \
     void Ty::decode(std::istream &I) { getDecoder(I) >> x >> y >> z >> u >> \
       v >> w >> r >> s;}
+#define _SPRV_IMP_ENCDEC9(Ty,x,y,z,u,v,w,r,s,t) \
+    void Ty::encode(std::ostream &O) const { getEncoder(O) << x << y << z << \
+      u << v << w << r << s << t; } \
+    void Ty::decode(std::istream &I) { getDecoder(I) >> x >> y >> z >> u >> \
+      v >> w >> r >> s >> t;}
 
 // Add definition of encode/decode functions to a class.
 // Used inside class definition.
@@ -140,6 +147,11 @@ class SPRVMemberDecorate;
       v << w << r << s; } \
     void decode(std::istream &I) { getDecoder(I) >> x >> y >> z >> u >> v >> \
       w >> r >> s;}
+#define _SPRV_DEF_ENCDEC9(x,y,z,u,v,w,r,s,t) \
+    void encode(std::ostream &O) const { getEncoder(O) << x << y << z << u << \
+      v << w << r << s << t; } \
+    void decode(std::istream &I) { getDecoder(I) >> x >> y >> z >> u >> v >> \
+      w >> r >> s >> t;}
 
 /// All SPIR-V in-memory-representation entities inherits from SPRVEntry.
 /// Usually there are two flavors of constructors of SPIRV objects:
@@ -174,6 +186,7 @@ class SPRVMemberDecorate;
 
 class SPRVEntry {
 public:
+  typedef std::vector<SPRVCapabilityKind> CapVec;
   enum SPRVEntryAttrib {
     SPRVEA_DEFAULT     = 0,
     SPRVEA_NOID        = 1,      // Entry has no valid id
@@ -184,25 +197,25 @@ public:
   SPRVEntry(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
       SPRVId TheId)
     :Module(M), OpCode(TheOpCode), Id(TheId), Attrib(SPRVEA_DEFAULT),
-     WordCount(TheWordCount){
+     WordCount(TheWordCount), Line(nullptr){
     validate();
   }
 
   // Complete constructor for objects without id
   SPRVEntry(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode)
     :Module(M), OpCode(TheOpCode), Id(SPRVID_INVALID), Attrib(SPRVEA_NOID),
-     WordCount(TheWordCount){
+     WordCount(TheWordCount), Line(nullptr){
     validate();
   }
 
   // Incomplete constructor
   SPRVEntry(SPRVOpCode TheOpCode)
     :Module(NULL), OpCode(TheOpCode), Id(SPRVID_INVALID),
-     Attrib(SPRVEA_DEFAULT), WordCount(0){}
+     Attrib(SPRVEA_DEFAULT), WordCount(0), Line(nullptr){}
 
   SPRVEntry()
     :Module(NULL), OpCode(SPRVOC_OpNop), Id(SPRVID_INVALID),
-     Attrib(SPRVEA_DEFAULT), WordCount(0){}
+     Attrib(SPRVEA_DEFAULT), WordCount(0), Line(nullptr){}
 
 
   virtual ~SPRVEntry(){}
@@ -222,14 +235,17 @@ public:
   virtual SPRVEncoder getEncoder(std::ostream &)const;
   SPRVErrorLog &getErrorLog()const;
   SPRVId getId() const { assert(hasId()); return Id;}
+  SPRVLine *getLine() const { return Line;}
   SPRVLinkageTypeKind getLinkageType() const;
   SPRVOpCode getOpCode() const { return OpCode;}
   SPRVModule *getModule() const { return Module;}
+  virtual CapVec getRequiredCapability() const { return CapVec();}
   const std::string& getName() const { return Name;}
   bool hasDecorate(SPRVDecorateKind Kind, size_t Index = 0,
       SPRVWord *Result=0)const;
   std::set<SPRVWord> getDecorate(SPRVDecorateKind Kind, size_t Index = 0)const;
   bool hasId() const { return !(Attrib & SPRVEA_NOID);}
+  bool hasLine() const { return Line != nullptr;}
   bool hasLinkageType() const;
   bool isAtomic() const { return isAtomicOpCode(OpCode);}
   bool isBasicBlock() const { return isLabel();}
@@ -242,6 +258,7 @@ public:
   bool isControlBarrier() const { return OpCode == SPRVOC_OpControlBarrier;}
   bool isMemoryBarrier() const { return OpCode == SPRVOC_OpMemoryBarrier;}
   bool isVariable() const { return OpCode == SPRVOC_OpVariable;}
+  virtual bool isInst() const { return false;}
 
   void addDecorate(const SPRVDecorate *);
   void addDecorate(SPRVDecorateKind Kind);
@@ -254,6 +271,7 @@ public:
   void eraseMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind);
   void setHasNoId() { Attrib |= SPRVEA_NOID;}
   void setId(SPRVId TheId) { Id = TheId;}
+  void setLine(SPRVLine*);
   void setLinkageType(SPRVLinkageTypeKind);
   void setModule(SPRVModule *TheModule);
   void setName(const std::string& TheName);
@@ -261,6 +279,7 @@ public:
   void takeAnnotations(SPRVForward *);
   void takeDecorates(SPRVEntry *);
   void takeMemberDecorates(SPRVEntry *);
+  void takeLine(SPRVEntry *);
 
   /// After a SPIRV entry is created during reading SPIRV binary by default
   /// constructor, this function is called to allow the SPIRV entry to resize
@@ -317,6 +336,7 @@ protected:
 
   DecorateMapType Decorates;
   MemberDecorateMapType MemberDecorates;
+  SPRVLine *Line;
 };
 
 class SPRVEntryNoIdGeneric:public SPRVEntry {
@@ -364,6 +384,9 @@ public:
 protected:
   SPRVExecutionModelKind ExecModel;
   SPRVId FuncId;
+  CapVec getRequiredCapability() const {
+    return getVec(getCapability(ExecModel));
+  }
 };
 
 class SPRVAnnotationGeneric:public SPRVEntryNoIdGeneric {
@@ -379,6 +402,7 @@ public:
 
   SPRVId getTargetId()const { return Target;}
   SPRVForward *getOrCreateTarget()const;
+  void setTargetId(SPRVId T) { Target = T;}
 protected:
   SPRVId Target;
 };
@@ -425,6 +449,19 @@ protected:
   std::string Str;
 };
 
+class SPRVString:public SPRVEntry {
+  static const SPRVOpCode OC = SPRVOC_OpString;
+  static const SPRVWord FixedWC = 2;
+public:
+  SPRVString(SPRVModule *M, SPRVId TheId, const std::string &TheStr)
+    :SPRVEntry(M, FixedWC + getSizeInWords(TheStr), OC, TheId), Str(TheStr){}
+  SPRVString():SPRVEntry(OC){}
+  _SPRV_DCL_ENCDEC
+  const std::string &getStr()const { return Str;}
+protected:
+  std::string Str;
+};
+
 class SPRVLine:public SPRVAnnotation<SPRVOC_OpLine> {
 public:
   static const SPRVWord WC = 5;
@@ -438,24 +475,41 @@ public:
   // Incomplete constructor
   SPRVLine():FileName(SPRVID_INVALID), Line(SPRVWORD_MAX),
       Column(SPRVWORD_MAX){}
+
+  SPRVWord getColumn() const {
+    return Column;
+  }
+
+  void setColumn(SPRVWord column) {
+    Column = column;
+  }
+
+  SPRVId getFileName() const {
+    return FileName;
+  }
+
+  const std::string &getFileNameStr() const {
+    return get<SPRVString>(FileName)->getStr();
+  }
+
+  void setFileName(SPRVId fileName) {
+    FileName = fileName;
+  }
+
+  SPRVWord getLine() const {
+    return Line;
+  }
+
+  void setLine(SPRVWord line) {
+    Line = line;
+  }
+
 protected:
   _SPRV_DCL_ENCDEC
   void validate() const;
   SPRVId FileName;
   SPRVWord Line;
   SPRVWord Column;
-};
-
-class SPRVString:public SPRVEntry {
-  static const SPRVOpCode OC = SPRVOC_OpString;
-  static const SPRVWord FixedWC = 2;
-public:
-  SPRVString(SPRVModule *M, SPRVId TheId, const std::string &TheStr)
-    :SPRVEntry(M, FixedWC + getSizeInWords(TheStr), OC, TheId), Str(TheStr){}
-  SPRVString():SPRVEntry(OC){}
-  _SPRV_DCL_ENCDEC
-protected:
-  std::string Str;
 };
 
 class SPRVExecutionMode:public SPRVAnnotation<SPRVOC_OpExecutionMode> {
@@ -483,6 +537,9 @@ public:
   SPRVExecutionModeKind getExecutionMode()const { return ExecMode;}
   const std::vector<SPRVWord>& getLiterals()const { return WordLiterals;}
   const std::string& getStringLiteral()const { return StrLiteral;}
+  CapVec getRequiredCapability() const {
+    return getVec(getCapability(ExecMode));
+  }
 protected:
   _SPRV_DCL_ENCDEC
   SPRVExecutionModeKind ExecMode;
@@ -552,6 +609,15 @@ public:
   _SPRV_DCL_ENCDEC
 };
 
+class SPRVCapability:public SPRVEntryNoId<SPRVOC_OpCapability> {
+public:
+  SPRVCapability(SPRVModule *M, SPRVCapabilityKind K);
+  SPRVCapability():Kind(SPRVCAP_None){}
+  _SPRV_DCL_ENCDEC
+private:
+  SPRVCapabilityKind Kind;
+};
+
 template<class T>
 T* bcast(SPRVEntry *E) {
   return static_cast<T*>(E);
@@ -563,21 +629,14 @@ T* bcast(SPRVEntry *E) {
 // This is also an indication of how much work is left.
 #define _SPRV_OP(x) typedef SPRVEntryOpCodeOnly<SPRVOC_Op##x> SPRV##x;
 _SPRV_OP(Nop)
-_SPRV_OP(Capability)
 _SPRV_OP(TypeMatrix)
 _SPRV_OP(TypeRuntimeArray)
-_SPRV_OP(TypeImage)
-_SPRV_OP(TypeSampledImage)
 _SPRV_OP(SpecConstantTrue)
 _SPRV_OP(SpecConstantFalse)
 _SPRV_OP(SpecConstant)
 _SPRV_OP(SpecConstantComposite)
-_SPRV_OP(SpecConstantOp)
 _SPRV_OP(ImageTexelPointer)
 _SPRV_OP(CompositeConstruct)
-_SPRV_OP(SampledImage)
-_SPRV_OP(ImageSampleImplicitLod)
-_SPRV_OP(ImageSampleExplicitLod)
 _SPRV_OP(ImageSampleDrefImplicitLod)
 _SPRV_OP(ImageSampleDrefExplicitLod)
 _SPRV_OP(ImageSampleProjImplicitLod)
@@ -587,19 +646,8 @@ _SPRV_OP(ImageSampleProjDrefExplicitLod)
 _SPRV_OP(ImageFetch)
 _SPRV_OP(ImageGather)
 _SPRV_OP(ImageDrefGather)
-_SPRV_OP(ImageRead)
-_SPRV_OP(ImageWrite)
-_SPRV_OP(ImageQueryDim)
-_SPRV_OP(ImageQueryFormat)
-_SPRV_OP(ImageQueryOrder)
-_SPRV_OP(ImageQuerySizeLod)
-_SPRV_OP(ImageQuerySize)
-_SPRV_OP(ImageQueryLod)
-_SPRV_OP(ImageQueryLevels)
-_SPRV_OP(ImageQuerySamples)
 _SPRV_OP(QuantizeToF16)
 _SPRV_OP(Transpose)
-_SPRV_OP(PtrAccessChain)
 _SPRV_OP(ArrayLength)
 _SPRV_OP(SMod)
 _SPRV_OP(FMod)

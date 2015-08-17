@@ -272,6 +272,22 @@ SPRVEntry::takeDecorates(SPRVEntry *E){
 }
 
 void
+SPRVEntry::setLine(SPRVLine *L){
+  Line = L;
+  L->setTargetId(Id);
+  SPRVDBG(bildbgs() << "[setLine] " << *L << '\n';)
+}
+
+void
+SPRVEntry::takeLine(SPRVEntry *E){
+  Line = E->Line;
+  if (Line == nullptr)
+    return;
+  Line->setTargetId(Id);
+  E->Line = nullptr;
+}
+
+void
 SPRVEntry::addMemberDecorate(const SPRVMemberDecorate *Dec){
   assert(canHaveMemberDecorates() && MemberDecorates.find(Dec->getPair()) ==
       MemberDecorates.end());
@@ -307,6 +323,7 @@ SPRVEntry::takeAnnotations(SPRVForward *E){
   Module->setName(this, E->getName());
   takeDecorates(E);
   takeMemberDecorates(E);
+  takeLine(E);
   if (OpCode == SPRVOC_OpFunction)
     static_cast<SPRVFunction *>(this)->takeExecutionModes(E);
 }
@@ -458,7 +475,17 @@ SPRVName::validate() const {
 
 _SPRV_IMP_ENCDEC2(SPRVString, Id, Str)
 _SPRV_IMP_ENCDEC3(SPRVMemberName, Target, MemberNumber, Str)
-_SPRV_IMP_ENCDEC4(SPRVLine, Target, FileName, Line, Column)
+
+void
+SPRVLine::encode(std::ostream &O) const {
+  getEncoder(O) << Target << FileName << Line << Column;
+}
+
+void
+SPRVLine::decode(std::istream &I) {
+  getDecoder(I) >> Target >> FileName >> Line >> Column;
+  Module->addLine(getOrCreateTarget(), get<SPRVString>(FileName), Line, Column);
+}
 
 void
 SPRVLine::validate() const {
@@ -567,6 +594,21 @@ SPRVExtension::decode(std::istream &I) {
   std::string S;
   getDecoder(I) >> S;
   Module->setExtension(S);
+}
+
+SPRVCapability::SPRVCapability(SPRVModule *M, SPRVCapabilityKind K)
+  :SPRVEntryNoId(M, 2), Kind(K){
+}
+
+void
+SPRVCapability::encode(std::ostream &O) const {
+  getEncoder(O) << Kind;
+}
+
+void
+SPRVCapability::decode(std::istream &I) {
+  getDecoder(I) >> Kind;
+  Module->addCapability(Kind);
 }
 
 } // namespace SPRV

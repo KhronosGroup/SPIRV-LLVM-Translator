@@ -90,6 +90,9 @@ SPRVMap<unsigned, SPRVOpCode>::init() {
     _SPRV_OP(BitCast, Bitcast)
     _SPRV_OP(GetElementPtr, AccessChain)
   /*Binary*/
+    _SPRV_OP(And, BitwiseAnd)
+    _SPRV_OP(Or, BitwiseOr)
+    _SPRV_OP(Xor, BitwiseXor)
     _SPRV_OP(Add, IAdd)
     _SPRV_OP(FAdd, FAdd)
     _SPRV_OP(Sub, ISub)
@@ -139,6 +142,18 @@ SPRVMap<CmpInst::Predicate, SPRVOpCode>::init() {
 #undef _SPRV_OP
 }
 typedef SPRVMap<CmpInst::Predicate, SPRVOpCode> CmpMap;
+
+class IntBoolOpMapId;
+template<> inline void
+SPRVMap<SPRVOpCode, SPRVOpCode, IntBoolOpMapId>::init() {
+  add(SPRVOC_OpIEqual,      SPRVOC_OpLogicalEqual);
+  add(SPRVOC_OpINotEqual,   SPRVOC_OpLogicalNotEqual);
+  add(SPRVOC_OpNot,         SPRVOC_OpLogicalNot);
+  add(SPRVOC_OpBitwiseAnd,  SPRVOC_OpLogicalAnd);
+  add(SPRVOC_OpBitwiseOr,   SPRVOC_OpLogicalOr);
+  add(SPRVOC_OpBitwiseXor,  SPRVOC_OpLogicalNotEqual);
+}
+typedef SPRVMap<SPRVOpCode, SPRVOpCode, IntBoolOpMapId> IntBoolOpMap;
 
 #define SPIR_TARGETTRIPLE32 "spir-unknown-unknown"
 #define SPIR_TARGETTRIPLE64 "spir64-unknown-unknown"
@@ -362,6 +377,17 @@ _SPRV_OP(group_smin, GroupSMin)
 _SPRV_OP(group_fmax, GroupFMax)
 _SPRV_OP(group_umax, GroupUMax)
 _SPRV_OP(group_smax, GroupSMax)
+// CL image builtins
+_SPRV_OP(SampledImage, SampledImage)
+_SPRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
+_SPRV_OP(read_image, ImageRead)
+_SPRV_OP(write_image, ImageWrite)
+_SPRV_OP(ImageQuerySizeLod, ImageQuerySizeLod)
+_SPRV_OP(get_image_channel_data_type, ImageQueryFormat)
+_SPRV_OP(get_image_channel_order, ImageQueryOrder)
+_SPRV_OP(get_image_array_size, ImageQueryArraySize)
+_SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
+_SPRV_OP(get_image_num_samples, ImageQuerySamples)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, SPRVOpCode, SPRVInstruction>
@@ -374,6 +400,7 @@ _SPRV_OP(ExternalLinkage, Export)
 _SPRV_OP(AvailableExternallyLinkage, Import)
 _SPRV_OP(PrivateLinkage, Count)
 _SPRV_OP(LinkOnceODRLinkage, Count)
+_SPRV_OP(CommonLinkage, Count)
 _SPRV_OP(InternalLinkage, Count)
 #undef _SPRV_OP
 }
@@ -441,27 +468,6 @@ SPRVMap<std::string, SPRVGroupOperationKind>::init() {
 typedef SPRVMap<std::string, SPRVGroupOperationKind>
   SPIRSPRVGroupOperationMap;
 
-template<> inline void
-SPRVMap<std::string, SPRVTypeSamplerDescriptor>::init() {
-#define _SPRV_OP(x,...) {SPRVTypeSamplerDescriptor S(__VA_ARGS__); \
-  add("opencl."#x, S);}
-_SPRV_OP(image1d_t,                  0, 1, 0, 0, 0)
-_SPRV_OP(image1d_buffer_t,           5, 1, 0, 0, 0)
-_SPRV_OP(image1d_array_t,            0, 1, 1, 0, 0)
-_SPRV_OP(image2d_t,                  1, 1, 0, 0, 0)
-_SPRV_OP(image2d_array_t,            1, 1, 1, 0, 0)
-_SPRV_OP(image2d_depth_t,            1, 1, 0, 1, 0)
-_SPRV_OP(image2d_array_depth_t,      1, 1, 1, 1, 0)
-_SPRV_OP(image2d_msaa_t,             1, 1, 0, 0, 1)
-_SPRV_OP(image2d_array_msaa_t,       1, 1, 1, 0, 1)
-_SPRV_OP(image2d_msaa_depth_t,       1, 1, 0, 1, 1)
-_SPRV_OP(image2d_array_msaa_depth_t, 1, 1, 1, 1, 1)
-_SPRV_OP(image3d_t,                  2, 1, 0, 0, 0)
-_SPRV_OP(sampler_t,                  0, 2, 0, 0, 0)
-#undef _SPRV_OP
-}
-typedef SPRVMap<std::string, SPRVTypeSamplerDescriptor>
-  SPIRSPRVImageSamplerTypeMap;
 
 template<> inline void
 SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
@@ -475,12 +481,6 @@ _SPRV_OP(n, N)
 typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
   SPIRSPRVFPRoundingModeMap;
 
-namespace kLLVMTypeName {
-  const static char *StructPrefix = "struct.";
-}
-
-#define SPRV_BUILTIN_PREFIX                 "__spirv_"
-#define SPRV_BUILTIN_POSTFIX                "__"
 #define SPIR_MD_KERNELS                     "opencl.kernels"
 #define SPIR_MD_ENABLE_FP_CONTRACT          "opencl.enable.FP_CONTRACT"
 #define SPIR_MD_SPIR_VERSION                "opencl.spir.version"
@@ -499,45 +499,78 @@ namespace kLLVMTypeName {
 #define SPIR_MD_KERNEL_ARG_NAME             "kernel_arg_name"
 
 #define OCL_TYPE_NAME_SAMPLER_T             "sampler_t"
-#define SPIR_TYPE_NAME_SAMPLER_T            "opencl.sampler_t"
 #define SPIR_TYPE_NAME_EVENT_T              "opencl.event_t"
 #define SPIR_TYPE_NAME_CLK_EVENT_T          "opencl.clk_event_t"
 #define SPIR_TYPE_NAME_PIPE_T               "opencl.pipe_t"
-#define SPIR_TYPE_NAME_PREFIX_IMAGE_T       "opencl.image"
 #define SPIR_TYPE_NAME_BLOCK_T              "opencl.block"
-#define SPIR_TYPE_NAME_PREFIX               "opencl."
-#define SPIR_TYPE_NAME_DELIMITER            '.'
 #define SPIR_INTRINSIC_BLOCK_BIND           "spir_block_bind"
 #define SPIR_INTRINSIC_GET_BLOCK_INVOKE     "spir_get_block_invoke"
 #define SPIR_INTRINSIC_GET_BLOCK_CONTEXT    "spir_get_block_context"
 #define SPIR_TEMP_NAME_PREFIX_BLOCK         "block"
 #define SPIR_TEMP_NAME_PREFIX_CALL          "call"
 
-#define OCL_MANGLED_TYPE_NAME_SAMPLER       "ocl_sampler"
-
-namespace kOCLBuiltinName {
-  const static char *AtomicPrefix       = "atomic_";
-  const static char *Barrier            = "barrier";
-  const static char *EnqueueKernel      = "enqueue_kernel";
-  const static char *GetFence           = "get_fence";
-  const static char *NDRangePrefix      = "ndrange_";
-  const static char *ToGlobal           = "to_global";
-  const static char *ToLocal            = "to_local";
-  const static char *ToPrivate          = "to_private";
-  const static char *ReadImage          = "read_image";
-  const static char *ReadPipe           = "read_pipe";
-  const static char *SubGroupPrefix     = "sub_group_";
-  const static char *SubPrefix          = "sub_";
-  const static char *WriteImage         = "write_image";
-  const static char *WorkGroupBarrier   = "work_group_barrier";
-  const static char *WritePipe          = "write_pipe";
-  const static char *WorkGroupPrefix    = "work_group_";
-  const static char *WorkPrefix         = "work_";
+namespace kLLVMTypeName {
+  const static char StructPrefix[] = "struct.";
 }
 
-namespace kSPRVFuncName {
-  const static char *ReservedPrefix     = "reserved_";
-  const static char *GroupPrefix        = "group_";
+namespace kSPRVTypeName {
+  const static char Delimiter   = '.';
+  const static char SampledImg[] = "spirv.sampled_image_t";
+}
+
+namespace kSPR2TypeName {
+  const static char Delimiter   = '.';
+  const static char OCLPrefix[]   = "opencl.";
+  const static char ImagePrefix[] = "opencl.image";
+  const static char Sampler[]     = "opencl.sampler_t";
+  const static char Event[]       = "opencl.event_t";
+}
+
+namespace kAccessQualName {
+  const static char ReadOnly[]    = "read_only";
+  const static char WriteOnly[]   = "write_only";
+  const static char ReadWrite[]   = "read_write";
+}
+
+namespace kMangledName {
+  const static char *Sampler = "11ocl_sampler";
+}
+
+namespace kOCLBuiltinName {
+  const static char AtomicPrefix[]       = "atomic_";
+  const static char Barrier[]            = "barrier";
+  const static char EnqueueKernel[]      = "enqueue_kernel";
+  const static char GetFence[]           = "get_fence";
+  const static char GetImageDepth[]      = "get_image_depth";
+  const static char GetImageDim[]        = "get_image_dim";
+  const static char GetImageHeight[]     = "get_image_height";
+  const static char GetImageWidth[]      = "get_image_width";
+  const static char NDRangePrefix[]      = "ndrange_";
+  const static char ToGlobal[]           = "to_global";
+  const static char ToLocal[]            = "to_local";
+  const static char ToPrivate[]          = "to_private";
+  const static char ReadImage[]          = "read_image";
+  const static char ReadPipe[]           = "read_pipe";
+  const static char Sampled[]            = "sampled_";
+  const static char SampledReadImage[]   = "sampled_read_image";
+  const static char SubGroupPrefix[]     = "sub_group_";
+  const static char SubPrefix[]          = "sub_";
+  const static char WriteImage[]         = "write_image";
+  const static char WorkGroupBarrier[]   = "work_group_barrier";
+  const static char WritePipe[]          = "write_pipe";
+  const static char WorkGroupPrefix[]    = "work_group_";
+  const static char WorkPrefix[]         = "work_";
+}
+
+namespace kSPRVName {
+  const static char GroupPrefix[]            = "group_";
+  const static char Prefix[]                 = "__spirv_";
+  const static char Postfix[]                = "__";
+  const static char ImageQuerySizeLod[]      = "ImageQuerySizeLod";
+  const static char ImageSampleExplicitLod[] = "ImageSampleExplicitLod";
+  const static char ReservedPrefix[]         = "reserved_";
+  const static char SampledImage[]           = "SampledImage";
+  const static char TempSampledImage[]       = "TempSampledImage";
 }
 
 enum Spir2SamplerKind {
@@ -552,6 +585,97 @@ enum Spir2SamplerKind {
   CLK_FILTER_LINEAR           = 0x0020,
 };
 
+namespace OclExt {
+enum Kind {
+#define _SPRV_OP(x) x,
+  _SPRV_OP(cl_images)
+  _SPRV_OP(cl_doubles)
+  _SPRV_OP(cl_khr_int64_base_atomics)
+  _SPRV_OP(cl_khr_int64_extended_atomics)
+  _SPRV_OP(cl_khr_fp16)
+  _SPRV_OP(cl_khr_gl_sharing)
+  _SPRV_OP(cl_khr_gl_event)
+  _SPRV_OP(cl_khr_d3d10_sharing)
+  _SPRV_OP(cl_khr_media_sharing)
+  _SPRV_OP(cl_khr_d3d11_sharing)
+  _SPRV_OP(cl_khr_global_int32_base_atomics)
+  _SPRV_OP(cl_khr_global_int32_extended_atomics)
+  _SPRV_OP(cl_khr_local_int32_base_atomics)
+  _SPRV_OP(cl_khr_local_int32_extended_atomics)
+  _SPRV_OP(cl_khr_byte_addressable_store)
+  _SPRV_OP(cl_khr_3d_image_writes)
+  _SPRV_OP(cl_khr_gl_msaa_sharing)
+  _SPRV_OP(cl_khr_depth_images)
+  _SPRV_OP(cl_khr_gl_depth_images)
+  _SPRV_OP(cl_khr_subgroups)
+  _SPRV_OP(cl_khr_mipmap_image)
+  _SPRV_OP(cl_khr_mipmap_image_writes)
+  _SPRV_OP(cl_khr_egl_event)
+  _SPRV_OP(cl_khr_srgb_image_writes)
+#undef _SPRV_OP
+};
+}
+
+template<> inline void
+SPRVMap<OclExt::Kind, std::string>::init() {
+#define _SPRV_OP(x) add(OclExt::x, #x);
+  _SPRV_OP(cl_images)
+  _SPRV_OP(cl_doubles)
+  _SPRV_OP(cl_khr_int64_base_atomics)
+  _SPRV_OP(cl_khr_int64_extended_atomics)
+  _SPRV_OP(cl_khr_fp16)
+  _SPRV_OP(cl_khr_gl_sharing)
+  _SPRV_OP(cl_khr_gl_event)
+  _SPRV_OP(cl_khr_d3d10_sharing)
+  _SPRV_OP(cl_khr_media_sharing)
+  _SPRV_OP(cl_khr_d3d11_sharing)
+  _SPRV_OP(cl_khr_global_int32_base_atomics)
+  _SPRV_OP(cl_khr_global_int32_extended_atomics)
+  _SPRV_OP(cl_khr_local_int32_base_atomics)
+  _SPRV_OP(cl_khr_local_int32_extended_atomics)
+  _SPRV_OP(cl_khr_byte_addressable_store)
+  _SPRV_OP(cl_khr_3d_image_writes)
+  _SPRV_OP(cl_khr_gl_msaa_sharing)
+  _SPRV_OP(cl_khr_depth_images)
+  _SPRV_OP(cl_khr_gl_depth_images)
+  _SPRV_OP(cl_khr_subgroups)
+  _SPRV_OP(cl_khr_mipmap_image)
+  _SPRV_OP(cl_khr_mipmap_image_writes)
+  _SPRV_OP(cl_khr_egl_event)
+  _SPRV_OP(cl_khr_srgb_image_writes)
+#undef _SPRV_OP
+};
+
+template<> inline void
+SPRVMap<OclExt::Kind, SPRVCapabilityKind>::init() {
+#define _SPRV_OP(x,y) add(OclExt::x, SPRVCAP_##y);
+  _SPRV_OP(cl_images, ImageBasic)
+  _SPRV_OP(cl_doubles, Float64)
+  _SPRV_OP(cl_khr_int64_base_atomics, Int64Atomics)
+  _SPRV_OP(cl_khr_int64_extended_atomics, Int64Atomics)
+  _SPRV_OP(cl_khr_fp16, Float16)
+  _SPRV_OP(cl_khr_gl_sharing, None)
+  _SPRV_OP(cl_khr_gl_event, None)
+  _SPRV_OP(cl_khr_d3d10_sharing, None)
+  _SPRV_OP(cl_khr_media_sharing, None)
+  _SPRV_OP(cl_khr_d3d11_sharing, None)
+  _SPRV_OP(cl_khr_global_int32_base_atomics, None)
+  _SPRV_OP(cl_khr_global_int32_extended_atomics, None)
+  _SPRV_OP(cl_khr_local_int32_base_atomics, None)
+  _SPRV_OP(cl_khr_local_int32_extended_atomics, None)
+  _SPRV_OP(cl_khr_byte_addressable_store, None)
+  _SPRV_OP(cl_khr_3d_image_writes, None)
+  _SPRV_OP(cl_khr_gl_msaa_sharing, None)
+  _SPRV_OP(cl_khr_depth_images, None)
+  _SPRV_OP(cl_khr_gl_depth_images, None)
+  _SPRV_OP(cl_khr_subgroups, Groups)
+  _SPRV_OP(cl_khr_mipmap_image, ImageMipmap)
+  _SPRV_OP(cl_khr_mipmap_image_writes, ImageMipmap)
+  _SPRV_OP(cl_khr_egl_event, None)
+  _SPRV_OP(cl_khr_srgb_image_writes, ImageSRGBWrite)
+#undef _SPRV_OP
+};
+
 /// \returns a vector of types for a collection of values.
 template<class T>
 std::vector<Type *>
@@ -559,7 +683,6 @@ getTypes(T V) {
   std::vector<Type *> Tys;
   for (auto &I:V)
     Tys.push_back(I->getType());
-
   return Tys;
 }
 
@@ -581,6 +704,10 @@ Function *getOrCreateFunction(Module *M, Type *RetTy,
 std::vector<Value *> getArguments(CallInst* CI);
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
+
+/// Check if a type is OCL image type.
+/// \return type name without "opencl." prefix.
+bool isOCLImageType(llvm::Type* Ty, StringRef *Name = nullptr);
 
 std::string decorateSPRVFunction(const std::string &S);
 std::string undecorateSPRVFunction(const std::string &S);
@@ -610,6 +737,17 @@ bool hasArrayArg(Function *F);
 /// \return mutated call instruction.
 CallInst *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
+
+/// Mutates function call instruction by changing the arguments and return
+/// value.
+/// \param ArgMutate mutates the function arguments.
+/// \param RetMutate mutates the return value.
+/// \return mutated instruction.
+Instruction *mutateCallInst(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &,
+        Type *&RetTy)> ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
     bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
 
 /// Mutate function by change the arguments.
@@ -668,14 +806,20 @@ getScalarOrArray(Value *V, unsigned Size, Instruction *Pos);
 void
 dumpUsers(Value* V, StringRef Prompt = "");
 
+Type *
+getSPRVSampledImageType(Module *M, Type *ImageType);
+
+
 }
 namespace llvm {
 
 void initializeSPRVRegularizeOCL20Pass(PassRegistry&);
 void initializeSPRVLowerOCLBlocksPass(PassRegistry&);
+void initializeSPRVLowerBoolPass(PassRegistry&);
 
 ModulePass *createSPRVRegularizeOCL20();
 ModulePass *createSPRVLowerOCLBlocks();
+ModulePass *createSPRVLowerBool();
 
 }
 #endif
