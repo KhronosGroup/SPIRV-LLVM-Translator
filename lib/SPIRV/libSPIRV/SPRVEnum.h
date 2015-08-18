@@ -146,7 +146,7 @@ SPRVMap<SPRVExecutionModelKind, SPRVCapabilityKind>::init() {
   _SPRV_OP(Kernel, Kernel)
   _SPRV_OP(Count, Count)
 #undef _SPRV_OP
-};
+}
 
 inline bool
 isValid(SPRVExecutionModelKind E) {
@@ -163,6 +163,7 @@ enum SPRVExecutionModeKind {
   _SPRV_OP(VertexOrderCcw, Tess)
   _SPRV_OP(PixelCenterInteger, Shader)
   _SPRV_OP(OriginUpperLeft, Shader)
+  _SPRV_OP(OriginLowerLeft, Shader)
   _SPRV_OP(EarlyFragmentTests, Shader)
   _SPRV_OP(PointMode, Tess)
   _SPRV_OP(Xfb, Shader)
@@ -177,6 +178,7 @@ enum SPRVExecutionModeKind {
   _SPRV_OP(InputLines, Geom)
   _SPRV_OP(InputLinesAdjacency, Geom)
   _SPRV_OP(InputTriangles, Geom)
+  _SPRV_OP(InputTrianglesAdjacency, Geom)
   _SPRV_OP(InputQuads, Geom)
   _SPRV_OP(InputIsolines, Geom)
   _SPRV_OP(OutputVertices, GeomTess)
@@ -200,6 +202,7 @@ SPRVMap<SPRVExecutionModeKind, SPRVCapabilityKind>::init() {
   _SPRV_OP(VertexOrderCcw, Tess)
   _SPRV_OP(PixelCenterInteger, Shader)
   _SPRV_OP(OriginUpperLeft, Shader)
+  _SPRV_OP(OriginLowerLeft, Shader)
   _SPRV_OP(EarlyFragmentTests, Shader)
   _SPRV_OP(PointMode, Tess)
   _SPRV_OP(Xfb, Shader)
@@ -213,7 +216,8 @@ SPRVMap<SPRVExecutionModeKind, SPRVCapabilityKind>::init() {
   _SPRV_OP(InputPoints, Geom)
   _SPRV_OP(InputLines, Geom)
   _SPRV_OP(InputLinesAdjacency, Geom)
-  _SPRV_OP(InputTriangles, Geom)
+  _SPRV_OP(InputTriangles, GeomTess)
+  _SPRV_OP(InputTrianglesAdjacency, Geom)
   _SPRV_OP(InputQuads, Geom)
   _SPRV_OP(InputIsolines, Geom)
   _SPRV_OP(OutputVertices, GeomTess)
@@ -224,7 +228,7 @@ SPRVMap<SPRVExecutionModeKind, SPRVCapabilityKind>::init() {
   _SPRV_OP(ContractionOff, Kernel)
   _SPRV_OP(Count, Count)
 #undef _SPRV_OP
-};
+}
 
 inline bool
 isValid(SPRVExecutionModeKind E) {
@@ -302,7 +306,7 @@ SPRVMap<SPRVStorageClassKind, SPRVCapabilityKind>::init() {
   _SPRV_OP(AtomicCounter, Shader)
   _SPRV_OP(Count, Count)
 #undef _SPRV_OP
-};
+}
 
 inline bool
 isValid(SPRVStorageClassKind StorageClass) {

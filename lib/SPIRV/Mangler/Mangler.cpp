@@ -14,9 +14,15 @@
 #include "ManglingUtils.h"
 #include "NameMangleAPI.h"
 #include "ParameterType.h"
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <map>
+
+// According to IA64 name mangling spec,
+// builtin vector types should not be substituted
+// This is a workaround till this gets fixed in CLang
+#define ENABLE_MANGLER_VECTOR_SUBSTITUTION 1
 
 namespace SPIR {
 
@@ -55,7 +61,7 @@ public:
         if ((nType = mangledPrimitiveStringfromName(p->getPointee()->toString())))
           thistypeStr << nType;
       }
-#if defined(AMD_OPENCL) || 1
+#if defined(ENABLE_MANGLER_VECTOR_SUBSTITUTION)
       else if (const VectorType* pVec = SPIR::dyn_cast<VectorType>(type)) {
         if ((nType = mangledPrimitiveStringfromName(pVec->getScalarType()->toString())))
           thistypeStr << nType;
@@ -112,15 +118,12 @@ public:
     std::stringstream typeStr;
     typeStr << "Dv" << v->getLength() << "_";
     MangleError me = MANGLE_SUCCESS;
-    // According to IA64 name mangling spec,
-    // builtin types should not be substituted
-    // This is a workaround till this gets fixed in CLang
-#if defined(AMD_OPENCL) || 1
+#if defined(ENABLE_MANGLER_VECTOR_SUBSTITUTION)
     if (!mangleSubstitution(v, typeStr.str()))
 #endif
     {
       m_stream << typeStr.str();
-      MangleError me = v->getScalarType()->accept(this);
+      me = v->getScalarType()->accept(this);
       substitutions[m_stream.str().substr(index)] = seqId++;
     }
     return me;
