@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -293,8 +294,11 @@ unsigned rmapBitMask(unsigned BM) {
 }
 
 // Get the number of words used for encoding a string literal in SPRV
-inline size_t
-getSizeInWords(const std::string& Str) { return Str.length()/4 + 1;}
+inline unsigned
+getSizeInWords(const std::string& Str) {
+  assert(Str.length()/4 + 1 <= std::numeric_limits<unsigned>::max());
+  return static_cast<unsigned>(Str.length()/4 + 1);
+}
 
 template<typename T>
 inline std::vector<T>
