@@ -1518,8 +1518,7 @@ protected:
     assert(getValueType(Vector1) == getValueType(Vector2));
     size_t CompCount = Type->getVectorComponentCount();
     assert(Components.size() == CompCount);
-    assert(Components.size() > 0 && Components.size() <=
-        getValueType(Vector1)->getVectorComponentCount() * 2);
+    assert(Components.size() > 0);
   }
   SPRVId Vector1;
   SPRVId Vector2;
