@@ -869,6 +869,13 @@ LLVMToSPRV::transConstant(Value *V) {
     return BM->addCompositeConstant(transType(V->getType()), BV);
   }
 
+  if (auto ConstV = dyn_cast<ConstantStruct>(V)) {
+    std::vector<SPRVValue *> BV;
+    for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I)
+      BV.push_back(transValue(*I, nullptr));
+    return BM->addCompositeConstant(transType(V->getType()), BV);
+  }
+
   if (auto ConstUE = dyn_cast<ConstantExpr>(V)) {
     auto Inst = ConstUE->getAsInstruction();
     SPRVDBG(dbgs() << "ConstantExpr: " << *ConstUE << '\n';
