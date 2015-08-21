@@ -9,15 +9,15 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_kernel void @_Z4testv() #0 {
 ; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 57 {{[0-9]+}}
-  %call = call spir_func float @_ZN2cl3sinEf(float 1.000000e+00)
+  %call = call spir_func float @_ZN2cl7__spirv3sinEf(float 1.000000e+00)
 ; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 57 {{[0-9]+}}
-  %call1 = call spir_func <2 x float> @_ZN2cl3sinEDv2_f(<2 x float> <float 1.000000e+00, float 2.000000e+00>)
+  %call1 = call spir_func <2 x float> @_ZN2cl7__spirv3sinEDv2_f(<2 x float> <float 1.000000e+00, float 2.000000e+00>)
   ret void
 }
 
-declare spir_func float @_ZN2cl3sinEf(float)
+declare spir_func float @_ZN2cl7__spirv3sinEf(float)
 
-declare spir_func <2 x float> @_ZN2cl3sinEDv2_f(<2 x float>)
+declare spir_func <2 x float> @_ZN2cl7__spirv3sinEDv2_f(<2 x float>)
 
 attributes #0 = { nounwind }
 

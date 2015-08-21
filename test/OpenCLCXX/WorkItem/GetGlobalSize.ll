@@ -16,16 +16,16 @@ define spir_kernel void @_Z6workerv() #0 {
 ; <label>:1                                       ; preds = %8, %0
   %2 = load i32* %i, align 4
 ; CHECK-DAG: Decorate {{[0-9]+}} BuiltIn 30
-; CHECK-NOT: _ZN2cl12get_work_dimEv
-  %3 = call spir_func i32 @_ZN2cl12get_work_dimEv()
+; CHECK-NOT: _ZN2cl7__spirv12get_work_dimEv
+  %3 = call spir_func i32 @_ZN2cl7__spirv12get_work_dimEv()
   %4 = icmp ult i32 %2, %3
   br i1 %4, label %5, label %11
 
 ; <label>:5                                       ; preds = %1
   %6 = load i32* %i, align 4
 ; CHECK-DAG: Decorate {{[0-9]+}} BuiltIn 31
-; CHECK-NOT: _ZN2cl15get_global_sizeEj
-  %7 = call spir_func i32 @_ZN2cl15get_global_sizeEj(i32 %6)
+; CHECK-NOT: _ZN2cl7__spirv15get_global_sizeEj
+  %7 = call spir_func i32 @_ZN2cl7__spirv15get_global_sizeEj(i32 %6)
   store i32 %7, i32* %tmp, align 4
   br label %8
 
@@ -39,9 +39,9 @@ define spir_kernel void @_Z6workerv() #0 {
   ret void
 }
 
-declare spir_func i32 @_ZN2cl12get_work_dimEv() #1
+declare spir_func i32 @_ZN2cl7__spirv12get_work_dimEv() #1
 
-declare spir_func i32 @_ZN2cl15get_global_sizeEj(i32) #1
+declare spir_func i32 @_ZN2cl7__spirv15get_global_sizeEj(i32) #1
 
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }

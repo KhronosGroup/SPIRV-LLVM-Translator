@@ -10,13 +10,13 @@ target triple = "spir-unknown-unknown"
 define spir_kernel void @_Z6workerv() #0 {
   %dim = alloca i32, align 4
 ; CHECK: Decorate {{[0-9]+}} BuiltIn 30
-; CHECK-NOT: _ZN2cl12get_work_dimEv
-  %1 = call spir_func i32 @_ZN2cl12get_work_dimEv()
+; CHECK-NOT: _ZN2cl7__spirv12get_work_dimEv
+  %1 = call spir_func i32 @_ZN2cl7__spirv12get_work_dimEv()
   store i32 %1, i32* %dim, align 4
   ret void
 }
 
-declare spir_func i32 @_ZN2cl12get_work_dimEv() #1
+declare spir_func i32 @_ZN2cl7__spirv12get_work_dimEv() #1
 
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }

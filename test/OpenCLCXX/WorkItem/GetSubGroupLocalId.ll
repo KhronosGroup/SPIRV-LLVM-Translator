@@ -10,13 +10,13 @@ target triple = "spir-unknown-unknown"
 define spir_kernel void @_Z6workerv() #0 {
   %tmp = alloca i32, align 4
 ; CHECK: Decorate {{[0-9]+}} BuiltIn 41
-; CHECK-NOT: _ZN2cl22get_sub_group_local_idEv
-  %1 = call spir_func i32 @_ZN2cl22get_sub_group_local_idEv()
+; CHECK-NOT: _ZN2cl7__spirv22get_sub_group_local_idEv
+  %1 = call spir_func i32 @_ZN2cl7__spirv22get_sub_group_local_idEv()
   store i32 %1, i32* %tmp, align 4
   ret void
 }
 
-declare spir_func i32 @_ZN2cl22get_sub_group_local_idEv() #1
+declare spir_func i32 @_ZN2cl7__spirv22get_sub_group_local_idEv() #1
 
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
