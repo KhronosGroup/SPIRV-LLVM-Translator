@@ -842,5 +842,33 @@ getSPRVSampledImageType(Module *M, Type *ImageType) {
   return nullptr;
 }
 
+bool
+eraseUselessFunctions(Module *M) {
+  bool changed = false;
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = I++;
+    if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
+        !F->isDeclaration())
+      continue;
+
+    dumpUsers(F, "[eraseUselessFunctions] ");
+    for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
+      auto U = *UI++;
+      if (auto CE = dyn_cast<ConstantExpr>(U)){
+        if (CE->use_empty()) {
+          CE->dropAllReferences();
+          changed = true;
+        }
+      }
+    }
+    if (F->use_empty()) {
+      F->dropAllReferences();
+      F->eraseFromParent();
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 }
 

@@ -174,6 +174,16 @@ getSet(const std::string &S, char Delim = ' ') {
 }
 
 template<typename VT, typename KT>
+VT map(KT Key) {
+  return SPRVMap<KT, VT>::map(Key);
+}
+
+template<typename KT, typename VT>
+KT rmap(VT V) {
+  return SPRVMap<KT, VT>::rmap(V);
+}
+
+template<typename VT, typename KT>
 std::unordered_set<VT>
 map(const std::unordered_set<KT> &KSet) {
   VT V;

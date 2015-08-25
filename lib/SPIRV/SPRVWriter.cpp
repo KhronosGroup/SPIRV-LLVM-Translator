@@ -693,8 +693,14 @@ LLVMToSPRV::transType(Type *T) {
         if (SubStrs.size() > 2) {
           Acc = SubStrs[2];
         }
-        SPRVTypeImageDescriptor Desc(0, 0, 0, 0, 0, 0);
-        OCLSPRVImageTypeMap::find(SubStrs[1], &Desc);
+        auto Desc = map<SPRVTypeImageDescriptor>(SubStrs[1].str());
+        DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => " <<
+            "(" << (unsigned)Desc.Dim << ", " <<
+                   Desc.Depth << ", " <<
+                   Desc.Arrayed << ", " <<
+                   Desc.MS << ", " <<
+                   Desc.Sampled << ", " <<
+                   Desc.Format << ")\n");
         auto VoidT = transType(Type::getVoidTy(*Ctx));
         return mapType(T, BM->addImageType(VoidT, Desc,
           SPIRSPRVAccessQualifierMap::map(Acc)));
@@ -740,9 +746,8 @@ LLVMToSPRV::transType(Type *T) {
 
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
-    SPRVTypeImageDescriptor SamplerDesc(0, 0, 0, 0, 0, 0);
     assert(!ST->getName().startswith(SPIR_TYPE_NAME_PIPE_T));
-    assert(!OCLSPRVImageTypeMap::find(ST->getName(), &SamplerDesc));
+    assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
   }
 
@@ -2308,6 +2313,7 @@ LLVMToSPRV::oclRegularize() {
   PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.add(createSPRVLowerBool());
   PassMgr.run(*M);
+  eraseUselessFunctions(M);
 }
 
 SPRVOpCode

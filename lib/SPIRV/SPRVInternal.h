@@ -566,6 +566,7 @@ namespace kSPRVName {
   const static char GroupPrefix[]            = "group_";
   const static char Prefix[]                 = "__spirv_";
   const static char Postfix[]                = "__";
+  const static char ImageQuerySize[]         = "ImageQuerySize";
   const static char ImageQuerySizeLod[]      = "ImageQuerySizeLod";
   const static char ImageSampleExplicitLod[] = "ImageSampleExplicitLod";
   const static char ReservedPrefix[]         = "reserved_";
@@ -809,6 +810,8 @@ dumpUsers(Value* V, StringRef Prompt = "");
 Type *
 getSPRVSampledImageType(Module *M, Type *ImageType);
 
+bool
+eraseUselessFunctions(Module *M);
 
 }
 namespace llvm {
