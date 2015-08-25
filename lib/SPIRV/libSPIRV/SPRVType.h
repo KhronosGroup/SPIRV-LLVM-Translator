@@ -495,7 +495,10 @@ public:
 
 protected:
   _SPRV_DEF_ENCDEC3(Id, ReturnType, ParamTypeVec)
-  void setWordCount(SPRVWord WordCount) { ParamTypeVec.resize(WordCount - 3);}
+  void setWordCount(SPRVWord WordCount) {
+    SPRVType::setWordCount(WordCount);
+    ParamTypeVec.resize(WordCount - 3);
+  }
   void validate()const {
     SPRVEntry::validate();
     ReturnType->validate();

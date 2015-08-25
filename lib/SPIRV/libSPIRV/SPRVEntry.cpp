@@ -175,8 +175,8 @@ SPRVEntry::encodeChildren(std::ostream &O)const {
 
 void
 SPRVEntry::encodeWordCountOpCode(std::ostream &O) const {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     getEncoder(O) << WordCount << OpCode;
     return;
   }
@@ -243,8 +243,6 @@ SPRVEntry::validateBuiltin(SPRVWord TheSet, SPRVWord Index)const {
 void
 SPRVEntry::addDecorate(const SPRVDecorate *Dec){
   auto Kind = Dec->getDecorateKind();
-  assert(Kind == SPRVDEC_FuncParamAttr ||
-      Decorates.find(Kind) == Decorates.end());
   Decorates.insert(std::make_pair(Dec->getDecorateKind(), Dec));
   Module->addDecorate(Dec);
   SPRVDBG(bildbgs() << "[addDecorate] " << *Dec << '\n';)
@@ -382,11 +380,8 @@ SPRVEntry::setLinkageType(SPRVLinkageTypeKind LT) {
 std::ostream &
 operator<<(std::ostream &O, const SPRVEntry &E) {
   E.validate();
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat)
-    O << '\n';
-#endif
   E.encodeAll(O);
+  O << SPRVNL;
   return O;
 }
 

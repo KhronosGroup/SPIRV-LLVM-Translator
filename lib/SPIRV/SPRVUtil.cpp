@@ -55,15 +55,19 @@
 
 namespace SPRV{
 
+#ifdef _SPRV_SUPPORT_TEXT_FMT
 cl::opt<bool, true>
 UseTextFormat("spirv-text",
     cl::desc("Use text format for SPIR-V for debugging purpose"),
-    cl::location(SPRVDbgUseTextFormat));
+    cl::location(SPRVUseTextFormat));
+#endif
 
+#ifdef _SPRVDBG
 cl::opt<bool, true>
 EnableDbgOutput("spirv-debug",
     cl::desc("Enable SPIR-V debug output"),
     cl::location(SPRVDbgEnable));
+#endif
 
 void
 addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {

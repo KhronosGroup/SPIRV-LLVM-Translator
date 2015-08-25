@@ -59,8 +59,15 @@
 
 #include <memory>
 #include <fstream>
+#include <iostream>
 
 #define DEBUG_TYPE "spirv"
+
+namespace kExt {
+  const char SpirvBinary[] = ".spv";
+  const char SpirvText[] = ".spt";
+  const char LLVMBinary[] = ".bc";
+};
 
 using namespace llvm;
 
@@ -77,6 +84,13 @@ IsReverse("r", cl::desc("Reverse translation (SPIR-V to LLVM)"));
 static cl::opt<bool>
 IsRegularization("s", cl::desc(
     "Regularize LLVM to be representable by SPIR-V"));
+
+static cl::opt<bool>
+ToText("to-text", cl::desc("Convert input SPIR-V binary to internal textual format"));
+
+static cl::opt<bool>
+ToBinary("to-binary",
+    cl::desc("Convert input SPIR-V in internal textual format to binary"));
 
 static std::string
 removeExt(const std::string& FileName) {
@@ -98,12 +112,14 @@ convertLLVMToSPRV() {
   }
 
   ErrorOr<std::unique_ptr<Module>> MOrErr =
-    getStreamedBitcodeModule(InputFile, DS, Context);
-  std::unique_ptr<Module> M(std::move(*MOrErr));
-  if (!M) {
-    errs() << "Fails to load bitcode: " << Err;
+      getStreamedBitcodeModule(InputFile, DS, Context);
+
+  if (std::error_code EC = MOrErr.getError()) {
+    errs() << "Fails to load bitcode: " << EC.message();
     return -1;
   }
+  
+  std::unique_ptr<Module> M = std::move(*MOrErr);
 
   if (std::error_code EC = M->materializeAllPermanently()){
     errs() << "Fails to materialize: " << EC.message();
@@ -114,7 +130,7 @@ convertLLVMToSPRV() {
     if (InputFile == "-")
       OutputFile = "-";
     else
-      OutputFile = removeExt(InputFile) + ".bil";
+      OutputFile = removeExt(InputFile) + kExt::SpirvBinary;
   }
 
   std::ofstream OFS(OutputFile, std::ios::binary);
@@ -150,7 +166,7 @@ convertSPRVToLLVM() {
     if (InputFile == "-")
       OutputFile = "-";
     else
-      OutputFile = removeExt(InputFile) + ".bc";
+      OutputFile = removeExt(InputFile) + kExt::LLVMBinary;
   }
 
   std::error_code EC;
@@ -167,6 +183,38 @@ convertSPRVToLLVM() {
 }
 
 static int
+convertSPRV() {
+  if (ToBinary == ToText) {
+    errs() << "Invalid arguments\n";
+    return -1;
+  }
+  std::ifstream IFS(InputFile, std::ios::binary);
+
+  if (OutputFile.empty()) {
+    if (InputFile == "-")
+      OutputFile = "-";
+    else {
+      OutputFile = removeExt(InputFile)
+                 + (ToBinary?kExt::SpirvBinary:kExt::SpirvText);
+    }
+  }
+
+  auto Action = [&](std::ostream &OFS) {
+    std::string Err;
+      if (!SPRV::ConvertSPRV(IFS, OFS, Err, ToBinary, ToText)) {
+      errs() << "Fails to convert SPIR-V : " << Err << '\n';
+      return -1;
+    }
+    return 0;
+  };
+  if (OutputFile != "-") {
+    std::ofstream OFS(OutputFile, std::ios::binary);
+    return Action(OFS);
+  } else
+    return Action(std::cout);
+}
+
+static int
 regularizeLLVM() {
   LLVMContext Context;
 
@@ -178,12 +226,14 @@ regularizeLLVM() {
   }
 
   ErrorOr<std::unique_ptr<Module>> MOrErr =
-    getStreamedBitcodeModule(InputFile, DS, Context);
-  std::unique_ptr<Module> M(std::move(*MOrErr));
-  if (!M) {
-    errs() << "Fails to load bitcode: " << Err;
+      getStreamedBitcodeModule(InputFile, DS, Context);
+
+  if (std::error_code EC = MOrErr.getError()) {
+    errs() << "Fails to load bitcode: " << EC.message();
     return -1;
   }
+  
+  std::unique_ptr<Module> M = std::move(*MOrErr);
 
   if (std::error_code EC = M->materializeAllPermanently()){
     errs() << "Fails to materialize: " << EC.message();
@@ -218,6 +268,19 @@ regularizeLLVM() {
 int
 main(int ac, char** av) {
   cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
+
+  if (ToText && (ToBinary || IsReverse || IsRegularization)) {
+    errs() << "Cannot use -to-text with -to-binary, -r, -s\n";
+    return -1;
+  }
+
+  if (ToBinary && (ToText || IsReverse || IsRegularization)) {
+    errs() << "Cannot use -to-binary with -to-text, -r, -s\n";
+    return -1;
+  }
+
+  if (ToBinary || ToText)
+    return convertSPRV();
 
   if (!IsReverse && !IsRegularization)
     return convertLLVMToSPRV();

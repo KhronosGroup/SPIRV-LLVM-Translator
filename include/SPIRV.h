@@ -56,7 +56,27 @@ bool RegularizeLLVMForSPRV(llvm::Module *M, std::string &ErrMsg);
 /// \brief Mangle OpenCL builtin function function name.
 void MangleOpenCLBuiltin(const std::string &UnmangledName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName);
+} // namespace llvm
 
-} // End namespace llvm
+namespace SPRV {
+/// \brief Convert SPIR-V between binary and internal textual formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+/// \returns true if succeeds.
+bool ConvertSPRV(std::istream &IS, std::ostream &OS,
+    std::string &ErrMsg, bool FromText, bool ToText);
+
+/// \brief Convert SPIR-V between binary and internel text formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+bool ConvertSPRV(std::string &Input, std::string &Out,
+    std::string &ErrMsg, bool ToText);
+
+/// \brief Check if a string contains SPIR-V binary.
+bool IsSPRVBinary(std::string &Img);
+
+/// \brief Check if a string contains SPIR-V in internal text format.
+bool IsSPRVText(std::string &Img);
+} // End namespace SPIRV
 
 #endif

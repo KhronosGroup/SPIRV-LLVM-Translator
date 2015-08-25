@@ -53,19 +53,19 @@ operator<< (std::ostream &O, const std::multiset<T *, B>& V) {
 
 SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC,
     SPRVDecorateKind TheDec, SPRVEntry *TheTarget)
-  :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec){
+  :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
   validate();
 }
 
 SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC,
     SPRVDecorateKind TheDec, SPRVEntry *TheTarget, SPRVWord V)
-  :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec){
+  :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
   Literals.push_back(V);
   validate();
 }
 
 SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC)
-  :SPRVAnnotationGeneric(OC), Dec(SPRVDEC_Count){
+  :SPRVAnnotationGeneric(OC), Dec(SPRVDEC_Count), Owner(nullptr){
 }
 
 SPRVDecorateKind
@@ -171,6 +171,7 @@ SPRVGroupMemberDecorate::decorateTargets() {
 bool
 SPRVDecorateGeneric::Comparator::operator()(const SPRVDecorateGeneric *A,
     const SPRVDecorateGeneric *B) {
+  auto Action = [=](){
   if (A->getOpCode() < B->getOpCode())
     return true;
   if (A->getOpCode() > B->getOpCode())
@@ -192,7 +193,31 @@ SPRVDecorateGeneric::Comparator::operator()(const SPRVDecorateGeneric *A,
       return false;
   }
   return false;
+  };
+  auto Res = Action();
+#if 0
+  SPRVDBG(bildbgs() << "[decorate comparator] " << *A << " vs " << *B
+                    << " : " << Res << '\n');
+#endif
+  return Res;
 }
 
+bool operator==(const SPRVDecorateGeneric &A, const SPRVDecorateGeneric &B) {
+  if (A.getTargetId() != B.getTargetId())
+    return false;
+  if (A.getOpCode() != B.getOpCode())
+    return false;
+  if (A.getDecorateKind() != B.getDecorateKind())
+    return false;
+  if (A.getLiteralCount() != B.getLiteralCount())
+    return false;
+  for (size_t I = 0, E = A.getLiteralCount(); I != E; ++I) {
+    auto EA = A.getLiteral(I);
+    auto EB = B.getLiteral(I);
+    if (EA != EB)
+      return false;
+  }
+  return true;
+}
 }
 

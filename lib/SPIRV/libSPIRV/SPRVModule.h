@@ -295,6 +295,21 @@ private:
   const std::string ModuleFileStr;
   SPRVModule *M;
 };
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+
+/// Convert SPIR-V between binary and internel text formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+bool ConvertSPRV(std::istream &IS, std::ostream &OS,
+    std::string &ErrMsg, bool FromText, bool ToText);
+
+/// Convert SPIR-V between binary and internel text formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+bool ConvertSPRV(std::string &Input, std::string &Out,
+    std::string &ErrMsg, bool ToText);
+#endif
 }
 
 

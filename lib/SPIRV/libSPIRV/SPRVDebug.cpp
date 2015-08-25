@@ -42,6 +42,5 @@
 using namespace SPRV;
 
 bool SPRV::SPRVDbgEnable = false;
-bool SPRV::SPRVDbgUseTextFormat = false;
 bool SPRV::SPRVDbgAssertOnError = true;
 bool SPRV::SPRVDbgErrorMsgIncludesSourceInfo = true;

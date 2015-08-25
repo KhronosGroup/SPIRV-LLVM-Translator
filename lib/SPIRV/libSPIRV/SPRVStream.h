@@ -52,6 +52,13 @@
 
 namespace SPRV{
 
+#define _SPRV_SUPPORT_TEXT_FMT
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+// Use textual format for SPRV.
+extern bool SPRVUseTextFormat;
+#endif
+
 class SPRVFunction;
 class SPRVBasicBlock;
 
@@ -82,6 +89,11 @@ public:
   std::ostream& OS;
 };
 
+/// Output a new line in text mode. Do nothing in binary mode.
+class SPRVNLTy {};
+const SPRVNLTy SPRVNL;
+std::ostream& operator<<(std::ostream &OS, const SPRVNLTy& NL);
+
 template<typename T>
 const SPRVDecoder&
 DecodeBinary(const SPRVDecoder& I, T &V) {
@@ -95,8 +107,8 @@ DecodeBinary(const SPRVDecoder& I, T &V) {
 template<typename T>
 const SPRVDecoder&
 operator>>(const SPRVDecoder& I, T &V) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     uint32_t W;
     I.IS >> W;
     V = static_cast<T>(W);
@@ -135,8 +147,8 @@ operator>>(const SPRVDecoder& I, std::vector<T> &V) {
 template<typename T>
 const SPRVEncoder&
 operator<<(const SPRVEncoder& O, T V) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     O.OS << V << " ";
     return O;
   }
