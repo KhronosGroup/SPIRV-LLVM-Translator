@@ -184,8 +184,6 @@ public:
     if (TheBB)
       Inst->setBasicBlock(TheBB);
     else {
-      assert(isSpecConstantOpAllowedOp(TheOC) &&
-          "Invalid op code for constant expression");
       Inst->setModule(TheModule);
     }
     Inst->setOpWords(TheOps);
