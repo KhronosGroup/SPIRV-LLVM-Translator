@@ -268,7 +268,7 @@ protected:
 
 class SPRVConstantComposite: public SPRVValue {
 public:
-  // Complete constructor for integer constant
+  // Complete constructor for composite constant
   SPRVConstantComposite(SPRVModule *M, SPRVType *TheType, SPRVId TheId,
       const std::vector<SPRVValue *> TheElements)
     :SPRVValue(M, TheElements.size()+3, SPRVOC_OpConstantComposite, TheType,

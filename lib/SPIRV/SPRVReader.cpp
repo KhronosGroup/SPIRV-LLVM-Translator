@@ -1189,6 +1189,9 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     case SPRVOC_OpTypeArray:
       return mapValue(BV, ConstantArray::get(
           dyn_cast<ArrayType>(transType(BCC->getType())), CV));
+    case SPRVOC_OpTypeStruct:
+      return mapValue(BV, ConstantStruct::get(
+          dyn_cast<StructType>(transType(BCC->getType())), CV));
     default:
       llvm_unreachable("not implemented");
       return nullptr;
