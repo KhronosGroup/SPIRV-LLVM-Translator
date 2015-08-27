@@ -242,15 +242,15 @@ SPRVType::isTypeVectorOrScalarFloat() const {
 
 bool
 SPRVTypeStruct::isPacked() const {
-  return hasDecorate(SPRVDEC_CPacked);
+  return hasDecorate(DecorationCPacked);
 }
 
 void
 SPRVTypeStruct::setPacked(bool Packed) {
   if (Packed)
-    addDecorate(new SPRVDecorate(SPRVDEC_CPacked, this));
+    addDecorate(new SPRVDecorate(DecorationCPacked, this));
   else
-    eraseDecorate(SPRVDEC_CPacked);
+    eraseDecorate(DecorationCPacked);
 }
 
 SPRVTypeArray::SPRVTypeArray(SPRVModule *M, SPRVId TheId, SPRVType *TheElemType,

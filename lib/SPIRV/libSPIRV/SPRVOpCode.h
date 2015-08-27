@@ -160,7 +160,9 @@ inline bool isTypeOpCode(SPRVOpCode OpCode) {
 
 inline bool isConstantOpCode(SPRVOpCode OpCode) {
   unsigned OC = OpCode;
-  return SPRVOC_OpConstantTrue <= OC && OC <= SPRVOC_OpSpecConstantOp;
+  return (SPRVOC_OpConstantTrue <= OC
+      && OC <= SPRVOC_OpSpecConstantOp)
+      || OC == SPRVOC_OpUndef;
 }
 
 }

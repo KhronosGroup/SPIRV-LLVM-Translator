@@ -65,7 +65,7 @@ public:
     SPRVVersion(SPRVVER_100),
     SPRVGenerator(SPRVGEN_AMDOpenSourceLLVMSPRVTranslator),
     InstSchema(SPRVISCH_Default),
-    SrcLang(SPRVSL_OpenCL),
+    SrcLang(SourceLanguageOpenCL),
     SrcLangVer(12),
     MemoryModel(SPRVMM_OpenCL12){
     AddrModel = sizeof(size_t) == 32 ? SPRVAM_Physical32 : SPRVAM_Physical64;
@@ -115,7 +115,7 @@ public:
   }
   unsigned getNumFunctions() const { return FuncVec.size();}
   unsigned getNumVariables() const { return VariableVec.size();}
-  SPRVSourceLanguageKind getSourceLanguage(SPRVWord * Ver = nullptr) const {
+  SourceLanguage getSourceLanguage(SPRVWord * Ver = nullptr) const {
     if (Ver)
       *Ver = SrcLangVer;
     return SrcLang;
@@ -132,7 +132,7 @@ public:
   void setExtension(const std::string &Ext) { SPRVExt = Ext;}
   void setMemoryModel(SPRVMemoryModelKind MM) { MemoryModel = MM;}
   void setName(SPRVEntry *E, const std::string &Name);
-  void setSourceLanguage(SPRVSourceLanguageKind Lang, SPRVWord Ver) {
+  void setSourceLanguage(SourceLanguage Lang, SPRVWord Ver) {
     SrcLang = Lang;
     SrcLangVer = Ver;
   }
@@ -282,7 +282,7 @@ private:
   SPRVVersionKind SPRVVersion;
   SPRVGeneratorKind SPRVGenerator;
   SPRVInstructionSchemaKind InstSchema;
-  SPRVSourceLanguageKind SrcLang;
+  SourceLanguage SrcLang;
   SPRVWord SrcLangVer;
   std::string SrcExtension;
   std::string SPRVExt;
@@ -791,7 +791,7 @@ SPRVModuleImpl::addUndef(SPRVType *TheType) {
 SPRVInstruction *
 SPRVModuleImpl::addStoreInst(SPRVValue *Target, SPRVValue *Source,
     const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *BB) {
-  return BB->addInstruction(new SPRVStore(getId(), Target->getId(),
+  return BB->addInstruction(new SPRVStore(Target->getId(),
       Source->getId(), TheMemoryAccess, BB));
 }
 

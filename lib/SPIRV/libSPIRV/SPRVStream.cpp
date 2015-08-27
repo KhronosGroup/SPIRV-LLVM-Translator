@@ -135,7 +135,7 @@ operator<<(const SPRVEncoder& O, Type V) { \
 }
 
 SPRV_DEF_ENCDEC(SPRVOpCode)
-SPRV_DEF_ENCDEC(SPRVDecorateKind)
+SPRV_DEF_ENCDEC(Decoration)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL12Kind)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL20Kind)
 

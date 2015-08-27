@@ -46,30 +46,30 @@ namespace SPRV{
 void
 SPRVValue::setAlignment(SPRVWord A) {
   if (A == 0) {
-    eraseDecorate(SPRVDEC_Alignment);
+    eraseDecorate(DecorationAlignment);
     return;
   }
-  addDecorate(new SPRVDecorate(SPRVDEC_Alignment, this, A));
+  addDecorate(new SPRVDecorate(DecorationAlignment, this, A));
   SPRVDBG(bildbgs() << "Set alignment " << A << " for obj " << Id << "\n")
 }
 
 bool
 SPRVValue::hasAlignment(SPRVWord *Result)const {
-  return hasDecorate(SPRVDEC_Alignment, 0, Result);
+  return hasDecorate(DecorationAlignment, 0, Result);
 }
 
 bool
 SPRVValue::isVolatile()const {
-  return hasDecorate(SPRVDEC_Volatile);
+  return hasDecorate(DecorationVolatile);
 }
 
 void
 SPRVValue::setVolatile(bool IsVolatile) {
   if (!IsVolatile) {
-    eraseDecorate(SPRVDEC_Volatile);
+    eraseDecorate(DecorationVolatile);
     return;
   }
-  addDecorate(new SPRVDecorate(SPRVDEC_Volatile, this));
+  addDecorate(new SPRVDecorate(DecorationVolatile, this));
   SPRVDBG(bildbgs() << "Set volatile " << " for obj " << Id << "\n")
 }
 

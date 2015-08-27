@@ -116,7 +116,7 @@ public:
   virtual unsigned getNumFunctions() const = 0;
   virtual unsigned getNumEntryPoints(SPRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
-  virtual SPRVSourceLanguageKind getSourceLanguage(SPRVWord *) const = 0;
+  virtual SourceLanguage getSourceLanguage(SPRVWord *) const = 0;
   virtual const std::string &getSourceExtension() const = 0;
   virtual SPRVValue *getValue(SPRVId TheId)const = 0;
   virtual std::vector<SPRVValue *> getValues(const std::vector<SPRVId>&)const
@@ -136,7 +136,7 @@ public:
   virtual void setExtension(const std::string &) = 0;
   virtual void setMemoryModel(SPRVMemoryModelKind) = 0;
   virtual void setName(SPRVEntry *, const std::string&) = 0;
-  virtual void setSourceLanguage(SPRVSourceLanguageKind, SPRVWord) = 0;
+  virtual void setSourceLanguage(SourceLanguage, SPRVWord) = 0;
   virtual void setSourceExtension(const std::string &) = 0;
   virtual void optimizeDecorates() = 0;
   virtual void setAutoAddCapability(bool E){ AutoAddCapability = E;}

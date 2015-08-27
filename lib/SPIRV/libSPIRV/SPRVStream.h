@@ -187,7 +187,7 @@ const SPRVDecoder& \
 operator>>(const SPRVDecoder& I, Type &V);
 
 SPRV_DEC_ENCDEC(SPRVOpCode)
-SPRV_DEC_ENCDEC(SPRVDecorateKind)
+SPRV_DEC_ENCDEC(Decoration)
 SPRV_DEC_ENCDEC(SPRVBuiltinOCL12Kind)
 SPRV_DEC_ENCDEC(SPRVBuiltinOCL20Kind)
 

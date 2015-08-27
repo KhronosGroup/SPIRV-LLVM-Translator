@@ -56,11 +56,11 @@ public:
   unsigned getArgNo()const { return ArgNo;}
   void foreachAttr(std::function<void(SPRVFuncParamAttrKind)>);
   void addAttr(SPRVFuncParamAttrKind Kind) {
-    addDecorate(new SPRVDecorate(SPRVDEC_FuncParamAttr, this, Kind));
+    addDecorate(new SPRVDecorate(DecorationFuncParamAttr, this, Kind));
   }
   void setParent(SPRVFunction *Parent) { ParentFunc = Parent;}
   bool hasAttr(SPRVFuncParamAttrKind Kind) const {
-    return getDecorate(SPRVDEC_FuncParamAttr).count(Kind) ;
+    return getDecorate(DecorationFuncParamAttr).count(Kind) ;
   }
   bool isByVal()const { return hasAttr(SPRVFPA_ByVal);}
   bool isZext()const { return hasAttr(SPRVFPA_Zext);}

@@ -249,17 +249,17 @@ SPRVEntry::addDecorate(const SPRVDecorate *Dec){
 }
 
 void
-SPRVEntry::addDecorate(SPRVDecorateKind Kind) {
+SPRVEntry::addDecorate(Decoration Kind) {
   addDecorate(new SPRVDecorate(Kind, this));
 }
 
 void
-SPRVEntry::addDecorate(SPRVDecorateKind Kind, SPRVWord Literal) {
+SPRVEntry::addDecorate(Decoration Kind, SPRVWord Literal) {
   addDecorate(new SPRVDecorate(Kind, this, Literal));
 }
 
 void
-SPRVEntry::eraseDecorate(SPRVDecorateKind Dec){
+SPRVEntry::eraseDecorate(Decoration Dec){
   Decorates.erase(Dec);
 }
 
@@ -295,18 +295,18 @@ SPRVEntry::addMemberDecorate(const SPRVMemberDecorate *Dec){
 }
 
 void
-SPRVEntry::addMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind) {
+SPRVEntry::addMemberDecorate(SPRVWord MemberNumber, Decoration Kind) {
   addMemberDecorate(new SPRVMemberDecorate(Kind, MemberNumber, this));
 }
 
 void
-SPRVEntry::addMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind,
+SPRVEntry::addMemberDecorate(SPRVWord MemberNumber, Decoration Kind,
     SPRVWord Literal) {
   addMemberDecorate(new SPRVMemberDecorate(Kind, MemberNumber, this, Literal));
 }
 
 void
-SPRVEntry::eraseMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Dec){
+SPRVEntry::eraseMemberDecorate(SPRVWord MemberNumber, Decoration Dec){
   MemberDecorates.erase(std::make_pair(MemberNumber, Dec));
 }
 
@@ -329,7 +329,7 @@ SPRVEntry::takeAnnotations(SPRVForward *E){
 // Check if an entry has Kind of decoration and get the literal of the
 // first decoration of such kind at Index.
 bool
-SPRVEntry::hasDecorate(SPRVDecorateKind Kind, size_t Index, SPRVWord *Result)const {
+SPRVEntry::hasDecorate(Decoration Kind, size_t Index, SPRVWord *Result)const {
   DecorateMapType::const_iterator Loc = Decorates.find(Kind);
   if (Loc == Decorates.end())
     return false;
@@ -340,7 +340,7 @@ SPRVEntry::hasDecorate(SPRVDecorateKind Kind, size_t Index, SPRVWord *Result)con
 
 // Get literals of all decorations of Kind at Index.
 std::set<SPRVWord>
-SPRVEntry::getDecorate(SPRVDecorateKind Kind, size_t Index) const {
+SPRVEntry::getDecorate(Decoration Kind, size_t Index) const {
   auto Range = Decorates.equal_range(Kind);
   std::set<SPRVWord> Value;
   for (auto I = Range.first, E = Range.second; I != E; ++I) {
@@ -365,7 +365,7 @@ SPRVLinkageTypeKind
 SPRVEntry::getLinkageType() const {
   assert(hasLinkageType());
   SPRVWord LT = SPRVLT_Count;
-  if (!hasDecorate(SPRVDEC_LinkageType, 0, &LT))
+  if (!hasDecorate(DecorationLinkageAttributes, 0, &LT))
     return SPRVLT_Count;
   return static_cast<SPRVLinkageTypeKind>(LT);
 }
@@ -374,7 +374,7 @@ void
 SPRVEntry::setLinkageType(SPRVLinkageTypeKind LT) {
   assert(isValid(LT));
   assert(hasLinkageType());
-  addDecorate(new SPRVDecorate(SPRVDEC_LinkageType, this, LT));
+  addDecorate(new SPRVDecorate(DecorationLinkageAttributes, this, LT));
 }
 
 std::ostream &
@@ -555,7 +555,7 @@ SPRVSource::encode(std::ostream &O) const {
 
 void
 SPRVSource::decode(std::istream &I) {
-  SPRVSourceLanguageKind Lang = SPRVSL_Count;
+  SourceLanguage Lang = SourceLanguageUnknown;
   SPRVWord Ver = SPRVWORD_MAX;
   getDecoder(I) >> Lang >> Ver;
   Module->setSourceLanguage(Lang, Ver);

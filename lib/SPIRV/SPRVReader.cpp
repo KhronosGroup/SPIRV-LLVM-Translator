@@ -1935,7 +1935,7 @@ SPRVToLLVM::transKernelMetadata() {
         SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF,
         [=](SPRVFunctionParameter *Arg){
       std::string Qual;
-      if (Arg->hasDecorate(SPRVDEC_Volatile))
+      if (Arg->hasDecorate(DecorationVolatile))
         Qual = kOCLTypeQualifierName::Volatile;
       Arg->foreachAttr([&](SPRVFuncParamAttrKind Kind){
         Qual += Qual.empty() ? "" : " ";
@@ -2186,8 +2186,8 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
 bool
 SPRVToLLVM::transSourceLanguage() {
   SPRVWord Ver = 0;
-  SPRVSourceLanguageKind Lang = BM->getSourceLanguage(&Ver);
-  assert(Lang == SPRVSL_OpenCL && "Unsupported source language");
+  SourceLanguage Lang = BM->getSourceLanguage(&Ver);
+  assert(Lang == SourceLanguageOpenCL && "Unsupported source language");
   unsigned Major = Ver/10;
   unsigned Minor = (Ver%10);
   addOCLVersionMetadata(Context, M, SPIR_MD_SPIR_VERSION, Major, Minor);

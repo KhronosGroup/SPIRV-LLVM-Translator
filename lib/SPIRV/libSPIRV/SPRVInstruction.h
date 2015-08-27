@@ -130,26 +130,26 @@ public:
   void setParent(SPRVBasicBlock *);
   void setScope(SPRVEntry *);
   void addFPRoundingMode(SPRVFPRoundingModeKind Kind) {
-    addDecorate(SPRVDEC_FPRoundingMode, Kind);
+    addDecorate(DecorationFPRoundingMode, Kind);
   }
   void eraseFPRoundingMode() {
-    eraseDecorate(SPRVDEC_FPRoundingMode);
+    eraseDecorate(DecorationFPRoundingMode);
   }
   void setSaturatedConversion(bool Enable) {
     if (Enable)
-      addDecorate(SPRVDEC_FPSaturatedConversion);
+      addDecorate(DecorationSaturatedConversion);
     else
-      eraseDecorate(SPRVDEC_FPSaturatedConversion);
+      eraseDecorate(DecorationSaturatedConversion);
   }
   bool hasFPRoundingMode(SPRVFPRoundingModeKind *Kind = nullptr) {
     SPRVWord V;
-    auto Found = hasDecorate(SPRVDEC_FPRoundingMode, 0, &V);
+    auto Found = hasDecorate(DecorationFPRoundingMode, 0, &V);
     if (Found && Kind)
       *Kind = static_cast<SPRVFPRoundingModeKind>(V);
     return Found;
   }
   bool isSaturatedConversion() {
-    return hasDecorate(SPRVDEC_FPSaturatedConversion) ||
+    return hasDecorate(DecorationSaturatedConversion) ||
         OpCode == SPRVOC_OpSatConvertSToU ||
         OpCode == SPRVOC_OpSatConvertUToS;
   }
@@ -405,11 +405,11 @@ public:
     return getValue(Initializer[0]);
   }
   bool isConstant() const {
-    return hasDecorate(SPRVDEC_Constant);
+    return hasDecorate(DecorationConstant);
   }
   bool isBuiltin(SPRVBuiltinVariableKind *BuiltinKind = nullptr) const {
     SPRVWord Kind;
-    bool Found = hasDecorate(SPRVDEC_BuiltIn, 0, &Kind);
+    bool Found = hasDecorate(DecorationBuiltIn, 0, &Kind);
     if (!Found)
       return false;
     if (BuiltinKind)
@@ -418,13 +418,13 @@ public:
   }
   void setBuiltin(SPRVBuiltinVariableKind Kind) {
     assert(isValid(Kind));
-    addDecorate(new SPRVDecorate(SPRVDEC_BuiltIn, this, Kind));
+    addDecorate(new SPRVDecorate(DecorationBuiltIn, this, Kind));
   }
   void setIsConstant(bool Is) {
     if (Is)
-      addDecorate(new SPRVDecorate(SPRVDEC_Constant, this));
+      addDecorate(new SPRVDecorate(DecorationConstant, this));
     else
-      eraseDecorate(SPRVDEC_Constant);
+      eraseDecorate(DecorationConstant);
   }
 protected:
   void validate() const {
@@ -444,12 +444,12 @@ protected:
 
 class SPRVStore:public SPRVInstruction, public SPRVMemoryAccess {
 public:
-  const static SPRVWord FixedWords = 4;
+  const static SPRVWord FixedWords = 3;
   // Complete constructor
-  SPRVStore(SPRVId TheId, SPRVId PointerId, SPRVId ValueId,
+  SPRVStore(SPRVId PointerId, SPRVId ValueId,
       const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *TheBB)
     :SPRVInstruction(FixedWords + TheMemoryAccess.size(), SPRVOC_OpStore,
-        TheId, TheBB),
+        TheBB),
      SPRVMemoryAccess(TheMemoryAccess),
      MemoryAccess(TheMemoryAccess),
      PtrId(PointerId),
@@ -469,6 +469,7 @@ public:
 protected:
   void setAttr() {
     setHasNoType();
+    setHasNoId();
   }
 
   void setWordCount(SPRVWord TheWordCount) {
@@ -476,11 +477,11 @@ protected:
     MemoryAccess.resize(TheWordCount - FixedWords);
   }
   void encode(std::ostream &O) const {
-    getEncoder(O) << Id << PtrId << ValId << MemoryAccess;
+    getEncoder(O) << PtrId << ValId << MemoryAccess;
   }
 
   void decode(std::istream &I) {
-    getDecoder(I) >> Id >> PtrId >> ValId >> MemoryAccess;
+    getDecoder(I) >> PtrId >> ValId >> MemoryAccess;
     MemoryAccessUpdate(MemoryAccess);
   }
 
