@@ -283,21 +283,21 @@ protected:
 };
 
 struct SPRVTypeImageDescriptor {
-  SPRVWord Dim;
+  SPRVImageDimKind Dim;
   SPRVWord Depth;
   SPRVWord Arrayed;
   SPRVWord MS;
   SPRVWord Sampled;
   SPRVWord Format;
-  static std::tuple<std::tuple<SPRVWord, SPRVWord, SPRVWord, SPRVWord,
+  static std::tuple<std::tuple<SPRVImageDimKind, SPRVWord, SPRVWord, SPRVWord,
     SPRVWord>, SPRVWord>
     getAsTuple (const SPRVTypeImageDescriptor &Desc) {
     return std::make_tuple(std::make_tuple(Desc.Dim, Desc.Depth, Desc.Arrayed,
       Desc.MS, Desc.Sampled), Desc.Format);
   }
-  SPRVTypeImageDescriptor():Dim(0), Depth(0), Arrayed(0),
+  SPRVTypeImageDescriptor():Dim(SPRVDIM_1D), Depth(0), Arrayed(0),
       MS(0), Sampled(0), Format(0){}
-  SPRVTypeImageDescriptor(SPRVWord Dim, SPRVWord Cont, SPRVWord Arr,
+  SPRVTypeImageDescriptor(SPRVImageDimKind Dim, SPRVWord Cont, SPRVWord Arr,
       SPRVWord Comp,  SPRVWord Mult, SPRVWord F):Dim(Dim), Depth(Cont),
           Arrayed(Arr), MS(Comp), Sampled(Mult), Format(F){}
 };
@@ -305,19 +305,19 @@ struct SPRVTypeImageDescriptor {
 template<> inline void
 SPRVMap<std::string, SPRVTypeImageDescriptor>::init() {
 #define _SPRV_OP(x,...) {SPRVTypeImageDescriptor S(__VA_ARGS__); \
-  add("opencl."#x, S);}
-_SPRV_OP(image1d_t,                  0, 0, 0, 0, 0, 0)
-_SPRV_OP(image1d_buffer_t,           5, 0, 0, 0, 0, 0)
-_SPRV_OP(image1d_array_t,            0, 0, 1, 0, 0, 0)
-_SPRV_OP(image2d_t,                  1, 0, 0, 0, 0, 0)
-_SPRV_OP(image2d_array_t,            1, 0, 1, 0, 0, 0)
-_SPRV_OP(image2d_depth_t,            1, 1, 0, 0, 0, 0)
-_SPRV_OP(image2d_array_depth_t,      1, 1, 1, 0, 0, 0)
-_SPRV_OP(image2d_msaa_t,             1, 0, 0, 1, 0, 0)
-_SPRV_OP(image2d_array_msaa_t,       1, 0, 1, 1, 0, 0)
-_SPRV_OP(image2d_msaa_depth_t,       1, 1, 0, 1, 0, 0)
-_SPRV_OP(image2d_array_msaa_depth_t, 1, 1, 1, 1, 0, 0)
-_SPRV_OP(image3d_t,                  2, 0, 0, 0, 0, 0)
+  add(#x, S);}
+_SPRV_OP(image1d_t,                  SPRVDIM_1D,      0, 0, 0, 0, 0)
+_SPRV_OP(image1d_buffer_t,           SPRVDIM_Buffer,  0, 0, 0, 0, 0)
+_SPRV_OP(image1d_array_t,            SPRVDIM_1D,      0, 1, 0, 0, 0)
+_SPRV_OP(image2d_t,                  SPRVDIM_2D,      0, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_t,            SPRVDIM_2D,      0, 1, 0, 0, 0)
+_SPRV_OP(image2d_depth_t,            SPRVDIM_2D,      1, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_depth_t,      SPRVDIM_2D,      1, 1, 0, 0, 0)
+_SPRV_OP(image2d_msaa_t,             SPRVDIM_2D,      0, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_t,       SPRVDIM_2D,      0, 1, 1, 0, 0)
+_SPRV_OP(image2d_msaa_depth_t,       SPRVDIM_2D,      1, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_depth_t, SPRVDIM_2D,      1, 1, 1, 0, 0)
+_SPRV_OP(image3d_t,                  SPRVDIM_3D,      0, 0, 0, 0, 0)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, SPRVTypeImageDescriptor>
@@ -349,7 +349,7 @@ public:
     validate();
   }
   SPRVTypeImage():SPRVType(OC), SampledType(SPRVID_INVALID),
-    Desc(SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX,
+    Desc(SPRVDIM_Count, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX,
         SPRVWORD_MAX, SPRVWORD_MAX){
   }
   const SPRVTypeImageDescriptor &getDescriptor()const {
@@ -495,7 +495,10 @@ public:
 
 protected:
   _SPRV_DEF_ENCDEC3(Id, ReturnType, ParamTypeVec)
-  void setWordCount(SPRVWord WordCount) { ParamTypeVec.resize(WordCount - 3);}
+  void setWordCount(SPRVWord WordCount) {
+    SPRVType::setWordCount(WordCount);
+    ParamTypeVec.resize(WordCount - 3);
+  }
   void validate()const {
     SPRVEntry::validate();
     ReturnType->validate();

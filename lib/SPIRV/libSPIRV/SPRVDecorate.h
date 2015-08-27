@@ -47,41 +47,71 @@
 #include <utility>
 
 namespace SPRV{
-
+class SPRVDecorationGroup;
 class SPRVDecorateGeneric:public SPRVAnnotationGeneric{
 public:
   // Complete constructor for decorations without literals
-  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, SPRVDecorateKind TheDec,
+  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, Decoration TheDec,
       SPRVEntry *TheTarget);
   // Complete constructor for decorations with one word literal
-  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, SPRVDecorateKind TheDec,
+  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, Decoration TheDec,
       SPRVEntry *TheTarget, SPRVWord V);
   // Incomplete constructor
   SPRVDecorateGeneric(SPRVOpCode OC);
 
   SPRVWord getLiteral(size_t) const;
-  SPRVDecorateKind getDecorateKind() const;
+  Decoration getDecorateKind() const;
   size_t getLiteralCount() const;
+  /// Compare for kind and literal only.
   struct Comparator {
     bool operator()(const SPRVDecorateGeneric *A, const SPRVDecorateGeneric *B);
   };
+  /// Compare kind, literals and target.
+  friend bool operator==(const SPRVDecorateGeneric &A,
+      const SPRVDecorateGeneric &B);
+
+  SPRVDecorationGroup* getOwner() const {
+    return Owner;
+  }
+
+  void setOwner(SPRVDecorationGroup* owner) {
+    Owner = owner;
+  }
+
 protected:
-  SPRVDecorateKind Dec;
+  Decoration Dec;
   std::vector<SPRVWord> Literals;
+  SPRVDecorationGroup *Owner; // Owning decorate group
 };
 
-typedef std::multiset<const SPRVDecorateGeneric *,
-    SPRVDecorateGeneric::Comparator> SPRVDecorateSet;
+class SPRVDecorateSet: public std::multiset<const SPRVDecorateGeneric *,
+    SPRVDecorateGeneric::Comparator> {
+    public:
+  typedef std::multiset<const SPRVDecorateGeneric *,
+      SPRVDecorateGeneric::Comparator> BaseType;
+  iterator insert(const value_type& Dec) {
+    auto ER = BaseType::equal_range(Dec);
+    for (auto I = ER.first, E = ER.second; I != E; ++I) {
+      SPRVDBG(bildbgs() << "[compare decorate] " << *Dec
+                        << " vs " << **I << " : ");
+      if (**I == *Dec)
+        return I;
+      SPRVDBG(bildbgs() << " diff\n");
+    }
+    SPRVDBG(bildbgs() << "[add decorate] " << *Dec << '\n');
+    return BaseType::insert(Dec);
+  }
+};
 
 class SPRVDecorate:public SPRVDecorateGeneric{
 public:
   static const SPRVOpCode OC = SPRVOC_OpDecorate;
   static const SPRVWord FixedWC = 3;
   // Complete constructor for decorations without literals
-  SPRVDecorate(SPRVDecorateKind TheDec, SPRVEntry *TheTarget)
+  SPRVDecorate(Decoration TheDec, SPRVEntry *TheTarget)
     :SPRVDecorateGeneric(OC, 3, TheDec, TheTarget){}
   // Complete constructor for decorations with one word literal
-  SPRVDecorate(SPRVDecorateKind TheDec, SPRVEntry *TheTarget, SPRVWord V)
+  SPRVDecorate(Decoration TheDec, SPRVEntry *TheTarget, SPRVWord V)
     :SPRVDecorateGeneric(OC, 4, TheDec, TheTarget, V){}
   // Incomplete constructor
   SPRVDecorate():SPRVDecorateGeneric(OC){}
@@ -95,17 +125,17 @@ public:
   static const SPRVOpCode OC = SPRVOC_OpMemberDecorate;
   static const SPRVWord FixedWC = 4;
   // Complete constructor for decorations without literals
-  SPRVMemberDecorate(SPRVDecorateKind TheDec, SPRVWord Member, SPRVEntry *TheTarget)
+  SPRVMemberDecorate(Decoration TheDec, SPRVWord Member, SPRVEntry *TheTarget)
     :SPRVDecorateGeneric(OC, 4, TheDec, TheTarget), MemberNumber(Member){}
   // Complete constructor for decorations with one word literal
-  SPRVMemberDecorate(SPRVDecorateKind TheDec, SPRVWord Member, SPRVEntry *TheTarget,
+  SPRVMemberDecorate(Decoration TheDec, SPRVWord Member, SPRVEntry *TheTarget,
       SPRVWord V)
     :SPRVDecorateGeneric(OC, 5, TheDec, TheTarget, V), MemberNumber(Member){}
   // Incomplete constructor
   SPRVMemberDecorate():SPRVDecorateGeneric(OC), MemberNumber(SPRVWORD_MAX){}
 
   SPRVWord getMemberNumber() const { return MemberNumber;}
-  std::pair<SPRVWord, SPRVDecorateKind> getPair() const {
+  std::pair<SPRVWord, Decoration> getPair() const {
     return std::make_pair(MemberNumber, Dec);
   }
 
@@ -131,6 +161,9 @@ public:
   // Move the given decorates to the decoration group
   void takeDecorates(SPRVDecorateSet &Decs) {
     Decorations = std::move(Decs);
+    for (auto &I:Decorations)
+      const_cast<SPRVDecorateGeneric *>(I)->setOwner(this);
+    Decs.clear();
   }
 
   SPRVDecorateSet& getDecorations() {
@@ -151,14 +184,18 @@ public:
   // Complete constructor
   SPRVGroupDecorateGeneric(SPRVOpCode OC, SPRVDecorationGroup *TheGroup,
       const std::vector<SPRVId> &TheTargets)
-    :SPRVEntryNoIdGeneric(TheGroup->getModule(), FixedWC + TheTargets.size(), OC),
+    :SPRVEntryNoIdGeneric(TheGroup->getModule(), FixedWC + TheTargets.size(),
+        OC),
      DecorationGroup(TheGroup), Targets(TheTargets){
   }
   // Incomplete constructor
   SPRVGroupDecorateGeneric(SPRVOpCode OC)
     :SPRVEntryNoIdGeneric(OC), DecorationGroup(nullptr){}
 
-  void setWordCount(SPRVWord WC) { Targets.resize(WC - FixedWC);}
+  void setWordCount(SPRVWord WC) {
+    SPRVEntryNoIdGeneric::setWordCount(WC);
+    Targets.resize(WC - FixedWC);
+  }
   virtual void decorateTargets() = 0;
   _SPRV_DCL_ENCDEC
 protected:

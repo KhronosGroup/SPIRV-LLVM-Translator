@@ -241,9 +241,9 @@ public:
   SPRVModule *getModule() const { return Module;}
   virtual CapVec getRequiredCapability() const { return CapVec();}
   const std::string& getName() const { return Name;}
-  bool hasDecorate(SPRVDecorateKind Kind, size_t Index = 0,
+  bool hasDecorate(Decoration Kind, size_t Index = 0,
       SPRVWord *Result=0)const;
-  std::set<SPRVWord> getDecorate(SPRVDecorateKind Kind, size_t Index = 0)const;
+  std::set<SPRVWord> getDecorate(Decoration Kind, size_t Index = 0)const;
   bool hasId() const { return !(Attrib & SPRVEA_NOID);}
   bool hasLine() const { return Line != nullptr;}
   bool hasLinkageType() const;
@@ -261,14 +261,14 @@ public:
   virtual bool isInst() const { return false;}
 
   void addDecorate(const SPRVDecorate *);
-  void addDecorate(SPRVDecorateKind Kind);
-  void addDecorate(SPRVDecorateKind Kind, SPRVWord Literal);
-  void eraseDecorate(SPRVDecorateKind);
+  void addDecorate(Decoration Kind);
+  void addDecorate(Decoration Kind, SPRVWord Literal);
+  void eraseDecorate(Decoration);
   void addMemberDecorate(const SPRVMemberDecorate *);
-  void addMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind);
-  void addMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind,
+  void addMemberDecorate(SPRVWord MemberNumber, Decoration Kind);
+  void addMemberDecorate(SPRVWord MemberNumber, Decoration Kind,
       SPRVWord Literal);
-  void eraseMemberDecorate(SPRVWord MemberNumber, SPRVDecorateKind Kind);
+  void eraseMemberDecorate(SPRVWord MemberNumber, Decoration Kind);
   void setHasNoId() { Attrib |= SPRVEA_NOID;}
   void setId(SPRVId TheId) { Id = TheId;}
   void setLine(SPRVLine*);
@@ -314,8 +314,8 @@ public:
 
 protected:
   /// An entry may have multiple FuncParamAttr decorations.
-  typedef std::multimap<SPRVDecorateKind, const SPRVDecorate*> DecorateMapType;
-  typedef std::map<std::pair<SPRVWord, SPRVDecorateKind>,
+  typedef std::multimap<Decoration, const SPRVDecorate*> DecorateMapType;
+  typedef std::map<std::pair<SPRVWord, Decoration>,
       const SPRVMemberDecorate*> MemberDecorateMapType;
 
   bool canHaveMemberDecorates() const {

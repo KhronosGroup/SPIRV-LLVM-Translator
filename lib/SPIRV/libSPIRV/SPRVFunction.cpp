@@ -58,7 +58,7 @@ SPRVFunctionParameter::SPRVFunctionParameter(SPRVType *TheType, SPRVId TheId,
 void
 SPRVFunctionParameter::foreachAttr(
     std::function<void(SPRVFuncParamAttrKind)>Func){
-  auto Locs = Decorates.equal_range(SPRVDEC_FuncParamAttr);
+  auto Locs = Decorates.equal_range(DecorationFuncParamAttr);
   for (auto I = Locs.first, E = Locs.second; I != E; ++I){
     auto Attr = static_cast<SPRVFuncParamAttrKind>(
         I->second->getLiteral(0));
@@ -81,6 +81,7 @@ void
 SPRVFunction::encodeChildren(std::ostream &O) const {
   for (auto &I:Parameters)
     O << *I;
+  O << SPRVNL;
   for (auto &I:BBVec)
     O << *I;
   O << SPRVFunctionEnd();
@@ -153,7 +154,7 @@ SPRVFunction::decodeBB(SPRVDecoder &Decoder) {
 void
 SPRVFunction::foreachReturnValueAttr(
     std::function<void(SPRVFuncParamAttrKind)>Func){
-  auto Locs = Decorates.equal_range(SPRVDEC_FuncParamAttr);
+  auto Locs = Decorates.equal_range(DecorationFuncParamAttr);
   for (auto I = Locs.first, E = Locs.second; I != E; ++I){
     auto Attr = static_cast<SPRVFuncParamAttrKind>(
         I->second->getLiteral(0));

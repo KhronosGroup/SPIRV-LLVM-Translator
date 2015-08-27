@@ -43,6 +43,45 @@
 
 namespace SPRV{
 
+/// Write string with quote. Replace " with \".
+static void writeQuotedString(std::ostream& O, const std::string& Str) {
+  O << '"';
+  for (auto I : Str) {
+    if (I == '"')
+      O << '\\';
+    O << I;
+  }
+  O << '"';
+}
+
+/// Read quoted string. Replace \" with ".
+static void readQuotedString(std::istream &IS, std::string& Str) {
+  char Ch = ' ';
+  char PreCh = ' ';
+  while (IS >> Ch && Ch != '"')
+    ;
+
+  if (IS >> PreCh) {
+    while (IS >> Ch) {
+      if (Ch == '"') {
+        if (PreCh != '\\') {
+          Str += PreCh;
+          break;
+        }
+        else
+          PreCh = Ch;
+      } else {
+        Str += PreCh;
+        PreCh = Ch;
+      }
+    }
+  }
+}
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+bool SPRVUseTextFormat = false;
+#endif
+
 SPRVDecoder::SPRVDecoder(std::istream &InputStream, SPRVFunction &F)
   :IS(InputStream), M(*F.getModule()), WordCount(0), OpCode(SPRVOC_OpNop),
    Scope(&F){}
@@ -61,8 +100,8 @@ SPRVDecoder::setScope(SPRVEntry *TheScope) {
 template<class T>
 const SPRVDecoder&
 decode(const SPRVDecoder& I, T &V) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     std::string W;
     I.IS >> W;
     V = getNameMap(V).rmap(W);
@@ -76,8 +115,8 @@ decode(const SPRVDecoder& I, T &V) {
 template<class T>
 const SPRVEncoder&
 encode(const SPRVEncoder& O, T V) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     O.OS << getNameMap(V).map(V) << " ";
     return O;
   }
@@ -96,7 +135,7 @@ operator<<(const SPRVEncoder& O, Type V) { \
 }
 
 SPRV_DEF_ENCDEC(SPRVOpCode)
-SPRV_DEF_ENCDEC(SPRVDecorateKind)
+SPRV_DEF_ENCDEC(Decoration)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL12Kind)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL20Kind)
 
@@ -104,13 +143,9 @@ SPRV_DEF_ENCDEC(SPRVBuiltinOCL20Kind)
 // words.
 const SPRVDecoder&
 operator>>(const SPRVDecoder&I, std::string& Str) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
-    char Ch;
-    while (I.IS >> Ch && Ch != '"');
-    while (I.IS >> Ch && Ch != '\0')
-      Str += Ch;
-    Str.erase(Str.length()-1);
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
+    readQuotedString(I.IS, Str);
     SPRVDBG(bildbgs() << "Read string: \"" << Str << "\"\n");
     return I;
   }
@@ -136,9 +171,9 @@ operator>>(const SPRVDecoder&I, std::string& Str) {
 // words.
 const SPRVEncoder&
 operator<<(const SPRVEncoder&O, const std::string& Str) {
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
-    O.OS << '"' << Str << '"' << '\0';
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
+    writeQuotedString(O.OS, Str);
     return O;
   }
 #endif
@@ -159,8 +194,8 @@ SPRVDecoder::getWordCountAndOpCode() {
         WordCount << " " << OpCode << '\n');
     return false;
   }
-#ifdef _SPRVDBG
-  if (SPRVDbgUseTextFormat) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat) {
     *this >> WordCount;
     assert(!IS.bad() && "SPRV stream is bad");
     if (IS.fail()) {
@@ -177,7 +212,7 @@ SPRVDecoder::getWordCountAndOpCode() {
   *this >> WordCountAndOpCode;
   WordCount = WordCountAndOpCode >> 16;
   OpCode = static_cast<SPRVOpCode>(WordCountAndOpCode & 0xFFFF);
-#ifdef _SPRVDBG
+#ifdef _SPRV_SUPPORT_TEXT_FMT
   }
 #endif
   assert(!IS.bad() && "SPRV stream is bad");
@@ -214,6 +249,14 @@ SPRVDecoder::validate()const {
   assert(OpCode != SPRVOC_OpNop && "Invalid op code");
   assert(WordCount && "Invalid word count");
   assert(!IS.bad() && "Bad iInput stream");
+}
+
+std::ostream& operator<<(std::ostream &IS, const SPRVNLTy& NL) {
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+  if (SPRVUseTextFormat)
+    IS << '\n';
+#endif
+  return IS;
 }
 
 }

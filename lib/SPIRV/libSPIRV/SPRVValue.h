@@ -172,6 +172,7 @@ protected:
       getEncoder(O) << Union.Words[i];
   }
   void setWordCount(SPRVWord WordCount) {
+    SPRVValue::setWordCount(WordCount);
     NumWords = WordCount - 3;
   }
   void decode(std::istream &I) {

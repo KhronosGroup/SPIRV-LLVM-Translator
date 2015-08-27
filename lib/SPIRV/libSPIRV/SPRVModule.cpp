@@ -65,7 +65,7 @@ public:
     SPRVVersion(SPRVVER_100),
     SPRVGenerator(SPRVGEN_AMDOpenSourceLLVMSPRVTranslator),
     InstSchema(SPRVISCH_Default),
-    SrcLang(SPRVSL_OpenCL),
+    SrcLang(SourceLanguageOpenCL),
     SrcLangVer(12),
     MemoryModel(SPRVMM_OpenCL12){
     AddrModel = sizeof(size_t) == 32 ? SPRVAM_Physical32 : SPRVAM_Physical64;
@@ -115,7 +115,7 @@ public:
   }
   unsigned getNumFunctions() const { return FuncVec.size();}
   unsigned getNumVariables() const { return VariableVec.size();}
-  SPRVSourceLanguageKind getSourceLanguage(SPRVWord * Ver = nullptr) const {
+  SourceLanguage getSourceLanguage(SPRVWord * Ver = nullptr) const {
     if (Ver)
       *Ver = SrcLangVer;
     return SrcLang;
@@ -132,7 +132,7 @@ public:
   void setExtension(const std::string &Ext) { SPRVExt = Ext;}
   void setMemoryModel(SPRVMemoryModelKind MM) { MemoryModel = MM;}
   void setName(SPRVEntry *E, const std::string &Name);
-  void setSourceLanguage(SPRVSourceLanguageKind Lang, SPRVWord Ver) {
+  void setSourceLanguage(SourceLanguage Lang, SPRVWord Ver) {
     SrcLang = Lang;
     SrcLangVer = Ver;
   }
@@ -282,7 +282,7 @@ private:
   SPRVVersionKind SPRVVersion;
   SPRVGeneratorKind SPRVGenerator;
   SPRVInstructionSchemaKind InstSchema;
-  SPRVSourceLanguageKind SrcLang;
+  SourceLanguage SrcLang;
   SPRVWord SrcLangVer;
   std::string SrcExtension;
   std::string SPRVExt;
@@ -354,23 +354,35 @@ SPRVModuleImpl::addLine(SPRVEntry* E, SPRVString* FileName,
 // multiple targets.
 void
 SPRVModuleImpl::optimizeDecorates() {
+  SPRVDBG(bildbgs() << "[optimizeDecorates] begin\n");
   for (auto I = DecorateSet.begin(), E = DecorateSet.end(); I != E;) {
     auto D = *I;
+    SPRVDBG(bildbgs() << "  check " << *D << '\n');
     if (D->getOpCode() == SPRVOC_OpMemberDecorate) {
       ++I;
       continue;
     }
     auto ER = DecorateSet.equal_range(D);
+    SPRVDBG(bildbgs() << "  equal range " << **ER.first
+                      << " to ";
+            if (ER.second != DecorateSet.end())
+              bildbgs() << **ER.second;
+            else
+              bildbgs() << "end";
+            bildbgs() << '\n');
     if (std::distance(ER.first, ER.second) < 2) {
       I = ER.second;
+      SPRVDBG(bildbgs() << "  skip equal range \n");
       continue;
     }
+    SPRVDBG(bildbgs() << "  add deco group. erase equal range\n");
     auto G = new SPRVDecorationGroup(this, getId());
     std::vector<SPRVId> Targets;
     G->getDecorations().insert(D);
+    Targets.push_back(D->getTargetId());
     for (I = ER.first; I != ER.second; ++I) {
       auto E = *I;
-      if (E == D)
+      if (*E == *D)
         continue;
       Targets.push_back(E->getTargetId());
     }
@@ -401,7 +413,8 @@ SPRVModuleImpl::addCapabilityInternal(SPRVCapabilityKind Cap) {
 
 void
 SPRVModuleImpl::layoutEntry(SPRVEntry* E) {
-  switch (E->getOpCode()) {
+  auto OC = E->getOpCode();
+  switch (OC) {
   case SPRVOC_OpString:
     addTo(StringVec, E);
     break;
@@ -418,7 +431,10 @@ SPRVModuleImpl::layoutEntry(SPRVEntry* E) {
     }
     break;
   default:
-    // Do nothing
+    if (isTypeOpCode(OC))
+      TypeVec.push_back(static_cast<SPRVType*>(E));
+    else if (isConstantOpCode(OC))
+      ConstVec.push_back(static_cast<SPRVConstant*>(E));
     break;
   }
 }
@@ -560,7 +576,7 @@ SPRVModuleImpl::setName(SPRVEntry *E, const std::string &Name) {
 template<class T>
 T *
 SPRVModuleImpl::addType(T *Ty) {
-  TypeVec.push_back(add(Ty));
+  add(Ty);
   if (!Ty->getName().empty())
     setName(Ty, Ty->getName());
   return Ty;
@@ -680,7 +696,8 @@ SPRVModuleImpl::addDecorate(const SPRVDecorateGeneric *Dec) {
   SPRVEntry *Target = nullptr;
   bool Found = exist(Id, &Target);
   assert (Found && "Decorate target does not exist");
-  DecorateSet.insert(Dec);
+  if (!Dec->getOwner())
+    DecorateSet.insert(Dec);
   return Dec;
 }
 
@@ -724,8 +741,7 @@ SPRVModuleImpl::replaceForward(SPRVForward *Forward, SPRVEntry *Entry) {
 
 SPRVValue *
 SPRVModuleImpl::addConstant(SPRVValue *C) {
-  ConstVec.push_back(add(C));
-  return C;
+  return add(C);
 }
 
 SPRVValue *
@@ -775,7 +791,7 @@ SPRVModuleImpl::addUndef(SPRVType *TheType) {
 SPRVInstruction *
 SPRVModuleImpl::addStoreInst(SPRVValue *Target, SPRVValue *Source,
     const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *BB) {
-  return BB->addInstruction(new SPRVStore(getId(), Target->getId(),
+  return BB->addInstruction(new SPRVStore(Target->getId(),
       Source->getId(), TheMemoryAccess, BB));
 }
 
@@ -1022,7 +1038,7 @@ operator<< (std::ostream &O, SPRVModule &M) {
           << MI.SPRVGenerator
           << MI.NextId /* Bound for Id */
           << MI.InstSchema;
-
+  O << SPRVNL;
   O << SPRVSource(&M);
   if (!M.getSourceExtension().empty())
     O << SPRVSourceExtension(&M);
@@ -1057,6 +1073,7 @@ operator<< (std::ostream &O, SPRVModule &M) {
     << MI.TypeVec
     << MI.ConstVec
     << MI.VariableVec
+    << SPRVNL
     << MI.FuncVec;
   return O;
 }
@@ -1080,6 +1097,9 @@ SPRVModuleImpl::addDecorationGroup(SPRVDecorationGroup* Group) {
   add(Group);
   Group->takeDecorates(DecorateSet);
   DecGroupVec.push_back(Group);
+  SPRVDBG(bildbgs() << "[addDecorationGroup] {" << *Group << "}\n";
+          bildbgs() << "  Remaining DecorateSet: {" << DecorateSet << "}\n");
+  assert(DecorateSet.empty());
   return Group;
 }
 
@@ -1145,6 +1165,7 @@ operator>> (std::istream &I, SPRVModule &M) {
   while(Decoder.getWordCountAndOpCode())
     Decoder.getEntry();
 
+  MI.optimizeDecorates();
   return I;
 }
 
@@ -1227,6 +1248,61 @@ SPRVDbgInfo::getFunctionLineNo(SPRVFunction *F) {
     return F->getLine()->getLine();
   return 0;
 }
+
+bool IsSPRVBinary(const std::string &Img) {
+  if (Img.size() < sizeof(unsigned))
+    return false;
+  auto Magic = reinterpret_cast<const unsigned*>(Img.data());
+  return *Magic == SPRVMagicNumber;
+}
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+
+bool ConvertSPRV(std::istream &IS, std::ostream &OS,
+    std::string &ErrMsg, bool FromText, bool ToText) {
+  auto SaveOpt = SPRVUseTextFormat;
+  SPRVUseTextFormat = FromText;
+  SPRVModuleImpl M;
+  IS >> M;
+  if (M.getError(ErrMsg) != SPRVEC_Success) {
+    SPRVUseTextFormat = SaveOpt;
+    return false;
+  }
+  SPRVUseTextFormat = ToText;
+  OS << M;
+  if (M.getError(ErrMsg) != SPRVEC_Success) {
+    SPRVUseTextFormat = SaveOpt;
+    return false;
+  }
+  SPRVUseTextFormat = SaveOpt;
+  return true;
+}
+
+bool IsSPRVText(const std::string &Img) {
+  std::istringstream SS(Img);
+  unsigned Magic = 0;
+  SS >> Magic;
+  if (SS.bad())
+    return false;
+  return Magic == SPRVMagicNumber;
+}
+
+bool ConvertSPRV(std::string &Input, std::string &Out,
+    std::string &ErrMsg, bool ToText) {
+  auto FromText = IsSPRVText(Input);
+  if (ToText == FromText) {
+    Out = Input;
+    return true;
+  }
+  std::istringstream IS(Input);
+  std::ostringstream OS;
+  if (!ConvertSPRV(IS, OS, ErrMsg, FromText, ToText))
+    return false;
+  Out = OS.str();
+  return true;
+}
+
+#endif // _SPRV_SUPPORT_TEXT_FMT
 
 }
 

@@ -71,6 +71,7 @@ SPRVBasicBlock::addInstruction(SPRVInstruction *I) {
 
 void
 SPRVBasicBlock::encodeChildren(std::ostream &O) const {
+  O << SPRVNL;
   for (size_t i = 0, e = InstVec.size(); i != e; ++i)
     O << *InstVec[i];
 }

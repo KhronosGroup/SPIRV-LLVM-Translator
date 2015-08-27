@@ -116,7 +116,7 @@ public:
   virtual unsigned getNumFunctions() const = 0;
   virtual unsigned getNumEntryPoints(SPRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
-  virtual SPRVSourceLanguageKind getSourceLanguage(SPRVWord *) const = 0;
+  virtual SourceLanguage getSourceLanguage(SPRVWord *) const = 0;
   virtual const std::string &getSourceExtension() const = 0;
   virtual SPRVValue *getValue(SPRVId TheId)const = 0;
   virtual std::vector<SPRVValue *> getValues(const std::vector<SPRVId>&)const
@@ -136,7 +136,7 @@ public:
   virtual void setExtension(const std::string &) = 0;
   virtual void setMemoryModel(SPRVMemoryModelKind) = 0;
   virtual void setName(SPRVEntry *, const std::string&) = 0;
-  virtual void setSourceLanguage(SPRVSourceLanguageKind, SPRVWord) = 0;
+  virtual void setSourceLanguage(SourceLanguage, SPRVWord) = 0;
   virtual void setSourceExtension(const std::string &) = 0;
   virtual void optimizeDecorates() = 0;
   virtual void setAutoAddCapability(bool E){ AutoAddCapability = E;}
@@ -295,6 +295,21 @@ private:
   const std::string ModuleFileStr;
   SPRVModule *M;
 };
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
+
+/// Convert SPIR-V between binary and internel text formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+bool ConvertSPRV(std::istream &IS, std::ostream &OS,
+    std::string &ErrMsg, bool FromText, bool ToText);
+
+/// Convert SPIR-V between binary and internel text formats.
+/// This function is not thread safe and should not be used in multi-thread
+/// applications unless guarded by a critical section.
+bool ConvertSPRV(std::string &Input, std::string &Out,
+    std::string &ErrMsg, bool ToText);
+#endif
 }
 
 

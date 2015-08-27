@@ -52,9 +52,6 @@ namespace SPRV{
 // Enable debug output.
 extern bool SPRVDbgEnable;
 
-// Use textual format for SPRV.
-extern bool SPRVDbgUseTextFormat;
-
 // Include source file and line number in error message.
 extern bool SPRVDbgErrorMsgIncludesSourceInfo;
 

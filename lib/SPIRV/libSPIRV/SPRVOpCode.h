@@ -153,8 +153,18 @@ inline bool hasGroupOperation(SPRVOpCode OpCode) {
   return SPRVOC_OpGroupIAdd <= OC && OC <= SPRVOC_OpGroupSMax;
 }
 
+inline bool isTypeOpCode(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return SPRVOC_OpTypeVoid <= OC && OC <= SPRVOC_OpTypePipe;
 }
 
+inline bool isConstantOpCode(SPRVOpCode OpCode) {
+  unsigned OC = OpCode;
+  return (SPRVOC_OpConstantTrue <= OC
+      && OC <= SPRVOC_OpSpecConstantOp)
+      || OC == SPRVOC_OpUndef;
+}
 
+}
 
 #endif /* SPRVOPCODE_HPP_ */

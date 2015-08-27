@@ -40,8 +40,10 @@
 #ifndef SPRVENUM_HPP_
 #define SPRVENUM_HPP_
 
+#include "spirv.hpp"
 #include "SPRVOpCode.h"
 #include <cstdint>
+using namespace spv;
 
 namespace SPRV{
 
@@ -74,16 +76,6 @@ enum SPRVGeneratorKind {
 
 enum SPRVInstructionSchemaKind {
   SPRVISCH_Default,
-};
-
-enum SPRVSourceLanguageKind {
-#define _SPRV_OP(x) SPRVSL_##x,
-  _SPRV_OP(Unknown)
-  _SPRV_OP(ESSL)
-  _SPRV_OP(GLSL)
-  _SPRV_OP(OpenCL)
-  _SPRV_OP(Count)
-#undef _SPRV_OP
 };
 
 enum SPRVCapabilityKind {
@@ -322,19 +314,53 @@ enum SPRVFunctionControlMaskKind {
   SPRVFCM_Max                    = 15, // maximum possible value
 };
 
-enum SPRVDecorateKind {
-#define _SPRV_OP(x) SPRVDEC_##x,
-#include "SPRVDecorateEnum.h"
-#undef _SPRV_OP
-};
-
 template<> inline void
-SPRVMap<SPRVDecorateKind, std::string>::init() {
-#define _SPRV_OP(x) add(SPRVDEC_##x, #x);
-#include "SPRVDecorateEnum.h"
-#undef _SPRV_OP
+SPRVMap<Decoration, std::string>::init() {
+  add(DecorationRelaxedPrecision, "RelaxedPrecision");
+  add(DecorationSpecId, "SpecId");
+  add(DecorationBlock, "Block");
+  add(DecorationBufferBlock, "BufferBlock");
+  add(DecorationRowMajor, "RowMajor");
+  add(DecorationColMajor, "ColMajor");
+  add(DecorationArrayStride, "ArrayStride");
+  add(DecorationMatrixStride, "MatrixStride");
+  add(DecorationGLSLShared, "GLSLShared");
+  add(DecorationGLSLPacked, "GLSLPacked");
+  add(DecorationCPacked, "CPacked");
+  add(DecorationBuiltIn, "BuiltIn");
+  add(DecorationSmooth, "Smooth");
+  add(DecorationNoperspective, "Noperspective");
+  add(DecorationFlat, "Flat");
+  add(DecorationPatch, "Patch");
+  add(DecorationCentroid, "Centroid");
+  add(DecorationSample, "Sample");
+  add(DecorationInvariant, "Invariant");
+  add(DecorationRestrict, "Restrict");
+  add(DecorationAliased, "Aliased");
+  add(DecorationVolatile, "Volatile");
+  add(DecorationConstant, "Constant");
+  add(DecorationCoherent, "Coherent");
+  add(DecorationNonwritable, "Nonwritable");
+  add(DecorationNonreadable, "Nonreadable");
+  add(DecorationUniform, "Uniform");
+  add(DecorationNoStaticUse, "NoStaticUse");
+  add(DecorationSaturatedConversion, "SaturatedConversion");
+  add(DecorationStream, "Stream");
+  add(DecorationLocation, "Location");
+  add(DecorationComponent, "Component");
+  add(DecorationIndex, "Index");
+  add(DecorationBinding, "Binding");
+  add(DecorationDescriptorSet, "DescriptorSet");
+  add(DecorationOffset, "Offset");
+  add(DecorationXfbBuffer, "XfbBuffer");
+  add(DecorationXfbStride, "XfbStride");
+  add(DecorationFuncParamAttr, "FuncParamAttr");
+  add(DecorationFPRoundingMode, "FPRoundingMode");
+  add(DecorationFPFastMathMode, "FPFastMathMode");
+  add(DecorationLinkageAttributes, "LinkageAttributes");
+  add(DecorationAlignment, "Alignment");
 }
-SPRV_DEF_NAMEMAP(SPRVDecorateKind, SPRVDecorateNameMap)
+SPRV_DEF_NAMEMAP(Decoration, SPRVDecorateNameMap)
 
 enum SPRVFPRoundingModeKind {
 #define _SPRV_OP(x) SPRVFRM_##x,
@@ -498,6 +524,29 @@ enum SPRVGroupOperationKind {
 
 inline bool isValid(SPRVGroupOperationKind G) {
   return (unsigned)G < (unsigned)SPRVGO_Count;
+}
+
+enum SPRVImageDimKind {
+  SPRVDIM_1D,
+  SPRVDIM_2D,
+  SPRVDIM_3D,
+  SPRVDIM_Cube,
+  SPRVDIM_Rect,
+  SPRVDIM_Buffer,
+  SPRVDIM_InputTarget,
+  SPRVDIM_Count,
+};
+
+inline unsigned getImageDimension(SPRVImageDimKind K) {
+  switch(K){
+  case SPRVDIM_1D:      return 1;
+  case SPRVDIM_2D:      return 2;
+  case SPRVDIM_3D:      return 3;
+  case SPRVDIM_Cube:    return 2;
+  case SPRVDIM_Rect:    return 2;
+  case SPRVDIM_Buffer:  return 1;
+  default:              return 0;
+  }
 }
 
 }

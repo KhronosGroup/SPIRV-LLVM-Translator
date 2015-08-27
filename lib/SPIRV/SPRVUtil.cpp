@@ -55,15 +55,19 @@
 
 namespace SPRV{
 
+#ifdef _SPRV_SUPPORT_TEXT_FMT
 cl::opt<bool, true>
 UseTextFormat("spirv-text",
     cl::desc("Use text format for SPIR-V for debugging purpose"),
-    cl::location(SPRVDbgUseTextFormat));
+    cl::location(SPRVUseTextFormat));
+#endif
 
+#ifdef _SPRVDBG
 cl::opt<bool, true>
 EnableDbgOutput("spirv-debug",
     cl::desc("Enable SPIR-V debug output"),
     cl::location(SPRVDbgEnable));
+#endif
 
 void
 addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
@@ -840,6 +844,34 @@ getSPRVSampledImageType(Module *M, Type *ImageType) {
         + ImgTyName.str());
   llvm_unreachable("Invalid image type");
   return nullptr;
+}
+
+bool
+eraseUselessFunctions(Module *M) {
+  bool changed = false;
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = I++;
+    if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
+        !F->isDeclaration())
+      continue;
+
+    dumpUsers(F, "[eraseUselessFunctions] ");
+    for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
+      auto U = *UI++;
+      if (auto CE = dyn_cast<ConstantExpr>(U)){
+        if (CE->use_empty()) {
+          CE->dropAllReferences();
+          changed = true;
+        }
+      }
+    }
+    if (F->use_empty()) {
+      F->dropAllReferences();
+      F->eraseFromParent();
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 }

@@ -420,8 +420,8 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
       !isSPRVFunction(F, &DemangledName))
     return false;
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
-  SPRVSourceLanguageKind SourceLang = BM->getSourceLanguage(nullptr);
-  if (SourceLang == SPRVSL_OpenCL) {
+  SourceLanguage SourceLang = BM->getSourceLanguage(nullptr);
+  if (SourceLang == SourceLanguageOpenCL) {
     return DemangledName == "barrier" ||
         DemangledName == "mem_fence" ||
         DemangledName == "dot" ||
@@ -693,8 +693,14 @@ LLVMToSPRV::transType(Type *T) {
         if (SubStrs.size() > 2) {
           Acc = SubStrs[2];
         }
-        SPRVTypeImageDescriptor Desc(0, 0, 0, 0, 0, 0);
-        OCLSPRVImageTypeMap::find(SubStrs[1], &Desc);
+        auto Desc = map<SPRVTypeImageDescriptor>(SubStrs[1].str());
+        DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => " <<
+            "(" << (unsigned)Desc.Dim << ", " <<
+                   Desc.Depth << ", " <<
+                   Desc.Arrayed << ", " <<
+                   Desc.MS << ", " <<
+                   Desc.Sampled << ", " <<
+                   Desc.Format << ")\n");
         auto VoidT = transType(Type::getVoidTy(*Ctx));
         return mapType(T, BM->addImageType(VoidT, Desc,
           SPIRSPRVAccessQualifierMap::map(Acc)));
@@ -740,9 +746,8 @@ LLVMToSPRV::transType(Type *T) {
 
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
-    SPRVTypeImageDescriptor SamplerDesc(0, 0, 0, 0, 0, 0);
     assert(!ST->getName().startswith(SPIR_TYPE_NAME_PIPE_T));
-    assert(!OCLSPRVImageTypeMap::find(ST->getName(), &SamplerDesc));
+    assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
   }
 
@@ -808,9 +813,9 @@ LLVMToSPRV::transFunction(Function *F) {
       BA->addAttr(SPRVFPA_Sext);
   }
   if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::ZExt))
-    BF->addDecorate(SPRVDEC_FuncParamAttr, SPRVFPA_Zext);
+    BF->addDecorate(DecorationFuncParamAttr, SPRVFPA_Zext);
   if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::SExt))
-    BF->addDecorate(SPRVDEC_FuncParamAttr, SPRVFPA_Sext);
+    BF->addDecorate(DecorationFuncParamAttr, SPRVFPA_Sext);
   DbgTran.transDbgInfo(F, BF);
   SPRVDBG(dbgs() << "[transFunction] " << *F << " => ";
     bildbgs() << *BF << '\n';)
@@ -1410,8 +1415,8 @@ LLVMToSPRV::transAlign(Value *V, SPRVValue *BV) {
 bool
 LLVMToSPRV::transBuiltinSet() {
   SPRVWord Ver = 0;
-  SPRVSourceLanguageKind Kind = BM->getSourceLanguage(&Ver);
-  assert(Kind == SPRVSL_OpenCL && "not supported");
+  SourceLanguage Kind = BM->getSourceLanguage(&Ver);
+  assert(Kind == SourceLanguageOpenCL && "not supported");
   std::stringstream SS;
   SS << "OpenCL.std." << Ver;
   return BM->importBuiltinSet(SS.str(), &BuiltinSetId);
@@ -2254,12 +2259,12 @@ LLVMToSPRV::transOCLKernelMetadata() {
         foreachKernelArgMD(MD, BF,
             [](const std::string &Str, SPRVFunctionParameter *BA){
           if (Str.find("volatile") != std::string::npos)
-            BA->addDecorate(new SPRVDecorate(SPRVDEC_Volatile, BA));
+            BA->addDecorate(new SPRVDecorate(DecorationVolatile, BA));
           if (Str.find("restrict") != std::string::npos)
-            BA->addDecorate(new SPRVDecorate(SPRVDEC_FuncParamAttr,
+            BA->addDecorate(new SPRVDecorate(DecorationFuncParamAttr,
                 BA, SPRVFPA_NoAlias));
           if (Str.find("const") != std::string::npos)
-            BA->addDecorate(new SPRVDecorate(SPRVDEC_FuncParamAttr,
+            BA->addDecorate(new SPRVDecorate(DecorationFuncParamAttr,
                 BA, SPRVFPA_Const));
           });
       } else if (Name == SPIR_MD_KERNEL_ARG_NAME) {
@@ -2282,7 +2287,7 @@ LLVMToSPRV::transSourceLanguage() {
   unsigned Major = getMDOperandAsInt(MD, 0);
   unsigned Minor = getMDOperandAsInt(MD, 1);
   SrcLangVer = Major * 10 + Minor;
-  BM->setSourceLanguage(SPRVSL_OpenCL, SrcLangVer);
+  BM->setSourceLanguage(SourceLanguageOpenCL, SrcLangVer);
   return true;
 }
 
@@ -2319,6 +2324,7 @@ LLVMToSPRV::oclRegularize() {
   PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.add(createSPRVLowerBool());
   PassMgr.run(*M);
+  eraseUselessFunctions(M);
 }
 
 SPRVOpCode

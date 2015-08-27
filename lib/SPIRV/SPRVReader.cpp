@@ -588,19 +588,17 @@ SPRVToLLVM::transFPType(SPRVType* T) {
 
 std::string
 SPRVToLLVM::transOCLImageTypeName(SPRV::SPRVTypeImage* ST) {
-  auto Name = OCLSPRVImageTypeMap::rmap(ST->getDescriptor());
-  Name = Name + kSPR2TypeName::Delimiter +
-      SPIRSPRVAccessQualifierMap::rmap(ST->getAccessQualifier());
-  return Name;
+  return std::string(kSPR2TypeName::OCLPrefix)
+       + rmap<std::string>(ST->getDescriptor())
+       + kSPR2TypeName::Delimiter
+       + rmap<std::string>(ST->getAccessQualifier());
 }
 
 std::string
 SPRVToLLVM::transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST) {
-  auto Name = OCLSPRVImageTypeMap::rmap(
-      ST->getImageType()->getDescriptor());
-  Name = std::string(kSPRVTypeName::SampledImg) + kSPR2TypeName::Delimiter
-       + StringRef(Name).drop_front(strlen(kSPR2TypeName::OCLPrefix)).str();
-  return Name;
+  return std::string(kSPRVTypeName::SampledImg)
+       + kSPR2TypeName::Delimiter
+       + rmap<std::string>(ST->getImageType()->getDescriptor());
 }
 
 std::string
@@ -787,8 +785,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
   case SPRVOC_OpTypeSampler:
     return "sampler_t";
   case SPRVOC_OpTypeImage:
-    return OCLSPRVImageTypeMap::rmap(static_cast<SPRVTypeImage *>(T)
-        ->getDescriptor()).substr(7);
+    return rmap<std::string>(static_cast<SPRVTypeImage *>(T)->getDescriptor());
   default:
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
         return BuiltinOpaqueGenericTypeOpCodeMap::rmap(T->getOpCode());
@@ -1099,6 +1096,8 @@ SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    if (BI->getOpCode() == SPRVOC_OpImageQuerySizeLod)
+      Args.pop_back();
     return kOCLBuiltinName::GetImageDim;
   }, true, &Attrs);
 }
@@ -1693,7 +1692,8 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
     return postProcessOCLPipe(BI, CI, DemangledName);
   if (OC == SPRVOC_OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
-  if (OC == SPRVOC_OpImageQuerySizeLod)
+  if (OC == SPRVOC_OpImageQuerySizeLod ||
+      OC == SPRVOC_OpImageQuerySize)
     return postProcessOCLGetImageSize(BI, CI, DemangledName);
   return CI;
 }
@@ -1831,7 +1831,7 @@ SPRVToLLVM::translate() {
     return false;
   if (!postProcessOCL())
     return false;
-
+  eraseUselessFunctions(M);
   DbgTran.finalize();
   return true;
 }
@@ -1935,7 +1935,7 @@ SPRVToLLVM::transKernelMetadata() {
         SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF,
         [=](SPRVFunctionParameter *Arg){
       std::string Qual;
-      if (Arg->hasDecorate(SPRVDEC_Volatile))
+      if (Arg->hasDecorate(DecorationVolatile))
         Qual = kOCLTypeQualifierName::Volatile;
       Arg->foreachAttr([&](SPRVFuncParamAttrKind Kind){
         Qual += Qual.empty() ? "" : " ";
@@ -2186,8 +2186,8 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
 bool
 SPRVToLLVM::transSourceLanguage() {
   SPRVWord Ver = 0;
-  SPRVSourceLanguageKind Lang = BM->getSourceLanguage(&Ver);
-  assert(Lang == SPRVSL_OpenCL && "Unsupported source language");
+  SourceLanguage Lang = BM->getSourceLanguage(&Ver);
+  assert(Lang == SourceLanguageOpenCL && "Unsupported source language");
   unsigned Major = Ver/10;
   unsigned Minor = (Ver%10);
   addOCLVersionMetadata(Context, M, SPIR_MD_SPIR_VERSION, Major, Minor);

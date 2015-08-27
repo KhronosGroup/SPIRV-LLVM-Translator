@@ -232,8 +232,15 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInst(M, CI,
     [=](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+      assert(Args.size() == 1);
+      StringRef TyName;
+      auto IsImg = isOCLImageType(Args[0]->getType(), &TyName);
+      assert(IsImg);
+      auto Desc = map<SPRVTypeImageDescriptor>(TyName.str());
       if (DemangledName != kOCLBuiltinName::GetImageDim)
-        Ret = VectorType::get(Type::getInt32Ty(*Ctx), 3);
+        Ret = VectorType::get(Type::getInt32Ty(*Ctx),
+            getImageDimension(Desc.Dim) + Desc.Arrayed);
+      Args.push_back(getInt32(M, 0));
       return decorateSPRVFunction(kSPRVName::ImageQuerySizeLod);
     },
     [=](CallInst *NCI)->Instruction * {
