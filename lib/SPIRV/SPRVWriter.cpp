@@ -874,6 +874,13 @@ LLVMToSPRV::transConstant(Value *V) {
     return BM->addCompositeConstant(transType(V->getType()), BV);
   }
 
+  if (auto ConstV = dyn_cast<ConstantStruct>(V)) {
+    std::vector<SPRVValue *> BV;
+    for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I)
+      BV.push_back(transValue(*I, nullptr));
+    return BM->addCompositeConstant(transType(V->getType()), BV);
+  }
+
   if (auto ConstUE = dyn_cast<ConstantExpr>(V)) {
     auto Inst = ConstUE->getAsInstruction();
     SPRVDBG(dbgs() << "ConstantExpr: " << *ConstUE << '\n';
@@ -1153,20 +1160,24 @@ void LLVMToSPRV::getOCLBuiltinTransInfo(OCLBuiltinTransInfo &Info,
   return;
 }
 
-SPRV::SPRVInstruction* LLVMToSPRV::transUnaryInst(UnaryInstruction* U,
-    SPRVBasicBlock* BB) {
-  auto OpCode = U->getOpcode();
+SPRV::SPRVInstruction *LLVMToSPRV::transUnaryInst(UnaryInstruction *U,
+                                                  SPRVBasicBlock *BB) {
   SPRVOpCode BOC = SPRVOC_OpNop;
-  if (OpCode == Instruction::AddrSpaceCast) {
-    if (U->getType()->getPointerAddressSpace() == SPIRAS_Generic)
+  if (auto Cast = dyn_cast<AddrSpaceCastInst>(U)) {
+    if (Cast->getDestTy()->getPointerAddressSpace() == SPIRAS_Generic) {
+      assert(Cast->getSrcTy()->getPointerAddressSpace() != SPIRAS_Constant &&
+             "Casts from constant address space to generic are illegal");
       BOC = SPRVOC_OpPtrCastToGeneric;
-    else {
-      assert(U->getOperand(0)->getType()->getPointerAddressSpace() ==
-          SPIRAS_Generic);
+    } else {
+      assert(Cast->getDestTy()->getPointerAddressSpace() != SPIRAS_Constant &&
+             "Casts from generic address space to constant are illegal");
+      assert(Cast->getSrcTy()->getPointerAddressSpace() == SPIRAS_Generic);
       BOC = SPRVOC_OpGenericCastToPtr;
     }
-  } else
+  } else {
+    auto OpCode = U->getOpcode();
     BOC = OpCodeMap::map(OpCode);
+  }
   auto Op = transValue(U->getOperand(0), BB);
   return BM->addUnaryInst(transBoolOpCode(Op, BOC),
       transType(U->getType()), Op, BB);

@@ -195,6 +195,7 @@ isSpecConstantOpAllowedOp(SPRVOpCode OC) {
     SPRVOC_OpAccessChain,
     SPRVOC_OpInBoundsAccessChain,
     SPRVOC_OpPtrAccessChain,
+    SPRVOC_OpInBoundsPtrAccessChain,
   };
   static std::unordered_set<SPRVWord>
     Allow(std::begin(Table), std::end(Table));

@@ -306,9 +306,9 @@ bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
     // Skip CV and ref qualifiers.
     size_t NameSpaceStart = Name.find_first_not_of("rVKRO", 3);
     // All built-ins are in the ::cl:: namespace.
-    if (Name.substr(NameSpaceStart, 3) != "2cl")
+    if (Name.substr(NameSpaceStart, 11) != "2cl7__spirv")
       return false;
-    size_t DemangledNameLenStart = NameSpaceStart + 3;
+    size_t DemangledNameLenStart = NameSpaceStart + 11;
     size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
     size_t Len = 0;
     Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
