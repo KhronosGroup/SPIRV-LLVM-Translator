@@ -58,11 +58,11 @@ namespace SPRV{
 class SPRVType: public SPRVEntry {
 public:
   // Complete constructor
-  SPRVType(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
+  SPRVType(SPRVModule *M, unsigned TheWordCount, Op TheOpCode,
       SPRVId TheId)
     :SPRVEntry(M, TheWordCount, TheOpCode, TheId){}
   // Incomplete constructor
-  SPRVType(SPRVOpCode TheOpCode):SPRVEntry(TheOpCode){}
+  SPRVType(Op TheOpCode):SPRVEntry(TheOpCode){}
 
   SPRVType *getArrayElementType() const;
   uint64_t getArrayLength() const;
@@ -106,9 +106,9 @@ class SPRVTypeVoid:public SPRVType {
 public:
   // Complete constructor
   SPRVTypeVoid(SPRVModule *M, SPRVId TheId)
-    :SPRVType(M, 2, SPRVOC_OpTypeVoid, TheId){}
+    :SPRVType(M, 2, OpTypeVoid, TheId){}
   // Incomplete constructor
-  SPRVTypeVoid():SPRVType(SPRVOC_OpTypeVoid){}
+  SPRVTypeVoid():SPRVType(OpTypeVoid){}
 protected:
   _SPRV_DEF_ENCDEC1(Id)
 };
@@ -117,16 +117,16 @@ class SPRVTypeBool:public SPRVType {
 public:
   // Complete constructor
   SPRVTypeBool(SPRVModule *M, SPRVId TheId)
-    :SPRVType(M, 2, SPRVOC_OpTypeBool, TheId){}
+    :SPRVType(M, 2, OpTypeBool, TheId){}
   // Incomplete constructor
-  SPRVTypeBool():SPRVType(SPRVOC_OpTypeBool){}
+  SPRVTypeBool():SPRVType(OpTypeBool){}
 protected:
   _SPRV_DEF_ENCDEC1(Id)
 };
 
 class SPRVTypeInt:public SPRVType {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpTypeInt;
+  static const Op OC = OpTypeInt;
   // Complete constructor
   SPRVTypeInt(SPRVModule *M, SPRVId TheId, unsigned TheBitWidth,
       bool ItIsSigned)
@@ -153,7 +153,7 @@ private:
 
 class SPRVTypeFloat:public SPRVType {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpTypeFloat;
+  static const Op OC = OpTypeFloat;
   // Complete constructor
   SPRVTypeFloat(SPRVModule *M, SPRVId TheId, unsigned TheBitWidth)
     :SPRVType(M, 3, OC, TheId), BitWidth(TheBitWidth){}
@@ -178,12 +178,12 @@ public:
   SPRVTypePointer(SPRVModule *M, SPRVId TheId,
       SPRVStorageClassKind TheStorageClass,
       SPRVType *ElementType)
-    :SPRVType(M, 4, SPRVOC_OpTypePointer, TheId), StorageClass(TheStorageClass),
+    :SPRVType(M, 4, OpTypePointer, TheId), StorageClass(TheStorageClass),
      ElemType(ElementType){
     validate();
   }
   // Incomplete constructor
-  SPRVTypePointer():SPRVType(SPRVOC_OpTypePointer),
+  SPRVTypePointer():SPRVType(OpTypePointer),
       StorageClass(SPRVSC_Private),
       ElemType(NULL){}
 
@@ -213,12 +213,12 @@ public:
   // Complete constructor
   SPRVTypeVector(SPRVModule *M, SPRVId TheId, SPRVType *TheCompType,
       SPRVWord TheCompCount)
-    :SPRVType(M, 4, SPRVOC_OpTypeVector, TheId), CompType(TheCompType),
+    :SPRVType(M, 4, OpTypeVector, TheId), CompType(TheCompType),
      CompCount(TheCompCount){
     validate();
   }
   // Incomplete constructor
-  SPRVTypeVector():SPRVType(SPRVOC_OpTypeVector), CompType(nullptr),
+  SPRVTypeVector():SPRVType(OpTypeVector), CompType(nullptr),
       CompCount(0){}
 
   SPRVType *getComponentType() const { return CompType;}
@@ -250,7 +250,7 @@ public:
   SPRVTypeArray(SPRVModule *M, SPRVId TheId, SPRVType *TheElemType,
       SPRVConstant* TheLength);
   // Incomplete constructor
-  SPRVTypeArray():SPRVType(SPRVOC_OpTypeArray), ElemType(nullptr),
+  SPRVTypeArray():SPRVType(OpTypeArray), ElemType(nullptr),
       Length(SPRVID_INVALID){}
 
   SPRVType *getElementType() const { return ElemType;}
@@ -268,12 +268,12 @@ class SPRVTypeOpaque:public SPRVType {
 public:
   // Complete constructor
   SPRVTypeOpaque(SPRVModule *M, SPRVId TheId, const std::string& TheName)
-    :SPRVType(M, 2 + getSizeInWords(TheName), SPRVOC_OpTypeOpaque, TheId) {
+    :SPRVType(M, 2 + getSizeInWords(TheName), OpTypeOpaque, TheId) {
     Name = TheName;
     validate();
   }
   // Incomplete constructor
-  SPRVTypeOpaque():SPRVType(SPRVOC_OpTypeOpaque){}
+  SPRVTypeOpaque():SPRVType(OpTypeOpaque){}
 
 protected:
   _SPRV_DEF_ENCDEC2(Id, Name)
@@ -333,7 +333,7 @@ operator<(const SPRVTypeImageDescriptor &A,
 
 class SPRVTypeImage:public SPRVType {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpTypeImage;
+  const static Op OC = OpTypeImage;
   const static SPRVWord FixedWC = 8;
   SPRVTypeImage(SPRVModule *M, SPRVId TheId, SPRVId TheSampledType,
       const SPRVTypeImageDescriptor &TheDesc)
@@ -402,7 +402,7 @@ private:
 
 class SPRVTypeSampler:public SPRVType {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpTypeSampler;
+  const static Op OC = OpTypeSampler;
   const static SPRVWord FixedWC = 2;
   SPRVTypeSampler(SPRVModule *M, SPRVId TheId)
     :SPRVType(M, FixedWC, OC, TheId){
@@ -420,7 +420,7 @@ protected:
 
 class SPRVTypeSampledImage:public SPRVType {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpTypeSampledImage;
+  const static Op OC = OpTypeSampledImage;
   const static SPRVWord FixedWC = 3;
   SPRVTypeSampledImage(SPRVModule *M, SPRVId TheId, SPRVTypeImage *TheImgTy)
     :SPRVType(M, FixedWC, OC, TheId), ImgTy(TheImgTy){
@@ -452,13 +452,13 @@ public:
   // Complete constructor
   SPRVTypeStruct(SPRVModule *M, SPRVId TheId,
       const std::vector<SPRVType *> &TheMemberTypes, const std::string &TheName)
-    :SPRVType(M, 2 + TheMemberTypes.size(), SPRVOC_OpTypeStruct, TheId),
+    :SPRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId),
      MemberTypeVec(TheMemberTypes){
     Name = TheName;
     validate();
   }
   // Incomplete constructor
-  SPRVTypeStruct():SPRVType(SPRVOC_OpTypeStruct){}
+  SPRVTypeStruct():SPRVType(OpTypeStruct){}
 
   SPRVWord getMemberCount() const { return MemberTypeVec.size();}
   SPRVType *getMemberType(size_t I) const { return MemberTypeVec[I];}
@@ -482,12 +482,12 @@ public:
   // Complete constructor
   SPRVTypeFunction(SPRVModule *M, SPRVId TheId, SPRVType *TheReturnType,
       const std::vector<SPRVType *> &TheParameterTypes)
-    :SPRVType(M, 3 + TheParameterTypes.size(), SPRVOC_OpTypeFunction, TheId),
+    :SPRVType(M, 3 + TheParameterTypes.size(), OpTypeFunction, TheId),
      ReturnType(TheReturnType), ParamTypeVec(TheParameterTypes){
      validate();
   }
   // Incomplete constructor
-  SPRVTypeFunction():SPRVType(SPRVOC_OpTypeFunction), ReturnType(NULL){}
+  SPRVTypeFunction():SPRVType(OpTypeFunction), ReturnType(NULL){}
 
   SPRVType *getReturnType() const { return ReturnType;}
   SPRVWord getNumParameters() const { return ParamTypeVec.size();}
@@ -513,13 +513,13 @@ private:
 class SPRVTypeOpaqueGeneric:public SPRVType {
 public:
   // Complete constructor
-  SPRVTypeOpaqueGeneric(SPRVOpCode TheOpCode, SPRVModule *M, SPRVId TheId)
+  SPRVTypeOpaqueGeneric(Op TheOpCode, SPRVModule *M, SPRVId TheId)
     :SPRVType(M, 2, TheOpCode, TheId){
     validate();
   }
 
   // Incomplete constructor
-  SPRVTypeOpaqueGeneric(SPRVOpCode TheOpCode):SPRVType(TheOpCode),
+  SPRVTypeOpaqueGeneric(Op TheOpCode):SPRVType(TheOpCode),
       Op(SPRVID_INVALID) {}
 
   SPRVValue *getOperand() {
@@ -533,7 +533,7 @@ protected:
   SPRVId Op;
 };
 
-template<SPRVOpCode TheOpCode>
+template<Op TheOpCode>
 class SPRVOpaqueGenericType:public SPRVTypeOpaqueGeneric {
 public:
   // Complete constructor
@@ -543,7 +543,7 @@ public:
   SPRVOpaqueGenericType():SPRVTypeOpaqueGeneric(TheOpCode){}
 };
 
-#define _SPRV_OP(x) typedef SPRVOpaqueGenericType<SPRVOC_OpType##x> SPRVType##x;
+#define _SPRV_OP(x) typedef SPRVOpaqueGenericType<OpType##x> SPRVType##x;
 _SPRV_OP(Event)
 _SPRV_OP(DeviceEvent)
 _SPRV_OP(ReserveId)
@@ -555,13 +555,13 @@ public:
   // Complete constructor
   SPRVTypePipe(SPRVModule *M, SPRVId TheId,
       SPRVAccessQualifierKind AccessQual = SPRVAC_ReadOnly)
-    :SPRVType(M, 3, SPRVOC_OpTypePipe, TheId),
+    :SPRVType(M, 3, OpTypePipe, TheId),
      AccessQualifier(AccessQual){
        validate();
      }
 
   // Incomplete constructor
-  SPRVTypePipe() :SPRVType(SPRVOC_OpTypePipe),
+  SPRVTypePipe() :SPRVType(OpTypePipe),
     AccessQualifier(SPRVAC_ReadOnly){}
 
   SPRVAccessQualifierKind getAccessQualifier() const {

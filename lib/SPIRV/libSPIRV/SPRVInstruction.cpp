@@ -46,33 +46,33 @@
 namespace SPRV {
 
 // Complete constructor for instruction with type and id
-SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+SPRVInstruction::SPRVInstruction(unsigned TheWordCount, Op TheOC,
     SPRVType *TheType, SPRVId TheId, SPRVBasicBlock *TheBB)
   :SPRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType, TheId),
    BB(TheBB){
   validate();
 }
 
-SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+SPRVInstruction::SPRVInstruction(unsigned TheWordCount, Op TheOC,
   SPRVType *TheType, SPRVId TheId, SPRVBasicBlock *TheBB, SPRVModule *TheBM)
   : SPRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB){
   validate();
 }
 
 // Complete constructor for instruction with id but no type
-SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+SPRVInstruction::SPRVInstruction(unsigned TheWordCount, Op TheOC,
     SPRVId TheId, SPRVBasicBlock *TheBB)
   :SPRVValue(TheBB->getModule(), TheWordCount, TheOC, TheId), BB(TheBB){
   validate();
 }
 // Complete constructor for instruction without type and id
-SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+SPRVInstruction::SPRVInstruction(unsigned TheWordCount, Op TheOC,
     SPRVBasicBlock *TheBB)
   :SPRVValue(TheBB->getModule(), TheWordCount, TheOC), BB(TheBB){
   validate();
 }
 // Complete constructor for instruction with type but no id
-SPRVInstruction::SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+SPRVInstruction::SPRVInstruction(unsigned TheWordCount, Op TheOC,
     SPRVType *TheType, SPRVBasicBlock *TheBB)
   :SPRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType), BB(TheBB){
   validate();
@@ -89,7 +89,7 @@ SPRVInstruction::setParent(SPRVBasicBlock *TheBB) {
 
 void
 SPRVInstruction::setScope(SPRVEntry *Scope) {
-  assert(Scope && Scope->getOpCode() == SPRVOC_OpLabel && "Invalid scope");
+  assert(Scope && Scope->getOpCode() == OpLabel && "Invalid scope");
   setParent(static_cast<SPRVBasicBlock*>(Scope));
 }
 
@@ -119,7 +119,7 @@ SPRVInstruction::getOperandTypes(const std::vector<SPRVValue *> &Ops) {
   std::vector<SPRVType*> Tys;
   for (auto& I : Ops) {
     SPRVType* Ty = nullptr;
-    if (I->getOpCode() == SPRVOC_OpFunction)
+    if (I->getOpCode() == OpFunction)
       Ty = reinterpret_cast<SPRVFunction*>(I)->getFunctionType();
     else
       Ty = I->getType();
@@ -135,67 +135,67 @@ SPRVInstruction::getOperandTypes() {
 }
 
 bool
-isSpecConstantOpAllowedOp(SPRVOpCode OC) {
+isSpecConstantOpAllowedOp(Op OC) {
   static SPRVWord Table[] =
   {
-    SPRVOC_OpSConvert,
-    SPRVOC_OpFConvert,
-    SPRVOC_OpConvertFToS,
-    SPRVOC_OpConvertSToF,
-    SPRVOC_OpConvertFToU,
-    SPRVOC_OpConvertUToF,
-    SPRVOC_OpUConvert,
-    SPRVOC_OpConvertPtrToU,
-    SPRVOC_OpConvertUToPtr,
-    SPRVOC_OpGenericCastToPtr,
-    SPRVOC_OpPtrCastToGeneric,
-    SPRVOC_OpBitcast,
-    SPRVOC_OpQuantizeToF16,
-    SPRVOC_OpSNegate,
-    SPRVOC_OpNot,
-    SPRVOC_OpIAdd,
-    SPRVOC_OpISub,
-    SPRVOC_OpIMul,
-    SPRVOC_OpUDiv,
-    SPRVOC_OpSDiv,
-    SPRVOC_OpUMod,
-    SPRVOC_OpSRem,
-    SPRVOC_OpSMod,
-    SPRVOC_OpShiftRightLogical,
-    SPRVOC_OpShiftRightArithmetic,
-    SPRVOC_OpShiftLeftLogical,
-    SPRVOC_OpBitwiseOr,
-    SPRVOC_OpBitwiseXor,
-    SPRVOC_OpBitwiseAnd,
-    SPRVOC_OpFNegate,
-    SPRVOC_OpFAdd,
-    SPRVOC_OpFSub,
-    SPRVOC_OpFMul,
-    SPRVOC_OpFDiv,
-    SPRVOC_OpFRem,
-    SPRVOC_OpFMod,
-    SPRVOC_OpVectorShuffle,
-    SPRVOC_OpCompositeExtract,
-    SPRVOC_OpCompositeInsert,
-    SPRVOC_OpLogicalOr,
-    SPRVOC_OpLogicalAnd,
-    SPRVOC_OpLogicalNot,
-    SPRVOC_OpLogicalEqual,
-    SPRVOC_OpLogicalNotEqual,
-    SPRVOC_OpSelect,
-    SPRVOC_OpIEqual,
-    SPRVOC_OpULessThan,
-    SPRVOC_OpSLessThan,
-    SPRVOC_OpUGreaterThan,
-    SPRVOC_OpSGreaterThan,
-    SPRVOC_OpULessThanEqual,
-    SPRVOC_OpSLessThanEqual,
-    SPRVOC_OpUGreaterThanEqual,
-    SPRVOC_OpSGreaterThanEqual,
-    SPRVOC_OpAccessChain,
-    SPRVOC_OpInBoundsAccessChain,
-    SPRVOC_OpPtrAccessChain,
-    SPRVOC_OpInBoundsPtrAccessChain,
+    OpSConvert,
+    OpFConvert,
+    OpConvertFToS,
+    OpConvertSToF,
+    OpConvertFToU,
+    OpConvertUToF,
+    OpUConvert,
+    OpConvertPtrToU,
+    OpConvertUToPtr,
+    OpGenericCastToPtr,
+    OpPtrCastToGeneric,
+    OpBitcast,
+    OpQuantizeToF16,
+    OpSNegate,
+    OpNot,
+    OpIAdd,
+    OpISub,
+    OpIMul,
+    OpUDiv,
+    OpSDiv,
+    OpUMod,
+    OpSRem,
+    OpSMod,
+    OpShiftRightLogical,
+    OpShiftRightArithmetic,
+    OpShiftLeftLogical,
+    OpBitwiseOr,
+    OpBitwiseXor,
+    OpBitwiseAnd,
+    OpFNegate,
+    OpFAdd,
+    OpFSub,
+    OpFMul,
+    OpFDiv,
+    OpFRem,
+    OpFMod,
+    OpVectorShuffle,
+    OpCompositeExtract,
+    OpCompositeInsert,
+    OpLogicalOr,
+    OpLogicalAnd,
+    OpLogicalNot,
+    OpLogicalEqual,
+    OpLogicalNotEqual,
+    OpSelect,
+    OpIEqual,
+    OpULessThan,
+    OpSLessThan,
+    OpUGreaterThan,
+    OpSGreaterThan,
+    OpULessThanEqual,
+    OpSLessThanEqual,
+    OpUGreaterThanEqual,
+    OpSGreaterThanEqual,
+    OpAccessChain,
+    OpInBoundsAccessChain,
+    OpPtrAccessChain,
+    OpInBoundsPtrAccessChain,
   };
   static std::unordered_set<SPRVWord>
     Allow(std::begin(Table), std::end(Table));
@@ -210,16 +210,16 @@ createSpecConstantOpInst(SPRVInstruction *Inst) {
   auto Ops = Inst->getIds(Inst->getOperands());
   Ops.insert(Ops.begin(), OC);
   return static_cast<SPRVSpecConstantOp *>(
-    SPRVSpecConstantOp::create(SPRVOC_OpSpecConstantOp, Inst->getType(),
+    SPRVSpecConstantOp::create(OpSpecConstantOp, Inst->getType(),
         Inst->getId(), Ops, nullptr, Inst->getModule()));
 }
 
 SPRVInstruction *
 createInstFromSpecConstantOp(SPRVSpecConstantOp *Inst) {
-  assert(Inst->getOpCode() == SPRVOC_OpSpecConstantOp &&
+  assert(Inst->getOpCode() == OpSpecConstantOp &&
       "Not OpSpecConstantOp");
   auto Ops = Inst->getOpWords();
-  auto OC = static_cast<SPRVOpCode>(Ops[0]);
+  auto OC = static_cast<Op>(Ops[0]);
   assert (isSpecConstantOpAllowedOp(OC) &&
       "Op code not allowed for OpSpecConstantOp");
   Ops.erase(Ops.begin(), Ops.begin() + 1);

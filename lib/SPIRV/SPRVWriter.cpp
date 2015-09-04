@@ -225,7 +225,7 @@ public:
   SPRVFunction *transFunction(Function *F);
   bool transGlobalVariables();
 
-  SPRVOpCode transBoolOpCode(SPRVValue *Op, SPRVOpCode OC);
+  Op transBoolOpCode(SPRVValue *Opn, Op OC);
   // Translate LLVM module to SPIR-V module.
   // Returns true if succeeds.
   bool translate();
@@ -665,7 +665,7 @@ LLVMToSPRV::transType(Type *T) {
     auto ST = dyn_cast<StructType>(ET);
     auto AddrSpc = T->getPointerAddressSpace();
     if (ST && !ST->isSized()) {
-      SPRVOpCode OpCode;
+      Op OpCode;
       StringRef STName = ST->getName();
       // Workaround for non-conformant SPIR binary
       if (STName == "struct._event_t") {
@@ -722,7 +722,7 @@ LLVMToSPRV::transType(Type *T) {
                 transType(getOrCreateOpaquePtrType(M, ImgTyName)))));
       }
       else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
-        if (OpCode == SPRVOC_OpTypePipe) {
+        if (OpCode == OpTypePipe) {
           return mapType(T, BM->addPipeType());
         }
         return mapType(T, BM->addOpaqueGenericType(OpCode));
@@ -821,9 +821,9 @@ LLVMToSPRV::transFunction(Function *F) {
   return BF;
 }
 
-#define _SPRV_OPL(x) SPRVOC_OpLogical##x
+#define _SPRV_OPL(x) OpLogical##x
 
-#define _SPRV_OPB(x) SPRVOC_OpBitwise##x
+#define _SPRV_OPB(x) OpBitwise##x
 
 SPRVValue *
 LLVMToSPRV::transConstant(Value *V) {
@@ -1161,17 +1161,17 @@ void LLVMToSPRV::getOCLBuiltinTransInfo(OCLBuiltinTransInfo &Info,
 
 SPRV::SPRVInstruction *LLVMToSPRV::transUnaryInst(UnaryInstruction *U,
                                                   SPRVBasicBlock *BB) {
-  SPRVOpCode BOC = SPRVOC_OpNop;
+  Op BOC = OpNop;
   if (auto Cast = dyn_cast<AddrSpaceCastInst>(U)) {
     if (Cast->getDestTy()->getPointerAddressSpace() == SPIRAS_Generic) {
       assert(Cast->getSrcTy()->getPointerAddressSpace() != SPIRAS_Constant &&
              "Casts from constant address space to generic are illegal");
-      BOC = SPRVOC_OpPtrCastToGeneric;
+      BOC = OpPtrCastToGeneric;
     } else {
       assert(Cast->getDestTy()->getPointerAddressSpace() != SPIRAS_Constant &&
              "Casts from generic address space to constant are illegal");
       assert(Cast->getSrcTy()->getPointerAddressSpace() == SPIRAS_Generic);
-      BOC = SPRVOC_OpGenericCastToPtr;
+      BOC = OpGenericCastToPtr;
     }
   } else {
     auto OpCode = U->getOpcode();
@@ -2044,7 +2044,7 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
 SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB) {
-  auto OC = SPRVOC_OpNop;
+  auto OC = OpNop;
   OCLBuiltinTransInfo Info;
   getOCLBuiltinTransInfo(Info, CI, MangledName, DemangledName);
 
@@ -2061,7 +2061,7 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
       auto Cmp = BM->addCmpInst(OC, BBT,
         transValue(CI->getArgOperand(0), BB),
         transValue(CI->getArgOperand(1), BB), BB);
-      auto CastOC = IsVector ? SPRVOC_OpSConvert : SPRVOC_OpUConvert;
+      auto CastOC = IsVector ? OpSConvert : OpUConvert;
       return BM->addUnaryInst(CastOC, BT, Cmp, BB);
     } else if (isBinaryOpCode(OC)) {
       assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
@@ -2152,7 +2152,7 @@ LLVMToSPRV::isFuncParamSigned(const std::string& MangledName) {
 SPRVValue *
 LLVMToSPRV::transOCLConvert(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName, SPRVBasicBlock *BB) {
-  SPRVOpCode OC = SPRVOC_OpNop;
+  Op OC = OpNop;
   auto TargetTy = CI->getType();
   auto SrcTy = CI->getArgOperand(0)->getType();
   if (isa<VectorType>(TargetTy))
@@ -2166,17 +2166,17 @@ LLVMToSPRV::transOCLConvert(CallInst *CI, const std::string &MangledName,
     bool Signed = isFuncParamSigned(MangledName);
     if (IsTargetInt) {
       if (IsSat && TargetSigned != Signed)
-        OC = Signed ? SPRVOC_OpSatConvertSToU : SPRVOC_OpSatConvertUToS;
+        OC = Signed ? OpSatConvertSToU : OpSatConvertUToS;
       else
-        OC = Signed ? SPRVOC_OpSConvert : SPRVOC_OpUConvert;
+        OC = Signed ? OpSConvert : OpUConvert;
     }
     else
-      OC = Signed ? SPRVOC_OpConvertSToF : SPRVOC_OpConvertUToF;
+      OC = Signed ? OpConvertSToF : OpConvertUToF;
   } else {
     if (IsTargetInt) {
-      OC = TargetSigned ? SPRVOC_OpConvertFToS : SPRVOC_OpConvertFToU;
+      OC = TargetSigned ? OpConvertFToS : OpConvertFToU;
     } else
-      OC = SPRVOC_OpFConvert;
+      OC = OpFConvert;
   }
   auto V = BM->addUnaryInst(OC, transType(CI->getType()),
       transValue(CI->getArgOperand(0), BB), BB);
@@ -2326,9 +2326,9 @@ LLVMToSPRV::oclRegularize() {
   eraseUselessFunctions(M);
 }
 
-SPRVOpCode
-LLVMToSPRV::transBoolOpCode(SPRVValue* Op, SPRVOpCode OC) {
-  if (!Op->getType()->isTypeVectorOrScalarBool())
+Op
+LLVMToSPRV::transBoolOpCode(SPRVValue* Opn, Op OC) {
+  if (!Opn->getType()->isTypeVectorOrScalarBool())
     return OC;
   IntBoolOpMap::find(OC, &OC);
   return OC;

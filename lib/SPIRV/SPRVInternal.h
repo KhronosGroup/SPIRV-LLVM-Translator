@@ -73,8 +73,8 @@ namespace kOCLTypeQualifierName {
 }
 
 template<> inline void
-SPRVMap<unsigned, SPRVOpCode>::init() {
-#define _SPRV_OP(x,y) add(Instruction::x, SPRVOC_Op##y);
+SPRVMap<unsigned, Op>::init() {
+#define _SPRV_OP(x,y) add(Instruction::x, Op##y);
   /* Casts */
     _SPRV_OP(ZExt, UConvert)
     _SPRV_OP(SExt, SConvert)
@@ -110,11 +110,11 @@ SPRVMap<unsigned, SPRVOpCode>::init() {
     _SPRV_OP(AShr, ShiftRightArithmetic)
 #undef _SPRV_OP
 }
-typedef SPRVMap<unsigned, SPRVOpCode> OpCodeMap;
+typedef SPRVMap<unsigned, Op> OpCodeMap;
 
 template<> inline void
-SPRVMap<CmpInst::Predicate, SPRVOpCode>::init() {
-#define _SPRV_OP(x,y) add(CmpInst::x, SPRVOC_Op##y);
+SPRVMap<CmpInst::Predicate, Op>::init() {
+#define _SPRV_OP(x,y) add(CmpInst::x, Op##y);
     _SPRV_OP(FCMP_OEQ, FOrdEqual)
     _SPRV_OP(FCMP_OGT, FOrdGreaterThan)
     _SPRV_OP(FCMP_OGE, FOrdGreaterThanEqual)
@@ -141,19 +141,19 @@ SPRVMap<CmpInst::Predicate, SPRVOpCode>::init() {
     _SPRV_OP(ICMP_SLE, SLessThanEqual)
 #undef _SPRV_OP
 }
-typedef SPRVMap<CmpInst::Predicate, SPRVOpCode> CmpMap;
+typedef SPRVMap<CmpInst::Predicate, Op> CmpMap;
 
 class IntBoolOpMapId;
 template<> inline void
-SPRVMap<SPRVOpCode, SPRVOpCode, IntBoolOpMapId>::init() {
-  add(SPRVOC_OpIEqual,      SPRVOC_OpLogicalEqual);
-  add(SPRVOC_OpINotEqual,   SPRVOC_OpLogicalNotEqual);
-  add(SPRVOC_OpNot,         SPRVOC_OpLogicalNot);
-  add(SPRVOC_OpBitwiseAnd,  SPRVOC_OpLogicalAnd);
-  add(SPRVOC_OpBitwiseOr,   SPRVOC_OpLogicalOr);
-  add(SPRVOC_OpBitwiseXor,  SPRVOC_OpLogicalNotEqual);
+SPRVMap<Op, Op, IntBoolOpMapId>::init() {
+  add(OpIEqual,      OpLogicalEqual);
+  add(OpINotEqual,   OpLogicalNotEqual);
+  add(OpNot,         OpLogicalNot);
+  add(OpBitwiseAnd,  OpLogicalAnd);
+  add(OpBitwiseOr,   OpLogicalOr);
+  add(OpBitwiseXor,  OpLogicalNotEqual);
 }
-typedef SPRVMap<SPRVOpCode, SPRVOpCode, IntBoolOpMapId> IntBoolOpMap;
+typedef SPRVMap<Op, Op, IntBoolOpMapId> IntBoolOpMap;
 
 #define SPIR_TARGETTRIPLE32 "spir-unknown-unknown"
 #define SPIR_TARGETTRIPLE64 "spir64-unknown-unknown"
@@ -226,8 +226,8 @@ SPRVMap<std::string, SPRVAccessQualifierKind>::init() {
 typedef SPRVMap<std::string, SPRVAccessQualifierKind> SPIRSPRVAccessQualifierMap;
 
 template<> inline void
-SPRVMap<std::string, SPRVOpCode>::init() {
-#define _SPRV_OP(x,y) add(#x, SPRVOC_OpType##y);
+SPRVMap<std::string, Op>::init() {
+#define _SPRV_OP(x,y) add(#x, OpType##y);
     _SPRV_OP(opencl.event_t, Event)
     _SPRV_OP(opencl.pipe_t, Pipe)
     _SPRV_OP(opencl.clk_event_t, DeviceEvent)
@@ -235,7 +235,7 @@ SPRVMap<std::string, SPRVOpCode>::init() {
     _SPRV_OP(opencl.queue_t, Queue)
 #undef _SPRV_OP
 }
-typedef SPRVMap<std::string, SPRVOpCode> BuiltinOpaqueGenericTypeOpCodeMap;
+typedef SPRVMap<std::string, Op> BuiltinOpaqueGenericTypeOpCodeMap;
 
 template<> inline void
 SPRVMap<std::string, SPRVBuiltinVariableKind>::init() {
@@ -270,8 +270,8 @@ typedef SPRVMap<std::string, SPRVBuiltinVariableKind> SPIRSPRVBuiltinVariableMap
 // except work_group_barrier.
 class SPRVInstruction;
 template<> inline void
-SPRVMap<std::string, SPRVOpCode, SPRVInstruction>::init() {
-#define _SPRV_OP(x,y) add("atom_"#x, SPRVOC_OpAtomic##y);
+SPRVMap<std::string, Op, SPRVInstruction>::init() {
+#define _SPRV_OP(x,y) add("atom_"#x, OpAtomic##y);
 // cl_khr_int64_base_atomics builtins
 _SPRV_OP(add, IAdd)
 _SPRV_OP(sub, ISub)
@@ -280,34 +280,34 @@ _SPRV_OP(dec, IDecrement)
 _SPRV_OP(inc, IIncrement)
 _SPRV_OP(cmpxchg, CompareExchange)
 // cl_khr_int64_extended_atomics builtins
-_SPRV_OP(min, IMin)
-_SPRV_OP(max, IMax)
+_SPRV_OP(min, SMin)
+_SPRV_OP(max, SMax)
 _SPRV_OP(and, And)
 _SPRV_OP(or, Or)
 _SPRV_OP(xor, Xor)
 #undef _SPRV_OP
-#define _SPRV_OP(x,y) add("atomic_"#x, SPRVOC_OpAtomic##y);
+#define _SPRV_OP(x,y) add("atomic_"#x, Op##y);
 // CL 2.0 atomic builtins
-_SPRV_OP(flag_test_and_set, TestSet)
-_SPRV_OP(load_explicit, Load)
-_SPRV_OP(store_explicit, Store)
-_SPRV_OP(exchange_explicit, Exchange)
-_SPRV_OP(compare_exchange_strong_explicit, CompareExchange)
-_SPRV_OP(compare_exchange_weak_explicit, CompareExchangeWeak)
-_SPRV_OP(inc, IIncrement)
-_SPRV_OP(dec, IDecrement)
-_SPRV_OP(fetch_add_explicit, IAdd)
-_SPRV_OP(fetch_sub_explicit, ISub)
-_SPRV_OP(fetch_umin_explicit, UMin)
-_SPRV_OP(fetch_umax_explicit, UMax)
-_SPRV_OP(fetch_min_explicit, IMin)
-_SPRV_OP(fetch_max_explicit, IMax)
-_SPRV_OP(fetch_and_explicit, And)
-_SPRV_OP(fetch_or_explicit, Or)
-_SPRV_OP(fetch_xor_explicit, Xor)
-_SPRV_OP(work_item_fence, WorkItemFence)
+_SPRV_OP(flag_test_and_set, AtomicFlagTestAndSet)
+_SPRV_OP(load_explicit, AtomicLoad)
+_SPRV_OP(store_explicit, AtomicStore)
+_SPRV_OP(exchange_explicit, AtomicExchange)
+_SPRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
+_SPRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
+_SPRV_OP(inc, AtomicIIncrement)
+_SPRV_OP(dec, AtomicIDecrement)
+_SPRV_OP(fetch_add_explicit, AtomicIAdd)
+_SPRV_OP(fetch_sub_explicit, AtomicISub)
+_SPRV_OP(fetch_umin_explicit, AtomicUMin)
+_SPRV_OP(fetch_umax_explicit, AtomicUMax)
+_SPRV_OP(fetch_min_explicit, AtomicSMin)
+_SPRV_OP(fetch_max_explicit, AtomicSMax)
+_SPRV_OP(fetch_and_explicit, AtomicAnd)
+_SPRV_OP(fetch_or_explicit, AtomicOr)
+_SPRV_OP(fetch_xor_explicit, AtomicXor)
+_SPRV_OP(work_item_fence, MemoryBarrier)
 #undef _SPRV_OP
-#define _SPRV_OP(x,y) add(#x, SPRVOC_Op##y);
+#define _SPRV_OP(x,y) add(#x, Op##y);
 _SPRV_OP(dot, Dot)
 _SPRV_OP(async_work_group_copy, AsyncGroupCopy)
 _SPRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
@@ -386,12 +386,11 @@ _SPRV_OP(write_image, ImageWrite)
 _SPRV_OP(ImageQuerySizeLod, ImageQuerySizeLod)
 _SPRV_OP(get_image_channel_data_type, ImageQueryFormat)
 _SPRV_OP(get_image_channel_order, ImageQueryOrder)
-_SPRV_OP(get_image_array_size, ImageQueryArraySize)
 _SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
 _SPRV_OP(get_image_num_samples, ImageQuerySamples)
 #undef _SPRV_OP
 }
-typedef SPRVMap<std::string, SPRVOpCode, SPRVInstruction>
+typedef SPRVMap<std::string, Op, SPRVInstruction>
   SPIRSPRVBuiltinInstMap;
 
 template<> inline void
@@ -785,7 +784,7 @@ void mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet,
     const std::string &UniqName, ArrayRef<Type*> ArgTypes,
     std::string &MangledName);
 
-SPIRAddressSpace getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode);
+SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);

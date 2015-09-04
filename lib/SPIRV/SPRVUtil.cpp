@@ -771,15 +771,15 @@ MangleOpenCLBuiltin(const std::string &UnmangledName,
 }
 
 SPIRAddressSpace
-getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode) {
+getOCLOpaqueTypeAddrSpace(Op OpCode) {
   switch (OpCode) {
-  case SPRVOC_OpTypePipe:
-  case SPRVOC_OpTypeQueue:
-  case SPRVOC_OpTypeEvent:
-  case SPRVOC_OpTypeDeviceEvent:
-  case SPRVOC_OpTypeSampler:
+  case OpTypePipe:
+  case OpTypeQueue:
+  case OpTypeEvent:
+  case OpTypeDeviceEvent:
+  case OpTypeSampler:
     return SPIRAS_Global;
-  case SPRVOC_OpTypeReserveId:
+  case OpTypeReserveId:
     return SPIRAS_Private;
   default:
     return SPIRAS_Private;

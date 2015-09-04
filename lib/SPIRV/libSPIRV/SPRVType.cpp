@@ -48,13 +48,13 @@ namespace SPRV{
 
 SPRVType*
 SPRVType::getArrayElementType() const {
-  assert(OpCode == SPRVOC_OpTypeArray && "Not array type");
+  assert(OpCode == OpTypeArray && "Not array type");
   return static_cast<const SPRVTypeArray *const>(this)->getElementType();
 }
 
 uint64_t
 SPRVType::getArrayLength() const {
-  assert(OpCode == SPRVOC_OpTypeArray && "Not array type");
+  assert(OpCode == OpTypeArray && "Not array type");
   return static_cast<const SPRVTypeArray *const>(this)->getLength()->
       getZExtIntValue();
 }
@@ -70,13 +70,13 @@ SPRVType::getBitWidth() const {
 
 SPRVWord
 SPRVType::getFloatBitWidth()const {
-  assert(OpCode == SPRVOC_OpTypeFloat && "Not an integer type");
+  assert(OpCode == OpTypeFloat && "Not an integer type");
   return static_cast<const SPRVTypeFloat *const>(this)->getBitWidth();
 }
 
 SPRVWord
 SPRVType::getIntegerBitWidth()const {
-  assert((OpCode == SPRVOC_OpTypeInt || OpCode == SPRVOC_OpTypeBool) &&
+  assert((OpCode == OpTypeInt || OpCode == OpTypeBool) &&
       "Not an integer type");
   if (isTypeBool())
     return 1;
@@ -85,58 +85,58 @@ SPRVType::getIntegerBitWidth()const {
 
 SPRVType *
 SPRVType::getFunctionReturnType() const {
-  assert(OpCode == SPRVOC_OpTypeFunction);
+  assert(OpCode == OpTypeFunction);
   return static_cast<const SPRVTypeFunction *const>(this)->getReturnType();
 }
 
 SPRVType *
 SPRVType::getPointerElementType()const {
-  assert(OpCode == SPRVOC_OpTypePointer && "Not a pointer type");
+  assert(OpCode == OpTypePointer && "Not a pointer type");
   return static_cast<const SPRVTypePointer *const>(this)->getElementType();
 }
 
 SPRVStorageClassKind
 SPRVType::getPointerStorageClass() const {
-  assert(OpCode == SPRVOC_OpTypePointer && "Not a pointer type");
+  assert(OpCode == OpTypePointer && "Not a pointer type");
   return static_cast<const SPRVTypePointer *const>(this)->getStorageClass();
 }
 
 SPRVType*
 SPRVType::getStructMemberType(size_t Index) const {
-  assert(OpCode == SPRVOC_OpTypeStruct && "Not struct type");
+  assert(OpCode == OpTypeStruct && "Not struct type");
   return static_cast<const SPRVTypeStruct *const>(this)->getMemberType(Index);
 }
 
 SPRVWord
 SPRVType::getStructMemberCount() const {
-  assert(OpCode == SPRVOC_OpTypeStruct && "Not struct type");
+  assert(OpCode == OpTypeStruct && "Not struct type");
   return static_cast<const SPRVTypeStruct *const>(this)->getMemberCount();
 }
 
 SPRVWord
 SPRVType::getVectorComponentCount() const {
-  assert(OpCode == SPRVOC_OpTypeVector && "Not vector type");
+  assert(OpCode == OpTypeVector && "Not vector type");
   return static_cast<const SPRVTypeVector *const>(this)->getComponentCount();
 }
 
 SPRVType*
 SPRVType::getVectorComponentType() const {
-  assert(OpCode == SPRVOC_OpTypeVector && "Not vector type");
+  assert(OpCode == OpTypeVector && "Not vector type");
   return static_cast<const SPRVTypeVector *const>(this)->getComponentType();
 }
 
 bool
 SPRVType::isTypeVoid() const {
-  return OpCode == SPRVOC_OpTypeVoid;
+  return OpCode == OpTypeVoid;
 }
 bool
 SPRVType::isTypeArray() const {
-  return OpCode == SPRVOC_OpTypeArray;
+  return OpCode == OpTypeArray;
 }
 
 bool
 SPRVType::isTypeBool()const {
-  return OpCode == SPRVOC_OpTypeBool;
+  return OpCode == OpTypeBool;
 }
 
 bool
@@ -157,12 +157,12 @@ SPRVType::isTypeOCLImage()const {
 
 bool
 SPRVType::isTypePipe()const {
-  return OpCode == SPRVOC_OpTypePipe;
+  return OpCode == OpTypePipe;
 }
 
 bool
 SPRVType::isTypeReserveId() const {
-  return OpCode == SPRVOC_OpTypeReserveId;
+  return OpCode == OpTypeReserveId;
 }
 
 bool
@@ -172,42 +172,42 @@ SPRVType::isTypeInt(unsigned Bits)const {
 
 bool
 SPRVType::isTypePointer()const {
-  return OpCode == SPRVOC_OpTypePointer;
+  return OpCode == OpTypePointer;
 }
 
 bool
 SPRVType::isTypeOpaque()const {
-  return OpCode == SPRVOC_OpTypeOpaque;
+  return OpCode == OpTypeOpaque;
 }
 
 bool
 SPRVType::isTypeEvent()const {
-  return OpCode == SPRVOC_OpTypeEvent;
+  return OpCode == OpTypeEvent;
 }
 
 bool
 SPRVType::isTypeDeviceEvent()const {
-  return OpCode == SPRVOC_OpTypeDeviceEvent;
+  return OpCode == OpTypeDeviceEvent;
 }
 
 bool
 SPRVType::isTypeSampler()const {
-  return OpCode == SPRVOC_OpTypeSampler;
+  return OpCode == OpTypeSampler;
 }
 
 bool
 SPRVType::isTypeImage()const {
-  return OpCode == SPRVOC_OpTypeImage;
+  return OpCode == OpTypeImage;
 }
 
 bool
 SPRVType::isTypeStruct() const {
-  return OpCode == SPRVOC_OpTypeStruct;
+  return OpCode == OpTypeStruct;
 }
 
 bool
 SPRVType::isTypeVector() const {
-  return OpCode == SPRVOC_OpTypeVector;
+  return OpCode == OpTypeVector;
 }
 
 bool
@@ -255,7 +255,7 @@ SPRVTypeStruct::setPacked(bool Packed) {
 
 SPRVTypeArray::SPRVTypeArray(SPRVModule *M, SPRVId TheId, SPRVType *TheElemType,
         SPRVConstant* TheLength)
-      :SPRVType(M, 4, SPRVOC_OpTypeArray, TheId), ElemType(TheElemType),
+      :SPRVType(M, 4, OpTypeArray, TheId), ElemType(TheElemType),
        Length(TheLength->getId()){
       validate();
     }

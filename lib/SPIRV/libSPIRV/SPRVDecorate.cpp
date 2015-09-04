@@ -51,20 +51,20 @@ operator<< (std::ostream &O, const std::multiset<T *, B>& V) {
   return O;
 }
 
-SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC,
+SPRVDecorateGeneric::SPRVDecorateGeneric(Op OC, SPRVWord WC,
     Decoration TheDec, SPRVEntry *TheTarget)
   :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
   validate();
 }
 
-SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC,
+SPRVDecorateGeneric::SPRVDecorateGeneric(Op OC, SPRVWord WC,
     Decoration TheDec, SPRVEntry *TheTarget, SPRVWord V)
   :SPRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
   Literals.push_back(V);
   validate();
 }
 
-SPRVDecorateGeneric::SPRVDecorateGeneric(SPRVOpCode OC)
+SPRVDecorateGeneric::SPRVDecorateGeneric(Op OC)
   :SPRVAnnotationGeneric(OC), Dec(DecorationRelaxedPrecision), Owner(nullptr){
 }
 

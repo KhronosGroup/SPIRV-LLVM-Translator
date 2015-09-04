@@ -57,7 +57,7 @@ inline bool
 isValid(SPRVId Id) { return Id != SPRVID_INVALID;}
 
 inline SPRVWord
-mkWord(unsigned WordCount, SPRVOpCode OpCode) {
+mkWord(unsigned WordCount, Op OpCode) {
   return (WordCount << 16) | OpCode;
 }
 
@@ -329,7 +329,7 @@ SPRVMap<Decoration, std::string>::init() {
   add(DecorationCPacked, "CPacked");
   add(DecorationBuiltIn, "BuiltIn");
   add(DecorationSmooth, "Smooth");
-  add(DecorationNoperspective, "Noperspective");
+  add(DecorationNoPerspective, "NoPerspective");
   add(DecorationFlat, "Flat");
   add(DecorationPatch, "Patch");
   add(DecorationCentroid, "Centroid");
@@ -340,8 +340,8 @@ SPRVMap<Decoration, std::string>::init() {
   add(DecorationVolatile, "Volatile");
   add(DecorationConstant, "Constant");
   add(DecorationCoherent, "Coherent");
-  add(DecorationNonwritable, "Nonwritable");
-  add(DecorationNonreadable, "Nonreadable");
+  add(DecorationNonWritable, "NonWritable");
+  add(DecorationNonReadable, "NonReadable");
   add(DecorationUniform, "Uniform");
   add(DecorationNoStaticUse, "NoStaticUse");
   add(DecorationSaturatedConversion, "SaturatedConversion");
@@ -358,6 +358,8 @@ SPRVMap<Decoration, std::string>::init() {
   add(DecorationFPRoundingMode, "FPRoundingMode");
   add(DecorationFPFastMathMode, "FPFastMathMode");
   add(DecorationLinkageAttributes, "LinkageAttributes");
+  add(DecorationNoContraction, "NoContraction");
+  add(DecorationInputTargetIndex, "InputTargetIndex");
   add(DecorationAlignment, "Alignment");
 }
 SPRV_DEF_NAMEMAP(Decoration, SPRVDecorateNameMap)

@@ -194,7 +194,7 @@ public:
   };
 
   // Complete constructor for objects with id
-  SPRVEntry(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
+  SPRVEntry(SPRVModule *M, unsigned TheWordCount, Op TheOpCode,
       SPRVId TheId)
     :Module(M), OpCode(TheOpCode), Id(TheId), Attrib(SPRVEA_DEFAULT),
      WordCount(TheWordCount), Line(nullptr){
@@ -202,19 +202,19 @@ public:
   }
 
   // Complete constructor for objects without id
-  SPRVEntry(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode)
+  SPRVEntry(SPRVModule *M, unsigned TheWordCount, Op TheOpCode)
     :Module(M), OpCode(TheOpCode), Id(SPRVID_INVALID), Attrib(SPRVEA_NOID),
      WordCount(TheWordCount), Line(nullptr){
     validate();
   }
 
   // Incomplete constructor
-  SPRVEntry(SPRVOpCode TheOpCode)
+  SPRVEntry(Op TheOpCode)
     :Module(NULL), OpCode(TheOpCode), Id(SPRVID_INVALID),
      Attrib(SPRVEA_DEFAULT), WordCount(0), Line(nullptr){}
 
   SPRVEntry()
-    :Module(NULL), OpCode(SPRVOC_OpNop), Id(SPRVID_INVALID),
+    :Module(NULL), OpCode(OpNop), Id(SPRVID_INVALID),
      Attrib(SPRVEA_DEFAULT), WordCount(0), Line(nullptr){}
 
 
@@ -237,7 +237,7 @@ public:
   SPRVId getId() const { assert(hasId()); return Id;}
   SPRVLine *getLine() const { return Line;}
   SPRVLinkageTypeKind getLinkageType() const;
-  SPRVOpCode getOpCode() const { return OpCode;}
+  Op getOpCode() const { return OpCode;}
   SPRVModule *getModule() const { return Module;}
   virtual CapVec getRequiredCapability() const { return CapVec();}
   const std::string& getName() const { return Name;}
@@ -249,15 +249,15 @@ public:
   bool hasLinkageType() const;
   bool isAtomic() const { return isAtomicOpCode(OpCode);}
   bool isBasicBlock() const { return isLabel();}
-  bool isBuiltinCall() const { return OpCode == SPRVOC_OpExtInst;}
-  bool isDecorate()const { return OpCode == SPRVOC_OpDecorate;}
-  bool isMemberDecorate()const { return OpCode == SPRVOC_OpMemberDecorate;}
-  bool isForward() const { return OpCode == SPRVOC_OpForward;}
-  bool isLabel() const { return OpCode == SPRVOC_OpLabel;}
-  bool isUndef() const { return OpCode == SPRVOC_OpUndef;}
-  bool isControlBarrier() const { return OpCode == SPRVOC_OpControlBarrier;}
-  bool isMemoryBarrier() const { return OpCode == SPRVOC_OpMemoryBarrier;}
-  bool isVariable() const { return OpCode == SPRVOC_OpVariable;}
+  bool isBuiltinCall() const { return OpCode == OpExtInst;}
+  bool isDecorate()const { return OpCode == OpDecorate;}
+  bool isMemberDecorate()const { return OpCode == OpMemberDecorate;}
+  bool isForward() const { return OpCode == OpForward;}
+  bool isLabel() const { return OpCode == OpLabel;}
+  bool isUndef() const { return OpCode == OpUndef;}
+  bool isControlBarrier() const { return OpCode == OpControlBarrier;}
+  bool isMemoryBarrier() const { return OpCode == OpMemoryBarrier;}
+  bool isVariable() const { return OpCode == OpVariable;}
   virtual bool isInst() const { return false;}
 
   void addDecorate(const SPRVDecorate *);
@@ -288,7 +288,7 @@ public:
 
   /// Create an empty SPIRV object by op code, e.g. OpTypeInt creates
   /// SPRVTypeInt.
-  static SPRVEntry *create(SPRVOpCode);
+  static SPRVEntry *create(Op);
 
   friend std::ostream &operator<<(std::ostream &O, const SPRVEntry &E);
   friend std::istream &operator>>(std::istream &I, SPRVEntry &E);
@@ -305,7 +305,7 @@ public:
   /// Checks the integrity of the object.
   virtual void validate()const {
     assert(Module && "Invalid module");
-    assert(OpCode != SPRVOC_OpNop && "Invalid op code");
+    assert(OpCode != OpNop && "Invalid op code");
     assert((!hasId() || isValid(Id)) && "Invalid Id");
   }
   void validateFunctionControlMask(SPRVWord FCtlMask)const;
@@ -319,8 +319,8 @@ protected:
       const SPRVMemberDecorate*> MemberDecorateMapType;
 
   bool canHaveMemberDecorates() const {
-    return OpCode == SPRVOC_OpTypeStruct ||
-        OpCode == SPRVOC_OpForward;
+    return OpCode == OpTypeStruct ||
+        OpCode == OpForward;
   }
   MemberDecorateMapType& getMemberDecorates() {
     assert(canHaveMemberDecorates());
@@ -328,7 +328,7 @@ protected:
   }
 
   SPRVModule *Module;
-  SPRVOpCode OpCode;
+  Op OpCode;
   SPRVId Id;
   std::string Name;
   unsigned Attrib;
@@ -341,11 +341,11 @@ protected:
 
 class SPRVEntryNoIdGeneric:public SPRVEntry {
 public:
-  SPRVEntryNoIdGeneric(SPRVModule *M, unsigned TheWordCount, SPRVOpCode OC)
+  SPRVEntryNoIdGeneric(SPRVModule *M, unsigned TheWordCount, Op OC)
     :SPRVEntry(M, TheWordCount, OC){
     setAttr();
   }
-  SPRVEntryNoIdGeneric(SPRVOpCode OC):SPRVEntry(OC){
+  SPRVEntryNoIdGeneric(Op OC):SPRVEntry(OC){
     setAttr();
   }
 protected:
@@ -354,7 +354,7 @@ protected:
   }
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVEntryNoId:public SPRVEntryNoIdGeneric {
 public:
   SPRVEntryNoId(SPRVModule *M, unsigned TheWordCount)
@@ -362,7 +362,7 @@ public:
   SPRVEntryNoId():SPRVEntryNoIdGeneric(OC){}
 };
 
-template<SPRVOpCode TheOpCode>
+template<Op TheOpCode>
 class SPRVEntryOpCodeOnly:public SPRVEntryNoId<TheOpCode> {
 public:
   SPRVEntryOpCodeOnly(){
@@ -376,7 +376,7 @@ protected:
   }
 };
 
-class SPRVEntryPoint:public SPRVEntryNoId<SPRVOC_OpEntryPoint> {
+class SPRVEntryPoint:public SPRVEntryNoId<OpEntryPoint> {
 public:
   SPRVEntryPoint(SPRVModule *TheModule, SPRVExecutionModelKind, SPRVId TheId);
   SPRVEntryPoint():ExecModel(SPRVEMDL_Count),FuncId(SPRVID_INVALID){}
@@ -393,11 +393,11 @@ class SPRVAnnotationGeneric:public SPRVEntryNoIdGeneric {
 public:
   // Complete constructor
   SPRVAnnotationGeneric(const SPRVEntry *TheTarget, unsigned TheWordCount,
-      SPRVOpCode OC)
+      Op OC)
     :SPRVEntryNoIdGeneric(TheTarget->getModule(), TheWordCount, OC),
      Target(TheTarget->getId()){}
   // Incomplete constructor
-  SPRVAnnotationGeneric(SPRVOpCode OC):SPRVEntryNoIdGeneric(OC),
+  SPRVAnnotationGeneric(Op OC):SPRVEntryNoIdGeneric(OC),
       Target(SPRVID_INVALID){}
 
   SPRVId getTargetId()const { return Target;}
@@ -407,7 +407,7 @@ protected:
   SPRVId Target;
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVAnnotation:public SPRVAnnotationGeneric {
 public:
   // Complete constructor
@@ -417,7 +417,7 @@ public:
   SPRVAnnotation():SPRVAnnotationGeneric(OC){}
 };
 
-class SPRVName:public SPRVAnnotation<SPRVOC_OpName> {
+class SPRVName:public SPRVAnnotation<OpName> {
 public:
   // Complete constructor
   SPRVName(const SPRVEntry *TheTarget, const std::string& TheStr);
@@ -430,7 +430,7 @@ protected:
   std::string Str;
 };
 
-class SPRVMemberName:public SPRVAnnotation<SPRVOC_OpName> {
+class SPRVMemberName:public SPRVAnnotation<OpName> {
 public:
   static const SPRVWord FixedWC = 3;
   // Complete constructor
@@ -450,7 +450,7 @@ protected:
 };
 
 class SPRVString:public SPRVEntry {
-  static const SPRVOpCode OC = SPRVOC_OpString;
+  static const Op OC = OpString;
   static const SPRVWord FixedWC = 2;
 public:
   SPRVString(SPRVModule *M, SPRVId TheId, const std::string &TheStr)
@@ -462,7 +462,7 @@ protected:
   std::string Str;
 };
 
-class SPRVLine:public SPRVAnnotation<SPRVOC_OpLine> {
+class SPRVLine:public SPRVAnnotation<OpLine> {
 public:
   static const SPRVWord WC = 5;
   // Complete constructor
@@ -512,7 +512,7 @@ protected:
   SPRVWord Column;
 };
 
-class SPRVExecutionMode:public SPRVAnnotation<SPRVOC_OpExecutionMode> {
+class SPRVExecutionMode:public SPRVAnnotation<OpExecutionMode> {
 public:
   // Complete constructor for LocalSize, LocalSizeHint
   SPRVExecutionMode(SPRVEntry *TheTarget, SPRVExecutionModeKind TheExecMode,
@@ -567,7 +567,7 @@ protected:
 
 class SPRVExtInstImport:public SPRVEntry {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpExtInstImport;
+  const static Op OC = OpExtInstImport;
   // Complete constructor
   SPRVExtInstImport(SPRVModule *TheModule, SPRVId TheId,
       const std::string& TheStr);
@@ -580,7 +580,7 @@ protected:
   std::string Str;
 };
 
-class SPRVMemoryModel:public SPRVEntryNoId<SPRVOC_OpMemoryModel> {
+class SPRVMemoryModel:public SPRVEntryNoId<OpMemoryModel> {
 public:
   SPRVMemoryModel(SPRVModule *M):SPRVEntryNoId(M, 3){}
   SPRVMemoryModel(){}
@@ -588,28 +588,28 @@ public:
   void validate() const;
 };
 
-class SPRVSource:public SPRVEntryNoId<SPRVOC_OpSource> {
+class SPRVSource:public SPRVEntryNoId<OpSource> {
 public:
   SPRVSource(SPRVModule *M):SPRVEntryNoId(M, 3){}
   SPRVSource(){}
   _SPRV_DCL_ENCDEC
 };
 
-class SPRVSourceExtension:public SPRVEntryNoId<SPRVOC_OpSourceExtension> {
+class SPRVSourceExtension:public SPRVEntryNoId<OpSourceExtension> {
 public:
   SPRVSourceExtension(SPRVModule *M);
   SPRVSourceExtension(){}
   _SPRV_DCL_ENCDEC
 };
 
-class SPRVExtension:public SPRVEntryNoId<SPRVOC_OpExtension> {
+class SPRVExtension:public SPRVEntryNoId<OpExtension> {
 public:
   SPRVExtension(SPRVModule *M);
   SPRVExtension(){}
   _SPRV_DCL_ENCDEC
 };
 
-class SPRVCapability:public SPRVEntryNoId<SPRVOC_OpCapability> {
+class SPRVCapability:public SPRVEntryNoId<OpCapability> {
 public:
   SPRVCapability(SPRVModule *M, SPRVCapabilityKind K);
   SPRVCapability():Kind(SPRVCAP_None){}
@@ -627,10 +627,12 @@ T* bcast(SPRVEntry *E) {
 // to be implemented.
 // Each time a new class is implemented, remove the corresponding typedef.
 // This is also an indication of how much work is left.
-#define _SPRV_OP(x) typedef SPRVEntryOpCodeOnly<SPRVOC_Op##x> SPRV##x;
+#define _SPRV_OP(x, ...) typedef SPRVEntryOpCodeOnly<Op##x> SPRV##x;
 _SPRV_OP(Nop)
+_SPRV_OP(SourceContinued, 2)
 _SPRV_OP(TypeMatrix)
 _SPRV_OP(TypeRuntimeArray)
+_SPRV_OP(TypeForwardPointer, 39)
 _SPRV_OP(SpecConstantTrue)
 _SPRV_OP(SpecConstantFalse)
 _SPRV_OP(SpecConstant)
@@ -659,7 +661,8 @@ _SPRV_OP(MatrixTimesMatrix)
 _SPRV_OP(OuterProduct)
 _SPRV_OP(IAddCarry)
 _SPRV_OP(ISubBorrow)
-_SPRV_OP(IMulExtended)
+_SPRV_OP(SMulExtended)
+_SPRV_OP(UMulExtended)
 _SPRV_OP(BitFieldInsert)
 _SPRV_OP(BitFieldSExtract)
 _SPRV_OP(BitFieldUExtract)
@@ -686,7 +689,19 @@ _SPRV_OP(LifetimeStart)
 _SPRV_OP(LifetimeStop)
 _SPRV_OP(GenericCastToPtrExplicit)
 _SPRV_OP(GenericPtrMemSemantics)
-_SPRV_OP(Count)
+_SPRV_OP(ImageSparseSampleImplicitLod, 305)
+_SPRV_OP(ImageSparseSampleExplicitLod, 306)
+_SPRV_OP(ImageSparseSampleDrefImplicitLod, 307)
+_SPRV_OP(ImageSparseSampleDrefExplicitLod, 308)
+_SPRV_OP(ImageSparseSampleProjImplicitLod, 309)
+_SPRV_OP(ImageSparseSampleProjExplicitLod, 310)
+_SPRV_OP(ImageSparseSampleProjDrefImplicitLod, 311)
+_SPRV_OP(ImageSparseSampleProjDrefExplicitLod, 312)
+_SPRV_OP(ImageSparseFetch, 313)
+_SPRV_OP(ImageSparseGather, 314)
+_SPRV_OP(ImageSparseDrefGather, 315)
+_SPRV_OP(ImageSparseTexelsResident, 316)
+_SPRV_OP(NoLine, 317)
 #undef _SPRV_OP
 
 }

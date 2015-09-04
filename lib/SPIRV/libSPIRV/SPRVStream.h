@@ -67,7 +67,7 @@ class SPRVBasicBlock;
 class SPRVDecoder {
 public:
   SPRVDecoder(std::istream& InputStream, SPRVModule& Module)
-    :IS(InputStream), M(Module), WordCount(0), OpCode(SPRVOC_OpNop),
+    :IS(InputStream), M(Module), WordCount(0), OpCode(OpNop),
      Scope(NULL){}
   SPRVDecoder(std::istream& InputStream, SPRVFunction& F);
   SPRVDecoder(std::istream& InputStream, SPRVBasicBlock &BB);
@@ -80,7 +80,7 @@ public:
   std::istream &IS;
   SPRVModule &M;
   SPRVWord WordCount;
-  SPRVOpCode OpCode;
+  Op OpCode;
   SPRVEntry *Scope; // A function or basic block
 };
 
@@ -188,7 +188,7 @@ operator<<(const SPRVEncoder& O, Type V); \
 const SPRVDecoder& \
 operator>>(const SPRVDecoder& I, Type &V);
 
-SPRV_DEC_ENCDEC(SPRVOpCode)
+SPRV_DEC_ENCDEC(Op)
 SPRV_DEC_ENCDEC(Decoration)
 SPRV_DEC_ENCDEC(SPRVBuiltinOCL12Kind)
 SPRV_DEC_ENCDEC(SPRVBuiltinOCL20Kind)
