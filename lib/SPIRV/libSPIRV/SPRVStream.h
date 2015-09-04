@@ -52,7 +52,9 @@
 
 namespace SPRV{
 
+#ifndef _SPRV_SUPPORT_TEXT_FMT
 #define _SPRV_SUPPORT_TEXT_FMT
+#endif
 
 #ifdef _SPRV_SUPPORT_TEXT_FMT
 // Use textual format for SPRV.

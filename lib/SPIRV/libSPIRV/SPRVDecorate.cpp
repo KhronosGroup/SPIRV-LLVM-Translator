@@ -195,10 +195,6 @@ SPRVDecorateGeneric::Comparator::operator()(const SPRVDecorateGeneric *A,
   return false;
   };
   auto Res = Action();
-#if 0
-  SPRVDBG(bildbgs() << "[decorate comparator] " << *A << " vs " << *B
-                    << " : " << Res << '\n');
-#endif
   return Res;
 }
 

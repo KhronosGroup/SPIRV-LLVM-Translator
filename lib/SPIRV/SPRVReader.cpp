@@ -1669,7 +1669,8 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
     else if (BT->isTypeVectorBool())
-      RetTy = VectorType::get(IntegerType::getInt32Ty(*Context),
+      RetTy = VectorType::get(IntegerType::get(*Context,
+          Args[0]->getType()->getVectorComponentType()->isTypeFloat(64)?64:32),
           BT->getVectorComponentCount());
     else
        llvm_unreachable("invalid compare instruction");
