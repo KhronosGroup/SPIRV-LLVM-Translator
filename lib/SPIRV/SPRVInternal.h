@@ -288,7 +288,8 @@ _SPRV_OP(xor, Xor)
 #undef _SPRV_OP
 #define _SPRV_OP(x,y) add("atomic_"#x, Op##y);
 // CL 2.0 atomic builtins
-_SPRV_OP(flag_test_and_set, AtomicFlagTestAndSet)
+_SPRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
+_SPRV_OP(flag_clear_explicit, AtomicFlagClear)
 _SPRV_OP(load_explicit, AtomicLoad)
 _SPRV_OP(store_explicit, AtomicStore)
 _SPRV_OP(exchange_explicit, AtomicExchange)
@@ -533,7 +534,8 @@ namespace kAccessQualName {
 }
 
 namespace kMangledName {
-  const static char *Sampler = "11ocl_sampler";
+  const static char Sampler[]       = "11ocl_sampler";
+  const static char AtomicPrefix[]  = "U7_Atomic";
 }
 
 namespace kOCLBuiltinName {

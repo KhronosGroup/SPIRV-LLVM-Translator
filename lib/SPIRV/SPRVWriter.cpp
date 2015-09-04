@@ -1080,7 +1080,7 @@ LLVMToSPRV::getOCLLegacyAtomicTransInfo(OCLBuiltinTransInfo &Info,
 static size_t
 getOCLCpp11AtomicMaxNumOps(StringRef Name) {
   return StringSwitch<size_t>(Name)
-      .Cases("load", "flag_test_and_set", 3)
+      .Cases("load", "flag_test_and_set", "flag_clear", 3)
       .Cases("store", "exchange",  4)
       .StartsWith("compare_exchange", 6)
       .StartsWith("fetch", 4)
@@ -1107,12 +1107,11 @@ LLVMToSPRV::getOCLCpp11AtomicTransInfo(OCLBuiltinTransInfo &Info,
       Stem.startswith("flag")) {
     if (Stem.startswith("fetch_min") ||
         Stem.startswith("fetch_max")) {
-      auto LastChar = MangledName.back();
+      auto Loc = MangledName.find(kMangledName::AtomicPrefix);
+      assert (Loc != std::string::npos && Loc + 1 < MangledName.size());
+      auto LastChar = MangledName[Loc + strlen(kMangledName::AtomicPrefix)];
       if (LastChar == 'j' || LastChar == 'm')
         NewStem.insert(NewStem.begin() + strlen("fetch_"), 'u');
-    } else if (Stem.startswith("flag_clear")) {
-      NewStem = "store";
-      PostOps.push_back(0);
     }
 
     if (!Stem.endswith("_explicit")) {
