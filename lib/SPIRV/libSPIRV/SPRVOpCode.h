@@ -142,7 +142,7 @@ inline bool isModuleScopeAllowedOpCode(SPRVOpCode OpCode) {
 
 inline bool hasExecScope(SPRVOpCode OpCode) {
   unsigned OC = OpCode;
-  return (SPRVOC_OpGroupAll <= OC &&
+  return (SPRVOC_OpWaitGroupEvents <= OC &&
             OC <= SPRVOC_OpGroupSMax) ||
       (SPRVOC_OpGroupReserveReadPipePackets <= OC &&
           OC <= SPRVOC_OpGroupCommitWritePipe);

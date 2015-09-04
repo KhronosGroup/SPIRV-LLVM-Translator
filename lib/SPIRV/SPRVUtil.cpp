@@ -542,15 +542,18 @@ private:
 OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
   UnmangledName = UniqName;
   size_t Pos = std::string::npos;
-  if (UnmangledName.find("write_imageui") == 0)
+
+  if (UnmangledName.find("async_work_group") == 0) {
+    addUnsignedArg(-1);
+    setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("write_imageui") == 0)
       addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
-      UnmangledName.find("vstore") == 0 ||
-      UnmangledName.find("async_work_group") == 0 ||
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
+      UnmangledName == "mem_fence" ||
       UnmangledName.find("shuffle") == 0){
     addUnsignedArg(-1);
     if (UnmangledName.find("get_fence") == 0){
@@ -582,8 +585,10 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
     setArgAttr(2, SPIR::ATTR_CONST);
     addUnsignedArg(1);
   } else if (UnmangledName.find("vload") == 0) {
-    addUnsignedArg(-1);
+    addUnsignedArg(0);
     setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("vstore") == 0 ){
+    addUnsignedArg(1);
   } else if (UnmangledName.find("ndrange_") == 0) {
     addUnsignedArg(-1);
     if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {

@@ -722,7 +722,6 @@ LLVMToSPRV::transType(Type *T) {
                 transType(getOrCreateOpaquePtrType(M, ImgTyName)))));
       }
       else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
-        assert(AddrSpc == getOCLOpaqueTypeAddrSpace(OpCode));
         if (OpCode == SPRVOC_OpTypePipe) {
           return mapType(T, BM->addPipeType());
         }
@@ -1913,7 +1912,7 @@ LLVMToSPRV::transOCLAsyncGroupCopy(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName, SPRVBasicBlock *BB) {
   auto Args = getArguments(CI);
   if (DemangledName == "async_work_group_copy") {
-    Args.insert(Args.begin()+3, ConstantInt::getAllOnesValue(getSizetType()));
+    Args.insert(Args.begin()+3, ConstantInt::get(getSizetType(), 1));
   }
   auto BArgs = transValue(Args, BB);
   return BM->addAsyncGroupCopy(SPRVES_Workgroup, BArgs[0], BArgs[1], BArgs[2],

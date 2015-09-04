@@ -310,6 +310,7 @@ _SPRV_OP(work_item_fence, WorkItemFence)
 #define _SPRV_OP(x,y) add(#x, SPRVOC_Op##y);
 _SPRV_OP(dot, Dot)
 _SPRV_OP(async_work_group_copy, AsyncGroupCopy)
+_SPRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
 _SPRV_OP(wait_group_events, WaitGroupEvents)
 _SPRV_OP(isequal, FOrdEqual)
 _SPRV_OP(isnotequal, FUnordNotEqual)
