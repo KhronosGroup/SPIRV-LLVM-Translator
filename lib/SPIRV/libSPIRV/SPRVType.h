@@ -520,17 +520,17 @@ public:
 
   // Incomplete constructor
   SPRVTypeOpaqueGeneric(Op TheOpCode):SPRVType(TheOpCode),
-      Op(SPRVID_INVALID) {}
+      Opn(SPRVID_INVALID) {}
 
   SPRVValue *getOperand() {
-    return getValue(Op);
+    return getValue(Opn);
   }
 protected:
   _SPRV_DEF_ENCDEC1(Id)
   void validate()const {
     SPRVEntry::validate();
     }
-  SPRVId Op;
+  SPRVId Opn;
 };
 
 template<Op TheOpCode>
