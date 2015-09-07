@@ -52,7 +52,7 @@ class SPRVBasicBlock: public SPRVValue {
 public:
   SPRVBasicBlock(SPRVId TheId, SPRVFunction *Func);
 
-  SPRVBasicBlock():SPRVValue(SPRVOC_OpLabel), ParentF(NULL){
+  SPRVBasicBlock():SPRVValue(OpLabel), ParentF(NULL){
     setAttr();
   }
 

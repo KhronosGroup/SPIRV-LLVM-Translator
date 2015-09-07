@@ -51,13 +51,13 @@ class SPRVDecorationGroup;
 class SPRVDecorateGeneric:public SPRVAnnotationGeneric{
 public:
   // Complete constructor for decorations without literals
-  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, Decoration TheDec,
+  SPRVDecorateGeneric(Op OC, SPRVWord WC, Decoration TheDec,
       SPRVEntry *TheTarget);
   // Complete constructor for decorations with one word literal
-  SPRVDecorateGeneric(SPRVOpCode OC, SPRVWord WC, Decoration TheDec,
+  SPRVDecorateGeneric(Op OC, SPRVWord WC, Decoration TheDec,
       SPRVEntry *TheTarget, SPRVWord V);
   // Incomplete constructor
-  SPRVDecorateGeneric(SPRVOpCode OC);
+  SPRVDecorateGeneric(Op OC);
 
   SPRVWord getLiteral(size_t) const;
   Decoration getDecorateKind() const;
@@ -105,7 +105,7 @@ class SPRVDecorateSet: public std::multiset<const SPRVDecorateGeneric *,
 
 class SPRVDecorate:public SPRVDecorateGeneric{
 public:
-  static const SPRVOpCode OC = SPRVOC_OpDecorate;
+  static const Op OC = OpDecorate;
   static const SPRVWord FixedWC = 3;
   // Complete constructor for decorations without literals
   SPRVDecorate(Decoration TheDec, SPRVEntry *TheTarget)
@@ -122,7 +122,7 @@ public:
 
 class SPRVMemberDecorate:public SPRVDecorateGeneric{
 public:
-  static const SPRVOpCode OC = SPRVOC_OpMemberDecorate;
+  static const Op OC = OpMemberDecorate;
   static const SPRVWord FixedWC = 4;
   // Complete constructor for decorations without literals
   SPRVMemberDecorate(Decoration TheDec, SPRVWord Member, SPRVEntry *TheTarget)
@@ -147,7 +147,7 @@ protected:
 
 class SPRVDecorationGroup:public SPRVEntry{
 public:
-  static const SPRVOpCode OC = SPRVOC_OpDecorationGroup;
+  static const Op OC = OpDecorationGroup;
   static const SPRVWord WC = 2;
   // Complete constructor. Does not populate Decorations.
   SPRVDecorationGroup(SPRVModule *TheModule, SPRVId TheId)
@@ -182,14 +182,14 @@ class SPRVGroupDecorateGeneric:public SPRVEntryNoIdGeneric{
 public:
   static const SPRVWord FixedWC = 2;
   // Complete constructor
-  SPRVGroupDecorateGeneric(SPRVOpCode OC, SPRVDecorationGroup *TheGroup,
+  SPRVGroupDecorateGeneric(Op OC, SPRVDecorationGroup *TheGroup,
       const std::vector<SPRVId> &TheTargets)
     :SPRVEntryNoIdGeneric(TheGroup->getModule(), FixedWC + TheTargets.size(),
         OC),
      DecorationGroup(TheGroup), Targets(TheTargets){
   }
   // Incomplete constructor
-  SPRVGroupDecorateGeneric(SPRVOpCode OC)
+  SPRVGroupDecorateGeneric(Op OC)
     :SPRVEntryNoIdGeneric(OC), DecorationGroup(nullptr){}
 
   void setWordCount(SPRVWord WC) {
@@ -205,7 +205,7 @@ protected:
 
 class SPRVGroupDecorate:public SPRVGroupDecorateGeneric{
 public:
-  static const SPRVOpCode OC = SPRVOC_OpGroupDecorate;
+  static const Op OC = OpGroupDecorate;
   // Complete constructor
   SPRVGroupDecorate(SPRVDecorationGroup *TheGroup,
       const std::vector<SPRVId> &TheTargets)
@@ -219,7 +219,7 @@ public:
 
 class SPRVGroupMemberDecorate:public SPRVGroupDecorateGeneric{
 public:
-  static const SPRVOpCode OC = SPRVOC_OpGroupMemberDecorate;
+  static const Op OC = OpGroupMemberDecorate;
   // Complete constructor
   SPRVGroupMemberDecorate(SPRVDecorationGroup *TheGroup,
       const std::vector<SPRVId> &TheTargets)

@@ -56,34 +56,34 @@ namespace SPRV{
 class SPRVValue: public SPRVEntry {
 public:
   // Complete constructor for value with id and type
-  SPRVValue(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
+  SPRVValue(SPRVModule *M, unsigned TheWordCount, Op TheOpCode,
       SPRVType *TheType, SPRVId TheId)
     :SPRVEntry(M, TheWordCount, TheOpCode, TheId), Type(TheType) {
     validate();
   }
   // Complete constructor for value with type but without id
-  SPRVValue(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
+  SPRVValue(SPRVModule *M, unsigned TheWordCount, Op TheOpCode,
       SPRVType *TheType)
     :SPRVEntry(M, TheWordCount, TheOpCode), Type(TheType) {
     setHasNoId();
     validate();
   }
   // Complete constructor for value with id but without type
-  SPRVValue(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode,
+  SPRVValue(SPRVModule *M, unsigned TheWordCount, Op TheOpCode,
       SPRVId TheId)
     :SPRVEntry(M, TheWordCount, TheOpCode, TheId), Type(NULL) {
     setHasNoType();
     validate();
   }
   // Complete constructor for value without id and type
-  SPRVValue(SPRVModule *M, unsigned TheWordCount, SPRVOpCode TheOpCode)
+  SPRVValue(SPRVModule *M, unsigned TheWordCount, Op TheOpCode)
     :SPRVEntry(M, TheWordCount, TheOpCode), Type(NULL) {
     setHasNoId();
     setHasNoType();
     validate();
   }
   // Incomplete constructor
-  SPRVValue(SPRVOpCode TheOpCode):SPRVEntry(TheOpCode), Type(NULL) {}
+  SPRVValue(Op TheOpCode):SPRVEntry(TheOpCode), Type(NULL) {}
 
   bool hasType()const { return !(Attrib & SPRVEA_NOTYPE);}
   SPRVType *getType()const {
@@ -131,27 +131,27 @@ public:
   // Complete constructor for integer constant
   SPRVConstant(SPRVModule *M, SPRVType *TheType, SPRVId TheId,
       uint64_t TheValue)
-    :SPRVValue(M, 0, SPRVOC_OpConstant, TheType, TheId){
+    :SPRVValue(M, 0, OpConstant, TheType, TheId){
     Union.UInt64Val = TheValue;
     recalculateWordCount();
     validate();
   }
   // Complete constructor for float constant
   SPRVConstant(SPRVModule *M, SPRVType *TheType, SPRVId TheId, float TheValue)
-    :SPRVValue(M, 0, SPRVOC_OpConstant, TheType, TheId){
+    :SPRVValue(M, 0, OpConstant, TheType, TheId){
     Union.FloatVal = TheValue;
     recalculateWordCount();
     validate();
   }
   // Complete constructor for double constant
   SPRVConstant(SPRVModule *M, SPRVType *TheType, SPRVId TheId, double TheValue)
-    :SPRVValue(M, 0, SPRVOC_OpConstant, TheType, TheId){
+    :SPRVValue(M, 0, OpConstant, TheType, TheId){
     Union.DoubleVal = TheValue;
     recalculateWordCount();
     validate();
   }
   // Incomplete constructor
-  SPRVConstant():SPRVValue(SPRVOC_OpConstant), NumWords(0){}
+  SPRVConstant():SPRVValue(OpConstant), NumWords(0){}
   uint64_t getZExtIntValue() const { return Union.UInt64Val;}
   float getFloatValue() const { return Union.FloatVal;}
   double getDoubleValue() const { return Union.DoubleVal;}
@@ -193,7 +193,7 @@ protected:
   } Union;
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVConstantEmpty: public SPRVValue {
 public:
   // Complete constructor
@@ -210,7 +210,7 @@ protected:
   _SPRV_DEF_ENCDEC2(Type, Id)
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVConstantBool: public SPRVConstantEmpty<OC> {
 public:
   // Complete constructor
@@ -225,11 +225,11 @@ protected:
   }
 };
 
-typedef SPRVConstantBool<SPRVOC_OpConstantTrue> SPRVConstantTrue;
-typedef SPRVConstantBool<SPRVOC_OpConstantFalse> SPRVConstantFalse;
+typedef SPRVConstantBool<OpConstantTrue> SPRVConstantTrue;
+typedef SPRVConstantBool<OpConstantFalse> SPRVConstantFalse;
 
 class SPRVConstantNull:
-    public SPRVConstantEmpty<SPRVOC_OpConstantNull> {
+    public SPRVConstantEmpty<OpConstantNull> {
 public:
   // Complete constructor
   SPRVConstantNull(SPRVModule *M, SPRVType *TheType, SPRVId TheId)
@@ -252,7 +252,7 @@ protected:
 };
 
 class SPRVUndef:
-    public SPRVConstantEmpty<SPRVOC_OpUndef> {
+    public SPRVConstantEmpty<OpUndef> {
 public:
   // Complete constructor
   SPRVUndef(SPRVModule *M, SPRVType *TheType, SPRVId TheId)
@@ -272,13 +272,13 @@ public:
   // Complete constructor for composite constant
   SPRVConstantComposite(SPRVModule *M, SPRVType *TheType, SPRVId TheId,
       const std::vector<SPRVValue *> TheElements)
-    :SPRVValue(M, TheElements.size()+3, SPRVOC_OpConstantComposite, TheType,
+    :SPRVValue(M, TheElements.size()+3, OpConstantComposite, TheType,
         TheId){
     Elements = getIds(TheElements);
     validate();
   }
   // Incomplete constructor
-  SPRVConstantComposite():SPRVValue(SPRVOC_OpConstantComposite){}
+  SPRVConstantComposite():SPRVValue(OpConstantComposite){}
   std::vector<SPRVValue*> getElements()const {
     return getValues(Elements);
   }
@@ -298,7 +298,7 @@ protected:
 
 class SPRVConstantSampler: public SPRVValue {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpConstantSampler;
+  const static Op OC = OpConstantSampler;
   const static SPRVWord WC = 6;
   // Complete constructor
   SPRVConstantSampler(SPRVModule *M, SPRVType *TheType, SPRVId TheId,
@@ -340,7 +340,7 @@ protected:
 
 class SPRVForward:public SPRVValue, public SPRVComponentExecutionModes {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpForward;
+  const static Op OC = OpForward;
   // Complete constructor
   SPRVForward(SPRVModule *TheModule, SPRVId TheId):
     SPRVValue(TheModule, 0, OC, TheId){}

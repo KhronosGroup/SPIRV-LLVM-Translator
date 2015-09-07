@@ -654,26 +654,26 @@ SPRVToLLVM::transType(SPRVType *T) {
   SPRVDBG(bildbgs() << "[transType] " << *T << " -> ";)
   T->validate();
   switch(T->getOpCode()) {
-  case SPRVOC_OpTypeVoid:
+  case OpTypeVoid:
     return mapType(T, Type::getVoidTy(*Context));
-  case SPRVOC_OpTypeBool:
+  case OpTypeBool:
     return mapType(T, Type::getInt1Ty(*Context));
-  case SPRVOC_OpTypeInt:
+  case OpTypeInt:
     return mapType(T, Type::getIntNTy(*Context, T->getIntegerBitWidth()));
-  case SPRVOC_OpTypeFloat:
+  case OpTypeFloat:
     return mapType(T, transFPType(T));
-  case SPRVOC_OpTypeArray:
+  case OpTypeArray:
     return mapType(T, ArrayType::get(transType(T->getArrayElementType()),
         T->getArrayLength()));
-  case SPRVOC_OpTypePointer:
+  case OpTypePointer:
     return mapType(T, PointerType::get(transType(T->getPointerElementType()),
         SPIRSPRVAddrSpaceMap::rmap(T->getPointerStorageClass())));
-  case SPRVOC_OpTypeVector:
+  case OpTypeVector:
     return mapType(T, VectorType::get(transType(T->getVectorComponentType()),
         T->getVectorComponentCount()));
-  case SPRVOC_OpTypeOpaque:
+  case OpTypeOpaque:
     return mapType(T, StructType::create(*Context, T->getName()));
-  case SPRVOC_OpTypeFunction: {
+  case OpTypeFunction: {
     auto FT = static_cast<SPRVTypeFunction *>(T);
     auto RT = transType(FT->getReturnType());
     std::vector<Type *> PT;
@@ -681,7 +681,7 @@ SPRVToLLVM::transType(SPRVType *T) {
       PT.push_back(transType(FT->getParameterType(I)));
     return mapType(T, FunctionType::get(RT, PT, false));
     }
-  case SPRVOC_OpTypeImage: {
+  case OpTypeImage: {
     auto ST = static_cast<SPRVTypeImage *>(T);
     if (ST->isOCLImage())
       return mapType(T, getOrCreateOpaquePtrType(M,
@@ -690,14 +690,14 @@ SPRVToLLVM::transType(SPRVType *T) {
       llvm_unreachable("Unsupported image type");
     return nullptr;
   }
-  case SPRVOC_OpTypeSampler:
+  case OpTypeSampler:
     return mapType(T, Type::getInt32Ty(*Context));
-  case SPRVOC_OpTypeSampledImage: {
+  case OpTypeSampledImage: {
     auto ST = static_cast<SPRVTypeSampledImage *>(T);
     return mapType(T, getOrCreateOpaquePtrType(M,
         transOCLSampledImageTypeName(ST)));
   }
-  case SPRVOC_OpTypeStruct: {
+  case OpTypeStruct: {
     auto ST = static_cast<SPRVTypeStruct *>(T);
     std::vector<Type *> MT;
     for (size_t I = 0, E = ST->getMemberCount(); I != E; ++I)
@@ -705,7 +705,7 @@ SPRVToLLVM::transType(SPRVType *T) {
     return mapType(T, StructType::create(*Context, MT, ST->getName(),
       ST->isPacked()));
     } 
-  case SPRVOC_OpTypePipe: {
+  case OpTypePipe: {
     auto PT = static_cast<SPRVTypePipe *>(T);
     return mapType(T, getOrCreateOpaquePtrType(M, transOCLPipeTypeName(PT)));
     }
@@ -726,11 +726,11 @@ SPRVToLLVM::transType(SPRVType *T) {
 std::string
 SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
   switch(T->getOpCode()) {
-  case SPRVOC_OpTypeVoid:
+  case OpTypeVoid:
     return "void";
-  case SPRVOC_OpTypeBool:
+  case OpTypeBool:
     return "bool";
-  case SPRVOC_OpTypeInt: {
+  case OpTypeInt: {
     std::string Prefix = IsSigned ? "" : "u";
     switch(T->getIntegerBitWidth()) {
     case 8:
@@ -747,7 +747,7 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
     }
   }
   break;
-  case SPRVOC_OpTypeFloat:
+  case OpTypeFloat:
     switch(T->getFloatBitWidth()){
     case 16:
       return "half";
@@ -760,19 +760,19 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
       return std::string("float") + T->getFloatBitWidth() + "_t";
     }
     break;
-  case SPRVOC_OpTypeArray:
+  case OpTypeArray:
     return "array";
-  case SPRVOC_OpTypePointer:
+  case OpTypePointer:
     return transTypeToOCLTypeName(T->getPointerElementType()) + "*";
-  case SPRVOC_OpTypeVector:
+  case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
         T->getVectorComponentCount();
-  case SPRVOC_OpTypeOpaque:
+  case OpTypeOpaque:
       return T->getName();
-  case SPRVOC_OpTypeFunction:
+  case OpTypeFunction:
     llvm_unreachable("Unsupported");
     return "function";
-  case SPRVOC_OpTypeStruct: {
+  case OpTypeStruct: {
     auto Name = T->getName();
     if (Name.find("struct.") == 0)
       Name[6] = ' ';
@@ -780,11 +780,11 @@ SPRVToLLVM::transTypeToOCLTypeName(SPRVType *T, bool IsSigned) {
       Name[5] = ' ';
     return Name;
   }
-  case SPRVOC_OpTypePipe:
+  case OpTypePipe:
     return "pipe";
-  case SPRVOC_OpTypeSampler:
+  case OpTypeSampler:
     return "sampler_t";
-  case SPRVOC_OpTypeImage:
+  case OpTypeImage:
     return rmap<std::string>(static_cast<SPRVTypeImage *>(T)->getDescriptor());
   default:
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
@@ -816,7 +816,7 @@ bool
 SPRVToLLVM::isSPRVCmpInstTransToLLVMInst(SPRVInstruction* BI) const {
   auto OC = BI->getOpCode();
   return isCmpOpCode(OC) &&
-      !(OC >= SPRVOC_OpLessOrGreater && OC <= SPRVOC_OpUnordered);
+      !(OC >= OpLessOrGreater && OC <= OpUnordered);
 }
 
 void
@@ -866,17 +866,17 @@ SPRVToLLVM::transConvertInst(SPRVValue* BV, Function* F, BasicBlock* BB) {
   bool IsExt = Dst->getScalarSizeInBits()
       > Src->getType()->getScalarSizeInBits();
   switch (BC->getOpCode()) {
-  case SPRVOC_OpPtrCastToGeneric:
-  case SPRVOC_OpGenericCastToPtr:
+  case OpPtrCastToGeneric:
+  case OpGenericCastToPtr:
     CO = Instruction::AddrSpaceCast;
     break;
-  case SPRVOC_OpSConvert:
+  case OpSConvert:
     CO = IsExt ? Instruction::SExt : Instruction::Trunc;
     break;
-  case SPRVOC_OpUConvert:
+  case OpUConvert:
     CO = IsExt ? Instruction::ZExt : Instruction::Trunc;
     break;
-  case SPRVOC_OpFConvert:
+  case OpFConvert:
     CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
     break;
   default:
@@ -1046,10 +1046,10 @@ SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   auto OC = BI->getOpCode();
   return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    if (!(OC == SPRVOC_OpReadPipe ||
-          OC == SPRVOC_OpWritePipe ||
-          OC == SPRVOC_OpReservedReadPipe ||
-          OC == SPRVOC_OpReservedWritePipe))
+    if (!(OC == OpReadPipe ||
+          OC == OpWritePipe ||
+          OC == OpReservedReadPipe ||
+          OC == OpReservedWritePipe))
       return FuncName;
 
     auto &P = Args[Args.size() - 3];
@@ -1096,7 +1096,7 @@ SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    if (BI->getOpCode() == SPRVOC_OpImageQuerySizeLod)
+    if (BI->getOpCode() == OpImageQuerySizeLod)
       Args.pop_back();
     return kOCLBuiltinName::GetImageDim;
   }, true, &Attrs);
@@ -1130,16 +1130,16 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
 
   // Translation of non-instruction values
   switch(OC) {
-  case SPRVOC_OpConstant: {
+  case OpConstant: {
     SPRVConstant *BConst = static_cast<SPRVConstant *>(BV);
     SPRVType *BT = BV->getType();
     Type *LT = transType(BT);
     switch(BT->getOpCode()) {
-    case SPRVOC_OpTypeBool:
-    case SPRVOC_OpTypeInt:
+    case OpTypeBool:
+    case OpTypeInt:
       return mapValue(BV, ConstantInt::get(LT, BConst->getZExtIntValue(),
           static_cast<SPRVTypeInt*>(BT)->isSigned()));
-    case SPRVOC_OpTypeFloat: {
+    case OpTypeFloat: {
       const llvm::fltSemantics *FS = nullptr;
       switch (BT->getFloatBitWidth()) {
       case 16:
@@ -1164,31 +1164,31 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   }
   break;
 
-  case SPRVOC_OpConstantTrue:
+  case OpConstantTrue:
     return mapValue(BV, ConstantInt::getTrue(*Context));
 
-  case SPRVOC_OpConstantFalse:
+  case OpConstantFalse:
     return mapValue(BV, ConstantInt::getFalse(*Context));
 
-  case SPRVOC_OpConstantNull: {
+  case OpConstantNull: {
     auto LT = transType(BV->getType());
     if (auto PT = dyn_cast<PointerType>(LT))
       return mapValue(BV, ConstantPointerNull::get(PT));
     return mapValue(BV, ConstantAggregateZero::get(LT));
   }
 
-  case SPRVOC_OpConstantComposite: {
+  case OpConstantComposite: {
     auto BCC = static_cast<SPRVConstantComposite*>(BV);
     std::vector<Constant *> CV;
     for (auto &I:BCC->getElements())
       CV.push_back(dyn_cast<Constant>(transValue(I, F, BB)));
     switch(BV->getType()->getOpCode()) {
-    case SPRVOC_OpTypeVector:
+    case OpTypeVector:
       return mapValue(BV, ConstantVector::get(CV));
-    case SPRVOC_OpTypeArray:
+    case OpTypeArray:
       return mapValue(BV, ConstantArray::get(
           dyn_cast<ArrayType>(transType(BCC->getType())), CV));
-    case SPRVOC_OpTypeStruct:
+    case OpTypeStruct:
       return mapValue(BV, ConstantStruct::get(
           dyn_cast<StructType>(transType(BCC->getType())), CV));
     default:
@@ -1198,21 +1198,21 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   }
   break;
 
-  case SPRVOC_OpConstantSampler: {
+  case OpConstantSampler: {
     auto BCS = static_cast<SPRVConstantSampler*>(BV);
     return mapValue(BV, oclTransConstantSampler(BCS));
   }
 
-  case SPRVOC_OpSpecConstantOp: {
+  case OpSpecConstantOp: {
     auto BI = createInstFromSpecConstantOp(
         static_cast<SPRVSpecConstantOp*>(BV));
     return mapValue(BV, transValue(BI, nullptr, nullptr, false));
   }
 
-  case SPRVOC_OpUndef:
+  case OpUndef:
     return mapValue(BV, UndefValue::get(transType(BV->getType())));
 
-  case SPRVOC_OpVariable: {
+  case OpVariable: {
     auto BVar = static_cast<SPRVVariable *>(BV);
     auto Initializer = BVar->getInitializer();
     SPRVStorageClassKind BS = BVar->getStorageClass();
@@ -1238,7 +1238,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   }
   break;
 
-  case SPRVOC_OpFunctionParameter: {
+  case OpFunctionParameter: {
     auto BA = static_cast<SPRVFunctionParameter*>(BV);
     assert (F && "Invalid function");
     unsigned ArgNo = 0;
@@ -1252,10 +1252,10 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
   }
   break;
 
-  case SPRVOC_OpFunction:
+  case OpFunction:
     return mapValue(BV, transFunction(static_cast<SPRVFunction *>(BV)));
 
-  case SPRVOC_OpLabel:
+  case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
     break;
   default:
@@ -1279,7 +1279,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
 
   // Translation of instructions
   switch (BV->getOpCode()) {
-  case SPRVOC_OpBranch: {
+  case OpBranch: {
     auto BR = static_cast<SPRVBranch *>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, BranchInst::Create(
@@ -1287,7 +1287,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpBranchConditional: {
+  case OpBranchConditional: {
     auto BR = static_cast<SPRVBranchConditional *>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, BranchInst::Create(
@@ -1298,7 +1298,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpPhi: {
+  case OpPhi: {
     auto Phi = static_cast<SPRVPhi *>(BV);
     assert(BB && "Invalid BB");
     auto LPhi = dyn_cast<PHINode>(mapValue(BV, PHINode::Create(
@@ -1316,19 +1316,19 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpReturn:
+  case OpReturn:
     assert(BB && "Invalid BB");
     return mapValue(BV, ReturnInst::Create(*Context, BB));
     break;
 
-  case SPRVOC_OpReturnValue: {
+  case OpReturnValue: {
     auto RV = static_cast<SPRVReturnValue *>(BV);
     return mapValue(BV, ReturnInst::Create(*Context,
       transValue(RV->getReturnValue(), F, BB), BB));
     }
     break;
 
-  case SPRVOC_OpStore: {
+  case OpStore: {
     SPRVStore *BS = static_cast<SPRVStore*>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, new StoreInst(
@@ -1340,7 +1340,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpLoad: {
+  case OpLoad: {
     SPRVLoad *BL = static_cast<SPRVLoad*>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, new LoadInst(
@@ -1352,7 +1352,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpCopyMemorySized: {
+  case OpCopyMemorySized: {
     SPRVCopyMemorySized *BC = static_cast<SPRVCopyMemorySized *>(BV);
     assert(BB && "Invalid BB");
     std::string FuncName = "llvm.memcpy";
@@ -1394,7 +1394,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     return mapValue( BV, CallInst::Create(Func, Arg, "", BB));
   }
   break;
-  case SPRVOC_OpSelect: {
+  case OpSelect: {
     SPRVSelect *BS = static_cast<SPRVSelect*>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, SelectInst::Create(
@@ -1405,7 +1405,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpSwitch: {
+  case OpSwitch: {
     auto BS = static_cast<SPRVSwitch *>(BV);
     assert(BB && "Invalid BB");
     auto Select = transValue(BS->getSelect(), F, BB);
@@ -1420,10 +1420,10 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpAccessChain:
-  case SPRVOC_OpInBoundsAccessChain:
-  case SPRVOC_OpPtrAccessChain:
-  case SPRVOC_OpInBoundsPtrAccessChain: {
+  case OpAccessChain:
+  case OpInBoundsAccessChain:
+  case OpPtrAccessChain:
+  case OpInBoundsPtrAccessChain: {
     auto AC = static_cast<SPRVAccessChainBase *>(BV);
     auto Base = transValue(AC->getBase(), F, BB);
     auto Index = transValue(AC->getIndices(), F, BB);
@@ -1443,7 +1443,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpCompositeExtract: {
+  case OpCompositeExtract: {
     SPRVCompositeExtract *CE = static_cast<SPRVCompositeExtract *>(BV);
     assert(BB && "Invalid BB");
     assert(CE->getComposite()->getType()->isTypeVector() && "Invalid type");
@@ -1455,7 +1455,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpVectorExtractDynamic: {
+  case OpVectorExtractDynamic: {
     auto CE = static_cast<SPRVVectorExtractDynamic *>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, ExtractElementInst::Create(
@@ -1465,7 +1465,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpCompositeInsert: {
+  case OpCompositeInsert: {
     auto CI = static_cast<SPRVCompositeInsert *>(BV);
     assert(BB && "Invalid BB");
     assert(CI->getComposite()->getType()->isTypeVector() && "Invalid type");
@@ -1478,7 +1478,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpVectorInsertDynamic: {
+  case OpVectorInsertDynamic: {
     auto CI = static_cast<SPRVVectorInsertDynamic *>(BV);
     assert(BB && "Invalid BB");
     return mapValue(BV, InsertElementInst::Create(
@@ -1489,7 +1489,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpVectorShuffle: {
+  case OpVectorShuffle: {
     auto VS = static_cast<SPRVVectorShuffle *>(BV);
     assert(BB && "Invalid BB");
     std::vector<Constant *> Components;
@@ -1508,7 +1508,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpFunctionCall: {
+  case OpFunctionCall: {
     SPRVFunctionCall *BC = static_cast<SPRVFunctionCall *>(BV);
     assert(BB && "Invalid BB");
     auto Call = CallInst::Create(
@@ -1522,24 +1522,24 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpExtInst:
+  case OpExtInst:
     return mapValue(BV, transOCLBuiltinFromExtInst(
       static_cast<SPRVExtInst *>(BV), BB));
     break;
 
-  case SPRVOC_OpControlBarrier:
-  case SPRVOC_OpMemoryBarrier:
+  case OpControlBarrier:
+  case OpMemoryBarrier:
     return mapValue(BV, transOCLBarrierFence(
         static_cast<SPRVInstruction *>(BV), BB));
 
-  case SPRVOC_OpSNegate: {
+  case OpSNegate: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateNSWNeg(
       transValue(BC->getOperand(0), F, BB),
       BV->getName(), BB));
     }
 
-  case SPRVOC_OpFNegate: {
+  case OpFNegate: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateFNeg(
       transValue(BC->getOperand(0), F, BB),
@@ -1547,7 +1547,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  case SPRVOC_OpNot: {
+  case OpNot: {
     SPRVUnary *BC = static_cast<SPRVUnary*>(BV);
     return mapValue(BV, BinaryOperator::CreateNot(
       transValue(BC->getOperand(0), F, BB),
@@ -1669,12 +1669,13 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
     else if (BT->isTypeVectorBool())
-      RetTy = VectorType::get(IntegerType::getInt32Ty(*Context),
+      RetTy = VectorType::get(IntegerType::get(*Context,
+          Args[0]->getType()->getVectorComponentType()->isTypeFloat(64)?64:32),
           BT->getVectorComponentCount());
     else
        llvm_unreachable("invalid compare instruction");
-  } else if (OC == SPRVOC_OpAtomicIIncrement ||
-             OC == SPRVOC_OpAtomicIDecrement) {
+  } else if (OC == OpAtomicIIncrement ||
+             OC == OpAtomicIDecrement) {
     Args.erase(Args.begin() + Args.size() - 2, Args.end());
   }
 }
@@ -1690,10 +1691,10 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
   }
   if (DemangledName.find("pipe") != std::string::npos)
     return postProcessOCLPipe(BI, CI, DemangledName);
-  if (OC == SPRVOC_OpImageSampleExplicitLod)
+  if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
-  if (OC == SPRVOC_OpImageQuerySizeLod ||
-      OC == SPRVOC_OpImageQuerySize)
+  if (OC == OpImageQuerySizeLod ||
+      OC == OpImageQuerySize)
     return postProcessOCLGetImageSize(BI, CI, DemangledName);
   return CI;
 }
@@ -1744,11 +1745,11 @@ SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
 std::string
 SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
   auto OC = BI->getOpCode();
-  if (OC == SPRVOC_OpGenericCastToPtr)
+  if (OC == OpGenericCastToPtr)
     return getOCLGenericCastToPtrName(BI);
   if (isCvtOpCode(OC))
     return getOCLConvertBuiltinName(BI);
-  if (OC == SPRVOC_OpBuildNDRange) {
+  if (OC == OpBuildNDRange) {
     auto NDRangeInst = static_cast<SPRVBuildNDRange *>(BI);
     auto EleTy = ((NDRangeInst->getOperands())[0])->getType();
     int Dim = EleTy->isTypeArray() ? EleTy->getArrayLength() : 1;
@@ -1760,11 +1761,11 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
     return std::string(kOCLBuiltinName::NDRangePrefix) + OS.str() + "D";
   }
   switch(OC) {
-  case SPRVOC_OpReservedReadPipe:
-    OC = SPRVOC_OpReadPipe;
+  case OpReservedReadPipe:
+    OC = OpReadPipe;
     break;
-  case SPRVOC_OpReservedWritePipe:
-    OC = SPRVOC_OpWritePipe;
+  case OpReservedWritePipe:
+    OC = OpWritePipe;
     break;
   default:
     // Do nothing.
@@ -1775,10 +1776,10 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
 
   SPRVType *T = nullptr;
   switch(OC) {
-  case SPRVOC_OpImageRead:
+  case OpImageRead:
     T = BI->getType();
     break;
-  case SPRVOC_OpImageWrite:
+  case OpImageWrite:
     T = BI->getOperands()[2]->getType();
     break;
   default:
@@ -2144,11 +2145,11 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
   assert(BB && "Invalid BB");
   std::string FuncName;
   SPRVWord MemSema = 0;
-  if (MB->getOpCode() == SPRVOC_OpMemoryBarrier) {
+  if (MB->getOpCode() == OpMemoryBarrier) {
     auto MemB = static_cast<SPRVMemoryBarrier*>(MB);
     FuncName = "mem_fence";
-    MemSema = MemB->getMemSemantic();
-  } else if (MB->getOpCode() == SPRVOC_OpControlBarrier) {
+    MemSema = MemB->getOpWord(1);
+  } else if (MB->getOpCode() == OpControlBarrier) {
     auto CtlB = static_cast<SPRVControlBarrier*>(MB);
     SPRVWord Ver = 1;
     BM->getSourceLanguage(&Ver);

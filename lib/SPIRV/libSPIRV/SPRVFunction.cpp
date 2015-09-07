@@ -48,7 +48,7 @@ using namespace SPRV;
 
 SPRVFunctionParameter::SPRVFunctionParameter(SPRVType *TheType, SPRVId TheId,
     SPRVFunction *TheParent, unsigned TheArgNo):
-        SPRVValue(TheParent->getModule(), 3, SPRVOC_OpFunctionParameter,
+        SPRVValue(TheParent->getModule(), 3, OpFunctionParameter,
         TheType, TheId),
     ParentFunc(TheParent),
     ArgNo(TheArgNo){
@@ -102,11 +102,11 @@ SPRVFunction::decode(std::istream &I) {
 
   Decoder.getWordCountAndOpCode();
   while (!I.eof()) {
-    if (Decoder.OpCode == SPRVOC_OpFunctionEnd)
+    if (Decoder.OpCode == OpFunctionEnd)
       break;
 
     switch(Decoder.OpCode) {
-    case SPRVOC_OpFunctionParameter: {
+    case OpFunctionParameter: {
       auto Param = static_cast<SPRVFunctionParameter *>(Decoder.getEntry());
       Param->setParent(this);
       Parameters.push_back(Param);
@@ -114,7 +114,7 @@ SPRVFunction::decode(std::istream &I) {
       continue;
       break;
     }
-    case SPRVOC_OpLabel: {
+    case OpLabel: {
       decodeBB(Decoder);
       break;
     }
@@ -134,13 +134,13 @@ SPRVFunction::decodeBB(SPRVDecoder &Decoder) {
 
   Decoder.setScope(BB);
   while(Decoder.getWordCountAndOpCode()) {
-    if (Decoder.OpCode == SPRVOC_OpFunctionEnd ||
-        Decoder.OpCode == SPRVOC_OpLabel) {
+    if (Decoder.OpCode == OpFunctionEnd ||
+        Decoder.OpCode == OpLabel) {
       break;
     }
 
-    if (Decoder.OpCode == SPRVOC_OpName ||
-        Decoder.OpCode == SPRVOC_OpDecorate) {
+    if (Decoder.OpCode == OpName ||
+        Decoder.OpCode == OpDecorate) {
       Decoder.getEntry();
       continue;
     }

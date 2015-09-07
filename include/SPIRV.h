@@ -59,6 +59,10 @@ void MangleOpenCLBuiltin(const std::string &UnmangledName,
 } // namespace llvm
 
 namespace SPRV {
+/// \brief Check if a string contains SPIR-V binary.
+bool IsSPRVBinary(std::string &Img);
+
+#ifdef _SPRV_SUPPORT_TEXT_FMT
 /// \brief Convert SPIR-V between binary and internal textual formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
@@ -72,11 +76,10 @@ bool ConvertSPRV(std::istream &IS, std::ostream &OS,
 bool ConvertSPRV(std::string &Input, std::string &Out,
     std::string &ErrMsg, bool ToText);
 
-/// \brief Check if a string contains SPIR-V binary.
-bool IsSPRVBinary(std::string &Img);
-
 /// \brief Check if a string contains SPIR-V in internal text format.
 bool IsSPRVText(std::string &Img);
+#endif
+
 } // End namespace SPIRV
 
 #endif

@@ -69,7 +69,11 @@ public:
   /// However in atomic_compare_exchange it is a pointer. The transformation
   /// adds an alloca instruction, store the expected value in the pointer, and
   /// pass the pointer as argument.
-  void visitCallAtomic(CallInst *CI, const std::string &DemangledName);
+  void visitCallAtomicCmpXchg(CallInst *CI, const std::string &DemangledName);
+
+  /// Transform atomic_init.
+  /// atomic_init(p, x) => store p, x
+  void visitCallAtomicInit(CallInst *CI);
 
   /// Transform read_image with sampler arguments.
   /// read_image(image, sampler, ...) =>
@@ -135,7 +139,11 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   }
   if (DemangledName == "atom_cmpxchg" ||
       DemangledName == "atomic_cmpxchg") {
-    visitCallAtomic(&CI, DemangledName);
+    visitCallAtomicCmpXchg(&CI, DemangledName);
+    return;
+  }
+  if (DemangledName == "atomic_init") {
+    visitCallAtomicInit(&CI);
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
@@ -193,7 +201,7 @@ SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomic(CallInst* CI,
+SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -204,6 +212,14 @@ SPRVRegularizeOCL20::visitCallAtomic(CallInst* CI,
     CmpVal = Alloca;
     return "atomic_compare_exchange_strong";
   }, true, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallAtomicInit(CallInst* CI) {
+  auto ST = new StoreInst(CI->getArgOperand(1), CI->getArgOperand(0), CI);
+  ST->takeName(CI);
+  CI->dropAllReferences();
+  CI->eraseFromParent();
 }
 
 void

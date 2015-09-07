@@ -61,7 +61,7 @@ typedef std::pair<ValueVec::iterator, ValueVec::iterator> ValueRange;
 class SPRVBasicBlock;
 class SPRVFunction;
 
-bool isSpecConstantOpAllowedOp(SPRVOpCode OC);
+bool isSpecConstantOpAllowedOp(Op OC);
 
 class SPRVComponentExecutionScope {
 public:
@@ -100,23 +100,23 @@ protected:
 class SPRVInstruction: public SPRVValue {
 public:
   // Complete constructor for instruction with type and id
-  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC, SPRVType *TheType,
+  SPRVInstruction(unsigned TheWordCount, Op TheOC, SPRVType *TheType,
       SPRVId TheId, SPRVBasicBlock *TheBB);
   // Complete constructor for instruction with module, type and id
-  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+  SPRVInstruction(unsigned TheWordCount, Op TheOC,
       SPRVType *TheType, SPRVId TheId, SPRVBasicBlock *TheBB,
       SPRVModule *TheBM);
   // Complete constructor for instruction with id but no type
-  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC, SPRVId TheId,
+  SPRVInstruction(unsigned TheWordCount, Op TheOC, SPRVId TheId,
       SPRVBasicBlock *TheBB);
   // Complete constructor for instruction without type and id
-  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC,
+  SPRVInstruction(unsigned TheWordCount, Op TheOC,
       SPRVBasicBlock *TheBB);
   // Complete constructor for instruction with type but no id
-  SPRVInstruction(unsigned TheWordCount, SPRVOpCode TheOC, SPRVType *TheType,
+  SPRVInstruction(unsigned TheWordCount, Op TheOC, SPRVType *TheType,
       SPRVBasicBlock *TheBB);
   // Incomplete constructor
-  SPRVInstruction(SPRVOpCode TheOC = SPRVOC_OpNop):SPRVValue(TheOC), BB(NULL){}
+  SPRVInstruction(Op TheOC = OpNop):SPRVValue(TheOC), BB(NULL){}
 
   virtual bool isInst() const { return true;}
   SPRVBasicBlock *getParent() const {return BB;}
@@ -150,8 +150,8 @@ public:
   }
   bool isSaturatedConversion() {
     return hasDecorate(DecorationSaturatedConversion) ||
-        OpCode == SPRVOC_OpSatConvertSToU ||
-        OpCode == SPRVOC_OpSatConvertUToS;
+        OpCode == OpSatConvertSToU ||
+        OpCode == OpSatConvertUToS;
   }
 
   SPRVBasicBlock* getBasicBlock() const {
@@ -175,7 +175,7 @@ private:
 class SPRVInstTemplateBase:public SPRVInstruction {
 public:
   // Instruction with Id
-  static SPRVInstTemplateBase *create(SPRVOpCode TheOC, SPRVType *TheType,
+  static SPRVInstTemplateBase *create(Op TheOC, SPRVType *TheType,
       SPRVId TheId, const std::vector<SPRVWord> &TheOps, SPRVBasicBlock *TheBB,
       SPRVModule *TheModule){
     auto Inst = static_cast<SPRVInstTemplateBase *>(SPRVEntry::create(TheOC));
@@ -192,13 +192,13 @@ public:
     Inst->validate();
     return Inst;
   }
-  SPRVInstTemplateBase(SPRVOpCode OC = SPRVOC_OpNop)
+  SPRVInstTemplateBase(Op OC = OpNop)
     :SPRVInstruction(OC), HasVariWC(false){
     init();
   }
   virtual ~SPRVInstTemplateBase(){}
   virtual void init() {}
-  virtual void initImpl(SPRVOpCode OC, bool HasId = true, SPRVWord WC = 0,
+  virtual void initImpl(Op OC, bool HasId = true, SPRVWord WC = 0,
       bool VariWC = false){
     OpCode = OC;
     if (!HasId) {
@@ -335,7 +335,7 @@ protected:
 };
 
 template<typename BT        = SPRVInstTemplateBase,
-         SPRVOpCode OC      = SPRVOC_OpNop,
+         Op OC      = OpNop,
          bool HasId         = true,
          SPRVWord WC        = 0,
          bool HasVariableWC = false>
@@ -385,7 +385,7 @@ public:
     SPRVValue *TheInitializer, const std::string &TheName,
     SPRVStorageClassKind TheStorageClass, SPRVBasicBlock *TheBB,
     SPRVModule *TheM)
-    :SPRVInstruction(TheInitializer ? 5 : 4, SPRVOC_OpVariable, TheType,
+    :SPRVInstruction(TheInitializer ? 5 : 4, OpVariable, TheType,
         TheId, TheBB, TheM),
     StorageClass(TheStorageClass){
     if (TheInitializer)
@@ -394,7 +394,7 @@ public:
     validate();
   }
   // Incomplete constructor
-  SPRVVariable() :SPRVInstruction(SPRVOC_OpVariable),
+  SPRVVariable() :SPRVInstruction(OpVariable),
       StorageClass(SPRVSC_Count){}
 
   SPRVStorageClassKind getStorageClass() const { return StorageClass; }
@@ -448,7 +448,7 @@ public:
   // Complete constructor
   SPRVStore(SPRVId PointerId, SPRVId ValueId,
       const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(FixedWords + TheMemoryAccess.size(), SPRVOC_OpStore,
+    :SPRVInstruction(FixedWords + TheMemoryAccess.size(), OpStore,
         TheBB),
      SPRVMemoryAccess(TheMemoryAccess),
      MemoryAccess(TheMemoryAccess),
@@ -459,7 +459,7 @@ public:
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPRVStore():SPRVInstruction(SPRVOC_OpStore), SPRVMemoryAccess(),
+  SPRVStore():SPRVInstruction(OpStore), SPRVMemoryAccess(),
       PtrId(SPRVID_INVALID), ValId(SPRVID_INVALID){
     setAttr();
   }
@@ -504,7 +504,7 @@ public:
   // Complete constructor
   SPRVLoad(SPRVId TheId, SPRVId PointerId,
       const std::vector<SPRVWord> &TheMemoryAccess, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(FixedWords + TheMemoryAccess.size() , SPRVOC_OpLoad,
+    :SPRVInstruction(FixedWords + TheMemoryAccess.size() , OpLoad,
         TheBB->getValueType(PointerId)->getPointerElementType(), TheId, TheBB),
         SPRVMemoryAccess(TheMemoryAccess), PtrId(PointerId),
         MemoryAccess(TheMemoryAccess) {
@@ -512,7 +512,7 @@ public:
       assert(TheBB && "Invalid BB");
     }
   // Incomplete constructor
-  SPRVLoad():SPRVInstruction(SPRVOC_OpLoad), SPRVMemoryAccess(),
+  SPRVLoad():SPRVInstruction(OpLoad), SPRVMemoryAccess(),
       PtrId(SPRVID_INVALID){}
 
   SPRVValue *getSrc() const { return Module->get<SPRVValue>(PtrId);}
@@ -588,12 +588,12 @@ protected:
   }
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVBinaryInst:public SPRVInstTemplate<SPRVBinary, OC, true, 5, false> {
 };
 
 /* ToDo: SMod and FMod to be added */
-#define _SPRV_OP(x) typedef SPRVBinaryInst<SPRVOC_Op##x> SPRV##x;
+#define _SPRV_OP(x) typedef SPRVBinaryInst<Op##x> SPRV##x;
 _SPRV_OP(IAdd)
 _SPRV_OP(FAdd)
 _SPRV_OP(ISub)
@@ -619,7 +619,7 @@ _SPRV_OP(BitwiseXor)
 _SPRV_OP(Dot)
 #undef _SPRV_OP
 
-template<SPRVOpCode TheOpCode>
+template<Op TheOpCode>
 class SPRVInstNoOperand:public SPRVInstruction {
 public:
   // Complete constructor
@@ -640,11 +640,11 @@ protected:
   _SPRV_DEF_ENCDEC0
 };
 
-typedef SPRVInstNoOperand<SPRVOC_OpReturn> SPRVReturn;
+typedef SPRVInstNoOperand<OpReturn> SPRVReturn;
 
 class SPRVReturnValue:public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpReturnValue;
+  static const Op OC = OpReturnValue;
   // Complete constructor
   SPRVReturnValue(SPRVValue *TheReturnValue, SPRVBasicBlock *TheBB)
     :SPRVInstruction(2, OC, TheBB), ReturnValueId(TheReturnValue->getId()){
@@ -674,7 +674,7 @@ protected:
 
 class SPRVBranch:public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpBranch;
+  static const Op OC = OpBranch;
   // Complete constructor
   SPRVBranch(SPRVLabel *TheTargetLabel,SPRVBasicBlock *TheBB)
     :SPRVInstruction(2, OC, TheBB), TargetLabelId(TheTargetLabel->getId()) {
@@ -702,7 +702,7 @@ protected:
 
 class SPRVBranchConditional:public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpBranchConditional;
+  static const Op OC = OpBranchConditional;
   // Complete constructor
   SPRVBranchConditional(SPRVValue *TheCondition, SPRVLabel *TheTrueLabel,
       SPRVLabel *TheFalseLabel, SPRVBasicBlock *TheBB)
@@ -759,7 +759,7 @@ protected:
 
 class SPRVPhi: public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpPhi;
+  static const Op OC = OpPhi;
   static const SPRVWord FixedWordCount = 3;
   SPRVPhi(SPRVType *TheType, SPRVId TheId,
       const std::vector<SPRVValue *> &ThePairs, SPRVBasicBlock *BB)
@@ -853,11 +853,11 @@ protected:
   }
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVCmpInst:public SPRVInstTemplate<SPRVCompare, OC, true, 5, false> {
 };
 
-#define _SPRV_OP(x) typedef SPRVCmpInst<SPRVOC_Op##x> SPRV##x;
+#define _SPRV_OP(x) typedef SPRVCmpInst<Op##x> SPRV##x;
 _SPRV_OP(IEqual)
 _SPRV_OP(FOrdEqual)
 _SPRV_OP(FUnordEqual)
@@ -890,13 +890,13 @@ public:
   // Complete constructor
   SPRVSelect(SPRVId TheId, SPRVId TheCondition, SPRVId TheOp1, SPRVId TheOp2,
       SPRVBasicBlock *TheBB)
-    :SPRVInstruction(6, SPRVOC_OpSelect, TheBB->getValueType(TheOp1), TheId,
+    :SPRVInstruction(6, OpSelect, TheBB->getValueType(TheOp1), TheId,
         TheBB), Condition(TheCondition), Op1(TheOp1), Op2(TheOp2){
     validate();
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPRVSelect():SPRVInstruction(SPRVOC_OpSelect), Condition(SPRVID_INVALID),
+  SPRVSelect():SPRVInstruction(OpSelect), Condition(SPRVID_INVALID),
       Op1(SPRVID_INVALID), Op2(SPRVID_INVALID){}
   SPRVValue *getCondition() { return getValue(Condition);}
   SPRVValue *getTrueValue() { return getValue(Op1);}
@@ -924,7 +924,7 @@ protected:
 
 class SPRVSwitch: public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpSwitch;
+  static const Op OC = OpSwitch;
   static const SPRVWord FixedWordCount = 3;
   SPRVSwitch(SPRVValue *TheSelect, SPRVBasicBlock *TheDefault,
       const std::vector<std::pair<SPRVWord, SPRVBasicBlock *>> &ThePairs,
@@ -1006,11 +1006,11 @@ protected:
   }
 };
 
-template<SPRVOpCode OC>
+template<Op OC>
 class SPRVUnaryInst:public SPRVInstTemplate<SPRVUnary, OC, true, 4, false> {
 };
 
-#define _SPRV_OP(x) typedef SPRVUnaryInst<SPRVOC_Op##x> SPRV##x;
+#define _SPRV_OP(x) typedef SPRVUnaryInst<Op##x> SPRV##x;
 _SPRV_OP(ConvertFToU)
 _SPRV_OP(ConvertFToS)
 _SPRV_OP(ConvertSToF)
@@ -1046,28 +1046,28 @@ public:
     return this->getValues(IndexWords);
   }
   bool isInBounds() {
-    return OpCode == SPRVOC_OpInBoundsAccessChain ||
-        OpCode == SPRVOC_OpInBoundsPtrAccessChain;
+    return OpCode == OpInBoundsAccessChain ||
+        OpCode == OpInBoundsPtrAccessChain;
   }
   bool hasPtrIndex() {
-    return OpCode == SPRVOC_OpPtrAccessChain ||
-        OpCode == SPRVOC_OpInBoundsPtrAccessChain;
+    return OpCode == OpPtrAccessChain ||
+        OpCode == OpInBoundsPtrAccessChain;
   }
 };
 
-template<SPRVOpCode OC, unsigned FixedWC>
+template<Op OC, unsigned FixedWC>
 class SPRVAccessChainGeneric
     :public SPRVInstTemplate<SPRVAccessChainBase, OC, true, FixedWC, true> {
 };
 
-typedef SPRVAccessChainGeneric<SPRVOC_OpAccessChain, 4> SPRVAccessChain;
-typedef SPRVAccessChainGeneric<SPRVOC_OpInBoundsAccessChain, 4>
+typedef SPRVAccessChainGeneric<OpAccessChain, 4> SPRVAccessChain;
+typedef SPRVAccessChainGeneric<OpInBoundsAccessChain, 4>
   SPRVInBoundsAccessChain;
-typedef SPRVAccessChainGeneric<SPRVOC_OpPtrAccessChain, 5> SPRVPtrAccessChain;
-typedef SPRVAccessChainGeneric<SPRVOC_OpInBoundsPtrAccessChain, 5>
+typedef SPRVAccessChainGeneric<OpPtrAccessChain, 5> SPRVPtrAccessChain;
+typedef SPRVAccessChainGeneric<OpInBoundsPtrAccessChain, 5>
   SPRVInBoundsPtrAccessChain;
 
-template<SPRVOpCode OC, SPRVWord FixedWordCount>
+template<Op OC, SPRVWord FixedWordCount>
 class SPRVFunctionCallGeneric: public SPRVInstruction {
 public:
   SPRVFunctionCallGeneric(SPRVType *TheType, SPRVId TheId,
@@ -1109,7 +1109,7 @@ protected:
 };
 
 class SPRVFunctionCall:
-    public SPRVFunctionCallGeneric<SPRVOC_OpFunctionCall, 4> {
+    public SPRVFunctionCallGeneric<OpFunctionCall, 4> {
 public:
   SPRVFunctionCall(SPRVId TheId, SPRVFunction *TheFunction,
       const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB);
@@ -1123,7 +1123,7 @@ protected:
   SPRVId FunctionId;
 };
 
-class SPRVExtInst: public SPRVFunctionCallGeneric<SPRVOC_OpExtInst, 5> {
+class SPRVExtInst: public SPRVFunctionCallGeneric<OpExtInst, 5> {
 public:
   SPRVExtInst(SPRVType *TheType, SPRVId TheId,
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
@@ -1202,7 +1202,7 @@ protected:
 
 class SPRVCompositeExtract:public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpCompositeExtract;
+  const static Op OC = OpCompositeExtract;
   // Complete constructor
   SPRVCompositeExtract(SPRVType *TheType, SPRVId TheId, SPRVValue *TheComposite,
       const std::vector<SPRVWord>& TheIndices, SPRVBasicBlock *TheBB):
@@ -1236,7 +1236,7 @@ protected:
 
 class SPRVCompositeInsert:public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpCompositeInsert;
+  const static Op OC = OpCompositeInsert;
   const static SPRVWord FixedWordCount = 5;
   // Complete constructor
   SPRVCompositeInsert(SPRVId TheId, SPRVValue *TheObject,
@@ -1280,7 +1280,7 @@ protected:
 
 class SPRVCopyObject :public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpCopyObject;
+  const static Op OC = OpCopyObject;
 
   // Complete constructor
   SPRVCopyObject(SPRVType *TheType, SPRVId TheId, SPRVValue *TheOperand,
@@ -1307,7 +1307,7 @@ protected:
 
 class SPRVCopyMemory :public SPRVInstruction, public SPRVMemoryAccess {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpCopyMemory;
+  const static Op OC = OpCopyMemory;
   const static SPRVWord FixedWords = 3;
   // Complete constructor
   SPRVCopyMemory(SPRVValue *TheTarget, SPRVValue *TheSource,
@@ -1363,7 +1363,7 @@ protected:
 
 class SPRVCopyMemorySized :public SPRVInstruction, public SPRVMemoryAccess {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpCopyMemorySized;
+  const static Op OC = OpCopyMemorySized;
   const static SPRVWord FixedWords = 4;
   // Complete constructor
   SPRVCopyMemorySized(SPRVValue *TheTarget, SPRVValue *TheSource,
@@ -1416,7 +1416,7 @@ protected:
 
 class SPRVVectorExtractDynamic:public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpVectorExtractDynamic;
+  const static Op OC = OpVectorExtractDynamic;
   // Complete constructor
   SPRVVectorExtractDynamic(SPRVId TheId, SPRVValue *TheVector,
       SPRVValue* TheIndex, SPRVBasicBlock *TheBB)
@@ -1446,7 +1446,7 @@ protected:
 
 class SPRVVectorInsertDynamic :public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpVectorInsertDynamic;
+  const static Op OC = OpVectorInsertDynamic;
   // Complete constructor
   SPRVVectorInsertDynamic(SPRVId TheId, SPRVValue *TheVector,
       SPRVValue* TheComponent, SPRVValue* TheIndex, SPRVBasicBlock *TheBB)
@@ -1478,7 +1478,7 @@ protected:
 
 class SPRVVectorShuffle:public SPRVInstruction {
 public:
-  const static SPRVOpCode OC = SPRVOC_OpVectorShuffle;
+  const static Op OC = OpVectorShuffle;
   const static SPRVWord FixedWordCount = 5;
   // Complete constructor
   SPRVVectorShuffle(SPRVId TheId, SPRVType *TheType, SPRVValue *TheVector1,
@@ -1517,7 +1517,7 @@ protected:
     assert(getValueType(Vector1) == getValueType(Vector2));
     size_t CompCount = Type->getVectorComponentCount();
     assert(Components.size() == CompCount);
-    assert(Components.size() > 0);
+    assert(Components.size() > 1);
   }
   SPRVId Vector1;
   SPRVId Vector2;
@@ -1526,7 +1526,7 @@ protected:
 
 class SPRVControlBarrier:public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpControlBarrier;
+  static const Op OC = OpControlBarrier;
   // Complete constructor
   SPRVControlBarrier(SPRVExecutionScopeKind TheScope,
       SPRVMemoryScopeKind TheMemScope, SPRVWord TheMemSema,
@@ -1570,45 +1570,9 @@ protected:
   SPRVWord MemSema;
 };
 
-class SPRVMemoryBarrier:public SPRVInstruction {
-public:
-  static const SPRVOpCode OC = SPRVOC_OpMemoryBarrier;
-  // Complete constructor
-  SPRVMemoryBarrier(SPRVExecutionScopeKind TheScope,
-      SPRVWord TheMemSemantic, SPRVBasicBlock *TheBB)
-    :SPRVInstruction(3, OC, TheBB), ExecScope(TheScope),
-     MemSemantic(TheMemSemantic){
-    validate();
-    assert(TheBB && "Invalid BB");
-  }
-  // Incomplete constructor
-  SPRVMemoryBarrier():SPRVInstruction(OC), ExecScope(SPRVES_Count),
-      MemSemantic(SPRVWORD_MAX){
-    setHasNoId();
-    setHasNoType();
-  }
-  SPRVExecutionScopeKind getExecScope() const {
-    return ExecScope;
-  }
-  SPRVWord getMemSemantic() const {
-    return MemSemantic;
-  }
-protected:
-  _SPRV_DEF_ENCDEC2(ExecScope, MemSemantic)
-  void validate()const {
-    assert(OpCode == OC);
-    assert(WordCount == 3);
-    SPRVInstruction::validate();
-    isValid(ExecScope);
-    isValid(MemSemantic);
-  }
-  SPRVExecutionScopeKind ExecScope;
-  SPRVWord MemSemantic;
-};
-
 class SPRVAsyncGroupCopy:public SPRVInstruction {
 public:
-  static const SPRVOpCode OC = SPRVOC_OpAsyncGroupCopy;
+  static const Op OC = OpAsyncGroupCopy;
   static const SPRVWord WC = 9;
   // Complete constructor
   SPRVAsyncGroupCopy(SPRVExecutionScopeKind TheScope, SPRVId TheId,
@@ -1676,7 +1640,7 @@ public:
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVDevEnqInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVDevEnqInstBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // CL 2.0 enqueue kernel builtins
 _SPRV_OP(EnqueueMarker, true, 7)
@@ -1703,7 +1667,7 @@ public:
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVPipeInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVPipeInstBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // CL 2.0 pipe builtins
 _SPRV_OP(ReadPipe, true, 7)
@@ -1727,7 +1691,7 @@ public:
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVGroupInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVGroupInstBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // Group instructions
 _SPRV_OP(WaitGroupEvents, false, 4)
@@ -1756,10 +1720,11 @@ public:
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVAtomicInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVAtomicInstBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // Atomic builtins
-_SPRV_OP(AtomicTestSet, true, 6)
+_SPRV_OP(AtomicFlagTestAndSet, true, 6)
+_SPRV_OP(AtomicFlagClear, false, 4)
 _SPRV_OP(AtomicLoad, true, 6)
 _SPRV_OP(AtomicStore, false, 5)
 _SPRV_OP(AtomicExchange, true, 7)
@@ -1771,12 +1736,12 @@ _SPRV_OP(AtomicIAdd, true, 7)
 _SPRV_OP(AtomicISub, true, 7)
 _SPRV_OP(AtomicUMin, true, 7)
 _SPRV_OP(AtomicUMax, true, 7)
-_SPRV_OP(AtomicIMin, true, 7)
-_SPRV_OP(AtomicIMax, true, 7)
+_SPRV_OP(AtomicSMin, true, 7)
+_SPRV_OP(AtomicSMax, true, 7)
 _SPRV_OP(AtomicAnd, true, 7)
 _SPRV_OP(AtomicOr, true, 7)
 _SPRV_OP(AtomicXor, true, 7)
-_SPRV_OP(AtomicWorkItemFence, false, 4)
+_SPRV_OP(MemoryBarrier, false, 4)
 #undef _SPRV_OP
 
 class SPRVImageInstBase:public SPRVInstTemplateBase {
@@ -1787,7 +1752,7 @@ public:
 };
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVImageInstBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVImageInstBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // Image instructions
 _SPRV_OP(SampledImage, true, 5)
@@ -1795,7 +1760,6 @@ _SPRV_OP(ImageSampleImplicitLod, true, 5, true)
 _SPRV_OP(ImageSampleExplicitLod, true, 5, true)
 _SPRV_OP(ImageRead, true, 5)
 _SPRV_OP(ImageWrite, false, 4)
-_SPRV_OP(ImageQueryArraySize, true, 4)
 _SPRV_OP(ImageQueryFormat, true, 4)
 _SPRV_OP(ImageQueryOrder, true, 4)
 _SPRV_OP(ImageQuerySizeLod, true, 5)
@@ -1806,7 +1770,7 @@ _SPRV_OP(ImageQuerySamples, true, 4)
 #undef _SPRV_OP
 
 #define _SPRV_OP(x, ...) \
-  typedef SPRVInstTemplate<SPRVInstTemplateBase, SPRVOC_Op##x, __VA_ARGS__> \
+  typedef SPRVInstTemplate<SPRVInstTemplateBase, Op##x, __VA_ARGS__> \
       SPRV##x;
 // Other instructions
 _SPRV_OP(SpecConstantOp, true, 4, true)

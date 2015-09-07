@@ -55,6 +55,11 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
+
+#ifndef _SPRV_SUPPORT_TEXT_FMT
+#define _SPRV_SUPPORT_TEXT_FMT
+#endif
+
 #include "SPIRV.h"
 
 #include <memory>
@@ -85,12 +90,14 @@ static cl::opt<bool>
 IsRegularization("s", cl::desc(
     "Regularize LLVM to be representable by SPIR-V"));
 
+#ifdef _SPRV_SUPPORT_TEXT_FMT
 static cl::opt<bool>
 ToText("to-text", cl::desc("Convert input SPIR-V binary to internal textual format"));
 
 static cl::opt<bool>
 ToBinary("to-binary",
     cl::desc("Convert input SPIR-V in internal textual format to binary"));
+#endif
 
 static std::string
 removeExt(const std::string& FileName) {
@@ -182,6 +189,7 @@ convertSPRVToLLVM() {
   return 0;
 }
 
+#ifdef _SPRV_SUPPORT_TEXT_FMT
 static int
 convertSPRV() {
   if (ToBinary == ToText) {
@@ -213,6 +221,7 @@ convertSPRV() {
   } else
     return Action(std::cout);
 }
+#endif
 
 static int
 regularizeLLVM() {
@@ -269,6 +278,7 @@ int
 main(int ac, char** av) {
   cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
 
+#ifdef _SPRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
     errs() << "Cannot use -to-text with -to-binary, -r, -s\n";
     return -1;
@@ -281,6 +291,7 @@ main(int ac, char** av) {
 
   if (ToBinary || ToText)
     return convertSPRV();
+#endif
 
   if (!IsReverse && !IsRegularization)
     return convertLLVMToSPRV();

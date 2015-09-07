@@ -51,7 +51,7 @@ class SPRVFunctionParameter: public SPRVValue {
 public:
   SPRVFunctionParameter(SPRVType *TheType, SPRVId TheId,
       SPRVFunction *TheParent, unsigned TheArgNo);
-  SPRVFunctionParameter():SPRVValue(SPRVOC_OpFunctionParameter),
+  SPRVFunctionParameter():SPRVValue(OpFunctionParameter),
       ParentFunc(nullptr), ArgNo(0){}
   unsigned getArgNo()const { return ArgNo;}
   void foreachAttr(std::function<void(SPRVFuncParamAttrKind)>);
@@ -84,14 +84,14 @@ class SPRVFunction: public SPRVValue, public SPRVComponentExecutionModes {
 public:
   // Complete constructor. It does not construct basic blocks.
   SPRVFunction(SPRVModule *M, SPRVTypeFunction *FunctionType, SPRVId TheId)
-    :SPRVValue(M, 5, SPRVOC_OpFunction, FunctionType->getReturnType(), TheId),
+    :SPRVValue(M, 5, OpFunction, FunctionType->getReturnType(), TheId),
      FuncType(FunctionType), FCtrlMask(SPRVFCM_Default) {
     addAllArguments(TheId + 1);
     validate();
   }
 
   // Incomplete constructor
-  SPRVFunction():SPRVValue(SPRVOC_OpFunction),FuncType(NULL),
+  SPRVFunction():SPRVValue(OpFunction),FuncType(NULL),
       FCtrlMask(SPRVFCM_Default){}
 
   SPRVDecoder getDecoder(std::istream &IS);
@@ -161,7 +161,7 @@ private:
   SPRVLBasicBlockVector BBVec;
 };
 
-typedef SPRVEntryOpCodeOnly<SPRVOC_OpFunctionEnd> SPRVFunctionEnd;
+typedef SPRVEntryOpCodeOnly<OpFunctionEnd> SPRVFunctionEnd;
 
 }
 

@@ -476,10 +476,11 @@ struct OCLTypeMangleInfo {
   bool IsVoidPtr;
   bool IsEnum;
   bool IsSampler;
+  bool IsAtomic;
   SPIR::TypePrimitiveEnum Enum;
   unsigned Attr;
   OCLTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
-      IsSampler(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
+      IsSampler(false), IsAtomic(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
 };
 
 /// Information for mangling an OpenCL builtin function.
@@ -492,6 +493,7 @@ public:
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
   void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}
+  void addAtomicArg(int Ndx) { AtomicArgs.insert(Ndx);}
   void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
     EnumArgs[Ndx] = Enum;}
   void setArgAttr(int Ndx, unsigned Attr) {
@@ -502,6 +504,8 @@ public:
     return VoidPtrArgs.count(-1) || VoidPtrArgs.count(Ndx);}
   bool isArgSampler(int Ndx) {
     return SamplerArgs.count(Ndx);}
+  bool isArgAtomic(int Ndx) {
+    return AtomicArgs.count(Ndx);}
   bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
     auto Loc = EnumArgs.find(Ndx);
     if (Loc == EnumArgs.end())
@@ -526,6 +530,7 @@ public:
     Info.IsVoidPtr = isArgVoidPtr(Ndx);
     Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
     Info.IsSampler = isArgSampler(Ndx);
+    Info.IsAtomic = isArgAtomic(Ndx);
     Info.Attr = getArgAttr(Ndx);
     return Info;
   }
@@ -535,6 +540,7 @@ private:
   std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
                               // pointer
   std::set<int> SamplerArgs;  // sampler arguments
+  std::set<int> AtomicArgs;   // atomic arguments
   std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
   std::map<int, unsigned> Attrs;                   // argument attributes
 };
@@ -542,15 +548,18 @@ private:
 OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
   UnmangledName = UniqName;
   size_t Pos = std::string::npos;
-  if (UnmangledName.find("write_imageui") == 0)
+
+  if (UnmangledName.find("async_work_group") == 0) {
+    addUnsignedArg(-1);
+    setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("write_imageui") == 0)
       addUnsignedArg(2);
   else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
-      UnmangledName.find("vstore") == 0 ||
-      UnmangledName.find("async_work_group") == 0 ||
       UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
+      UnmangledName == "mem_fence" ||
       UnmangledName.find("shuffle") == 0){
     addUnsignedArg(-1);
     if (UnmangledName.find("get_fence") == 0){
@@ -559,10 +568,15 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
     }
   } else if (UnmangledName.find("atomic") == 0) {
     setArgAttr(0, SPIR::ATTR_VOLATILE);
-    if (UnmangledName == "atomic_umax" ||
-        UnmangledName == "atomic_umin") {
-      addUnsignedArg(-1);
+    addAtomicArg(0);
+    if (UnmangledName.find("atomic_umax") == 0 ||
+        UnmangledName.find("atomic_umin") == 0) {
+      addUnsignedArg(0);
       UnmangledName.erase(7, 1);
+    } else if (UnmangledName.find("atomic_fetch_umin") == 0 ||
+               UnmangledName.find("atomic_fetch_umax") == 0) {
+      addUnsignedArg(0);
+      UnmangledName.erase(13, 1);
     }
   } else if (UnmangledName.find("uconvert_") == 0) {
     addUnsignedArg(0);
@@ -582,8 +596,10 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
     setArgAttr(2, SPIR::ATTR_CONST);
     addUnsignedArg(1);
   } else if (UnmangledName.find("vload") == 0) {
-    addUnsignedArg(-1);
+    addUnsignedArg(0);
     setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("vstore") == 0 ){
+    addUnsignedArg(1);
   } else if (UnmangledName.find("ndrange_") == 0) {
     addUnsignedArg(-1);
     if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
@@ -614,6 +630,12 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   if (Info.IsSampler)
     return SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_SAMPLER_T));
+  if (Info.IsAtomic && !Ty->isPointerTy()) {
+    OCLTypeMangleInfo DTInfo = Info;
+    DTInfo.IsAtomic = false;
+    return SPIR::RefParamType(new SPIR::AtomicType(
+        transTypeDesc(Ty, DTInfo)));
+  }
   if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch(IntTy->getBitWidth()) {
     case 8:
@@ -766,15 +788,15 @@ MangleOpenCLBuiltin(const std::string &UnmangledName,
 }
 
 SPIRAddressSpace
-getOCLOpaqueTypeAddrSpace(SPRVOpCode OpCode) {
+getOCLOpaqueTypeAddrSpace(Op OpCode) {
   switch (OpCode) {
-  case SPRVOC_OpTypePipe:
-  case SPRVOC_OpTypeQueue:
-  case SPRVOC_OpTypeEvent:
-  case SPRVOC_OpTypeDeviceEvent:
-  case SPRVOC_OpTypeSampler:
+  case OpTypePipe:
+  case OpTypeQueue:
+  case OpTypeEvent:
+  case OpTypeDeviceEvent:
+  case OpTypeSampler:
     return SPIRAS_Global;
-  case SPRVOC_OpTypeReserveId:
+  case OpTypeReserveId:
     return SPIRAS_Private;
   default:
     return SPIRAS_Private;

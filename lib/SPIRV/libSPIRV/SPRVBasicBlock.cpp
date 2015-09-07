@@ -49,7 +49,7 @@
 using namespace SPRV;
 
 SPRVBasicBlock::SPRVBasicBlock(SPRVId TheId, SPRVFunction *Func)
-  :SPRVValue(Func->getModule(), 2, SPRVOC_OpLabel, TheId), ParentF(Func) {
+  :SPRVValue(Func->getModule(), 2, OpLabel, TheId), ParentF(Func) {
   setAttr();
   validate();
 }
@@ -80,6 +80,6 @@ _SPRV_IMP_ENCDEC1(SPRVBasicBlock, Id)
 
 void
 SPRVBasicBlock::setScope(SPRVEntry *Scope) {
-  assert(Scope && Scope->getOpCode() == SPRVOC_OpFunction && "Invalid scope");
+  assert(Scope && Scope->getOpCode() == OpFunction && "Invalid scope");
   setParent(static_cast<SPRVFunction*>(Scope));
 }

@@ -190,7 +190,7 @@ public:
       const std::string &, bool) = 0;
   virtual SPRVTypeVector *addVectorType(SPRVType *, SPRVWord) = 0;
   virtual SPRVTypeVoid *addVoidType() = 0;
-  virtual SPRVType *addOpaqueGenericType(SPRVOpCode) = 0;
+  virtual SPRVType *addOpaqueGenericType(Op) = 0;
   virtual SPRVTypePipe *addPipeType() = 0;
 
   // Constants creation functions
@@ -212,7 +212,7 @@ public:
   virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB) = 0;
-  virtual SPRVInstruction *addBinaryInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addBinaryInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addBranchConditionalInst(SPRVValue *, SPRVLabel *,
       SPRVLabel *, SPRVBasicBlock *) = 0;
@@ -237,15 +237,15 @@ public:
     const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addCopyMemorySizedInst(SPRVValue *, SPRVValue *,
     SPRVValue *, const std::vector<SPRVWord>&,  SPRVBasicBlock *) = 0;
-  virtual SPRVInstruction *addCmpInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addCmpInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addControlBarrierInst(
       SPRVExecutionScopeKind ExecKind, SPRVMemoryScopeKind MemKind,
       SPRVWord MemSema, SPRVBasicBlock *BB) = 0;
-  virtual SPRVInstruction *addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
+  virtual SPRVInstruction *addGroupInst(Op OpCode, SPRVType *Type,
       SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB) = 0;
-  virtual SPRVInstruction* addInstTemplate(SPRVOpCode OC,
+  virtual SPRVInstruction* addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) = 0;
   virtual SPRVInstruction *addLoadInst(SPRVValue *,
       const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;
@@ -264,7 +264,7 @@ public:
   virtual SPRVInstruction *addSwitchInst(SPRVValue *, SPRVBasicBlock *,
       const std::vector<std::pair<SPRVWord, SPRVBasicBlock *>>&,
       SPRVBasicBlock *) = 0;
-  virtual SPRVInstruction *addUnaryInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addUnaryInst(Op, SPRVType *, SPRVValue *,
       SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addVariable(SPRVType *, bool, SPRVLinkageTypeKind,
       SPRVValue *, const std::string &, SPRVStorageClassKind, SPRVBasicBlock *)

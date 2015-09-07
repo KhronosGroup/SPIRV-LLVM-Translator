@@ -83,17 +83,17 @@ bool SPRVUseTextFormat = false;
 #endif
 
 SPRVDecoder::SPRVDecoder(std::istream &InputStream, SPRVFunction &F)
-  :IS(InputStream), M(*F.getModule()), WordCount(0), OpCode(SPRVOC_OpNop),
+  :IS(InputStream), M(*F.getModule()), WordCount(0), OpCode(OpNop),
    Scope(&F){}
 
 SPRVDecoder::SPRVDecoder(std::istream &InputStream, SPRVBasicBlock &BB)
-  :IS(InputStream), M(*BB.getModule()), WordCount(0), OpCode(SPRVOC_OpNop),
+  :IS(InputStream), M(*BB.getModule()), WordCount(0), OpCode(OpNop),
    Scope(&BB){}
 
 void
 SPRVDecoder::setScope(SPRVEntry *TheScope) {
-  assert(TheScope && (TheScope->getOpCode() == SPRVOC_OpFunction ||
-      TheScope->getOpCode() == SPRVOC_OpLabel));
+  assert(TheScope && (TheScope->getOpCode() == OpFunction ||
+      TheScope->getOpCode() == OpLabel));
   Scope = TheScope;
 }
 
@@ -134,7 +134,7 @@ operator<<(const SPRVEncoder& O, Type V) { \
   return encode(O, V); \
 }
 
-SPRV_DEF_ENCDEC(SPRVOpCode)
+SPRV_DEF_ENCDEC(Op)
 SPRV_DEF_ENCDEC(Decoration)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL12Kind)
 SPRV_DEF_ENCDEC(SPRVBuiltinOCL20Kind)
@@ -189,7 +189,7 @@ bool
 SPRVDecoder::getWordCountAndOpCode() {
   if (IS.eof()) {
     WordCount = 0;
-    OpCode = SPRVOC_OpNop;
+    OpCode = OpNop;
     SPRVDBG(bildbgs() << "[SPRVDecoder] getWordCountAndOpCode EOF " <<
         WordCount << " " << OpCode << '\n');
     return false;
@@ -200,7 +200,7 @@ SPRVDecoder::getWordCountAndOpCode() {
     assert(!IS.bad() && "SPRV stream is bad");
     if (IS.fail()) {
       WordCount = 0;
-      OpCode = SPRVOC_OpNop;
+      OpCode = OpNop;
       SPRVDBG(bildbgs() << "[SPRVDecoder] getWordCountAndOpCode FAIL " <<
           WordCount << " " << OpCode << '\n');
       return false;
@@ -211,14 +211,14 @@ SPRVDecoder::getWordCountAndOpCode() {
   SPRVWord WordCountAndOpCode;
   *this >> WordCountAndOpCode;
   WordCount = WordCountAndOpCode >> 16;
-  OpCode = static_cast<SPRVOpCode>(WordCountAndOpCode & 0xFFFF);
+  OpCode = static_cast<Op>(WordCountAndOpCode & 0xFFFF);
 #ifdef _SPRV_SUPPORT_TEXT_FMT
   }
 #endif
   assert(!IS.bad() && "SPRV stream is bad");
   if (IS.fail()) {
     WordCount = 0;
-    OpCode = SPRVOC_OpNop;
+    OpCode = OpNop;
     SPRVDBG(bildbgs() << "[SPRVDecoder] getWordCountAndOpCode FAIL " <<
         WordCount << " " << OpCode << '\n');
     return false;
@@ -230,7 +230,7 @@ SPRVDecoder::getWordCountAndOpCode() {
 
 SPRVEntry *
 SPRVDecoder::getEntry() {
-  if (WordCount == 0 || OpCode == SPRVOC_OpNop)
+  if (WordCount == 0 || OpCode == OpNop)
     return NULL;
   SPRVEntry *Entry = SPRVEntry::create(OpCode);
   Entry->setModule(&M);
@@ -246,7 +246,7 @@ SPRVDecoder::getEntry() {
 
 void
 SPRVDecoder::validate()const {
-  assert(OpCode != SPRVOC_OpNop && "Invalid op code");
+  assert(OpCode != OpNop && "Invalid op code");
   assert(WordCount && "Invalid word count");
   assert(!IS.bad() && "Bad iInput stream");
 }

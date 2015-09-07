@@ -185,7 +185,7 @@ public:
   virtual SPRVTypeStruct *addStructType(const std::vector<SPRVType *>&,
       const std::string &, bool);
   virtual SPRVTypeVector *addVectorType(SPRVType *, SPRVWord);
-  virtual SPRVType *addOpaqueGenericType(SPRVOpCode);
+  virtual SPRVType *addOpaqueGenericType(Op);
   virtual SPRVTypePipe *addPipeType();
   virtual SPRVTypeVoid *addVoidType();
 
@@ -217,11 +217,11 @@ public:
   virtual SPRVInstruction *addExtInst(SPRVType *,
       SPRVWord, SPRVWord, const std::vector<SPRVValue *> &,
       SPRVBasicBlock *);
-  virtual SPRVInstruction *addBinaryInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addBinaryInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *);
   virtual SPRVInstruction *addCallInst(SPRVFunction*,
       const std::vector<SPRVValue *>, SPRVBasicBlock *);
-  virtual SPRVInstruction *addCmpInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addCmpInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *);
   virtual SPRVInstruction *addLoadInst(SPRVValue *,
       const std::vector<SPRVWord>&, SPRVBasicBlock *);
@@ -241,12 +241,12 @@ public:
   virtual SPRVInstruction *addControlBarrierInst(
       SPRVExecutionScopeKind ExecKind, SPRVMemoryScopeKind MemKind,
       SPRVWord MemSema, SPRVBasicBlock *BB);
-  virtual SPRVInstruction *addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
+  virtual SPRVInstruction *addGroupInst(Op OpCode, SPRVType *Type,
       SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB);
   virtual SPRVInstruction *addInstruction(SPRVInstruction *Inst,
       SPRVBasicBlock *BB);
-  virtual SPRVInstruction *addInstTemplate(SPRVOpCode OC,
+  virtual SPRVInstruction *addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty);
   virtual SPRVInstruction *addMemoryBarrierInst(
       SPRVExecutionScopeKind ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB);
@@ -259,7 +259,7 @@ public:
   virtual SPRVInstruction *addSwitchInst(SPRVValue *, SPRVBasicBlock *,
       const std::vector<std::pair<SPRVWord, SPRVBasicBlock *>>&,
       SPRVBasicBlock *);
-  virtual SPRVInstruction *addUnaryInst(SPRVOpCode, SPRVType *, SPRVValue *,
+  virtual SPRVInstruction *addUnaryInst(Op, SPRVType *, SPRVValue *,
       SPRVBasicBlock *);
   virtual SPRVInstruction *addVariable(SPRVType *, bool, SPRVLinkageTypeKind,
     SPRVValue *, const std::string &, SPRVStorageClassKind, SPRVBasicBlock *);
@@ -358,7 +358,7 @@ SPRVModuleImpl::optimizeDecorates() {
   for (auto I = DecorateSet.begin(), E = DecorateSet.end(); I != E;) {
     auto D = *I;
     SPRVDBG(bildbgs() << "  check " << *D << '\n');
-    if (D->getOpCode() == SPRVOC_OpMemberDecorate) {
+    if (D->getOpCode() == OpMemberDecorate) {
       ++I;
       continue;
     }
@@ -415,16 +415,16 @@ void
 SPRVModuleImpl::layoutEntry(SPRVEntry* E) {
   auto OC = E->getOpCode();
   switch (OC) {
-  case SPRVOC_OpString:
+  case OpString:
     addTo(StringVec, E);
     break;
-  case SPRVOC_OpMemberName:
+  case OpMemberName:
     addTo(MemberNameVec, E);
     break;
-  case SPRVOC_OpLine:
+  case OpLine:
     addTo(LineVec, E);
     break;
-  case SPRVOC_OpVariable: {
+  case OpVariable: {
     auto BV = static_cast<SPRVVariable*>(E);
     if (!BV->getParent())
       addTo(VariableVec, E);
@@ -451,7 +451,7 @@ SPRVModuleImpl::addEntry(SPRVEntry *Entry) {
     assert(Entry->getId() != SPRVID_INVALID && "Invalid id");
     SPRVEntry *Mapped = nullptr;
     if (exist(Id, &Mapped)) {
-      if (Mapped->getOpCode() == SPRVOC_OpForward) {
+      if (Mapped->getOpCode() == OpForward) {
         replaceForward(static_cast<SPRVForward *>(Mapped), Entry);
       } else {
         assert(Mapped == Entry && "Id used twice");
@@ -641,7 +641,7 @@ SPRVModuleImpl::addVectorType(SPRVType* CompType, SPRVWord CompCount) {
   return addType(new SPRVTypeVector(this, getId(), CompType, CompCount));
 }
 SPRVType *
-SPRVModuleImpl::addOpaqueGenericType(SPRVOpCode TheOpCode) {
+SPRVModuleImpl::addOpaqueGenericType(Op TheOpCode) {
   return addType(new SPRVTypeOpaqueGeneric(TheOpCode, this, getId()));
 }
 SPRVTypePipe*
@@ -803,7 +803,7 @@ SPRVModuleImpl::addSwitchInst(SPRVValue *Select, SPRVBasicBlock *Default,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addGroupInst(SPRVOpCode OpCode, SPRVType *Type,
+SPRVModuleImpl::addGroupInst(Op OpCode, SPRVType *Type,
     SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
     SPRVBasicBlock *BB) {
   auto WordOps = getIds(Ops);
@@ -815,7 +815,7 @@ SPRVInstruction *
 SPRVModuleImpl::addInstruction(SPRVInstruction *Inst, SPRVBasicBlock *BB) {
   if (BB)
     return BB->addInstruction(Inst);
-  if (Inst->getOpCode() != SPRVOC_OpSpecConstantOp)
+  if (Inst->getOpCode() != OpSpecConstantOp)
     Inst = createSpecConstantOpInst(Inst);
   return static_cast<SPRVInstruction *>(addConstant(Inst));
 }
@@ -857,7 +857,7 @@ SPRVModuleImpl::addCallInst(SPRVFunction* TheFunction,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addBinaryInst(SPRVOpCode TheOpCode, SPRVType *Type,
+SPRVModuleImpl::addBinaryInst(Op TheOpCode, SPRVType *Type,
     SPRVValue *Op1, SPRVValue *Op2, SPRVBasicBlock *BB){
   return addInstruction(SPRVInstTemplateBase::create(TheOpCode, Type, getId(),
       getVec(Op1->getId(), Op2->getId()), BB, this), BB);
@@ -874,7 +874,7 @@ SPRVModuleImpl::addReturnValueInst(SPRVValue *ReturnValue, SPRVBasicBlock *BB) {
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addUnaryInst(SPRVOpCode TheOpCode, SPRVType *TheType,
+SPRVModuleImpl::addUnaryInst(Op TheOpCode, SPRVType *TheType,
     SPRVValue *Op, SPRVBasicBlock *BB) {
   return addInstruction(SPRVInstTemplateBase::create(TheOpCode,
       TheType, getId(), getVec(Op->getId()), BB, this), BB);
@@ -915,7 +915,7 @@ SPRVModuleImpl::addBranchConditionalInst(SPRVValue *Condition,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addCmpInst(SPRVOpCode TheOpCode, SPRVType *TheType,
+SPRVModuleImpl::addCmpInst(Op TheOpCode, SPRVType *TheType,
     SPRVValue *Op1, SPRVValue *Op2, SPRVBasicBlock *BB) {
   return addInstruction(SPRVInstTemplateBase::create(TheOpCode,
       TheType, getId(), getVec(Op1->getId(), Op2->getId()), BB, this), BB);
@@ -931,7 +931,9 @@ SPRVModuleImpl::addControlBarrierInst(SPRVExecutionScopeKind ExecKind,
 SPRVInstruction *
 SPRVModuleImpl::addMemoryBarrierInst(SPRVExecutionScopeKind ScopeKind,
     SPRVWord MemFlag, SPRVBasicBlock *BB) {
-  return addInstruction(new SPRVMemoryBarrier(ScopeKind, MemFlag, BB), BB);
+  return addInstruction(SPRVInstTemplateBase::create(OpMemoryBarrier,
+      nullptr, SPRVID_INVALID,
+      getVec(static_cast<SPRVWord>(ScopeKind), MemFlag), BB, this), BB);
 }
 
 SPRVInstruction *
@@ -945,7 +947,7 @@ SPRVInstruction *
 SPRVModuleImpl::addPtrAccessChainInst(SPRVType *Type, SPRVValue *Base,
     std::vector<SPRVValue *> Indices, SPRVBasicBlock *BB, bool IsInBounds){
   return addInstruction(SPRVInstTemplateBase::create(
-    IsInBounds?SPRVOC_OpInBoundsPtrAccessChain:SPRVOC_OpPtrAccessChain,
+    IsInBounds?OpInBoundsPtrAccessChain:OpPtrAccessChain,
     Type, getId(), getVec(Base->getId(), Base->getIds(Indices)),
     BB, this), BB);
 }
@@ -1217,7 +1219,7 @@ SPRVModuleImpl::getIds(const std::vector<SPRVValue *> &ValueVec)const {
 }
 
 SPRVInstruction*
-SPRVModuleImpl::addInstTemplate(SPRVOpCode OC,
+SPRVModuleImpl::addInstTemplate(Op OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
   SPRVId Id = Ty ? getId() : SPRVID_INVALID;
   auto Ins = SPRVInstTemplateBase::create(OC, Ty, Id, Ops, BB, this);

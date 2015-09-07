@@ -41,128 +41,126 @@
 #define SPRVOPCODE_HPP_
 
 #include "SPRVUtil.h"
+#include "spirv.hpp"
 #include <string>
 
+using namespace spv;
 namespace SPRV{
 
-enum SPRVOpCode {
-#define _SPRV_OP(x, y) SPRVOC_Op##x = y,
-#include "SPRVOpCodeEnum.h"
-#undef _SPRV_OP
-};
-
 template<> inline void
-SPRVMap<SPRVOpCode, std::string>::init() {
-#define _SPRV_OP(x, ...) add(SPRVOC_Op##x, #x);
+SPRVMap<Op, std::string>::init() {
+#define _SPRV_OP(x, ...) add(Op##x, #x);
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
 }
-SPRV_DEF_NAMEMAP(SPRVOpCode, OpCodeNameMap)
+SPRV_DEF_NAMEMAP(Op, OpCodeNameMap)
 
-inline bool isAtomicOpCode(SPRVOpCode OpCode) {
-  assert(SPRVOC_OpAtomicTestSet < SPRVOC_OpAtomicXor);
-  return (unsigned)OpCode >= SPRVOC_OpAtomicTestSet &&
-      (unsigned)OpCode <= SPRVOC_OpAtomicXor;
+inline bool isAtomicOpCode(Op OpCode) {
+  assert(OpAtomicLoad < OpAtomicXor);
+  return ((unsigned)OpCode >= OpAtomicLoad
+      && (unsigned)OpCode <= OpAtomicXor)
+      || OpCode == OpAtomicFlagTestAndSet
+      || OpCode == OpAtomicFlagClear;
 }
-inline bool isBinaryOpCode(SPRVOpCode OpCode) {
-  return ((unsigned)OpCode >= SPRVOC_OpIAdd &&
-      (unsigned)OpCode <= SPRVOC_OpFMod) ||
-      OpCode == SPRVOC_OpDot;
-}
-
-inline bool isShiftOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpShiftRightLogical &&
-      (unsigned)OpCode <= SPRVOC_OpShiftLeftLogical;
+inline bool isBinaryOpCode(Op OpCode) {
+  return ((unsigned)OpCode >= OpIAdd &&
+      (unsigned)OpCode <= OpFMod) ||
+      OpCode == OpDot;
 }
 
-inline bool isLogicalOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpLogicalOr &&
-      (unsigned)OpCode <= SPRVOC_OpLogicalAnd;
+inline bool isShiftOpCode(Op OpCode) {
+  return (unsigned)OpCode >= OpShiftRightLogical &&
+      (unsigned)OpCode <= OpShiftLeftLogical;
 }
 
-inline bool isBitwiseOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpBitwiseOr &&
-      (unsigned)OpCode <= SPRVOC_OpBitwiseAnd;
+inline bool isLogicalOpCode(Op OpCode) {
+  return (unsigned)OpCode >= OpLogicalEqual &&
+      (unsigned)OpCode <= OpLogicalNot;
 }
 
-inline bool isBinaryShiftLogicalBitwiseOpCode(SPRVOpCode OpCode) {
-  return (((unsigned)OpCode >= SPRVOC_OpShiftRightLogical &&
-      (unsigned)OpCode <= SPRVOC_OpBitwiseAnd) ||
+inline bool isBitwiseOpCode(Op OpCode) {
+  return (unsigned)OpCode >= OpBitwiseOr &&
+      (unsigned)OpCode <= OpBitwiseAnd;
+}
+
+inline bool isBinaryShiftLogicalBitwiseOpCode(Op OpCode) {
+  return (((unsigned)OpCode >= OpShiftRightLogical &&
+      (unsigned)OpCode <= OpBitwiseAnd) ||
       isBinaryOpCode(OpCode));
 }
 
-inline bool isCmpOpCode(SPRVOpCode OpCode) {
-  return ((unsigned)OpCode >= SPRVOC_OpIEqual &&
-      (unsigned)OpCode <= SPRVOC_OpFUnordGreaterThanEqual) ||
-      (OpCode >= SPRVOC_OpLessOrGreater && OpCode <= SPRVOC_OpUnordered);
+inline bool isCmpOpCode(Op OpCode) {
+  return ((unsigned)OpCode >= OpIEqual &&
+      (unsigned)OpCode <= OpFUnordGreaterThanEqual) ||
+      (OpCode >= OpLessOrGreater && OpCode <= OpUnordered);
 }
 
-inline bool isCvtOpCode(SPRVOpCode OpCode) {
-  return ((unsigned)OpCode >= SPRVOC_OpConvertFToU &&
-      (unsigned)OpCode <= SPRVOC_OpBitcast) ||
-      OpCode == SPRVOC_OpSatConvertSToU ||
-      OpCode == SPRVOC_OpSatConvertUToS;
+inline bool isCvtOpCode(Op OpCode) {
+  return ((unsigned)OpCode >= OpConvertFToU &&
+      (unsigned)OpCode <= OpBitcast) ||
+      OpCode == OpSatConvertSToU ||
+      OpCode == OpSatConvertUToS;
 }
 
-inline bool isCvtToUnsignedOpCode(SPRVOpCode OpCode) {
-  return OpCode == SPRVOC_OpConvertFToU ||
-      OpCode == SPRVOC_OpUConvert ||
-      OpCode == SPRVOC_OpSatConvertSToU;
+inline bool isCvtToUnsignedOpCode(Op OpCode) {
+  return OpCode == OpConvertFToU ||
+      OpCode == OpUConvert ||
+      OpCode == OpSatConvertSToU;
 }
 
-inline bool isCvtFromUnsignedOpCode(SPRVOpCode OpCode) {
-  return OpCode == SPRVOC_OpConvertUToF ||
-      OpCode == SPRVOC_OpUConvert ||
-      OpCode == SPRVOC_OpSatConvertUToS;
+inline bool isCvtFromUnsignedOpCode(Op OpCode) {
+  return OpCode == OpConvertUToF ||
+      OpCode == OpUConvert ||
+      OpCode == OpSatConvertUToS;
 }
 
-inline bool isOpaqueGenericTypeOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode >= SPRVOC_OpTypeEvent &&
-      (unsigned)OpCode <= SPRVOC_OpTypeQueue;
+inline bool isOpaqueGenericTypeOpCode(Op OpCode) {
+  return (unsigned)OpCode >= OpTypeEvent &&
+      (unsigned)OpCode <= OpTypeQueue;
 }
 
-inline bool isGenericNegateOpCode(SPRVOpCode OpCode) {
-  return (unsigned)OpCode == SPRVOC_OpSNegate ||
-      (unsigned)OpCode == SPRVOC_OpFNegate ||
-      (unsigned)OpCode == SPRVOC_OpNot;
+inline bool isGenericNegateOpCode(Op OpCode) {
+  return (unsigned)OpCode == OpSNegate ||
+      (unsigned)OpCode == OpFNegate ||
+      (unsigned)OpCode == OpNot;
 }
 
-inline bool isAccessChainOpCode(SPRVOpCode OpCode) {
-  return OpCode == SPRVOC_OpAccessChain ||
-      OpCode == SPRVOC_OpInBoundsAccessChain;
+inline bool isAccessChainOpCode(Op OpCode) {
+  return OpCode == OpAccessChain ||
+      OpCode == OpInBoundsAccessChain;
 }
 
-inline bool isModuleScopeAllowedOpCode(SPRVOpCode OpCode) {
-  return OpCode == SPRVOC_OpVariable ||
+inline bool isModuleScopeAllowedOpCode(Op OpCode) {
+  return OpCode == OpVariable ||
       isAccessChainOpCode(OpCode) ||
-      OpCode == SPRVOC_OpBitcast ||
-      OpCode == SPRVOC_OpConvertPtrToU ||
-      OpCode == SPRVOC_OpConvertUToPtr;
+      OpCode == OpBitcast ||
+      OpCode == OpConvertPtrToU ||
+      OpCode == OpConvertUToPtr;
 }
 
-inline bool hasExecScope(SPRVOpCode OpCode) {
+inline bool hasExecScope(Op OpCode) {
   unsigned OC = OpCode;
-  return (SPRVOC_OpGroupAll <= OC &&
-            OC <= SPRVOC_OpGroupSMax) ||
-      (SPRVOC_OpGroupReserveReadPipePackets <= OC &&
-          OC <= SPRVOC_OpGroupCommitWritePipe);
+  return (OpWaitGroupEvents <= OC &&
+            OC <= OpGroupSMax) ||
+      (OpGroupReserveReadPipePackets <= OC &&
+          OC <= OpGroupCommitWritePipe);
 }
 
-inline bool hasGroupOperation(SPRVOpCode OpCode) {
+inline bool hasGroupOperation(Op OpCode) {
   unsigned OC = OpCode;
-  return SPRVOC_OpGroupIAdd <= OC && OC <= SPRVOC_OpGroupSMax;
+  return OpGroupIAdd <= OC && OC <= OpGroupSMax;
 }
 
-inline bool isTypeOpCode(SPRVOpCode OpCode) {
+inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return SPRVOC_OpTypeVoid <= OC && OC <= SPRVOC_OpTypePipe;
+  return OpTypeVoid <= OC && OC <= OpTypePipe;
 }
 
-inline bool isConstantOpCode(SPRVOpCode OpCode) {
+inline bool isConstantOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return (SPRVOC_OpConstantTrue <= OC
-      && OC <= SPRVOC_OpSpecConstantOp)
-      || OC == SPRVOC_OpUndef;
+  return (OpConstantTrue <= OC
+      && OC <= OpSpecConstantOp)
+      || OC == OpUndef;
 }
 
 }

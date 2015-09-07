@@ -62,23 +62,23 @@ SPRVEntry* create() {
 }
 
 SPRVEntry *
-SPRVEntry::create(SPRVOpCode OpCode) {
+SPRVEntry::create(Op OpCode) {
   typedef SPRVEntry *(*SPRVFactoryTy)();
   struct TableEntry {
-    SPRVOpCode Op;
+    Op Opn;
     SPRVFactoryTy Factory;
-    operator std::pair<const SPRVOpCode, SPRVFactoryTy>() {
-      return std::make_pair(Op, Factory);
+    operator std::pair<const Op, SPRVFactoryTy>() {
+      return std::make_pair(Opn, Factory);
     }
   };
 
   static TableEntry Table[] = {
-#define _SPRV_OP(x,...) {SPRVOC_Op##x, &SPRV::create<SPRV##x>},
+#define _SPRV_OP(x,...) {Op##x, &SPRV::create<SPRV##x>},
 #include "SPRVOpCodeEnum.h"
 #undef _SPRV_OP
   };
 
-  typedef std::map<SPRVOpCode, SPRVFactoryTy> OpToFactoryMapTy;
+  typedef std::map<Op, SPRVFactoryTy> OpToFactoryMapTy;
   static const OpToFactoryMapTy OpToFactoryMap(std::begin(Table),
       std::end(Table));
 
@@ -322,7 +322,7 @@ SPRVEntry::takeAnnotations(SPRVForward *E){
   takeDecorates(E);
   takeMemberDecorates(E);
   takeLine(E);
-  if (OpCode == SPRVOC_OpFunction)
+  if (OpCode == OpFunction)
     static_cast<SPRVFunction *>(this)->takeExecutionModes(E);
 }
 
@@ -352,7 +352,7 @@ SPRVEntry::getDecorate(Decoration Kind, size_t Index) const {
 
 bool
 SPRVEntry::hasLinkageType() const {
-  return OpCode == SPRVOC_OpFunction || OpCode == SPRVOC_OpVariable;
+  return OpCode == OpFunction || OpCode == OpVariable;
 }
 
 void
@@ -441,7 +441,7 @@ SPRVForward *
 SPRVAnnotationGeneric::getOrCreateTarget()const {
   SPRVEntry *Entry = nullptr;
   bool Found = Module->exist(Target, &Entry);
-  assert((!Found || Entry->getOpCode() == SPRVOC_OpForward) &&
+  assert((!Found || Entry->getOpCode() == OpForward) &&
       "Annotations only allowed on forward");
   if (!Found)
     Entry = Module->addForward(Target);
@@ -484,19 +484,19 @@ SPRVLine::decode(std::istream &I) {
 
 void
 SPRVLine::validate() const {
-  assert(OpCode == SPRVOC_OpLine);
+  assert(OpCode == OpLine);
   assert(WordCount == 5);
   assert(get<SPRVEntry>(Target));
-  assert(get<SPRVEntry>(FileName)->getOpCode() == SPRVOC_OpString);
+  assert(get<SPRVEntry>(FileName)->getOpCode() == OpString);
   assert(Line != SPRVWORD_MAX);
   assert(Column != SPRVWORD_MAX);
 }
 
 void
 SPRVMemberName::validate() const {
-  assert(OpCode == SPRVOC_OpMemberName);
+  assert(OpCode == OpMemberName);
   assert(WordCount == getSizeInWords(Str) + FixedWC);
-  assert(get<SPRVEntry>(Target)->getOpCode() == SPRVOC_OpTypeStruct);
+  assert(get<SPRVEntry>(Target)->getOpCode() == OpTypeStruct);
   assert(MemberNumber < get<SPRVTypeStruct>(Target)->getStructMemberCount());
 }
 
