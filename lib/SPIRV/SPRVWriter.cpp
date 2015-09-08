@@ -727,6 +727,11 @@ LLVMToSPRV::transType(Type *T) {
         }
         return mapType(T, BM->addOpaqueGenericType(OpCode));
       }
+      else if (isPointerToOpaqueStructType(T)) {
+        return mapType(T, BM->addPointerType(SPIRSPRVAddrSpaceMap::map(
+          static_cast<SPIRAddressSpace>(AddrSpc)),
+          transType(ET)));
+      }
     } else  {
       return mapType(T, BM->addPointerType(SPIRSPRVAddrSpaceMap::map(
         static_cast<SPIRAddressSpace>(AddrSpc)),
