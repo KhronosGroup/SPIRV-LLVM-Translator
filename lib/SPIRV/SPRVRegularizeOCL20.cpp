@@ -207,7 +207,7 @@ SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
   mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     auto &CmpVal = Args[1];
     auto Alloca = new AllocaInst(CmpVal->getType(), "",
-        CI->getParent()->getParent()->begin());
+                                 CI->getParent()->getParent()->front().begin());
     auto Store = new StoreInst(CmpVal, Alloca, CI);
     CmpVal = Alloca;
     return "atomic_compare_exchange_strong";
