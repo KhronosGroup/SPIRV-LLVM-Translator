@@ -378,8 +378,9 @@ SPRVModuleImpl::optimizeDecorates() {
     SPRVDBG(bildbgs() << "  add deco group. erase equal range\n");
     auto G = new SPRVDecorationGroup(this, getId());
     std::vector<SPRVId> Targets;
-    G->getDecorations().insert(D);
     Targets.push_back(D->getTargetId());
+    const_cast<SPRVDecorateGeneric*>(D)->setTargetId(G->getId());
+    G->getDecorations().insert(D);
     for (I = ER.first; I != ER.second; ++I) {
       auto E = *I;
       if (*E == *D)
