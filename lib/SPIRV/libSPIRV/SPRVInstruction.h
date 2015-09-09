@@ -65,9 +65,9 @@ bool isSpecConstantOpAllowedOp(Op OC);
 
 class SPRVComponentExecutionScope {
 public:
-  SPRVComponentExecutionScope(SPRVExecutionScopeKind TheScope = SPRVES_Count):
+  SPRVComponentExecutionScope(Scope TheScope = ScopeInvocation):
     ExecScope(TheScope){}
-  SPRVExecutionScopeKind ExecScope;
+  Scope ExecScope;
 };
 
 class SPRVComponentMemorySemanticsMask {
@@ -299,10 +299,10 @@ public:
     return static_cast<SPRVGroupOperationKind>(Ops[1]);
   }
 
-  SPRVExecutionScopeKind getExecutionScope() const {
+  Scope getExecutionScope() const {
     if(!hasExecScope())
-      return SPRVES_Count;
-    return static_cast<SPRVExecutionScopeKind>(Ops[0]);
+      return ScopeInvocation;
+    return static_cast<Scope>(Ops[0]);
   }
 
   bool hasVariableWordCount() const {
@@ -1528,8 +1528,8 @@ class SPRVControlBarrier:public SPRVInstruction {
 public:
   static const Op OC = OpControlBarrier;
   // Complete constructor
-  SPRVControlBarrier(SPRVExecutionScopeKind TheScope,
-      SPRVMemoryScopeKind TheMemScope, SPRVWord TheMemSema,
+  SPRVControlBarrier(Scope TheScope,
+      Scope TheMemScope, SPRVWord TheMemSema,
       SPRVBasicBlock *TheBB)
     :SPRVInstruction(4, OC, TheBB),ExecScope(TheScope),
      MemScope(TheMemScope), MemSema(TheMemSema){
@@ -1537,17 +1537,17 @@ public:
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPRVControlBarrier():SPRVInstruction(OC), ExecScope(SPRVES_Count) {
+  SPRVControlBarrier():SPRVInstruction(OC), ExecScope(ScopeInvocation) {
     setHasNoId();
     setHasNoType();
   }
   void setWordCount(SPRVWord TheWordCount) {
     SPRVEntry::setWordCount(TheWordCount);
   }
-  SPRVExecutionScopeKind getExecScope() const {
+  Scope getExecScope() const {
     return ExecScope;
   }
-  SPRVMemoryScopeKind getMemScope() const {
+  Scope getMemScope() const {
     return MemScope;
   }
   bool hasMemSemantic() const {
@@ -1565,8 +1565,8 @@ protected:
     isValid(ExecScope);
     isValid(MemScope);
   }
-  SPRVExecutionScopeKind ExecScope;
-  SPRVMemoryScopeKind MemScope;
+  Scope ExecScope;
+  Scope MemScope;
   SPRVWord MemSema;
 };
 
@@ -1575,7 +1575,7 @@ public:
   static const Op OC = OpAsyncGroupCopy;
   static const SPRVWord WC = 9;
   // Complete constructor
-  SPRVAsyncGroupCopy(SPRVExecutionScopeKind TheScope, SPRVId TheId,
+  SPRVAsyncGroupCopy(Scope TheScope, SPRVId TheId,
       SPRVValue *TheDest, SPRVValue *TheSrc, SPRVValue *TheNumElems,
       SPRVValue *TheStride, SPRVValue *TheEvent, SPRVBasicBlock *TheBB)
     :SPRVInstruction(WC, OC, TheEvent->getType(), TheId, TheBB),
@@ -1586,12 +1586,12 @@ public:
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPRVAsyncGroupCopy():SPRVInstruction(OC), ExecScope(SPRVES_Count),
+  SPRVAsyncGroupCopy():SPRVInstruction(OC), ExecScope(ScopeInvocation),
       Destination(SPRVID_INVALID), Source(SPRVID_INVALID),
       NumElements(SPRVID_INVALID), Stride(SPRVID_INVALID),
       Event(SPRVID_INVALID){
   }
-  SPRVExecutionScopeKind getExecScope() const {
+  Scope getExecScope() const {
     return ExecScope;
   }
   SPRVValue *getDestination()const { return getValue(Destination);}
@@ -1618,7 +1618,7 @@ protected:
     SPRVInstruction::validate();
     isValid(ExecScope);
   }
-  SPRVExecutionScopeKind ExecScope;
+  Scope ExecScope;
   SPRVId Destination;
   SPRVId Source;
   SPRVId NumElements;
@@ -1741,7 +1741,7 @@ _SPRV_OP(AtomicSMax, true, 7)
 _SPRV_OP(AtomicAnd, true, 7)
 _SPRV_OP(AtomicOr, true, 7)
 _SPRV_OP(AtomicXor, true, 7)
-_SPRV_OP(MemoryBarrier, false, 4)
+_SPRV_OP(MemoryBarrier, false, 3)
 #undef _SPRV_OP
 
 class SPRVImageInstBase:public SPRVInstTemplateBase {

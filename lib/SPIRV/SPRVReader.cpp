@@ -56,6 +56,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Type.h"
+#include "llvm/PassManager.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Dwarf.h"
@@ -288,9 +289,10 @@ public:
   bool transSourceExtension();
   bool transCompilerOption();
   Value *transConvertInst(SPRVValue* BV, Function* F, BasicBlock* BB);
-  Instruction *transOCLBuiltinFromInst(const std::string& FuncName,
+  Instruction *transBuiltinFromInst(const std::string& FuncName,
       SPRVInstruction* BI, BasicBlock* BB);
   Instruction *transOCLBuiltinFromInst(SPRVInstruction *BI, BasicBlock *BB);
+  Instruction *transSPRVBuiltinFromInst(SPRVInstruction *BI, BasicBlock *BB);
   Instruction *transOCLBarrierFence(SPRVInstruction* BI, BasicBlock *BB);
   Instruction *transOCLDot(SPRVDot *BD, BasicBlock *BB);
   void transOCLVectorLoadStore(std::string& UnmangledName,
@@ -619,10 +621,10 @@ SPRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
   auto ES = IT->getExecutionScope();
   std::string Prefix;
   switch(ES) {
-  case SPRVES_Workgroup:
+  case ScopeWorkgroup:
     Prefix = kOCLBuiltinName::WorkPrefix;
     break;
-  case SPRVES_Subgroup:
+  case ScopeSubgroup:
     Prefix = kOCLBuiltinName::SubPrefix;
     break;
   default:
@@ -1555,22 +1557,28 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     }
     break;
 
-  default:
-  if (isSPRVCmpInstTransToLLVMInst(static_cast<SPRVInstruction*>(BV))) {
-    return mapValue(BV, transCmpInst(BV, BB, F));
-  } else if (SPIRSPRVBuiltinInstMap::rfind(BV->getOpCode(), nullptr)) {
-    return mapValue(BV, transOCLBuiltinFromInst(
-        static_cast<SPRVInstruction *>(BV), BB));
-  } else if (isBinaryShiftLogicalBitwiseOpCode(BV->getOpCode())) {
-        return mapValue(BV, transShiftLogicalBitwiseInst(BV, BB, F));
-  } else if (isCvtOpCode(BV->getOpCode())) {
-      auto BI = static_cast<SPRVInstruction *>(BV);
-      Value *Inst = nullptr;
-      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
-        Inst = transOCLBuiltinFromInst(BI, BB);
-      else
-        Inst = transConvertInst(BV, F, BB);
-      return mapValue(BV, Inst);
+  default: {
+    auto OC = BV->getOpCode();
+    if (isSPRVCmpInstTransToLLVMInst(static_cast<SPRVInstruction*>(BV))) {
+      return mapValue(BV, transCmpInst(BV, BB, F));
+    } else if (OCLSPRVBuiltinMap::rfind(OC, nullptr) &&
+               !isAtomicOpCode(OC)) {
+      return mapValue(BV, transOCLBuiltinFromInst(
+          static_cast<SPRVInstruction *>(BV), BB));
+    } else if (isBinaryShiftLogicalBitwiseOpCode(OC) ||
+                isLogicalOpCode(OC)) {
+          return mapValue(BV, transShiftLogicalBitwiseInst(BV, BB, F));
+    } else if (isCvtOpCode(OC)) {
+        auto BI = static_cast<SPRVInstruction *>(BV);
+        Value *Inst = nullptr;
+        if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
+          Inst = transOCLBuiltinFromInst(BI, BB);
+        else
+          Inst = transConvertInst(BV, F, BB);
+        return mapValue(BV, Inst);
+    }
+    return mapValue(BV, transSPRVBuiltinFromInst(
+      static_cast<SPRVInstruction *>(BV), BB));
   }
 
   SPRVDBG(bildbgs() << "Cannot translate " << *BV << '\n';)
@@ -1674,9 +1682,6 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
           BT->getVectorComponentCount());
     else
        llvm_unreachable("invalid compare instruction");
-  } else if (OC == OpAtomicIIncrement ||
-             OC == OpAtomicIDecrement) {
-    Args.erase(Args.begin() + Args.size() - 2, Args.end());
   }
 }
 
@@ -1700,7 +1705,7 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
 }
 
 Instruction *
-SPRVToLLVM::transOCLBuiltinFromInst(const std::string& FuncName,
+SPRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
     SPRVInstruction* BI, BasicBlock* BB) {
   std::string MangledName;
   auto Ops = BI->getOperands();
@@ -1771,7 +1776,7 @@ SPRVToLLVM::getOCLBuiltinName(SPRVInstruction* BI) {
     // Do nothing.
     break;
   }
-  auto Name = SPIRSPRVBuiltinInstMap::rmap(OC);
+  auto Name = OCLSPRVBuiltinMap::rmap(OC);
   transOCLGroupBuiltinName(Name, BI);
 
   SPRVType *T = nullptr;
@@ -1798,7 +1803,13 @@ Instruction *
 SPRVToLLVM::transOCLBuiltinFromInst(SPRVInstruction *BI, BasicBlock *BB) {
   assert(BB && "Invalid BB");
   auto FuncName = getOCLBuiltinName(BI);
-  return transOCLBuiltinFromInst(FuncName, BI, BB);
+  return transBuiltinFromInst(FuncName, BI, BB);
+}
+
+Instruction *
+SPRVToLLVM::transSPRVBuiltinFromInst(SPRVInstruction *BI, BasicBlock *BB) {
+  assert(BB && "Invalid BB");
+  return transBuiltinFromInst(getSPRVFuncName(BI->getOpCode()), BI, BB);
 }
 
 bool
@@ -2173,7 +2184,7 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
       Func->addFnAttr(Attribute::NoUnwind);
   }
   Value *Arg[] = {ConstantInt::get(Int32Ty,
-      rmapBitMask<SPIRSPRVMemFenceFlagMap>(MemSema))};
+      rmapBitMask<OCLMemFenceMap>(MemSema))};
   auto Call = CallInst::Create(Func, Arg, "", BB);
   Call->setName(MB->getName());
   setAttrByCalledFunc(Call);
@@ -2290,6 +2301,11 @@ llvm::ReadSPRV(LLVMContext &C, std::istream &IS, Module *&M,
     BM->getError(ErrMsg);
     Succeed = false;
   }
+  PassManager PassMgr;
+  PassMgr.add(createSPRVToOCL20());
+  PassMgr.add(createOCL20To12());
+  PassMgr.run(*M);
+
   if (DbgSaveTmpLLVM)
     dumpLLVM(M, DbgTmpLLVMFileName);
   if (!Succeed) {

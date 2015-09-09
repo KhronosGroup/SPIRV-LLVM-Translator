@@ -1,4 +1,4 @@
-//===- LLVMSPRVRegularizeOCL20.cpp – Regularize OCL20 builtins---*- C++ -*-===//
+//===- SPRVRegularizeOCL20.cpp - Regularize OCL20 builtins-------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -38,6 +38,7 @@
 #define DEBUG_TYPE "spvcl20"
 
 #include "SPRVInternal.h"
+#include "OCLUtil.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
@@ -50,8 +51,19 @@
 
 using namespace llvm;
 using namespace SPRV;
+using namespace OCLUtil;
 
 namespace SPRV {
+static size_t
+getOCLCpp11AtomicMaxNumOps(StringRef Name) {
+  return StringSwitch<size_t>(Name)
+      .Cases("load", "flag_test_and_set", "flag_clear", 3)
+      .Cases("store", "exchange",  4)
+      .StartsWith("compare_exchange", 6)
+      .StartsWith("fetch", 4)
+      .Default(0);
+}
+
 class SPRVRegularizeOCL20: public ModulePass,
   public InstVisitor<SPRVRegularizeOCL20> {
 public:
@@ -61,32 +73,64 @@ public:
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
-  void visitCallGetFence(CallInst *CI, const std::string &DemangledName);
-  void visitCallNDRange(CallInst *CI, const std::string &DemangledName);
+
+  /// Transform atomic_work_item_fence/mem_fence to __spirv_MemoryBarrier.
+  /// func(flag, order, scope) =>
+  ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
+  void transMemoryBarrier(CallInst *CI, AtomicWorkItemFenceLiterals);
+
+  /// Transform atomic_* to __spirv_Atomic*.
+  /// atomic_x(ptr_arg, args, order, scope) =>
+  ///   __spirv_AtomicY(ptr_arg, map(order), map(scope), args)
+  void transAtomicBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info);
+
+  /// Transform atomic_work_item_fence to __spirv_MemoryBarrier.
+  /// atomic_work_item_fence(flag, order, scope) =>
+  ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
+  void visitCallAtomicWorkItemFence(CallInst *CI);
 
   /// Transform atom_cmpxchg/atomic_cmpxchg to atomic_compare_exchange.
   /// In atom_cmpxchg/atomic_cmpxchg, the expected value parameter is a value.
   /// However in atomic_compare_exchange it is a pointer. The transformation
   /// adds an alloca instruction, store the expected value in the pointer, and
   /// pass the pointer as argument.
-  void visitCallAtomicCmpXchg(CallInst *CI, const std::string &DemangledName);
+  /// \returns the call instruction of atomic_compare_exchange_strong.
+  CallInst *visitCallAtomicCmpXchg(CallInst *CI, const std::string &DemangledName);
 
   /// Transform atomic_init.
   /// atomic_init(p, x) => store p, x
   void visitCallAtomicInit(CallInst *CI);
 
-  /// Transform read_image with sampler arguments.
-  /// read_image(image, sampler, ...) =>
-  ///   sampled_image = __spirv_SampledImage__(image, sampler);
-  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
-  void visitCallReadImage(CallInst *CI, StringRef MangledName,
-      const std::string &DemangledName);
+  /// Transform legacy OCL 1.x atomic builtins to SPIR-V builtins for extensions
+  ///   cl_khr_int64_base_atomics
+  ///   cl_khr_int64_extended_atomics
+  /// Do nothing if the called function is not a legacy atomic builtin.
+  void visitCallAtomicLegacy(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
+
+  /// Transform OCL 2.0 C++11 atomic builtins to SPIR-V builtins.
+  /// Do nothing if the called function is not a C++11 atomic builtin.
+  void visitCallAtomicCpp11(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
 
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
   ///   dimension = __spirv_ImageQuerySizeLod__(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
+
+  /// Transform mem_fence to __spirv_MemoryBarrier.
+  /// mem_fence(flag) => __spirv_MemoryBarrier(Workgroup, map(flag))
+  void visitCallMemFence(CallInst *CI);
+
+  void visitCallNDRange(CallInst *CI, const std::string &DemangledName);
+
+  /// Transform read_image with sampler arguments.
+  /// read_image(image, sampler, ...) =>
+  ///   sampled_image = __spirv_SampledImage__(image, sampler);
+  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
+  void visitCallReadImage(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
@@ -97,6 +141,11 @@ public:
 private:
   Module *M;
   LLVMContext *Ctx;
+
+  ConstantInt *addInt32(int I) {
+    return getInt32(M, I);
+  }
+
 };
 
 char SPRVRegularizeOCL20::ID = 0;
@@ -116,7 +165,7 @@ SPRVRegularizeOCL20::runOnModule(Module& Module) {
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)){
-    DEBUG(errs() << "Fails to verify module: " << Err);
+    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
@@ -137,13 +186,23 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
     visitCallNDRange(&CI, DemangledName);
     return;
   }
-  if (DemangledName == "atom_cmpxchg" ||
-      DemangledName == "atomic_cmpxchg") {
-    visitCallAtomicCmpXchg(&CI, DemangledName);
-    return;
-  }
-  if (DemangledName == "atomic_init") {
-    visitCallAtomicInit(&CI);
+  if (DemangledName.find(kOCLBuiltinName::AtomicPrefix) == 0 ||
+      DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0) {
+    auto PCI = &CI;
+    if (DemangledName == kOCLBuiltinName::AtomicInit) {
+      visitCallAtomicInit(PCI);
+      return;
+    }
+    if (DemangledName == kOCLBuiltinName::AtomicWorkItemFence) {
+      visitCallAtomicWorkItemFence(PCI);
+      return;
+    }
+    if (DemangledName == kOCLBuiltinName::AtomCmpXchg ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchg) {
+      PCI = visitCallAtomicCmpXchg(PCI, DemangledName);
+    }
+    visitCallAtomicLegacy(PCI, MangledName, DemangledName);
+    visitCallAtomicCpp11(PCI, MangledName, DemangledName);
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
@@ -155,6 +214,10 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
       DemangledName == kOCLBuiltinName::GetImageDepth ||
       DemangledName == kOCLBuiltinName::GetImageDim) {
     visitCallGetImageSize(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::MemFence) {
+    visitCallMemFence(&CI);
     return;
   }
 }
@@ -200,18 +263,28 @@ SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
   }, true, &Attrs);
 }
 
-void
+CallInst *
 SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  Value *Alloca = nullptr;
+  CallInst *NewCI = nullptr;
+  mutateCallInst(M, CI, [&](CallInst *, std::vector<Value *> &Args,
+      Type *&RetTy){
     auto &CmpVal = Args[1];
-    auto Alloca = new AllocaInst(CmpVal->getType(), "",
-                                 CI->getParent()->getParent()->front().begin());
+    Alloca = new AllocaInst(CmpVal->getType(), "",
+        CI->getParent()->getParent()->getEntryBlock().getFirstInsertionPt());
     auto Store = new StoreInst(CmpVal, Alloca, CI);
     CmpVal = Alloca;
+    RetTy = Type::getInt1Ty(*Ctx);
     return "atomic_compare_exchange_strong";
-  }, true, &Attrs);
+  },
+  [&](CallInst *NCI)->Instruction * {
+    NewCI = NCI;
+    return new LoadInst(Alloca, "", false, NCI->getNextNode());
+  },
+  true, &Attrs);
+  return NewCI;
 }
 
 void
@@ -220,6 +293,160 @@ SPRVRegularizeOCL20::visitCallAtomicInit(CallInst* CI) {
   ST->takeName(CI);
   CI->dropAllReferences();
   CI->eraseFromParent();
+}
+
+void
+SPRVRegularizeOCL20::visitCallAtomicWorkItemFence(CallInst* CI) {
+  transMemoryBarrier(CI, getAtomicWorkItemFenceLiterals(CI));
+}
+
+void
+SPRVRegularizeOCL20::visitCallMemFence(CallInst* CI) {
+  transMemoryBarrier(CI, std::make_tuple(
+      cast<ConstantInt>(CI->getArgOperand(0))->getZExtValue(),
+      OCLMO_relaxed,
+      OCLMS_work_group));
+}
+
+void SPRVRegularizeOCL20::transMemoryBarrier(CallInst* CI,
+    AtomicWorkItemFenceLiterals Lit) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    Args.resize(2);
+    Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
+    Args[1] = addInt32(mapOCLMemSemanticToSPRV(std::get<0>(Lit),
+        std::get<1>(Lit)));
+    return getSPRVFuncName(OpMemoryBarrier);
+  }, true, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallAtomicLegacy(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  StringRef Stem = DemangledName;
+  if (Stem.startswith("atom_"))
+    Stem = Stem.drop_front(strlen("atom_"));
+  else if (Stem.startswith("atomic_"))
+    Stem = Stem.drop_front(strlen("atomic_"));
+  else
+    return;
+
+  std::string Sign;
+  std::string Postfix;
+  std::string Prefix;
+  if (Stem == "add" ||
+      Stem == "sub" ||
+      Stem == "and" ||
+      Stem == "or" ||
+      Stem == "xor" ||
+      Stem == "min" ||
+      Stem == "max") {
+    if ((Stem == "min" || Stem == "max") &&
+         isMangledTypeUnsigned(MangledName.back()))
+      Sign = 'u';
+    Prefix = "fetch_";
+    Postfix = "_explicit";
+  } else if (Stem == "xchg") {
+    Stem = "exchange";
+    Postfix = "_explicit";
+  }
+  else if (Stem == "cmpxchg") {
+    Stem = "compare_exchange_strong";
+    Postfix = "_explicit";
+  }
+  else if (Stem == "inc" ||
+           Stem == "dec") {
+    // do nothing
+  } else
+    return;
+
+  OCLBuiltinTransInfo Info;
+  Info.UniqName = "atomic_" + Prefix + Sign + Stem.str() + Postfix;
+  std::vector<int> PostOps;
+  PostOps.push_back(OCLLegacyAtomicMemOrder);
+  if (Stem.startswith("compare_exchange"))
+    PostOps.push_back(OCLLegacyAtomicMemOrder);
+  PostOps.push_back(OCLLegacyAtomicMemScope);
+
+  Info.PostProc = [=](std::vector<Value *> &Ops){
+    for (auto &I:PostOps){
+      Ops.push_back(addInt32(I));
+    }
+  };
+  transAtomicBuiltin(CI, Info);
+}
+
+void
+SPRVRegularizeOCL20::visitCallAtomicCpp11(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  StringRef Stem = DemangledName;
+  if (Stem.startswith("atomic_"))
+    Stem = Stem.drop_front(strlen("atomic_"));
+  else
+    return;
+
+  std::string NewStem = Stem;
+  std::vector<int> PostOps;
+  if (Stem.startswith("store") ||
+      Stem.startswith("load") ||
+      Stem.startswith("exchange") ||
+      Stem.startswith("compare_exchange") ||
+      Stem.startswith("fetch") ||
+      Stem.startswith("flag")) {
+    if ((Stem.startswith("fetch_min") ||
+        Stem.startswith("fetch_max")) &&
+        containsUnsignedAtomicType(MangledName))
+      NewStem.insert(NewStem.begin() + strlen("fetch_"), 'u');
+
+    if (!Stem.endswith("_explicit")) {
+      NewStem = NewStem + "_explicit";
+      PostOps.push_back(OCLMO_seq_cst);
+      if (Stem.startswith("compare_exchange"))
+        PostOps.push_back(OCLMO_seq_cst);
+      PostOps.push_back(OCLMS_device);
+    } else {
+      auto MaxOps = getOCLCpp11AtomicMaxNumOps(
+          Stem.drop_back(strlen("_explicit")));
+      if (CI->getNumArgOperands() < MaxOps)
+        PostOps.push_back(OCLMS_device);
+    }
+  } else if (Stem == "work_item_fence") {
+    // do nothing
+  } else
+    return;
+
+  OCLBuiltinTransInfo Info;
+  Info.UniqName = std::string("atomic_") + NewStem;
+  Info.PostProc = [=](std::vector<Value *> &Ops){
+    for (auto &I:PostOps){
+      Ops.push_back(addInt32(I));
+    }
+  };
+
+  transAtomicBuiltin(CI, Info);
+}
+
+void
+SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
+    OCLBuiltinTransInfo& Info) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    Info.PostProc(Args);
+    auto NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Info.UniqName);
+    auto ScopeIdx = Args.size() - 1;
+    auto OrderIdx = Args.size() - NumOrder - 1;
+    Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
+        [](unsigned I){
+      return map<Scope>(static_cast<OCLMemScopeKind>(I));
+    });
+    for (size_t I = 0; I < NumOrder; ++I)
+      Args[OrderIdx + I] = mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),
+          [](unsigned Ord) {
+      return mapOCLMemSemanticToSPRV(0, static_cast<OCLMemOrderKind>(Ord));
+    });
+    move(Args, OrderIdx, Args.size(), findFirstPtr(Args) + 1);
+    return getSPRVFuncName(OCLSPRVBuiltinMap::map(Info.UniqName));
+  }, true, &Attrs);
 }
 
 void

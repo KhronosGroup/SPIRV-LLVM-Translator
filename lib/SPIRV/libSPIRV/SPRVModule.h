@@ -209,7 +209,7 @@ public:
   // Instruction creation functions
   virtual SPRVInstruction *addPtrAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool) = 0;
-  virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
+  virtual SPRVInstruction *addAsyncGroupCopy(Scope Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB) = 0;
   virtual SPRVInstruction *addBinaryInst(Op, SPRVType *, SPRVValue *,
@@ -240,17 +240,17 @@ public:
   virtual SPRVInstruction *addCmpInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addControlBarrierInst(
-      SPRVExecutionScopeKind ExecKind, SPRVMemoryScopeKind MemKind,
+      Scope ExecKind, Scope MemKind,
       SPRVWord MemSema, SPRVBasicBlock *BB) = 0;
   virtual SPRVInstruction *addGroupInst(Op OpCode, SPRVType *Type,
-      SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
+      Scope Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB) = 0;
   virtual SPRVInstruction* addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) = 0;
   virtual SPRVInstruction *addLoadInst(SPRVValue *,
       const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addMemoryBarrierInst(
-      SPRVExecutionScopeKind ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB)
+      Scope ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB)
     = 0;
   virtual SPRVInstruction *addPhiInst(SPRVType *, std::vector<SPRVValue *>,
       SPRVBasicBlock *) = 0;

@@ -291,6 +291,29 @@ undecorateSPRVFunction(const std::string& S) {
   return S.substr(Start, End - Start);
 }
 
+std::string
+prefixSPRVFunction(const std::string &S) {
+  return std::string(kSPRVName::Prefix) + S;
+}
+
+std::string
+dePrefixSPRVFunction(const std::string& S) {
+  StringRef R(S);
+  const size_t Start = strlen(kSPRVName::Prefix);
+  return R.startswith(kSPRVName::Prefix) ? R.drop_front(Start).str() : S;
+}
+
+std::string
+getSPRVFuncName(Op OC) {
+  return prefixSPRVFunction(getName(OC));
+}
+
+Op
+getSPRVFuncOC(const std::string& S) {
+  Op OC;
+  return getByName(dePrefixSPRVFunction(S), OC) ? OC : OpNop;
+}
+
 bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
                   std::string *DemangledName) {
   if (!Name.startswith("_Z"))
@@ -321,6 +344,24 @@ bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
     *DemangledName = Name.substr(Start, Len);
   }
   return true;
+}
+
+// Check if a mangled type name is unsigned
+bool
+isMangledTypeUnsigned(char Mangled) {
+  return Mangled == 'h' /* uchar */
+      || Mangled == 't' /* ushort */
+      || Mangled == 'j' /* uint */
+      || Mangled == 'm' /* ulong */;
+}
+
+// Check if a mangled function name contains unsigned atomic type
+bool
+containsUnsignedAtomicType(StringRef Name) {
+  auto Loc = Name.find(kMangledName::AtomicPrefix);
+  if (Loc == StringRef::npos)
+    return false;
+  return isMangledTypeUnsigned(Name[Loc + strlen(kMangledName::AtomicPrefix)]);
 }
 
 bool
@@ -459,6 +500,16 @@ getInt64(Module *M, int64_t value) {
 ConstantInt *
 getInt32(Module *M, int value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, true);
+}
+
+ConstantInt *mapUInt(Module *M, ConstantInt *I,
+    std::function<unsigned(unsigned)> F) {
+  return ConstantInt::get(I->getType(), F(I->getZExtValue()), false);
+}
+
+ConstantInt *mapSInt(Module *M, ConstantInt *I,
+    std::function<int(int)> F) {
+  return ConstantInt::get(I->getType(), F(I->getSExtValue()), true);
 }
 
 bool
@@ -895,6 +946,7 @@ eraseUselessFunctions(Module *M) {
   }
   return changed;
 }
+
 
 }
 

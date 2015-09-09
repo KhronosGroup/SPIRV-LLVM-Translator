@@ -438,53 +438,12 @@ SPRVMap<SPRVBuiltinVariableKind, std::string>::init() {
 typedef SPRVMap<SPRVBuiltinVariableKind, std::string>
   SPRVBuiltinVariableNameMap;
 
-enum SPRVExecutionScopeKind {
-#define _SPRV_OP(x) SPRVES_##x,
-_SPRV_OP(CrossDevice)
-_SPRV_OP(Device)
-_SPRV_OP(Workgroup)
-_SPRV_OP(Subgroup)
-_SPRV_OP(Count)
-#undef _SPRV_OP
-};
-
-inline bool isValid(SPRVExecutionScopeKind Kind) {
-  return (unsigned)Kind < (unsigned)SPRVES_Count;
+inline bool isValid(Scope Kind) {
+  return (unsigned)Kind <= (unsigned)ScopeInvocation;
 }
-
-enum SPRVMemoryScopeKind {
-#define _SPRV_OP(x) SPRVMS_##x,
-_SPRV_OP(CrossDevice)
-_SPRV_OP(Device)
-_SPRV_OP(Workgroup)
-_SPRV_OP(Subgroup)
-_SPRV_OP(Invocation)
-_SPRV_OP(Count)
-#undef _SPRV_OP
-};
-
-inline bool isValid(SPRVMemoryScopeKind Kind) {
-  return (unsigned)Kind < (unsigned)SPRVMS_Count;
-}
-
-enum SPRVMemorySemanticsMaskKind {
-#define _SPRV_OP(x, y) SPRVMSM_##x = y,
-_SPRV_OP(Relaxed, 1)
-_SPRV_OP(SequentiallyConsistent, 2)
-_SPRV_OP(Acquire, 4)
-_SPRV_OP(Release, 8)
-_SPRV_OP(UniformMemory, 16)
-_SPRV_OP(SubgroupMemory, 32)
-_SPRV_OP(WorkgroupLocalMemory, 64)
-_SPRV_OP(WorkgroupGlobalMemory, 128)
-_SPRV_OP(AtomicCounterMemory, 256)
-_SPRV_OP(ImageMemory, 512)
-_SPRV_OP(Max, 1023)
-#undef _SPRV_OP
-};
 
 inline bool isValidSPRVMemSemanticsMask(SPRVWord MemMask) {
-  return MemMask <= (unsigned)SPRVMSM_Max;
+  return MemMask < 1 << ((unsigned)MemorySemanticsImageMemoryShift + 1);
 }
 
 enum SPRVSamplerAddressingModeKind {
