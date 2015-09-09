@@ -208,7 +208,7 @@ public:
   // Instruction creation functions
   virtual SPRVInstruction *addPtrAccessChainInst(SPRVType *, SPRVValue *,
       std::vector<SPRVValue *>, SPRVBasicBlock *, bool);
-  virtual SPRVInstruction *addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
+  virtual SPRVInstruction *addAsyncGroupCopy(Scope Scope,
       SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
       SPRVValue *Event, SPRVBasicBlock *BB);
   virtual SPRVInstruction *addExtInst(SPRVType *,
@@ -239,17 +239,17 @@ public:
   virtual SPRVInstruction *addCopyMemorySizedInst(SPRVValue *, SPRVValue *,
       SPRVValue *, const std::vector<SPRVWord>&, SPRVBasicBlock *);
   virtual SPRVInstruction *addControlBarrierInst(
-      SPRVExecutionScopeKind ExecKind, SPRVMemoryScopeKind MemKind,
+      Scope ExecKind, Scope MemKind,
       SPRVWord MemSema, SPRVBasicBlock *BB);
   virtual SPRVInstruction *addGroupInst(Op OpCode, SPRVType *Type,
-      SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
+      Scope Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB);
   virtual SPRVInstruction *addInstruction(SPRVInstruction *Inst,
       SPRVBasicBlock *BB);
   virtual SPRVInstruction *addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty);
   virtual SPRVInstruction *addMemoryBarrierInst(
-      SPRVExecutionScopeKind ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB);
+      Scope ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB);
   virtual SPRVInstruction *addReturnInst(SPRVBasicBlock *);
   virtual SPRVInstruction *addReturnValueInst(SPRVValue *, SPRVBasicBlock *);
   virtual SPRVInstruction *addSelectInst(SPRVValue *, SPRVValue *, SPRVValue *,
@@ -804,7 +804,7 @@ SPRVModuleImpl::addSwitchInst(SPRVValue *Select, SPRVBasicBlock *Default,
 
 SPRVInstruction *
 SPRVModuleImpl::addGroupInst(Op OpCode, SPRVType *Type,
-    SPRVExecutionScopeKind Scope, const std::vector<SPRVValue *> &Ops,
+    Scope Scope, const std::vector<SPRVValue *> &Ops,
     SPRVBasicBlock *BB) {
   auto WordOps = getIds(Ops);
   WordOps.insert(WordOps.begin(), Scope);
@@ -922,14 +922,14 @@ SPRVModuleImpl::addCmpInst(Op TheOpCode, SPRVType *TheType,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addControlBarrierInst(SPRVExecutionScopeKind ExecKind,
-    SPRVMemoryScopeKind MemKind, SPRVWord MemSema, SPRVBasicBlock *BB) {
+SPRVModuleImpl::addControlBarrierInst(Scope ExecKind,
+    Scope MemKind, SPRVWord MemSema, SPRVBasicBlock *BB) {
   return addInstruction(
       new SPRVControlBarrier(ExecKind, MemKind, MemSema, BB), BB);
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addMemoryBarrierInst(SPRVExecutionScopeKind ScopeKind,
+SPRVModuleImpl::addMemoryBarrierInst(Scope ScopeKind,
     SPRVWord MemFlag, SPRVBasicBlock *BB) {
   return addInstruction(SPRVInstTemplateBase::create(OpMemoryBarrier,
       nullptr, SPRVID_INVALID,
@@ -953,7 +953,7 @@ SPRVModuleImpl::addPtrAccessChainInst(SPRVType *Type, SPRVValue *Base,
 }
 
 SPRVInstruction *
-SPRVModuleImpl::addAsyncGroupCopy(SPRVExecutionScopeKind Scope,
+SPRVModuleImpl::addAsyncGroupCopy(Scope Scope,
     SPRVValue *Dest, SPRVValue *Src, SPRVValue *NumElems, SPRVValue *Stride,
     SPRVValue *Event, SPRVBasicBlock *BB) {
   return addInstruction(new SPRVAsyncGroupCopy(Scope, getId(), Dest, Src,

@@ -165,7 +165,7 @@ convertSPRVToLLVM() {
 
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)){
-    errs() << "Fails to verify module: " << Err;
+    errs() << "Fails to verify module: " << ErrorOS.str();
     return -1;
   }
 

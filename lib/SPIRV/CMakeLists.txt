@@ -17,10 +17,13 @@ add_llvm_library(LLVMSPIRVLib
   Mangler/Mangler.cpp
   Mangler/ManglingUtils.cpp
   Mangler/ParameterType.cpp
+  OCL20To12.cpp
+  OCLUtil.cpp
   SPRVLowerBool.cpp
   SPRVLowerOCLBlocks.cpp
   SPRVReader.cpp
   SPRVRegularizeOCL20.cpp
+  SPRVToOCL20.cpp
   SPRVUtil.cpp
   SPRVWriter.cpp
   )

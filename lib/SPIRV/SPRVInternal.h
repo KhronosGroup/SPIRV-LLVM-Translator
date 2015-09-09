@@ -49,6 +49,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/SPIRV.h"
 
+#include <utility>
 #include <functional>
 
 using namespace SPRV;
@@ -177,29 +178,26 @@ enum SPIRAddressSpace {
   SPIRAS_Count,
 };
 
-enum SPIRMemFenceFlagKind {
-#define _SPRV_OP(x,y) SPIRMFF_##x = y,
-_SPRV_OP(Local, 1)
-_SPRV_OP(Global, 2)
-_SPRV_OP(Image, 4)
-#undef _SPRV_OP
+enum OCLMemFenceKind {
+  OCLMF_Local = 1,
+  OCLMF_Global = 2,
+  OCLMF_Image = 4,
 };
 
-enum SPIRMemScopeKind {
-  SPIRMS_work_item,
-  SPIRMS_work_group,
-  SPIRMS_device,
-  SPIRMS_all_svm_devices,
-  SPIRMS_sub_group,
-  SPIRMS_Count,
+enum OCLMemScopeKind {
+  OCLMS_work_item,
+  OCLMS_work_group,
+  OCLMS_device,
+  OCLMS_all_svm_devices,
+  OCLMS_sub_group,
 };
 
-enum SPIRMemoryOrderKind {
-  SPIRMO_relaxed,
-  SPIRMO_acquire,
-  SPIRMO_release,
-  SPIRMO_acq_rel,
-  SPIRMO_seq_cst
+enum OCLMemOrderKind {
+  OCLMO_relaxed,
+  OCLMO_acquire,
+  OCLMO_release,
+  OCLMO_acq_rel,
+  OCLMO_seq_cst
 };
 
 template<> inline void
@@ -306,7 +304,6 @@ _SPRV_OP(fetch_max_explicit, AtomicSMax)
 _SPRV_OP(fetch_and_explicit, AtomicAnd)
 _SPRV_OP(fetch_or_explicit, AtomicOr)
 _SPRV_OP(fetch_xor_explicit, AtomicXor)
-_SPRV_OP(work_item_fence, MemoryBarrier)
 #undef _SPRV_OP
 #define _SPRV_OP(x,y) add(#x, Op##y);
 _SPRV_OP(dot, Dot)
@@ -392,7 +389,7 @@ _SPRV_OP(get_image_num_samples, ImageQuerySamples)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, Op, SPRVInstruction>
-  SPIRSPRVBuiltinInstMap;
+  OCLSPRVBuiltinMap;
 
 template<> inline void
 SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>::init() {
@@ -435,28 +432,52 @@ typedef SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>
   SPIRSPRVFuncCtlMaskMap;
 
 template<> inline void
-SPRVMap<SPIRMemFenceFlagKind, SPRVMemorySemanticsMaskKind>::init() {
-#define _SPRV_OP(x,y) add(SPIRMFF_##x, SPRVMSM_##y);
-_SPRV_OP(Local, WorkgroupLocalMemory)
-_SPRV_OP(Global, WorkgroupGlobalMemory)
-_SPRV_OP(Image, ImageMemory)
-#undef _SPRV_OP
+SPRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
+  add(OCLMF_Local, MemorySemanticsWorkgroupLocalMemoryMask);
+  add(OCLMF_Global, MemorySemanticsWorkgroupGlobalMemoryMask);
+  add(OCLMF_Image, MemorySemanticsImageMemoryMask);
 }
-typedef SPRVMap<SPIRMemFenceFlagKind, SPRVMemorySemanticsMaskKind>
-  SPIRSPRVMemFenceFlagMap;
+typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
+  OCLMemFenceMap;
 
 template<> inline void
-SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>::init() {
-#define _SPRV_OP(x,y) add(SPIRMS_##x, SPRVMS_##y);
-  _SPRV_OP(work_item, Invocation)
-  _SPRV_OP(work_group, Workgroup)
-  _SPRV_OP(device, Device)
-  _SPRV_OP(all_svm_devices, CrossDevice)
-  _SPRV_OP(sub_group, Subgroup)
-#undef _SPRV_OP
+SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
+  add(OCLMO_relaxed, MemorySemanticsRelaxedMask);
+  add(OCLMO_acquire, MemorySemanticsAcquireMask);
+  add(OCLMO_release, MemorySemanticsReleaseMask);
+  add(OCLMO_acq_rel, MemorySemanticsAcquireMask|MemorySemanticsReleaseMask);
+  add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
 }
-typedef SPRVMap<SPIRMemScopeKind, SPRVMemoryScopeKind>
-  SPIRSPRVMemScopeMap;
+typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
+  OCLMemOrderMap;
+
+inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
+    OCLMemOrderKind Order) {
+  return OCLMemOrderMap::map(Order) |
+      mapBitMask<OCLMemFenceMap>(MemFenceFlag);
+}
+
+inline std::pair<unsigned, OCLMemOrderKind>
+mapSPRVMemSemanticToOCL(unsigned Sema) {
+  return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
+    OCLMemOrderMap::rmap(Sema & 0xF));
+}
+
+inline OCLMemOrderKind
+mapSPRVMemOrderToOCL(unsigned Sema) {
+  return OCLMemOrderMap::rmap(Sema & 0xF);
+}
+
+template<> inline void
+SPRVMap<OCLMemScopeKind, Scope>::init() {
+  add(OCLMS_work_item, ScopeInvocation);
+  add(OCLMS_work_group, ScopeWorkgroup);
+  add(OCLMS_device, ScopeDevice);
+  add(OCLMS_all_svm_devices, ScopeCrossDevice);
+  add(OCLMS_sub_group, ScopeSubgroup);
+}
+typedef SPRVMap<OCLMemScopeKind, Scope>
+  OCLMemScopeMap;
 
 template<> inline void
 SPRVMap<std::string, SPRVGroupOperationKind>::init() {
@@ -539,7 +560,12 @@ namespace kMangledName {
 }
 
 namespace kOCLBuiltinName {
+  const static char AtomPrefix[]         = "atom_";
+  const static char AtomCmpXchg[]        = "atom_cmpxchg";
   const static char AtomicPrefix[]       = "atomic_";
+  const static char AtomicCmpXchg[]      = "atomic_cmpxchg";
+  const static char AtomicInit[]         = "atomic_init";
+  const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
   const static char Barrier[]            = "barrier";
   const static char EnqueueKernel[]      = "enqueue_kernel";
   const static char GetFence[]           = "get_fence";
@@ -547,6 +573,7 @@ namespace kOCLBuiltinName {
   const static char GetImageDim[]        = "get_image_dim";
   const static char GetImageHeight[]     = "get_image_height";
   const static char GetImageWidth[]      = "get_image_width";
+  const static char MemFence[]           = "mem_fence";
   const static char NDRangePrefix[]      = "ndrange_";
   const static char ToGlobal[]           = "to_global";
   const static char ToLocal[]            = "to_local";
@@ -689,6 +716,31 @@ getTypes(T V) {
   return Tys;
 }
 
+/// Move elements of std::vector from [begin, end) to target.
+template <typename T>
+void move(std::vector<T>& V, size_t begin, size_t end, size_t target) {
+  assert(begin < end && end <= V.size() && target <= V.size() &&
+      !(begin < target && target < end));
+  if (begin <= target && target <= end)
+    return;
+  auto B = V.begin() + begin, E = V.begin() + end;
+  if (target > V.size())
+    target = V.size();
+  if (target > end)
+    target -= (end - begin);
+  std::vector<T> Segment(B, E);
+  V.erase(B, E);
+  V.insert(V.begin() + target, Segment.begin(), Segment.end());
+}
+
+/// Find position of first pointer type value in a vector.
+inline size_t findFirstPtr(const std::vector<Value *> &Args) {
+  auto PtArg = std::find_if(Args.begin(), Args.end(), [](Value *V){
+    return V->getType()->isPointerTy();
+  });
+  return PtArg - Args.begin();
+}
+
 void removeFnAttr(LLVMContext *Context, CallInst *Call,
     Attribute::AttrKind Attr);
 void addFnAttr(LLVMContext *Context, CallInst *Call,
@@ -715,6 +767,12 @@ bool isOCLImageType(llvm::Type* Ty, StringRef *Name = nullptr);
 std::string decorateSPRVFunction(const std::string &S);
 std::string undecorateSPRVFunction(const std::string &S);
 bool isSPRVFunction(const Function *F, std::string *UndecName = nullptr);
+
+/// Get a canonical function name for a SPIR-V op code.
+std::string getSPRVFuncName(Op OC);
+
+/// Get SPIR-V op code given the canonical function name.
+Op getSPRVFuncOC(const std::string& S);
 
 /// \param Name LLVM function name
 /// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
@@ -777,6 +835,14 @@ ConstantInt *getInt64(Module *M, int64_t value);
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
 
+/// Map an unsigned integer constant by applying a function.
+ConstantInt *mapUInt(Module *M, ConstantInt *I,
+    std::function<unsigned(unsigned)> F);
+
+/// Map a signed integer constant by applying a function.
+ConstantInt *mapSInt(Module *M, ConstantInt *I,
+    std::function<int(int)> F);
+
 /// Mangle name for OCL builtin functions.
 /// \param UniqName is unique unmangled name for OCL builtin functions,
 ///        which is transformed and unique version of original unmangled
@@ -815,16 +881,28 @@ getSPRVSampledImageType(Module *M, Type *ImageType);
 bool
 eraseUselessFunctions(Module *M);
 
+// Check if a mangled type name is unsigned
+bool
+isMangledTypeUnsigned(char Mangled);
+
+// Check if a mangled function name contains unsigned atomic type
+bool
+containsUnsignedAtomicType(StringRef Name);
+
 }
 namespace llvm {
 
 void initializeSPRVRegularizeOCL20Pass(PassRegistry&);
 void initializeSPRVLowerOCLBlocksPass(PassRegistry&);
 void initializeSPRVLowerBoolPass(PassRegistry&);
+void initializeSPRVToOCL20Pass(PassRegistry&);
+void initializeOCL20To12Pass(PassRegistry&);
 
 ModulePass *createSPRVRegularizeOCL20();
 ModulePass *createSPRVLowerOCLBlocks();
 ModulePass *createSPRVLowerBool();
+ModulePass *createSPRVToOCL20();
+ModulePass *createOCL20To12();
 
 }
 #endif
