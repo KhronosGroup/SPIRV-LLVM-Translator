@@ -555,8 +555,9 @@ namespace kAccessQualName {
 }
 
 namespace kMangledName {
-  const static char Sampler[]       = "11ocl_sampler";
-  const static char AtomicPrefix[]  = "U7_Atomic";
+  const static char Sampler[]               = "11ocl_sampler";
+  const static char AtomicPrefixIncoming[]  = "U7_Atomic";
+  const static char AtomicPrefixInternal[]  = "atomic_";
 }
 
 namespace kOCLBuiltinName {

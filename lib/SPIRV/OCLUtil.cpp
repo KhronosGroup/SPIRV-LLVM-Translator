@@ -60,7 +60,6 @@ namespace OCLUtil {
 //
 ///////////////////////////////////////////////////////////////////////////////
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI) {
-  AtomicWorkItemFenceLiterals Tup;
   auto getArg = [=](unsigned I){
     return cast<ConstantInt>(CI->getArgOperand(I))->getZExtValue();
   };
