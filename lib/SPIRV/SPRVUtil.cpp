@@ -358,10 +358,11 @@ isMangledTypeUnsigned(char Mangled) {
 // Check if a mangled function name contains unsigned atomic type
 bool
 containsUnsignedAtomicType(StringRef Name) {
-  auto Loc = Name.find(kMangledName::AtomicPrefix);
+  auto Loc = Name.find(kMangledName::AtomicPrefixIncoming);
   if (Loc == StringRef::npos)
     return false;
-  return isMangledTypeUnsigned(Name[Loc + strlen(kMangledName::AtomicPrefix)]);
+  return isMangledTypeUnsigned(Name[Loc + strlen(
+      kMangledName::AtomicPrefixIncoming)]);
 }
 
 bool

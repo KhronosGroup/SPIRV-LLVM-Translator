@@ -159,7 +159,7 @@ namespace SPIR {
 
   std::string AtomicType::toString() const {
     std::stringstream myName;
-    myName << "U7_Atomic" << getBaseType()->toString();
+    myName << "atomic_" << getBaseType()->toString();
     return myName.str();
   }
 

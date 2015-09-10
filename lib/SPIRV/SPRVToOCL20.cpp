@@ -46,14 +46,22 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <cstring>
 
 using namespace llvm;
 using namespace SPRV;
 using namespace OCLUtil;
 
 namespace SPRV {
+
+static cl::opt<std::string>
+MangledAtomicTypeNamePrefix("spirv-atomic-prefix",
+    cl::desc("Mangled atomic type name prefix"), cl::init("U7_Atomic"));
+
 class SPRVToOCL20: public ModulePass,
   public InstVisitor<SPRVToOCL20> {
 public:
@@ -77,6 +85,10 @@ public:
   /// No change with arguments.
   void visitCallSPRVBuiltin(CallInst *CI, Op OC);
 
+  /// Translate mangled atomic type name: "atomic_" =>
+  ///   MangledAtomicTypeNamePrefix
+  void translateMangledAtomicTypeName();
+
   static char ID;
 private:
   Module *M;
@@ -90,6 +102,8 @@ SPRVToOCL20::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
   visit(*M);
+
+  translateMangledAtomicTypeName();
 
   DEBUG(dbgs() << "After SPRVToOCL20:\n" << *M);
 
@@ -177,6 +191,23 @@ void SPRVToOCL20::visitCallSPRVBuiltin(CallInst* CI, Op OC) {
   mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     return OCLSPRVBuiltinMap::rmap(OC);
   }, true, &Attrs);
+}
+
+void SPRVToOCL20::translateMangledAtomicTypeName() {
+  for (auto &I:M->functions()) {
+    if (!I.hasName())
+      continue;
+    std::string MangledName = I.getName();
+    std::string DemangledName;
+    if (!oclIsBuiltin(MangledName, 20, &DemangledName) ||
+        DemangledName.find(kOCLBuiltinName::AtomPrefix) != 0)
+      continue;
+    auto Loc = MangledName.find(kOCLBuiltinName::AtomPrefix);
+    Loc = MangledName.find(kMangledName::AtomicPrefixInternal, Loc);
+    MangledName.replace(Loc, strlen(kMangledName::AtomicPrefixInternal),
+        MangledAtomicTypeNamePrefix);
+    I.setName(MangledName);
+  }
 }
 
 }

@@ -274,7 +274,6 @@ private:
       CI->replaceUsesOfWith(F, InvokeF);
       DEBUG(dbgs() << " => " << *CI << "\n\n");
       erase(Cast);
-      erase(CallInv);
       changed = true;
     }
     erase(CallGetBlkInvoke);
