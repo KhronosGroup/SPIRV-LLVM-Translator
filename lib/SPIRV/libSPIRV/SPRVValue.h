@@ -103,6 +103,10 @@ public:
 
   void setType(SPRVType *Ty) {
     Type = Ty;
+    if (Ty)
+      setHasType();
+    else
+      setHasNoType();
   }
 
   CapVec getRequiredCapability() const {
@@ -122,6 +126,7 @@ public:
 
 protected:
   void setHasNoType() { Attrib |= SPRVEA_NOTYPE;}
+  void setHasType() { Attrib &= ~SPRVEA_NOTYPE;}
 
   SPRVType *Type;                 // Value Type
 };
@@ -342,8 +347,11 @@ class SPRVForward:public SPRVValue, public SPRVComponentExecutionModes {
 public:
   const static Op OC = OpForward;
   // Complete constructor
-  SPRVForward(SPRVModule *TheModule, SPRVId TheId):
-    SPRVValue(TheModule, 0, OC, TheId){}
+  SPRVForward(SPRVModule *TheModule, SPRVType *TheTy, SPRVId TheId):
+    SPRVValue(TheModule, 0, OC, TheId){
+    if (TheTy)
+      setType(TheTy);
+  }
   SPRVForward():SPRVValue(OC) {
     assert(0 && "should never be called");
   }

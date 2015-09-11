@@ -62,6 +62,7 @@
 #include "llvm/Support/Dwarf.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -81,6 +82,9 @@ using namespace llvm;
 using namespace SPRV;
 
 namespace SPRV{
+
+cl::opt<bool> SPRVEnableStepExpansion("spirv-expand-step", cl::init(true),
+  cl::desc("Enable expansion of OpenCL step and smoothstep function"));
 
 // Prefix for placeholder global variable name.
 const char* kPlaceholderPrefix = "placeholder.";
@@ -346,6 +350,24 @@ public:
   CallInst *postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
+  /// \brief Post-process OCL step function
+  /// gentype step (double edge, gentype x)
+  /// =>
+  /// gentype step (gentype edge, gentype x)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLStep(CallInst* CI,
+      const std::string &FuncName);
+
+  /// \brief Post-process OCL smoothstep function
+  /// gentype smoothstep (double edge0, double edge1,
+  ///  gentype x)
+  /// =>
+  /// gentype smoothstep (gentype edge0, gentype edge1,
+  ///  gentype x)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLSmoothStep(CallInst* CI,
+    const std::string &FuncName);
+
   typedef DenseMap<SPRVType *, Type *> SPRVToLLVMTypeMap;
   typedef DenseMap<SPRVValue *, Value *> SPRVToLLVMValueMap;
   typedef DenseMap<SPRVFunction *, Function *> SPRVToLLVMFunctionMap;
@@ -441,7 +463,7 @@ private:
   Instruction *transCmpInst(SPRVValue* BV, BasicBlock* BB, Function* F);
   void transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
       std::vector<SPRVValue *> &Args);
-  Instruction* transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
+  Instruction* transOCLBuiltinPostproc(SPRVInstruction* BI,
       CallInst* CI, BasicBlock* BB, const std::string &DemangledName);
   std::string transOCLImageTypeName(SPRV::SPRVTypeImage* ST);
   std::string transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST);
@@ -898,8 +920,11 @@ BinaryOperator *SPRVToLLVM::transShiftLogicalBitwiseInst(SPRVValue* BV,
     BasicBlock* BB,Function* F) {
   SPRVBinary* BBN = static_cast<SPRVBinary*>(BV);
   assert(BB && "Invalid BB");
-  Instruction::BinaryOps BO = static_cast<Instruction::BinaryOps>(
-      OpCodeMap::rmap(BBN->getOpCode()));
+  Instruction::BinaryOps BO;
+  auto OP = BBN->getOpCode();
+  if (isLogicalOpCode(OP))
+    OP = IntBoolOpMap::rmap(OP);
+  BO = static_cast<Instruction::BinaryOps>(OpCodeMap::rmap(OP));
   auto Inst = BinaryOperator::Create(BO,
       transValue(BBN->getOperand(0), F, BB),
       transValue(BBN->getOperand(1), F, BB), BV->getName(), BB);
@@ -1104,6 +1129,55 @@ SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
   }, true, &Attrs);
 }
 
+CallInst *
+SPRVToLLVM::postProcessOCLStep(CallInst* CI,
+    const std::string &FuncName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  if (!CI->getOperand(0)->getType()->isVectorTy() &&
+    CI->getOperand(1)->getType()->isVectorTy()) {
+    return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+      Type *VecEleTy = Args[0]->getType();
+      unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
+      Type* NewTy = VectorType::get(VecEleTy, vecSize);
+      Value* NewVec = UndefValue::get(NewTy);
+      for (unsigned i = 0; i < vecSize; i++) {
+        Value* idx = ConstantInt::get(llvm::Type::getInt32Ty(*Context), i);
+        Instruction* insertElem = InsertElementInst::Create(NewVec,
+          Args[0], idx, "", CI);
+        NewVec = insertElem;
+      }
+      Args[0] = NewVec;
+      return "step";
+    }, true, &Attrs);
+  }
+  return CI;
+}
+
+CallInst *
+SPRVToLLVM::postProcessOCLSmoothStep(CallInst* CI,
+const std::string &FuncName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  if (!CI->getOperand(0)->getType()->isVectorTy() &&
+    CI->getOperand(2)->getType()->isVectorTy()) {
+    return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+      Type *VecEleTy = Args[0]->getType();
+      unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
+      Type* NewTy = VectorType::get(VecEleTy, vecSize);
+      Value* NewVec = UndefValue::get(NewTy);
+      for (int i = 0; i < 2; i++) {
+        for (unsigned j = 0; j < vecSize; j++) {
+          Value* idx = ConstantInt::get(llvm::Type::getInt32Ty(*Context), j);
+          Instruction* insertElem = InsertElementInst::Create(NewVec,
+            Args[i], idx, "", CI);
+          NewVec = insertElem;
+        }
+        Args[i] = NewVec;
+      }
+      return "smoothstep";
+    }, true, &Attrs);
+  }
+  return CI;
+}
 Value *
 SPRVToLLVM::oclTransConstantSampler(SPRV::SPRVConstantSampler* BCS) {
   auto Lit = (BCS->getAddrMode() << 1) |
@@ -1686,7 +1760,7 @@ SPRVToLLVM::transOCLBuiltinFromInstPreproc(SPRVInstruction* BI, Type *&RetTy,
 }
 
 Instruction*
-SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
+SPRVToLLVM::transOCLBuiltinPostproc(SPRVInstruction* BI,
     CallInst* CI, BasicBlock* BB, const std::string &DemangledName) {
   auto OC = BI->getOpCode();
   if (isCmpOpCode(OC) &&
@@ -1701,6 +1775,10 @@ SPRVToLLVM::transOCLBuiltinFromInstPostproc(SPRVInstruction* BI,
   if (OC == OpImageQuerySizeLod ||
       OC == OpImageQuerySize)
     return postProcessOCLGetImageSize(BI, CI, DemangledName);
+  if (SPRVEnableStepExpansion && DemangledName == "smoothstep")
+    return postProcessOCLSmoothStep(CI, DemangledName);
+  if (SPRVEnableStepExpansion && DemangledName == "step")
+    return postProcessOCLStep(CI, DemangledName);
   return CI;
 }
 
@@ -1743,7 +1821,7 @@ SPRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
   SPRVDBG(bildbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
       *Call << '\n';)
   Instruction *Inst = Call;
-  Inst = transOCLBuiltinFromInstPostproc(BI, Call, BB, FuncName);
+  Inst = transOCLBuiltinPostproc(BI, Call, BB, FuncName);
   return Inst;
 }
 
@@ -1910,6 +1988,7 @@ SPRVToLLVM::transKernelMetadata() {
       continue;
     std::vector<llvm::Metadata*> KernelMD;
     KernelMD.push_back(ValueAsMetadata::get(F));
+
     // Generate metadata for kernel_arg_address_spaces
     addOCLKernelArgumentMetadata(Context, KernelMD,
         SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF,
@@ -2148,7 +2227,7 @@ SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
       BB);
   setCallingConv(Call);
   addFnAttr(Context, Call, Attribute::NoUnwind);
-  return Call;
+  return transOCLBuiltinPostproc(BC, Call, BB, UnmangledName);
 }
 
 Instruction *

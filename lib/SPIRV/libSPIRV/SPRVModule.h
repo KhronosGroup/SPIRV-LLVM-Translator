@@ -164,8 +164,8 @@ public:
   virtual SPRVGroupDecorateGeneric *addGroupDecorateGeneric(
       SPRVGroupDecorateGeneric *GDec) = 0;
   virtual void addEntryPoint(SPRVExecutionModelKind, SPRVId) = 0;
-  virtual SPRVForward *addForward() = 0;
-  virtual SPRVForward *addForward(SPRVId) = 0;
+  virtual SPRVForward *addForward(SPRVType *Ty) = 0;
+  virtual SPRVForward *addForward(SPRVId, SPRVType *Ty) = 0;
   virtual SPRVFunction *addFunction(SPRVFunction *) = 0;
   virtual SPRVFunction *addFunction(SPRVTypeFunction *,
       SPRVId Id = SPRVID_INVALID) = 0;

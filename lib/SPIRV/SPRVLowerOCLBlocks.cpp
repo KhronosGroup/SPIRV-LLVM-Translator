@@ -294,16 +294,16 @@ private:
       }
       assert (I < E);
       Args[I] = InvF;
+      if (I + 1 == E) {
+        Args.push_back(Ctx);
+        Args.push_back(CtxLen);
+        Args.push_back(CtxAlign);
+      } else {
+        Args.insert(Args.begin() + I + 1, CtxAlign);
+        Args.insert(Args.begin() + I + 1, CtxLen);
+        Args.insert(Args.begin() + I + 1, Ctx);
+      }
       if (DemangledName == kOCLBuiltinName::EnqueueKernel) {
-        if (I + 1 == E) {
-          Args.push_back(Ctx);
-          Args.push_back(CtxLen);
-          Args.push_back(CtxAlign);
-        } else {
-          Args.insert(Args.begin() + I + 1, CtxAlign);
-          Args.insert(Args.begin() + I + 1, CtxLen);
-          Args.insert(Args.begin() + I + 1, Ctx);
-        }
         // Insert event arguments if there are not.
         if (!isa<IntegerType>(Args[3]->getType())) {
           Args.insert(Args.begin() + 3, getInt32(M, 0));
