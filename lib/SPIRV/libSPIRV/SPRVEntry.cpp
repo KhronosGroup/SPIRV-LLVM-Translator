@@ -106,7 +106,7 @@ SPRVEntry::getOrCreate(SPRVId TheId)const {
   SPRVEntry *Entry = nullptr;
   bool Found = Module->exist(TheId, &Entry);
   if (!Found)
-    return Module->addForward(TheId);
+    return Module->addForward(TheId, nullptr);
   return Entry;
 }
 
@@ -444,7 +444,7 @@ SPRVAnnotationGeneric::getOrCreateTarget()const {
   assert((!Found || Entry->getOpCode() == OpForward) &&
       "Annotations only allowed on forward");
   if (!Found)
-    Entry = Module->addForward(Target);
+    Entry = Module->addForward(Target, nullptr);
   return static_cast<SPRVForward *>(Entry);
 }
 

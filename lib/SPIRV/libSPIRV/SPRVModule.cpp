@@ -160,8 +160,8 @@ public:
       SPRVDecorationGroup *Group, const std::vector<SPRVEntry *> &Targets);
   virtual void addEntryPoint(SPRVExecutionModelKind ExecModel,
       SPRVId EntryPoint);
-  virtual SPRVForward *addForward();
-  virtual SPRVForward *addForward(SPRVId);
+  virtual SPRVForward *addForward(SPRVType *Ty);
+  virtual SPRVForward *addForward(SPRVId, SPRVType *Ty);
   virtual SPRVFunction *addFunction(SPRVFunction *);
   virtual SPRVFunction *addFunction(SPRVTypeFunction *, SPRVId);
   virtual SPRVEntry *replaceForward(SPRVForward *, SPRVEntry *);
@@ -712,13 +712,13 @@ SPRVModuleImpl::addEntryPoint(SPRVExecutionModelKind ExecModel,
 }
 
 SPRVForward *
-SPRVModuleImpl::addForward() {
-  return add(new SPRVForward(this, getId()));
+SPRVModuleImpl::addForward(SPRVType *Ty) {
+  return add(new SPRVForward(this, Ty, getId()));
 }
 
 SPRVForward *
-SPRVModuleImpl::addForward(SPRVId Id) {
-  return add(new SPRVForward(this, Id));
+SPRVModuleImpl::addForward(SPRVId Id, SPRVType *Ty) {
+  return add(new SPRVForward(this, Ty, Id));
 }
 
 SPRVEntry *

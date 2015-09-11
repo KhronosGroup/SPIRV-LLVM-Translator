@@ -1076,7 +1076,7 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
   }
 
   if (CreateForward)
-    return mapValue(V, BM->addForward());
+    return mapValue(V, BM->addForward(transType(V->getType())));
 
   if (StoreInst *ST = dyn_cast<StoreInst>(V)) {
     std::vector<SPRVWord> MemoryAccess;
@@ -1495,7 +1495,8 @@ LLVMToSPRV::oclGetKernelMetadata(Function *F) {
     MDNode *KernelMD = KernelMDs->getOperand(I);
     if (KernelMD->getNumOperands() == 0)
       continue;
-    Function *Kernel = dyn_cast<Function>(dyn_cast<ValueAsMetadata>(KernelMD->getOperand(0))->getValue());
+    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0)); 
+
     if (Kernel == F)
       return KernelMD;
   }
@@ -2047,7 +2048,8 @@ LLVMToSPRV::transOCLKernelMetadata() {
     MDNode *KernelMD = KernelMDs->getOperand(I);
     if (KernelMD->getNumOperands() == 0)
       continue;
-    Function *Kernel = dyn_cast<Function>(dyn_cast<ValueAsMetadata>(KernelMD->getOperand(0))->getValue());
+    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0));
+
     SPRVFunction *BF = static_cast<SPRVFunction *>(getTranslatedValue(Kernel));
     assert(BF && "Kernel function should be translated first");
     assert(Kernel && oclIsKernel(Kernel)
