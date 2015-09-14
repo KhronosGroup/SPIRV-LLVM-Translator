@@ -6,6 +6,7 @@ set(LLVM_LINK_COMPONENTS
   SPIRVLib
   Core
   Support
+  TransformUtils
   )
 
 add_llvm_tool(llvm-spirv

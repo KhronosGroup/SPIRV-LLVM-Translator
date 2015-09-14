@@ -86,6 +86,10 @@ using namespace llvm;
 using namespace SPRV;
 using namespace OCLUtil;
 
+namespace llvm {
+  FunctionPass *createPromoteMemoryToRegisterPass();
+}
+
 namespace SPRV{
 
 bool SPRVDbgSaveRegularizedModule = false;
@@ -2140,10 +2144,10 @@ LLVMToSPRV::dumpUsers(Value* V) {
     SPRVDBG(dbgs() << "  " << **UI << '\n');
 }
 
-
 void
 LLVMToSPRV::oclRegularize() {
   PassManager PassMgr;
+  PassMgr.add(createPromoteMemoryToRegisterPass());
   PassMgr.add(createSPRVRegularizeOCL20());
   PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.add(createSPRVLowerBool());

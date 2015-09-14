@@ -79,6 +79,7 @@ SPRVFunction::encode(std::ostream &O) const {
 
 void
 SPRVFunction::encodeChildren(std::ostream &O) const {
+  O << SPRVNL;
   for (auto &I:Parameters)
     O << *I;
   O << SPRVNL;
