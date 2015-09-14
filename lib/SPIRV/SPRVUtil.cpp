@@ -50,6 +50,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <functional>
+#include <sstream>
 
 #define DEBUG_TYPE "spirv"
 
@@ -727,9 +728,11 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
     if (Name.startswith(kLLVMTypeName::StructPrefix))
       Name = Name.drop_front(strlen(kLLVMTypeName::StructPrefix));
     // ToDo: Create a better unique name for struct without name
-    if (Name.empty())
-      Name = std::string("struct_") +
-      std::to_string(reinterpret_cast<size_t>(Ty));
+    if (Name.empty()) {
+      std::ostringstream OS;
+      OS << reinterpret_cast<size_t>(Ty);
+      Name = std::string("struct_") + OS.str();
+    }
     return SPIR::RefParamType(new SPIR::UserDefinedType(Name));
   }
 
