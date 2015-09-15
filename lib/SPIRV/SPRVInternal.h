@@ -853,7 +853,6 @@ void mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet,
     const std::string &UniqName, ArrayRef<Type*> ArgTypes,
     std::string &MangledName);
 
-SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);

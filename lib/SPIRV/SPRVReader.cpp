@@ -45,6 +45,7 @@
 #include "SPRVInstruction.h"
 #include "SPRVExtInst.h"
 #include "SPRVInternal.h"
+#include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -80,6 +81,7 @@
 using namespace std;
 using namespace llvm;
 using namespace SPRV;
+using namespace OCLUtil;
 
 namespace SPRV{
 
@@ -350,23 +352,14 @@ public:
   CallInst *postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
-  /// \brief Post-process OCL step function
-  /// gentype step (double edge, gentype x)
+  /// \brief Expand OCL builtin functions with scalar argument, e.g.
+  /// step, smoothstep.
+  /// gentype func (fp edge, gentype x)
   /// =>
-  /// gentype step (gentype edge, gentype x)
+  /// gentype func (gentype edge, gentype x)
   /// \return transformed call instruction.
-  CallInst *postProcessOCLStep(CallInst* CI,
+  CallInst *expandOCLBuiltinWithScalarArg(CallInst* CI,
       const std::string &FuncName);
-
-  /// \brief Post-process OCL smoothstep function
-  /// gentype smoothstep (double edge0, double edge1,
-  ///  gentype x)
-  /// =>
-  /// gentype smoothstep (gentype edge0, gentype edge1,
-  ///  gentype x)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLSmoothStep(CallInst* CI,
-    const std::string &FuncName);
 
   typedef DenseMap<SPRVType *, Type *> SPRVToLLVMTypeMap;
   typedef DenseMap<SPRVValue *, Value *> SPRVToLLVMValueMap;
@@ -469,6 +462,7 @@ private:
   std::string transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST);
   std::string transOCLPipeTypeName(SPRV::SPRVTypePipe* ST);
   std::string transOCLImageTypeAccessQualifier(SPRV::SPRVTypeImage* ST);
+  std::string transOCLPipeTypeAccessQualifier(SPRV::SPRVTypePipe* ST);
 
   // Transform OpenCL group builtin function names from group_
   // to workgroup_ and sub_group_.
@@ -627,10 +621,7 @@ SPRVToLLVM::transOCLSampledImageTypeName(SPRV::SPRVTypeSampledImage* ST) {
 
 std::string
 SPRVToLLVM::transOCLPipeTypeName(SPRV::SPRVTypePipe* PT) {
-  std::string Name = SPIR_TYPE_NAME_PIPE_T;
-  Name = Name + kSPR2TypeName::Delimiter +
-      SPIRSPRVAccessQualifierMap::rmap(PT->getAccessQualifier());
-  return Name;
+  return SPIR_TYPE_NAME_PIPE_T;
 }
 
 void
@@ -1130,54 +1121,37 @@ SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
 }
 
 CallInst *
-SPRVToLLVM::postProcessOCLStep(CallInst* CI,
+SPRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   if (!CI->getOperand(0)->getType()->isVectorTy() &&
     CI->getOperand(1)->getType()->isVectorTy()) {
     return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-      Type *VecEleTy = Args[0]->getType();
       unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
-      Type* NewTy = VectorType::get(VecEleTy, vecSize);
-      Value* NewVec = UndefValue::get(NewTy);
-      for (unsigned i = 0; i < vecSize; i++) {
-        Value* idx = ConstantInt::get(llvm::Type::getInt32Ty(*Context), i);
-        Instruction* insertElem = InsertElementInst::Create(NewVec,
-          Args[0], idx, "", CI);
-        NewVec = insertElem;
+      Value *NewVec = nullptr;
+      if (auto CA = dyn_cast<Constant>(Args[0]))
+        NewVec = ConstantVector::getSplat(vecSize, CA);
+      else {
+        NewVec = ConstantVector::getSplat(vecSize,
+            Constant::getNullValue(Args[0]->getType()));
+        NewVec = InsertElementInst::Create(NewVec, Args[0], getInt32(M, 0), "",
+            CI);
+        NewVec = new ShuffleVectorInst(NewVec, NewVec,
+            ConstantVector::getSplat(vecSize, getInt32(M, 0)), "", CI);
       }
+      NewVec->takeName(Args[0]);
       Args[0] = NewVec;
-      return "step";
+      return FuncName;
     }, true, &Attrs);
   }
   return CI;
 }
 
-CallInst *
-SPRVToLLVM::postProcessOCLSmoothStep(CallInst* CI,
-const std::string &FuncName) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  if (!CI->getOperand(0)->getType()->isVectorTy() &&
-    CI->getOperand(2)->getType()->isVectorTy()) {
-    return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-      Type *VecEleTy = Args[0]->getType();
-      unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
-      Type* NewTy = VectorType::get(VecEleTy, vecSize);
-      Value* NewVec = UndefValue::get(NewTy);
-      for (int i = 0; i < 2; i++) {
-        for (unsigned j = 0; j < vecSize; j++) {
-          Value* idx = ConstantInt::get(llvm::Type::getInt32Ty(*Context), j);
-          Instruction* insertElem = InsertElementInst::Create(NewVec,
-            Args[i], idx, "", CI);
-          NewVec = insertElem;
-        }
-        Args[i] = NewVec;
-      }
-      return "smoothstep";
-    }, true, &Attrs);
-  }
-  return CI;
+std::string
+SPRVToLLVM::transOCLPipeTypeAccessQualifier(SPRV::SPRVTypePipe* ST) {
+  return SPIRSPRVAccessQualifierMap::rmap(ST->getAccessQualifier());
 }
+
 Value *
 SPRVToLLVM::oclTransConstantSampler(SPRV::SPRVConstantSampler* BCS) {
   auto Lit = (BCS->getAddrMode() << 1) |
@@ -1775,10 +1749,10 @@ SPRVToLLVM::transOCLBuiltinPostproc(SPRVInstruction* BI,
   if (OC == OpImageQuerySizeLod ||
       OC == OpImageQuerySize)
     return postProcessOCLGetImageSize(BI, CI, DemangledName);
-  if (SPRVEnableStepExpansion && DemangledName == "smoothstep")
-    return postProcessOCLSmoothStep(CI, DemangledName);
-  if (SPRVEnableStepExpansion && DemangledName == "step")
-    return postProcessOCLStep(CI, DemangledName);
+  if (SPRVEnableStepExpansion &&
+      (DemangledName == "smoothstep" ||
+       DemangledName == "step"))
+    return expandOCLBuiltinWithScalarArg(CI, DemangledName);
   return CI;
 }
 
@@ -2007,12 +1981,15 @@ SPRVToLLVM::transKernelMetadata() {
         SPIR_MD_KERNEL_ARG_ACCESS_QUAL, BF,
         [=](SPRVFunctionParameter *Arg){
       std::string Qual;
-      if (!Arg->getType()->isTypeOCLImage())
-        Qual = "none";
-      else {
-        auto ST = static_cast<SPRVTypeImage *>(Arg->getType());
+      auto T = Arg->getType();
+      if (T->isTypeOCLImage()) {
+        auto ST = static_cast<SPRVTypeImage *>(T);
         Qual = transOCLImageTypeAccessQualifier(ST);
-      }
+      } else if (T->isTypePipe()){
+        auto PT = static_cast<SPRVTypePipe *>(T);
+        Qual = transOCLPipeTypeAccessQualifier(PT);
+      } else
+        Qual = "none";
       return MDString::get(*Context, Qual);
     });
     // Generate metadata for kernel_arg_type

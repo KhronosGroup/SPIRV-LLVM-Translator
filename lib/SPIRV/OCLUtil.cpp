@@ -46,6 +46,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -53,6 +54,10 @@ using namespace llvm;
 using namespace SPRV;
 
 namespace OCLUtil {
+
+cl::opt<enum SPIRAddressSpace>
+ReservedIdAddrSpaceForOutput("spirv-reserved-id-addr-space",
+    cl::desc("Addr space of reserved id for output"), cl::init(SPIRAS_Global));
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -100,6 +105,12 @@ getMDOperandAsType(MDNode* N, unsigned I) {
   return cast<ValueAsMetadata>(N->getOperand(I))->getType();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Functions for getting module info
+//
+///////////////////////////////////////////////////////////////////////////////
+
 unsigned getOCLVersion(Module *M) {
   NamedMDNode *NamedMD = M->getNamedMetadata(SPIR_MD_OCL_VERSION);
   assert (NamedMD && "Invalid SPIR");
@@ -109,5 +120,23 @@ unsigned getOCLVersion(Module *M) {
   unsigned Minor = getMDOperandAsInt(MD, 1);
   return Major * 10 + Minor;
 }
+
+SPIRAddressSpace
+getOCLOpaqueTypeAddrSpace(Op OpCode) {
+  switch (OpCode) {
+  case OpTypePipe:
+  case OpTypeQueue:
+  case OpTypeEvent:
+  case OpTypeDeviceEvent:
+  case OpTypeSampler:
+    return SPIRAS_Global;
+  case OpTypeReserveId:
+    return ReservedIdAddrSpaceForOutput;
+  default:
+    return SPIRAS_Private;
+  }
+}
+
+
 }
 
