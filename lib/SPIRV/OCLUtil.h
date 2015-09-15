@@ -83,5 +83,7 @@ Type* getMDOperandAsType(MDNode* N, unsigned I);
 /// \return 20 for OCL 2.0, 12 for OCL 1.2.
 unsigned getOCLVersion(Module *M);
 
+SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
+
 }
 

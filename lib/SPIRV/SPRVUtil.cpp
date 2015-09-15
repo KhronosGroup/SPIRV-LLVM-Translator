@@ -842,22 +842,6 @@ MangleOpenCLBuiltin(const std::string &UnmangledName,
   mangleOCLBuiltin(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
 }
 
-SPIRAddressSpace
-getOCLOpaqueTypeAddrSpace(Op OpCode) {
-  switch (OpCode) {
-  case OpTypePipe:
-  case OpTypeQueue:
-  case OpTypeEvent:
-  case OpTypeDeviceEvent:
-  case OpTypeSampler:
-    return SPIRAS_Global;
-  case OpTypeReserveId:
-    return SPIRAS_Private;
-  default:
-    return SPIRAS_Private;
-  }
-}
-
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned) {
   if (auto IT = dyn_cast<IntegerType>(T))
