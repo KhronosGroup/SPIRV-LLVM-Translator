@@ -381,7 +381,6 @@ _SPRV_OP(SampledImage, SampledImage)
 _SPRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
 _SPRV_OP(read_image, ImageRead)
 _SPRV_OP(write_image, ImageWrite)
-_SPRV_OP(ImageQuerySizeLod, ImageQuerySizeLod)
 _SPRV_OP(get_image_channel_data_type, ImageQueryFormat)
 _SPRV_OP(get_image_channel_order, ImageQueryOrder)
 _SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
@@ -570,6 +569,7 @@ namespace kOCLBuiltinName {
   const static char Barrier[]            = "barrier";
   const static char EnqueueKernel[]      = "enqueue_kernel";
   const static char GetFence[]           = "get_fence";
+  const static char GetImageArraySize[]  = "get_image_array_size";
   const static char GetImageDepth[]      = "get_image_depth";
   const static char GetImageDim[]        = "get_image_dim";
   const static char GetImageHeight[]     = "get_image_height";

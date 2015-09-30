@@ -115,7 +115,7 @@ public:
 
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
-  ///   dimension = __spirv_ImageQuerySizeLod__(...);
+  ///   dimension = __spirv_ImageQuerySizeLod(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
@@ -473,30 +473,50 @@ void
 SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  SPRVTypeImageDescriptor Desc;
+  unsigned Dim = 0;
   mutateCallInst(M, CI,
-    [=](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+    [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
       assert(Args.size() == 1);
       StringRef TyName;
       auto IsImg = isOCLImageType(Args[0]->getType(), &TyName);
       assert(IsImg);
-      auto Desc = map<SPRVTypeImageDescriptor>(TyName.str());
-      if (DemangledName != kOCLBuiltinName::GetImageDim)
-        Ret = VectorType::get(Type::getInt32Ty(*Ctx),
-            getImageDimension(Desc.Dim) + Desc.Arrayed);
-      Args.push_back(getInt32(M, 0));
-      return decorateSPRVFunction(kSPRVName::ImageQuerySizeLod);
+      Desc = map<SPRVTypeImageDescriptor>(TyName.str());
+      Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
+      Ret = Type::getInt32Ty(*Ctx);
+      if (Dim > 1)
+        Ret = VectorType::get(Ret, Dim);
+      if (Desc.Dim == SPRV::SPRVDIM_Buffer)
+        return getSPRVFuncName(OpImageQuerySize);
+      else {
+        Args.push_back(getInt32(M, 0));
+        return getSPRVFuncName(OpImageQuerySizeLod);
+      }
     },
-    [=](CallInst *NCI)->Instruction * {
-      if (DemangledName == kOCLBuiltinName::GetImageDim)
+    [&](CallInst *NCI)->Instruction * {
+      if (Dim == 1)
         return NCI;
+      if (DemangledName == kOCLBuiltinName::GetImageDim) {
+        if (Desc.Dim != SPRV::SPRVDIM_3D)
+          return NCI;
+        else {
+          auto ZeroVec = ConstantVector::getSplat(3,
+            Constant::getNullValue(NCI->getType()->getVectorElementType()));
+          Constant *Index[] = {getInt32(M, 0), getInt32(M, 1),
+              getInt32(M, 2), getInt32(M, 3)};
+          return new ShuffleVectorInst(NCI, ZeroVec,
+             ConstantVector::get(Index), "", CI);
+        }
+      }
       auto I = StringSwitch<unsigned>(DemangledName)
           .Case(kOCLBuiltinName::GetImageWidth, 0)
           .Case(kOCLBuiltinName::GetImageHeight, 1)
-          .Case(kOCLBuiltinName::GetImageDepth, 2);
+          .Case(kOCLBuiltinName::GetImageDepth, 2)
+          .Case(kOCLBuiltinName::GetImageArraySize, Dim - 1);
       return ExtractElementInst::Create(NCI, getInt32(M, I), "",
           NCI->getNextNode());
     },
-  false, &Attrs);
+  true, &Attrs);
 }
 
 }

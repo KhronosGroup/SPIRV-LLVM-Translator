@@ -187,8 +187,8 @@ public:
       Inst->setModule(TheModule);
     }
     Inst->setOpWords(TheOps);
-    Inst->setId(TheId);
-    Inst->setType(TheType);
+    Inst->setId(Inst->hasId() ? TheId : SPRVID_INVALID);
+    Inst->setType(Inst->hasType() ? TheType : nullptr);
     Inst->validate();
     return Inst;
   }

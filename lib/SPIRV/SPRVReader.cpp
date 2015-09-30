@@ -344,14 +344,6 @@ public:
   CallInst *postProcessOCLReadImage(SPRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
-  /// \brief Post-process OpImageQuerySizeLod.
-  ///   __spirv_ImageQuerySizeLod__(...);
-  /// =>
-  ///   get_image_dim(...)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst *CI,
-      const std::string &DemangledName);
-
   /// \brief Expand OCL builtin functions with scalar argument, e.g.
   /// step, smoothstep.
   /// gentype func (fp edge, gentype x)
@@ -1110,17 +1102,6 @@ SPRVToLLVM::postProcessOCLReadImage(SPRVInstruction *BI, CallInst* CI,
 }
 
 CallInst *
-SPRVToLLVM::postProcessOCLGetImageSize(SPRVInstruction *BI, CallInst* CI,
-    const std::string &FuncName) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    if (BI->getOpCode() == OpImageQuerySizeLod)
-      Args.pop_back();
-    return kOCLBuiltinName::GetImageDim;
-  }, true, &Attrs);
-}
-
-CallInst *
 SPRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
@@ -1746,9 +1727,6 @@ SPRVToLLVM::transOCLBuiltinPostproc(SPRVInstruction* BI,
     return postProcessOCLPipe(BI, CI, DemangledName);
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
-  if (OC == OpImageQuerySizeLod ||
-      OC == OpImageQuerySize)
-    return postProcessOCLGetImageSize(BI, CI, DemangledName);
   if (SPRVEnableStepExpansion &&
       (DemangledName == "smoothstep" ||
        DemangledName == "step"))
