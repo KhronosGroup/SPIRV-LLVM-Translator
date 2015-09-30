@@ -139,7 +139,8 @@ SPRVToOCL20::visitCallInst(CallInst& CI) {
     visitCallSPRVAtomicBuiltin(&CI, OC);
     return;
   }
-  visitCallSPRVBuiltin(&CI, OC);
+  if (OCLSPRVBuiltinMap::rfind(OC))
+    visitCallSPRVBuiltin(&CI, OC);
 
 }
 
