@@ -103,7 +103,8 @@ public:
 
   void setType(SPRVType *Ty) {
     Type = Ty;
-    if (Ty)
+    assert(!Ty || !Ty->isTypeVoid() || OpCode == OpFunction);
+    if (Ty && (!Ty->isTypeVoid() || OpCode == OpFunction))
       setHasType();
     else
       setHasNoType();

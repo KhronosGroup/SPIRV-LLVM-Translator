@@ -607,10 +607,13 @@ OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
     setArgAttr(1, SPIR::ATTR_CONST);
   } else if (UnmangledName.find("write_imageui") == 0)
       addUnsignedArg(2);
+  else if (UnmangledName == "prefetch") {
+    addUnsignedArg(1);
+    setArgAttr(0, SPIR::ATTR_CONST);
+  }
   else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
-      UnmangledName == "prefetch" ||
       UnmangledName == "nan" ||
       UnmangledName == "mem_fence" ||
       UnmangledName.find("shuffle") == 0){

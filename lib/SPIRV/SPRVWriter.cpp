@@ -1773,8 +1773,9 @@ LLVMToSPRV::transOCLGroupBuiltins(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName, SPRVBasicBlock *BB) {
   auto Args = getArguments(CI);
   auto BArgs = transValue(Args, BB);
+  auto Ty = CI->getType();
   return BM->addGroupInst(OCLSPRVBuiltinMap::map(DemangledName),
-      transType(CI->getType()),
+      Ty->isVoidTy() ? nullptr : transType(Ty),
       ScopeWorkgroup, BArgs, BB);
 }
 

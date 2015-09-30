@@ -130,14 +130,6 @@ inline bool isAccessChainOpCode(Op OpCode) {
       OpCode == OpInBoundsAccessChain;
 }
 
-inline bool isModuleScopeAllowedOpCode(Op OpCode) {
-  return OpCode == OpVariable ||
-      isAccessChainOpCode(OpCode) ||
-      OpCode == OpBitcast ||
-      OpCode == OpConvertPtrToU ||
-      OpCode == OpConvertUToPtr;
-}
-
 inline bool hasExecScope(Op OpCode) {
   unsigned OC = OpCode;
   return (OpWaitGroupEvents <= OC &&
@@ -161,6 +153,11 @@ inline bool isConstantOpCode(Op OpCode) {
   return (OpConstantTrue <= OC
       && OC <= OpSpecConstantOp)
       || OC == OpUndef;
+}
+
+inline bool isModuleScopeAllowedOpCode(Op OpCode) {
+  return OpCode == OpVariable ||
+      isConstantOpCode(OpCode);
 }
 
 }

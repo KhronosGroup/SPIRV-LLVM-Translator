@@ -807,6 +807,7 @@ SPRVInstruction *
 SPRVModuleImpl::addGroupInst(Op OpCode, SPRVType *Type,
     Scope Scope, const std::vector<SPRVValue *> &Ops,
     SPRVBasicBlock *BB) {
+  assert(!Type || !Type->isTypeVoid());
   auto WordOps = getIds(Ops);
   WordOps.insert(WordOps.begin(), Scope);
   return addInstTemplate(OpCode, WordOps, BB, Type);
@@ -1222,6 +1223,7 @@ SPRVModuleImpl::getIds(const std::vector<SPRVValue *> &ValueVec)const {
 SPRVInstruction*
 SPRVModuleImpl::addInstTemplate(Op OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
+  assert (!Ty || !Ty->isTypeVoid());
   SPRVId Id = Ty ? getId() : SPRVID_INVALID;
   auto Ins = SPRVInstTemplateBase::create(OC, Ty, Id, Ops, BB, this);
   return BB->addInstruction(Ins);
