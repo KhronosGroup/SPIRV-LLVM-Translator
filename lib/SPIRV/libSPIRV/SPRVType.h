@@ -1,4 +1,4 @@
-//===- SPRVType.h – Class to represent a SPIR-V Type ------------*- C++ -*-===//
+//===- SPRVType.h - Class to represent a SPIR-V Type ------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -184,15 +184,15 @@ public:
   }
   // Incomplete constructor
   SPRVTypePointer():SPRVType(OpTypePointer),
-      StorageClass(SPRVSC_Private),
+      StorageClass(StorageClassFunction),
       ElemType(NULL){}
 
   SPRVType *getElementType() const { return ElemType;}
   SPRVStorageClassKind getStorageClass() const { return StorageClass;}
   CapVec getRequiredCapability() const {
-    auto Cap = getVec(SPRVCAP_Addresses);
+    auto Cap = getVec(CapabilityAddresses);
     if (ElemType->isTypeFloat(16))
-      Cap.push_back(SPRVCAP_Float16Buffer);
+      Cap.push_back(CapabilityFloat16Buffer);
     Cap.push_back(getCapability(StorageClass));
     return Cap;
   }
@@ -226,7 +226,7 @@ public:
   bool isValidIndex(SPRVWord Index) const { return Index < CompCount;}
   CapVec getRequiredCapability() const {
     if (CompCount >= 8)
-      return getVec(SPRVCAP_Vector16);
+      return getVec(CapabilityVector16);
     return CapVec();
   }
 
@@ -295,7 +295,7 @@ struct SPRVTypeImageDescriptor {
     return std::make_tuple(std::make_tuple(Desc.Dim, Desc.Depth, Desc.Arrayed,
       Desc.MS, Desc.Sampled), Desc.Format);
   }
-  SPRVTypeImageDescriptor():Dim(SPRVDIM_1D), Depth(0), Arrayed(0),
+  SPRVTypeImageDescriptor():Dim(Dim1D), Depth(0), Arrayed(0),
       MS(0), Sampled(0), Format(0){}
   SPRVTypeImageDescriptor(SPRVImageDimKind Dim, SPRVWord Cont, SPRVWord Arr,
       SPRVWord Comp,  SPRVWord Mult, SPRVWord F):Dim(Dim), Depth(Cont),
@@ -306,18 +306,18 @@ template<> inline void
 SPRVMap<std::string, SPRVTypeImageDescriptor>::init() {
 #define _SPRV_OP(x,...) {SPRVTypeImageDescriptor S(__VA_ARGS__); \
   add(#x, S);}
-_SPRV_OP(image1d_t,                  SPRVDIM_1D,      0, 0, 0, 0, 0)
-_SPRV_OP(image1d_buffer_t,           SPRVDIM_Buffer,  0, 0, 0, 0, 0)
-_SPRV_OP(image1d_array_t,            SPRVDIM_1D,      0, 1, 0, 0, 0)
-_SPRV_OP(image2d_t,                  SPRVDIM_2D,      0, 0, 0, 0, 0)
-_SPRV_OP(image2d_array_t,            SPRVDIM_2D,      0, 1, 0, 0, 0)
-_SPRV_OP(image2d_depth_t,            SPRVDIM_2D,      1, 0, 0, 0, 0)
-_SPRV_OP(image2d_array_depth_t,      SPRVDIM_2D,      1, 1, 0, 0, 0)
-_SPRV_OP(image2d_msaa_t,             SPRVDIM_2D,      0, 0, 1, 0, 0)
-_SPRV_OP(image2d_array_msaa_t,       SPRVDIM_2D,      0, 1, 1, 0, 0)
-_SPRV_OP(image2d_msaa_depth_t,       SPRVDIM_2D,      1, 0, 1, 0, 0)
-_SPRV_OP(image2d_array_msaa_depth_t, SPRVDIM_2D,      1, 1, 1, 0, 0)
-_SPRV_OP(image3d_t,                  SPRVDIM_3D,      0, 0, 0, 0, 0)
+_SPRV_OP(image1d_t,                  Dim1D,      0, 0, 0, 0, 0)
+_SPRV_OP(image1d_buffer_t,           DimBuffer,  0, 0, 0, 0, 0)
+_SPRV_OP(image1d_array_t,            Dim1D,      0, 1, 0, 0, 0)
+_SPRV_OP(image2d_t,                  Dim2D,      0, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_t,            Dim2D,      0, 1, 0, 0, 0)
+_SPRV_OP(image2d_depth_t,            Dim2D,      1, 0, 0, 0, 0)
+_SPRV_OP(image2d_array_depth_t,      Dim2D,      1, 1, 0, 0, 0)
+_SPRV_OP(image2d_msaa_t,             Dim2D,      0, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_t,       Dim2D,      0, 1, 1, 0, 0)
+_SPRV_OP(image2d_msaa_depth_t,       Dim2D,      1, 0, 1, 0, 0)
+_SPRV_OP(image2d_array_msaa_depth_t, Dim2D,      1, 1, 1, 0, 0)
+_SPRV_OP(image3d_t,                  Dim3D,      0, 0, 0, 0, 0)
 #undef _SPRV_OP
 }
 typedef SPRVMap<std::string, SPRVTypeImageDescriptor>
@@ -349,7 +349,7 @@ public:
     validate();
   }
   SPRVTypeImage():SPRVType(OC), SampledType(SPRVID_INVALID),
-    Desc(SPRVDIM_Count, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX,
+    Desc(DimCount, SPRVWORD_MAX, SPRVWORD_MAX, SPRVWORD_MAX,
         SPRVWORD_MAX, SPRVWORD_MAX){
   }
   const SPRVTypeImageDescriptor &getDescriptor()const {
@@ -367,11 +367,11 @@ public:
   }
   CapVec getRequiredCapability() const {
     CapVec CV;
-    CV.push_back(SPRVCAP_ImageBasic);
-    if (Acc.size() > 0 && Acc[0] == SPRVAC_ReadWrite)
-      CV.push_back(SPRVCAP_ImageReadWrite);
+    CV.push_back(CapabilityImageBasic);
+    if (Acc.size() > 0 && Acc[0] == AccessQualifierReadWrite)
+      CV.push_back(CapabilityImageReadWrite);
     if (Desc.MS)
-      CV.push_back(SPRVCAP_ImageMipmap);
+      CV.push_back(CapabilityImageMipmap);
     return CV;
   }
 protected:
@@ -554,7 +554,7 @@ class SPRVTypePipe :public SPRVType {
 public:
   // Complete constructor
   SPRVTypePipe(SPRVModule *M, SPRVId TheId,
-      SPRVAccessQualifierKind AccessQual = SPRVAC_ReadOnly)
+      SPRVAccessQualifierKind AccessQual = AccessQualifierReadOnly)
     :SPRVType(M, 3, OpTypePipe, TheId),
      AccessQualifier(AccessQual){
        validate();
@@ -562,7 +562,7 @@ public:
 
   // Incomplete constructor
   SPRVTypePipe() :SPRVType(OpTypePipe),
-    AccessQualifier(SPRVAC_ReadOnly){}
+    AccessQualifier(AccessQualifierReadOnly){}
 
   SPRVAccessQualifierKind getAccessQualifier() const {
       return AccessQualifier; 
@@ -572,7 +572,7 @@ public:
     assert(isValid(AccessQualifier));
   }
   CapVec getRequiredCapability() const {
-    return getVec(SPRVCAP_Pipe);
+    return getVec(CapabilityPipes);
   }
 protected:
   _SPRV_DEF_ENCDEC2(Id, AccessQualifier)

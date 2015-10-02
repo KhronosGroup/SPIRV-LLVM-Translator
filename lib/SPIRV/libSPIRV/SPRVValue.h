@@ -1,4 +1,4 @@
-//===- SPRVValue.h – Class to represent a SPIR-V Value ----------*- C++ -*-===//
+//===- SPRVValue.h - Class to represent a SPIR-V Value ----------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -115,13 +115,13 @@ public:
     if (!hasType())
       return CV;
     if (Type->isTypeFloat(16))
-      CV.push_back(SPRVCAP_Float16);
+      CV.push_back(CapabilityFloat16);
     else if (Type->isTypeFloat(64))
-      CV.push_back(SPRVCAP_Float64);
+      CV.push_back(CapabilityFloat64);
     else if (Type->isTypeInt(16))
-      CV.push_back(SPRVCAP_Int16);
+      CV.push_back(CapabilityInt16);
     else if (Type->isTypeInt(64))
-      CV.push_back(SPRVCAP_Int64);
+      CV.push_back(CapabilityInt64);
     return CV;
   }
 
@@ -329,7 +329,7 @@ public:
     return Normalized;
   }
   CapVec getRequiredCapability() const {
-    return getVec(SPRVCAP_LiteralSampler);
+    return getVec(CapabilityLiteralSampler);
   }
 protected:
   SPRVWord AddrMode;

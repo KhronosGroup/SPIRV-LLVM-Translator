@@ -1,4 +1,4 @@
-//===- SPRVFunction.h – Class to represent a SPIR-V function ----*- C++ -*-===//
+//===- SPRVFunction.h - Class to represent a SPIR-V function ----*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -62,11 +62,11 @@ public:
   bool hasAttr(SPRVFuncParamAttrKind Kind) const {
     return getDecorate(DecorationFuncParamAttr).count(Kind) ;
   }
-  bool isByVal()const { return hasAttr(SPRVFPA_ByVal);}
-  bool isZext()const { return hasAttr(SPRVFPA_Zext);}
+  bool isByVal()const { return hasAttr(FunctionParameterAttributeByVal);}
+  bool isZext()const { return hasAttr(FunctionParameterAttributeZext);}
   CapVec getRequiredCapability() const {
-    if (hasLinkageType() && getLinkageType() == SPRVLT_Import)
-      return getVec(SPRVCAP_Linkage);
+    if (hasLinkageType() && getLinkageType() == LinkageTypeImport)
+      return getVec(CapabilityLinkage);
     return CapVec();
   }
 protected:
@@ -85,14 +85,14 @@ public:
   // Complete constructor. It does not construct basic blocks.
   SPRVFunction(SPRVModule *M, SPRVTypeFunction *FunctionType, SPRVId TheId)
     :SPRVValue(M, 5, OpFunction, FunctionType->getReturnType(), TheId),
-     FuncType(FunctionType), FCtrlMask(SPRVFCM_Default) {
+     FuncType(FunctionType), FCtrlMask(FunctionControlMaskNone) {
     addAllArguments(TheId + 1);
     validate();
   }
 
   // Incomplete constructor
   SPRVFunction():SPRVValue(OpFunction),FuncType(NULL),
-      FCtrlMask(SPRVFCM_Default){}
+      FCtrlMask(FunctionControlMaskNone){}
 
   SPRVDecoder getDecoder(std::istream &IS);
   SPRVTypeFunction *getFunctionType() const { return FuncType;}

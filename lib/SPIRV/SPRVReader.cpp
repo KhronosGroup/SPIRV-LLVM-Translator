@@ -99,7 +99,7 @@ typedef std::pair < unsigned, AttributeSet > AttributeWithIndex;
 
 static bool
 isOpenCLKernel(SPRVFunction *BF) {
-  return BF->getModule()->isEntryPoint(SPRVEMDL_Kernel, BF->getId());
+  return BF->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId());
 }
 
 static void
@@ -174,7 +174,7 @@ public:
   void createCompileUnit() {
     if (!Enable)
       return;
-    auto File = SpDbg.getEntryPointFileStr(SPRVEMDL_Kernel, 0);
+    auto File = SpDbg.getEntryPointFileStr(ExecutionModelKernel, 0);
     std::string BaseName;
     std::string Path;
     splitFileName(File, BaseName, Path);
@@ -501,7 +501,7 @@ bool
 SPRVToLLVM::transOCLBuiltinsFromVariables(){
   std::vector<GlobalVariable *> WorkList;
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    SPRVBuiltinVariableKind Kind = SPRVBI_Count;
+    SPRVBuiltinVariableKind Kind = BuiltInCount;
     if (!isSPRVBuiltinVariable(I, &Kind))
       continue;
     if (!transOCLBuiltinFromVariable(I, Kind))
@@ -1249,7 +1249,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     SPRVStorageClassKind BS = BVar->getStorageClass();
     auto Ty = transType(BVar->getType()->getPointerElementType());
 
-    if (BS == SPRVSC_Function) {
+    if (BS == StorageClassFunction) {
         assert (BB && "Invalid BB");
         return mapValue(BV, new AllocaInst(Ty, BV->getName(), BB));
     }
@@ -1262,7 +1262,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
         BV->getName(), 0, GlobalVariable::NotThreadLocal, AddrSpace);
     LVar->setUnnamedAddr(IsConst && Ty->isArrayTy() &&
         Ty->getArrayElementType()->isIntegerTy(8));
-    SPRVBuiltinVariableKind BVKind = SPRVBI_Count;
+    SPRVBuiltinVariableKind BVKind = BuiltInCount;
     if (BVar->isBuiltin(&BVKind))
       BuiltinGVMap[LVar] = BVKind;
     return mapValue(BV, LVar);
@@ -1634,7 +1634,7 @@ SPRVToLLVM::transFunction(SPRVFunction *BF) {
   if (Loc != FuncMap.end())
     return Loc->second;
 
-  auto IsKernel = BM->isEntryPoint(SPRVEMDL_Kernel, BF->getId());
+  auto IsKernel = BM->isEntryPoint(ExecutionModelKernel, BF->getId());
   auto Linkage = IsKernel ? GlobalValue::ExternalLinkage :
       SPIRSPRVLinkageTypeMap::rmap(BF->getLinkageType());
   FunctionType *FT = dyn_cast<FunctionType>(transType(BF->getFunctionType()));
@@ -1660,13 +1660,13 @@ SPRVToLLVM::transFunction(SPRVFunction *BF) {
       continue;
     I->setName(ArgName);
     BA->foreachAttr([&](SPRVFuncParamAttrKind Kind){
-      if (Kind == SPRVFPA_Const)
+      if (Kind == FunctionParameterAttributeNoWrite)
         return;
       F->addAttribute(I->getArgNo() + 1, SPIRSPRVFuncParamAttrMap::rmap(Kind));
     });
   }
   BF->foreachReturnValueAttr([&](SPRVFuncParamAttrKind Kind){
-    if (Kind == SPRVFPA_Const)
+    if (Kind == FunctionParameterAttributeNoWrite)
       return;
     F->addAttribute(AttributeSet::ReturnIndex,
         SPIRSPRVFuncParamAttrMap::rmap(Kind));
@@ -1852,7 +1852,7 @@ SPRVToLLVM::translate() {
 
   for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
     auto BV = BM->getVariable(I);
-    if (BV->getStorageClass() != SPRVSC_Function)
+    if (BV->getStorageClass() != StorageClassFunction)
       transValue(BV, nullptr, nullptr);
   }
 
@@ -1881,15 +1881,15 @@ SPRVToLLVM::translate() {
 bool
 SPRVToLLVM::transAddressingModel() {
   switch (BM->getAddressingModel()) {
-  case SPRVAM_Physical64:
+  case AddressingModelPhysical64:
     M->setTargetTriple(SPIR_TARGETTRIPLE64);
     M->setDataLayout(SPIR_DATALAYOUT64);
     break;
-  case SPRVAM_Physical32:
+  case AddressingModelPhysical32:
     M->setTargetTriple(SPIR_TARGETTRIPLE32);
     M->setDataLayout(SPIR_DATALAYOUT32);
     break;
-  case SPRVAM_Logical:
+  case AddressingModelLogical:
     // Do not set target triple and data layout
     break;
   default:
@@ -1914,7 +1914,7 @@ SPRVToLLVM::transFPContractMetadata() {
     SPRVFunction *BF = BM->getFunction(I);
     if (!isOpenCLKernel(BF))
       continue;
-    if (BF->getExecutionMode(SPRVEM_ContractionOff)) {
+    if (BF->getExecutionMode(ExecutionModeContractionOff)) {
       ContractOff = true;
       break;
     }
@@ -1986,10 +1986,10 @@ SPRVToLLVM::transKernelMetadata() {
       Arg->foreachAttr([&](SPRVFuncParamAttrKind Kind){
         Qual += Qual.empty() ? "" : " ";
         switch(Kind){
-        case SPRVFPA_NoAlias:
+        case FunctionParameterAttributeNoAlias:
           Qual += kOCLTypeQualifierName::Restrict;
           break;
-        case SPRVFPA_Const:
+        case FunctionParameterAttributeNoWrite:
           Qual += kOCLTypeQualifierName::Const;
           break;
         default:
@@ -2024,17 +2024,17 @@ SPRVToLLVM::transKernelMetadata() {
         });
     }
     // Generate metadata for reqd_work_group_size
-    if (auto EM = BF->getExecutionMode(SPRVEM_LocalSize)) {
+    if (auto EM = BF->getExecutionMode(ExecutionModeLocalSize)) {
       KernelMD.push_back(getMDNodeStringIntVec(Context,
           SPIR_MD_REQD_WORK_GROUP_SIZE, EM->getLiterals()));
     }
     // Generate metadata for work_group_size_hint
-    if (auto EM = BF->getExecutionMode(SPRVEM_LocalSizeHint)) {
+    if (auto EM = BF->getExecutionMode(ExecutionModeLocalSizeHint)) {
       KernelMD.push_back(getMDNodeStringIntVec(Context,
           SPIR_MD_WORK_GROUP_SIZE_HINT, EM->getLiterals()));
     }
     // Generate metadata for vec_type_hint
-    if (auto EM = BF->getExecutionMode(SPRVEM_VecTypeHint)) {
+    if (auto EM = BF->getExecutionMode(ExecutionModeVecTypeHint)) {
       std::vector<Metadata*> MetadataVec;
       MetadataVec.push_back(MDString::get(*Context, SPIR_MD_VEC_TYPE_HINT));
       Type *VecHintTy = transType(BM->get<SPRVType>(EM->getLiterals()[0]));
@@ -2276,7 +2276,7 @@ SPRVToLLVM::getOCLConvertBuiltinName(SPRVInstruction* BI) {
   Name += "convert_";
   Name += mapSPRVTypeToOpenCLType(U->getType(),
       !isCvtToUnsignedOpCode(OC));
-  SPRVFPRoundingModeKind Rounding = SPRVFRM_Count;
+  SPRVFPRoundingModeKind Rounding = FPRoundingModeCount;
   if (U->isSaturatedConversion())
     Name += "_sat";
   if (U->hasFPRoundingMode(&Rounding)) {
@@ -2291,11 +2291,11 @@ std::string
 SPRVToLLVM::getOCLGenericCastToPtrName(SPRVInstruction* BI) {
   auto GenericCastToPtrInst = BI->getType()->getPointerStorageClass();
   switch (GenericCastToPtrInst) {
-    case SPRVSC_WorkgroupGlobal:
+    case StorageClassWorkgroupGlobal:
       return std::string(kOCLBuiltinName::ToGlobal);
-    case SPRVSC_WorkgroupLocal:
+    case StorageClassWorkgroupLocal:
       return std::string(kOCLBuiltinName::ToLocal);
-    case SPRVSC_Private:
+    case StorageClassFunction:
       return std::string(kOCLBuiltinName::ToPrivate);
     default:
       llvm_unreachable("Invalid address space");

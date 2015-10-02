@@ -70,18 +70,21 @@ enum ExecutionModel {
     ExecutionModelFragment = 4,
     ExecutionModelGLCompute = 5,
     ExecutionModelKernel = 6,
+    ExecutionModelCount, /* internal use only */
 };
 
 enum AddressingModel {
     AddressingModelLogical = 0,
     AddressingModelPhysical32 = 1,
     AddressingModelPhysical64 = 2,
+    AddressingModelCount /* internal use only */
 };
 
 enum MemoryModel {
     MemoryModelSimple = 0,
     MemoryModelGLSL450 = 1,
     MemoryModelOpenCL = 2,
+    MemoryModelCount /* internal use only */
 };
 
 enum ExecutionMode {
@@ -117,6 +120,7 @@ enum ExecutionMode {
     ExecutionModeVecTypeHint = 30,
     ExecutionModeContractionOff = 31,
     ExecutionModeIndependentForwardProgress = 32,
+    ExecutionModeCount /* internal use only */
 };
 
 enum StorageClass {
@@ -132,6 +136,7 @@ enum StorageClass {
     StorageClassPushConstant = 9,
     StorageClassAtomicCounter = 10,
     StorageClassImage = 11,
+    StorageClassCount /* internal use only */
 };
 
 enum Dim {
@@ -142,6 +147,7 @@ enum Dim {
     DimRect = 4,
     DimBuffer = 5,
     DimInputTarget = 6,
+    DimCount /* internal use only */
 };
 
 enum SamplerAddressingMode {
@@ -287,11 +293,14 @@ enum FPRoundingMode {
     FPRoundingModeRTZ = 1,
     FPRoundingModeRTP = 2,
     FPRoundingModeRTN = 3,
+    FPRoundingModeCount /* internal use only */
 };
 
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
+    LinkageTypeInternal, /* internal use only */
+    LinkageTypeCount /* internal use only */
 };
 
 enum AccessQualifier {
@@ -309,6 +318,7 @@ enum FunctionParameterAttribute {
     FunctionParameterAttributeNoCapture = 5,
     FunctionParameterAttributeNoWrite = 6,
     FunctionParameterAttributeNoReadWrite = 7,
+    FunctionParameterAttributeCount /* internal use only */
 };
 
 enum Decoration {
@@ -402,6 +412,7 @@ enum BuiltIn {
     BuiltInSubgroupLocalInvocationId = 41,
     BuiltInVertexIndex = 42,
     BuiltInInstanceIndex = 43,
+    BuiltInCount /* internal use only */
 };
 
 enum SelectionControlShift {
@@ -439,6 +450,7 @@ enum FunctionControlMask {
     FunctionControlDontInlineMask = 0x00000002,
     FunctionControlPureMask = 0x00000004,
     FunctionControlConstMask = 0x00000008,
+    FunctionControlMaskMax = 0xF /* internal use only */
 };
 
 enum MemorySemanticsShift {
@@ -493,6 +505,7 @@ enum GroupOperation {
     GroupOperationReduce = 0,
     GroupOperationInclusiveScan = 1,
     GroupOperationExclusiveScan = 2,
+    GroupOperationCount /* internal use only */
 };
 
 enum KernelEnqueueFlags {
@@ -565,6 +578,7 @@ enum Capability {
     CapabilityDerivativeControl = 51,
     CapabilityInterpolationFunction = 52,
     CapabilityTransformFeedback = 53,
+    CapabilityNone = 1024, /* internal use only */
 };
 
 enum Op {

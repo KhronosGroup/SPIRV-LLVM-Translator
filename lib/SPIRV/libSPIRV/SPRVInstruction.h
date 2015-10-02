@@ -1,4 +1,4 @@
-//===- SPRVInstruction.h – Class to represent SPIRV instruction -*- C++ -*-===//
+//===- SPRVInstruction.h - Class to represent SPIRV instruction -*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -295,7 +295,7 @@ public:
 
   SPRVGroupOperationKind getGroupOperation() const {
     if (!hasGroupOperation())
-      return SPRVGO_Count;
+      return GroupOperationCount;
     return static_cast<SPRVGroupOperationKind>(Ops[1]);
   }
 
@@ -362,9 +362,9 @@ public:
   void MemoryAccessUpdate(const std::vector<SPRVWord> &MemoryAccess) {
     unsigned i = 0;
     while (i < MemoryAccess.size()) {
-      if (MemoryAccess[i] == SPRVMA_Volatile)
+      if (MemoryAccess[i] == MemoryAccessVolatileMask)
         Volatile = MemoryAccess[i++];
-      else if (MemoryAccess[i] == SPRVMA_Aligned) {
+      else if (MemoryAccess[i] == MemoryAccessAlignedMask) {
         Alignment = MemoryAccess[i + 1];
         i += 2;
       }
@@ -395,7 +395,7 @@ public:
   }
   // Incomplete constructor
   SPRVVariable() :SPRVInstruction(OpVariable),
-      StorageClass(SPRVSC_Count){}
+      StorageClass(StorageClassCount){}
 
   SPRVStorageClassKind getStorageClass() const { return StorageClass; }
   SPRVValue *getInitializer() const {
@@ -1621,7 +1621,7 @@ enum SPRVOpKind {
 class SPRVDevEnqInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_DeviceEnqueue);
+    return getVec(CapabilityDeviceEnqueue);
   }
 };
 
@@ -1648,7 +1648,7 @@ _SPRV_OP(BuildNDRange, true, 6)
 class SPRVPipeInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Pipe);
+    return getVec(CapabilityPipes);
   }
 };
 
@@ -1672,7 +1672,7 @@ _SPRV_OP(GetMaxPipePackets, true, 6)
 class SPRVGroupInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Groups);
+    return getVec(CapabilityGroups);
   }
 };
 
@@ -1701,7 +1701,7 @@ _SPRV_OP(GroupCommitWritePipe, false, 6)
 class SPRVAtomicInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Int64Atomics);
+    return getVec(CapabilityInt64Atomics);
   }
 };
 
@@ -1733,7 +1733,7 @@ _SPRV_OP(MemoryBarrier, false, 3)
 class SPRVImageInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_ImageBasic);
+    return getVec(CapabilityImageBasic);
   }
 };
 

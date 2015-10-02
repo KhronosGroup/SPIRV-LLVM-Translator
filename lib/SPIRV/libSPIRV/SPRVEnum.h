@@ -68,11 +68,6 @@ inline unsigned extractSPRVMemOrderSemantic(unsigned Sema) {
   return Sema & kSPRVMemOrderSemanticMask;
 }
 
-// ToDo: change to 100 for release
-enum SPRVVersionKind {
-  SPRVVER_100 = 99,
-};
-
 // ToDo: register the LLVM/SPIRV translator and get an official SPIRV generator
 // magic number
 enum SPRVGeneratorKind {
@@ -83,34 +78,21 @@ enum SPRVInstructionSchemaKind {
   SPRVISCH_Default,
 };
 
-enum SPRVCapabilityKind {
-  SPRVCAP_Matrix            = 0,
-  SPRVCAP_Shader            = 1,
-  SPRVCAP_Geom              = 2,
-  SPRVCAP_Tess              = 3,
-  SPRVCAP_Addresses         = 4,
-  SPRVCAP_Linkage           = 5,
-  SPRVCAP_Kernel            = 6,
-  SPRVCAP_Vector16          = 7,
-  SPRVCAP_Float16Buffer     = 8,
-  SPRVCAP_Float16           = 9,
-  SPRVCAP_Float64           = 10,
-  SPRVCAP_Int64             = 11,
-  SPRVCAP_Int64Atomics      = 12,
-  SPRVCAP_ImageBasic        = 13,
-  SPRVCAP_ImageReadWrite    = 14,
-  SPRVCAP_ImageMipmap       = 15,
-  SPRVCAP_ImageSRGBWrite    = 16,
-  SPRVCAP_Pipe              = 17,
-  SPRVCAP_Groups            = 18,
-  SPRVCAP_DeviceEnqueue     = 19,
-  SPRVCAP_LiteralSampler    = 20,
-  SPRVCAP_AtomicStorage     = 21,
-  SPRVCAP_Int16             = 22,
-  SPRVCAP_Count             = 23,
-  SPRVCAP_GeomTess          = 254,
-  SPRVCAP_None              = 255,
-};
+typedef spv::Capability SPRVCapabilityKind;
+typedef spv::ExecutionModel SPRVExecutionModelKind;
+typedef spv::ExecutionMode SPRVExecutionModeKind;
+typedef spv::AccessQualifier SPRVAccessQualifierKind;
+typedef spv::AddressingModel SPRVAddressingModelKind;
+typedef spv::LinkageType SPRVLinkageTypeKind;
+typedef spv::MemoryModel SPRVMemoryModelKind;
+typedef spv::StorageClass SPRVStorageClassKind;
+typedef spv::FunctionControlMask SPRVFunctionControlMaskKind;
+typedef spv::FPRoundingMode SPRVFPRoundingModeKind;
+typedef spv::FunctionParameterAttribute SPRVFuncParamAttrKind;
+typedef spv::BuiltIn SPRVBuiltinVariableKind;
+typedef spv::MemoryAccessMask SPRVMemoryAccessKind;
+typedef spv::GroupOperation SPRVGroupOperationKind;
+typedef spv::Dim SPRVImageDimKind;
 
 template<typename K>
 SPRVCapabilityKind
@@ -118,206 +100,85 @@ getCapability(K Key) {
   return SPRVMap<K, SPRVCapabilityKind>::map(Key);
 }
 
-enum SPRVExecutionModelKind {
-#define _SPRV_OP(x,y) SPRVEMDL_##x,
-  _SPRV_OP(Vertex, Shader)
-  _SPRV_OP(TessellationControl, Tess)
-  _SPRV_OP(TessellationEvalulation, Shader)
-  _SPRV_OP(Geometry, Geom)
-  _SPRV_OP(Fragment, Shader)
-  _SPRV_OP(GLCompute, Shader)
-  _SPRV_OP(Kernel, Kernel)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
-};
-
 template<> inline void
 SPRVMap<SPRVExecutionModelKind, SPRVCapabilityKind>::init() {
-#define _SPRV_OP(x,y) add(SPRVEMDL_##x, SPRVCAP_##y);
-  _SPRV_OP(Vertex, Shader)
-  _SPRV_OP(TessellationControl, Tess)
-  _SPRV_OP(TessellationEvalulation, Shader)
-  _SPRV_OP(Geometry, Geom)
-  _SPRV_OP(Fragment, Shader)
-  _SPRV_OP(GLCompute, Shader)
-  _SPRV_OP(Kernel, Kernel)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
+  add(ExecutionModelVertex, CapabilityShader);
+  add(ExecutionModelTessellationControl, CapabilityTessellation);
+  add(ExecutionModelTessellationEvaluation, CapabilityShader);
+  add(ExecutionModelGeometry, CapabilityGeometry);
+  add(ExecutionModelFragment, CapabilityShader);
+  add(ExecutionModelGLCompute, CapabilityShader);
+  add(ExecutionModelKernel, CapabilityKernel);
 }
 
 inline bool
 isValid(SPRVExecutionModelKind E) {
-  return (unsigned)E < (unsigned)SPRVEMDL_Count;
+  return (unsigned)E < (unsigned)ExecutionModelCount;
 }
-
-enum SPRVExecutionModeKind {
-#define _SPRV_OP(x,y) SPRVEM_##x,
-  _SPRV_OP(Invocations, Geom)
-  _SPRV_OP(SpacingEqual, Tess)
-  _SPRV_OP(SpacingFractionEven, Tess)
-  _SPRV_OP(SpacingFractionOdd, Tess)
-  _SPRV_OP(VertexOrderCw, Tess)
-  _SPRV_OP(VertexOrderCcw, Tess)
-  _SPRV_OP(PixelCenterInteger, Shader)
-  _SPRV_OP(OriginUpperLeft, Shader)
-  _SPRV_OP(OriginLowerLeft, Shader)
-  _SPRV_OP(EarlyFragmentTests, Shader)
-  _SPRV_OP(PointMode, Tess)
-  _SPRV_OP(Xfb, Shader)
-  _SPRV_OP(DepthReplacing, Shader)
-  _SPRV_OP(DepthAny, Shader)
-  _SPRV_OP(DepthGreater, Shader)
-  _SPRV_OP(DepthLess, Shader)
-  _SPRV_OP(DepthUnchanged, Shader)
-  _SPRV_OP(LocalSize, Default)
-  _SPRV_OP(LocalSizeHint, Kernel)
-  _SPRV_OP(InputPoints, Geom)
-  _SPRV_OP(InputLines, Geom)
-  _SPRV_OP(InputLinesAdjacency, Geom)
-  _SPRV_OP(InputTriangles, Geom)
-  _SPRV_OP(InputTrianglesAdjacency, Geom)
-  _SPRV_OP(InputQuads, Geom)
-  _SPRV_OP(InputIsolines, Geom)
-  _SPRV_OP(OutputVertices, GeomTess)
-  _SPRV_OP(OutputPoints, Geom)
-  _SPRV_OP(OutputLineStrip, Geom)
-  _SPRV_OP(OutputTriangleStrip, Geom)
-  _SPRV_OP(VecTypeHint, Kernel)
-  _SPRV_OP(ContractionOff, Kernel)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
-};
 
 template<> inline void
 SPRVMap<SPRVExecutionModeKind, SPRVCapabilityKind>::init() {
-#define _SPRV_OP(x,y) add(SPRVEM_##x, SPRVCAP_##y);
-  _SPRV_OP(Invocations, Geom)
-  _SPRV_OP(SpacingEqual, Tess)
-  _SPRV_OP(SpacingFractionEven, Tess)
-  _SPRV_OP(SpacingFractionOdd, Tess)
-  _SPRV_OP(VertexOrderCw, Tess)
-  _SPRV_OP(VertexOrderCcw, Tess)
-  _SPRV_OP(PixelCenterInteger, Shader)
-  _SPRV_OP(OriginUpperLeft, Shader)
-  _SPRV_OP(OriginLowerLeft, Shader)
-  _SPRV_OP(EarlyFragmentTests, Shader)
-  _SPRV_OP(PointMode, Tess)
-  _SPRV_OP(Xfb, Shader)
-  _SPRV_OP(DepthReplacing, Shader)
-  _SPRV_OP(DepthAny, Shader)
-  _SPRV_OP(DepthGreater, Shader)
-  _SPRV_OP(DepthLess, Shader)
-  _SPRV_OP(DepthUnchanged, Shader)
-  _SPRV_OP(LocalSize, None)
-  _SPRV_OP(LocalSizeHint, Kernel)
-  _SPRV_OP(InputPoints, Geom)
-  _SPRV_OP(InputLines, Geom)
-  _SPRV_OP(InputLinesAdjacency, Geom)
-  _SPRV_OP(InputTriangles, GeomTess)
-  _SPRV_OP(InputTrianglesAdjacency, Geom)
-  _SPRV_OP(InputQuads, Geom)
-  _SPRV_OP(InputIsolines, Geom)
-  _SPRV_OP(OutputVertices, GeomTess)
-  _SPRV_OP(OutputPoints, Geom)
-  _SPRV_OP(OutputLineStrip, Geom)
-  _SPRV_OP(OutputTriangleStrip, Geom)
-  _SPRV_OP(VecTypeHint, Kernel)
-  _SPRV_OP(ContractionOff, Kernel)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
+  add(ExecutionModeInvocations, CapabilityGeometry);
+  add(ExecutionModeSpacingEqual, CapabilityTessellation);
+  add(ExecutionModeSpacingFractionalEven, CapabilityTessellation);
+  add(ExecutionModeSpacingFractionalOdd, CapabilityTessellation);
+  add(ExecutionModeVertexOrderCw, CapabilityTessellation);
+  add(ExecutionModeVertexOrderCcw, CapabilityTessellation);
+  add(ExecutionModePixelCenterInteger, CapabilityShader);
+  add(ExecutionModeOriginUpperLeft, CapabilityShader);
+  add(ExecutionModeOriginLowerLeft, CapabilityShader);
+  add(ExecutionModeEarlyFragmentTests, CapabilityShader);
+  add(ExecutionModePointMode, CapabilityTessellation);
+  add(ExecutionModeXfb, CapabilityShader);
+  add(ExecutionModeDepthReplacing, CapabilityShader);
+  add(ExecutionModeDepthGreater, CapabilityShader);
+  add(ExecutionModeDepthLess, CapabilityShader);
+  add(ExecutionModeDepthUnchanged, CapabilityShader);
+  add(ExecutionModeLocalSize, CapabilityNone);
+  add(ExecutionModeLocalSizeHint, CapabilityKernel);
+  add(ExecutionModeInputPoints, CapabilityGeometry);
+  add(ExecutionModeInputLines, CapabilityGeometry);
+  add(ExecutionModeInputLinesAdjacency, CapabilityGeometry);
+  add(ExecutionModeInputTriangles, CapabilityTessellation);
+  add(ExecutionModeInputTrianglesAdjacency, CapabilityGeometry);
+  add(ExecutionModeInputQuads, CapabilityGeometry);
+  add(ExecutionModeInputIsolines, CapabilityGeometry);
+  add(ExecutionModeOutputVertices, CapabilityTessellation);
+  add(ExecutionModeOutputPoints, CapabilityGeometry);
+  add(ExecutionModeOutputLineStrip, CapabilityGeometry);
+  add(ExecutionModeOutputTriangleStrip, CapabilityGeometry);
+  add(ExecutionModeVecTypeHint, CapabilityKernel);
+  add(ExecutionModeContractionOff, CapabilityKernel);
 }
 
 inline bool
 isValid(SPRVExecutionModeKind E) {
-  return (unsigned)E < (unsigned)SPRVEM_Count;
+  return (unsigned)E < (unsigned)ExecutionModeCount;
 }
-
-enum SPRVAccessQualifierKind {
-#define _SPRV_OP(x) SPRVAC_##x,
-_SPRV_OP(ReadOnly)
-_SPRV_OP(WriteOnly)
-_SPRV_OP(ReadWrite)
-_SPRV_OP(Count)
-#undef _SPRV_OP
-};
-
-enum SPRVAddressingModelKind {
-  SPRVAM_Logical,
-  SPRVAM_Physical32,
-  SPRVAM_Physical64,
-  SPRVAM_Count
-};
-
-// SPIRV spec does not define enum for internal linkage.
-// Use SPRVLT_Internal only in in-memory representation.
-enum SPRVLinkageTypeKind {
-  SPRVLT_Export,
-  SPRVLT_Import,
-  SPRVLT_Count,
-  SPRVLT_Internal = SPRVLT_Count,
-};
 
 inline bool
 isValid(SPRVLinkageTypeKind L) {
-  return (unsigned)L < (unsigned)SPRVLT_Count;
+  return (unsigned)L < (unsigned)LinkageTypeCount;
 }
-
-enum SPRVMemoryModelKind {
-  SPRVMM_Simple,
-  SPRVMM_GLSL450,
-  SPRVMM_OpenCL12,
-  SPRVMM_OpenCL20,
-  SPRVMM_Count,
-};
-
-enum SPRVStorageClassKind {
-#define _SPRV_OP(x,y) SPRVSC_##x,
-  _SPRV_OP(UniformConstant, None)
-  _SPRV_OP(Input, Shader)
-  _SPRV_OP(Uniform, Shader)
-  _SPRV_OP(Output, Shader)
-  _SPRV_OP(WorkgroupLocal, None)
-  _SPRV_OP(WorkgroupGlobal, None)
-  _SPRV_OP(PrivateGlobal, Shader)
-  _SPRV_OP(Function, Shader)
-  _SPRV_OP(Generic, Kernel)
-  _SPRV_OP(Private, Kernel)
-  _SPRV_OP(AtomicCounter, Shader)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
-};
 
 template<> inline void
 SPRVMap<SPRVStorageClassKind, SPRVCapabilityKind>::init() {
-#define _SPRV_OP(x,y) add(SPRVSC_##x, SPRVCAP_##y);
-  _SPRV_OP(UniformConstant, None)
-  _SPRV_OP(Input, Shader)
-  _SPRV_OP(Uniform, Shader)
-  _SPRV_OP(Output, Shader)
-  _SPRV_OP(WorkgroupLocal, None)
-  _SPRV_OP(WorkgroupGlobal, None)
-  _SPRV_OP(PrivateGlobal, Shader)
-  _SPRV_OP(Function, Shader)
-  _SPRV_OP(Generic, Kernel)
-  _SPRV_OP(Private, Kernel)
-  _SPRV_OP(AtomicCounter, Shader)
-  _SPRV_OP(Count, Count)
-#undef _SPRV_OP
+  add(StorageClassUniformConstant, CapabilityNone);
+  add(StorageClassInput, CapabilityShader);
+  add(StorageClassUniform, CapabilityShader);
+  add(StorageClassOutput, CapabilityShader);
+  add(StorageClassWorkgroupLocal, CapabilityNone);
+  add(StorageClassWorkgroupGlobal, CapabilityNone);
+  add(StorageClassPrivateGlobal, CapabilityShader);
+  add(StorageClassFunction, CapabilityShader);
+  add(StorageClassGeneric, CapabilityKernel);
+  add(StorageClassAtomicCounter, CapabilityShader);
 }
 
 inline bool
 isValid(SPRVStorageClassKind StorageClass) {
-  return (unsigned)StorageClass < (unsigned)SPRVSC_Count;
+  return (unsigned)StorageClass < (unsigned)StorageClassCount;
 }
-
-enum SPRVFunctionControlMaskKind {
-  SPRVFCM_Default                = 0,
-  SPRVFCM_Inline                 = 1,
-  SPRVFCM_NoInline               = 2,
-  SPRVFCM_Pure                   = 4,
-  SPRVFCM_Const                  = 8,
-  SPRVFCM_Max                    = 15, // maximum possible value
-};
 
 template<> inline void
 SPRVMap<Decoration, std::string>::init() {
@@ -368,34 +229,9 @@ SPRVMap<Decoration, std::string>::init() {
 }
 SPRV_DEF_NAMEMAP(Decoration, SPRVDecorateNameMap)
 
-enum SPRVFPRoundingModeKind {
-#define _SPRV_OP(x) SPRVFRM_##x,
-_SPRV_OP(RTE)
-_SPRV_OP(RTZ)
-_SPRV_OP(RTP)
-_SPRV_OP(RTN)
-_SPRV_OP(Count)
-#undef _SPRV_OP
-};
-
-enum SPRVFuncParamAttrKind {
-#define _SPRV_OP(x) SPRVFPA_##x,
-_SPRV_OP(Zext)
-_SPRV_OP(Sext)
-_SPRV_OP(ByVal)
-_SPRV_OP(Sret)
-_SPRV_OP(NoAlias)
-_SPRV_OP(NoCapture)
-_SPRV_OP(SVM)
-_SPRV_OP(Pure)
-_SPRV_OP(Const)
-_SPRV_OP(Count)
-#undef _SPRV_OP
-};
-
 inline bool
 isValid(SPRVFuncParamAttrKind FPA) {
-  return (unsigned)FPA < (unsigned)SPRVFPA_Count;
+  return (unsigned)FPA < (unsigned)FunctionParameterAttributeCount;
 }
 
 enum SPRVExtInstSetKind {
@@ -414,22 +250,55 @@ SPRVMap<SPRVExtInstSetKind, std::string>::init() {
 }
 typedef SPRVMap<SPRVExtInstSetKind, std::string> SPRVBuiltinSetNameMap;
 
-enum SPRVBuiltinVariableKind {
-#define _SPRV_OP(x,y) SPRVBI_##x,
-#include "SPRVBuiltinVariables.h"
-#undef _SPRV_OP
-};
-
 inline bool
 isValid(SPRVBuiltinVariableKind Kind) {
-  return (unsigned)Kind < (unsigned)SPRVBI_Count;
+  return (unsigned)Kind < (unsigned)BuiltInCount;
 }
 
 template<> inline void
 SPRVMap<SPRVBuiltinVariableKind, std::string>::init() {
-#define _SPRV_OP(x,y) add(SPRVBI_##x, #x);
-#include "SPRVBuiltinVariables.h"
-#undef _SPRV_OP
+  add(BuiltInPosition, "Position");
+  add(BuiltInPointSize, "PointSize");
+  add(BuiltInClipDistance, "ClipDistance");
+  add(BuiltInCullDistance, "CullDistance");
+  add(BuiltInVertexId, "VertexId");
+  add(BuiltInInstanceId, "InstanceId");
+  add(BuiltInPrimitiveId, "PrimitiveId");
+  add(BuiltInInvocationId, "InvocationId");
+  add(BuiltInLayer, "Layer");
+  add(BuiltInViewportIndex, "ViewportIndex");
+  add(BuiltInTessLevelOuter, "TessLevelOuter");
+  add(BuiltInTessLevelInner, "TessLevelInner");
+  add(BuiltInTessCoord, "TessCoord");
+  add(BuiltInPatchVertices, "PatchVertices");
+  add(BuiltInFragCoord, "FragCoord");
+  add(BuiltInPointCoord, "PointCoord");
+  add(BuiltInFrontFacing, "FrontFacing");
+  add(BuiltInSampleId, "SampleId");
+  add(BuiltInSamplePosition, "SamplePosition");
+  add(BuiltInSampleMask, "SampleMask");
+  add(BuiltInFragColor, "FragColor");
+  add(BuiltInFragDepth, "FragDepth");
+  add(BuiltInHelperInvocation, "HelperInvocation");
+  add(BuiltInNumWorkgroups, "NumWorkgroups");
+  add(BuiltInWorkgroupSize, "WorkgroupSize");
+  add(BuiltInWorkgroupId, "WorkgroupId");
+  add(BuiltInLocalInvocationId, "LocalInvocationId");
+  add(BuiltInGlobalInvocationId, "GlobalInvocationId");
+  add(BuiltInLocalInvocationIndex, "LocalInvocationIndex");
+  add(BuiltInWorkDim, "WorkDim");
+  add(BuiltInGlobalSize, "GlobalSize");
+  add(BuiltInEnqueuedWorkgroupSize, "EnqueuedWorkgroupSize");
+  add(BuiltInGlobalOffset, "GlobalOffset");
+  add(BuiltInGlobalLinearId, "GlobalLinearId");
+  add(BuiltInWorkgroupLinearId, "WorkgroupLinearId");
+  add(BuiltInSubgroupSize, "SubgroupSize");
+  add(BuiltInSubgroupMaxSize, "SubgroupMaxSize");
+  add(BuiltInNumSubgroups, "NumSubgroups");
+  add(BuiltInNumEnqueuedSubgroups, "NumEnqueuedSubgroups");
+  add(BuiltInSubgroupId, "SubgroupId");
+  add(BuiltInSubgroupLocalInvocationId, "SubgroupLocalInvocationId");
+  add(BuiltInCount, "Count");
 }
 typedef SPRVMap<SPRVBuiltinVariableKind, std::string>
   SPRVBuiltinVariableNameMap;
@@ -443,65 +312,32 @@ inline bool isValidSPRVMemSemanticsMask(SPRVWord MemMask) {
 }
 
 enum SPRVSamplerAddressingModeKind {
-#define _SPRV_OP(x, y) SPRVSAM_##x = y,
-_SPRV_OP(None, 0)
-_SPRV_OP(ClampEdge, 2)
-_SPRV_OP(Clamp, 4)
-_SPRV_OP(Repeat, 6)
-_SPRV_OP(RepeatMirrored, 8)
-_SPRV_OP(Invalid, 255)
-#undef _SPRV_OP
+  SPRVSAM_None = 0,
+  SPRVSAM_ClampEdge = 2,
+  SPRVSAM_Clamp = 4,
+  SPRVSAM_Repeat = 6,
+  SPRVSAM_RepeatMirrored = 8,
+  SPRVSAM_Invalid = 255,
 };
 
 enum SPRVSamplerFilterModeKind {
-#define _SPRV_OP(x, y) SPRVSFM_##x = y,
-_SPRV_OP(Nearest, 16)
-_SPRV_OP(Linear, 32)
-_SPRV_OP(Invalid, 255)
-#undef _SPRV_OP
-};
-
-enum SPRVMemoryAccessKind {
-#define _SPRV_OP(x, y) SPRVMA_##x = y,
-  _SPRV_OP(None, 0x0)
-  _SPRV_OP(Volatile, 0x1)
-  _SPRV_OP(Aligned, 0x2)
-  _SPRV_OP(Count, 0x4)
-#undef _SPRV_OP
-};
-
-enum SPRVGroupOperationKind {
-#define _SPRV_OP(x) SPRVGO_##x,
-  _SPRV_OP(Reduce)
-  _SPRV_OP(InclusiveScan)
-  _SPRV_OP(ExclusiveScan)
-  _SPRV_OP(Count)
-#undef _SPRV_OP
+  SPRVSFM_Nearest = 16,
+  SPRVSFM_Linear = 32,
+  SPRVSFM_Invalid = 255,
 };
 
 inline bool isValid(SPRVGroupOperationKind G) {
-  return (unsigned)G < (unsigned)SPRVGO_Count;
+  return (unsigned)G < (unsigned)GroupOperationCount;
 }
-
-enum SPRVImageDimKind {
-  SPRVDIM_1D,
-  SPRVDIM_2D,
-  SPRVDIM_3D,
-  SPRVDIM_Cube,
-  SPRVDIM_Rect,
-  SPRVDIM_Buffer,
-  SPRVDIM_InputTarget,
-  SPRVDIM_Count,
-};
 
 inline unsigned getImageDimension(SPRVImageDimKind K) {
   switch(K){
-  case SPRVDIM_1D:      return 1;
-  case SPRVDIM_2D:      return 2;
-  case SPRVDIM_3D:      return 3;
-  case SPRVDIM_Cube:    return 2;
-  case SPRVDIM_Rect:    return 2;
-  case SPRVDIM_Buffer:  return 1;
+  case Dim1D:      return 1;
+  case Dim2D:      return 2;
+  case Dim3D:      return 3;
+  case DimCube:    return 2;
+  case DimRect:    return 2;
+  case DimBuffer:  return 1;
   default:              return 0;
   }
 }
