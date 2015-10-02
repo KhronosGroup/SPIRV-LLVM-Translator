@@ -538,7 +538,7 @@ SPRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   std::vector<Type*> ArgTy;
   if (IsVec)
     ArgTy.push_back(Type::getInt32Ty(*Context));
-  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
+  MangleOpenCLBuiltin(FuncName, ArgTy, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
     FunctionType *FT = FunctionType::get(ReturnTy, ArgTy, false);
@@ -1752,7 +1752,7 @@ SPRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
     }
   }
   if (!HasFuncPtrArg)
-    mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTys, MangledName);
+    MangleOpenCLBuiltin(FuncName, ArgTys, MangledName);
   else
     MangledName = decorateSPRVFunction(FuncName);
   Function* Func = M->getFunction(MangledName);
@@ -2115,27 +2115,12 @@ SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
   std::string UnmangledName;
   auto BArgs = BC->getArguments();
 
-  if (Set == SPRVBIS_OpenCL12) {
-    if (EntryPoint == OCL12_Printf)
-      IsPrintf = true;
-    else {
-      UnmangledName = OCL12Map::map(static_cast<SPRVBuiltinOCL12Kind>(
-          EntryPoint));
-    }
-  } else if (Set == SPRVBIS_OpenCL20) {
-    if (EntryPoint == OCL20_Printf)
-      IsPrintf = true;
-    else {
-      UnmangledName = OCL20Map::map(static_cast<SPRVBuiltinOCL20Kind>(
-          EntryPoint));
-    }
-  } else if (Set == SPRVBIS_OpenCL21) {
-    if (EntryPoint == OCL21_Printf)
-      IsPrintf = true;
-    else {
-      UnmangledName =
-          OCL21Map::map(static_cast<SPRVBuiltinOCL21Kind>(EntryPoint));
-    }
+  assert (Set == SPRVEIS_OpenCL && "Not OpenCL extended instruction");
+  if (EntryPoint == OpenCLLIB::Printf)
+    IsPrintf = true;
+  else {
+    UnmangledName = OCLExtOpMap::map(static_cast<OCLExtOpKind>(
+        EntryPoint));
   }
 
   SPRVDBG(bildbgs() << "[transOCLBuiltinFromExtInst] OrigUnmangledName: " <<
@@ -2151,9 +2136,9 @@ SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
   } else if (UnmangledName.find("read_image") == 0) {
     auto ModifiedArgTypes = ArgTypes;
     ModifiedArgTypes[1] = getOrCreateOpaquePtrType(M, "opencl.sampler_t");
-    mangleOCLBuiltin(Set, UnmangledName, ModifiedArgTypes, MangledName);
+    MangleOpenCLBuiltin(UnmangledName, ModifiedArgTypes, MangledName);
   } else {
-    mangleOCLBuiltin(Set, UnmangledName, ArgTypes, MangledName);
+    MangleOpenCLBuiltin(UnmangledName, ArgTypes, MangledName);
   }
   SPRVDBG(bildbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: " <<
       UnmangledName << " MangledName: " << MangledName << '\n');
@@ -2208,7 +2193,7 @@ SPRVToLLVM::transOCLBarrierFence(SPRVInstruction* MB, BasicBlock *BB) {
   Type* Int32Ty = Type::getInt32Ty(*Context);
   Type* VoidTy = Type::getVoidTy(*Context);
   Type* ArgTy[] = {Int32Ty};
-  mangleOCLBuiltin(SPRVBIS_OpenCL20, FuncName, ArgTy, MangledName);
+  MangleOpenCLBuiltin(FuncName, ArgTy, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
     FunctionType *FT = FunctionType::get(VoidTy, ArgTy, false);

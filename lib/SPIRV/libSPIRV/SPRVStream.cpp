@@ -136,8 +136,7 @@ operator<<(const SPRVEncoder& O, Type V) { \
 
 SPRV_DEF_ENCDEC(Op)
 SPRV_DEF_ENCDEC(Decoration)
-SPRV_DEF_ENCDEC(SPRVBuiltinOCL12Kind)
-SPRV_DEF_ENCDEC(SPRVBuiltinOCL20Kind)
+SPRV_DEF_ENCDEC(OCLExtOpKind)
 
 // Read a string with padded 0's at the end so that they form a stream of
 // words.

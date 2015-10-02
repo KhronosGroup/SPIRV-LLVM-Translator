@@ -475,21 +475,13 @@ LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
   }
   SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName
                     << '\n');
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   BSK = BM->getBuiltinSet(BuiltinSetId);
   bool Found = false;
   switch (BSK) {
-  case SPRVBIS_OpenCL12:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL12Kind>(OrigName, DemangledName,
+  case SPRVEIS_OpenCL:
+    Found = oclGetExtInstIndex<OCLExtOpKind>(OrigName, DemangledName,
         EntryPoint);
-    break;
-  case SPRVBIS_OpenCL20:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL20Kind>(OrigName, DemangledName,
-        EntryPoint);
-    break;
-  case SPRVBIS_OpenCL21:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL21Kind>(OrigName, DemangledName,
-                                                     EntryPoint);
     break;
   default:
     llvm_unreachable("not supported");
@@ -1265,7 +1257,7 @@ LLVMToSPRV::transBuiltinSet() {
   SourceLanguage Kind = BM->getSourceLanguage(&Ver);
   assert(Kind == SourceLanguageOpenCL && "not supported");
   std::stringstream SS;
-  SS << "OpenCL.std." << Ver;
+  SS << "OpenCL.std";
   return BM->importBuiltinSet(SS.str(), &BuiltinSetId);
 }
 
@@ -1323,7 +1315,7 @@ LLVMToSPRV::transSpcvCast(CallInst* CI, SPRVBasicBlock *BB) {
 
 SPRVValue *
 LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   SPRVWord EntryPoint = SPRVWORD_MAX;
   llvm::Function* F = CI->getCalledFunction();
   auto MangledName = F->getName();
@@ -1814,7 +1806,7 @@ LLVMToSPRV::transOCLVectorLoadStore(CallInst *CI,
         DemangledName.find("_r") + 1, 3)));
   }
 
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   SPRVWord EntryPoint = SPRVWORD_MAX;
   bool Found = oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &BSK,
       &EntryPoint);

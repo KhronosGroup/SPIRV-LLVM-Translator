@@ -190,8 +190,7 @@ operator>>(const SPRVDecoder& I, Type &V);
 
 SPRV_DEC_ENCDEC(Op)
 SPRV_DEC_ENCDEC(Decoration)
-SPRV_DEC_ENCDEC(SPRVBuiltinOCL12Kind)
-SPRV_DEC_ENCDEC(SPRVBuiltinOCL20Kind)
+SPRV_DEC_ENCDEC(OCLExtOpKind)
 
 const SPRVEncoder&
 operator<<(const SPRVEncoder&O, const std::string& Str);

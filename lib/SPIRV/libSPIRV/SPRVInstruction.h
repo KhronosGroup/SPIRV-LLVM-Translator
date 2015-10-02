@@ -1129,74 +1129,60 @@ public:
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVWord> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     BuiltinSet(TheBuiltinSet),
-     EntryPoint(TheEntryPoint) {
+     ExtInstSet(TheBuiltinSet),
+     ExtOp(TheEntryPoint) {
     validate();
   }
   SPRVExtInst(SPRVType *TheType, SPRVId TheId,
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     BuiltinSet(TheBuiltinSet),
-     EntryPoint(TheEntryPoint) {
+     ExtInstSet(TheBuiltinSet),
+     ExtOp(TheEntryPoint) {
     validate();
   }
-  SPRVExtInst(): BuiltinSet(SPRVWORD_MAX),
-      EntryPoint(SPRVWORD_MAX) {}
+  SPRVExtInst(): ExtInstSet(SPRVWORD_MAX),
+      ExtOp(SPRVWORD_MAX) {}
   SPRVId getBuiltinSet()const {
-    return BuiltinSet;
+    return ExtInstSet;
   }
   SPRVWord getEntryPoint()const {
-    return EntryPoint;
+    return ExtOp;
   }
 
   void encode(std::ostream &O) const {
-    getEncoder(O) << Type << Id << BuiltinSet;
-    switch(Module->getBuiltinSet(BuiltinSet)) {
-    case SPRVBIS_OpenCL12:
-      getEncoder(O) << EntryPointOCL12;
-      break;
-    case SPRVBIS_OpenCL20:
-      getEncoder(O) << EntryPointOCL20;
-      break;
-    case SPRVBIS_OpenCL21:
-      getEncoder(O) << EntryPointOCL21;
+    getEncoder(O) << Type << Id << ExtInstSet;
+    switch(Module->getBuiltinSet(ExtInstSet)) {
+    case SPRVEIS_OpenCL:
+      getEncoder(O) << ExtOpOCL;
       break;
     default:
       assert(0 && "not supported");
-      getEncoder(O) << EntryPoint;
+      getEncoder(O) << ExtOp;
     }
     getEncoder(O) << Args;
   }
   void decode(std::istream &I) {
-    getDecoder(I) >> Type >> Id >> BuiltinSet;
-    switch(Module->getBuiltinSet(BuiltinSet)) {
-    case SPRVBIS_OpenCL12:
-      getDecoder(I) >> EntryPointOCL12;
-      break;
-    case SPRVBIS_OpenCL20:
-      getDecoder(I) >> EntryPointOCL20;
-      break;
-    case SPRVBIS_OpenCL21:
-      getDecoder(I) >> EntryPointOCL21;
+    getDecoder(I) >> Type >> Id >> ExtInstSet;
+    switch(Module->getBuiltinSet(ExtInstSet)) {
+    case SPRVEIS_OpenCL:
+      getDecoder(I) >> ExtOpOCL;
       break;
     default:
       assert(0 && "not supported");
-      getDecoder(I) >> EntryPoint;
+      getDecoder(I) >> ExtOp;
     }
     getDecoder(I) >> Args;
   }
   void validate()const {
     SPRVFunctionCallGeneric::validate();
-    validateBuiltin(BuiltinSet, EntryPoint);
+    validateBuiltin(ExtInstSet, ExtOp);
   }
 protected:
-  SPRVId BuiltinSet;
+  SPRVId ExtInstSet;
   union {
-    SPRVWord EntryPoint;
-    SPRVBuiltinOCL12Kind EntryPointOCL12;
-    SPRVBuiltinOCL20Kind EntryPointOCL20;
-    SPRVBuiltinOCL21Kind EntryPointOCL21;
+    SPRVWord ExtOp;
+    OCLExtOpKind ExtOpOCL;
   };
 };
 

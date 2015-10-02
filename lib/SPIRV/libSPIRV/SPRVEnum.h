@@ -399,26 +399,18 @@ isValid(SPRVFuncParamAttrKind FPA) {
 }
 
 enum SPRVExtInstSetKind {
-#define _SPRV_OP(x) SPRVBIS_##x,
-  _SPRV_OP(OpenCL12)
-  _SPRV_OP(OpenCL20)
-  _SPRV_OP(OpenCL21)
-  _SPRV_OP(Count)
-#undef _SPRV_OP
+  SPRVEIS_OpenCL,
+  SPRVEIS_Count,
 };
 
 inline bool
 isValid(SPRVExtInstSetKind BIS) {
-  return (unsigned)BIS < (unsigned)SPRVBIS_Count;
+  return (unsigned)BIS < (unsigned)SPRVEIS_Count;
 }
 
 template<> inline void
 SPRVMap<SPRVExtInstSetKind, std::string>::init() {
-#define _SPRV_OP(x,y) add(SPRVBIS_##x, #y);
-  _SPRV_OP(OpenCL12,OpenCL.std.12)
-  _SPRV_OP(OpenCL20,OpenCL.std.20)
-  _SPRV_OP(OpenCL21,OpenCL.std.21)
-#undef _SPRV_OP
+  add(SPRVEIS_OpenCL, "OpenCL.std");
 }
 typedef SPRVMap<SPRVExtInstSetKind, std::string> SPRVBuiltinSetNameMap;
 

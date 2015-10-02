@@ -550,7 +550,7 @@ SPRVModuleImpl::importBuiltinSet(const std::string& BuiltinSetName,
 bool
 SPRVModuleImpl::importBuiltinSetWithId(const std::string& BuiltinSetName,
     SPRVId BuiltinSetId) {
-  SPRVExtInstSetKind BuiltinSet = SPRVBIS_Count;
+  SPRVExtInstSetKind BuiltinSet = SPRVEIS_Count;
   SPRVCKRT(SPRVBuiltinSetNameMap::rfind(BuiltinSetName, &BuiltinSet),
       InvalidBuiltinSetName, "Actual is " + BuiltinSetName);
   IdBuiltinMap[BuiltinSetId] = BuiltinSet;

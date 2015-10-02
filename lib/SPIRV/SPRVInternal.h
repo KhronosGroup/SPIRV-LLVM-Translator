@@ -844,16 +844,6 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 ConstantInt *mapSInt(Module *M, ConstantInt *I,
     std::function<int(int)> F);
 
-/// Mangle name for OCL builtin functions.
-/// \param UniqName is unique unmangled name for OCL builtin functions,
-///        which is transformed and unique version of original unmangled
-///        names. Mostly for functions which have different semantics for
-///        signed/unsigned integer arguments, e.g. s_max/u_max.
-void mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet,
-    const std::string &UniqName, ArrayRef<Type*> ArgTypes,
-    std::string &MangledName);
-
-
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);
 

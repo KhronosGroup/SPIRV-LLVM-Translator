@@ -244,7 +244,7 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
   std::string MangledName = Name;
   if (Mangle)
-    mangleOCLBuiltin(SPRVBIS_OpenCL20, Name, ArgTypes, MangledName);
+    MangleOpenCLBuiltin(Name, ArgTypes, MangledName);
   FunctionType *FT = FunctionType::get(
       RetTy,
       ArgTypes,
@@ -802,27 +802,6 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
 }
 
-void
-mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet, const std::string &UniqName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
-  assert(isOpenCLBuiltinSet(BuiltinSet) && "Not OpenCL builtin set");
-  SPIR::NameMangler Mangler(BuiltinSet == SPRVBIS_OpenCL12 ? SPIR::SPIR12 :
-      SPIR::SPIR20);
-  SPIR::FunctionDescriptor FD;
-  OCLBuiltinMangleInfo BtnInfo(UniqName);
-  FD.name = BtnInfo.getUnmangledName();
-  for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
-    auto T = ArgTypes[I];
-    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
-  }
-  if (FD.parameters.empty())
-    FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
-        SPIR::PRIMITIVE_VOID)));
-  Mangler.mangle(FD, MangledName);
-  DEBUG(dbgs() << MangledName << '\n');
-}
-
 Value *
 getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
   if (!V->getType()->isPointerTy())
@@ -837,12 +816,6 @@ getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
   auto Index1 = GEP->getOperand(2);
   assert(dyn_cast<ConstantInt>(Index1)->getZExtValue() == 0);
   return new LoadInst(P, "", Pos);
-}
-
-void
-MangleOpenCLBuiltin(const std::string &UnmangledName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  mangleOCLBuiltin(SPRVBIS_OpenCL20, UnmangledName, ArgTypes, MangledName);
 }
 
 Constant *
@@ -937,7 +910,25 @@ eraseUselessFunctions(Module *M) {
   }
   return changed;
 }
-
-
 }
+
+void
+llvm::MangleOpenCLBuiltin(const std::string &UniqName,
+    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
+  DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
+  SPIR::NameMangler Mangler(SPIR::SPIR20);
+  SPIR::FunctionDescriptor FD;
+  OCLBuiltinMangleInfo BtnInfo(UniqName);
+  FD.name = BtnInfo.getUnmangledName();
+  for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
+    auto T = ArgTypes[I];
+    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
+  }
+  if (FD.parameters.empty())
+    FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
+        SPIR::PRIMITIVE_VOID)));
+  Mangler.mangle(FD, MangledName);
+  DEBUG(dbgs() << MangledName << '\n');
+}
+
 
