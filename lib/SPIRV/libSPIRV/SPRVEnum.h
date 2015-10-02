@@ -61,7 +61,12 @@ mkWord(unsigned WordCount, Op OpCode) {
   return (WordCount << 16) | OpCode;
 }
 
-const SPRVWord SPRVMagicNumber = 0x07230203;
+const static unsigned kSPRVMemOrderSemanticMask = 0x1F;
+
+/// Extract memory order part of SPIR-V memory semantics.
+inline unsigned extractSPRVMemOrderSemantic(unsigned Sema) {
+  return Sema & kSPRVMemOrderSemanticMask;
+}
 
 // ToDo: change to 100 for release
 enum SPRVVersionKind {
@@ -343,7 +348,6 @@ SPRVMap<Decoration, std::string>::init() {
   add(DecorationNonWritable, "NonWritable");
   add(DecorationNonReadable, "NonReadable");
   add(DecorationUniform, "Uniform");
-  add(DecorationNoStaticUse, "NoStaticUse");
   add(DecorationSaturatedConversion, "SaturatedConversion");
   add(DecorationStream, "Stream");
   add(DecorationLocation, "Location");

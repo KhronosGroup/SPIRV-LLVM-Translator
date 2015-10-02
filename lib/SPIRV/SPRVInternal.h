@@ -441,10 +441,10 @@ typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
 
 template<> inline void
 SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
-  add(OCLMO_relaxed, MemorySemanticsRelaxedMask);
+  add(OCLMO_relaxed, MemorySemanticsMaskNone);
   add(OCLMO_acquire, MemorySemanticsAcquireMask);
   add(OCLMO_release, MemorySemanticsReleaseMask);
-  add(OCLMO_acq_rel, MemorySemanticsAcquireMask|MemorySemanticsReleaseMask);
+  add(OCLMO_acq_rel, MemorySemanticsAcquireReleaseMask);
   add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
 }
 typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
@@ -459,12 +459,12 @@ inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
 inline std::pair<unsigned, OCLMemOrderKind>
 mapSPRVMemSemanticToOCL(unsigned Sema) {
   return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
-    OCLMemOrderMap::rmap(Sema & 0xF));
+    OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema)));
 }
 
 inline OCLMemOrderKind
 mapSPRVMemOrderToOCL(unsigned Sema) {
-  return OCLMemOrderMap::rmap(Sema & 0xF);
+  return OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema));
 }
 
 template<> inline void

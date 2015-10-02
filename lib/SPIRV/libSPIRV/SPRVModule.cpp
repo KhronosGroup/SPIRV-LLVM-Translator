@@ -1037,7 +1037,7 @@ operator<< (std::ostream &O, SPRVModule &M) {
   SPRVModuleImpl &MI = *static_cast<SPRVModuleImpl*>(&M);
 
   SPRVEncoder Encoder(O);
-  Encoder << SPRVMagicNumber
+  Encoder << MagicNumber
           << MI.SPRVVersion
           << MI.SPRVGenerator
           << MI.NextId /* Bound for Id */
@@ -1153,7 +1153,7 @@ operator>> (std::istream &I, SPRVModule &M) {
 
   SPRVWord Magic;
   Decoder >> Magic;
-  assert(Magic == SPRVMagicNumber && "Invalid magic number");
+  assert(Magic == MagicNumber && "Invalid magic number");
 
   Decoder >> MI.SPRVVersion;
   assert(MI.SPRVVersion == SPRVVER_100 && "Unsupported SPIRV version number");
@@ -1258,7 +1258,7 @@ bool IsSPRVBinary(const std::string &Img) {
   if (Img.size() < sizeof(unsigned))
     return false;
   auto Magic = reinterpret_cast<const unsigned*>(Img.data());
-  return *Magic == SPRVMagicNumber;
+  return *Magic == MagicNumber;
 }
 
 #ifdef _SPRV_SUPPORT_TEXT_FMT
@@ -1289,7 +1289,7 @@ bool IsSPRVText(const std::string &Img) {
   SS >> Magic;
   if (SS.bad())
     return false;
-  return Magic == SPRVMagicNumber;
+  return Magic == MagicNumber;
 }
 
 bool ConvertSPRV(std::string &Input, std::string &Out,

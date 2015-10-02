@@ -41,7 +41,7 @@
 #define SPRVBUILTIN_HPP_
 
 #include "SPRVUtil.h"
-#include "OpenCLLib.h"
+#include "OpenCL.std.h"
 
 #include <string>
 #include <vector>
