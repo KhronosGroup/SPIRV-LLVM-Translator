@@ -1,4 +1,4 @@
-//===- LLVMSPRVInternal.h –  SPIR-V internal header file --------*- C++ -*-===//
+//===- LLVMSPRVInternal.h -  SPIR-V internal header file --------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -202,60 +202,52 @@ enum OCLMemOrderKind {
 
 template<> inline void
 SPRVMap<SPIRAddressSpace, SPRVStorageClassKind>::init() {
-#define _SPRV_OP(x,y) add(SPIRAS_##x, SPRVSC_##y);
-    _SPRV_OP(Private, Private)
-    _SPRV_OP(Global, WorkgroupGlobal)
-    _SPRV_OP(Constant, UniformConstant)
-    _SPRV_OP(Local, WorkgroupLocal)
-    _SPRV_OP(Generic, Generic)
-#undef _SPRV_OP
+  add(SPIRAS_Private, StorageClassFunction);
+  add(SPIRAS_Global, StorageClassWorkgroupGlobal);
+  add(SPIRAS_Constant, StorageClassUniformConstant);
+  add(SPIRAS_Local, StorageClassWorkgroupLocal);
+  add(SPIRAS_Generic, StorageClassGeneric);
 }
 typedef SPRVMap<SPIRAddressSpace, SPRVStorageClassKind> SPIRSPRVAddrSpaceMap;
 
 // Maps OCL builtin function to SPIRV builtin variable.
 template<> inline void
 SPRVMap<std::string, SPRVAccessQualifierKind>::init() {
-#define _SPRV_OP(x,y) add(#x, SPRVAC_##y);
-    _SPRV_OP(read_only, ReadOnly)
-    _SPRV_OP(write_only, WriteOnly)
-    _SPRV_OP(read_write, ReadWrite)
-#undef _SPRV_OP
+  add("read_only", AccessQualifierReadOnly);
+  add("write_only", AccessQualifierWriteOnly);
+  add("read_write", AccessQualifierReadWrite);
 }
 typedef SPRVMap<std::string, SPRVAccessQualifierKind> SPIRSPRVAccessQualifierMap;
 
 template<> inline void
 SPRVMap<std::string, Op>::init() {
-#define _SPRV_OP(x,y) add(#x, OpType##y);
-    _SPRV_OP(opencl.event_t, Event)
-    _SPRV_OP(opencl.pipe_t, Pipe)
-    _SPRV_OP(opencl.clk_event_t, DeviceEvent)
-    _SPRV_OP(opencl.reserve_id_t, ReserveId)
-    _SPRV_OP(opencl.queue_t, Queue)
-#undef _SPRV_OP
+  add("opencl.event_t", OpTypeEvent);
+  add("opencl.pipe_t", OpTypePipe);
+  add("opencl.clk_event_t", OpTypeDeviceEvent);
+  add("opencl.reserve_id_t", OpTypeReserveId);
+  add("opencl.queue_t", OpTypeQueue);
 }
 typedef SPRVMap<std::string, Op> BuiltinOpaqueGenericTypeOpCodeMap;
 
 template<> inline void
 SPRVMap<std::string, SPRVBuiltinVariableKind>::init() {
-#define _SPRV_OP(x,y) add(#x, SPRVBI_##y);
-_SPRV_OP(get_work_dim, WorkDim)
-_SPRV_OP(get_global_size, GlobalSize)
-_SPRV_OP(get_global_id, GlobalInvocationId)
-_SPRV_OP(get_global_offset, GlobalOffset)
-_SPRV_OP(get_local_size, WorkgroupSize)
-_SPRV_OP(get_enqueued_local_size, EnqueuedWorkgroupSize)
-_SPRV_OP(get_local_id, LocalInvocationId)
-_SPRV_OP(get_num_groups, NumWorkgroups)
-_SPRV_OP(get_group_id, WorkgroupId)
-_SPRV_OP(get_global_linear_id, GlobalLinearId)
-_SPRV_OP(get_local_linear_id, WorkgroupLinearId)
-_SPRV_OP(get_sub_group_size, SubgroupSize)
-_SPRV_OP(get_max_sub_group_size, SubgroupMaxSize)
-_SPRV_OP(get_num_sub_groups, NumSubgroups)
-_SPRV_OP(get_enqueued_num_sub_groups, NumEnqueuedSubgroups)
-_SPRV_OP(get_sub_group_id, SubgroupId)
-_SPRV_OP(get_sub_group_local_id, SubgroupLocalInvocationId)
-#undef _SPRV_OP
+  add("get_work_dim", BuiltInWorkDim);
+  add("get_global_size", BuiltInGlobalSize);
+  add("get_global_id", BuiltInGlobalInvocationId);
+  add("get_global_offset", BuiltInGlobalOffset);
+  add("get_local_size", BuiltInWorkgroupSize);
+  add("get_enqueued_local_size", BuiltInEnqueuedWorkgroupSize);
+  add("get_local_id", BuiltInLocalInvocationId);
+  add("get_num_groups", BuiltInNumWorkgroups);
+  add("get_group_id", BuiltInWorkgroupId);
+  add("get_global_linear_id", BuiltInGlobalLinearId);
+  add("get_local_linear_id", BuiltInWorkgroupLinearId);
+  add("get_sub_group_size", BuiltInSubgroupSize);
+  add("get_max_sub_group_size", BuiltInSubgroupMaxSize);
+  add("get_num_sub_groups", BuiltInNumSubgroups);
+  add("get_enqueued_num_sub_groups", BuiltInNumEnqueuedSubgroups);
+  add("get_sub_group_id", BuiltInSubgroupId);
+  add("get_sub_group_local_id", BuiltInSubgroupLocalInvocationId);
 }
 
 typedef SPRVMap<std::string, SPRVBuiltinVariableKind> SPIRSPRVBuiltinVariableMap;
@@ -392,40 +384,34 @@ typedef SPRVMap<std::string, Op, SPRVInstruction>
 
 template<> inline void
 SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>::init() {
-#define _SPRV_OP(x,y) add(GlobalValue::x, SPRVLT_##y);
-_SPRV_OP(ExternalLinkage, Export)
-_SPRV_OP(AvailableExternallyLinkage, Import)
-_SPRV_OP(PrivateLinkage, Count)
-_SPRV_OP(LinkOnceODRLinkage, Count)
-_SPRV_OP(CommonLinkage, Count)
-_SPRV_OP(InternalLinkage, Count)
-#undef _SPRV_OP
+  add(GlobalValue::ExternalLinkage, LinkageTypeExport);
+  add(GlobalValue::AvailableExternallyLinkage, LinkageTypeImport);
+  add(GlobalValue::PrivateLinkage, LinkageTypeInternal);
+  add(GlobalValue::LinkOnceODRLinkage, LinkageTypeInternal);
+  add(GlobalValue::CommonLinkage, LinkageTypeInternal);
+  add(GlobalValue::InternalLinkage, LinkageTypeInternal);
 }
 typedef SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>
   SPIRSPRVLinkageTypeMap;
 
 template<> inline void
 SPRVMap<Attribute::AttrKind, SPRVFuncParamAttrKind>::init() {
-#define _SPRV_OP(x,y) add(Attribute::x, SPRVFPA_##y);
-_SPRV_OP(ZExt, Zext)
-_SPRV_OP(SExt, Sext)
-_SPRV_OP(ByVal, ByVal)
-_SPRV_OP(StructRet, Sret)
-_SPRV_OP(NoAlias, NoAlias)
-_SPRV_OP(NoCapture, NoCapture)
-#undef _SPRV_OP
+  add(Attribute::ZExt, FunctionParameterAttributeZext);
+  add(Attribute::SExt, FunctionParameterAttributeSext);
+  add(Attribute::ByVal, FunctionParameterAttributeByVal);
+  add(Attribute::StructRet, FunctionParameterAttributeSret);
+  add(Attribute::NoAlias, FunctionParameterAttributeNoAlias);
+  add(Attribute::NoCapture, FunctionParameterAttributeNoCapture);
 }
 typedef SPRVMap<Attribute::AttrKind, SPRVFuncParamAttrKind>
   SPIRSPRVFuncParamAttrMap;
 
 template<> inline void
 SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>::init() {
-#define _SPRV_OP(x,y) add(Attribute::x, SPRVFCM_##y);
-_SPRV_OP(ReadNone, Pure)
-_SPRV_OP(ReadOnly, Const)
-_SPRV_OP(AlwaysInline, Inline)
-_SPRV_OP(NoInline, NoInline)
-#undef _SPRV_OP
+  add(Attribute::ReadNone, FunctionControlPureMask);
+  add(Attribute::ReadOnly, FunctionControlConstMask);
+  add(Attribute::AlwaysInline, FunctionControlInlineMask);
+  add(Attribute::NoInline, FunctionControlDontInlineMask);
 }
 typedef SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>
   SPIRSPRVFuncCtlMaskMap;
@@ -441,10 +427,10 @@ typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
 
 template<> inline void
 SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
-  add(OCLMO_relaxed, MemorySemanticsRelaxedMask);
+  add(OCLMO_relaxed, MemorySemanticsMaskNone);
   add(OCLMO_acquire, MemorySemanticsAcquireMask);
   add(OCLMO_release, MemorySemanticsReleaseMask);
-  add(OCLMO_acq_rel, MemorySemanticsAcquireMask|MemorySemanticsReleaseMask);
+  add(OCLMO_acq_rel, MemorySemanticsAcquireReleaseMask);
   add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
 }
 typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
@@ -459,12 +445,12 @@ inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
 inline std::pair<unsigned, OCLMemOrderKind>
 mapSPRVMemSemanticToOCL(unsigned Sema) {
   return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
-    OCLMemOrderMap::rmap(Sema & 0xF));
+    OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema)));
 }
 
 inline OCLMemOrderKind
 mapSPRVMemOrderToOCL(unsigned Sema) {
-  return OCLMemOrderMap::rmap(Sema & 0xF);
+  return OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema));
 }
 
 template<> inline void
@@ -480,11 +466,9 @@ typedef SPRVMap<OCLMemScopeKind, Scope>
 
 template<> inline void
 SPRVMap<std::string, SPRVGroupOperationKind>::init() {
-#define _SPRV_OP(x,y) add(#x, SPRVGO_##y);
-  _SPRV_OP(reduce, Reduce)
-  _SPRV_OP(scan_inclusive, InclusiveScan)
-  _SPRV_OP(scan_exclusive, ExclusiveScan)
-#undef _SPRV_OP
+  add("reduce", GroupOperationReduce);
+  add("scan_inclusive", GroupOperationInclusiveScan);
+  add("scan_exclusive", GroupOperationExclusiveScan);
 }
 typedef SPRVMap<std::string, SPRVGroupOperationKind>
   SPIRSPRVGroupOperationMap;
@@ -492,12 +476,10 @@ typedef SPRVMap<std::string, SPRVGroupOperationKind>
 
 template<> inline void
 SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
-#define _SPRV_OP(x,y) add("rt"#x, SPRVFRM_RT##y);
-_SPRV_OP(e, E)
-_SPRV_OP(z, Z)
-_SPRV_OP(p, P)
-_SPRV_OP(n, N)
-#undef _SPRV_OP
+  add("rte", FPRoundingModeRTE);
+  add("rtz", FPRoundingModeRTZ);
+  add("rtp", FPRoundingModeRTP);
+  add("rtn", FPRoundingModeRTN);
 }
 typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
   SPIRSPRVFPRoundingModeMap;
@@ -679,32 +661,30 @@ SPRVMap<OclExt::Kind, std::string>::init() {
 
 template<> inline void
 SPRVMap<OclExt::Kind, SPRVCapabilityKind>::init() {
-#define _SPRV_OP(x,y) add(OclExt::x, SPRVCAP_##y);
-  _SPRV_OP(cl_images, ImageBasic)
-  _SPRV_OP(cl_doubles, Float64)
-  _SPRV_OP(cl_khr_int64_base_atomics, Int64Atomics)
-  _SPRV_OP(cl_khr_int64_extended_atomics, Int64Atomics)
-  _SPRV_OP(cl_khr_fp16, Float16)
-  _SPRV_OP(cl_khr_gl_sharing, None)
-  _SPRV_OP(cl_khr_gl_event, None)
-  _SPRV_OP(cl_khr_d3d10_sharing, None)
-  _SPRV_OP(cl_khr_media_sharing, None)
-  _SPRV_OP(cl_khr_d3d11_sharing, None)
-  _SPRV_OP(cl_khr_global_int32_base_atomics, None)
-  _SPRV_OP(cl_khr_global_int32_extended_atomics, None)
-  _SPRV_OP(cl_khr_local_int32_base_atomics, None)
-  _SPRV_OP(cl_khr_local_int32_extended_atomics, None)
-  _SPRV_OP(cl_khr_byte_addressable_store, None)
-  _SPRV_OP(cl_khr_3d_image_writes, None)
-  _SPRV_OP(cl_khr_gl_msaa_sharing, None)
-  _SPRV_OP(cl_khr_depth_images, None)
-  _SPRV_OP(cl_khr_gl_depth_images, None)
-  _SPRV_OP(cl_khr_subgroups, Groups)
-  _SPRV_OP(cl_khr_mipmap_image, ImageMipmap)
-  _SPRV_OP(cl_khr_mipmap_image_writes, ImageMipmap)
-  _SPRV_OP(cl_khr_egl_event, None)
-  _SPRV_OP(cl_khr_srgb_image_writes, ImageSRGBWrite)
-#undef _SPRV_OP
+  add(OclExt::cl_images, CapabilityImageBasic);
+  add(OclExt::cl_doubles, CapabilityFloat64);
+  add(OclExt::cl_khr_int64_base_atomics, CapabilityInt64Atomics);
+  add(OclExt::cl_khr_int64_extended_atomics, CapabilityInt64Atomics);
+  add(OclExt::cl_khr_fp16, CapabilityFloat16);
+  add(OclExt::cl_khr_gl_sharing, CapabilityNone);
+  add(OclExt::cl_khr_gl_event, CapabilityNone);
+  add(OclExt::cl_khr_d3d10_sharing, CapabilityNone);
+  add(OclExt::cl_khr_media_sharing, CapabilityNone);
+  add(OclExt::cl_khr_d3d11_sharing, CapabilityNone);
+  add(OclExt::cl_khr_global_int32_base_atomics, CapabilityNone);
+  add(OclExt::cl_khr_global_int32_extended_atomics, CapabilityNone);
+  add(OclExt::cl_khr_local_int32_base_atomics, CapabilityNone);
+  add(OclExt::cl_khr_local_int32_extended_atomics, CapabilityNone);
+  add(OclExt::cl_khr_byte_addressable_store, CapabilityNone);
+  add(OclExt::cl_khr_3d_image_writes, CapabilityNone);
+  add(OclExt::cl_khr_gl_msaa_sharing, CapabilityNone);
+  add(OclExt::cl_khr_depth_images, CapabilityNone);
+  add(OclExt::cl_khr_gl_depth_images, CapabilityNone);
+  add(OclExt::cl_khr_subgroups, CapabilityGroups);
+  add(OclExt::cl_khr_mipmap_image, CapabilityImageMipmap);
+  add(OclExt::cl_khr_mipmap_image_writes, CapabilityImageMipmap);
+  add(OclExt::cl_khr_egl_event, CapabilityNone);
+  add(OclExt::cl_khr_srgb_image_writes, CapabilityImageSRGBWrite);
 };
 
 /// \returns a vector of types for a collection of values.
@@ -843,16 +823,6 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 /// Map a signed integer constant by applying a function.
 ConstantInt *mapSInt(Module *M, ConstantInt *I,
     std::function<int(int)> F);
-
-/// Mangle name for OCL builtin functions.
-/// \param UniqName is unique unmangled name for OCL builtin functions,
-///        which is transformed and unique version of original unmangled
-///        names. Mostly for functions which have different semantics for
-///        signed/unsigned integer arguments, e.g. s_max/u_max.
-void mangleOCLBuiltin(SPRVExtInstSetKind BuiltinSet,
-    const std::string &UniqName, ArrayRef<Type*> ArgTypes,
-    std::string &MangledName);
-
 
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);

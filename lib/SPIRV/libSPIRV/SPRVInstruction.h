@@ -1,4 +1,4 @@
-//===- SPRVInstruction.h – Class to represent SPIRV instruction -*- C++ -*-===//
+//===- SPRVInstruction.h - Class to represent SPIRV instruction -*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -295,7 +295,7 @@ public:
 
   SPRVGroupOperationKind getGroupOperation() const {
     if (!hasGroupOperation())
-      return SPRVGO_Count;
+      return GroupOperationCount;
     return static_cast<SPRVGroupOperationKind>(Ops[1]);
   }
 
@@ -362,9 +362,9 @@ public:
   void MemoryAccessUpdate(const std::vector<SPRVWord> &MemoryAccess) {
     unsigned i = 0;
     while (i < MemoryAccess.size()) {
-      if (MemoryAccess[i] == SPRVMA_Volatile)
+      if (MemoryAccess[i] == MemoryAccessVolatileMask)
         Volatile = MemoryAccess[i++];
-      else if (MemoryAccess[i] == SPRVMA_Aligned) {
+      else if (MemoryAccess[i] == MemoryAccessAlignedMask) {
         Alignment = MemoryAccess[i + 1];
         i += 2;
       }
@@ -395,7 +395,7 @@ public:
   }
   // Incomplete constructor
   SPRVVariable() :SPRVInstruction(OpVariable),
-      StorageClass(SPRVSC_Count){}
+      StorageClass(StorageClassCount){}
 
   SPRVStorageClassKind getStorageClass() const { return StorageClass; }
   SPRVValue *getInitializer() const {
@@ -1129,74 +1129,60 @@ public:
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVWord> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     BuiltinSet(TheBuiltinSet),
-     EntryPoint(TheEntryPoint) {
+     ExtInstSet(TheBuiltinSet),
+     ExtOp(TheEntryPoint) {
     validate();
   }
   SPRVExtInst(SPRVType *TheType, SPRVId TheId,
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     BuiltinSet(TheBuiltinSet),
-     EntryPoint(TheEntryPoint) {
+     ExtInstSet(TheBuiltinSet),
+     ExtOp(TheEntryPoint) {
     validate();
   }
-  SPRVExtInst(): BuiltinSet(SPRVWORD_MAX),
-      EntryPoint(SPRVWORD_MAX) {}
+  SPRVExtInst(): ExtInstSet(SPRVWORD_MAX),
+      ExtOp(SPRVWORD_MAX) {}
   SPRVId getBuiltinSet()const {
-    return BuiltinSet;
+    return ExtInstSet;
   }
   SPRVWord getEntryPoint()const {
-    return EntryPoint;
+    return ExtOp;
   }
 
   void encode(std::ostream &O) const {
-    getEncoder(O) << Type << Id << BuiltinSet;
-    switch(Module->getBuiltinSet(BuiltinSet)) {
-    case SPRVBIS_OpenCL12:
-      getEncoder(O) << EntryPointOCL12;
-      break;
-    case SPRVBIS_OpenCL20:
-      getEncoder(O) << EntryPointOCL20;
-      break;
-    case SPRVBIS_OpenCL21:
-      getEncoder(O) << EntryPointOCL21;
+    getEncoder(O) << Type << Id << ExtInstSet;
+    switch(Module->getBuiltinSet(ExtInstSet)) {
+    case SPRVEIS_OpenCL:
+      getEncoder(O) << ExtOpOCL;
       break;
     default:
       assert(0 && "not supported");
-      getEncoder(O) << EntryPoint;
+      getEncoder(O) << ExtOp;
     }
     getEncoder(O) << Args;
   }
   void decode(std::istream &I) {
-    getDecoder(I) >> Type >> Id >> BuiltinSet;
-    switch(Module->getBuiltinSet(BuiltinSet)) {
-    case SPRVBIS_OpenCL12:
-      getDecoder(I) >> EntryPointOCL12;
-      break;
-    case SPRVBIS_OpenCL20:
-      getDecoder(I) >> EntryPointOCL20;
-      break;
-    case SPRVBIS_OpenCL21:
-      getDecoder(I) >> EntryPointOCL21;
+    getDecoder(I) >> Type >> Id >> ExtInstSet;
+    switch(Module->getBuiltinSet(ExtInstSet)) {
+    case SPRVEIS_OpenCL:
+      getDecoder(I) >> ExtOpOCL;
       break;
     default:
       assert(0 && "not supported");
-      getDecoder(I) >> EntryPoint;
+      getDecoder(I) >> ExtOp;
     }
     getDecoder(I) >> Args;
   }
   void validate()const {
     SPRVFunctionCallGeneric::validate();
-    validateBuiltin(BuiltinSet, EntryPoint);
+    validateBuiltin(ExtInstSet, ExtOp);
   }
 protected:
-  SPRVId BuiltinSet;
+  SPRVId ExtInstSet;
   union {
-    SPRVWord EntryPoint;
-    SPRVBuiltinOCL12Kind EntryPointOCL12;
-    SPRVBuiltinOCL20Kind EntryPointOCL20;
-    SPRVBuiltinOCL21Kind EntryPointOCL21;
+    SPRVWord ExtOp;
+    OCLExtOpKind ExtOpOCL;
   };
 };
 
@@ -1635,7 +1621,7 @@ enum SPRVOpKind {
 class SPRVDevEnqInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_DeviceEnqueue);
+    return getVec(CapabilityDeviceEnqueue);
   }
 };
 
@@ -1662,7 +1648,7 @@ _SPRV_OP(BuildNDRange, true, 6)
 class SPRVPipeInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Pipe);
+    return getVec(CapabilityPipes);
   }
 };
 
@@ -1686,7 +1672,7 @@ _SPRV_OP(GetMaxPipePackets, true, 6)
 class SPRVGroupInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Groups);
+    return getVec(CapabilityGroups);
   }
 };
 
@@ -1715,7 +1701,7 @@ _SPRV_OP(GroupCommitWritePipe, false, 6)
 class SPRVAtomicInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_Int64Atomics);
+    return getVec(CapabilityInt64Atomics);
   }
 };
 
@@ -1747,7 +1733,7 @@ _SPRV_OP(MemoryBarrier, false, 3)
 class SPRVImageInstBase:public SPRVInstTemplateBase {
 public:
   CapVec getRequiriedCapability() const {
-    return getVec(SPRVCAP_ImageBasic);
+    return getVec(CapabilityImageBasic);
   }
 };
 

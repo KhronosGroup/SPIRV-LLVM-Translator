@@ -486,7 +486,7 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
       Ret = Type::getInt32Ty(*Ctx);
       if (Dim > 1)
         Ret = VectorType::get(Ret, Dim);
-      if (Desc.Dim == SPRV::SPRVDIM_Buffer)
+      if (Desc.Dim == DimBuffer)
         return getSPRVFuncName(OpImageQuerySize);
       else {
         Args.push_back(getInt32(M, 0));
@@ -497,7 +497,7 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
       if (Dim == 1)
         return NCI;
       if (DemangledName == kOCLBuiltinName::GetImageDim) {
-        if (Desc.Dim != SPRV::SPRVDIM_3D)
+        if (Desc.Dim != Dim3D)
           return NCI;
         else {
           auto ZeroVec = ConstantVector::getSplat(3,

@@ -379,7 +379,7 @@ protected:
 class SPRVEntryPoint:public SPRVEntryNoId<OpEntryPoint> {
 public:
   SPRVEntryPoint(SPRVModule *TheModule, SPRVExecutionModelKind, SPRVId TheId);
-  SPRVEntryPoint():ExecModel(SPRVEMDL_Count),FuncId(SPRVID_INVALID){}
+  SPRVEntryPoint():ExecModel(ExecutionModelKernel),FuncId(SPRVID_INVALID){}
   _SPRV_DCL_ENCDEC
 protected:
   SPRVExecutionModelKind ExecModel;
@@ -533,7 +533,7 @@ public:
   SPRVExecutionMode(SPRVEntry *TheTarget, SPRVExecutionModeKind TheExecMode)
   :SPRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){}
   // Incomplete constructor
-  SPRVExecutionMode():ExecMode(SPRVEM_Count){}
+  SPRVExecutionMode():ExecMode(ExecutionModeCount){}
   SPRVExecutionModeKind getExecutionMode()const { return ExecMode;}
   const std::vector<SPRVWord>& getLiterals()const { return WordLiterals;}
   const std::string& getStringLiteral()const { return StrLiteral;}
@@ -612,7 +612,7 @@ public:
 class SPRVCapability:public SPRVEntryNoId<OpCapability> {
 public:
   SPRVCapability(SPRVModule *M, SPRVCapabilityKind K);
-  SPRVCapability():Kind(SPRVCAP_None){}
+  SPRVCapability():Kind(CapabilityNone){}
   _SPRV_DCL_ENCDEC
 private:
   SPRVCapabilityKind Kind;

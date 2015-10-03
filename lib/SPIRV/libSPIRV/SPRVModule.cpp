@@ -1,4 +1,4 @@
-//===- SPRVModule.cpp – Class to represent SPIR-V module --------*- C++ -*-===//
+//===- SPRVModule.cpp - Class to represent SPIR-V module --------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -62,13 +62,13 @@ SPRVModule::~SPRVModule()
 class SPRVModuleImpl : public SPRVModule {
 public:
   SPRVModuleImpl():SPRVModule(), NextId(0), BoolType(NULL),
-    SPRVVersion(SPRVVER_100),
+    SPRVVersion(SPV_VERSION),
     SPRVGenerator(SPRVGEN_AMDOpenSourceLLVMSPRVTranslator),
     InstSchema(SPRVISCH_Default),
     SrcLang(SourceLanguageOpenCL),
     SrcLangVer(12),
-    MemoryModel(SPRVMM_OpenCL12){
-    AddrModel = sizeof(size_t) == 32 ? SPRVAM_Physical32 : SPRVAM_Physical64;
+    MemoryModel(MemoryModelOpenCL){
+    AddrModel = sizeof(size_t) == 32 ? AddressingModelPhysical32 : AddressingModelPhysical64;
   };
   virtual ~SPRVModuleImpl();
 
@@ -279,7 +279,7 @@ private:
   SPRVErrorLog ErrLog;
   SPRVId NextId;
   SPRVTypeInt *BoolType;
-  SPRVVersionKind SPRVVersion;
+  SPRVWord SPRVVersion;
   SPRVGeneratorKind SPRVGenerator;
   SPRVInstructionSchemaKind InstSchema;
   SourceLanguage SrcLang;
@@ -468,13 +468,13 @@ SPRVModuleImpl::addEntry(SPRVEntry *Entry) {
   layoutEntry(Entry);
   if (AutoAddCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != SPRVCAP_None)
+      if (I != CapabilityNone)
         addCapability(I);
     }
   }
   if (ValidateCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != SPRVCAP_None)
+      if (I != CapabilityNone)
         assert(CapSet.count(I));
     }
   }
@@ -550,7 +550,7 @@ SPRVModuleImpl::importBuiltinSet(const std::string& BuiltinSetName,
 bool
 SPRVModuleImpl::importBuiltinSetWithId(const std::string& BuiltinSetName,
     SPRVId BuiltinSetId) {
-  SPRVExtInstSetKind BuiltinSet = SPRVBIS_Count;
+  SPRVExtInstSetKind BuiltinSet = SPRVEIS_Count;
   SPRVCKRT(SPRVBuiltinSetNameMap::rfind(BuiltinSetName, &BuiltinSet),
       InvalidBuiltinSetName, "Actual is " + BuiltinSetName);
   IdBuiltinMap[BuiltinSetId] = BuiltinSet;
@@ -1010,7 +1010,7 @@ SPRVModuleImpl::addVariable(SPRVType *Type, bool IsConstant,
     return addInstruction(Variable, BB);
 
   add(Variable);
-  if (LinkageType != SPRVLT_Internal)
+  if (LinkageType != LinkageTypeInternal)
     Variable->setLinkageType(LinkageType);
   Variable->setIsConstant(IsConstant);
   return Variable;
@@ -1037,7 +1037,7 @@ operator<< (std::ostream &O, SPRVModule &M) {
   SPRVModuleImpl &MI = *static_cast<SPRVModuleImpl*>(&M);
 
   SPRVEncoder Encoder(O);
-  Encoder << SPRVMagicNumber
+  Encoder << MagicNumber
           << MI.SPRVVersion
           << MI.SPRVGenerator
           << MI.NextId /* Bound for Id */
@@ -1153,10 +1153,10 @@ operator>> (std::istream &I, SPRVModule &M) {
 
   SPRVWord Magic;
   Decoder >> Magic;
-  assert(Magic == SPRVMagicNumber && "Invalid magic number");
+  assert(Magic == MagicNumber && "Invalid magic number");
 
   Decoder >> MI.SPRVVersion;
-  assert(MI.SPRVVersion == SPRVVER_100 && "Unsupported SPIRV version number");
+  assert(MI.SPRVVersion <= SPV_VERSION && "Unsupported SPIRV version number");
 
   Decoder >> MI.SPRVGenerator;
 
@@ -1258,7 +1258,7 @@ bool IsSPRVBinary(const std::string &Img) {
   if (Img.size() < sizeof(unsigned))
     return false;
   auto Magic = reinterpret_cast<const unsigned*>(Img.data());
-  return *Magic == SPRVMagicNumber;
+  return *Magic == MagicNumber;
 }
 
 #ifdef _SPRV_SUPPORT_TEXT_FMT
@@ -1289,7 +1289,7 @@ bool IsSPRVText(const std::string &Img) {
   SS >> Magic;
   if (SS.bad())
     return false;
-  return Magic == SPRVMagicNumber;
+  return Magic == MagicNumber;
 }
 
 bool ConvertSPRV(std::string &Input, std::string &Out,

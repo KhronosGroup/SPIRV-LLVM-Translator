@@ -224,7 +224,7 @@ SPRVEntry::getEntry(SPRVId TheId) const {
 void
 SPRVEntry::validateFunctionControlMask(SPRVWord TheFCtlMask)
   const {
-  SPRVCK(TheFCtlMask <= (unsigned)SPRVFCM_Max,
+  SPRVCK(TheFCtlMask <= (unsigned)FunctionControlMaskMax,
       InvalidFunctionControlMask, "");
 }
 
@@ -364,9 +364,9 @@ SPRVEntry::encodeDecorate(std::ostream &O) const {
 SPRVLinkageTypeKind
 SPRVEntry::getLinkageType() const {
   assert(hasLinkageType());
-  SPRVWord LT = SPRVLT_Count;
+  SPRVWord LT = LinkageTypeInternal;
   if (!hasDecorate(DecorationLinkageAttributes, 0, &LT))
-    return SPRVLT_Count;
+    return LinkageTypeInternal;
   return static_cast<SPRVLinkageTypeKind>(LT);
 }
 
@@ -410,7 +410,7 @@ SPRVEntryPoint::decode(std::istream &I) {
 void
 SPRVExecutionMode::encode(std::ostream &O) const {
   getEncoder(O) << Target << ExecMode << WordLiterals;
-  if (ExecMode == SPRVEM_VecTypeHint)
+  if (ExecMode == ExecutionModeVecTypeHint)
     getEncoder(O) << StrLiteral;
 }
 
@@ -418,13 +418,13 @@ void
 SPRVExecutionMode::decode(std::istream &I) {
   getDecoder(I) >> Target >> ExecMode;
   switch(ExecMode) {
-  case SPRVEM_LocalSize:
-  case SPRVEM_LocalSizeHint:
+  case ExecutionModeLocalSize:
+  case ExecutionModeLocalSizeHint:
     WordLiterals.resize(3);
     break;
-  case SPRVEM_Invocations:
-  case SPRVEM_OutputVertices:
-  case SPRVEM_VecTypeHint:
+  case ExecutionModeInvocations:
+  case ExecutionModeOutputVertices:
+  case ExecutionModeVecTypeHint:
     WordLiterals.resize(1);
     break;
   default:
@@ -432,7 +432,7 @@ SPRVExecutionMode::decode(std::istream &I) {
     break;
   }
   getDecoder(I) >> WordLiterals;
-  if (ExecMode == SPRVEM_VecTypeHint)
+  if (ExecMode == ExecutionModeVecTypeHint)
     getDecoder(I) >> StrLiteral;
   getOrCreateTarget()->addExecutionMode(this);
 }
@@ -542,8 +542,8 @@ void
 SPRVMemoryModel::validate() const {
   unsigned AM = Module->getAddressingModel();
   unsigned MM = Module->getMemoryModel();
-  SPRVCK(AM < SPRVAM_Count, InvalidAddressingModel, "Actual is "+AM );
-  SPRVCK(MM < SPRVMM_Count, InvalidMemoryModel, "Actual is "+MM);
+  SPRVCK(AM < AddressingModelCount, InvalidAddressingModel, "Actual is "+AM );
+  SPRVCK(MM < MemoryModelCount, InvalidMemoryModel, "Actual is "+MM);
 }
 
 void

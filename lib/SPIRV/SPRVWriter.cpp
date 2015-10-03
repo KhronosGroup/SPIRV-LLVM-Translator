@@ -475,21 +475,13 @@ LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
   }
   SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName
                     << '\n');
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   BSK = BM->getBuiltinSet(BuiltinSetId);
   bool Found = false;
   switch (BSK) {
-  case SPRVBIS_OpenCL12:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL12Kind>(OrigName, DemangledName,
+  case SPRVEIS_OpenCL:
+    Found = oclGetExtInstIndex<OCLExtOpKind>(OrigName, DemangledName,
         EntryPoint);
-    break;
-  case SPRVBIS_OpenCL20:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL20Kind>(OrigName, DemangledName,
-        EntryPoint);
-    break;
-  case SPRVBIS_OpenCL21:
-    Found = oclGetExtInstIndex<SPRVBuiltinOCL21Kind>(OrigName, DemangledName,
-                                                     EntryPoint);
     break;
   default:
     llvm_unreachable("not supported");
@@ -513,7 +505,7 @@ LLVMToSPRV::transOCLBuiltinsToVariables() {
     SPRVDBG(bildbgs() << "Function: demangled name: " << DemangledName <<
         '\n');
     std::string BuiltinVarName;
-    SPRVBuiltinVariableKind BVKind = SPRVBI_Count;
+    SPRVBuiltinVariableKind BVKind = BuiltInCount;
     if (!SPIRSPRVBuiltinVariableMap::find(DemangledName, &BVKind))
       continue;
     BuiltinVarName = std::string(kSPRVName::Prefix) +
@@ -762,7 +754,7 @@ LLVMToSPRV::transFunction(Function *F) {
   if (F->hasName())
     BM->setName(BF, F->getName());
   if (oclIsKernel(F))
-    BM->addEntryPoint(SPRVEMDL_Kernel, BF->getId());
+    BM->addEntryPoint(ExecutionModelKernel, BF->getId());
   else if (F->getLinkage() != GlobalValue::InternalLinkage &&
            F->getLinkage() != GlobalValue::LinkOnceODRLinkage)
     BF->setLinkageType(SPIRSPRVLinkageTypeMap::map(F->getLinkage()));
@@ -774,22 +766,22 @@ LLVMToSPRV::transFunction(Function *F) {
     if (I->hasName())
       BM->setName(BA, I->getName());
     if (I->hasByValAttr())
-      BA->addAttr(SPRVFPA_ByVal);
+      BA->addAttr(FunctionParameterAttributeByVal);
     if (I->hasNoAliasAttr())
-      BA->addAttr(SPRVFPA_NoAlias);
+      BA->addAttr(FunctionParameterAttributeNoAlias);
     if (I->hasNoCaptureAttr())
-      BA->addAttr(SPRVFPA_NoCapture);
+      BA->addAttr(FunctionParameterAttributeNoCapture);
     if (I->hasStructRetAttr())
-      BA->addAttr(SPRVFPA_Sret);
+      BA->addAttr(FunctionParameterAttributeSret);
     if (Attrs.hasAttribute(ArgNo + 1, Attribute::ZExt))
-      BA->addAttr(SPRVFPA_Zext);
+      BA->addAttr(FunctionParameterAttributeZext);
     if (Attrs.hasAttribute(ArgNo + 1, Attribute::SExt))
-      BA->addAttr(SPRVFPA_Sext);
+      BA->addAttr(FunctionParameterAttributeSext);
   }
   if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::ZExt))
-    BF->addDecorate(DecorationFuncParamAttr, SPRVFPA_Zext);
+    BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeZext);
   if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::SExt))
-    BF->addDecorate(DecorationFuncParamAttr, SPRVFPA_Sext);
+    BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
   DbgTran.transDbgInfo(F, BF);
   SPRVDBG(dbgs() << "[transFunction] " << *F << " => ";
     bildbgs() << *BF << '\n';)
@@ -1085,8 +1077,8 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
   if (StoreInst *ST = dyn_cast<StoreInst>(V)) {
     std::vector<SPRVWord> MemoryAccess;
     if (ST->isVolatile())
-      MemoryAccess.push_back(SPRVMA_Volatile);
-    MemoryAccess.push_back(SPRVMA_Aligned);
+      MemoryAccess.push_back(MemoryAccessVolatileMask);
+    MemoryAccess.push_back(MemoryAccessAlignedMask);
     MemoryAccess.push_back(ST->getAlignment());
     return mapValue(V, BM->addStoreInst(
         transValue(ST->getPointerOperand(), BB),
@@ -1097,8 +1089,8 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
   if (LoadInst *LD = dyn_cast<LoadInst>(V)) {
     std::vector<SPRVWord> MemoryAccess;
     if (LD->isVolatile())
-      MemoryAccess.push_back(SPRVMA_Volatile);
-    MemoryAccess.push_back(SPRVMA_Aligned);
+      MemoryAccess.push_back(MemoryAccessVolatileMask);
+    MemoryAccess.push_back(MemoryAccessAlignedMask);
     MemoryAccess.push_back(LD->getAlignment());
     return mapValue(V, BM->addLoadInst(
         transValue(LD->getPointerOperand(), BB),
@@ -1133,7 +1125,7 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
       transType(Alc->getType()), false,
       SPIRSPRVLinkageTypeMap::map(GlobalValue::InternalLinkage),
       nullptr, Alc->getName(),
-      SPRVSC_Function, BB));
+      StorageClassFunction, BB));
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
     std::vector<std::pair<SPRVWord, SPRVBasicBlock *>> Pairs;
@@ -1265,7 +1257,7 @@ LLVMToSPRV::transBuiltinSet() {
   SourceLanguage Kind = BM->getSourceLanguage(&Ver);
   assert(Kind == SourceLanguageOpenCL && "not supported");
   std::stringstream SS;
-  SS << "OpenCL.std." << Ver;
+  SS << "OpenCL.std";
   return BM->importBuiltinSet(SS.str(), &BuiltinSetId);
 }
 
@@ -1323,7 +1315,7 @@ LLVMToSPRV::transSpcvCast(CallInst* CI, SPRVBasicBlock *BB) {
 
 SPRVValue *
 LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   SPRVWord EntryPoint = SPRVWORD_MAX;
   llvm::Function* F = CI->getCalledFunction();
   auto MangledName = F->getName();
@@ -1338,9 +1330,9 @@ LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
     if (isa<ConstantInt>(CI->getOperand(4)) &&
       dyn_cast<ConstantInt>(CI->getOperand(4))
       ->getZExtValue() == 1)
-      MemoryAccess.push_back(SPRVMA_Volatile);
+      MemoryAccess.push_back(MemoryAccessVolatileMask);
     if (isa<ConstantInt>(CI->getOperand(3))) {
-        MemoryAccess.push_back(SPRVMA_Aligned);
+        MemoryAccess.push_back(MemoryAccessAlignedMask);
         MemoryAccess.push_back(dyn_cast<ConstantInt>(CI->getOperand(3))
           ->getZExtValue());
     }
@@ -1622,9 +1614,9 @@ LLVMToSPRV::transAddressingMode() {
       "Actual target triple is " + M->getTargetTriple());
 
   if (Arch == Triple::spir)
-    BM->setAddressingModel(SPRVAM_Physical32);
+    BM->setAddressingModel(AddressingModelPhysical32);
   else
-    BM->setAddressingModel(SPRVAM_Physical64);
+    BM->setAddressingModel(AddressingModelPhysical64);
   return true;
 }
 
@@ -1814,7 +1806,7 @@ LLVMToSPRV::transOCLVectorLoadStore(CallInst *CI,
         DemangledName.find("_r") + 1, 3)));
   }
 
-  SPRVExtInstSetKind BSK = SPRVBIS_Count;
+  SPRVExtInstSetKind BSK = SPRVEIS_Count;
   SPRVWord EntryPoint = SPRVWORD_MAX;
   bool Found = oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &BSK,
       &EntryPoint);
@@ -2036,7 +2028,7 @@ LLVMToSPRV::transFPContractMetadata() {
       continue;
     SPRVFunction *BF = static_cast<SPRVFunction *>(getTranslatedValue(I));
     assert(BF && "Invalid kernel function");
-    BF->addExecutionMode(new SPRVExecutionMode(BF, SPRVEM_ContractionOff));
+    BF->addExecutionMode(new SPRVExecutionMode(BF, ExecutionModeContractionOff));
   }
   return true;
 }
@@ -2070,17 +2062,17 @@ LLVMToSPRV::transOCLKernelMetadata() {
       if (Name == SPIR_MD_WORK_GROUP_SIZE_HINT) {
         unsigned X, Y, Z;
         decodeMDNode(MD, X, Y, Z);
-        BF->addExecutionMode(new SPRVExecutionMode(BF, SPRVEM_LocalSizeHint,
+        BF->addExecutionMode(new SPRVExecutionMode(BF, ExecutionModeLocalSizeHint,
             X, Y, Z));
       } else if (Name == SPIR_MD_REQD_WORK_GROUP_SIZE) {
         unsigned X, Y, Z;
         decodeMDNode(MD, X, Y, Z);
-        BF->addExecutionMode(new SPRVExecutionMode(BF, SPRVEM_LocalSize,
+        BF->addExecutionMode(new SPRVExecutionMode(BF, ExecutionModeLocalSize,
             X, Y, Z));
       } else if (Name == SPIR_MD_VEC_TYPE_HINT) {
         Type *HintTy = nullptr;
         std::string HintTyStr = decodeVecTypeHintMDNode(MD, HintTy);
-        BF->addExecutionMode(new SPRVExecutionMode(BF, SPRVEM_VecTypeHint,
+        BF->addExecutionMode(new SPRVExecutionMode(BF, ExecutionModeVecTypeHint,
             transType(HintTy)->getId(), HintTyStr));
       } else if (Name == SPIR_MD_KERNEL_ARG_ADDR_SPACE) {
         // Do nothing
@@ -2097,10 +2089,10 @@ LLVMToSPRV::transOCLKernelMetadata() {
             BA->addDecorate(new SPRVDecorate(DecorationVolatile, BA));
           if (Str.find("restrict") != std::string::npos)
             BA->addDecorate(new SPRVDecorate(DecorationFuncParamAttr,
-                BA, SPRVFPA_NoAlias));
+                BA, FunctionParameterAttributeNoAlias));
           if (Str.find("const") != std::string::npos)
             BA->addDecorate(new SPRVDecorate(DecorationFuncParamAttr,
-                BA, SPRVFPA_Const));
+                BA, FunctionParameterAttributeNoWrite));
           });
       } else if (Name == SPIR_MD_KERNEL_ARG_NAME) {
         foreachKernelArgMD(MD, BF,
