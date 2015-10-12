@@ -4,7 +4,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; CHECK: Source 3 21
-; CHECK: ExtInstImport 0 "OpenCL.std.21"
+; CHECK: ExtInstImport 0 "OpenCL.std"
 ; CHECK: "_Z5emptyv"
 ; Function Attrs: nounwind
 define spir_kernel void @_Z5emptyv() #0 {
