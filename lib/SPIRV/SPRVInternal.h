@@ -178,27 +178,6 @@ enum SPIRAddressSpace {
   SPIRAS_Count,
 };
 
-enum OCLMemFenceKind {
-  OCLMF_Local = 1,
-  OCLMF_Global = 2,
-  OCLMF_Image = 4,
-};
-
-enum OCLMemScopeKind {
-  OCLMS_work_item,
-  OCLMS_work_group,
-  OCLMS_device,
-  OCLMS_all_svm_devices,
-  OCLMS_sub_group,
-};
-
-enum OCLMemOrderKind {
-  OCLMO_relaxed,
-  OCLMO_acquire,
-  OCLMO_release,
-  OCLMO_acq_rel,
-  OCLMO_seq_cst
-};
 
 template<> inline void
 SPRVMap<SPIRAddressSpace, SPRVStorageClassKind>::init() {
@@ -318,6 +297,7 @@ _SPRV_OP(isnormal, IsNormal)
 _SPRV_OP(signbit, SignBitSet)
 _SPRV_OP(any, Any)
 _SPRV_OP(all, All)
+_SPRV_OP(get_fence, GenericPtrMemSemantics)
 // CL 2.0 kernel enqueue builtins
 _SPRV_OP(enqueue_marker, EnqueueMarker)
 _SPRV_OP(enqueue_kernel, EnqueueKernel)
@@ -416,73 +396,6 @@ SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>::init() {
 typedef SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>
   SPIRSPRVFuncCtlMaskMap;
 
-template<> inline void
-SPRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
-  add(OCLMF_Local, MemorySemanticsWorkgroupLocalMemoryMask);
-  add(OCLMF_Global, MemorySemanticsWorkgroupGlobalMemoryMask);
-  add(OCLMF_Image, MemorySemanticsImageMemoryMask);
-}
-typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
-  OCLMemFenceMap;
-
-template<> inline void
-SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
-  add(OCLMO_relaxed, MemorySemanticsMaskNone);
-  add(OCLMO_acquire, MemorySemanticsAcquireMask);
-  add(OCLMO_release, MemorySemanticsReleaseMask);
-  add(OCLMO_acq_rel, MemorySemanticsAcquireReleaseMask);
-  add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
-}
-typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
-  OCLMemOrderMap;
-
-inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
-    OCLMemOrderKind Order) {
-  return OCLMemOrderMap::map(Order) |
-      mapBitMask<OCLMemFenceMap>(MemFenceFlag);
-}
-
-inline std::pair<unsigned, OCLMemOrderKind>
-mapSPRVMemSemanticToOCL(unsigned Sema) {
-  return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
-    OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema)));
-}
-
-inline OCLMemOrderKind
-mapSPRVMemOrderToOCL(unsigned Sema) {
-  return OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema));
-}
-
-template<> inline void
-SPRVMap<OCLMemScopeKind, Scope>::init() {
-  add(OCLMS_work_item, ScopeInvocation);
-  add(OCLMS_work_group, ScopeWorkgroup);
-  add(OCLMS_device, ScopeDevice);
-  add(OCLMS_all_svm_devices, ScopeCrossDevice);
-  add(OCLMS_sub_group, ScopeSubgroup);
-}
-typedef SPRVMap<OCLMemScopeKind, Scope>
-  OCLMemScopeMap;
-
-template<> inline void
-SPRVMap<std::string, SPRVGroupOperationKind>::init() {
-  add("reduce", GroupOperationReduce);
-  add("scan_inclusive", GroupOperationInclusiveScan);
-  add("scan_exclusive", GroupOperationExclusiveScan);
-}
-typedef SPRVMap<std::string, SPRVGroupOperationKind>
-  SPIRSPRVGroupOperationMap;
-
-
-template<> inline void
-SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
-  add("rte", FPRoundingModeRTE);
-  add("rtz", FPRoundingModeRTZ);
-  add("rtp", FPRoundingModeRTP);
-  add("rtn", FPRoundingModeRTN);
-}
-typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
-  SPIRSPRVFPRoundingModeMap;
 
 #define SPIR_MD_KERNELS                     "opencl.kernels"
 #define SPIR_MD_ENABLE_FP_CONTRACT          "opencl.enable.FP_CONTRACT"
@@ -549,6 +462,7 @@ namespace kOCLBuiltinName {
   const static char AtomicInit[]         = "atomic_init";
   const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
   const static char Barrier[]            = "barrier";
+  const static char ConvertPrefix[]      = "convert_";
   const static char EnqueueKernel[]      = "enqueue_kernel";
   const static char GetFence[]           = "get_fence";
   const static char GetImageArraySize[]  = "get_image_array_size";
@@ -584,6 +498,15 @@ namespace kSPRVName {
   const static char ReservedPrefix[]         = "reserved_";
   const static char SampledImage[]           = "SampledImage";
   const static char TempSampledImage[]       = "TempSampledImage";
+}
+
+namespace kSPRVPostfix {
+  const static char Sat[]       = "sat";
+  const static char Rtz[]       = "rtz";
+  const static char Rte[]       = "rte";
+  const static char Rtp[]       = "rtp";
+  const static char Rtn[]       = "rtn";
+  const static char Rt[]        = "rt";
 }
 
 enum Spir2SamplerKind {
@@ -729,6 +652,7 @@ void addFnAttr(LLVMContext *Context, CallInst *Call,
 void saveLLVMModule(Module *M, const std::string &OutputFile);
 std::string mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed);
 std::string mapLLVMTypeToOpenCLType(Type* Ty, bool Signed);
+SPRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target);
 
 PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
     unsigned AddrSpace = SPIRAS_Global);
@@ -737,7 +661,10 @@ void getFunctionTypeParameterTypes(llvm::FunctionType* FT,
 Function *getOrCreateFunction(Module *M, Type *RetTy,
     ArrayRef<Type *> ArgTypes, StringRef Name, bool Mangle = false,
     AttributeSet *Attrs = nullptr, bool takeName = true);
+
 std::vector<Value *> getArguments(CallInst* CI);
+uint64_t getArgInt(CallInst *CI, unsigned I);
+
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
 
@@ -750,10 +677,13 @@ std::string undecorateSPRVFunction(const std::string &S);
 bool isSPRVFunction(const Function *F, std::string *UndecName = nullptr);
 
 /// Get a canonical function name for a SPIR-V op code.
-std::string getSPRVFuncName(Op OC);
+std::string getSPRVFuncName(Op OC, StringRef PostFix = "");
 
 /// Get SPIR-V op code given the canonical function name.
-Op getSPRVFuncOC(const std::string& S);
+/// \param Dec contains decorations decoded from function name if it is
+///        not nullptr.
+Op getSPRVFuncOC(const std::string& S,
+    SmallVectorImpl<std::string> *Dec = nullptr);
 
 /// \param Name LLVM function name
 /// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
@@ -779,7 +709,7 @@ bool hasArrayArg(Function *F);
 /// \return mutated call instruction.
 CallInst *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
+    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = false);
 
 /// Mutates function call instruction by changing the arguments and return
 /// value.
@@ -790,7 +720,7 @@ Instruction *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
+    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = false);
 
 /// Mutate function by change the arguments.
 /// \param ArgMutate mutates the function arguments.
@@ -854,6 +784,10 @@ eraseUselessFunctions(Module *M);
 // Check if a mangled type name is unsigned
 bool
 isMangledTypeUnsigned(char Mangled);
+
+// Check if the last function parameter is signed
+bool
+isLastFuncParamSigned(const std::string& MangledName);
 
 // Check if a mangled function name contains unsigned atomic type
 bool

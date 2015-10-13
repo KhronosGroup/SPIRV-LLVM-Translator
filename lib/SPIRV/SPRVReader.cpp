@@ -1249,7 +1249,7 @@ SPRVToLLVM::transValueWithoutDecoration(SPRVValue *BV, Function *F,
     SPRVStorageClassKind BS = BVar->getStorageClass();
     auto Ty = transType(BVar->getType()->getPointerElementType());
 
-    if (BS == StorageClassFunction) {
+    if (BS == StorageClassFunction && !Initializer) {
         assert (BB && "Invalid BB");
         return mapValue(BV, new AllocaInst(Ty, BV->getName(), BB));
     }

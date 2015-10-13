@@ -40,11 +40,13 @@
 
 #include "SPRVInternal.h"
 #include "NameMangleAPI.h"
+#include "libSPIRV/SPRVDecorate.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
@@ -250,6 +252,13 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
       ArgTypes,
       false);
   Function *F = M->getFunction(MangledName);
+  if (!takeName && F && F->getFunctionType() != FT) {
+    std::string S;
+    raw_string_ostream SS(S);
+    SS << "Error: Attempt to redefine function: " << *F << " => " <<
+        *FT << '\n';
+    report_fatal_error(SS.str(), false);
+  }
   if (!F || F->getFunctionType() != FT) {
     auto NewF = Function::Create(FT,
       GlobalValue::ExternalLinkage,
@@ -279,6 +288,10 @@ getArguments(CallInst* CI) {
   return Args;
 }
 
+uint64_t getArgInt(CallInst *CI, unsigned I){
+  return cast<ConstantInt>(CI->getArgOperand(I))->getZExtValue();
+};
+
 std::string
 decorateSPRVFunction(const std::string &S) {
   return std::string(kSPRVName::Prefix) + S + kSPRVName::Postfix;
@@ -298,21 +311,46 @@ prefixSPRVFunction(const std::string &S) {
 }
 
 std::string
-dePrefixSPRVFunction(const std::string& S) {
+dePrefixSPRVFunction(const std::string& S,
+    SmallVectorImpl<StringRef> &Postfix) {
   StringRef R(S);
   const size_t Start = strlen(kSPRVName::Prefix);
-  return R.startswith(kSPRVName::Prefix) ? R.drop_front(Start).str() : S;
+  if (!R.startswith(kSPRVName::Prefix))
+    return R;
+  R = R.drop_front(Start);
+  R.split(Postfix, "_", -1, false);
+  auto Name = Postfix.front();
+  Postfix.erase(Postfix.begin());
+  return Name.str();
 }
 
 std::string
-getSPRVFuncName(Op OC) {
-  return prefixSPRVFunction(getName(OC));
+getSPRVFuncName(Op OC, StringRef PostFix) {
+  return prefixSPRVFunction(getName(OC) + PostFix.str());
+}
+
+SPRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target) {
+  if (Postfix == kSPRVPostfix::Sat)
+    return new SPRVDecorate(spv::DecorationSaturatedConversion, Target);
+
+  if (Postfix.startswith(kSPRVPostfix::Rt))
+    return new SPRVDecorate(spv::DecorationFPRoundingMode, Target,
+      map<SPRVFPRoundingModeKind>(Postfix.str()));
+
+  return nullptr;
 }
 
 Op
-getSPRVFuncOC(const std::string& S) {
+getSPRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
-  return getByName(dePrefixSPRVFunction(S), OC) ? OC : OpNop;
+  SmallVector<StringRef, 2> Postfix;
+  auto Name = dePrefixSPRVFunction(S, Postfix);
+  if (!getByName(Name, OC))
+    return OpNop;
+  if (Dec)
+    for (auto &I:Postfix)
+      Dec->push_back(I.str());
+  return OC;
 }
 
 bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
@@ -355,6 +393,28 @@ isMangledTypeUnsigned(char Mangled) {
       || Mangled == 'j' /* uint */
       || Mangled == 'm' /* ulong */;
 }
+
+void
+eraseSubstitutionFromMangledName(std::string& MangledName) {
+  auto Len = MangledName.length();
+  while (Len >= 2 && MangledName.substr(Len - 2, 2) == "S_") {
+    Len -= 2;
+    MangledName.erase(Len, 2);
+  }
+}
+
+// Check if the last argument is signed
+bool
+isLastFuncParamSigned(const std::string& MangledName) {
+  auto Copy = MangledName;
+  eraseSubstitutionFromMangledName(Copy);
+  char Mangled = Copy.back();
+  bool Signed = true;
+  if (isMangledTypeUnsigned(Mangled))
+    Signed = false;
+  return Signed;
+}
+
 
 // Check if a mangled function name contains unsigned atomic type
 bool

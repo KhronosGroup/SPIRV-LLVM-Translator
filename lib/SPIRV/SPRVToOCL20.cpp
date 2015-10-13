@@ -155,7 +155,7 @@ void SPRVToOCL20::visitCallSPRVMemoryBarrier(CallInst* CI) {
     Args.resize(3);
     Args[0] = getInt32(M, Sema.first);
     Args[1] = getInt32(M, Sema.second);
-    Args[2] = getInt32(M, rmap<OCLMemScopeKind>(MScope));
+    Args[2] = getInt32(M, rmap<OCLScopeKind>(MScope));
     return kOCLBuiltinName::AtomicWorkItemFence;
   }, true, &Attrs);
 }
@@ -174,7 +174,7 @@ void SPRVToOCL20::visitCallSPRVAtomicBuiltin(CallInst* CI, Op OC) {
     } else {
       Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
           [](unsigned I){
-        return rmap<OCLMemScopeKind>(static_cast<Scope>(I));
+        return rmap<OCLScopeKind>(static_cast<Scope>(I));
       });
       for (size_t I = 0; I < NumOrder; ++I)
         Args[OrderIdx + I] = mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),

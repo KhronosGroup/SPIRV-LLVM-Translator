@@ -275,8 +275,6 @@ private:
   std::vector<SPRVValue*> transValue(const std::vector<Value *> &Values,
       SPRVBasicBlock* BB);
 
-  bool isFuncParamSigned(const std::string& MangledName);
-  void eraseSubstitutionFromMangledName(std::string& MangledName);
   SPRVInstruction* transBinaryInst(BinaryOperator* B, SPRVBasicBlock* BB);
   SPRVInstruction* transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB);
   void mutateFunctionType(const std::map<unsigned, Type*>& ChangedType,
@@ -312,15 +310,9 @@ private:
   bool getOCLImageBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info, CallInst *CI,
       const std::string &DeMangledName);
 
-  SPRVValue *oclTransBarrier(CallInst *Call,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
-  SPRVValue *oclTransWorkGroupBarrier(CallInst *Call,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *transOCLBuiltinToInst(CallInst *Call,
       const std::string &MangledName,
       const std::string &DemangledName, SPRVBasicBlock *BB);
-  SPRVValue *transOCLConvert(CallInst *Call, const std::string &MangledName,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
   SPRVValue *transOCLGroupBuiltins(CallInst *Call,
       const std::string &MangledName,
       const std::string &DeMangledName, SPRVBasicBlock *BB);
@@ -332,6 +324,8 @@ private:
       const std::string& Stem, bool AlwaysN);
   SPRVInstruction *transOCLBuiltinToInstByMap(const std::string& DemangledName,
       const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB);
+  SPRVInstruction *transOCLBuiltinToInstWithoutDecoration(Op OC,
+      OCLBuiltinSPRVTransInfo &Info, CallInst* CI, SPRVBasicBlock* BB);
   void mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       Function* F);
   bool oclIsSamplerType(llvm::Type* RT);
@@ -349,11 +343,7 @@ private:
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
-  bool oclRegularizeConvert(CallInst *Call, const std::string &MangledName,
-      const std::string &DeMangledName,
-      std::set<Value *>& ValuesForDeleting);
   void oclRegularize();
-  void eraseFunctions(const std::vector<std::string> &L);
   SPRV::SPRVInstruction* transUnaryInst(UnaryInstruction* U,
       SPRVBasicBlock* BB);
 
@@ -392,9 +382,7 @@ LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
   SourceLanguage SourceLang = BM->getSourceLanguage(nullptr);
   if (SourceLang == SourceLanguageOpenCL) {
-    return DemangledName == "barrier" ||
-        DemangledName == "dot" ||
-        DemangledName.find("convert_") == 0 ||
+    return DemangledName == "dot" ||
         DemangledName.find("atomic_") == 0 ||
         DemangledName.find("async_work_group") == 0 ||
         DemangledName == "wait_group_events" ||
@@ -449,7 +437,7 @@ bool LLVMToSPRV::oclGetExtInstIndex(const std::string &MangledName,
   SPRVExtInstKind ExtInst = static_cast<SPRVExtInstKind>(0);
   bool Found = getNameMap(ExtInst).rfind(DemangledName, &ExtInst);
   if (!Found) {
-    std::string Prefix = isFuncParamSigned(MangledName) ? "s_" : "u_";
+    std::string Prefix = isLastFuncParamSigned(MangledName) ? "s_" : "u_";
     Found = getNameMap(ExtInst).rfind(Prefix + DemangledName, &ExtInst);
   }
 
@@ -968,7 +956,7 @@ LLVMToSPRV::getOCLGroupBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info,
       if (!NeedSign)
         OpTyC = 'i';
       else {
-        if (isFuncParamSigned(F->getName()))
+        if (isLastFuncParamSigned(F->getName()))
           OpTyC = 's';
         else
           OpTyC = 'u';
@@ -1371,7 +1359,6 @@ LLVMToSPRV::regularize() {
   oclRegularize();
   lowerConstantExpressions();
 
-  std::set<Value *> ValuesForDeleting;
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = I++;
     if (F->isDeclaration() && F->use_empty()) {
@@ -1385,17 +1372,8 @@ LLVMToSPRV::regularize() {
           Call->setTailCall(false);
           if (Call->getCalledFunction()->isIntrinsic())
             removeFnAttr(Context, Call, Attribute::NoUnwind);
-
-          // Remove useless convert function
-          std::string DemangledName;
-          auto MangledName = Call->getCalledFunction()->getName();
-          if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName)) {
-            if (DemangledName.find("convert_") == 0)
-              if (!oclRegularizeConvert(Call, MangledName, DemangledName,
-                  ValuesForDeleting))
-                return false;
-          }
         }
+
         // Remove optimization info not supported by SPRV
         if (auto BO = dyn_cast<BinaryOperator>(II)) {
           if (isa<OverflowingBinaryOperator>(BO)) {
@@ -1422,17 +1400,6 @@ LLVMToSPRV::regularize() {
     }
   }
 
-  for (auto &I:ValuesForDeleting)
-    if (auto Inst = dyn_cast<Instruction>(I)) {
-      Inst->dropAllReferences();
-      Inst->removeFromParent();
-    }
-  for (auto &I : ValuesForDeleting)
-    if (auto GV = dyn_cast<GlobalValue>(I)) {
-      GV->dropAllReferences();
-      GV->removeFromParent();
-    }
-
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)){
@@ -1445,31 +1412,6 @@ LLVMToSPRV::regularize() {
   return true;
 }
 
-/// Remove trivial conversion functions
-bool
-LLVMToSPRV::oclRegularizeConvert(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName,
-    std::set<Value *>& ValuesForDeleting) {
-  auto TargetTy = CI->getType();
-  auto SrcTy = CI->getArgOperand(0)->getType();
-  if (isa<VectorType>(TargetTy))
-    TargetTy = TargetTy->getVectorElementType();
-  if (isa<VectorType>(SrcTy))
-    SrcTy = SrcTy->getVectorElementType();
-  if (TargetTy == SrcTy) {
-    if (isa<IntegerType>(TargetTy) &&
-        DemangledName.find("_sat") != std::string::npos &&
-        isFuncParamSigned(MangledName) != (DemangledName[8] != 'u'))
-      return true;
-    CI->getArgOperand(0)->takeName(CI);
-    SPRVDBG(dbgs() << "[regularizeOCLConvert] " << *CI << " <- " <<
-        *CI->getArgOperand(0) << '\n');
-    CI->replaceAllUsesWith(CI->getArgOperand(0));
-    ValuesForDeleting.insert(CI);
-    ValuesForDeleting.insert(CI->getCalledFunction());
-  }
-  return true;
-}
 
 MDNode *
 LLVMToSPRV::oclGetArgBaseTypeMetadata(Function *F) {
@@ -1491,7 +1433,7 @@ LLVMToSPRV::oclGetKernelMetadata(Function *F) {
     MDNode *KernelMD = KernelMDs->getOperand(I);
     if (KernelMD->getNumOperands() == 0)
       continue;
-    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0)); 
+    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0));
 
     if (Kernel == F)
       return KernelMD;
@@ -1819,43 +1761,6 @@ LLVMToSPRV::transOCLVectorLoadStore(CallInst *CI,
       BB);
 }
 
-SPRVValue *
-LLVMToSPRV::oclTransBarrier(CallInst *CI,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  assert(CI->getNumArgOperands() == 1);
-  auto MemFenceFlagVal = CI->getArgOperand(0);
-  assert(isa<ConstantInt>(MemFenceFlagVal));
-  SPRVValue * CB = BM->addControlBarrierInst(ScopeWorkgroup, ScopeWorkgroup,
-    mapBitMask<OCLMemFenceMap>(dyn_cast<ConstantInt>(
-    MemFenceFlagVal)->getZExtValue()), BB);
-  return CB;
-}
-
-SPRVValue *
-LLVMToSPRV::oclTransWorkGroupBarrier(CallInst *CI,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  assert(CI->getNumArgOperands() == 1 || CI->getNumArgOperands() == 3);
-  Value *MemFenceFlagVal = CI->getArgOperand(0);
-  assert(isa<ConstantInt>(MemFenceFlagVal));
-
-  if (CI->getNumArgOperands() == 1){
-    return BM->addControlBarrierInst(ScopeWorkgroup, ScopeWorkgroup,
-      mapBitMask<OCLMemFenceMap>(dyn_cast<ConstantInt>
-      (MemFenceFlagVal)->getZExtValue()), BB);
-  }
-
-  Value *MemScopeVal = CI->getArgOperand(1);
-  assert(isa<ConstantInt>(MemScopeVal));
-  assert(dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue() <= OCLMS_sub_group);
-
-  SPRVValue * CB = BM->addControlBarrierInst(ScopeWorkgroup,
-    OCLMemScopeMap::map(static_cast<OCLMemScopeKind>(
-    dyn_cast<ConstantInt>(MemScopeVal)->getZExtValue())),
-    mapBitMask<OCLMemFenceMap>(dyn_cast<ConstantInt>
-    (MemFenceFlagVal)->getZExtValue()), BB);
-  return CB;
-}
-
 void
 LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
     llvm::FunctionType* FT, std::map<unsigned, Type*>& ChangedType,
@@ -1874,7 +1779,8 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
 SPRVInstruction *
 LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB) {
-  auto OC = getSPRVFuncOC(DemangledName);
+  SmallVector<std::string, 2> Dec;
+  auto OC = getSPRVFuncOC(DemangledName, &Dec);
   OCLBuiltinSPRVTransInfo Info;
 
   if (OC == OpNop) {
@@ -1882,70 +1788,20 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
     OCLSPRVBuiltinMap::find(Info.UniqName, &OC);
   }
 
-  if (OC != OpNop) {
-    if (isCmpOpCode(OC)) {
-      assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
-      auto ResultTy = CI->getType();
-      Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
-      auto IsVector = ResultTy->isVectorTy();
-      if (IsVector)
-        BoolTy = VectorType::get(BoolTy, ResultTy->getVectorNumElements());
-      auto BT = transType(ResultTy);
-      auto BBT = transType(BoolTy);
-      auto Cmp = BM->addCmpInst(OC, BBT,
-        transValue(CI->getArgOperand(0), BB),
-        transValue(CI->getArgOperand(1), BB), BB);
-      auto CastOC = IsVector ? OpSConvert : OpUConvert;
-      return BM->addUnaryInst(CastOC, BT, Cmp, BB);
-    } else if (isBinaryOpCode(OC)) {
-      assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
-      return BM->addBinaryInst(OC, transType(CI->getType()),
-        transValue(CI->getArgOperand(0), BB),
-        transValue(CI->getArgOperand(1), BB), BB);
-    } else if (CI->getNumArgOperands() == 1 &&
-        !CI->getType()->isVoidTy() &&
-        Info.UniqName.find("group_") != 0 &&
-        Info.UniqName.find("atomic_") != 0) {
-      return BM->addUnaryInst(OC, transType(CI->getType()),
-        transValue(CI->getArgOperand(0), BB), BB);
-    } else {
-      auto Args = getArguments(CI);
-      SPRVType *SPRetTy = nullptr;
-      Type *RetTy = CI->getType();
-      auto F = CI->getCalledFunction();
-      if (!RetTy->isVoidTy()) {
-        SPRetTy = transType(RetTy);
-      } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
-        SPRetTy = transType(F->arg_begin()->getType()->getPointerElementType());
-        Args.erase(Args.begin());
-      }
-      std::vector<SPRVWord> SPArgs;
-      for (auto I:Args) {
-        SPArgs.push_back(transValue(I, BB)->getId());
-      }
-      Info.PostProc(SPArgs);
-      auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
-      if (!SPRetTy || !SPRetTy->isTypeStruct())
-        return SPI;
-      std::vector<SPRVWord> Mem;
-      SPRVDBG(bildbgs() << *SPI << '\n');
-      return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), SPI,
-          Mem, BB);
-    }
-  }
+  if (OC == OpNop)
+    return nullptr;
 
-  return nullptr;
+  auto Inst = transOCLBuiltinToInstWithoutDecoration(OC, Info, CI, BB);
+  for (auto &I:Dec)
+    if (auto Dec = mapPostfixToDecorate(I, Inst))
+      Inst->addDecorate(Dec);
+
+  return Inst;
 }
 
 SPRVValue *
 LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName, SPRVBasicBlock *BB) {
-  if (DemangledName == "barrier")
-    return oclTransBarrier(CI, DemangledName, BB);
-  if (DemangledName == "work_group_barrier")
-    return oclTransWorkGroupBarrier(CI, DemangledName, BB);
-  if (DemangledName.find("convert_") == 0)
-    return transOCLConvert(CI, MangledName, DemangledName, BB);
   if (DemangledName.find("vload") == 0 ||
       DemangledName.find("vstore") == 0)
     return transOCLVectorLoadStore(CI, MangledName, DemangledName, BB);
@@ -1954,68 +1810,6 @@ LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
   if (DemangledName == "wait_group_events")
     return transOCLGroupBuiltins(CI, MangledName, DemangledName, BB);
   return transOCLBuiltinToInstByMap(DemangledName, MangledName, CI, BB);
-}
-
-void
-LLVMToSPRV::eraseSubstitutionFromMangledName(std::string& MangledName) {
-  auto Len = MangledName.length();
-  while (Len >= 2 && MangledName.substr(Len - 2, 2) == "S_") {
-    Len -= 2;
-    MangledName.erase(Len, 2);
-  }
-}
-
-bool
-LLVMToSPRV::isFuncParamSigned(const std::string& MangledName) {
-  auto Copy = MangledName;
-  eraseSubstitutionFromMangledName(Copy);
-  char Mangled = Copy.back();
-  bool Signed = true;
-  if (isMangledTypeUnsigned(Mangled))
-    Signed = false;
-  return Signed;
-}
-
-SPRVValue *
-LLVMToSPRV::transOCLConvert(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  Op OC = OpNop;
-  auto TargetTy = CI->getType();
-  auto SrcTy = CI->getArgOperand(0)->getType();
-  if (isa<VectorType>(TargetTy))
-    TargetTy = TargetTy->getVectorElementType();
-  if (isa<VectorType>(SrcTy))
-    SrcTy = SrcTy->getVectorElementType();
-  auto IsTargetInt = isa<IntegerType>(TargetTy);
-  auto IsSat = DemangledName.find("_sat") != std::string::npos;
-  auto TargetSigned = DemangledName[8] != 'u';
-  if (isa<IntegerType>(SrcTy)) {
-    bool Signed = isFuncParamSigned(MangledName);
-    if (IsTargetInt) {
-      if (IsSat && TargetSigned != Signed)
-        OC = Signed ? OpSatConvertSToU : OpSatConvertUToS;
-      else
-        OC = Signed ? OpSConvert : OpUConvert;
-    }
-    else
-      OC = Signed ? OpConvertSToF : OpConvertUToF;
-  } else {
-    if (IsTargetInt) {
-      OC = TargetSigned ? OpConvertFToS : OpConvertFToU;
-    } else
-      OC = OpFConvert;
-  }
-  auto V = BM->addUnaryInst(OC, transType(CI->getType()),
-      transValue(CI->getArgOperand(0), BB), BB);
-  auto Loc = DemangledName.find("_rt");
-  if (Loc != std::string::npos) {
-    auto Rounding = SPIRSPRVFPRoundingModeMap::map(
-        DemangledName.substr(Loc + 1, 3));
-    V->addFPRoundingMode(Rounding);
-  }
-  if (IsSat)
-    V->setSaturatedConversion(true);
-  return V;
 }
 
 bool
@@ -2154,6 +1948,74 @@ LLVMToSPRV::transBoolOpCode(SPRVValue* Opn, Op OC) {
     return OC;
   IntBoolOpMap::find(OC, &OC);
   return OC;
+}
+
+SPRVInstruction *
+LLVMToSPRV::transOCLBuiltinToInstWithoutDecoration(Op OC,
+    OCLBuiltinSPRVTransInfo &Info, CallInst* CI, SPRVBasicBlock* BB) {
+  switch (OC) {
+  case OpControlBarrier:
+    return BM->addControlBarrierInst(
+        static_cast<Scope>(getArgInt(CI, 0)),
+        static_cast<Scope>(getArgInt(CI, 1)),
+        getArgInt(CI, 2), BB);
+    break;
+  default: {
+    if (isCvtOpCode(OC)) {
+      return BM->addUnaryInst(OC, transType(CI->getType()),
+        transValue(CI->getArgOperand(0), BB), BB);
+    } else if (isCmpOpCode(OC)) {
+      assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
+      auto ResultTy = CI->getType();
+      Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+      auto IsVector = ResultTy->isVectorTy();
+      if (IsVector)
+        BoolTy = VectorType::get(BoolTy, ResultTy->getVectorNumElements());
+      auto BT = transType(ResultTy);
+      auto BBT = transType(BoolTy);
+      auto Cmp = BM->addCmpInst(OC, BBT,
+        transValue(CI->getArgOperand(0), BB),
+        transValue(CI->getArgOperand(1), BB), BB);
+      auto CastOC = IsVector ? OpSConvert : OpUConvert;
+      return BM->addUnaryInst(CastOC, BT, Cmp, BB);
+    } else if (isBinaryOpCode(OC)) {
+      assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
+      return BM->addBinaryInst(OC, transType(CI->getType()),
+        transValue(CI->getArgOperand(0), BB),
+        transValue(CI->getArgOperand(1), BB), BB);
+    } else if (CI->getNumArgOperands() == 1 &&
+        !CI->getType()->isVoidTy() &&
+        Info.UniqName.find("group_") != 0 &&
+        Info.UniqName.find("atomic_") != 0) {
+      return BM->addUnaryInst(OC, transType(CI->getType()),
+        transValue(CI->getArgOperand(0), BB), BB);
+    } else {
+      auto Args = getArguments(CI);
+      SPRVType *SPRetTy = nullptr;
+      Type *RetTy = CI->getType();
+      auto F = CI->getCalledFunction();
+      if (!RetTy->isVoidTy()) {
+        SPRetTy = transType(RetTy);
+      } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
+        SPRetTy = transType(F->arg_begin()->getType()->getPointerElementType());
+        Args.erase(Args.begin());
+      }
+      std::vector<SPRVWord> SPArgs;
+      for (auto I:Args) {
+        SPArgs.push_back(transValue(I, BB)->getId());
+      }
+      Info.PostProc(SPArgs);
+      auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
+      if (!SPRetTy || !SPRetTy->isTypeStruct())
+        return SPI;
+      std::vector<SPRVWord> Mem;
+      SPRVDBG(bildbgs() << *SPI << '\n');
+      return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), SPI,
+          Mem, BB);
+    }
+  }
+  }
+  return nullptr;
 }
 
 SPRVId LLVMToSPRV::addInt32(int I) {
