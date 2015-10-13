@@ -5,7 +5,7 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK: 4 Decorate [[GID:[0-9]*]] FuncParamAttr 5
 ; CHECK: 2 DecorationGroup [[GID]]
-; CHECK: 4 Decorate [[GID2:[0-9]*]] FuncParamAttr 8
+; CHECK: 4 Decorate [[GID2:[0-9]*]] FuncParamAttr 6
 ; CHECK: 2 DecorationGroup [[GID2]]
 ; CHECK: 5 GroupDecorate [[GID]]
 ; CHECK: 4 GroupDecorate [[GID2]]

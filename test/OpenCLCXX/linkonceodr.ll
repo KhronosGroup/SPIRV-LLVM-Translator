@@ -14,7 +14,7 @@ entry:
 
 ; CHECK: Source 3 21
 ; CHECK: EntryPoint 6 3
-; CHECK: ExtInstImport 0 "OpenCL.std.21"
+; CHECK: ExtInstImport 0 "OpenCL.std"
 ; CHECK: _Z4FuncIiET_S0_
 ; Function Attrs: nounwind
 define linkonce_odr spir_func i32 @_Z4FuncIiET_S0_(i32 %var) #0 {

@@ -4,13 +4,13 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; CHECK: Source 3 21
-; CHECK: ExtInstImport 0 "OpenCL.std.21"
+; CHECK: ExtInstImport 0 "OpenCL.std"
 ; CHECK: "_Z4testv"
 ; Function Attrs: nounwind
 define spir_kernel void @_Z4testv() #0 {
-; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 57 {{[0-9]+}}
+; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} sin {{[0-9]+}}
   %call = call spir_func float @_ZN2cl7__spirv3sinEf(float 1.000000e+00)
-; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 57 {{[0-9]+}}
+; CHECK: 6 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} sin {{[0-9]+}}
   %call1 = call spir_func <2 x float> @_ZN2cl7__spirv3sinEDv2_f(<2 x float> <float 1.000000e+00, float 2.000000e+00>)
   ret void
 }
