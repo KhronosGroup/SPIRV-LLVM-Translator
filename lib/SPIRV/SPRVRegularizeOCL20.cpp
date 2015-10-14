@@ -49,6 +49,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <set>
+
 using namespace llvm;
 using namespace SPRV;
 using namespace OCLUtil;
@@ -73,6 +75,22 @@ public:
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
+
+  /// Transform barrier/work_group_barrier to __spirv_ControlBarrier.
+  /// barrier(flag) =>
+  ///   __spirv_ControlBarrier(workgroup, workgroup, map(flag))
+  /// workgroup_barrier(scope, flag) =>
+  ///   __spirv_ControlBarrier(workgroup, map(scope), map(flag))
+  void visitCallWorkGroupBarrier(CallInst *CI);
+
+  /// Erase useless convert functions.
+  /// \return true if the call instruction is erased.
+  bool eraseUselessConvert(CallInst *Call, const std::string &MangledName,
+      const std::string &DeMangledName);
+
+  /// Transform convert_ to __spirv_{CastOpName}_R{TargeTyName}{_sat}{_rt[p|n|z|e]}
+  void visistCallConvert(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
 
   /// Transform atomic_work_item_fence/mem_fence to __spirv_MemoryBarrier.
   /// func(flag, order, scope) =>
@@ -141,6 +159,7 @@ public:
 private:
   Module *M;
   LLVMContext *Ctx;
+  std::set<Value *> ValuesToDelete;
 
   ConstantInt *addInt32(int I) {
     return getInt32(M, I);
@@ -159,6 +178,13 @@ SPRVRegularizeOCL20::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
   visit(*M);
+
+  for (auto &I:ValuesToDelete)
+    if (auto Inst = dyn_cast<Instruction>(I))
+      Inst->eraseFromParent();
+  for (auto &I:ValuesToDelete)
+    if (auto GV = dyn_cast<GlobalValue>(I))
+      GV->eraseFromParent();
 
   DEBUG(dbgs() << "After RegularizeOCL20:\n" << *M);
 
@@ -205,8 +231,8 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
     visitCallAtomicCpp11(PCI, MangledName, DemangledName);
     return;
   }
-  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
-    visitCallReadImage(&CI, MangledName, DemangledName);
+  if (DemangledName.find(kOCLBuiltinName::ConvertPrefix) == 0) {
+    visistCallConvert(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::GetImageWidth ||
@@ -218,6 +244,15 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   }
   if (DemangledName == kOCLBuiltinName::MemFence) {
     visitCallMemFence(&CI);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
+    visitCallReadImage(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
+      DemangledName == kOCLBuiltinName::Barrier) {
+    visitCallWorkGroupBarrier(&CI);
     return;
   }
 }
@@ -437,7 +472,7 @@ SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
     auto OrderIdx = Args.size() - NumOrder - 1;
     Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
         [](unsigned I){
-      return map<Scope>(static_cast<OCLMemScopeKind>(I));
+      return map<Scope>(static_cast<OCLScopeKind>(I));
     });
     for (size_t I = 0; I < NumOrder; ++I)
       Args[OrderIdx + I] = mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),
@@ -446,6 +481,71 @@ SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
     });
     move(Args, OrderIdx, Args.size(), findFirstPtr(Args) + 1);
     return getSPRVFuncName(OCLSPRVBuiltinMap::map(Info.UniqName));
+  }, true, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallWorkGroupBarrier(CallInst* CI) {
+  auto Lit = getWorkGroupBarrierLiterals(CI);
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    Args.resize(3);
+    Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
+    Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
+    Args[2] = addInt32(mapOCLMemFenceFlagToSPRV(std::get<0>(Lit)));
+    return getSPRVFuncName(OpControlBarrier);
+  }, true, &Attrs);
+}
+
+void SPRVRegularizeOCL20::visistCallConvert(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  if (eraseUselessConvert(CI, MangledName, DemangledName))
+    return;
+  Op OC = OpNop;
+  auto TargetTy = CI->getType();
+  auto SrcTy = CI->getArgOperand(0)->getType();
+  if (isa<VectorType>(TargetTy))
+    TargetTy = TargetTy->getVectorElementType();
+  if (isa<VectorType>(SrcTy))
+    SrcTy = SrcTy->getVectorElementType();
+  auto IsTargetInt = isa<IntegerType>(TargetTy);
+
+  std::string TargetTyName = DemangledName.substr(
+      strlen(kOCLBuiltinName::ConvertPrefix));
+  auto FirstUnderscoreLoc = TargetTyName.find('_');
+  if (FirstUnderscoreLoc != std::string::npos)
+    TargetTyName = TargetTyName.substr(0, FirstUnderscoreLoc);
+  TargetTyName = std::string("_R") + TargetTyName;
+
+  std::string Sat = DemangledName.find("_sat") != std::string::npos ?
+      "_sat" : "";
+  auto TargetSigned = DemangledName[8] != 'u';
+  if (isa<IntegerType>(SrcTy)) {
+    bool Signed = isLastFuncParamSigned(MangledName);
+    if (IsTargetInt) {
+      if (!Sat.empty() && TargetSigned != Signed) {
+        OC = Signed ? OpSatConvertSToU : OpSatConvertUToS;
+        Sat = "";
+      }
+      else
+        OC = Signed ? OpSConvert : OpUConvert;
+    }
+    else
+      OC = Signed ? OpConvertSToF : OpConvertUToF;
+  } else {
+    if (IsTargetInt) {
+      OC = TargetSigned ? OpConvertFToS : OpConvertFToU;
+    } else
+      OC = OpFConvert;
+  }
+  auto Loc = DemangledName.find("_rt");
+  std::string Rounding;
+  if (Loc != std::string::npos) {
+    Rounding = DemangledName.substr(Loc, 4);
+  }
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    return getSPRVFuncName(OC, TargetTyName + Sat + Rounding);
   }, true, &Attrs);
 }
 
@@ -517,6 +617,33 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
           NCI->getNextNode());
     },
   true, &Attrs);
+}
+
+/// Remove trivial conversion functions
+bool
+SPRVRegularizeOCL20::eraseUselessConvert(CallInst *CI,
+    const std::string &MangledName,
+    const std::string &DemangledName) {
+  auto TargetTy = CI->getType();
+  auto SrcTy = CI->getArgOperand(0)->getType();
+  if (isa<VectorType>(TargetTy))
+    TargetTy = TargetTy->getVectorElementType();
+  if (isa<VectorType>(SrcTy))
+    SrcTy = SrcTy->getVectorElementType();
+  if (TargetTy == SrcTy) {
+    if (isa<IntegerType>(TargetTy) &&
+        DemangledName.find("_sat") != std::string::npos &&
+        isLastFuncParamSigned(MangledName) != (DemangledName[8] != 'u'))
+      return false;
+    CI->getArgOperand(0)->takeName(CI);
+    SPRVDBG(dbgs() << "[regularizeOCLConvert] " << *CI << " <- " <<
+        *CI->getArgOperand(0) << '\n');
+    CI->replaceAllUsesWith(CI->getArgOperand(0));
+    ValuesToDelete.insert(CI);
+    ValuesToDelete.insert(CI->getCalledFunction());
+    return true;
+  }
+  return false;
 }
 
 }

@@ -42,11 +42,66 @@
 #include <functional>
 using namespace SPRV;
 using namespace llvm;
+using namespace spv;
 
 namespace OCLUtil {
 
-typedef std::tuple<unsigned, OCLMemOrderKind, OCLMemScopeKind>
+///////////////////////////////////////////////////////////////////////////////
+//
+// Enums
+//
+///////////////////////////////////////////////////////////////////////////////
+
+enum OCLMemFenceKind {
+  OCLMF_Local = 1,
+  OCLMF_Global = 2,
+  OCLMF_Image = 4,
+};
+
+enum OCLScopeKind {
+  OCLMS_work_item,
+  OCLMS_work_group,
+  OCLMS_device,
+  OCLMS_all_svm_devices,
+  OCLMS_sub_group,
+};
+
+enum OCLMemOrderKind {
+  OCLMO_relaxed,
+  OCLMO_acquire,
+  OCLMO_release,
+  OCLMO_acq_rel,
+  OCLMO_seq_cst
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Types
+//
+///////////////////////////////////////////////////////////////////////////////
+
+typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
+  OCLMemFenceMap;
+
+typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
+  OCLMemOrderMap;
+
+typedef SPRVMap<OCLScopeKind, Scope>
+  OCLMemScopeMap;
+
+typedef SPRVMap<std::string, SPRVGroupOperationKind>
+  SPIRSPRVGroupOperationMap;
+
+typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
+  SPIRSPRVFPRoundingModeMap;
+
+/// Tuple of literals for atomic_work_item_fence (flag, order, scope)
+typedef std::tuple<unsigned, OCLMemOrderKind, OCLScopeKind>
   AtomicWorkItemFenceLiterals;
+
+/// Tuple of literals for work_group_barrier (flag, mem_scope, exec_scope)
+typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
+  WorkGroupBarrierLiterals;
 
 /// Information for translating OCL builtin.
 struct OCLBuiltinTransInfo {
@@ -58,14 +113,29 @@ struct OCLBuiltinTransInfo {
   }
 };
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Constants
+//
+///////////////////////////////////////////////////////////////////////////////
+
 /// OCL 1.x atomic memory order when translated to 2.0 atomics.
 const OCLMemOrderKind OCLLegacyAtomicMemOrder = OCLMO_seq_cst;
 
 /// OCL 1.x atomic memory scope when translated to 2.0 atomics.
-const OCLMemScopeKind OCLLegacyAtomicMemScope = OCLMS_device;
+const OCLScopeKind OCLLegacyAtomicMemScope = OCLMS_device;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Functions
+//
+///////////////////////////////////////////////////////////////////////////////
 
 /// Get literal arguments of call of atomic_work_item_fence.
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI);
+
+/// Get literal arguments of call of work_group_barrier.
+WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI);
 
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
@@ -85,5 +155,73 @@ unsigned getOCLVersion(Module *M);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 
+inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
+    OCLMemOrderKind Order) {
+  return OCLMemOrderMap::map(Order) |
+      mapBitMask<OCLMemFenceMap>(MemFenceFlag);
 }
 
+inline unsigned mapOCLMemFenceFlagToSPRV(unsigned MemFenceFlag) {
+  return mapBitMask<OCLMemFenceMap>(MemFenceFlag);
+}
+
+inline std::pair<unsigned, OCLMemOrderKind>
+mapSPRVMemSemanticToOCL(unsigned Sema) {
+  return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
+    OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema)));
+}
+
+inline OCLMemOrderKind
+mapSPRVMemOrderToOCL(unsigned Sema) {
+  return OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema));
+}
+} // namespace OCLUtil
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Map definitions
+//
+///////////////////////////////////////////////////////////////////////////////
+
+using namespace OCLUtil;
+namespace SPRV {
+template<> inline void
+SPRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
+  add(OCLMF_Local, MemorySemanticsWorkgroupLocalMemoryMask);
+  add(OCLMF_Global, MemorySemanticsWorkgroupGlobalMemoryMask);
+  add(OCLMF_Image, MemorySemanticsImageMemoryMask);
+}
+
+template<> inline void
+SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
+  add(OCLMO_relaxed, MemorySemanticsMaskNone);
+  add(OCLMO_acquire, MemorySemanticsAcquireMask);
+  add(OCLMO_release, MemorySemanticsReleaseMask);
+  add(OCLMO_acq_rel, MemorySemanticsAcquireReleaseMask);
+  add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
+}
+
+template<> inline void
+SPRVMap<OCLScopeKind, Scope>::init() {
+  add(OCLMS_work_item, ScopeInvocation);
+  add(OCLMS_work_group, ScopeWorkgroup);
+  add(OCLMS_device, ScopeDevice);
+  add(OCLMS_all_svm_devices, ScopeCrossDevice);
+  add(OCLMS_sub_group, ScopeSubgroup);
+}
+
+template<> inline void
+SPRVMap<std::string, SPRVGroupOperationKind>::init() {
+  add("reduce", GroupOperationReduce);
+  add("scan_inclusive", GroupOperationInclusiveScan);
+  add("scan_exclusive", GroupOperationExclusiveScan);
+}
+
+template<> inline void
+SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
+  add("rte", FPRoundingModeRTE);
+  add("rtz", FPRoundingModeRTZ);
+  add("rtp", FPRoundingModeRTP);
+  add("rtn", FPRoundingModeRTN);
+}
+} // namespace SPRV

@@ -65,12 +65,9 @@ ReservedIdAddrSpaceForOutput("spirv-reserved-id-addr-space",
 //
 ///////////////////////////////////////////////////////////////////////////////
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI) {
-  auto getArg = [=](unsigned I){
-    return cast<ConstantInt>(CI->getArgOperand(I))->getZExtValue();
-  };
-  return std::make_tuple(getArg(0),
-      static_cast<OCLMemOrderKind>(getArg(1)),
-      static_cast<OCLMemScopeKind>(getArg(2)));
+  return std::make_tuple(getArgInt(CI, 0),
+    static_cast<OCLMemOrderKind>(getArgInt(CI, 1)),
+    static_cast<OCLScopeKind>(getArgInt(CI, 2)));
 }
 
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
@@ -78,6 +75,15 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
     return 2;
   return 1;
 }
+
+WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI){
+  auto N = CI->getNumArgOperands();
+  assert (N == 1 || N == 3);
+  return std::make_tuple(getArgInt(CI, 0),
+    N == 1 ? OCLMS_work_group : static_cast<OCLScopeKind>(getArgInt(CI, 1)),
+    OCLMS_work_group);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Functions for getting metadata

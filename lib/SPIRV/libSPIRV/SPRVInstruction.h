@@ -1760,6 +1760,7 @@ _SPRV_OP(ImageQuerySamples, true, 4)
       SPRV##x;
 // Other instructions
 _SPRV_OP(SpecConstantOp, true, 4, true)
+_SPRV_OP(GenericPtrMemSemantics, true, 4, false)
 #undef _SPRV_OP
 
 SPRVSpecConstantOp *createSpecConstantOpInst(SPRVInstruction *Inst);

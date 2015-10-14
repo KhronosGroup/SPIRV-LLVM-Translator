@@ -395,7 +395,7 @@ public:
   SPRVAnnotationGeneric(const SPRVEntry *TheTarget, unsigned TheWordCount,
       Op OC)
     :SPRVEntryNoIdGeneric(TheTarget->getModule(), TheWordCount, OC),
-     Target(TheTarget->getId()){}
+     Target(TheTarget ? TheTarget->getId() : SPRVID_INVALID){}
   // Incomplete constructor
   SPRVAnnotationGeneric(Op OC):SPRVEntryNoIdGeneric(OC),
       Target(SPRVID_INVALID){}
@@ -688,7 +688,6 @@ _SPRV_OP(Unreachable)
 _SPRV_OP(LifetimeStart)
 _SPRV_OP(LifetimeStop)
 _SPRV_OP(GenericCastToPtrExplicit)
-_SPRV_OP(GenericPtrMemSemantics)
 _SPRV_OP(ImageSparseSampleImplicitLod, 305)
 _SPRV_OP(ImageSparseSampleExplicitLod, 306)
 _SPRV_OP(ImageSparseSampleDrefImplicitLod, 307)
