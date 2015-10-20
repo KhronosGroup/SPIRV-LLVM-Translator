@@ -94,7 +94,7 @@ SPRVInstruction::setScope(SPRVEntry *Scope) {
 }
 
 SPRVFunctionCall::SPRVFunctionCall(SPRVId TheId, SPRVFunction *TheFunction,
-    const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB)
+    const std::vector<SPRVWord> &TheArgs, SPRVBasicBlock *BB)
   :SPRVFunctionCallGeneric(
       TheFunction->getFunctionType()->getReturnType(),
       TheId, TheArgs, BB), FunctionId(TheFunction->getId()){

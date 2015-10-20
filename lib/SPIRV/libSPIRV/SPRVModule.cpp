@@ -220,7 +220,7 @@ public:
   virtual SPRVInstruction *addBinaryInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *);
   virtual SPRVInstruction *addCallInst(SPRVFunction*,
-      const std::vector<SPRVValue *>, SPRVBasicBlock *);
+      const std::vector<SPRVWord> &, SPRVBasicBlock *);
   virtual SPRVInstruction *addCmpInst(Op, SPRVType *, SPRVValue *,
       SPRVValue *, SPRVBasicBlock *);
   virtual SPRVInstruction *addLoadInst(SPRVValue *,
@@ -246,7 +246,9 @@ public:
       SPRVBasicBlock *BB);
   virtual SPRVInstruction *addInstruction(SPRVInstruction *Inst,
       SPRVBasicBlock *BB);
-  virtual SPRVInstruction *addInstTemplate(Op OC,
+  virtual SPRVInstTemplateBase *addInstTemplate(Op OC,
+      SPRVBasicBlock* BB, SPRVType *Ty);
+  virtual SPRVInstTemplateBase *addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty);
   virtual SPRVInstruction *addMemoryBarrierInst(
       Scope ScopeKind, SPRVWord MemFlag, SPRVBasicBlock *BB);
@@ -853,7 +855,7 @@ SPRVModuleImpl::addExtInst(SPRVType *TheType, SPRVWord BuiltinSet,
 
 SPRVInstruction*
 SPRVModuleImpl::addCallInst(SPRVFunction* TheFunction,
-    const std::vector<SPRVValue *> TheArguments, SPRVBasicBlock *BB) {
+    const std::vector<SPRVWord> &TheArguments, SPRVBasicBlock *BB) {
   return addInstruction(new SPRVFunctionCall(getId(), TheFunction,
       TheArguments, BB), BB);
 }
@@ -1220,13 +1222,24 @@ SPRVModuleImpl::getIds(const std::vector<SPRVValue *> &ValueVec)const {
   return IdVec;
 }
 
-SPRVInstruction*
+SPRVInstTemplateBase*
+SPRVModuleImpl::addInstTemplate(Op OC,
+    SPRVBasicBlock* BB, SPRVType *Ty) {
+  assert (!Ty || !Ty->isTypeVoid());
+  SPRVId Id = Ty ? getId() : SPRVID_INVALID;
+  auto Ins = SPRVInstTemplateBase::create(OC, Ty, Id, BB, this);
+  BB->addInstruction(Ins);
+  return Ins;
+}
+
+SPRVInstTemplateBase*
 SPRVModuleImpl::addInstTemplate(Op OC,
     const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) {
   assert (!Ty || !Ty->isTypeVoid());
   SPRVId Id = Ty ? getId() : SPRVID_INVALID;
   auto Ins = SPRVInstTemplateBase::create(OC, Ty, Id, Ops, BB, this);
-  return BB->addInstruction(Ins);
+  BB->addInstruction(Ins);
+  return Ins;
 }
 
 SPRVDbgInfo::SPRVDbgInfo(SPRVModule *TM)

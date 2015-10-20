@@ -62,6 +62,7 @@ class SPRVForward;
 class SPRVMemberDecorate;
 class SPRVLine;
 class SPRVString;
+class SPRVExtInst;
 
 // Add declaration of encode/decode functions to a class.
 // Used inside class definition.
@@ -259,6 +260,10 @@ public:
   bool isMemoryBarrier() const { return OpCode == OpMemoryBarrier;}
   bool isVariable() const { return OpCode == OpVariable;}
   virtual bool isInst() const { return false;}
+  virtual bool isOperandLiteral(unsigned Index) const {
+    assert(0 && "not implemented");
+    return false;
+  }
 
   void addDecorate(const SPRVDecorate *);
   void addDecorate(Decoration Kind);
@@ -289,6 +294,12 @@ public:
   /// Create an empty SPIRV object by op code, e.g. OpTypeInt creates
   /// SPRVTypeInt.
   static SPRVEntry *create(Op);
+  static std::unique_ptr<SPRVEntry> create_unique(Op);
+
+  /// Create an empty extended instruction.
+  static std::unique_ptr<SPRVExtInst> create_unique(
+      SPRVExtInstSetKind Set,
+      unsigned ExtOp);
 
   friend std::ostream &operator<<(std::ostream &O, const SPRVEntry &E);
   friend std::istream &operator>>(std::istream &I, SPRVEntry &E);

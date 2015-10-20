@@ -43,6 +43,7 @@
 #include "libSPIRV/SPRVEnum.h"
 #include "libSPIRV/SPRVError.h"
 #include "libSPIRV/SPRVType.h"
+#include "NameMangleAPI.h"
 
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/Constants.h"
@@ -208,159 +209,6 @@ SPRVMap<std::string, Op>::init() {
 }
 typedef SPRVMap<std::string, Op> BuiltinOpaqueGenericTypeOpCodeMap;
 
-template<> inline void
-SPRVMap<std::string, SPRVBuiltinVariableKind>::init() {
-  add("get_work_dim", BuiltInWorkDim);
-  add("get_global_size", BuiltInGlobalSize);
-  add("get_global_id", BuiltInGlobalInvocationId);
-  add("get_global_offset", BuiltInGlobalOffset);
-  add("get_local_size", BuiltInWorkgroupSize);
-  add("get_enqueued_local_size", BuiltInEnqueuedWorkgroupSize);
-  add("get_local_id", BuiltInLocalInvocationId);
-  add("get_num_groups", BuiltInNumWorkgroups);
-  add("get_group_id", BuiltInWorkgroupId);
-  add("get_global_linear_id", BuiltInGlobalLinearId);
-  add("get_local_linear_id", BuiltInWorkgroupLinearId);
-  add("get_sub_group_size", BuiltInSubgroupSize);
-  add("get_max_sub_group_size", BuiltInSubgroupMaxSize);
-  add("get_num_sub_groups", BuiltInNumSubgroups);
-  add("get_enqueued_num_sub_groups", BuiltInNumEnqueuedSubgroups);
-  add("get_sub_group_id", BuiltInSubgroupId);
-  add("get_sub_group_local_id", BuiltInSubgroupLocalInvocationId);
-}
-
-typedef SPRVMap<std::string, SPRVBuiltinVariableKind> SPIRSPRVBuiltinVariableMap;
-
-// Maps uniqued OCL builtin function name to SPIRV instruction.
-// A uniqued OCL builtin function name may be different from the real
-// OCL builtin function name. e.g. instead of atomic_min, atomic_umin
-// is used for atomic_min with unsigned integer parameter.
-// work_group_ and sub_group_ functions are unified as group_ functions
-// except work_group_barrier.
-class SPRVInstruction;
-template<> inline void
-SPRVMap<std::string, Op, SPRVInstruction>::init() {
-#define _SPRV_OP(x,y) add("atom_"#x, OpAtomic##y);
-// cl_khr_int64_base_atomics builtins
-_SPRV_OP(add, IAdd)
-_SPRV_OP(sub, ISub)
-_SPRV_OP(xchg, Exchange)
-_SPRV_OP(dec, IDecrement)
-_SPRV_OP(inc, IIncrement)
-_SPRV_OP(cmpxchg, CompareExchange)
-// cl_khr_int64_extended_atomics builtins
-_SPRV_OP(min, SMin)
-_SPRV_OP(max, SMax)
-_SPRV_OP(and, And)
-_SPRV_OP(or, Or)
-_SPRV_OP(xor, Xor)
-#undef _SPRV_OP
-#define _SPRV_OP(x,y) add("atomic_"#x, Op##y);
-// CL 2.0 atomic builtins
-_SPRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
-_SPRV_OP(flag_clear_explicit, AtomicFlagClear)
-_SPRV_OP(load_explicit, AtomicLoad)
-_SPRV_OP(store_explicit, AtomicStore)
-_SPRV_OP(exchange_explicit, AtomicExchange)
-_SPRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
-_SPRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
-_SPRV_OP(inc, AtomicIIncrement)
-_SPRV_OP(dec, AtomicIDecrement)
-_SPRV_OP(fetch_add_explicit, AtomicIAdd)
-_SPRV_OP(fetch_sub_explicit, AtomicISub)
-_SPRV_OP(fetch_umin_explicit, AtomicUMin)
-_SPRV_OP(fetch_umax_explicit, AtomicUMax)
-_SPRV_OP(fetch_min_explicit, AtomicSMin)
-_SPRV_OP(fetch_max_explicit, AtomicSMax)
-_SPRV_OP(fetch_and_explicit, AtomicAnd)
-_SPRV_OP(fetch_or_explicit, AtomicOr)
-_SPRV_OP(fetch_xor_explicit, AtomicXor)
-#undef _SPRV_OP
-#define _SPRV_OP(x,y) add(#x, Op##y);
-_SPRV_OP(dot, Dot)
-_SPRV_OP(async_work_group_copy, AsyncGroupCopy)
-_SPRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
-_SPRV_OP(wait_group_events, WaitGroupEvents)
-_SPRV_OP(isequal, FOrdEqual)
-_SPRV_OP(isnotequal, FUnordNotEqual)
-_SPRV_OP(isgreater, FOrdGreaterThan)
-_SPRV_OP(isgreaterequal, FOrdGreaterThanEqual)
-_SPRV_OP(isless, FOrdLessThan)
-_SPRV_OP(islessequal, FOrdLessThanEqual)
-_SPRV_OP(islessgreater, LessOrGreater)
-_SPRV_OP(isordered, Ordered)
-_SPRV_OP(isunordered, Unordered)
-_SPRV_OP(isfinite, IsFinite)
-_SPRV_OP(isinf, IsInf)
-_SPRV_OP(isnan, IsNan)
-_SPRV_OP(isnormal, IsNormal)
-_SPRV_OP(signbit, SignBitSet)
-_SPRV_OP(any, Any)
-_SPRV_OP(all, All)
-_SPRV_OP(get_fence, GenericPtrMemSemantics)
-// CL 2.0 kernel enqueue builtins
-_SPRV_OP(enqueue_marker, EnqueueMarker)
-_SPRV_OP(enqueue_kernel, EnqueueKernel)
-_SPRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
-_SPRV_OP(get_kernel_ndrange_max_subgroup_count, GetKernelNDrangeMaxSubGroupSize)
-_SPRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
-_SPRV_OP(get_kernel_preferred_work_group_size_multiple, GetKernelPreferredWorkGroupSizeMultiple)
-_SPRV_OP(retain_event, RetainEvent)
-_SPRV_OP(release_event, ReleaseEvent)
-_SPRV_OP(create_user_event, CreateUserEvent)
-_SPRV_OP(is_valid_event, IsValidEvent)
-_SPRV_OP(set_user_event_status, SetUserEventStatus)
-_SPRV_OP(capture_event_profiling_info, CaptureEventProfilingInfo)
-_SPRV_OP(get_default_queue, GetDefaultQueue)
-_SPRV_OP(ndrange_1D, BuildNDRange)
-_SPRV_OP(ndrange_2D, BuildNDRange)
-_SPRV_OP(ndrange_3D, BuildNDRange)
-// Generic Address Space Casts
-_SPRV_OP(to_global, GenericCastToPtr)
-_SPRV_OP(to_local, GenericCastToPtr)
-_SPRV_OP(to_private, GenericCastToPtr)
-_SPRV_OP(work_group_barrier, ControlBarrier)
-// CL 2.0 pipe builtins
-_SPRV_OP(read_pipe, ReadPipe)
-_SPRV_OP(write_pipe, WritePipe)
-_SPRV_OP(reserved_read_pipe, ReservedReadPipe)
-_SPRV_OP(reserved_write_pipe, ReservedWritePipe)
-_SPRV_OP(reserve_read_pipe, ReserveReadPipePackets)
-_SPRV_OP(reserve_write_pipe, ReserveWritePipePackets)
-_SPRV_OP(commit_read_pipe, CommitReadPipe)
-_SPRV_OP(commit_write_pipe, CommitWritePipe)
-_SPRV_OP(is_valid_reserve_id, IsValidReserveId)
-_SPRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
-_SPRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
-_SPRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
-_SPRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
-_SPRV_OP(get_pipe_num_packets, GetNumPipePackets)
-_SPRV_OP(get_pipe_max_packets, GetMaxPipePackets)
-// CL 2.0 workgroup builtins
-_SPRV_OP(group_all, GroupAll)
-_SPRV_OP(group_any, GroupAny)
-_SPRV_OP(group_broadcast, GroupBroadcast)
-_SPRV_OP(group_iadd, GroupIAdd)
-_SPRV_OP(group_fadd, GroupFAdd)
-_SPRV_OP(group_fmin, GroupFMin)
-_SPRV_OP(group_umin, GroupUMin)
-_SPRV_OP(group_smin, GroupSMin)
-_SPRV_OP(group_fmax, GroupFMax)
-_SPRV_OP(group_umax, GroupUMax)
-_SPRV_OP(group_smax, GroupSMax)
-// CL image builtins
-_SPRV_OP(SampledImage, SampledImage)
-_SPRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
-_SPRV_OP(read_image, ImageRead)
-_SPRV_OP(write_image, ImageWrite)
-_SPRV_OP(get_image_channel_data_type, ImageQueryFormat)
-_SPRV_OP(get_image_channel_order, ImageQueryOrder)
-_SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
-_SPRV_OP(get_image_num_samples, ImageQuerySamples)
-#undef _SPRV_OP
-}
-typedef SPRVMap<std::string, Op, SPRVInstruction>
-  OCLSPRVBuiltinMap;
 
 template<> inline void
 SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>::init() {
@@ -395,6 +243,14 @@ SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>::init() {
 }
 typedef SPRVMap<Attribute::AttrKind, SPRVFunctionControlMaskKind>
   SPIRSPRVFuncCtlMaskMap;
+
+class SPRVExtSetShortName;
+template<> inline void
+SPRVMap<SPRVExtInstSetKind, std::string, SPRVExtSetShortName>::init() {
+  add(SPRVEIS_OpenCL, "ocl");
+}
+typedef SPRVMap<SPRVExtInstSetKind, std::string, SPRVExtSetShortName>
+  SPRVExtSetShortNameMap;
 
 
 #define SPIR_MD_KERNELS                     "opencl.kernels"
@@ -454,40 +310,6 @@ namespace kMangledName {
   const static char AtomicPrefixInternal[]  = "atomic_";
 }
 
-namespace kOCLBuiltinName {
-  const static char AtomPrefix[]         = "atom_";
-  const static char AtomCmpXchg[]        = "atom_cmpxchg";
-  const static char AtomicPrefix[]       = "atomic_";
-  const static char AtomicCmpXchg[]      = "atomic_cmpxchg";
-  const static char AtomicInit[]         = "atomic_init";
-  const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
-  const static char Barrier[]            = "barrier";
-  const static char ConvertPrefix[]      = "convert_";
-  const static char EnqueueKernel[]      = "enqueue_kernel";
-  const static char GetFence[]           = "get_fence";
-  const static char GetImageArraySize[]  = "get_image_array_size";
-  const static char GetImageDepth[]      = "get_image_depth";
-  const static char GetImageDim[]        = "get_image_dim";
-  const static char GetImageHeight[]     = "get_image_height";
-  const static char GetImageWidth[]      = "get_image_width";
-  const static char MemFence[]           = "mem_fence";
-  const static char NDRangePrefix[]      = "ndrange_";
-  const static char ToGlobal[]           = "to_global";
-  const static char ToLocal[]            = "to_local";
-  const static char ToPrivate[]          = "to_private";
-  const static char ReadImage[]          = "read_image";
-  const static char ReadPipe[]           = "read_pipe";
-  const static char Sampled[]            = "sampled_";
-  const static char SampledReadImage[]   = "sampled_read_image";
-  const static char SubGroupPrefix[]     = "sub_group_";
-  const static char SubPrefix[]          = "sub_";
-  const static char WriteImage[]         = "write_image";
-  const static char WorkGroupBarrier[]   = "work_group_barrier";
-  const static char WritePipe[]          = "write_pipe";
-  const static char WorkGroupPrefix[]    = "work_group_";
-  const static char WorkPrefix[]         = "work_";
-}
-
 namespace kSPRVName {
   const static char GroupPrefix[]            = "group_";
   const static char Prefix[]                 = "__spirv_";
@@ -521,93 +343,87 @@ enum Spir2SamplerKind {
   CLK_FILTER_LINEAR           = 0x0020,
 };
 
-namespace OclExt {
-enum Kind {
-#define _SPRV_OP(x) x,
-  _SPRV_OP(cl_images)
-  _SPRV_OP(cl_doubles)
-  _SPRV_OP(cl_khr_int64_base_atomics)
-  _SPRV_OP(cl_khr_int64_extended_atomics)
-  _SPRV_OP(cl_khr_fp16)
-  _SPRV_OP(cl_khr_gl_sharing)
-  _SPRV_OP(cl_khr_gl_event)
-  _SPRV_OP(cl_khr_d3d10_sharing)
-  _SPRV_OP(cl_khr_media_sharing)
-  _SPRV_OP(cl_khr_d3d11_sharing)
-  _SPRV_OP(cl_khr_global_int32_base_atomics)
-  _SPRV_OP(cl_khr_global_int32_extended_atomics)
-  _SPRV_OP(cl_khr_local_int32_base_atomics)
-  _SPRV_OP(cl_khr_local_int32_extended_atomics)
-  _SPRV_OP(cl_khr_byte_addressable_store)
-  _SPRV_OP(cl_khr_3d_image_writes)
-  _SPRV_OP(cl_khr_gl_msaa_sharing)
-  _SPRV_OP(cl_khr_depth_images)
-  _SPRV_OP(cl_khr_gl_depth_images)
-  _SPRV_OP(cl_khr_subgroups)
-  _SPRV_OP(cl_khr_mipmap_image)
-  _SPRV_OP(cl_khr_mipmap_image_writes)
-  _SPRV_OP(cl_khr_egl_event)
-  _SPRV_OP(cl_khr_srgb_image_writes)
-#undef _SPRV_OP
-};
-}
 
-template<> inline void
-SPRVMap<OclExt::Kind, std::string>::init() {
-#define _SPRV_OP(x) add(OclExt::x, #x);
-  _SPRV_OP(cl_images)
-  _SPRV_OP(cl_doubles)
-  _SPRV_OP(cl_khr_int64_base_atomics)
-  _SPRV_OP(cl_khr_int64_extended_atomics)
-  _SPRV_OP(cl_khr_fp16)
-  _SPRV_OP(cl_khr_gl_sharing)
-  _SPRV_OP(cl_khr_gl_event)
-  _SPRV_OP(cl_khr_d3d10_sharing)
-  _SPRV_OP(cl_khr_media_sharing)
-  _SPRV_OP(cl_khr_d3d11_sharing)
-  _SPRV_OP(cl_khr_global_int32_base_atomics)
-  _SPRV_OP(cl_khr_global_int32_extended_atomics)
-  _SPRV_OP(cl_khr_local_int32_base_atomics)
-  _SPRV_OP(cl_khr_local_int32_extended_atomics)
-  _SPRV_OP(cl_khr_byte_addressable_store)
-  _SPRV_OP(cl_khr_3d_image_writes)
-  _SPRV_OP(cl_khr_gl_msaa_sharing)
-  _SPRV_OP(cl_khr_depth_images)
-  _SPRV_OP(cl_khr_gl_depth_images)
-  _SPRV_OP(cl_khr_subgroups)
-  _SPRV_OP(cl_khr_mipmap_image)
-  _SPRV_OP(cl_khr_mipmap_image_writes)
-  _SPRV_OP(cl_khr_egl_event)
-  _SPRV_OP(cl_khr_srgb_image_writes)
-#undef _SPRV_OP
+/// Additional information for mangling a function argument type.
+struct BuiltinArgTypeMangleInfo {
+  bool IsSigned;
+  bool IsVoidPtr;
+  bool IsEnum;
+  bool IsSampler;
+  bool IsAtomic;
+  SPIR::TypePrimitiveEnum Enum;
+  unsigned Attr;
+  BuiltinArgTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
+      IsSampler(false), IsAtomic(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
 };
 
-template<> inline void
-SPRVMap<OclExt::Kind, SPRVCapabilityKind>::init() {
-  add(OclExt::cl_images, CapabilityImageBasic);
-  add(OclExt::cl_doubles, CapabilityFloat64);
-  add(OclExt::cl_khr_int64_base_atomics, CapabilityInt64Atomics);
-  add(OclExt::cl_khr_int64_extended_atomics, CapabilityInt64Atomics);
-  add(OclExt::cl_khr_fp16, CapabilityFloat16);
-  add(OclExt::cl_khr_gl_sharing, CapabilityNone);
-  add(OclExt::cl_khr_gl_event, CapabilityNone);
-  add(OclExt::cl_khr_d3d10_sharing, CapabilityNone);
-  add(OclExt::cl_khr_media_sharing, CapabilityNone);
-  add(OclExt::cl_khr_d3d11_sharing, CapabilityNone);
-  add(OclExt::cl_khr_global_int32_base_atomics, CapabilityNone);
-  add(OclExt::cl_khr_global_int32_extended_atomics, CapabilityNone);
-  add(OclExt::cl_khr_local_int32_base_atomics, CapabilityNone);
-  add(OclExt::cl_khr_local_int32_extended_atomics, CapabilityNone);
-  add(OclExt::cl_khr_byte_addressable_store, CapabilityNone);
-  add(OclExt::cl_khr_3d_image_writes, CapabilityNone);
-  add(OclExt::cl_khr_gl_msaa_sharing, CapabilityNone);
-  add(OclExt::cl_khr_depth_images, CapabilityNone);
-  add(OclExt::cl_khr_gl_depth_images, CapabilityNone);
-  add(OclExt::cl_khr_subgroups, CapabilityGroups);
-  add(OclExt::cl_khr_mipmap_image, CapabilityImageMipmap);
-  add(OclExt::cl_khr_mipmap_image_writes, CapabilityImageMipmap);
-  add(OclExt::cl_khr_egl_event, CapabilityNone);
-  add(OclExt::cl_khr_srgb_image_writes, CapabilityImageSRGBWrite);
+/// Information for mangling builtin function.
+class BuiltinFuncMangleInfo {
+public:
+  /// Translate builtin function name and set
+  /// argument attributes and unsigned args.
+  BuiltinFuncMangleInfo(const std::string &UniqName = "") {
+    if (!UniqName.empty())
+      init(UniqName);
+  }
+  virtual ~BuiltinFuncMangleInfo(){}
+  const std::string &getUnmangledName() const { return UnmangledName;}
+  void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
+  void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
+  void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}
+  void addAtomicArg(int Ndx) { AtomicArgs.insert(Ndx);}
+  void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
+    EnumArgs[Ndx] = Enum;}
+  void setArgAttr(int Ndx, unsigned Attr) {
+    Attrs[Ndx] = Attr;}
+  bool isArgUnsigned(int Ndx) {
+    return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);}
+  bool isArgVoidPtr(int Ndx) {
+    return VoidPtrArgs.count(-1) || VoidPtrArgs.count(Ndx);}
+  bool isArgSampler(int Ndx) {
+    return SamplerArgs.count(Ndx);}
+  bool isArgAtomic(int Ndx) {
+    return AtomicArgs.count(Ndx);}
+  bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
+    auto Loc = EnumArgs.find(Ndx);
+    if (Loc == EnumArgs.end())
+      Loc = EnumArgs.find(-1);
+    if (Loc == EnumArgs.end())
+      return false;
+    if (Enum)
+      *Enum = Loc->second;
+    return true;
+  }
+  unsigned getArgAttr(int Ndx) {
+    auto Loc = Attrs.find(Ndx);
+    if (Loc == Attrs.end())
+      Loc = Attrs.find(-1);
+    if (Loc == Attrs.end())
+      return 0;
+    return Loc->second;
+  }
+  BuiltinArgTypeMangleInfo getTypeMangleInfo(int Ndx) {
+    BuiltinArgTypeMangleInfo Info;
+    Info.IsSigned = !isArgUnsigned(Ndx);
+    Info.IsVoidPtr = isArgVoidPtr(Ndx);
+    Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
+    Info.IsSampler = isArgSampler(Ndx);
+    Info.IsAtomic = isArgAtomic(Ndx);
+    Info.Attr = getArgAttr(Ndx);
+    return Info;
+  }
+  virtual void init(const std::string &UniqUnmangledName){
+    UnmangledName = UniqUnmangledName;
+  }
+protected:
+  std::string UnmangledName;
+  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
+  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
+                              // pointer
+  std::set<int> SamplerArgs;  // sampler arguments
+  std::set<int> AtomicArgs;   // atomic arguments
+  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
+  std::map<int, unsigned> Attrs;                   // argument attributes
 };
 
 /// \returns a vector of types for a collection of values.
@@ -659,11 +475,23 @@ PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
 void getFunctionTypeParameterTypes(llvm::FunctionType* FT,
     std::vector<Type*>& ArgTys);
 Function *getOrCreateFunction(Module *M, Type *RetTy,
-    ArrayRef<Type *> ArgTypes, StringRef Name, bool Mangle = false,
+    ArrayRef<Type *> ArgTypes, StringRef Name,
+    BuiltinFuncMangleInfo *Mangle = nullptr,
     AttributeSet *Attrs = nullptr, bool takeName = true);
 
-std::vector<Value *> getArguments(CallInst* CI);
-uint64_t getArgInt(CallInst *CI, unsigned I);
+/// Get function call arguments.
+/// \param Start Starting index.
+/// \param End Ending index.
+std::vector<Value *> getArguments(CallInst* CI, unsigned Start = 0,
+    unsigned End = 0);
+
+/// Get constant function call argument as an integer.
+/// \param I argument index.
+uint64_t getArgAsInt(CallInst *CI, unsigned I);
+
+/// Get constant function call argument as a Scope enum.
+/// \param I argument index.
+Scope getArgAsScope(CallInst *CI, unsigned I);
 
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
@@ -672,18 +500,37 @@ bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
 /// \return type name without "opencl." prefix.
 bool isOCLImageType(llvm::Type* Ty, StringRef *Name = nullptr);
 
+/// Decorate a function name as __spirv_{Name}_
 std::string decorateSPRVFunction(const std::string &S);
+
+/// Remove prefix/postfix from __spirv_{Name}_
 std::string undecorateSPRVFunction(const std::string &S);
-bool isSPRVFunction(const Function *F, std::string *UndecName = nullptr);
+
+/// Check if a function has decorated name as __spirv_{Name}_
+/// and get the original name.
+bool isDecoratedSPRVFunc(const Function *F, std::string *UndecName = nullptr);
 
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPRVFuncName(Op OC, StringRef PostFix = "");
 
+/// Get a canonical function name for a SPIR-V extended instruction
+std::string getSPRVExtFuncName(SPRVExtInstSetKind Set, unsigned ExtOp,
+    StringRef PostFix = "");
+
 /// Get SPIR-V op code given the canonical function name.
+/// Assume \param Name is either IA64 mangled or unmangled, and the unmangled
+/// name takes the __spirv_{OpName}_{Postfixes} format.
+/// \return op code if the unmangled function name is a valid op code name,
+///   otherwise return OpNop.
 /// \param Dec contains decorations decoded from function name if it is
-///        not nullptr.
-Op getSPRVFuncOC(const std::string& S,
+///   not nullptr.
+Op getSPRVFuncOC(const std::string& Name,
     SmallVectorImpl<std::string> *Dec = nullptr);
+
+/// Get SPIR-V builtin variable enum given the canonical builtin name
+/// Assume \param Name is in format __spirv_BuiltIn{Name}
+/// \return spv::BuiltInCount if \param Name is not a valid builtin name.
+spv::BuiltIn getSPRVBuiltin(const std::string &Name);
 
 /// \param Name LLVM function name
 /// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
@@ -693,6 +540,9 @@ Op getSPRVFuncOC(const std::string& S,
 /// false for other functions
 bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12,
     std::string* DemangledName = nullptr);
+
+/// Check if a function type is void(void).
+bool isVoidFuncTy(FunctionType *FT);
 
 /// \returns true if \p T is a function pointer type.
 bool isFunctionPointerType(Type *T);
@@ -709,7 +559,8 @@ bool hasArrayArg(Function *F);
 /// \return mutated call instruction.
 CallInst *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = false);
+    BuiltinFuncMangleInfo *Mangle = nullptr, AttributeSet *Attrs = nullptr,
+    bool takeName = false);
 
 /// Mutates function call instruction by changing the arguments and return
 /// value.
@@ -720,19 +571,44 @@ Instruction *mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = false);
+    BuiltinFuncMangleInfo *Mangle = nullptr, AttributeSet *Attrs = nullptr,
+    bool takeName = false);
+
+/// Mutate call instruction to call SPIR-V builtin function.
+CallInst *
+mutateCallInstSPRV(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    AttributeSet *Attrs = nullptr);
+
+/// Mutate call instruction to call SPIR-V builtin function.
+Instruction *
+mutateCallInstSPRV(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &,
+        Type *&RetTy)> ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
+    AttributeSet *Attrs = nullptr);
 
 /// Mutate function by change the arguments.
 /// \param ArgMutate mutates the function arguments.
+/// \param TakeName Take the original function's name if a new function with
+///   different type needs to be created.
 void mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle = false, AttributeSet *Attrs = nullptr, bool takeName = true);
+    BuiltinFuncMangleInfo *Mangle = nullptr, AttributeSet *Attrs = nullptr,
+    bool TakeName = true);
 
 /// Add a call instruction at \p Pos.
 CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
     ArrayRef<Value *> Args, AttributeSet *Attrs, Instruction *Pos,
-    bool Mangle = false, StringRef InstName = SPIR_TEMP_NAME_PREFIX_CALL,
+    BuiltinFuncMangleInfo *Mangle = nullptr,
+    StringRef InstName = SPIR_TEMP_NAME_PREFIX_CALL,
     bool TakeFuncName = true);
+
+/// Add a call instruction for SPIR-V builtin function.
+CallInst *
+addCallInstSPRV(Module *M, StringRef FuncName, Type *RetTy,
+    ArrayRef<Value *> Args,
+    AttributeSet *Attrs, Instruction *Pos, StringRef InstName);
 
 /// Add a call of spir_block_bind function.
 CallInst *
@@ -740,11 +616,26 @@ addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
     Value *CtxAlign, Instruction *InsPos,
     StringRef InstName = SPIR_TEMP_NAME_PREFIX_BLOCK);
 
+/// Get size_t type.
+IntegerType *getSizetType(Module *M);
+
+/// Get void(void) function type.
+Type *getVoidFuncType(Module *M);
+
+/// Get void(void) function pointer type.
+Type *getVoidFuncPtrType(Module *M, unsigned AddrSpace = 0);
+
 /// Get a 64 bit integer constant.
 ConstantInt *getInt64(Module *M, int64_t value);
 
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
+
+/// Get a 32 bit integer constant vector.
+std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);
+
+/// Get a size_t type constant.
+ConstantInt *getSizet(Module *M, uint64_t value);
 
 /// Map an unsigned integer constant by applying a function.
 ConstantInt *mapUInt(Module *M, ConstantInt *I,
@@ -781,6 +672,13 @@ getSPRVSampledImageType(Module *M, Type *ImageType);
 bool
 eraseUselessFunctions(Module *M);
 
+/// Erase a function if it is declaration, has internal linkage and has no use.
+bool
+eraseIfNoUse(Function *F);
+
+void
+eraseIfNoUse(Value *V);
+
 // Check if a mangled type name is unsigned
 bool
 isMangledTypeUnsigned(char Mangled);
@@ -792,6 +690,21 @@ isLastFuncParamSigned(const std::string& MangledName);
 // Check if a mangled function name contains unsigned atomic type
 bool
 containsUnsignedAtomicType(StringRef Name);
+
+/// Mangle builtin function name.
+/// \return \param UniqName if \param BtnInfo is null pointer, otherwise
+///    return IA64 mangled name.
+std::string
+mangleBuiltin(const std::string &UniqName,
+    ArrayRef<Type*> ArgTypes, BuiltinFuncMangleInfo* BtnInfo);
+
+/// Remove cast from a value.
+Value *
+removeCast(Value *V);
+
+/// Cast a function to a void(void) funtion pointer.
+Constant *
+castToVoidFuncPtr(Function *F);
 
 }
 namespace llvm {

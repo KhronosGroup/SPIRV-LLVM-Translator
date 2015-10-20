@@ -146,7 +146,7 @@ SPRVToOCL20::visitCallInst(CallInst& CI) {
 
 void SPRVToOCL20::visitCallSPRVMemoryBarrier(CallInst* CI) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     auto getArg = [=](unsigned I){
       return cast<ConstantInt>(Args[I])->getZExtValue();
     };
@@ -157,12 +157,12 @@ void SPRVToOCL20::visitCallSPRVMemoryBarrier(CallInst* CI) {
     Args[1] = getInt32(M, Sema.second);
     Args[2] = getInt32(M, rmap<OCLScopeKind>(MScope));
     return kOCLBuiltinName::AtomicWorkItemFence;
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 void SPRVToOCL20::visitCallSPRVAtomicBuiltin(CallInst* CI, Op OC) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     auto Ptr = findFirstPtr(Args);
     auto Name = OCLSPRVBuiltinMap::rmap(OC);
     auto NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Name);
@@ -184,14 +184,14 @@ void SPRVToOCL20::visitCallSPRVAtomicBuiltin(CallInst* CI, Op OC) {
       move(Args, OrderIdx, ScopeIdx + 1, Args.size());
     }
     return Name;
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 void SPRVToOCL20::visitCallSPRVBuiltin(CallInst* CI, Op OC) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     return OCLSPRVBuiltinMap::rmap(OC);
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 void SPRVToOCL20::translateMangledAtomicTypeName() {

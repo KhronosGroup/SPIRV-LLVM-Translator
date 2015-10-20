@@ -52,6 +52,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 
 namespace SPRV{
 
@@ -174,21 +175,28 @@ private:
 
 class SPRVInstTemplateBase:public SPRVInstruction {
 public:
-  // Instruction with Id
+  /// Create an empty instruction. Mainly for getting format information,
+  /// e.g. whether an operand is literal.
+  static SPRVInstTemplateBase *create(Op TheOC){
+    auto Inst = static_cast<SPRVInstTemplateBase *>(SPRVEntry::create(TheOC));
+    Inst->init();
+    return Inst;
+  }
+  /// Create a instruction without operands.
+  static SPRVInstTemplateBase *create(Op TheOC, SPRVType *TheType,
+      SPRVId TheId, SPRVBasicBlock *TheBB,
+      SPRVModule *TheModule){
+    auto Inst = create(TheOC);
+    Inst->init(TheType, TheId, TheBB, TheModule);
+    return Inst;
+  }
+  /// Create a complete and valid instruction.
   static SPRVInstTemplateBase *create(Op TheOC, SPRVType *TheType,
       SPRVId TheId, const std::vector<SPRVWord> &TheOps, SPRVBasicBlock *TheBB,
       SPRVModule *TheModule){
-    auto Inst = static_cast<SPRVInstTemplateBase *>(SPRVEntry::create(TheOC));
-    Inst->init();
-    assert((TheBB || TheModule) && "Invalid BB or Module");
-    if (TheBB)
-      Inst->setBasicBlock(TheBB);
-    else {
-      Inst->setModule(TheModule);
-    }
+    auto Inst = create(TheOC);
+    Inst->init(TheType, TheId, TheBB, TheModule);
     Inst->setOpWords(TheOps);
-    Inst->setId(Inst->hasId() ? TheId : SPRVID_INVALID);
-    Inst->setType(Inst->hasType() ? TheType : nullptr);
     Inst->validate();
     return Inst;
   }
@@ -197,9 +205,23 @@ public:
     init();
   }
   virtual ~SPRVInstTemplateBase(){}
+  SPRVInstTemplateBase *init(SPRVType *TheType,
+      SPRVId TheId, SPRVBasicBlock *TheBB,
+      SPRVModule *TheModule){
+    assert((TheBB || TheModule) && "Invalid BB or Module");
+    if (TheBB)
+      setBasicBlock(TheBB);
+    else {
+      setModule(TheModule);
+    }
+    setId(hasId() ? TheId : SPRVID_INVALID);
+    setType(hasType() ? TheType : nullptr);
+    return this;
+  }
   virtual void init() {}
   virtual void initImpl(Op OC, bool HasId = true, SPRVWord WC = 0,
-      bool VariWC = false){
+      bool VariWC = false, unsigned Lit1 = ~0U,
+      unsigned Lit2 = ~0U, unsigned Lit3 = ~0U){
     OpCode = OC;
     if (!HasId) {
       setHasNoId();
@@ -208,6 +230,16 @@ public:
     if (WC)
       SPRVEntry::setWordCount(WC);
     setHasVariableWordCount(VariWC);
+    addLit(Lit1);
+    addLit(Lit2);
+    addLit(Lit3);
+  }
+  virtual bool isOperandLiteral(unsigned I) const {
+    return Lit.count(I);
+  }
+  void addLit(unsigned L) {
+    if (L != ~0U)
+      Lit.insert(L);
   }
   /// \return Expected number of operands. If the instruction has variable
   /// number of words, return the minimum.
@@ -219,6 +251,10 @@ public:
     if (hasType())
       --Exp;
     return Exp;
+  }
+  virtual void setOpWordsAndValidate(const std::vector<SPRVWord> &TheOps) {
+    setOpWords(TheOps);
+    validate();
   }
   virtual void setOpWords(const std::vector<SPRVWord> &TheOps) {
     SPRVWord WC = TheOps.size() + 1;
@@ -302,7 +338,8 @@ public:
   Scope getExecutionScope() const {
     if(!hasExecScope())
       return ScopeInvocation;
-    return static_cast<Scope>(Ops[0]);
+    return static_cast<Scope>(
+        static_cast<SPRVConstant*>(getValue(Ops[0]))->getZExtIntValue());
   }
 
   bool hasVariableWordCount() const {
@@ -332,21 +369,26 @@ protected:
   }
   std::vector<SPRVWord> Ops;
   bool HasVariWC;
+  std::unordered_set<unsigned> Lit; // Literal operand index
 };
 
 template<typename BT        = SPRVInstTemplateBase,
-         Op OC      = OpNop,
+         Op OC              = OpNop,
          bool HasId         = true,
          SPRVWord WC        = 0,
-         bool HasVariableWC = false>
+         bool HasVariableWC = false,
+         unsigned Literal1  = ~0U,
+         unsigned Literal2  = ~0U,
+         unsigned Literal3  = ~0U>
 class SPRVInstTemplate:public BT {
 public:
   typedef BT BaseTy;
   SPRVInstTemplate(){
     init();
   }
+  virtual ~SPRVInstTemplate(){}
   virtual void init() {
-    this->initImpl(OC, HasId, WC, HasVariableWC);
+    this->initImpl(OC, HasId, WC, HasVariableWC, Literal1, Literal2, Literal3);
   }
 };
 
@@ -1112,13 +1154,14 @@ class SPRVFunctionCall:
     public SPRVFunctionCallGeneric<OpFunctionCall, 4> {
 public:
   SPRVFunctionCall(SPRVId TheId, SPRVFunction *TheFunction,
-      const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB);
+      const std::vector<SPRVWord> &TheArgs, SPRVBasicBlock *BB);
   SPRVFunctionCall():FunctionId(SPRVID_INVALID) {}
   SPRVFunction *getFunction()const {
     return get<SPRVFunction>(FunctionId);
   }
   _SPRV_DEF_ENCDEC4(Type, Id, FunctionId, Args)
   void validate()const;
+  bool isOperandLiteral(unsigned Index) const { return false;}
 protected:
   SPRVId FunctionId;
 };
@@ -1129,30 +1172,39 @@ public:
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVWord> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     ExtInstSet(TheBuiltinSet),
+     ExtSetId(TheBuiltinSet),
      ExtOp(TheEntryPoint) {
+    setExtSetKindById();
     validate();
   }
   SPRVExtInst(SPRVType *TheType, SPRVId TheId,
       SPRVId TheBuiltinSet, SPRVWord TheEntryPoint,
       const std::vector<SPRVValue *> &TheArgs, SPRVBasicBlock *BB)
     :SPRVFunctionCallGeneric(TheType, TheId, TheArgs, BB),
-     ExtInstSet(TheBuiltinSet),
+     ExtSetId(TheBuiltinSet),
      ExtOp(TheEntryPoint) {
+    setExtSetKindById();
     validate();
   }
-  SPRVExtInst(): ExtInstSet(SPRVWORD_MAX),
-      ExtOp(SPRVWORD_MAX) {}
-  SPRVId getBuiltinSet()const {
-    return ExtInstSet;
+  SPRVExtInst(SPRVExtInstSetKind SetKind = SPRVEIS_Count,
+      unsigned ExtOC = SPRVWORD_MAX)
+    :ExtSetId(SPRVWORD_MAX), ExtOp(ExtOC), ExtSetKind(SetKind) {}
+  void setExtSetId(unsigned Set) { ExtSetId = Set;}
+  void setExtOp(unsigned ExtOC) { ExtOp = ExtOC;}
+  SPRVId getExtSetId()const {
+    return ExtSetId;
   }
-  SPRVWord getEntryPoint()const {
+  SPRVWord getExtOp()const {
     return ExtOp;
   }
-
+  void setExtSetKindById() {
+    assert(Module && "Invalid module");
+    ExtSetKind = Module->getBuiltinSet(ExtSetId);
+    assert(ExtSetKind == SPRVEIS_OpenCL && "not supported");
+  }
   void encode(std::ostream &O) const {
-    getEncoder(O) << Type << Id << ExtInstSet;
-    switch(Module->getBuiltinSet(ExtInstSet)) {
+    getEncoder(O) << Type << Id << ExtSetId;
+    switch(ExtSetKind) {
     case SPRVEIS_OpenCL:
       getEncoder(O) << ExtOpOCL;
       break;
@@ -1163,8 +1215,9 @@ public:
     getEncoder(O) << Args;
   }
   void decode(std::istream &I) {
-    getDecoder(I) >> Type >> Id >> ExtInstSet;
-    switch(Module->getBuiltinSet(ExtInstSet)) {
+    getDecoder(I) >> Type >> Id >> ExtSetId;
+    setExtSetKindById();
+    switch(ExtSetKind) {
     case SPRVEIS_OpenCL:
       getDecoder(I) >> ExtOpOCL;
       break;
@@ -1176,14 +1229,32 @@ public:
   }
   void validate()const {
     SPRVFunctionCallGeneric::validate();
-    validateBuiltin(ExtInstSet, ExtOp);
+    validateBuiltin(ExtSetId, ExtOp);
+  }
+  bool isOperandLiteral(unsigned Index) const {
+    assert(ExtSetKind == SPRVEIS_OpenCL &&
+        "Unsupported extended instruction set");
+    auto EOC = static_cast<OCLExtOpKind>(ExtOp);
+    switch(EOC) {
+    default:
+      return false;
+    case OpenCLLIB::Vloadn:
+    case OpenCLLIB::Vload_halfn:
+    case OpenCLLIB::Vloada_halfn:
+      return Index == 2;
+    case OpenCLLIB::Vstore_half_r:
+    case OpenCLLIB::Vstore_halfn_r:
+    case OpenCLLIB::Vstorea_halfn_r:
+      return Index == 3;
+    }
   }
 protected:
-  SPRVId ExtInstSet;
+  SPRVId ExtSetId;
   union {
     SPRVWord ExtOp;
     OCLExtOpKind ExtOpOCL;
   };
+  SPRVExtInstSetKind ExtSetKind;
 };
 
 class SPRVCompositeExtract:public SPRVInstruction {
@@ -1684,14 +1755,14 @@ _SPRV_OP(WaitGroupEvents, false, 4)
 _SPRV_OP(GroupAll, true, 5)
 _SPRV_OP(GroupAny, true, 5)
 _SPRV_OP(GroupBroadcast, true, 6)
-_SPRV_OP(GroupIAdd, true, 6)
-_SPRV_OP(GroupFAdd, true, 6)
-_SPRV_OP(GroupFMin, true, 6)
-_SPRV_OP(GroupUMin, true, 6)
-_SPRV_OP(GroupSMin, true, 6)
-_SPRV_OP(GroupFMax, true, 6)
-_SPRV_OP(GroupUMax, true, 6)
-_SPRV_OP(GroupSMax, true, 6)
+_SPRV_OP(GroupIAdd, true, 6, false, 1)
+_SPRV_OP(GroupFAdd, true, 6, false, 1)
+_SPRV_OP(GroupFMin, true, 6, false, 1)
+_SPRV_OP(GroupUMin, true, 6, false, 1)
+_SPRV_OP(GroupSMin, true, 6, false, 1)
+_SPRV_OP(GroupFMax, true, 6, false, 1)
+_SPRV_OP(GroupUMax, true, 6, false, 1)
+_SPRV_OP(GroupSMax, true, 6, false, 1)
 _SPRV_OP(GroupReserveReadPipePackets, true, 8)
 _SPRV_OP(GroupReserveWritePipePackets, true, 8)
 _SPRV_OP(GroupCommitReadPipe, false, 6)

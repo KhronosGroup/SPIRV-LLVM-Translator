@@ -88,9 +88,24 @@ public:
   bool eraseUselessConvert(CallInst *Call, const std::string &MangledName,
       const std::string &DeMangledName);
 
-  /// Transform convert_ to __spirv_{CastOpName}_R{TargeTyName}{_sat}{_rt[p|n|z|e]}
-  void visistCallConvert(CallInst *CI, StringRef MangledName,
+  /// Transform convert_ to
+  ///   __spirv_{CastOpName}_R{TargeTyName}{_sat}{_rt[p|n|z|e]}
+  void visitCallConvert(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
+
+  /// Transform async_work_group{_strided}_copy.
+  /// async_work_group_copy(dst, src, n, event)
+  ///   => async_work_group_strided_copy(dst, src, n, 1, event)
+  /// async_work_group_strided_copy(dst, src, n, stride, event)
+  ///   => __spirv_AsyncGroupCopy(ScopeWorkGroup, dst, src, n, stride, event)
+  void visitCallAsyncWorkGroupCopy(CallInst *CI,
+      const std::string &DemangledName);
+
+  /// Transform OCL builtin function to SPIR-V builtin function.
+  void transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info);
+
+  /// Transform OCL work item builtin functions to SPIR-V builtin variables.
+  void transWorkItemBuiltinsToVariables();
 
   /// Transform atomic_work_item_fence/mem_fence to __spirv_MemoryBarrier.
   /// func(flag, order, scope) =>
@@ -113,7 +128,8 @@ public:
   /// adds an alloca instruction, store the expected value in the pointer, and
   /// pass the pointer as argument.
   /// \returns the call instruction of atomic_compare_exchange_strong.
-  CallInst *visitCallAtomicCmpXchg(CallInst *CI, const std::string &DemangledName);
+  CallInst *visitCallAtomicCmpXchg(CallInst *CI,
+      const std::string &DemangledName);
 
   /// Transform atomic_init.
   /// atomic_init(p, x) => store p, x
@@ -131,11 +147,22 @@ public:
   void visitCallAtomicCpp11(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
 
+  /// Transform OCL builtin function to SPIR-V builtin function.
+  /// Assuming there is a simple name mapping without argument changes.
+  /// Should be called at last.
+  void visitCallBuiltinSimple(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
+
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
   ///   dimension = __spirv_ImageQuerySizeLod(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
+
+  /// Transform {work|sub}_group_x =>
+  ///   __spirv_{OpName}
+  void visitCallGroupBuiltin(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
 
   /// Transform mem_fence to __spirv_MemoryBarrier.
@@ -144,11 +171,26 @@ public:
 
   void visitCallNDRange(CallInst *CI, const std::string &DemangledName);
 
+  /// Transform OCL pipe builtin function to SPIR-V pipe builtin function.
+  void visitCallPipeBuiltin(CallInst *CI, StringRef MangledName,
+    const std::string &DemangledName);
+
   /// Transform read_image with sampler arguments.
   /// read_image(image, sampler, ...) =>
-  ///   sampled_image = __spirv_SampledImage__(image, sampler);
-  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
-  void visitCallReadImage(CallInst *CI, StringRef MangledName,
+  ///   sampled_image = __spirv_SampledImage(image, sampler);
+  ///   return __spirv_ImageSampleExplicitLod(sampled_image, ...);
+  void visitCallReadImageWithSampler(CallInst *CI, StringRef MangledName,
+      const std::string &DemangledName);
+
+  /// Transform {read|write}_image without sampler arguments.
+  void visitCallReadWriteImage(CallInst *CI, StringRef MangledName,
+      const std::string &DemangledName);
+
+  /// Transform vector load/store functions to SPIR-V extended builtin
+  ///   functions
+  /// {vload|vstore{a}}{_half}{n}{_rte|_rtz|_rtp|_rtn} =>
+  ///   __spirv_ocl_{ExtendedInstructionOpCodeName}
+  void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
@@ -164,6 +206,51 @@ private:
   ConstantInt *addInt32(int I) {
     return getInt32(M, I);
   }
+  ConstantInt *addSizet(uint64_t I) {
+    return getSizet(M, I);
+  }
+
+  /// Get vector width from OpenCL vload* function name.
+  SPRVWord getVecLoadWidth(const std::string& DemangledName) {
+    SPRVWord Width = 0;
+    if (DemangledName == "vloada_half")
+      Width = 1;
+    else {
+      unsigned Loc = 5;
+      if (DemangledName.find("vload_half") == 0)
+        Loc = 10;
+      else if (DemangledName.find("vloada_half") == 0)
+        Loc = 11;
+
+      std::stringstream SS(DemangledName.substr(Loc));
+      SS >> Width;
+    }
+    return Width;
+  }
+
+  /// Transform OpenCL vload/vstore function name.
+  void transVecLoadStoreName(std::string& DemangledName,
+      const std::string &Stem, bool AlwaysN) {
+    auto HalfStem = Stem + "_half";
+    auto HalfStemR = HalfStem + "_r";
+    if (!AlwaysN && DemangledName == HalfStem)
+      return;
+    if (!AlwaysN && DemangledName.find(HalfStemR) == 0) {
+      DemangledName = HalfStemR;
+      return;
+    }
+    if (DemangledName.find(HalfStem) == 0) {
+      auto OldName = DemangledName;
+      DemangledName = HalfStem + "n";
+      if (OldName.find("_r") != std::string::npos)
+        DemangledName += "_r";
+      return;
+    }
+    if (DemangledName.find(Stem) == 0) {
+      DemangledName = Stem + "n";
+      return;
+    }
+  }
 
 };
 
@@ -177,6 +264,9 @@ bool
 SPRVRegularizeOCL20::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
+
+  transWorkItemBuiltinsToVariables();
+
   visit(*M);
 
   for (auto &I:ValuesToDelete)
@@ -196,6 +286,9 @@ SPRVRegularizeOCL20::runOnModule(Module& Module) {
   return true;
 }
 
+// The order of handling OCL builtin functions is important.
+// Workgroup functions need to be handled before pipe functions since
+// there are functions fall into both categories.
 void
 SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
@@ -210,6 +303,11 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "DemangledName == " << DemangledName.c_str() << '\n');
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
     visitCallNDRange(&CI, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::AsyncWorkGroupCopy) == 0 ||
+      DemangledName.find(kOCLBuiltinName::AsyncWorkGroupStridedCopy) == 0) {
+    visitCallAsyncWorkGroupCopy(&CI, DemangledName);
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::AtomicPrefix) == 0 ||
@@ -232,7 +330,7 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::ConvertPrefix) == 0) {
-    visistCallConvert(&CI, MangledName, DemangledName);
+    visitCallConvert(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::GetImageWidth ||
@@ -242,12 +340,34 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
     visitCallGetImageSize(&CI, MangledName, DemangledName);
     return;
   }
+  if ((DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0 &&
+      DemangledName != kOCLBuiltinName::WorkGroupBarrier) ||
+      DemangledName == kOCLBuiltinName::WaitGroupEvent ||
+      DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
+    visitCallGroupBuiltin(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::Pipe) != std::string::npos) {
+    visitCallPipeBuiltin(&CI, MangledName, DemangledName);
+    return;
+  }
   if (DemangledName == kOCLBuiltinName::MemFence) {
     visitCallMemFence(&CI);
     return;
   }
-  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
-    visitCallReadImage(&CI, MangledName, DemangledName);
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0 &&
+      MangledName.find(kMangledName::Sampler) != StringRef::npos) {
+    visitCallReadImageWithSampler(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0 ||
+      DemangledName.find(kOCLBuiltinName::WriteImage) == 0) {
+    visitCallReadWriteImage(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 ||
+      DemangledName.find(kOCLBuiltinName::VStorePrefix) == 0) {
+    visitCallVecLoadStore(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
@@ -255,6 +375,7 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
     visitCallWorkGroupBarrier(&CI);
     return;
   }
+  visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
 
 
@@ -270,7 +391,7 @@ SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
   //   local work size
   // The arguments need to add missing members.
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     for (size_t I = 1, E = Args.size(); I != E; ++I)
       Args[I] = getScalarOrArray(Args[I], Len, CI);
     switch (Args.size()) {
@@ -294,8 +415,21 @@ SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
     default:
       assert(0 && "Invalid number of arguments");
     }
-    return DemangledName;
-  }, true, &Attrs);
+    return getSPRVFuncName(OpBuildNDRange);
+  }, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallAsyncWorkGroupCopy(CallInst* CI,
+    const std::string &DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    if (DemangledName == OCLUtil::kOCLBuiltinName::AsyncWorkGroupCopy) {
+      Args.insert(Args.begin()+3, addSizet(1));
+    }
+    Args.insert(Args.begin(), addInt32(ScopeWorkgroup));
+    return getSPRVFuncName(OpAsyncGroupCopy);
+  }, &Attrs);
 }
 
 CallInst *
@@ -304,7 +438,7 @@ SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   Value *Alloca = nullptr;
   CallInst *NewCI = nullptr;
-  mutateCallInst(M, CI, [&](CallInst *, std::vector<Value *> &Args,
+  mutateCallInstOCL(M, CI, [&](CallInst *, std::vector<Value *> &Args,
       Type *&RetTy){
     auto &CmpVal = Args[1];
     Alloca = new AllocaInst(CmpVal->getType(), "",
@@ -312,13 +446,13 @@ SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
     auto Store = new StoreInst(CmpVal, Alloca, CI);
     CmpVal = Alloca;
     RetTy = Type::getInt1Ty(*Ctx);
-    return "atomic_compare_exchange_strong";
+    return kOCLBuiltinName::AtomicCmpXchgStrong;
   },
   [&](CallInst *NCI)->Instruction * {
     NewCI = NCI;
     return new LoadInst(Alloca, "", false, NCI->getNextNode());
   },
-  true, &Attrs);
+  &Attrs);
   return NewCI;
 }
 
@@ -346,13 +480,13 @@ SPRVRegularizeOCL20::visitCallMemFence(CallInst* CI) {
 void SPRVRegularizeOCL20::transMemoryBarrier(CallInst* CI,
     AtomicWorkItemFenceLiterals Lit) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.resize(2);
     Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
     Args[1] = addInt32(mapOCLMemSemanticToSPRV(std::get<0>(Lit),
         std::get<1>(Lit)));
     return getSPRVFuncName(OpMemoryBarrier);
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 void
@@ -465,7 +599,7 @@ void
 SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
     OCLBuiltinTransInfo& Info) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Info.PostProc(Args);
     auto NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Info.UniqName);
     auto ScopeIdx = Args.size() - 1;
@@ -481,23 +615,23 @@ SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
     });
     move(Args, OrderIdx, Args.size(), findFirstPtr(Args) + 1);
     return getSPRVFuncName(OCLSPRVBuiltinMap::map(Info.UniqName));
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 void
 SPRVRegularizeOCL20::visitCallWorkGroupBarrier(CallInst* CI) {
   auto Lit = getWorkGroupBarrierLiterals(CI);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.resize(3);
     Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
     Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
     Args[2] = addInt32(mapOCLMemFenceFlagToSPRV(std::get<0>(Lit)));
     return getSPRVFuncName(OpControlBarrier);
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
-void SPRVRegularizeOCL20::visistCallConvert(CallInst* CI,
+void SPRVRegularizeOCL20::visitCallConvert(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   if (eraseUselessConvert(CI, MangledName, DemangledName))
     return;
@@ -544,29 +678,118 @@ void SPRVRegularizeOCL20::visistCallConvert(CallInst* CI,
     Rounding = DemangledName.substr(Loc, 4);
   }
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     return getSPRVFuncName(OC, TargetTyName + Sat + Rounding);
-  }, true, &Attrs);
+  }, &Attrs);
+}
+
+void SPRVRegularizeOCL20::visitCallGroupBuiltin(CallInst* CI,
+    StringRef MangledName, const std::string& OrigDemangledName) {
+  auto F = CI->getCalledFunction();
+  std::vector<int> PreOps;
+  std::string DemangledName = OrigDemangledName;
+  if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
+    return;
+  if (DemangledName == kOCLBuiltinName::WaitGroupEvent) {
+    PreOps.push_back(ScopeWorkgroup);
+  } else if (DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::WorkPrefix));
+    PreOps.push_back(ScopeWorkgroup);
+  } else if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
+    DemangledName.erase(0, strlen(kOCLBuiltinName::SubPrefix));
+    PreOps.push_back(ScopeSubgroup);
+  } else
+    return;
+
+  if (DemangledName != kOCLBuiltinName::WaitGroupEvent) {
+    StringRef GroupOp = DemangledName;
+    GroupOp = GroupOp.drop_front(strlen(kSPRVName::GroupPrefix));
+    SPIRSPRVGroupOperationMap::foreach_conditional([&](const std::string &S,
+        SPRVGroupOperationKind G){
+      if (!GroupOp.startswith(S))
+        return true; // continue
+      PreOps.push_back(G);
+      StringRef Op = GroupOp.drop_front(S.size() + 1);
+      assert(!Op.empty() && "Invalid OpenCL group builtin function");
+      char OpTyC = 0;
+      auto NeedSign = Op == "max" || Op == "min";
+      auto OpTy = F->getReturnType();
+      if (OpTy->isFloatingPointTy())
+        OpTyC = 'f';
+      else if (OpTy->isIntegerTy()) {
+        if (!NeedSign)
+          OpTyC = 'i';
+        else {
+          if (isLastFuncParamSigned(F->getName()))
+            OpTyC = 's';
+          else
+            OpTyC = 'u';
+        }
+      } else
+        llvm_unreachable("Invalid OpenCL group builtin argument type");
+
+      DemangledName = std::string(kSPRVName::GroupPrefix) + OpTyC + Op.str();
+      return false; // break out of loop
+    });
+  }
+  auto Consts = getInt32(M, PreOps);
+  OCLBuiltinTransInfo Info;
+  Info.UniqName = DemangledName;
+  Info.PostProc = [=](std::vector<Value *> &Ops){
+    Ops.insert(Ops.begin(), Consts.begin(), Consts.end());
+  };
+  transBuiltin(CI, Info);
 }
 
 void
-SPRVRegularizeOCL20::visitCallReadImage(CallInst* CI,
-    StringRef MangledName, const std::string& DemangledName) {
-  if (MangledName.find(kMangledName::Sampler) == StringRef::npos)
-    return;
+SPRVRegularizeOCL20::transBuiltin(CallInst* CI,
+    OCLBuiltinTransInfo& Info) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  Op OC = OpNop;
+  unsigned ExtOp = ~0U;
+  if (OCLSPRVBuiltinMap::find(Info.UniqName, &OC))
+    Info.UniqName = getSPRVFuncName(OC);
+  else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
+    Info.UniqName = getSPRVExtFuncName(SPRVEIS_OpenCL, ExtOp);
+  else
+    return;
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    Info.PostProc(Args);
+    return Info.UniqName;
+  }, &Attrs);
+}
+
+void
+SPRVRegularizeOCL20::visitCallPipeBuiltin(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  std::string NewName = DemangledName;
+  // Transform OpenCL read_pipe/write_pipe builtin function names
+  // with reserve_id argument to reserved_read_pipe/reserved_write_pipe.
+  if ((DemangledName.find(kOCLBuiltinName::ReadPipe) == 0 ||
+      DemangledName.find(kOCLBuiltinName::WritePipe) == 0)
+      && CI->getNumArgOperands() > 4)
+    NewName = std::string(kSPRVName::ReservedPrefix) + DemangledName;
+  OCLBuiltinTransInfo Info;
+  Info.UniqName = NewName;
+  transBuiltin(CI, Info);
+}
+
+void
+SPRVRegularizeOCL20::visitCallReadImageWithSampler(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  assert (MangledName.find(kMangledName::Sampler) != StringRef::npos);
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     auto SampledImgTy = getSPRVSampledImageType(M, Args[0]->getType());
     Value *SampledImgArgs[] = {Args[0], Args[1]};
-    auto SampledImg = addCallInst(M,
-        decorateSPRVFunction(kSPRVName::SampledImage), SampledImgTy,
-        SampledImgArgs, nullptr, CI, false, kSPRVName::TempSampledImage,
-        false);
+    auto SampledImg = addCallInstSPRV(M,
+        getSPRVFuncName(OpSampledImage), SampledImgTy,
+        SampledImgArgs, nullptr, CI, kSPRVName::TempSampledImage);
 
     Args[0] = SampledImg;
     Args.erase(Args.begin() + 1, Args.begin() + 2);
-    return decorateSPRVFunction(kSPRVName::ImageSampleExplicitLod);
-  }, false, &Attrs);
+    return getSPRVFuncName(OpImageSampleExplicitLod);
+  }, &Attrs);
 }
 
 void
@@ -575,7 +798,7 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   SPRVTypeImageDescriptor Desc;
   unsigned Dim = 0;
-  mutateCallInst(M, CI,
+  mutateCallInstSPRV(M, CI,
     [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
       assert(Args.size() == 1);
       StringRef TyName;
@@ -616,7 +839,7 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
       return ExtractElementInst::Create(NCI, getInt32(M, I), "",
           NCI->getNextNode());
     },
-  true, &Attrs);
+  &Attrs);
 }
 
 /// Remove trivial conversion functions
@@ -644,6 +867,118 @@ SPRVRegularizeOCL20::eraseUselessConvert(CallInst *CI,
     return true;
   }
   return false;
+}
+
+void
+SPRVRegularizeOCL20::visitCallBuiltinSimple(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  OCLBuiltinTransInfo Info;
+  Info.MangledName = MangledName.str();
+  Info.UniqName = DemangledName;
+  transBuiltin(CI, Info);
+}
+
+/// Translates OCL work-item builtin functions to SPIRV builtin variables.
+/// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
+/// Function like get_work_dim() -> load WorkDim
+void SPRVRegularizeOCL20::transWorkItemBuiltinsToVariables() {
+  std::vector<Function *> WorkList;
+  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
+    std::string DemangledName;
+    if (!oclIsBuiltin(I->getName(), 20, &DemangledName))
+      continue;
+    SPRVDBG(bildbgs() << "Function: demangled name: " << DemangledName <<
+        '\n');
+    std::string BuiltinVarName;
+    SPRVBuiltinVariableKind BVKind = BuiltInCount;
+    if (!SPIRSPRVBuiltinVariableMap::find(DemangledName, &BVKind))
+      continue;
+    BuiltinVarName = std::string(kSPRVName::Prefix) +
+        SPRVBuiltinVariableNameMap::map(BVKind);
+    SPRVDBG(bildbgs() << "builtin variable name: " << BuiltinVarName << '\n');
+    bool IsVec = I->getFunctionType()->getNumParams() > 0;
+    Type *GVType = IsVec ? VectorType::get(I->getReturnType(),3) :
+        I->getReturnType();
+    auto BV = new GlobalVariable(*M, GVType,
+        true,
+        GlobalValue::ExternalLinkage,
+        nullptr, BuiltinVarName,
+        0,
+        GlobalVariable::NotThreadLocal,
+        SPIRAS_Constant);
+    std::vector<Instruction *> InstList;
+    for (auto UI = I->user_begin(), UE = I->user_end(); UI != UE; ++UI) {
+      auto CI = dyn_cast<CallInst>(*UI);
+      assert(CI && "invalid instruction");
+      Value * NewValue = new LoadInst(BV, "", CI);
+      if (IsVec)
+        NewValue = ExtractElementInst::Create(NewValue,
+          CI->getArgOperand(0),
+          "", CI);
+      NewValue->takeName(CI);
+      SPRVDBG(dbgs() << "Replace: " << *CI << " <- " << *NewValue << '\n');
+      CI->replaceAllUsesWith(NewValue);
+      InstList.push_back(CI);
+    }
+    for (auto &Inst:InstList) {
+      Inst->dropAllReferences();
+      Inst->removeFromParent();
+    }
+    WorkList.push_back(I);
+  }
+  for (auto &I:WorkList) {
+    I->dropAllReferences();
+    I->removeFromParent();
+  }
+}
+
+void
+SPRVRegularizeOCL20::visitCallReadWriteImage(CallInst* CI,
+    StringRef MangledName, const std::string& DemangledName) {
+  OCLBuiltinTransInfo Info;
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0)
+    Info.UniqName = kOCLBuiltinName::ReadImage;
+
+  if (DemangledName.find(kOCLBuiltinName::WriteImage) == 0)
+    Info.UniqName = kOCLBuiltinName::WriteImage;
+  transBuiltin(CI, Info);
+}
+
+void
+SPRVRegularizeOCL20::visitCallVecLoadStore(CallInst* CI,
+    StringRef MangledName, const std::string& OrigDemangledName) {
+  std::vector<int> PreOps;
+  std::string DemangledName = OrigDemangledName;
+  if (DemangledName.find("vload") == 0 &&
+      DemangledName != "vload_half") {
+    SPRVWord Width = getVecLoadWidth(DemangledName);
+    SPRVDBG(bildbgs() << "[visitCallVecLoadStore] DemangledName: " <<
+        DemangledName << " Width: " << Width << '\n');
+    PreOps.push_back(Width);
+  } else if (DemangledName.find("_r") != std::string::npos) {
+    auto R = SPIRSPRVFPRoundingModeMap::map(DemangledName.substr(
+        DemangledName.find("_r") + 1, 3));
+    PreOps.push_back(R);
+  }
+
+  if (DemangledName.find("vloada") == 0)
+    transVecLoadStoreName(DemangledName, "vloada", true);
+  else
+    transVecLoadStoreName(DemangledName, "vload", false);
+
+  if (DemangledName.find("vstorea") == 0)
+    transVecLoadStoreName(DemangledName, "vstorea", true);
+  else
+    transVecLoadStoreName(DemangledName, "vstore", false);
+
+  auto Consts = getInt32(M, PreOps);
+  OCLBuiltinTransInfo Info;
+  Info.MangledName = MangledName;
+  Info.UniqName = DemangledName;
+  Info.PostProc = [=](std::vector<Value *> &Ops){
+    Ops.insert(Ops.end(), Consts.begin(), Consts.end());
+  };
+  transBuiltin(CI, Info);
 }
 
 }

@@ -39,6 +39,9 @@
 
 #include "SPRVInternal.h"
 #include "OCLUtil.h"
+#include "SPRVEntry.h"
+#include "SPRVFunction.h"
+#include "SPRVInstruction.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
@@ -65,9 +68,9 @@ ReservedIdAddrSpaceForOutput("spirv-reserved-id-addr-space",
 //
 ///////////////////////////////////////////////////////////////////////////////
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI) {
-  return std::make_tuple(getArgInt(CI, 0),
-    static_cast<OCLMemOrderKind>(getArgInt(CI, 1)),
-    static_cast<OCLScopeKind>(getArgInt(CI, 2)));
+  return std::make_tuple(getArgAsInt(CI, 0),
+    static_cast<OCLMemOrderKind>(getArgAsInt(CI, 1)),
+    static_cast<OCLScopeKind>(getArgAsInt(CI, 2)));
 }
 
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
@@ -79,9 +82,43 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
 WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI){
   auto N = CI->getNumArgOperands();
   assert (N == 1 || N == 3);
-  return std::make_tuple(getArgInt(CI, 0),
-    N == 1 ? OCLMS_work_group : static_cast<OCLScopeKind>(getArgInt(CI, 1)),
+  return std::make_tuple(getArgAsInt(CI, 0),
+    N == 1 ? OCLMS_work_group : static_cast<OCLScopeKind>(getArgAsInt(CI, 1)),
     OCLMS_work_group);
+}
+
+unsigned
+getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
+  std::string DemangledName = GivenDemangledName;
+  if (OrigName != "printf" && !oclIsBuiltin(OrigName, 20,
+      DemangledName.empty() ? &DemangledName : nullptr))
+    return ~0U;
+  if (OrigName == "printf" && DemangledName.empty())
+    DemangledName = OrigName;
+  DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
+  OCLExtOpKind EOC;
+  bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
+  if (!Found) {
+    std::string Prefix = isLastFuncParamSigned(OrigName) ? "s_" : "u_";
+    Found = OCLExtOpMap::rfind(Prefix + DemangledName, &EOC);
+  }
+  if (Found)
+    return EOC;
+  else
+    return ~0U;
+}
+
+std::unique_ptr<SPRVEntry>
+getSPRVInst(const OCLBuiltinTransInfo &Info) {
+  Op OC = OpNop;
+  unsigned ExtOp = ~0U;
+  SPRVEntry *Entry = nullptr;
+  if (OCLSPRVBuiltinMap::find(Info.UniqName, &OC))
+    Entry = SPRVEntry::create(OC);
+  else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
+    Entry = static_cast<SPRVEntry*>(
+        SPRVEntry::create_unique(SPRVEIS_OpenCL, ExtOp).get());
+  return std::unique_ptr<SPRVEntry>(Entry);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -143,6 +180,117 @@ getOCLOpaqueTypeAddrSpace(Op OpCode) {
   }
 }
 
+class OCLBuiltinFuncMangleInfo:public SPRV::BuiltinFuncMangleInfo {
+public:
+  OCLBuiltinFuncMangleInfo(){}
+  void init(const std::string &UniqName) {
+  UnmangledName = UniqName;
+  size_t Pos = std::string::npos;
 
+  if (UnmangledName.find("async_work_group") == 0) {
+    addUnsignedArg(-1);
+    setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("write_imageui") == 0)
+      addUnsignedArg(2);
+  else if (UnmangledName == "prefetch") {
+    addUnsignedArg(1);
+    setArgAttr(0, SPIR::ATTR_CONST);
+  }
+  else if (UnmangledName.find("get_") == 0 ||
+      UnmangledName.find("barrier") == 0 ||
+      UnmangledName.find("work_group_barrier") == 0 ||
+      UnmangledName == "nan" ||
+      UnmangledName == "mem_fence" ||
+      UnmangledName.find("shuffle") == 0){
+    addUnsignedArg(-1);
+    if (UnmangledName.find("get_fence") == 0){
+      setArgAttr(0, SPIR::ATTR_CONST);
+      addVoidPtrArg(0);
+    }
+  } else if (UnmangledName.find("atomic") == 0) {
+    setArgAttr(0, SPIR::ATTR_VOLATILE);
+    addAtomicArg(0);
+    if (UnmangledName.find("atomic_umax") == 0 ||
+        UnmangledName.find("atomic_umin") == 0) {
+      addUnsignedArg(0);
+      UnmangledName.erase(7, 1);
+    } else if (UnmangledName.find("atomic_fetch_umin") == 0 ||
+               UnmangledName.find("atomic_fetch_umax") == 0) {
+      addUnsignedArg(0);
+      UnmangledName.erase(13, 1);
+    }
+  } else if (UnmangledName.find("uconvert_") == 0) {
+    addUnsignedArg(0);
+    UnmangledName.erase(0, 1);
+  } else if (UnmangledName.find("s_") == 0) {
+    UnmangledName.erase(0, 2);
+  } else if (UnmangledName.find("u_") == 0) {
+    addUnsignedArg(-1);
+    UnmangledName.erase(0, 2);
+  } else if (UnmangledName == "capture_event_profiling_info") {
+    addVoidPtrArg(2);
+    setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
+  } else if (UnmangledName == "enqueue_kernel") {
+    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
+    addUnsignedArg(3);
+  } else if (UnmangledName == "enqueue_marker") {
+    setArgAttr(2, SPIR::ATTR_CONST);
+    addUnsignedArg(1);
+  } else if (UnmangledName.find("vload") == 0) {
+    addUnsignedArg(0);
+    setArgAttr(1, SPIR::ATTR_CONST);
+  } else if (UnmangledName.find("vstore") == 0 ){
+    addUnsignedArg(1);
+  } else if (UnmangledName.find("ndrange_") == 0) {
+    addUnsignedArg(-1);
+    if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
+      setArgAttr(-1, SPIR::ATTR_CONST);
+    }
+  } else if ((Pos = UnmangledName.find("umax")) != std::string::npos ||
+             (Pos = UnmangledName.find("umin")) != std::string::npos) {
+    addUnsignedArg(-1);
+    UnmangledName.erase(Pos, 1);
+  } else if (UnmangledName.find("broadcast") != std::string::npos)
+    addUnsignedArg(-1);
+  else if (UnmangledName.find(kOCLBuiltinName::SampledReadImage) == 0) {
+    UnmangledName.erase(0, strlen(kOCLBuiltinName::Sampled));
+    addSamplerArg(1);
+  }
+}
+};
+
+CallInst *
+mutateCallInstOCL(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    AttributeSet *Attrs) {
+  OCLBuiltinFuncMangleInfo BtnInfo;
+  return mutateCallInst(M, CI, ArgMutate, &BtnInfo, Attrs);
+}
+
+Instruction *
+mutateCallInstOCL(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &,
+        Type *&RetTy)> ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
+    AttributeSet *Attrs) {
+  OCLBuiltinFuncMangleInfo BtnInfo;
+  return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
+}
+
+void
+mutateFunctionOCL(Function *F,
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    AttributeSet *Attrs) {
+  OCLBuiltinFuncMangleInfo BtnInfo;
+  return mutateFunction(F, ArgMutate, &BtnInfo, Attrs, false);
+}
+
+} // namespace OCLUtil
+
+void
+llvm::MangleOpenCLBuiltin(const std::string &UniqName,
+    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
+  OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo;
+  MangledName = SPRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }
 
