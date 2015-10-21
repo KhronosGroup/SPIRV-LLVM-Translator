@@ -123,11 +123,11 @@ void OCL20To12::visitCallAtomicWorkItemFence(CallInst* CI) {
         false);
 
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.resize(1);
     Args[0] = getInt32(M, std::get<0>(Lit));
     return kOCLBuiltinName::MemFence;
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 }

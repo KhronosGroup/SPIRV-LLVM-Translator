@@ -78,6 +78,7 @@ class SPRVDecorationGroup;
 class SPRVGroupDecorate;
 class SPRVGroupMemberDecorate;
 class SPRVGroupDecorateGeneric;
+class SPRVInstTemplateBase;
 
 typedef SPRVBasicBlock SPRVLabel;
 struct SPRVTypeImageDescriptor;
@@ -226,7 +227,7 @@ public:
   /// Should not be used by users directly.
   virtual void addCapabilityInternal(SPRVCapabilityKind) = 0;
   virtual SPRVInstruction *addCallInst(SPRVFunction*,
-      const std::vector<SPRVValue *>, SPRVBasicBlock *) = 0;
+      const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addCompositeExtractInst(SPRVType *, SPRVValue *,
       const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;
   virtual SPRVInstruction *addCompositeInsertInst(SPRVValue *,
@@ -245,7 +246,9 @@ public:
   virtual SPRVInstruction *addGroupInst(Op OpCode, SPRVType *Type,
       Scope Scope, const std::vector<SPRVValue *> &Ops,
       SPRVBasicBlock *BB) = 0;
-  virtual SPRVInstruction* addInstTemplate(Op OC,
+  virtual SPRVInstTemplateBase* addInstTemplate(Op OC,
+      SPRVBasicBlock* BB, SPRVType *Ty) = 0;
+  virtual SPRVInstTemplateBase* addInstTemplate(Op OC,
       const std::vector<SPRVWord>& Ops, SPRVBasicBlock* BB, SPRVType *Ty) = 0;
   virtual SPRVInstruction *addLoadInst(SPRVValue *,
       const std::vector<SPRVWord>&, SPRVBasicBlock *) = 0;

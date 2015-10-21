@@ -41,6 +41,7 @@
 #define OCLLOWERBLOCKS_H_
 
 #include "SPRVInternal.h"
+#include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
@@ -77,6 +78,7 @@
 
 using namespace llvm;
 using namespace SPRV;
+using namespace OCLUtil;
 
 namespace SPRV{
 
@@ -283,7 +285,7 @@ private:
   void
   lowerBlockBuiltin(CallInst *CI, Function *InvF, Value *Ctx, Value *CtxLen,
       Value *CtxAlign, const std::string& DemangledName) {
-    mutateCallInst (M, CI, [=](CallInst *CI, std::vector<Value *> &Args) {
+    mutateCallInstSPRV (M, CI, [=](CallInst *CI, std::vector<Value *> &Args) {
       size_t I = 0;
       size_t E = Args.size();
       for (; I != E; ++I) {
@@ -293,7 +295,7 @@ private:
         }
       }
       assert (I < E);
-      Args[I] = InvF;
+      Args[I] = castToVoidFuncPtr(InvF);
       if (I + 1 == E) {
         Args.push_back(Ctx);
         Args.push_back(CtxLen);
@@ -312,9 +314,8 @@ private:
         if (!isOCLClkEventPtrType(Args[5]->getType()))
           Args.insert(Args.begin() + 5, getOCLNullClkEventPtr());
       }
-
-      return decorateSPRVFunction(DemangledName);
-    }, false, nullptr, false);
+      return getSPRVFuncName(OCLSPRVBuiltinMap::map(DemangledName));
+    });
   }
   /// Transform return of a block.
   /// The function returning a block is inlined since the context cannot be

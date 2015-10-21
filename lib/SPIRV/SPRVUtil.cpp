@@ -39,7 +39,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPRVInternal.h"
-#include "NameMangleAPI.h"
 #include "libSPIRV/SPRVDecorate.h"
 
 #include "llvm/ADT/StringSwitch.h"
@@ -81,6 +80,17 @@ void
 removeFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
   Call->removeAttribute(AttributeSet::FunctionIndex,
       Attribute::get(*Context, Attr));
+}
+
+Value *
+removeCast(Value *V) {
+  auto Cast = dyn_cast<ConstantExpr>(V);
+  if (Cast && Cast->isCast()) {
+    return removeCast(Cast->getOperand(0));
+  }
+  if (auto Cast = dyn_cast<CastInst>(V))
+    return removeCast(Cast->getOperand(0));
+  return V;
 }
 
 void
@@ -209,6 +219,11 @@ getFunctionTypeParameterTypes(llvm::FunctionType* FT,
 }
 
 bool
+isVoidFuncTy(FunctionType *FT) {
+  return FT->getReturnType()->isVoidTy() && FT->getNumParams() == 0;
+}
+
+bool
 isPointerToOpaqueStructType(llvm::Type* Ty) {
   if (auto PT = dyn_cast<PointerType>(Ty))
     if (auto ST = dyn_cast<StructType>(PT->getElementType()))
@@ -243,16 +258,17 @@ isOCLImageType(llvm::Type* Ty, StringRef *Name) {
 
 Function *
 getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
-    StringRef Name, bool Mangle, AttributeSet *Attrs, bool takeName) {
+    StringRef Name, BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs,
+    bool takeName) {
   std::string MangledName = Name;
   if (Mangle)
-    MangleOpenCLBuiltin(Name, ArgTypes, MangledName);
+    MangledName = mangleBuiltin(Name, ArgTypes, Mangle);
   FunctionType *FT = FunctionType::get(
       RetTy,
       ArgTypes,
       false);
   Function *F = M->getFunction(MangledName);
-  if (!takeName && F && F->getFunctionType() != FT) {
+  if (!takeName && F && F->getFunctionType() != FT && Mangle != nullptr) {
     std::string S;
     raw_string_ostream SS(S);
     SS << "Error: Attempt to redefine function: " << *F << " => " <<
@@ -264,8 +280,13 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
       GlobalValue::ExternalLinkage,
       MangledName,
       M);
-    if (F && takeName)
+    if (F && takeName) {
       NewF->takeName(F);
+      DEBUG(dbgs() << "[getOrCreateFunction] Warning: taking function name\n");
+    }
+    if (NewF->getName() != MangledName) {
+      DEBUG(dbgs() << "[getOrCreateFunction] Warning: function name changed\n");
+    }
     DEBUG(dbgs() << "[getOrCreateFunction] ";
       if (F)
         dbgs() << *F << " => ";
@@ -280,17 +301,23 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
 }
 
 std::vector<Value *>
-getArguments(CallInst* CI) {
+getArguments(CallInst* CI, unsigned Start, unsigned End) {
   std::vector<Value*> Args;
-  for (unsigned I = 0, E = CI->getNumArgOperands(); I != E; ++I) {
-    Args.push_back(CI->getArgOperand(I));
+  if (End == 0)
+    End = CI->getNumArgOperands();
+  for (; Start != End; ++Start) {
+    Args.push_back(CI->getArgOperand(Start));
   }
   return Args;
 }
 
-uint64_t getArgInt(CallInst *CI, unsigned I){
+uint64_t getArgAsInt(CallInst *CI, unsigned I){
   return cast<ConstantInt>(CI->getArgOperand(I))->getZExtValue();
-};
+}
+
+Scope getArgAsScope(CallInst *CI, unsigned I){
+  return static_cast<Scope>(getArgAsInt(CI, I));
+}
 
 std::string
 decorateSPRVFunction(const std::string &S) {
@@ -306,12 +333,12 @@ undecorateSPRVFunction(const std::string& S) {
 }
 
 std::string
-prefixSPRVFunction(const std::string &S) {
+prefixSPRVName(const std::string &S) {
   return std::string(kSPRVName::Prefix) + S;
 }
 
 std::string
-dePrefixSPRVFunction(const std::string& S,
+dePrefixSPRVName(const std::string& S,
     SmallVectorImpl<StringRef> &Postfix) {
   StringRef R(S);
   const size_t Start = strlen(kSPRVName::Prefix);
@@ -326,10 +353,28 @@ dePrefixSPRVFunction(const std::string& S,
 
 std::string
 getSPRVFuncName(Op OC, StringRef PostFix) {
-  return prefixSPRVFunction(getName(OC) + PostFix.str());
+  return prefixSPRVName(getName(OC) + PostFix.str());
 }
 
-SPRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target) {
+std::string
+getSPRVExtFuncName(SPRVExtInstSetKind Set, unsigned ExtOp,
+    StringRef PostFix) {
+  std::string ExtOpName;
+  switch(Set) {
+  default:
+    llvm_unreachable("invalid extended instruction set");
+    ExtOpName = "unknown";
+    break;
+  case SPRVEIS_OpenCL:
+    ExtOpName = getName(static_cast<OCLExtOpKind>(ExtOp));
+    break;
+  }
+  return prefixSPRVName(SPRVExtSetShortNameMap::map(Set)
+      + '_' + ExtOpName + PostFix.str());
+}
+
+SPRVDecorate *
+mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target) {
   if (Postfix == kSPRVPostfix::Sat)
     return new SPRVDecorate(spv::DecorationSaturatedConversion, Target);
 
@@ -344,13 +389,26 @@ Op
 getSPRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
-  auto Name = dePrefixSPRVFunction(S, Postfix);
+  std::string Name;
+  if (!oclIsBuiltin(S, 20, &Name))
+    Name = S;
+  Name = dePrefixSPRVName(Name, Postfix);
   if (!getByName(Name, OC))
     return OpNop;
   if (Dec)
     for (auto &I:Postfix)
       Dec->push_back(I.str());
   return OC;
+}
+
+spv::BuiltIn
+getSPRVBuiltin(const std::string &OrigName) {
+  SmallVector<StringRef, 2> Postfix;
+  auto Name = dePrefixSPRVName(OrigName, Postfix);
+  assert(Postfix.empty() && "Invalid SPIR-V builtin name");
+  spv::BuiltIn B = spv::BuiltInCount;
+  getByName(Name, B);
+  return B;
 }
 
 bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
@@ -447,6 +505,12 @@ hasFunctionPointerArg(Function *F, Function::arg_iterator& AI) {
   return false;
 }
 
+Constant *
+castToVoidFuncPtr(Function *F) {
+  auto T = getVoidFuncPtrType(F->getParent());
+  return ConstantExpr::getBitCast(F, T);
+}
+
 bool
 hasArrayArg(Function *F) {
   for (auto I = F->arg_begin(), E = F->arg_end(); I != E; ++I) {
@@ -461,7 +525,7 @@ hasArrayArg(Function *F) {
 CallInst *
 mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs, bool TakeFuncName) {
   DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
@@ -485,7 +549,7 @@ mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)>ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs, bool TakeFuncName) {
   DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
@@ -510,27 +574,52 @@ mutateCallInst(Module *M, CallInst *CI,
 void
 mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    bool Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs,
+    bool TakeFuncName) {
   auto M = F->getParent();
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
     if (auto CI = dyn_cast<CallInst>(*I++))
       mutateCallInst(M, CI, ArgMutate, Mangle, Attrs, TakeFuncName);
   }
-  if (F->use_empty()) {
-    F->dropAllReferences();
-    F->removeFromParent();
-  }
+  if (F->use_empty())
+    F->eraseFromParent();
+}
+
+CallInst *
+mutateCallInstSPRV(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+    AttributeSet *Attrs) {
+  BuiltinFuncMangleInfo BtnInfo;
+  return mutateCallInst(M, CI, ArgMutate, &BtnInfo, Attrs);
+}
+
+Instruction *
+mutateCallInstSPRV(Module *M, CallInst *CI,
+    std::function<std::string (CallInst *, std::vector<Value *> &,
+        Type *&RetTy)> ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
+    AttributeSet *Attrs) {
+  BuiltinFuncMangleInfo BtnInfo;
+  return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
 }
 
 CallInst *
 addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
-    AttributeSet *Attrs, Instruction *Pos, bool Mangle, StringRef InstName,
-    bool TakeFuncName) {
+    AttributeSet *Attrs, Instruction *Pos, BuiltinFuncMangleInfo *Mangle,
+    StringRef InstName, bool TakeFuncName) {
   auto F = getOrCreateFunction(M, RetTy, getTypes(Args),
       FuncName, Mangle, Attrs, TakeFuncName);
   auto CI = CallInst::Create(F, Args, InstName, Pos);
   CI->setCallingConv(F->getCallingConv());
   return CI;
+}
+
+CallInst *
+addCallInstSPRV(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
+    AttributeSet *Attrs, Instruction *Pos, StringRef InstName) {
+  BuiltinFuncMangleInfo BtnInfo;
+  return addCallInst(M, FuncName, RetTy, Args, Attrs, Pos, &BtnInfo,
+      InstName);
 }
 
 Constant *
@@ -551,7 +640,22 @@ addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
       BlkCtx ? BlkCtx : UndefValue::get(Type::getInt8PtrTy(Ctx))
   };
   return addCallInst(M, SPIR_INTRINSIC_BLOCK_BIND, BlkTy, BlkArgs, nullptr,
-      InsPos, false, InstName);
+      InsPos, nullptr, InstName);
+}
+
+IntegerType* getSizetType(Module *M) {
+  return IntegerType::getIntNTy(M->getContext(),
+    M->getDataLayout()->getPointerSizeInBits(0));
+}
+
+Type *
+getVoidFuncType(Module *M) {
+  return FunctionType::get(Type::getVoidTy(M->getContext()), false);
+}
+
+Type *
+getVoidFuncPtrType(Module *M, unsigned AddrSpace) {
+  return PointerType::get(getVoidFuncType(M), AddrSpace);
 }
 
 ConstantInt *
@@ -562,6 +666,18 @@ getInt64(Module *M, int64_t value) {
 ConstantInt *
 getInt32(Module *M, int value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, true);
+}
+
+std::vector<Value *> getInt32(Module *M, const std::vector<int> &value) {
+  std::vector<Value *> V;
+  for (auto &I:value)
+    V.push_back(getInt32(M, I));
+  return V;
+}
+
+ConstantInt *
+getSizet(Module *M, uint64_t value) {
+  return ConstantInt::get(getSizetType(M), value, false);
 }
 
 ConstantInt *mapUInt(Module *M, ConstantInt *I,
@@ -575,7 +691,7 @@ ConstantInt *mapSInt(Module *M, ConstantInt *I,
 }
 
 bool
-isSPRVFunction(const Function *F, std::string *UndecoratedName) {
+isDecoratedSPRVFunc(const Function *F, std::string *UndecoratedName) {
   if (!F->hasName() || !F->getName().startswith(kSPRVName::Prefix))
     return false;
   if (UndecoratedName)
@@ -583,161 +699,11 @@ isSPRVFunction(const Function *F, std::string *UndecoratedName) {
   return true;
 }
 
-/// Additional information for mangling a function argument type.
-struct OCLTypeMangleInfo {
-  bool IsSigned;
-  bool IsVoidPtr;
-  bool IsEnum;
-  bool IsSampler;
-  bool IsAtomic;
-  SPIR::TypePrimitiveEnum Enum;
-  unsigned Attr;
-  OCLTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
-      IsSampler(false), IsAtomic(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
-};
-
-/// Information for mangling an OpenCL builtin function.
-class OCLBuiltinMangleInfo {
-public:
-  /// Translated uniqued OCL builtin name to its original name, and set
-  /// argument attributes and unsigned args.
-  OCLBuiltinMangleInfo(const std::string &UniqName);
-  const std::string &getUnmangledName() const { return UnmangledName;}
-  void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
-  void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
-  void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}
-  void addAtomicArg(int Ndx) { AtomicArgs.insert(Ndx);}
-  void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
-    EnumArgs[Ndx] = Enum;}
-  void setArgAttr(int Ndx, unsigned Attr) {
-    Attrs[Ndx] = Attr;}
-  bool isArgUnsigned(int Ndx) {
-    return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);}
-  bool isArgVoidPtr(int Ndx) {
-    return VoidPtrArgs.count(-1) || VoidPtrArgs.count(Ndx);}
-  bool isArgSampler(int Ndx) {
-    return SamplerArgs.count(Ndx);}
-  bool isArgAtomic(int Ndx) {
-    return AtomicArgs.count(Ndx);}
-  bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
-    auto Loc = EnumArgs.find(Ndx);
-    if (Loc == EnumArgs.end())
-      Loc = EnumArgs.find(-1);
-    if (Loc == EnumArgs.end())
-      return false;
-    if (Enum)
-      *Enum = Loc->second;
-    return true;
-  }
-  unsigned getArgAttr(int Ndx) {
-    auto Loc = Attrs.find(Ndx);
-    if (Loc == Attrs.end())
-      Loc = Attrs.find(-1);
-    if (Loc == Attrs.end())
-      return 0;
-    return Loc->second;
-  }
-  OCLTypeMangleInfo getTypeMangleInfo(int Ndx) {
-    OCLTypeMangleInfo Info;
-    Info.IsSigned = !isArgUnsigned(Ndx);
-    Info.IsVoidPtr = isArgVoidPtr(Ndx);
-    Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
-    Info.IsSampler = isArgSampler(Ndx);
-    Info.IsAtomic = isArgAtomic(Ndx);
-    Info.Attr = getArgAttr(Ndx);
-    return Info;
-  }
-private:
-  std::string UnmangledName;
-  std::set<int> UnsignedArgs; // unsigned arguments, or -1 if all are unsigned
-  std::set<int> VoidPtrArgs;  // void pointer arguments, or -1 if all are void
-                              // pointer
-  std::set<int> SamplerArgs;  // sampler arguments
-  std::set<int> AtomicArgs;   // atomic arguments
-  std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
-  std::map<int, unsigned> Attrs;                   // argument attributes
-};
-
-OCLBuiltinMangleInfo::OCLBuiltinMangleInfo(const std::string &UniqName) {
-  UnmangledName = UniqName;
-  size_t Pos = std::string::npos;
-
-  if (UnmangledName.find("async_work_group") == 0) {
-    addUnsignedArg(-1);
-    setArgAttr(1, SPIR::ATTR_CONST);
-  } else if (UnmangledName.find("write_imageui") == 0)
-      addUnsignedArg(2);
-  else if (UnmangledName == "prefetch") {
-    addUnsignedArg(1);
-    setArgAttr(0, SPIR::ATTR_CONST);
-  }
-  else if (UnmangledName.find("get_") == 0 ||
-      UnmangledName.find("barrier") == 0 ||
-      UnmangledName.find("work_group_barrier") == 0 ||
-      UnmangledName == "nan" ||
-      UnmangledName == "mem_fence" ||
-      UnmangledName.find("shuffle") == 0){
-    addUnsignedArg(-1);
-    if (UnmangledName.find("get_fence") == 0){
-      setArgAttr(0, SPIR::ATTR_CONST);
-      addVoidPtrArg(0);
-    }
-  } else if (UnmangledName.find("atomic") == 0) {
-    setArgAttr(0, SPIR::ATTR_VOLATILE);
-    addAtomicArg(0);
-    if (UnmangledName.find("atomic_umax") == 0 ||
-        UnmangledName.find("atomic_umin") == 0) {
-      addUnsignedArg(0);
-      UnmangledName.erase(7, 1);
-    } else if (UnmangledName.find("atomic_fetch_umin") == 0 ||
-               UnmangledName.find("atomic_fetch_umax") == 0) {
-      addUnsignedArg(0);
-      UnmangledName.erase(13, 1);
-    }
-  } else if (UnmangledName.find("uconvert_") == 0) {
-    addUnsignedArg(0);
-    UnmangledName.erase(0, 1);
-  } else if (UnmangledName.find("s_") == 0) {
-    UnmangledName.erase(0, 2);
-  } else if (UnmangledName.find("u_") == 0) {
-    addUnsignedArg(-1);
-    UnmangledName.erase(0, 2);
-  } else if (UnmangledName == "capture_event_profiling_info") {
-    addVoidPtrArg(2);
-    setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
-  } else if (UnmangledName == "enqueue_kernel") {
-    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
-    addUnsignedArg(3);
-  } else if (UnmangledName == "enqueue_marker") {
-    setArgAttr(2, SPIR::ATTR_CONST);
-    addUnsignedArg(1);
-  } else if (UnmangledName.find("vload") == 0) {
-    addUnsignedArg(0);
-    setArgAttr(1, SPIR::ATTR_CONST);
-  } else if (UnmangledName.find("vstore") == 0 ){
-    addUnsignedArg(1);
-  } else if (UnmangledName.find("ndrange_") == 0) {
-    addUnsignedArg(-1);
-    if (UnmangledName[8] == '2' || UnmangledName[8] == '3') {
-      setArgAttr(-1, SPIR::ATTR_CONST);
-    }
-  } else if ((Pos = UnmangledName.find("umax")) != std::string::npos ||
-             (Pos = UnmangledName.find("umin")) != std::string::npos) {
-    addUnsignedArg(-1);
-    UnmangledName.erase(Pos, 1);
-  } else if (UnmangledName.find("broadcast") != std::string::npos)
-    addUnsignedArg(-1);
-  else if (UnmangledName.find(kOCLBuiltinName::SampledReadImage) == 0) {
-    UnmangledName.erase(0, strlen(kOCLBuiltinName::Sampled));
-    addSamplerArg(1);
-  }
-}
-
 /// Translates LLVM type to descriptor for mangler.
 /// \param Signed indicates integer type should be translated as signed.
 /// \param VoidPtr indicates i8* should be translated as void*.
 static SPIR::RefParamType
-transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
+transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
   bool Signed = Info.IsSigned;
   unsigned Attr = Info.Attr;
   bool VoidPtr = Info.IsVoidPtr;
@@ -747,7 +713,7 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
     return SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_SAMPLER_T));
   if (Info.IsAtomic && !Ty->isPointerTy()) {
-    OCLTypeMangleInfo DTInfo = Info;
+    BuiltinArgTypeMangleInfo DTInfo = Info;
     DTInfo.IsAtomic = false;
     return SPIR::RefParamType(new SPIR::AtomicType(
         transTypeDesc(Ty, DTInfo)));
@@ -802,7 +768,10 @@ transTypeDesc(Type *Ty, const OCLTypeMangleInfo &Info) {
   if (Ty->isPointerTy()) {
     auto ET = Ty->getPointerElementType();
     SPIR::ParamType *EPT = nullptr;
-    if (auto StructTy = dyn_cast<StructType>(ET)) {
+    if (auto FT = dyn_cast<FunctionType>(ET)) {
+      assert(isVoidFuncTy(FT) && "Not supported");
+      EPT = new SPIR::BlockType;
+    } else if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
       if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
@@ -944,51 +913,80 @@ getSPRVSampledImageType(Module *M, Type *ImageType) {
 }
 
 bool
-eraseUselessFunctions(Module *M) {
+eraseIfNoUse(Function *F) {
   bool changed = false;
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = I++;
-    if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
-        !F->isDeclaration())
-      continue;
+  if (!F)
+    return changed;
+  if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
+      !F->isDeclaration())
+    return changed;
 
-    dumpUsers(F, "[eraseUselessFunctions] ");
-    for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
-      auto U = *UI++;
-      if (auto CE = dyn_cast<ConstantExpr>(U)){
-        if (CE->use_empty()) {
-          CE->dropAllReferences();
-          changed = true;
-        }
+  dumpUsers(F, "[eraseIfNoUse] ");
+  for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
+    auto U = *UI++;
+    if (auto CE = dyn_cast<ConstantExpr>(U)){
+      if (CE->use_empty()) {
+        CE->dropAllReferences();
+        changed = true;
       }
     }
-    if (F->use_empty()) {
-      F->dropAllReferences();
-      F->eraseFromParent();
-      changed = true;
-    }
+  }
+  if (F->use_empty()) {
+    DEBUG(dbgs() << "Erase ";
+          F->printAsOperand(dbgs());
+          dbgs() << '\n');
+    F->eraseFromParent();
+    changed = true;
   }
   return changed;
 }
-}
 
 void
-llvm::MangleOpenCLBuiltin(const std::string &UniqName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName) {
+eraseIfNoUse(Value *V) {
+  if (!V->use_empty())
+    return;
+  if (Constant *C = dyn_cast<Constant>(V)) {
+    C->destroyConstant();
+    return;
+  }
+  if (Instruction *I = dyn_cast<Instruction>(V)) {
+    if (!I->mayHaveSideEffects())
+      I->eraseFromParent();
+  }
+  eraseIfNoUse(dyn_cast<Function>(V));
+}
+
+bool
+eraseUselessFunctions(Module *M) {
+  bool changed = false;
+  for (auto I = M->begin(), E = M->end(); I != E;)
+    changed |= eraseIfNoUse(I++);
+  return changed;
+}
+
+std::string
+mangleBuiltin(const std::string &UniqName,
+    ArrayRef<Type*> ArgTypes, BuiltinFuncMangleInfo* BtnInfo) {
+  if (!BtnInfo)
+    return UniqName;
+  BtnInfo->init(UniqName);
+  std::string MangledName;
   DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   SPIR::NameMangler Mangler(SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
-  OCLBuiltinMangleInfo BtnInfo(UniqName);
-  FD.name = BtnInfo.getUnmangledName();
+  FD.name = BtnInfo->getUnmangledName();
   for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
     auto T = ArgTypes[I];
-    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo.getTypeMangleInfo(I)));
+    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
   }
   if (FD.parameters.empty())
     FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_VOID)));
   Mangler.mangle(FD, MangledName);
   DEBUG(dbgs() << MangledName << '\n');
+  return MangledName;
+}
+
 }
 
 

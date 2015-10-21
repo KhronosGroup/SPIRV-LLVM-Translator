@@ -180,7 +180,7 @@ public:
       : M(LLVMModule),
         Ctx(&M->getContext()),
         BM(TheSPRVModule),
-        BuiltinSetId(SPRVID_INVALID),
+        ExtSetId(SPRVID_INVALID),
         SrcLangVer(0),
         DbgTran(M, BM){
     RegularizedModuleTmpFile = "regularized.bc";
@@ -191,14 +191,20 @@ public:
 
   // Lower functions
   bool regularize();
-  bool transOCLBuiltinsToVariables();
   bool lowerConstantExpressions();
+
+  /// Erase cast inst of function and replace with the function.
+  /// Assuming F is a SPIR-V builtin function with op code \param OC.
+  void lowerFuncPtr(Function *F, Op OC);
+  void lowerFuncPtr(Module *M);
 
   // Translation functions
 
   bool transAddressingMode();
   bool transAlign(Value *V, SPRVValue *BV);
   std::vector<SPRVValue *> transArguments(CallInst *, SPRVBasicBlock *);
+  std::vector<SPRVWord> transArguments(CallInst *, SPRVBasicBlock *,
+      SPRVEntry *);
   bool transCompileFlag();
   bool transSourceLanguage();
   bool transSourceExtension();
@@ -223,16 +229,14 @@ public:
 
   typedef DenseMap<Type *, SPRVType *> LLVMToSPRVTypeMap;
   typedef DenseMap<Value *, SPRVValue *> LLVMToSPRVValueMap;
-  typedef DenseMap<GlobalVariable *, SPRVBuiltinVariableKind> BuiltinVarMap;
 private:
   Module *M;
   LLVMContext *Ctx;
   SPRVModule *BM;
-  BuiltinVarMap BuiltinGVMap;
   LLVMToSPRVTypeMap TypeMap;
   LLVMToSPRVValueMap ValueMap;
   //ToDo: support multiple builtin sets. Currently assume one builtin set.
-  SPRVId BuiltinSetId;
+  SPRVId ExtSetId;
   SPRVWord SrcLangVer;
   std::string RegularizedModuleTmpFile;
   LLVMToSPRVDbgTran DbgTran;
@@ -274,6 +278,8 @@ private:
   llvm::IntegerType* getSizetType();
   std::vector<SPRVValue*> transValue(const std::vector<Value *> &Values,
       SPRVBasicBlock* BB);
+  std::vector<SPRVWord> transValue(const std::vector<Value *> &Values,
+      SPRVBasicBlock* BB, SPRVEntry *Entry);
 
   SPRVInstruction* transBinaryInst(BinaryOperator* B, SPRVBasicBlock* BB);
   SPRVInstruction* transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB);
@@ -296,50 +302,25 @@ private:
   FunctionType *oclGetRegularizedFunctionType(Function *);
   SPRVWord oclGetVectorLoadWidth(const std::string& DemangledName);
 
-  bool oclIsBuiltinTransToInst(Function *F);
+  bool isBuiltinTransToInst(Function *F);
   bool oclIsBuiltinTransToExtInst(Function *F,
       SPRVExtInstSetKind *BuiltinSet = nullptr,
       SPRVWord *EntryPoint = nullptr);
   bool oclIsKernel(Function *F);
 
   bool transOCLKernelMetadata();
-  SPRVValue *transOCLAsyncGroupCopy(CallInst *Call,
-      const std::string &MangledName,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
-
-  bool getOCLImageBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info, CallInst *CI,
-      const std::string &DeMangledName);
 
   SPRVValue *transOCLBuiltinToInst(CallInst *Call,
       const std::string &MangledName,
       const std::string &DemangledName, SPRVBasicBlock *BB);
-  SPRVValue *transOCLGroupBuiltins(CallInst *Call,
-      const std::string &MangledName,
-      const std::string &DeMangledName, SPRVBasicBlock *BB);
-  SPRVValue *transOCLVectorLoadStore(CallInst *Call,
-      const std::string &MangledName, const std::string &DeMangledName,
-      SPRVBasicBlock *BB);
-  void transOCLVectorLoadStoreName(std::string &DemangledName);
-  void transOCLVectorLoadStoreName(std::string& DemangledName,
-      const std::string& Stem, bool AlwaysN);
-  SPRVInstruction *transOCLBuiltinToInstByMap(const std::string& DemangledName,
+  SPRVInstruction *transBuiltinToInst(const std::string& DemangledName,
       const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB);
-  SPRVInstruction *transOCLBuiltinToInstWithoutDecoration(Op OC,
-      OCLBuiltinSPRVTransInfo &Info, CallInst* CI, SPRVBasicBlock* BB);
+  SPRVInstruction *transBuiltinToInstWithoutDecoration(Op OC,
+      CallInst* CI, SPRVBasicBlock* BB);
   void mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       Function* F);
   bool oclIsSamplerType(llvm::Type* RT);
 
-  void getOCLBuiltinSPRVTransInfo(OCLBuiltinSPRVTransInfo &Info, CallInst *CI,
-      const std::string &MangledName, const std::string &DemangledName);
-  // Transform OpenCL group builtin function names from work_group_
-  // and sub_group_ to group_.
-  bool getOCLGroupBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info, CallInst *CI,
-      const std::string &DemangledName);
-  // Transform OpenCL read_pipe/write_pipe builtin function names
-  // with reserve_id argument to reserved_read_pipe/reserved_write_pipe.
-  bool getOCLPipeBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info, CallInst *CI,
-      const std::string &DemangledName);
   SPRVValue *transSpcvCast(CallInst* CI, SPRVBasicBlock *BB);
   SPRVValue *oclTransSpvcCastSampler(CallInst* CI, SPRVBasicBlock *BB);
 
@@ -374,166 +355,47 @@ LLVMToSPRV::oclIsKernel(Function *F) {
 }
 
 bool
-LLVMToSPRV::oclIsBuiltinTransToInst(Function *F) {
+LLVMToSPRV::isBuiltinTransToInst(Function *F) {
   std::string DemangledName;
   if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName) &&
-      !isSPRVFunction(F, &DemangledName))
+      !isDecoratedSPRVFunc(F, &DemangledName))
     return false;
   SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
-  SourceLanguage SourceLang = BM->getSourceLanguage(nullptr);
-  if (SourceLang == SourceLanguageOpenCL) {
-    return DemangledName == "dot" ||
-        DemangledName.find("atomic_") == 0 ||
-        DemangledName.find("async_work_group") == 0 ||
-        DemangledName == "wait_group_events" ||
-        DemangledName.find("work_group_") == 0 ||
-        DemangledName.find("sub_group_") == 0 ||
-        getSPRVFuncOC(DemangledName) != OpNop ||
-        OCLSPRVBuiltinMap::find(DemangledName);
-  }
-  llvm_unreachable("not supported");
-  return false;
-}
-
-void LLVMToSPRV::transOCLVectorLoadStoreName(std::string& DemangledName,
-    const std::string &Stem, bool AlwaysN) {
-  auto HalfStem = Stem + "_half";
-  auto HalfStemR = HalfStem + "_r";
-  if (!AlwaysN && DemangledName == HalfStem)
-    return;
-  if (!AlwaysN && DemangledName.find(HalfStemR) == 0) {
-    DemangledName = HalfStemR;
-    return;
-  }
-  if (DemangledName.find(HalfStem) == 0) {
-    auto OldName = DemangledName;
-    DemangledName = HalfStem + "n";
-    if (OldName.find("_r") != std::string::npos)
-      DemangledName += "_r";
-    return;
-  }
-  if (DemangledName.find(Stem) == 0) {
-    DemangledName = Stem + "n";
-    return;
-  }
-}
-
-void
-LLVMToSPRV::transOCLVectorLoadStoreName(std::string &DemangledName) {
-  if (DemangledName.find("vloada") == 0)
-    transOCLVectorLoadStoreName(DemangledName, "vloada", true);
-  else
-    transOCLVectorLoadStoreName(DemangledName, "vload", false);
-
-  if (DemangledName.find("vstorea") == 0)
-    transOCLVectorLoadStoreName(DemangledName, "vstorea", true);
-  else
-    transOCLVectorLoadStoreName(DemangledName, "vstore", false);
-}
-
-template<class SPRVExtInstKind>
-bool LLVMToSPRV::oclGetExtInstIndex(const std::string &MangledName,
-    const std::string& DemangledName, SPRVWord* EntryPoint) {
-  SPRVExtInstKind ExtInst = static_cast<SPRVExtInstKind>(0);
-  bool Found = getNameMap(ExtInst).rfind(DemangledName, &ExtInst);
-  if (!Found) {
-    std::string Prefix = isLastFuncParamSigned(MangledName) ? "s_" : "u_";
-    Found = getNameMap(ExtInst).rfind(Prefix + DemangledName, &ExtInst);
-  }
-
-  if (Found && EntryPoint)
-    *EntryPoint = ExtInst;
-  return Found;
+  return getSPRVFuncOC(DemangledName) != OpNop;
 }
 
 bool
 LLVMToSPRV::oclIsBuiltinTransToExtInst(Function *F,
-    SPRVExtInstSetKind *BuiltinSet,
-    SPRVWord *EntryPoint) {
+    SPRVExtInstSetKind *ExtSet,
+    SPRVWord *ExtOp) {
   std::string OrigName = F->getName();
   std::string DemangledName;
-  if (OrigName != "printf" &&
-      !oclIsBuiltin(OrigName, SrcLangVer, &DemangledName))
+  if (!oclIsBuiltin(OrigName, SrcLangVer, &DemangledName))
     return false;
-  if (OrigName == "printf")
-    DemangledName = OrigName;
-  else {
-    SPRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
-    transOCLVectorLoadStoreName(DemangledName);
-  }
-  SPRVDBG(bildbgs() << "CallInst: modified demangled name: " << DemangledName
-                    << '\n');
-  SPRVExtInstSetKind BSK = SPRVEIS_Count;
-  BSK = BM->getBuiltinSet(BuiltinSetId);
-  bool Found = false;
-  switch (BSK) {
-  case SPRVEIS_OpenCL:
-    Found = oclGetExtInstIndex<OCLExtOpKind>(OrigName, DemangledName,
-        EntryPoint);
-    break;
-  default:
-    llvm_unreachable("not supported");
-  }
-  assert(Found && "Invalid builtin function");
-  if (Found && BuiltinSet)
-    *BuiltinSet = BSK;
-  return Found;
-}
+  DEBUG(dbgs() << "[oclIsBuiltinTransToExtInst] CallInst: demangled name: "
+      << DemangledName << '\n');
+  StringRef S = DemangledName;
+  if (!S.startswith(kSPRVName::Prefix))
+    return false;
+  S = S.drop_front(strlen(kSPRVName::Prefix));
+  auto Loc = S.find('_');
+  auto ExtSetName = S.substr(0, Loc);
+  SPRVExtInstSetKind Set = SPRVEIS_Count;
+  if (!SPRVExtSetShortNameMap::rfind(ExtSetName, &Set))
+    return false;
+  assert(Set == BM->getBuiltinSet(ExtSetId) &&
+      "Invalid extended instruction set");
+  assert(Set == SPRVEIS_OpenCL && "Unsupported extended instruction set");
 
-/// Translates OCL work-item builtin functions to SPIRV builtin variables.
-/// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
-/// Function like get_work_dim() -> load WorkDim
-bool
-LLVMToSPRV::transOCLBuiltinsToVariables() {
-  std::vector<Function *> WorkList;
-  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
-    std::string DemangledName;
-    if (!oclIsBuiltin(I->getName(), SrcLangVer, &DemangledName))
-      continue;
-    SPRVDBG(bildbgs() << "Function: demangled name: " << DemangledName <<
-        '\n');
-    std::string BuiltinVarName;
-    SPRVBuiltinVariableKind BVKind = BuiltInCount;
-    if (!SPIRSPRVBuiltinVariableMap::find(DemangledName, &BVKind))
-      continue;
-    BuiltinVarName = std::string(kSPRVName::Prefix) +
-        SPRVBuiltinVariableNameMap::map(BVKind);
-    SPRVDBG(bildbgs() << "builtin variable name: " << BuiltinVarName << '\n');
-    bool IsVec = I->getFunctionType()->getNumParams() > 0;
-    Type *GVType = IsVec ? VectorType::get(I->getReturnType(),3) :
-        I->getReturnType();
-    auto BV = new GlobalVariable(*M, GVType,
-        true,
-        GlobalValue::InternalLinkage,
-        nullptr, BuiltinVarName,
-        0,
-        GlobalVariable::NotThreadLocal,
-        SPIRAS_Constant);
-    BuiltinGVMap[BV] = BVKind;
-    std::vector<Instruction *> InstList;
-    for (auto UI = I->user_begin(), UE = I->user_end(); UI != UE; ++UI) {
-      auto CI = dyn_cast<CallInst>(*UI);
-      assert(CI && "invalid instruction");
-      Value * NewValue = new LoadInst(BV, "", CI);
-      if (IsVec)
-        NewValue = ExtractElementInst::Create(NewValue,
-          CI->getArgOperand(0),
-          "", CI);
-      NewValue->takeName(CI);
-      SPRVDBG(dbgs() << "Replace: " << *CI << " <- " << *NewValue << '\n');
-      CI->replaceAllUsesWith(NewValue);
-      InstList.push_back(CI);
-    }
-    for (auto &Inst:InstList) {
-      Inst->dropAllReferences();
-      Inst->removeFromParent();
-    }
-    WorkList.push_back(I);
-  }
-  for (auto &I:WorkList) {
-    I->dropAllReferences();
-    I->removeFromParent();
-  }
+  auto ExtOpName = S.substr(Loc + 1);
+  OCLExtOpKind EOC;
+  if (!OCLExtOpMap::rfind(ExtOpName, &EOC))
+    return false;
+
+  if (ExtSet)
+    *ExtSet = Set;
+  if (ExtOp)
+    *ExtOp = EOC;
   return true;
 }
 
@@ -612,6 +474,7 @@ LLVMToSPRV::transType(Type *T) {
   // sampler or pipe type.
   if (T->isPointerTy()) {
     auto ET = T->getPointerElementType();
+    assert(!ET->isFunctionTy() && "Function pointer type is not allowed");
     auto ST = dyn_cast<StructType>(ET);
     auto AddrSpc = T->getPointerAddressSpace();
     if (ST && !ST->isSized()) {
@@ -889,104 +752,6 @@ LLVMToSPRV::transCmpInst(CmpInst* Cmp, SPRVBasicBlock* BB) {
   return BI;
 }
 
-bool
-LLVMToSPRV::getOCLPipeBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info,
-    CallInst *CI, const std::string &DemangledName) {
-  std::string NewName = DemangledName;
-  if (DemangledName.find(kOCLBuiltinName::ReadPipe) != 0 &&
-      DemangledName.find(kOCLBuiltinName::WritePipe) != 0)
-    return false;
-
-  if (CI->getNumArgOperands() > 4 &&
-      DemangledName.find(kSPRVName::ReservedPrefix) != 0)
-    NewName = std::string(kSPRVName::ReservedPrefix) + DemangledName;
-  Info.UniqName = NewName;
-  return true;
-}
-
-// ToDo: Handle unsigned integer texel type
-bool
-LLVMToSPRV::getOCLImageBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info,
-    CallInst *CI, const std::string &DemangledName) {
-  std::string NewName = DemangledName;
-  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
-    Info.UniqName = kOCLBuiltinName::ReadImage;
-    return true;
-  }
-
-  if (DemangledName.find(kOCLBuiltinName::WriteImage) == 0) {
-    Info.UniqName = kOCLBuiltinName::WriteImage;
-    return true;
-  }
-  return false;
-}
-
-bool
-LLVMToSPRV::getOCLGroupBuiltinTransInfo(OCLBuiltinSPRVTransInfo &Info,
-    CallInst *CI, const std::string &OrigDemangledName) {
-  auto F = CI->getCalledFunction();
-  std::vector<SPRVWord> PreOps;
-  std::string DemangledName = OrigDemangledName;
-  if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
-    return false;
-  if (DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0) {
-    DemangledName.erase(0, strlen(kOCLBuiltinName::WorkPrefix));
-    PreOps.push_back(ScopeWorkgroup);
-  } else if (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
-    DemangledName.erase(0, strlen(kOCLBuiltinName::SubPrefix));
-    PreOps.push_back(ScopeSubgroup);
-  } else
-    return false;
-
-  StringRef GroupOp = DemangledName;
-  GroupOp = GroupOp.drop_front(strlen(kSPRVName::GroupPrefix));
-  SPIRSPRVGroupOperationMap::foreach_conditional([&](const std::string &S,
-      SPRVGroupOperationKind G){
-    if (!GroupOp.startswith(S))
-      return true; // continue
-    PreOps.push_back(G);
-    StringRef Op = GroupOp.drop_front(S.size() + 1);
-    assert(!Op.empty() && "Invalid OpenCL group builtin function");
-    char OpTyC = 0;
-    auto NeedSign = Op == "max" || Op == "min";
-    auto OpTy = F->getReturnType();
-    if (OpTy->isFloatingPointTy())
-      OpTyC = 'f';
-    else if (OpTy->isIntegerTy()) {
-      if (!NeedSign)
-        OpTyC = 'i';
-      else {
-        if (isLastFuncParamSigned(F->getName()))
-          OpTyC = 's';
-        else
-          OpTyC = 'u';
-      }
-    } else
-      llvm_unreachable("Invalid OpenCL group builtin argument type");
-
-    DemangledName = std::string(kSPRVName::GroupPrefix) + OpTyC + Op.str();
-    return false; // break out of loop
-  });
-  Info.UniqName = DemangledName;
-  Info.PostProc = [=](std::vector<SPRVWord> &Ops){
-    Ops.insert(Ops.begin(), PreOps.begin(), PreOps.end());
-  };
-  return true;
-}
-
-void LLVMToSPRV::getOCLBuiltinSPRVTransInfo(OCLBuiltinSPRVTransInfo &Info,
-    CallInst *CI, const std::string & MangledName,
-    const std::string &DemangledName) {
-  if (getOCLGroupBuiltinTransInfo(Info, CI, DemangledName))
-    return;
-  if (getOCLPipeBuiltinTransInfo(Info, CI, DemangledName))
-    return;
-  if (getOCLImageBuiltinTransInfo(Info, CI, DemangledName))
-    return;
-  Info.UniqName = DemangledName;
-  return;
-}
-
 SPRV::SPRVInstruction *LLVMToSPRV::transUnaryInst(UnaryInstruction *U,
                                                   SPRVBasicBlock *BB) {
   Op BOC = OpNop;
@@ -1039,10 +804,12 @@ LLVMToSPRV::transValueWithoutDecoration(Value *V, SPRVBasicBlock *BB,
         nullptr
         ));
     mapValue(V, BVar);
-    auto Loc = BuiltinGVMap.find(GV);
-    if (Loc == BuiltinGVMap.end())
+    auto Builtin = spv::BuiltInCount;
+    if (GV->hasName())
+      Builtin = getSPRVBuiltin(GV->getName().str());
+    if (Builtin == spv::BuiltInCount)
       return BVar;
-    BVar->setBuiltin(Loc->second);
+    BVar->setBuiltin(Builtin);
     return BVar;
   }
 
@@ -1246,7 +1013,7 @@ LLVMToSPRV::transBuiltinSet() {
   assert(Kind == SourceLanguageOpenCL && "not supported");
   std::stringstream SS;
   SS << "OpenCL.std";
-  return BM->importBuiltinSet(SS.str(), &BuiltinSetId);
+  return BM->importBuiltinSet(SS.str(), &ExtSetId);
 }
 
 bool
@@ -1303,8 +1070,8 @@ LLVMToSPRV::transSpcvCast(CallInst* CI, SPRVBasicBlock *BB) {
 
 SPRVValue *
 LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
-  SPRVExtInstSetKind BSK = SPRVEIS_Count;
-  SPRVWord EntryPoint = SPRVWORD_MAX;
+  SPRVExtInstSetKind ExtSetKind = SPRVEIS_Count;
+  SPRVWord ExtOp = SPRVWORD_MAX;
   llvm::Function* F = CI->getCalledFunction();
   auto MangledName = F->getName();
   std::string DemangledName;
@@ -1334,21 +1101,22 @@ LLVMToSPRV::transCallInst(CallInst *CI, SPRVBasicBlock *BB) {
   }
 
   if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName) ||
-      isSPRVFunction(F, &DemangledName))
+      isDecoratedSPRVFunc(F, &DemangledName))
     if (auto BV = transOCLBuiltinToInst(CI, MangledName, DemangledName, BB))
       return BV;
 
-  if (oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &BSK, &EntryPoint))
+  if (oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &ExtSetKind,
+      &ExtOp))
     return BM->addExtInst(
-        transType(CI->getType()),
-        BuiltinSetId,
-        EntryPoint,
-        transArguments(CI, BB),
-        BB);
-  return BM->addCallInst(
-      transFunction(CI->getCalledFunction()),
-      transArguments(CI, BB),
+      transType(CI->getType()),
+      ExtSetId,
+      ExtOp,
+      transArguments(CI, BB, SPRVEntry::create_unique(ExtSetKind, ExtOp).get()),
       BB);
+  return BM->addCallInst(
+    transFunction(CI->getCalledFunction()),
+    transArguments(CI, BB, SPRVEntry::create_unique(OpFunctionCall).get()),
+    BB);
 }
 
 /// Remove entities not representable by SPIR-V
@@ -1357,6 +1125,7 @@ LLVMToSPRV::regularize() {
   LLVMContext *Context = &M->getContext();
 
   oclRegularize();
+  lowerFuncPtr(M);
   lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
@@ -1561,7 +1330,6 @@ LLVMToSPRV::transAddressingMode() {
     BM->setAddressingModel(AddressingModelPhysical64);
   return true;
 }
-
 std::vector<SPRVValue*>
 LLVMToSPRV::transValue(const std::vector<Value *> &Args, SPRVBasicBlock* BB) {
   std::vector<SPRVValue*> BArgs;
@@ -1573,6 +1341,23 @@ LLVMToSPRV::transValue(const std::vector<Value *> &Args, SPRVBasicBlock* BB) {
 std::vector<SPRVValue*>
 LLVMToSPRV::transArguments(CallInst *CI, SPRVBasicBlock *BB) {
   return transValue(getArguments(CI), BB);
+}
+
+std::vector<SPRVWord>
+LLVMToSPRV::transValue(const std::vector<Value *> &Args, SPRVBasicBlock* BB,
+    SPRVEntry *Entry) {
+  std::vector<SPRVWord> Operands;
+  for (size_t I = 0, E = Args.size(); I != E; ++I) {
+    Operands.push_back(Entry->isOperandLiteral(I) ?
+        cast<ConstantInt>(Args[I])->getZExtValue() :
+        transValue(Args[I], BB)->getId());
+  }
+  return Operands;
+}
+
+std::vector<SPRVWord>
+LLVMToSPRV::transArguments(CallInst *CI, SPRVBasicBlock *BB, SPRVEntry *Entry) {
+  return transValue(getArguments(CI), BB, Entry);
 }
 
 SPRVWord
@@ -1640,8 +1425,6 @@ LLVMToSPRV::translate() {
     return false;
   if (!transCompileFlag())
     return false;
-  if (!transOCLBuiltinsToVariables())
-    return false;
   if (!transBuiltinSet())
     return false;
   if (!transAddressingMode())
@@ -1658,7 +1441,7 @@ LLVMToSPRV::translate() {
   }
 
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
-    if (oclIsBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
+    if (isBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
         || I->getName().startswith(SPCV_CAST) || I->getName().startswith(LLVM_MEMCPY))
       continue;
     transFunction(I);
@@ -1689,30 +1472,6 @@ llvm::IntegerType* LLVMToSPRV::getSizetType() {
     M->getDataLayout()->getPointerSizeInBits());
 }
 
-
-SPRVValue *
-LLVMToSPRV::transOCLAsyncGroupCopy(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  auto Args = getArguments(CI);
-  if (DemangledName == "async_work_group_copy") {
-    Args.insert(Args.begin()+3, ConstantInt::get(getSizetType(), 1));
-  }
-  auto BArgs = transValue(Args, BB);
-  return BM->addAsyncGroupCopy(ScopeWorkgroup, BArgs[0], BArgs[1], BArgs[2],
-      BArgs[3], BArgs[4], BB);
-}
-
-SPRVValue *
-LLVMToSPRV::transOCLGroupBuiltins(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  auto Args = getArguments(CI);
-  auto BArgs = transValue(Args, BB);
-  auto Ty = CI->getType();
-  return BM->addGroupInst(OCLSPRVBuiltinMap::map(DemangledName),
-      Ty->isVoidTy() ? nullptr : transType(Ty),
-      ScopeWorkgroup, BArgs, BB);
-}
-
 SPRVWord LLVMToSPRV::oclGetVectorLoadWidth(const std::string& DemangledName) {
   SPRVWord Width = 0;
   if (DemangledName == "vloada_half")
@@ -1728,37 +1487,6 @@ SPRVWord LLVMToSPRV::oclGetVectorLoadWidth(const std::string& DemangledName) {
     SS >> Width;
   }
   return Width;
-}
-
-SPRVValue *
-LLVMToSPRV::transOCLVectorLoadStore(CallInst *CI,
-    const std::string &MangledName,
-    const std::string &DemangledName, SPRVBasicBlock *BB) {
-  std::vector<SPRVWord> Args;
-  for (unsigned I = 0, E = CI->getNumArgOperands(); I != E; ++I)
-    Args.push_back(transValue(CI->getArgOperand(I), BB)->getId());
-  if (DemangledName.find("vload") == 0 &&
-      DemangledName != "vload_half") {
-    SPRVWord Width = oclGetVectorLoadWidth(DemangledName);
-    SPRVDBG(bildbgs() << "[transOCLVectorLoadStore] DemangledName: " <<
-        DemangledName << " Width: " << Width << '\n');
-    Args.push_back(Width);
-  } else if (DemangledName.find("_r") != std::string::npos) {
-    Args.push_back(SPIRSPRVFPRoundingModeMap::map(DemangledName.substr(
-        DemangledName.find("_r") + 1, 3)));
-  }
-
-  SPRVExtInstSetKind BSK = SPRVEIS_Count;
-  SPRVWord EntryPoint = SPRVWORD_MAX;
-  bool Found = oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &BSK,
-      &EntryPoint);
-  assert (Found);
-  return BM->addExtInst(
-      transType(CI->getType()),
-      BuiltinSetId,
-      EntryPoint,
-      Args,
-      BB);
 }
 
 void
@@ -1777,21 +1505,15 @@ LLVMToSPRV::oclGetMutatedArgumentTypesByBuiltin(
 }
 
 SPRVInstruction *
-LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
+LLVMToSPRV::transBuiltinToInst(const std::string& DemangledName,
     const std::string &MangledName, CallInst* CI, SPRVBasicBlock* BB) {
   SmallVector<std::string, 2> Dec;
   auto OC = getSPRVFuncOC(DemangledName, &Dec);
-  OCLBuiltinSPRVTransInfo Info;
-
-  if (OC == OpNop) {
-    getOCLBuiltinSPRVTransInfo(Info, CI, MangledName, DemangledName);
-    OCLSPRVBuiltinMap::find(Info.UniqName, &OC);
-  }
 
   if (OC == OpNop)
     return nullptr;
 
-  auto Inst = transOCLBuiltinToInstWithoutDecoration(OC, Info, CI, BB);
+  auto Inst = transBuiltinToInstWithoutDecoration(OC, CI, BB);
   for (auto &I:Dec)
     if (auto Dec = mapPostfixToDecorate(I, Inst))
       Inst->addDecorate(Dec);
@@ -1802,14 +1524,7 @@ LLVMToSPRV::transOCLBuiltinToInstByMap(const std::string& DemangledName,
 SPRVValue *
 LLVMToSPRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
     const std::string &DemangledName, SPRVBasicBlock *BB) {
-  if (DemangledName.find("vload") == 0 ||
-      DemangledName.find("vstore") == 0)
-    return transOCLVectorLoadStore(CI, MangledName, DemangledName, BB);
-  if (DemangledName.find("async_work_group") == 0)
-    return transOCLAsyncGroupCopy(CI, MangledName, DemangledName, BB);
-  if (DemangledName == "wait_group_events")
-    return transOCLGroupBuiltins(CI, MangledName, DemangledName, BB);
-  return transOCLBuiltinToInstByMap(DemangledName, MangledName, CI, BB);
+  return transBuiltinToInst(DemangledName, MangledName, CI, BB);
 }
 
 bool
@@ -1935,9 +1650,9 @@ void
 LLVMToSPRV::oclRegularize() {
   PassManager PassMgr;
   PassMgr.add(createPromoteMemoryToRegisterPass());
-  PassMgr.add(createSPRVRegularizeOCL20());
   PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.add(createSPRVLowerBool());
+  PassMgr.add(createSPRVRegularizeOCL20());
   PassMgr.run(*M);
   eraseUselessFunctions(M);
 }
@@ -1951,14 +1666,23 @@ LLVMToSPRV::transBoolOpCode(SPRVValue* Opn, Op OC) {
 }
 
 SPRVInstruction *
-LLVMToSPRV::transOCLBuiltinToInstWithoutDecoration(Op OC,
-    OCLBuiltinSPRVTransInfo &Info, CallInst* CI, SPRVBasicBlock* BB) {
+LLVMToSPRV::transBuiltinToInstWithoutDecoration(Op OC,
+    CallInst* CI, SPRVBasicBlock* BB) {
   switch (OC) {
   case OpControlBarrier:
     return BM->addControlBarrierInst(
-        static_cast<Scope>(getArgInt(CI, 0)),
-        static_cast<Scope>(getArgInt(CI, 1)),
-        getArgInt(CI, 2), BB);
+        getArgAsScope(CI, 0),
+        getArgAsScope(CI, 1),
+        getArgAsInt(CI, 2), BB);
+    break;
+  case OpAsyncGroupCopy: {
+    auto Args = getArguments(CI, 1);
+    auto BArgs = transValue(Args, BB);
+    return BM->addAsyncGroupCopy(
+        getArgAsScope(CI, 0),
+        BArgs[0], BArgs[1], BArgs[2],
+        BArgs[3], BArgs[4], BB);
+    }
     break;
   default: {
     if (isCvtOpCode(OC)) {
@@ -1985,8 +1709,8 @@ LLVMToSPRV::transOCLBuiltinToInstWithoutDecoration(Op OC,
         transValue(CI->getArgOperand(1), BB), BB);
     } else if (CI->getNumArgOperands() == 1 &&
         !CI->getType()->isVoidTy() &&
-        Info.UniqName.find("group_") != 0 &&
-        Info.UniqName.find("atomic_") != 0) {
+        !hasExecScope(OC) &&
+        !isAtomicOpCode(OC)) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB), BB);
     } else {
@@ -2000,12 +1724,17 @@ LLVMToSPRV::transOCLBuiltinToInstWithoutDecoration(Op OC,
         SPRetTy = transType(F->arg_begin()->getType()->getPointerElementType());
         Args.erase(Args.begin());
       }
+      auto SPI = BM->addInstTemplate(OC, BB, SPRetTy);
       std::vector<SPRVWord> SPArgs;
-      for (auto I:Args) {
-        SPArgs.push_back(transValue(I, BB)->getId());
+      for (size_t I = 0, E = Args.size(); I != E; ++I) {
+        assert((!isFunctionPointerType(Args[I]->getType()) ||
+               isa<Function>(Args[I])) &&
+               "Invalid function pointer argument");
+        SPArgs.push_back(SPI->isOperandLiteral(I) ?
+            cast<ConstantInt>(Args[I])->getZExtValue() :
+            transValue(Args[I], BB)->getId());
       }
-      Info.PostProc(SPArgs);
-      auto SPI = BM->addInstTemplate(OC, SPArgs, BB, SPRetTy);
+      SPI->setOpWordsAndValidate(SPArgs);
       if (!SPRetTy || !SPRetTy->isTypeStruct())
         return SPI;
       std::vector<SPRVWord> Mem;
@@ -2018,7 +1747,45 @@ LLVMToSPRV::transOCLBuiltinToInstWithoutDecoration(Op OC,
   return nullptr;
 }
 
-SPRVId LLVMToSPRV::addInt32(int I) {
+// Assume F is a SPIR-V builtin function with a function pointer argument which
+// is a bitcast instruction casting a function to a void(void) function pointer.
+void LLVMToSPRV::lowerFuncPtr(Function* F, Op OC) {
+  DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
+  auto Name = decorateSPRVFunction(getName(OC));
+  std::set<Value *> InvokeFuncPtrs;
+  auto Attrs = F->getAttributes();
+  mutateFunction(F, [=, &InvokeFuncPtrs](
+      CallInst *CI, std::vector<Value *> &Args) {
+    for (auto &I:Args) {
+      if (isFunctionPointerType(I->getType())) {
+        InvokeFuncPtrs.insert(I);
+        I = removeCast(I);
+      }
+    }
+    return Name;
+  }, nullptr, &Attrs, false);
+  for (auto &I:InvokeFuncPtrs)
+    eraseIfNoUse(I);
+}
+
+void
+LLVMToSPRV::lowerFuncPtr(Module* M) {
+  std::vector<std::pair<Function *, Op>> Work;
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = I++;
+    auto AI = F->arg_begin();
+    if (hasFunctionPointerArg(F, AI)) {
+      auto OC = getSPRVFuncOC(F->getName());
+      assert(OC != OpNop && "Invalid function pointer usage");
+      Work.push_back(std::make_pair(F, OC));
+    }
+  }
+  for (auto &I:Work)
+    lowerFuncPtr(I.first, I.second);
+}
+
+SPRVId
+LLVMToSPRV::addInt32(int I) {
   return transValue(getInt32(M, I), nullptr, false)->getId();
 }
 

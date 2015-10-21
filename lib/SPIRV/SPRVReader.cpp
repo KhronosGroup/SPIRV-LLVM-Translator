@@ -325,7 +325,8 @@ public:
   ///
   /// These functions are translated to functions with array type argument
   /// first, then post-processed to have pointer arguments.
-  bool postProcessOCLBuiltinWithArrayArguments(Function *F);
+  bool postProcessOCLBuiltinWithArrayArguments(Function *F,
+      const std::string &DemangledName);
 
   /// \brief Post-process call instruction of read_pipe and write_pipe.
   ///
@@ -711,7 +712,7 @@ SPRVToLLVM::transType(SPRVType *T) {
       MT.push_back(transType(ST->getMemberType(I)));
     return mapType(T, StructType::create(*Context, MT, ST->getName(),
       ST->isPacked()));
-    } 
+    }
   case OpTypePipe: {
     auto PT = static_cast<SPRVTypePipe *>(T);
     return mapType(T, getOrCreateOpaquePtrType(M, transOCLPipeTypeName(PT)));
@@ -934,14 +935,15 @@ SPRVToLLVM::transCmpInst(SPRVValue* BV, BasicBlock* BB, Function* F) {
 
 bool
 SPRVToLLVM::postProcessOCL() {
+  std::string DemangledName;
+  SPRVWord SrcLangVer = 0;
+  BM->getSourceLanguage(&SrcLangVer);
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL sret] " << *F << '\n');
-      SPRVWord SrcLangVer = 0;
-      BM->getSourceLanguage(&SrcLangVer);
       if (F->getReturnType()->isStructTy() &&
-          oclIsBuiltin(F->getName(), SrcLangVer)) {
+          oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName)) {
         if (!postProcessOCLBuiltinReturnStruct(F))
           return false;
       }
@@ -952,7 +954,7 @@ SPRVToLLVM::postProcessOCL() {
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL func ptr] " << *F << '\n');
       auto AI = F->arg_begin();
-      if (hasFunctionPointerArg(F, AI) && isSPRVFunction(F))
+      if (hasFunctionPointerArg(F, AI) && isDecoratedSPRVFunc(F))
         if (!postProcessOCLBuiltinWithFuncPointer(F, AI))
           return false;
     }
@@ -961,8 +963,9 @@ SPRVToLLVM::postProcessOCL() {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
-      if (hasArrayArg(F))
-        if (!postProcessOCLBuiltinWithArrayArguments(F))
+      if (hasArrayArg(F) &&
+          oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName))
+        if (!postProcessOCLBuiltinWithArrayArguments(F, DemangledName))
           return false;
     }
   }
@@ -981,7 +984,7 @@ SPRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
       ArgTys.insert(ArgTys.begin(), PointerType::get(F->getReturnType(),
           SPIRAS_Private));
       auto newF = getOrCreateFunction(M, Type::getVoidTy(*Context),
-          ArgTys, Name, false);
+          ArgTys, Name);
       newF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), ST->getPointerOperand());
@@ -1002,10 +1005,13 @@ bool
 SPRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
     Function::arg_iterator I) {
   auto Name = undecorateSPRVFunction(F->getName());
-  mutateFunction (F, [=](CallInst *CI, std::vector<Value *> &Args) {
+  std::set<Value *> InvokeFuncPtrs;
+  mutateFunctionOCL (F, [=, &InvokeFuncPtrs](
+      CallInst *CI, std::vector<Value *> &Args) {
     auto ALoc = Args.begin();
     for (auto E = Args.end(); ALoc != E; ++ALoc) {
-      if (isa<Function>(*ALoc)) {
+      if (isFunctionPointerType((*ALoc)->getType())) {
+        assert(isa<Function>(*ALoc) && "Invalid function pointer usage");
         break;
       }
     }
@@ -1020,20 +1026,23 @@ SPRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
       CtxAlign = ALoc[3];
       Args.erase(ALoc + 1, ALoc + 4);
     }
-    *ALoc = addBlockBind(M, dyn_cast<Function>(*ALoc), Ctx, CtxLen, CtxAlign,
-        CI);
-
+    InvokeFuncPtrs.insert(*ALoc);
+    *ALoc = addBlockBind(M, cast<Function>(removeCast(*ALoc)),
+        Ctx, CtxLen, CtxAlign, CI);
     return Name;
-  }, true);
+  });
+  for (auto &I:InvokeFuncPtrs)
+    eraseIfNoUse(I);
   return true;
 }
 
 bool
-SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F) {
+SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F,
+    const std::string &DemangledName) {
   DEBUG(dbgs() << "[postProcessOCLBuiltinWithArrayArguments] " << *F << '\n');
-  auto Name = F->getName();
   auto Attrs = F->getAttributes();
-  mutateFunction (F, [=](CallInst *CI, std::vector<Value *> &Args) {
+  auto Name = F->getName();
+  mutateFunction(F, [=](CallInst *CI, std::vector<Value *> &Args) {
     auto FBegin = CI->getParent()->getParent()->begin()->getFirstInsertionPt();
     for (auto &I:Args) {
       auto T = I->getType();
@@ -1046,7 +1055,7 @@ SPRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F) {
       I = GetElementPtrInst::CreateInBounds(Alloca, Index, "", CI);
     }
     return Name;
-  }, false, &Attrs);
+  }, nullptr, &Attrs);
   return true;
 }
 
@@ -1055,7 +1064,7 @@ SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   auto OC = BI->getOpCode();
-  return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     if (!(OC == OpReadPipe ||
           OC == OpWritePipe ||
           OC == OpReservedReadPipe ||
@@ -1072,7 +1081,7 @@ SPRVToLLVM::postProcessOCLPipe(SPRVInstruction *BI, CallInst* CI,
       P = CastInst::CreatePointerBitCastOrAddrSpaceCast(P, NewTy, "", CI);
     }
     return FuncName;
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 // ToDo: Handle unsigned integer return type. May need spec change.
@@ -1080,7 +1089,7 @@ CallInst *
 SPRVToLLVM::postProcessOCLReadImage(SPRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     CallInst *CallSampledImg = cast<CallInst>(Args[0]);
     auto Img = CallSampledImg->getArgOperand(0);
     assert(isOCLImageType(Img->getType()));
@@ -1098,7 +1107,7 @@ SPRVToLLVM::postProcessOCLReadImage(SPRVInstruction *BI, CallInst* CI,
       T = VT->getElementType();
     return std::string(kOCLBuiltinName::SampledReadImage)
       + (T->isFloatingPointTy()?'f':'i');
-  }, true, &Attrs);
+  }, &Attrs);
 }
 
 CallInst *
@@ -1107,7 +1116,7 @@ SPRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   if (!CI->getOperand(0)->getType()->isVectorTy() &&
     CI->getOperand(1)->getType()->isVectorTy()) {
-    return mutateCallInst(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
       unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
       Value *NewVec = nullptr;
       if (auto CA = dyn_cast<Constant>(Args[0]))
@@ -1123,7 +1132,7 @@ SPRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
       NewVec->takeName(Args[0]);
       Args[0] = NewVec;
       return FuncName;
-    }, true, &Attrs);
+    }, &Attrs);
   }
   return CI;
 }
@@ -2108,8 +2117,8 @@ Instruction *
 SPRVToLLVM::transOCLBuiltinFromExtInst(SPRVExtInst *BC, BasicBlock *BB) {
   assert(BB && "Invalid BB");
   std::string MangledName;
-  SPRVWord EntryPoint = BC->getEntryPoint();
-  SPRVExtInstSetKind Set = BM->getBuiltinSet(BC->getBuiltinSet());
+  SPRVWord EntryPoint = BC->getExtOp();
+  SPRVExtInstSetKind Set = BM->getBuiltinSet(BC->getExtSetId());
   bool IsVarArg = false;
   bool IsPrintf = false;
   std::string UnmangledName;

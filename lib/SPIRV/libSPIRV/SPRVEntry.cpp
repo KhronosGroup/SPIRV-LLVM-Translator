@@ -91,6 +91,17 @@ SPRVEntry::create(Op OpCode) {
   return 0;
 }
 
+std::unique_ptr<SPRV::SPRVEntry>
+SPRVEntry::create_unique(Op OC) {
+  return std::unique_ptr<SPRVEntry>(create(OC));
+}
+
+std::unique_ptr<SPRV::SPRVExtInst>
+SPRVEntry::create_unique(SPRVExtInstSetKind Set,
+    unsigned ExtOp) {
+  return std::unique_ptr<SPRVExtInst>(new SPRVExtInst(Set, ExtOp));
+}
+
 SPRVErrorLog &
 SPRVEntry::getErrorLog()const {
   return Module->getErrorLog();
