@@ -67,9 +67,9 @@ SPIR-V builtin functions corresponding to the following SPIR-V instructions are
 postfixed following the order specified as below:
 
  * Instructions having identical argument types but different return types are postfixed with "_R{ReturnType}" where
-    - {ReturnType} - {ScalarType}|{VectorType}
-    - {ScalarType} - char|uchar|short|ushort|int|uint|long|ulong|half|float|double|bool
-    - {VectorType} - {ScalarType}{2|3|4|8|16}
+    - {ReturnType} = {ScalarType}|{VectorType}
+    - {ScalarType} = char|uchar|short|ushort|int|uint|long|ulong|half|float|double|bool
+    - {VectorType} = {ScalarType}{2|3|4|8|16}
  * Instructions with saturation decoration are postfixed with "_sat"
  * Instructions with floating point rounding mode decoration are postfixed with "_rtp|_rtn|_rtz|_rte"
 
@@ -84,7 +84,7 @@ The unmangled names of SPIR-V builtin conversion functions follow the convention
 
 where
 
- * {ConversionOpCodeName} - ConvertFToU|ConvertFToS|ConvertUToF|ConvertUToS|UConvert|SConvert|FConvert|SatConvertSToU|SatConvertUToS
+ * {ConversionOpCodeName} = ConvertFToU|ConvertFToS|ConvertUToF|ConvertUToS|UConvert|SConvert|FConvert|SatConvertSToU|SatConvertUToS
 
 SPIR-V Extended Instructions Mapped to LLVM Function Calls
 ==========================================================
@@ -116,31 +116,31 @@ following format:
 
 .. code-block:: llvm
 
-  !spirv.<OpCodeName> - !{!<InstructionMetadata1>, <InstructionMetadata2>, ..}
-  !<InstructionMetadata1> - !{<Operand1>, <Operand2>, ..}
-  !<InstructionMetadata2> - !{<Operand1>, <Operand2>, ..}
+  !spirv.<OpCodeName> = !{!<InstructionMetadata1>, <InstructionMetadata2>, ..}
+  !<InstructionMetadata1> = !{<Operand1>, <Operand2>, ..}
+  !<InstructionMetadata2> = !{<Operand1>, <Operand2>, ..}
 
 For example:
 
 .. code-block:: llvm
 
-  !spirv.Source - !{!0}
-  !spirv.SourceExtension - !{!2, !3}
-  !spirv.Extension - !{!2}
-  !spirv.Capability - !{!4}
-  !spirv.MemoryModel - !{!5}
-  !spirv.EntryPoint - !{!6 ,!7}
-  !spirv.ExecutionMode - !{!8, !9}
+  !spirv.Source = !{!0}
+  !spirv.SourceExtension = !{!2, !3}
+  !spirv.Extension = !{!2}
+  !spirv.Capability = !{!4}
+  !spirv.MemoryModel = !{!5}
+  !spirv.EntryPoint = !{!6 ,!7}
+  !spirv.ExecutionMode = !{!8, !9}
 
   ; 3 - OpenCL, 120 - OpenCL version 1.2, !0 - optional file id.
-  !0 - !{i32 3, i32 120, !1}
-  !1 - !{!"/tmp/opencl/program.cl"}
-  !2 - !{!"cl_khr_fp16"}
-  !3 - !{!"cl_khr_gl_sharing"}
-  !4 - !{i32 10}                ; Float64 - program uses doubles
-  !5 - !{i32 1, i32 2}     ; 1 - 32-bit addressing model, 2 - OpenCL memory model
-  !6 - !{i32 6, TBD, !"kernel1", TBD}
-  !7 - !{i32 6, TBD, !"kernel2", TBD}
-  !8 - !{!6, i32 18, i32 16, i32 1, i32 1}     ; local size hint <16, 1, 1> for 'kernel1'
-  !9 - !{!7, i32 32}     ; independent forward progress is required for 'kernel2'
+  !0 = !{i32 3, i32 120, !1}
+  !1 = !{!"/tmp/opencl/program.cl"}
+  !2 = !{!"cl_khr_fp16"}
+  !3 = !{!"cl_khr_gl_sharing"}
+  !4 = !{i32 10}                ; Float64 - program uses doubles
+  !5 = !{i32 1, i32 2}     ; 1 - 32-bit addressing model, 2 - OpenCL memory model
+  !6 = !{i32 6, TBD, !"kernel1", TBD}
+  !7 = !{i32 6, TBD, !"kernel2", TBD}
+  !8 = !{!6, i32 18, i32 16, i32 1, i32 1}     ; local size hint <16, 1, 1> for 'kernel1'
+  !9 = !{!7, i32 32}     ; independent forward progress is required for 'kernel2'
 
