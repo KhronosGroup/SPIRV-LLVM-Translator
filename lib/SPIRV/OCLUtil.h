@@ -109,6 +109,10 @@ typedef std::tuple<unsigned, OCLMemOrderKind, OCLScopeKind>
 typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
   WorkGroupBarrierLiterals;
 
+class OCLOpaqueType;
+typedef SPRVMap<std::string, Op, OCLOpaqueType>
+  BuiltinOpaqueGenericTypeOpCodeMap;
+
 /// Information for translating OCL builtin.
 struct OCLBuiltinTransInfo {
   std::string UniqName;
@@ -171,6 +175,12 @@ const OCLMemOrderKind OCLLegacyAtomicMemOrder = OCLMO_seq_cst;
 
 /// OCL 1.x atomic memory scope when translated to 2.0 atomics.
 const OCLScopeKind OCLLegacyAtomicMemScope = OCLMS_device;
+
+namespace kOCLVer {
+  const unsigned CL12 = 12;
+  const unsigned CL20 = 20;
+  const unsigned CL21 = 21;
+}
 
 namespace OclExt {
 enum Kind {
@@ -243,7 +253,7 @@ std::string getMDOperandAsString(MDNode* N, unsigned I);
 Type* getMDOperandAsType(MDNode* N, unsigned I);
 
 /// Get OCL version from metadata opencl.ocl.version.
-/// \return 20 for OCL 2.0, 12 for OCL 1.2.
+/// \return 21 for OCL 2.1, 20 for OCL 2.0, 12 for OCL 1.2.
 unsigned getOCLVersion(Module *M);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
@@ -546,6 +556,15 @@ _SPRV_OP(get_image_channel_order, ImageQueryOrder)
 _SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
 _SPRV_OP(get_image_num_samples, ImageQuerySamples)
 #undef _SPRV_OP
+}
+
+template<> inline void
+SPRVMap<std::string, Op, OCLOpaqueType>::init() {
+  add("opencl.event_t", OpTypeEvent);
+  add("opencl.pipe_t", OpTypePipe);
+  add("opencl.clk_event_t", OpTypeDeviceEvent);
+  add("opencl.reserve_id_t", OpTypeReserveId);
+  add("opencl.queue_t", OpTypeQueue);
 }
 
 } // namespace SPRV

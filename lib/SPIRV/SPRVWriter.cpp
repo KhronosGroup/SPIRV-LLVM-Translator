@@ -108,7 +108,7 @@ static std::string
 decodeVecTypeHintMDNode(MDNode* Node, Type *&HintType) {
   HintType = getMDOperandAsType(Node, 1);
   int Signed = getMDOperandAsInt(Node, 2);
-  return mapLLVMTypeToOpenCLType(HintType, Signed);
+  return mapLLVMTypeToOCLType(HintType, Signed);
 }
 
 static std::string
@@ -1650,9 +1650,10 @@ void
 LLVMToSPRV::oclRegularize() {
   PassManager PassMgr;
   PassMgr.add(createPromoteMemoryToRegisterPass());
+  PassMgr.add(createOCL21ToSPRV());
   PassMgr.add(createSPRVLowerOCLBlocks());
   PassMgr.add(createSPRVLowerBool());
-  PassMgr.add(createSPRVRegularizeOCL20());
+  PassMgr.add(createOCL20ToSPRV());
   PassMgr.run(*M);
   eraseUselessFunctions(M);
 }
