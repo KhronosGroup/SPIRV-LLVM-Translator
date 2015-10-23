@@ -35,12 +35,12 @@
 // This file declares OCL utility functions.
 //
 //===----------------------------------------------------------------------===//
-#include "SPRVInternal.h"
+#include "SPIRVInternal.h"
 
 #include <utility>
 #include <tuple>
 #include <functional>
-using namespace SPRV;
+using namespace SPIRV;
 using namespace llvm;
 using namespace spv;
 
@@ -80,26 +80,26 @@ enum OCLMemOrderKind {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef SPRVMap<OCLMemFenceKind, MemorySemanticsMask>
+typedef SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>
   OCLMemFenceMap;
 
-typedef SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
+typedef SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
   OCLMemOrderMap;
 
-typedef SPRVMap<OCLScopeKind, Scope>
+typedef SPIRVMap<OCLScopeKind, Scope>
   OCLMemScopeMap;
 
-typedef SPRVMap<std::string, SPRVGroupOperationKind>
-  SPIRSPRVGroupOperationMap;
+typedef SPIRVMap<std::string, SPIRVGroupOperationKind>
+  SPIRSPIRVGroupOperationMap;
 
-typedef SPRVMap<std::string, SPRVFPRoundingModeKind>
-  SPIRSPRVFPRoundingModeMap;
+typedef SPIRVMap<std::string, SPIRVFPRoundingModeKind>
+  SPIRSPIRVFPRoundingModeMap;
 
-typedef SPRVMap<std::string, Op, SPRVInstruction>
-  OCLSPRVBuiltinMap;
+typedef SPIRVMap<std::string, Op, SPIRVInstruction>
+  OCLSPIRVBuiltinMap;
 
-typedef SPRVMap<std::string, SPRVBuiltinVariableKind>
-  SPIRSPRVBuiltinVariableMap;
+typedef SPIRVMap<std::string, SPIRVBuiltinVariableKind>
+  SPIRSPIRVBuiltinVariableMap;
 
 /// Tuple of literals for atomic_work_item_fence (flag, order, scope)
 typedef std::tuple<unsigned, OCLMemOrderKind, OCLScopeKind>
@@ -110,7 +110,7 @@ typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
   WorkGroupBarrierLiterals;
 
 class OCLOpaqueType;
-typedef SPRVMap<std::string, Op, OCLOpaqueType>
+typedef SPIRVMap<std::string, Op, OCLOpaqueType>
   BuiltinOpaqueGenericTypeOpCodeMap;
 
 /// Information for translating OCL builtin.
@@ -184,32 +184,32 @@ namespace kOCLVer {
 
 namespace OclExt {
 enum Kind {
-#define _SPRV_OP(x) x,
-  _SPRV_OP(cl_images)
-  _SPRV_OP(cl_doubles)
-  _SPRV_OP(cl_khr_int64_base_atomics)
-  _SPRV_OP(cl_khr_int64_extended_atomics)
-  _SPRV_OP(cl_khr_fp16)
-  _SPRV_OP(cl_khr_gl_sharing)
-  _SPRV_OP(cl_khr_gl_event)
-  _SPRV_OP(cl_khr_d3d10_sharing)
-  _SPRV_OP(cl_khr_media_sharing)
-  _SPRV_OP(cl_khr_d3d11_sharing)
-  _SPRV_OP(cl_khr_global_int32_base_atomics)
-  _SPRV_OP(cl_khr_global_int32_extended_atomics)
-  _SPRV_OP(cl_khr_local_int32_base_atomics)
-  _SPRV_OP(cl_khr_local_int32_extended_atomics)
-  _SPRV_OP(cl_khr_byte_addressable_store)
-  _SPRV_OP(cl_khr_3d_image_writes)
-  _SPRV_OP(cl_khr_gl_msaa_sharing)
-  _SPRV_OP(cl_khr_depth_images)
-  _SPRV_OP(cl_khr_gl_depth_images)
-  _SPRV_OP(cl_khr_subgroups)
-  _SPRV_OP(cl_khr_mipmap_image)
-  _SPRV_OP(cl_khr_mipmap_image_writes)
-  _SPRV_OP(cl_khr_egl_event)
-  _SPRV_OP(cl_khr_srgb_image_writes)
-#undef _SPRV_OP
+#define _SPIRV_OP(x) x,
+  _SPIRV_OP(cl_images)
+  _SPIRV_OP(cl_doubles)
+  _SPIRV_OP(cl_khr_int64_base_atomics)
+  _SPIRV_OP(cl_khr_int64_extended_atomics)
+  _SPIRV_OP(cl_khr_fp16)
+  _SPIRV_OP(cl_khr_gl_sharing)
+  _SPIRV_OP(cl_khr_gl_event)
+  _SPIRV_OP(cl_khr_d3d10_sharing)
+  _SPIRV_OP(cl_khr_media_sharing)
+  _SPIRV_OP(cl_khr_d3d11_sharing)
+  _SPIRV_OP(cl_khr_global_int32_base_atomics)
+  _SPIRV_OP(cl_khr_global_int32_extended_atomics)
+  _SPIRV_OP(cl_khr_local_int32_base_atomics)
+  _SPIRV_OP(cl_khr_local_int32_extended_atomics)
+  _SPIRV_OP(cl_khr_byte_addressable_store)
+  _SPIRV_OP(cl_khr_3d_image_writes)
+  _SPIRV_OP(cl_khr_gl_msaa_sharing)
+  _SPIRV_OP(cl_khr_depth_images)
+  _SPIRV_OP(cl_khr_gl_depth_images)
+  _SPIRV_OP(cl_khr_subgroups)
+  _SPIRV_OP(cl_khr_mipmap_image)
+  _SPIRV_OP(cl_khr_mipmap_image_writes)
+  _SPIRV_OP(cl_khr_egl_event)
+  _SPIRV_OP(cl_khr_srgb_image_writes)
+#undef _SPIRV_OP
 };
 }
 
@@ -231,8 +231,8 @@ unsigned getExtOp(StringRef MangledName,
     const std::string &DemangledName = "");
 
 /// Get an empty SPIR-V instruction.
-std::unique_ptr<SPRVEntry>
-getSPRVInst(const OCLBuiltinTransInfo &Info);
+std::unique_ptr<SPIRVEntry>
+getSPIRVInst(const OCLBuiltinTransInfo &Info);
 
 /// Get literal arguments of call of atomic_work_item_fence.
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI);
@@ -258,25 +258,25 @@ unsigned getOCLVersion(Module *M);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 
-inline unsigned mapOCLMemSemanticToSPRV(unsigned MemFenceFlag,
+inline unsigned mapOCLMemSemanticToSPIRV(unsigned MemFenceFlag,
     OCLMemOrderKind Order) {
   return OCLMemOrderMap::map(Order) |
       mapBitMask<OCLMemFenceMap>(MemFenceFlag);
 }
 
-inline unsigned mapOCLMemFenceFlagToSPRV(unsigned MemFenceFlag) {
+inline unsigned mapOCLMemFenceFlagToSPIRV(unsigned MemFenceFlag) {
   return mapBitMask<OCLMemFenceMap>(MemFenceFlag);
 }
 
 inline std::pair<unsigned, OCLMemOrderKind>
-mapSPRVMemSemanticToOCL(unsigned Sema) {
+mapSPIRVMemSemanticToOCL(unsigned Sema) {
   return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
-    OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema)));
+    OCLMemOrderMap::rmap(extractSPIRVMemOrderSemantic(Sema)));
 }
 
 inline OCLMemOrderKind
-mapSPRVMemOrderToOCL(unsigned Sema) {
-  return OCLMemOrderMap::rmap(extractSPRVMemOrderSemantic(Sema));
+mapSPIRVMemOrderToOCL(unsigned Sema) {
+  return OCLMemOrderMap::rmap(extractSPIRVMemOrderSemantic(Sema));
 }
 
 /// Mutate call instruction to call OpenCL builtin function.
@@ -308,16 +308,16 @@ mutateFunctionOCL(Function *F,
 ///////////////////////////////////////////////////////////////////////////////
 
 using namespace OCLUtil;
-namespace SPRV {
+namespace SPIRV {
 template<> inline void
-SPRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
+SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
   add(OCLMF_Local, MemorySemanticsWorkgroupLocalMemoryMask);
   add(OCLMF_Global, MemorySemanticsWorkgroupGlobalMemoryMask);
   add(OCLMF_Image, MemorySemanticsImageMemoryMask);
 }
 
 template<> inline void
-SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
+SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
   add(OCLMO_relaxed, MemorySemanticsMaskNone);
   add(OCLMO_acquire, MemorySemanticsAcquireMask);
   add(OCLMO_release, MemorySemanticsReleaseMask);
@@ -326,7 +326,7 @@ SPRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
 }
 
 template<> inline void
-SPRVMap<OCLScopeKind, Scope>::init() {
+SPIRVMap<OCLScopeKind, Scope>::init() {
   add(OCLMS_work_item, ScopeInvocation);
   add(OCLMS_work_group, ScopeWorkgroup);
   add(OCLMS_device, ScopeDevice);
@@ -335,14 +335,14 @@ SPRVMap<OCLScopeKind, Scope>::init() {
 }
 
 template<> inline void
-SPRVMap<std::string, SPRVGroupOperationKind>::init() {
+SPIRVMap<std::string, SPIRVGroupOperationKind>::init() {
   add("reduce", GroupOperationReduce);
   add("scan_inclusive", GroupOperationInclusiveScan);
   add("scan_exclusive", GroupOperationExclusiveScan);
 }
 
 template<> inline void
-SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
+SPIRVMap<std::string, SPIRVFPRoundingModeKind>::init() {
   add("rte", FPRoundingModeRTE);
   add("rtz", FPRoundingModeRTZ);
   add("rtp", FPRoundingModeRTP);
@@ -350,37 +350,37 @@ SPRVMap<std::string, SPRVFPRoundingModeKind>::init() {
 }
 
 template<> inline void
-SPRVMap<OclExt::Kind, std::string>::init() {
-#define _SPRV_OP(x) add(OclExt::x, #x);
-  _SPRV_OP(cl_images)
-  _SPRV_OP(cl_doubles)
-  _SPRV_OP(cl_khr_int64_base_atomics)
-  _SPRV_OP(cl_khr_int64_extended_atomics)
-  _SPRV_OP(cl_khr_fp16)
-  _SPRV_OP(cl_khr_gl_sharing)
-  _SPRV_OP(cl_khr_gl_event)
-  _SPRV_OP(cl_khr_d3d10_sharing)
-  _SPRV_OP(cl_khr_media_sharing)
-  _SPRV_OP(cl_khr_d3d11_sharing)
-  _SPRV_OP(cl_khr_global_int32_base_atomics)
-  _SPRV_OP(cl_khr_global_int32_extended_atomics)
-  _SPRV_OP(cl_khr_local_int32_base_atomics)
-  _SPRV_OP(cl_khr_local_int32_extended_atomics)
-  _SPRV_OP(cl_khr_byte_addressable_store)
-  _SPRV_OP(cl_khr_3d_image_writes)
-  _SPRV_OP(cl_khr_gl_msaa_sharing)
-  _SPRV_OP(cl_khr_depth_images)
-  _SPRV_OP(cl_khr_gl_depth_images)
-  _SPRV_OP(cl_khr_subgroups)
-  _SPRV_OP(cl_khr_mipmap_image)
-  _SPRV_OP(cl_khr_mipmap_image_writes)
-  _SPRV_OP(cl_khr_egl_event)
-  _SPRV_OP(cl_khr_srgb_image_writes)
-#undef _SPRV_OP
+SPIRVMap<OclExt::Kind, std::string>::init() {
+#define _SPIRV_OP(x) add(OclExt::x, #x);
+  _SPIRV_OP(cl_images)
+  _SPIRV_OP(cl_doubles)
+  _SPIRV_OP(cl_khr_int64_base_atomics)
+  _SPIRV_OP(cl_khr_int64_extended_atomics)
+  _SPIRV_OP(cl_khr_fp16)
+  _SPIRV_OP(cl_khr_gl_sharing)
+  _SPIRV_OP(cl_khr_gl_event)
+  _SPIRV_OP(cl_khr_d3d10_sharing)
+  _SPIRV_OP(cl_khr_media_sharing)
+  _SPIRV_OP(cl_khr_d3d11_sharing)
+  _SPIRV_OP(cl_khr_global_int32_base_atomics)
+  _SPIRV_OP(cl_khr_global_int32_extended_atomics)
+  _SPIRV_OP(cl_khr_local_int32_base_atomics)
+  _SPIRV_OP(cl_khr_local_int32_extended_atomics)
+  _SPIRV_OP(cl_khr_byte_addressable_store)
+  _SPIRV_OP(cl_khr_3d_image_writes)
+  _SPIRV_OP(cl_khr_gl_msaa_sharing)
+  _SPIRV_OP(cl_khr_depth_images)
+  _SPIRV_OP(cl_khr_gl_depth_images)
+  _SPIRV_OP(cl_khr_subgroups)
+  _SPIRV_OP(cl_khr_mipmap_image)
+  _SPIRV_OP(cl_khr_mipmap_image_writes)
+  _SPIRV_OP(cl_khr_egl_event)
+  _SPIRV_OP(cl_khr_srgb_image_writes)
+#undef _SPIRV_OP
 }
 
 template<> inline void
-SPRVMap<OclExt::Kind, SPRVCapabilityKind>::init() {
+SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
   add(OclExt::cl_images, CapabilityImageBasic);
   add(OclExt::cl_doubles, CapabilityFloat64);
   add(OclExt::cl_khr_int64_base_atomics, CapabilityInt64Atomics);
@@ -409,7 +409,7 @@ SPRVMap<OclExt::Kind, SPRVCapabilityKind>::init() {
 
 /// Map OpenCL work functions to SPIR-V builtin variables.
 template<> inline void
-SPRVMap<std::string, SPRVBuiltinVariableKind>::init() {
+SPIRVMap<std::string, SPIRVBuiltinVariableKind>::init() {
   add("get_work_dim", BuiltInWorkDim);
   add("get_global_size", BuiltInGlobalSize);
   add("get_global_id", BuiltInGlobalInvocationId);
@@ -435,131 +435,131 @@ SPRVMap<std::string, SPRVBuiltinVariableKind>::init() {
 // is used for atomic_min with unsigned integer parameter.
 // work_group_ and sub_group_ functions are unified as group_ functions
 // except work_group_barrier.
-class SPRVInstruction;
+class SPIRVInstruction;
 template<> inline void
-SPRVMap<std::string, Op, SPRVInstruction>::init() {
-#define _SPRV_OP(x,y) add("atom_"#x, OpAtomic##y);
+SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
+#define _SPIRV_OP(x,y) add("atom_"#x, OpAtomic##y);
 // cl_khr_int64_base_atomics builtins
-_SPRV_OP(add, IAdd)
-_SPRV_OP(sub, ISub)
-_SPRV_OP(xchg, Exchange)
-_SPRV_OP(dec, IDecrement)
-_SPRV_OP(inc, IIncrement)
-_SPRV_OP(cmpxchg, CompareExchange)
+_SPIRV_OP(add, IAdd)
+_SPIRV_OP(sub, ISub)
+_SPIRV_OP(xchg, Exchange)
+_SPIRV_OP(dec, IDecrement)
+_SPIRV_OP(inc, IIncrement)
+_SPIRV_OP(cmpxchg, CompareExchange)
 // cl_khr_int64_extended_atomics builtins
-_SPRV_OP(min, SMin)
-_SPRV_OP(max, SMax)
-_SPRV_OP(and, And)
-_SPRV_OP(or, Or)
-_SPRV_OP(xor, Xor)
-#undef _SPRV_OP
-#define _SPRV_OP(x,y) add("atomic_"#x, Op##y);
+_SPIRV_OP(min, SMin)
+_SPIRV_OP(max, SMax)
+_SPIRV_OP(and, And)
+_SPIRV_OP(or, Or)
+_SPIRV_OP(xor, Xor)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x,y) add("atomic_"#x, Op##y);
 // CL 2.0 atomic builtins
-_SPRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
-_SPRV_OP(flag_clear_explicit, AtomicFlagClear)
-_SPRV_OP(load_explicit, AtomicLoad)
-_SPRV_OP(store_explicit, AtomicStore)
-_SPRV_OP(exchange_explicit, AtomicExchange)
-_SPRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
-_SPRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
-_SPRV_OP(inc, AtomicIIncrement)
-_SPRV_OP(dec, AtomicIDecrement)
-_SPRV_OP(fetch_add_explicit, AtomicIAdd)
-_SPRV_OP(fetch_sub_explicit, AtomicISub)
-_SPRV_OP(fetch_umin_explicit, AtomicUMin)
-_SPRV_OP(fetch_umax_explicit, AtomicUMax)
-_SPRV_OP(fetch_min_explicit, AtomicSMin)
-_SPRV_OP(fetch_max_explicit, AtomicSMax)
-_SPRV_OP(fetch_and_explicit, AtomicAnd)
-_SPRV_OP(fetch_or_explicit, AtomicOr)
-_SPRV_OP(fetch_xor_explicit, AtomicXor)
-#undef _SPRV_OP
-#define _SPRV_OP(x,y) add(#x, Op##y);
-_SPRV_OP(dot, Dot)
-_SPRV_OP(async_work_group_copy, AsyncGroupCopy)
-_SPRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
-_SPRV_OP(wait_group_events, WaitGroupEvents)
-_SPRV_OP(isequal, FOrdEqual)
-_SPRV_OP(isnotequal, FUnordNotEqual)
-_SPRV_OP(isgreater, FOrdGreaterThan)
-_SPRV_OP(isgreaterequal, FOrdGreaterThanEqual)
-_SPRV_OP(isless, FOrdLessThan)
-_SPRV_OP(islessequal, FOrdLessThanEqual)
-_SPRV_OP(islessgreater, LessOrGreater)
-_SPRV_OP(isordered, Ordered)
-_SPRV_OP(isunordered, Unordered)
-_SPRV_OP(isfinite, IsFinite)
-_SPRV_OP(isinf, IsInf)
-_SPRV_OP(isnan, IsNan)
-_SPRV_OP(isnormal, IsNormal)
-_SPRV_OP(signbit, SignBitSet)
-_SPRV_OP(any, Any)
-_SPRV_OP(all, All)
-_SPRV_OP(get_fence, GenericPtrMemSemantics)
+_SPIRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
+_SPIRV_OP(flag_clear_explicit, AtomicFlagClear)
+_SPIRV_OP(load_explicit, AtomicLoad)
+_SPIRV_OP(store_explicit, AtomicStore)
+_SPIRV_OP(exchange_explicit, AtomicExchange)
+_SPIRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
+_SPIRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
+_SPIRV_OP(inc, AtomicIIncrement)
+_SPIRV_OP(dec, AtomicIDecrement)
+_SPIRV_OP(fetch_add_explicit, AtomicIAdd)
+_SPIRV_OP(fetch_sub_explicit, AtomicISub)
+_SPIRV_OP(fetch_umin_explicit, AtomicUMin)
+_SPIRV_OP(fetch_umax_explicit, AtomicUMax)
+_SPIRV_OP(fetch_min_explicit, AtomicSMin)
+_SPIRV_OP(fetch_max_explicit, AtomicSMax)
+_SPIRV_OP(fetch_and_explicit, AtomicAnd)
+_SPIRV_OP(fetch_or_explicit, AtomicOr)
+_SPIRV_OP(fetch_xor_explicit, AtomicXor)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x,y) add(#x, Op##y);
+_SPIRV_OP(dot, Dot)
+_SPIRV_OP(async_work_group_copy, AsyncGroupCopy)
+_SPIRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
+_SPIRV_OP(wait_group_events, WaitGroupEvents)
+_SPIRV_OP(isequal, FOrdEqual)
+_SPIRV_OP(isnotequal, FUnordNotEqual)
+_SPIRV_OP(isgreater, FOrdGreaterThan)
+_SPIRV_OP(isgreaterequal, FOrdGreaterThanEqual)
+_SPIRV_OP(isless, FOrdLessThan)
+_SPIRV_OP(islessequal, FOrdLessThanEqual)
+_SPIRV_OP(islessgreater, LessOrGreater)
+_SPIRV_OP(isordered, Ordered)
+_SPIRV_OP(isunordered, Unordered)
+_SPIRV_OP(isfinite, IsFinite)
+_SPIRV_OP(isinf, IsInf)
+_SPIRV_OP(isnan, IsNan)
+_SPIRV_OP(isnormal, IsNormal)
+_SPIRV_OP(signbit, SignBitSet)
+_SPIRV_OP(any, Any)
+_SPIRV_OP(all, All)
+_SPIRV_OP(get_fence, GenericPtrMemSemantics)
 // CL 2.0 kernel enqueue builtins
-_SPRV_OP(enqueue_marker, EnqueueMarker)
-_SPRV_OP(enqueue_kernel, EnqueueKernel)
-_SPRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
-_SPRV_OP(get_kernel_ndrange_max_subgroup_count, GetKernelNDrangeMaxSubGroupSize)
-_SPRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
-_SPRV_OP(get_kernel_preferred_work_group_size_multiple, GetKernelPreferredWorkGroupSizeMultiple)
-_SPRV_OP(retain_event, RetainEvent)
-_SPRV_OP(release_event, ReleaseEvent)
-_SPRV_OP(create_user_event, CreateUserEvent)
-_SPRV_OP(is_valid_event, IsValidEvent)
-_SPRV_OP(set_user_event_status, SetUserEventStatus)
-_SPRV_OP(capture_event_profiling_info, CaptureEventProfilingInfo)
-_SPRV_OP(get_default_queue, GetDefaultQueue)
-_SPRV_OP(ndrange_1D, BuildNDRange)
-_SPRV_OP(ndrange_2D, BuildNDRange)
-_SPRV_OP(ndrange_3D, BuildNDRange)
+_SPIRV_OP(enqueue_marker, EnqueueMarker)
+_SPIRV_OP(enqueue_kernel, EnqueueKernel)
+_SPIRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
+_SPIRV_OP(get_kernel_ndrange_max_subgroup_count, GetKernelNDrangeMaxSubGroupSize)
+_SPIRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
+_SPIRV_OP(get_kernel_preferred_work_group_size_multiple, GetKernelPreferredWorkGroupSizeMultiple)
+_SPIRV_OP(retain_event, RetainEvent)
+_SPIRV_OP(release_event, ReleaseEvent)
+_SPIRV_OP(create_user_event, CreateUserEvent)
+_SPIRV_OP(is_valid_event, IsValidEvent)
+_SPIRV_OP(set_user_event_status, SetUserEventStatus)
+_SPIRV_OP(capture_event_profiling_info, CaptureEventProfilingInfo)
+_SPIRV_OP(get_default_queue, GetDefaultQueue)
+_SPIRV_OP(ndrange_1D, BuildNDRange)
+_SPIRV_OP(ndrange_2D, BuildNDRange)
+_SPIRV_OP(ndrange_3D, BuildNDRange)
 // Generic Address Space Casts
-_SPRV_OP(to_global, GenericCastToPtr)
-_SPRV_OP(to_local, GenericCastToPtr)
-_SPRV_OP(to_private, GenericCastToPtr)
-_SPRV_OP(work_group_barrier, ControlBarrier)
+_SPIRV_OP(to_global, GenericCastToPtr)
+_SPIRV_OP(to_local, GenericCastToPtr)
+_SPIRV_OP(to_private, GenericCastToPtr)
+_SPIRV_OP(work_group_barrier, ControlBarrier)
 // CL 2.0 pipe builtins
-_SPRV_OP(read_pipe, ReadPipe)
-_SPRV_OP(write_pipe, WritePipe)
-_SPRV_OP(reserved_read_pipe, ReservedReadPipe)
-_SPRV_OP(reserved_write_pipe, ReservedWritePipe)
-_SPRV_OP(reserve_read_pipe, ReserveReadPipePackets)
-_SPRV_OP(reserve_write_pipe, ReserveWritePipePackets)
-_SPRV_OP(commit_read_pipe, CommitReadPipe)
-_SPRV_OP(commit_write_pipe, CommitWritePipe)
-_SPRV_OP(is_valid_reserve_id, IsValidReserveId)
-_SPRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
-_SPRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
-_SPRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
-_SPRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
-_SPRV_OP(get_pipe_num_packets, GetNumPipePackets)
-_SPRV_OP(get_pipe_max_packets, GetMaxPipePackets)
+_SPIRV_OP(read_pipe, ReadPipe)
+_SPIRV_OP(write_pipe, WritePipe)
+_SPIRV_OP(reserved_read_pipe, ReservedReadPipe)
+_SPIRV_OP(reserved_write_pipe, ReservedWritePipe)
+_SPIRV_OP(reserve_read_pipe, ReserveReadPipePackets)
+_SPIRV_OP(reserve_write_pipe, ReserveWritePipePackets)
+_SPIRV_OP(commit_read_pipe, CommitReadPipe)
+_SPIRV_OP(commit_write_pipe, CommitWritePipe)
+_SPIRV_OP(is_valid_reserve_id, IsValidReserveId)
+_SPIRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
+_SPIRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
+_SPIRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
+_SPIRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
+_SPIRV_OP(get_pipe_num_packets, GetNumPipePackets)
+_SPIRV_OP(get_pipe_max_packets, GetMaxPipePackets)
 // CL 2.0 workgroup builtins
-_SPRV_OP(group_all, GroupAll)
-_SPRV_OP(group_any, GroupAny)
-_SPRV_OP(group_broadcast, GroupBroadcast)
-_SPRV_OP(group_iadd, GroupIAdd)
-_SPRV_OP(group_fadd, GroupFAdd)
-_SPRV_OP(group_fmin, GroupFMin)
-_SPRV_OP(group_umin, GroupUMin)
-_SPRV_OP(group_smin, GroupSMin)
-_SPRV_OP(group_fmax, GroupFMax)
-_SPRV_OP(group_umax, GroupUMax)
-_SPRV_OP(group_smax, GroupSMax)
+_SPIRV_OP(group_all, GroupAll)
+_SPIRV_OP(group_any, GroupAny)
+_SPIRV_OP(group_broadcast, GroupBroadcast)
+_SPIRV_OP(group_iadd, GroupIAdd)
+_SPIRV_OP(group_fadd, GroupFAdd)
+_SPIRV_OP(group_fmin, GroupFMin)
+_SPIRV_OP(group_umin, GroupUMin)
+_SPIRV_OP(group_smin, GroupSMin)
+_SPIRV_OP(group_fmax, GroupFMax)
+_SPIRV_OP(group_umax, GroupUMax)
+_SPIRV_OP(group_smax, GroupSMax)
 // CL image builtins
-_SPRV_OP(SampledImage, SampledImage)
-_SPRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
-_SPRV_OP(read_image, ImageRead)
-_SPRV_OP(write_image, ImageWrite)
-_SPRV_OP(get_image_channel_data_type, ImageQueryFormat)
-_SPRV_OP(get_image_channel_order, ImageQueryOrder)
-_SPRV_OP(get_image_num_mip_levels, ImageQueryLevels)
-_SPRV_OP(get_image_num_samples, ImageQuerySamples)
-#undef _SPRV_OP
+_SPIRV_OP(SampledImage, SampledImage)
+_SPIRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
+_SPIRV_OP(read_image, ImageRead)
+_SPIRV_OP(write_image, ImageWrite)
+_SPIRV_OP(get_image_channel_data_type, ImageQueryFormat)
+_SPIRV_OP(get_image_channel_order, ImageQueryOrder)
+_SPIRV_OP(get_image_num_mip_levels, ImageQueryLevels)
+_SPIRV_OP(get_image_num_samples, ImageQuerySamples)
+#undef _SPIRV_OP
 }
 
 template<> inline void
-SPRVMap<std::string, Op, OCLOpaqueType>::init() {
+SPIRVMap<std::string, Op, OCLOpaqueType>::init() {
   add("opencl.event_t", OpTypeEvent);
   add("opencl.pipe_t", OpTypePipe);
   add("opencl.clk_event_t", OpTypeDeviceEvent);
@@ -567,4 +567,4 @@ SPRVMap<std::string, Op, OCLOpaqueType>::init() {
   add("opencl.queue_t", OpTypeQueue);
 }
 
-} // namespace SPRV
+} // namespace SPIRV

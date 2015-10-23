@@ -1,7 +1,7 @@
 //===-- llvm-spirv.cpp - The LLVM/SPIR-V translator utility -----*- C++ -*-===//
 //
 //
-//                     The LLVM/SPRV Translator
+//                     The LLVM/SPIRV Translator
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
@@ -56,8 +56,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#ifndef _SPRV_SUPPORT_TEXT_FMT
-#define _SPRV_SUPPORT_TEXT_FMT
+#ifndef _SPIRV_SUPPORT_TEXT_FMT
+#define _SPIRV_SUPPORT_TEXT_FMT
 #endif
 
 #include "SPIRV.h"
@@ -90,7 +90,7 @@ static cl::opt<bool>
 IsRegularization("s", cl::desc(
     "Regularize LLVM to be representable by SPIR-V"));
 
-#ifdef _SPRV_SUPPORT_TEXT_FMT
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
 static cl::opt<bool>
 ToText("to-text", cl::desc("Convert input SPIR-V binary to internal textual format"));
 
@@ -108,7 +108,7 @@ removeExt(const std::string& FileName) {
 }
 
 static int
-convertLLVMToSPRV() {
+convertLLVMToSPIRV() {
   LLVMContext Context;
 
   std::string Err;
@@ -141,21 +141,21 @@ convertLLVMToSPRV() {
   }
 
   std::ofstream OFS(OutputFile, std::ios::binary);
-  if (!WriteSPRV(M.get(), OFS, Err)) {
-    errs() << "Fails to save LLVM as SPRV: " << Err << '\n';
+  if (!WriteSPIRV(M.get(), OFS, Err)) {
+    errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
   return 0;
 }
 
 static int
-convertSPRVToLLVM() {
+convertSPIRVToLLVM() {
   LLVMContext Context;
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
   std::string Err;
 
-  if (!ReadSPRV(Context, IFS, M, Err)) {
+  if (!ReadSPIRV(Context, IFS, M, Err)) {
     errs() << "Fails to load SPIRV as LLVM Module: " << Err << '\n';
     return -1;
   }
@@ -189,9 +189,9 @@ convertSPRVToLLVM() {
   return 0;
 }
 
-#ifdef _SPRV_SUPPORT_TEXT_FMT
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
 static int
-convertSPRV() {
+convertSPIRV() {
   if (ToBinary == ToText) {
     errs() << "Invalid arguments\n";
     return -1;
@@ -209,7 +209,7 @@ convertSPRV() {
 
   auto Action = [&](std::ostream &OFS) {
     std::string Err;
-      if (!SPRV::ConvertSPRV(IFS, OFS, Err, ToBinary, ToText)) {
+      if (!SPIRV::ConvertSPIRV(IFS, OFS, Err, ToBinary, ToText)) {
       errs() << "Fails to convert SPIR-V : " << Err << '\n';
       return -1;
     }
@@ -256,8 +256,8 @@ regularizeLLVM() {
       OutputFile = removeExt(InputFile) + ".regularized.bc";
   }
 
-  if (!RegularizeLLVMForSPRV(M.get(), Err)) {
-    errs() << "Fails to save LLVM as SPRV: " << Err << '\n';
+  if (!RegularizeLLVMForSPIRV(M.get(), Err)) {
+    errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
 
@@ -278,7 +278,7 @@ int
 main(int ac, char** av) {
   cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
 
-#ifdef _SPRV_SUPPORT_TEXT_FMT
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
     errs() << "Cannot use -to-text with -to-binary, -r, -s\n";
     return -1;
@@ -290,18 +290,18 @@ main(int ac, char** av) {
   }
 
   if (ToBinary || ToText)
-    return convertSPRV();
+    return convertSPIRV();
 #endif
 
   if (!IsReverse && !IsRegularization)
-    return convertLLVMToSPRV();
+    return convertLLVMToSPIRV();
 
   if (IsReverse && IsRegularization) {
     errs() << "Cannot have both -r and -s options\n";
     return -1;
   }
   if (IsReverse)
-    return convertSPRVToLLVM();
+    return convertSPIRVToLLVM();
 
   if (IsRegularization)
     return regularizeLLVM();

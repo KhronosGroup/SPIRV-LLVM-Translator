@@ -37,7 +37,7 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "ocl20to12"
 
-#include "SPRVInternal.h"
+#include "SPIRVInternal.h"
 #include "OCLUtil.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
@@ -51,10 +51,10 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
-using namespace SPRV;
+using namespace SPIRV;
 using namespace OCLUtil;
 
-namespace SPRV {
+namespace SPIRV {
 class OCL20To12: public ModulePass,
   public InstVisitor<OCL20To12> {
 public:
