@@ -3,30 +3,30 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
   ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_llvm_library(LLVMSPIRVLib
-  libSPIRV/SPRVBasicBlock.cpp
-  libSPIRV/SPRVDebug.cpp
-  libSPIRV/SPRVDecorate.cpp
-  libSPIRV/SPRVEntry.cpp
-  libSPIRV/SPRVFunction.cpp
-  libSPIRV/SPRVInstruction.cpp
-  libSPIRV/SPRVModule.cpp
-  libSPIRV/SPRVStream.cpp
-  libSPIRV/SPRVType.cpp
-  libSPIRV/SPRVValue.cpp
+  libSPIRV/SPIRVBasicBlock.cpp
+  libSPIRV/SPIRVDebug.cpp
+  libSPIRV/SPIRVDecorate.cpp
+  libSPIRV/SPIRVEntry.cpp
+  libSPIRV/SPIRVFunction.cpp
+  libSPIRV/SPIRVInstruction.cpp
+  libSPIRV/SPIRVModule.cpp
+  libSPIRV/SPIRVStream.cpp
+  libSPIRV/SPIRVType.cpp
+  libSPIRV/SPIRVValue.cpp
   Mangler/FunctionDescriptor.cpp
   Mangler/Mangler.cpp
   Mangler/ManglingUtils.cpp
   Mangler/ParameterType.cpp
   OCL20To12.cpp
-  OCL20ToSPRV.cpp
-  OCL21ToSPRV.cpp
+  OCL20ToSPIRV.cpp
+  OCL21ToSPIRV.cpp
   OCLUtil.cpp
-  SPRVLowerBool.cpp
-  SPRVLowerOCLBlocks.cpp
-  SPRVReader.cpp
-  SPRVToOCL20.cpp
-  SPRVUtil.cpp
-  SPRVWriter.cpp
+  SPIRVLowerBool.cpp
+  SPIRVLowerOCLBlocks.cpp
+  SPIRVReader.cpp
+  SPIRVToOCL20.cpp
+  SPIRVUtil.cpp
+  SPIRVWriter.cpp
   )
 
 add_dependencies(LLVMSPIRVLib intrinsics_gen)

@@ -37,11 +37,11 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "oclutil"
 
-#include "SPRVInternal.h"
+#include "SPIRVInternal.h"
 #include "OCLUtil.h"
-#include "SPRVEntry.h"
-#include "SPRVFunction.h"
-#include "SPRVInstruction.h"
+#include "SPIRVEntry.h"
+#include "SPIRVFunction.h"
+#include "SPIRVInstruction.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
@@ -54,7 +54,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
-using namespace SPRV;
+using namespace SPIRV;
 
 namespace OCLUtil {
 
@@ -106,17 +106,17 @@ getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
     return ~0U;
 }
 
-std::unique_ptr<SPRVEntry>
-getSPRVInst(const OCLBuiltinTransInfo &Info) {
+std::unique_ptr<SPIRVEntry>
+getSPIRVInst(const OCLBuiltinTransInfo &Info) {
   Op OC = OpNop;
   unsigned ExtOp = ~0U;
-  SPRVEntry *Entry = nullptr;
-  if (OCLSPRVBuiltinMap::find(Info.UniqName, &OC))
-    Entry = SPRVEntry::create(OC);
+  SPIRVEntry *Entry = nullptr;
+  if (OCLSPIRVBuiltinMap::find(Info.UniqName, &OC))
+    Entry = SPIRVEntry::create(OC);
   else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
-    Entry = static_cast<SPRVEntry*>(
-        SPRVEntry::create_unique(SPRVEIS_OpenCL, ExtOp).get());
-  return std::unique_ptr<SPRVEntry>(Entry);
+    Entry = static_cast<SPIRVEntry*>(
+        SPIRVEntry::create_unique(SPIRVEIS_OpenCL, ExtOp).get());
+  return std::unique_ptr<SPIRVEntry>(Entry);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,7 +178,7 @@ getOCLOpaqueTypeAddrSpace(Op OpCode) {
   }
 }
 
-class OCLBuiltinFuncMangleInfo:public SPRV::BuiltinFuncMangleInfo {
+class OCLBuiltinFuncMangleInfo:public SPIRV::BuiltinFuncMangleInfo {
 public:
   OCLBuiltinFuncMangleInfo(){}
   void init(const std::string &UniqName) {
@@ -289,6 +289,6 @@ void
 llvm::MangleOpenCLBuiltin(const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
   OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo;
-  MangledName = SPRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
+  MangledName = SPIRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }
 
