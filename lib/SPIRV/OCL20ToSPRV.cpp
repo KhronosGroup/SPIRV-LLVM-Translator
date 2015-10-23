@@ -1,4 +1,4 @@
-//===- SPRVRegularizeOCL20.cpp - Regularize OCL20 builtins-------*- C++ -*-===//
+//===- OCL20ToSPRV.cpp - Transform OCL20 to SPIR-V builtins -----*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,10 +32,10 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements regularization of OCL20 builtin functions.
+// This file implements translation of OCL20 builtin functions.
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "spvcl20"
+#define DEBUG_TYPE "cl20tospv"
 
 #include "SPRVInternal.h"
 #include "OCLUtil.h"
@@ -66,11 +66,11 @@ getOCLCpp11AtomicMaxNumOps(StringRef Name) {
       .Default(0);
 }
 
-class SPRVRegularizeOCL20: public ModulePass,
-  public InstVisitor<SPRVRegularizeOCL20> {
+class OCL20ToSPRV: public ModulePass,
+  public InstVisitor<OCL20ToSPRV> {
 public:
-  SPRVRegularizeOCL20():ModulePass(ID), M(nullptr), Ctx(nullptr) {
-    initializeSPRVRegularizeOCL20Pass(*PassRegistry::getPassRegistry());
+  OCL20ToSPRV():ModulePass(ID), M(nullptr), Ctx(nullptr) {
+    initializeOCL20ToSPRVPass(*PassRegistry::getPassRegistry());
   }
   virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
@@ -254,16 +254,18 @@ private:
 
 };
 
-char SPRVRegularizeOCL20::ID = 0;
+char OCL20ToSPRV::ID = 0;
 
 void
-SPRVRegularizeOCL20::getAnalysisUsage(AnalysisUsage& AU) {
+OCL20ToSPRV::getAnalysisUsage(AnalysisUsage& AU) {
 }
 
 bool
-SPRVRegularizeOCL20::runOnModule(Module& Module) {
+OCL20ToSPRV::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
+
+  DEBUG(dbgs() << "Enter OCL20ToSPRV:\n");
 
   transWorkItemBuiltinsToVariables();
 
@@ -276,7 +278,7 @@ SPRVRegularizeOCL20::runOnModule(Module& Module) {
     if (auto GV = dyn_cast<GlobalValue>(I))
       GV->eraseFromParent();
 
-  DEBUG(dbgs() << "After RegularizeOCL20:\n" << *M);
+  DEBUG(dbgs() << "After OCL20ToSPRV:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
@@ -290,7 +292,7 @@ SPRVRegularizeOCL20::runOnModule(Module& Module) {
 // Workgroup functions need to be handled before pipe functions since
 // there are functions fall into both categories.
 void
-SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
+OCL20ToSPRV::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto F = CI.getCalledFunction();
   if (!F)
@@ -300,7 +302,7 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
   std::string DemangledName;
   if (!oclIsBuiltin(MangledName, 20, &DemangledName))
     return;
-  DEBUG(dbgs() << "DemangledName == " << DemangledName.c_str() << '\n');
+  DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
     visitCallNDRange(&CI, DemangledName);
     return;
@@ -380,7 +382,7 @@ SPRVRegularizeOCL20::visitCallInst(CallInst& CI) {
 
 
 void
-SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
+OCL20ToSPRV::visitCallNDRange(CallInst *CI,
     const std::string &DemangledName) {
   assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
   auto Len = atoi(DemangledName.substr(8, 1).c_str());
@@ -420,7 +422,7 @@ SPRVRegularizeOCL20::visitCallNDRange(CallInst *CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAsyncWorkGroupCopy(CallInst* CI,
+OCL20ToSPRV::visitCallAsyncWorkGroupCopy(CallInst* CI,
     const std::string &DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -433,7 +435,7 @@ SPRVRegularizeOCL20::visitCallAsyncWorkGroupCopy(CallInst* CI,
 }
 
 CallInst *
-SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
+OCL20ToSPRV::visitCallAtomicCmpXchg(CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   Value *Alloca = nullptr;
@@ -457,7 +459,7 @@ SPRVRegularizeOCL20::visitCallAtomicCmpXchg(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomicInit(CallInst* CI) {
+OCL20ToSPRV::visitCallAtomicInit(CallInst* CI) {
   auto ST = new StoreInst(CI->getArgOperand(1), CI->getArgOperand(0), CI);
   ST->takeName(CI);
   CI->dropAllReferences();
@@ -465,19 +467,19 @@ SPRVRegularizeOCL20::visitCallAtomicInit(CallInst* CI) {
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomicWorkItemFence(CallInst* CI) {
+OCL20ToSPRV::visitCallAtomicWorkItemFence(CallInst* CI) {
   transMemoryBarrier(CI, getAtomicWorkItemFenceLiterals(CI));
 }
 
 void
-SPRVRegularizeOCL20::visitCallMemFence(CallInst* CI) {
+OCL20ToSPRV::visitCallMemFence(CallInst* CI) {
   transMemoryBarrier(CI, std::make_tuple(
       cast<ConstantInt>(CI->getArgOperand(0))->getZExtValue(),
       OCLMO_relaxed,
       OCLMS_work_group));
 }
 
-void SPRVRegularizeOCL20::transMemoryBarrier(CallInst* CI,
+void OCL20ToSPRV::transMemoryBarrier(CallInst* CI,
     AtomicWorkItemFenceLiterals Lit) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -490,7 +492,7 @@ void SPRVRegularizeOCL20::transMemoryBarrier(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomicLegacy(CallInst* CI,
+OCL20ToSPRV::visitCallAtomicLegacy(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   StringRef Stem = DemangledName;
   if (Stem.startswith("atom_"))
@@ -546,7 +548,7 @@ SPRVRegularizeOCL20::visitCallAtomicLegacy(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallAtomicCpp11(CallInst* CI,
+OCL20ToSPRV::visitCallAtomicCpp11(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   StringRef Stem = DemangledName;
   if (Stem.startswith("atomic_"))
@@ -596,7 +598,7 @@ SPRVRegularizeOCL20::visitCallAtomicCpp11(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
+OCL20ToSPRV::transAtomicBuiltin(CallInst* CI,
     OCLBuiltinTransInfo& Info) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -619,7 +621,7 @@ SPRVRegularizeOCL20::transAtomicBuiltin(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallWorkGroupBarrier(CallInst* CI) {
+OCL20ToSPRV::visitCallWorkGroupBarrier(CallInst* CI) {
   auto Lit = getWorkGroupBarrierLiterals(CI);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
@@ -631,7 +633,7 @@ SPRVRegularizeOCL20::visitCallWorkGroupBarrier(CallInst* CI) {
   }, &Attrs);
 }
 
-void SPRVRegularizeOCL20::visitCallConvert(CallInst* CI,
+void OCL20ToSPRV::visitCallConvert(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   if (eraseUselessConvert(CI, MangledName, DemangledName))
     return;
@@ -683,7 +685,7 @@ void SPRVRegularizeOCL20::visitCallConvert(CallInst* CI,
   }, &Attrs);
 }
 
-void SPRVRegularizeOCL20::visitCallGroupBuiltin(CallInst* CI,
+void OCL20ToSPRV::visitCallGroupBuiltin(CallInst* CI,
     StringRef MangledName, const std::string& OrigDemangledName) {
   auto F = CI->getCalledFunction();
   std::vector<int> PreOps;
@@ -742,7 +744,7 @@ void SPRVRegularizeOCL20::visitCallGroupBuiltin(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::transBuiltin(CallInst* CI,
+OCL20ToSPRV::transBuiltin(CallInst* CI,
     OCLBuiltinTransInfo& Info) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
@@ -760,7 +762,7 @@ SPRVRegularizeOCL20::transBuiltin(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallPipeBuiltin(CallInst* CI,
+OCL20ToSPRV::visitCallPipeBuiltin(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   std::string NewName = DemangledName;
   // Transform OpenCL read_pipe/write_pipe builtin function names
@@ -775,7 +777,7 @@ SPRVRegularizeOCL20::visitCallPipeBuiltin(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallReadImageWithSampler(CallInst* CI,
+OCL20ToSPRV::visitCallReadImageWithSampler(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   assert (MangledName.find(kMangledName::Sampler) != StringRef::npos);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
@@ -793,7 +795,7 @@ SPRVRegularizeOCL20::visitCallReadImageWithSampler(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
+OCL20ToSPRV::visitCallGetImageSize(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   SPRVTypeImageDescriptor Desc;
@@ -844,7 +846,7 @@ SPRVRegularizeOCL20::visitCallGetImageSize(CallInst* CI,
 
 /// Remove trivial conversion functions
 bool
-SPRVRegularizeOCL20::eraseUselessConvert(CallInst *CI,
+OCL20ToSPRV::eraseUselessConvert(CallInst *CI,
     const std::string &MangledName,
     const std::string &DemangledName) {
   auto TargetTy = CI->getType();
@@ -870,7 +872,7 @@ SPRVRegularizeOCL20::eraseUselessConvert(CallInst *CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallBuiltinSimple(CallInst* CI,
+OCL20ToSPRV::visitCallBuiltinSimple(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   OCLBuiltinTransInfo Info;
   Info.MangledName = MangledName.str();
@@ -881,21 +883,21 @@ SPRVRegularizeOCL20::visitCallBuiltinSimple(CallInst* CI,
 /// Translates OCL work-item builtin functions to SPIRV builtin variables.
 /// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
 /// Function like get_work_dim() -> load WorkDim
-void SPRVRegularizeOCL20::transWorkItemBuiltinsToVariables() {
+void OCL20ToSPRV::transWorkItemBuiltinsToVariables() {
+  DEBUG(dbgs() << "Enter transWorkItemBuiltinsToVariables\n");
   std::vector<Function *> WorkList;
   for (auto I = M->begin(), E = M->end(); I != E; ++I) {
     std::string DemangledName;
     if (!oclIsBuiltin(I->getName(), 20, &DemangledName))
       continue;
-    SPRVDBG(bildbgs() << "Function: demangled name: " << DemangledName <<
-        '\n');
+    DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;
     SPRVBuiltinVariableKind BVKind = BuiltInCount;
     if (!SPIRSPRVBuiltinVariableMap::find(DemangledName, &BVKind))
       continue;
     BuiltinVarName = std::string(kSPRVName::Prefix) +
         SPRVBuiltinVariableNameMap::map(BVKind);
-    SPRVDBG(bildbgs() << "builtin variable name: " << BuiltinVarName << '\n');
+    DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
     bool IsVec = I->getFunctionType()->getNumParams() > 0;
     Type *GVType = IsVec ? VectorType::get(I->getReturnType(),3) :
         I->getReturnType();
@@ -911,12 +913,14 @@ void SPRVRegularizeOCL20::transWorkItemBuiltinsToVariables() {
       auto CI = dyn_cast<CallInst>(*UI);
       assert(CI && "invalid instruction");
       Value * NewValue = new LoadInst(BV, "", CI);
-      if (IsVec)
+      DEBUG(dbgs() << "Transform: " << *CI << " => " << *NewValue << '\n');
+      if (IsVec) {
         NewValue = ExtractElementInst::Create(NewValue,
           CI->getArgOperand(0),
           "", CI);
+        DEBUG(dbgs() << *NewValue << '\n');
+      }
       NewValue->takeName(CI);
-      SPRVDBG(dbgs() << "Replace: " << *CI << " <- " << *NewValue << '\n');
       CI->replaceAllUsesWith(NewValue);
       InstList.push_back(CI);
     }
@@ -933,7 +937,7 @@ void SPRVRegularizeOCL20::transWorkItemBuiltinsToVariables() {
 }
 
 void
-SPRVRegularizeOCL20::visitCallReadWriteImage(CallInst* CI,
+OCL20ToSPRV::visitCallReadWriteImage(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   OCLBuiltinTransInfo Info;
   if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0)
@@ -945,7 +949,7 @@ SPRVRegularizeOCL20::visitCallReadWriteImage(CallInst* CI,
 }
 
 void
-SPRVRegularizeOCL20::visitCallVecLoadStore(CallInst* CI,
+OCL20ToSPRV::visitCallVecLoadStore(CallInst* CI,
     StringRef MangledName, const std::string& OrigDemangledName) {
   std::vector<int> PreOps;
   std::string DemangledName = OrigDemangledName;
@@ -983,9 +987,9 @@ SPRVRegularizeOCL20::visitCallVecLoadStore(CallInst* CI,
 
 }
 
-INITIALIZE_PASS(SPRVRegularizeOCL20, "regocl20", "Regularize OCL 2.0 module",
+INITIALIZE_PASS(OCL20ToSPRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
-ModulePass *llvm::createSPRVRegularizeOCL20() {
-  return new SPRVRegularizeOCL20();
+ModulePass *llvm::createOCL20ToSPRV() {
+  return new OCL20ToSPRV();
 }

@@ -2283,7 +2283,7 @@ SPRVToLLVM::getOCLConvertBuiltinName(SPRVInstruction* BI) {
   if (isCvtFromUnsignedOpCode(OC))
     Name = "u";
   Name += "convert_";
-  Name += mapSPRVTypeToOpenCLType(U->getType(),
+  Name += mapSPRVTypeToOCLType(U->getType(),
       !isCvtToUnsignedOpCode(OC));
   SPRVFPRoundingModeKind Rounding = FPRoundingModeCount;
   if (U->isSaturatedConversion())

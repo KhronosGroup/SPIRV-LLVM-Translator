@@ -107,7 +107,7 @@ saveLLVMModule(Module *M, const std::string &OutputFile) {
 }
 
 std::string
-mapLLVMTypeToOpenCLType(Type* Ty, bool Signed) {
+mapLLVMTypeToOCLType(Type* Ty, bool Signed) {
   if (Ty->isHalfTy())
     return "half";
   if (Ty->isFloatTy())
@@ -142,14 +142,14 @@ mapLLVMTypeToOpenCLType(Type* Ty, bool Signed) {
     Type* eleTy = vecTy->getElementType();
     unsigned size = vecTy->getVectorNumElements();
     std::stringstream ss;
-    ss << mapLLVMTypeToOpenCLType(eleTy, Signed) << size;
+    ss << mapLLVMTypeToOCLType(eleTy, Signed) << size;
     return ss.str();
   }
   return "invalid_type";
 }
 
 std::string
-mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed) {
+mapSPRVTypeToOCLType(SPRVType* Ty, bool Signed) {
   if (Ty->isTypeFloat()) {
     auto W = Ty->getBitWidth();
     switch (W) {
@@ -194,7 +194,7 @@ mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed) {
     auto eleTy = Ty->getVectorComponentType();
     auto size = Ty->getVectorComponentCount();
     std::stringstream ss;
-    ss << mapSPRVTypeToOpenCLType(eleTy, Signed) << size;
+    ss << mapSPRVTypeToOCLType(eleTy, Signed) << size;
     return ss.str();
   }
   llvm_unreachable("Invalid type");
@@ -319,6 +319,10 @@ Scope getArgAsScope(CallInst *CI, unsigned I){
   return static_cast<Scope>(getArgAsInt(CI, I));
 }
 
+Decoration getArgAsDecoration(CallInst *CI, unsigned I) {
+  return static_cast<Decoration>(getArgAsInt(CI, I));
+}
+
 std::string
 decorateSPRVFunction(const std::string &S) {
   return std::string(kSPRVName::Prefix) + S + kSPRVName::Postfix;
@@ -385,6 +389,19 @@ mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target) {
   return nullptr;
 }
 
+std::string
+getPostfix(Decoration Dec, unsigned Value) {
+  switch(Dec) {
+  default:
+    llvm_unreachable("not implemented");
+    return "unknown";
+  case spv::DecorationSaturatedConversion:
+    return kSPRVPostfix::Sat;
+  case spv::DecorationFPRoundingMode:
+    return rmap<std::string>(static_cast<SPRVFPRoundingModeKind>(Value));
+  }
+}
+
 Op
 getSPRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
@@ -412,7 +429,12 @@ getSPRVBuiltin(const std::string &OrigName) {
 }
 
 bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
-                  std::string *DemangledName) {
+                  std::string *DemangledName, bool isCPP) {
+  if (Name == "printf") {
+    if (DemangledName)
+      *DemangledName = Name;
+    return true;
+  }
   if (!Name.startswith("_Z"))
     return false;
   if (!DemangledName)
@@ -420,7 +442,7 @@ bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
   // OpenCL C++ built-ins are declared in cl namespace.
   // TODO: consider using 'St' abbriviation for cl namespace mangling.
   // Similar to ::std:: in C++.
-  if (SrcLangVer == 21) {
+  if (isCPP) {
     if (!Name.startswith("_ZN"))
       return false;
     // Skip CV and ref qualifiers.

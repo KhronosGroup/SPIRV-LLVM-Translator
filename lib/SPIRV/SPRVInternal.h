@@ -179,7 +179,6 @@ enum SPIRAddressSpace {
   SPIRAS_Count,
 };
 
-
 template<> inline void
 SPRVMap<SPIRAddressSpace, SPRVStorageClassKind>::init() {
   add(SPIRAS_Private, StorageClassFunction);
@@ -198,17 +197,6 @@ SPRVMap<std::string, SPRVAccessQualifierKind>::init() {
   add("read_write", AccessQualifierReadWrite);
 }
 typedef SPRVMap<std::string, SPRVAccessQualifierKind> SPIRSPRVAccessQualifierMap;
-
-template<> inline void
-SPRVMap<std::string, Op>::init() {
-  add("opencl.event_t", OpTypeEvent);
-  add("opencl.pipe_t", OpTypePipe);
-  add("opencl.clk_event_t", OpTypeDeviceEvent);
-  add("opencl.reserve_id_t", OpTypeReserveId);
-  add("opencl.queue_t", OpTypeQueue);
-}
-typedef SPRVMap<std::string, Op> BuiltinOpaqueGenericTypeOpCodeMap;
-
 
 template<> inline void
 SPRVMap<GlobalValue::LinkageTypes, SPRVLinkageTypeKind>::init() {
@@ -466,8 +454,8 @@ void removeFnAttr(LLVMContext *Context, CallInst *Call,
 void addFnAttr(LLVMContext *Context, CallInst *Call,
     Attribute::AttrKind Attr);
 void saveLLVMModule(Module *M, const std::string &OutputFile);
-std::string mapSPRVTypeToOpenCLType(SPRVType* Ty, bool Signed);
-std::string mapLLVMTypeToOpenCLType(Type* Ty, bool Signed);
+std::string mapSPRVTypeToOCLType(SPRVType* Ty, bool Signed);
+std::string mapLLVMTypeToOCLType(Type* Ty, bool Signed);
 SPRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPRVEntry *Target);
 
 PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
@@ -492,6 +480,10 @@ uint64_t getArgAsInt(CallInst *CI, unsigned I);
 /// Get constant function call argument as a Scope enum.
 /// \param I argument index.
 Scope getArgAsScope(CallInst *CI, unsigned I);
+
+/// Get constant function call argument as a Decoration enum.
+/// \param I argument index.
+Decoration getArgAsDecoration(CallInst *CI, unsigned I);
 
 bool isPointerToOpaqueStructType(llvm::Type* Ty);
 bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
@@ -539,7 +531,7 @@ spv::BuiltIn getSPRVBuiltin(const std::string &Name);
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
 bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12,
-    std::string* DemangledName = nullptr);
+    std::string* DemangledName = nullptr, bool isCPP = false);
 
 /// Check if a function type is void(void).
 bool isVoidFuncTy(FunctionType *FT);
@@ -645,6 +637,10 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 ConstantInt *mapSInt(Module *M, ConstantInt *I,
     std::function<int(int)> F);
 
+/// Get postfix for given decoration.
+/// The returned postfix does not include "_" at the beginning.
+std::string getPostfix(Decoration Dec, unsigned Value = 0);
+
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);
 
@@ -709,13 +705,15 @@ castToVoidFuncPtr(Function *F);
 }
 namespace llvm {
 
-void initializeSPRVRegularizeOCL20Pass(PassRegistry&);
+void initializeOCL20ToSPRVPass(PassRegistry&);
+void initializeOCL21ToSPRVPass(PassRegistry&);
 void initializeSPRVLowerOCLBlocksPass(PassRegistry&);
 void initializeSPRVLowerBoolPass(PassRegistry&);
 void initializeSPRVToOCL20Pass(PassRegistry&);
 void initializeOCL20To12Pass(PassRegistry&);
 
-ModulePass *createSPRVRegularizeOCL20();
+ModulePass *createOCL20ToSPRV();
+ModulePass *createOCL21ToSPRV();
 ModulePass *createSPRVLowerOCLBlocks();
 ModulePass *createSPRVLowerBool();
 ModulePass *createSPRVToOCL20();

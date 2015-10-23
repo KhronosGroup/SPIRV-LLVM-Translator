@@ -90,11 +90,9 @@ WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI){
 unsigned
 getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   std::string DemangledName = GivenDemangledName;
-  if (OrigName != "printf" && !oclIsBuiltin(OrigName, 20,
+  if (!oclIsBuiltin(OrigName, 20,
       DemangledName.empty() ? &DemangledName : nullptr))
     return ~0U;
-  if (OrigName == "printf" && DemangledName.empty())
-    DemangledName = OrigName;
   DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;
   bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
