@@ -158,12 +158,12 @@ OCL21ToSPIRV::visitCallInst(CallInst& CI) {
 
 void OCL21ToSPIRV::visitCallConvert(CallInst* CI,
     StringRef MangledName, Op OC) {
-  std::string TargetTyName = mapLLVMTypeToOCLType(CI->getType(),
-      OC == OpSConvert || OC == OpConvertFToS || OC == OpSatConvertUToS);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.pop_back();
-    return getSPIRVFuncName(OC, std::string("_R") + TargetTyName);
+    return getSPIRVFuncName(OC, kSPIRVPostfix::Divider +
+      getPostfixForReturnType(CI,
+      OC == OpSConvert || OC == OpConvertFToS || OC == OpSatConvertUToS));
   }, &Attrs);
   ValuesToDelete.insert(CI);
   ValuesToDelete.insert(CI->getCalledFunction());
@@ -177,7 +177,7 @@ void OCL21ToSPIRV::visitCallDecorate(CallInst* CI,
   std::string DemangledName;
   oclIsBuiltin(Name, CLVer, &DemangledName);
   BuiltinFuncMangleInfo Info;
-  F->setName(mangleBuiltin(DemangledName + "_" +
+  F->setName(mangleBuiltin(DemangledName + kSPIRVPostfix::Divider +
       getPostfix(getArgAsDecoration(CI, 1), getArgAsInt(CI, 2)),
       getTypes(getArguments(CI)), &Info));
   CI->replaceAllUsesWith(Target);

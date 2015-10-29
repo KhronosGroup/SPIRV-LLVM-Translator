@@ -117,6 +117,7 @@ typedef SPIRVMap<std::string, Op, OCLOpaqueType>
 struct OCLBuiltinTransInfo {
   std::string UniqName;
   std::string MangledName;
+  std::string Postfix;      // Postfix to be added
   /// Postprocessor of operands
   std::function<void(std::vector<Value *>&)> PostProc;
   OCLBuiltinTransInfo(){
@@ -156,12 +157,16 @@ namespace kOCLBuiltinName {
   const static char ToPrivate[]          = "to_private";
   const static char ReadImage[]          = "read_image";
   const static char ReadPipe[]           = "read_pipe";
+  const static char RoundingPrefix[]     = "_r";
   const static char Sampled[]            = "sampled_";
   const static char SampledReadImage[]   = "sampled_read_image";
   const static char SubGroupPrefix[]     = "sub_group_";
   const static char SubPrefix[]          = "sub_";
   const static char VLoadPrefix[]        = "vload";
+  const static char VLoadAPrefix[]       = "vloada";
+  const static char VLoadHalf[]          = "vload_half";
   const static char VStorePrefix[]       = "vstore";
+  const static char VStoreAPrefix[]      = "vstorea";
   const static char WaitGroupEvent[]     = "wait_group_events";
   const static char WriteImage[]         = "write_image";
   const static char WorkGroupBarrier[]   = "work_group_barrier";

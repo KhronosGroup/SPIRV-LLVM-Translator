@@ -189,7 +189,7 @@ public:
   /// Transform vector load/store functions to SPIR-V extended builtin
   ///   functions
   /// {vload|vstore{a}}{_half}{n}{_rte|_rtz|_rtp|_rtn} =>
-  ///   __spirv_ocl_{ExtendedInstructionOpCodeName}
+  ///   __spirv_ocl_{ExtendedInstructionOpCodeName}__R{ReturnType}
   void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
@@ -757,7 +757,7 @@ OCL20ToSPIRV::transBuiltin(CallInst* CI,
     return;
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Info.PostProc(Args);
-    return Info.UniqName;
+    return Info.UniqName + Info.Postfix;
   }, &Attrs);
 }
 
@@ -953,32 +953,37 @@ OCL20ToSPIRV::visitCallVecLoadStore(CallInst* CI,
     StringRef MangledName, const std::string& OrigDemangledName) {
   std::vector<int> PreOps;
   std::string DemangledName = OrigDemangledName;
-  if (DemangledName.find("vload") == 0 &&
-      DemangledName != "vload_half") {
+  if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 &&
+      DemangledName != kOCLBuiltinName::VLoadHalf) {
     SPIRVWord Width = getVecLoadWidth(DemangledName);
     SPIRVDBG(bildbgs() << "[visitCallVecLoadStore] DemangledName: " <<
         DemangledName << " Width: " << Width << '\n');
     PreOps.push_back(Width);
-  } else if (DemangledName.find("_r") != std::string::npos) {
+  } else if (DemangledName.find(kOCLBuiltinName::RoundingPrefix)
+      != std::string::npos) {
     auto R = SPIRSPIRVFPRoundingModeMap::map(DemangledName.substr(
-        DemangledName.find("_r") + 1, 3));
+        DemangledName.find(kOCLBuiltinName::RoundingPrefix) + 1, 3));
     PreOps.push_back(R);
   }
 
-  if (DemangledName.find("vloada") == 0)
-    transVecLoadStoreName(DemangledName, "vloada", true);
+  if (DemangledName.find(kOCLBuiltinName::VLoadAPrefix) == 0)
+    transVecLoadStoreName(DemangledName, kOCLBuiltinName::VLoadAPrefix, true);
   else
-    transVecLoadStoreName(DemangledName, "vload", false);
+    transVecLoadStoreName(DemangledName, kOCLBuiltinName::VLoadPrefix, false);
 
-  if (DemangledName.find("vstorea") == 0)
-    transVecLoadStoreName(DemangledName, "vstorea", true);
+  if (DemangledName.find(kOCLBuiltinName::VStoreAPrefix) == 0)
+    transVecLoadStoreName(DemangledName, kOCLBuiltinName::VStoreAPrefix, true);
   else
-    transVecLoadStoreName(DemangledName, "vstore", false);
+    transVecLoadStoreName(DemangledName, kOCLBuiltinName::VStorePrefix, false);
+
 
   auto Consts = getInt32(M, PreOps);
   OCLBuiltinTransInfo Info;
   Info.MangledName = MangledName;
   Info.UniqName = DemangledName;
+  if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0)
+    Info.Postfix = std::string(kSPIRVPostfix::ExtDivider) +
+      getPostfixForReturnType(CI);
   Info.PostProc = [=](std::vector<Value *> &Ops){
     Ops.insert(Ops.end(), Consts.begin(), Consts.end());
   };

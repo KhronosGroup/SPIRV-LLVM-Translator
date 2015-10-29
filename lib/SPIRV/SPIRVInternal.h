@@ -317,6 +317,10 @@ namespace kSPIRVPostfix {
   const static char Rtp[]       = "rtp";
   const static char Rtn[]       = "rtn";
   const static char Rt[]        = "rt";
+  const static char Return[]    = "R";
+  const static char Divider[]   = "_";
+  /// Divider between extended instruction name and postfix
+  const static char ExtDivider[] = "__";
 }
 
 enum Spir2SamplerKind {
@@ -457,6 +461,11 @@ void saveLLVMModule(Module *M, const std::string &OutputFile);
 std::string mapSPIRVTypeToOCLType(SPIRVType* Ty, bool Signed);
 std::string mapLLVMTypeToOCLType(Type* Ty, bool Signed);
 SPIRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPIRVEntry *Target);
+
+/// Add decorations to a SPIR-V entry.
+/// \param Decs Each string is a postfix without _ at the beginning.
+SPIRVValue *addDecorations(SPIRVValue *Target,
+    const SmallVectorImpl<std::string>& Decs);
 
 PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
     unsigned AddrSpace = SPIRAS_Global);
@@ -640,6 +649,10 @@ ConstantInt *mapSInt(Module *M, ConstantInt *I,
 /// Get postfix for given decoration.
 /// The returned postfix does not include "_" at the beginning.
 std::string getPostfix(Decoration Dec, unsigned Value = 0);
+
+/// Get postfix _R{ReturnType} for return type
+/// The returned postfix does not includ "_" at the beginning
+std::string getPostfixForReturnType(CallInst *CI, bool IsSigned = false);
 
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);

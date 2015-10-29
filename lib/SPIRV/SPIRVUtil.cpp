@@ -40,6 +40,7 @@
 
 #include "SPIRVInternal.h"
 #include "libSPIRV/SPIRVDecorate.h"
+#include "libSPIRV/SPIRVValue.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -388,6 +389,14 @@ mapPostfixToDecorate(StringRef Postfix, SPIRVEntry *Target) {
   return nullptr;
 }
 
+SPIRVValue *
+addDecorations(SPIRVValue *Target, const SmallVectorImpl<std::string>& Decs){
+  for (auto &I:Decs)
+    if (auto Dec = mapPostfixToDecorate(I, Target))
+      Target->addDecorate(Dec);
+  return Target;
+}
+
 std::string
 getPostfix(Decoration Dec, unsigned Value) {
   switch(Dec) {
@@ -399,6 +408,12 @@ getPostfix(Decoration Dec, unsigned Value) {
   case spv::DecorationFPRoundingMode:
     return rmap<std::string>(static_cast<SPIRVFPRoundingModeKind>(Value));
   }
+}
+
+std::string
+getPostfixForReturnType(CallInst *CI, bool IsSigned) {
+  return std::string(kSPIRVPostfix::Return) +
+        mapLLVMTypeToOCLType(CI->getType(), IsSigned);
 }
 
 Op
