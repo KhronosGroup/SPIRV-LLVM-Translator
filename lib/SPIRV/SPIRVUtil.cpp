@@ -341,10 +341,9 @@ prefixSPIRVName(const std::string &S) {
   return std::string(kSPIRVName::Prefix) + S;
 }
 
-std::string
-dePrefixSPIRVName(const std::string& S,
+StringRef
+dePrefixSPIRVName(StringRef R,
     SmallVectorImpl<StringRef> &Postfix) {
-  StringRef R(S);
   const size_t Start = strlen(kSPIRVName::Prefix);
   if (!R.startswith(kSPIRVName::Prefix))
     return R;
@@ -352,7 +351,7 @@ dePrefixSPIRVName(const std::string& S,
   R.split(Postfix, "_", -1, false);
   auto Name = Postfix.front();
   Postfix.erase(Postfix.begin());
-  return Name.str();
+  return Name;
 }
 
 std::string
@@ -409,8 +408,9 @@ getSPIRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   std::string Name;
   if (!oclIsBuiltin(S, 20, &Name))
     Name = S;
-  Name = dePrefixSPIRVName(Name, Postfix);
-  if (!getByName(Name, OC))
+  StringRef R(Name);
+  R = dePrefixSPIRVName(R, Postfix);
+  if (!getByName(R.str(), OC))
     return OpNop;
   if (Dec)
     for (auto &I:Postfix)
@@ -421,10 +421,11 @@ getSPIRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
 spv::BuiltIn
 getSPIRVBuiltin(const std::string &OrigName) {
   SmallVector<StringRef, 2> Postfix;
-  auto Name = dePrefixSPIRVName(OrigName, Postfix);
+  StringRef R(OrigName);
+  R = dePrefixSPIRVName(R, Postfix);
   assert(Postfix.empty() && "Invalid SPIR-V builtin name");
   spv::BuiltIn B = spv::BuiltInCount;
-  getByName(Name, B);
+  getByName(R.str(), B);
   return B;
 }
 

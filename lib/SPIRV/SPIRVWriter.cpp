@@ -67,6 +67,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -94,6 +95,10 @@ namespace SPIRV{
 
 bool SPIRVDbgSaveRegularizedModule = false;
 
+cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(true),
+    cl::desc("LLVM/SPIR-V translation enable mem2reg"));
+cl::opt<bool> SPIRVLowerConst("spirv-lower-const", cl::init(true),
+    cl::desc("LLVM/SPIR-V translation enalbe lowering constant expression"));
 
 static void
 decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z) {
@@ -1126,7 +1131,8 @@ LLVMToSPIRV::regularize() {
 
   oclRegularize();
   lowerFuncPtr(M);
-  lowerConstantExpressions();
+  if (SPIRVLowerConst)
+    lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = I++;
@@ -1649,7 +1655,8 @@ LLVMToSPIRV::dumpUsers(Value* V) {
 void
 LLVMToSPIRV::oclRegularize() {
   PassManager PassMgr;
-  PassMgr.add(createPromoteMemoryToRegisterPass());
+  if (SPIRVMemToReg)
+    PassMgr.add(createPromoteMemoryToRegisterPass());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
   PassMgr.add(createSPIRVLowerBool());
