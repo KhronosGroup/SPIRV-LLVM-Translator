@@ -53,7 +53,9 @@
 #include "llvm/Support/DataStream.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Signals.h"
 #include "llvm/Support/ToolOutputFile.h"
 
 #ifndef _SPIRV_SUPPORT_TEXT_FMT
@@ -125,7 +127,7 @@ convertLLVMToSPIRV() {
     errs() << "Fails to load bitcode: " << EC.message();
     return -1;
   }
-  
+
   std::unique_ptr<Module> M = std::move(*MOrErr);
 
   if (std::error_code EC = M->materializeAllPermanently()){
@@ -241,7 +243,7 @@ regularizeLLVM() {
     errs() << "Fails to load bitcode: " << EC.message();
     return -1;
   }
-  
+
   std::unique_ptr<Module> M = std::move(*MOrErr);
 
   if (std::error_code EC = M->materializeAllPermanently()){
@@ -277,6 +279,10 @@ regularizeLLVM() {
 int
 main(int ac, char** av) {
   cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
+#ifndef NDEBUG
+  EnablePrettyStackTrace();
+  sys::PrintStackTraceOnErrorSignal();
+#endif
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {

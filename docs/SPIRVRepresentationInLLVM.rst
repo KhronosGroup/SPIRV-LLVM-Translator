@@ -41,24 +41,9 @@ where {OpCodeName} is the op code name of the SPIR-V instructions without the
 specify decorations for the SPIR-V instruction. The SPIR-V op code name and
 each postfix does not contain "_".
 
-The literal operands of extended instruction are mapped to function call
-arguments with type i32.
-
-SPIR-V Builtin Functions with Casted Arguments
-----------------------------------------------
-
 SPIR-V builtin functions accepts all argument types accepted by the
-corresponding SPIR-V instructions, with exceptions of the following
-instructions:
-
- * Pipe instructions: where the pipe type is casted to i8* and mangled as such
- * EnqueueKernel instruction: where the invoke function argument is casted to
-   (void*)(void) and mangled as such
-
-This is to simplify the mangling of pipe and function types. For these
-functions the information carried by the argument type can be obtained
-otherwise therefore it can be omitted in the mangled names by casting the
-arguments to simpler types.
+corresponding SPIR-V instructions. The literal operands of extended
+instruction are mapped to function call arguments with type i32.
 
 Optional Postfixes for SPIR-V Builtin Function Names
 ----------------------------------------------------
@@ -94,12 +79,31 @@ name is IA64 mangled and the unmangled name has the format
 
 .. code-block:: c
 
-  __spirv_{ExtendedInstructionSetName}_{ExtendedInstrutionName}
+  __spirv_{ExtendedInstructionSetName}_{ExtendedInstrutionName}{__OptionalPostfixes}
 
 where {ExtendedInstructionSetName} for OpenCL is "ocl".
 
-The literal operands of extended instruction are mapped to function call
-arguments with type i32.
+The translated functions accepts all argument types accepted by the
+corresponding SPIR-V instructions. The literal operands of extended
+instruction are mapped to function call arguments with type i32.
+
+The optional postfixes take the same format as SPIR-V builtin functions. The first postfix
+starts with two underscores to facilitate identification since extended instruction name
+may contain underscore. The remaining postfixes start with one underscore.
+
+OpenCL Extended Builtin Vector Load Function Names
+----------------------------------------
+
+The unmangled names of OpenCL extended vector load functions follow the convention:
+
+.. code-block:: c
+
+  __spirv_ocl_{VectorLoadOpCodeName}__R{ReturnType}
+
+where
+
+ * {VectorLoadOpCodeName} = vloadn|vload_half|vload_halfn|vloada_halfn
+
 
 SPIR-V Builtins Variables Mapped to LLVM Global Variables
 =========================================================

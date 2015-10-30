@@ -67,6 +67,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -94,6 +95,10 @@ namespace SPIRV{
 
 bool SPIRVDbgSaveRegularizedModule = false;
 
+cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(true),
+    cl::desc("LLVM/SPIR-V translation enable mem2reg"));
+cl::opt<bool> SPIRVLowerConst("spirv-lower-const", cl::init(true),
+    cl::desc("LLVM/SPIR-V translation enalbe lowering constant expression"));
 
 static void
 decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z) {
@@ -303,16 +308,14 @@ private:
   SPIRVWord oclGetVectorLoadWidth(const std::string& DemangledName);
 
   bool isBuiltinTransToInst(Function *F);
-  bool oclIsBuiltinTransToExtInst(Function *F,
+  bool isBuiltinTransToExtInst(Function *F,
       SPIRVExtInstSetKind *BuiltinSet = nullptr,
-      SPIRVWord *EntryPoint = nullptr);
+      SPIRVWord *EntryPoint = nullptr,
+      SmallVectorImpl<std::string> *Dec = nullptr);
   bool oclIsKernel(Function *F);
 
   bool transOCLKernelMetadata();
 
-  SPIRVValue *transOCLBuiltinToInst(CallInst *Call,
-      const std::string &MangledName,
-      const std::string &DemangledName, SPIRVBasicBlock *BB);
   SPIRVInstruction *transBuiltinToInst(const std::string& DemangledName,
       const std::string &MangledName, CallInst* CI, SPIRVBasicBlock* BB);
   SPIRVInstruction *transBuiltinToInstWithoutDecoration(Op OC,
@@ -365,9 +368,10 @@ LLVMToSPIRV::isBuiltinTransToInst(Function *F) {
 }
 
 bool
-LLVMToSPIRV::oclIsBuiltinTransToExtInst(Function *F,
+LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
     SPIRVExtInstSetKind *ExtSet,
-    SPIRVWord *ExtOp) {
+    SPIRVWord *ExtOp,
+    SmallVectorImpl<std::string> *Dec) {
   std::string OrigName = F->getName();
   std::string DemangledName;
   if (!oclIsBuiltin(OrigName, SrcLangVer, &DemangledName))
@@ -378,7 +382,7 @@ LLVMToSPIRV::oclIsBuiltinTransToExtInst(Function *F,
   if (!S.startswith(kSPIRVName::Prefix))
     return false;
   S = S.drop_front(strlen(kSPIRVName::Prefix));
-  auto Loc = S.find('_');
+  auto Loc = S.find(kSPIRVPostfix::Divider);
   auto ExtSetName = S.substr(0, Loc);
   SPIRVExtInstSetKind Set = SPIRVEIS_Count;
   if (!SPIRVExtSetShortNameMap::rfind(ExtSetName, &Set))
@@ -388,14 +392,21 @@ LLVMToSPIRV::oclIsBuiltinTransToExtInst(Function *F,
   assert(Set == SPIRVEIS_OpenCL && "Unsupported extended instruction set");
 
   auto ExtOpName = S.substr(Loc + 1);
+  auto Splited = ExtOpName.split(kSPIRVPostfix::ExtDivider);
   OCLExtOpKind EOC;
-  if (!OCLExtOpMap::rfind(ExtOpName, &EOC))
+  if (!OCLExtOpMap::rfind(Splited.first, &EOC))
     return false;
 
   if (ExtSet)
     *ExtSet = Set;
   if (ExtOp)
     *ExtOp = EOC;
+  if (Dec) {
+    SmallVector<StringRef, 2> P;
+    Splited.second.split(P, kSPIRVPostfix::Divider);
+    for (auto &I:P)
+      Dec->push_back(I.str());
+  }
   return true;
 }
 
@@ -1102,17 +1113,19 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 
   if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName) ||
       isDecoratedSPIRVFunc(F, &DemangledName))
-    if (auto BV = transOCLBuiltinToInst(CI, MangledName, DemangledName, BB))
+    if (auto BV = transBuiltinToInst(DemangledName, MangledName, CI, BB))
       return BV;
 
-  if (oclIsBuiltinTransToExtInst(CI->getCalledFunction(), &ExtSetKind,
-      &ExtOp))
-    return BM->addExtInst(
+  SmallVector<std::string, 2> Dec;
+  if (isBuiltinTransToExtInst(CI->getCalledFunction(), &ExtSetKind,
+      &ExtOp, &Dec))
+    return addDecorations(BM->addExtInst(
       transType(CI->getType()),
       ExtSetId,
       ExtOp,
       transArguments(CI, BB, SPIRVEntry::create_unique(ExtSetKind, ExtOp).get()),
-      BB);
+      BB), Dec);
+
   return BM->addCallInst(
     transFunction(CI->getCalledFunction()),
     transArguments(CI, BB, SPIRVEntry::create_unique(OpFunctionCall).get()),
@@ -1126,7 +1139,8 @@ LLVMToSPIRV::regularize() {
 
   oclRegularize();
   lowerFuncPtr(M);
-  lowerConstantExpressions();
+  if (SPIRVLowerConst)
+    lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = I++;
@@ -1441,7 +1455,7 @@ LLVMToSPIRV::translate() {
   }
 
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
-    if (isBuiltinTransToInst(I) || oclIsBuiltinTransToExtInst(I)
+    if (isBuiltinTransToInst(I) || isBuiltinTransToExtInst(I)
         || I->getName().startswith(SPCV_CAST) || I->getName().startswith(LLVM_MEMCPY))
       continue;
     transFunction(I);
@@ -1514,17 +1528,8 @@ LLVMToSPIRV::transBuiltinToInst(const std::string& DemangledName,
     return nullptr;
 
   auto Inst = transBuiltinToInstWithoutDecoration(OC, CI, BB);
-  for (auto &I:Dec)
-    if (auto Dec = mapPostfixToDecorate(I, Inst))
-      Inst->addDecorate(Dec);
-
+  addDecorations(Inst, Dec);
   return Inst;
-}
-
-SPIRVValue *
-LLVMToSPIRV::transOCLBuiltinToInst(CallInst *CI, const std::string &MangledName,
-    const std::string &DemangledName, SPIRVBasicBlock *BB) {
-  return transBuiltinToInst(DemangledName, MangledName, CI, BB);
 }
 
 bool
@@ -1649,7 +1654,8 @@ LLVMToSPIRV::dumpUsers(Value* V) {
 void
 LLVMToSPIRV::oclRegularize() {
   PassManager PassMgr;
-  PassMgr.add(createPromoteMemoryToRegisterPass());
+  if (SPIRVMemToReg)
+    PassMgr.add(createPromoteMemoryToRegisterPass());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
   PassMgr.add(createSPIRVLowerBool());
