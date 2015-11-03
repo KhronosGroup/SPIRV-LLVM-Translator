@@ -403,26 +403,27 @@ operator>>(std::istream &I, SPIRVEntry &E) {
 }
 
 SPIRVEntryPoint::SPIRVEntryPoint(SPIRVModule *TheModule,
-    SPIRVExecutionModelKind TheExecModel, SPIRVId TheId)
-      :SPIRVEntryNoId(TheModule, 3), ExecModel(TheExecModel), FuncId(TheId) {
-
+  SPIRVExecutionModelKind TheExecModel, SPIRVId TheId,
+  const std::string &TheName)
+  :SPIRVAnnotation(TheModule->get<SPIRVFunction>(TheId),
+   getSizeInWords(TheName) + 3), ExecModel(TheExecModel), Name(TheName){
 }
+
 void
 SPIRVEntryPoint::encode(std::ostream &O) const {
-  getEncoder(O) << ExecModel << FuncId;
+  getEncoder(O) << ExecModel << Target << Name;
 }
 
 void
 SPIRVEntryPoint::decode(std::istream &I) {
-  getDecoder(I) >> ExecModel >> FuncId;
-  Module->addEntryPoint(ExecModel, FuncId);
+  getDecoder(I) >> ExecModel >> Target >> Name;
+  Module->setName(getOrCreateTarget(), Name);
+  Module->addEntryPoint(ExecModel, Target);
 }
 
 void
 SPIRVExecutionMode::encode(std::ostream &O) const {
   getEncoder(O) << Target << ExecMode << WordLiterals;
-  if (ExecMode == ExecutionModeVecTypeHint)
-    getEncoder(O) << StrLiteral;
 }
 
 void
@@ -443,8 +444,6 @@ SPIRVExecutionMode::decode(std::istream &I) {
     break;
   }
   getDecoder(I) >> WordLiterals;
-  if (ExecMode == ExecutionModeVecTypeHint)
-    getDecoder(I) >> StrLiteral;
   getOrCreateTarget()->addExecutionMode(this);
 }
 
@@ -572,34 +571,33 @@ SPIRVSource::decode(std::istream &I) {
   Module->setSourceLanguage(Lang, Ver);
 }
 
-SPIRVSourceExtension::SPIRVSourceExtension(SPIRVModule *M)
-  :SPIRVEntryNoId(M, 1 + getSizeInWords(M->getSourceExtension())){}
+SPIRVSourceExtension::SPIRVSourceExtension(SPIRVModule *M,
+    const std::string &SS)
+  :SPIRVEntryNoId(M, 1 + getSizeInWords(SS)), S(SS){}
 
 void
 SPIRVSourceExtension::encode(std::ostream &O) const {
-  getEncoder(O) << Module->getSourceExtension();
+  getEncoder(O) << S;
 }
 
 void
 SPIRVSourceExtension::decode(std::istream &I) {
-  std::string S;
   getDecoder(I) >> S;
-  Module->setSourceExtension(S);
+  Module->getSourceExtension().insert(S);
 }
 
-SPIRVExtension::SPIRVExtension(SPIRVModule *M)
-  :SPIRVEntryNoId(M, 1 + getSizeInWords(M->getExtension())){}
+SPIRVExtension::SPIRVExtension(SPIRVModule *M, const std::string &SS)
+  :SPIRVEntryNoId(M, 1 + getSizeInWords(SS)), S(SS){}
 
 void
 SPIRVExtension::encode(std::ostream &O) const {
-  getEncoder(O) << Module->getExtension();
+  getEncoder(O) << S;
 }
 
 void
 SPIRVExtension::decode(std::istream &I) {
-  std::string S;
   getDecoder(I) >> S;
-  Module->setExtension(S);
+  Module->getExtension().insert(S);
 }
 
 SPIRVCapability::SPIRVCapability(SPIRVModule *M, SPIRVCapabilityKind K)

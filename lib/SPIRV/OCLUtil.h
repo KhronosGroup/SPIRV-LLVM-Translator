@@ -248,18 +248,20 @@ WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI);
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
 
-/// Get metadata operand as int.
-int getMDOperandAsInt(MDNode* N, unsigned I);
-
-/// Get metadata operand as string.
-std::string getMDOperandAsString(MDNode* N, unsigned I);
-
-/// Get metadata operand as type.
-Type* getMDOperandAsType(MDNode* N, unsigned I);
-
 /// Get OCL version from metadata opencl.ocl.version.
-/// \return 21 for OCL 2.1, 20 for OCL 2.0, 12 for OCL 1.2.
+/// \return 21 for OCL 2.1, 20 for OCL 2.0, 12 for OCL 1.2,
+///         0 if metadata not found.
 unsigned getOCLVersion(Module *M);
+
+/// Decode a MDNode assuming it contains three integer constants.
+void decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z);
+
+/// Decode OpenCL vector type hint MDNode and encode it as SPIR-V execution
+/// mode VecTypeHint.
+unsigned transVecTypeHint(MDNode* Node);
+
+/// Decode SPIR-V encoding of vector type hint execution mode.
+Type *decodeVecTypeHint(LLVMContext &C, unsigned code);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 

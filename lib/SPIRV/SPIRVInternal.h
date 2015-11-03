@@ -242,15 +242,7 @@ typedef SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>
 
 
 #define SPIR_MD_KERNELS                     "opencl.kernels"
-#define SPIR_MD_ENABLE_FP_CONTRACT          "opencl.enable.FP_CONTRACT"
-#define SPIR_MD_SPIR_VERSION                "opencl.spir.version"
-#define SPIR_MD_OCL_VERSION                 "opencl.ocl.version"
-#define SPIR_MD_USED_EXTENSIONS             "opencl.used.extensions"
-#define SPIR_MD_USED_OPTIONAL_CORE_FEATURES "opencl.used.optional.core.features"
 #define SPIR_MD_COMPILER_OPTIONS            "opencl.compiler.options"
-#define SPIR_MD_REQD_WORK_GROUP_SIZE        "reqd_work_group_size"
-#define SPIR_MD_WORK_GROUP_SIZE_HINT        "work_group_size_hint"
-#define SPIR_MD_VEC_TYPE_HINT               "vec_type_hint"
 #define SPIR_MD_KERNEL_ARG_ADDR_SPACE       "kernel_arg_addr_space"
 #define SPIR_MD_KERNEL_ARG_ACCESS_QUAL      "kernel_arg_access_qual"
 #define SPIR_MD_KERNEL_ARG_TYPE             "kernel_arg_type"
@@ -321,6 +313,27 @@ namespace kSPIRVPostfix {
   const static char Divider[]   = "_";
   /// Divider between extended instruction name and postfix
   const static char ExtDivider[] = "__";
+}
+
+namespace kSPIRVMD {
+  const static char Capability[]        = "spirv.Capability";
+  const static char Extension[]         = "spirv.Extension";
+  const static char Source[]            = "spirv.Source";
+  const static char SourceExtension[]   = "spirv.SourceExtension";
+  const static char MemoryModel[]       = "spirv.MemoryModel";
+  const static char EntryPoint[]        = "spirv.EntryPoint";
+  const static char ExecutionMode[]     = "spirv.ExecutionMode";
+}
+
+namespace kSPIR2MD {
+  const static char Extensions[]        = "opencl.used.extensions";
+  const static char FPContract[]        = "opencl.enable.FP_CONTRACT";
+  const static char OCLVer[]            = "opencl.ocl.version";
+  const static char OptFeatures[]       = "opencl.used.optional.core.features";
+  const static char SPIRVer[]           = "opencl.spir.version";
+  const static char VecTyHint[]         = "vec_type_hint";
+  const static char WGSize[]            = "reqd_work_group_size";
+  const static char WGSizeHint[]        = "work_group_size_hint";
 }
 
 enum Spir2SamplerKind {
@@ -638,6 +651,23 @@ std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);
 /// Get a size_t type constant.
 ConstantInt *getSizet(Module *M, uint64_t value);
 
+/// Get metadata operand as int.
+int getMDOperandAsInt(MDNode* N, unsigned I);
+
+/// Get metadata operand as string.
+std::string getMDOperandAsString(MDNode* N, unsigned I);
+
+/// Get metadata operand as type.
+Type* getMDOperandAsType(MDNode* N, unsigned I);
+
+/// Get a named metadata as string.
+/// Assume the named metadata has only one operand which contains one string.
+std::string getNamedMDAsString(Module *M, const std::string &MDName);
+
+/// Get SPIR-V language by SPIR-V metadata spirv.Source
+std::tuple<unsigned, unsigned, std::string>
+getSPIRVSource(Module *M);
+
 /// Map an unsigned integer constant by applying a function.
 ConstantInt *mapUInt(Module *M, ConstantInt *I,
     std::function<unsigned(unsigned)> F);
@@ -724,6 +754,7 @@ void initializeSPIRVLowerOCLBlocksPass(PassRegistry&);
 void initializeSPIRVLowerBoolPass(PassRegistry&);
 void initializeSPIRVToOCL20Pass(PassRegistry&);
 void initializeOCL20To12Pass(PassRegistry&);
+void initializeTransOCLMDPass(PassRegistry&);
 
 ModulePass *createOCL20ToSPIRV();
 ModulePass *createOCL21ToSPIRV();
@@ -731,6 +762,7 @@ ModulePass *createSPIRVLowerOCLBlocks();
 ModulePass *createSPIRVLowerBool();
 ModulePass *createSPIRVToOCL20();
 ModulePass *createOCL20To12();
+ModulePass *createTransOCLMD();
 
 }
 #endif

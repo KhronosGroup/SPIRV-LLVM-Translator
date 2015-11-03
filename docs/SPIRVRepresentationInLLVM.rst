@@ -136,8 +136,8 @@ For example:
   !spirv.EntryPoint = !{!6 ,!7}
   !spirv.ExecutionMode = !{!8, !9}
 
-  ; 3 - OpenCL, 120 - OpenCL version 1.2, !0 - optional file id.
-  !0 = !{i32 3, i32 120, !1}
+  ; 3 - OpenCL, 12 - OpenCL version 1.2, !1 - optional file id.
+  !0 = !{i32 3, i32 12, !1}
   !1 = !{!"/tmp/opencl/program.cl"}
   !2 = !{!"cl_khr_fp16"}
   !3 = !{!"cl_khr_gl_sharing"}

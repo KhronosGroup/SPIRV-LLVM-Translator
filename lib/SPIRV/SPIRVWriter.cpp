@@ -49,6 +49,7 @@
 #include "SPIRVExtInst.h"
 #include "SPIRVUtil.h"
 #include "SPIRVInternal.h"
+#include "SPIRVMDWalker.h"
 #include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -99,34 +100,6 @@ cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(true),
     cl::desc("LLVM/SPIR-V translation enable mem2reg"));
 cl::opt<bool> SPIRVLowerConst("spirv-lower-const", cl::init(true),
     cl::desc("LLVM/SPIR-V translation enalbe lowering constant expression"));
-
-static void
-decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z) {
-  if (N == NULL)
-    return;
-  X = getMDOperandAsInt(N, 1);
-  Y = getMDOperandAsInt(N, 2);
-  Z = getMDOperandAsInt(N, 3);
-}
-
-static std::string
-decodeVecTypeHintMDNode(MDNode* Node, Type *&HintType) {
-  HintType = getMDOperandAsType(Node, 1);
-  int Signed = getMDOperandAsInt(Node, 2);
-  return mapLLVMTypeToOCLType(HintType, Signed);
-}
-
-static std::string
-getNamedMDAsString(Module *M, const std::string &MDName) {
-  NamedMDNode *NamedMD = M->getNamedMetadata(MDName);
-  if (!NamedMD)
-    return "";
-  assert(NamedMD->getNumOperands() == 1 && "Invalid SPIR");
-  MDNode *MD = NamedMD->getOperand(0);
-  if (!MD || MD->getNumOperands() == 0)
-    return "";
-  return getMDOperandAsString(MD, 0);
-}
 
 static void
 foreachKernelArgMD(MDNode *MD, SPIRVFunction *BF,
@@ -186,6 +159,7 @@ public:
         Ctx(&M->getContext()),
         BM(TheSPIRVModule),
         ExtSetId(SPIRVID_INVALID),
+        SrcLang(0),
         SrcLangVer(0),
         DbgTran(M, BM){
     RegularizedModuleTmpFile = "regularized.bc";
@@ -212,7 +186,7 @@ public:
       SPIRVEntry *);
   bool transCompileFlag();
   bool transSourceLanguage();
-  bool transSourceExtension();
+  bool transExtension();
   bool transBuiltinSet();
   SPIRVValue *transCallInst(CallInst *Call, SPIRVBasicBlock *BB);
   bool transDecoration(Value *V, SPIRVValue *BV);
@@ -225,7 +199,7 @@ public:
   // Translate LLVM module to SPIR-V module.
   // Returns true if succeeds.
   bool translate();
-  bool transFPContractMetadata();
+  bool transExecutionMode();
   SPIRVValue *transConstant(Value *V);
   SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
       bool CreateForward = true);
@@ -242,6 +216,7 @@ private:
   LLVMToSPIRVValueMap ValueMap;
   //ToDo: support multiple builtin sets. Currently assume one builtin set.
   SPIRVId ExtSetId;
+  SPIRVWord SrcLang;
   SPIRVWord SrcLangVer;
   std::string RegularizedModuleTmpFile;
   LLVMToSPIRVDbgTran DbgTran;
@@ -305,7 +280,6 @@ private:
   void oclGetMutatedArgumentTypesByBuiltin(llvm::FunctionType* FT,
       std::map<unsigned, Type*>& ChangedType, Function* F);
   FunctionType *oclGetRegularizedFunctionType(Function *);
-  SPIRVWord oclGetVectorLoadWidth(const std::string& DemangledName);
 
   bool isBuiltinTransToInst(Function *F);
   bool isBuiltinTransToExtInst(Function *F,
@@ -348,12 +322,6 @@ bool
 LLVMToSPIRV::oclIsKernel(Function *F) {
   if (F->getCallingConv() == CallingConv::SPIR_KERNEL)
     return true;
-#if  SPCV_RELAX_KERNEL_CALLING_CONV
-  if (oclGetKernelMetadata(F)) {
-    F->setCallingConv(CallingConv::SPIR_KERNEL);
-    return true;
-  }
-#endif
   return false;
 }
 
@@ -1431,11 +1399,11 @@ LLVMToSPIRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
 
 bool
 LLVMToSPIRV::translate() {
+  if (!regularize())
+    return false;
   if (!transSourceLanguage())
     return false;
-  if (!transSourceExtension())
-    return false;
-  if (!regularize())
+  if (!transExtension())
     return false;
   if (!transCompileFlag())
     return false;
@@ -1456,7 +1424,8 @@ LLVMToSPIRV::translate() {
 
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
     if (isBuiltinTransToInst(I) || isBuiltinTransToExtInst(I)
-        || I->getName().startswith(SPCV_CAST) || I->getName().startswith(LLVM_MEMCPY))
+        || I->getName().startswith(SPCV_CAST) ||
+        I->getName().startswith(LLVM_MEMCPY))
       continue;
     transFunction(I);
     // Creating all basic blocks before creating any instruction.
@@ -1474,7 +1443,7 @@ LLVMToSPIRV::translate() {
   }
   if (!transOCLKernelMetadata())
     return false;
-  if (!transFPContractMetadata())
+  if (!transExecutionMode())
     return false;
 
   BM->optimizeDecorates();
@@ -1484,23 +1453,6 @@ LLVMToSPIRV::translate() {
 llvm::IntegerType* LLVMToSPIRV::getSizetType() {
   return IntegerType::getIntNTy(M->getContext(),
     M->getDataLayout()->getPointerSizeInBits());
-}
-
-SPIRVWord LLVMToSPIRV::oclGetVectorLoadWidth(const std::string& DemangledName) {
-  SPIRVWord Width = 0;
-  if (DemangledName == "vloada_half")
-    Width = 1;
-  else {
-    unsigned Loc = 5;
-    if (DemangledName.find("vload_half") == 0)
-      Loc = 10;
-    else if (DemangledName.find("vloada_half") == 0)
-      Loc = 11;
-
-    std::stringstream SS(DemangledName.substr(Loc));
-    SS >> Width;
-  }
-  return Width;
 }
 
 void
@@ -1533,20 +1485,55 @@ LLVMToSPIRV::transBuiltinToInst(const std::string& DemangledName,
 }
 
 bool
-LLVMToSPIRV::transFPContractMetadata() {
-  NamedMDNode *KernelMDs = M->getNamedMetadata(SPIR_MD_ENABLE_FP_CONTRACT);
-  if (KernelMDs)
-    return true;
-  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
-    if (!oclIsKernel(I))
-      continue;
-    SPIRVFunction *BF = static_cast<SPIRVFunction *>(getTranslatedValue(I));
-    assert(BF && "Invalid kernel function");
-    BF->addExecutionMode(new SPIRVExecutionMode(BF, ExecutionModeContractionOff));
+LLVMToSPIRV::transExecutionMode() {
+  if (auto NMD = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::ExecutionMode)) {
+    while (!NMD.atEnd()) {
+      unsigned EMode = ~0U;
+      unsigned EModel = ~0U;
+      Function *F = nullptr;
+      auto N = NMD.nextOp(); /* execution mode MDNode */
+      N.nextOp() /* entry point MDNode */
+          .get(EModel)
+          .get(F)
+          .done()
+       .get(EMode);
+      assert (EModel == spv::ExecutionModelKernel &&
+          "Unsupported execution model");
+      SPIRVFunction *BF = static_cast<SPIRVFunction *>(getTranslatedValue(F));
+      assert(BF && "Invalid kernel function");
+      switch(EMode) {
+      case spv::ExecutionModeContractionOff:
+        BF->addExecutionMode(new SPIRVExecutionMode(BF,
+            ExecutionModeContractionOff));
+        break;
+      case spv::ExecutionModeLocalSize: {
+        unsigned X, Y, Z;
+        N.get(X).get(Y).get(Z);
+        BF->addExecutionMode(new SPIRVExecutionMode(BF,
+            ExecutionModeLocalSize, X, Y, Z));
+      }
+      break;
+      case spv::ExecutionModeLocalSizeHint: {
+        unsigned X, Y, Z;
+        N.get(X).get(Y).get(Z);
+        BF->addExecutionMode(new SPIRVExecutionMode(BF,
+            ExecutionModeLocalSizeHint, X, Y, Z));
+      }
+      break;
+      case spv::ExecutionModeVecTypeHint: {
+        unsigned X;
+        N.get(X);
+        BF->addExecutionMode(new SPIRVExecutionMode(BF,
+            ExecutionModeVecTypeHint, X));
+      }
+      break;
+      default:
+        llvm_unreachable("invalid execution mode");
+      }
+    }
   }
   return true;
 }
-
 
 bool
 LLVMToSPIRV::transOCLKernelMetadata() {
@@ -1573,30 +1560,7 @@ LLVMToSPIRV::transOCLKernelMetadata() {
       if (!NameMD)
         continue;
       StringRef Name = NameMD->getString();
-      if (Name == SPIR_MD_WORK_GROUP_SIZE_HINT) {
-        unsigned X, Y, Z;
-        decodeMDNode(MD, X, Y, Z);
-        BF->addExecutionMode(new SPIRVExecutionMode(BF, ExecutionModeLocalSizeHint,
-            X, Y, Z));
-      } else if (Name == SPIR_MD_REQD_WORK_GROUP_SIZE) {
-        unsigned X, Y, Z;
-        decodeMDNode(MD, X, Y, Z);
-        BF->addExecutionMode(new SPIRVExecutionMode(BF, ExecutionModeLocalSize,
-            X, Y, Z));
-      } else if (Name == SPIR_MD_VEC_TYPE_HINT) {
-        Type *HintTy = nullptr;
-        std::string HintTyStr = decodeVecTypeHintMDNode(MD, HintTy);
-        BF->addExecutionMode(new SPIRVExecutionMode(BF, ExecutionModeVecTypeHint,
-            transType(HintTy)->getId(), HintTyStr));
-      } else if (Name == SPIR_MD_KERNEL_ARG_ADDR_SPACE) {
-        // Do nothing
-      } else if (Name == SPIR_MD_KERNEL_ARG_ACCESS_QUAL) {
-        // Do nothing
-      } else if (Name == SPIR_MD_KERNEL_ARG_TYPE) {
-        // Do nothing
-      } else if (Name == SPIR_MD_KERNEL_ARG_BASE_TYPE) {
-        //Do nothing
-      } else if (Name == SPIR_MD_KERNEL_ARG_TYPE_QUAL) {
+      if (Name == SPIR_MD_KERNEL_ARG_TYPE_QUAL) {
         foreachKernelArgMD(MD, BF,
             [](const std::string &Str, SPIRVFunctionParameter *BA){
           if (Str.find("volatile") != std::string::npos)
@@ -1621,23 +1585,32 @@ LLVMToSPIRV::transOCLKernelMetadata() {
 
 bool
 LLVMToSPIRV::transSourceLanguage() {
-  SrcLangVer = getOCLVersion(M);
-  BM->setSourceLanguage(SourceLanguageOpenCL, SrcLangVer);
+  auto Src = getSPIRVSource(M);
+  SrcLang = std::get<0>(Src);
+  SrcLangVer = std::get<1>(Src);
+  BM->setSourceLanguage(static_cast<SourceLanguage>(SrcLang), SrcLangVer);
   return true;
 }
 
-/// SPIR-V does not separate OpenCL extensions with optional core features,
-/// so put them together.
 bool
-LLVMToSPIRV::transSourceExtension() {
-  std::string OCLExtensions = getNamedMDAsString(M, SPIR_MD_USED_EXTENSIONS);
-  std::string OCLOptionalCoreFeatures = getNamedMDAsString(M,
-      SPIR_MD_USED_OPTIONAL_CORE_FEATURES);
-
-  auto S = concat(OCLOptionalCoreFeatures, OCLExtensions);
-
-  BM->setSourceExtension(S);
-  for (auto &I:map<SPIRVCapabilityKind>(rmap<OclExt::Kind>(getSet(S))))
+LLVMToSPIRV::transExtension() {
+  if (auto N = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::Extension)) {
+    while (!N.atEnd()) {
+      std::string S;
+      N.nextOp().get(S);
+      assert(!S.empty() && "Invalid extension");
+      BM->getExtension().insert(S);
+    }
+  }
+  if (auto N = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::SourceExtension)) {
+    while (!N.atEnd()) {
+      std::string S;
+      N.nextOp().get(S);
+      assert(!S.empty() && "Invalid extension");
+      BM->getSourceExtension().insert(S);
+    }
+  }
+  for (auto &I:map<SPIRVCapabilityKind>(rmap<OclExt::Kind>(BM->getExtension())))
     BM->addCapability(I);
 
   return true;
@@ -1656,6 +1629,7 @@ LLVMToSPIRV::oclRegularize() {
   PassManager PassMgr;
   if (SPIRVMemToReg)
     PassMgr.add(createPromoteMemoryToRegisterPass());
+  PassMgr.add(createTransOCLMD());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
   PassMgr.add(createSPIRVLowerBool());
