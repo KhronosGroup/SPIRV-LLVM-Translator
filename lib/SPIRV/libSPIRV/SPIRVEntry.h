@@ -387,19 +387,6 @@ protected:
   }
 };
 
-class SPIRVEntryPoint:public SPIRVEntryNoId<OpEntryPoint> {
-public:
-  SPIRVEntryPoint(SPIRVModule *TheModule, SPIRVExecutionModelKind, SPIRVId TheId);
-  SPIRVEntryPoint():ExecModel(ExecutionModelKernel),FuncId(SPIRVID_INVALID){}
-  _SPIRV_DCL_ENCDEC
-protected:
-  SPIRVExecutionModelKind ExecModel;
-  SPIRVId FuncId;
-  CapVec getRequiredCapability() const {
-    return getVec(getCapability(ExecModel));
-  }
-};
-
 class SPIRVAnnotationGeneric:public SPIRVEntryNoIdGeneric {
 public:
   // Complete constructor
@@ -427,6 +414,21 @@ public:
   // Incomplete constructor
   SPIRVAnnotation():SPIRVAnnotationGeneric(OC){}
 };
+
+class SPIRVEntryPoint:public SPIRVAnnotation<OpEntryPoint> {
+public:
+  SPIRVEntryPoint(SPIRVModule *TheModule, SPIRVExecutionModelKind,
+      SPIRVId TheId, const std::string &TheName);
+  SPIRVEntryPoint():ExecModel(ExecutionModelKernel){}
+  _SPIRV_DCL_ENCDEC
+protected:
+  SPIRVExecutionModelKind ExecModel;
+  std::string Name;
+  CapVec getRequiredCapability() const {
+    return getVec(getCapability(ExecModel));
+  }
+};
+
 
 class SPIRVName:public SPIRVAnnotation<OpName> {
 public:
@@ -535,10 +537,10 @@ public:
   }
   // Complete constructor for VecTypeHint
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
-      SPIRVId VecType, const std::string &VecTypeName)
-  :SPIRVAnnotation(TheTarget, 4 + getSizeInWords(VecTypeName)),
-   ExecMode(TheExecMode), StrLiteral(VecTypeName){
-    WordLiterals.push_back(VecType);
+      SPIRVWord code)
+  :SPIRVAnnotation(TheTarget, 4),
+   ExecMode(TheExecMode) {
+    WordLiterals.push_back(code);
   }
   // Complete constructor for ContractionOff
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode)
@@ -547,7 +549,6 @@ public:
   SPIRVExecutionMode():ExecMode(ExecutionModeCount){}
   SPIRVExecutionModeKind getExecutionMode()const { return ExecMode;}
   const std::vector<SPIRVWord>& getLiterals()const { return WordLiterals;}
-  const std::string& getStringLiteral()const { return StrLiteral;}
   CapVec getRequiredCapability() const {
     return getVec(getCapability(ExecMode));
   }
@@ -555,7 +556,6 @@ protected:
   _SPIRV_DCL_ENCDEC
   SPIRVExecutionModeKind ExecMode;
   std::vector<SPIRVWord> WordLiterals;
-  std::string StrLiteral;
 };
 
 
@@ -608,16 +608,20 @@ public:
 
 class SPIRVSourceExtension:public SPIRVEntryNoId<OpSourceExtension> {
 public:
-  SPIRVSourceExtension(SPIRVModule *M);
+  SPIRVSourceExtension(SPIRVModule *M, const std::string &SS);
   SPIRVSourceExtension(){}
   _SPIRV_DCL_ENCDEC
+private:
+  std::string S;
 };
 
 class SPIRVExtension:public SPIRVEntryNoId<OpExtension> {
 public:
-  SPIRVExtension(SPIRVModule *M);
+  SPIRVExtension(SPIRVModule *M, const std::string &SS);
   SPIRVExtension(){}
   _SPIRV_DCL_ENCDEC
+private:
+  std::string S;
 };
 
 class SPIRVCapability:public SPIRVEntryNoId<OpCapability> {

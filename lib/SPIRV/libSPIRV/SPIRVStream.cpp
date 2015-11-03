@@ -61,7 +61,7 @@ static void readQuotedString(std::istream &IS, std::string& Str) {
   while (IS >> Ch && Ch != '"')
     ;
 
-  if (IS >> PreCh) {
+  if (IS >> PreCh && PreCh != '"') {
     while (IS >> Ch) {
       if (Ch == '"') {
         if (PreCh != '\\') {

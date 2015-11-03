@@ -39,6 +39,7 @@
 
 #include "SPIRVInternal.h"
 #include "OCLUtil.h"
+
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
@@ -69,7 +70,7 @@ getOCLCpp11AtomicMaxNumOps(StringRef Name) {
 class OCL20ToSPIRV: public ModulePass,
   public InstVisitor<OCL20ToSPIRV> {
 public:
-  OCL20ToSPIRV():ModulePass(ID), M(nullptr), Ctx(nullptr) {
+  OCL20ToSPIRV():ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
     initializeOCL20ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
   virtual void getAnalysisUsage(AnalysisUsage &AU);
@@ -201,6 +202,7 @@ public:
 private:
   Module *M;
   LLVMContext *Ctx;
+  unsigned CLVer;                   /// OpenCL version as major*10+minor
   std::set<Value *> ValuesToDelete;
 
   ConstantInt *addInt32(int I) {
@@ -264,6 +266,13 @@ bool
 OCL20ToSPIRV::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
+  auto Src = getSPIRVSource(&Module);
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL)
+    return false;
+
+  CLVer = std::get<1>(Src);
+  if (CLVer > kOCLVer::CL20)
+    return false;
 
   DEBUG(dbgs() << "Enter OCL20ToSPIRV:\n");
 

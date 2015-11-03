@@ -98,7 +98,12 @@ bool
 OCL21ToSPIRV::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
-  CLVer = getOCLVersion(M);
+
+  auto Src = getSPIRVSource(&Module);
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL)
+    return false;
+
+  CLVer = std::get<1>(Src);
   if (CLVer < kOCLVer::CL21)
     return false;
 

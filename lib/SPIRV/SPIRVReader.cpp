@@ -1929,7 +1929,7 @@ SPIRVToLLVM::transFPContractMetadata() {
     }
   }
   if (!ContractOff)
-    M->getOrInsertNamedMetadata(SPIR_MD_ENABLE_FP_CONTRACT);
+    M->getOrInsertNamedMetadata(kSPIR2MD::FPContract);
   return true;
 }
 
@@ -2035,22 +2035,22 @@ SPIRVToLLVM::transKernelMetadata() {
     // Generate metadata for reqd_work_group_size
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSize)) {
       KernelMD.push_back(getMDNodeStringIntVec(Context,
-          SPIR_MD_REQD_WORK_GROUP_SIZE, EM->getLiterals()));
+          kSPIR2MD::WGSize, EM->getLiterals()));
     }
     // Generate metadata for work_group_size_hint
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSizeHint)) {
       KernelMD.push_back(getMDNodeStringIntVec(Context,
-          SPIR_MD_WORK_GROUP_SIZE_HINT, EM->getLiterals()));
+          kSPIR2MD::WGSizeHint, EM->getLiterals()));
     }
     // Generate metadata for vec_type_hint
     if (auto EM = BF->getExecutionMode(ExecutionModeVecTypeHint)) {
       std::vector<Metadata*> MetadataVec;
-      MetadataVec.push_back(MDString::get(*Context, SPIR_MD_VEC_TYPE_HINT));
-      Type *VecHintTy = transType(BM->get<SPIRVType>(EM->getLiterals()[0]));
+      MetadataVec.push_back(MDString::get(*Context, kSPIR2MD::VecTyHint));
+      Type *VecHintTy = decodeVecTypeHint(*Context, EM->getLiterals()[0]);
       MetadataVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
       MetadataVec.push_back(
           ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),
-        VecHintTy->isIntegerTy() && EM->getStringLiteral()[0] != 'u' ? 1 : 0)));
+              0)));
       KernelMD.push_back(MDNode::get(*Context, MetadataVec));
     }
 
@@ -2230,19 +2230,18 @@ SPIRVToLLVM::transSourceLanguage() {
   assert(Lang == SourceLanguageOpenCL && "Unsupported source language");
   unsigned Major = Ver/10;
   unsigned Minor = (Ver%10);
-  addOCLVersionMetadata(Context, M, SPIR_MD_SPIR_VERSION, Major, Minor);
-  addOCLVersionMetadata(Context, M, SPIR_MD_OCL_VERSION, Major, Minor);
+  addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, Major, Minor);
+  addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
   return true;
 }
 
 bool
 SPIRVToLLVM::transSourceExtension() {
-  std::string OCLExtensions = BM->getSourceExtension();
-  auto ExtSet = rmap<OclExt::Kind>(getSet(OCLExtensions));
+  auto ExtSet = rmap<OclExt::Kind>(BM->getExtension());
   auto CapSet = rmap<OclExt::Kind>(BM->getCapability());
   for (auto &I:CapSet)
     ExtSet.insert(I);
-  OCLExtensions = getStr(map<std::string>(ExtSet));
+  auto OCLExtensions = getStr(map<std::string>(ExtSet));
   std::string OCLOptionalCoreFeatures;
   bool First = true;
   static const char *OCLOptCoreFeatureNames[] = {
@@ -2260,8 +2259,8 @@ SPIRVToLLVM::transSourceExtension() {
       OCLOptionalCoreFeatures += I;
     }
   }
-  addNamedMetadataString(Context, M, SPIR_MD_USED_EXTENSIONS, OCLExtensions);
-  addNamedMetadataString(Context, M, SPIR_MD_USED_OPTIONAL_CORE_FEATURES,
+  addNamedMetadataString(Context, M, kSPIR2MD::Extensions, OCLExtensions);
+  addNamedMetadataString(Context, M, kSPIR2MD::OptFeatures,
       OCLOptionalCoreFeatures);
   return true;
 }

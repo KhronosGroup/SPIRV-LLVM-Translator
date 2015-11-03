@@ -110,7 +110,7 @@ public:
   virtual const std::string &getCompileFlag() const = 0;
   virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind, unsigned) const
     = 0;
-  virtual const std::string &getExtension() const = 0;
+  virtual std::set<std::string> &getExtension() = 0;
   virtual SPIRVFunction *getFunction(unsigned) const = 0;
   virtual SPIRVVariable *getVariable(unsigned) const = 0;
   virtual SPIRVMemoryModelKind getMemoryModel() = 0;
@@ -118,7 +118,7 @@ public:
   virtual unsigned getNumEntryPoints(SPIRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
   virtual SourceLanguage getSourceLanguage(SPIRVWord *) const = 0;
-  virtual const std::string &getSourceExtension() const = 0;
+  virtual std::set<std::string> &getSourceExtension() = 0;
   virtual SPIRVValue *getValue(SPIRVId TheId)const = 0;
   virtual std::vector<SPIRVValue *> getValues(const std::vector<SPIRVId>&)const
       = 0;
@@ -134,11 +134,9 @@ public:
   virtual bool importBuiltinSetWithId(const std::string &, SPIRVId) = 0;
   virtual void setAddressingModel(SPIRVAddressingModelKind) = 0;
   virtual void setAlignment(SPIRVValue *, SPIRVWord) = 0;
-  virtual void setExtension(const std::string &) = 0;
   virtual void setMemoryModel(SPIRVMemoryModelKind) = 0;
   virtual void setName(SPIRVEntry *, const std::string&) = 0;
   virtual void setSourceLanguage(SourceLanguage, SPIRVWord) = 0;
-  virtual void setSourceExtension(const std::string &) = 0;
   virtual void optimizeDecorates() = 0;
   virtual void setAutoAddCapability(bool E){ AutoAddCapability = E;}
   virtual void setValidateCapability(bool E){ ValidateCapability = E;}

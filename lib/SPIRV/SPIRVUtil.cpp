@@ -41,6 +41,7 @@
 #include "SPIRVInternal.h"
 #include "libSPIRV/SPIRVDecorate.h"
 #include "libSPIRV/SPIRVValue.h"
+#include "SPIRVMDWalker.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -716,6 +717,56 @@ std::vector<Value *> getInt32(Module *M, const std::vector<int> &value) {
 ConstantInt *
 getSizet(Module *M, uint64_t value) {
   return ConstantInt::get(getSizetType(M), value, false);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Functions for getting metadata
+//
+///////////////////////////////////////////////////////////////////////////////
+int
+getMDOperandAsInt(MDNode* N, unsigned I) {
+  return mdconst::dyn_extract<ConstantInt>(N->getOperand(I))->getZExtValue();
+}
+
+std::string
+getMDOperandAsString(MDNode* N, unsigned I) {
+  Metadata* Op = N->getOperand(I);
+
+  if (!Op)
+    return "";
+  if (MDString* Str = dyn_cast<MDString>(Op)) {
+    return Str->getString().str();
+  }
+  return "";
+}
+
+Type*
+getMDOperandAsType(MDNode* N, unsigned I) {
+  return cast<ValueAsMetadata>(N->getOperand(I))->getType();
+}
+
+std::string
+getNamedMDAsString(Module *M, const std::string &MDName) {
+  NamedMDNode *NamedMD = M->getNamedMetadata(MDName);
+  if (!NamedMD)
+    return "";
+  assert(NamedMD->getNumOperands() == 1 && "Invalid SPIR");
+  MDNode *MD = NamedMD->getOperand(0);
+  if (!MD || MD->getNumOperands() == 0)
+    return "";
+  return getMDOperandAsString(MD, 0);
+}
+
+std::tuple<unsigned, unsigned, std::string>
+getSPIRVSource(Module *M) {
+  std::tuple<unsigned, unsigned, std::string> Tup;
+  if (auto N = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::Source).nextOp())
+    N.get(std::get<0>(Tup))
+     .get(std::get<1>(Tup))
+     .setQuiet(true)
+     .get(std::get<2>(Tup));
+  return Tup;
 }
 
 ConstantInt *mapUInt(Module *M, ConstantInt *I,

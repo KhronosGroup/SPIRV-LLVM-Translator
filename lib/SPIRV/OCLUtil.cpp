@@ -121,45 +121,96 @@ getSPIRVInst(const OCLBuiltinTransInfo &Info) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Functions for getting metadata
-//
-///////////////////////////////////////////////////////////////////////////////
-int
-getMDOperandAsInt(MDNode* N, unsigned I) {
-  return mdconst::dyn_extract<ConstantInt>(N->getOperand(I))->getZExtValue();
-}
-
-std::string
-getMDOperandAsString(MDNode* N, unsigned I) {
-  Metadata* Op = N->getOperand(I);
-
-  if (!Op)
-    return "";
-  if (MDString* Str = dyn_cast<MDString>(Op)) {
-    return Str->getString().str();
-  }
-  return "";
-}
-
-Type*
-getMDOperandAsType(MDNode* N, unsigned I) {
-  return cast<ValueAsMetadata>(N->getOperand(I))->getType();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // Functions for getting module info
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 unsigned getOCLVersion(Module *M) {
-  NamedMDNode *NamedMD = M->getNamedMetadata(SPIR_MD_OCL_VERSION);
-  assert (NamedMD && "Invalid SPIR");
+  NamedMDNode *NamedMD = M->getNamedMetadata(kSPIR2MD::OCLVer);
+  if (!NamedMD)
+    return 0;
   assert (NamedMD->getNumOperands() == 1 && "Invalid SPIR");
   MDNode *MD = NamedMD->getOperand(0);
   unsigned Major = getMDOperandAsInt(MD, 0);
   unsigned Minor = getMDOperandAsInt(MD, 1);
   return Major * 10 + Minor;
+}
+
+void
+decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z) {
+  if (N == NULL)
+    return;
+  X = getMDOperandAsInt(N, 1);
+  Y = getMDOperandAsInt(N, 2);
+  Z = getMDOperandAsInt(N, 3);
+}
+
+/// Encode LLVM type by SPIR-V execution mode VecTypeHint
+unsigned
+encodeVecTypeHint(Type *Ty){
+  if (Ty->isHalfTy())
+    return 4;
+  if (Ty->isFloatTy())
+    return 5;
+  if (Ty->isDoubleTy())
+    return 6;
+  if (IntegerType* intTy = dyn_cast<IntegerType>(Ty)) {
+    switch (intTy->getIntegerBitWidth()) {
+    case 8:
+      return 0;
+    case 16:
+      return 1;
+    case 32:
+      return 2;
+    case 64:
+      return 3;
+    default:
+      llvm_unreachable("invalid integer type");
+      return 3;
+    }
+  }
+  if (VectorType* VecTy = dyn_cast<VectorType>(Ty)) {
+    Type* EleTy = VecTy->getElementType();
+    unsigned Size = VecTy->getVectorNumElements();
+    return Size << 16 | encodeVecTypeHint(EleTy);
+  }
+  llvm_unreachable("invalid type");
+  return 0;
+}
+
+Type *
+decodeVecTypeHint(LLVMContext &C, unsigned code) {
+  unsigned VecWidth = code >> 16;
+  unsigned Scalar = code & 0xFFFF;
+  Type *ST = nullptr;
+  switch(Scalar) {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+    ST = IntegerType::get(C, 1 << (3 + Scalar));
+    break;
+  case 4:
+    ST = Type::getHalfTy(C);
+    break;
+  case 5:
+    ST = Type::getFloatTy(C);
+    break;
+  case 6:
+    ST = Type::getDoubleTy(C);
+    break;
+  default:
+    llvm_unreachable("Invalid vec type hint");
+    ST = Type::getInt8Ty(C);
+  }
+  if (VecWidth < 1)
+    return ST;
+  return VectorType::get(ST, VecWidth);
+}
+
+unsigned
+transVecTypeHint(MDNode* Node) {
+  return encodeVecTypeHint(getMDOperandAsType(Node, 1));
 }
 
 SPIRAddressSpace

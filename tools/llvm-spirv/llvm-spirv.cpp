@@ -142,8 +142,10 @@ convertLLVMToSPIRV() {
       OutputFile = removeExt(InputFile) + kExt::SpirvBinary;
   }
 
-  std::ofstream OFS(OutputFile, std::ios::binary);
-  if (!WriteSPIRV(M.get(), OFS, Err)) {
+  std::ofstream OFS;
+  std::ostream *OS = OutputFile == "-" ? &std::cout :
+      (OFS.open(OutputFile, std::ios::binary), &OFS);
+  if (!WriteSPIRV(M.get(), *OS, Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }

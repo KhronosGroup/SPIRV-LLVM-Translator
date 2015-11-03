@@ -89,7 +89,7 @@ public:
   const SPIRVCapSet &getCapability() const { return CapSet;}
   const std::string &getCompileFlag() const { return CompileFlag;}
   std::string &getCompileFlag() { return CompileFlag;}
-  const std::string &getExtension() const { return SPIRVExt;}
+  std::set<std::string> &getExtension() { return SPIRVExt;}
   SPIRVFunction *getFunction(unsigned I) const { return FuncVec[I];}
   SPIRVVariable *getVariable(unsigned I) const { return VariableVec[I];}
   virtual SPIRVValue *getValue(SPIRVId TheId) const;
@@ -120,7 +120,7 @@ public:
       *Ver = SrcLangVer;
     return SrcLang;
   }
-  const std::string &getSourceExtension() const { return SrcExtension;}
+  std::set<std::string> &getSourceExtension() { return SrcExtension;}
   bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId EP) const;
 
   // Module changing functions
@@ -129,14 +129,12 @@ public:
   void optimizeDecorates();
   void setAddressingModel(SPIRVAddressingModelKind AM) { AddrModel = AM;}
   void setAlignment(SPIRVValue *, SPIRVWord);
-  void setExtension(const std::string &Ext) { SPIRVExt = Ext;}
   void setMemoryModel(SPIRVMemoryModelKind MM) { MemoryModel = MM;}
   void setName(SPIRVEntry *E, const std::string &Name);
   void setSourceLanguage(SourceLanguage Lang, SPIRVWord Ver) {
     SrcLang = Lang;
     SrcLangVer = Ver;
   }
-  void setSourceExtension(const std::string &Ext) { SrcExtension = Ext;}
 
   // Object creation functions
   template<class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -286,8 +284,8 @@ private:
   SPIRVInstructionSchemaKind InstSchema;
   SourceLanguage SrcLang;
   SPIRVWord SrcLangVer;
-  std::string SrcExtension;
-  std::string SPIRVExt;
+  std::set<std::string> SrcExtension;
+  std::set<std::string> SPIRVExt;
   std::string CompileFlag;
   SPIRVAddressingModelKind AddrModel;
   SPIRVMemoryModelKind MemoryModel;
@@ -1046,16 +1044,21 @@ operator<< (std::ostream &O, SPIRVModule &M) {
           << MI.InstSchema;
   O << SPIRVNL;
   O << SPIRVSource(&M);
-  if (!M.getSourceExtension().empty())
-    O << SPIRVSourceExtension(&M);
-  if (!M.getExtension().empty())
-    O << SPIRVExtension(&M);
+  for (auto &I:M.getSourceExtension()) {
+    assert(!I.empty() && "Invalid source extension");
+    O << SPIRVSourceExtension(&M, I);
+  }
+  for (auto &I:M.getExtension()) {
+    assert(!I.empty() && "Invalid extension");
+    O << SPIRVExtension(&M, I);
+  }
   for (auto &I:MI.CapSet)
     O << SPIRVCapability(&M, I);
 
   for (auto &I:MI.EntryPointVec)
     for (auto &II:I.second)
-      O << SPIRVEntryPoint(&M, I.first, II);
+      O << SPIRVEntryPoint(&M, I.first, II,
+          M.get<SPIRVFunction>(II)->getName());
 
   for (auto &I:MI.EntryPointVec)
     for (auto &II:I.second)
@@ -1068,8 +1071,17 @@ operator<< (std::ostream &O, SPIRVModule &M) {
 
   O << MI.StringVec;
 
-  for (auto &I:MI.NamedId)
-    M.getEntry(I)->encodeName(O);
+  for (auto &I:MI.NamedId) {
+    // Don't output name for entry point since it is redundant
+    bool IsEntryPoint = false;
+    for (auto &EPS:MI.EntryPointSet)
+      if (EPS.second.count(I)) {
+        IsEntryPoint = true;
+        break;
+      }
+    if (!IsEntryPoint)
+      M.getEntry(I)->encodeName(O);
+  }
 
   O << MI.MemberNameVec
     << MI.LineVec
