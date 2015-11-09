@@ -120,7 +120,8 @@ struct OCLBuiltinTransInfo {
   std::string Postfix;      // Postfix to be added
   /// Postprocessor of operands
   std::function<void(std::vector<Value *>&)> PostProc;
-  OCLBuiltinTransInfo(){
+  Type* RetTy;              // Return type of the translated function
+  OCLBuiltinTransInfo():RetTy(nullptr){
     PostProc = [](std::vector<Value *>&){};
   }
 };
@@ -152,9 +153,6 @@ namespace kOCLBuiltinName {
   const static char MemFence[]           = "mem_fence";
   const static char NDRangePrefix[]      = "ndrange_";
   const static char Pipe[]               = "pipe";
-  const static char ToGlobal[]           = "to_global";
-  const static char ToLocal[]            = "to_local";
-  const static char ToPrivate[]          = "to_private";
   const static char ReadImage[]          = "read_image";
   const static char ReadPipe[]           = "read_pipe";
   const static char RoundingPrefix[]     = "_r";
@@ -162,6 +160,9 @@ namespace kOCLBuiltinName {
   const static char SampledReadImage[]   = "sampled_read_image";
   const static char SubGroupPrefix[]     = "sub_group_";
   const static char SubPrefix[]          = "sub_";
+  const static char ToGlobal[]           = "to_global";
+  const static char ToLocal[]            = "to_local";
+  const static char ToPrivate[]          = "to_private";
   const static char VLoadPrefix[]        = "vload";
   const static char VLoadAPrefix[]       = "vloada";
   const static char VLoadHalf[]          = "vload_half";
@@ -521,9 +522,9 @@ _SPIRV_OP(ndrange_1D, BuildNDRange)
 _SPIRV_OP(ndrange_2D, BuildNDRange)
 _SPIRV_OP(ndrange_3D, BuildNDRange)
 // Generic Address Space Casts
-_SPIRV_OP(to_global, GenericCastToPtr)
-_SPIRV_OP(to_local, GenericCastToPtr)
-_SPIRV_OP(to_private, GenericCastToPtr)
+_SPIRV_OP(to_global, GenericCastToPtrExplicit)
+_SPIRV_OP(to_local, GenericCastToPtrExplicit)
+_SPIRV_OP(to_private, GenericCastToPtrExplicit)
 _SPIRV_OP(work_group_barrier, ControlBarrier)
 // CL 2.0 pipe builtins
 _SPIRV_OP(read_pipe, ReadPipe)

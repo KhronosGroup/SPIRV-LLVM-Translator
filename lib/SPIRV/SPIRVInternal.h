@@ -90,6 +90,7 @@ SPIRVMap<unsigned, Op>::init() {
     _SPIRV_OP(PtrToInt, ConvertPtrToU)
     _SPIRV_OP(IntToPtr, ConvertUToPtr)
     _SPIRV_OP(BitCast, Bitcast)
+    _SPIRV_OP(AddrSpaceCast, GenericCastToPtr)
     _SPIRV_OP(GetElementPtr, AccessChain)
   /*Binary*/
     _SPIRV_OP(And, BitwiseAnd)
@@ -178,6 +179,17 @@ enum SPIRAddressSpace {
   SPIRAS_Generic,
   SPIRAS_Count,
 };
+
+template<>inline void
+SPIRVMap<SPIRAddressSpace, std::string>::init() {
+  add(SPIRAS_Private, "Private");
+  add(SPIRAS_Global, "Global");
+  add(SPIRAS_Constant, "Constant");
+  add(SPIRAS_Local, "Local");
+  add(SPIRAS_Generic, "Generic");
+}
+typedef SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>
+  SPIRAddrSpaceCapitalizedNameMap;
 
 template<> inline void
 SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>::init() {
@@ -744,6 +756,13 @@ removeCast(Value *V);
 /// Cast a function to a void(void) funtion pointer.
 Constant *
 castToVoidFuncPtr(Function *F);
+
+/// Get i8* with the same address space.
+PointerType *getInt8PtrTy(PointerType *T);
+
+/// Cast a value to a i8* by inserting a cast instruction.
+Value *
+castToInt8Ptr(Value *V, Instruction *Pos);
 
 }
 namespace llvm {

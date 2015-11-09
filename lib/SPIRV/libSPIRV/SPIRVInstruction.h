@@ -295,30 +295,37 @@ public:
     return Ops[I];
   }
 
+  /// Get operand as value.
+  /// If the operand is a literal, return it as a uint32 constant.
   SPIRVValue *getOpValue(int I) {
-    return getValue(Ops[I]);
+    return isOperandLiteral(I) ? Module->getLiteralAsConstant(Ops[I]) :
+        getValue(Ops[I]);
+  }
+
+  // Get the offset of operands.
+  // Some instructions skip literals when returning operands.
+  size_t getOperandOffset() const {
+    if (hasGroupOperation()) {
+      assert(hasExecScope());
+      return 2;
+    } else if (hasExecScope())
+      return 1;
+    return 0;
   }
 
   // Get operands which are values.
   // Drop execution scope and group operation literals.
+  // Return other literals as uint32 constants.
   virtual std::vector<SPIRVValue *> getOperands() {
-    std::vector<SPIRVWord> VOps = Ops;
-    if (hasGroupOperation()) {
-      assert(hasExecScope());
-      VOps.erase(VOps.begin(), VOps.begin() + 2);
-    } else if (hasExecScope())
-      VOps.erase(VOps.begin());
-
-    return getValues(VOps);
+    std::vector<SPIRVValue*> VOps;
+    auto Offset = getOperandOffset();
+    for (size_t I = 0, E = Ops.size() - Offset; I != E; ++I)
+      VOps.push_back(getOperand(I));
+    return VOps;
   }
 
   virtual SPIRVValue *getOperand(unsigned I) {
-    if (hasGroupOperation()) {
-      assert(hasExecScope());
-      I += 2;
-    } else if (hasExecScope())
-      ++I;
-    return getValue(Ops[I]);
+    return getOpValue(I + getOperandOffset());
   }
 
   bool hasExecScope() const {
@@ -1832,6 +1839,7 @@ _SPIRV_OP(ImageQuerySamples, true, 4)
 // Other instructions
 _SPIRV_OP(SpecConstantOp, true, 4, true)
 _SPIRV_OP(GenericPtrMemSemantics, true, 4, false)
+_SPIRV_OP(GenericCastToPtrExplicit, true, 5, false, 1)
 #undef _SPIRV_OP
 
 SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst);

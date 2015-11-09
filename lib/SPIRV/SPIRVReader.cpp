@@ -1724,7 +1724,8 @@ SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
           BT->getVectorComponentCount());
     else
        llvm_unreachable("invalid compare instruction");
-  }
+  } else if (OC == OpGenericCastToPtrExplicit)
+    Args.pop_back();
 }
 
 Instruction*
@@ -1793,7 +1794,7 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
 std::string
 SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
   auto OC = BI->getOpCode();
-  if (OC == OpGenericCastToPtr)
+  if (OC == OpGenericCastToPtrExplicit)
     return getOCLGenericCastToPtrName(BI);
   if (isCvtOpCode(OC))
     return getOCLConvertBuiltinName(BI);
