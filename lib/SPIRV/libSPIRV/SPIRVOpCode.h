@@ -92,7 +92,7 @@ inline bool isBinaryShiftLogicalBitwiseOpCode(Op OpCode) {
 inline bool isCmpOpCode(Op OpCode) {
   return ((unsigned)OpCode >= OpIEqual &&
       (unsigned)OpCode <= OpFUnordGreaterThanEqual) ||
-      (OpCode >= OpLessOrGreater && OpCode <= OpUnordered);
+      (OpCode >= OpLessOrGreater && OpCode <= OpLogicalNotEqual);
 }
 
 inline bool isCvtOpCode(Op OpCode) {

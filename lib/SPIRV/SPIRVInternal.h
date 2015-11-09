@@ -148,12 +148,12 @@ typedef SPIRVMap<CmpInst::Predicate, Op> CmpMap;
 class IntBoolOpMapId;
 template<> inline void
 SPIRVMap<Op, Op, IntBoolOpMapId>::init() {
-  add(OpIEqual,      OpLogicalEqual);
-  add(OpINotEqual,   OpLogicalNotEqual);
   add(OpNot,         OpLogicalNot);
   add(OpBitwiseAnd,  OpLogicalAnd);
   add(OpBitwiseOr,   OpLogicalOr);
   add(OpBitwiseXor,  OpLogicalNotEqual);
+  add(OpIEqual,      OpLogicalEqual);
+  add(OpINotEqual,   OpLogicalNotEqual);
 }
 typedef SPIRVMap<Op, Op, IntBoolOpMapId> IntBoolOpMap;
 

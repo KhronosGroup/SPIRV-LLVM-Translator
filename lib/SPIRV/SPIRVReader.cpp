@@ -921,12 +921,16 @@ SPIRVToLLVM::transCmpInst(SPIRVValue* BV, BasicBlock* BB, Function* F) {
   assert(BB && "Invalid BB");
   SPIRVType* BT = BC->getOperand(0)->getType();
   Instruction* Inst = nullptr;
-  if (BT->isTypeVectorOrScalarInt() || BT->isTypePointer())
-    Inst = new ICmpInst(*BB, CmpMap::rmap(BC->getOpCode()),
+  auto OP = BC->getOpCode();
+  if (isLogicalOpCode(OP))
+    OP = IntBoolOpMap::rmap(OP);
+  if (BT->isTypeVectorOrScalarInt() || BT->isTypeVectorOrScalarBool() ||
+      BT->isTypePointer())
+    Inst = new ICmpInst(*BB, CmpMap::rmap(OP),
         transValue(BC->getOperand(0), F, BB),
         transValue(BC->getOperand(1), F, BB));
   else if (BT->isTypeVectorOrScalarFloat())
-    Inst = new FCmpInst(*BB, CmpMap::rmap(BC->getOpCode()),
+    Inst = new FCmpInst(*BB, CmpMap::rmap(OP),
         transValue(BC->getOperand(0), F, BB),
         transValue(BC->getOperand(1), F, BB));
   assert(Inst && "not implemented");
