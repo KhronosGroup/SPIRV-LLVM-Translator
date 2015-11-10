@@ -666,6 +666,17 @@ castToInt8Ptr(Constant *V, unsigned Addr = 0) {
   return ConstantExpr::getBitCast(V, Type::getInt8PtrTy(V->getContext(), Addr));
 }
 
+PointerType *
+getInt8PtrTy(PointerType *T) {
+  return Type::getInt8PtrTy(T->getContext(), T->getAddressSpace());
+}
+
+Value *
+castToInt8Ptr(Value *V, Instruction *Pos) {
+  return CastInst::CreatePointerCast(V, getInt8PtrTy(
+      cast<PointerType>(V->getType())), "", Pos);
+}
+
 CallInst *
 addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
     Value *CtxAlign, Instruction *InsPos, StringRef InstName) {

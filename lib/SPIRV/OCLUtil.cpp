@@ -166,7 +166,6 @@ encodeVecTypeHint(Type *Ty){
       return 3;
     default:
       llvm_unreachable("invalid integer type");
-      return 3;
     }
   }
   if (VectorType* VecTy = dyn_cast<VectorType>(Ty)) {
@@ -175,7 +174,6 @@ encodeVecTypeHint(Type *Ty){
     return Size << 16 | encodeVecTypeHint(EleTy);
   }
   llvm_unreachable("invalid type");
-  return 0;
 }
 
 Type *
@@ -201,7 +199,6 @@ decodeVecTypeHint(LLVMContext &C, unsigned code) {
     break;
   default:
     llvm_unreachable("Invalid vec type hint");
-    ST = Type::getInt8Ty(C);
   }
   if (VecWidth < 1)
     return ST;

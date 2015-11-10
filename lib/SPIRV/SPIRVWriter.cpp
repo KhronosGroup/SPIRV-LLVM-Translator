@@ -1666,7 +1666,7 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
     }
     break;
   default: {
-    if (isCvtOpCode(OC)) {
+    if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
         transValue(CI->getArgOperand(0), BB), BB);
     } else if (isCmpOpCode(OC)) {

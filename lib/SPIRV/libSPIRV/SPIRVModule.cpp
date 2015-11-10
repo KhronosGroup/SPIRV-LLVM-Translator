@@ -100,6 +100,7 @@ public:
   virtual std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId>&)
       const;
   SPIRVMemoryModelKind getMemoryModel() { return MemoryModel;}
+  virtual SPIRVConstant* getLiteralAsConstant(unsigned Literal);
   unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const {
     auto Loc = EntryPointVec.find(EM);
     if (Loc == EntryPointVec.end())
@@ -326,6 +327,8 @@ private:
   SPIRVExecModelIdVecMap EntryPointVec;
   SPIRVStringMap StrMap;
   SPIRVCapSet CapSet;
+  std::map<unsigned, SPIRVTypeInt*> IntTypeMap;
+  std::map<unsigned, SPIRVConstant*> LiteralMap;
 
   void layoutEntry(SPIRVEntry* Entry);
 };
@@ -410,6 +413,18 @@ void
 SPIRVModuleImpl::addCapabilityInternal(SPIRVCapabilityKind Cap) {
   if (AutoAddCapability)
     CapSet.insert(Cap);
+}
+
+SPIRVConstant*
+SPIRVModuleImpl::getLiteralAsConstant(unsigned Literal) {
+  auto Loc = LiteralMap.find(Literal);
+  if (Loc != LiteralMap.end())
+    return Loc->second;
+  auto Ty = addIntegerType(32);
+  auto V = new SPIRVConstant(this, Ty, getId(), static_cast<uint64_t>(Literal));
+  LiteralMap[Literal] = V;
+  addConstant(V);
+  return V;
 }
 
 void
@@ -600,7 +615,12 @@ SPIRVModuleImpl::addBoolType() {
 
 SPIRVTypeInt *
 SPIRVModuleImpl::addIntegerType(unsigned BitWidth) {
-  return addType(new SPIRVTypeInt(this, getId(), BitWidth, false));
+  auto Loc = IntTypeMap.find(BitWidth);
+  if (Loc != IntTypeMap.end())
+    return Loc->second;
+  auto Ty = new SPIRVTypeInt(this, getId(), BitWidth, false);
+  IntTypeMap[BitWidth] = Ty;
+  return addType(Ty);
 }
 
 SPIRVTypeFloat *
@@ -758,6 +778,11 @@ SPIRVModuleImpl::addConstant(SPIRVType *Ty, uint64_t V) {
 
 SPIRVValue *
 SPIRVModuleImpl::addIntegerConstant(SPIRVTypeInt *Ty, uint64_t V) {
+  if (Ty->getBitWidth() == 32) {
+    unsigned I32 = V;
+    assert(I32 == V && "Integer value truncated");
+    return getLiteralAsConstant(I32);
+  }
   return addConstant(new SPIRVConstant(this, Ty, getId(), V));
 }
 

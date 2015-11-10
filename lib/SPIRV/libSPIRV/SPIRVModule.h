@@ -127,6 +127,7 @@ public:
   virtual SPIRVType *getValueType(SPIRVId TheId)const = 0;
   virtual std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId>&)
       const = 0;
+  virtual SPIRVConstant* getLiteralAsConstant(unsigned Literal) = 0;
   virtual bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId) const = 0;
 
   // Module changing functions

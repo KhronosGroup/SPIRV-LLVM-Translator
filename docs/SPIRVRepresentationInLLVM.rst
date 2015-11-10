@@ -71,6 +71,15 @@ where
 
  * {ConversionOpCodeName} = ConvertFToU|ConvertFToS|ConvertUToF|ConvertUToS|UConvert|SConvert|FConvert|SatConvertSToU|SatConvertUToS
 
+SPIR-V Builtin GenericCastToPtr Function Name
+----------------------------------------
+
+The unmangled names of SPIR-V builtin GenericCastToPtrExplicit function follow the convention:
+
+.. code-block:: c
+
+  __spirv_GenericCastToPtrExplicit_To{Global|Local|Private}
+
 SPIR-V Extended Instructions Mapped to LLVM Function Calls
 ==========================================================
 

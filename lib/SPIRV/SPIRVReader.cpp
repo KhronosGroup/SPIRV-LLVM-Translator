@@ -921,12 +921,16 @@ SPIRVToLLVM::transCmpInst(SPIRVValue* BV, BasicBlock* BB, Function* F) {
   assert(BB && "Invalid BB");
   SPIRVType* BT = BC->getOperand(0)->getType();
   Instruction* Inst = nullptr;
-  if (BT->isTypeVectorOrScalarInt() || BT->isTypePointer())
-    Inst = new ICmpInst(*BB, CmpMap::rmap(BC->getOpCode()),
+  auto OP = BC->getOpCode();
+  if (isLogicalOpCode(OP))
+    OP = IntBoolOpMap::rmap(OP);
+  if (BT->isTypeVectorOrScalarInt() || BT->isTypeVectorOrScalarBool() ||
+      BT->isTypePointer())
+    Inst = new ICmpInst(*BB, CmpMap::rmap(OP),
         transValue(BC->getOperand(0), F, BB),
         transValue(BC->getOperand(1), F, BB));
   else if (BT->isTypeVectorOrScalarFloat())
-    Inst = new FCmpInst(*BB, CmpMap::rmap(BC->getOpCode()),
+    Inst = new FCmpInst(*BB, CmpMap::rmap(OP),
         transValue(BC->getOperand(0), F, BB),
         transValue(BC->getOperand(1), F, BB));
   assert(Inst && "not implemented");
@@ -1720,7 +1724,8 @@ SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
           BT->getVectorComponentCount());
     else
        llvm_unreachable("invalid compare instruction");
-  }
+  } else if (OC == OpGenericCastToPtrExplicit)
+    Args.pop_back();
 }
 
 Instruction*
@@ -1789,7 +1794,7 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
 std::string
 SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
   auto OC = BI->getOpCode();
-  if (OC == OpGenericCastToPtr)
+  if (OC == OpGenericCastToPtrExplicit)
     return getOCLGenericCastToPtrName(BI);
   if (isCvtOpCode(OC))
     return getOCLConvertBuiltinName(BI);

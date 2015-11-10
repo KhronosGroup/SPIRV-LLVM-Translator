@@ -187,6 +187,17 @@ public:
   void visitCallReadWriteImage(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
+  /// Transform to_{global|local|private}.
+  ///
+  /// T* a = ...;
+  /// addr T* b = to_addr(a);
+  ///   =>
+  /// i8* x = cast<i8*>(a);
+  /// addr i8* y = __spirv_GenericCastToPtr_ToAddr(x);
+  /// addr T* b = cast<addr T*>(y);
+  void visitCallToAddr(CallInst *CI, StringRef MangledName,
+      const std::string &DemangledName);
+
   /// Transform vector load/store functions to SPIR-V extended builtin
   ///   functions
   /// {vload|vstore{a}}{_half}{n}{_rte|_rtz|_rtp|_rtn} =>
@@ -374,6 +385,12 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0 ||
       DemangledName.find(kOCLBuiltinName::WriteImage) == 0) {
     visitCallReadWriteImage(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::ToGlobal ||
+      DemangledName == kOCLBuiltinName::ToLocal ||
+      DemangledName == kOCLBuiltinName::ToPrivate) {
+    visitCallToAddr(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 ||
@@ -764,10 +781,23 @@ OCL20ToSPIRV::transBuiltin(CallInst* CI,
     Info.UniqName = getSPIRVExtFuncName(SPIRVEIS_OpenCL, ExtOp);
   else
     return;
-  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    Info.PostProc(Args);
-    return Info.UniqName + Info.Postfix;
-  }, &Attrs);
+  if (!Info.RetTy)
+    mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+      Info.PostProc(Args);
+      return Info.UniqName + Info.Postfix;
+    }, &Attrs);
+  else
+    mutateCallInstSPIRV(M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy){
+        Info.PostProc(Args);
+        RetTy = Info.RetTy;
+        return Info.UniqName + Info.Postfix;
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        return CastInst::CreatePointerBitCastOrAddrSpaceCast(NewCI,
+            CI->getType(), "", CI);
+      },
+    &Attrs);
 }
 
 void
@@ -954,6 +984,26 @@ OCL20ToSPIRV::visitCallReadWriteImage(CallInst* CI,
 
   if (DemangledName.find(kOCLBuiltinName::WriteImage) == 0)
     Info.UniqName = kOCLBuiltinName::WriteImage;
+  transBuiltin(CI, Info);
+}
+
+void
+OCL20ToSPIRV::visitCallToAddr(CallInst* CI, StringRef MangledName,
+    const std::string &DemangledName) {
+  auto AddrSpace = static_cast<SPIRAddressSpace>(
+      CI->getType()->getPointerAddressSpace());
+  OCLBuiltinTransInfo Info;
+  Info.UniqName = DemangledName;
+  Info.Postfix = std::string(kSPIRVPostfix::Divider) + "To" +
+      SPIRAddrSpaceCapitalizedNameMap::map(AddrSpace);
+  auto StorageClass = addInt32(SPIRSPIRVAddrSpaceMap::map(AddrSpace));
+  Info.RetTy = getInt8PtrTy(cast<PointerType>(CI->getType()));
+  Info.PostProc = [=](std::vector<Value *> &Ops){
+    auto P = Ops.back();
+    Ops.pop_back();
+    Ops.push_back(castToInt8Ptr(P, CI));
+    Ops.push_back(StorageClass);
+  };
   transBuiltin(CI, Info);
 }
 
