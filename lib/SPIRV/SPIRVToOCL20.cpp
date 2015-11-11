@@ -71,15 +71,32 @@ public:
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
 
-  /// Transform __spirv_MemoryBarrier to atomic_work_item_fence.
-  ///   __spirv_MemoryBarrier(scope, sema) =>
-  ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
-  void visitCallSPIRVMemoryBarrier(CallInst *CI);
-
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(atomic_op, ops, ..., order(sema), map(scope))
   void visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC);
+
+  /// Transform __spirv_Group* to {work_group|sub_group}_*.
+  ///
+  /// Special handling of work_group_broadcast.
+  ///   __spirv_GroupBroadcast(a, vec3(x, y, z))
+  ///     =>
+  ///   work_group_broadcast(a, x, y, z)
+  ///
+  /// Transform OpenCL group builtin function names from group_
+  /// to workgroup_ and sub_group_.
+  /// Insert group operation part: reduce_/inclusive_scan_/exclusive_scan_
+  /// Transform the operation part:
+  ///    fadd/iadd/sadd => add
+  ///    fmax/smax => max
+  ///    fmin/smin => min
+  /// Keep umax/umin unchanged.
+  void visitCallSPIRVGroupBuiltin(CallInst *CI, Op OC);
+
+  /// Transform __spirv_MemoryBarrier to atomic_work_item_fence.
+  ///   __spirv_MemoryBarrier(scope, sema) =>
+  ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
+  void visitCallSPIRVMemoryBarrier(CallInst *CI);
 
   /// Transform __spirv_* builtins to OCL 2.0 builtins.
   /// No change with arguments.
@@ -139,6 +156,10 @@ SPIRVToOCL20::visitCallInst(CallInst& CI) {
     visitCallSPIRVAtomicBuiltin(&CI, OC);
     return;
   }
+  if (isGroupOpCode(OC)) {
+    visitCallSPIRVGroupBuiltin(&CI, OC);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 
@@ -194,6 +215,45 @@ void SPIRVToOCL20::visitCallSPIRVBuiltin(CallInst* CI, Op OC) {
   }, &Attrs);
 }
 
+void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst* CI, Op OC) {
+  auto DemangledName = OCLSPIRVBuiltinMap::rmap(OC);
+  assert(DemangledName.find(kSPIRVName::GroupPrefix) == 0);
+
+  auto ES = getArgAsScope(CI, 0);
+  std::string Prefix;
+  switch(ES) {
+  case ScopeWorkgroup:
+    Prefix = kOCLBuiltinName::WorkPrefix;
+    break;
+  case ScopeSubgroup:
+    Prefix = kOCLBuiltinName::SubPrefix;
+    break;
+  default:
+    llvm_unreachable("Invalid execution scope");
+  }
+
+  bool HasGroupOperation = hasGroupOperation(OC);
+  if (!HasGroupOperation) {
+    DemangledName = Prefix + DemangledName;
+  } else {
+    auto GO = getArgAs<spv::GroupOperation>(CI, 1);
+    StringRef Op = DemangledName;
+    Op = Op.drop_front(strlen(kSPIRVName::GroupPrefix));
+    bool Unsigned = Op.front() == 'u';
+    if (!Unsigned)
+      Op = Op.drop_front(1);
+    DemangledName = Prefix + kSPIRVName::GroupPrefix +
+        SPIRSPIRVGroupOperationMap::rmap(GO) + '_' + Op.str();
+  }
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    Args.erase(Args.begin(), Args.begin() + (HasGroupOperation ? 2 : 1));
+    if (OC == OpGroupBroadcast)
+      expandVector(CI, Args, 1);
+    return DemangledName;
+  }, &Attrs);
+}
+
 void SPIRVToOCL20::translateMangledAtomicTypeName() {
   for (auto &I:M->functions()) {
     if (!I.hasName())
@@ -210,7 +270,6 @@ void SPIRVToOCL20::translateMangledAtomicTypeName() {
     I.setName(MangledName);
   }
 }
-
 }
 
 INITIALIZE_PASS(SPIRVToOCL20, "spvtoocl20",

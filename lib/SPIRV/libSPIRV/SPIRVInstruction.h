@@ -44,6 +44,7 @@
 #include "SPIRVStream.h"
 #include "SPIRVValue.h"
 #include "SPIRVBasicBlock.h"
+#include "SPIRVOpCode.h"
 
 #include <cassert>
 #include <cstdint>
@@ -305,10 +306,7 @@ public:
   // Get the offset of operands.
   // Some instructions skip literals when returning operands.
   size_t getOperandOffset() const {
-    if (hasGroupOperation()) {
-      assert(hasExecScope());
-      return 2;
-    } else if (hasExecScope())
+    if (hasExecScope() && !isGroupOpCode(OpCode))
       return 1;
     return 0;
   }

@@ -163,6 +163,12 @@ public:
 
   /// Transform {work|sub}_group_x =>
   ///   __spirv_{OpName}
+  ///
+  /// Special handling of work_group_broadcast.
+  ///   work_group_broadcast(a, x, y, z)
+  ///     =>
+  ///   __spirv_GroupBroadcast(a, vec3(x, y, z))
+
   void visitCallGroupBuiltin(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
 
@@ -764,6 +770,11 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst* CI,
   OCLBuiltinTransInfo Info;
   Info.UniqName = DemangledName;
   Info.PostProc = [=](std::vector<Value *> &Ops){
+    size_t E = Ops.size();
+    if (DemangledName == "group_broadcast" && E > 2) {
+      assert (E == 3 || E == 4);
+      makeVector(CI, Ops, std::make_pair(Ops.begin() + 1, Ops.end()));
+    }
     Ops.insert(Ops.begin(), Consts.begin(), Consts.end());
   };
   transBuiltin(CI, Info);
