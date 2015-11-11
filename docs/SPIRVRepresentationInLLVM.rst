@@ -144,6 +144,7 @@ For example:
   !spirv.MemoryModel = !{!5}
   !spirv.EntryPoint = !{!6 ,!7}
   !spirv.ExecutionMode = !{!8, !9}
+  !spirv.Generator = !{!10 }
 
   ; 3 - OpenCL, 12 - OpenCL version 1.2, !1 - optional file id.
   !0 = !{i32 3, i32 12, !1}
@@ -156,4 +157,5 @@ For example:
   !7 = !{i32 6, TBD, !"kernel2", TBD}
   !8 = !{!6, i32 18, i32 16, i32 1, i32 1}     ; local size hint <16, 1, 1> for 'kernel1'
   !9 = !{!7, i32 32}     ; independent forward progress is required for 'kernel2'
+  !10 = !{i16 6, i16 123} ; 6 - Generator Id, 123 - Generator Version 
 

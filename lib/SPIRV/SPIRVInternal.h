@@ -58,6 +58,11 @@ using namespace llvm;
 
 namespace SPIRV{
 
+  /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
+  /// generator's magic number in the generated SPIR-V module.
+  /// This number should be bumped up whenever the generated SPIR-V changes.
+  const static unsigned short kTranslatorVer = 1;
+
 #define SPCV_TARGET_LLVM_IMAGE_TYPE_ENCODE_ACCESS_QUAL 0
 // Workaround for SPIR 2 producer bug about kernel function calling convention.
 // This workaround checks metadata to determine if a function is kernel.
@@ -329,12 +334,13 @@ namespace kSPIRVPostfix {
 
 namespace kSPIRVMD {
   const static char Capability[]        = "spirv.Capability";
+  const static char EntryPoint[]        = "spirv.EntryPoint";
+  const static char ExecutionMode[]     = "spirv.ExecutionMode";
   const static char Extension[]         = "spirv.Extension";
+  const static char Generator[]         = "spirv.Generator";
   const static char Source[]            = "spirv.Source";
   const static char SourceExtension[]   = "spirv.SourceExtension";
   const static char MemoryModel[]       = "spirv.MemoryModel";
-  const static char EntryPoint[]        = "spirv.EntryPoint";
-  const static char ExecutionMode[]     = "spirv.ExecutionMode";
 }
 
 namespace kSPIR2MD {
@@ -682,6 +688,12 @@ ConstantInt *getInt64(Module *M, int64_t value);
 
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
+
+/// Get a 32 bit unsigned integer constant.
+ConstantInt *getUInt32(Module *M, unsigned value);
+
+/// Get a 16 bit unsigned integer constant.
+ConstantInt *getUInt16(Module *M, unsigned short value);
 
 /// Get a 32 bit integer constant vector.
 std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);

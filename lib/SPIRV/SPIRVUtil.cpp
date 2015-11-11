@@ -766,6 +766,16 @@ getInt32(Module *M, int value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, true);
 }
 
+ConstantInt *
+getUInt32(Module *M, unsigned value) {
+  return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, false);
+}
+
+ConstantInt *
+getUInt16(Module *M, unsigned short value) {
+  return ConstantInt::get(Type::getInt16Ty(M->getContext()), value, false);
+}
+
 std::vector<Value *> getInt32(Module *M, const std::vector<int> &value) {
   std::vector<Value *> V;
   for (auto &I:value)

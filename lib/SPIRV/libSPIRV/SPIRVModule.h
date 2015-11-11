@@ -86,6 +86,7 @@ struct SPIRVTypeImageDescriptor;
 class SPIRVModule {
 public:
   typedef std::set<SPIRVCapabilityKind> SPIRVCapSet;
+
   static SPIRVModule* createSPIRVModule();
   SPIRVModule();
   virtual ~SPIRVModule();
@@ -129,6 +130,8 @@ public:
       const = 0;
   virtual SPIRVConstant* getLiteralAsConstant(unsigned Literal) = 0;
   virtual bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId) const = 0;
+  virtual unsigned short getGeneratorId() const = 0;
+  virtual unsigned short getGeneratorVer() const = 0;
 
   // Module changing functions
   virtual bool importBuiltinSet(const std::string &, SPIRVId *) = 0;
@@ -141,6 +144,8 @@ public:
   virtual void optimizeDecorates() = 0;
   virtual void setAutoAddCapability(bool E){ AutoAddCapability = E;}
   virtual void setValidateCapability(bool E){ ValidateCapability = E;}
+  virtual void setGeneratorId(unsigned short) = 0;
+  virtual void setGeneratorVer(unsigned short) = 0;
 
   // Object creation functions
   template<class T> T *add(T *Entry) { addEntry(Entry); return Entry;}

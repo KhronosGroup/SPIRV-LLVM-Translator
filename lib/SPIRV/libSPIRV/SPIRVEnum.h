@@ -68,10 +68,8 @@ inline unsigned extractSPIRVMemOrderSemantic(unsigned Sema) {
   return Sema & kSPIRVMemOrderSemanticMask;
 }
 
-// ToDo: register the LLVM/SPIRV translator and get an official SPIRV generator
-// magic number
 enum SPIRVGeneratorKind {
-  SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator = 1,
+  SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator = 6,
 };
 
 enum SPIRVInstructionSchemaKind {

@@ -69,7 +69,11 @@ public:
     MDWrapper(ParentT &Parent, SPIRVMDBuilder &Builder)
       :M(nullptr), P(Parent), B(Builder){}
     MDWrapper &add(unsigned I) {
-      V.push_back(ConstantAsMetadata::get(getInt32(&B.M, I)));
+      V.push_back(ConstantAsMetadata::get(getUInt32(&B.M, I)));
+      return *this;
+    }
+    MDWrapper &addU16(unsigned short I) {
+      V.push_back(ConstantAsMetadata::get(getUInt16(&B.M, I)));
       return *this;
     }
     MDWrapper &add(StringRef S) {

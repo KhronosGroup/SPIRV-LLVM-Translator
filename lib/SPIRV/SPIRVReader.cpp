@@ -45,6 +45,7 @@
 #include "SPIRVInstruction.h"
 #include "SPIRVExtInst.h"
 #include "SPIRVInternal.h"
+#include "SPIRVMDBuilder.h"
 #include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -294,13 +295,13 @@ public:
   bool transSourceLanguage();
   bool transSourceExtension();
   bool transCompilerOption();
+  void transGeneratorMD();
   Value *transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB);
   Instruction *transBuiltinFromInst(const std::string& FuncName,
       SPIRVInstruction* BI, BasicBlock* BB);
   Instruction *transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transOCLBarrierFence(SPIRVInstruction* BI, BasicBlock *BB);
-  Instruction *transOCLDot(SPIRVDot *BD, BasicBlock *BB);
   void transOCLVectorLoadStore(std::string& UnmangledName,
       std::vector<SPIRVWord> &BArgs);
 
@@ -1103,6 +1104,16 @@ SPIRVToLLVM::transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST) {
   return SPIRSPIRVAccessQualifierMap::rmap(ST->getAccessQualifier());
 }
 
+void
+SPIRVToLLVM::transGeneratorMD() {
+  SPIRVMDBuilder B(*M);
+  B.addNamedMD(kSPIRVMD::Generator)
+      .addOp()
+        .addU16(BM->getGeneratorId())
+        .addU16(BM->getGeneratorVer())
+        .done();
+}
+
 Value *
 SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS) {
   auto Lit = (BCS->getAddrMode() << 1) |
@@ -1839,6 +1850,7 @@ SPIRVToLLVM::translate() {
     return false;
   if (!transCompilerOption())
     return false;
+  transGeneratorMD();
   if (!transOCLBuiltinsFromVariables())
     return false;
   if (!postProcessOCL())
