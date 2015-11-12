@@ -63,7 +63,8 @@ class SPIRVModuleImpl : public SPIRVModule {
 public:
   SPIRVModuleImpl():SPIRVModule(), NextId(0), BoolType(NULL),
     SPIRVVersion(SPV_VERSION),
-    SPIRVGenerator(SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator),
+    GeneratorId(SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator),
+    GeneratorVer(0),
     InstSchema(SPIRVISCH_Default),
     SrcLang(SourceLanguageOpenCL),
     SrcLangVer(12),
@@ -123,6 +124,8 @@ public:
   }
   std::set<std::string> &getSourceExtension() { return SrcExtension;}
   bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId EP) const;
+  unsigned short getGeneratorId() const { return GeneratorId; }
+  unsigned short getGeneratorVer() const { return GeneratorVer; }
 
   // Module changing functions
   bool importBuiltinSet(const std::string &, SPIRVId *);
@@ -136,6 +139,8 @@ public:
     SrcLang = Lang;
     SrcLangVer = Ver;
   }
+  void setGeneratorId(unsigned short Id) { GeneratorId = Id; }
+  void setGeneratorVer(unsigned short Ver) { GeneratorVer = Ver; }
 
   // Object creation functions
   template<class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -281,7 +286,8 @@ private:
   SPIRVId NextId;
   SPIRVTypeInt *BoolType;
   SPIRVWord SPIRVVersion;
-  SPIRVGeneratorKind SPIRVGenerator;
+  unsigned short GeneratorId;
+  unsigned short GeneratorVer;
   SPIRVInstructionSchemaKind InstSchema;
   SourceLanguage SrcLang;
   SPIRVWord SrcLangVer;
@@ -1064,7 +1070,7 @@ operator<< (std::ostream &O, SPIRVModule &M) {
   SPIRVEncoder Encoder(O);
   Encoder << MagicNumber
           << MI.SPIRVVersion
-          << MI.SPIRVGenerator
+          << (((SPIRVWord)MI.GeneratorId << 16) | MI.GeneratorVer)
           << MI.NextId /* Bound for Id */
           << MI.InstSchema;
   O << SPIRVNL;
@@ -1197,7 +1203,10 @@ operator>> (std::istream &I, SPIRVModule &M) {
   Decoder >> MI.SPIRVVersion;
   assert(MI.SPIRVVersion <= SPV_VERSION && "Unsupported SPIRV version number");
 
-  Decoder >> MI.SPIRVGenerator;
+  SPIRVWord Generator = 0;
+  Decoder >> Generator;
+  MI.GeneratorId = Generator >> 16;
+  MI.GeneratorVer = Generator & 0xFFFF;
 
   // Bound for Id
   Decoder >> MI.NextId;

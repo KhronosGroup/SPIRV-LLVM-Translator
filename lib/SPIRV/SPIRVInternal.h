@@ -58,6 +58,11 @@ using namespace llvm;
 
 namespace SPIRV{
 
+  /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
+  /// generator's magic number in the generated SPIR-V module.
+  /// This number should be bumped up whenever the generated SPIR-V changes.
+  const static unsigned short kTranslatorVer = 1;
+
 #define SPCV_TARGET_LLVM_IMAGE_TYPE_ENCODE_ACCESS_QUAL 0
 // Workaround for SPIR 2 producer bug about kernel function calling convention.
 // This workaround checks metadata to determine if a function is kernel.
@@ -329,12 +334,13 @@ namespace kSPIRVPostfix {
 
 namespace kSPIRVMD {
   const static char Capability[]        = "spirv.Capability";
+  const static char EntryPoint[]        = "spirv.EntryPoint";
+  const static char ExecutionMode[]     = "spirv.ExecutionMode";
   const static char Extension[]         = "spirv.Extension";
+  const static char Generator[]         = "spirv.Generator";
   const static char Source[]            = "spirv.Source";
   const static char SourceExtension[]   = "spirv.SourceExtension";
   const static char MemoryModel[]       = "spirv.MemoryModel";
-  const static char EntryPoint[]        = "spirv.EntryPoint";
-  const static char ExecutionMode[]     = "spirv.ExecutionMode";
 }
 
 namespace kSPIR2MD {
@@ -511,6 +517,13 @@ std::vector<Value *> getArguments(CallInst* CI, unsigned Start = 0,
 /// \param I argument index.
 uint64_t getArgAsInt(CallInst *CI, unsigned I);
 
+/// Get constant function call argument as type \param T.
+/// \param I argument index.
+template<typename T>
+T getArgAs(CallInst *CI, unsigned I){
+  return static_cast<T>(getArgAsInt(CI, I));
+}
+
 /// Get constant function call argument as a Scope enum.
 /// \param I argument index.
 Scope getArgAsScope(CallInst *CI, unsigned I);
@@ -642,6 +655,25 @@ addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
     Value *CtxAlign, Instruction *InsPos,
     StringRef InstName = SPIR_TEMP_NAME_PREFIX_BLOCK);
 
+typedef std::pair<std::vector<Value *>::iterator,
+    std::vector<Value *>::iterator> ValueVecRange;
+
+/// Add a vector at \param InsPos.
+Value *
+addVector(Instruction *InsPos, ValueVecRange Range);
+
+/// Replace scalar values with a vector created at \param InsPos.
+void
+makeVector(Instruction *InsPos, std::vector<Value *> &Ops,
+    ValueVecRange Range);
+
+/// Expand a vector type value in \param Ops at index \param VecPos.
+/// Generate extract element instructions at \param InsPos and replace
+/// the vector type value with scalar type values.
+/// If the value to be expanded is not vector type, do nothing.
+void
+expandVector(Instruction *InsPos, std::vector<Value *> &Ops, size_t VecPos);
+
 /// Get size_t type.
 IntegerType *getSizetType(Module *M);
 
@@ -656,6 +688,12 @@ ConstantInt *getInt64(Module *M, int64_t value);
 
 /// Get a 32 bit integer constant.
 ConstantInt *getInt32(Module *M, int value);
+
+/// Get a 32 bit unsigned integer constant.
+ConstantInt *getUInt32(Module *M, unsigned value);
+
+/// Get a 16 bit unsigned integer constant.
+ConstantInt *getUInt16(Module *M, unsigned short value);
 
 /// Get a 32 bit integer constant vector.
 std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);
@@ -733,6 +771,10 @@ eraseIfNoUse(Value *V);
 // Check if a mangled type name is unsigned
 bool
 isMangledTypeUnsigned(char Mangled);
+
+// Check if \param I is valid vector size: 2, 3, 4, 8, 16.
+bool
+isValidVectorSize(unsigned I);
 
 // Check if the last function parameter is signed
 bool

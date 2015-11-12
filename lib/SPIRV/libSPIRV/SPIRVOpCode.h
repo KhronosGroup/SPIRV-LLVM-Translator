@@ -143,6 +143,11 @@ inline bool hasGroupOperation(Op OpCode) {
   return OpGroupIAdd <= OC && OC <= OpGroupSMax;
 }
 
+inline bool isGroupOpCode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OpGroupAll <= OC && OC <= OpGroupSMax;
+}
+
 inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OpTypeVoid <= OC && OC <= OpTypePipe;

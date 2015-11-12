@@ -45,6 +45,7 @@
 #include "SPIRVInstruction.h"
 #include "SPIRVExtInst.h"
 #include "SPIRVInternal.h"
+#include "SPIRVMDBuilder.h"
 #include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -294,13 +295,13 @@ public:
   bool transSourceLanguage();
   bool transSourceExtension();
   bool transCompilerOption();
+  void transGeneratorMD();
   Value *transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB);
   Instruction *transBuiltinFromInst(const std::string& FuncName,
       SPIRVInstruction* BI, BasicBlock* BB);
   Instruction *transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transOCLBarrierFence(SPIRVInstruction* BI, BasicBlock *BB);
-  Instruction *transOCLDot(SPIRVDot *BD, BasicBlock *BB);
   void transOCLVectorLoadStore(std::string& UnmangledName,
       std::vector<SPIRVWord> &BArgs);
 
@@ -457,16 +458,6 @@ private:
   std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage* ST);
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST);
 
-  // Transform OpenCL group builtin function names from group_
-  // to workgroup_ and sub_group_.
-  // Insert group operation part: reduce_/inclusive_scan_/exclusive_scan_
-  // Transform the operation part:
-  //    fadd/iadd/sadd => add
-  //    fmax/smax => max
-  //    fmin/smin => min
-  // Keep umax/umin unchanged.
-  // \param ES is the execution scope.
-  void transOCLGroupBuiltinName(std::string &Name, SPIRVInstruction *ES);
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
   template<class Source, class Func>
   bool foreachFuncCtlMask(Source, Func);
@@ -617,42 +608,6 @@ SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe* PT) {
   return SPIR_TYPE_NAME_PIPE_T;
 }
 
-void
-SPIRVToLLVM::transOCLGroupBuiltinName(std::string &DemangledName,
-    SPIRVInstruction *Inst) {
-  if (DemangledName.find(kSPIRVName::GroupPrefix) != 0)
-    return;
-
-  auto IT = static_cast<SPIRVInstTemplate<> *>(Inst);
-  auto ES = IT->getExecutionScope();
-  std::string Prefix;
-  switch(ES) {
-  case ScopeWorkgroup:
-    Prefix = kOCLBuiltinName::WorkPrefix;
-    break;
-  case ScopeSubgroup:
-    Prefix = kOCLBuiltinName::SubPrefix;
-    break;
-  default:
-    llvm_unreachable("Invalid execution scope");
-  }
-
-  auto GO = IT->getGroupOperation();
-  if (!isValid(GO)) {
-    DemangledName = Prefix + DemangledName;
-    return;
-  }
-
-  StringRef Op = DemangledName;
-  Op = Op.drop_front(strlen(kSPIRVName::GroupPrefix));
-  bool Unsigned = Op.front() == 'u';
-  if (!Unsigned)
-    Op = Op.drop_front(1);
-  DemangledName = Prefix + kSPIRVName::GroupPrefix +
-      SPIRSPIRVGroupOperationMap::rmap(GO) + '_' + Op.str();
-
-}
-
 Type *
 SPIRVToLLVM::transType(SPIRVType *T) {
   auto Loc = TypeMap.find(T);
@@ -710,7 +665,12 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     std::vector<Type *> MT;
     for (size_t I = 0, E = ST->getMemberCount(); I != E; ++I)
       MT.push_back(transType(ST->getMemberType(I)));
-    return mapType(T, StructType::create(*Context, MT, ST->getName(),
+    auto Name = ST->getName();
+    if (!Name.empty()) {
+      if (auto OldST = M->getTypeByName(Name))
+        OldST->setName("");
+    }
+    return mapType(T, StructType::create(*Context, MT, Name,
       ST->isPacked()));
     }
   case OpTypePipe: {
@@ -719,12 +679,10 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     }
   default: {
     auto OC = T->getOpCode();
-    if (isOpaqueGenericTypeOpCode(OC)) {
-      return mapType(T, PointerType::get(
-          llvm::StructType::create(*Context,
-              BuiltinOpaqueGenericTypeOpCodeMap::rmap(OC)),
-              getOCLOpaqueTypeAddrSpace(OC)));
-    }
+    if (isOpaqueGenericTypeOpCode(OC))
+      return mapType(T, getOrCreateOpaquePtrType(M,
+          BuiltinOpaqueGenericTypeOpCodeMap::rmap(OC),
+          getOCLOpaqueTypeAddrSpace(OC)));
     llvm_unreachable("Not implemented");
     }
   }
@@ -1144,6 +1102,16 @@ SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
 std::string
 SPIRVToLLVM::transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST) {
   return SPIRSPIRVAccessQualifierMap::rmap(ST->getAccessQualifier());
+}
+
+void
+SPIRVToLLVM::transGeneratorMD() {
+  SPIRVMDBuilder B(*M);
+  B.addNamedMD(kSPIRVMD::Generator)
+      .addOp()
+        .addU16(BM->getGeneratorId())
+        .addU16(BM->getGeneratorVer())
+        .done();
 }
 
 Value *
@@ -1604,7 +1572,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
     } else if (OCLSPIRVBuiltinMap::rfind(OC, nullptr) &&
-               !isAtomicOpCode(OC)) {
+               !isAtomicOpCode(OC) && !isGroupOpCode(OC)) {
       return mapValue(BV, transOCLBuiltinFromInst(
           static_cast<SPIRVInstruction *>(BV), BB));
     } else if (isBinaryShiftLogicalBitwiseOpCode(OC) ||
@@ -1821,7 +1789,6 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
     break;
   }
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
-  transOCLGroupBuiltinName(Name, BI);
 
   SPIRVType *T = nullptr;
   switch(OC) {
@@ -1883,6 +1850,7 @@ SPIRVToLLVM::translate() {
     return false;
   if (!transCompilerOption())
     return false;
+  transGeneratorMD();
   if (!transOCLBuiltinsFromVariables())
     return false;
   if (!postProcessOCL())

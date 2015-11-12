@@ -45,6 +45,7 @@
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -661,6 +662,53 @@ addCallInstSPIRV(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> A
       InstName);
 }
 
+bool
+isValidVectorSize(unsigned I) {
+  return I == 2 ||
+         I == 3 ||
+         I == 4 ||
+         I == 8 ||
+         I == 16;
+}
+
+Value *
+addVector(Instruction *InsPos, ValueVecRange Range) {
+  size_t VecSize = Range.second - Range.first;
+  if (VecSize == 1)
+    return *Range.first;
+  assert(isValidVectorSize(VecSize) && "Invalid vector size");
+  IRBuilder<> Builder(InsPos);
+  auto Vec = Builder.CreateVectorSplat(VecSize, *Range.first);
+  unsigned Index = 1;
+  for (++Range.first; Range.first != Range.second; ++Range.first, ++Index)
+    Vec = Builder.CreateInsertElement(Vec, *Range.first,
+        ConstantInt::get(Type::getInt32Ty(InsPos->getContext()), Index, false));
+  return Vec;
+}
+
+void
+makeVector(Instruction *InsPos, std::vector<Value *> &Ops,
+    ValueVecRange Range) {
+  auto Vec = addVector(InsPos, Range);
+  Ops.erase(Range.first, Range.second);
+  Ops.push_back(Vec);
+}
+
+void
+expandVector(Instruction *InsPos, std::vector<Value *> &Ops,
+    size_t VecPos) {
+  auto Vec = Ops[VecPos];
+  auto VT = Vec->getType();
+  if (!VT->isVectorTy())
+    return;
+  size_t N = VT->getVectorNumElements();
+  IRBuilder<> Builder(InsPos);
+  for (size_t I = 0; I != N; ++I)
+    Ops.insert(Ops.begin() + VecPos + I, Builder.CreateExtractElement(Vec,
+        ConstantInt::get(Type::getInt32Ty(InsPos->getContext()), I, false)));
+  Ops.erase(Ops.begin() + VecPos + N);
+}
+
 Constant *
 castToInt8Ptr(Constant *V, unsigned Addr = 0) {
   return ConstantExpr::getBitCast(V, Type::getInt8PtrTy(V->getContext(), Addr));
@@ -716,6 +764,16 @@ getInt64(Module *M, int64_t value) {
 ConstantInt *
 getInt32(Module *M, int value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, true);
+}
+
+ConstantInt *
+getUInt32(Module *M, unsigned value) {
+  return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, false);
+}
+
+ConstantInt *
+getUInt16(Module *M, unsigned short value) {
+  return ConstantInt::get(Type::getInt16Ty(M->getContext()), value, false);
 }
 
 std::vector<Value *> getInt32(Module *M, const std::vector<int> &value) {

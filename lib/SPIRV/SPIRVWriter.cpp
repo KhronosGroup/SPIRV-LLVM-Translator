@@ -1399,6 +1399,8 @@ LLVMToSPIRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
 
 bool
 LLVMToSPIRV::translate() {
+  BM->setGeneratorVer(kTranslatorVer);
+
   if (!regularize())
     return false;
   if (!transSourceLanguage())
