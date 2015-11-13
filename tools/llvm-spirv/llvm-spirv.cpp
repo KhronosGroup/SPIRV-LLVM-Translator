@@ -280,11 +280,11 @@ regularizeLLVM() {
 
 int
 main(int ac, char** av) {
-  cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
-#ifndef NDEBUG
   EnablePrettyStackTrace();
   sys::PrintStackTraceOnErrorSignal();
-#endif
+  PrettyStackTraceProgram X(ac, av);
+
+  cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {

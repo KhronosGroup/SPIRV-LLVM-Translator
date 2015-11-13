@@ -148,6 +148,10 @@ inline bool isGroupOpCode(Op OpCode) {
   return OpGroupAll <= OC && OC <= OpGroupSMax;
 }
 
+inline bool isPipeOpCode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OpReadPipe <= OC && OC <= OpGroupCommitWritePipe;
+}
 inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OpTypeVoid <= OC && OC <= OpTypePipe;

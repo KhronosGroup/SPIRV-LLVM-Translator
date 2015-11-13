@@ -63,7 +63,7 @@ class SPIRVModuleImpl : public SPIRVModule {
 public:
   SPIRVModuleImpl():SPIRVModule(), NextId(0), BoolType(NULL),
     SPIRVVersion(SPV_VERSION),
-    GeneratorId(SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator),
+    GeneratorId(SPIRVGEN_KhronosLLVMSPIRVTranslator),
     GeneratorVer(0),
     InstSchema(SPIRVISCH_Default),
     SrcLang(SourceLanguageOpenCL),

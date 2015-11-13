@@ -306,7 +306,7 @@ public:
   // Get the offset of operands.
   // Some instructions skip literals when returning operands.
   size_t getOperandOffset() const {
-    if (hasExecScope() && !isGroupOpCode(OpCode))
+    if (hasExecScope() && !isGroupOpCode(OpCode) && !isPipeOpCode(OpCode))
       return 1;
     return 0;
   }

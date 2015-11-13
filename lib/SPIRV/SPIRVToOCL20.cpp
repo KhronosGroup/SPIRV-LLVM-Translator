@@ -98,6 +98,9 @@ public:
   ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
   void visitCallSPIRVMemoryBarrier(CallInst *CI);
 
+  /// Transform __spirv_{PipeOpName} to OCL pipe builtin functions.
+  void visitCallSPIRVPipeBuiltin(CallInst *CI, Op OC);
+
   /// Transform __spirv_* builtins to OCL 2.0 builtins.
   /// No change with arguments.
   void visitCallSPIRVBuiltin(CallInst *CI, Op OC);
@@ -105,6 +108,11 @@ public:
   /// Translate mangled atomic type name: "atomic_" =>
   ///   MangledAtomicTypeNamePrefix
   void translateMangledAtomicTypeName();
+
+  /// Get prefix work_/sub_ for OCL group builtin functions.
+  /// Assuming the first argument of \param CI is a constant integer for
+  /// workgroup/subgroup scope enums.
+  std::string getGroupBuiltinPrefix(CallInst *CI);
 
   static char ID;
 private:
@@ -158,6 +166,10 @@ SPIRVToOCL20::visitCallInst(CallInst& CI) {
   }
   if (isGroupOpCode(OC)) {
     visitCallSPIRVGroupBuiltin(&CI, OC);
+    return;
+  }
+  if (isPipeOpCode(OC)) {
+    visitCallSPIRVPipeBuiltin(&CI, OC);
     return;
   }
   if (OCLSPIRVBuiltinMap::rfind(OC))
@@ -219,18 +231,7 @@ void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst* CI, Op OC) {
   auto DemangledName = OCLSPIRVBuiltinMap::rmap(OC);
   assert(DemangledName.find(kSPIRVName::GroupPrefix) == 0);
 
-  auto ES = getArgAsScope(CI, 0);
-  std::string Prefix;
-  switch(ES) {
-  case ScopeWorkgroup:
-    Prefix = kOCLBuiltinName::WorkPrefix;
-    break;
-  case ScopeSubgroup:
-    Prefix = kOCLBuiltinName::SubPrefix;
-    break;
-  default:
-    llvm_unreachable("Invalid execution scope");
-  }
+  std::string Prefix = getGroupBuiltinPrefix(CI);
 
   bool HasGroupOperation = hasGroupOperation(OC);
   if (!HasGroupOperation) {
@@ -254,6 +255,48 @@ void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst* CI, Op OC) {
   }, &Attrs);
 }
 
+void SPIRVToOCL20::visitCallSPIRVPipeBuiltin(CallInst* CI, Op OC) {
+  switch(OC) {
+  case OpReservedReadPipe:
+    OC = OpReadPipe;
+    break;
+  case OpReservedWritePipe:
+    OC = OpWritePipe;
+    break;
+  default:
+    // Do nothing.
+    break;
+  }
+  auto DemangledName = OCLSPIRVBuiltinMap::rmap(OC);
+
+  bool HasScope = DemangledName.find(kSPIRVName::GroupPrefix) == 0;
+  if (HasScope)
+    DemangledName = getGroupBuiltinPrefix(CI) + DemangledName;
+
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+    if (HasScope)
+      Args.erase(Args.begin(), Args.begin() + 1);
+
+    if (!(OC == OpReadPipe ||
+          OC == OpWritePipe ||
+          OC == OpReservedReadPipe ||
+          OC == OpReservedWritePipe))
+      return DemangledName;
+
+    auto &P = Args[Args.size() - 3];
+    auto T = P->getType();
+    assert(isa<PointerType>(T));
+    auto ET = T->getPointerElementType();
+    if (!ET->isIntegerTy(8) ||
+        T->getPointerAddressSpace() != SPIRAS_Generic) {
+      auto NewTy = PointerType::getInt8PtrTy(*Ctx, SPIRAS_Generic);
+      P = CastInst::CreatePointerBitCastOrAddrSpaceCast(P, NewTy, "", CI);
+    }
+    return DemangledName;
+  }, &Attrs);
+}
+
 void SPIRVToOCL20::translateMangledAtomicTypeName() {
   for (auto &I:M->functions()) {
     if (!I.hasName())
@@ -270,6 +313,24 @@ void SPIRVToOCL20::translateMangledAtomicTypeName() {
     I.setName(MangledName);
   }
 }
+
+std::string
+SPIRVToOCL20::getGroupBuiltinPrefix(CallInst* CI) {
+  std::string Prefix;
+  auto ES = getArgAsScope(CI, 0);
+  switch(ES) {
+  case ScopeWorkgroup:
+    Prefix = kOCLBuiltinName::WorkPrefix;
+    break;
+  case ScopeSubgroup:
+    Prefix = kOCLBuiltinName::SubPrefix;
+    break;
+  default:
+    llvm_unreachable("Invalid execution scope");
+  }
+  return Prefix;
+}
+
 }
 
 INITIALIZE_PASS(SPIRVToOCL20, "spvtoocl20",

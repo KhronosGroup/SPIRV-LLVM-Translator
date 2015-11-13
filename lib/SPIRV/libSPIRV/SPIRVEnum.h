@@ -69,7 +69,8 @@ inline unsigned extractSPIRVMemOrderSemantic(unsigned Sema) {
 }
 
 enum SPIRVGeneratorKind {
-  SPIRVGEN_AMDOpenSourceLLVMSPIRVTranslator = 6,
+  SPIRVGEN_KhronosLLVMSPIRVTranslator   = 6,
+  SPIRVGEN_KhronosSPIRVAssembler        = 7,
 };
 
 enum SPIRVInstructionSchemaKind {
