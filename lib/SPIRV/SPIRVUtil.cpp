@@ -857,6 +857,31 @@ isDecoratedSPIRVFunc(const Function *F, std::string *UndecoratedName) {
   return true;
 }
 
+/// Get TypePrimitiveEnum for opaque type.
+SPIR::TypePrimitiveEnum
+getOpaqueTypePrimitiveEnum(StringRef TyName) {
+  return StringSwitch<SPIR::TypePrimitiveEnum>(TyName)
+    .Case("opencl.image1d_t",         SPIR::PRIMITIVE_IMAGE_1D_T)
+    .Case("opencl.image1d_array_t",   SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T)
+    .Case("opencl.image1d_buffer_t",  SPIR::PRIMITIVE_IMAGE_1D_BUFFER_T)
+    .Case("opencl.image2d_t",         SPIR::PRIMITIVE_IMAGE_2D_T)
+    .Case("opencl.image2d_array_t",   SPIR::PRIMITIVE_IMAGE_2D_ARRAY_T)
+    .Case("opencl.image3d_t",         SPIR::PRIMITIVE_IMAGE_3D_T)
+    .Case("opencl.image2d_msaa_t",    SPIR::PRIMITIVE_IMAGE_2D_MSAA_T)
+    .Case("opencl.image2d_array_msaa_t",        SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_T)
+    .Case("opencl.image2d_msaa_depth_t",        SPIR::PRIMITIVE_IMAGE_2D_MSAA_DEPTH_T)
+    .Case("opencl.image2d_array_msaa_depth_t",  SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_DEPTH_T)
+    .Case("opencl.image2d_depth_t",             SPIR::PRIMITIVE_IMAGE_2D_DEPTH_T)
+    .Case("opencl.image2d_array_depth_t",       SPIR::PRIMITIVE_IMAGE_2D_ARRAY_DEPTH_T)
+    .Case("opencl.event_t",           SPIR::PRIMITIVE_EVENT_T)
+    .Case("opencl.pipe_t",            SPIR::PRIMITIVE_PIPE_T)
+    .Case("opencl.reserve_id_t",      SPIR::PRIMITIVE_RESERVE_ID_T)
+    .Case("opencl.queue_t",           SPIR::PRIMITIVE_QUEUE_T)
+    .Case("opencl.clk_event_t",       SPIR::PRIMITIVE_CLK_EVENT_T)
+    .Case("opencl.sampler_t",         SPIR::PRIMITIVE_SAMPLER_T)
+    .Case("struct.ndrange_t",         SPIR::PRIMITIVE_NDRANGE_T)
+    .Default(                         SPIR::PRIMITIVE_NONE);
+}
 /// Translates LLVM type to descriptor for mangler.
 /// \param Signed indicates integer type should be translated as signed.
 /// \param VoidPtr indicates i8* should be translated as void*.
@@ -944,29 +969,11 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
       if (StructTy->isOpaque()) {
         if (TyName == "opencl.block")
           EPT = new SPIR::BlockType;
-        else
-          EPT = new SPIR::PrimitiveType(
-            StringSwitch<SPIR::TypePrimitiveEnum>(TyName)
-              .Case("opencl.image1d_t",         SPIR::PRIMITIVE_IMAGE_1D_T)
-              .Case("opencl.image1d_array_t",   SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T)
-              .Case("opencl.image1d_buffer_t",  SPIR::PRIMITIVE_IMAGE_1D_BUFFER_T)
-              .Case("opencl.image2d_t",         SPIR::PRIMITIVE_IMAGE_2D_T)
-              .Case("opencl.image2d_array_t",   SPIR::PRIMITIVE_IMAGE_2D_ARRAY_T)
-              .Case("opencl.image3d_t",         SPIR::PRIMITIVE_IMAGE_3D_T)
-              .Case("opencl.image2d_msaa_t",    SPIR::PRIMITIVE_IMAGE_2D_MSAA_T)
-              .Case("opencl.image2d_array_msaa_t",        SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_T)
-              .Case("opencl.image2d_msaa_depth_t",        SPIR::PRIMITIVE_IMAGE_2D_MSAA_DEPTH_T)
-              .Case("opencl.image2d_array_msaa_depth_t",  SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_DEPTH_T)
-              .Case("opencl.image2d_depth_t",             SPIR::PRIMITIVE_IMAGE_2D_DEPTH_T)
-              .Case("opencl.image2d_array_depth_t",       SPIR::PRIMITIVE_IMAGE_2D_ARRAY_DEPTH_T)
-              .Case("opencl.event_t",           SPIR::PRIMITIVE_EVENT_T)
-              .Case("opencl.pipe_t",            SPIR::PRIMITIVE_PIPE_T)
-              .Case("opencl.reserve_id_t",      SPIR::PRIMITIVE_RESERVE_ID_T)
-              .Case("opencl.queue_t",           SPIR::PRIMITIVE_QUEUE_T)
-              .Case("opencl.clk_event_t",       SPIR::PRIMITIVE_CLK_EVENT_T)
-              .Case("opencl.sampler_t",         SPIR::PRIMITIVE_SAMPLER_T)
-              .Case("struct.ndrange_t",         SPIR::PRIMITIVE_NDRANGE_T)
-              .Default(                         SPIR::PRIMITIVE_NONE));
+        else {
+          auto Prim = getOpaqueTypePrimitiveEnum(TyName);
+          if (Prim != SPIR::PRIMITIVE_NONE)
+            EPT = new SPIR::PrimitiveType(Prim);
+        }
       }
     }
     if (EPT)
