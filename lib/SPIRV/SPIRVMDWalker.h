@@ -92,7 +92,8 @@ public:
 
     bool atEnd() const { return !(M && I < E);}
 
-    MDWrapper &get(unsigned &V) {
+    template<typename T>
+    MDWrapper &get(T &V) {
       if (!Q)
         assert(I < E && "out of bound");
       if (atEnd())

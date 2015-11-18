@@ -146,8 +146,8 @@ For example:
   !spirv.ExecutionMode = !{!8, !9}
   !spirv.Generator = !{!10 }
 
-  ; 3 - OpenCL, 12 - OpenCL version 1.2, !1 - optional file id.
-  !0 = !{i32 3, i32 12, !1}
+  ; 3 - OpenCL_C, 102000 - OpenCL version 1.2, !1 - optional file id.
+  !0 = !{i32 3, i32 102000, !1}
   !1 = !{!"/tmp/opencl/program.cl"}
   !2 = !{!"cl_khr_fp16"}
   !3 = !{!"cl_khr_gl_sharing"}

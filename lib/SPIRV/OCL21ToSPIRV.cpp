@@ -100,7 +100,7 @@ OCL21ToSPIRV::runOnModule(Module& Module) {
   Ctx = &M->getContext();
 
   auto Src = getSPIRVSource(&Module);
-  if (std::get<0>(Src) != spv::SourceLanguageOpenCL)
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_CPP)
     return false;
 
   CLVer = std::get<1>(Src);

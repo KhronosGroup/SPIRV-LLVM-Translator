@@ -306,7 +306,7 @@ public:
   // Get the offset of operands.
   // Some instructions skip literals when returning operands.
   size_t getOperandOffset() const {
-    if (hasExecScope() && !isGroupOpCode(OpCode))
+    if (hasExecScope() && !isGroupOpCode(OpCode) && !isPipeOpCode(OpCode))
       return 1;
     return 0;
   }
@@ -1632,12 +1632,12 @@ protected:
   SPIRVWord MemSema;
 };
 
-class SPIRVAsyncGroupCopy:public SPIRVInstruction {
+class SPIRVGroupAsyncCopy:public SPIRVInstruction {
 public:
-  static const Op OC = OpAsyncGroupCopy;
+  static const Op OC = OpGroupAsyncCopy;
   static const SPIRVWord WC = 9;
   // Complete constructor
-  SPIRVAsyncGroupCopy(Scope TheScope, SPIRVId TheId,
+  SPIRVGroupAsyncCopy(Scope TheScope, SPIRVId TheId,
       SPIRVValue *TheDest, SPIRVValue *TheSrc, SPIRVValue *TheNumElems,
       SPIRVValue *TheStride, SPIRVValue *TheEvent, SPIRVBasicBlock *TheBB)
     :SPIRVInstruction(WC, OC, TheEvent->getType(), TheId, TheBB),
@@ -1648,7 +1648,7 @@ public:
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPIRVAsyncGroupCopy():SPIRVInstruction(OC), ExecScope(ScopeInvocation),
+  SPIRVGroupAsyncCopy():SPIRVInstruction(OC), ExecScope(ScopeInvocation),
       Destination(SPIRVID_INVALID), Source(SPIRVID_INVALID),
       NumElements(SPIRVID_INVALID), Stride(SPIRVID_INVALID),
       Event(SPIRVID_INVALID){
@@ -1756,7 +1756,7 @@ public:
   typedef SPIRVInstTemplate<SPIRVGroupInstBase, Op##x, __VA_ARGS__> \
       SPIRV##x;
 // Group instructions
-_SPIRV_OP(WaitGroupEvents, false, 4)
+_SPIRV_OP(GroupWaitEvents, false, 4)
 _SPIRV_OP(GroupAll, true, 5)
 _SPIRV_OP(GroupAny, true, 5)
 _SPIRV_OP(GroupBroadcast, true, 6)

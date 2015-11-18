@@ -109,7 +109,8 @@ TransOCLMD::visit(Module *M) {
   SPIRVMDWalker W(*M);
   B.addNamedMD(kSPIRVMD::Source)
       .addOp()
-        .add(spv::SourceLanguageOpenCL)
+        .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
+            : spv::SourceLanguageOpenCL_CPP)
         .add(CLVer)
         .done();
   if (EraseOCLMD)

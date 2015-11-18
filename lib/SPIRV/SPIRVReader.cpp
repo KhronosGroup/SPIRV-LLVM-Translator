@@ -329,14 +329,6 @@ public:
   bool postProcessOCLBuiltinWithArrayArguments(Function *F,
       const std::string &DemangledName);
 
-  /// \brief Post-process call instruction of read_pipe and write_pipe.
-  ///
-  /// Pipe packet size and alignment is added as function arguments.
-  /// Data poiter argument is casted to i8* in generic address space.
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLPipe(SPIRVInstruction *BI, CallInst *CI,
-      const std::string &DemangledName);
-
   /// \brief Post-process OpImageSampleExplicitLod.
   ///   sampled_image = __spirv_SampledImage__(image, sampler);
   ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
@@ -1021,31 +1013,6 @@ SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F,
   return true;
 }
 
-CallInst *
-SPIRVToLLVM::postProcessOCLPipe(SPIRVInstruction *BI, CallInst* CI,
-    const std::string &FuncName) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  auto OC = BI->getOpCode();
-  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    if (!(OC == OpReadPipe ||
-          OC == OpWritePipe ||
-          OC == OpReservedReadPipe ||
-          OC == OpReservedWritePipe))
-      return FuncName;
-
-    auto &P = Args[Args.size() - 3];
-    auto T = P->getType();
-    assert(isa<PointerType>(T));
-    auto ET = T->getPointerElementType();
-    if (!ET->isIntegerTy(8) ||
-        T->getPointerAddressSpace() != SPIRAS_Generic) {
-      auto NewTy = PointerType::getInt8PtrTy(*Context, SPIRAS_Generic);
-      P = CastInst::CreatePointerBitCastOrAddrSpaceCast(P, NewTy, "", CI);
-    }
-    return FuncName;
-  }, &Attrs);
-}
-
 // ToDo: Handle unsigned integer return type. May need spec change.
 CallInst *
 SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
@@ -1572,7 +1539,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
     } else if (OCLSPIRVBuiltinMap::rfind(OC, nullptr) &&
-               !isAtomicOpCode(OC) && !isGroupOpCode(OC)) {
+               !isAtomicOpCode(OC) &&
+               !isGroupOpCode(OC) &&
+               !isPipeOpCode(OC)) {
       return mapValue(BV, transOCLBuiltinFromInst(
           static_cast<SPIRVInstruction *>(BV), BB));
     } else if (isBinaryShiftLogicalBitwiseOpCode(OC) ||
@@ -1705,8 +1674,6 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
     return CastInst::Create(Instruction::Trunc, CI, transType(BI->getType()),
         "cvt", BB);
   }
-  if (DemangledName.find("pipe") != std::string::npos)
-    return postProcessOCLPipe(BI, CI, DemangledName);
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
   if (SPIRVEnableStepExpansion &&
@@ -1776,17 +1743,6 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
     assert((EleTy->isTypeInt() && Dim == 1) ||
         (EleTy->isTypeArray() && Dim >= 2 && Dim <= 3));
     return std::string(kOCLBuiltinName::NDRangePrefix) + OS.str() + "D";
-  }
-  switch(OC) {
-  case OpReservedReadPipe:
-    OC = OpReadPipe;
-    break;
-  case OpReservedWritePipe:
-    OC = OpWritePipe;
-    break;
-  default:
-    // Do nothing.
-    break;
   }
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
 
@@ -2200,10 +2156,24 @@ bool
 SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
-  assert(Lang == SourceLanguageOpenCL && "Unsupported source language");
-  unsigned Major = Ver/10;
-  unsigned Minor = (Ver%10);
-  addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, Major, Minor);
+  assert((Lang == SourceLanguageOpenCL_C ||
+      Lang == SourceLanguageOpenCL_CPP) && "Unsupported source language");
+  unsigned short Major = 0;
+  unsigned char Minor = 0;
+  unsigned char Rev = 0;
+  std::tie(Major, Minor, Rev) = decodeOCLVer(Ver);
+  SPIRVMDBuilder Builder(*M);
+  Builder.addNamedMD(kSPIRVMD::Source)
+            .addOp()
+              .add(Lang)
+              .add(Ver)
+              .done();
+  // ToDo: Phasing out usage of old SPIR metadata
+  if (Ver <= kOCLVer::CL12)
+    addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 1, 2);
+  else
+    addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 2, 0);
+
   addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
   return true;
 }
@@ -2272,9 +2242,9 @@ std::string
 SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction* BI) {
   auto GenericCastToPtrInst = BI->getType()->getPointerStorageClass();
   switch (GenericCastToPtrInst) {
-    case StorageClassWorkgroupGlobal:
+    case StorageClassCrossWorkgroup:
       return std::string(kOCLBuiltinName::ToGlobal);
-    case StorageClassWorkgroupLocal:
+    case StorageClassWorkgroup:
       return std::string(kOCLBuiltinName::ToLocal);
     case StorageClassFunction:
       return std::string(kOCLBuiltinName::ToPrivate);

@@ -1,4 +1,4 @@
-//===- SPIRVOpCode.h – Class to represent SPIR-V Operation Codes -*- C++ -*-===//
+//===- SPIRVOpCode.h - Class to represent SPIR-V Operation Codes -*- C++ -*-==//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -132,7 +132,7 @@ inline bool isAccessChainOpCode(Op OpCode) {
 
 inline bool hasExecScope(Op OpCode) {
   unsigned OC = OpCode;
-  return (OpWaitGroupEvents <= OC &&
+  return (OpGroupWaitEvents <= OC &&
             OC <= OpGroupSMax) ||
       (OpGroupReserveReadPipePackets <= OC &&
           OC <= OpGroupCommitWritePipe);
@@ -148,6 +148,10 @@ inline bool isGroupOpCode(Op OpCode) {
   return OpGroupAll <= OC && OC <= OpGroupSMax;
 }
 
+inline bool isPipeOpCode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OpReadPipe <= OC && OC <= OpGroupCommitWritePipe;
+}
 inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OpTypeVoid <= OC && OC <= OpTypePipe;

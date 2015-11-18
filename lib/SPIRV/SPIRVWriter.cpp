@@ -1,4 +1,4 @@
-//===- SPIRVWriter.cpp – Converts LLVM to SPIR-V -----------------*- C++ -*-===//
+//===- SPIRVWriter.cpp - Converts LLVM to SPIR-V ----------------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -989,7 +989,8 @@ bool
 LLVMToSPIRV::transBuiltinSet() {
   SPIRVWord Ver = 0;
   SourceLanguage Kind = BM->getSourceLanguage(&Ver);
-  assert(Kind == SourceLanguageOpenCL && "not supported");
+  assert((Kind == SourceLanguageOpenCL_C ||
+      Kind == SourceLanguageOpenCL_CPP ) && "not supported");
   std::stringstream SS;
   SS << "OpenCL.std";
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
@@ -1658,7 +1659,7 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
         getArgAsScope(CI, 1),
         getArgAsInt(CI, 2), BB);
     break;
-  case OpAsyncGroupCopy: {
+  case OpGroupAsyncCopy: {
     auto Args = getArguments(CI, 1);
     auto BArgs = transValue(Args, BB);
     return BM->addAsyncGroupCopy(

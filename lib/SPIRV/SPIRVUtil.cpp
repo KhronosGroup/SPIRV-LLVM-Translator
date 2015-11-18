@@ -857,6 +857,31 @@ isDecoratedSPIRVFunc(const Function *F, std::string *UndecoratedName) {
   return true;
 }
 
+/// Get TypePrimitiveEnum for opaque type.
+SPIR::TypePrimitiveEnum
+getOpaqueTypePrimitiveEnum(StringRef TyName) {
+  return StringSwitch<SPIR::TypePrimitiveEnum>(TyName)
+    .Case("opencl.image1d_t",         SPIR::PRIMITIVE_IMAGE_1D_T)
+    .Case("opencl.image1d_array_t",   SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T)
+    .Case("opencl.image1d_buffer_t",  SPIR::PRIMITIVE_IMAGE_1D_BUFFER_T)
+    .Case("opencl.image2d_t",         SPIR::PRIMITIVE_IMAGE_2D_T)
+    .Case("opencl.image2d_array_t",   SPIR::PRIMITIVE_IMAGE_2D_ARRAY_T)
+    .Case("opencl.image3d_t",         SPIR::PRIMITIVE_IMAGE_3D_T)
+    .Case("opencl.image2d_msaa_t",    SPIR::PRIMITIVE_IMAGE_2D_MSAA_T)
+    .Case("opencl.image2d_array_msaa_t",        SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_T)
+    .Case("opencl.image2d_msaa_depth_t",        SPIR::PRIMITIVE_IMAGE_2D_MSAA_DEPTH_T)
+    .Case("opencl.image2d_array_msaa_depth_t",  SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_DEPTH_T)
+    .Case("opencl.image2d_depth_t",             SPIR::PRIMITIVE_IMAGE_2D_DEPTH_T)
+    .Case("opencl.image2d_array_depth_t",       SPIR::PRIMITIVE_IMAGE_2D_ARRAY_DEPTH_T)
+    .Case("opencl.event_t",           SPIR::PRIMITIVE_EVENT_T)
+    .Case("opencl.pipe_t",            SPIR::PRIMITIVE_PIPE_T)
+    .Case("opencl.reserve_id_t",      SPIR::PRIMITIVE_RESERVE_ID_T)
+    .Case("opencl.queue_t",           SPIR::PRIMITIVE_QUEUE_T)
+    .Case("opencl.clk_event_t",       SPIR::PRIMITIVE_CLK_EVENT_T)
+    .Case("opencl.sampler_t",         SPIR::PRIMITIVE_SAMPLER_T)
+    .Case("struct.ndrange_t",         SPIR::PRIMITIVE_NDRANGE_T)
+    .Default(                         SPIR::PRIMITIVE_NONE);
+}
 /// Translates LLVM type to descriptor for mangler.
 /// \param Signed indicates integer type should be translated as signed.
 /// \param VoidPtr indicates i8* should be translated as void*.
@@ -941,35 +966,15 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
       }
       DEBUG(dbgs() << "  type name: " << TyName << '\n');
 
-#define _SPIRV_OP(x,y) .Case("opencl."#x"_t", \
-    new SPIR::PrimitiveType(SPIR::PRIMITIVE_##y##_T))
-      if (StructTy->isOpaque())
-        EPT = StringSwitch<SPIR::ParamType *>(TyName)
-          _SPIRV_OP(image1d, IMAGE_1D)
-          _SPIRV_OP(image1d_array, IMAGE_1D_ARRAY)
-          _SPIRV_OP(image1d_buffer, IMAGE_1D_BUFFER)
-          _SPIRV_OP(image2d, IMAGE_2D)
-          _SPIRV_OP(image2d_array, IMAGE_2D_ARRAY)
-          _SPIRV_OP(image3d, IMAGE_3D)
-          _SPIRV_OP(image2d_msaa, IMAGE_2D_MSAA)
-          _SPIRV_OP(image2d_array_msaa, IMAGE_2D_ARRAY_MSAA)
-          _SPIRV_OP(image2d_msaa_depth, IMAGE_2D_MSAA_DEPTH)
-          _SPIRV_OP(image2d_array_msaa_depth, IMAGE_2D_ARRAY_MSAA_DEPTH)
-          _SPIRV_OP(image2d_depth, IMAGE_2D_DEPTH)
-          _SPIRV_OP(image2d_array_depth, IMAGE_2D_ARRAY_DEPTH)
-          _SPIRV_OP(event, EVENT)
-          _SPIRV_OP(pipe, PIPE)
-          _SPIRV_OP(reserve_id, RESERVE_ID)
-          _SPIRV_OP(queue, QUEUE)
-          _SPIRV_OP(clk_event, CLK_EVENT)
-          _SPIRV_OP(sampler, SAMPLER)
-          .Case("opencl.block",
-              new SPIR::BlockType)
-          .Case("struct.ndrange_t",
-              new SPIR::PrimitiveType(SPIR::PRIMITIVE_NDRANGE_T))
-          .Default(nullptr)
-          ;
-#undef _SPIRV_OP
+      if (StructTy->isOpaque()) {
+        if (TyName == "opencl.block")
+          EPT = new SPIR::BlockType;
+        else {
+          auto Prim = getOpaqueTypePrimitiveEnum(TyName);
+          if (Prim != SPIR::PRIMITIVE_NONE)
+            EPT = new SPIR::PrimitiveType(Prim);
+        }
+      }
     }
     if (EPT)
       return SPIR::RefParamType(EPT);

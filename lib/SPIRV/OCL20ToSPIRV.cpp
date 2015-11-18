@@ -284,7 +284,7 @@ OCL20ToSPIRV::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
   auto Src = getSPIRVSource(&Module);
-  if (std::get<0>(Src) != spv::SourceLanguageOpenCL)
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
     return false;
 
   CLVer = std::get<1>(Src);
@@ -462,7 +462,7 @@ OCL20ToSPIRV::visitCallAsyncWorkGroupCopy(CallInst* CI,
       Args.insert(Args.begin()+3, addSizet(1));
     }
     Args.insert(Args.begin(), addInt32(ScopeWorkgroup));
-    return getSPIRVFuncName(OpAsyncGroupCopy);
+    return getSPIRVFuncName(OpGroupAsyncCopy);
   }, &Attrs);
 }
 

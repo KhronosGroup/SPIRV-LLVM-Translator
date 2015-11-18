@@ -125,6 +125,20 @@ getSPIRVInst(const OCLBuiltinTransInfo &Info) {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+unsigned
+encodeOCLVer(unsigned short Major,
+    unsigned char Minor, unsigned char Rev) {
+  return (Major * 100 + Minor) * 1000 + Rev;
+}
+
+std::tuple<unsigned short, unsigned char, unsigned char>
+decodeOCLVer(unsigned Ver) {
+  unsigned short Major = Ver / 100000;
+  unsigned char Minor = (Ver % 100000) / 1000;
+  unsigned char Rev = Ver % 1000;
+  return std::make_tuple(Major, Minor, Rev);
+}
+
 unsigned getOCLVersion(Module *M) {
   NamedMDNode *NamedMD = M->getNamedMetadata(kSPIR2MD::OCLVer);
   if (!NamedMD)
@@ -133,7 +147,7 @@ unsigned getOCLVersion(Module *M) {
   MDNode *MD = NamedMD->getOperand(0);
   unsigned Major = getMDOperandAsInt(MD, 0);
   unsigned Minor = getMDOperandAsInt(MD, 1);
-  return Major * 10 + Minor;
+  return encodeOCLVer(Major, Minor, 0);
 }
 
 void
