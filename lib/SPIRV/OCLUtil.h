@@ -183,9 +183,9 @@ const OCLMemOrderKind OCLLegacyAtomicMemOrder = OCLMO_seq_cst;
 const OCLScopeKind OCLLegacyAtomicMemScope = OCLMS_device;
 
 namespace kOCLVer {
-  const unsigned CL12 = 12;
-  const unsigned CL20 = 20;
-  const unsigned CL21 = 21;
+  const unsigned CL12 = 102000;
+  const unsigned CL20 = 200000;
+  const unsigned CL21 = 201000;
 }
 
 namespace OclExt {
@@ -250,9 +250,19 @@ WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI);
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
 
 /// Get OCL version from metadata opencl.ocl.version.
-/// \return 21 for OCL 2.1, 20 for OCL 2.0, 12 for OCL 1.2,
-///         0 if metadata not found.
+/// \return OCL version encoded as Major*10^5+Minor*10^3+Rev,
+/// e.g. 201000 for OCL 2.1, 200000 for OCL 2.0, 102000 for OCL 1.2,
+/// 0 if metadata not found.
 unsigned getOCLVersion(Module *M);
+
+/// Encode OpenCL version as Major*10^5+Minor*10^3+Rev.
+unsigned
+encodeOCLVer(unsigned short Major,
+    unsigned char Minor, unsigned char Rev);
+
+/// Decode OpenCL version which is encoded as Major*10^5+Minor*10^3+Rev
+std::tuple<unsigned short, unsigned char, unsigned char>
+decodeOCLVer(unsigned Ver);
 
 /// Decode a MDNode assuming it contains three integer constants.
 void decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z);
@@ -319,8 +329,8 @@ using namespace OCLUtil;
 namespace SPIRV {
 template<> inline void
 SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
-  add(OCLMF_Local, MemorySemanticsWorkgroupLocalMemoryMask);
-  add(OCLMF_Global, MemorySemanticsWorkgroupGlobalMemoryMask);
+  add(OCLMF_Local, MemorySemanticsWorkgroupMemoryMask);
+  add(OCLMF_Global, MemorySemanticsCrossWorkgroupMemoryMask);
   add(OCLMF_Image, MemorySemanticsImageMemoryMask);
 }
 
@@ -412,7 +422,6 @@ SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
   add(OclExt::cl_khr_mipmap_image, CapabilityImageMipmap);
   add(OclExt::cl_khr_mipmap_image_writes, CapabilityImageMipmap);
   add(OclExt::cl_khr_egl_event, CapabilityNone);
-  add(OclExt::cl_khr_srgb_image_writes, CapabilityImageSRGBWrite);
 }
 
 /// Map OpenCL work functions to SPIR-V builtin variables.
@@ -428,7 +437,7 @@ SPIRVMap<std::string, SPIRVBuiltinVariableKind>::init() {
   add("get_num_groups", BuiltInNumWorkgroups);
   add("get_group_id", BuiltInWorkgroupId);
   add("get_global_linear_id", BuiltInGlobalLinearId);
-  add("get_local_linear_id", BuiltInWorkgroupLinearId);
+  add("get_local_linear_id", BuiltInLocalInvocationIndex);
   add("get_sub_group_size", BuiltInSubgroupSize);
   add("get_max_sub_group_size", BuiltInSubgroupMaxSize);
   add("get_num_sub_groups", BuiltInNumSubgroups);
@@ -484,9 +493,9 @@ _SPIRV_OP(fetch_xor_explicit, AtomicXor)
 #undef _SPIRV_OP
 #define _SPIRV_OP(x,y) add(#x, Op##y);
 _SPIRV_OP(dot, Dot)
-_SPIRV_OP(async_work_group_copy, AsyncGroupCopy)
-_SPIRV_OP(async_work_group_strided_copy, AsyncGroupCopy)
-_SPIRV_OP(wait_group_events, WaitGroupEvents)
+_SPIRV_OP(async_work_group_copy, GroupAsyncCopy)
+_SPIRV_OP(async_work_group_strided_copy, GroupAsyncCopy)
+_SPIRV_OP(wait_group_events, GroupWaitEvents)
 _SPIRV_OP(isequal, FOrdEqual)
 _SPIRV_OP(isnotequal, FUnordNotEqual)
 _SPIRV_OP(isgreater, FOrdGreaterThan)

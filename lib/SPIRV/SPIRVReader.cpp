@@ -2156,10 +2156,24 @@ bool
 SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
-  assert(Lang == SourceLanguageOpenCL && "Unsupported source language");
-  unsigned Major = Ver/10;
-  unsigned Minor = (Ver%10);
-  addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, Major, Minor);
+  assert((Lang == SourceLanguageOpenCL_C ||
+      Lang == SourceLanguageOpenCL_CPP) && "Unsupported source language");
+  unsigned short Major = 0;
+  unsigned char Minor = 0;
+  unsigned char Rev = 0;
+  std::tie(Major, Minor, Rev) = decodeOCLVer(Ver);
+  SPIRVMDBuilder Builder(*M);
+  Builder.addNamedMD(kSPIRVMD::Source)
+            .addOp()
+              .add(Lang)
+              .add(Ver)
+              .done();
+  // ToDo: Phasing out usage of old SPIR metadata
+  if (Ver <= kOCLVer::CL12)
+    addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 1, 2);
+  else
+    addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 2, 0);
+
   addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
   return true;
 }
@@ -2228,9 +2242,9 @@ std::string
 SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction* BI) {
   auto GenericCastToPtrInst = BI->getType()->getPointerStorageClass();
   switch (GenericCastToPtrInst) {
-    case StorageClassWorkgroupGlobal:
+    case StorageClassCrossWorkgroup:
       return std::string(kOCLBuiltinName::ToGlobal);
-    case StorageClassWorkgroupLocal:
+    case StorageClassWorkgroup:
       return std::string(kOCLBuiltinName::ToLocal);
     case StorageClassFunction:
       return std::string(kOCLBuiltinName::ToPrivate);

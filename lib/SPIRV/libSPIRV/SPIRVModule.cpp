@@ -66,10 +66,11 @@ public:
     GeneratorId(SPIRVGEN_KhronosLLVMSPIRVTranslator),
     GeneratorVer(0),
     InstSchema(SPIRVISCH_Default),
-    SrcLang(SourceLanguageOpenCL),
-    SrcLangVer(12),
+    SrcLang(SourceLanguageOpenCL_C),
+    SrcLangVer(102000),
     MemoryModel(MemoryModelOpenCL){
-    AddrModel = sizeof(size_t) == 32 ? AddressingModelPhysical32 : AddressingModelPhysical64;
+    AddrModel = sizeof(size_t) == 32 ? AddressingModelPhysical32
+        : AddressingModelPhysical64;
   };
   virtual ~SPIRVModuleImpl();
 
@@ -989,7 +990,7 @@ SPIRVInstruction *
 SPIRVModuleImpl::addAsyncGroupCopy(Scope Scope,
     SPIRVValue *Dest, SPIRVValue *Src, SPIRVValue *NumElems, SPIRVValue *Stride,
     SPIRVValue *Event, SPIRVBasicBlock *BB) {
-  return addInstruction(new SPIRVAsyncGroupCopy(Scope, getId(), Dest, Src,
+  return addInstruction(new SPIRVGroupAsyncCopy(Scope, getId(), Dest, Src,
     NumElems, Stride, Event, BB), BB);
 }
 

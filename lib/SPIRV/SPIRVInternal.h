@@ -61,7 +61,7 @@ namespace SPIRV{
   /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
   /// generator's magic number in the generated SPIR-V module.
   /// This number should be bumped up whenever the generated SPIR-V changes.
-  const static unsigned short kTranslatorVer = 2;
+  const static unsigned short kTranslatorVer = 3;
 
 #define SPCV_TARGET_LLVM_IMAGE_TYPE_ENCODE_ACCESS_QUAL 0
 // Workaround for SPIR 2 producer bug about kernel function calling convention.
@@ -199,9 +199,9 @@ typedef SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>
 template<> inline void
 SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>::init() {
   add(SPIRAS_Private, StorageClassFunction);
-  add(SPIRAS_Global, StorageClassWorkgroupGlobal);
+  add(SPIRAS_Global, StorageClassCrossWorkgroup);
   add(SPIRAS_Constant, StorageClassUniformConstant);
-  add(SPIRAS_Local, StorageClassWorkgroupLocal);
+  add(SPIRAS_Local, StorageClassWorkgroup);
   add(SPIRAS_Generic, StorageClassGeneric);
 }
 typedef SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind> SPIRSPIRVAddrSpaceMap;

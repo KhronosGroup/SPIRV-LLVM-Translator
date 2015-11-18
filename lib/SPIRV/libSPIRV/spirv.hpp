@@ -1,19 +1,19 @@
 // Copyright (c) 2014-2015 The Khronos Group Inc.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and/or associated documentation files (the "Materials"),
 // to deal in the Materials without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and/or sell copies of the Materials, and to permit persons to whom the
 // Materials are furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Materials.
-// 
+//
 // MODIFICATIONS TO THIS FILE MAY MEAN IT NO LONGER ACCURATELY REFLECTS KHRONOS
 // STANDARDS. THE UNMODIFIED, NORMATIVE VERSIONS OF KHRONOS SPECIFICATIONS AND
-// HEADER INFORMATION ARE LOCATED AT https://www.khronos.org/registry/ 
-// 
+// HEADER INFORMATION ARE LOCATED AT https://www.khronos.org/registry/
+//
 // THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -27,13 +27,13 @@
 
 // Enumeration tokens for SPIR-V, in various styles:
 //   C, C++, C++11, JSON, Lua, Python
-// 
+//
 // - C will have tokens with a "Spv" prefix, e.g.: SpvSourceLanguageGLSL
 // - C++ will have tokens in the "spv" name space, e.g.: spv::SourceLanguageGLSL
 // - C++11 will use enum classes in the spv namespace, e.g.: spv::SourceLanguage::GLSL
 // - Lua will use tables, e.g.: spv.SourceLanguage.GLSL
 // - Python will use dictionaries, e.g.: spv['SourceLanguage']['GLSL']
-// 
+//
 // Some tokens act like mask values, which can be OR'd together,
 // while others are mutually exclusive.  The mask-like ones have
 // "Mask" in their name, and a parallel enum that has the shift
@@ -46,12 +46,12 @@ namespace spv {
 
 typedef unsigned int Id;
 
-#define SPV_VERSION 100
-#define SPV_REVISION 1
+#define SPV_VERSION 10000
+#define SPV_REVISION 2
 
 static const unsigned int MagicNumber = 0x07230203;
-static const unsigned int Version = 100;
-static const unsigned int Revision = 1;
+static const unsigned int Version = 0x00010000;
+static const unsigned int Revision = 2;
 static const unsigned int OpCodeMask = 0xffff;
 static const unsigned int WordCountShift = 16;
 
@@ -59,7 +59,8 @@ enum SourceLanguage {
     SourceLanguageUnknown = 0,
     SourceLanguageESSL = 1,
     SourceLanguageGLSL = 2,
-    SourceLanguageOpenCL = 3,
+    SourceLanguageOpenCL_C = 3,
+    SourceLanguageOpenCL_CPP = 4,
 };
 
 enum ExecutionModel {
@@ -109,17 +110,16 @@ enum ExecutionMode {
     ExecutionModeInputPoints = 19,
     ExecutionModeInputLines = 20,
     ExecutionModeInputLinesAdjacency = 21,
-    ExecutionModeInputTriangles = 22,
+    ExecutionModeTriangles = 22,
     ExecutionModeInputTrianglesAdjacency = 23,
-    ExecutionModeInputQuads = 24,
-    ExecutionModeInputIsolines = 25,
+    ExecutionModeQuads = 24,
+    ExecutionModeIsolines = 25,
     ExecutionModeOutputVertices = 26,
     ExecutionModeOutputPoints = 27,
     ExecutionModeOutputLineStrip = 28,
     ExecutionModeOutputTriangleStrip = 29,
     ExecutionModeVecTypeHint = 30,
     ExecutionModeContractionOff = 31,
-    ExecutionModeIndependentForwardProgress = 32,
     ExecutionModeCount /* internal use only */
 };
 
@@ -128,9 +128,9 @@ enum StorageClass {
     StorageClassInput = 1,
     StorageClassUniform = 2,
     StorageClassOutput = 3,
-    StorageClassWorkgroupLocal = 4,
-    StorageClassWorkgroupGlobal = 5,
-    StorageClassPrivateGlobal = 6,
+    StorageClassWorkgroup = 4,
+    StorageClassCrossWorkgroup = 5,
+    StorageClassPrivate = 6,
     StorageClassFunction = 7,
     StorageClassGeneric = 8,
     StorageClassPushConstant = 9,
@@ -146,7 +146,7 @@ enum Dim {
     DimCube = 3,
     DimRect = 4,
     DimBuffer = 5,
-    DimInputTarget = 6,
+    DimSubpassData = 6,
     DimCount /* internal use only */
 };
 
@@ -334,7 +334,6 @@ enum Decoration {
     DecorationGLSLPacked = 9,
     DecorationCPacked = 10,
     DecorationBuiltIn = 11,
-    DecorationSmooth = 12,
     DecorationNoPerspective = 13,
     DecorationFlat = 14,
     DecorationPatch = 15,
@@ -364,7 +363,7 @@ enum Decoration {
     DecorationFPFastMathMode = 40,
     DecorationLinkageAttributes = 41,
     DecorationNoContraction = 42,
-    DecorationInputTargetIndex = 43,
+    DecorationInputAttachmentIndex = 43,
     DecorationAlignment = 44,
 };
 
@@ -389,7 +388,6 @@ enum BuiltIn {
     BuiltInSampleId = 18,
     BuiltInSamplePosition = 19,
     BuiltInSampleMask = 20,
-    BuiltInFragColor = 21,
     BuiltInFragDepth = 22,
     BuiltInHelperInvocation = 23,
     BuiltInNumWorkgroups = 24,
@@ -403,7 +401,6 @@ enum BuiltIn {
     BuiltInEnqueuedWorkgroupSize = 32,
     BuiltInGlobalOffset = 33,
     BuiltInGlobalLinearId = 34,
-    BuiltInWorkgroupLinearId = 35,
     BuiltInSubgroupSize = 36,
     BuiltInSubgroupMaxSize = 37,
     BuiltInNumSubgroups = 38,
@@ -460,8 +457,8 @@ enum MemorySemanticsShift {
     MemorySemanticsSequentiallyConsistentShift = 4,
     MemorySemanticsUniformMemoryShift = 6,
     MemorySemanticsSubgroupMemoryShift = 7,
-    MemorySemanticsWorkgroupLocalMemoryShift = 8,
-    MemorySemanticsWorkgroupGlobalMemoryShift = 9,
+    MemorySemanticsWorkgroupMemoryShift = 8,
+    MemorySemanticsCrossWorkgroupMemoryShift = 9,
     MemorySemanticsAtomicCounterMemoryShift = 10,
     MemorySemanticsImageMemoryShift = 11,
 };
@@ -474,8 +471,8 @@ enum MemorySemanticsMask {
     MemorySemanticsSequentiallyConsistentMask = 0x00000010,
     MemorySemanticsUniformMemoryMask = 0x00000040,
     MemorySemanticsSubgroupMemoryMask = 0x00000080,
-    MemorySemanticsWorkgroupLocalMemoryMask = 0x00000100,
-    MemorySemanticsWorkgroupGlobalMemoryMask = 0x00000200,
+    MemorySemanticsWorkgroupMemoryMask = 0x00000100,
+    MemorySemanticsCrossWorkgroupMemoryMask = 0x00000200,
     MemorySemanticsAtomicCounterMemoryMask = 0x00000400,
     MemorySemanticsImageMemoryMask = 0x00000800,
 };
@@ -540,7 +537,6 @@ enum Capability {
     CapabilityImageBasic = 13,
     CapabilityImageReadWrite = 14,
     CapabilityImageMipmap = 15,
-    CapabilityImageSRGBWrite = 16,
     CapabilityPipes = 17,
     CapabilityGroups = 18,
     CapabilityDeviceEnqueue = 19,
@@ -550,7 +546,6 @@ enum Capability {
     CapabilityTessellationPointSize = 23,
     CapabilityGeometryPointSize = 24,
     CapabilityImageGatherExtended = 25,
-    CapabilityStorageImageExtendedFormats = 26,
     CapabilityStorageImageMultisample = 27,
     CapabilityUniformBufferArrayDynamicIndexing = 28,
     CapabilitySampledImageArrayDynamicIndexing = 29,
@@ -564,7 +559,7 @@ enum Capability {
     CapabilitySampledRect = 37,
     CapabilityGenericPointer = 38,
     CapabilityInt8 = 39,
-    CapabilityInputTarget = 40,
+    CapabilityInputAttachment = 40,
     CapabilitySparseResidency = 41,
     CapabilityMinLod = 42,
     CapabilitySampled1D = 43,
@@ -573,11 +568,14 @@ enum Capability {
     CapabilitySampledBuffer = 46,
     CapabilityImageBuffer = 47,
     CapabilityImageMSArray = 48,
-    CapabilityAdvancedFormats = 49,
+    CapabilityStorageImageExtendedFormats = 49,
     CapabilityImageQuery = 50,
     CapabilityDerivativeControl = 51,
     CapabilityInterpolationFunction = 52,
     CapabilityTransformFeedback = 53,
+    CapabilityGeometryStreams = 54,
+    CapabilityStorageImageReadWithoutFormat = 55,
+    CapabilityStorageImageWriteWithoutFormat = 56,
     CapabilityNone = 1024, /* internal use only */
 };
 
@@ -673,6 +671,7 @@ enum Op {
     OpImageDrefGather = 97,
     OpImageRead = 98,
     OpImageWrite = 99,
+    OpImage = 100,
     OpImageQueryFormat = 101,
     OpImageQueryOrder = 102,
     OpImageQuerySizeLod = 103,
@@ -817,8 +816,8 @@ enum Op {
     OpUnreachable = 255,
     OpLifetimeStart = 256,
     OpLifetimeStop = 257,
-    OpAsyncGroupCopy = 259,
-    OpWaitGroupEvents = 260,
+    OpGroupAsyncCopy = 259,
+    OpGroupWaitEvents = 260,
     OpGroupAll = 261,
     OpGroupAny = 262,
     OpGroupBroadcast = 263,

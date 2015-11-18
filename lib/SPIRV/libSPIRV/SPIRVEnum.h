@@ -138,10 +138,10 @@ SPIRVMap<SPIRVExecutionModeKind, SPIRVCapabilityKind>::init() {
   add(ExecutionModeInputPoints, CapabilityGeometry);
   add(ExecutionModeInputLines, CapabilityGeometry);
   add(ExecutionModeInputLinesAdjacency, CapabilityGeometry);
-  add(ExecutionModeInputTriangles, CapabilityTessellation);
+  add(ExecutionModeTriangles, CapabilityTessellation);
   add(ExecutionModeInputTrianglesAdjacency, CapabilityGeometry);
-  add(ExecutionModeInputQuads, CapabilityGeometry);
-  add(ExecutionModeInputIsolines, CapabilityGeometry);
+  add(ExecutionModeQuads, CapabilityGeometry);
+  add(ExecutionModeIsolines, CapabilityGeometry);
   add(ExecutionModeOutputVertices, CapabilityTessellation);
   add(ExecutionModeOutputPoints, CapabilityGeometry);
   add(ExecutionModeOutputLineStrip, CapabilityGeometry);
@@ -166,9 +166,9 @@ SPIRVMap<SPIRVStorageClassKind, SPIRVCapabilityKind>::init() {
   add(StorageClassInput, CapabilityShader);
   add(StorageClassUniform, CapabilityShader);
   add(StorageClassOutput, CapabilityShader);
-  add(StorageClassWorkgroupLocal, CapabilityNone);
-  add(StorageClassWorkgroupGlobal, CapabilityNone);
-  add(StorageClassPrivateGlobal, CapabilityShader);
+  add(StorageClassWorkgroup, CapabilityNone);
+  add(StorageClassCrossWorkgroup, CapabilityNone);
+  add(StorageClassPrivate, CapabilityShader);
   add(StorageClassFunction, CapabilityShader);
   add(StorageClassGeneric, CapabilityKernel);
   add(StorageClassAtomicCounter, CapabilityShader);
@@ -193,7 +193,6 @@ SPIRVMap<Decoration, std::string>::init() {
   add(DecorationGLSLPacked, "GLSLPacked");
   add(DecorationCPacked, "CPacked");
   add(DecorationBuiltIn, "BuiltIn");
-  add(DecorationSmooth, "Smooth");
   add(DecorationNoPerspective, "NoPerspective");
   add(DecorationFlat, "Flat");
   add(DecorationPatch, "Patch");
@@ -223,7 +222,7 @@ SPIRVMap<Decoration, std::string>::init() {
   add(DecorationFPFastMathMode, "FPFastMathMode");
   add(DecorationLinkageAttributes, "LinkageAttributes");
   add(DecorationNoContraction, "NoContraction");
-  add(DecorationInputTargetIndex, "InputTargetIndex");
+  add(DecorationInputAttachmentIndex, "InputTargetIndex");
   add(DecorationAlignment, "Alignment");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorateNameMap)
@@ -276,7 +275,6 @@ SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInSampleId, "SampleId");
   add(BuiltInSamplePosition, "SamplePosition");
   add(BuiltInSampleMask, "SampleMask");
-  add(BuiltInFragColor, "FragColor");
   add(BuiltInFragDepth, "FragDepth");
   add(BuiltInHelperInvocation, "HelperInvocation");
   add(BuiltInNumWorkgroups, "NumWorkgroups");
@@ -290,7 +288,6 @@ SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInEnqueuedWorkgroupSize, "EnqueuedWorkgroupSize");
   add(BuiltInGlobalOffset, "GlobalOffset");
   add(BuiltInGlobalLinearId, "GlobalLinearId");
-  add(BuiltInWorkgroupLinearId, "WorkgroupLinearId");
   add(BuiltInSubgroupSize, "SubgroupSize");
   add(BuiltInSubgroupMaxSize, "SubgroupMaxSize");
   add(BuiltInNumSubgroups, "NumSubgroups");
