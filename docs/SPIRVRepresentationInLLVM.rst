@@ -71,6 +71,15 @@ where
 
  * {ConversionOpCodeName} = ConvertFToU|ConvertFToS|ConvertUToF|ConvertUToS|UConvert|SConvert|FConvert|SatConvertSToU|SatConvertUToS
 
+SPIR-V Builtin ImageSample Function Names
+----------------------------------------
+
+The unmangled names of SPIR-V builtin ImageSample functions follow the convention:
+
+.. code-block:: c
+
+  __spirv_{ImageSampleOpCodeName}_R{ReturnType}
+
 SPIR-V Builtin GenericCastToPtr Function Name
 ----------------------------------------
 

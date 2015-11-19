@@ -54,7 +54,7 @@ typedef uint32_t SPIRVId;
 #define SPIRVWORD_MAX     ~0U
 
 inline bool
-isValid(SPIRVId Id) { return Id != SPIRVID_INVALID;}
+isValid(SPIRVId Id) { return Id != SPIRVID_INVALID && Id != 0;}
 
 inline SPIRVWord
 mkWord(unsigned WordCount, Op OpCode) {
