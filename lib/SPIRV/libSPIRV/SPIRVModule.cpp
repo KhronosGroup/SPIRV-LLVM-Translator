@@ -61,7 +61,7 @@ SPIRVModule::~SPIRVModule()
 
 class SPIRVModuleImpl : public SPIRVModule {
 public:
-  SPIRVModuleImpl():SPIRVModule(), NextId(0), BoolType(NULL),
+  SPIRVModuleImpl():SPIRVModule(), NextId(1), BoolType(NULL),
     SPIRVVersion(SPV_VERSION),
     GeneratorId(SPIRVGEN_KhronosLLVMSPIRVTranslator),
     GeneratorVer(0),
