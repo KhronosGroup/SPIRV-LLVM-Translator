@@ -185,7 +185,7 @@ public:
   /// Transform read_image with sampler arguments.
   /// read_image(image, sampler, ...) =>
   ///   sampled_image = __spirv_SampledImage(image, sampler);
-  ///   return __spirv_ImageSampleExplicitLod(sampled_image, ...);
+  ///   return __spirv_ImageSampleExplicitLod_R{ReturnType}(sampled_image, ...);
   void visitCallReadImageWithSampler(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
@@ -840,7 +840,8 @@ OCL20ToSPIRV::visitCallReadImageWithSampler(CallInst* CI,
 
     Args[0] = SampledImg;
     Args.erase(Args.begin() + 1, Args.begin() + 2);
-    return getSPIRVFuncName(OpImageSampleExplicitLod);
+    return getSPIRVFuncName(OpImageSampleExplicitLod,
+      std::string(kSPIRVPostfix::ExtDivider) + getPostfixForReturnType(CI));
   }, &Attrs);
 }
 
