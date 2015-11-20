@@ -93,6 +93,11 @@ typedef spv::MemoryAccessMask SPIRVMemoryAccessKind;
 typedef spv::GroupOperation SPIRVGroupOperationKind;
 typedef spv::Dim SPIRVImageDimKind;
 
+inline bool
+isValid(SPIRVAccessQualifierKind Acc) {
+  return static_cast<unsigned>(Acc) <= AccessQualifierReadWrite;
+}
+
 template<typename K>
 SPIRVCapabilityKind
 getCapability(K Key) {

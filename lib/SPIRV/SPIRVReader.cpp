@@ -451,6 +451,7 @@ private:
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST);
 
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
+  void setName(llvm::Value* V, SPIRVValue* BV);
   template<class Source, class Func>
   bool foreachFuncCtlMask(Source, Func);
 };
@@ -788,6 +789,13 @@ SPIRVToLLVM::transFlags(llvm::Value* V) {
   }
 }
 
+void
+SPIRVToLLVM::setName(llvm::Value* V, SPIRVValue* BV) {
+  auto Name = BV->getName();
+  if (!Name.empty() && (!V->hasName() || Name != V->getName()))
+    V->setName(Name);
+}
+
 Value *
 SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
     bool CreatePlaceHolder){
@@ -803,7 +811,7 @@ SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
     SPIRVDBG(dbgs() << " Warning ! nullptr\n";)
     return nullptr;
   }
-  V->setName(BV->getName());
+  setName(V, BV);
   if (!transDecoration(BV, V)) {
     assert (0 && "trans decoration fail");
     return nullptr;
@@ -1605,10 +1613,7 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
       ++I) {
     auto BA = BF->getArgument(I->getArgNo());
     mapValue(BA, I);
-    const std::string &ArgName = BA->getName();
-    if (ArgName.empty())
-      continue;
-    I->setName(ArgName);
+    setName(I, BA);
     BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind){
       if (Kind == FunctionParameterAttributeNoWrite)
         return;
@@ -1706,6 +1711,19 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
     MangledName = decorateSPIRVFunction(FuncName);
   Function* Func = M->getFunction(MangledName);
   FunctionType* FT = FunctionType::get(RetTy, ArgTys, false);
+  // ToDo: Some intermediate functions have duplicate names with
+  // different function types. This is OK if the function name
+  // is used internally and finally translated to unique function
+  // names. However it is better to have a way to differentiate
+  // between intermidiate functions and final functions and make
+  // sure final functions have unique names.
+  SPIRVDBG(
+  if (!HasFuncPtrArg && Func && Func->getFunctionType() != FT) {
+    dbgs() << "Warning: Function name conflict:\n"
+       << *Func << '\n'
+       << " => " << *FT << '\n';
+  }
+  )
   if (!Func || Func->getFunctionType() != FT) {
     DEBUG(for (auto& I:ArgTys) {
       dbgs() << *I << '\n';
@@ -1717,7 +1735,7 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
   }
   auto Call = CallInst::Create(Func,
       transValue(Ops, BB->getParent(), BB), "", BB);
-  Call->setName(BI->getName());
+  setName(Call, BI);
   setAttrByCalledFunc(Call);
   SPIRVDBG(bildbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
       *Call << '\n';)
@@ -2143,7 +2161,7 @@ SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction* MB, BasicBlock *BB) {
   Value *Arg[] = {ConstantInt::get(Int32Ty,
       rmapBitMask<OCLMemFenceMap>(MemSema))};
   auto Call = CallInst::Create(Func, Arg, "", BB);
-  Call->setName(MB->getName());
+  setName(Call, MB);
   setAttrByCalledFunc(Call);
   SPIRVDBG(bildbgs() << "[transBarrier] " << *MB << " -> ";
     dbgs() << *Call << '\n';)
