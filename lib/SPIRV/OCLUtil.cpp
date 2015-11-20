@@ -269,16 +269,27 @@ public:
     }
   } else if (UnmangledName.find("atomic") == 0) {
     setArgAttr(0, SPIR::ATTR_VOLATILE);
-    addAtomicArg(0);
     if (UnmangledName.find("atomic_umax") == 0 ||
         UnmangledName.find("atomic_umin") == 0) {
       addUnsignedArg(0);
+      addUnsignedArg(1);
       UnmangledName.erase(7, 1);
     } else if (UnmangledName.find("atomic_fetch_umin") == 0 ||
                UnmangledName.find("atomic_fetch_umax") == 0) {
       addUnsignedArg(0);
+      addUnsignedArg(1);
       UnmangledName.erase(13, 1);
     }
+    // Don't set atomic property to the first argument of 1.2 atomic built-ins.
+    if(UnmangledName.find("atomic_add")  != 0 && UnmangledName.find("atomic_sub") != 0 &&
+       UnmangledName.find("atomic_xchg") != 0 && UnmangledName.find("atomic_inc") != 0 &&
+       UnmangledName.find("atomic_dec")  != 0 && UnmangledName.find("atomic_cmpxchg") != 0 &&
+       UnmangledName.find("atomic_min")  != 0 && UnmangledName.find("atomic_max") != 0 &&
+       UnmangledName.find("atomic_and")  != 0 && UnmangledName.find("atomic_or") != 0 &&
+       UnmangledName.find("atomic_xor")  != 0 && UnmangledName.find("atom_") != 0) {
+      addAtomicArg(0);
+    }
+
   } else if (UnmangledName.find("uconvert_") == 0) {
     addUnsignedArg(0);
     UnmangledName.erase(0, 1);
