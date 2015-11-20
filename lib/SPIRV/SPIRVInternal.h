@@ -216,18 +216,6 @@ SPIRVMap<std::string, SPIRVAccessQualifierKind>::init() {
 typedef SPIRVMap<std::string, SPIRVAccessQualifierKind> SPIRSPIRVAccessQualifierMap;
 
 template<> inline void
-SPIRVMap<GlobalValue::LinkageTypes, SPIRVLinkageTypeKind>::init() {
-  add(GlobalValue::ExternalLinkage, LinkageTypeExport);
-  add(GlobalValue::AvailableExternallyLinkage, LinkageTypeImport);
-  add(GlobalValue::PrivateLinkage, LinkageTypeInternal);
-  add(GlobalValue::LinkOnceODRLinkage, LinkageTypeInternal);
-  add(GlobalValue::CommonLinkage, LinkageTypeInternal);
-  add(GlobalValue::InternalLinkage, LinkageTypeInternal);
-}
-typedef SPIRVMap<GlobalValue::LinkageTypes, SPIRVLinkageTypeKind>
-  SPIRSPIRVLinkageTypeMap;
-
-template<> inline void
 SPIRVMap<Attribute::AttrKind, SPIRVFuncParamAttrKind>::init() {
   add(Attribute::ZExt, FunctionParameterAttributeZext);
   add(Attribute::SExt, FunctionParameterAttributeSext);
