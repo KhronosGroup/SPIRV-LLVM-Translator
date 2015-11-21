@@ -120,6 +120,28 @@ public:
   void setWordCount(SPIRVWord);
 };
 
+class SPIRVDecorateLinkageAttr:public SPIRVDecorate{
+public:
+  // Complete constructor for LinkageAttributes decorations
+  SPIRVDecorateLinkageAttr(SPIRVEntry *TheTarget,
+      const std::string &Name, SPIRVLinkageTypeKind Kind)
+    :SPIRVDecorate(DecorationLinkageAttributes, TheTarget) {
+      WordCount += getSizeInWords(Name) + 1u;
+      for (auto &I:getVec(Name))
+        Literals.push_back(I);
+      Literals.push_back(Kind);
+    }
+  // Incomplete constructor
+  SPIRVDecorateLinkageAttr():SPIRVDecorate(){}
+
+  std::string getLinkageName() const {
+    return getString(Literals.cbegin(), Literals.cend() - 1);
+  }
+  SPIRVLinkageTypeKind getLinkageType() const {
+    return (SPIRVLinkageTypeKind)Literals.back();
+  }
+};
+
 class SPIRVMemberDecorate:public SPIRVDecorateGeneric{
 public:
   static const Op OC = OpMemberDecorate;

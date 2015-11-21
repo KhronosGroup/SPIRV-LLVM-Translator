@@ -375,17 +375,17 @@ SPIRVEntry::encodeDecorate(std::ostream &O) const {
 SPIRVLinkageTypeKind
 SPIRVEntry::getLinkageType() const {
   assert(hasLinkageType());
-  SPIRVWord LT = LinkageTypeInternal;
-  if (!hasDecorate(DecorationLinkageAttributes, 0, &LT))
+  DecorateMapType::const_iterator Loc = Decorates.find(DecorationLinkageAttributes);
+  if (Loc == Decorates.end())
     return LinkageTypeInternal;
-  return static_cast<SPIRVLinkageTypeKind>(LT);
+  return static_cast<const SPIRVDecorateLinkageAttr*>(Loc->second)->getLinkageType();
 }
 
 void
 SPIRVEntry::setLinkageType(SPIRVLinkageTypeKind LT) {
   assert(isValid(LT));
   assert(hasLinkageType());
-  addDecorate(new SPIRVDecorate(DecorationLinkageAttributes, this, LT));
+  addDecorate(new SPIRVDecorateLinkageAttr(this, Name, LT));
 }
 
 std::ostream &
