@@ -341,10 +341,13 @@ getVec(const std::string &Str) {
       V.push_back(CurrentWord);
       CurrentWord = 0u;
     }
+    assert(Str[I] && "0 is not allowed in string");
     CurrentWord += ((uint32_t)Str[I]) << ((I % 4u) * 8u);
   }
   if (CurrentWord != 0u)
     V.push_back(CurrentWord);
+  if (StrSize % 4 == 0)
+    V.push_back(0);
   return V;
 }
 
