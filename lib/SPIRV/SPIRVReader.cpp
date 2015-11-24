@@ -1561,7 +1561,11 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     } else if (isCvtOpCode(OC)) {
         auto BI = static_cast<SPIRVInstruction *>(BV);
         Value *Inst = nullptr;
-        if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
+        // Vector casts are prohibited in OpenCL; such casts may not be translated
+        // into LLVM instructions directly. OpenCL C/C++ has special convertion
+        // functions which are to be used instead.
+        const bool isVectorCast = BI->getOperandTypes()[0]->isTypeVector();
+        if (isVectorCast || BI->hasFPRoundingMode() || BI->isSaturatedConversion())
           Inst = transOCLBuiltinFromInst(BI, BB);
         else
           Inst = transConvertInst(BV, F, BB);
