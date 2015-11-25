@@ -42,6 +42,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -308,6 +309,47 @@ inline unsigned
 getSizeInWords(const std::string& Str) {
   assert(Str.length()/4 + 1 <= std::numeric_limits<unsigned>::max());
   return static_cast<unsigned>(Str.length()/4 + 1);
+}
+
+inline std::string
+getString(std::vector<uint32_t>::const_iterator Begin,
+    std::vector<uint32_t>::const_iterator End) {
+  std::string Str = std::string();
+  for (auto I = Begin; I != End; ++I) {
+    uint32_t Word = *I;
+    for (unsigned J = 0u; J < 32u; J += 8u) {
+      char Char = (char)((Word >> J) & 0xff);
+      if (Char == '\0')
+        return Str;
+      Str += Char;
+    }
+  }
+  return Str;
+}
+
+inline std::string
+getString(const std::vector<uint32_t> &V) {
+  return getString(V.cbegin(), V.cend());
+}
+
+inline std::vector<uint32_t>
+getVec(const std::string &Str) {
+  std::vector<uint32_t> V;
+  auto StrSize = Str.size();
+  uint32_t CurrentWord = 0u;
+  for (unsigned I = 0u; I < StrSize; ++I) {
+    if (I % 4u == 0u && I != 0u) {
+      V.push_back(CurrentWord);
+      CurrentWord = 0u;
+    }
+    assert(Str[I] && "0 is not allowed in string");
+    CurrentWord += ((uint32_t)Str[I]) << ((I % 4u) * 8u);
+  }
+  if (CurrentWord != 0u)
+    V.push_back(CurrentWord);
+  if (StrSize % 4 == 0)
+    V.push_back(0);
+  return V;
 }
 
 template<typename T>

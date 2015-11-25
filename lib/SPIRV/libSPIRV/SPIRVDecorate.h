@@ -118,6 +118,33 @@ public:
 
   _SPIRV_DCL_ENCDEC
   void setWordCount(SPIRVWord);
+  void validate()const {
+    SPIRVDecorateGeneric::validate();
+    assert(WordCount == Literals.size() + FixedWC);
+  }
+
+};
+
+class SPIRVDecorateLinkageAttr:public SPIRVDecorate{
+public:
+  // Complete constructor for LinkageAttributes decorations
+  SPIRVDecorateLinkageAttr(SPIRVEntry *TheTarget,
+      const std::string &Name, SPIRVLinkageTypeKind Kind)
+    :SPIRVDecorate(DecorationLinkageAttributes, TheTarget) {
+      for (auto &I:getVec(Name))
+        Literals.push_back(I);
+      Literals.push_back(Kind);
+      WordCount += Literals.size();
+    }
+  // Incomplete constructor
+  SPIRVDecorateLinkageAttr():SPIRVDecorate(){}
+
+  std::string getLinkageName() const {
+    return getString(Literals.cbegin(), Literals.cend() - 1);
+  }
+  SPIRVLinkageTypeKind getLinkageType() const {
+    return (SPIRVLinkageTypeKind)Literals.back();
+  }
 };
 
 class SPIRVMemberDecorate:public SPIRVDecorateGeneric{
@@ -141,6 +168,11 @@ public:
 
   _SPIRV_DCL_ENCDEC
   void setWordCount(SPIRVWord);
+
+  void validate()const {
+    SPIRVDecorateGeneric::validate();
+    assert(WordCount == Literals.size() + FixedWC);
+  }
 protected:
   SPIRVWord MemberNumber;
 };
