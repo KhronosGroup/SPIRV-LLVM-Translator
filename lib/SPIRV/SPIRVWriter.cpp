@@ -66,6 +66,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Pass.h"
+#include "llvm/PassSupport.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
@@ -94,12 +96,9 @@ namespace llvm {
 
 namespace SPIRV{
 
-bool SPIRVDbgSaveRegularizedModule = false;
-
 cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(true),
     cl::desc("LLVM/SPIR-V translation enable mem2reg"));
-cl::opt<bool> SPIRVLowerConst("spirv-lower-const", cl::init(true),
-    cl::desc("LLVM/SPIR-V translation enalbe lowering constant expression"));
+
 
 static void
 foreachKernelArgMD(MDNode *MD, SPIRVFunction *BF,
@@ -123,9 +122,12 @@ struct OCLBuiltinSPIRVTransInfo {
 
 class LLVMToSPIRVDbgTran {
 public:
-  LLVMToSPIRVDbgTran(Module *TM, SPIRVModule *TBM)
+  LLVMToSPIRVDbgTran(Module *TM = nullptr, SPIRVModule *TBM = nullptr)
   :BM(TBM), M(TM){
   }
+
+  void setModule(Module *Mod) { M = Mod;}
+  void setSPIRVModule(SPIRVModule *SMod) { BM = SMod;}
 
   void transDbgInfo(Value *V, SPIRVValue *BV) {
     if (auto I = dyn_cast<Instruction>(V)) {
@@ -152,33 +154,35 @@ private:
   Module *M;
 };
 
-class LLVMToSPIRV {
+class LLVMToSPIRV: public ModulePass {
 public:
-  LLVMToSPIRV(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
-      : M(LLVMModule),
-        Ctx(&M->getContext()),
-        BM(TheSPIRVModule),
+  LLVMToSPIRV(SPIRVModule *SMod = nullptr)
+      : ModulePass(ID),
+        M(nullptr),
+        Ctx(nullptr),
+        BM(SMod),
         ExtSetId(SPIRVID_INVALID),
         SrcLang(0),
         SrcLangVer(0),
-        DbgTran(M, BM){
-    RegularizedModuleTmpFile = "regularized.bc";
+        DbgTran(nullptr, SMod){
   }
+
+  bool runOnModule(Module &Mod) override {
+    M = &Mod;
+    Ctx = &M->getContext();
+    DbgTran.setModule(M);
+    assert(BM && "SPIR-V module not initialized");
+    translate();
+    return true;
+  }
+
+  static char ID;
+
   SPIRVType *transType(Type *T);
 
   SPIRVValue *getTranslatedValue(Value *);
 
-  // Lower functions
-  bool regularize();
-  bool lowerConstantExpressions();
-
-  /// Erase cast inst of function and replace with the function.
-  /// Assuming F is a SPIR-V builtin function with op code \param OC.
-  void lowerFuncPtr(Function *F, Op OC);
-  void lowerFuncPtr(Module *M);
-
   // Translation functions
-
   bool transAddressingMode();
   bool transAlign(Value *V, SPIRVValue *BV);
   std::vector<SPIRVValue *> transArguments(CallInst *, SPIRVBasicBlock *);
@@ -218,7 +222,6 @@ private:
   SPIRVId ExtSetId;
   SPIRVWord SrcLang;
   SPIRVWord SrcLangVer;
-  std::string RegularizedModuleTmpFile;
   LLVMToSPIRVDbgTran DbgTran;
 
   SPIRVType *mapType(Type *T, SPIRVType *BT) {
@@ -301,7 +304,6 @@ private:
   SPIRVValue *transSpcvCast(CallInst* CI, SPIRVBasicBlock *BB);
   SPIRVValue *oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB);
 
-  void oclRegularize();
   SPIRV::SPIRVInstruction* transUnaryInst(UnaryInstruction* U,
       SPIRVBasicBlock* BB);
 
@@ -309,6 +311,7 @@ private:
   /// \return Id of the constant.
   SPIRVId addInt32(int);
 };
+
 
 SPIRVValue *
 LLVMToSPIRV::getTranslatedValue(Value *V) {
@@ -378,57 +381,6 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
   return true;
 }
 
-/// Since SPIR-V cannot represent constant expression, constant expressions
-/// in LLVM needs to be lowered to instructions.
-/// For each function, the constant expressions used by instructions of the
-/// function are replaced by instructions placed in the entry block since it
-/// dominates all other BB's. Each constant expression only needs to be lowered
-/// once in each function and all uses of it by instructions in that function
-/// is replaced by one instruction.
-/// ToDo: remove redundant instructions for common subexpression
-bool
-LLVMToSPIRV::lowerConstantExpressions() {
-  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
-    std::map<ConstantExpr*, Instruction *> CMap;
-    std::list<Instruction *> WorkList;
-    auto FBegin = I->begin();
-    for (auto BI = FBegin, BE = I->end(); BI != BE; ++BI) {
-      for (auto II = BI->begin(), IE = BI->end(); II != IE; ++II) {
-        WorkList.push_back(II);
-      }
-    }
-    while (!WorkList.empty()) {
-      auto II = WorkList.front();
-      WorkList.pop_front();
-      for (unsigned OI = 0, OE = II->getNumOperands(); OI != OE; ++OI) {
-        auto Op = II->getOperand(OI);
-
-        if (auto CE = dyn_cast<ConstantExpr>(Op)) {
-          SPIRVDBG(dbgs() << "[lowerConstantExpressions] " << *CE;)
-          auto ReplInst = CE->getAsInstruction();
-          ReplInst->insertBefore(FBegin->begin());
-          SPIRVDBG(dbgs() << " -> " << *ReplInst << '\n';)
-          WorkList.push_front(ReplInst);
-          std::vector<Instruction *> Users;
-          // Do not replace use during iteration of use. Do it in another loop.
-          for (auto UI = CE->user_begin(), UE = CE->user_end(); UI != UE;
-              ++UI){
-            SPIRVDBG(dbgs() << "[lowerConstantExpressions] Use: " <<
-                **UI << '\n';)
-            if (auto InstUser = dyn_cast<Instruction>(*UI)) {
-              if (InstUser->getParent()->getParent() != I)
-                continue;
-              Users.push_back(InstUser);
-            }
-          }
-          for (auto &User:Users)
-            User->replaceUsesOfWith(CE, ReplInst);
-        }
-      }
-    }
-  }
-  return true;
-}
 
 SPIRVType *
 LLVMToSPIRV::transType(Type *T) {
@@ -1101,68 +1053,6 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
     BB);
 }
 
-/// Remove entities not representable by SPIR-V
-bool
-LLVMToSPIRV::regularize() {
-  LLVMContext *Context = &M->getContext();
-
-  oclRegularize();
-  lowerFuncPtr(M);
-  if (SPIRVLowerConst)
-    lowerConstantExpressions();
-
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = I++;
-    if (F->isDeclaration() && F->use_empty()) {
-      F->eraseFromParent();
-      continue;
-    }
-
-    for (auto BI = F->begin(), BE = F->end(); BI != BE; ++BI) {
-      for (auto II = BI->begin(), IE = BI->end(); II != IE; ++II) {
-        if (auto Call = dyn_cast<CallInst>(II)) {
-          Call->setTailCall(false);
-          if (Call->getCalledFunction()->isIntrinsic())
-            removeFnAttr(Context, Call, Attribute::NoUnwind);
-        }
-
-        // Remove optimization info not supported by SPIRV
-        if (auto BO = dyn_cast<BinaryOperator>(II)) {
-          if (isa<OverflowingBinaryOperator>(BO)) {
-            if (BO->hasNoUnsignedWrap())
-              BO->setHasNoUnsignedWrap(false);
-            if (BO->hasNoSignedWrap())
-              BO->setHasNoSignedWrap(false);
-          }
-          if (isa<PossiblyExactOperator>(BO) && BO->isExact())
-            BO->setIsExact(false);
-        }
-        // Remove metadata not supported by SPIRV
-        static const char *MDs[] = {
-            "fpmath",
-            "tbaa",
-            "range",
-        };
-        for (auto &MDName:MDs) {
-          if (II->getMetadata(MDName)) {
-            II->setMetadata(MDName, nullptr);
-          }
-        }
-      }
-    }
-  }
-
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
-    SPIRVDBG(errs() << "Fails to verify module: " << ErrorOS.str();)
-    return false;
-  }
-
-  if (SPIRVDbgSaveRegularizedModule)
-    saveLLVMModule(M, RegularizedModuleTmpFile);
-  return true;
-}
 
 
 MDNode *
@@ -1402,8 +1292,6 @@ bool
 LLVMToSPIRV::translate() {
   BM->setGeneratorVer(kTranslatorVer);
 
-  if (!regularize())
-    return false;
   if (!transSourceLanguage())
     return false;
   if (!transExtension())
@@ -1627,20 +1515,6 @@ LLVMToSPIRV::dumpUsers(Value* V) {
     SPIRVDBG(dbgs() << "  " << **UI << '\n');
 }
 
-void
-LLVMToSPIRV::oclRegularize() {
-  PassManager PassMgr;
-  if (SPIRVMemToReg)
-    PassMgr.add(createPromoteMemoryToRegisterPass());
-  PassMgr.add(createTransOCLMD());
-  PassMgr.add(createOCL21ToSPIRV());
-  PassMgr.add(createSPIRVLowerOCLBlocks());
-  PassMgr.add(createSPIRVLowerBool());
-  PassMgr.add(createOCL20ToSPIRV());
-  PassMgr.run(*M);
-  eraseUselessFunctions(M);
-}
-
 Op
 LLVMToSPIRV::transBoolOpCode(SPIRVValue* Opn, Op OC) {
   if (!Opn->getType()->isTypeVectorOrScalarBool())
@@ -1731,42 +1605,6 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
   return nullptr;
 }
 
-// Assume F is a SPIR-V builtin function with a function pointer argument which
-// is a bitcast instruction casting a function to a void(void) function pointer.
-void LLVMToSPIRV::lowerFuncPtr(Function* F, Op OC) {
-  DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
-  auto Name = decorateSPIRVFunction(getName(OC));
-  std::set<Value *> InvokeFuncPtrs;
-  auto Attrs = F->getAttributes();
-  mutateFunction(F, [=, &InvokeFuncPtrs](
-      CallInst *CI, std::vector<Value *> &Args) {
-    for (auto &I:Args) {
-      if (isFunctionPointerType(I->getType())) {
-        InvokeFuncPtrs.insert(I);
-        I = removeCast(I);
-      }
-    }
-    return Name;
-  }, nullptr, &Attrs, false);
-  for (auto &I:InvokeFuncPtrs)
-    eraseIfNoUse(I);
-}
-
-void
-LLVMToSPIRV::lowerFuncPtr(Module* M) {
-  std::vector<std::pair<Function *, Op>> Work;
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = I++;
-    auto AI = F->arg_begin();
-    if (hasFunctionPointerArg(F, AI)) {
-      auto OC = getSPIRVFuncOC(F->getName());
-      assert(OC != OpNop && "Invalid function pointer usage");
-      Work.push_back(std::make_pair(F, OC));
-    }
-  }
-  for (auto &I:Work)
-    lowerFuncPtr(I.first, I.second);
-}
 
 SPIRVId
 LLVMToSPIRV::addInt32(int I) {
@@ -1775,14 +1613,38 @@ LLVMToSPIRV::addInt32(int I) {
 
 }
 
+char LLVMToSPIRV::ID = 0;
+
+INITIALIZE_PASS(LLVMToSPIRV, "llvmtospv", "Translate LLVM to SPIR-V",
+    false, false)
+
+ModulePass *llvm::createLLVMToSPIRV(SPIRVModule *SMod) {
+  return new LLVMToSPIRV(SMod);
+}
+
+void
+addPassesForSPIRV(PassManager &PassMgr) {
+  if (SPIRVMemToReg)
+    PassMgr.add(createPromoteMemoryToRegisterPass());
+  PassMgr.add(createTransOCLMD());
+  PassMgr.add(createOCL21ToSPIRV());
+  PassMgr.add(createSPIRVLowerOCLBlocks());
+  PassMgr.add(createSPIRVLowerBool());
+  PassMgr.add(createOCL20ToSPIRV());
+  PassMgr.add(createSPIRVRegularizeLLVM());
+  PassMgr.add(createSPIRVLowerConstExpr());
+}
+
 bool
 llvm::WriteSPIRV(Module *M, std::ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
-  LLVMToSPIRV LTB(M, BM.get());
-  if (!LTB.translate()) {
-    BM->getError(ErrMsg);
+  PassManager PassMgr;
+  addPassesForSPIRV(PassMgr);
+  PassMgr.add(createLLVMToSPIRV(BM.get()));
+  PassMgr.run(*M);
+
+  if (BM->getError(ErrMsg) != SPIRVEC_Success)
     return false;
-  }
   OS << *BM;
   return true;
 }
@@ -1790,11 +1652,9 @@ llvm::WriteSPIRV(Module *M, std::ostream &OS, std::string &ErrMsg) {
 bool
 llvm::RegularizeLLVMForSPIRV(Module *M, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
-  LLVMToSPIRV LTB(M, BM.get());
-  if (!LTB.regularize()) {
-    BM->getError(ErrMsg);
-    return false;
-  }
+  PassManager PassMgr;
+  addPassesForSPIRV(PassMgr);
+  PassMgr.run(*M);
   return true;
 }
 
