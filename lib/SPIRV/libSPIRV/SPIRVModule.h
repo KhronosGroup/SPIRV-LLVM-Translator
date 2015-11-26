@@ -107,8 +107,6 @@ public:
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
   virtual const SPIRVCapSet &getCapability() const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
-  virtual std::string &getCompileFlag() = 0;
-  virtual const std::string &getCompileFlag() const = 0;
   virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind, unsigned) const
     = 0;
   virtual std::set<std::string> &getExtension() = 0;

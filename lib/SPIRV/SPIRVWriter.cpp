@@ -188,7 +188,6 @@ public:
   std::vector<SPIRVValue *> transArguments(CallInst *, SPIRVBasicBlock *);
   std::vector<SPIRVWord> transArguments(CallInst *, SPIRVBasicBlock *,
       SPIRVEntry *);
-  bool transCompileFlag();
   bool transSourceLanguage();
   bool transExtension();
   bool transBuiltinSet();
@@ -949,12 +948,6 @@ LLVMToSPIRV::transBuiltinSet() {
 }
 
 bool
-LLVMToSPIRV::transCompileFlag() {
-  BM->getCompileFlag() = getNamedMDAsString(M, SPIR_MD_COMPILER_OPTIONS);
-  return true;
-}
-
-bool
 LLVMToSPIRV::oclIsSamplerType(llvm::Type* T) {
   auto PT = dyn_cast<PointerType>(T);
   if (!PT)
@@ -1295,8 +1288,6 @@ LLVMToSPIRV::translate() {
   if (!transSourceLanguage())
     return false;
   if (!transExtension())
-    return false;
-  if (!transCompileFlag())
     return false;
   if (!transBuiltinSet())
     return false;
