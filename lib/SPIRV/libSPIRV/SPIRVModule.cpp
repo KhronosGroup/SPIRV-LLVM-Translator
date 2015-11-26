@@ -89,8 +89,6 @@ public:
   SPIRVAddressingModelKind getAddressingModel() { return AddrModel;}
   SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const;
   const SPIRVCapSet &getCapability() const { return CapSet;}
-  const std::string &getCompileFlag() const { return CompileFlag;}
-  std::string &getCompileFlag() { return CompileFlag;}
   std::set<std::string> &getExtension() { return SPIRVExt;}
   SPIRVFunction *getFunction(unsigned I) const { return FuncVec[I];}
   SPIRVVariable *getVariable(unsigned I) const { return VariableVec[I];}
@@ -294,7 +292,6 @@ private:
   SPIRVWord SrcLangVer;
   std::set<std::string> SrcExtension;
   std::set<std::string> SPIRVExt;
-  std::string CompileFlag;
   SPIRVAddressingModelKind AddrModel;
   SPIRVMemoryModelKind MemoryModel;
 

@@ -807,23 +807,5 @@ Value *
 castToInt8Ptr(Value *V, Instruction *Pos);
 
 }
-namespace llvm {
 
-void initializeOCL20ToSPIRVPass(PassRegistry&);
-void initializeOCL21ToSPIRVPass(PassRegistry&);
-void initializeSPIRVLowerOCLBlocksPass(PassRegistry&);
-void initializeSPIRVLowerBoolPass(PassRegistry&);
-void initializeSPIRVToOCL20Pass(PassRegistry&);
-void initializeOCL20To12Pass(PassRegistry&);
-void initializeTransOCLMDPass(PassRegistry&);
-
-ModulePass *createOCL20ToSPIRV();
-ModulePass *createOCL21ToSPIRV();
-ModulePass *createSPIRVLowerOCLBlocks();
-ModulePass *createSPIRVLowerBool();
-ModulePass *createSPIRVToOCL20();
-ModulePass *createOCL20To12();
-ModulePass *createTransOCLMD();
-
-}
 #endif
