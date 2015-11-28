@@ -1072,17 +1072,19 @@ operator<< (std::ostream &O, SPIRVModule &M) {
           << MI.NextId /* Bound for Id */
           << MI.InstSchema;
   O << SPIRVNL;
-  O << SPIRVSource(&M);
-  for (auto &I:M.getSourceExtension()) {
-    assert(!I.empty() && "Invalid source extension");
-    O << SPIRVSourceExtension(&M, I);
-  }
+
+  for (auto &I:MI.CapSet)
+    O << SPIRVCapability(&M, I);
+
   for (auto &I:M.getExtension()) {
     assert(!I.empty() && "Invalid extension");
     O << SPIRVExtension(&M, I);
   }
-  for (auto &I:MI.CapSet)
-    O << SPIRVCapability(&M, I);
+
+  for (auto &I:MI.IdBuiltinMap)
+    O <<  SPIRVExtInstImport(&M, I.first, SPIRVBuiltinSetNameMap::map(I.second));
+
+  O << SPIRVMemoryModel(&M);
 
   for (auto &I:MI.EntryPointVec)
     for (auto &II:I.second)
@@ -1093,12 +1095,14 @@ operator<< (std::ostream &O, SPIRVModule &M) {
     for (auto &II:I.second)
       MI.get<SPIRVFunction>(II)->encodeExecutionModes(O);
 
-  for (auto &I:MI.IdBuiltinMap)
-    O <<  SPIRVExtInstImport(&M, I.first, SPIRVBuiltinSetNameMap::map(I.second));
-
-  O << SPIRVMemoryModel(&M);
-
   O << MI.StringVec;
+
+  for (auto &I:M.getSourceExtension()) {
+    assert(!I.empty() && "Invalid source extension");
+    O << SPIRVSourceExtension(&M, I);
+  }
+
+  O << SPIRVSource(&M);
 
   for (auto &I:MI.NamedId) {
     // Don't output name for entry point since it is redundant

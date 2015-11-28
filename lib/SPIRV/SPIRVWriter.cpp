@@ -195,7 +195,7 @@ public:
   bool transDecoration(Value *V, SPIRVValue *BV);
   SPIRVWord transFunctionControlMask(CallInst *);
   SPIRVWord transFunctionControlMask(Function *);
-  SPIRVFunction *transFunction(Function *F);
+  SPIRVFunction *transFunctionDecl(Function *F);
   bool transGlobalVariables();
 
   Op transBoolOpCode(SPIRVValue *Opn, Op OC);
@@ -309,6 +309,7 @@ private:
   /// Add a 32 bit integer constant.
   /// \return Id of the constant.
   SPIRVId addInt32(int);
+  void transFunction(Function *I);
 };
 
 
@@ -523,7 +524,7 @@ LLVMToSPIRV::transType(Type *T) {
 }
 
 SPIRVFunction *
-LLVMToSPIRV::transFunction(Function *F) {
+LLVMToSPIRV::transFunctionDecl(Function *F) {
   if (auto BF= getTranslatedValue(F))
     return static_cast<SPIRVFunction *>(BF);
 
@@ -721,7 +722,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (auto F = dyn_cast<Function>(V))
-    return transFunction(F);
+    return transFunctionDecl(F);
 
   if (auto GV = dyn_cast<GlobalVariable>(V)) {
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
@@ -1041,7 +1042,7 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
       BB), Dec);
 
   return BM->addCallInst(
-    transFunction(CI->getCalledFunction()),
+    transFunctionDecl(CI->getCalledFunction()),
     transArguments(CI, BB, SPIRVEntry::create_unique(OpFunctionCall).get()),
     BB);
 }
@@ -1281,6 +1282,22 @@ LLVMToSPIRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
   }
 }
 
+void
+LLVMToSPIRV::transFunction(Function *I) {
+  transFunctionDecl(I);
+  // Creating all basic blocks before creating any instruction.
+  for (Function::iterator FI = I->begin(), FE = I->end(); FI != FE; ++FI) {
+    transValue(FI, nullptr);
+  }
+  for (Function::iterator FI = I->begin(), FE = I->end(); FI != FE; ++FI) {
+    SPIRVBasicBlock* BB = static_cast<SPIRVBasicBlock*>(transValue(FI, nullptr));
+    for (BasicBlock::iterator BI = FI->begin(), BE = FI->end(); BI != BE;
+        ++BI) {
+      transValue(BI, BB, false);
+    }
+  }
+}
+
 bool
 LLVMToSPIRV::translate() {
   BM->setGeneratorVer(kTranslatorVer);
@@ -1304,25 +1321,24 @@ LLVMToSPIRV::translate() {
     mutateFuncArgType(ChangedType, F);
   }
 
+  // SPIR-V logical layout requires all function declarations go before
+  // function definitions.
+  std::vector<Function *> Decls, Defs;
   for (Module::iterator I = M->begin(), E = M->end(); I != E; ++I) {
     if (isBuiltinTransToInst(I) || isBuiltinTransToExtInst(I)
         || I->getName().startswith(SPCV_CAST) ||
         I->getName().startswith(LLVM_MEMCPY))
       continue;
-    transFunction(I);
-    // Creating all basic blocks before creating any instruction.
-    for (Function::iterator FI = I->begin(), FE = I->end(); FI != FE; ++FI) {
-      transValue(FI, nullptr);
-    }
-    for (Function::iterator FI = I->begin(), FE = I->end(); FI != FE; ++FI) {
-      SPIRVBasicBlock *BB = static_cast<SPIRVBasicBlock*>(
-          transValue(FI, nullptr));
-      for (BasicBlock::iterator BI = FI->begin(), BE = FI->end(); BI != BE;
-          ++BI) {
-        transValue(BI, BB, false);
-      }
-    }
+    if (I->isDeclaration())
+      Decls.push_back(I);
+    else
+      Defs.push_back(I);
   }
+  for (auto I:Decls)
+    transFunctionDecl(I);
+  for (auto I:Defs)
+    transFunction(I);
+
   if (!transOCLKernelMetadata())
     return false;
   if (!transExecutionMode())
