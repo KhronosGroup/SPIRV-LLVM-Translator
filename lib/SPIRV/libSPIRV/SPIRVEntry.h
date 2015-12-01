@@ -187,7 +187,6 @@ class SPIRVExtInst;
 
 class SPIRVEntry {
 public:
-  typedef std::vector<SPIRVCapabilityKind> CapVec;
   enum SPIRVEntryAttrib {
     SPIRVEA_DEFAULT     = 0,
     SPIRVEA_NOID        = 1,      // Entry has no valid id
@@ -240,7 +239,7 @@ public:
   SPIRVLinkageTypeKind getLinkageType() const;
   Op getOpCode() const { return OpCode;}
   SPIRVModule *getModule() const { return Module;}
-  virtual CapVec getRequiredCapability() const { return CapVec();}
+  virtual SPIRVCapVec getRequiredCapability() const { return SPIRVCapVec();}
   const std::string& getName() const { return Name;}
   bool hasDecorate(Decoration Kind, size_t Index = 0,
       SPIRVWord *Result=0)const;
@@ -317,7 +316,7 @@ public:
   virtual void validate()const {
     assert(Module && "Invalid module");
     assert(OpCode != OpNop && "Invalid op code");
-    assert((!hasId() || isValid(Id)) && "Invalid Id");
+    assert((!hasId() || isValidId(Id)) && "Invalid Id");
   }
   void validateFunctionControlMask(SPIRVWord FCtlMask)const;
   void validateValues(const std::vector<SPIRVId> &)const;
@@ -383,7 +382,7 @@ public:
 protected:
   _SPIRV_DEF_ENCDEC0
   void validate()const {
-    assert(isValid(SPIRVEntry::OpCode));
+    assert(isValidId(SPIRVEntry::OpCode));
   }
 };
 
@@ -424,9 +423,6 @@ public:
 protected:
   SPIRVExecutionModelKind ExecModel;
   std::string Name;
-  CapVec getRequiredCapability() const {
-    return getVec(getCapability(ExecModel));
-  }
 };
 
 
@@ -549,8 +545,8 @@ public:
   SPIRVExecutionMode():ExecMode(ExecutionModeCount){}
   SPIRVExecutionModeKind getExecutionMode()const { return ExecMode;}
   const std::vector<SPIRVWord>& getLiterals()const { return WordLiterals;}
-  CapVec getRequiredCapability() const {
-    return getVec(getCapability(ExecMode));
+  SPIRVCapVec getRequiredCapability() const {
+    return getCapability(ExecMode);
   }
 protected:
   _SPIRV_DCL_ENCDEC
@@ -627,7 +623,7 @@ private:
 class SPIRVCapability:public SPIRVEntryNoId<OpCapability> {
 public:
   SPIRVCapability(SPIRVModule *M, SPIRVCapabilityKind K);
-  SPIRVCapability():Kind(CapabilityNone){}
+  SPIRVCapability():Kind(CapabilityMatrix){}
   _SPIRV_DCL_ENCDEC
 private:
   SPIRVCapabilityKind Kind;

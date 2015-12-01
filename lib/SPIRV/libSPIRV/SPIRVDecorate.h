@@ -78,6 +78,10 @@ public:
     Owner = owner;
   }
 
+  SPIRVCapVec getRequiredCapability() const {
+    return getCapability(Dec);
+  }
+
 protected:
   Decoration Dec;
   std::vector<SPIRVWord> Literals;

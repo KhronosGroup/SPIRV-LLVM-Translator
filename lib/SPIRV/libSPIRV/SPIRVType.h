@@ -189,11 +189,12 @@ public:
 
   SPIRVType *getElementType() const { return ElemType;}
   SPIRVStorageClassKind getStorageClass() const { return StorageClass;}
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     auto Cap = getVec(CapabilityAddresses);
     if (ElemType->isTypeFloat(16))
       Cap.push_back(CapabilityFloat16Buffer);
-    Cap.push_back(getCapability(StorageClass));
+    auto C = getCapability(StorageClass);
+    Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
 protected:
@@ -224,10 +225,10 @@ public:
   SPIRVType *getComponentType() const { return CompType;}
   SPIRVWord getComponentCount() const { return CompCount;}
   bool isValidIndex(SPIRVWord Index) const { return Index < CompCount;}
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     if (CompCount >= 8)
       return getVec(CapabilityVector16);
-    return CapVec();
+    return SPIRVCapVec();
   }
 
 protected:
@@ -365,8 +366,8 @@ public:
     assert(hasAccessQualifier());
     return Acc[0];
   }
-  CapVec getRequiredCapability() const {
-    CapVec CV;
+  SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec CV;
     CV.push_back(CapabilityImageBasic);
     if (Acc.size() > 0 && Acc[0] == AccessQualifierReadWrite)
       CV.push_back(CapabilityImageReadWrite);
@@ -565,13 +566,13 @@ public:
     AccessQualifier(AccessQualifierReadOnly){}
 
   SPIRVAccessQualifierKind getAccessQualifier() const {
-      return AccessQualifier; 
+      return AccessQualifier;
   }
   void setPipeAcessQualifier(SPIRVAccessQualifierKind AccessQual) {
     AccessQualifier = AccessQual;
     assert(isValid(AccessQualifier));
   }
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     return getVec(CapabilityPipes);
   }
 protected:

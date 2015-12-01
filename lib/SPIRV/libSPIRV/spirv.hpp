@@ -575,8 +575,7 @@ enum Capability {
     CapabilityTransformFeedback = 53,
     CapabilityGeometryStreams = 54,
     CapabilityStorageImageReadWithoutFormat = 55,
-    CapabilityStorageImageWriteWithoutFormat = 56,
-    CapabilityNone = 1024, /* internal use only */
+    CapabilityStorageImageWriteWithoutFormat = 56
 };
 
 enum Op {

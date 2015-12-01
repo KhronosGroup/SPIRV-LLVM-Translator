@@ -187,6 +187,7 @@ const SPIRVDecoder& \
 operator>>(const SPIRVDecoder& I, Type &V);
 
 SPIRV_DEC_ENCDEC(Op)
+SPIRV_DEC_ENCDEC(Capability)
 SPIRV_DEC_ENCDEC(Decoration)
 SPIRV_DEC_ENCDEC(OCLExtOpKind)
 

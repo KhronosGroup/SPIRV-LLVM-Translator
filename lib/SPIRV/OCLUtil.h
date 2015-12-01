@@ -404,24 +404,9 @@ SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
   add(OclExt::cl_khr_int64_base_atomics, CapabilityInt64Atomics);
   add(OclExt::cl_khr_int64_extended_atomics, CapabilityInt64Atomics);
   add(OclExt::cl_khr_fp16, CapabilityFloat16);
-  add(OclExt::cl_khr_gl_sharing, CapabilityNone);
-  add(OclExt::cl_khr_gl_event, CapabilityNone);
-  add(OclExt::cl_khr_d3d10_sharing, CapabilityNone);
-  add(OclExt::cl_khr_media_sharing, CapabilityNone);
-  add(OclExt::cl_khr_d3d11_sharing, CapabilityNone);
-  add(OclExt::cl_khr_global_int32_base_atomics, CapabilityNone);
-  add(OclExt::cl_khr_global_int32_extended_atomics, CapabilityNone);
-  add(OclExt::cl_khr_local_int32_base_atomics, CapabilityNone);
-  add(OclExt::cl_khr_local_int32_extended_atomics, CapabilityNone);
-  add(OclExt::cl_khr_byte_addressable_store, CapabilityNone);
-  add(OclExt::cl_khr_3d_image_writes, CapabilityNone);
-  add(OclExt::cl_khr_gl_msaa_sharing, CapabilityNone);
-  add(OclExt::cl_khr_depth_images, CapabilityNone);
-  add(OclExt::cl_khr_gl_depth_images, CapabilityNone);
   add(OclExt::cl_khr_subgroups, CapabilityGroups);
   add(OclExt::cl_khr_mipmap_image, CapabilityImageMipmap);
   add(OclExt::cl_khr_mipmap_image_writes, CapabilityImageMipmap);
-  add(OclExt::cl_khr_egl_event, CapabilityNone);
 }
 
 /// Map OpenCL work functions to SPIR-V builtin variables.

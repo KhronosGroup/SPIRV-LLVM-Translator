@@ -110,8 +110,8 @@ public:
       setHasNoType();
   }
 
-  CapVec getRequiredCapability() const {
-    CapVec CV;
+  SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec CV;
     if (!hasType())
       return CV;
     if (Type->isTypeFloat(16))
@@ -328,7 +328,7 @@ public:
   SPIRVWord getNormalized() const {
     return Normalized;
   }
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     return getVec(CapabilityLiteralSampler);
   }
 protected:

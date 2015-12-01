@@ -112,7 +112,7 @@ public:
   virtual std::set<std::string> &getExtension() = 0;
   virtual SPIRVFunction *getFunction(unsigned) const = 0;
   virtual SPIRVVariable *getVariable(unsigned) const = 0;
-  virtual SPIRVMemoryModelKind getMemoryModel() = 0;
+  virtual SPIRVMemoryModelKind getMemoryModel() const = 0;
   virtual unsigned getNumFunctions() const = 0;
   virtual unsigned getNumEntryPoints(SPIRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
@@ -225,6 +225,11 @@ public:
   virtual SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
       const std::vector<SPIRVValue *> &, SPIRVBasicBlock *) = 0;
   virtual void addCapability(SPIRVCapabilityKind) = 0;
+  template<typename T>
+  void addCapabilities(const T& Caps) {
+    for (auto I: Caps)
+      addCapability(I);
+  }
   /// Used by SPIRV entries to add required capability internally.
   /// Should not be used by users directly.
   virtual void addCapabilityInternal(SPIRVCapabilityKind) = 0;

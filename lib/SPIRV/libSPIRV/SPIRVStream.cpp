@@ -135,6 +135,7 @@ operator<<(const SPIRVEncoder& O, Type V) { \
 }
 
 SPIRV_DEF_ENCDEC(Op)
+SPIRV_DEF_ENCDEC(Capability)
 SPIRV_DEF_ENCDEC(Decoration)
 SPIRV_DEF_ENCDEC(OCLExtOpKind)
 

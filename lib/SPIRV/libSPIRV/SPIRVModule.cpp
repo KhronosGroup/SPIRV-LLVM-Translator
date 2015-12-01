@@ -99,7 +99,7 @@ public:
   virtual SPIRVType *getValueType(SPIRVId TheId)const;
   virtual std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId>&)
       const;
-  SPIRVMemoryModelKind getMemoryModel() { return MemoryModel;}
+  SPIRVMemoryModelKind getMemoryModel() const { return MemoryModel;}
   virtual SPIRVConstant* getLiteralAsConstant(unsigned Literal);
   unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const {
     auto Loc = EntryPointVec.find(EM);
@@ -132,7 +132,11 @@ public:
   void optimizeDecorates();
   void setAddressingModel(SPIRVAddressingModelKind AM) { AddrModel = AM;}
   void setAlignment(SPIRVValue *, SPIRVWord);
-  void setMemoryModel(SPIRVMemoryModelKind MM) { MemoryModel = MM;}
+  void setMemoryModel(SPIRVMemoryModelKind MM) {
+    MemoryModel = MM;
+    if (MemoryModel == spv::MemoryModelOpenCL)
+      addCapability(CapabilityKernel);
+  }
   void setName(SPIRVEntry *E, const std::string &Name);
   void setSourceLanguage(SourceLanguage Lang, SPIRVWord Ver) {
     SrcLang = Lang;
@@ -487,14 +491,12 @@ SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
   layoutEntry(Entry);
   if (AutoAddCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != CapabilityNone)
-        addCapability(I);
+      addCapability(I);
     }
   }
   if (ValidateCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != CapabilityNone)
-        assert(CapSet.count(I));
+      assert(CapSet.count(I));
     }
   }
   return Entry;
@@ -520,7 +522,7 @@ SPIRVModuleImpl::exist(SPIRVId Id, SPIRVEntry **Entry) const {
 // Otherwise returns the given id and adjust the next available id by increment.
 SPIRVId
 SPIRVModuleImpl::getId(SPIRVId Id, unsigned increment) {
-  if (!isValid(Id))
+  if (!isValidId(Id))
     Id = NextId;
   else
     NextId = std::max(Id, NextId);
@@ -723,6 +725,7 @@ SPIRVModuleImpl::addDecorate(const SPIRVDecorateGeneric *Dec) {
   assert (Found && "Decorate target does not exist");
   if (!Dec->getOwner())
     DecorateSet.insert(Dec);
+  addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
 
@@ -733,6 +736,7 @@ SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
   EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointVec[ExecModel].push_back(EntryPoint);
+  addCapabilities(SPIRV::getCapability(ExecModel));
 }
 
 SPIRVForward *
