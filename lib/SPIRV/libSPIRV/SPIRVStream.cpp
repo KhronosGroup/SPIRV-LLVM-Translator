@@ -105,7 +105,7 @@ decode(const SPIRVDecoder& I, T &V) {
     std::string W;
     I.IS >> W;
     V = getNameMap(V).rmap(W);
-    SPIRVDBG(bildbgs() << "Read word: W = " << W << " V = " << V << '\n');
+    SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = " << V << '\n');
     return I;
   }
 #endif
@@ -146,7 +146,7 @@ operator>>(const SPIRVDecoder&I, std::string& Str) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     readQuotedString(I.IS, Str);
-    SPIRVDBG(bildbgs() << "Read string: \"" << Str << "\"\n");
+    SPIRVDBG(spvdbgs() << "Read string: \"" << Str << "\"\n");
     return I;
   }
 #endif
@@ -163,7 +163,7 @@ operator>>(const SPIRVDecoder&I, std::string& Str) {
     I.IS >> Ch;
     assert(Ch == '\0' && "Invalid string in SPIRV");
   }
-  SPIRVDBG(bildbgs() << "Read string: \"" << Str << "\"\n");
+  SPIRVDBG(spvdbgs() << "Read string: \"" << Str << "\"\n");
   return I;
 }
 
@@ -190,7 +190,7 @@ SPIRVDecoder::getWordCountAndOpCode() {
   if (IS.eof()) {
     WordCount = 0;
     OpCode = OpNop;
-    SPIRVDBG(bildbgs() << "[SPIRVDecoder] getWordCountAndOpCode EOF " <<
+    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode EOF " <<
         WordCount << " " << OpCode << '\n');
     return false;
   }
@@ -201,7 +201,7 @@ SPIRVDecoder::getWordCountAndOpCode() {
     if (IS.fail()) {
       WordCount = 0;
       OpCode = OpNop;
-      SPIRVDBG(bildbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
+      SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
           WordCount << " " << OpCode << '\n');
       return false;
     }
@@ -219,11 +219,11 @@ SPIRVDecoder::getWordCountAndOpCode() {
   if (IS.fail()) {
     WordCount = 0;
     OpCode = OpNop;
-    SPIRVDBG(bildbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
+    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
         WordCount << " " << OpCode << '\n');
     return false;
   }
-  SPIRVDBG(bildbgs() << "[SPIRVDecoder] getWordCountAndOpCode " << WordCount <<
+  SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode " << WordCount <<
       " " << OpCodeNameMap::map(OpCode) << '\n');
   return true;
 }

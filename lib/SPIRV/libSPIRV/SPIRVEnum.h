@@ -1,4 +1,4 @@
-//===- SPIRVEnum.h - SPIR-V enums --------------------------------*- C++ -*-===//
+//===- SPIRVEnum.h - SPIR-V enums -------------------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -391,21 +391,20 @@ SPIRVMap<Decoration, SPIRVCapabilityKind>::init() {
   add(DecorationSpecId, CapabilityShader);
   add(DecorationBlock, CapabilityShader);
   add(DecorationBufferBlock, CapabilityShader);
-  add(DecorationRowMajor, CapabilityShader);
-  add(DecorationColMajor, CapabilityShader);
+  add(DecorationRowMajor, CapabilityMatrix);
+  add(DecorationColMajor, CapabilityMatrix);
   add(DecorationArrayStride, CapabilityShader);
   add(DecorationMatrixStride, CapabilityShader);
   add(DecorationGLSLShared, CapabilityShader);
   add(DecorationGLSLPacked, CapabilityShader);
   add(DecorationCPacked, CapabilityKernel);
-  add(DecorationBuiltIn, CapabilityShader);
   add(DecorationNoPerspective, CapabilityShader);
   add(DecorationFlat, CapabilityShader);
   add(DecorationPatch, CapabilityTessellation);
   add(DecorationCentroid, CapabilityShader);
   add(DecorationSample, CapabilityShader);
   add(DecorationInvariant, CapabilityShader);
-  add(DecorationConstant, CapabilityShader);
+  add(DecorationConstant, CapabilityKernel);
   add(DecorationUniform, CapabilityShader);
   add(DecorationSaturatedConversion, CapabilityKernel);
   add(DecorationStream, CapabilityGeometryStreams);

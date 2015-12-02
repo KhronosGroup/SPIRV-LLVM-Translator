@@ -241,7 +241,7 @@ private:
     }
     ValueMap[V] = BV;
     SPIRVDBG(dbgs() << "[mapValue] " << *V << " => ";
-      bildbgs() << *BV << "\n");
+      spvdbgs() << *BV << "\n");
     return BV;
   }
 
@@ -334,7 +334,7 @@ LLVMToSPIRV::isBuiltinTransToInst(Function *F) {
   if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName) &&
       !isDecoratedSPIRVFunc(F, &DemangledName))
     return false;
-  SPIRVDBG(bildbgs() << "CallInst: demangled name: " << DemangledName << '\n');
+  SPIRVDBG(spvdbgs() << "CallInst: demangled name: " << DemangledName << '\n');
   return getSPIRVFuncOC(DemangledName) != OpNop;
 }
 
@@ -566,7 +566,7 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
   DbgTran.transDbgInfo(F, BF);
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
-    bildbgs() << *BF << '\n';)
+    spvdbgs() << *BF << '\n';)
   return BF;
 }
 
@@ -1603,7 +1603,7 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
       if (!SPRetTy || !SPRetTy->isTypeStruct())
         return SPI;
       std::vector<SPIRVWord> Mem;
-      SPIRVDBG(bildbgs() << *SPI << '\n');
+      SPIRVDBG(spvdbgs() << *SPI << '\n');
       return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), SPI,
           Mem, BB);
     }

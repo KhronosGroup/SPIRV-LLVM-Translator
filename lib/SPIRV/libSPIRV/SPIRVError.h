@@ -114,8 +114,8 @@ SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
     SS <<" [Src: " << FileName << ":" << LineNo << " " << CondString << " ]";
   setError(ErrCode, SS.str());
   if (SPIRVDbgAssertOnError) {
-    bildbgs() << SS.str() << '\n';
-    bildbgs().flush();
+    spvdbgs() << SS.str() << '\n';
+    spvdbgs().flush();
     assert (0);
   }
   return Cond;

@@ -365,28 +365,28 @@ SPIRVModuleImpl::addLine(SPIRVEntry* E, SPIRVString* FileName,
 // multiple targets.
 void
 SPIRVModuleImpl::optimizeDecorates() {
-  SPIRVDBG(bildbgs() << "[optimizeDecorates] begin\n");
+  SPIRVDBG(spvdbgs() << "[optimizeDecorates] begin\n");
   for (auto I = DecorateSet.begin(), E = DecorateSet.end(); I != E;) {
     auto D = *I;
-    SPIRVDBG(bildbgs() << "  check " << *D << '\n');
+    SPIRVDBG(spvdbgs() << "  check " << *D << '\n');
     if (D->getOpCode() == OpMemberDecorate) {
       ++I;
       continue;
     }
     auto ER = DecorateSet.equal_range(D);
-    SPIRVDBG(bildbgs() << "  equal range " << **ER.first
+    SPIRVDBG(spvdbgs() << "  equal range " << **ER.first
                       << " to ";
             if (ER.second != DecorateSet.end())
-              bildbgs() << **ER.second;
+              spvdbgs() << **ER.second;
             else
-              bildbgs() << "end";
-            bildbgs() << '\n');
+              spvdbgs() << "end";
+            spvdbgs() << '\n');
     if (std::distance(ER.first, ER.second) < 2) {
       I = ER.second;
-      SPIRVDBG(bildbgs() << "  skip equal range \n");
+      SPIRVDBG(spvdbgs() << "  skip equal range \n");
       continue;
     }
-    SPIRVDBG(bildbgs() << "  add deco group. erase equal range\n");
+    SPIRVDBG(spvdbgs() << "  add deco group. erase equal range\n");
     auto G = new SPIRVDecorationGroup(this, getId());
     std::vector<SPIRVId> Targets;
     Targets.push_back(D->getTargetId());
@@ -414,6 +414,7 @@ SPIRVModuleImpl::addSamplerConstant(SPIRVType* TheType,
 
 void
 SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
+  SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
   CapSet.insert(Cap);
 }
 
@@ -1152,8 +1153,8 @@ SPIRVModuleImpl::addDecorationGroup(SPIRVDecorationGroup* Group) {
   add(Group);
   Group->takeDecorates(DecorateSet);
   DecGroupVec.push_back(Group);
-  SPIRVDBG(bildbgs() << "[addDecorationGroup] {" << *Group << "}\n";
-          bildbgs() << "  Remaining DecorateSet: {" << DecorateSet << "}\n");
+  SPIRVDBG(spvdbgs() << "[addDecorationGroup] {" << *Group << "}\n";
+          spvdbgs() << "  Remaining DecorateSet: {" << DecorateSet << "}\n");
   assert(DecorateSet.empty());
   return Group;
 }

@@ -99,7 +99,7 @@ SPIRVFunction::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Type >> Id >> FCtrlMask >> FuncType;
   Module->addFunction(this);
-  SPIRVDBG(bildbgs() << "Decode function: " << Id << '\n');
+  SPIRVDBG(spvdbgs() << "Decode function: " << Id << '\n');
 
   Decoder.getWordCountAndOpCode();
   while (!I.eof()) {
@@ -131,7 +131,7 @@ void
 SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
   SPIRVBasicBlock *BB = static_cast<SPIRVBasicBlock*>(Decoder.getEntry());
   addBasicBlock(BB);
-  SPIRVDBG(bildbgs() << "Decode BB: " << BB->getId() << '\n');
+  SPIRVDBG(spvdbgs() << "Decode BB: " << BB->getId() << '\n');
 
   Decoder.setScope(BB);
   while(Decoder.getWordCountAndOpCode()) {

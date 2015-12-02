@@ -11,23 +11,39 @@ target triple = "spir64-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_func void @func_export(i32 addrspace(1)* nocapture %a) #0 {
 entry:
+; CHECK-DAG: {{[0-9]*}} Capability Int64
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #3
+  %cmp = icmp eq i64 %call, 0
+  br i1 %cmp, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
   store i32 1, i32 addrspace(1)* %a, align 4, !tbaa !9
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
+; Function Attrs: nounwind readnone
+declare spir_func i64 @_Z13get_global_idj(i32) #1
+
 ; CHECK-DAG: {{[0-9]*}} Capability Kernel
+; CHECK-NOT: {{[0-9]*}} Capability Shader
+; CHECK-NOT: {{[0-9]*}} Capability Float64
 ; Function Attrs: nounwind
 define spir_kernel void @func_kernel(i32 addrspace(1)* %a) #0 {
 entry:
-  tail call spir_func void @func_import(i32 addrspace(1)* %a) #2
+  tail call spir_func void @func_import(i32 addrspace(1)* %a) #4
   ret void
 }
 
-declare spir_func void @func_import(i32 addrspace(1)*) #1
+declare spir_func void @func_import(i32 addrspace(1)*) #2
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nounwind }
+attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind readnone }
+attributes #4 = { nounwind }
 
 !opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}

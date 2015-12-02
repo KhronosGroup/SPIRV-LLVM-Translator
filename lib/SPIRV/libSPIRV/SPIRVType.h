@@ -139,6 +139,14 @@ public:
 
   unsigned getBitWidth() const { return BitWidth;}
   bool isSigned() const { return IsSigned;}
+  SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec CV;
+    if (isTypeInt(16))
+      CV.push_back(CapabilityInt16);
+    else if (isTypeInt(64))
+      CV.push_back(CapabilityInt64);
+    return std::move(CV);
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, BitWidth, IsSigned)
@@ -161,6 +169,16 @@ public:
   SPIRVTypeFloat():SPIRVType(OC), BitWidth(0){}
 
   unsigned getBitWidth() const { return BitWidth;}
+
+  SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec CV;
+    if (isTypeFloat(16))
+      CV.push_back(CapabilityFloat16);
+    else if (isTypeFloat(64))
+      CV.push_back(CapabilityFloat64);
+    return std::move(CV);
+  }
+
 
 protected:
   _SPIRV_DEF_ENCDEC2(Id, BitWidth)
@@ -226,9 +244,10 @@ public:
   SPIRVWord getComponentCount() const { return CompCount;}
   bool isValidIndex(SPIRVWord Index) const { return Index < CompCount;}
   SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec V(getComponentType()->getRequiredCapability());
     if (CompCount >= 8)
-      return getVec(CapabilityVector16);
-    return SPIRVCapVec();
+      V.push_back(CapabilityVector16);
+    return std::move(V);
   }
 
 protected:
@@ -256,6 +275,9 @@ public:
 
   SPIRVType *getElementType() const { return ElemType;}
   SPIRVConstant *getLength() const;
+  SPIRVCapVec getRequiredCapability() const {
+    return std::move(getElementType()->getRequiredCapability());
+  }
 
 protected:
   _SPIRV_DCL_ENCDEC
@@ -588,8 +610,10 @@ template<typename T2, typename T1>
 bool
 isType(const T1 *Ty, unsigned Bits = 0) {
   bool Is = Ty->getOpCode() == T2::OC;
+  if (!Is)
+    return false;
   if (Bits == 0)
-    return Is;
+    return true;
   return static_cast<const T2*>(Ty)->getBitWidth() == Bits;
 }
 
