@@ -414,6 +414,7 @@ SPIRVModuleImpl::addSamplerConstant(SPIRVType* TheType,
 
 void
 SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
+  addCapabilities(SPIRV::getCapability(Cap));
   SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
   CapSet.insert(Cap);
 }

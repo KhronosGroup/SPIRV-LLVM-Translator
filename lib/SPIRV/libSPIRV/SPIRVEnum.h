@@ -330,6 +330,57 @@ getCapability(K Key) {
 }
 
 template<> inline void
+SPIRVMap<SPIRVCapabilityKind, SPIRVCapabilityKind>::init() {
+  add(CapabilityShader, CapabilityMatrix);
+  add(CapabilityGeometry, CapabilityShader);
+  add(CapabilityTessellation, CapabilityShader);
+  add(CapabilityVector16, CapabilityKernel);
+  add(CapabilityFloat16Buffer, CapabilityKernel);
+  add(CapabilityFloat16, CapabilityFloat16Buffer);
+  add(CapabilityInt64Atomics, CapabilityInt64);
+  add(CapabilityImageBasic, CapabilityKernel);
+  add(CapabilityImageReadWrite, CapabilityImageBasic);
+  add(CapabilityImageMipmap, CapabilityImageBasic);
+  add(CapabilityPipes, CapabilityKernel);
+  add(CapabilityDeviceEnqueue, CapabilityKernel);
+  add(CapabilityLiteralSampler, CapabilityKernel);
+  add(CapabilityAtomicStorage, CapabilityShader);
+  add(CapabilityTessellationPointSize, CapabilityTessellation);
+  add(CapabilityGeometryPointSize, CapabilityGeometry);
+  add(CapabilityImageGatherExtended, CapabilityShader);
+  add(CapabilityStorageImageMultisample, CapabilityShader);
+  add(CapabilityUniformBufferArrayDynamicIndexing, CapabilityShader);
+  add(CapabilitySampledImageArrayDynamicIndexing, CapabilityShader);
+  add(CapabilityStorageBufferArrayDynamicIndexing, CapabilityShader);
+  add(CapabilityStorageImageArrayDynamicIndexing, CapabilityShader);
+  add(CapabilityClipDistance, CapabilityShader);
+  add(CapabilityCullDistance, CapabilityShader);
+  add(CapabilityImageCubeArray, CapabilitySampledCubeArray);
+  add(CapabilitySampleRateShading, CapabilityShader);
+  add(CapabilityImageRect, CapabilitySampledRect);
+  add(CapabilitySampledRect, CapabilityShader);
+  add(CapabilityGenericPointer, CapabilityAddresses);
+  add(CapabilityInt8, CapabilityKernel);
+  add(CapabilityInputAttachment, CapabilityShader);
+  add(CapabilitySparseResidency, CapabilityShader);
+  add(CapabilityMinLod, CapabilityShader);
+  add(CapabilitySampled1D, CapabilityShader);
+  add(CapabilityImage1D, CapabilitySampled1D);
+  add(CapabilitySampledCubeArray, CapabilityShader);
+  add(CapabilitySampledBuffer, CapabilityShader);
+  add(CapabilityImageBuffer, CapabilitySampledBuffer);
+  add(CapabilityImageMSArray, CapabilityShader);
+  add(CapabilityStorageImageExtendedFormats, CapabilityShader);
+  add(CapabilityImageQuery, CapabilityShader);
+  add(CapabilityDerivativeControl, CapabilityShader);
+  add(CapabilityInterpolationFunction, CapabilityShader);
+  add(CapabilityTransformFeedback, CapabilityShader);
+  add(CapabilityGeometryStreams, CapabilityShader);
+  add(CapabilityStorageImageReadWithoutFormat, CapabilityShader);
+  add(CapabilityStorageImageWriteWithoutFormat, CapabilityShader);
+}
+
+template<> inline void
 SPIRVMap<SPIRVExecutionModelKind, SPIRVCapabilityKind>::init() {
   add(ExecutionModelVertex, CapabilityShader);
   add(ExecutionModelTessellationControl, CapabilityTessellation);
