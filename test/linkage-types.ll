@@ -25,7 +25,7 @@ target triple = "spir-unknown-unknown"
 
 @i4 = common addrspace(1) global i32 0, align 4
 ; SPIRV: Name [[i4:[0-9]+]] "i4"
-; BACK-TO-LLVM: @i4 = addrspace(1) global i32 0, align 4
+; BACK-TO-LLVM: @i4 = available_externally addrspace(1) global i32 0, align 4
 ; "common" is lost in translation
 
 @i5 = internal addrspace(1) global i32 0, align 4
@@ -78,8 +78,8 @@ target triple = "spir-unknown-unknown"
 ; SPIRV: 4 Decorate [[IMPORT:[0-9]+]] LinkageAttributes 1
 ; SPIRV: 2 DecorationGroup [[IMPORT]]
 
-; SPIRV: GroupDecorate [[EXPORT]] [[i1]] [[i3]] [[i4]] [[color_table]] [[w]] [[f]] [[inline_fun]]
-; SPIRV: GroupDecorate [[IMPORT]] [[noise_table]] [[e]] [[foo]]
+; SPIRV: GroupDecorate [[EXPORT]] [[i1]] [[i3]] [[color_table]] [[w]] [[f]] [[inline_fun]]
+; SPIRV: GroupDecorate [[IMPORT]] [[i4]] [[noise_table]] [[e]] [[foo]]
 
 
 ; SPIRV: Function {{[0-9]+}} [[f]]

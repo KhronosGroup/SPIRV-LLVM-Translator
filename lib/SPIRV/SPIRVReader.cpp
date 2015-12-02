@@ -2267,8 +2267,26 @@ SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction* BI) {
 
 llvm::GlobalValue::LinkageTypes
 SPIRVToLLVM::transLinkageType(const SPIRVValue* V) {
-  return V->getLinkageType() == LinkageTypeInternal ?
-    GlobalValue::InternalLinkage: GlobalValue::ExternalLinkage;
+  if (V->getLinkageType() == LinkageTypeInternal) {
+    return GlobalValue::InternalLinkage;
+  }
+  else if (V->getLinkageType() == LinkageTypeImport) {
+    // Function declaration
+    if (V->getOpCode() == OpFunction) {
+      if (static_cast<const SPIRVFunction*>(V)->getNumBasicBlock() == 0)
+        return GlobalValue::ExternalLinkage;
+    }
+    // Variable declaration
+    if (V->getOpCode() == OpVariable) {
+      if (static_cast<const SPIRVVariable*>(V)->getInitializer() == 0)
+        return GlobalValue::ExternalLinkage;
+    }
+    // Definition
+    return GlobalValue::AvailableExternallyLinkage;
+  }
+  else {// LinkageTypeExport
+    return GlobalValue::ExternalLinkage;
+  }
 }
 
 }

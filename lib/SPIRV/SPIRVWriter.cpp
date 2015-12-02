@@ -1622,14 +1622,14 @@ LLVMToSPIRV::addInt32(int I) {
 
 SPIRV::SPIRVLinkageTypeKind
 LLVMToSPIRV::transLinkageType(const GlobalValue* GV) {
-  if(GV->isDeclarationForLinker())
+  if(GV->isDeclarationForLinker() || GV->hasCommonLinkage())
     return SPIRVLinkageTypeKind::LinkageTypeImport;
-  if(GV->getLinkage() == GlobalValue::InternalLinkage)
+  if(GV->hasInternalLinkage() || GV->hasPrivateLinkage())
     return SPIRVLinkageTypeKind::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
 
-}
+} // end of SPIRV namespace
 
 char LLVMToSPIRV::ID = 0;
 
