@@ -1696,7 +1696,7 @@ enum SPIRVOpKind {
 
 class SPIRVDevEnqInstBase:public SPIRVInstTemplateBase {
 public:
-  CapVec getRequiriedCapability() const {
+  SPIRVCapVec getRequiriedCapability() const {
     return getVec(CapabilityDeviceEnqueue);
   }
 };
@@ -1723,7 +1723,7 @@ _SPIRV_OP(BuildNDRange, true, 6)
 
 class SPIRVPipeInstBase:public SPIRVInstTemplateBase {
 public:
-  CapVec getRequiriedCapability() const {
+  SPIRVCapVec getRequiriedCapability() const {
     return getVec(CapabilityPipes);
   }
 };
@@ -1747,7 +1747,7 @@ _SPIRV_OP(GetMaxPipePackets, true, 6)
 
 class SPIRVGroupInstBase:public SPIRVInstTemplateBase {
 public:
-  CapVec getRequiriedCapability() const {
+  SPIRVCapVec getRequiriedCapability() const {
     return getVec(CapabilityGroups);
   }
 };
@@ -1776,7 +1776,7 @@ _SPIRV_OP(GroupCommitWritePipe, false, 6)
 
 class SPIRVAtomicInstBase:public SPIRVInstTemplateBase {
 public:
-  CapVec getRequiriedCapability() const {
+  SPIRVCapVec getRequiriedCapability() const {
     return getVec(CapabilityInt64Atomics);
   }
 };
@@ -1808,7 +1808,7 @@ _SPIRV_OP(MemoryBarrier, false, 3)
 
 class SPIRVImageInstBase:public SPIRVInstTemplateBase {
 public:
-  CapVec getRequiriedCapability() const {
+  SPIRVCapVec getRequiriedCapability() const {
     return getVec(CapabilityImageBasic);
   }
 };

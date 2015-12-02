@@ -50,7 +50,7 @@ SPIRVValue::setAlignment(SPIRVWord A) {
     return;
   }
   addDecorate(new SPIRVDecorate(DecorationAlignment, this, A));
-  SPIRVDBG(bildbgs() << "Set alignment " << A << " for obj " << Id << "\n")
+  SPIRVDBG(spvdbgs() << "Set alignment " << A << " for obj " << Id << "\n")
 }
 
 bool
@@ -70,7 +70,7 @@ SPIRVValue::setVolatile(bool IsVolatile) {
     return;
   }
   addDecorate(new SPIRVDecorate(DecorationVolatile, this));
-  SPIRVDBG(bildbgs() << "Set volatile " << " for obj " << Id << "\n")
+  SPIRVDBG(spvdbgs() << "Set volatile " << " for obj " << Id << "\n")
 }
 
 }

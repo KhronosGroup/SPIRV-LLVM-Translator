@@ -78,6 +78,10 @@ public:
     Owner = owner;
   }
 
+  SPIRVCapVec getRequiredCapability() const {
+    return getCapability(Dec);
+  }
+
 protected:
   Decoration Dec;
   std::vector<SPIRVWord> Literals;
@@ -92,13 +96,13 @@ class SPIRVDecorateSet: public std::multiset<const SPIRVDecorateGeneric *,
   iterator insert(const value_type& Dec) {
     auto ER = BaseType::equal_range(Dec);
     for (auto I = ER.first, E = ER.second; I != E; ++I) {
-      SPIRVDBG(bildbgs() << "[compare decorate] " << *Dec
+      SPIRVDBG(spvdbgs() << "[compare decorate] " << *Dec
                         << " vs " << **I << " : ");
       if (**I == *Dec)
         return I;
-      SPIRVDBG(bildbgs() << " diff\n");
+      SPIRVDBG(spvdbgs() << " diff\n");
     }
-    SPIRVDBG(bildbgs() << "[add decorate] " << *Dec << '\n');
+    SPIRVDBG(spvdbgs() << "[add decorate] " << *Dec << '\n');
     return BaseType::insert(Dec);
   }
 };

@@ -64,10 +64,10 @@ public:
   }
   bool isByVal()const { return hasAttr(FunctionParameterAttributeByVal);}
   bool isZext()const { return hasAttr(FunctionParameterAttributeZext);}
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     if (hasLinkageType() && getLinkageType() == LinkageTypeImport)
       return getVec(CapabilityLinkage);
-    return CapVec();
+    return SPIRVCapVec();
   }
 protected:
   void validate()const {

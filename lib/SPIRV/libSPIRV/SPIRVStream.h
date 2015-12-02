@@ -100,7 +100,7 @@ DecodeBinary(const SPIRVDecoder& I, T &V) {
   uint32_t W;
   I.IS.read(reinterpret_cast<char*>(&W), sizeof(W));
   V = static_cast<T>(W);
-  SPIRVDBG(bildbgs() << "Read word: W = " << W << " V = " << V << '\n');
+  SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = " << V << '\n');
   return I;
 }
 
@@ -112,7 +112,7 @@ operator>>(const SPIRVDecoder& I, T &V) {
     uint32_t W;
     I.IS >> W;
     V = static_cast<T>(W);
-    SPIRVDBG(bildbgs() << "Read word: W = " << W << " V = " << V << '\n');
+    SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = " << V << '\n');
     return I;
   }
 #endif
@@ -187,6 +187,7 @@ const SPIRVDecoder& \
 operator>>(const SPIRVDecoder& I, Type &V);
 
 SPIRV_DEC_ENCDEC(Op)
+SPIRV_DEC_ENCDEC(Capability)
 SPIRV_DEC_ENCDEC(Decoration)
 SPIRV_DEC_ENCDEC(OCLExtOpKind)
 

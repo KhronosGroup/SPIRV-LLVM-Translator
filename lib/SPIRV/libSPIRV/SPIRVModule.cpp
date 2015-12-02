@@ -99,7 +99,7 @@ public:
   virtual SPIRVType *getValueType(SPIRVId TheId)const;
   virtual std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId>&)
       const;
-  SPIRVMemoryModelKind getMemoryModel() { return MemoryModel;}
+  SPIRVMemoryModelKind getMemoryModel() const { return MemoryModel;}
   virtual SPIRVConstant* getLiteralAsConstant(unsigned Literal);
   unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const {
     auto Loc = EntryPointVec.find(EM);
@@ -132,7 +132,11 @@ public:
   void optimizeDecorates();
   void setAddressingModel(SPIRVAddressingModelKind AM) { AddrModel = AM;}
   void setAlignment(SPIRVValue *, SPIRVWord);
-  void setMemoryModel(SPIRVMemoryModelKind MM) { MemoryModel = MM;}
+  void setMemoryModel(SPIRVMemoryModelKind MM) {
+    MemoryModel = MM;
+    if (MemoryModel == spv::MemoryModelOpenCL)
+      addCapability(CapabilityKernel);
+  }
   void setName(SPIRVEntry *E, const std::string &Name);
   void setSourceLanguage(SourceLanguage Lang, SPIRVWord Ver) {
     SrcLang = Lang;
@@ -361,28 +365,28 @@ SPIRVModuleImpl::addLine(SPIRVEntry* E, SPIRVString* FileName,
 // multiple targets.
 void
 SPIRVModuleImpl::optimizeDecorates() {
-  SPIRVDBG(bildbgs() << "[optimizeDecorates] begin\n");
+  SPIRVDBG(spvdbgs() << "[optimizeDecorates] begin\n");
   for (auto I = DecorateSet.begin(), E = DecorateSet.end(); I != E;) {
     auto D = *I;
-    SPIRVDBG(bildbgs() << "  check " << *D << '\n');
+    SPIRVDBG(spvdbgs() << "  check " << *D << '\n');
     if (D->getOpCode() == OpMemberDecorate) {
       ++I;
       continue;
     }
     auto ER = DecorateSet.equal_range(D);
-    SPIRVDBG(bildbgs() << "  equal range " << **ER.first
+    SPIRVDBG(spvdbgs() << "  equal range " << **ER.first
                       << " to ";
             if (ER.second != DecorateSet.end())
-              bildbgs() << **ER.second;
+              spvdbgs() << **ER.second;
             else
-              bildbgs() << "end";
-            bildbgs() << '\n');
+              spvdbgs() << "end";
+            spvdbgs() << '\n');
     if (std::distance(ER.first, ER.second) < 2) {
       I = ER.second;
-      SPIRVDBG(bildbgs() << "  skip equal range \n");
+      SPIRVDBG(spvdbgs() << "  skip equal range \n");
       continue;
     }
-    SPIRVDBG(bildbgs() << "  add deco group. erase equal range\n");
+    SPIRVDBG(spvdbgs() << "  add deco group. erase equal range\n");
     auto G = new SPIRVDecorationGroup(this, getId());
     std::vector<SPIRVId> Targets;
     Targets.push_back(D->getTargetId());
@@ -410,6 +414,7 @@ SPIRVModuleImpl::addSamplerConstant(SPIRVType* TheType,
 
 void
 SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
+  SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
   CapSet.insert(Cap);
 }
 
@@ -487,14 +492,12 @@ SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
   layoutEntry(Entry);
   if (AutoAddCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != CapabilityNone)
-        addCapability(I);
+      addCapability(I);
     }
   }
   if (ValidateCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      if (I != CapabilityNone)
-        assert(CapSet.count(I));
+      assert(CapSet.count(I));
     }
   }
   return Entry;
@@ -520,7 +523,7 @@ SPIRVModuleImpl::exist(SPIRVId Id, SPIRVEntry **Entry) const {
 // Otherwise returns the given id and adjust the next available id by increment.
 SPIRVId
 SPIRVModuleImpl::getId(SPIRVId Id, unsigned increment) {
-  if (!isValid(Id))
+  if (!isValidId(Id))
     Id = NextId;
   else
     NextId = std::max(Id, NextId);
@@ -723,6 +726,7 @@ SPIRVModuleImpl::addDecorate(const SPIRVDecorateGeneric *Dec) {
   assert (Found && "Decorate target does not exist");
   if (!Dec->getOwner())
     DecorateSet.insert(Dec);
+  addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
 
@@ -733,6 +737,7 @@ SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
   EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointVec[ExecModel].push_back(EntryPoint);
+  addCapabilities(SPIRV::getCapability(ExecModel));
 }
 
 SPIRVForward *
@@ -1148,8 +1153,8 @@ SPIRVModuleImpl::addDecorationGroup(SPIRVDecorationGroup* Group) {
   add(Group);
   Group->takeDecorates(DecorateSet);
   DecGroupVec.push_back(Group);
-  SPIRVDBG(bildbgs() << "[addDecorationGroup] {" << *Group << "}\n";
-          bildbgs() << "  Remaining DecorateSet: {" << DecorateSet << "}\n");
+  SPIRVDBG(spvdbgs() << "[addDecorationGroup] {" << *Group << "}\n";
+          spvdbgs() << "  Remaining DecorateSet: {" << DecorateSet << "}\n");
   assert(DecorateSet.empty());
   return Group;
 }

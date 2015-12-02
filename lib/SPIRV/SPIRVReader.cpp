@@ -419,7 +419,7 @@ private:
   MDString *transOCLKernelArgTypeName(SPIRVFunctionParameter *);
 
   Value *mapFunction(SPIRVFunction *BF, Function *F) {
-    SPIRVDBG(bildbgs() << "[mapFunction] " << *BF << " -> ";
+    SPIRVDBG(spvdbgs() << "[mapFunction] " << *BF << " -> ";
       dbgs() << *F << '\n';)
     FuncMap[BF] = F;
     return F;
@@ -610,7 +610,7 @@ SPIRVToLLVM::transType(SPIRVType *T) {
   if (Loc != TypeMap.end())
     return Loc->second;
 
-  SPIRVDBG(bildbgs() << "[transType] " << *T << " -> ";)
+  SPIRVDBG(spvdbgs() << "[transType] " << *T << " -> ";)
   T->validate();
   switch(T->getOpCode()) {
   case OpTypeVoid:
@@ -806,7 +806,7 @@ SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
   if (Loc != ValueMap.end() && (!PlaceholderMap.count(BV) || CreatePlaceHolder))
     return Loc->second;
 
-  SPIRVDBG(bildbgs() << "[transValue] " << *BV << " -> ";)
+  SPIRVDBG(spvdbgs() << "[transValue] " << *BV << " -> ";)
   BV->validate();
 
   auto V = transValueWithoutDecoration(BV, F, BB, CreatePlaceHolder);
@@ -853,7 +853,7 @@ SPIRVToLLVM::transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB) {
   }
   assert(CastInst::isCast(CO) && "Invalid cast op code");
   SPIRVDBG(if (!CastInst::castIsValid(CO, Src, Dst)) {
-    bildbgs() << "Invalid cast: " << *BV << " -> ";
+    spvdbgs() << "Invalid cast: " << *BV << " -> ";
     dbgs() << "Op = " << CO << ", Src = " << *Src << " Dst = " << *Dst << '\n';
   })
   if (BB)
@@ -1571,7 +1571,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       static_cast<SPIRVInstruction *>(BV), BB));
   }
 
-  SPIRVDBG(bildbgs() << "Cannot translate " << *BV << '\n';)
+  SPIRVDBG(spvdbgs() << "Cannot translate " << *BV << '\n';)
   llvm_unreachable("Translation of SPIRV instruction not implemented");
   return NULL;
   }
@@ -1740,7 +1740,7 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
       transValue(Ops, BB->getParent(), BB), "", BB);
   setName(Call, BI);
   setAttrByCalledFunc(Call);
-  SPIRVDBG(bildbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
+  SPIRVDBG(spvdbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
       *Call << '\n';)
   Instruction *Inst = Call;
   Inst = transOCLBuiltinPostproc(BI, Call, BB, FuncName);
@@ -2079,7 +2079,7 @@ SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
         EntryPoint));
   }
 
-  SPIRVDBG(bildbgs() << "[transOCLBuiltinFromExtInst] OrigUnmangledName: " <<
+  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] OrigUnmangledName: " <<
       UnmangledName << '\n');
   transOCLVectorLoadStore(UnmangledName, BArgs);
 
@@ -2096,7 +2096,7 @@ SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
   } else {
     MangleOpenCLBuiltin(UnmangledName, ArgTypes, MangledName);
   }
-  SPIRVDBG(bildbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: " <<
+  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: " <<
       UnmangledName << " MangledName: " << MangledName << '\n');
 
   FunctionType *FT = FunctionType::get(
@@ -2163,7 +2163,7 @@ SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction* MB, BasicBlock *BB) {
   auto Call = CallInst::Create(Func, Arg, "", BB);
   setName(Call, MB);
   setAttrByCalledFunc(Call);
-  SPIRVDBG(bildbgs() << "[transBarrier] " << *MB << " -> ";
+  SPIRVDBG(spvdbgs() << "[transBarrier] " << *MB << " -> ";
     dbgs() << *Call << '\n';)
   return Call;
 }

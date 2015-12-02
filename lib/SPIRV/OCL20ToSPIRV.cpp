@@ -1027,7 +1027,7 @@ OCL20ToSPIRV::visitCallVecLoadStore(CallInst* CI,
   if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 &&
       DemangledName != kOCLBuiltinName::VLoadHalf) {
     SPIRVWord Width = getVecLoadWidth(DemangledName);
-    SPIRVDBG(bildbgs() << "[visitCallVecLoadStore] DemangledName: " <<
+    SPIRVDBG(spvdbgs() << "[visitCallVecLoadStore] DemangledName: " <<
         DemangledName << " Width: " << Width << '\n');
     PreOps.push_back(Width);
   } else if (DemangledName.find(kOCLBuiltinName::RoundingPrefix)

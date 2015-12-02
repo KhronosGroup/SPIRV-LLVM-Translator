@@ -59,7 +59,7 @@ extern bool SPIRVDbgErrorMsgIncludesSourceInfo;
 extern bool SPIRVDbgAssertOnError;
 
 // Output stream for SPIRV debug information.
-inline std::ostream& bildbgs() { return std::cerr; }
+inline std::ostream& spvdbgs() { return std::cerr; }
 
 #else
 

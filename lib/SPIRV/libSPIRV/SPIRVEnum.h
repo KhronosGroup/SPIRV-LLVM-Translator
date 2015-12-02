@@ -1,4 +1,4 @@
-//===- SPIRVEnum.h - SPIR-V enums --------------------------------*- C++ -*-===//
+//===- SPIRVEnum.h - SPIR-V enums -------------------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -54,7 +54,7 @@ typedef uint32_t SPIRVId;
 #define SPIRVWORD_MAX     ~0U
 
 inline bool
-isValid(SPIRVId Id) { return Id != SPIRVID_INVALID && Id != 0;}
+isValidId(SPIRVId Id) { return Id != SPIRVID_INVALID && Id != 0;}
 
 inline SPIRVWord
 mkWord(unsigned WordCount, Op OpCode) {
@@ -63,11 +63,6 @@ mkWord(unsigned WordCount, Op OpCode) {
 
 const static unsigned kSPIRVMemOrderSemanticMask = 0x1F;
 
-/// Extract memory order part of SPIR-V memory semantics.
-inline unsigned extractSPIRVMemOrderSemantic(unsigned Sema) {
-  return Sema & kSPIRVMemOrderSemanticMask;
-}
-
 enum SPIRVGeneratorKind {
   SPIRVGEN_KhronosLLVMSPIRVTranslator   = 6,
   SPIRVGEN_KhronosSPIRVAssembler        = 7,
@@ -75,6 +70,26 @@ enum SPIRVGeneratorKind {
 
 enum SPIRVInstructionSchemaKind {
   SPIRVISCH_Default,
+};
+
+enum SPIRVExtInstSetKind {
+  SPIRVEIS_OpenCL,
+  SPIRVEIS_Count,
+};
+
+enum SPIRVSamplerAddressingModeKind {
+  SPIRVSAM_None = 0,
+  SPIRVSAM_ClampEdge = 2,
+  SPIRVSAM_Clamp = 4,
+  SPIRVSAM_Repeat = 6,
+  SPIRVSAM_RepeatMirrored = 8,
+  SPIRVSAM_Invalid = 255,
+};
+
+enum SPIRVSamplerFilterModeKind {
+  SPIRVSFM_Nearest = 16,
+  SPIRVSFM_Linear = 32,
+  SPIRVSFM_Invalid = 255,
 };
 
 typedef spv::Capability SPIRVCapabilityKind;
@@ -92,97 +107,67 @@ typedef spv::BuiltIn SPIRVBuiltinVariableKind;
 typedef spv::MemoryAccessMask SPIRVMemoryAccessKind;
 typedef spv::GroupOperation SPIRVGroupOperationKind;
 typedef spv::Dim SPIRVImageDimKind;
-
-inline bool
-isValid(SPIRVAccessQualifierKind Acc) {
-  return static_cast<unsigned>(Acc) <= AccessQualifierReadWrite;
-}
-
-template<typename K>
-SPIRVCapabilityKind
-getCapability(K Key) {
-  return SPIRVMap<K, SPIRVCapabilityKind>::map(Key);
-}
+typedef std::vector<SPIRVCapabilityKind> SPIRVCapVec;
 
 template<> inline void
-SPIRVMap<SPIRVExecutionModelKind, SPIRVCapabilityKind>::init() {
-  add(ExecutionModelVertex, CapabilityShader);
-  add(ExecutionModelTessellationControl, CapabilityTessellation);
-  add(ExecutionModelTessellationEvaluation, CapabilityShader);
-  add(ExecutionModelGeometry, CapabilityGeometry);
-  add(ExecutionModelFragment, CapabilityShader);
-  add(ExecutionModelGLCompute, CapabilityShader);
-  add(ExecutionModelKernel, CapabilityKernel);
+SPIRVMap<Capability, std::string>::init() {
+  add(CapabilityMatrix, "Matrix");
+  add(CapabilityShader, "Shader");
+  add(CapabilityGeometry, "Geometry");
+  add(CapabilityTessellation, "Tessellation");
+  add(CapabilityAddresses, "Addresses");
+  add(CapabilityLinkage, "Linkage");
+  add(CapabilityKernel, "Kernel");
+  add(CapabilityVector16, "Vector16");
+  add(CapabilityFloat16Buffer, "Float16Buffer");
+  add(CapabilityFloat16, "Float16");
+  add(CapabilityFloat64, "Float64");
+  add(CapabilityInt64, "Int64");
+  add(CapabilityInt64Atomics, "Int64Atomics");
+  add(CapabilityImageBasic, "ImageBasic");
+  add(CapabilityImageReadWrite, "ImageReadWrite");
+  add(CapabilityImageMipmap, "ImageMipmap");
+  add(CapabilityPipes, "Pipes");
+  add(CapabilityGroups, "Groups");
+  add(CapabilityDeviceEnqueue, "DeviceEnqueue");
+  add(CapabilityLiteralSampler, "LiteralSampler");
+  add(CapabilityAtomicStorage, "AtomicStorage");
+  add(CapabilityInt16, "Int16");
+  add(CapabilityTessellationPointSize, "TessellationPointSize");
+  add(CapabilityGeometryPointSize, "GeometryPointSize");
+  add(CapabilityImageGatherExtended, "ImageGatherExtended");
+  add(CapabilityStorageImageMultisample, "StorageImageMultisample");
+  add(CapabilityUniformBufferArrayDynamicIndexing, "UniformBufferArrayDynamicIndexing");
+  add(CapabilitySampledImageArrayDynamicIndexing, "SampledImageArrayDynamicIndexing");
+  add(CapabilityStorageBufferArrayDynamicIndexing, "StorageBufferArrayDynamicIndexing");
+  add(CapabilityStorageImageArrayDynamicIndexing, "StorageImageArrayDynamicIndexing");
+  add(CapabilityClipDistance, "ClipDistance");
+  add(CapabilityCullDistance, "CullDistance");
+  add(CapabilityImageCubeArray, "ImageCubeArray");
+  add(CapabilitySampleRateShading, "SampleRateShading");
+  add(CapabilityImageRect, "ImageRect");
+  add(CapabilitySampledRect, "SampledRect");
+  add(CapabilityGenericPointer, "GenericPointer");
+  add(CapabilityInt8, "Int8");
+  add(CapabilityInputAttachment, "InputAttachment");
+  add(CapabilitySparseResidency, "SparseResidency");
+  add(CapabilityMinLod, "MinLod");
+  add(CapabilitySampled1D, "Sampled1D");
+  add(CapabilityImage1D, "Image1D");
+  add(CapabilitySampledCubeArray, "SampledCubeArray");
+  add(CapabilitySampledBuffer, "SampledBuffer");
+  add(CapabilityImageBuffer, "ImageBuffer");
+  add(CapabilityImageMSArray, "ImageMSArray");
+  add(CapabilityStorageImageExtendedFormats, "StorageImageExtendedFormats");
+  add(CapabilityImageQuery, "ImageQuery");
+  add(CapabilityDerivativeControl, "DerivativeControl");
+  add(CapabilityInterpolationFunction, "InterpolationFunction");
+  add(CapabilityTransformFeedback, "TransformFeedback");
+  add(CapabilityGeometryStreams, "GeometryStreams");
+  add(CapabilityStorageImageReadWithoutFormat, "StorageImageReadWithoutFormat");
+  add(CapabilityStorageImageWriteWithoutFormat, "StorageImageWriteWithoutFormat");
 }
-
-inline bool
-isValid(SPIRVExecutionModelKind E) {
-  return (unsigned)E < (unsigned)ExecutionModelCount;
-}
-
-template<> inline void
-SPIRVMap<SPIRVExecutionModeKind, SPIRVCapabilityKind>::init() {
-  add(ExecutionModeInvocations, CapabilityGeometry);
-  add(ExecutionModeSpacingEqual, CapabilityTessellation);
-  add(ExecutionModeSpacingFractionalEven, CapabilityTessellation);
-  add(ExecutionModeSpacingFractionalOdd, CapabilityTessellation);
-  add(ExecutionModeVertexOrderCw, CapabilityTessellation);
-  add(ExecutionModeVertexOrderCcw, CapabilityTessellation);
-  add(ExecutionModePixelCenterInteger, CapabilityShader);
-  add(ExecutionModeOriginUpperLeft, CapabilityShader);
-  add(ExecutionModeOriginLowerLeft, CapabilityShader);
-  add(ExecutionModeEarlyFragmentTests, CapabilityShader);
-  add(ExecutionModePointMode, CapabilityTessellation);
-  add(ExecutionModeXfb, CapabilityShader);
-  add(ExecutionModeDepthReplacing, CapabilityShader);
-  add(ExecutionModeDepthGreater, CapabilityShader);
-  add(ExecutionModeDepthLess, CapabilityShader);
-  add(ExecutionModeDepthUnchanged, CapabilityShader);
-  add(ExecutionModeLocalSize, CapabilityNone);
-  add(ExecutionModeLocalSizeHint, CapabilityKernel);
-  add(ExecutionModeInputPoints, CapabilityGeometry);
-  add(ExecutionModeInputLines, CapabilityGeometry);
-  add(ExecutionModeInputLinesAdjacency, CapabilityGeometry);
-  add(ExecutionModeTriangles, CapabilityTessellation);
-  add(ExecutionModeInputTrianglesAdjacency, CapabilityGeometry);
-  add(ExecutionModeQuads, CapabilityGeometry);
-  add(ExecutionModeIsolines, CapabilityGeometry);
-  add(ExecutionModeOutputVertices, CapabilityTessellation);
-  add(ExecutionModeOutputPoints, CapabilityGeometry);
-  add(ExecutionModeOutputLineStrip, CapabilityGeometry);
-  add(ExecutionModeOutputTriangleStrip, CapabilityGeometry);
-  add(ExecutionModeVecTypeHint, CapabilityKernel);
-  add(ExecutionModeContractionOff, CapabilityKernel);
-}
-
-inline bool
-isValid(SPIRVExecutionModeKind E) {
-  return (unsigned)E < (unsigned)ExecutionModeCount;
-}
-
-inline bool
-isValid(SPIRVLinkageTypeKind L) {
-  return (unsigned)L < (unsigned)LinkageTypeCount;
-}
-
-template<> inline void
-SPIRVMap<SPIRVStorageClassKind, SPIRVCapabilityKind>::init() {
-  add(StorageClassUniformConstant, CapabilityNone);
-  add(StorageClassInput, CapabilityShader);
-  add(StorageClassUniform, CapabilityShader);
-  add(StorageClassOutput, CapabilityShader);
-  add(StorageClassWorkgroup, CapabilityNone);
-  add(StorageClassCrossWorkgroup, CapabilityNone);
-  add(StorageClassPrivate, CapabilityShader);
-  add(StorageClassFunction, CapabilityShader);
-  add(StorageClassGeneric, CapabilityKernel);
-  add(StorageClassAtomicCounter, CapabilityShader);
-}
-
-inline bool
-isValid(SPIRVStorageClassKind StorageClass) {
-  return (unsigned)StorageClass < (unsigned)StorageClassCount;
-}
+SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
 template<> inline void
 SPIRVMap<Decoration, std::string>::init() {
@@ -232,32 +217,6 @@ SPIRVMap<Decoration, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorateNameMap)
 
-inline bool
-isValid(SPIRVFuncParamAttrKind FPA) {
-  return (unsigned)FPA < (unsigned)FunctionParameterAttributeCount;
-}
-
-enum SPIRVExtInstSetKind {
-  SPIRVEIS_OpenCL,
-  SPIRVEIS_Count,
-};
-
-inline bool
-isValid(SPIRVExtInstSetKind BIS) {
-  return (unsigned)BIS < (unsigned)SPIRVEIS_Count;
-}
-
-template<> inline void
-SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
-  add(SPIRVEIS_OpenCL, "OpenCL.std");
-}
-typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
-
-inline bool
-isValid(SPIRVBuiltinVariableKind Kind) {
-  return (unsigned)Kind < (unsigned)BuiltInCount;
-}
-
 template<> inline void
 SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInPosition, "Position");
@@ -304,34 +263,174 @@ SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
 typedef SPIRVMap<SPIRVBuiltinVariableKind, std::string>
   SPIRVBuiltinVariableNameMap;
 
-inline bool isValid(Scope Kind) {
+template<> inline void
+SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
+  add(SPIRVEIS_OpenCL, "OpenCL.std");
+}
+typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
+
+inline bool
+isValid(SPIRVAccessQualifierKind Acc) {
+  return static_cast<unsigned>(Acc) <= AccessQualifierReadWrite;
+}
+
+inline bool
+isValid(SPIRVExecutionModelKind E) {
+  return (unsigned)E < (unsigned)ExecutionModelCount;
+}
+
+inline bool
+isValid(SPIRVExecutionModeKind E) {
+  return (unsigned)E < (unsigned)ExecutionModeCount;
+}
+
+inline bool
+isValid(SPIRVLinkageTypeKind L) {
+  return (unsigned)L < (unsigned)LinkageTypeCount;
+}
+
+inline bool
+isValid(SPIRVStorageClassKind StorageClass) {
+  return (unsigned)StorageClass < (unsigned)StorageClassCount;
+}
+
+inline bool
+isValid(SPIRVFuncParamAttrKind FPA) {
+  return (unsigned)FPA < (unsigned)FunctionParameterAttributeCount;
+}
+
+inline bool
+isValid(SPIRVExtInstSetKind BIS) {
+  return (unsigned)BIS < (unsigned)SPIRVEIS_Count;
+}
+
+inline bool
+isValid(SPIRVBuiltinVariableKind Kind) {
+  return (unsigned)Kind < (unsigned)BuiltInCount;
+}
+
+inline bool
+isValid(Scope Kind) {
   return (unsigned)Kind <= (unsigned)ScopeInvocation;
 }
 
-inline bool isValidSPIRVMemSemanticsMask(SPIRVWord MemMask) {
-  return MemMask < 1 << ((unsigned)MemorySemanticsImageMemoryShift + 1);
-}
-
-enum SPIRVSamplerAddressingModeKind {
-  SPIRVSAM_None = 0,
-  SPIRVSAM_ClampEdge = 2,
-  SPIRVSAM_Clamp = 4,
-  SPIRVSAM_Repeat = 6,
-  SPIRVSAM_RepeatMirrored = 8,
-  SPIRVSAM_Invalid = 255,
-};
-
-enum SPIRVSamplerFilterModeKind {
-  SPIRVSFM_Nearest = 16,
-  SPIRVSFM_Linear = 32,
-  SPIRVSFM_Invalid = 255,
-};
-
-inline bool isValid(SPIRVGroupOperationKind G) {
+inline bool
+isValid(SPIRVGroupOperationKind G) {
   return (unsigned)G < (unsigned)GroupOperationCount;
 }
 
-inline unsigned getImageDimension(SPIRVImageDimKind K) {
+template<typename K>
+SPIRVCapVec
+getCapability(K Key) {
+  SPIRVCapVec V;
+  SPIRVCapabilityKind C;
+  if (SPIRVMap<K, SPIRVCapabilityKind>::find(Key, &C))
+    V.push_back(C);
+  return std::move(V);
+}
+
+template<> inline void
+SPIRVMap<SPIRVExecutionModelKind, SPIRVCapabilityKind>::init() {
+  add(ExecutionModelVertex, CapabilityShader);
+  add(ExecutionModelTessellationControl, CapabilityTessellation);
+  add(ExecutionModelTessellationEvaluation, CapabilityShader);
+  add(ExecutionModelGeometry, CapabilityGeometry);
+  add(ExecutionModelFragment, CapabilityShader);
+  add(ExecutionModelGLCompute, CapabilityShader);
+  add(ExecutionModelKernel, CapabilityKernel);
+}
+
+template<> inline void
+SPIRVMap<SPIRVExecutionModeKind, SPIRVCapabilityKind>::init() {
+  add(ExecutionModeInvocations, CapabilityGeometry);
+  add(ExecutionModeSpacingEqual, CapabilityTessellation);
+  add(ExecutionModeSpacingFractionalEven, CapabilityTessellation);
+  add(ExecutionModeSpacingFractionalOdd, CapabilityTessellation);
+  add(ExecutionModeVertexOrderCw, CapabilityTessellation);
+  add(ExecutionModeVertexOrderCcw, CapabilityTessellation);
+  add(ExecutionModePixelCenterInteger, CapabilityShader);
+  add(ExecutionModeOriginUpperLeft, CapabilityShader);
+  add(ExecutionModeOriginLowerLeft, CapabilityShader);
+  add(ExecutionModeEarlyFragmentTests, CapabilityShader);
+  add(ExecutionModePointMode, CapabilityTessellation);
+  add(ExecutionModeXfb, CapabilityShader);
+  add(ExecutionModeDepthReplacing, CapabilityShader);
+  add(ExecutionModeDepthGreater, CapabilityShader);
+  add(ExecutionModeDepthLess, CapabilityShader);
+  add(ExecutionModeDepthUnchanged, CapabilityShader);
+  add(ExecutionModeLocalSizeHint, CapabilityKernel);
+  add(ExecutionModeInputPoints, CapabilityGeometry);
+  add(ExecutionModeInputLines, CapabilityGeometry);
+  add(ExecutionModeInputLinesAdjacency, CapabilityGeometry);
+  add(ExecutionModeTriangles, CapabilityTessellation);
+  add(ExecutionModeInputTrianglesAdjacency, CapabilityGeometry);
+  add(ExecutionModeQuads, CapabilityGeometry);
+  add(ExecutionModeIsolines, CapabilityGeometry);
+  add(ExecutionModeOutputVertices, CapabilityTessellation);
+  add(ExecutionModeOutputPoints, CapabilityGeometry);
+  add(ExecutionModeOutputLineStrip, CapabilityGeometry);
+  add(ExecutionModeOutputTriangleStrip, CapabilityGeometry);
+  add(ExecutionModeVecTypeHint, CapabilityKernel);
+  add(ExecutionModeContractionOff, CapabilityKernel);
+}
+
+template<> inline void
+SPIRVMap<SPIRVStorageClassKind, SPIRVCapabilityKind>::init() {
+  add(StorageClassInput, CapabilityShader);
+  add(StorageClassUniform, CapabilityShader);
+  add(StorageClassOutput, CapabilityShader);
+  add(StorageClassPrivate, CapabilityShader);
+  add(StorageClassFunction, CapabilityShader);
+  add(StorageClassGeneric, CapabilityKernel);
+  add(StorageClassAtomicCounter, CapabilityShader);
+}
+
+template<> inline void
+SPIRVMap<Decoration, SPIRVCapabilityKind>::init() {
+  add(DecorationRelaxedPrecision, CapabilityShader);
+  add(DecorationSpecId, CapabilityShader);
+  add(DecorationBlock, CapabilityShader);
+  add(DecorationBufferBlock, CapabilityShader);
+  add(DecorationRowMajor, CapabilityMatrix);
+  add(DecorationColMajor, CapabilityMatrix);
+  add(DecorationArrayStride, CapabilityShader);
+  add(DecorationMatrixStride, CapabilityShader);
+  add(DecorationGLSLShared, CapabilityShader);
+  add(DecorationGLSLPacked, CapabilityShader);
+  add(DecorationCPacked, CapabilityKernel);
+  add(DecorationNoPerspective, CapabilityShader);
+  add(DecorationFlat, CapabilityShader);
+  add(DecorationPatch, CapabilityTessellation);
+  add(DecorationCentroid, CapabilityShader);
+  add(DecorationSample, CapabilityShader);
+  add(DecorationInvariant, CapabilityShader);
+  add(DecorationConstant, CapabilityKernel);
+  add(DecorationUniform, CapabilityShader);
+  add(DecorationSaturatedConversion, CapabilityKernel);
+  add(DecorationStream, CapabilityGeometryStreams);
+  add(DecorationLocation, CapabilityShader);
+  add(DecorationComponent, CapabilityShader);
+  add(DecorationIndex, CapabilityShader);
+  add(DecorationBinding, CapabilityShader);
+  add(DecorationDescriptorSet, CapabilityShader);
+  add(DecorationXfbBuffer, CapabilityTransformFeedback);
+  add(DecorationXfbStride, CapabilityTransformFeedback);
+  add(DecorationFuncParamAttr, CapabilityKernel);
+  add(DecorationFPRoundingMode, CapabilityKernel);
+  add(DecorationFPFastMathMode, CapabilityKernel);
+  add(DecorationLinkageAttributes, CapabilityLinkage);
+  add(DecorationNoContraction, CapabilityShader);
+  add(DecorationInputAttachmentIndex, CapabilityInputAttachment);
+  add(DecorationAlignment, CapabilityKernel);
+}
+
+inline bool
+isValidSPIRVMemSemanticsMask(SPIRVWord MemMask) {
+  return MemMask < 1 << ((unsigned)MemorySemanticsImageMemoryShift + 1);
+}
+
+inline unsigned
+getImageDimension(SPIRVImageDimKind K) {
   switch(K){
   case Dim1D:      return 1;
   case Dim2D:      return 2;
@@ -342,6 +441,13 @@ inline unsigned getImageDimension(SPIRVImageDimKind K) {
   default:              return 0;
   }
 }
+
+/// Extract memory order part of SPIR-V memory semantics.
+inline unsigned
+extractSPIRVMemOrderSemantic(unsigned Sema) {
+  return Sema & kSPIRVMemOrderSemanticMask;
+}
+
 
 }
 

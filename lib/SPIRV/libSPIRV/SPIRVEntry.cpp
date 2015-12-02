@@ -86,7 +86,7 @@ SPIRVEntry::create(Op OpCode) {
   if (Loc != OpToFactoryMap.end())
     return Loc->second();
 
-  SPIRVDBG(bildbgs() << "No factory for OpCode " << (unsigned)OpCode << '\n';)
+  SPIRVDBG(spvdbgs() << "No factory for OpCode " << (unsigned)OpCode << '\n';)
   assert (0 && "Not implemented");
   return 0;
 }
@@ -149,7 +149,7 @@ SPIRVEntry::setWordCount(SPIRVWord TheWordCount){
 void
 SPIRVEntry::setName(const std::string& TheName) {
   Name = TheName;
-  SPIRVDBG(bildbgs() << "Set name for obj " << Id << " " <<
+  SPIRVDBG(spvdbgs() << "Set name for obj " << Id << " " <<
     Name << '\n');
 }
 
@@ -256,7 +256,7 @@ SPIRVEntry::addDecorate(const SPIRVDecorate *Dec){
   auto Kind = Dec->getDecorateKind();
   Decorates.insert(std::make_pair(Dec->getDecorateKind(), Dec));
   Module->addDecorate(Dec);
-  SPIRVDBG(bildbgs() << "[addDecorate] " << *Dec << '\n';)
+  SPIRVDBG(spvdbgs() << "[addDecorate] " << *Dec << '\n';)
 }
 
 void
@@ -277,14 +277,14 @@ SPIRVEntry::eraseDecorate(Decoration Dec){
 void
 SPIRVEntry::takeDecorates(SPIRVEntry *E){
   Decorates = std::move(E->Decorates);
-  SPIRVDBG(bildbgs() << "[takeDecorates] " << Id << '\n';)
+  SPIRVDBG(spvdbgs() << "[takeDecorates] " << Id << '\n';)
 }
 
 void
 SPIRVEntry::setLine(SPIRVLine *L){
   Line = L;
   L->setTargetId(Id);
-  SPIRVDBG(bildbgs() << "[setLine] " << *L << '\n';)
+  SPIRVDBG(spvdbgs() << "[setLine] " << *L << '\n';)
 }
 
 void
@@ -302,7 +302,7 @@ SPIRVEntry::addMemberDecorate(const SPIRVMemberDecorate *Dec){
       MemberDecorates.end());
   MemberDecorates[Dec->getPair()] = Dec;
   Module->addDecorate(Dec);
-  SPIRVDBG(bildbgs() << "[addMemberDecorate] " << *Dec << '\n';)
+  SPIRVDBG(spvdbgs() << "[addMemberDecorate] " << *Dec << '\n';)
 }
 
 void
@@ -324,7 +324,7 @@ SPIRVEntry::eraseMemberDecorate(SPIRVWord MemberNumber, Decoration Dec){
 void
 SPIRVEntry::takeMemberDecorates(SPIRVEntry *E){
   MemberDecorates = std::move(E->MemberDecorates);
-  SPIRVDBG(bildbgs() << "[takeMemberDecorates] " << Id << '\n';)
+  SPIRVDBG(spvdbgs() << "[takeMemberDecorates] " << Id << '\n';)
 }
 
 void

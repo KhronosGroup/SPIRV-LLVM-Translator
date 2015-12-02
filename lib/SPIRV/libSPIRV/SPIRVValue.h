@@ -110,19 +110,11 @@ public:
       setHasNoType();
   }
 
-  CapVec getRequiredCapability() const {
-    CapVec CV;
+  SPIRVCapVec getRequiredCapability() const {
+    SPIRVCapVec CV;
     if (!hasType())
-      return CV;
-    if (Type->isTypeFloat(16))
-      CV.push_back(CapabilityFloat16);
-    else if (Type->isTypeFloat(64))
-      CV.push_back(CapabilityFloat64);
-    else if (Type->isTypeInt(16))
-      CV.push_back(CapabilityInt16);
-    else if (Type->isTypeInt(64))
-      CV.push_back(CapabilityInt64);
-    return CV;
+      return std::move(CV);
+    return std::move(Type->getRequiredCapability());
   }
 
 protected:
@@ -328,7 +320,7 @@ public:
   SPIRVWord getNormalized() const {
     return Normalized;
   }
-  CapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const {
     return getVec(CapabilityLiteralSampler);
   }
 protected:
