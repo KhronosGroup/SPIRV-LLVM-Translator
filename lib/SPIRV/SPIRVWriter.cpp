@@ -225,6 +225,8 @@ private:
 
   SPIRVType *mapType(Type *T, SPIRVType *BT) {
     TypeMap[T] = BT;
+    SPIRVDBG(dbgs() << "[mapType] " << *T << " => ";
+             spvdbgs() << *BT << '\n');
     return BT;
   }
 
@@ -241,7 +243,7 @@ private:
     }
     ValueMap[V] = BV;
     SPIRVDBG(dbgs() << "[mapValue] " << *V << " => ";
-      spvdbgs() << *BV << "\n");
+             spvdbgs() << *BV << "\n");
     return BV;
   }
 
