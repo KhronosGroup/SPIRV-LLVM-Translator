@@ -43,6 +43,9 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Function.h"
 
+#include <map>
+#include <set>
+
 using namespace llvm;
 
 namespace SPIRV {
@@ -63,14 +66,17 @@ private:
   Module *M;
   LLVMContext *Ctx;
   unsigned CLVer;
+  std::map<Value*, Type*> AdaptedTy;    // Adapted types for values
+  std::set<Function *> WorkSet;         // Functions to be adapted
+
   MDNode *getArgBaseTypeMetadata(Function *);
   MDNode *getArgAccessQualifierMetadata(Function *);
   MDNode *getArgMetadata(Function *, const std::string& MDName);
   MDNode *getKernelMetadata(Function *F);
-  void getAdaptedArgumentTypesByArgBaseTypeMetadata(llvm::FunctionType* FT,
-      std::map<unsigned, Type*>& ChangedType, Function* F);
-  void adaptFunctionType(const std::map<unsigned, Type*>& ChangedType,
-      llvm::FunctionType* &FT);
+  void adaptArgumentsByMetadata(Function* F);
+  void adaptFunction(Function *F);
+  void addAdaptedType(Value *V, Type *T);
+  void addWork(Function *F);
 };
 
 }
