@@ -20,6 +20,7 @@ add_llvm_library(LLVMSPIRVLib
   OCL20To12.cpp
   OCL20ToSPIRV.cpp
   OCL21ToSPIRV.cpp
+  OCLTypeToSPIRV.cpp
   OCLUtil.cpp
   SPIRVLowerBool.cpp
   SPIRVLowerConstExpr.cpp
