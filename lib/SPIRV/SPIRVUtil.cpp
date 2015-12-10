@@ -1069,8 +1069,9 @@ getSPIRVSampledImageType(Module *M, Type *ImageType) {
   StringRef ImgTyName;
   if (isOCLImageType(ImageType, &ImgTyName))
     return getOrCreateOpaquePtrType(M,
-        std::string(kSPIRVTypeName::SampledImg) + kSPIRVTypeName::Delimiter
-        + ImgTyName.str());
+        std::string(kSPIRVTypeName::SampledImg)
+          + kSPIRVTypeName::Delimiter + ImgTyName.str()
+          + kSPIRVTypeName::Delimiter + kAccessQualName::ReadOnly);
   llvm_unreachable("Invalid image type");
   return nullptr;
 }
