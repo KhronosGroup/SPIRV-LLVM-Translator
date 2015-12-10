@@ -9,6 +9,7 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
 
+; SPIRV:  Capability Linkage
 ; SPIRV: EntryPoint 6 [[kern:[0-9]+]] "kern"
 
 @i1 = addrspace(1) global i32 1, align 4
@@ -68,19 +69,25 @@ target triple = "spir-unknown-unknown"
 ; SPIRV: Name [[f_b:[0-9]+]] "f.b"
 ; BACK-TO-LLVM: @f.b = internal addrspace(2) constant float 1.000000e+00, align 4
 
-; SPIRV: Name [[f:[0-9]+]] "f"
-; SPIRV: Name [[g:[0-9]+]] "g"
-; SPIRV: Name [[inline_fun:[0-9]+]] "inline_fun"
-; SPIRV: Name [[foo:[0-9]+]] "foo"
+; SPIRV-DAG: Name [[foo:[0-9]+]] "foo"
+; SPIRV-DAG: Name [[f:[0-9]+]] "f"
+; SPIRV-DAG: Name [[g:[0-9]+]] "g"
+; SPIRV-DAG: Name [[inline_fun:[0-9]+]] "inline_fun"
 
-; SPIRV: 4 Decorate [[EXPORT:[0-9]+]] LinkageAttributes 0
-; SPIRV: 2 DecorationGroup [[EXPORT]]
-; SPIRV: 4 Decorate [[IMPORT:[0-9]+]] LinkageAttributes 1
-; SPIRV: 2 DecorationGroup [[IMPORT]]
+; SPIRV-DAG: Decorate [[e]] LinkageAttributes "e" Import
+; SPIRV-DAG: Decorate [[f]] LinkageAttributes "f" Export
+; SPIRV-DAG: Decorate [[w]] LinkageAttributes "w" Export
+; SPIRV-DAG: Decorate [[i1]] LinkageAttributes "i1" Export
+; SPIRV-DAG: Decorate [[i3]] LinkageAttributes "i3" Export
+; SPIRV-DAG: Decorate [[i4]] LinkageAttributes "i4" Import
+; SPIRV-DAG: Decorate [[foo]] LinkageAttributes "foo" Import
+; SPIRV-DAG: Decorate [[inline_fun]] LinkageAttributes "inline_fun" Export
+; SPIRV-DAG: Decorate [[color_table]] LinkageAttributes "color_table" Export
+; SPIRV-DAG: Decorate [[noise_table]] LinkageAttributes "noise_table" Import
 
-; SPIRV: GroupDecorate [[EXPORT]] [[i1]] [[i3]] [[color_table]] [[w]] [[f]] [[inline_fun]]
-; SPIRV: GroupDecorate [[IMPORT]] [[i4]] [[noise_table]] [[e]] [[foo]]
-
+; SPIRV: Function {{[0-9]+}} [[foo]]
+; BACK-TO-LLVM: declare spir_func void @foo()
+declare spir_func void @foo() #2
 
 ; SPIRV: Function {{[0-9]+}} [[f]]
 ; BACK-TO-LLVM: define spir_func void @f()
@@ -114,11 +121,6 @@ entry:
 }
 
 ; SPIRV: Function {{[0-9]+}} [[inline_fun]]
-
-; SPIRV: Function {{[0-9]+}} [[foo]]
-; BACK-TO-LLVM: declare spir_func void @foo()
-declare spir_func void @foo() #2
-
 ; BACK-TO-LLVM: define spir_func void @inline_fun()
 ; "linkonce_odr" is lost in translation !
 ; Function Attrs: inlinehint nounwind
@@ -137,7 +139,6 @@ entry:
   call spir_func void @f()
   ret void
 }
-
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { inlinehint nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

@@ -42,6 +42,7 @@
 
 #include "SPIRVEntry.h"
 #include "SPIRVUtil.h"
+#include "SPIRVStream.h"
 #include <string>
 #include <vector>
 #include <utility>
@@ -148,6 +149,11 @@ public:
   }
   SPIRVLinkageTypeKind getLinkageType() const {
     return (SPIRVLinkageTypeKind)Literals.back();
+  }
+
+  void encode(std::ostream &O)const {
+    getEncoder(O) << Target << Dec << getLinkageName() << SPIRVTextOnly(" ")
+                  << getLinkageType();
   }
 };
 

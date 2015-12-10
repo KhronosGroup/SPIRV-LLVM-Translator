@@ -218,6 +218,15 @@ SPIRVMap<Decoration, std::string>::init() {
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorateNameMap)
 
 template<> inline void
+SPIRVMap<SPIRVLinkageTypeKind, std::string>::init() {
+  add(LinkageTypeExport, "Export");
+  add(LinkageTypeImport, "Import");
+  add(LinkageTypeInternal, "Internal");
+}
+SPIRV_DEF_NAMEMAP(SPIRVLinkageTypeKind, SPIRVLinkageTypeMap)
+
+
+template<> inline void
 SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInPosition, "Position");
   add(BuiltInPointSize, "PointSize");

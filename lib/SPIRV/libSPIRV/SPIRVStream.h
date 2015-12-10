@@ -164,6 +164,12 @@ operator<<(const SPIRVEncoder& O, T* P) {
   return O << P->getId();
 }
 
+// Use this structure for text which should be printed in text mode only.
+struct SPIRVTextOnly {
+  const std::string text;
+  SPIRVTextOnly(const std::string txt): text(txt){}
+};
+
 template<typename T>
 const SPIRVEncoder&
 operator<<(const SPIRVEncoder& O, const std::vector<T>& V) {
@@ -190,11 +196,14 @@ SPIRV_DEC_ENCDEC(Op)
 SPIRV_DEC_ENCDEC(Capability)
 SPIRV_DEC_ENCDEC(Decoration)
 SPIRV_DEC_ENCDEC(OCLExtOpKind)
+SPIRV_DEC_ENCDEC(LinkageType)
 
 const SPIRVEncoder&
 operator<<(const SPIRVEncoder&O, const std::string& Str);
 const SPIRVDecoder&
 operator>>(const SPIRVDecoder&I, std::string& Str);
+const SPIRVEncoder&
+operator<<(const SPIRVEncoder& O, const SPIRVTextOnly& T);
 
 } // namespace SPIRV
 #endif

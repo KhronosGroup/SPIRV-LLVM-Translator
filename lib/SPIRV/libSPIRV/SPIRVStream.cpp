@@ -138,6 +138,7 @@ SPIRV_DEF_ENCDEC(Op)
 SPIRV_DEF_ENCDEC(Capability)
 SPIRV_DEF_ENCDEC(Decoration)
 SPIRV_DEF_ENCDEC(OCLExtOpKind)
+SPIRV_DEF_ENCDEC(LinkageType)
 
 // Read a string with padded 0's at the end so that they form a stream of
 // words.
@@ -259,4 +260,15 @@ std::ostream& SPIRVNL(std::ostream &IS) {
   return IS;
 }
 
+const SPIRVEncoder&
+operator<<(const SPIRVEncoder& O, const SPIRVTextOnly& T) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+  if (SPIRVUseTextFormat) {
+    O.OS << T.text;
+  }
+#endif
+  return O;
 }
+
+} // end of SPIRV namespace
+
