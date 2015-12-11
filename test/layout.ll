@@ -3,7 +3,7 @@
 
 ; CHECK: 119734787 {{[0-9]*}} {{[0-9]*}} {{[0-9]*}} 0
 ; CHECK-NEXT: {{[0-9]*}} Capability
-; CHECK-NEXT: {{[0-9]*}} ExtInstImport
+; CHECK: {{[0-9]*}} ExtInstImport
 ; CHECK-NEXT: {{[0-9]*}} MemoryModel
 ; CHECK-NEXT: {{[0-9]*}} EntryPoint
 ; CHECK-NEXT: {{[0-9]*}} Source

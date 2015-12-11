@@ -570,7 +570,7 @@ mutateCallInst(Module *M, CallInst *CI,
 
   auto Args = getArguments(CI);
   auto NewName = ArgMutate(CI, Args);
-  StringRef InstName;
+  std::string InstName;
   if (!CI->getType()->isVoidTy() && CI->hasName()) {
     InstName = CI->getName();
     CI->setName(InstName + ".old");
@@ -595,13 +595,13 @@ mutateCallInst(Module *M, CallInst *CI,
   auto Args = getArguments(CI);
   Type *RetTy = CI->getType();
   auto NewName = ArgMutate(CI, Args, RetTy);
-  StringRef InstName;
+  std::string InstName;
   if (CI->hasName()) {
     InstName = CI->getName();
     CI->setName(InstName + ".old");
   }
   auto NewCI = addCallInst(M, NewName, RetTy, Args, Attrs,
-      CI, Mangle, InstName.str() + ".tmp", TakeFuncName);
+      CI, Mangle, InstName + ".tmp", TakeFuncName);
   auto NewI = RetMutate(NewCI);
   NewI->takeName(CI);
   DEBUG(dbgs() << " => " << *NewI << '\n');
