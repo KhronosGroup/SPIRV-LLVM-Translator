@@ -44,8 +44,8 @@
 
 namespace SPIRV{
 template<class T, class B>
-std::ostream &
-operator<< (std::ostream &O, const std::multiset<T *, B>& V) {
+llvm::raw_ostream &
+operator<< (llvm::raw_ostream &O, const std::multiset<T *, B>& V) {
   for (auto &I: V)
     O << *I;
   return O;
@@ -85,7 +85,7 @@ SPIRVDecorateGeneric::getLiteralCount() const {
 }
 
 void
-SPIRVDecorate::encode(std::ostream &O)const {
+SPIRVDecorate::encode(llvm::raw_ostream &O)const {
   getEncoder(O) << Target << Dec << Literals;
 }
 
@@ -102,7 +102,7 @@ SPIRVDecorate::decode(std::istream &I){
 }
 
 void
-SPIRVMemberDecorate::encode(std::ostream &O)const {
+SPIRVMemberDecorate::encode(llvm::raw_ostream &O)const {
   getEncoder(O) << Target << MemberNumber << Dec << Literals;
 }
 
@@ -119,7 +119,7 @@ SPIRVMemberDecorate::decode(std::istream &I){
 }
 
 void
-SPIRVDecorationGroup::encode(std::ostream &O)const {
+SPIRVDecorationGroup::encode(llvm::raw_ostream &O)const {
   getEncoder(O) << Id;
 }
 
@@ -130,13 +130,13 @@ SPIRVDecorationGroup::decode(std::istream &I){
 }
 
 void
-SPIRVDecorationGroup::encodeAll(std::ostream &O) const {
+SPIRVDecorationGroup::encodeAll(llvm::raw_ostream &O) const {
   O << Decorations;
   SPIRVEntry::encodeAll(O);
 }
 
 void
-SPIRVGroupDecorateGeneric::encode(std::ostream &O)const {
+SPIRVGroupDecorateGeneric::encode(llvm::raw_ostream &O)const {
   getEncoder(O) << DecorationGroup << Targets;
 }
 

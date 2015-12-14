@@ -164,7 +164,7 @@ protected:
     SPIRVValue::validate();
     assert(NumWords >= 1 && NumWords <= 2 && "Invalid constant size");
   }
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << Type << Id;
     for (unsigned i = 0; i < NumWords; ++i)
       getEncoder(O) << Union.Words[i];

@@ -70,8 +70,8 @@ SPIRVBasicBlock::addInstruction(SPIRVInstruction *I) {
 }
 
 void
-SPIRVBasicBlock::encodeChildren(std::ostream &O) const {
-  O << SPIRVNL;
+SPIRVBasicBlock::encodeChildren(llvm::raw_ostream &O) const {
+  SPIRVNL(O);
   for (size_t i = 0, e = InstVec.size(); i != e; ++i)
     O << *InstVec[i];
 }

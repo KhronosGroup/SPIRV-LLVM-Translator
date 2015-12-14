@@ -30,6 +30,7 @@ add_llvm_library(LLVMSPIRVLib
   SPIRVToOCL20.cpp
   SPIRVUtil.cpp
   SPIRVWriter.cpp
+  SPIRVWriterPass.cpp
   TransOCLMD.cpp
   )
 

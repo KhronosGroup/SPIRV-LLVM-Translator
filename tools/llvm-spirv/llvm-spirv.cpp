@@ -142,10 +142,10 @@ convertLLVMToSPIRV() {
       OutputFile = removeExt(InputFile) + kExt::SpirvBinary;
   }
 
-  std::ofstream OFS;
-  std::ostream *OS = OutputFile == "-" ? &std::cout :
-      (OFS.open(OutputFile, std::ios::binary), &OFS);
-  if (!WriteSPIRV(M.get(), *OS, Err)) {
+  llvm::StringRef outFile(OutputFile);
+  std::error_code EC;
+  llvm::raw_fd_ostream OFS(outFile, EC, llvm::sys::fs::F_None);
+  if (!WriteSPIRV(M.get(), OFS, Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
@@ -211,7 +211,7 @@ convertSPIRV() {
     }
   }
 
-  auto Action = [&](std::ostream &OFS) {
+  auto Action = [&](llvm::raw_ostream &OFS) {
     std::string Err;
       if (!SPIRV::ConvertSPIRV(IFS, OFS, Err, ToBinary, ToText)) {
       errs() << "Fails to convert SPIR-V : " << Err << '\n';
@@ -220,10 +220,11 @@ convertSPIRV() {
     return 0;
   };
   if (OutputFile != "-") {
-    std::ofstream OFS(OutputFile, std::ios::binary);
+    std::error_code EC;
+    llvm::raw_fd_ostream OFS(llvm::StringRef(OutputFile), EC, llvm::sys::fs::F_None);
     return Action(OFS);
   } else
-    return Action(std::cout);
+    return Action(outs());
 }
 #endif
 

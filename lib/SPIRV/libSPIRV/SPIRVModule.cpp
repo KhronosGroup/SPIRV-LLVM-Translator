@@ -281,7 +281,7 @@ public:
     SPIRVValue *, SPIRVValue*, SPIRVBasicBlock *);
 
   // I/O functions
-  friend std::ostream & operator<<(std::ostream &O, SPIRVModule& M);
+  friend llvm::raw_ostream & operator<<(llvm::raw_ostream &O, SPIRVModule& M);
   friend std::istream & operator>>(std::istream &I, SPIRVModule& M);
 
 private:
@@ -1052,23 +1052,23 @@ SPIRVModuleImpl::addVariable(SPIRVType *Type, bool IsConstant,
 }
 
 template<class T>
-std::ostream &
-operator<< (std::ostream &O, const std::vector<T *>& V) {
+llvm::raw_ostream &
+operator<< (llvm::raw_ostream &O, const std::vector<T *>& V) {
   for (auto &I: V)
     O << *I;
   return O;
 }
 
 template<class T, class B>
-std::ostream &
-operator<< (std::ostream &O, const std::multiset<T *, B>& V) {
+llvm::raw_ostream &
+operator<< (llvm::raw_ostream &O, const std::multiset<T *, B>& V) {
   for (auto &I: V)
     O << *I;
   return O;
 }
 
-std::ostream &
-operator<< (std::ostream &O, SPIRVModule &M) {
+llvm::raw_ostream &
+operator<< (llvm::raw_ostream &O, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl*>(&M);
 
   SPIRVEncoder Encoder(O);
@@ -1077,7 +1077,7 @@ operator<< (std::ostream &O, SPIRVModule &M) {
           << (((SPIRVWord)MI.GeneratorId << 16) | MI.GeneratorVer)
           << MI.NextId /* Bound for Id */
           << MI.InstSchema;
-  O << SPIRVNL;
+  SPIRVNL(O);
 
   for (auto &I:MI.CapSet)
     O << SPIRVCapability(&M, I);
@@ -1129,9 +1129,8 @@ operator<< (std::ostream &O, SPIRVModule &M) {
     << MI.GroupDecVec
     << MI.TypeVec
     << MI.ConstVec
-    << MI.VariableVec
-    << SPIRVNL
-    << MI.FuncVec;
+    << MI.VariableVec;
+  SPIRVNL(O) << MI.FuncVec;
   return O;
 }
 
@@ -1330,7 +1329,7 @@ bool IsSPIRVBinary(const std::string &Img) {
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 
-bool ConvertSPIRV(std::istream &IS, std::ostream &OS,
+bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS,
     std::string &ErrMsg, bool FromText, bool ToText) {
   auto SaveOpt = SPIRVUseTextFormat;
   SPIRVUseTextFormat = FromText;
@@ -1367,10 +1366,9 @@ bool ConvertSPIRV(std::string &Input, std::string &Out,
     return true;
   }
   std::istringstream IS(Input);
-  std::ostringstream OS;
+  llvm::raw_string_ostream OS(Out);
   if (!ConvertSPIRV(IS, OS, ErrMsg, FromText, ToText))
     return false;
-  Out = OS.str();
   return true;
 }
 

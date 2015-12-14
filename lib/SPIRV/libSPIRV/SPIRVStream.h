@@ -43,6 +43,7 @@
 #include "SPIRVDebug.h"
 #include "SPIRVModule.h"
 #include "SPIRVExtInst.h"
+#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
@@ -86,13 +87,12 @@ public:
 
 class SPIRVEncoder {
 public:
-  explicit SPIRVEncoder(std::ostream& OutputStream)
-    :OS(OutputStream){}
-  std::ostream& OS;
+  explicit SPIRVEncoder(llvm::raw_ostream &OutputStream) : OS(OutputStream) {}
+  llvm::raw_ostream &OS;
 };
 
 /// Output a new line in text mode. Do nothing in binary mode.
-std::ostream& SPIRVNL(std::ostream &OS);
+llvm::raw_ostream& SPIRVNL(llvm::raw_ostream &OS);
 
 template<typename T>
 const SPIRVDecoder&

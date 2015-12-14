@@ -356,7 +356,7 @@ public:
   }
 
 protected:
-  virtual void encode(std::ostream &O) const {
+  virtual void encode(llvm::raw_ostream &O) const {
     auto E = getEncoder(O);
     if (hasType())
       E << Type;
@@ -523,7 +523,7 @@ protected:
     SPIRVEntry::setWordCount(TheWordCount);
     MemoryAccess.resize(TheWordCount - FixedWords);
   }
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << PtrId << ValId << MemoryAccess;
   }
 
@@ -570,7 +570,7 @@ protected:
     MemoryAccess.resize(TheWordCount - FixedWords);
   }
 
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << Type << Id << PtrId << MemoryAccess;
   }
 
@@ -1207,7 +1207,7 @@ public:
     ExtSetKind = Module->getBuiltinSet(ExtSetId);
     assert(ExtSetKind == SPIRVEIS_OpenCL && "not supported");
   }
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << Type << Id << ExtSetId;
     switch(ExtSetKind) {
     case SPIRVEIS_OpenCL:
@@ -1401,7 +1401,7 @@ protected:
     MemoryAccess.resize(TheWordCount - FixedWords);
   }
 
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << Target << Source << MemoryAccess;
   }
 
@@ -1457,7 +1457,7 @@ protected:
     MemoryAccess.resize(TheWordCount - FixedWords);
   }
 
-  void encode(std::ostream &O) const {
+  void encode(llvm::raw_ostream &O) const {
     getEncoder(O) << Target << Source << Size << MemoryAccess;
   }
 

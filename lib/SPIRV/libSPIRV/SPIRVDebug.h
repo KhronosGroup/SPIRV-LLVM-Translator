@@ -40,6 +40,8 @@
 #ifndef SPIRVDEBUG_HPP_
 #define SPIRVDEBUG_HPP_
 
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Debug.h"
 #include <iostream>
 
 namespace SPIRV{
@@ -59,7 +61,7 @@ extern bool SPIRVDbgErrorMsgIncludesSourceInfo;
 extern bool SPIRVDbgAssertOnError;
 
 // Output stream for SPIRV debug information.
-inline std::ostream& spvdbgs() { return std::cerr; }
+inline llvm::raw_ostream& spvdbgs() { return llvm::dbgs(); }
 
 #else
 
