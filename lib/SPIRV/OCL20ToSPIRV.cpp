@@ -73,7 +73,6 @@ public:
   OCL20ToSPIRV():ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
     initializeOCL20ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
-  virtual void getAnalysisUsage(AnalysisUsage &AU);
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
 
@@ -274,10 +273,6 @@ private:
 };
 
 char OCL20ToSPIRV::ID = 0;
-
-void
-OCL20ToSPIRV::getAnalysisUsage(AnalysisUsage& AU) {
-}
 
 bool
 OCL20ToSPIRV::runOnModule(Module& Module) {

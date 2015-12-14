@@ -50,6 +50,7 @@
 #include "SPIRVUtil.h"
 #include "SPIRVInternal.h"
 #include "SPIRVMDWalker.h"
+#include "OCLTypeToSPIRV.h"
 #include "OCLUtil.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -176,6 +177,10 @@ public:
     return true;
   }
 
+  void getAnalysisUsage(AnalysisUsage &AU) const {
+    AU.addRequired<OCLTypeToSPIRV>();
+  }
+
   static char ID;
 
   SPIRVType *transType(Type *T);
@@ -267,23 +272,14 @@ private:
 
   SPIRVInstruction* transBinaryInst(BinaryOperator* B, SPIRVBasicBlock* BB);
   SPIRVInstruction* transCmpInst(CmpInst* Cmp, SPIRVBasicBlock* BB);
-  void mutateFunctionType(const std::map<unsigned, Type*>& ChangedType,
-      llvm::FunctionType* &FT);
 
   void dumpUsers(Value *V);
 
-  MDNode *oclGetArgBaseTypeMetadata(Function *);
-  MDNode *oclGetArgAccessQualifierMetadata(Function *);
-  MDNode *oclGetArgMetadata(Function *, const std::string& MDName);
   template<class ExtInstKind>
   bool oclGetExtInstIndex(const std::string &MangledName,
       const std::string& DemangledName, SPIRVWord* EntryPoint);
-  MDNode *oclGetKernelMetadata(Function *F);
-  void oclGetMutatedArgumentTypesByArgBaseTypeMetadata(llvm::FunctionType* FT,
-      std::map<unsigned, Type*>& ChangedType, Function* F);
   void oclGetMutatedArgumentTypesByBuiltin(llvm::FunctionType* FT,
       std::map<unsigned, Type*>& ChangedType, Function* F);
-  FunctionType *oclGetRegularizedFunctionType(Function *);
 
   bool isBuiltinTransToInst(Function *F);
   bool isBuiltinTransToExtInst(Function *F,
@@ -532,7 +528,7 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
     return static_cast<SPIRVFunction *>(BF);
 
   SPIRVTypeFunction *BFT = static_cast<SPIRVTypeFunction *>(transType(
-      oclGetRegularizedFunctionType(F)));
+      getAnalysis<OCLTypeToSPIRV>().getAdaptedFunctionType(F)));
   SPIRVFunction *BF = static_cast<SPIRVFunction *>(mapValue(F,
       BM->addFunction(BFT)));
   BF->setFunctionControlMask(transFunctionControlMask(F));
@@ -1051,139 +1047,6 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 
 
 
-MDNode *
-LLVMToSPIRV::oclGetArgBaseTypeMetadata(Function *F) {
-  return oclGetArgMetadata(F, SPIR_MD_KERNEL_ARG_BASE_TYPE);
-}
-
-MDNode *
-LLVMToSPIRV::oclGetArgAccessQualifierMetadata(Function *F) {
-  return oclGetArgMetadata(F, SPIR_MD_KERNEL_ARG_ACCESS_QUAL);
-}
-
-MDNode *
-LLVMToSPIRV::oclGetKernelMetadata(Function *F) {
-  NamedMDNode *KernelMDs = M->getNamedMetadata(SPIR_MD_KERNELS);
-  if (!KernelMDs)
-    return nullptr;
-
-  for (unsigned I = 0, E = KernelMDs->getNumOperands(); I < E; ++I) {
-    MDNode *KernelMD = KernelMDs->getOperand(I);
-    if (KernelMD->getNumOperands() == 0)
-      continue;
-    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0));
-
-    if (Kernel == F)
-      return KernelMD;
-  }
-  return nullptr;
-}
-
-MDNode *
-LLVMToSPIRV::oclGetArgMetadata(Function *F, const std::string &MDName) {
-  auto KernelMD = oclGetKernelMetadata(F);
-  if (!KernelMD)
-    return nullptr;
-
-  for (unsigned MI = 1, ME = KernelMD->getNumOperands(); MI < ME; ++MI) {
-    MDNode *MD = dyn_cast<MDNode>(KernelMD->getOperand(MI));
-    if (!MD)
-      continue;
-    MDString *NameMD = dyn_cast<MDString>(MD->getOperand(0));
-    if (!NameMD)
-      continue;
-    StringRef Name = NameMD->getString();
-    if (Name == MDName) {
-      return MD;
-    }
-  }
-  return nullptr;
-}
-
-
-void
-LLVMToSPIRV::oclGetMutatedArgumentTypesByArgBaseTypeMetadata(
-    llvm::FunctionType* FT,
-    std::map<unsigned, Type*>& ChangedType, Function* F) {
-  auto TypeMD = oclGetArgBaseTypeMetadata(F);
-  if (!TypeMD)
-    return;
-  auto PI = FT->param_begin();
-  for (unsigned I = 1, E = TypeMD->getNumOperands(); I != E; ++I, ++PI) {
-    auto OCLTyStr = getMDOperandAsString(TypeMD, I);
-    auto NewTy = *PI;
-    if (OCLTyStr == OCL_TYPE_NAME_SAMPLER_T && !NewTy->isStructTy()) {
-      ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
-          kSPR2TypeName::Sampler);
-    } else if (isPointerToOpaqueStructType(NewTy)) {
-      auto STName = NewTy->getPointerElementType()->getStructName();
-      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
-        auto Ty = STName.str();
-        auto AccMD = oclGetArgAccessQualifierMetadata(F);
-        auto AccStr = getMDOperandAsString(AccMD, I);
-        ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
-            Ty + kSPR2TypeName::Delimiter + AccStr);
-      } else if (STName == SPIR_TYPE_NAME_PIPE_T) {
-        auto Ty = STName.str();
-        auto AccMD = oclGetArgAccessQualifierMetadata(F);
-        auto AccStr = getMDOperandAsString(AccMD, I);
-        ChangedType[I - 1] = getOrCreateOpaquePtrType(M,
-            Ty + kSPR2TypeName::Delimiter + AccStr);
-      }
-    }
-  }
-}
-
-
-void
-LLVMToSPIRV::mutateFunctionType(const std::map<unsigned, Type*>& ChangedType,
-    llvm::FunctionType* &FT) {
-  if (ChangedType.empty())
-    return;
-  std::vector<Type*> ArgTys;
-  getFunctionTypeParameterTypes(FT, ArgTys);
-  for (auto& I : ChangedType)
-    ArgTys[I.first] = I.second;
-  FT = FunctionType::get(FT->getReturnType(), ArgTys, FT->isVarArg());
-}
-
-// OCL sampler, image and pipe type need to be regularized before converting
-// to SPIRV types.
-//
-// OCL sampler type is represented as i32 in LLVM, however in SPIRV it is
-// represented as OpTypeSampler. Also LLVM uses the same pipe type to
-// represent pipe types with different underlying data types, however
-// in SPIRV they are different types. OCL image and pipie types do not
-// encode access qualifier, which is part of SPIRV types for image and pipe.
-//
-// The function types in LLVM need to be regularized before translating
-// to SPIRV function types:
-//
-// sampler type as i32 -> opencl.sampler_t opaque type
-// opencl.pipe_t opaque type with underlying opencl type x and access
-//   qualifier y -> opencl.pipe_t.x.y opaque type
-// opencl.image_x opaque type with access qualifier y ->
-//   opencl.image_x.y opaque type
-//
-// The converter relies on kernel_arg_base_type to identify the sampler
-// type, the underlying data type of pipe type, and access qualifier for
-// image and pipe types. The FE is responsible to generate the correct
-// kernel_arg_base_type metadata.
-//
-// Alternatively,the FE may choose to use opencl.sampler_t to represent
-// sampler type, use opencl.pipe_t.x.y to represent pipe type with underlying
-// opencl data type x and access qualifier y, and use opencl.image_x.y to
-// represent image_x type with access qualifier y.
-//
-FunctionType *
-LLVMToSPIRV::oclGetRegularizedFunctionType(Function *F) {
-  auto FT = F->getFunctionType();
-  std::map<unsigned, Type *> ChangedType;
-  oclGetMutatedArgumentTypesByArgBaseTypeMetadata(FT, ChangedType, F);
-  mutateFunctionType(ChangedType, FT);
-  return FT;
-}
-
 bool
 LLVMToSPIRV::transAddressingMode() {
   Triple TargetTriple(M->getTargetTriple());
@@ -1658,6 +1521,7 @@ llvm::WriteSPIRV(Module *M, std::ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
+  PassMgr.add(createOCLTypeToSPIRV());
   PassMgr.add(createLLVMToSPIRV(BM.get()));
   PassMgr.run(*M);
 
