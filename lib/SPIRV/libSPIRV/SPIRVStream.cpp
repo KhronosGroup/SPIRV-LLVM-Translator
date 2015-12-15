@@ -260,15 +260,5 @@ std::ostream& SPIRVNL(std::ostream &IS) {
   return IS;
 }
 
-const SPIRVEncoder&
-operator<<(const SPIRVEncoder& O, const SPIRVTextOnly& T) {
-#ifdef _SPIRV_SUPPORT_TEXT_FMT
-  if (SPIRVUseTextFormat) {
-    O.OS << T.text;
-  }
-#endif
-  return O;
-}
-
 } // end of SPIRV namespace
 

@@ -225,7 +225,6 @@ SPIRVMap<SPIRVLinkageTypeKind, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(SPIRVLinkageTypeKind, SPIRVLinkageTypeMap)
 
-
 template<> inline void
 SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInPosition, "Position");

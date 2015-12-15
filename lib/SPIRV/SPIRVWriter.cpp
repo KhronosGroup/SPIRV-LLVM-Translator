@@ -537,7 +537,7 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
   if (oclIsKernel(F))
     BM->addEntryPoint(ExecutionModelKernel, BF->getId());
   else if (F->getLinkage() != GlobalValue::InternalLinkage)
-    BF->setLinkageType(transLinkageType(static_cast<GlobalValue*>(F)));
+    BF->setLinkageType(transLinkageType(F));
   auto Attrs = F->getAttributes();
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
       ++I) {
@@ -725,7 +725,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (auto GV = dyn_cast<GlobalVariable>(V)) {
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
         transType(GV->getType()), GV->isConstant(),
-        transLinkageType(static_cast<GlobalValue*>(GV)),
+        transLinkageType(GV),
         GV->hasInitializer()?transValue(GV->getInitializer(), nullptr):nullptr,
         GV->getName(),
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(
