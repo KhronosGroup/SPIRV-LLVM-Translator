@@ -44,7 +44,7 @@
 namespace SPIRV{
 
 /// Write string with quote. Replace " with \".
-static void writeQuotedString(llvm::raw_ostream& O, const std::string& Str) {
+static void writeQuotedString(spv_ostream& O, const std::string& Str) {
   O << '"';
   for (auto I : Str) {
     if (I == '"')
@@ -251,7 +251,7 @@ SPIRVDecoder::validate()const {
   assert(!IS.bad() && "Bad iInput stream");
 }
 
-llvm::raw_ostream& SPIRVNL(llvm::raw_ostream &IS) {
+spv_ostream& SPIRVNL(spv_ostream &IS) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat)
     IS << '\n';

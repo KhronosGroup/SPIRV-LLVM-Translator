@@ -82,7 +82,7 @@ public:
 
   void setAttr() { setHasNoType();}
   _SPIRV_DCL_ENCDEC
-  void encodeChildren(llvm::raw_ostream &)const;
+  void encodeChildren(spv_ostream &)const;
   void validate()const {
     SPIRVValue::validate();
     assert(ParentF && "Invalid parent function");

@@ -129,8 +129,8 @@ public:
     return BB;
   }
 
-  void encodeChildren(llvm::raw_ostream &)const;
-  void encodeExecutionModes(llvm::raw_ostream &)const;
+  void encodeChildren(spv_ostream &)const;
+  void encodeExecutionModes(spv_ostream &)const;
   _SPIRV_DCL_ENCDEC
   void validate()const {
     SPIRVValue::validate();

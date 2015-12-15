@@ -132,7 +132,7 @@ SPIRVEntry::getValueType(SPIRVId TheId)const {
 }
 
 SPIRVEncoder
-SPIRVEntry::getEncoder(llvm::raw_ostream &O)const{
+SPIRVEntry::getEncoder(spv_ostream &O)const{
   return SPIRVEncoder(O);
 }
 
@@ -163,29 +163,29 @@ SPIRVEntry::setModule(SPIRVModule *TheModule) {
 }
 
 void
-SPIRVEntry::encode(llvm::raw_ostream &O) const {
+SPIRVEntry::encode(spv_ostream &O) const {
   assert (0 && "Not implemented");
 }
 
 void
-SPIRVEntry::encodeName(llvm::raw_ostream &O) const {
+SPIRVEntry::encodeName(spv_ostream &O) const {
   if (!Name.empty())
     O << SPIRVName(this, Name);
 }
 
 void
-SPIRVEntry::encodeAll(llvm::raw_ostream &O) const {
+SPIRVEntry::encodeAll(spv_ostream &O) const {
   encodeWordCountOpCode(O);
   encode(O);
   encodeChildren(O);
 }
 
 void
-SPIRVEntry::encodeChildren(llvm::raw_ostream &O)const {
+SPIRVEntry::encodeChildren(spv_ostream &O)const {
 }
 
 void
-SPIRVEntry::encodeWordCountOpCode(llvm::raw_ostream &O) const {
+SPIRVEntry::encodeWordCountOpCode(spv_ostream &O) const {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     getEncoder(O) << WordCount << OpCode;
@@ -367,7 +367,7 @@ SPIRVEntry::hasLinkageType() const {
 }
 
 void
-SPIRVEntry::encodeDecorate(llvm::raw_ostream &O) const {
+SPIRVEntry::encodeDecorate(spv_ostream &O) const {
   for (auto& i:Decorates)
     O << *i.second;
 }
@@ -388,8 +388,8 @@ SPIRVEntry::setLinkageType(SPIRVLinkageTypeKind LT) {
   addDecorate(new SPIRVDecorateLinkageAttr(this, Name, LT));
 }
 
-llvm::raw_ostream &
-operator<<(llvm::raw_ostream &O, const SPIRVEntry &E) {
+spv_ostream &
+operator<<(spv_ostream &O, const SPIRVEntry &E) {
   E.validate();
   E.encodeAll(O);
   SPIRVNL(O);
@@ -410,7 +410,7 @@ SPIRVEntryPoint::SPIRVEntryPoint(SPIRVModule *TheModule,
 }
 
 void
-SPIRVEntryPoint::encode(llvm::raw_ostream &O) const {
+SPIRVEntryPoint::encode(spv_ostream &O) const {
   getEncoder(O) << ExecModel << Target << Name;
 }
 
@@ -422,7 +422,7 @@ SPIRVEntryPoint::decode(std::istream &I) {
 }
 
 void
-SPIRVExecutionMode::encode(llvm::raw_ostream &O) const {
+SPIRVExecutionMode::encode(spv_ostream &O) const {
   getEncoder(O) << Target << ExecMode << WordLiterals;
 }
 
@@ -463,7 +463,7 @@ SPIRVName::SPIRVName(const SPIRVEntry *TheTarget, const std::string& TheStr)
 }
 
 void
-SPIRVName::encode(llvm::raw_ostream &O) const {
+SPIRVName::encode(spv_ostream &O) const {
   getEncoder(O) << Target << Str;
 }
 
@@ -482,7 +482,7 @@ _SPIRV_IMP_ENCDEC2(SPIRVString, Id, Str)
 _SPIRV_IMP_ENCDEC3(SPIRVMemberName, Target, MemberNumber, Str)
 
 void
-SPIRVLine::encode(llvm::raw_ostream &O) const {
+SPIRVLine::encode(spv_ostream &O) const {
   getEncoder(O) << Target << FileName << Line << Column;
 }
 
@@ -517,7 +517,7 @@ SPIRVExtInstImport::SPIRVExtInstImport(SPIRVModule *TheModule, SPIRVId TheId,
 }
 
 void
-SPIRVExtInstImport::encode(llvm::raw_ostream &O) const {
+SPIRVExtInstImport::encode(spv_ostream &O) const {
   getEncoder(O) << Id << Str;
 }
 
@@ -534,7 +534,7 @@ SPIRVExtInstImport::validate() const {
 }
 
 void
-SPIRVMemoryModel::encode(llvm::raw_ostream &O) const {
+SPIRVMemoryModel::encode(spv_ostream &O) const {
   getEncoder(O) << Module->getAddressingModel() <<
       Module->getMemoryModel();
 }
@@ -557,7 +557,7 @@ SPIRVMemoryModel::validate() const {
 }
 
 void
-SPIRVSource::encode(llvm::raw_ostream &O) const {
+SPIRVSource::encode(spv_ostream &O) const {
   SPIRVWord Ver = SPIRVWORD_MAX;
   auto Language = Module->getSourceLanguage(&Ver);
   getEncoder(O) << Language << Ver;
@@ -576,7 +576,7 @@ SPIRVSourceExtension::SPIRVSourceExtension(SPIRVModule *M,
   :SPIRVEntryNoId(M, 1 + getSizeInWords(SS)), S(SS){}
 
 void
-SPIRVSourceExtension::encode(llvm::raw_ostream &O) const {
+SPIRVSourceExtension::encode(spv_ostream &O) const {
   getEncoder(O) << S;
 }
 
@@ -590,7 +590,7 @@ SPIRVExtension::SPIRVExtension(SPIRVModule *M, const std::string &SS)
   :SPIRVEntryNoId(M, 1 + getSizeInWords(SS)), S(SS){}
 
 void
-SPIRVExtension::encode(llvm::raw_ostream &O) const {
+SPIRVExtension::encode(spv_ostream &O) const {
   getEncoder(O) << S;
 }
 
@@ -605,7 +605,7 @@ SPIRVCapability::SPIRVCapability(SPIRVModule *M, SPIRVCapabilityKind K)
 }
 
 void
-SPIRVCapability::encode(llvm::raw_ostream &O) const {
+SPIRVCapability::encode(spv_ostream &O) const {
   getEncoder(O) << Kind;
 }
 

@@ -281,7 +281,7 @@ public:
     SPIRVValue *, SPIRVValue*, SPIRVBasicBlock *);
 
   // I/O functions
-  friend llvm::raw_ostream & operator<<(llvm::raw_ostream &O, SPIRVModule& M);
+  friend spv_ostream & operator<<(spv_ostream &O, SPIRVModule& M);
   friend std::istream & operator>>(std::istream &I, SPIRVModule& M);
 
 private:
@@ -1052,23 +1052,23 @@ SPIRVModuleImpl::addVariable(SPIRVType *Type, bool IsConstant,
 }
 
 template<class T>
-llvm::raw_ostream &
-operator<< (llvm::raw_ostream &O, const std::vector<T *>& V) {
+spv_ostream &
+operator<< (spv_ostream &O, const std::vector<T *>& V) {
   for (auto &I: V)
     O << *I;
   return O;
 }
 
 template<class T, class B>
-llvm::raw_ostream &
-operator<< (llvm::raw_ostream &O, const std::multiset<T *, B>& V) {
+spv_ostream &
+operator<< (spv_ostream &O, const std::multiset<T *, B>& V) {
   for (auto &I: V)
     O << *I;
   return O;
 }
 
-llvm::raw_ostream &
-operator<< (llvm::raw_ostream &O, SPIRVModule &M) {
+spv_ostream &
+operator<< (spv_ostream &O, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl*>(&M);
 
   SPIRVEncoder Encoder(O);
@@ -1130,7 +1130,8 @@ operator<< (llvm::raw_ostream &O, SPIRVModule &M) {
     << MI.TypeVec
     << MI.ConstVec
     << MI.VariableVec;
-  SPIRVNL(O) << MI.FuncVec;
+  SPIRVNL(O);
+  O << MI.FuncVec;
   return O;
 }
 
@@ -1329,7 +1330,7 @@ bool IsSPIRVBinary(const std::string &Img) {
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 
-bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS,
+bool ConvertSPIRV(std::istream &IS, spv_ostream &OS,
     std::string &ErrMsg, bool FromText, bool ToText) {
   auto SaveOpt = SPIRVUseTextFormat;
   SPIRVUseTextFormat = FromText;
@@ -1366,9 +1367,14 @@ bool ConvertSPIRV(std::string &Input, std::string &Out,
     return true;
   }
   std::istringstream IS(Input);
+#ifdef _SPIRV_LLVM_API
   llvm::raw_string_ostream OS(Out);
+#else
+  std::ostringstream OS;
+#endif
   if (!ConvertSPIRV(IS, OS, ErrMsg, FromText, ToText))
     return false;
+  Out = OS.str();
   return true;
 }
 

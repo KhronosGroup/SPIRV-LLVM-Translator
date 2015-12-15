@@ -2,6 +2,11 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
   ${CMAKE_CURRENT_SOURCE_DIR}/Mangler
   ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+option(SPIRV_USE_LLVM_API "Enable usage of LLVM API for libSPIRV." ON)
+if ( SPIRV_USE_LLVM_API )
+  add_definitions(-D_SPIRV_LLVM_API)
+endif()
+
 add_llvm_library(LLVMSPIRVLib
   libSPIRV/SPIRVBasicBlock.cpp
   libSPIRV/SPIRVDebug.cpp

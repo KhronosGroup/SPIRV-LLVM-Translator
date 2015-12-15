@@ -73,12 +73,12 @@ SPIRVFunction::getDecoder(std::istream &IS) {
 }
 
 void
-SPIRVFunction::encode(llvm::raw_ostream &O) const {
+SPIRVFunction::encode(spv_ostream &O) const {
   getEncoder(O) << Type << Id << FCtrlMask << FuncType;
 }
 
 void
-SPIRVFunction::encodeChildren(llvm::raw_ostream &O) const {
+SPIRVFunction::encodeChildren(spv_ostream &O) const {
   SPIRVNL(O);
   for (auto &I:Parameters)
     O << *I;
@@ -89,7 +89,7 @@ SPIRVFunction::encodeChildren(llvm::raw_ostream &O) const {
 }
 
 void
-SPIRVFunction::encodeExecutionModes(llvm::raw_ostream &O)const {
+SPIRVFunction::encodeExecutionModes(spv_ostream &O)const {
   for (auto &I:ExecModes)
     O << *I.second;
 }
