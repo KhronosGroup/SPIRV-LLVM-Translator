@@ -143,10 +143,21 @@ unsigned getOCLVersion(Module *M) {
   NamedMDNode *NamedMD = M->getNamedMetadata(kSPIR2MD::OCLVer);
   if (!NamedMD)
     return 0;
-  assert (NamedMD->getNumOperands() == 1 && "Invalid SPIR");
-  MDNode *MD = NamedMD->getOperand(0);
-  unsigned Major = getMDOperandAsInt(MD, 0);
-  unsigned Minor = getMDOperandAsInt(MD, 1);
+  assert (NamedMD->getNumOperands() > 0 && "Invalid SPIR");
+  // If the module was linked with another module, there may be multiple
+  // operands.
+  int Major = 0;
+  int Minor = 0;
+  for (unsigned I = 0, E = NamedMD->getNumOperands(); I != E; ++I) {
+    MDNode *MD = NamedMD->getOperand(I);
+    if (Major == 0) {
+      Major = getMDOperandAsInt(MD, 0);
+      Minor = getMDOperandAsInt(MD, 1);
+    } else if (Major != getMDOperandAsInt(MD, 0)
+        || Minor != getMDOperandAsInt(MD, 1)) {
+      report_fatal_error("OCL version mismatch");
+    }
+  }
   return encodeOCLVer(Major, Minor, 0);
 }
 
