@@ -27,7 +27,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK:   call {{.*}} @_Z15get_image_width17ocl_image1dbuffer
 
 ; CHECK:   call {{.*}} @_Z15get_image_width16ocl_image1darray
-; CHECK:   insertelement <2 x i32> undef
+; CHECK:   insertelement <2 x i32> {{.*}} 0
 ; CHECK:   call {{.*}} i64 @_Z20get_image_array_size16ocl_image1darray
 ; CHECK:   trunc i64 {{.*}} to i32
 ; CHECK:   insertelement <2 x i32> {{.*}} 1

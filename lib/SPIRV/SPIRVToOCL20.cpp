@@ -282,7 +282,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
              "OpImageQuerySize[Lod] must return <2 x iN> vector type");
       getImageSize =
         InsertElementInst::Create(UndefValue::get(CI->getType()), getImageSize,
-                                  ConstantInt::get(int32Ty, 1), CI->getName(), CI);
+                                  ConstantInt::get(int32Ty, 0), CI->getName(), CI);
     } else {
       // get_image_dim and OpImageQuerySize returns different vector
       // types for arrayed and 3d images.
