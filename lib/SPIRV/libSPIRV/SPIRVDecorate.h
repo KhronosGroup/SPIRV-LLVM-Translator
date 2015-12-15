@@ -153,26 +153,28 @@ public:
 
   static void encodeLiterals(SPIRVEncoder& Encoder,
                              const std::vector<SPIRVWord>& Literals) {
-   if(SPIRVUseTextFormat) {
-     Encoder << getString(Literals.cbegin(), Literals.cend() - 1);
-     Encoder.OS << " ";
-     Encoder << (SPIRVLinkageTypeKind)Literals.back();
-   } else {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if(SPIRVUseTextFormat) {
+      Encoder << getString(Literals.cbegin(), Literals.cend() - 1);
+      Encoder.OS << " ";
+      Encoder << (SPIRVLinkageTypeKind)Literals.back();
+    } else
+#endif
      Encoder << Literals;
-   }
   }
 
   static void decodeLiterals(SPIRVDecoder& Decoder, std::vector<SPIRVWord>& Literals) {
-   if(SPIRVUseTextFormat) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if(SPIRVUseTextFormat) {
       std::string Name;
       Decoder >> Name;
       SPIRVLinkageTypeKind Kind;
       Decoder >> Kind;
       std::copy_n(getVec(Name).begin(), Literals.size()-1, Literals.begin());
       Literals.back() = Kind;
-   } else {
+   } else
+#endif
      Decoder >> Literals;
-   }
   }
 };
 
