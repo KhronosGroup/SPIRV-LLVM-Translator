@@ -1153,9 +1153,3 @@ mangleBuiltin(const std::string &UniqName,
 
 }
 
-spv_ostream &operator<<(spv_ostream &O, spv_ostream_manip_t M) {
-  M(O);
-  return O;
-}
-
-

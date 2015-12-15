@@ -412,7 +412,4 @@ getOrInsert(
 
 }
 
-typedef spv_ostream &(*spv_ostream_manip_t)(spv_ostream &IS);
-spv_ostream &operator<<(spv_ostream &O, spv_ostream_manip_t M);
-
 #endif /* SPIRVUTIL_HPP_ */

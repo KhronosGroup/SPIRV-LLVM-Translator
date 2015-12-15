@@ -79,10 +79,10 @@ SPIRVFunction::encode(spv_ostream &O) const {
 
 void
 SPIRVFunction::encodeChildren(spv_ostream &O) const {
-  SPIRVNL(O);
+  O << SPIRVNL();
   for (auto &I:Parameters)
     O << *I;
-  SPIRVNL(O);
+  O << SPIRVNL();
   for (auto &I:BBVec)
     O << *I;
   O << SPIRVFunctionEnd();

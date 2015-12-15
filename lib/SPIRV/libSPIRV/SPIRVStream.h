@@ -91,7 +91,9 @@ public:
 };
 
 /// Output a new line in text mode. Do nothing in binary mode.
-spv_ostream& SPIRVNL(spv_ostream &OS);
+class SPIRVNL {
+  friend spv_ostream &operator<<(spv_ostream &O, const SPIRVNL &E);
+};
 
 template<typename T>
 const SPIRVDecoder&

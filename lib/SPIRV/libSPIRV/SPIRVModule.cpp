@@ -1077,7 +1077,7 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
           << (((SPIRVWord)MI.GeneratorId << 16) | MI.GeneratorVer)
           << MI.NextId /* Bound for Id */
           << MI.InstSchema;
-  SPIRVNL(O);
+  O << SPIRVNL();
 
   for (auto &I:MI.CapSet)
     O << SPIRVCapability(&M, I);
@@ -1129,9 +1129,9 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
     << MI.GroupDecVec
     << MI.TypeVec
     << MI.ConstVec
-    << MI.VariableVec;
-  SPIRVNL(O);
-  O << MI.FuncVec;
+    << MI.VariableVec
+    << SPIRVNL()
+    << MI.FuncVec;
   return O;
 }
 

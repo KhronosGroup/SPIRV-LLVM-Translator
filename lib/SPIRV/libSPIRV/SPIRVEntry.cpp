@@ -37,6 +37,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "SPIRVEntry.h"
 #include "SPIRVDebug.h"
 #include "SPIRVType.h"
 #include "SPIRVFunction.h"
@@ -392,7 +393,7 @@ spv_ostream &
 operator<<(spv_ostream &O, const SPIRVEntry &E) {
   E.validate();
   E.encodeAll(O);
-  SPIRVNL(O);
+  O << SPIRVNL();
   return O;
 }
 

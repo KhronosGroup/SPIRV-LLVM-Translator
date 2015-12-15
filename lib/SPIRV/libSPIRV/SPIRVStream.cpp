@@ -251,12 +251,13 @@ SPIRVDecoder::validate()const {
   assert(!IS.bad() && "Bad iInput stream");
 }
 
-spv_ostream& SPIRVNL(spv_ostream &IS) {
+spv_ostream &
+operator<<(spv_ostream &O, const SPIRVNL &E) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat)
-    IS << '\n';
+    O << '\n';
 #endif
-  return IS;
+  return O;
 }
 
 }
