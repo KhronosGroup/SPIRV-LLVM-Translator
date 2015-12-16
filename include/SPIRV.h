@@ -74,7 +74,7 @@ bool IsSPIRVBinary(std::string &Img);
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
 /// \returns true if succeeds.
-bool ConvertSPIRV(std::istream &IS, std::ostream &OS,
+bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS,
     std::string &ErrMsg, bool FromText, bool ToText);
 
 /// \brief Convert SPIR-V between binary and internel text formats.
@@ -93,7 +93,7 @@ namespace llvm {
 
 /// \brief Translate LLVM module to SPIRV and write to ostream.
 /// \returns true if succeeds.
-bool WriteSPIRV(llvm::Module *M, std::ostream &OS, std::string &ErrMsg);
+bool WriteSPIRV(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
 
 /// \brief Load SPIRV from istream and translate to LLVM module.
 /// \returns true if succeeds.
@@ -145,6 +145,11 @@ ModulePass *createSPIRVToOCL20();
 /// Create a pass for translating SPIR 1.2/2.0 metadata to SPIR-V friendly
 /// metadata.
 ModulePass *createTransOCLMD();
+
+/// Create and return a pass that writes the module to the specified
+/// ostream.
+ModulePass *createSPIRVWriterPass(llvm::raw_ostream &Str);
+
 } // namespace llvm
 
 

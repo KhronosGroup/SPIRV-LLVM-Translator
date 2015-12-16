@@ -1508,7 +1508,7 @@ addPassesForSPIRV(PassManager &PassMgr) {
 }
 
 bool
-llvm::WriteSPIRV(Module *M, std::ostream &OS, std::string &ErrMsg) {
+llvm::WriteSPIRV(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
