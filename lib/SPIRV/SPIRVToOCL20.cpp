@@ -213,6 +213,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
   StructType * imgTy = cast<StructType>(argTy->getPointerElementType());
   assert(imgTy->isOpaque() && "image type must be an opaque structure");
   StringRef imgTyName = imgTy->getName();
+  assert(imgTyName.startswith("opencl.image") && "not an OCL image type");
 
   unsigned imgDim = 0;
   bool imgArray = false;
@@ -224,9 +225,9 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
   } else if (imgTyName.startswith("opencl.image3d")) {
     imgDim = 3;
   }
+  assert(imgDim != 0 && "unexpected image dimensionality");
 
-  if (imgTyName.startswith("opencl.image") &&
-      imgTyName.count("_array_t") > 0) {
+  if (imgTyName.count("_array_") != 0) {
     imgArray = true;
   }
 
