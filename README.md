@@ -37,7 +37,7 @@ The [Khronos OpenCL C compiler](https://github.com/KhronosGroup/SPIR) can be use
 
 To translate between SPIR 1.2/2.0 and SPIR-V:
 
-1. Follow the instructions provided by the Khronos OpenCL C compiler website to use clang to compile OpenCL C source code to SPIR 1.2/2.0 binary.
+1. Follow the instructions provided by the [Khronos OpenCL C compiler](https://github.com/KhronosGroup/SPIR) website to use clang to compile OpenCL C source code to SPIR 1.2/2.0 binary.
 
 2. Execute the following command to translate input.bc to input.spv
 
