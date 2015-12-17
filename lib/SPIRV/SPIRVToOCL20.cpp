@@ -69,7 +69,14 @@ public:
     initializeSPIRVToOCL20Pass(*PassRegistry::getPassRegistry());
   }
   virtual bool runOnModule(Module &M);
-  virtual void visitCallInst(CallInst &CI);
+
+  void visitCallInst(CallInst &CI);
+
+  // SPIR-V reader should translate vector casts into OCL built-ins because
+  // such conversions are not defined neither by OpenCL C/C++ nor
+  // by SPIR 1.2/2.0 standards. So, it is safer to convert such casts into
+  // appropriate calls to conversion built-ins defined by the standards.
+  void visitCastInst(CastInst &CI);
 
   /// Transform __spirv_ImageQuerySize[Lod] into vector of the same lenght
   /// containing {[get_image_width | get_image_dim], get_image_array_size}
@@ -463,7 +470,44 @@ SPIRVToOCL20::getGroupBuiltinPrefix(CallInst* CI) {
   return Prefix;
 }
 
+void SPIRVToOCL20::visitCastInst(CastInst &Cast) {
+  if(!isa<ZExtInst>(Cast) && !isa<SExtInst>(Cast) &&
+     !isa<TruncInst>(Cast) && !isa<FPTruncInst>(Cast) &&
+     !isa<FPExtInst>(Cast) && !isa<FPToUIInst>(Cast) &&
+     !isa<FPToSIInst>(Cast) && !isa<UIToFPInst>(Cast) &&
+     !isa<SIToFPInst>(Cast))
+    return;
+
+  Type const* srcTy = Cast.getSrcTy();
+  Type * dstVecTy = Cast.getDestTy();
+  // Leave scalar casts as is. Skip boolean vector casts becase there
+  // are no suitable OCL built-ins.
+  if(!dstVecTy->isVectorTy() ||
+     srcTy->getScalarSizeInBits() == 1 ||
+     dstVecTy->getScalarSizeInBits() == 1)
+    return;
+
+  // Assemble built-in name -> convert_gentypeN
+  std::string castBuiltInName(kOCLBuiltinName::ConvertPrefix);
+  // Check if this is 'floating point -> unsigned integer' cast
+  castBuiltInName +=
+    mapLLVMTypeToOCLType(dstVecTy, !isa<FPToUIInst>(Cast));
+
+  // Replace LLVM conversion instruction with call to conversion built-in
+  BuiltinFuncMangleInfo mangle;
+  // It does matter if the source is unsigned integer or not. SExt is for
+  // signed source, ZExt and UIToFPInst are for unsigned source.
+  if(isa<ZExtInst>(Cast) || isa<UIToFPInst>(Cast))
+    mangle.addUnsignedArg(0);
+
+  AttributeSet attributes;
+  CallInst *call = addCallInst(M, castBuiltInName, dstVecTy, Cast.getOperand(0),
+                              &attributes, &Cast, &mangle, Cast.getName(), false);
+  Cast.replaceAllUsesWith(call);
+  Cast.eraseFromParent();
 }
+
+} // namespace SPIRV
 
 INITIALIZE_PASS(SPIRVToOCL20, "spvtoocl20",
     "Translate SPIR-V builtins to OCL 2.0 builtins", false, false)
