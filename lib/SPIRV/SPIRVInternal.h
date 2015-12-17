@@ -710,9 +710,11 @@ std::string getMDOperandAsString(MDNode* N, unsigned I);
 /// Get metadata operand as type.
 Type* getMDOperandAsType(MDNode* N, unsigned I);
 
-/// Get a named metadata as string.
-/// Assume the named metadata has only one operand which contains one string.
-std::string getNamedMDAsString(Module *M, const std::string &MDName);
+/// Get a named metadata as a set of string.
+/// Assume the named metadata has one or more operands each of which contains
+/// one string.
+std::set<std::string> getNamedMDAsStringSet(Module *M,
+    const std::string &MDName);
 
 /// Get SPIR-V language by SPIR-V metadata spirv.Source
 std::tuple<unsigned, unsigned, std::string>

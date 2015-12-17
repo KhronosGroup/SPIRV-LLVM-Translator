@@ -87,7 +87,7 @@ bool
 TransOCLMD::runOnModule(Module& Module) {
   M = &Module;
   Ctx = &M->getContext();
-  CLVer = getOCLVersion(M);
+  CLVer = getOCLVersion(M, true);
   if (CLVer == 0)
     return false;
 
@@ -128,12 +128,9 @@ TransOCLMD::visit(Module *M) {
         .done();
 
   // Add extensions
-  std::string OCLExtensions = getNamedMDAsString(M, kSPIR2MD::Extensions);
-  std::string OCLOptionalCoreFeatures = getNamedMDAsString(M,
-      kSPIR2MD::OptFeatures);
-  auto S = concat(OCLOptionalCoreFeatures, OCLExtensions);
-  SmallVector<StringRef, 10> Exts;
-  StringRef(S).split(Exts, " ", -1, false);
+  auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
+  for (auto &&I:getNamedMDAsStringSet(M, kSPIR2MD::OptFeatures))
+      Exts.insert(std::move(I));
   if (!Exts.empty()) {
     auto N = B.addNamedMD(kSPIRVMD::Extension);
     for (auto &I:Exts)

@@ -250,10 +250,12 @@ WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI);
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
 
 /// Get OCL version from metadata opencl.ocl.version.
+/// \param AllowMulti Allows multiple operands if true.
 /// \return OCL version encoded as Major*10^5+Minor*10^3+Rev,
 /// e.g. 201000 for OCL 2.1, 200000 for OCL 2.0, 102000 for OCL 1.2,
 /// 0 if metadata not found.
-unsigned getOCLVersion(Module *M);
+/// If there are multiple operands, check they are identical.
+unsigned getOCLVersion(Module *M, bool AllowMulti = false);
 
 /// Encode OpenCL version as Major*10^5+Minor*10^3+Rev.
 unsigned

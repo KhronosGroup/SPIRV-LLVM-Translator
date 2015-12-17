@@ -44,13 +44,18 @@ entry:
 
 attributes #0 = { nounwind }
 
+; CHECK-DAG: 4 Extension "cl_images"
+; CHECK-DAG: 8 Extension "cl_khr_int64_base_atomics"
+; CHECK-DAG: 9 Extension "cl_khr_int64_extended_atomics"
+; CHECK: 3 Source 3 200000
+
 !opencl.kernels = !{!0, !7}
 !opencl.enable.FP_CONTRACT = !{}
 !llvm.ident = !{!12, !12}
-
-; CHECK: 3 Source 3 200000
 !opencl.ocl.version = !{!13, !13}
 !opencl.spir.version = !{!13, !13}
+!opencl.used.extensions = !{!24, !25}
+!opencl.used.optional.core.features = !{!26, !27}
 
 !0 = !{void (i8, i32)* @__OpenCL_writer_kernel, !1, !2, !3, !4, !5, !6}
 !1 = !{!"kernel_arg_addr_space", i32 0, i32 0}
@@ -76,3 +81,7 @@ attributes #0 = { nounwind }
 !21 = !{!20, !18, i64 4}
 !22 = !{!23, !23, i64 0}
 !23 = !{!"any pointer", !15, i64 0}
+!24 = !{!"cl_khr_int64_base_atomics"}
+!25 = !{!"cl_khr_int64_base_atomics cl_khr_int64_extended_atomics"}
+!26 = !{!"cl_images"}
+!27 = !{!""}

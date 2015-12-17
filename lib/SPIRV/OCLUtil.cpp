@@ -139,26 +139,26 @@ decodeOCLVer(unsigned Ver) {
   return std::make_tuple(Major, Minor, Rev);
 }
 
-unsigned getOCLVersion(Module *M) {
+unsigned getOCLVersion(Module *M, bool AllowMulti) {
   NamedMDNode *NamedMD = M->getNamedMetadata(kSPIR2MD::OCLVer);
   if (!NamedMD)
     return 0;
   assert (NamedMD->getNumOperands() > 0 && "Invalid SPIR");
+  if (!AllowMulti && NamedMD->getNumOperands() != 1)
+    report_fatal_error("Multiple OCL version metadata not allowed");
+
   // If the module was linked with another module, there may be multiple
   // operands.
-  int Major = 0;
-  int Minor = 0;
-  for (unsigned I = 0, E = NamedMD->getNumOperands(); I != E; ++I) {
-    MDNode *MD = NamedMD->getOperand(I);
-    if (Major == 0) {
-      Major = getMDOperandAsInt(MD, 0);
-      Minor = getMDOperandAsInt(MD, 1);
-    } else if (Major != getMDOperandAsInt(MD, 0)
-        || Minor != getMDOperandAsInt(MD, 1)) {
+  auto getVer = [=](unsigned I) {
+    auto MD = NamedMD->getOperand(I);
+    return std::make_pair(getMDOperandAsInt(MD, 0), getMDOperandAsInt(MD, 1));
+  };
+  auto Ver = getVer(0);
+  for (unsigned I = 1, E = NamedMD->getNumOperands(); I != E; ++I)
+    if (Ver != getVer(I))
       report_fatal_error("OCL version mismatch");
-    }
-  }
-  return encodeOCLVer(Major, Minor, 0);
+
+  return encodeOCLVer(Ver.first, Ver.second, 0);
 }
 
 void
