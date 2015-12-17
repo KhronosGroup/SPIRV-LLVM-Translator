@@ -33,7 +33,7 @@ Run Instructions for llvm-spirv
 
 llvm-spirv only accepts SPIR 1.2/2.0 or LLVM bitcode following a [SPIR-V friendly format](https://github.com/KhronosGroup/SPIRV-LLVM/blob/khronos/spirv-3.6.1/docs/SPIRVRepresentationInLLVM.rst).
 
-The [Khronos OpenCL C compiler](https://github.com/KhronosGroup/SPIR) can be used to compile OpenCL 1.2/2.0 C source code to SPIR 1.2/2.0 or SPIR-V. It has three branches: spir_12, spir_20_provisional, and spirv-1.0, corresponding to SPIR 1.2, SPIR 2.0, and SPIR-V, respectively. The spirv-1.0 branch emits SPIR-V directly.
+The [Khronos OpenCL C compiler](https://github.com/KhronosGroup/SPIR) can be used to compile OpenCL 1.2/2.0 C source code to SPIR 1.2/2.0 or SPIR-V. It has three branches: spir_12, spir_20_provisional, and spirv-1.0, corresponding to SPIR 1.2, SPIR 2.0, and SPIR-V, respectively. The spirv-1.0 branch emits SPIR-V directly. It is recommended to use the spirv-1.0 branch since SPIR 1.2/2.0 have limitations for representing sampler types and access qualifier of image and pipe types, which may result in incorrect SPIR-V in certain cases.
 
 To translate between SPIR 1.2/2.0 and SPIR-V:
 
