@@ -93,6 +93,10 @@ cl::opt<bool> SPIRVGenKernelArgNameMD("spirv-gen-kernel-arg-name-md",
     cl::init(false), cl::desc("Enable generating OpenCL kernel argument name "
     "metadata"));
 
+cl::opt<bool> SPIRVGenImgTypeAccQualPostfix("spirv-gen-image-type-acc-postfix",
+    cl::init(false), cl::desc("Enable generating access qualifier postfix"
+        " in OpenCL image type names"));
+
 // Prefix for placeholder global variable name.
 const char* kPlaceholderPrefix = "placeholder.";
 
@@ -587,10 +591,12 @@ SPIRVToLLVM::transFPType(SPIRVType* T) {
 
 std::string
 SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST) {
-  return std::string(kSPR2TypeName::OCLPrefix)
-       + rmap<std::string>(ST->getDescriptor())
-       + kSPR2TypeName::Delimiter
-       + rmap<std::string>(ST->getAccessQualifier());
+  std::string Name = std::string(kSPR2TypeName::OCLPrefix)
+    + rmap<std::string>(ST->getDescriptor());
+  if (SPIRVGenImgTypeAccQualPostfix)
+    Name = Name + kSPR2TypeName::Delimiter
+      + rmap<std::string>(ST->getAccessQualifier());
+  return std::move(Name);
 }
 
 std::string
