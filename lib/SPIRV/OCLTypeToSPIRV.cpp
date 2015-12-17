@@ -76,10 +76,6 @@ OCLTypeToSPIRV::runOnModule(Module& Module) {
   if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
     return false;
 
-  CLVer = std::get<1>(Src);
-  if (CLVer > kOCLVer::CL20)
-    return false;
-
   for (auto &F:Module.functions())
     adaptArgumentsByMetadata(&F);
 
