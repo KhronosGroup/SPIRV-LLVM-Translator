@@ -13,6 +13,15 @@ target triple = "spir64-unknown-unknown"
 ; and subsequent extract or shufflevector instructions. Unfortunately there is
 ; no get_image_dim for 1D images and get_image_dim cannot replace get_image_array_size
 
+; CHECK-DAG: %opencl.image1d_t = type opaque
+; CHECK-DAG: %opencl.image1d_buffer_t = type opaque
+; CHECK-DAG: %opencl.image1d_array_t = type opaque
+; CHECK-DAG: %opencl.image2d_t = type opaque
+; CHECK-DAG: %opencl.image2d_depth_t = type opaque
+; CHECK-DAG: %opencl.image2d_array_t = type opaque
+; CHECK-DAG: %opencl.image2d_array_depth_t = type opaque
+; CHECK-DAG: %opencl.image3d_t = type opaque
+
 %opencl.image1d_t = type opaque
 %opencl.image1d_buffer_t = type opaque
 %opencl.image1d_array_t = type opaque
