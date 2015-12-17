@@ -71,6 +71,12 @@ public:
   virtual bool runOnModule(Module &M);
   virtual void visitCallInst(CallInst &CI);
 
+  /// Transform __spirv_ImageQuerySize[Lod] into vector of the same lenght
+  /// containing {[get_image_width | get_image_dim], get_image_array_size}
+  /// for all images except image1d_t which is always converted into
+  /// get_image_width returning scalar result.
+  void visitCallSPRIVImageQuerySize(CallInst *CI);
+
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(atomic_op, ops, ..., order(sema), map(scope))
@@ -130,6 +136,8 @@ SPIRVToOCL20::runOnModule(Module& Module) {
 
   translateMangledAtomicTypeName();
 
+  eraseUselessFunctions(&Module);
+
   DEBUG(dbgs() << "After SPIRVToOCL20:\n" << *M);
 
   std::string Err;
@@ -156,6 +164,10 @@ SPIRVToOCL20::visitCallInst(CallInst& CI) {
   DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n'
                << "OpCode = " << OC << '\n');
 
+  if (OC == OpImageQuerySize || OC == OpImageQuerySizeLod) {
+    visitCallSPRIVImageQuerySize(&CI);
+    return;
+  }
   if (OC == OpMemoryBarrier) {
     visitCallSPIRVMemoryBarrier(&CI);
     return;
@@ -191,6 +203,126 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst* CI) {
     Args[2] = getInt32(M, rmap<OCLScopeKind>(MScope));
     return kOCLBuiltinName::AtomicWorkItemFence;
   }, &Attrs);
+}
+
+void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
+  Function * func = CI->getCalledFunction();
+  // Get image type
+  Type * argTy = func->getFunctionType()->getParamType(0);
+  assert(argTy->isPointerTy() && "argument must be a pointer to opaque structure");
+  StructType * imgTy = cast<StructType>(argTy->getPointerElementType());
+  assert(imgTy->isOpaque() && "image type must be an opaque structure");
+  StringRef imgTyName = imgTy->getName();
+  assert(imgTyName.startswith("opencl.image") && "not an OCL image type");
+
+  unsigned imgDim = 0;
+  bool imgArray = false;
+
+  if (imgTyName.startswith("opencl.image1d")) {
+    imgDim = 1;
+  } else if (imgTyName.startswith("opencl.image2d")) {
+    imgDim = 2;
+  } else if (imgTyName.startswith("opencl.image3d")) {
+    imgDim = 3;
+  }
+  assert(imgDim != 0 && "unexpected image dimensionality");
+
+  if (imgTyName.count("_array_") != 0) {
+    imgArray = true;
+  }
+
+  AttributeSet attributes = CI->getCalledFunction()->getAttributes();
+  BuiltinFuncMangleInfo mangle;
+  Type * int32Ty = Type::getInt32Ty(*Ctx);
+  Instruction * getImageSize = nullptr;
+
+  if (imgDim == 1) {
+    // OpImageQuerySize from non-arrayed 1d image is always translated
+    // into get_image_width returning scalar argument
+    getImageSize =
+      addCallInst(M, kOCLBuiltinName::GetImageWidth, int32Ty,
+                  CI->getArgOperand(0), &attributes,
+                  CI, &mangle, CI->getName(), false);
+    // The width of integer type returning by OpImageQuerySize[Lod] may
+    // differ from i32
+    if (CI->getType()->getScalarType() != int32Ty) {
+      getImageSize =
+        CastInst::CreateIntegerCast(getImageSize, CI->getType()->getScalarType(), false,
+                                    CI->getName(), CI);
+    }
+  } else {
+    assert((imgDim == 2 || imgDim == 3) && "invalid image type");
+    assert(CI->getType()->isVectorTy() && "this code can handle vector result type only");
+    // get_image_dim returns int2 and int4 for 2d and 3d images respecitvely.
+    const unsigned imgDimRetEls = imgDim == 2 ? 2 : 4;
+    VectorType * retTy = VectorType::get(int32Ty, imgDimRetEls);
+    getImageSize =
+      addCallInst(M, kOCLBuiltinName::GetImageDim, retTy,
+                  CI->getArgOperand(0), &attributes,
+                  CI, &mangle, CI->getName(), false);
+    // The width of integer type returning by OpImageQuerySize[Lod] may
+    // differ from i32
+    if (CI->getType()->getScalarType() != int32Ty) {
+      getImageSize =
+        CastInst::CreateIntegerCast(getImageSize,
+                                    VectorType::get(CI->getType()->getScalarType(),
+                                                    getImageSize->getType()->getVectorNumElements()),
+                                    false, CI->getName(), CI);
+    }
+  }
+
+  if (imgArray || imgDim == 3) {
+    assert(CI->getType()->isVectorTy() &&
+           "OpImageQuerySize[Lod] must return vector for arrayed and 3d images");
+    const unsigned imgQuerySizeRetEls = CI->getType()->getVectorNumElements();
+
+    if (imgDim == 1) {
+      // get_image_width returns scalar result while OpImageQuerySize
+      // for image1d_array_t returns <2 x i32> vector.
+      assert(imgQuerySizeRetEls == 2 &&
+             "OpImageQuerySize[Lod] must return <2 x iN> vector type");
+      getImageSize =
+        InsertElementInst::Create(UndefValue::get(CI->getType()), getImageSize,
+                                  ConstantInt::get(int32Ty, 0), CI->getName(), CI);
+    } else {
+      // get_image_dim and OpImageQuerySize returns different vector
+      // types for arrayed and 3d images.
+      SmallVector<Constant*, 4> maskEls;
+      for(unsigned idx = 0; idx < imgQuerySizeRetEls; ++idx)
+        maskEls.push_back(ConstantInt::get(int32Ty, idx));
+      Constant * mask = ConstantVector::get(maskEls);
+
+      getImageSize =
+        new ShuffleVectorInst(getImageSize, UndefValue::get(getImageSize->getType()),
+                              mask, CI->getName(), CI);
+    }
+  }
+
+  if (imgArray) {
+    assert((imgDim == 1 || imgDim == 2) && "invalid image array type");
+    // Insert get_image_array_size to the last position of the resulting vector.
+    Type * sizeTy = Type::getIntNTy(*Ctx, M->getDataLayout()->getPointerSizeInBits(0));
+    Instruction * getImageArraySize =
+      addCallInst(M, kOCLBuiltinName::GetImageArraySize, sizeTy,
+                  CI->getArgOperand(0), &attributes,
+                  CI, &mangle, CI->getName(), false);
+    // The width of integer type returning by OpImageQuerySize[Lod] may
+    // differ from size_t which is returned by get_image_array_size
+    if (getImageArraySize->getType() != CI->getType()->getScalarType()) {
+      getImageArraySize =
+        CastInst::CreateIntegerCast(getImageArraySize, CI->getType()->getScalarType(),
+                                    false, CI->getName(), CI);
+    }
+    getImageSize =
+      InsertElementInst::Create(getImageSize, getImageArraySize,
+                                ConstantInt::get(int32Ty,
+                                                 CI->getType()->getVectorNumElements() - 1),
+                                CI->getName(), CI);
+  }
+
+  assert(getImageSize && "must not be null");
+  CI->replaceAllUsesWith(getImageSize);
+  CI->eraseFromParent();
 }
 
 void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {

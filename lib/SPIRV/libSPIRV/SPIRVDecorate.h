@@ -219,7 +219,7 @@ public:
   };
   // Incomplete constructor
   SPIRVDecorationGroup():SPIRVEntry(OC){}
-  void encodeAll(std::ostream &O) const;
+  void encodeAll(spv_ostream &O) const;
   _SPIRV_DCL_ENCDEC
   // Move the given decorates to the decoration group
   void takeDecorates(SPIRVDecorateSet &Decs) {

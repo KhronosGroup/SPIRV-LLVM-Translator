@@ -287,7 +287,7 @@ public:
   virtual SPIRVInstruction *addVectorInsertDynamicInst(SPIRVValue *,
     SPIRVValue *, SPIRVValue*, SPIRVBasicBlock *) = 0;
   // I/O functions
-  friend std::ostream & operator<<(std::ostream &O, SPIRVModule& M);
+  friend spv_ostream & operator<<(spv_ostream &O, SPIRVModule& M);
   friend std::istream & operator>>(std::istream &I, SPIRVModule& M);
 protected:
   bool AutoAddCapability;
@@ -311,7 +311,7 @@ private:
 /// Convert SPIR-V between binary and internel text formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
-bool ConvertSPIRV(std::istream &IS, std::ostream &OS,
+bool ConvertSPIRV(std::istream &IS, spv_ostream &OS,
     std::string &ErrMsg, bool FromText, bool ToText);
 
 /// Convert SPIR-V between binary and internel text formats.

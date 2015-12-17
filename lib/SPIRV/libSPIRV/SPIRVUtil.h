@@ -40,6 +40,14 @@
 #ifndef SPIRVUTIL_H_
 #define SPIRVUTIL_H_
 
+#ifdef _SPIRV_LLVM_API
+#include "llvm/Support/raw_ostream.h"
+#define spv_ostream llvm::raw_ostream
+#else
+#include <ostream>
+#define spv_ostream std::ostream
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -403,6 +411,5 @@ getOrInsert(
 }
 
 }
-
 
 #endif /* SPIRVUTIL_HPP_ */
