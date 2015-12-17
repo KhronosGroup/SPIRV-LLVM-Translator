@@ -5,7 +5,7 @@ target triple = "spir64-unknown-unknown"
 
 %opencl.image2d_t = type opaque
 
-; CHECK: 8 Decorate [[ID:[0-9]*]] LinkageAttributes 1734438249 1835094885 1919249520 0 0
+; CHECK: 8 Decorate [[ID:[0-9]*]] LinkageAttributes "imageSampler" Export
 ; CHECK: 5 Variable {{[0-9]*}} [[ID]] 0 {{[0-9]*}}
 
 @imageSampler = addrspace(2) constant i32 36, align 4

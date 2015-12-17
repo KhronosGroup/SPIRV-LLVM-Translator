@@ -308,6 +308,7 @@ private:
   /// \return Id of the constant.
   SPIRVId addInt32(int);
   void transFunction(Function *I);
+  SPIRV::SPIRVLinkageTypeKind transLinkageType(const GlobalValue* GV);
 };
 
 
@@ -535,9 +536,8 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
     BM->setName(BF, F->getName());
   if (oclIsKernel(F))
     BM->addEntryPoint(ExecutionModelKernel, BF->getId());
-  else if (F->getLinkage() != GlobalValue::InternalLinkage &&
-           F->getLinkage() != GlobalValue::LinkOnceODRLinkage)
-    BF->setLinkageType(SPIRSPIRVLinkageTypeMap::map(F->getLinkage()));
+  else if (F->getLinkage() != GlobalValue::InternalLinkage)
+    BF->setLinkageType(transLinkageType(F));
   auto Attrs = F->getAttributes();
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
       ++I) {
@@ -725,7 +725,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (auto GV = dyn_cast<GlobalVariable>(V)) {
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
         transType(GV->getType()), GV->isConstant(),
-        SPIRSPIRVLinkageTypeMap::map(GV->getLinkage()),
+        transLinkageType(GV),
         GV->hasInitializer()?transValue(GV->getInitializer(), nullptr):nullptr,
         GV->getName(),
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(
@@ -807,7 +807,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (AllocaInst *Alc = dyn_cast<AllocaInst>(V))
     return mapValue(V, BM->addVariable(
       transType(Alc->getType()), false,
-      SPIRSPIRVLinkageTypeMap::map(GlobalValue::InternalLinkage),
+      SPIRVLinkageTypeKind::LinkageTypeInternal,
       nullptr, Alc->getName(),
       StorageClassFunction, BB));
 
@@ -1483,7 +1483,16 @@ LLVMToSPIRV::addInt32(int I) {
   return transValue(getInt32(M, I), nullptr, false)->getId();
 }
 
+SPIRV::SPIRVLinkageTypeKind
+LLVMToSPIRV::transLinkageType(const GlobalValue* GV) {
+  if(GV->isDeclarationForLinker() || GV->hasCommonLinkage())
+    return SPIRVLinkageTypeKind::LinkageTypeImport;
+  if(GV->hasInternalLinkage() || GV->hasPrivateLinkage())
+    return SPIRVLinkageTypeKind::LinkageTypeInternal;
+  return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
+
+} // end of SPIRV namespace
 
 char LLVMToSPIRV::ID = 0;
 
@@ -1530,5 +1539,4 @@ llvm::RegularizeLLVMForSPIRV(Module *M, std::string &ErrMsg) {
   PassMgr.run(*M);
   return true;
 }
-
 

@@ -86,7 +86,12 @@ SPIRVDecorateGeneric::getLiteralCount() const {
 
 void
 SPIRVDecorate::encode(spv_ostream &O)const {
-  getEncoder(O) << Target << Dec << Literals;
+  SPIRVEncoder Encoder = getEncoder(O);
+  Encoder << Target << Dec;
+  if ( Dec == DecorationLinkageAttributes )
+    SPIRVDecorateLinkageAttr::encodeLiterals(Encoder, Literals);
+  else
+    Encoder << Literals;
 }
 
 void
@@ -97,7 +102,12 @@ SPIRVDecorate::setWordCount(SPIRVWord Count){
 
 void
 SPIRVDecorate::decode(std::istream &I){
-  getDecoder(I) >> Target >> Dec >> Literals;
+  SPIRVDecoder Decoder = getDecoder(I);
+  Decoder >> Target >> Dec;
+  if(Dec == DecorationLinkageAttributes)
+    SPIRVDecorateLinkageAttr::decodeLiterals(Decoder, Literals);
+  else
+    Decoder >> Literals;
   getOrCreateTarget()->addDecorate(this);
 }
 
