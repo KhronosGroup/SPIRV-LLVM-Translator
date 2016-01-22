@@ -703,7 +703,8 @@ void OCL20ToSPIRV::visitCallConvert(CallInst* CI,
   }
   auto Loc = DemangledName.find("_rt");
   std::string Rounding;
-  if (Loc != std::string::npos) {
+  if (Loc != std::string::npos &&
+      !(isa<IntegerType>(SrcTy) && IsTargetInt)) {
     Rounding = DemangledName.substr(Loc, 4);
   }
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
