@@ -58,9 +58,38 @@ using namespace SPIRV;
 
 namespace OCLUtil {
 
-cl::opt<enum SPIRAddressSpace>
-ReservedIdAddrSpaceForOutput("spirv-reserved-id-addr-space",
-    cl::desc("Addr space of reserved id for output"), cl::init(SPIRAS_Global));
+
+#ifndef SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+  #define SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE SPIRAS_Private
+#endif
+
+#ifndef SPIRV_QUEUE_T_ADDR_SPACE
+  #define SPIRV_QUEUE_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+
+#ifndef SPIRV_EVENT_T_ADDR_SPACE
+  #define SPIRV_EVENT_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+
+#ifndef SPIRV_CLK_EVENT_T_ADDR_SPACE
+  #define SPIRV_CLK_EVENT_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+
+#ifndef SPIRV_RESERVE_ID_T_ADDR_SPACE
+  #define SPIRV_RESERVE_ID_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+// Excerpt from SPIR 2.0 spec.:
+//   Pipe objects are represented using pointers to the opaque %opencl.pipe LLVM structure type
+//   which reside in the global address space.
+#ifndef SPIRV_PIPE_ADDR_SPACE
+  #define SPIRV_PIPE_ADDR_SPACE SPIRAS_Global
+#endif
+// Excerpt from SPIR 2.0 spec.:
+//   Note: Images data types reside in global memory and hence should be marked as such in the
+//   "kernel arg addr space" metadata.
+#ifndef SPIRV_IMAGE_ADDR_SPACE
+  #define SPIRV_IMAGE_ADDR_SPACE SPIRAS_Global
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -238,16 +267,22 @@ transVecTypeHint(MDNode* Node) {
 SPIRAddressSpace
 getOCLOpaqueTypeAddrSpace(Op OpCode) {
   switch (OpCode) {
-  case OpTypePipe:
   case OpTypeQueue:
+    return SPIRV_QUEUE_T_ADDR_SPACE;
   case OpTypeEvent:
+    return SPIRV_EVENT_T_ADDR_SPACE;
   case OpTypeDeviceEvent:
-  case OpTypeSampler:
-    return SPIRAS_Global;
+    return SPIRV_CLK_EVENT_T_ADDR_SPACE;
   case OpTypeReserveId:
-    return ReservedIdAddrSpaceForOutput;
+    return SPIRV_RESERVE_ID_T_ADDR_SPACE;
+  case OpTypePipe:
+    return SPIRV_PIPE_ADDR_SPACE;
+  case OpTypeImage:
+  case OpTypeSampledImage:
+    return SPIRV_IMAGE_ADDR_SPACE;
   default:
-    return SPIRAS_Private;
+    assert(false && "No address space is determined for some OCL type");
+    return SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE;
   }
 }
 
@@ -375,4 +410,3 @@ llvm::MangleOpenCLBuiltin(const std::string &UniqName,
   OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo;
   MangledName = SPIRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }
-
