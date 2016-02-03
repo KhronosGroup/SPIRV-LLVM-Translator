@@ -1637,25 +1637,23 @@ public:
   static const Op OC = OpGroupAsyncCopy;
   static const SPIRVWord WC = 9;
   // Complete constructor
-  SPIRVGroupAsyncCopy(Scope TheScope, SPIRVId TheId,
+  SPIRVGroupAsyncCopy(SPIRVValue *TheScope, SPIRVId TheId,
       SPIRVValue *TheDest, SPIRVValue *TheSrc, SPIRVValue *TheNumElems,
       SPIRVValue *TheStride, SPIRVValue *TheEvent, SPIRVBasicBlock *TheBB)
     :SPIRVInstruction(WC, OC, TheEvent->getType(), TheId, TheBB),
-     ExecScope(TheScope), Destination(TheDest->getId()),
+    ExecScope(TheScope->getId()), Destination(TheDest->getId()),
      Source(TheSrc->getId()), NumElements(TheNumElems->getId()),
      Stride(TheStride->getId()), Event(TheEvent->getId()){
     validate();
     assert(TheBB && "Invalid BB");
   }
   // Incomplete constructor
-  SPIRVGroupAsyncCopy():SPIRVInstruction(OC), ExecScope(ScopeInvocation),
+  SPIRVGroupAsyncCopy():SPIRVInstruction(OC), ExecScope(SPIRVID_INVALID),
       Destination(SPIRVID_INVALID), Source(SPIRVID_INVALID),
       NumElements(SPIRVID_INVALID), Stride(SPIRVID_INVALID),
       Event(SPIRVID_INVALID){
   }
-  Scope getExecScope() const {
-    return ExecScope;
-  }
+  SPIRVValue *getExecScope() const { return getValue(ExecScope); }
   SPIRVValue *getDestination()const { return getValue(Destination);}
   SPIRVValue *getSource()const { return getValue(Source);}
   SPIRVValue *getNumElements()const { return getValue(NumElements);}
@@ -1678,9 +1676,8 @@ protected:
     assert(OpCode == OC);
     assert(WordCount == WC);
     SPIRVInstruction::validate();
-    isValid(ExecScope);
   }
-  Scope ExecScope;
+  SPIRVId ExecScope;
   SPIRVId Destination;
   SPIRVId Source;
   SPIRVId NumElements;
