@@ -87,8 +87,13 @@ namespace SPIR {
     "9ndrange_t",                    //PRIMITIVE_NDRANGE_T
     "12ocl_clkevent",                //PRIMITIVE_CLK_EVENT_T
     "11ocl_sampler",                 //PRIMITIVE_SAMPLER_T
+#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
+    "i",                             //PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T
+    "i",                             //PRIMITIVE_CLK_PROFILING_INFO
+#else
     "22kernel_enqueue_flags_t",      //PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T
-    "18clk_profiling_info",          //PRIMITIVE_CLK_PROFILING_INFOR
+    "18clk_profiling_info",          //PRIMITIVE_CLK_PROFILING_INFO
+#endif
   };
 
   const char* readableAttribute[ATTR_NUM] = {
