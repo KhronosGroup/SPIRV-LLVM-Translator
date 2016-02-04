@@ -364,7 +364,8 @@ getSPIRVFuncName(Op OC, StringRef PostFix) {
 
 std::string
 getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned) {
-  return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider + getPostfixForReturnType(pRetTy, false));
+  return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider
+      + getPostfixForReturnType(pRetTy, false));
 }
 
 std::string
