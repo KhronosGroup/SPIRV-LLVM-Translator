@@ -359,7 +359,8 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName == kOCLBuiltinName::GetImageWidth ||
       DemangledName == kOCLBuiltinName::GetImageHeight ||
       DemangledName == kOCLBuiltinName::GetImageDepth ||
-      DemangledName == kOCLBuiltinName::GetImageDim) {
+      DemangledName == kOCLBuiltinName::GetImageDim   ||
+      DemangledName == kOCLBuiltinName::GetImageArraySize) {
     visitCallGetImageSize(&CI, MangledName, DemangledName);
     return;
   }
