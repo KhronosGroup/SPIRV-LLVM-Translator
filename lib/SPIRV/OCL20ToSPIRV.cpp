@@ -856,16 +856,16 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
       assert(IsImg);
       Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
       Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-      Ret = CI->getCalledFunction()->getReturnType();
+      Ret = CI->getType()->isIntegerTy(64) ?
+          Type::getInt64Ty(*Ctx) :
+          Type::getInt32Ty(*Ctx);
       if (Dim > 1)
         Ret = VectorType::get(Ret, Dim);
       if (Desc.Dim == DimBuffer)
-          return getSPIRVFuncName(OpImageQuerySize,
-              kSPIRVPostfix::Divider + getPostfixForReturnType(CI, false));
+          return getSPIRVFuncName(OpImageQuerySize, CI->getType());
       else {
         Args.push_back(getInt32(M, 0));
-        return getSPIRVFuncName(OpImageQuerySizeLod,
-            kSPIRVPostfix::Divider + getPostfixForReturnType(CI, false));
+        return getSPIRVFuncName(OpImageQuerySizeLod, CI->getType());
       }
     },
     [&](CallInst *NCI)->Instruction * {

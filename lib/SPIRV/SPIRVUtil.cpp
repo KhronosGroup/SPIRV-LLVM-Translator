@@ -110,14 +110,14 @@ saveLLVMModule(Module *M, const std::string &OutputFile) {
 }
 
 std::string
-mapLLVMTypeToOCLType(Type* Ty, bool Signed) {
+mapLLVMTypeToOCLType(const Type* Ty, bool Signed) {
   if (Ty->isHalfTy())
     return "half";
   if (Ty->isFloatTy())
     return "float";
   if (Ty->isDoubleTy())
     return "double";
-  if (IntegerType* intTy = dyn_cast<IntegerType>(Ty)) {
+  if (auto* intTy = dyn_cast<IntegerType>(Ty)) {
     std::string SignPrefix;
     std::string Stem;
     if (!Signed)
@@ -141,7 +141,7 @@ mapLLVMTypeToOCLType(Type* Ty, bool Signed) {
     }
     return SignPrefix + Stem;
   }
-  if (VectorType* vecTy = dyn_cast<VectorType>(Ty)) {
+  if (auto* vecTy = dyn_cast<VectorType>(Ty)) {
     Type* eleTy = vecTy->getElementType();
     unsigned size = vecTy->getVectorNumElements();
     std::stringstream ss;
@@ -363,6 +363,11 @@ getSPIRVFuncName(Op OC, StringRef PostFix) {
 }
 
 std::string
+getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned) {
+  return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider + getPostfixForReturnType(pRetTy, false));
+}
+
+std::string
 getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
     StringRef PostFix) {
   std::string ExtOpName;
@@ -414,8 +419,13 @@ getPostfix(Decoration Dec, unsigned Value) {
 
 std::string
 getPostfixForReturnType(CallInst *CI, bool IsSigned) {
+    return getPostfixForReturnType(CI->getType(), IsSigned);
+}
+
+std::string
+getPostfixForReturnType(const Type *pRetTy, bool IsSigned) {
   return std::string(kSPIRVPostfix::Return) +
-        mapLLVMTypeToOCLType(CI->getType(), IsSigned);
+        mapLLVMTypeToOCLType(pRetTy, IsSigned);
 }
 
 Op
