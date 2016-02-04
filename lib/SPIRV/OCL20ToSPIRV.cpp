@@ -155,7 +155,7 @@ public:
 
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
-  ///   dimension = __spirv_ImageQuerySizeLod(...);
+  ///   dimension = __spirv_ImageQuerySizeLod_R{ReturnType}(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
@@ -856,14 +856,16 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
       assert(IsImg);
       Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
       Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-      Ret = Type::getInt32Ty(*Ctx);
+      Ret = CI->getCalledFunction()->getReturnType();
       if (Dim > 1)
         Ret = VectorType::get(Ret, Dim);
       if (Desc.Dim == DimBuffer)
-        return getSPIRVFuncName(OpImageQuerySize);
+          return getSPIRVFuncName(OpImageQuerySize,
+              kSPIRVPostfix::Divider + getPostfixForReturnType(CI, false));
       else {
         Args.push_back(getInt32(M, 0));
-        return getSPIRVFuncName(OpImageQuerySizeLod);
+        return getSPIRVFuncName(OpImageQuerySizeLod,
+            kSPIRVPostfix::Divider + getPostfixForReturnType(CI, false));
       }
     },
     [&](CallInst *NCI)->Instruction * {
