@@ -143,6 +143,7 @@ namespace kOCLBuiltinName {
   const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
   const static char Barrier[]            = "barrier";
   const static char ConvertPrefix[]      = "convert_";
+  const static char Dot[]                = "dot";
   const static char EnqueueKernel[]      = "enqueue_kernel";
   const static char GetFence[]           = "get_fence";
   const static char GetImageArraySize[]  = "get_image_array_size";
