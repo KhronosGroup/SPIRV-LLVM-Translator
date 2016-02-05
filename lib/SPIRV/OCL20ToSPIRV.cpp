@@ -218,6 +218,9 @@ public:
   /// Transforms OpDot instructions with a scalar type to a fmul instruction
   void visitCallDot(CallInst *CI);
   
+    void visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,
+      const std::string &DemangledName);
+  
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -426,6 +429,15 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       visitCallDot(&CI);
       return;
   }
+   if (DemangledName == kOCLBuiltinName::IsFinite ||
+      DemangledName == kOCLBuiltinName::IsInf ||
+      DemangledName == kOCLBuiltinName::IsNan ||
+      DemangledName == kOCLBuiltinName::IsNormal )
+  {
+    visitCallForUnaryIntAsBool(&CI, MangledName, DemangledName);
+    return;
+  }
+  
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
 
@@ -1134,6 +1146,44 @@ OCL20ToSPIRV::visitCallDot(CallInst* CI){
     CI->replaceAllUsesWith(FMulVal);
     CI->dropAllReferences();
     CI->removeFromParent();
+}
+
+void OCL20ToSPIRV::visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,
+  const std::string &DemangledName) {
+
+  std::vector<Type *> ArgTys;
+  std::vector<Value*> Args;
+  for (size_t I = 0, E = CI->getNumArgOperands(); I != E; ++I) {
+    ArgTys.push_back(CI->getArgOperand(I)->getType());
+    Args.push_back(CI->getArgOperand(I));
+  }
+
+  spv::Op OC = OpNop;
+  
+  if(DemangledName == kOCLBuiltinName::IsFinite) OC = OpIsFinite;
+  if(DemangledName == kOCLBuiltinName::IsInf) OC = OpIsInf;
+  if(DemangledName == kOCLBuiltinName::IsNan) OC = OpIsNan;
+  if(DemangledName == kOCLBuiltinName::IsNormal) OC = OpIsNormal;
+
+  assert( OC != OpNop && "Invalid OC in visitCallForUnaryIntAsBool");
+
+  BuiltinFuncMangleInfo mangler;
+  AttributeSet AS = CI->getCalledFunction()->getAttributes();
+
+  CallInst* CallInst = 
+    addCallInst(M, getSPIRVFuncName(OC), Type::getInt1Ty(M->getContext()), Args, 
+    &AS, 
+    CI, 
+    &mangler);
+
+  auto Ty = CI->getType();
+  auto Zero = getScalarOrVectorConstantInt(Ty, 0, false);
+  auto One = getScalarOrVectorConstantInt(Ty, 1, false);
+  auto Sel = SelectInst::Create(CallInst, One, Zero, "");
+    
+  Sel->insertAfter(CallInst);
+  CI->replaceAllUsesWith(Sel);
+  CI->eraseFromParent();
 }
 
 }
