@@ -926,6 +926,8 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
   }
   if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch(IntTy->getBitWidth()) {
+    case 1:
+      return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_BOOL));
     case 8:
       return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
           SPIR::PRIMITIVE_CHAR:SPIR::PRIMITIVE_UCHAR));
