@@ -132,6 +132,8 @@ struct OCLBuiltinTransInfo {
 //
 ///////////////////////////////////////////////////////////////////////////////
 namespace kOCLBuiltinName {
+  const static char All[]                       = "all";
+  const static char Any[]                       = "any";
   const static char AsyncWorkGroupCopy[]        = "async_work_group_copy";
   const static char AsyncWorkGroupStridedCopy[] = "async_work_group_strided_copy";
   const static char AtomPrefix[]         = "atom_";

@@ -1510,10 +1510,10 @@ addPassesForSPIRV(PassManager &PassMgr) {
   PassMgr.add(createTransOCLMD());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
-  PassMgr.add(createSPIRVLowerBool());
   PassMgr.add(createOCL20ToSPIRV());
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
+  PassMgr.add(createSPIRVLowerBool());
 }
 
 bool
