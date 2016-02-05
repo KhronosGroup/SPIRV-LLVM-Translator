@@ -215,6 +215,9 @@ public:
   void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
+  /// Transforms OpDot instructions with a scalar type to a fmul instruction
+  void visitCallDot(CallInst *CI);
+  
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -417,6 +420,11 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       DemangledName == kOCLBuiltinName::Barrier) {
     visitCallWorkGroupBarrier(&CI);
     return;
+  }
+  if (DemangledName == kOCLBuiltinName::Dot &&
+      !isa<VectorType>(CI.getOperand(0)->getType())){
+      visitCallDot(&CI);
+      return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
@@ -1117,6 +1125,15 @@ OCL20ToSPIRV::visitCallVecLoadStore(CallInst* CI,
     Ops.insert(Ops.end(), Consts.begin(), Consts.end());
   };
   transBuiltin(CI, Info);
+}
+
+void
+OCL20ToSPIRV::visitCallDot(CallInst* CI){
+    IRBuilder<> Builder(CI);
+    Value *FMulVal = Builder.CreateFMul(CI->getOperand(0), CI->getOperand(1));
+    CI->replaceAllUsesWith(FMulVal);
+    CI->dropAllReferences();
+    CI->removeFromParent();
 }
 
 }
