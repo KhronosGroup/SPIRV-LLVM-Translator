@@ -156,6 +156,7 @@ namespace kOCLBuiltinName {
   const static char MemFence[]           = "mem_fence";
   const static char NDRangePrefix[]      = "ndrange_";
   const static char Pipe[]               = "pipe";
+  const static char Prefetch[]           = "prefetch";
   const static char ReadImage[]          = "read_image";
   const static char ReadPipe[]           = "read_pipe";
   const static char RoundingPrefix[]     = "_r";

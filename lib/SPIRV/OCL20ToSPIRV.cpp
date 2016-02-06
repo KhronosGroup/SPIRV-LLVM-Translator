@@ -217,9 +217,10 @@ public:
 
   /// Transforms OpDot instructions with a scalar type to a fmul instruction
   void visitCallDot(CallInst *CI);
-  
-    void visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,
-      const std::string &DemangledName);
+
+  void visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,const std::string &DemangledName);
+
+  void visitCallPrefetch(CallInst *CI, StringRef MangledName, const std::string& DemangledName);
   
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
@@ -437,7 +438,10 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallForUnaryIntAsBool(&CI, MangledName, DemangledName);
     return;
   }
-  
+  if (DemangledName == kOCLBuiltinName::Prefetch){
+    visitCallPrefetch(&CI, MangledName, DemangledName);
+    return;
+  }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
 
@@ -1186,8 +1190,17 @@ void OCL20ToSPIRV::visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledNam
   CI->eraseFromParent();
 }
 
+void
+OCL20ToSPIRV::visitCallPrefetch(CallInst* CI, StringRef MangledName, const std::string& DemangledName){
+    AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+    mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+        Args[0] = CI->getOperand(1);
+        Args[1] = CI->getOperand(0);
+        return kOCLBuiltinName::Prefetch;
+    }, &Attrs);
 }
 
+}
 INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
