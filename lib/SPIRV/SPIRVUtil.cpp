@@ -495,12 +495,31 @@ bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
 }
 
 // Check if a mangled type name is unsigned
-bool
-isMangledTypeUnsigned(char Mangled) {
-  return Mangled == 'h' /* uchar */
-      || Mangled == 't' /* ushort */
-      || Mangled == 'j' /* uint */
-      || Mangled == 'm' /* ulong */;
+bool isMangledTypeUnsigned(char Mangled) {
+  return Mangled == 'h'    /* uchar */
+         || Mangled == 't' /* ushort */
+         || Mangled == 'j' /* uint */
+         || Mangled == 'm' /* ulong */;
+}
+
+// Check if a mangled type name is signed
+bool isMangledTypeSigned(char Mangled) {
+  return Mangled == 'c'    /* char */
+         || Mangled == 'a' /* signed char */
+         || Mangled == 's' /* short */
+         || Mangled == 'i' /* int */
+         || Mangled == 'l' /* long */;
+}
+
+// Check if a mangled type name is floating point (excludes half)
+bool isMangledTypeFP(char Mangled) {
+  return Mangled == 'f'     /* float */
+         || Mangled == 'd'; /* double */
+}
+
+// Check if a mangled type name is half
+bool isMangledTypeHalf(std::string Mangled) {
+  return Mangled == "Dh"; /* half */
 }
 
 void
@@ -512,16 +531,27 @@ eraseSubstitutionFromMangledName(std::string& MangledName) {
   }
 }
 
-// Check if the last argument is signed
-bool
-isLastFuncParamSigned(const std::string& MangledName) {
+ParamType LastFuncParamType(const std::string &MangledName) {
   auto Copy = MangledName;
   eraseSubstitutionFromMangledName(Copy);
   char Mangled = Copy.back();
-  bool Signed = true;
-  if (isMangledTypeUnsigned(Mangled))
-    Signed = false;
-  return Signed;
+  std::string Mangled2 = Copy.substr(Copy.size() - 2);
+
+  if (isMangledTypeFP(Mangled) || isMangledTypeHalf(Mangled2)) {
+    return ParamType::FLOAT;
+  } else if (isMangledTypeUnsigned(Mangled)) {
+    return ParamType::UNSIGNED;
+  } else if (isMangledTypeSigned(Mangled)) {
+    return ParamType::SIGNED;
+  }
+
+  return ParamType::UNKNOWN;
+}
+
+// Check if the last argument is signed
+bool
+isLastFuncParamSigned(const std::string& MangledName) {
+  return LastFuncParamType(MangledName) == ParamType::SIGNED;
 }
 
 
