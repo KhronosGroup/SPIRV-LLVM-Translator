@@ -97,7 +97,20 @@ getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   OCLExtOpKind EOC;
   bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
   if (!Found) {
-    std::string Prefix = isLastFuncParamSigned(OrigName) ? "s_" : "u_";
+    std::string Prefix;
+    switch (LastFuncParamType(OrigName))
+    {
+    case ParamType::UNSIGNED:
+        Prefix = "u_";
+        break;
+    case ParamType::SIGNED:
+        Prefix = "s_";
+        break;
+    case ParamType::FLOAT:
+        Prefix = "f";
+        break;
+    default: assert(0 && "unknown mangling!");
+    }
     Found = OCLExtOpMap::rfind(Prefix + DemangledName, &EOC);
   }
   if (Found)
