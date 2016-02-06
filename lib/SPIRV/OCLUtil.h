@@ -132,6 +132,8 @@ struct OCLBuiltinTransInfo {
 //
 ///////////////////////////////////////////////////////////////////////////////
 namespace kOCLBuiltinName {
+  const static char All[]                       = "all";
+  const static char Any[]                       = "any";
   const static char AsyncWorkGroupCopy[]        = "async_work_group_copy";
   const static char AsyncWorkGroupStridedCopy[] = "async_work_group_strided_copy";
   const static char AtomPrefix[]         = "atom_";
@@ -176,6 +178,10 @@ namespace kOCLBuiltinName {
   const static char WritePipe[]          = "write_pipe";
   const static char WorkGroupPrefix[]    = "work_group_";
   const static char WorkPrefix[]         = "work_";
+  const static char IsFinite[]           = "isfinite";
+  const static char IsNan[]              = "isnan";
+  const static char IsNormal[]           = "isnormal";
+  const static char IsInf[]              = "isinf";
 }
 
 /// OCL 1.x atomic memory order when translated to 2.0 atomics.

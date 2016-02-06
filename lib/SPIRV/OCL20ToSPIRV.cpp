@@ -43,6 +43,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
@@ -111,6 +112,10 @@ public:
   /// func(flag, order, scope) =>
   ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
   void transMemoryBarrier(CallInst *CI, AtomicWorkItemFenceLiterals);
+
+  /// Transform all to __spirv_Op(All|Any).  Note that the types mismatch so
+  // some extra code is emitted to convert between the two.
+  void visitCallAllAny(spv::Op OC, CallInst *CI);
 
   /// Transform atomic_* to __spirv_Atomic*.
   /// atomic_x(ptr_arg, args, order, scope) =>
@@ -213,7 +218,8 @@ public:
   /// Transforms OpDot instructions with a scalar type to a fmul instruction
   void visitCallDot(CallInst *CI);
 
-  
+  void visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,const std::string &DemangledName);
+
   void visitCallPrefetch(CallInst *CI, StringRef MangledName, const std::string& DemangledName);
   
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
@@ -334,6 +340,14 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallNDRange(&CI, DemangledName);
     return;
   }
+  if (DemangledName == kOCLBuiltinName::All) {
+      visitCallAllAny(OpAll, &CI);
+      return;
+  }
+  if (DemangledName == kOCLBuiltinName::Any) {
+      visitCallAllAny(OpAny, &CI);
+      return;
+  }
   if (DemangledName.find(kOCLBuiltinName::AsyncWorkGroupCopy) == 0 ||
       DemangledName.find(kOCLBuiltinName::AsyncWorkGroupStridedCopy) == 0) {
     visitCallAsyncWorkGroupCopy(&CI, DemangledName);
@@ -416,9 +430,17 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       visitCallDot(&CI);
       return;
   }
+   if (DemangledName == kOCLBuiltinName::IsFinite ||
+      DemangledName == kOCLBuiltinName::IsInf ||
+      DemangledName == kOCLBuiltinName::IsNan ||
+      DemangledName == kOCLBuiltinName::IsNormal )
+  {
+    visitCallForUnaryIntAsBool(&CI, MangledName, DemangledName);
+    return;
+  }
   if (DemangledName == kOCLBuiltinName::Prefetch){
-      visitCallPrefetch(&CI, MangledName, DemangledName);
-      return;
+    visitCallPrefetch(&CI, MangledName, DemangledName);
+    return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
@@ -507,6 +529,47 @@ OCL20ToSPIRV::visitCallAtomicInit(CallInst* CI) {
   ST->takeName(CI);
   CI->dropAllReferences();
   CI->eraseFromParent();
+}
+
+void
+OCL20ToSPIRV::visitCallAllAny(spv::Op OC, CallInst* CI) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+
+  auto Args = getArguments(CI);
+  assert(Args.size() == 1);
+
+  auto *pArgTy = Args[0]->getType();
+  auto zero = ConstantInt::get(pArgTy->getScalarType(), 0);
+  auto RHS = isa<VectorType>(pArgTy) ?
+      ConstantVector::getSplat(
+        cast<VectorType>(pArgTy)->getNumElements(), zero) : zero;
+
+  auto *pCmp = CmpInst::Create(CmpInst::ICmp, CmpInst::ICMP_SLT,
+      Args[0], RHS, "cast", CI);
+
+  if (!isa<VectorType>(pArgTy))
+  {
+      auto *pCast = CastInst::CreateZExtOrBitCast(pCmp, Type::getInt32Ty(*Ctx),
+          "",
+          pCmp->getNextNode());
+      CI->replaceAllUsesWith(pCast);
+      CI->eraseFromParent();
+  }
+  else
+  {
+      mutateCallInstSPIRV(M, CI,
+      [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+          Args[0] = pCmp;
+          Ret = Type::getInt1Ty(*Ctx);
+
+          return getSPIRVFuncName(OC);
+      },
+      [&](CallInst *CI)->Instruction * {
+          return CastInst::CreateZExtOrBitCast(CI, Type::getInt32Ty(*Ctx), "",
+              CI->getNextNode());
+      },
+      &Attrs);
+  }
 }
 
 void
@@ -1087,6 +1150,44 @@ OCL20ToSPIRV::visitCallDot(CallInst* CI){
     CI->replaceAllUsesWith(FMulVal);
     CI->dropAllReferences();
     CI->removeFromParent();
+}
+
+void OCL20ToSPIRV::visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,
+  const std::string &DemangledName) {
+
+  std::vector<Type *> ArgTys;
+  std::vector<Value*> Args;
+  for (size_t I = 0, E = CI->getNumArgOperands(); I != E; ++I) {
+    ArgTys.push_back(CI->getArgOperand(I)->getType());
+    Args.push_back(CI->getArgOperand(I));
+  }
+
+  spv::Op OC = OpNop;
+  
+  if(DemangledName == kOCLBuiltinName::IsFinite) OC = OpIsFinite;
+  if(DemangledName == kOCLBuiltinName::IsInf) OC = OpIsInf;
+  if(DemangledName == kOCLBuiltinName::IsNan) OC = OpIsNan;
+  if(DemangledName == kOCLBuiltinName::IsNormal) OC = OpIsNormal;
+
+  assert( OC != OpNop && "Invalid OC in visitCallForUnaryIntAsBool");
+
+  BuiltinFuncMangleInfo mangler;
+  AttributeSet AS = CI->getCalledFunction()->getAttributes();
+
+  CallInst* CallInst = 
+    addCallInst(M, getSPIRVFuncName(OC), Type::getInt1Ty(M->getContext()), Args, 
+    &AS, 
+    CI, 
+    &mangler);
+
+  auto Ty = CI->getType();
+  auto Zero = getScalarOrVectorConstantInt(Ty, 0, false);
+  auto One = getScalarOrVectorConstantInt(Ty, 1, false);
+  auto Sel = SelectInst::Create(CallInst, One, Zero, "");
+    
+  Sel->insertAfter(CallInst);
+  CI->replaceAllUsesWith(Sel);
+  CI->eraseFromParent();
 }
 
 void

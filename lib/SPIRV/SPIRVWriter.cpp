@@ -1430,8 +1430,28 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
       auto Cmp = BM->addCmpInst(OC, BBT,
         transValue(CI->getArgOperand(0), BB),
         transValue(CI->getArgOperand(1), BB), BB);
-      auto CastOC = IsVector ? OpSConvert : OpUConvert;
-      return BM->addUnaryInst(CastOC, BT, Cmp, BB);
+      SPIRVValue *pZero = nullptr;
+      SPIRVValue *pOne  = nullptr;
+      if (IsVector)
+      {
+          std::vector<SPIRVValue*> BVZero;
+          std::vector<SPIRVValue*> BVOne;
+          for (auto i = 0U; i < ResultTy->getVectorNumElements(); i++)
+          {
+              BVZero.push_back(transValue(
+                  ConstantInt::get(ResultTy->getScalarType(), 0), nullptr));
+              BVOne.push_back(transValue(
+                  ConstantInt::get(ResultTy->getScalarType(), ~0), nullptr));
+          }
+          pZero = BM->addCompositeConstant(BT, BVZero);
+          pOne  = BM->addCompositeConstant(BT, BVOne);
+      }
+      else
+      {
+          pZero = BM->addIntegerConstant(static_cast<SPIRVTypeInt*>(BT), 0);
+          pOne  = BM->addIntegerConstant(static_cast<SPIRVTypeInt*>(BT), 1);
+      }
+      return BM->addSelectInst(Cmp, pOne, pZero, BB);
     } else if (isBinaryOpCode(OC)) {
       assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
       return BM->addBinaryInst(OC, transType(CI->getType()),
@@ -1510,10 +1530,10 @@ addPassesForSPIRV(PassManager &PassMgr) {
   PassMgr.add(createTransOCLMD());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
-  PassMgr.add(createSPIRVLowerBool());
   PassMgr.add(createOCL20ToSPIRV());
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
+  PassMgr.add(createSPIRVLowerBool());
 }
 
 bool
