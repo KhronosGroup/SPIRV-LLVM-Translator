@@ -212,7 +212,7 @@ public:
   // Instruction creation functions
   virtual SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,
       std::vector<SPIRVValue *>, SPIRVBasicBlock *, bool) = 0;
-  virtual SPIRVInstruction *addAsyncGroupCopy(Scope Scope,
+  virtual SPIRVInstruction *addAsyncGroupCopy(SPIRVValue *Scope,
       SPIRVValue *Dest, SPIRVValue *Src, SPIRVValue *NumElems, SPIRVValue *Stride,
       SPIRVValue *Event, SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *,

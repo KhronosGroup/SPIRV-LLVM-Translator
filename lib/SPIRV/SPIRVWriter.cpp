@@ -1406,12 +1406,9 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
         getArgAsInt(CI, 2), BB);
     break;
   case OpGroupAsyncCopy: {
-    auto Args = getArguments(CI, 1);
-    auto BArgs = transValue(Args, BB);
-    return BM->addAsyncGroupCopy(
-        getArgAsScope(CI, 0),
-        BArgs[0], BArgs[1], BArgs[2],
-        BArgs[3], BArgs[4], BB);
+    auto BArgs = transValue(getArguments(CI), BB);
+    return BM->addAsyncGroupCopy(BArgs[0], BArgs[1], BArgs[2], BArgs[3],
+                                 BArgs[4], BArgs[5], BB);
     }
     break;
   default: {

@@ -215,7 +215,7 @@ public:
   // Instruction creation functions
   virtual SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,
       std::vector<SPIRVValue *>, SPIRVBasicBlock *, bool);
-  virtual SPIRVInstruction *addAsyncGroupCopy(Scope Scope,
+  virtual SPIRVInstruction *addAsyncGroupCopy(SPIRVValue *Scope,
       SPIRVValue *Dest, SPIRVValue *Src, SPIRVValue *NumElems, SPIRVValue *Stride,
       SPIRVValue *Event, SPIRVBasicBlock *BB);
   virtual SPIRVInstruction *addExtInst(SPIRVType *,
@@ -990,7 +990,7 @@ SPIRVModuleImpl::addPtrAccessChainInst(SPIRVType *Type, SPIRVValue *Base,
 }
 
 SPIRVInstruction *
-SPIRVModuleImpl::addAsyncGroupCopy(Scope Scope,
+SPIRVModuleImpl::addAsyncGroupCopy(SPIRVValue *Scope,
     SPIRVValue *Dest, SPIRVValue *Src, SPIRVValue *NumElems, SPIRVValue *Stride,
     SPIRVValue *Event, SPIRVBasicBlock *BB) {
   return addInstruction(new SPIRVGroupAsyncCopy(Scope, getId(), Dest, Src,
