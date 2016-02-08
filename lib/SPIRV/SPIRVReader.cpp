@@ -996,17 +996,19 @@ SPIRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
       }
     }
     assert (ALoc != Args.end());
-    Value *Ctx = nullptr;
-    Value *CtxLen = nullptr;
-    Value *CtxAlign = nullptr;
-    if (Name == kOCLBuiltinName::EnqueueKernel) {
+    Value *Ctx = ALoc[1];
+    Value *CtxLen = ALoc[2];
+    Value *CtxAlign = ALoc[3];
+    if (Name == kOCLBuiltinName::EnqueueKernel)
       assert(Args.end() - ALoc > 3);
-      Ctx = ALoc[1];
-      CtxLen = ALoc[2];
-      CtxAlign = ALoc[3];
-      Args.erase(ALoc + 1, ALoc + 4);
-    }
+    else
+      assert(Args.end() - ALoc > 0);
+    // Erase arguments what are hanled by "spir_block_bind" according to SPIR 2.0
+    Args.erase(ALoc + 1, ALoc + 4);
+
     InvokeFuncPtrs.insert(*ALoc);
+    // There will be as many calls to spir_block_bind as how much device execution
+    // bult-ins using this block. This doesn't contradict SPIR 2.0 specification.
     *ALoc = addBlockBind(M, cast<Function>(removeCast(*ALoc)),
         Ctx, CtxLen, CtxAlign, CI);
     return Name;
@@ -2348,4 +2350,3 @@ llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
   }
   return Succeed;
 }
-
