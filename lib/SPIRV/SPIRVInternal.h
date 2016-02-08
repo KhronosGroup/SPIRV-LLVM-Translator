@@ -478,7 +478,7 @@ void addFnAttr(LLVMContext *Context, CallInst *Call,
     Attribute::AttrKind Attr);
 void saveLLVMModule(Module *M, const std::string &OutputFile);
 std::string mapSPIRVTypeToOCLType(SPIRVType* Ty, bool Signed);
-std::string mapLLVMTypeToOCLType(Type* Ty, bool Signed);
+std::string mapLLVMTypeToOCLType(const Type* Ty, bool Signed);
 SPIRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPIRVEntry *Target);
 
 /// Add decorations to a SPIR-V entry.
@@ -539,6 +539,8 @@ bool isDecoratedSPIRVFunc(const Function *F, std::string *UndecName = nullptr);
 
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPIRVFuncName(Op OC, StringRef PostFix = "");
+
+std::string getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned = false);
 
 /// Get a canonical function name for a SPIR-V extended instruction
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
@@ -723,6 +725,7 @@ std::string getPostfix(Decoration Dec, unsigned Value = 0);
 /// Get postfix _R{ReturnType} for return type
 /// The returned postfix does not includ "_" at the beginning
 std::string getPostfixForReturnType(CallInst *CI, bool IsSigned = false);
+std::string getPostfixForReturnType(const Type *pRetTy, bool IsSigned = false);
 
 Constant *
 getScalarOrVectorConstantInt(Type *T, uint64_t V, bool isSigned = false);
@@ -762,9 +765,27 @@ eraseIfNoUse(Value *V);
 bool
 isMangledTypeUnsigned(char Mangled);
 
+// Check if a mangled type name is signed
+bool
+isMangledTypeSigned(char Mangled);
+
+// Check if a mangled type name is floating point
+bool
+isMangledTypeFP(char Mangled);
+
 // Check if \param I is valid vector size: 2, 3, 4, 8, 16.
 bool
 isValidVectorSize(unsigned I);
+
+enum class ParamType
+{
+    FLOAT    = 0,
+    SIGNED   = 1,
+    UNSIGNED = 2,
+    UNKNOWN  = 3
+};
+
+ParamType LastFuncParamType(const std::string& MangledName);
 
 // Check if the last function parameter is signed
 bool

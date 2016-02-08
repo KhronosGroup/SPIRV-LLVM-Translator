@@ -43,6 +43,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
@@ -112,6 +113,10 @@ public:
   ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
   void transMemoryBarrier(CallInst *CI, AtomicWorkItemFenceLiterals);
 
+  /// Transform all to __spirv_Op(All|Any).  Note that the types mismatch so
+  // some extra code is emitted to convert between the two.
+  void visitCallAllAny(spv::Op OC, CallInst *CI);
+
   /// Transform atomic_* to __spirv_Atomic*.
   /// atomic_x(ptr_arg, args, order, scope) =>
   ///   __spirv_AtomicY(ptr_arg, map(order), map(scope), args)
@@ -155,7 +160,7 @@ public:
 
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
-  ///   dimension = __spirv_ImageQuerySizeLod(...);
+  ///   dimension = __spirv_ImageQuerySizeLod_R{ReturnType}(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
@@ -210,6 +215,13 @@ public:
   void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
+  /// Transforms OpDot instructions with a scalar type to a fmul instruction
+  void visitCallDot(CallInst *CI);
+
+  void visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,const std::string &DemangledName);
+
+  void visitCallPrefetch(CallInst *CI, StringRef MangledName, const std::string& DemangledName);
+  
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -328,6 +340,14 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallNDRange(&CI, DemangledName);
     return;
   }
+  if (DemangledName == kOCLBuiltinName::All) {
+      visitCallAllAny(OpAll, &CI);
+      return;
+  }
+  if (DemangledName == kOCLBuiltinName::Any) {
+      visitCallAllAny(OpAny, &CI);
+      return;
+  }
   if (DemangledName.find(kOCLBuiltinName::AsyncWorkGroupCopy) == 0 ||
       DemangledName.find(kOCLBuiltinName::AsyncWorkGroupStridedCopy) == 0) {
     visitCallAsyncWorkGroupCopy(&CI, DemangledName);
@@ -359,7 +379,8 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName == kOCLBuiltinName::GetImageWidth ||
       DemangledName == kOCLBuiltinName::GetImageHeight ||
       DemangledName == kOCLBuiltinName::GetImageDepth ||
-      DemangledName == kOCLBuiltinName::GetImageDim) {
+      DemangledName == kOCLBuiltinName::GetImageDim   ||
+      DemangledName == kOCLBuiltinName::GetImageArraySize) {
     visitCallGetImageSize(&CI, MangledName, DemangledName);
     return;
   }
@@ -402,6 +423,23 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
       DemangledName == kOCLBuiltinName::Barrier) {
     visitCallWorkGroupBarrier(&CI);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::Dot &&
+      !isa<VectorType>(CI.getOperand(0)->getType())){
+      visitCallDot(&CI);
+      return;
+  }
+   if (DemangledName == kOCLBuiltinName::IsFinite ||
+      DemangledName == kOCLBuiltinName::IsInf ||
+      DemangledName == kOCLBuiltinName::IsNan ||
+      DemangledName == kOCLBuiltinName::IsNormal )
+  {
+    visitCallForUnaryIntAsBool(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::Prefetch){
+    visitCallPrefetch(&CI, MangledName, DemangledName);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -491,6 +529,47 @@ OCL20ToSPIRV::visitCallAtomicInit(CallInst* CI) {
   ST->takeName(CI);
   CI->dropAllReferences();
   CI->eraseFromParent();
+}
+
+void
+OCL20ToSPIRV::visitCallAllAny(spv::Op OC, CallInst* CI) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+
+  auto Args = getArguments(CI);
+  assert(Args.size() == 1);
+
+  auto *pArgTy = Args[0]->getType();
+  auto zero = ConstantInt::get(pArgTy->getScalarType(), 0);
+  auto RHS = isa<VectorType>(pArgTy) ?
+      ConstantVector::getSplat(
+        cast<VectorType>(pArgTy)->getNumElements(), zero) : zero;
+
+  auto *pCmp = CmpInst::Create(CmpInst::ICmp, CmpInst::ICMP_SLT,
+      Args[0], RHS, "cast", CI);
+
+  if (!isa<VectorType>(pArgTy))
+  {
+      auto *pCast = CastInst::CreateZExtOrBitCast(pCmp, Type::getInt32Ty(*Ctx),
+          "",
+          pCmp->getNextNode());
+      CI->replaceAllUsesWith(pCast);
+      CI->eraseFromParent();
+  }
+  else
+  {
+      mutateCallInstSPIRV(M, CI,
+      [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+          Args[0] = pCmp;
+          Ret = Type::getInt1Ty(*Ctx);
+
+          return getSPIRVFuncName(OC);
+      },
+      [&](CallInst *CI)->Instruction * {
+          return CastInst::CreateZExtOrBitCast(CI, Type::getInt32Ty(*Ctx), "",
+              CI->getNextNode());
+      },
+      &Attrs);
+  }
 }
 
 void
@@ -855,14 +934,16 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
       assert(IsImg);
       Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
       Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-      Ret = Type::getInt32Ty(*Ctx);
+      Ret = CI->getType()->isIntegerTy(64) ?
+          Type::getInt64Ty(*Ctx) :
+          Type::getInt32Ty(*Ctx);
       if (Dim > 1)
         Ret = VectorType::get(Ret, Dim);
       if (Desc.Dim == DimBuffer)
-        return getSPIRVFuncName(OpImageQuerySize);
+          return getSPIRVFuncName(OpImageQuerySize, CI->getType());
       else {
         Args.push_back(getInt32(M, 0));
-        return getSPIRVFuncName(OpImageQuerySizeLod);
+        return getSPIRVFuncName(OpImageQuerySizeLod, CI->getType());
       }
     },
     [&](CallInst *NCI)->Instruction * {
@@ -1062,8 +1143,64 @@ OCL20ToSPIRV::visitCallVecLoadStore(CallInst* CI,
   transBuiltin(CI, Info);
 }
 
+void
+OCL20ToSPIRV::visitCallDot(CallInst* CI){
+    IRBuilder<> Builder(CI);
+    Value *FMulVal = Builder.CreateFMul(CI->getOperand(0), CI->getOperand(1));
+    CI->replaceAllUsesWith(FMulVal);
+    CI->dropAllReferences();
+    CI->removeFromParent();
 }
 
+void OCL20ToSPIRV::visitCallForUnaryIntAsBool(CallInst *CI, StringRef MangledName,
+  const std::string &DemangledName) {
+
+  std::vector<Type *> ArgTys;
+  std::vector<Value*> Args;
+  for (size_t I = 0, E = CI->getNumArgOperands(); I != E; ++I) {
+    ArgTys.push_back(CI->getArgOperand(I)->getType());
+    Args.push_back(CI->getArgOperand(I));
+  }
+
+  spv::Op OC = OpNop;
+  
+  if(DemangledName == kOCLBuiltinName::IsFinite) OC = OpIsFinite;
+  if(DemangledName == kOCLBuiltinName::IsInf) OC = OpIsInf;
+  if(DemangledName == kOCLBuiltinName::IsNan) OC = OpIsNan;
+  if(DemangledName == kOCLBuiltinName::IsNormal) OC = OpIsNormal;
+
+  assert( OC != OpNop && "Invalid OC in visitCallForUnaryIntAsBool");
+
+  BuiltinFuncMangleInfo mangler;
+  AttributeSet AS = CI->getCalledFunction()->getAttributes();
+
+  CallInst* CallInst = 
+    addCallInst(M, getSPIRVFuncName(OC), Type::getInt1Ty(M->getContext()), Args, 
+    &AS, 
+    CI, 
+    &mangler);
+
+  auto Ty = CI->getType();
+  auto Zero = getScalarOrVectorConstantInt(Ty, 0, false);
+  auto One = getScalarOrVectorConstantInt(Ty, 1, false);
+  auto Sel = SelectInst::Create(CallInst, One, Zero, "");
+    
+  Sel->insertAfter(CallInst);
+  CI->replaceAllUsesWith(Sel);
+  CI->eraseFromParent();
+}
+
+void
+OCL20ToSPIRV::visitCallPrefetch(CallInst* CI, StringRef MangledName, const std::string& DemangledName){
+    AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+    mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+        Args[0] = CI->getOperand(1);
+        Args[1] = CI->getOperand(0);
+        return kOCLBuiltinName::Prefetch;
+    }, &Attrs);
+}
+
+}
 INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
