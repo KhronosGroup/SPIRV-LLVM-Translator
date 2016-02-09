@@ -142,8 +142,6 @@ OCL21ToSPIRV::visitCallInst(CallInst& CI) {
     return;
   DEBUG(dbgs() << "DemangledName:" << DemangledName << '\n');
   StringRef Ref(DemangledName);
-  assert(Ref.startswith("Op") && "Invalid builtin name");
-  Ref = Ref.drop_front(2);
 
   Op OC = OpNop;
   if (!OpCodeNameMap::rfind(Ref.str(), &OC))
