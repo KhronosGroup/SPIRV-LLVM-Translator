@@ -345,6 +345,14 @@ public:
   CallInst *postProcessOCLReadImage(SPIRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
+  /// \brief Post-process OpBuildNDRange.
+  ///   OpBuildNDRange GlobalWorkSize, LocalWorkSize, GlobalWorkOffset
+  /// =>
+  ///   call ndrange_XD(GlobalWorkOffset, GlobalWorkSize, LocalWorkSize)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
+      const std::string &DemangledName);
+
   /// \brief Expand OCL builtin functions with scalar argument, e.g.
   /// step, smoothstep.
   /// gentype func (fp edge, gentype x)
@@ -1058,6 +1066,19 @@ SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
 }
 
 CallInst *
+SPIRVToLLVM::postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
+    const std::string &FuncName) {
+  assert(CI->getNumArgOperands() == 3);
+  auto GWS = CI->getArgOperand(0);
+  auto LWS = CI->getArgOperand(1);
+  auto GWO = CI->getArgOperand(2);
+  CI->setArgOperand(0, GWO);
+  CI->setArgOperand(1, GWS);
+  CI->setArgOperand(2, LWS);
+  return CI;
+}
+
+CallInst *
 SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
@@ -1690,6 +1711,8 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
   }
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
+  if (OC == OpBuildNDRange)
+    return postProcessOCLBuildNDRange(BI, CI, DemangledName);
   if (SPIRVEnableStepExpansion &&
       (DemangledName == "smoothstep" ||
        DemangledName == "step"))
