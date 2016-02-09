@@ -89,26 +89,28 @@ public:
 
   MangleError visit(const PointerType* p) {
     size_t fpos = m_stream.str().size();
-    std::stringstream typeStr;
+    std::string qualStr;
     MangleError me = MANGLE_SUCCESS;
-    typeStr << 'P';
     for (unsigned int i = ATTR_QUALIFIER_FIRST; i <= ATTR_QUALIFIER_LAST; i++) {
       TypeAttributeEnum qualifier = (TypeAttributeEnum)i;
       if (p->hasQualifier(qualifier)) {
-        typeStr << getMangledAttribute(qualifier);
+        qualStr += getMangledAttribute(qualifier);
       }
     }
-    typeStr << getMangledAttribute((p->getAddressSpace()));
-    if (!mangleSubstitution(p, typeStr.str())) {
-      m_stream << typeStr.str();
-      size_t tpos = m_stream.str().size();
+    qualStr += getMangledAttribute((p->getAddressSpace()));
+    if (!mangleSubstitution(p, "P" + qualStr)) {
+      // A pointee type is substituted when it is a user type, a vector type
+      // (but see a comment in the beginning of this file), a pointer type,
+      // or a primitive type with qualifiers (addr. space and/or CV qualifiers).
+      // So, stream "P", type qualifiers
+      m_stream << "P" << qualStr;
+      // and the pointee type itself.
       me = p->getPointee()->accept(this);
-      typeStr.str(std::string());
-      typeStr << 'P' << m_stream.str().substr(tpos);
-      if (typeStr.str().find('S') == std::string::npos) {
-        substitutions[typeStr.str()] = seqId++;
-        substitutions[m_stream.str().substr(fpos)] = seqId++;
-      }
+      // The type qualifiers plus a pointee type is a substitutable entity
+      if(qualStr.length() > 0)
+        substitutions[m_stream.str().substr(fpos + 1)] = seqId++;
+      // The complete pointer type is substitutable as well
+      substitutions[m_stream.str().substr(fpos)] = seqId++;
     }
     return me;
   }

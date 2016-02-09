@@ -913,9 +913,9 @@ isDecoratedSPIRVFunc(const Function *F, std::string *UndecoratedName) {
   return true;
 }
 
-/// Get TypePrimitiveEnum for opaque type.
+/// Get TypePrimitiveEnum for special OpenCL type except opencl.block.
 SPIR::TypePrimitiveEnum
-getOpaqueTypePrimitiveEnum(StringRef TyName) {
+getOCLTypePrimitiveEnum(StringRef TyName) {
   return StringSwitch<SPIR::TypePrimitiveEnum>(TyName)
     .Case("opencl.image1d_t",         SPIR::PRIMITIVE_IMAGE_1D_T)
     .Case("opencl.image1d_array_t",   SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T)
@@ -1024,15 +1024,15 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
       }
       DEBUG(dbgs() << "  type name: " << TyName << '\n');
 
+      auto Prim = getOCLTypePrimitiveEnum(TyName);
       if (StructTy->isOpaque()) {
         if (TyName == "opencl.block")
           EPT = new SPIR::BlockType;
-        else {
-          auto Prim = getOpaqueTypePrimitiveEnum(TyName);
-          if (Prim != SPIR::PRIMITIVE_NONE)
-            EPT = new SPIR::PrimitiveType(Prim);
-        }
-      }
+        else if (Prim != SPIR::PRIMITIVE_NONE)
+          EPT = new SPIR::PrimitiveType(Prim);
+      } else if (Prim == SPIR::PRIMITIVE_NDRANGE_T)
+        // ndrange_t is not opaque type
+        EPT = new SPIR::PrimitiveType(SPIR::PRIMITIVE_NDRANGE_T);
     }
     if (EPT)
       return SPIR::RefParamType(EPT);
@@ -1210,4 +1210,3 @@ mangleBuiltin(const std::string &UniqName,
 }
 
 }
-

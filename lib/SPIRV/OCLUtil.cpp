@@ -363,6 +363,7 @@ public:
   } else if (UnmangledName == "enqueue_kernel") {
     setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
     addUnsignedArg(3);
+    setArgAttr(4, SPIR::ATTR_CONST);
   } else if (UnmangledName == "enqueue_marker") {
     setArgAttr(2, SPIR::ATTR_CONST);
     addUnsignedArg(1);
