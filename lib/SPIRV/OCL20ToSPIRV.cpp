@@ -465,18 +465,23 @@ OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
     case 2: {
       // Has global work size.
       auto T = Args[1]->getType();
-      Args.push_back(getScalarOrArrayConstantInt(CI, T, Len, 1));
-      Args.insert(Args.begin() + 1, getScalarOrArrayConstantInt(CI, T, Len, 0));
+      auto C = getScalarOrArrayConstantInt(CI, T, Len, 0);
+      Args.push_back(C);
+      Args.push_back(C);
     }
       break;
     case 3: {
       // Has global and local work size.
       auto T = Args[1]->getType();
-      Args.insert(Args.begin() + 1, getScalarOrArrayConstantInt(CI, T, Len, 0));
+      Args.push_back(getScalarOrArrayConstantInt(CI, T, Len, 0));
     }
       break;
     case 4: {
-      // Do nothing
+      // Move offset arg to the end
+      auto OffsetPos = Args.begin() + 1;
+      Value* OffsetVal = *OffsetPos;
+      Args.erase(OffsetPos);
+      Args.push_back(OffsetVal);
     }
       break;
     default:
