@@ -103,7 +103,7 @@ AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI) {
 }
 
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
-  if (Name.find("compare_exchange_strong") != StringRef::npos)
+  if (Name.startswith("atomic_compare_exchange"))
     return 2;
   return 1;
 }

@@ -127,11 +127,16 @@ public:
   ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
   void visitCallAtomicWorkItemFence(CallInst *CI);
 
-  /// Transform atom_cmpxchg/atomic_cmpxchg to atomic_compare_exchange.
-  /// In atom_cmpxchg/atomic_cmpxchg, the expected value parameter is a value.
-  /// However in atomic_compare_exchange it is a pointer. The transformation
-  /// adds an alloca instruction, store the expected value in the pointer, and
-  /// pass the pointer as argument.
+  /// Transform atomic_compare_exchange call.
+  /// In atomic_compare_exchange, the expected value parameter is a pointer.
+  /// However in SPIR-V it is a value. The transformation adds a load 
+  /// instruction, result of which is passed to atomic_compare_exchange as
+  /// argument.
+  /// The transformation adds a store instruction after the call, to update the
+  /// value in expected with the value pointed to by object. Though, it is not
+  /// necessary in case they are equal, this approach makes result code simpler.
+  /// Also ICmp instruction is added, because the call must return result of
+  /// comparison.
   /// \returns the call instruction of atomic_compare_exchange_strong.
   CallInst *visitCallAtomicCmpXchg(CallInst *CI,
       const std::string &DemangledName);
@@ -364,8 +369,9 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       visitCallAtomicWorkItemFence(PCI);
       return;
     }
-    if (DemangledName == kOCLBuiltinName::AtomCmpXchg ||
-        DemangledName == kOCLBuiltinName::AtomicCmpXchg) {
+    if (DemangledName == kOCLBuiltinName::AtomicCmpXchgStrong ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgWeak) {
+      assert(CLVer == kOCLVer::CL20 && "Wrong version of OpenCL");
       PCI = visitCallAtomicCmpXchg(PCI, DemangledName);
     }
     visitCallAtomicLegacy(PCI, MangledName, DemangledName);
@@ -508,21 +514,24 @@ CallInst *
 OCL20ToSPIRV::visitCallAtomicCmpXchg(CallInst* CI,
     const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  Value *Alloca = nullptr;
+  Value *Expected = nullptr;
   CallInst *NewCI = nullptr;
-  mutateCallInstOCL(M, CI, [&](CallInst *, std::vector<Value *> &Args,
+  mutateCallInstOCL(M, CI, [&](CallInst * CI, std::vector<Value *> &Args,
       Type *&RetTy){
-    auto &CmpVal = Args[1];
-    Alloca = new AllocaInst(CmpVal->getType(), "",
-        CI->getParent()->getParent()->getEntryBlock().getFirstInsertionPt());
-    auto Store = new StoreInst(CmpVal, Alloca, CI);
-    CmpVal = Alloca;
-    RetTy = Type::getInt1Ty(*Ctx);
+    Expected = Args[1]; // temporary save second argument.
+    Args[1] = new LoadInst(Args[1], "exp", false, CI);
+    RetTy = Args[2]->getType();
+    assert(Args[0]->getType()->getPointerElementType()->isIntegerTy() &&
+      Args[1]->getType()->isIntegerTy() && Args[2]->getType()->isIntegerTy() &&
+      "In SPIR-V 1.0 arguments of OpAtomicCompareExchange must be "
+      "an integer type scalars");
     return kOCLBuiltinName::AtomicCmpXchgStrong;
   },
   [&](CallInst *NCI)->Instruction * {
     NewCI = NCI;
-    return new LoadInst(Alloca, "", false, NCI->getNextNode());
+    Instruction* Store = new StoreInst(NCI, Expected, NCI->getNextNode());
+    return new ICmpInst(Store->getNextNode(), CmpInst::ICMP_EQ, NCI,
+                        NCI->getArgOperand(1));
   },
   &Attrs);
   return NewCI;
@@ -645,10 +654,10 @@ OCL20ToSPIRV::visitCallAtomicLegacy(CallInst* CI,
   OCLBuiltinTransInfo Info;
   Info.UniqName = "atomic_" + Prefix + Sign + Stem.str() + Postfix;
   std::vector<int> PostOps;
+  PostOps.push_back(OCLLegacyAtomicMemScope);
   PostOps.push_back(OCLLegacyAtomicMemOrder);
   if (Stem.startswith("compare_exchange"))
     PostOps.push_back(OCLLegacyAtomicMemOrder);
-  PostOps.push_back(OCLLegacyAtomicMemScope);
 
   Info.PostProc = [=](std::vector<Value *> &Ops){
     for (auto &I:PostOps){
@@ -682,10 +691,10 @@ OCL20ToSPIRV::visitCallAtomicCpp11(CallInst* CI,
 
     if (!Stem.endswith("_explicit")) {
       NewStem = NewStem + "_explicit";
+      PostOps.push_back(OCLMS_device);
       PostOps.push_back(OCLMO_seq_cst);
       if (Stem.startswith("compare_exchange"))
         PostOps.push_back(OCLMO_seq_cst);
-      PostOps.push_back(OCLMS_device);
     } else {
       auto MaxOps = getOCLCpp11AtomicMaxNumOps(
           Stem.drop_back(strlen("_explicit")));
@@ -712,11 +721,12 @@ void
 OCL20ToSPIRV::transAtomicBuiltin(CallInst* CI,
     OCLBuiltinTransInfo& Info) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+  mutateCallInstSPIRV(M, CI, [=](CallInst * CI, std::vector<Value *> &Args){
     Info.PostProc(Args);
-    auto NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Info.UniqName);
-    auto ScopeIdx = Args.size() - 1;
-    auto OrderIdx = Args.size() - NumOrder - 1;
+    const size_t NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Info.UniqName);
+    const size_t ArgsCount = Args.size();
+    const size_t ScopeIdx = ArgsCount - NumOrder - 1;
+    const size_t OrderIdx = ArgsCount - NumOrder;
     Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
         [](unsigned I){
       return map<Scope>(static_cast<OCLScopeKind>(I));
@@ -726,7 +736,10 @@ OCL20ToSPIRV::transAtomicBuiltin(CallInst* CI,
           [](unsigned Ord) {
       return mapOCLMemSemanticToSPIRV(0, static_cast<OCLMemOrderKind>(Ord));
     });
-    move(Args, OrderIdx, Args.size(), findFirstPtr(Args) + 1);
+    move(Args, ScopeIdx, ArgsCount, findFirstPtr(Args) + 1);
+    if(Info.UniqName.find("atomic_compare_exchange") != std::string::npos) {
+      std::swap(Args[ArgsCount-1], Args[ArgsCount-2]);
+    }
     return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
   }, &Attrs);
 }
