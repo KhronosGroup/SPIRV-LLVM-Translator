@@ -198,6 +198,11 @@ public:
   void visitCallReadImageWithSampler(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
+  /// Transform read_image with msaa image arguments.
+  /// Sample argument must be acoded as Image Operand.
+  void visitCallReadImageMSAA(CallInst *CI, StringRef MangledName,
+                              const std::string &DemangledName);
+
   /// Transform {read|write}_image without sampler arguments.
   void visitCallReadWriteImage(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
@@ -405,10 +410,15 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallMemFence(&CI);
     return;
   }
-  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0 &&
-      MangledName.find(kMangledName::Sampler) != StringRef::npos) {
-    visitCallReadImageWithSampler(&CI, MangledName, DemangledName);
-    return;
+  if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0) {
+    if (MangledName.find(kMangledName::Sampler) != StringRef::npos) {
+      visitCallReadImageWithSampler(&CI, MangledName, DemangledName);
+      return;
+    }
+    if (MangledName.find("msaa") != StringRef::npos) {
+      visitCallReadImageMSAA(&CI, MangledName, DemangledName);
+      return;
+    }
   }
   if (DemangledName.find(kOCLBuiltinName::ReadImage) == 0 ||
       DemangledName.find(kOCLBuiltinName::WriteImage) == 0) {
@@ -914,9 +924,23 @@ OCL20ToSPIRV::visitCallPipeBuiltin(CallInst* CI,
   transBuiltin(CI, Info);
 }
 
-void
-OCL20ToSPIRV::visitCallReadImageWithSampler(CallInst* CI,
-    StringRef MangledName, const std::string& DemangledName) {
+void OCL20ToSPIRV::visitCallReadImageMSAA(CallInst *CI, StringRef MangledName,
+                                          const std::string &DemangledName) {
+  assert(MangledName.find("msaa") != StringRef::npos);
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        Args.insert(Args.begin() + 2, getInt32(M, ImageOperandsSampleMask));
+        return getSPIRVFuncName(OpImageRead,
+                                std::string(kSPIRVPostfix::ExtDivider) +
+                                    getPostfixForReturnType(CI));
+      },
+      &Attrs);
+}
+
+void OCL20ToSPIRV::visitCallReadImageWithSampler(
+    CallInst *CI, StringRef MangledName, const std::string &DemangledName) {
   assert (MangledName.find(kMangledName::Sampler) != StringRef::npos);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   bool isRetScalar = !CI->getType()->isVectorTy();
