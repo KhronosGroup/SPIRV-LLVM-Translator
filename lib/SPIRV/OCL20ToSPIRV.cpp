@@ -552,28 +552,25 @@ OCL20ToSPIRV::visitCallAllAny(spv::Op OC, CallInst* CI) {
   auto *pCmp = CmpInst::Create(CmpInst::ICmp, CmpInst::ICMP_SLT,
       Args[0], RHS, "cast", CI);
 
-  if (!isa<VectorType>(pArgTy))
-  {
-      auto *pCast = CastInst::CreateZExtOrBitCast(pCmp, Type::getInt32Ty(*Ctx),
-          "",
-          pCmp->getNextNode());
-      CI->replaceAllUsesWith(pCast);
-      CI->eraseFromParent();
-  }
-  else
-  {
-      mutateCallInstSPIRV(M, CI,
-      [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
+  if (!isa<VectorType>(pArgTy)) {
+    auto *pCast = CastInst::CreateZExtOrBitCast(pCmp, Type::getInt32Ty(*Ctx),
+                                                "", pCmp->getNextNode());
+    CI->replaceAllUsesWith(pCast);
+    CI->eraseFromParent();
+  } else {
+    mutateCallInstSPIRV(
+        M, CI,
+        [&](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
           Args[0] = pCmp;
           Ret = Type::getInt1Ty(*Ctx);
 
           return getSPIRVFuncName(OC);
-      },
-      [&](CallInst *CI)->Instruction * {
+        },
+        [&](CallInst *CI) -> Instruction * {
           return CastInst::CreateZExtOrBitCast(CI, Type::getInt32Ty(*Ctx), "",
               CI->getNextNode());
-      },
-      &Attrs);
+        },
+        &Attrs);
   }
 }
 
@@ -773,11 +770,9 @@ void OCL20ToSPIRV::visitCallConvert(CallInst* CI,
       if (!Sat.empty() && TargetSigned != Signed) {
         OC = Signed ? OpSatConvertSToU : OpSatConvertUToS;
         Sat = "";
-      }
-      else
+      } else
         OC = Signed ? OpSConvert : OpUConvert;
-    }
-    else
+    } else
       OC = Signed ? OpConvertSToF : OpConvertUToF;
   } else {
     if (IsTargetInt) {
@@ -911,18 +906,35 @@ OCL20ToSPIRV::visitCallReadImageWithSampler(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   assert (MangledName.find(kMangledName::Sampler) != StringRef::npos);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    auto SampledImgTy = getSPIRVSampledImageType(M, Args[0]->getType());
-    Value *SampledImgArgs[] = {Args[0], Args[1]};
-    auto SampledImg = addCallInstSPIRV(M,
-        getSPIRVFuncName(OpSampledImage), SampledImgTy,
-        SampledImgArgs, nullptr, CI, kSPIRVName::TempSampledImage);
+  bool isRetScalar = !CI->getType()->isVectorTy();
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
+        auto SampledImgTy = getSPIRVSampledImageType(M, Args[0]->getType());
+        Value *SampledImgArgs[] = {Args[0], Args[1]};
+        auto SampledImg = addCallInstSPIRV(
+            M, getSPIRVFuncName(OpSampledImage), SampledImgTy, SampledImgArgs,
+            nullptr, CI, kSPIRVName::TempSampledImage);
 
-    Args[0] = SampledImg;
-    Args.erase(Args.begin() + 1, Args.begin() + 2);
-    return getSPIRVFuncName(OpImageSampleExplicitLod,
-      std::string(kSPIRVPostfix::ExtDivider) + getPostfixForReturnType(CI));
-  }, &Attrs);
+        Args[0] = SampledImg;
+        Args.erase(Args.begin() + 1, Args.begin() + 2);
+        Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+        // TODO: pass actual LOD for mipmap images.
+        Args.push_back(getFloat32(M, 0));
+        // SPIR-V intruction always returns 4-element vector
+        if (isRetScalar)
+          Ret = VectorType::get(Ret, 4);
+        return getSPIRVFuncName(OpImageSampleExplicitLod,
+                                std::string(kSPIRVPostfix::ExtDivider) +
+                                    getPostfixForReturnType(Ret));
+      },
+      [&](CallInst *CI) -> Instruction * {
+        if (isRetScalar)
+          return ExtractElementInst::Create(CI, getSizet(M, 0), "",
+                                            CI->getNextNode());
+        return CI;
+      },
+      &Attrs);
 }
 
 void
