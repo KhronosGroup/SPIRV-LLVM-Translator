@@ -805,6 +805,10 @@ getInt64(Module *M, int64_t value) {
   return ConstantInt::get(Type::getInt64Ty(M->getContext()), value, true);
 }
 
+Constant *getFloat32(Module *M, float value) {
+  return ConstantFP::get(Type::getFloatTy(M->getContext()), value);
+}
+
 ConstantInt *
 getInt32(Module *M, int value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), value, true);

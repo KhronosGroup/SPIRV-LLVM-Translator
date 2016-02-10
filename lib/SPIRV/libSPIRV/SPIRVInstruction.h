@@ -1816,7 +1816,7 @@ public:
 // Image instructions
 _SPIRV_OP(SampledImage, true, 5)
 _SPIRV_OP(ImageSampleImplicitLod, true, 5, true)
-_SPIRV_OP(ImageSampleExplicitLod, true, 5, true)
+_SPIRV_OP(ImageSampleExplicitLod, true, 7, true, 2)
 _SPIRV_OP(ImageRead, true, 5)
 _SPIRV_OP(ImageWrite, false, 4)
 _SPIRV_OP(ImageQueryFormat, true, 4)

@@ -342,7 +342,7 @@ public:
   /// =>
   ///   read_image(image, sampler, ...)
   /// \return transformed call instruction.
-  CallInst *postProcessOCLReadImage(SPIRVInstruction *BI, CallInst *CI,
+  Instruction *postProcessOCLReadImage(SPIRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
   /// \brief Post-process OpBuildNDRange.
@@ -1042,29 +1042,50 @@ SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F,
 }
 
 // ToDo: Handle unsigned integer return type. May need spec change.
-CallInst *
+Instruction *
 SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
     const std::string &FuncName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    CallInst *CallSampledImg = cast<CallInst>(Args[0]);
-    auto Img = CallSampledImg->getArgOperand(0);
-    assert(isOCLImageType(Img->getType()));
-    auto Sampler = CallSampledImg->getArgOperand(1);
-    Args[0] = Img;
-    Args.insert(Args.begin() + 1, Sampler);
-    if (CallSampledImg->hasOneUse()) {
-      CallSampledImg->replaceAllUsesWith(
-          UndefValue::get(CallSampledImg->getType()));
-      CallSampledImg->dropAllReferences();
-      CallSampledImg->eraseFromParent();
-    }
-    Type *T = CI->getType();
-    if (auto VT = dyn_cast<VectorType>(T))
-      T = VT->getElementType();
-    return std::string(kOCLBuiltinName::SampledReadImage)
-      + (T->isFloatingPointTy()?'f':'i');
-  }, &Attrs);
+  StringRef ImageTypeName;
+  bool isDepthImage = false;
+  if (isOCLImageType(
+          (cast<CallInst>(CI->getOperand(0)))->getArgOperand(0)->getType(),
+          &ImageTypeName))
+    isDepthImage = ImageTypeName.endswith("depth_t");
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
+        CallInst *CallSampledImg = cast<CallInst>(Args[0]);
+        auto Img = CallSampledImg->getArgOperand(0);
+        assert(isOCLImageType(Img->getType()));
+        auto Sampler = CallSampledImg->getArgOperand(1);
+        Args[0] = Img;
+        Args.insert(Args.begin() + 1, Sampler);
+        // Drop "Image Operadns" arguments - they are not used by OpenCL at the
+        // moment.
+        // TODO: OpenCL extension mipmap images will use LOD image operand.
+        Args.erase(Args.begin() + 3, Args.end());
+        if (CallSampledImg->hasOneUse()) {
+          CallSampledImg->replaceAllUsesWith(
+              UndefValue::get(CallSampledImg->getType()));
+          CallSampledImg->dropAllReferences();
+          CallSampledImg->eraseFromParent();
+        }
+        Type *T = CI->getType();
+        if (auto VT = dyn_cast<VectorType>(T))
+          T = VT->getElementType();
+        RetTy = isDepthImage ? T : CI->getType();
+        return std::string(kOCLBuiltinName::SampledReadImage) +
+               (T->isFloatingPointTy() ? 'f' : 'i');
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        if (isDepthImage)
+          return InsertElementInst::Create(
+              UndefValue::get(VectorType::get(NewCI->getType(), 4)), NewCI,
+              getSizet(M, 0), "", NewCI->getParent());
+        return NewCI;
+      },
+      &Attrs);
 }
 
 CallInst *

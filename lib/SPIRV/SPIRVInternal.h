@@ -685,6 +685,9 @@ ConstantInt *getUInt32(Module *M, unsigned value);
 /// Get a 16 bit unsigned integer constant.
 ConstantInt *getUInt16(Module *M, unsigned short value);
 
+// Get a 32 bit floating point constant.
+Constant *getFloat32(Module *M, float value);
+
 /// Get a 32 bit integer constant vector.
 std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);
 
