@@ -1226,8 +1226,7 @@ LLVMToSPIRV::oclGetMutatedArgumentTypesByBuiltin(
   std::string Demangled;
   if (!oclIsBuiltin(Name, SrcLangVer, &Demangled))
     return;
-  if (Demangled.find(kOCLBuiltinName::ReadImage) != 0 ||
-      Name.find(kMangledName::Sampler) == std::string::npos)
+  if (Demangled.find(kSPIRVName::SampledImage) == std::string::npos)
     return;
   ChangedType[1] = getOrCreateOpaquePtrType(F->getParent(),
       kSPR2TypeName::Sampler);
