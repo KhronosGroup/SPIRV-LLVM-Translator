@@ -1721,6 +1721,10 @@ SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
        llvm_unreachable("invalid compare instruction");
   } else if (OC == OpGenericCastToPtrExplicit)
     Args.pop_back();
+  else if (OC == OpImageRead && Args.size() > 2) {
+    // Drop "Image operands" argument
+    Args.erase(Args.begin() + 2);
+  }
 }
 
 Instruction*
