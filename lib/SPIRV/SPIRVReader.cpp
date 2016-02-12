@@ -1738,6 +1738,8 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
   }
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
+  if (OC == OpGenericPtrMemSemantics)
+    return BinaryOperator::CreateShl(CI, getInt32(M, 8), "", BB);
   if (OC == OpBuildNDRange)
     return postProcessOCLBuildNDRange(BI, CI, DemangledName);
   if (SPIRVEnableStepExpansion &&

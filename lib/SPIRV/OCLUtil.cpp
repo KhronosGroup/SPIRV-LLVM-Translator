@@ -322,7 +322,7 @@ public:
       UnmangledName == "mem_fence" ||
       UnmangledName.find("shuffle") == 0){
     addUnsignedArg(-1);
-    if (UnmangledName.find("get_fence") == 0){
+    if (UnmangledName.find(kOCLBuiltinName::GetFence) == 0){
       setArgAttr(0, SPIR::ATTR_CONST);
       addVoidPtrArg(0);
     }
