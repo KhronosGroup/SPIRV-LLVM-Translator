@@ -362,10 +362,13 @@ struct BuiltinArgTypeMangleInfo {
   bool IsEnum;
   bool IsSampler;
   bool IsAtomic;
+  bool IsLocalArgBlock;
   SPIR::TypePrimitiveEnum Enum;
   unsigned Attr;
   BuiltinArgTypeMangleInfo():IsSigned(true), IsVoidPtr(false), IsEnum(false),
-      IsSampler(false), IsAtomic(false), Enum(SPIR::PRIMITIVE_NONE), Attr(0){}
+                             IsSampler(false), IsAtomic(false), IsLocalArgBlock(false),
+                             Enum(SPIR::PRIMITIVE_NONE), Attr(0)
+  {}
 };
 
 /// Information for mangling builtin function.
@@ -373,7 +376,8 @@ class BuiltinFuncMangleInfo {
 public:
   /// Translate builtin function name and set
   /// argument attributes and unsigned args.
-  BuiltinFuncMangleInfo(const std::string &UniqName = "") {
+  BuiltinFuncMangleInfo(const std::string &UniqName = "") : LocalArgBlockIdx(-1),
+                                                            VarArgIdx(-1) {
     if (!UniqName.empty())
       init(UniqName);
   }
@@ -383,10 +387,18 @@ public:
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
   void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}
   void addAtomicArg(int Ndx) { AtomicArgs.insert(Ndx);}
+  void setLocalArgBlock(int Ndx) {
+    assert(0 <= Ndx && "it is not allowed to set less than zero index");
+    LocalArgBlockIdx = Ndx;
+  }
   void setEnumArg(int Ndx, SPIR::TypePrimitiveEnum Enum) {
     EnumArgs[Ndx] = Enum;}
   void setArgAttr(int Ndx, unsigned Attr) {
     Attrs[Ndx] = Attr;}
+  void setVarArg(int Ndx) {
+    assert(0 <= Ndx && "it is not allowed to set less than zero index");
+    VarArgIdx = Ndx;
+  }
   bool isArgUnsigned(int Ndx) {
     return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);}
   bool isArgVoidPtr(int Ndx) {
@@ -395,6 +407,8 @@ public:
     return SamplerArgs.count(Ndx);}
   bool isArgAtomic(int Ndx) {
     return AtomicArgs.count(Ndx);}
+  bool isLocalArgBlock(int Ndx) {
+    return LocalArgBlockIdx == Ndx;}
   bool isArgEnum(int Ndx, SPIR::TypePrimitiveEnum *Enum = nullptr) {
     auto Loc = EnumArgs.find(Ndx);
     if (Loc == EnumArgs.end())
@@ -413,6 +427,11 @@ public:
       return 0;
     return Loc->second;
   }
+  // get ellipsis index, single ellipsis at the end of the function is possible only
+  // return value < 0 if none
+  int getVarArg() const {
+    return VarArgIdx;
+  }
   BuiltinArgTypeMangleInfo getTypeMangleInfo(int Ndx) {
     BuiltinArgTypeMangleInfo Info;
     Info.IsSigned = !isArgUnsigned(Ndx);
@@ -420,6 +439,7 @@ public:
     Info.IsEnum = isArgEnum(Ndx, &Info.Enum);
     Info.IsSampler = isArgSampler(Ndx);
     Info.IsAtomic = isArgAtomic(Ndx);
+    Info.IsLocalArgBlock = isLocalArgBlock(Ndx);
     Info.Attr = getArgAttr(Ndx);
     return Info;
   }
@@ -435,6 +455,8 @@ protected:
   std::set<int> AtomicArgs;   // atomic arguments
   std::map<int, SPIR::TypePrimitiveEnum> EnumArgs; // enum arguments
   std::map<int, unsigned> Attrs;                   // argument attributes
+  int LocalArgBlockIdx; // index of a block with local arguments, idx < 0 if none
+  int VarArgIdx;        // index of ellipsis argument, idx < 0 if none
 };
 
 /// \returns a vector of types for a collection of values.

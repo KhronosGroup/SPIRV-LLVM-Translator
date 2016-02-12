@@ -299,9 +299,17 @@ getOCLOpaqueTypeAddrSpace(Op OpCode) {
   }
 }
 
-class OCLBuiltinFuncMangleInfo:public SPIRV::BuiltinFuncMangleInfo {
+// Fetch type of invoke function passed to device execution built-ins
+static FunctionType *
+getBlockInvokeTy(Function * F, unsigned blockIdx) {
+    auto params = F->getFunctionType()->params();
+    PointerType * funcPtr = cast<PointerType>(params[blockIdx]);
+    return cast<FunctionType>(funcPtr->getElementType());
+}
+
+class OCLBuiltinFuncMangleInfo : public SPIRV::BuiltinFuncMangleInfo {
 public:
-  OCLBuiltinFuncMangleInfo(){}
+  OCLBuiltinFuncMangleInfo(Function * f) : F(f) {}
   void init(const std::string &UniqName) {
   UnmangledName = UniqName;
   size_t Pos = std::string::npos;
@@ -314,8 +322,27 @@ public:
   else if (UnmangledName == "prefetch") {
     addUnsignedArg(1);
     setArgAttr(0, SPIR::ATTR_CONST);
-  }
-  else if (UnmangledName.find("get_") == 0 ||
+  } else if(UnmangledName == "get_kernel_work_group_size" ||
+            UnmangledName == "get_kernel_preferred_work_group_size_multiple") {
+    assert(F && "lack of necessary information");
+    const size_t blockArgIdx = 0;
+    FunctionType * InvokeTy = getBlockInvokeTy(F, blockArgIdx);
+    if(InvokeTy->getNumParams() > 1) setLocalArgBlock(blockArgIdx);
+  } else if (UnmangledName == "enqueue_kernel") {
+    assert(F && "lack of necessary information");
+    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
+    addUnsignedArg(3);
+    setArgAttr(4, SPIR::ATTR_CONST);
+    // If there are arguments other then block context then these are pointers
+    // to local memory so this built-in must be mangled accordingly.
+    const size_t blockArgIdx = 6;
+    FunctionType * InvokeTy = getBlockInvokeTy(F, blockArgIdx);
+    if(InvokeTy->getNumParams() > 1) {
+       setLocalArgBlock(blockArgIdx);
+       addUnsignedArg(blockArgIdx + 1);
+       setVarArg(blockArgIdx + 2);
+    }
+  } else if (UnmangledName.find("get_") == 0 ||
       UnmangledName.find("barrier") == 0 ||
       UnmangledName.find("work_group_barrier") == 0 ||
       UnmangledName == "nan" ||
@@ -360,10 +387,6 @@ public:
   } else if (UnmangledName == "capture_event_profiling_info") {
     addVoidPtrArg(2);
     setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
-  } else if (UnmangledName == "enqueue_kernel") {
-    setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
-    addUnsignedArg(3);
-    setArgAttr(4, SPIR::ATTR_CONST);
   } else if (UnmangledName == "enqueue_marker") {
     setArgAttr(2, SPIR::ATTR_CONST);
     addUnsignedArg(1);
@@ -388,13 +411,16 @@ public:
     addSamplerArg(1);
   }
 }
+// Auxiliarry information, it is expected what it is relevant at the moment
+// the init method is called.
+Function * F; // SPIRV decorated function
 };
 
 CallInst *
 mutateCallInstOCL(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     AttributeSet *Attrs) {
-  OCLBuiltinFuncMangleInfo BtnInfo;
+  OCLBuiltinFuncMangleInfo BtnInfo(CI->getCalledFunction());
   return mutateCallInst(M, CI, ArgMutate, &BtnInfo, Attrs);
 }
 
@@ -404,7 +430,7 @@ mutateCallInstOCL(Module *M, CallInst *CI,
         Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     AttributeSet *Attrs) {
-  OCLBuiltinFuncMangleInfo BtnInfo;
+  OCLBuiltinFuncMangleInfo BtnInfo(CI->getCalledFunction());
   return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
 }
 
@@ -412,7 +438,7 @@ void
 mutateFunctionOCL(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     AttributeSet *Attrs) {
-  OCLBuiltinFuncMangleInfo BtnInfo;
+  OCLBuiltinFuncMangleInfo BtnInfo(F);
   return mutateFunction(F, ArgMutate, &BtnInfo, Attrs, false);
 }
 
@@ -421,6 +447,6 @@ mutateFunctionOCL(Function *F,
 void
 llvm::MangleOpenCLBuiltin(const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, std::string &MangledName) {
-  OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo;
+  OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo(nullptr);
   MangledName = SPIRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }

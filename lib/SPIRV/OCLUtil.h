@@ -327,7 +327,6 @@ void
 mutateFunctionOCL(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     AttributeSet *Attrs = nullptr);
-
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////
