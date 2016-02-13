@@ -965,6 +965,7 @@ LLVMToSPIRV::oclIsSamplerType(llvm::Type* T) {
 /// Only two cases are possible:
 ///   arg = ConstantInt x -> SPIRVConstantSampler
 ///   arg = i32 argument -> transValue(arg)
+///   arg = load from sampler -> look through load
 SPIRVValue *
 LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
   llvm::Function* F = CI->getCalledFunction();
@@ -975,15 +976,30 @@ LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
   bool isSampler = oclIsSamplerType(RT);
   assert(isSampler && ArgT->isIntegerTy());
   auto Arg = CI->getArgOperand(0);
-  auto Const = dyn_cast<ConstantInt>(Arg);
-  if (Const) {
-    auto Lit = Const->getZExtValue();
-    auto AddrMode = (Lit & 0xE) >> 1;
-    auto Param = Lit & 0x1;
-    auto Filter = ((Lit & 0x30) >> 4) - 1;
+
+  auto GetSamplerConstant = [&](uint64_t SamplerValue) {
+    auto AddrMode = (SamplerValue & 0xE) >> 1;
+    auto Param = SamplerValue & 0x1;
+    auto Filter = ((SamplerValue & 0x30) >> 4) - 1;
     auto BV = BM->addSamplerConstant(transType(RT), AddrMode, Param, Filter);
     return BV;
+  };
+
+  if (auto Const = dyn_cast<ConstantInt>(Arg)) {
+    return GetSamplerConstant(Const->getZExtValue());
   }
+  else if (auto Load = dyn_cast<LoadInst>(Arg)) {
+    auto Op = Load->getPointerOperand();
+    assert(isa<GlobalVariable>(Op) && "Unknown sampler pattern!");
+    auto GV = cast<GlobalVariable>(Op);
+    assert(GV->isConstant() ||
+      GV->getType()->getPointerAddressSpace() == SPIRAS_Constant);
+    auto Initializer = GV->getInitializer();
+    assert(isa<ConstantInt>(Initializer) && "sampler not constant int?");
+
+    return GetSamplerConstant(cast<ConstantInt>(Initializer)->getZExtValue());
+  }
+
   auto BV = transValue(Arg, BB);
   assert(BV && BV->getType() == transType(RT));
   return BV;
