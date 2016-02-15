@@ -988,14 +988,11 @@ SPIRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
   std::set<Value *> InvokeFuncPtrs;
   mutateFunctionOCL (F, [=, &InvokeFuncPtrs](
       CallInst *CI, std::vector<Value *> &Args) {
-    auto ALoc = Args.begin();
-    for (auto E = Args.end(); ALoc != E; ++ALoc) {
-      if (isFunctionPointerType((*ALoc)->getType())) {
-        assert(isa<Function>(*ALoc) && "Invalid function pointer usage");
-        break;
-      }
-    }
-    assert (ALoc != Args.end());
+    auto ALoc = std::find_if(Args.begin(), Args.end(), [](Value * elem) {
+        return isFunctionPointerType(elem->getType());
+      });
+    assert(ALoc != Args.end() && "Buit-in must accept a pointer to function");
+    assert(isa<Function>(*ALoc) && "Invalid function pointer usage");
     Value *Ctx = ALoc[1];
     Value *CtxLen = ALoc[2];
     Value *CtxAlign = ALoc[3];
