@@ -110,14 +110,14 @@ saveLLVMModule(Module *M, const std::string &OutputFile) {
 }
 
 std::string
-mapLLVMTypeToOCLType(const Type* Ty, bool Signed) {
+mapLLVMTypeToOCLType(Type* Ty, bool Signed) {
   if (Ty->isHalfTy())
     return "half";
   if (Ty->isFloatTy())
     return "float";
   if (Ty->isDoubleTy())
     return "double";
-  if (auto* intTy = dyn_cast<IntegerType>(Ty)) {
+  if (IntegerType* intTy = dyn_cast<IntegerType>(Ty)) {
     std::string SignPrefix;
     std::string Stem;
     if (!Signed)
@@ -141,7 +141,7 @@ mapLLVMTypeToOCLType(const Type* Ty, bool Signed) {
     }
     return SignPrefix + Stem;
   }
-  if (auto* vecTy = dyn_cast<VectorType>(Ty)) {
+  if (VectorType* vecTy = dyn_cast<VectorType>(Ty)) {
     Type* eleTy = vecTy->getElementType();
     unsigned size = vecTy->getVectorNumElements();
     std::stringstream ss;
@@ -363,12 +363,6 @@ getSPIRVFuncName(Op OC, StringRef PostFix) {
 }
 
 std::string
-getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned) {
-  return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider
-      + getPostfixForReturnType(pRetTy, false));
-}
-
-std::string
 getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
     StringRef PostFix) {
   std::string ExtOpName;
@@ -420,13 +414,8 @@ getPostfix(Decoration Dec, unsigned Value) {
 
 std::string
 getPostfixForReturnType(CallInst *CI, bool IsSigned) {
-    return getPostfixForReturnType(CI->getType(), IsSigned);
-}
-
-std::string
-getPostfixForReturnType(const Type *pRetTy, bool IsSigned) {
   return std::string(kSPIRVPostfix::Return) +
-        mapLLVMTypeToOCLType(pRetTy, IsSigned);
+        mapLLVMTypeToOCLType(CI->getType(), IsSigned);
 }
 
 Op
@@ -503,23 +492,6 @@ isMangledTypeUnsigned(char Mangled) {
       || Mangled == 'm' /* ulong */;
 }
 
-// Check if a mangled type name is signed
-bool
-isMangledTypeSigned(char Mangled) {
-  return Mangled == 'c' /* char */
-      || Mangled == 'a' /* signed char */
-      || Mangled == 's' /* short */
-      || Mangled == 'i' /* int */
-      || Mangled == 'l' /* long */;
-}
-
-// Check if a mangled type name is floating point
-bool
-isMangledTypeFP(char Mangled) {
-  return Mangled == 'f' /* float */
-      || Mangled == 'd'; /* double */
-}
-
 void
 eraseSubstitutionFromMangledName(std::string& MangledName) {
   auto Len = MangledName.length();
@@ -529,32 +501,16 @@ eraseSubstitutionFromMangledName(std::string& MangledName) {
   }
 }
 
-ParamType LastFuncParamType(const std::string& MangledName)
-{
-  auto Copy = MangledName;
-  eraseSubstitutionFromMangledName(Copy);
-  char Mangled = Copy.back();
-
-  if (isMangledTypeUnsigned(Mangled))
-  {
-      return ParamType::UNSIGNED;
-  }
-  else if (isMangledTypeSigned(Mangled))
-  {
-      return ParamType::SIGNED;
-  }
-  else if (isMangledTypeFP(Mangled))
-  {
-      return ParamType::FLOAT;
-  }
-
-  return ParamType::UNKNOWN;
-}
-
 // Check if the last argument is signed
 bool
 isLastFuncParamSigned(const std::string& MangledName) {
-  return LastFuncParamType(MangledName) == ParamType::SIGNED;
+  auto Copy = MangledName;
+  eraseSubstitutionFromMangledName(Copy);
+  char Mangled = Copy.back();
+  bool Signed = true;
+  if (isMangledTypeUnsigned(Mangled))
+    Signed = false;
+  return Signed;
 }
 
 
@@ -963,8 +919,6 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
   }
   if(auto *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch(IntTy->getBitWidth()) {
-    case 1:
-      return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_BOOL));
     case 8:
       return SPIR::RefParamType(new SPIR::PrimitiveType(Signed?
           SPIR::PRIMITIVE_CHAR:SPIR::PRIMITIVE_UCHAR));

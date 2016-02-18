@@ -365,7 +365,6 @@ SPIRVModuleImpl::addLine(SPIRVEntry* E, SPIRVString* FileName,
 // multiple targets.
 void
 SPIRVModuleImpl::optimizeDecorates() {
-
   SPIRVDBG(spvdbgs() << "[optimizeDecorates] begin\n");
   for (auto I = DecorateSet.begin(), E = DecorateSet.end(); I != E;) {
     auto D = *I;
@@ -399,17 +398,11 @@ SPIRVModuleImpl::optimizeDecorates() {
         continue;
       Targets.push_back(E->getTargetId());
     }
-
-    // WordCount is only 16 bits.  We can only have 65535 - FixedWC targtets per group.
-    // For now, just skip using a group if the number of targets to too big
-    if( Targets.size() < 65530 ) {
-      DecorateSet.erase(ER.first, ER.second);
-      auto GD = new SPIRVGroupDecorate(G, Targets);
-      DecGroupVec.push_back(G);
-      GroupDecVec.push_back(GD);
-    }
+    DecorateSet.erase(ER.first, ER.second);
+    auto GD = new SPIRVGroupDecorate(G, Targets);
+    DecGroupVec.push_back(G);
+    GroupDecVec.push_back(GD);
   }
-
 }
 
 SPIRVValue*
