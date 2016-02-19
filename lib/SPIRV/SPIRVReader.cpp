@@ -470,6 +470,7 @@ private:
   template<class Source, class Func>
   bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue* V);
+  Instruction *transOCLAllAny(SPIRVInstruction* BI, BasicBlock *BB);
 };
 
 Type *
@@ -1593,6 +1594,11 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
     break;
 
+  case OpAll :
+  case OpAny :
+    return mapValue(BV,
+                    transOCLAllAny(static_cast<SPIRVInstruction *>(BV), BB));
+
   default: {
     auto OC = BV->getOpCode();
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
@@ -2344,6 +2350,29 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue* V) {
   }
 }
 
+Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
+  CallInst *CI = cast<CallInst>(transSPIRVBuiltinFromInst(I, BB));
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  return cast<Instruction>(mapValue(
+      I, mutateCallInstOCL(
+             M, CI,
+             [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
+               Type *Int32Ty = Type::getInt32Ty(*Context);
+               auto oldArg = CI->getOperand(0);
+               auto newArgTy = VectorType::get(
+                   Int32Ty, oldArg->getType()->getVectorNumElements());
+               auto newArg =
+                   CastInst::CreateSExtOrBitCast(oldArg, newArgTy, "", CI);
+               Args[0] = newArg;
+               RetTy = Int32Ty;
+               return CI->getCalledFunction()->getName();
+             },
+             [=](CallInst *NewCI) -> Instruction * {
+               return CastInst::CreateTruncOrBitCast(
+                   NewCI, Type::getInt1Ty(*Context), "", NewCI->getNextNode());
+             },
+             &Attrs)));
+}
 }
 
 bool
