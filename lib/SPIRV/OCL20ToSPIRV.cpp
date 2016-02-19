@@ -160,7 +160,7 @@ public:
 
   /// Transform get_image_{width|height|depth|dim}.
   /// get_image_xxx(...) =>
-  ///   dimension = __spirv_ImageQuerySizeLod(...);
+  ///   dimension = __spirv_ImageQuerySizeLod_R{ReturnType}(...);
   ///   return dimension.{x|y|z};
   void visitCallGetImageSize(CallInst *CI, StringRef MangledName,
     const std::string &DemangledName);
@@ -377,7 +377,8 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName == kOCLBuiltinName::GetImageWidth ||
       DemangledName == kOCLBuiltinName::GetImageHeight ||
       DemangledName == kOCLBuiltinName::GetImageDepth ||
-      DemangledName == kOCLBuiltinName::GetImageDim) {
+      DemangledName == kOCLBuiltinName::GetImageDim   ||
+      DemangledName == kOCLBuiltinName::GetImageArraySize) {
     visitCallGetImageSize(&CI, MangledName, DemangledName);
     return;
   }
@@ -923,14 +924,15 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
       assert(IsImg);
       Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
       Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-      Ret = Type::getInt32Ty(*Ctx);
+      Ret = CI->getType()->isIntegerTy(64) ? Type::getInt64Ty(*Ctx)
+                                           : Type::getInt32Ty(*Ctx);
       if (Dim > 1)
         Ret = VectorType::get(Ret, Dim);
       if (Desc.Dim == DimBuffer)
-        return getSPIRVFuncName(OpImageQuerySize);
+        return getSPIRVFuncName(OpImageQuerySize, CI->getType());
       else {
         Args.push_back(getInt32(M, 0));
-        return getSPIRVFuncName(OpImageQuerySizeLod);
+        return getSPIRVFuncName(OpImageQuerySizeLod, CI->getType());
       }
     },
     [&](CallInst *NCI)->Instruction * {

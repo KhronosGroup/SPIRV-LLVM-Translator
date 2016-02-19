@@ -3,6 +3,8 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
+; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s
@@ -19,6 +21,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-DAG: %opencl.image2d_t = type opaque
 ; CHECK-DAG: %opencl.image2d_depth_t = type opaque
 ; CHECK-DAG: %opencl.image2d_array_t = type opaque
+; CHECK-SPIRV: 10 TypeImage [[ArrayTypeID:[0-9]+]] {{[0-9]+}} 0 0 1 0 0 0 0
 ; CHECK-DAG: %opencl.image2d_array_depth_t = type opaque
 ; CHECK-DAG: %opencl.image3d_t = type opaque
 
@@ -44,7 +47,9 @@ target triple = "spir64-unknown-unknown"
 ; CHECK:   insertelement <2 x i32> {{.*}} 1
 
 ; CHECK:   call {{.*}} i64 @_Z20get_image_array_size16ocl_image1darray
-; ATM SPIR-V writer translates get_image1d_array_t into function call
+; CHECK-SPIRV: 3 FunctionParameter [[ArrayTypeID]] [[ArrayVarID:[0-9]+]]
+; CHECK-SPIRV: ImageQuerySizeLod {{[0-9]+}} {{[0-9]+}} [[ArrayVarID]]
+; CHECK-SPIRV-NOT: {{[0-9]*}} ExtInst {{[0-9]*}} {{[0-9]*}} {{[0-9]*}} get_image_array_size
 
 ; Function Attrs: nounwind
 define spir_kernel void @test_image1d(i32 addrspace(1)* nocapture %sizes, %opencl.image1d_t addrspace(1)* %img, %opencl.image1d_buffer_t addrspace(1)* %buffer, %opencl.image1d_array_t addrspace(1)* %array) #0 {

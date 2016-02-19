@@ -562,6 +562,8 @@ bool isDecoratedSPIRVFunc(const Function *F, std::string *UndecName = nullptr);
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPIRVFuncName(Op OC, StringRef PostFix = "");
 
+std::string getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned = false);
+
 /// Get a canonical function name for a SPIR-V extended instruction
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
     StringRef PostFix = "");
