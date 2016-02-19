@@ -264,12 +264,13 @@ getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     StringRef Name, BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs,
     bool takeName) {
   std::string MangledName = Name;
-  if (Mangle)
+  bool isVarArg = false;
+  if (Mangle) {
     MangledName = mangleBuiltin(Name, ArgTypes, Mangle);
-  FunctionType *FT = FunctionType::get(
-      RetTy,
-      ArgTypes,
-      false);
+    isVarArg = 0 <= Mangle->getVarArg();
+    if(isVarArg) ArgTypes = ArgTypes.slice(0, Mangle->getVarArg());
+  }
+  FunctionType *FT = FunctionType::get(RetTy, ArgTypes, isVarArg);
   Function *F = M->getFunction(MangledName);
   if (!takeName && F && F->getFunctionType() != FT && Mangle != nullptr) {
     std::string S;
@@ -652,6 +653,7 @@ CallInst *
 addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
     AttributeSet *Attrs, Instruction *Pos, BuiltinFuncMangleInfo *Mangle,
     StringRef InstName, bool TakeFuncName) {
+
   auto F = getOrCreateFunction(M, RetTy, getTypes(Args),
       FuncName, Mangle, Attrs, TakeFuncName);
   auto CI = CallInst::Create(F, Args, InstName, Pos);
@@ -989,8 +991,21 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
 
       auto Prim = getOCLTypePrimitiveEnum(TyName);
       if (StructTy->isOpaque()) {
-        if (TyName == "opencl.block")
-          EPT = new SPIR::BlockType;
+        if (TyName == "opencl.block") {
+          auto BlockTy = new SPIR::BlockType;
+          // Handle block with local memory arguments according to OpenCL 2.0 spec.
+          if(Info.IsLocalArgBlock) {
+            SPIR::RefParamType VoidTyRef(new SPIR::PrimitiveType(SPIR::PRIMITIVE_VOID));
+            auto VoidPtrTy = new SPIR::PointerType(VoidTyRef);
+            VoidPtrTy->setAddressSpace(SPIR::ATTR_LOCAL);
+            // "__local void *"
+            BlockTy->setParam(0, SPIR::RefParamType(VoidPtrTy));
+            // "..."
+            BlockTy->setParam(1, SPIR::RefParamType(
+              new SPIR::PrimitiveType(SPIR::PRIMITIVE_VAR_ARG)));
+          }
+          EPT = BlockTy;
+        }
         else if (Prim != SPIR::PRIMITIVE_NONE)
           EPT = new SPIR::PrimitiveType(Prim);
       } else if (Prim == SPIR::PRIMITIVE_NDRANGE_T)
@@ -1160,13 +1175,28 @@ mangleBuiltin(const std::string &UniqName,
   SPIR::NameMangler Mangler(SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
   FD.name = BtnInfo->getUnmangledName();
-  for (unsigned I = 0, E = ArgTypes.size(); I != E; ++I) {
-    auto T = ArgTypes[I];
-    FD.parameters.emplace_back(transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
-  }
-  if (FD.parameters.empty())
-    FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
+
+  if (ArgTypes.empty()) {
+    // Function signature cannot be ()(void, ...) so if there is an ellipsis
+    // it must be ()(...)
+    if(BtnInfo->getVarArg() < 0) {
+      FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_VOID)));
+    }
+  } else {
+    for (unsigned I = 0, E = ArgTypes.size();
+         I != E && I != BtnInfo->getVarArg(); ++I) {
+      auto T = ArgTypes[I];
+      FD.parameters.emplace_back(transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
+    }
+  }
+  // Ellipsis must be the last argument of any function
+  if(0 <= BtnInfo->getVarArg()) {
+    assert(BtnInfo->getVarArg() <= ArgTypes.size()
+           && "invalid index of an ellipsis");
+    FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
+        SPIR::PRIMITIVE_VAR_ARG)));
+  }
   Mangler.mangle(FD, MangledName);
   DEBUG(dbgs() << MangledName << '\n');
   return MangledName;
