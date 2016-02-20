@@ -299,6 +299,56 @@ getOCLOpaqueTypeAddrSpace(Op OpCode) {
   }
 }
 
+static SPIR::TypeAttributeEnum
+mapAddrSpaceEnums(SPIRAddressSpace addrspace)
+{
+  switch (addrspace) {
+  case SPIRAS_Private:
+    return SPIR::ATTR_PRIVATE;
+  case SPIRAS_Global:
+    return SPIR::ATTR_GLOBAL;
+  case SPIRAS_Constant:
+    return SPIR::ATTR_CONSTANT;
+  case SPIRAS_Local:
+    return SPIR::ATTR_LOCAL;
+  case SPIRAS_Generic:
+    return SPIR::ATTR_GENERIC;
+  default:
+    llvm_unreachable("Invalid addrspace enum member");
+  }
+}
+
+SPIR::TypeAttributeEnum
+getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim) {
+  switch (prim) {
+  case SPIR::PRIMITIVE_QUEUE_T:
+    return mapAddrSpaceEnums(SPIRV_QUEUE_T_ADDR_SPACE);
+  case SPIR::PRIMITIVE_EVENT_T:
+    return mapAddrSpaceEnums(SPIRV_EVENT_T_ADDR_SPACE);
+  case SPIR::PRIMITIVE_CLK_EVENT_T:
+    return mapAddrSpaceEnums(SPIRV_CLK_EVENT_T_ADDR_SPACE);
+  case SPIR::PRIMITIVE_RESERVE_ID_T:
+    return mapAddrSpaceEnums(SPIRV_RESERVE_ID_T_ADDR_SPACE);
+  case SPIR::PRIMITIVE_PIPE_T:
+    return mapAddrSpaceEnums(SPIRV_PIPE_ADDR_SPACE);
+  case SPIR::PRIMITIVE_IMAGE_1D_T:
+  case SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T:
+  case SPIR::PRIMITIVE_IMAGE_1D_BUFFER_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_ARRAY_T:
+  case SPIR::PRIMITIVE_IMAGE_3D_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_MSAA_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_MSAA_DEPTH_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_ARRAY_MSAA_DEPTH_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_DEPTH_T:
+  case SPIR::PRIMITIVE_IMAGE_2D_ARRAY_DEPTH_T:
+    return mapAddrSpaceEnums(SPIRV_IMAGE_ADDR_SPACE);
+  default:
+    llvm_unreachable("No address space is determined for a SPIR primitive");
+  }
+}
+
 // Fetch type of invoke function passed to device execution built-ins
 static FunctionType *
 getBlockInvokeTy(Function * F, unsigned blockIdx) {
@@ -386,6 +436,39 @@ public:
     UnmangledName.erase(0, 2);
   } else if (UnmangledName == "fclamp") {
     UnmangledName.erase(0, 1);
+  } else if (UnmangledName == "read_pipe" || UnmangledName == "write_pipe") {
+    assert(F && "lack of necessary information");
+    // handle [read|write]pipe builtins (plus two i32 literal args
+    // required by SPIR 2.0 provisional specification):
+    if (F->getArgumentList().size() == 6) {
+      // with 4 arguments (plus two i32 literals):
+      // int read_pipe (read_only pipe gentype p, reserve_id_t reserve_id, uint index, gentype *ptr)
+      // int write_pipe (write_only pipe gentype p, reserve_id_t reserve_id, uint index, const gentype *ptr)
+      addUnsignedArg(2);
+      addVoidPtrArg(3);
+      addUnsignedArg(4);
+      addUnsignedArg(5);
+    } else if (F->getArgumentList().size() == 4) {
+      // with 2 arguments (plus two i32 literals):
+      // int read_pipe (read_only pipe gentype p, gentype *ptr)
+      // int write_pipe (write_only pipe gentype p, const gentype *ptr)
+      addVoidPtrArg(1);
+      addUnsignedArg(2);
+      addUnsignedArg(3);
+    } else {
+      llvm_unreachable("read/write pipe builtin with unexpected number of arguments");
+    }
+  } else if (UnmangledName.find("reserve_read_pipe") != std::string::npos ||
+             UnmangledName.find("reserve_write_pipe") != std::string::npos) {
+    // process [|work_group|sub_group]reserve[read|write]pipe builtins
+    addUnsignedArg(1);
+    addUnsignedArg(2);
+    addUnsignedArg(3);
+  } else if (UnmangledName.find("commit_read_pipe") != std::string::npos ||
+             UnmangledName.find("commit_write_pipe") != std::string::npos) {
+    // process [|work_group|sub_group]commit[read|write]pipe builtins
+    addUnsignedArg(2);
+    addUnsignedArg(3);
   } else if (UnmangledName == "capture_event_profiling_info") {
     addVoidPtrArg(2);
     setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);

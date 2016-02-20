@@ -705,7 +705,9 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     }
   case OpTypePipe: {
     auto PT = static_cast<SPIRVTypePipe *>(T);
-    return mapType(T, getOrCreateOpaquePtrType(M, transOCLPipeTypeName(PT)));
+    return mapType(T, getOrCreateOpaquePtrType(M,
+        transOCLPipeTypeName(PT),
+        getOCLOpaqueTypeAddrSpace(T->getOpCode())));
     }
   default: {
     auto OC = T->getOpCode();
