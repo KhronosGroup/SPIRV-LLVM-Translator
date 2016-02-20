@@ -1190,17 +1190,16 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         FS = &APFloat::IEEEdouble;
         break;
       default:
-        assert (0 && "invalid float type");
+        llvm_unreachable("invalid float type");
       }
       return mapValue(BV, ConstantFP::get(*Context, APFloat(*FS,
           APInt(BT->getFloatBitWidth(), BConst->getZExtIntValue()))));
     }
     default:
       llvm_unreachable("Not implemented");
-      return NULL;
+      return nullptr;
     }
   }
-  break;
 
   case OpConstantTrue:
     return mapValue(BV, ConstantInt::getTrue(*Context));
@@ -1210,9 +1209,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpConstantNull: {
     auto LT = transType(BV->getType());
-    if (auto PT = dyn_cast<PointerType>(LT))
-      return mapValue(BV, ConstantPointerNull::get(PT));
-    return mapValue(BV, ConstantAggregateZero::get(LT));
+    return mapValue(BV, Constant::getNullValue(LT));
   }
 
   case OpConstantComposite: {
@@ -1234,7 +1231,6 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       return nullptr;
     }
   }
-  break;
 
   case OpConstantSampler: {
     auto BCS = static_cast<SPIRVConstantSampler*>(BV);
@@ -1274,7 +1270,6 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       BuiltinGVMap[LVar] = BVKind;
     return mapValue(BV, LVar);
   }
-  break;
 
   case OpFunctionParameter: {
     auto BA = static_cast<SPIRVFunctionParameter*>(BV);
@@ -1285,21 +1280,23 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       if (ArgNo == BA->getArgNo())
         return mapValue(BV, I);
     }
-    assert (0 && "Invalid argument");
-    return NULL;
+    llvm_unreachable("Invalid argument");
+    return nullptr;
   }
-  break;
 
   case OpFunction:
     return mapValue(BV, transFunction(static_cast<SPIRVFunction *>(BV)));
 
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
-    break;
+
   default:
     // do nothing
     break;
   }
+
+  // All other values require valid BB pointer.
+  assert(BB && "Invalid BB");
 
   // Creation of place holder
   if (CreatePlaceHolder) {
@@ -1319,80 +1316,62 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   switch (BV->getOpCode()) {
   case OpBranch: {
     auto BR = static_cast<SPIRVBranch *>(BV);
-    assert(BB && "Invalid BB");
     return mapValue(BV, BranchInst::Create(
       dyn_cast<BasicBlock>(transValue(BR->getTargetLabel(), F, BB)), BB));
-    }
-    break;
+  }
 
   case OpBranchConditional: {
     auto BR = static_cast<SPIRVBranchConditional *>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, BranchInst::Create(
-      dyn_cast<BasicBlock>(transValue(BR->getTrueLabel(), F, BB)),
-      dyn_cast<BasicBlock>(transValue(BR->getFalseLabel(), F, BB)),
-      transValue(BR->getCondition(), F, BB),
-      BB));
-    }
-    break;
+    return mapValue(
+        BV, BranchInst::Create(
+                dyn_cast<BasicBlock>(transValue(BR->getTrueLabel(), F, BB)),
+                dyn_cast<BasicBlock>(transValue(BR->getFalseLabel(), F, BB)),
+                transValue(BR->getCondition(), F, BB), BB));
+  }
 
   case OpPhi: {
     auto Phi = static_cast<SPIRVPhi *>(BV);
-    assert(BB && "Invalid BB");
-    auto LPhi = dyn_cast<PHINode>(mapValue(BV, PHINode::Create(
-      transType(Phi->getType()),
-      Phi->getPairs().size() / 2,
-      Phi->getName(),
-      BB)));
+    auto LPhi = dyn_cast<PHINode>(mapValue(
+        BV, PHINode::Create(transType(Phi->getType()),
+                            Phi->getPairs().size() / 2, Phi->getName(), BB)));
     Phi->foreachPair([&](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB,
-      size_t Index){
+                         size_t Index) {
       auto Translated = transValue(IncomingV, F, BB);
       LPhi->addIncoming(Translated,
-        dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
+                        dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
     });
     return LPhi;
-    }
-    break;
+  }
 
   case OpReturn:
-    assert(BB && "Invalid BB");
     return mapValue(BV, ReturnInst::Create(*Context, BB));
-    break;
 
   case OpReturnValue: {
     auto RV = static_cast<SPIRVReturnValue *>(BV);
-    return mapValue(BV, ReturnInst::Create(*Context,
-      transValue(RV->getReturnValue(), F, BB), BB));
-    }
-    break;
+    return mapValue(
+        BV, ReturnInst::Create(*Context,
+                               transValue(RV->getReturnValue(), F, BB), BB));
+  }
 
   case OpStore: {
     SPIRVStore *BS = static_cast<SPIRVStore*>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, new StoreInst(
-      transValue(BS->getSrc(), F, BB),
-      transValue(BS->getDst(), F, BB),
-      BS->SPIRVMemoryAccess::isVolatile(),
-      BS->SPIRVMemoryAccess::getAlignment(),
-      BB));
-    }
-    break;
+    return mapValue(BV,
+                    new StoreInst(transValue(BS->getSrc(), F, BB),
+                                  transValue(BS->getDst(), F, BB),
+                                  BS->SPIRVMemoryAccess::isVolatile(),
+                                  BS->SPIRVMemoryAccess::getAlignment(), BB));
+  }
 
   case OpLoad: {
     SPIRVLoad *BL = static_cast<SPIRVLoad*>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, new LoadInst(
-      transValue(BL->getSrc(), F, BB),
-      BV->getName(),
-      BL->SPIRVMemoryAccess::isVolatile(),
-      BL->SPIRVMemoryAccess::getAlignment(),
-      BB));
-    }
-    break;
+    return mapValue(BV,
+                    new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
+                                 BL->SPIRVMemoryAccess::isVolatile(),
+                                 BL->SPIRVMemoryAccess::getAlignment(), BB));
+  }
 
   case OpCopyMemorySized: {
     SPIRVCopyMemorySized *BC = static_cast<SPIRVCopyMemorySized *>(BV);
-    assert(BB && "Invalid BB");
     std::string FuncName = "llvm.memcpy";
     SPIRVType* BS = BC->getSource()->getType();
     SPIRVType* BT = BC->getTarget()->getType();
@@ -1431,32 +1410,30 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                          BC->SPIRVMemoryAccess::isVolatile())};
     return mapValue( BV, CallInst::Create(Func, Arg, "", BB));
   }
-  break;
+
   case OpSelect: {
     SPIRVSelect *BS = static_cast<SPIRVSelect*>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, SelectInst::Create(
-      transValue(BS->getCondition(), F, BB),
-      transValue(BS->getTrueValue(), F, BB),
-      transValue(BS->getFalseValue(), F, BB),
-      BV->getName(), BB));
-    }
-    break;
+    return mapValue(BV,
+                    SelectInst::Create(transValue(BS->getCondition(), F, BB),
+                                       transValue(BS->getTrueValue(), F, BB),
+                                       transValue(BS->getFalseValue(), F, BB),
+                                       BV->getName(), BB));
+  }
 
   case OpSwitch: {
     auto BS = static_cast<SPIRVSwitch *>(BV);
-    assert(BB && "Invalid BB");
     auto Select = transValue(BS->getSelect(), F, BB);
-    auto LS = SwitchInst::Create(Select,
-      dyn_cast<BasicBlock>(transValue(BS->getDefault(), F, BB)),
-      BS->getNumPairs(), BB);
-    BS->foreachPair([&](SPIRVWord Literal, SPIRVBasicBlock *Label, size_t Index){
-      LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()),
-        Literal), dyn_cast<BasicBlock>(transValue(Label, F, BB)));
-    });
+    auto LS = SwitchInst::Create(
+        Select, dyn_cast<BasicBlock>(transValue(BS->getDefault(), F, BB)),
+        BS->getNumPairs(), BB);
+    BS->foreachPair(
+        [&](SPIRVWord Literal, SPIRVBasicBlock *Label, size_t Index) {
+          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()),
+                                       Literal),
+                      dyn_cast<BasicBlock>(transValue(Label, F, BB)));
+        });
     return mapValue(BV, LS);
-    }
-    break;
+  }
 
   case OpAccessChain:
   case OpInBoundsAccessChain:
@@ -1475,61 +1452,53 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       V = GEP;
     } else {
       V = ConstantExpr::getGetElementPtr(dyn_cast<Constant>(Base), Index,
-          IsInbound);
+                                         IsInbound);
     }
     return mapValue(BV, V);
-    }
-    break;
+  }
 
   case OpCompositeExtract: {
     SPIRVCompositeExtract *CE = static_cast<SPIRVCompositeExtract *>(BV);
-    assert(BB && "Invalid BB");
     assert(CE->getComposite()->getType()->isTypeVector() && "Invalid type");
     assert(CE->getIndices().size() == 1 && "Invalid index");
-    return mapValue(BV, ExtractElementInst::Create(
-      transValue(CE->getComposite(), F, BB),
-      ConstantInt::get(*Context, APInt(32, CE->getIndices()[0])),
-      BV->getName(), BB));
-    }
-    break;
+    return mapValue(
+        BV, ExtractElementInst::Create(
+                transValue(CE->getComposite(), F, BB),
+                ConstantInt::get(*Context, APInt(32, CE->getIndices()[0])),
+                BV->getName(), BB));
+  }
 
   case OpVectorExtractDynamic: {
     auto CE = static_cast<SPIRVVectorExtractDynamic *>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, ExtractElementInst::Create(
-      transValue(CE->getVector(), F, BB),
-      transValue(CE->getIndex(), F, BB),
-      BV->getName(), BB));
+    return mapValue(
+        BV, ExtractElementInst::Create(transValue(CE->getVector(), F, BB),
+                                       transValue(CE->getIndex(), F, BB),
+                                       BV->getName(), BB));
     }
-    break;
 
   case OpCompositeInsert: {
     auto CI = static_cast<SPIRVCompositeInsert *>(BV);
-    assert(BB && "Invalid BB");
     assert(CI->getComposite()->getType()->isTypeVector() && "Invalid type");
     assert(CI->getIndices().size() == 1 && "Invalid index");
-    return mapValue(BV, InsertElementInst::Create(
-      transValue(CI->getComposite(), F, BB),
-      transValue(CI->getObject(), F, BB),
-      ConstantInt::get(*Context, APInt(32, CI->getIndices()[0])),
-      BV->getName(), BB));
-    }
-    break;
+    return mapValue(
+        BV, InsertElementInst::Create(
+                transValue(CI->getComposite(), F, BB),
+                transValue(CI->getObject(), F, BB),
+                ConstantInt::get(*Context, APInt(32, CI->getIndices()[0])),
+                BV->getName(), BB));
+  }
 
   case OpVectorInsertDynamic: {
     auto CI = static_cast<SPIRVVectorInsertDynamic *>(BV);
-    assert(BB && "Invalid BB");
-    return mapValue(BV, InsertElementInst::Create(
-      transValue(CI->getVector(), F, BB),
-      transValue(CI->getComponent(), F, BB),
-      transValue(CI->getIndex(), F, BB),
-      BV->getName(), BB));
-    }
-    break;
+    return mapValue(
+        BV, InsertElementInst::Create(transValue(CI->getVector(), F, BB),
+                                      transValue(CI->getComponent(), F, BB),
+                                      transValue(CI->getIndex(), F, BB),
+                                      BV->getName(), BB));
+  }
 
   case OpVectorShuffle: {
     auto VS = static_cast<SPIRVVectorShuffle *>(BV);
-    assert(BB && "Invalid BB");
     std::vector<Constant *> Components;
     IntegerType *Int32Ty = IntegerType::get(*Context, 32);
     for (auto I : VS->getComponents()) {
@@ -1538,60 +1507,52 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       else
         Components.push_back(ConstantInt::get(Int32Ty, I));
     }
-    return mapValue(BV, new ShuffleVectorInst(
-      transValue(VS->getVector1(), F, BB),
-      transValue(VS->getVector2(), F, BB),
-      ConstantVector::get(Components),
-      BV->getName(), BB));
-    }
-    break;
+    return mapValue(BV,
+                    new ShuffleVectorInst(transValue(VS->getVector1(), F, BB),
+                                          transValue(VS->getVector2(), F, BB),
+                                          ConstantVector::get(Components),
+                                          BV->getName(), BB));
+  }
 
   case OpFunctionCall: {
     SPIRVFunctionCall *BC = static_cast<SPIRVFunctionCall *>(BV);
-    assert(BB && "Invalid BB");
-    auto Call = CallInst::Create(
-      transFunction(BC->getFunction()),
-      transValue(BC->getArgumentValues(), F, BB),
-      BC->getName(),
-      BB);
+    auto Call = CallInst::Create(transFunction(BC->getFunction()),
+                                 transValue(BC->getArgumentValues(), F, BB),
+                                 BC->getName(), BB);
     setCallingConv(Call);
     setAttrByCalledFunc(Call);
     return mapValue(BV, Call);
-    }
-    break;
+  }
 
   case OpExtInst:
-    return mapValue(BV, transOCLBuiltinFromExtInst(
-      static_cast<SPIRVExtInst *>(BV), BB));
-    break;
+    return mapValue(
+        BV, transOCLBuiltinFromExtInst(static_cast<SPIRVExtInst *>(BV), BB));
 
   case OpControlBarrier:
   case OpMemoryBarrier:
-    return mapValue(BV, transOCLBarrierFence(
-        static_cast<SPIRVInstruction *>(BV), BB));
+    return mapValue(
+        BV, transOCLBarrierFence(static_cast<SPIRVInstruction *>(BV), BB));
 
   case OpSNegate: {
-    SPIRVUnary *BC = static_cast<SPIRVUnary*>(BV);
-    return mapValue(BV, BinaryOperator::CreateNSWNeg(
-      transValue(BC->getOperand(0), F, BB),
-      BV->getName(), BB));
-    }
+    SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    return mapValue(
+        BV, BinaryOperator::CreateNSWNeg(transValue(BC->getOperand(0), F, BB),
+                                         BV->getName(), BB));
+  }
 
   case OpFNegate: {
-    SPIRVUnary *BC = static_cast<SPIRVUnary*>(BV);
-    return mapValue(BV, BinaryOperator::CreateFNeg(
-      transValue(BC->getOperand(0), F, BB),
-      BV->getName(), BB));
-    }
-    break;
+    SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    return mapValue(
+        BV, BinaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
+                                       BV->getName(), BB));
+  }
 
   case OpNot: {
-    SPIRVUnary *BC = static_cast<SPIRVUnary*>(BV);
-    return mapValue(BV, BinaryOperator::CreateNot(
-      transValue(BC->getOperand(0), F, BB),
-      BV->getName(), BB));
-    }
-    break;
+    SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    return mapValue(
+        BV, BinaryOperator::CreateNot(transValue(BC->getOperand(0), F, BB),
+                                      BV->getName(), BB));
+  }
 
   default: {
     auto OC = BV->getOpCode();
