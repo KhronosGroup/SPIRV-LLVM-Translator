@@ -2358,12 +2358,12 @@ Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
              M, CI,
              [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
                Type *Int32Ty = Type::getInt32Ty(*Context);
-               auto oldArg = CI->getOperand(0);
-               auto newArgTy = VectorType::get(
-                   Int32Ty, oldArg->getType()->getVectorNumElements());
-               auto newArg =
-                   CastInst::CreateSExtOrBitCast(oldArg, newArgTy, "", CI);
-               Args[0] = newArg;
+               auto OldArg = CI->getOperand(0);
+               auto NewArgTy = VectorType::get(
+                   Int32Ty, OldArg->getType()->getVectorNumElements());
+               auto NewArg =
+                   CastInst::CreateSExtOrBitCast(OldArg, NewArgTy, "", CI);
+               Args[0] = NewArg;
                RetTy = Int32Ty;
                return CI->getCalledFunction()->getName();
              },

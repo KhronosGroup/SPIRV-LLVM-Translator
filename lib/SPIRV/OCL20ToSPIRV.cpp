@@ -548,22 +548,22 @@ OCL20ToSPIRV::visitCallAllAny(spv::Op OC, CallInst* CI) {
   auto Args = getArguments(CI);
   assert(Args.size() == 1);
 
-  auto *pArgTy = Args[0]->getType();
-  auto zero = Constant::getNullValue(Args[0]->getType());
+  auto *ArgTy = Args[0]->getType();
+  auto Zero = Constant::getNullValue(Args[0]->getType());
 
-  auto *pCmp = CmpInst::Create(CmpInst::ICmp, CmpInst::ICMP_SLT, Args[0], zero,
+  auto *Cmp = CmpInst::Create(CmpInst::ICmp, CmpInst::ICMP_SLT, Args[0], Zero,
                                "cast", CI);
 
-  if (!isa<VectorType>(pArgTy)) {
-    auto *pCast = CastInst::CreateZExtOrBitCast(pCmp, Type::getInt32Ty(*Ctx),
-                                                "", pCmp->getNextNode());
-    CI->replaceAllUsesWith(pCast);
+  if (!isa<VectorType>(ArgTy)) {
+    auto *Cast = CastInst::CreateZExtOrBitCast(Cmp, Type::getInt32Ty(*Ctx),
+                                                "", Cmp->getNextNode());
+    CI->replaceAllUsesWith(Cast);
     CI->eraseFromParent();
   } else {
     mutateCallInstSPIRV(
         M, CI,
         [&](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
-          Args[0] = pCmp;
+          Args[0] = Cmp;
           Ret = Type::getInt1Ty(*Ctx);
 
           return getSPIRVFuncName(OC);
