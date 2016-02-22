@@ -93,6 +93,11 @@ IsRegularization("s", cl::desc(
     "Regularize LLVM to be representable by SPIR-V"));
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
+namespace SPIRV {
+// Use textual format for SPIRV.
+extern bool SPIRVUseTextFormat;
+}
+
 static cl::opt<bool>
 ToText("to-text", cl::desc("Convert input SPIR-V binary to internal textual format"));
 
@@ -139,7 +144,8 @@ convertLLVMToSPIRV() {
     if (InputFile == "-")
       OutputFile = "-";
     else
-      OutputFile = removeExt(InputFile) + kExt::SpirvBinary;
+      OutputFile = removeExt(InputFile) +
+                   (SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
   }
 
   llvm::StringRef outFile(OutputFile);
