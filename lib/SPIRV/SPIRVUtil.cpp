@@ -364,6 +364,12 @@ getSPIRVFuncName(Op OC, StringRef PostFix) {
 }
 
 std::string
+getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned) {
+  return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider +
+                         getPostfixForReturnType(pRetTy, false));
+}
+
+std::string
 getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
     StringRef PostFix) {
   std::string ExtOpName;
@@ -415,8 +421,7 @@ getPostfix(Decoration Dec, unsigned Value) {
 
 std::string
 getPostfixForReturnType(CallInst *CI, bool IsSigned) {
-  return std::string(kSPIRVPostfix::Return) +
-        mapLLVMTypeToOCLType(CI->getType(), IsSigned);
+  return getPostfixForReturnType(CI->getType(), IsSigned);
 }
 
 std::string getPostfixForReturnType(const Type *pRetTy, bool IsSigned) {
