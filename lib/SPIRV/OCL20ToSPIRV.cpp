@@ -218,13 +218,16 @@ public:
   void visitCallToAddr(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
 
+  /// Transform return type of relatinal built-in functions like isnan, isfinite
+  /// to boolean values.
+  void visitCallRelational(CallInst *CI, const std::string &DemangledName);
+
   /// Transform vector load/store functions to SPIR-V extended builtin
   ///   functions
   /// {vload|vstore{a}}{_half}{n}{_rte|_rtz|_rtp|_rtn} =>
   ///   __spirv_ocl_{ExtendedInstructionOpCodeName}__R{ReturnType}
   void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
       const std::string &DemangledName);
-
 
   /// Transforms get_mem_fence built-in to SPIR-V function and aligns result values with SPIR 1.2.
   /// get_mem_fence(ptr) => __spirv_GenericPtrMemSemantics
@@ -434,6 +437,13 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 ||
       DemangledName.find(kOCLBuiltinName::VStorePrefix) == 0) {
     visitCallVecLoadStore(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::IsFinite ||
+      DemangledName == kOCLBuiltinName::IsInf ||
+      DemangledName == kOCLBuiltinName::IsNan ||
+      DemangledName == kOCLBuiltinName::IsNormal) {
+    visitCallRelational(&CI, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
@@ -1136,6 +1146,38 @@ OCL20ToSPIRV::visitCallToAddr(CallInst* CI, StringRef MangledName,
     Ops.push_back(StorageClass);
   };
   transBuiltin(CI, Info);
+}
+
+void OCL20ToSPIRV::visitCallRelational(CallInst *CI,
+                                       const std::string &DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  Op OC = OpNop;
+  OCLSPIRVBuiltinMap::find(DemangledName, &OC);
+  std::string SPIRVName = getSPIRVFuncName(OC);
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
+        Ret = Type::getInt1Ty(*Ctx);
+        if (CI->getOperand(0)->getType()->isVectorTy())
+          Ret = VectorType::get(
+              Type::getInt1Ty(*Ctx),
+              CI->getOperand(0)->getType()->getVectorNumElements());
+        return SPIRVName;
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        Value *False = nullptr, *True = nullptr;
+        if (NewCI->getType()->isVectorTy()) {
+          Type *VTy = VectorType::get(Type::getInt32Ty(*Ctx),
+                                      NewCI->getType()->getVectorNumElements());
+          False = Constant::getNullValue(VTy);
+          True = Constant::getAllOnesValue(VTy);
+        } else {
+          False = getInt32(M, 0);
+          True = getInt32(M, 1);
+        }
+        return SelectInst::Create(NewCI, True, False, "", NewCI->getNextNode());
+      },
+      &Attrs);
 }
 
 void

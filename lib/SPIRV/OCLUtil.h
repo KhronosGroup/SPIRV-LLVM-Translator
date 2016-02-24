@@ -153,6 +153,10 @@ namespace kOCLBuiltinName {
   const static char GetImageDim[]        = "get_image_dim";
   const static char GetImageHeight[]     = "get_image_height";
   const static char GetImageWidth[]      = "get_image_width";
+  const static char IsFinite[]           = "isfinite";
+  const static char IsNan[]              = "isnan";
+  const static char IsNormal[]           = "isnormal";
+  const static char IsInf[]              = "isinf";
   const static char MemFence[]           = "mem_fence";
   const static char NDRangePrefix[]      = "ndrange_";
   const static char Pipe[]               = "pipe";
