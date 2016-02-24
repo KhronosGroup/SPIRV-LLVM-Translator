@@ -235,6 +235,10 @@ public:
   /// SPIR 1.2 defines them as 0x1, 0x2 and 0x3, so this function adjusts
   /// GenericPtrMemSemantics results to SPIR 1.2 values.
   void visitCallGetFence(CallInst *CI, StringRef MangledName, const std::string& DemangledName);
+
+  /// Transforms OpDot instructions with a scalar type to a fmul instruction
+  void visitCallDot(CallInst *CI);
+  
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -453,6 +457,11 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   }
   if (DemangledName == kOCLBuiltinName::GetFence) {
     visitCallGetFence(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::Dot &&
+      !(CI.getOperand(0)->getType()->isVectorTy())) {
+    visitCallDot(&CI);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -1237,7 +1246,16 @@ void OCL20ToSPIRV::visitCallGetFence(CallInst *CI, StringRef MangledName,
             &Attrs);
 }
 
+void OCL20ToSPIRV::visitCallDot(CallInst *CI) {
+  IRBuilder<> Builder(CI);
+  Value *FMulVal = Builder.CreateFMul(CI->getOperand(0), CI->getOperand(1));
+  CI->replaceAllUsesWith(FMulVal);
+  CI->dropAllReferences();
+  CI->removeFromParent();
 }
+
+}
+
 INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
