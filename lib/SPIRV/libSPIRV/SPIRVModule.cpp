@@ -398,10 +398,16 @@ SPIRVModuleImpl::optimizeDecorates() {
         continue;
       Targets.push_back(E->getTargetId());
     }
-    DecorateSet.erase(ER.first, ER.second);
-    auto GD = new SPIRVGroupDecorate(G, Targets);
-    DecGroupVec.push_back(G);
-    GroupDecVec.push_back(GD);
+
+    // WordCount is only 16 bits.  We can only have 65535 - FixedWC targtets per
+    // group.
+    // For now, just skip using a group if the number of targets to too big
+    if (Targets.size() < 65530) {
+      DecorateSet.erase(ER.first, ER.second);
+      auto GD = new SPIRVGroupDecorate(G, Targets);
+      DecGroupVec.push_back(G);
+      GroupDecVec.push_back(GD);
+    }
   }
 }
 
