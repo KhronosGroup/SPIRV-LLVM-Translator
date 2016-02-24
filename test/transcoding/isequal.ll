@@ -1,15 +1,17 @@
-; ModuleID = 'isequal.bc'
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
+; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.bc
-; RUN: llvm-dis < %t.bc | FileCheck %s
+; CHECK-SPIRV-NOT: SConvert
 
 ; Check no OpenCL convert builtin function generated
-
-; CHECK-NOT: call {{.*}} @_Z{{[0-9]*}}convert
+; CHECK-LLVM-NOT: call {{.*}} @_Z{{[0-9]*}}convert
 
 ; Function Attrs: nounwind
 define spir_kernel void @math_kernel8(<8 x i32> addrspace(1)* nocapture %out, <8 x float> addrspace(1)* nocapture readonly %in1, <8 x float> addrspace(1)* nocapture readonly %in2) #0 {
