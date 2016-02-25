@@ -12,6 +12,10 @@ target triple = "spir-unknown-unknown"
 ; SPIRV:  Capability Linkage
 ; SPIRV: EntryPoint 6 [[kern:[0-9]+]] "kern"
 
+@ae = available_externally addrspace(1) global i32 79, align 4
+; SPIRV: Name [[ae:[0-9]+]] "ae"
+; BACK-TO-LLVM: @ae = available_externally addrspace(1) global i32 79, align 4
+
 @i1 = addrspace(1) global i32 1, align 4
 ; SPIRV: Name [[i1:[0-9]+]] "i1"
 ; BACK-TO-LLVM: @i1 = addrspace(1) global i32 1, align 4
@@ -26,8 +30,7 @@ target triple = "spir-unknown-unknown"
 
 @i4 = common addrspace(1) global i32 0, align 4
 ; SPIRV: Name [[i4:[0-9]+]] "i4"
-; BACK-TO-LLVM: @i4 = available_externally addrspace(1) global i32 0, align 4
-; "common" is lost in translation
+; BACK-TO-LLVM: @i4 = common addrspace(1) global i32 0, align 4
 
 @i5 = internal addrspace(1) global i32 0, align 4
 ; SPIRV: Name [[i5:[0-9]+]] "i5"
@@ -74,12 +77,13 @@ target triple = "spir-unknown-unknown"
 ; SPIRV-DAG: Name [[g:[0-9]+]] "g"
 ; SPIRV-DAG: Name [[inline_fun:[0-9]+]] "inline_fun"
 
+; SPIRV-DAG: Decorate [[ae]] LinkageAttributes "ae" Import
 ; SPIRV-DAG: Decorate [[e]] LinkageAttributes "e" Import
 ; SPIRV-DAG: Decorate [[f]] LinkageAttributes "f" Export
 ; SPIRV-DAG: Decorate [[w]] LinkageAttributes "w" Export
 ; SPIRV-DAG: Decorate [[i1]] LinkageAttributes "i1" Export
 ; SPIRV-DAG: Decorate [[i3]] LinkageAttributes "i3" Export
-; SPIRV-DAG: Decorate [[i4]] LinkageAttributes "i4" Import
+; SPIRV-DAG: Decorate [[i4]] LinkageAttributes "i4" Export
 ; SPIRV-DAG: Decorate [[foo]] LinkageAttributes "foo" Import
 ; SPIRV-DAG: Decorate [[inline_fun]] LinkageAttributes "inline_fun" Export
 ; SPIRV-DAG: Decorate [[color_table]] LinkageAttributes "color_table" Export
