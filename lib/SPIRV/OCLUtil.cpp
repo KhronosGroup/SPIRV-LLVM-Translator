@@ -126,7 +126,20 @@ getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   OCLExtOpKind EOC;
   bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
   if (!Found) {
-    std::string Prefix = isLastFuncParamSigned(OrigName) ? "s_" : "u_";
+    std::string Prefix;
+    switch (LastFuncParamType(OrigName)) {
+    case ParamType::UNSIGNED:
+      Prefix = "u_";
+      break;
+    case ParamType::SIGNED:
+      Prefix = "s_";
+      break;
+    case ParamType::FLOAT:
+      Prefix = "f";
+      break;
+    default:
+      llvm_unreachable("unknown mangling!");
+    }
     Found = OCLExtOpMap::rfind(Prefix + DemangledName, &EOC);
   }
   if (Found)
@@ -371,6 +384,8 @@ public:
   } else if (UnmangledName.find("u_") == 0) {
     addUnsignedArg(-1);
     UnmangledName.erase(0, 2);
+  } else if (UnmangledName == "fclamp") {
+    UnmangledName.erase(0, 1);
   } else if (UnmangledName == "capture_event_profiling_info") {
     addVoidPtrArg(2);
     setEnumArg(1, SPIR::PRIMITIVE_CLK_PROFILING_INFO);
