@@ -581,10 +581,8 @@ LLVMToSPIRV::transConstant(Value *V) {
   if (auto CAZero = dyn_cast<ConstantAggregateZero>(V))
     return BM->addNullConstant(transType(CAZero->getType()));
 
-  if (auto ConstI = dyn_cast<ConstantInt>(V)) {
-    SPIRVTypeInt *BT = static_cast<SPIRVTypeInt *>(transType(V->getType()));
-    return BM->addIntegerConstant(BT, ConstI->getZExtValue());
-  }
+  if (auto ConstI = dyn_cast<ConstantInt>(V))
+    return BM->addConstant(transType(V->getType()), ConstI->getZExtValue());
 
   if (auto ConstFP = dyn_cast<ConstantFP>(V)) {
     auto BT = static_cast<SPIRVType *>(transType(V->getType()));

@@ -785,10 +785,12 @@ SPIRVValue *
 SPIRVModuleImpl::addConstant(SPIRVType *Ty, uint64_t V) {
   if (Ty->isTypeBool()) {
     if (V)
-      return new SPIRVConstantTrue(this, Ty, getId());
+      return addConstant(new SPIRVConstantTrue(this, Ty, getId()));
     else
-      return new SPIRVConstantFalse(this, Ty, getId());
+      return addConstant(new SPIRVConstantFalse(this, Ty, getId()));
   }
+  if (Ty->isTypeInt())
+    return addIntegerConstant(static_cast<SPIRVTypeInt*>(Ty), V);
   return addConstant(new SPIRVConstant(this, Ty, getId(), V));
 }
 
