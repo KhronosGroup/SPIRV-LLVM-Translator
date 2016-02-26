@@ -726,7 +726,11 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
         transType(GV->getType()), GV->isConstant(),
         transLinkageType(GV),
-        GV->hasInitializer()?transValue(GV->getInitializer(), nullptr):nullptr,
+        // Though variables with common linkage type are initialized by 0,
+        // they can be represented in SPIR-V as uninitialized variables with
+        // 'Export' linkage type, just as tentative definitions look in C
+        (GV->hasInitializer() && !GV->hasCommonLinkage()) ?
+            transValue(GV->getInitializer(), nullptr) : nullptr,
         GV->getName(),
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(
             GV->getType()->getAddressSpace())),
@@ -1483,7 +1487,7 @@ LLVMToSPIRV::addInt32(int I) {
 
 SPIRV::SPIRVLinkageTypeKind
 LLVMToSPIRV::transLinkageType(const GlobalValue* GV) {
-  if(GV->isDeclarationForLinker() || GV->hasCommonLinkage())
+  if(GV->isDeclarationForLinker())
     return SPIRVLinkageTypeKind::LinkageTypeImport;
   if(GV->hasInternalLinkage() || GV->hasPrivateLinkage())
     return SPIRVLinkageTypeKind::LinkageTypeInternal;

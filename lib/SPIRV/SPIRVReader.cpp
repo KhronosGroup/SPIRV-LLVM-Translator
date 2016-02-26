@@ -1250,20 +1250,24 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpVariable: {
     auto BVar = static_cast<SPIRVVariable *>(BV);
-    auto Initializer = BVar->getInitializer();
-    SPIRVStorageClassKind BS = BVar->getStorageClass();
     auto Ty = transType(BVar->getType()->getPointerElementType());
+    bool IsConst = BVar->isConstant();
+    llvm::GlobalValue::LinkageTypes LinkageTy = transLinkageType(BVar);
+    Constant *Initializer = nullptr;
+    SPIRVValue *Init = BVar->getInitializer();
+    if (Init)
+        Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
+    else if (LinkageTy == GlobalValue::CommonLinkage)
+        // In LLVM variables with common linkage type must be initilized by 0
+        Initializer = Constant::getNullValue(Ty);
 
-    if (BS == StorageClassFunction && !Initializer) {
+    SPIRVStorageClassKind BS = BVar->getStorageClass();
+    if (BS == StorageClassFunction && !Init) {
         assert (BB && "Invalid BB");
         return mapValue(BV, new AllocaInst(Ty, BV->getName(), BB));
     }
     auto AddrSpace = SPIRSPIRVAddrSpaceMap::rmap(BS);
-    bool IsConst = BVar->isConstant();
-    auto LVar = new GlobalVariable(*M, Ty, IsConst,
-        transLinkageType(BVar),
-        Initializer?dyn_cast<Constant>(transValue(Initializer, F, BB, false)):
-            nullptr,
+    auto LVar = new GlobalVariable(*M, Ty, IsConst, LinkageTy, Initializer,
         BV->getName(), 0, GlobalVariable::NotThreadLocal, AddrSpace);
     LVar->setUnnamedAddr(IsConst && Ty->isArrayTy() &&
         Ty->getArrayElementType()->isIntegerTy(8));
@@ -2315,6 +2319,11 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue* V) {
     return GlobalValue::AvailableExternallyLinkage;
   }
   else {// LinkageTypeExport
+    if (V->getOpCode() == OpVariable) {
+      if (static_cast<const SPIRVVariable*>(V)->getInitializer() == 0 )
+        // Tentative definition
+        return GlobalValue::CommonLinkage;
+    }
     return GlobalValue::ExternalLinkage;
   }
 }
