@@ -367,6 +367,18 @@ private:
     } else if (auto F = dyn_cast<Function>(Blk->stripPointerCasts())) {
       InvF = F;
       Ctx = Constant::getNullValue(IntegerType::getInt8PtrTy(M->getContext()));
+    } else if (auto Load = dyn_cast<LoadInst>(Blk)) {
+      auto Op = Load->getPointerOperand();
+      if (auto GV = dyn_cast<GlobalVariable>(Op)) {
+        if (GV->isConstant()) {
+          InvF = cast<Function>(GV->getInitializer()->stripPointerCasts());
+          Ctx = Constant::getNullValue(IntegerType::getInt8PtrTy(M->getContext()));
+        } else {
+          llvm_unreachable("load non-constant block?");
+        }
+      } else {
+        llvm_unreachable("Loading block from non global?");
+      }
     } else {
       llvm_unreachable("Invalid block");
     }
