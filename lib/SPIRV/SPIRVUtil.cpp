@@ -1071,11 +1071,12 @@ Value *
 getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
   if (!V->getType()->isPointerTy())
     return V;
-  auto GEP = dyn_cast<GetElementPtrInst>(V);
-  assert (GEP);
-  auto P = GEP->getPointerOperand();
+  assert((isa<ConstantExpr>(V) || isa<GetElementPtrInst>(V)) &&
+         "unexpected value type");
+  auto GEP = cast<User>(V);
+  assert(GEP->getNumOperands() == 3 && "must be a GEP from an array");
+  auto P = GEP->getOperand(0);
   assert(P->getType()->getPointerElementType()->getArrayNumElements() == Size);
-  assert(GEP->getNumIndices() == 2);
   auto Index0 = GEP->getOperand(1);
   assert(dyn_cast<ConstantInt>(Index0)->getZExtValue() == 0);
   auto Index1 = GEP->getOperand(2);
