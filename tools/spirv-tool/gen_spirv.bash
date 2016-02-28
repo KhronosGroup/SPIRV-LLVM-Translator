@@ -15,7 +15,7 @@ prefix=$1
 echo "template<> inline void
 SPIRVMap<$prefix, std::string>::init() {"
 
-cat $spirvHeader | sed -n -e "/^ *${prefix}/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\([0x]*[0-9][0-9]*\).*:\1 \2:p"  | while read a b; do
+cat $spirvHeader | sed -n -e "/^ *${prefix}[^a-z]/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\([0x]*[0-9][0-9]*\).*:\1 \2:p"  | while read a b; do
   #printf "_SPIRV_OP(%s, %s)\n" $a $b
   printf "  add(${prefix}%s, \"%s\");\n" $a $a
   #i=$((i+1))
@@ -38,7 +38,7 @@ echo "bool
 isValid(spv::$prefix V) {
   switch(V) {"
 
-cat $spirvHeader | sed -n -e "/^ *${prefix}/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\(.*\).*:\1 \2:p"  | while read a b; do
+  cat $spirvHeader | sed -n -e "/^ *${prefix}[^a-z]/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\(.*\).*:\1 \2:p"  | while read a b; do
   if [[ $a == CapabilityNone ]]; then
     continue
   fi
@@ -71,7 +71,7 @@ else
 "
 fi
 
-cat $spirvHeader | sed -n -e "/^ *${prefix}/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\([0xX]*[0-9a-fA-F][0-9a-fA-F]*\).*:\1 \2:p"  | while read a b; do
+cat $spirvHeader | sed -n -e "/^ *${prefix}[^a-z]/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\([0xX]*[0-9a-fA-F][0-9a-fA-F]*\).*:\1 \2:p"  | while read a b; do
   if [[ $a == CapabilityNone ]]; then
     continue
   fi
