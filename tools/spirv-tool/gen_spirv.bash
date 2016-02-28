@@ -16,9 +16,7 @@ echo "template<> inline void
 SPIRVMap<$prefix, std::string>::init() {"
 
 cat $spirvHeader | sed -n -e "/^ *${prefix}[^a-z]/s:^ *${prefix}\([^= ][^= ]*\)[= ][= ]*\([0x]*[0-9][0-9]*\).*:\1 \2:p"  | while read a b; do
-  #printf "_SPIRV_OP(%s, %s)\n" $a $b
   printf "  add(${prefix}%s, \"%s\");\n" $a $a
-  #i=$((i+1))
 done
 
 echo "}
@@ -117,7 +115,6 @@ if [[ $# -ne 2 ]]; then
   exit
 fi
 
-#spirvHeader=/home/yaxunl/stg/compiler/llvm/lib/SPIRV/libSPIRV/spirv.hpp
 spirvHeader=$1
 type=$2
 
