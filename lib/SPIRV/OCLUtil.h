@@ -121,7 +121,9 @@ struct OCLBuiltinTransInfo {
   /// Postprocessor of operands
   std::function<void(std::vector<Value *>&)> PostProc;
   Type* RetTy;              // Return type of the translated function
-  OCLBuiltinTransInfo():RetTy(nullptr){
+  bool isRetSigned;         // When RetTy is int, determines if extensions
+                            // on it should be a sext or zet.
+  OCLBuiltinTransInfo() : RetTy(nullptr), isRetSigned(false) {
     PostProc = [](std::vector<Value *>&){};
   }
 };
@@ -181,6 +183,10 @@ namespace kOCLBuiltinName {
   const static char WorkGroupBarrier[]   = "work_group_barrier";
   const static char WritePipe[]          = "write_pipe";
   const static char WorkGroupPrefix[]    = "work_group_";
+  const static char WorkGroupAll[]       = "work_group_all";
+  const static char WorkGroupAny[]       = "work_group_any";
+  const static char SubGroupAll[]        = "sub_group_all";
+  const static char SubGroupAny[]        = "sub_group_any";
   const static char WorkPrefix[]         = "work_";
 }
 
