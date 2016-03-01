@@ -823,6 +823,7 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst* CI,
   auto F = CI->getCalledFunction();
   std::vector<int> PreOps;
   std::string DemangledName = OrigDemangledName;
+
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier)
     return;
   if (DemangledName == kOCLBuiltinName::WaitGroupEvent) {
@@ -867,13 +868,24 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst* CI,
       return false; // break out of loop
     });
   }
+
+  bool IsGroupAllAny = (DemangledName.find("_all") != std::string::npos ||
+                        DemangledName.find("_any") != std::string::npos);
+
   auto Consts = getInt32(M, PreOps);
   OCLBuiltinTransInfo Info;
+  if (IsGroupAllAny)
+    Info.RetTy = Type::getInt1Ty(*Ctx);
   Info.UniqName = DemangledName;
-  Info.PostProc = [=](std::vector<Value *> &Ops){
+  Info.PostProc = [=](std::vector<Value *> &Ops) {
+    if (IsGroupAllAny) {
+      IRBuilder<> IRB(CI);
+      Ops[0] =
+          IRB.CreateICmpNE(Ops[0], ConstantInt::get(Type::getInt32Ty(*Ctx), 0));
+    }
     size_t E = Ops.size();
     if (DemangledName == "group_broadcast" && E > 2) {
-      assert (E == 3 || E == 4);
+      assert(E == 3 || E == 4);
       makeVector(CI, Ops, std::make_pair(Ops.begin() + 1, Ops.end()));
     }
     Ops.insert(Ops.begin(), Consts.begin(), Consts.end());
@@ -894,22 +906,29 @@ OCL20ToSPIRV::transBuiltin(CallInst* CI,
   else
     return;
   if (!Info.RetTy)
-    mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-      Info.PostProc(Args);
-      return Info.UniqName + Info.Postfix;
-    }, &Attrs);
-  else
     mutateCallInstSPIRV(M, CI,
-      [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy){
-        Info.PostProc(Args);
-        RetTy = Info.RetTy;
-        return Info.UniqName + Info.Postfix;
-      },
-      [=](CallInst *NewCI) -> Instruction * {
-        return CastInst::CreatePointerBitCastOrAddrSpaceCast(NewCI,
-            CI->getType(), "", CI);
-      },
-    &Attrs);
+                        [=](CallInst *, std::vector<Value *> &Args) {
+                          Info.PostProc(Args);
+                          return Info.UniqName + Info.Postfix;
+                        },
+                        &Attrs);
+  else
+    mutateCallInstSPIRV(
+        M, CI,
+        [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy) {
+          Info.PostProc(Args);
+          RetTy = Info.RetTy;
+          return Info.UniqName + Info.Postfix;
+        },
+        [=](CallInst *NewCI) -> Instruction * {
+          if (NewCI->getType()->isIntegerTy() && CI->getType()->isIntegerTy())
+            return CastInst::CreateIntegerCast(NewCI, CI->getType(),
+                                               Info.isRetSigned, "", CI);
+          else
+            return CastInst::CreatePointerBitCastOrAddrSpaceCast(
+                NewCI, CI->getType(), "", CI);
+        },
+        &Attrs);
 }
 
 void

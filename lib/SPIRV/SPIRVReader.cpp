@@ -362,6 +362,14 @@ public:
   CallInst *expandOCLBuiltinWithScalarArg(CallInst* CI,
       const std::string &FuncName);
 
+  /// \brief Post-process OpGroupAll and OpGroupAny instructions translation.
+  /// i1 func (<n x i1> arg)
+  /// =>
+  /// i32 func (<n x i32> arg)
+  /// \return transformed call instruction.
+  Instruction *postProcessGroupAllAny(CallInst *CI,
+                                      const std::string &DemangledName);
+
   typedef DenseMap<SPIRVType *, Type *> SPIRVToLLVMTypeMap;
   typedef DenseMap<SPIRVValue *, Value *> SPIRVToLLVMValueMap;
   typedef DenseMap<SPIRVFunction *, Function *> SPIRVToLLVMFunctionMap;
@@ -1100,6 +1108,26 @@ SPIRVToLLVM::postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
   return CI;
 }
 
+Instruction *
+SPIRVToLLVM::postProcessGroupAllAny(CallInst *CI,
+                                    const std::string &DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
+        Type *Int32Ty = Type::getInt32Ty(*Context);
+        RetTy = Int32Ty;
+        Args[1] = CastInst::CreateZExtOrBitCast(Args[1], Int32Ty, "", CI);
+        return DemangledName;
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        Type *RetTy = Type::getInt1Ty(*Context);
+        return CastInst::CreateTruncOrBitCast(NewCI, RetTy, "",
+                                              NewCI->getNextNode());
+      },
+      &Attrs);
+}
+
 CallInst *
 SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
     const std::string &FuncName) {
@@ -1718,6 +1746,8 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
     return BinaryOperator::CreateShl(CI, getInt32(M, 8), "", BB);
   if (OC == OpBuildNDRange)
     return postProcessOCLBuildNDRange(BI, CI, DemangledName);
+  if (OC == OpGroupAll || OC == OpGroupAny)
+    return postProcessGroupAllAny(CI, DemangledName);
   if (SPIRVEnableStepExpansion &&
       (DemangledName == "smoothstep" ||
        DemangledName == "step"))
