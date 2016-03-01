@@ -238,7 +238,13 @@ public:
 
   /// Transforms OpDot instructions with a scalar type to a fmul instruction
   void visitCallDot(CallInst *CI);
-  
+
+  /// Fixes for built-in functions with vector+scalar arguments that are
+  /// translated to the SPIR-V instructions where all arguments must have the
+  /// same type.
+  void visitCallScalToVec(CallInst *CI, StringRef MangledName,
+                          const std::string &DemangledName);
+
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -464,9 +470,19 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallDot(&CI);
     return;
   }
+  if (DemangledName == kOCLBuiltinName::FMin ||
+      DemangledName == kOCLBuiltinName::FMax ||
+      DemangledName == kOCLBuiltinName::Min ||
+      DemangledName == kOCLBuiltinName::Max ||
+      DemangledName == kOCLBuiltinName::Step ||
+      DemangledName == kOCLBuiltinName::SmoothStep ||
+      DemangledName == kOCLBuiltinName::Clamp ||
+      DemangledName == kOCLBuiltinName::Mix) {
+    visitCallScalToVec(&CI, MangledName, DemangledName);
+    return;
+  }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
-
 
 void
 OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
@@ -1273,6 +1289,69 @@ void OCL20ToSPIRV::visitCallDot(CallInst *CI) {
   CI->removeFromParent();
 }
 
+void OCL20ToSPIRV::visitCallScalToVec(CallInst *CI, StringRef MangledName,
+                                      const std::string &DemangledName) {
+  // Check if all arguments have the same type - it's simple case.
+  auto Uniform = true;
+  auto IsArg0Vector = isa<VectorType>(CI->getOperand(0)->getType());
+  for (unsigned I = 1, E = CI->getNumArgOperands(); Uniform && (I != E); ++I) {
+    Uniform = isa<VectorType>(CI->getOperand(I)->getType()) == IsArg0Vector;
+  }
+  if (Uniform) {
+    visitCallBuiltinSimple(CI, MangledName, DemangledName);
+    return;
+  }
+
+  std::vector<unsigned int> VecPos;
+  std::vector<unsigned int> ScalarPos;
+  if (DemangledName == kOCLBuiltinName::FMin ||
+      DemangledName == kOCLBuiltinName::FMax ||
+      DemangledName == kOCLBuiltinName::Min ||
+      DemangledName == kOCLBuiltinName::Max) {
+    VecPos.push_back(0);
+    ScalarPos.push_back(1);
+  } else if (DemangledName == kOCLBuiltinName::Clamp) {
+    VecPos.push_back(0);
+    ScalarPos.push_back(1);
+    ScalarPos.push_back(2);
+  } else if (DemangledName == kOCLBuiltinName::Mix) {
+    VecPos.push_back(0);
+    VecPos.push_back(1);
+    ScalarPos.push_back(2);
+  } else if (DemangledName == kOCLBuiltinName::Step) {
+    VecPos.push_back(1);
+    ScalarPos.push_back(0);
+  } else if (DemangledName == kOCLBuiltinName::SmoothStep) {
+    VecPos.push_back(2);
+    ScalarPos.push_back(0);
+    ScalarPos.push_back(1);
+  }
+
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        Args.resize(VecPos.size() + ScalarPos.size());
+        for (auto I : VecPos) {
+          Args[I] = CI->getOperand(I);
+        }
+        auto VecArgWidth =
+            CI->getOperand(VecPos[0])->getType()->getVectorNumElements();
+        for (auto I : ScalarPos) {
+          Instruction *Inst = InsertElementInst::Create(
+              UndefValue::get(CI->getOperand(VecPos[0])->getType()),
+              CI->getOperand(I), getInt32(M, 0), "", CI);
+          Value *NewVec = new ShuffleVectorInst(
+              Inst, UndefValue::get(CI->getOperand(VecPos[0])->getType()),
+              ConstantVector::getSplat(VecArgWidth, getInt32(M, 0)), "", CI);
+
+          Args[I] = NewVec;
+        }
+        return getSPIRVExtFuncName(SPIRVEIS_OpenCL,
+                                   getExtOp(MangledName, DemangledName));
+      },
+      &Attrs);
+}
 }
 
 INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
