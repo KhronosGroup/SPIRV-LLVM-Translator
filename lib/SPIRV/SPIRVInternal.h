@@ -605,13 +605,11 @@ Op getSPIRVFuncOC(const std::string& Name,
 bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 
 /// \param Name LLVM function name
-/// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20
-/// and 21.
 /// \param DemangledName demanged name of the OpenCL built-in function
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
-bool oclIsBuiltin(const StringRef& Name, unsigned SrcLangVer = 12,
-    std::string* DemangledName = nullptr, bool isCPP = false);
+bool oclIsBuiltin(const StringRef &Name, std::string *DemangledName = nullptr,
+                  bool isCPP = false);
 
 /// Check if a function type is void(void).
 bool isVoidFuncTy(FunctionType *FT);

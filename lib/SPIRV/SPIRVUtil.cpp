@@ -455,7 +455,7 @@ getSPIRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
   std::string Name;
-  if (!oclIsBuiltin(S, 20, &Name))
+  if (!oclIsBuiltin(S, &Name))
     Name = S;
   StringRef R(Name);
   R = dePrefixSPIRVName(R, Postfix);
@@ -476,8 +476,8 @@ getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   return getByName(R.str(), B);
 }
 
-bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,
-                  std::string *DemangledName, bool isCPP) {
+bool oclIsBuiltin(const StringRef &Name, std::string *DemangledName,
+                  bool isCPP) {
   if (Name == "printf") {
     if (DemangledName)
       *DemangledName = Name;

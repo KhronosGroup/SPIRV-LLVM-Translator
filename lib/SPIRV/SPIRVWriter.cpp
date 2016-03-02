@@ -332,7 +332,7 @@ LLVMToSPIRV::oclIsKernel(Function *F) {
 bool
 LLVMToSPIRV::isBuiltinTransToInst(Function *F) {
   std::string DemangledName;
-  if (!oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName) &&
+  if (!oclIsBuiltin(F->getName(), &DemangledName) &&
       !isDecoratedSPIRVFunc(F, &DemangledName))
     return false;
   SPIRVDBG(spvdbgs() << "CallInst: demangled name: " << DemangledName << '\n');
@@ -346,7 +346,7 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
     SmallVectorImpl<std::string> *Dec) {
   std::string OrigName = F->getName();
   std::string DemangledName;
-  if (!oclIsBuiltin(OrigName, SrcLangVer, &DemangledName))
+  if (!oclIsBuiltin(OrigName, &DemangledName))
     return false;
   DEBUG(dbgs() << "[oclIsBuiltinTransToExtInst] CallInst: demangled name: "
       << DemangledName << '\n');
@@ -1081,9 +1081,7 @@ LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();
   assert(FT->getNumParams() == 1);
-  auto ArgT = FT->getParamType(0);
-  bool isSampler = oclIsSamplerType(RT);
-  assert(isSampler && ArgT->isIntegerTy());
+  assert(oclIsSamplerType(RT) && FT->getParamType(0)->isIntegerTy());
   auto Arg = CI->getArgOperand(0);
 
   auto GetSamplerConstant = [&](uint64_t SamplerValue) {
@@ -1152,7 +1150,7 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
       BB);
   }
 
-  if (oclIsBuiltin(MangledName, SrcLangVer, &DemangledName) ||
+  if (oclIsBuiltin(MangledName, &DemangledName) ||
       isDecoratedSPIRVFunc(F, &DemangledName))
     if (auto BV = transBuiltinToInst(DemangledName, MangledName, CI, BB))
       return BV;
@@ -1354,7 +1352,7 @@ LLVMToSPIRV::oclGetMutatedArgumentTypesByBuiltin(
     Function* F) {
   auto Name = F->getName();
   std::string Demangled;
-  if (!oclIsBuiltin(Name, SrcLangVer, &Demangled))
+  if (!oclIsBuiltin(Name, &Demangled))
     return;
   if (Demangled.find(kSPIRVName::SampledImage) == std::string::npos)
     return;
@@ -1551,7 +1549,6 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
       auto IsVector = ResultTy->isVectorTy();
       if (IsVector)
         BoolTy = VectorType::get(BoolTy, ResultTy->getVectorNumElements());
-      auto BT = transType(ResultTy);
       auto BBT = transType(BoolTy);
       auto Cmp = BM->addCmpInst(OC, BBT,
         transValue(CI->getArgOperand(0), BB),

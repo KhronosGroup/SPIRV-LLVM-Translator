@@ -119,8 +119,7 @@ WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI){
 unsigned
 getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   std::string DemangledName = GivenDemangledName;
-  if (!oclIsBuiltin(OrigName, 20,
-      DemangledName.empty() ? &DemangledName : nullptr))
+  if (!oclIsBuiltin(OrigName, DemangledName.empty() ? &DemangledName : nullptr))
     return ~0U;
   DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;

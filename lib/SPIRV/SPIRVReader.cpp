@@ -943,12 +943,13 @@ SPIRVToLLVM::postProcessOCL() {
   std::string DemangledName;
   SPIRVWord SrcLangVer = 0;
   BM->getSourceLanguage(&SrcLangVer);
+  bool isCPP = SrcLangVer == kOCLVer::CL21;
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL sret] " << *F << '\n');
       if (F->getReturnType()->isStructTy() &&
-          oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName)) {
+          oclIsBuiltin(F->getName(), &DemangledName, isCPP)) {
         if (!postProcessOCLBuiltinReturnStruct(F))
           return false;
       }
@@ -968,8 +969,7 @@ SPIRVToLLVM::postProcessOCL() {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
-      if (hasArrayArg(F) &&
-          oclIsBuiltin(F->getName(), SrcLangVer, &DemangledName))
+      if (hasArrayArg(F) && oclIsBuiltin(F->getName(), &DemangledName, isCPP))
         if (!postProcessOCLBuiltinWithArrayArguments(F, DemangledName))
           return false;
     }

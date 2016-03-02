@@ -80,7 +80,7 @@ char OCL20To12::ID = 0;
 bool
 OCL20To12::runOnModule(Module& Module) {
   M = &Module;
-  if (getOCLVersion(M) >= 20)
+  if (getOCLVersion(M) >= kOCLVer::CL20)
     return false;
 
   Ctx = &M->getContext();
@@ -105,7 +105,7 @@ OCL20To12::visitCallInst(CallInst& CI) {
 
   auto MangledName = F->getName();
   std::string DemangledName;
-  if (!oclIsBuiltin(MangledName, 20, &DemangledName))
+  if (!oclIsBuiltin(MangledName, &DemangledName))
     return;
   DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n');
 
