@@ -9,6 +9,7 @@
 ; CHECK-LLVM: call spir_func i32 @_Z5isnanf(
 ; CHECK-LLVM: call spir_func i32 @_Z5isinff(
 ; CHECK-LLVM: call spir_func i32 @_Z8isnormalf(
+; CHECK-LLVM: call spir_func i32 @_Z7signbitf(
 
 ; CHECK-LLVM: call spir_func <2 x i32> @_Z8isfiniteDv2_f(
 ; CHECK-LLVM: call spir_func <2 x i32> @_Z5isnanDv2_f(
@@ -22,6 +23,7 @@
 ; CHECK-SPIRV: 4 IsNan [[BoolTypeID]]
 ; CHECK-SPIRV: 4 IsInf [[BoolTypeID]]
 ; CHECK-SPIRV: 4 IsNormal [[BoolTypeID]]
+; CHECK-SPIRV: 4 SignBitSet [[BoolTypeID]]
 
 ; CHECK-SPIRV: 4 IsFinite [[BoolVectorTypeID]]
 ; CHECK-SPIRV: 4 IsNan [[BoolVectorTypeID]]
@@ -41,7 +43,9 @@ entry:
   %add3 = add nsw i32 %add, %call2
   %call4 = tail call spir_func i32 @_Z8isnormalf(float %f) #2
   %add5 = add nsw i32 %add3, %call4
-  store i32 %add5, i32 addrspace(1)* %out, align 4
+  %call6 = tail call spir_func i32 @_Z7signbitf(float %f) #2
+  %add7 = add nsw i32 %add5, %call6
+  store i32 %add7, i32 addrspace(1)* %out, align 4
   ret void
 }
 
@@ -52,6 +56,8 @@ declare spir_func i32 @_Z5isnanf(float) #1
 declare spir_func i32 @_Z5isinff(float) #1
 
 declare spir_func i32 @_Z8isnormalf(float) #1
+
+declare spir_func i32 @_Z7signbitf(float) #1
 
 ; Function Attrs: nounwind
 define spir_kernel void @test_vector(<2 x i32> addrspace(1)* nocapture %out, <2 x float> %f) #0 {

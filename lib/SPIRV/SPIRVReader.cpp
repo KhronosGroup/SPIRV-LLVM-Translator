@@ -1597,6 +1597,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpIsInf :
   case OpIsNan :
   case OpIsNormal :
+  case OpSignBitSet :
     return mapValue(BV,
                     transOCLRelational(static_cast<SPIRVInstruction *>(BV), BB));
 
