@@ -452,7 +452,8 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if (DemangledName == kOCLBuiltinName::IsFinite ||
       DemangledName == kOCLBuiltinName::IsInf ||
       DemangledName == kOCLBuiltinName::IsNan ||
-      DemangledName == kOCLBuiltinName::IsNormal) {
+      DemangledName == kOCLBuiltinName::IsNormal ||
+      DemangledName == kOCLBuiltinName::Signbit) {
     visitCallRelational(&CI, DemangledName);
     return;
   }

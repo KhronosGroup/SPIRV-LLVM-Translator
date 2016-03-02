@@ -174,6 +174,7 @@ namespace kOCLBuiltinName {
   const static char RoundingPrefix[]     = "_r";
   const static char Sampled[]            = "sampled_";
   const static char SampledReadImage[]   = "sampled_read_image";
+  const static char Signbit[]            = "signbit";
   const static char SmoothStep[]         = "smoothstep";
   const static char Step[]               = "step";
   const static char SubGroupPrefix[]     = "sub_group_";
