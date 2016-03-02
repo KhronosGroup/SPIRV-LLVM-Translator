@@ -653,7 +653,9 @@ LLVMToSPIRV::transValue(Value *V, SPIRVBasicBlock *BB, bool CreateForward) {
       "Invalid SPIRV BB");
 
   auto BV = transValueWithoutDecoration(V, BB, CreateForward);
-  BM->setName(BV, V->getName());
+  std::string name = V->getName();
+  if (!name.empty()) // Don't erase the name, which BM might already have
+    BM->setName(BV, name);
   if(!transDecoration(V, BV))
     return nullptr;
   return BV;
@@ -986,9 +988,11 @@ LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
   };
 
   if (auto Const = dyn_cast<ConstantInt>(Arg)) {
+    // Sampler is declared as a kernel scope constant
     return GetSamplerConstant(Const->getZExtValue());
-  }
-  else if (auto Load = dyn_cast<LoadInst>(Arg)) {
+  } else if (auto Load = dyn_cast<LoadInst>(Arg)) {
+    // If value of the sampler is loaded from a global constant, use its
+    // initializer for initialization of the sampler.
     auto Op = Load->getPointerOperand();
     assert(isa<GlobalVariable>(Op) && "Unknown sampler pattern!");
     auto GV = cast<GlobalVariable>(Op);
@@ -996,10 +1000,9 @@ LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
       GV->getType()->getPointerAddressSpace() == SPIRAS_Constant);
     auto Initializer = GV->getInitializer();
     assert(isa<ConstantInt>(Initializer) && "sampler not constant int?");
-
     return GetSamplerConstant(cast<ConstantInt>(Initializer)->getZExtValue());
   }
-
+  // Sampler is a function argument
   auto BV = transValue(Arg, BB);
   assert(BV && BV->getType() == transType(RT));
   return BV;
