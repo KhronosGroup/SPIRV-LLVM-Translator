@@ -1,4 +1,4 @@
-//===- SPIRVLowerOCLBlocks.cpp – Lower OpenCL blocks -------------*- C++ -*-===//
+//===- SPIRVLowerOCLBlocks.cpp - Lower OpenCL blocks ------------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -109,8 +109,7 @@ public:
 
   virtual bool runOnModule(Module &Module) {
     M = &Module;
-    if (!lowerBlockBind())
-      return false;
+    lowerBlockBind();
     lowerGetBlockInvoke();
     lowerGetBlockContext();
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE));
