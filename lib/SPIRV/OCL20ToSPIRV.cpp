@@ -526,7 +526,9 @@ OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
     default:
       assert(0 && "Invalid number of arguments");
     }
-    return getSPIRVFuncName(OpBuildNDRange);
+    // Translate ndrange_ND into differently named SPIR-V decorated functions because
+    // they have array arugments of different dimension which mangled the same way.
+    return getSPIRVFuncName(OpBuildNDRange, "_" + std::to_string(Len) + "D");
   }, &Attrs);
 }
 
