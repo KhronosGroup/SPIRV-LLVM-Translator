@@ -489,7 +489,8 @@ void
 OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
     const std::string &DemangledName) {
   assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
-  auto Len = atoi(DemangledName.substr(8, 1).c_str());
+  std::string lenStr = DemangledName.substr(8, 1);
+  auto Len = atoi(lenStr.c_str());
   assert (Len >= 1 && Len <= 3);
   // SPIR-V ndrange structure requires 3 members in the following order:
   //   global work offset
@@ -528,7 +529,7 @@ OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
     }
     // Translate ndrange_ND into differently named SPIR-V decorated functions because
     // they have array arugments of different dimension which mangled the same way.
-    return getSPIRVFuncName(OpBuildNDRange, "_" + std::to_string(Len) + "D");
+    return getSPIRVFuncName(OpBuildNDRange, "_" + lenStr + "D");
   }, &Attrs);
 }
 
