@@ -1,4 +1,4 @@
-//===- SPIRVReader.cpp – Converts SPIR-V to LLVM -----------------*- C++ -*-===//
+//===- SPIRVReader.cpp - Converts SPIR-V to LLVM ----------------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -1323,6 +1323,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
+
+  case OpBitcast:
+    return mapValue(BV, transConvertInst(BV, F, BB));
 
   default:
     // do nothing
