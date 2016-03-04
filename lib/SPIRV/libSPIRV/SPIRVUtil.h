@@ -60,7 +60,18 @@
 #include <unordered_set>
 #include <vector>
 
+// MSVC supports "magic statics" since MSVS 2015.
+// For the previous version of MSVS we should guard
+// initialization of local static variables.
+#if defined (_MSC_VER) && (_MSC_VER < 1900)
+#include "llvm/Support/Mutex.h"
+#include "llvm/Support/MutexGuard.h"
+#endif // LLVM_MSC_PREREQ(1900)
+
 namespace SPIRV{
+#if defined (_MSC_VER) && (_MSC_VER < 1900)
+  static llvm::sys::Mutex MapLock;
+#endif // LLVM_MSC_PREREQ(1900)
 
 #define SPIRV_DEF_NAMEMAP(Type,MapType) \
 typedef SPIRVMap<Type, std::string> MapType; \
@@ -90,11 +101,17 @@ public:
   }
 
   static const SPIRVMap& getMap() {
+#if defined (_MSC_VER) && (_MSC_VER < 1900)
+    llvm::sys::ScopedLock mapGuard(MapLock);
+#endif // LLVM_MSC_PREREQ(1900)
     static const SPIRVMap Map(false);
     return Map;
   }
 
   static const SPIRVMap& getRMap() {
+#if defined (_MSC_VER) && (_MSC_VER < 1900)
+    llvm::sys::ScopedLock mapGuard(MapLock);
+#endif // LLVM_MSC_PREREQ(1900)
     static const SPIRVMap Map(true);
     return Map;
   }
