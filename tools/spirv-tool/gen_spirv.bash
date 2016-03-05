@@ -32,7 +32,7 @@ SPIRV_DEF_NAMEMAP($prefix, SPIRV${prefix}NameMap)
 ###########################
 genIsValid() {
 prefix=$1
-echo "bool
+echo "inline bool
 isValid(spv::$prefix V) {
   switch(V) {"
 
@@ -47,7 +47,6 @@ echo "      return true;
     default:
       return false;
   }
-
 }
 "
 
