@@ -49,7 +49,25 @@ echo "      return true;
   }
 }
 "
+}
+genMaskIsValid() {
+prefix=$1
+subprefix=`echo $prefix | sed -e "s:Mask::g"`
+echo "inline bool
+isValid$prefix(SPIRVWord Mask) {
+  SPIRVWord ValidMask = 0u;"
 
+  cat $spirvHeader | sed -n -e "/^ *${subprefix}[^a-z]/s:^ *${subprefix}\([^= ][^= ]*\)Mask[= ][= ]*\(.*\).*:\1 \2:p"  | while read a b; do
+  if [[ $a == None ]]; then
+    continue
+  fi
+  printf "  ValidMask |= ${subprefix}%sMask;\n" $a
+done
+
+echo "
+  return (Mask & ~ValidMask) == 0;
+}
+"
 }
 
 ##############################
@@ -88,8 +106,8 @@ fi
 gen() {
 type=$1
 for prefix in SourceLanguage ExecutionModel AddressingModel MemoryModel ExecutionMode StorageClass Dim SamplerAddressingMode SamplerFilterMode ImageFormat \
-  ImageChannelOrder ImageChannelDataType ImageOperands FPFastMathMode FPRoundingMode LinkageType AccessQualifier FunctionParameterAttribute Decoration BuiltIn SelectionControl \
-  LoopControl FunctionControl MemorySemantics MemoryAccess Scope GroupOperation KernelEnqueueFlags KernelProfilingInfo Capability Op; do
+  ImageChannelOrder ImageChannelDataType FPRoundingMode LinkageType AccessQualifier FunctionParameterAttribute Decoration BuiltIn Scope GroupOperation \
+  KernelEnqueueFlags Capability Op; do
   if [[ "$type" == NameMap ]]; then
     genNameMap $prefix
   elif [[ "$type" == isValid ]]; then
@@ -99,6 +117,12 @@ for prefix in SourceLanguage ExecutionModel AddressingModel MemoryModel Executio
   else
     echo "invalid type \"$type\"."
     exit
+  fi
+done
+for prefix in ImageOperandsMask FPFastMathModeMask SelectionControlMask LoopControlMask FunctionControlMask MemorySemanticsMask MemoryAccessMask \
+  KernelProfilingInfoMask; do
+  if [[ "$type" == isValid ]]; then
+    genMaskIsValid $prefix
   fi
 done
 }
