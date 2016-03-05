@@ -41,6 +41,7 @@
 #define SPIRVENTRY_HPP_
 
 #include "SPIRVEnum.h"
+#include "SPIRVIsValidEnum.h"
 #include "SPIRVError.h"
 #include <cassert>
 #include <iostream>

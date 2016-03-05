@@ -41,6 +41,7 @@
 #define SPIRVINSTRUCTION_HPP_
 
 #include "SPIRVEnum.h"
+#include "SPIRVIsValidEnum.h"
 #include "SPIRVStream.h"
 #include "SPIRVValue.h"
 #include "SPIRVBasicBlock.h"

@@ -277,56 +277,6 @@ SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
 }
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
 
-inline bool
-isValid(SPIRVAccessQualifierKind Acc) {
-  return static_cast<unsigned>(Acc) <= AccessQualifierReadWrite;
-}
-
-inline bool
-isValid(SPIRVExecutionModelKind E) {
-  return (unsigned)E < (unsigned)ExecutionModelCount;
-}
-
-inline bool
-isValid(SPIRVExecutionModeKind E) {
-  return (unsigned)E < (unsigned)ExecutionModeCount;
-}
-
-inline bool
-isValid(SPIRVLinkageTypeKind L) {
-  return (unsigned)L < (unsigned)LinkageTypeCount;
-}
-
-inline bool
-isValid(SPIRVStorageClassKind StorageClass) {
-  return (unsigned)StorageClass < (unsigned)StorageClassCount;
-}
-
-inline bool
-isValid(SPIRVFuncParamAttrKind FPA) {
-  return (unsigned)FPA < (unsigned)FunctionParameterAttributeCount;
-}
-
-inline bool
-isValid(SPIRVExtInstSetKind BIS) {
-  return (unsigned)BIS < (unsigned)SPIRVEIS_Count;
-}
-
-inline bool
-isValid(SPIRVBuiltinVariableKind Kind) {
-  return (unsigned)Kind < (unsigned)BuiltInCount;
-}
-
-inline bool
-isValid(Scope Kind) {
-  return (unsigned)Kind <= (unsigned)ScopeInvocation;
-}
-
-inline bool
-isValid(SPIRVGroupOperationKind G) {
-  return (unsigned)G < (unsigned)GroupOperationCount;
-}
-
 template<typename K>
 SPIRVCapVec
 getCapability(K Key) {
@@ -481,11 +431,6 @@ SPIRVMap<Decoration, SPIRVCapabilityKind>::init() {
   add(DecorationNoContraction, CapabilityShader);
   add(DecorationInputAttachmentIndex, CapabilityInputAttachment);
   add(DecorationAlignment, CapabilityKernel);
-}
-
-inline bool
-isValidSPIRVMemSemanticsMask(SPIRVWord MemMask) {
-  return MemMask < 1 << ((unsigned)MemorySemanticsImageMemoryShift + 1);
 }
 
 inline unsigned
