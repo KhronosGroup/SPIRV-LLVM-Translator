@@ -580,8 +580,8 @@ Op getSPIRVFuncOC(const std::string& Name,
 
 /// Get SPIR-V builtin variable enum given the canonical builtin name
 /// Assume \param Name is in format __spirv_BuiltIn{Name}
-/// \return spv::BuiltInCount if \param Name is not a valid builtin name.
-spv::BuiltIn getSPIRVBuiltin(const std::string &Name);
+/// \return false if \param Name is not a valid builtin name.
+bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 
 /// \param Name LLVM function name
 /// \param OpenCLVer version of OpenCL source file. Suppotred values are 12, 20

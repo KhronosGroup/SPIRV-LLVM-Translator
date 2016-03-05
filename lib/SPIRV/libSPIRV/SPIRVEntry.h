@@ -543,7 +543,7 @@ public:
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode)
   :SPIRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){}
   // Incomplete constructor
-  SPIRVExecutionMode():ExecMode(ExecutionModeCount){}
+  SPIRVExecutionMode():ExecMode(ExecutionModeInvocations){}
   SPIRVExecutionModeKind getExecutionMode()const { return ExecMode;}
   const std::vector<SPIRVWord>& getLiterals()const { return WordLiterals;}
   SPIRVCapVec getRequiredCapability() const {

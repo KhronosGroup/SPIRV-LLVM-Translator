@@ -371,9 +371,7 @@ public:
     Acc.push_back(TheAcc);
     validate();
   }
-  SPIRVTypeImage():SPIRVType(OC), SampledType(SPIRVID_INVALID),
-    Desc(DimCount, SPIRVWORD_MAX, SPIRVWORD_MAX, SPIRVWORD_MAX,
-        SPIRVWORD_MAX, SPIRVWORD_MAX){
+  SPIRVTypeImage():SPIRVType(OC), SampledType(SPIRVID_INVALID), Desc(){
   }
   const SPIRVTypeImageDescriptor &getDescriptor()const {
     return Desc;

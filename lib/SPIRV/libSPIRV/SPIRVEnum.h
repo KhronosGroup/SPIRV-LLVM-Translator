@@ -266,7 +266,6 @@ SPIRVMap<SPIRVBuiltinVariableKind, std::string>::init() {
   add(BuiltInNumEnqueuedSubgroups, "NumEnqueuedSubgroups");
   add(BuiltInSubgroupId, "SubgroupId");
   add(BuiltInSubgroupLocalInvocationId, "SubgroupLocalInvocationId");
-  add(BuiltInCount, "Count");
 }
 typedef SPIRVMap<SPIRVBuiltinVariableKind, std::string>
   SPIRVBuiltinVariableNameMap;

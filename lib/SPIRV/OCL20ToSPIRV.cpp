@@ -1120,7 +1120,7 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
       continue;
     DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;
-    SPIRVBuiltinVariableKind BVKind = BuiltInCount;
+    SPIRVBuiltinVariableKind BVKind;
     if (!SPIRSPIRVBuiltinVariableMap::find(DemangledName, &BVKind))
       continue;
     BuiltinVarName = std::string(kSPIRVName::Prefix) +

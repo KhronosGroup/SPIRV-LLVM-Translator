@@ -335,10 +335,11 @@ public:
     return SPIRV::hasGroupOperation(OpCode);
   }
 
-  SPIRVGroupOperationKind getGroupOperation() const {
+  bool getSPIRVGroupOperation(SPIRVGroupOperationKind &GroupOp) const {
     if (!hasGroupOperation())
-      return GroupOperationCount;
-    return static_cast<SPIRVGroupOperationKind>(Ops[1]);
+      return false;
+    GroupOp = static_cast<SPIRVGroupOperationKind>(Ops[1]);
+    return true;
   }
 
   Scope getExecutionScope() const {
@@ -443,7 +444,7 @@ public:
   }
   // Incomplete constructor
   SPIRVVariable() :SPIRVInstruction(OpVariable),
-      StorageClass(StorageClassCount){}
+      StorageClass(StorageClassFunction){}
 
   SPIRVStorageClassKind getStorageClass() const { return StorageClass; }
   SPIRVValue *getInitializer() const {

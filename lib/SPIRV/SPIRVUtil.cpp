@@ -446,15 +446,13 @@ getSPIRVFuncOC(const std::string& S, SmallVectorImpl<std::string> *Dec) {
   return OC;
 }
 
-spv::BuiltIn
-getSPIRVBuiltin(const std::string &OrigName) {
+bool
+getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   SmallVector<StringRef, 2> Postfix;
   StringRef R(OrigName);
   R = dePrefixSPIRVName(R, Postfix);
   assert(Postfix.empty() && "Invalid SPIR-V builtin name");
-  spv::BuiltIn B = spv::BuiltInCount;
-  getByName(R.str(), B);
-  return B;
+  return getByName(R.str(), B);
 }
 
 bool oclIsBuiltin(const StringRef &Name, unsigned SrcLangVer,

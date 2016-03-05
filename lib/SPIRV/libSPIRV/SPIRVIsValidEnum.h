@@ -560,6 +560,7 @@ isValid(spv::Capability V) {
     case CapabilityGeometryStreams:
     case CapabilityStorageImageReadWithoutFormat:
     case CapabilityStorageImageWriteWithoutFormat:
+    case CapabilityMultiViewport:
       return true;
     default:
       return false;
@@ -862,6 +863,7 @@ isValid(spv::Op V) {
     case OpNoLine:
     case OpAtomicFlagTestAndSet:
     case OpAtomicFlagClear:
+    case OpImageSparseRead:
     case OpForward:
       return true;
     default:
