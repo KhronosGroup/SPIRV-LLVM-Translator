@@ -997,9 +997,22 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
 
         Args[0] = SampledImg;
         Args.erase(Args.begin() + 1, Args.begin() + 2);
-        Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
-        // TODO: pass actual LOD for mipmap images.
-        Args.push_back(getFloat32(M, 0));
+
+        switch (Args.size())
+        {
+        case 2: // no lod
+            Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+            Args.push_back(getFloat32(M, 0.f));
+            break;
+        case 3: // explicit lod
+            Args.insert(Args.begin() + 2, getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+            break;
+        case 4: // gradient
+            Args.insert(Args.begin() + 2, getInt32(M, ImageOperandsMask::ImageOperandsGradMask));
+            break;
+        default: assert(0 && "read_image* with unhandled number of args!");
+        }
+
         // SPIR-V intruction always returns 4-element vector
         if (isRetScalar)
           Ret = VectorType::get(Ret, 4);
@@ -1172,7 +1185,19 @@ OCL20ToSPIRV::visitCallReadWriteImage(CallInst* CI,
     Info.UniqName = kOCLBuiltinName::ReadImage;
 
   if (DemangledName.find(kOCLBuiltinName::WriteImage) == 0)
+  {
     Info.UniqName = kOCLBuiltinName::WriteImage;
+    Info.PostProc = [&](std::vector<Value*> &Args) {
+        if (Args.size() == 4) // write with lod
+        {
+            auto Lod = Args[2];
+            Args.erase(Args.begin() + 2);
+            Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+            Args.push_back(Lod);
+        }
+    };
+  }
+
   transBuiltin(CI, Info);
 }
 

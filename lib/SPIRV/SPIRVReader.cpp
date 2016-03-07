@@ -1,4 +1,4 @@
-//===- SPIRVReader.cpp - Converts SPIR-V to LLVM ----------------*- C++ -*-===//
+﻿//===- SPIRVReader.cpp - Converts SPIR-V to LLVM ----------------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -338,11 +338,20 @@ public:
 
   /// \brief Post-process OpImageSampleExplicitLod.
   ///   sampled_image = __spirv_SampledImage__(image, sampler);
-  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, ...);
+  ///   return __spirv_ImageSampleExplicitLod__(sampled_image, image_operands,
+  ///                                           ...);
   /// =>
   ///   read_image(image, sampler, ...)
   /// \return transformed call instruction.
   Instruction *postProcessOCLReadImage(SPIRVInstruction *BI, CallInst *CI,
+      const std::string &DemangledName);
+
+  /// \brief Post-process OpImageWrite.
+  ///   return write_image(image, coord, color, image_operands, ...);
+  /// =>
+  ///   write_image(image, coord, ..., color)
+  /// \return transformed call instruction.
+  CallInst *postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
       const std::string &DemangledName);
 
   /// \brief Post-process OpBuildNDRange.
@@ -1068,10 +1077,16 @@ SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
         auto Sampler = CallSampledImg->getArgOperand(1);
         Args[0] = Img;
         Args.insert(Args.begin() + 1, Sampler);
-        // Drop "Image Operadns" arguments - they are not used by OpenCL at the
-        // moment.
-        // TODO: OpenCL extension mipmap images will use LOD image operand.
-        Args.erase(Args.begin() + 3, Args.end());
+        if(Args.size() > 4 ) {
+          ConstantInt* ImOp = dyn_cast<ConstantInt>(Args[3]);
+          ConstantFP* LodVal = dyn_cast<ConstantFP>(Args[4]);
+          // Drop "Image Operands" argument.
+          Args.erase(Args.begin() + 3, Args.begin() + 4);
+          // If the image operand is LOD and its value is zero, drop it too.
+          if (ImOp && LodVal && LodVal->isNullValue() &&
+              ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask )
+            Args.erase(Args.begin() + 3, Args.end());
+        }
         if (CallSampledImg->hasOneUse()) {
           CallSampledImg->replaceAllUsesWith(
               UndefValue::get(CallSampledImg->getType()));
@@ -1093,6 +1108,29 @@ SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
         return NewCI;
       },
       &Attrs);
+}
+
+CallInst*
+SPIRVToLLVM::postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
+                                      const std::string &DemangledName) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
+    llvm::Type *T = Args[2]->getType();
+    if (Args.size() > 4) {
+      ConstantInt* ImOp = dyn_cast<ConstantInt>(Args[3]);
+      ConstantFP* LodVal = dyn_cast<ConstantFP>(Args[4]);
+      // Drop "Image Operands" argument.
+      Args.erase(Args.begin() + 3, Args.begin() + 4);
+      // If the image operand is LOD and its value is zero, drop it too.
+      if (ImOp && LodVal && LodVal->isNullValue() &&
+          ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask )
+        Args.erase(Args.begin() + 3, Args.end());
+      else
+        std::swap(Args[2], Args[3]);
+    }
+    return std::string(kOCLBuiltinName::WriteImage) +
+            (T->isFPOrFPVectorTy() ? 'f' : 'i');
+    }, &Attrs);
 }
 
 CallInst *
@@ -1746,6 +1784,9 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
   }
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
+  if (OC == OpImageWrite) {
+    return postProcessOCLWriteImage(BI, CI, DemangledName);
+  }
   if (OC == OpGenericPtrMemSemantics)
     return BinaryOperator::CreateShl(CI, getInt32(M, 8), "", BB);
   if (OC == OpBuildNDRange)
