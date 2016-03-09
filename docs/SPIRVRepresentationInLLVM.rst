@@ -32,12 +32,12 @@ Limited to this section, we define the following common postfix.
 OpTypeImage
 -----------
 OpTypeImage is mapped to LLVM opaque type
-spirv.Image.{SampledType}_{Dim}_{Depth}_{Arrayed}_{MS}_{Sampled}_{Format}_{Access}
+spirv.Image._{SampledType}_{Dim}_{Depth}_{Arrayed}_{MS}_{Sampled}_{Format}_{Access}
 and mangled as __spirv_Image__{SampledType}_{Dim}_{Depth}_{Arrayed}_{MS}_{Sampled}_{Format}_{Access},
 
 where
 
-* {SampledType}={float4|half4|int4|uint4|void} - Postfix indicating the sampled data type
+* {SampledType}={float|half|int|uint|void} - Postfix indicating the sampled data type
   - void for unknown sampled data type
 * {Dim} - Postfix indicating the dimension of the image
 * {Depth} - Postfix indicating whether the image is a depth image
@@ -52,7 +52,7 @@ literal values which are defined by the SPIR-V spec.
 OpTypePipe
 ----------
 OpTypePipe is mapped to LLVM opaque type
-spirv.Pipe.{Access} and mangled as __spirv_Pipe__{Access}.
+spirv.Pipe._{Access} and mangled as __spirv_Pipe__{Access}.
 
 Other SPIR-V Types
 ------------------
