@@ -27,7 +27,7 @@ SPIR-V Types Mapped to LLVM Types
 Limited to this section, we define the following common postfix.
 
 * {Access} - Postifix indicating the access qualifier.
-{Access} take ineger literal values which are defined by the SPIR-V spec.
+{Access} take integer literal values which are defined by the SPIR-V spec.
 
 OpTypeImage
 -----------
