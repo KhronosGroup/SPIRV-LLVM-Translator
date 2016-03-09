@@ -42,6 +42,7 @@
 #include "libSPIRV/SPIRVDecorate.h"
 #include "libSPIRV/SPIRVValue.h"
 #include "SPIRVMDWalker.h"
+#include "OCLUtil.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -1042,9 +1043,17 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
               new SPIR::PrimitiveType(SPIR::PRIMITIVE_VAR_ARG)));
           }
           EPT = BlockTy;
+        } else if (Prim != SPIR::PRIMITIVE_NONE) {
+          if (Prim == SPIR::PRIMITIVE_PIPE_T) {
+            SPIR::RefParamType OpaqueTyRef(new SPIR::PrimitiveType(Prim));
+            auto OpaquePtrTy = new SPIR::PointerType(OpaqueTyRef);
+            OpaquePtrTy->setAddressSpace(getOCLOpaqueTypeAddrSpace(Prim));
+            EPT = OpaquePtrTy;
+          }
+          else {
+            EPT = new SPIR::PrimitiveType(Prim);
+          }
         }
-        else if (Prim != SPIR::PRIMITIVE_NONE)
-          EPT = new SPIR::PrimitiveType(Prim);
       } else if (Prim == SPIR::PRIMITIVE_NDRANGE_T)
         // ndrange_t is not opaque type
         EPT = new SPIR::PrimitiveType(SPIR::PRIMITIVE_NDRANGE_T);

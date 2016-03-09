@@ -300,6 +300,7 @@ unsigned transVecTypeHint(MDNode* Node);
 Type *decodeVecTypeHint(LLVMContext &C, unsigned code);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
+SPIR::TypeAttributeEnum getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim);
 
 inline unsigned mapOCLMemSemanticToSPIRV(unsigned MemFenceFlag,
     OCLMemOrderKind Order) {
