@@ -14,12 +14,56 @@ blocks, instructions) have straightforward counterparts in LLVM. Therefore the
 focus of this document is those entities in SPIR-V which do not map to LLVM in
 an obvious way. These include:
 
+ * SPIR-V types mapped to LLVM types
  * SPIR-V instructions mapped to LLVM function calls
  * SPIR-V extended instructions mapped to LLVM function calls
  * SPIR-V builtins variables mapped to LLVM global variables
  * SPIR-V instructions mapped to LLVM metadata
  * SPIR-V types mapped to LLVM opaque types
  * SPIR-V decorations mapped to LLVM metadata or named attributes
+
+SPIR-V Types Mapped to LLVM Types
+=================================
+Limited to this section, we define the following common postfix.
+
+* {Access} - Postifix indicating the access qualifier.
+{Access} take ineger literal values which are defined by the SPIR-V spec.
+
+OpTypeImage
+-----------
+OpTypeImage is mapped to LLVM opaque type
+spirv.Image.{SampledType}_{Dim}_{Depth}_{Arrayed}_{MS}_{Sampled}_{Format}_{Access}
+and mangled as __spirv_Image__{SampledType}_{Dim}_{Depth}_{Arrayed}_{MS}_{Sampled}_{Format}_{Access},
+
+where
+
+* {SampledType}={float4|half4|int4|uint4|void} - Postfix indicating the sampled data type
+  - void for unknown sampled data type
+* {Dim} - Postfix indicating the dimension of the image
+* {Depth} - Postfix indicating whether the image is a depth image
+* {Arrayed} - Postfix indicating whether the image is arrayed image
+* {MS} - Postfix indicating whether the image is multi-sampled
+* {Sampled} - Postfix indicating whether the image is associated with sampler
+* {Format} - Postfix indicating the image format
+
+Postfixes {Dim}, {Depth}, {Arrayed}, {MS}, {Sampled} and {Format} take integer
+literal values which are defined by the SPIR-V spec.
+
+OpTypePipe
+----------
+OpTypePipe is mapped to LLVM opaque type
+spirv.Pipe.{Access} and mangled as __spirv_Pipe__{Access}.
+
+Other SPIR-V Types
+------------------
+* OpTypeEvent
+* OpTypeDeviceEvent
+* OpTypeReserveId
+* OpTypeQueue
+The above SPIR-V types are mapped to LLVM opaque type spirv.{TypeName} and
+mangled as __spirv_{TypeName}, where {TypeName} is the name of the SPIR-V
+type with "OpType" removed, e.g., OpTypeEvent is mapped to spirv.Event and
+mangled as __spirv_Event.
 
 SPIR-V Instructions Mapped to LLVM Function Calls
 =================================================
