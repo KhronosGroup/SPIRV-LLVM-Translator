@@ -6,8 +6,8 @@ target triple = "spir64-unknown-unknown"
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s
 
-; Check the mangling of 1.2 atomic functions. This test expects what
-; most of the built-ins are promoted to OpenCL C 2.0 atomics.
+; Check the mangling of 1.2 atomic functions. This test expects that all
+; built-ins are promoted to OpenCL C 2.0 atomics.
 ; Most of atomics lost information about the sign of the integer operand
 ; but since this concerns only built-ins  with two-complement's arithmetics
 ; it shouldn't cause any problems.
@@ -17,9 +17,9 @@ target triple = "spir64-unknown-unknown"
 define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 {
   ; atomic_inc
   %inc_ig = tail call spir_func i32 @_Z10atomic_incPVU3AS1i(i32 addrspace(1)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS1U7_Atomiciiii(i32 addrspace(1)* %dst, i32 1
+  ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS1U7_Atomiciiii(i32 addrspace(1)* {{.*}}, i32 1
   %dec_jg = tail call spir_func i32 @_Z10atomic_decPVU3AS1j(i32 addrspace(1)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_sub_explicitPVU3AS1U7_Atomiciiii(i32 addrspace(1)* %dst, i32 1
+  ; CHECK: _Z25atomic_fetch_sub_explicitPVU3AS1U7_Atomiciiii(i32 addrspace(1)* {{.*}}, i32 1
 
   ; atomic_max
   %max_ig = tail call spir_func i32 @_Z10atomic_maxPVU3AS1ii(i32 addrspace(1)* %dst, i32 0) #0
@@ -81,11 +81,11 @@ define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 {
 define spir_kernel void @test_atomic_local(i32 addrspace(3)* %dst) #0 {
   ; atomic_inc
   %inc_il = tail call spir_func i32 @_Z10atomic_incPVU3AS3i(i32 addrspace(3)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS3U7_Atomiciiii(i32 addrspace(3)* %dst, i32 1
+  ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS3U7_Atomiciiii(i32 addrspace(3)* {{.*}}, i32 1
 
   ; atomic dec
   %dec_jl = tail call spir_func i32 @_Z10atomic_decPVU3AS3j(i32 addrspace(3)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_sub_explicitPVU3AS3U7_Atomiciiii(i32 addrspace(3)* %dst, i32 1
+  ; CHECK: _Z25atomic_fetch_sub_explicitPVU3AS3U7_Atomiciiii(i32 addrspace(3)* {{.*}}, i32 1
 
   ; atomic_max
   %max_il = tail call spir_func i32 @_Z10atomic_maxPVU3AS3ii(i32 addrspace(3)* %dst, i32 0) #0
