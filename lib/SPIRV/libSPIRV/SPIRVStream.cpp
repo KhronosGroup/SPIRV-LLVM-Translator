@@ -40,6 +40,7 @@
 #include "SPIRVStream.h"
 #include "SPIRVFunction.h"
 #include "SPIRVOpCode.h"
+#include "SPIRVNameMapEnum.h"
 
 namespace SPIRV{
 

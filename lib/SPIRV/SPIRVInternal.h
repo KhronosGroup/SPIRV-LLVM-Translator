@@ -41,6 +41,7 @@
 
 #include "libSPIRV/SPIRVUtil.h"
 #include "libSPIRV/SPIRVEnum.h"
+#include "libSPIRV/SPIRVNameMapEnum.h"
 #include "libSPIRV/SPIRVError.h"
 #include "libSPIRV/SPIRVType.h"
 #include "NameMangleAPI.h"
