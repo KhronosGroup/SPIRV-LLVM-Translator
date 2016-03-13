@@ -119,156 +119,265 @@ template<typename K>
 SPIRVCapVec
 getCapability(K Key) {
   SPIRVCapVec V;
-  SPIRVCapabilityKind C;
-  if (SPIRVMap<K, SPIRVCapabilityKind>::find(Key, &C))
-    V.push_back(C);
+  SPIRVMap<K, SPIRVCapVec>::find(Key, &V);
   return std::move(V);
 }
 
 template<> inline void
-SPIRVMap<SPIRVCapabilityKind, SPIRVCapabilityKind>::init() {
-  add(CapabilityShader, CapabilityMatrix);
-  add(CapabilityGeometry, CapabilityShader);
-  add(CapabilityTessellation, CapabilityShader);
-  add(CapabilityVector16, CapabilityKernel);
-  add(CapabilityFloat16Buffer, CapabilityKernel);
-  add(CapabilityFloat16, CapabilityFloat16Buffer);
-  add(CapabilityInt64Atomics, CapabilityInt64);
-  add(CapabilityImageBasic, CapabilityKernel);
-  add(CapabilityImageReadWrite, CapabilityImageBasic);
-  add(CapabilityImageMipmap, CapabilityImageBasic);
-  add(CapabilityPipes, CapabilityKernel);
-  add(CapabilityDeviceEnqueue, CapabilityKernel);
-  add(CapabilityLiteralSampler, CapabilityKernel);
-  add(CapabilityAtomicStorage, CapabilityShader);
-  add(CapabilityTessellationPointSize, CapabilityTessellation);
-  add(CapabilityGeometryPointSize, CapabilityGeometry);
-  add(CapabilityImageGatherExtended, CapabilityShader);
-  add(CapabilityStorageImageMultisample, CapabilityShader);
-  add(CapabilityUniformBufferArrayDynamicIndexing, CapabilityShader);
-  add(CapabilitySampledImageArrayDynamicIndexing, CapabilityShader);
-  add(CapabilityStorageBufferArrayDynamicIndexing, CapabilityShader);
-  add(CapabilityStorageImageArrayDynamicIndexing, CapabilityShader);
-  add(CapabilityClipDistance, CapabilityShader);
-  add(CapabilityCullDistance, CapabilityShader);
-  add(CapabilityImageCubeArray, CapabilitySampledCubeArray);
-  add(CapabilitySampleRateShading, CapabilityShader);
-  add(CapabilityImageRect, CapabilitySampledRect);
-  add(CapabilitySampledRect, CapabilityShader);
-  add(CapabilityGenericPointer, CapabilityAddresses);
-  add(CapabilityInt8, CapabilityKernel);
-  add(CapabilityInputAttachment, CapabilityShader);
-  add(CapabilitySparseResidency, CapabilityShader);
-  add(CapabilityMinLod, CapabilityShader);
-  add(CapabilitySampled1D, CapabilityShader);
-  add(CapabilityImage1D, CapabilitySampled1D);
-  add(CapabilitySampledCubeArray, CapabilityShader);
-  add(CapabilitySampledBuffer, CapabilityShader);
-  add(CapabilityImageBuffer, CapabilitySampledBuffer);
-  add(CapabilityImageMSArray, CapabilityShader);
-  add(CapabilityStorageImageExtendedFormats, CapabilityShader);
-  add(CapabilityImageQuery, CapabilityShader);
-  add(CapabilityDerivativeControl, CapabilityShader);
-  add(CapabilityInterpolationFunction, CapabilityShader);
-  add(CapabilityTransformFeedback, CapabilityShader);
-  add(CapabilityGeometryStreams, CapabilityShader);
-  add(CapabilityStorageImageReadWithoutFormat, CapabilityShader);
-  add(CapabilityStorageImageWriteWithoutFormat, CapabilityShader);
+SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
+  add(CapabilityShader, { CapabilityMatrix });
+  add(CapabilityGeometry, { CapabilityShader });
+  add(CapabilityTessellation, { CapabilityShader });
+  add(CapabilityVector16, { CapabilityKernel });
+  add(CapabilityFloat16Buffer, { CapabilityKernel });
+  add(CapabilityInt64Atomics, { CapabilityInt64 });
+  add(CapabilityImageBasic, { CapabilityKernel });
+  add(CapabilityImageReadWrite, { CapabilityImageBasic });
+  add(CapabilityImageMipmap, { CapabilityImageBasic });
+  add(CapabilityPipes, { CapabilityKernel });
+  add(CapabilityDeviceEnqueue, { CapabilityKernel });
+  add(CapabilityLiteralSampler, { CapabilityKernel });
+  add(CapabilityAtomicStorage, { CapabilityShader });
+  add(CapabilityTessellationPointSize, { CapabilityTessellation });
+  add(CapabilityGeometryPointSize, { CapabilityGeometry });
+  add(CapabilityImageGatherExtended, { CapabilityShader });
+  add(CapabilityStorageImageMultisample, { CapabilityShader });
+  add(CapabilityUniformBufferArrayDynamicIndexing, { CapabilityShader });
+  add(CapabilitySampledImageArrayDynamicIndexing, { CapabilityShader });
+  add(CapabilityStorageBufferArrayDynamicIndexing, { CapabilityShader });
+  add(CapabilityStorageImageArrayDynamicIndexing, { CapabilityShader });
+  add(CapabilityClipDistance, { CapabilityShader });
+  add(CapabilityCullDistance, { CapabilityShader });
+  add(CapabilityImageCubeArray, { CapabilitySampledCubeArray });
+  add(CapabilitySampleRateShading, { CapabilityShader });
+  add(CapabilityImageRect, { CapabilitySampledRect });
+  add(CapabilitySampledRect, { CapabilityShader });
+  add(CapabilityGenericPointer, { CapabilityAddresses });
+  add(CapabilityInt8, { CapabilityKernel });
+  add(CapabilityInputAttachment, { CapabilityShader });
+  add(CapabilitySparseResidency, { CapabilityShader });
+  add(CapabilityMinLod, { CapabilityShader });
+  add(CapabilitySampled1D, { CapabilityShader });
+  add(CapabilityImage1D, { CapabilitySampled1D });
+  add(CapabilitySampledCubeArray, { CapabilityShader });
+  add(CapabilitySampledBuffer, { CapabilityShader });
+  add(CapabilityImageBuffer, { CapabilitySampledBuffer });
+  add(CapabilityImageMSArray, { CapabilityShader });
+  add(CapabilityStorageImageExtendedFormats, { CapabilityShader });
+  add(CapabilityImageQuery, { CapabilityShader });
+  add(CapabilityDerivativeControl, { CapabilityShader });
+  add(CapabilityInterpolationFunction, { CapabilityShader });
+  add(CapabilityTransformFeedback, { CapabilityShader });
+  add(CapabilityGeometryStreams, { CapabilityGeometry });
+  add(CapabilityStorageImageReadWithoutFormat, { CapabilityShader });
+  add(CapabilityStorageImageWriteWithoutFormat, { CapabilityShader });
+  add(CapabilityMultiViewport, { CapabilityGeometry });
 }
 
 template<> inline void
-SPIRVMap<SPIRVExecutionModelKind, SPIRVCapabilityKind>::init() {
-  add(ExecutionModelVertex, CapabilityShader);
-  add(ExecutionModelTessellationControl, CapabilityTessellation);
-  add(ExecutionModelTessellationEvaluation, CapabilityShader);
-  add(ExecutionModelGeometry, CapabilityGeometry);
-  add(ExecutionModelFragment, CapabilityShader);
-  add(ExecutionModelGLCompute, CapabilityShader);
-  add(ExecutionModelKernel, CapabilityKernel);
+SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {
+  add(ExecutionModelVertex, { CapabilityShader });
+  add(ExecutionModelTessellationControl, { CapabilityTessellation });
+  add(ExecutionModelTessellationEvaluation, { CapabilityTessellation });
+  add(ExecutionModelGeometry, { CapabilityGeometry });
+  add(ExecutionModelFragment, { CapabilityShader });
+  add(ExecutionModelGLCompute, { CapabilityShader });
+  add(ExecutionModelKernel, { CapabilityKernel });
 }
 
 template<> inline void
-SPIRVMap<SPIRVExecutionModeKind, SPIRVCapabilityKind>::init() {
-  add(ExecutionModeInvocations, CapabilityGeometry);
-  add(ExecutionModeSpacingEqual, CapabilityTessellation);
-  add(ExecutionModeSpacingFractionalEven, CapabilityTessellation);
-  add(ExecutionModeSpacingFractionalOdd, CapabilityTessellation);
-  add(ExecutionModeVertexOrderCw, CapabilityTessellation);
-  add(ExecutionModeVertexOrderCcw, CapabilityTessellation);
-  add(ExecutionModePixelCenterInteger, CapabilityShader);
-  add(ExecutionModeOriginUpperLeft, CapabilityShader);
-  add(ExecutionModeOriginLowerLeft, CapabilityShader);
-  add(ExecutionModeEarlyFragmentTests, CapabilityShader);
-  add(ExecutionModePointMode, CapabilityTessellation);
-  add(ExecutionModeXfb, CapabilityShader);
-  add(ExecutionModeDepthReplacing, CapabilityShader);
-  add(ExecutionModeDepthGreater, CapabilityShader);
-  add(ExecutionModeDepthLess, CapabilityShader);
-  add(ExecutionModeDepthUnchanged, CapabilityShader);
-  add(ExecutionModeLocalSizeHint, CapabilityKernel);
-  add(ExecutionModeInputPoints, CapabilityGeometry);
-  add(ExecutionModeInputLines, CapabilityGeometry);
-  add(ExecutionModeInputLinesAdjacency, CapabilityGeometry);
-  add(ExecutionModeTriangles, CapabilityTessellation);
-  add(ExecutionModeInputTrianglesAdjacency, CapabilityGeometry);
-  add(ExecutionModeQuads, CapabilityGeometry);
-  add(ExecutionModeIsolines, CapabilityGeometry);
-  add(ExecutionModeOutputVertices, CapabilityTessellation);
-  add(ExecutionModeOutputPoints, CapabilityGeometry);
-  add(ExecutionModeOutputLineStrip, CapabilityGeometry);
-  add(ExecutionModeOutputTriangleStrip, CapabilityGeometry);
-  add(ExecutionModeVecTypeHint, CapabilityKernel);
-  add(ExecutionModeContractionOff, CapabilityKernel);
+SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
+  add(ExecutionModeInvocations, { CapabilityGeometry });
+  add(ExecutionModeSpacingEqual, { CapabilityTessellation });
+  add(ExecutionModeSpacingFractionalEven, { CapabilityTessellation });
+  add(ExecutionModeSpacingFractionalOdd, { CapabilityTessellation });
+  add(ExecutionModeVertexOrderCw, { CapabilityTessellation });
+  add(ExecutionModeVertexOrderCcw, { CapabilityTessellation });
+  add(ExecutionModePixelCenterInteger, { CapabilityShader });
+  add(ExecutionModeOriginUpperLeft, { CapabilityShader });
+  add(ExecutionModeOriginLowerLeft, { CapabilityShader });
+  add(ExecutionModeEarlyFragmentTests, { CapabilityShader });
+  add(ExecutionModePointMode, { CapabilityTessellation });
+  add(ExecutionModeXfb, { CapabilityTransformFeedback });
+  add(ExecutionModeDepthReplacing, { CapabilityShader });
+  add(ExecutionModeDepthGreater, { CapabilityShader });
+  add(ExecutionModeDepthLess, { CapabilityShader });
+  add(ExecutionModeDepthUnchanged, { CapabilityShader });
+  add(ExecutionModeLocalSizeHint, { CapabilityKernel });
+  add(ExecutionModeInputPoints, { CapabilityGeometry });
+  add(ExecutionModeInputLines, { CapabilityGeometry });
+  add(ExecutionModeInputLinesAdjacency, { CapabilityGeometry });
+  add(ExecutionModeTriangles, { CapabilityGeometry, CapabilityTessellation });
+  add(ExecutionModeInputTrianglesAdjacency, { CapabilityGeometry });
+  add(ExecutionModeQuads, { CapabilityTessellation });
+  add(ExecutionModeIsolines, { CapabilityTessellation });
+  add(ExecutionModeOutputVertices, { CapabilityGeometry, CapabilityTessellation });
+  add(ExecutionModeOutputPoints, { CapabilityGeometry });
+  add(ExecutionModeOutputLineStrip, { CapabilityGeometry });
+  add(ExecutionModeOutputTriangleStrip, { CapabilityGeometry });
+  add(ExecutionModeVecTypeHint, { CapabilityKernel });
+  add(ExecutionModeContractionOff, { CapabilityKernel });
 }
 
 template<> inline void
-SPIRVMap<SPIRVStorageClassKind, SPIRVCapabilityKind>::init() {
-  add(StorageClassInput, CapabilityShader);
-  add(StorageClassUniform, CapabilityShader);
-  add(StorageClassOutput, CapabilityShader);
-  add(StorageClassPrivate, CapabilityShader);
-  add(StorageClassFunction, CapabilityShader);
-  add(StorageClassGeneric, CapabilityKernel);
-  add(StorageClassAtomicCounter, CapabilityShader);
+SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
+  add(MemoryModelSimple, { CapabilityShader });
+  add(MemoryModelGLSL450, { CapabilityShader });
+  add(MemoryModelOpenCL, { CapabilityKernel });
 }
 
 template<> inline void
-SPIRVMap<Decoration, SPIRVCapabilityKind>::init() {
-  add(DecorationRelaxedPrecision, CapabilityShader);
-  add(DecorationSpecId, CapabilityShader);
-  add(DecorationBlock, CapabilityShader);
-  add(DecorationBufferBlock, CapabilityShader);
-  add(DecorationRowMajor, CapabilityMatrix);
-  add(DecorationColMajor, CapabilityMatrix);
-  add(DecorationArrayStride, CapabilityShader);
-  add(DecorationMatrixStride, CapabilityShader);
-  add(DecorationGLSLShared, CapabilityShader);
-  add(DecorationGLSLPacked, CapabilityShader);
-  add(DecorationCPacked, CapabilityKernel);
-  add(DecorationNoPerspective, CapabilityShader);
-  add(DecorationFlat, CapabilityShader);
-  add(DecorationPatch, CapabilityTessellation);
-  add(DecorationCentroid, CapabilityShader);
-  add(DecorationSample, CapabilityShader);
-  add(DecorationInvariant, CapabilityShader);
-  add(DecorationConstant, CapabilityKernel);
-  add(DecorationUniform, CapabilityShader);
-  add(DecorationSaturatedConversion, CapabilityKernel);
-  add(DecorationStream, CapabilityGeometryStreams);
-  add(DecorationLocation, CapabilityShader);
-  add(DecorationComponent, CapabilityShader);
-  add(DecorationIndex, CapabilityShader);
-  add(DecorationBinding, CapabilityShader);
-  add(DecorationDescriptorSet, CapabilityShader);
-  add(DecorationXfbBuffer, CapabilityTransformFeedback);
-  add(DecorationXfbStride, CapabilityTransformFeedback);
-  add(DecorationFuncParamAttr, CapabilityKernel);
-  add(DecorationFPRoundingMode, CapabilityKernel);
-  add(DecorationFPFastMathMode, CapabilityKernel);
-  add(DecorationLinkageAttributes, CapabilityLinkage);
-  add(DecorationNoContraction, CapabilityShader);
-  add(DecorationInputAttachmentIndex, CapabilityInputAttachment);
-  add(DecorationAlignment, CapabilityKernel);
+SPIRVMap<SPIRVStorageClassKind, SPIRVCapVec>::init() {
+  add(StorageClassInput, { CapabilityShader });
+  add(StorageClassUniform, { CapabilityShader });
+  add(StorageClassOutput, { CapabilityShader });
+  add(StorageClassPrivate, { CapabilityShader });
+  add(StorageClassGeneric, { CapabilityGenericPointer });
+  add(StorageClassPushConstant, { CapabilityShader });
+  add(StorageClassAtomicCounter, { CapabilityAtomicStorage });
+}
+
+template<> inline void
+SPIRVMap<SPIRVImageDimKind, SPIRVCapVec>::init() {
+  add(Dim1D, { CapabilitySampled1D });
+  add(DimCube, { CapabilityShader });
+  add(DimRect, { CapabilitySampledRect });
+  add(DimBuffer, { CapabilitySampledBuffer });
+  add(DimSubpassData, {CapabilityInputAttachment });
+}
+
+template<> inline void
+SPIRVMap<ImageFormat, SPIRVCapVec>::init() {
+  add(ImageFormatRgba32f, { CapabilityShader });
+  add(ImageFormatRgba16f, { CapabilityShader });
+  add(ImageFormatR32f, { CapabilityShader });
+  add(ImageFormatRgba8, { CapabilityShader });
+  add(ImageFormatRgba8Snorm, { CapabilityShader });
+  add(ImageFormatRg32f, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg16f, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR11fG11fB10f, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR16f, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRgba16, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRgb10A2, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg16, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg8, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR16, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR8, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRgba16Snorm, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg16Snorm, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg8Snorm, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR16Snorm, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR8Snorm, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRgba32i, { CapabilityShader });
+  add(ImageFormatRgba16i, { CapabilityShader });
+  add(ImageFormatRgba8i, { CapabilityShader });
+  add(ImageFormatR32i, { CapabilityShader });
+  add(ImageFormatRg32i, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg16i, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg8i, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR16i, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR8i, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRgba32ui, { CapabilityShader });
+  add(ImageFormatRgba16ui, { CapabilityShader });
+  add(ImageFormatRgba8ui, { CapabilityShader });
+  add(ImageFormatR32ui, { CapabilityShader });
+  add(ImageFormatRgb10a2ui, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg32ui, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatRg16ui, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR16ui, { CapabilityStorageImageExtendedFormats });
+  add(ImageFormatR8ui, { CapabilityStorageImageExtendedFormats });
+}
+
+template<> inline void
+SPIRVMap<ImageOperandsMask, SPIRVCapVec>::init() {
+  add(ImageOperandsBiasMask, { CapabilityShader });
+  add(ImageOperandsOffsetMask, { CapabilityImageGatherExtended });
+  add(ImageOperandsMinLodMask, { CapabilityMinLod });
+}
+
+template<> inline void
+SPIRVMap<Decoration, SPIRVCapVec>::init() {
+  add(DecorationRelaxedPrecision, { CapabilityShader });
+  add(DecorationSpecId, { CapabilityShader });
+  add(DecorationBlock, { CapabilityShader });
+  add(DecorationBufferBlock, { CapabilityShader });
+  add(DecorationRowMajor, { CapabilityMatrix });
+  add(DecorationColMajor, { CapabilityMatrix });
+  add(DecorationArrayStride, { CapabilityShader });
+  add(DecorationMatrixStride, { CapabilityMatrix });
+  add(DecorationGLSLShared, { CapabilityShader });
+  add(DecorationGLSLPacked, { CapabilityShader });
+  add(DecorationCPacked, { CapabilityKernel });
+  add(DecorationNoPerspective, { CapabilityShader });
+  add(DecorationFlat, { CapabilityShader });
+  add(DecorationPatch, { CapabilityTessellation });
+  add(DecorationCentroid, { CapabilityShader });
+  add(DecorationSample, { CapabilitySampleRateShading });
+  add(DecorationInvariant, { CapabilityShader });
+  add(DecorationConstant, { CapabilityKernel });
+  add(DecorationUniform, { CapabilityShader });
+  add(DecorationSaturatedConversion, { CapabilityKernel });
+  add(DecorationStream, { CapabilityGeometryStreams });
+  add(DecorationLocation, { CapabilityShader });
+  add(DecorationComponent, { CapabilityShader });
+  add(DecorationIndex, { CapabilityShader });
+  add(DecorationBinding, { CapabilityShader });
+  add(DecorationDescriptorSet, { CapabilityShader });
+  add(DecorationOffset, { CapabilityShader });
+  add(DecorationXfbBuffer, { CapabilityTransformFeedback });
+  add(DecorationXfbStride, { CapabilityTransformFeedback });
+  add(DecorationFuncParamAttr, { CapabilityKernel });
+  add(DecorationFPRoundingMode, { CapabilityKernel });
+  add(DecorationFPFastMathMode, { CapabilityKernel });
+  add(DecorationLinkageAttributes, { CapabilityLinkage });
+  add(DecorationNoContraction, { CapabilityShader });
+  add(DecorationInputAttachmentIndex, { CapabilityInputAttachment });
+  add(DecorationAlignment, { CapabilityKernel });
+}
+
+template<> inline void
+SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
+  add(BuiltInPosition, { CapabilityShader });
+  add(BuiltInPointSize, { CapabilityShader });
+  add(BuiltInClipDistance, { CapabilityClipDistance });
+  add(BuiltInCullDistance, { CapabilityCullDistance });
+  add(BuiltInVertexId, { CapabilityShader });
+  add(BuiltInInstanceId, { CapabilityShader });
+  add(BuiltInPrimitiveId, { CapabilityGeometry, CapabilityTessellation });
+  add(BuiltInInvocationId, { CapabilityGeometry, CapabilityTessellation });
+  add(BuiltInLayer, { CapabilityGeometry });
+  add(BuiltInViewportIndex, { CapabilityMultiViewport });
+  add(BuiltInTessLevelOuter, { CapabilityTessellation });
+  add(BuiltInTessLevelInner, { CapabilityTessellation });
+  add(BuiltInTessCoord, { CapabilityTessellation });
+  add(BuiltInPatchVertices, { CapabilityTessellation });
+  add(BuiltInFragCoord, { CapabilityShader });
+  add(BuiltInPointCoord, { CapabilityShader });
+  add(BuiltInFrontFacing, { CapabilityShader });
+  add(BuiltInSampleId, { CapabilitySampleRateShading });
+  add(BuiltInSamplePosition, { CapabilitySampleRateShading });
+  add(BuiltInSampleMask, { CapabilitySampleRateShading });
+  add(BuiltInFragDepth, { CapabilityShader });
+  add(BuiltInHelperInvocation, { CapabilityShader });
+  add(BuiltInWorkDim, { CapabilityKernel });
+  add(BuiltInGlobalSize, { CapabilityKernel });
+  add(BuiltInEnqueuedWorkgroupSize, { CapabilityKernel });
+  add(BuiltInGlobalOffset, { CapabilityKernel });
+  add(BuiltInGlobalLinearId, { CapabilityKernel });
+  add(BuiltInSubgroupSize, { CapabilityKernel });
+  add(BuiltInSubgroupMaxSize, { CapabilityKernel });
+  add(BuiltInNumSubgroups, { CapabilityKernel });
+  add(BuiltInNumEnqueuedSubgroups, { CapabilityKernel });
+  add(BuiltInSubgroupId, { CapabilityKernel });
+  add(BuiltInSubgroupLocalInvocationId, { CapabilityKernel });
+  add(BuiltInVertexIndex, { CapabilityShader });
+  add(BuiltInInstanceIndex, { CapabilityShader });
+}
+
+template<> inline void
+SPIRVMap<MemorySemanticsMask, SPIRVCapVec>::init() {
+  add(MemorySemanticsUniformMemoryMask, { CapabilityShader });
+  add(MemorySemanticsAtomicCounterMemoryMask, { CapabilityAtomicStorage });
 }
 
 inline unsigned
