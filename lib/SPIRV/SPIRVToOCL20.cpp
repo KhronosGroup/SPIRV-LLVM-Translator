@@ -1,4 +1,4 @@
-//===- SPIRVToOCL20.cpp - Transform SPIR-V builtins to OCL20 builtins-------===//
+﻿//===- SPIRVToOCL20.cpp - Transform SPIR-V builtins to OCL20 builtins-------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -344,36 +344,38 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {
     auto OrderIdx = Ptr + 2;
     if (OC == OpAtomicIIncrement ||
         OC == OpAtomicIDecrement) {
-      Args.erase(Args.begin() + OrderIdx, Args.begin() + ScopeIdx + 1);
-    } else {
-      Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
-          [](unsigned I){
-        return rmap<OCLScopeKind>(static_cast<Scope>(I));
-      });
-      for (size_t I = 0; I < NumOrder; ++I)
-        Args[OrderIdx + I] = mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),
-            [](unsigned Ord) {
-        return mapSPIRVMemOrderToOCL(Ord);
-      });
-      std::swap(Args[ScopeIdx], Args.back());
-
-      if(OC == OpAtomicCompareExchange ||
-         OC == OpAtomicCompareExchangeWeak) {
-        // OpAtomicCompareExchange[Weak] semantics is different from
-        // atomic_compare_exchange_[strong|weak] semantics as well as
-        // arguments order.
-        // OCL built-ins returns boolean value and stores a new/original
-        // value by pointer passed as 2nd argument (aka expected) while SPIR-V
-        // instructions returns this new/original value as a resulting value.
-        AllocaInst *pExpected = new AllocaInst(CI->getType(), "expected", pInsertBefore);
-        pExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
-        new StoreInst(Args[1], pExpected, pInsertBefore);
-        Args[1] = pExpected;
-        std::swap(Args[3], Args[4]);
-        std::swap(Args[2], Args[3]);
-
-        RetTy = Type::getInt1Ty(*Ctx);
-      }
+      // Since OpenCL 1.2 atomic_inc and atomic_dec builtins don't have, memory
+      // scope and memory order syntax, and OpenCL 2.0 doesn't have such
+      // builtins, therefore we translate these instructions to
+      // atomic_fetch_add_explicit and atomic_fetch_sub_explicit OpenCL 2.0
+      // builtins with "operand" argument = 1.
+      Name = OCLSPIRVBuiltinMap::rmap(OC == OpAtomicIIncrement ?
+                                      OpAtomicIAdd: OpAtomicISub);
+      Type* ValueTy = cast<PointerType>(Args[Ptr]->getType())->getElementType();
+      assert(ValueTy->isIntegerTy());
+      Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
+    }
+    Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
+      [](unsigned I) { return rmap<OCLScopeKind>(static_cast<Scope>(I));});
+    for (size_t I = 0; I < NumOrder; ++I)
+      Args[OrderIdx + I] = mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),
+        [](unsigned Ord) { return mapSPIRVMemOrderToOCL(Ord); });
+    std::swap(Args[ScopeIdx], Args.back());
+    if(OC == OpAtomicCompareExchange ||
+       OC == OpAtomicCompareExchangeWeak) {
+      // OpAtomicCompareExchange[Weak] semantics is different from
+      // atomic_compare_exchange_[strong|weak] semantics as well as
+      // arguments order.
+      // OCL built-ins returns boolean value and stores a new/original
+      // value by pointer passed as 2nd argument (aka expected) while SPIR-V
+      // instructions returns this new/original value as a resulting value.
+      AllocaInst *pExpected = new AllocaInst(CI->getType(), "expected", pInsertBefore);
+      pExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
+      new StoreInst(Args[1], pExpected, pInsertBefore);
+      Args[1] = pExpected;
+      std::swap(Args[3], Args[4]);
+      std::swap(Args[2], Args[3]);
+      RetTy = Type::getInt1Ty(*Ctx);
     }
     return Name;
   },
