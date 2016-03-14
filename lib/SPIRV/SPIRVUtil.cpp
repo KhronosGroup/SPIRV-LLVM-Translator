@@ -690,7 +690,8 @@ addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
 
   auto F = getOrCreateFunction(M, RetTy, getTypes(Args),
       FuncName, Mangle, Attrs, TakeFuncName);
-  auto CI = CallInst::Create(F, Args, InstName, Pos);
+  // Cannot assign a name to void typed values
+  auto CI = CallInst::Create(F, Args, RetTy->isVoidTy() ? "" : InstName, Pos);
   CI->setCallingConv(F->getCallingConv());
   return CI;
 }
