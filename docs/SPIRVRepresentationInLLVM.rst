@@ -115,6 +115,15 @@ where
 
  * {ConversionOpCodeName} = ConvertFToU|ConvertFToS|ConvertUToF|ConvertUToS|UConvert|SConvert|FConvert|SatConvertSToU|SatConvertUToS
 
+SPIR-V Builtin Reinterpret / Bitcast Function Names
+---------------------------------------------------
+
+The unmangled names of SPIR-V builtin reinterpret / bitcast functions follow the convention:
+
+.. code-block:: c
+
+  __spirv_{BitcastOpCodeName}_R{ReturnType}
+
 SPIR-V Builtin ImageSample Function Names
 ----------------------------------------
 
