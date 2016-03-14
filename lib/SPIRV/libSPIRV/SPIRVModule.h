@@ -144,6 +144,7 @@ public:
   virtual void setValidateCapability(bool E){ ValidateCapability = E;}
   virtual void setGeneratorId(unsigned short) = 0;
   virtual void setGeneratorVer(unsigned short) = 0;
+  virtual void resolveUnknownStructFields() = 0;
 
   // Object creation functions
   template<class T> T *add(T *Entry) { addEntry(Entry); return Entry;}
@@ -153,6 +154,8 @@ public:
   virtual SPIRVString *getString(const std::string &Str) = 0;
   virtual SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST,
       SPIRVWord MemberNumber, const std::string &Name) = 0;
+  virtual void addUnknownStructField(SPIRVTypeStruct *, unsigned idx,
+                                     SPIRVId id) = 0;
   virtual SPIRVLine *addLine(SPIRVEntry *E, SPIRVString *FileName, SPIRVWord Line,
       SPIRVWord Column) = 0;
   virtual const SPIRVDecorateGeneric *addDecorate(const SPIRVDecorateGeneric*)
@@ -189,8 +192,8 @@ public:
   virtual SPIRVTypeInt *addIntegerType(unsigned) = 0;
   virtual SPIRVTypeOpaque *addOpaqueType(const std::string &) = 0;
   virtual SPIRVTypePointer *addPointerType(SPIRVStorageClassKind, SPIRVType *) = 0;
-  virtual SPIRVTypeStruct *addStructType(const std::vector<SPIRVType *> &,
-      const std::string &, bool) = 0;
+  virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &) = 0;
+  virtual void closeStructType(SPIRVTypeStruct *, bool) = 0;
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord) = 0;
   virtual SPIRVTypeVoid *addVoidType() = 0;
   virtual SPIRVType *addOpaqueGenericType(Op) = 0;

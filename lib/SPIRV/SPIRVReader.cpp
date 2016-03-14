@@ -692,17 +692,19 @@ SPIRVToLLVM::transType(SPIRVType *T) {
   }
   case OpTypeStruct: {
     auto ST = static_cast<SPIRVTypeStruct *>(T);
-    std::vector<Type *> MT;
-    for (size_t I = 0, E = ST->getMemberCount(); I != E; ++I)
-      MT.push_back(transType(ST->getMemberType(I)));
     auto Name = ST->getName();
     if (!Name.empty()) {
       if (auto OldST = M->getTypeByName(Name))
         OldST->setName("");
     }
-    return mapType(T, StructType::create(*Context, MT, Name,
-      ST->isPacked()));
-    }
+    auto *StructTy = StructType::create(*Context, Name);
+    mapType(ST, StructTy);
+    SmallVector<Type *, 4> MT;
+    for (size_t I = 0, E = ST->getMemberCount(); I != E; ++I)
+      MT.push_back(transType(ST->getMemberType(I)));
+    StructTy->setBody(MT, ST->isPacked());
+    return StructTy;
+  }
   case OpTypePipe: {
     auto PT = static_cast<SPIRVTypePipe *>(T);
     return mapType(T, getOrCreateOpaquePtrType(M,
@@ -2464,6 +2466,7 @@ llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
 
   BM->setAutoAddCapability(false);
   IS >> *BM;
+  BM->resolveUnknownStructFields();
 
   SPIRVToLLVM BTL(M, BM.get());
   bool Succeed = true;

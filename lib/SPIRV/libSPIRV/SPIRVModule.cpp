@@ -144,6 +144,7 @@ public:
   }
   void setGeneratorId(unsigned short Id) { GeneratorId = Id; }
   void setGeneratorVer(unsigned short Ver) { GeneratorVer = Ver; }
+  void resolveUnknownStructFields();
 
   // Object creation functions
   template<class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -152,6 +153,8 @@ public:
   virtual SPIRVString *getString(const std::string &Str);
   virtual SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST,
       SPIRVWord MemberNumber, const std::string &Name);
+  virtual void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
+                                     SPIRVId ID);
   virtual SPIRVLine *addLine(SPIRVEntry *E, SPIRVString *FileName, SPIRVWord Line,
       SPIRVWord Column);
   virtual void addCapability(SPIRVCapabilityKind);
@@ -189,8 +192,8 @@ public:
       const SPIRVTypeImageDescriptor &, SPIRVAccessQualifierKind);
   virtual SPIRVTypeSampler *addSamplerType();
   virtual SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T);
-  virtual SPIRVTypeStruct *addStructType(const std::vector<SPIRVType *>&,
-      const std::string &, bool);
+  virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &);
+  virtual void closeStructType(SPIRVTypeStruct *T, bool);
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord);
   virtual SPIRVType *addOpaqueGenericType(Op);
   virtual SPIRVTypePipe *addPipeType();
@@ -316,6 +319,8 @@ private:
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdSet> SPIRVExecModelIdSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdVec> SPIRVExecModelIdVecMap;
   typedef std::unordered_map<std::string, SPIRVString*> SPIRVStringMap;
+  typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
+      SPIRVUnknownStructFieldMap;
 
   SPIRVTypeVec TypeVec;
   SPIRVIdToEntryMap IdEntryMap;
@@ -335,6 +340,7 @@ private:
   SPIRVExecModelIdVecMap EntryPointVec;
   SPIRVStringMap StrMap;
   SPIRVCapSet CapSet;
+  SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt*> IntTypeMap;
   std::map<unsigned, SPIRVConstant*> LiteralMap;
 
@@ -602,6 +608,19 @@ SPIRVModuleImpl::setName(SPIRVEntry *E, const std::string &Name) {
     NamedId.erase(E->getId());
 }
 
+void SPIRVModuleImpl::resolveUnknownStructFields() {
+  for (auto &KV : UnknownStructFieldMap) {
+    auto *Struct = KV.first;
+    for (auto &Indices : KV.second) {
+      unsigned I = Indices.first;
+      SPIRVId ID = Indices.second;
+
+      auto Ty = static_cast<SPIRVType *>(getEntry(ID));
+      Struct->setMemberType(I, Ty);
+    }
+  }
+}
+
 // Type creation functions
 template<class T>
 T *
@@ -662,13 +681,15 @@ SPIRVModuleImpl::addOpaqueType(const std::string& Name) {
   return addType(new SPIRVTypeOpaque(this, getId(), Name));
 }
 
-SPIRVTypeStruct*
-SPIRVModuleImpl::addStructType(const std::vector<SPIRVType*> &MemberTypes,
-    const std::string &Name, bool Packed) {
-  auto T = new SPIRVTypeStruct(this, getId(), MemberTypes, Name);
+SPIRVTypeStruct *SPIRVModuleImpl::openStructType(unsigned NumMembers,
+                                                 const std::string &Name) {
+  auto T = new SPIRVTypeStruct(this, getId(), NumMembers, Name);
+  return T;
+}
+
+void SPIRVModuleImpl::closeStructType(SPIRVTypeStruct *T, bool Packed) {
   addType(T);
   T->setPacked(Packed);
-  return T;
 }
 
 SPIRVTypeVector*
@@ -1205,6 +1226,11 @@ SPIRVMemberName*
 SPIRVModuleImpl::addMemberName(SPIRVTypeStruct* ST,
     SPIRVWord MemberNumber, const std::string& Name) {
   return add(new SPIRVMemberName(ST, MemberNumber, Name));
+}
+
+void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
+                                            SPIRVId ID) {
+  UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
 }
 
 std::istream &

@@ -380,6 +380,37 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
   return true;
 }
 
+static bool recursiveType(const StructType *ST, const Type *Ty) {
+  SmallPtrSet<const StructType *, 4> Seen;
+
+  std::function<bool(const Type *Ty)> run = [&](const Type *Ty) {
+    if (!isa<CompositeType>(Ty))
+      return false;
+
+    if (auto *StructTy = dyn_cast<StructType>(Ty)) {
+      if (StructTy == ST)
+        return true;
+
+      if (Seen.count(StructTy))
+        return false;
+
+      Seen.insert(StructTy);
+
+      return find_if(StructTy->subtype_begin(), StructTy->subtype_end(), run) !=
+             StructTy->subtype_end();
+    }
+
+    if (auto *PtrTy = dyn_cast<PointerType>(Ty))
+      return run(PtrTy->getPointerElementType());
+
+    if (auto *ArrayTy = dyn_cast<ArrayType>(Ty))
+      return run(ArrayTy->getArrayElementType());
+
+    return false;
+  };
+
+  return run(Ty);
+}
 
 SPIRVType *
 LLVMToSPIRV::transType(Type *T) {
@@ -500,13 +531,30 @@ LLVMToSPIRV::transType(Type *T) {
 
   if (auto ST = dyn_cast<StructType>(T)) {
     assert(ST->isSized());
-    std::vector<SPIRVType *> MT;
-    for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I)
-      MT.push_back(transType(ST->getElementType(I)));
+    std::vector<SPIRVType *> MT(T->getStructNumElements(), nullptr);
+
     std::string Name;
     if (ST->hasName())
       Name = ST->getName();
-    return mapType(T, BM->addStructType(MT, Name, ST->isPacked()));
+    auto *Struct = BM->openStructType(T->getStructNumElements(), Name);
+    mapType(T, Struct);
+
+    SmallVector<unsigned, 4> ForwardRefs;
+
+    for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
+      auto *ElemTy = ST->getElementType(I);
+      if (isa<PointerType>(ElemTy) && recursiveType(ST, ElemTy))
+        ForwardRefs.push_back(I);
+      else
+        Struct->setMemberType(I, transType(ST->getElementType(I)));
+    }
+
+    BM->closeStructType(Struct, ST->isPacked());
+
+    for (auto I : ForwardRefs)
+        Struct->setMemberType(I, transType(ST->getElementType(I)));
+
+    return Struct;
   }
 
   if (FunctionType *FT = dyn_cast<FunctionType>(T)) {
