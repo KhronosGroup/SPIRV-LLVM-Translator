@@ -521,7 +521,7 @@ bool
 SPIRVToLLVM::transOCLBuiltinsFromVariables(){
   std::vector<GlobalVariable *> WorkList;
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    SPIRVBuiltinVariableKind Kind = BuiltInCount;
+    SPIRVBuiltinVariableKind Kind;
     if (!isSPIRVBuiltinVariable(I, &Kind))
       continue;
     if (!transOCLBuiltinFromVariable(I, Kind))
@@ -1339,7 +1339,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         BV->getName(), 0, GlobalVariable::NotThreadLocal, AddrSpace);
     LVar->setUnnamedAddr(IsConst && Ty->isArrayTy() &&
         Ty->getArrayElementType()->isIntegerTy(8));
-    SPIRVBuiltinVariableKind BVKind = BuiltInCount;
+    SPIRVBuiltinVariableKind BVKind;
     if (BVar->isBuiltin(&BVKind))
       BuiltinGVMap[LVar] = BVKind;
     return mapValue(BV, LVar);
@@ -2349,7 +2349,7 @@ SPIRVToLLVM::getOCLConvertBuiltinName(SPIRVInstruction* BI) {
   Name += "convert_";
   Name += mapSPIRVTypeToOCLType(U->getType(),
       !isCvtToUnsignedOpCode(OC));
-  SPIRVFPRoundingModeKind Rounding = FPRoundingModeCount;
+  SPIRVFPRoundingModeKind Rounding;
   if (U->isSaturatedConversion())
     Name += "_sat";
   if (U->hasFPRoundingMode(&Rounding)) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 The Khronos Group Inc.
+// Copyright (c) 2014-2016 The Khronos Group Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and/or associated documentation files (the "Materials"),
@@ -39,19 +39,19 @@
 // "Mask" in their name, and a parallel enum that has the shift
 // amount (1 << x) for each corresponding enumerant.
 
-#ifndef spirv_H
-#define spirv_H
+#ifndef spirv_HPP
+#define spirv_HPP
 
 namespace spv {
 
 typedef unsigned int Id;
 
 #define SPV_VERSION 0x10000
-#define SPV_REVISION 2
+#define SPV_REVISION 3
 
 static const unsigned int MagicNumber = 0x07230203;
 static const unsigned int Version = 0x00010000;
-static const unsigned int Revision = 2;
+static const unsigned int Revision = 3;
 static const unsigned int OpCodeMask = 0xffff;
 static const unsigned int WordCountShift = 16;
 
@@ -71,21 +71,18 @@ enum ExecutionModel {
     ExecutionModelFragment = 4,
     ExecutionModelGLCompute = 5,
     ExecutionModelKernel = 6,
-    ExecutionModelCount, /* internal use only */
 };
 
 enum AddressingModel {
     AddressingModelLogical = 0,
     AddressingModelPhysical32 = 1,
     AddressingModelPhysical64 = 2,
-    AddressingModelCount /* internal use only */
 };
 
 enum MemoryModel {
     MemoryModelSimple = 0,
     MemoryModelGLSL450 = 1,
     MemoryModelOpenCL = 2,
-    MemoryModelCount /* internal use only */
 };
 
 enum ExecutionMode {
@@ -120,7 +117,6 @@ enum ExecutionMode {
     ExecutionModeOutputTriangleStrip = 29,
     ExecutionModeVecTypeHint = 30,
     ExecutionModeContractionOff = 31,
-    ExecutionModeCount /* internal use only */
 };
 
 enum StorageClass {
@@ -136,7 +132,6 @@ enum StorageClass {
     StorageClassPushConstant = 9,
     StorageClassAtomicCounter = 10,
     StorageClassImage = 11,
-    StorageClassCount /* internal use only */
 };
 
 enum Dim {
@@ -147,7 +142,6 @@ enum Dim {
     DimRect = 4,
     DimBuffer = 5,
     DimSubpassData = 6,
-    DimCount /* internal use only */
 };
 
 enum SamplerAddressingMode {
@@ -293,14 +287,12 @@ enum FPRoundingMode {
     FPRoundingModeRTZ = 1,
     FPRoundingModeRTP = 2,
     FPRoundingModeRTN = 3,
-    FPRoundingModeCount /* internal use only */
 };
 
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
     LinkageTypeInternal, /* internal use only */
-    LinkageTypeCount /* internal use only */
 };
 
 enum AccessQualifier {
@@ -318,7 +310,6 @@ enum FunctionParameterAttribute {
     FunctionParameterAttributeNoCapture = 5,
     FunctionParameterAttributeNoWrite = 6,
     FunctionParameterAttributeNoReadWrite = 7,
-    FunctionParameterAttributeCount /* internal use only */
 };
 
 enum Decoration {
@@ -409,7 +400,6 @@ enum BuiltIn {
     BuiltInSubgroupLocalInvocationId = 41,
     BuiltInVertexIndex = 42,
     BuiltInInstanceIndex = 43,
-    BuiltInCount /* internal use only */
 };
 
 enum SelectionControlShift {
@@ -447,7 +437,6 @@ enum FunctionControlMask {
     FunctionControlDontInlineMask = 0x00000002,
     FunctionControlPureMask = 0x00000004,
     FunctionControlConstMask = 0x00000008,
-    FunctionControlMaskMax = 0xF /* internal use only */
 };
 
 enum MemorySemanticsShift {
@@ -502,7 +491,6 @@ enum GroupOperation {
     GroupOperationReduce = 0,
     GroupOperationInclusiveScan = 1,
     GroupOperationExclusiveScan = 2,
-    GroupOperationCount /* internal use only */
 };
 
 enum KernelEnqueueFlags {
@@ -575,7 +563,8 @@ enum Capability {
     CapabilityTransformFeedback = 53,
     CapabilityGeometryStreams = 54,
     CapabilityStorageImageReadWithoutFormat = 55,
-    CapabilityStorageImageWriteWithoutFormat = 56
+    CapabilityStorageImageWriteWithoutFormat = 56,
+    CapabilityMultiViewport = 57,
 };
 
 enum Op {
@@ -872,6 +861,7 @@ enum Op {
     OpNoLine = 317,
     OpAtomicFlagTestAndSet = 318,
     OpAtomicFlagClear = 319,
+    OpImageSparseRead = 320,
     OpForward = 1024, /* internal use only */
 };
 
@@ -888,5 +878,5 @@ inline KernelProfilingInfoMask operator|(KernelProfilingInfoMask a, KernelProfil
 
 }  // end namespace spv
 
-#endif  // #ifndef spirv_H
+#endif  // #ifndef spirv_HPP
 

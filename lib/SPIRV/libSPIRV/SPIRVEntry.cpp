@@ -236,7 +236,7 @@ SPIRVEntry::getEntry(SPIRVId TheId) const {
 void
 SPIRVEntry::validateFunctionControlMask(SPIRVWord TheFCtlMask)
   const {
-  SPIRVCK(TheFCtlMask <= (unsigned)FunctionControlMaskMax,
+  SPIRVCK(isValidFunctionControlMask(TheFCtlMask),
       InvalidFunctionControlMask, "");
 }
 
@@ -551,10 +551,10 @@ SPIRVMemoryModel::decode(std::istream &I) {
 
 void
 SPIRVMemoryModel::validate() const {
-  unsigned AM = Module->getAddressingModel();
-  unsigned MM = Module->getMemoryModel();
-  SPIRVCK(AM < AddressingModelCount, InvalidAddressingModel, "Actual is "+AM );
-  SPIRVCK(MM < MemoryModelCount, InvalidMemoryModel, "Actual is "+MM);
+  auto AM = Module->getAddressingModel();
+  auto MM = Module->getMemoryModel();
+  SPIRVCK(isValid(AM), InvalidAddressingModel, "Actual is "+AM );
+  SPIRVCK(isValid(MM), InvalidMemoryModel, "Actual is "+MM);
 }
 
 void

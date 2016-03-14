@@ -1133,11 +1133,11 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
       continue;
     DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;
-    SPIRVBuiltinVariableKind BVKind = BuiltInCount;
+    SPIRVBuiltinVariableKind BVKind;
     if (!SPIRSPIRVBuiltinVariableMap::find(DemangledName, &BVKind))
       continue;
     BuiltinVarName = std::string(kSPIRVName::Prefix) +
-        SPIRVBuiltinVariableNameMap::map(BVKind);
+        SPIRVBuiltInNameMap::map(BVKind);
     DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
     bool IsVec = I->getFunctionType()->getNumParams() > 0;
     Type *GVType = IsVec ? VectorType::get(I->getReturnType(),3) :
