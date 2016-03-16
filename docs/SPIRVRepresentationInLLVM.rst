@@ -49,6 +49,13 @@ where
 Postfixes {Dim}, {Depth}, {Arrayed}, {MS}, {Sampled} and {Format} take integer
 literal values which are defined by the SPIR-V spec.
 
+OpTypeSampledImage
+------------------
+OpTypeSampledImage is mapped to LLVM opaque type
+spirv.SampledImage._{Postfixes} and mangled as __spirv_SampledImage__{Postfixes},
+where {Postfixes} are the same as the postfixes of the original image type, as
+defined above in this section.
+
 OpTypePipe
 ----------
 OpTypePipe is mapped to LLVM opaque type
