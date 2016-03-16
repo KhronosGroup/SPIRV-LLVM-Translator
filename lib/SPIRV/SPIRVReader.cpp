@@ -2436,11 +2436,14 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I, BasicBlock *BB
       I, mutateCallInstOCL(
              M, CI,
              [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
-               Type *Int32Ty = Type::getInt32Ty(*Context);
-               RetTy = Int32Ty;
-               if (CI->getType()->isVectorTy())
-                 RetTy = VectorType::get(Int32Ty,
+               Type *IntTy = Type::getInt32Ty(*Context);
+               RetTy = IntTy;
+               if (CI->getType()->isVectorTy()) {
+                 if(cast<VectorType>(CI->getOperand(0)->getType())->getElementType()->isDoubleTy())
+                   IntTy = Type::getInt64Ty(*Context);
+                 RetTy = VectorType::get(IntTy,
                                          CI->getType()->getVectorNumElements());
+               }
                return CI->getCalledFunction()->getName();
              },
              [=](CallInst *NewCI) -> Instruction * {
