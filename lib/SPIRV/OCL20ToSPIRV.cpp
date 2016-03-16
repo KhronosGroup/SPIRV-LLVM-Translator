@@ -387,8 +387,10 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       visitCallAtomicWorkItemFence(PCI);
       return;
     }
-    if (DemangledName == kOCLBuiltinName::AtomicCmpXchgStrong ||
-        DemangledName == kOCLBuiltinName::AtomicCmpXchgWeak) {
+    if (DemangledName == kOCLBuiltinName::AtomicCmpXchgWeak ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgStrong ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgWeakExplicit ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgStrongExplicit) {
       assert(CLVer == kOCLVer::CL20 && "Wrong version of OpenCL");
       PCI = visitCallAtomicCmpXchg(PCI, DemangledName);
     }
