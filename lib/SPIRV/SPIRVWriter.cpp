@@ -737,7 +737,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         nullptr
         ));
     mapValue(V, BVar);
-    spv::BuiltIn Builtin;
+    spv::BuiltIn Builtin = spv::BuiltInPosition;
     if (!GV->hasName() || !getSPIRVBuiltin(GV->getName().str(), Builtin))
       return BVar;
     BVar->setBuiltin(Builtin);
