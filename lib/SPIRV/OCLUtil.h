@@ -142,8 +142,10 @@ namespace kOCLBuiltinName {
   const static char AtomCmpXchg[]        = "atom_cmpxchg";
   const static char AtomicPrefix[]       = "atomic_";
   const static char AtomicCmpXchg[]      = "atomic_cmpxchg";
-  const static char AtomicCmpXchgStrong[] = "atomic_compare_exchange_strong";
-  const static char AtomicCmpXchgWeak[]   = "atomic_compare_exchange_weak";
+  const static char AtomicCmpXchgStrong[]         = "atomic_compare_exchange_strong";
+  const static char AtomicCmpXchgStrongExplicit[] = "atomic_compare_exchange_strong_explicit";
+  const static char AtomicCmpXchgWeak[]           = "atomic_compare_exchange_weak";
+  const static char AtomicCmpXchgWeakExplicit[]   = "atomic_compare_exchange_weak_explicit";
   const static char AtomicInit[]          = "atomic_init";
   const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
   const static char Barrier[]            = "barrier";
