@@ -39,6 +39,7 @@
 
 #include "SPIRVInternal.h"
 #include "OCLUtil.h"
+#include "OCLTypeToSPIRV.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
@@ -75,6 +76,11 @@ public:
     initializeOCL20ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
   virtual bool runOnModule(Module &M);
+
+  void getAnalysisUsage(AnalysisUsage &AU) const {
+    AU.addRequired<OCLTypeToSPIRV>();
+  }
+
   virtual void visitCallInst(CallInst &CI);
 
   /// Transform barrier/work_group_barrier to __spirv_ControlBarrier.
@@ -999,7 +1005,10 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
-        auto SampledImgTy = getSPIRVSampledImageType(M, Args[0]->getType());
+        auto SampledImgTy = getSPIRVTypeByChangeBaseTypeName(M,
+            getAnalysis<OCLTypeToSPIRV>().getAdaptedType(Args[0]),
+            kSPIRVTypeName::Image,
+            kSPIRVTypeName::SampledImg);
         Value *SampledImgArgs[] = {Args[0], Args[1]};
         auto SampledImg = addCallInstSPIRV(
             M, getSPIRVFuncName(OpSampledImage), SampledImgTy, SampledImgArgs,
@@ -1396,7 +1405,10 @@ void OCL20ToSPIRV::visitCallScalToVec(CallInst *CI, StringRef MangledName,
 }
 }
 
-INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
+INITIALIZE_PASS_BEGIN(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
+    false, false)
+INITIALIZE_PASS_DEPENDENCY(OCLTypeToSPIRV)
+INITIALIZE_PASS_END(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
 ModulePass *llvm::createOCL20ToSPIRV() {

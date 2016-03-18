@@ -628,14 +628,14 @@ SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST) {
 
 std::string
 SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST) {
-  return std::string(kSPIRVTypeName::SampledImg)
-       + kSPR2TypeName::Delimiter
-       + rmap<std::string>(ST->getImageType()->getDescriptor());
+  return getSPIRVTypeName(kSPIRVTypeName::SampledImg,
+    getSPIRVImageTypePostfixes(ST->getImageType()->getDescriptor(),
+      ST->getImageType()->getAccessQualifier()));
 }
 
 std::string
 SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe* PT) {
-  return SPIR_TYPE_NAME_PIPE_T;
+  return kSPR2TypeName::Pipe;
 }
 
 Type *
