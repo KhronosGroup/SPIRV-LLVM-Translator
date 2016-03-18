@@ -2466,7 +2466,6 @@ llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
 
   BM->setAutoAddCapability(false);
   IS >> *BM;
-  BM->resolveUnknownStructFields();
 
   SPIRVToLLVM BTL(M, BM.get());
   bool Succeed = true;

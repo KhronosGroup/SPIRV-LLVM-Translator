@@ -196,35 +196,51 @@ public:
   SPIRVTypePointer(SPIRVModule *M, SPIRVId TheId,
       SPIRVStorageClassKind TheStorageClass,
       SPIRVType *ElementType)
-    :SPIRVType(M, 4, OpTypePointer, TheId), StorageClass(TheStorageClass),
-     ElemType(ElementType){
+    :SPIRVType(M, 4, OpTypePointer, TheId), ElemStorageClass(TheStorageClass),
+     ElemTypeId(ElementType->getId()){
     validate();
   }
   // Incomplete constructor
   SPIRVTypePointer():SPIRVType(OpTypePointer),
-      StorageClass(StorageClassFunction),
-      ElemType(NULL){}
+      ElemStorageClass(StorageClassFunction),
+      ElemTypeId(0){}
 
-  SPIRVType *getElementType() const { return ElemType;}
-  SPIRVStorageClassKind getStorageClass() const { return StorageClass;}
+  SPIRVType *getElementType() const {
+    return static_cast<SPIRVType *>(getEntry(ElemTypeId));
+  }
+  SPIRVStorageClassKind getStorageClass() const { return ElemStorageClass;}
   SPIRVCapVec getRequiredCapability() const {
     auto Cap = getVec(CapabilityAddresses);
-    if (ElemType->isTypeFloat(16))
+    if (getValueType(ElemTypeId)->isTypeFloat(16))
       Cap.push_back(CapabilityFloat16Buffer);
-    auto C = getCapability(StorageClass);
+    auto C = getCapability(ElemStorageClass);
     Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
 protected:
-  _SPIRV_DEF_ENCDEC3(Id, StorageClass, ElemType)
+  _SPIRV_DEF_ENCDEC3(Id, ElemStorageClass, ElemTypeId)
   void validate()const {
     SPIRVEntry::validate();
-    ElemType->validate();
-    assert(isValid(StorageClass));
+    assert(isValid(ElemStorageClass));
   }
 private:
-  SPIRVStorageClassKind StorageClass;     // Storage Class
-  SPIRVType *ElemType;                    // Element Type
+  SPIRVStorageClassKind ElemStorageClass; // Storage Class
+  SPIRVId   ElemTypeId;
+};
+
+class SPIRVTypeForwardPointer : public SPIRVEntryNoId<OpTypeForwardPointer> {
+public:
+  SPIRVTypeForwardPointer(SPIRVModule *M, SPIRVTypePointer *Pointer,
+                          SPIRVStorageClassKind SC)
+      : SPIRVEntryNoId(M, 3), Pointer(Pointer), SC(SC) {}
+
+  SPIRVTypeForwardPointer()
+      : Pointer(nullptr), SC(StorageClassUniformConstant) {}
+
+  _SPIRV_DCL_ENCDEC
+private:
+  SPIRVTypePointer *Pointer;
+  SPIRVStorageClassKind SC;
 };
 
 class SPIRVTypeVector:public SPIRVType {
@@ -474,8 +490,10 @@ public:
   SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId,
                   const std::vector<SPIRVType *> &TheMemberTypes,
                   const std::string &TheName)
-      : SPIRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId),
-        MemberTypeVec(TheMemberTypes) {
+      : SPIRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId) {
+    MemberTypeIdVec.resize(TheMemberTypes.size());
+    for (auto &t : TheMemberTypes)
+      MemberTypeIdVec.push_back(t->getId());
     Name = TheName;
     validate();
   }
@@ -484,31 +502,32 @@ public:
       : SPIRVType(M, 2 + NumMembers, OpTypeStruct, TheId) {
     Name = TheName;
     validate();
-    MemberTypeVec.resize(NumMembers);
+    MemberTypeIdVec.resize(NumMembers);
   }
   // Incomplete constructor
   SPIRVTypeStruct() : SPIRVType(OpTypeStruct) {}
 
-  SPIRVWord getMemberCount() const { return MemberTypeVec.size(); }
-  SPIRVType *getMemberType(size_t I) const { return MemberTypeVec[I]; }
-  void setMemberType(size_t I, SPIRVType *Ty) { MemberTypeVec[I] = Ty; }
+  SPIRVWord getMemberCount() const { return MemberTypeIdVec.size(); }
+  SPIRVType *getMemberType(size_t I) const {
+    return static_cast<SPIRVType *>(getEntry(MemberTypeIdVec[I]));
+  }
+  void setMemberType(size_t I, SPIRVType *Ty) { MemberTypeIdVec[I] = Ty->getId(); }
 
   bool isPacked() const;
   void setPacked(bool Packed);
 
-protected:
-  _SPIRV_DCL_ENCDEC
-
   void setWordCount(SPIRVWord WordCount) {
-    MemberTypeVec.resize(WordCount - 2);
+    SPIRVType::setWordCount(WordCount);
+    MemberTypeIdVec.resize(WordCount - 2);
   }
 
-  void validate() const {
-    SPIRVEntry::validate();
-  }
+protected:
+  _SPIRV_DEF_ENCDEC2(Id, MemberTypeIdVec)
+
+  void validate() const { SPIRVEntry::validate(); }
 
 private:
-  std::vector<SPIRVType *> MemberTypeVec; // Member Types
+  std::vector<SPIRVId> MemberTypeIdVec; // Member Type Ids
 };
 
 class SPIRVTypeFunction:public SPIRVType {

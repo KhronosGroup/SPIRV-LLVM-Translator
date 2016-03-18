@@ -198,6 +198,7 @@ public:
   virtual SPIRVType *addOpaqueGenericType(Op);
   virtual SPIRVTypePipe *addPipeType();
   virtual SPIRVTypeVoid *addVoidType();
+  virtual void createForwardPointers();
 
   // Constant creation functions
   virtual SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *);
@@ -307,6 +308,7 @@ private:
   typedef std::set<SPIRVId> SPIRVIdSet;
   typedef std::vector<SPIRVId> SPIRVIdVec;
   typedef std::vector<SPIRVFunction *> SPIRVFunctionVector;
+  typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
   typedef std::vector<SPIRVType *> SPIRVTypeVec;
   typedef std::vector<SPIRVValue *> SPIRVConstantVector;
   typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
@@ -322,6 +324,7 @@ private:
   typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
       SPIRVUnknownStructFieldMap;
 
+  SPIRVForwardPointerVec ForwardPointerVec;
   SPIRVTypeVec TypeVec;
   SPIRVIdToEntryMap IdEntryMap;
   SPIRVFunctionVector FuncVec;
@@ -727,6 +730,31 @@ SPIRVModuleImpl::addSamplerType() {
 SPIRVTypeSampledImage *
 SPIRVModuleImpl::addSampledImageType(SPIRVTypeImage *T) {
   return addType(new SPIRVTypeSampledImage(this, getId(), T));
+}
+
+void SPIRVModuleImpl::createForwardPointers() {
+  std::unordered_set<SPIRVId> Seen;
+
+  for (auto *T : TypeVec) {
+    if (T->hasId())
+      Seen.insert(T->getId());
+
+    if (!T->isTypeStruct())
+      continue;
+
+    auto ST = static_cast<SPIRVTypeStruct *>(T);
+
+    for (unsigned i = 0; i < ST->getStructMemberCount(); ++i) {
+      auto MemberTy = ST->getStructMemberType(i);
+      if (!MemberTy->isTypePointer()) continue;
+      auto Ptr = static_cast<SPIRVTypePointer *>(MemberTy);
+
+      if (Seen.find(Ptr->getId()) == Seen.end()) {
+        ForwardPointerVec.push_back(new SPIRVTypeForwardPointer(
+            this, Ptr, Ptr->getPointerStorageClass()));
+      }
+    }
+  }
 }
 
 SPIRVFunction *
@@ -1156,6 +1184,7 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
     << MI.DecGroupVec
     << MI.DecorateSet
     << MI.GroupDecVec
+    << MI.ForwardPointerVec
     << MI.TypeVec
     << MI.ConstVec
     << MI.VariableVec
@@ -1260,6 +1289,8 @@ operator>> (std::istream &I, SPIRVModule &M) {
     Decoder.getEntry();
 
   MI.optimizeDecorates();
+  MI.resolveUnknownStructFields();
+  MI.createForwardPointers();
   return I;
 }
 

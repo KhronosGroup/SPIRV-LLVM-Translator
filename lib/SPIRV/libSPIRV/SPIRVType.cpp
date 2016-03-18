@@ -240,27 +240,6 @@ SPIRVType::isTypeVectorOrScalarFloat() const {
   return isTypeFloat() || isTypeVectorFloat();
 }
 
-void SPIRVTypeStruct::encode(spv_ostream &O) const {
-  getEncoder(O) << Id << MemberTypeVec;
-}
-
-void SPIRVTypeStruct::decode(std::istream &I) {
-  auto Decoder = getDecoder(I);
-  Decoder >> Id;
-
-  for (size_t i = 0, e = MemberTypeVec.size(); i != e; ++i) {
-    SPIRVId currId;
-    Decoder >> currId;
-
-    if (Decoder.M.exist(currId)) {
-      MemberTypeVec[i] = static_cast<SPIRVType *>(Decoder.M.getEntry(currId));
-    } else {
-      MemberTypeVec[i] = nullptr;
-      Decoder.M.addUnknownStructField(this, i, currId);
-    }
-  }
-}
-
 bool
 SPIRVTypeStruct::isPacked() const {
   return hasDecorate(DecorationCPacked);
@@ -296,5 +275,14 @@ SPIRVTypeArray::getLength() const {
 
 _SPIRV_IMP_ENCDEC3(SPIRVTypeArray, Id, ElemType, Length)
 
+void SPIRVTypeForwardPointer::encode(spv_ostream &O) const {
+  getEncoder(O) << Pointer << SC;
+}
+
+void SPIRVTypeForwardPointer::decode(std::istream &I) {
+  auto Decoder = getDecoder(I);
+  SPIRVId PointerId;
+  Decoder >> PointerId >> SC;
+}
 }
 

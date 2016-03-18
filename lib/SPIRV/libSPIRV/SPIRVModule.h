@@ -198,6 +198,7 @@ public:
   virtual SPIRVTypeVoid *addVoidType() = 0;
   virtual SPIRVType *addOpaqueGenericType(Op) = 0;
   virtual SPIRVTypePipe *addPipeType() = 0;
+  virtual void createForwardPointers() = 0;
 
   // Constants creation functions
   virtual SPIRVValue *addCompositeConstant(SPIRVType *,

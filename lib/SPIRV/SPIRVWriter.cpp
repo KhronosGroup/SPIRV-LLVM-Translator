@@ -383,7 +383,7 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
 static bool recursiveType(const StructType *ST, const Type *Ty) {
   SmallPtrSet<const StructType *, 4> Seen;
 
-  std::function<bool(const Type *Ty)> run = [&](const Type *Ty) {
+  std::function<bool(const Type *Ty)> Run = [&](const Type *Ty) {
     if (!isa<CompositeType>(Ty))
       return false;
 
@@ -396,20 +396,20 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
 
       Seen.insert(StructTy);
 
-      return find_if(StructTy->subtype_begin(), StructTy->subtype_end(), run) !=
+      return find_if(StructTy->subtype_begin(), StructTy->subtype_end(), Run) !=
              StructTy->subtype_end();
     }
 
     if (auto *PtrTy = dyn_cast<PointerType>(Ty))
-      return run(PtrTy->getPointerElementType());
+      return Run(PtrTy->getPointerElementType());
 
     if (auto *ArrayTy = dyn_cast<ArrayType>(Ty))
-      return run(ArrayTy->getArrayElementType());
+      return Run(ArrayTy->getArrayElementType());
 
     return false;
   };
 
-  return run(Ty);
+  return Run(Ty);
 }
 
 SPIRVType *
@@ -543,7 +543,7 @@ LLVMToSPIRV::transType(Type *T) {
 
     for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
       auto *ElemTy = ST->getElementType(I);
-      if (isa<PointerType>(ElemTy) && recursiveType(ST, ElemTy))
+      if (isa<CompositeType>(ElemTy) && recursiveType(ST, ElemTy))
         ForwardRefs.push_back(I);
       else
         Struct->setMemberType(I, transType(ST->getElementType(I)));
@@ -552,7 +552,7 @@ LLVMToSPIRV::transType(Type *T) {
     BM->closeStructType(Struct, ST->isPacked());
 
     for (auto I : ForwardRefs)
-        Struct->setMemberType(I, transType(ST->getElementType(I)));
+      Struct->setMemberType(I, transType(ST->getElementType(I)));
 
     return Struct;
   }
@@ -1277,6 +1277,8 @@ LLVMToSPIRV::translate() {
     return false;
 
   BM->optimizeDecorates();
+  BM->resolveUnknownStructFields();
+  BM->createForwardPointers();
   return true;
 }
 
