@@ -39,6 +39,7 @@
 
 #include "SPIRVInternal.h"
 #include "OCLUtil.h"
+#include "OCLTypeToSPIRV.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/InstVisitor.h"
@@ -75,6 +76,11 @@ public:
     initializeOCL20ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
   virtual bool runOnModule(Module &M);
+
+  void getAnalysisUsage(AnalysisUsage &AU) const {
+    AU.addRequired<OCLTypeToSPIRV>();
+  }
+
   virtual void visitCallInst(CallInst &CI);
 
   /// Transform barrier/work_group_barrier to __spirv_ControlBarrier.
@@ -387,8 +393,10 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       visitCallAtomicWorkItemFence(PCI);
       return;
     }
-    if (DemangledName == kOCLBuiltinName::AtomicCmpXchgStrong ||
-        DemangledName == kOCLBuiltinName::AtomicCmpXchgWeak) {
+    if (DemangledName == kOCLBuiltinName::AtomicCmpXchgWeak ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgStrong ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgWeakExplicit ||
+        DemangledName == kOCLBuiltinName::AtomicCmpXchgStrongExplicit) {
       assert(CLVer == kOCLVer::CL20 && "Wrong version of OpenCL");
       PCI = visitCallAtomicCmpXchg(PCI, DemangledName);
     }
@@ -684,10 +692,10 @@ OCL20ToSPIRV::visitCallAtomicLegacy(CallInst* CI,
   OCLBuiltinTransInfo Info;
   Info.UniqName = "atomic_" + Prefix + Sign + Stem.str() + Postfix;
   std::vector<int> PostOps;
-  PostOps.push_back(OCLLegacyAtomicMemScope);
   PostOps.push_back(OCLLegacyAtomicMemOrder);
   if (Stem.startswith("compare_exchange"))
     PostOps.push_back(OCLLegacyAtomicMemOrder);
+  PostOps.push_back(OCLLegacyAtomicMemScope);
 
   Info.PostProc = [=](std::vector<Value *> &Ops){
     for (auto &I:PostOps){
@@ -721,10 +729,10 @@ OCL20ToSPIRV::visitCallAtomicCpp11(CallInst* CI,
 
     if (!Stem.endswith("_explicit")) {
       NewStem = NewStem + "_explicit";
-      PostOps.push_back(OCLMS_device);
       PostOps.push_back(OCLMO_seq_cst);
       if (Stem.startswith("compare_exchange"))
         PostOps.push_back(OCLMO_seq_cst);
+      PostOps.push_back(OCLMS_device);
     } else {
       auto MaxOps = getOCLCpp11AtomicMaxNumOps(
           Stem.drop_back(strlen("_explicit")));
@@ -753,10 +761,12 @@ OCL20ToSPIRV::transAtomicBuiltin(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI, [=](CallInst * CI, std::vector<Value *> &Args){
     Info.PostProc(Args);
+    // Order of args in OCL20:
+    // object, 0-2 other args, 1-2 order, scope
     const size_t NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Info.UniqName);
     const size_t ArgsCount = Args.size();
-    const size_t ScopeIdx = ArgsCount - NumOrder - 1;
-    const size_t OrderIdx = ArgsCount - NumOrder;
+    const size_t ScopeIdx = ArgsCount - 1;
+    const size_t OrderIdx = ScopeIdx - NumOrder;
     Args[ScopeIdx] = mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]),
         [](unsigned I){
       return map<Scope>(static_cast<OCLScopeKind>(I));
@@ -766,9 +776,15 @@ OCL20ToSPIRV::transAtomicBuiltin(CallInst* CI,
           [](unsigned Ord) {
       return mapOCLMemSemanticToSPIRV(0, static_cast<OCLMemOrderKind>(Ord));
     });
-    move(Args, ScopeIdx, ArgsCount, findFirstPtr(Args) + 1);
-    if(Info.UniqName.find("atomic_compare_exchange") != std::string::npos) {
-      std::swap(Args[ArgsCount-1], Args[ArgsCount-2]);
+    // Order of args in SPIR-V:
+    // object, scope, 1-2 order, 0-2 other args
+    std::swap(Args[1], Args[ScopeIdx]);
+    if(OrderIdx > 2) {
+      // For atomic_compare_exchange the swap above puts Comparator/Expected
+      // argument just where it should be, so don't move the last argument then.
+      int offset = Info.UniqName.find("atomic_compare_exchange") == 0 ? 1 : 0;
+      std::rotate(Args.begin() + 2, Args.begin() + OrderIdx,
+                  Args.end() - offset);
     }
     return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
   }, &Attrs);
@@ -989,7 +1005,10 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
-        auto SampledImgTy = getSPIRVSampledImageType(M, Args[0]->getType());
+        auto SampledImgTy = getSPIRVTypeByChangeBaseTypeName(M,
+            getAnalysis<OCLTypeToSPIRV>().getAdaptedType(Args[0]),
+            kSPIRVTypeName::Image,
+            kSPIRVTypeName::SampledImg);
         Value *SampledImgArgs[] = {Args[0], Args[1]};
         auto SampledImg = addCallInstSPIRV(
             M, getSPIRVFuncName(OpSampledImage), SampledImgTy, SampledImgArgs,
@@ -1240,7 +1259,10 @@ void OCL20ToSPIRV::visitCallRelational(CallInst *CI,
       [=](CallInst *NewCI) -> Instruction * {
         Value *False = nullptr, *True = nullptr;
         if (NewCI->getType()->isVectorTy()) {
-          Type *VTy = VectorType::get(Type::getInt32Ty(*Ctx),
+          Type *IntTy = Type::getInt32Ty(*Ctx);
+          if(cast<VectorType>(NewCI->getOperand(0)->getType())->getElementType()->isDoubleTy())
+            IntTy = Type::getInt64Ty(*Ctx);
+          Type *VTy = VectorType::get(IntTy,
                                       NewCI->getType()->getVectorNumElements());
           False = Constant::getNullValue(VTy);
           True = Constant::getAllOnesValue(VTy);
@@ -1383,7 +1405,10 @@ void OCL20ToSPIRV::visitCallScalToVec(CallInst *CI, StringRef MangledName,
 }
 }
 
-INITIALIZE_PASS(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
+INITIALIZE_PASS_BEGIN(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
+    false, false)
+INITIALIZE_PASS_DEPENDENCY(OCLTypeToSPIRV)
+INITIALIZE_PASS_END(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
     false, false)
 
 ModulePass *llvm::createOCL20ToSPIRV() {

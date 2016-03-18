@@ -380,6 +380,31 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
   return true;
 }
 
+/// Decode SPIR-V type name in the format spirv.{TypeName}._{Postfixes}
+/// where Postfixes are integers separated by underscores.
+/// \return TypeName.
+/// \param Ops contains the integers decoded from postfixes.
+static std::string
+ decodeSPIRVTypeName(StringRef Name,
+    SmallVectorImpl<unsigned>& Ops) {
+  SmallVector<StringRef, 4> SubStrs;
+  const char Delim[] = { kSPIRVTypeName::Delimiter, 0 };
+  Name.split(SubStrs, Delim, -1, true);
+  assert(SubStrs.size() >= 2 && "Invalid SPIRV type name");
+  assert(SubStrs[0] == kSPIRVTypeName::Prefix && "Invalid prefix");
+  assert((SubStrs.size() == 2 || !SubStrs[2].empty()) && "Invalid postfix");
+
+  if (SubStrs.size() > 2) {
+    const char PostDelim[] = { kSPIRVTypeName::PostfixDelim, 0 };
+    SmallVector<StringRef, 4> Postfixes;
+    SubStrs[2].split(Postfixes, PostDelim, -1, true);
+    assert(Postfixes.size() > 1 && Postfixes[0].empty() && "Invalid postfix");
+    for (unsigned I = 1, E = Postfixes.size(); I != E; ++I)
+      Ops.push_back(std::stoi(Postfixes[I]));
+  }
+  return SubStrs[1].str();
+}
+
 static bool recursiveType(const StructType *ST, const Type *Ty) {
   SmallPtrSet<const StructType *, 4> Seen;
 
@@ -446,7 +471,13 @@ LLVMToSPIRV::transType(Type *T) {
         STName = kSPR2TypeName::Event;
         ST->setName(STName);
       }
-      if (STName.find(SPIR_TYPE_NAME_PIPE_T) == 0) {
+      assert (!STName.startswith(kSPR2TypeName::Pipe) &&
+              "OpenCL type names should be translated to SPIR-V type names");
+      // ToDo: For SPIR1.2/2.0 there may still be load/store or bitcast
+      // instructions using opencl.* type names. We need to handle these
+      // type names until they are all mapped or FE generates SPIR-V type
+      // names.
+      if (STName.find(kSPR2TypeName::Pipe) == 0) {
         assert(AddrSpc == SPIRAS_Global);
         SmallVector<StringRef, 4> SubStrs;
         const char Delims[] = {kSPR2TypeName::Delimiter, 0};
@@ -481,27 +512,39 @@ LLVMToSPIRV::transType(Type *T) {
       } else if (STName == kSPR2TypeName::Sampler) {
         assert(AddrSpc == SPIRAS_Global);
         return mapType(T, BM->addSamplerType());
-      } else if (STName.find(kSPIRVTypeName::SampledImg) == 0) {
-        SmallVector<StringRef, 4> SubStrs;
-        const char Delims[] = {kSPR2TypeName::Delimiter, 0};
-        STName.split(SubStrs, Delims);
-        std::string ImgTyName = kSPR2TypeName::OCLPrefix;
-        ImgTyName += SubStrs[2];
-        if (SubStrs.size() > 3) {
-          ImgTyName += kSPR2TypeName::Delimiter;
-          ImgTyName += SubStrs[3].str();
-        }
-        return mapType(T, BM->addSampledImageType(
-            static_cast<SPIRVTypeImage *>(
-                transType(getOrCreateOpaquePtrType(M, ImgTyName)))));
-      }
-      else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
+      } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim)) {
+          SmallVector<unsigned, 4> Ops;
+          auto TN = decodeSPIRVTypeName(STName, Ops);
+          if (TN == kSPIRVTypeName::Pipe) {
+            assert(AddrSpc == SPIRAS_Global);
+            assert(Ops.size() == 1 && "Invalid pipe type ops");
+            auto PipeT = BM->addPipeType();
+            PipeT->setPipeAcessQualifier(static_cast<spv::AccessQualifier>(
+              Ops[0]));
+            return mapType(T, PipeT);
+          } else if (TN == kSPIRVTypeName::Image) {
+            assert(AddrSpc == SPIRAS_Global);
+            auto VoidT = transType(Type::getVoidTy(*Ctx));
+            SPIRVTypeImageDescriptor Desc(static_cast<SPIRVImageDimKind>(Ops[0]),
+                Ops[1], Ops[2], Ops[3], Ops[4], Ops[5]);
+            return mapType(T, BM->addImageType(VoidT, Desc,
+                           static_cast<spv::AccessQualifier>(Ops[6])));
+          } else if (TN == kSPIRVTypeName::SampledImg) {
+            return mapType(T, BM->addSampledImageType(
+                static_cast<SPIRVTypeImage *>(
+                    transType(getSPIRVTypeByChangeBaseTypeName(M,
+                        T, kSPIRVTypeName::SampledImg,
+                        kSPIRVTypeName::Image)))));
+          } else {
+            // ToDo: translate other SPIRV types.
+            assert(0 && "Not implemented");
+          }
+      } else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
         if (OpCode == OpTypePipe) {
           return mapType(T, BM->addPipeType());
         }
         return mapType(T, BM->addOpaqueGenericType(OpCode));
-      }
-      else if (isPointerToOpaqueStructType(T)) {
+      } else if (isPointerToOpaqueStructType(T)) {
         return mapType(T, BM->addPointerType(SPIRSPIRVAddrSpaceMap::map(
           static_cast<SPIRAddressSpace>(AddrSpc)),
           transType(ET)));
@@ -524,7 +567,7 @@ LLVMToSPIRV::transType(Type *T) {
 
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
-    assert(!ST->getName().startswith(SPIR_TYPE_NAME_PIPE_T));
+    assert(!ST->getName().startswith(kSPR2TypeName::Pipe));
     assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
   }
@@ -576,7 +619,7 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
     return static_cast<SPIRVFunction *>(BF);
 
   SPIRVTypeFunction *BFT = static_cast<SPIRVTypeFunction *>(transType(
-      getAnalysis<OCLTypeToSPIRV>().getAdaptedFunctionType(F)));
+      getAnalysis<OCLTypeToSPIRV>().getAdaptedType(F)));
   SPIRVFunction *BF = static_cast<SPIRVFunction *>(mapValue(F,
       BM->addFunction(BFT)));
   BF->setFunctionControlMask(transFunctionControlMask(F));
@@ -1558,12 +1601,14 @@ LLVMToSPIRV::transLinkageType(const GlobalValue* GV) {
     return SPIRVLinkageTypeKind::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
-
 } // end of SPIRV namespace
 
 char LLVMToSPIRV::ID = 0;
 
-INITIALIZE_PASS(LLVMToSPIRV, "llvmtospv", "Translate LLVM to SPIR-V",
+INITIALIZE_PASS_BEGIN(LLVMToSPIRV, "llvmtospv", "Translate LLVM to SPIR-V",
+    false, false)
+INITIALIZE_PASS_DEPENDENCY(OCLTypeToSPIRV)
+INITIALIZE_PASS_END(LLVMToSPIRV, "llvmtospv", "Translate LLVM to SPIR-V",
     false, false)
 
 ModulePass *llvm::createLLVMToSPIRV(SPIRVModule *SMod) {
@@ -1577,6 +1622,7 @@ addPassesForSPIRV(PassManager &PassMgr) {
   PassMgr.add(createTransOCLMD());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerOCLBlocks());
+  PassMgr.add(createOCLTypeToSPIRV());
   PassMgr.add(createOCL20ToSPIRV());
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
@@ -1588,7 +1634,6 @@ llvm::WriteSPIRV(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
-  PassMgr.add(createOCLTypeToSPIRV());
   PassMgr.add(createLLVMToSPIRV(BM.get()));
   PassMgr.run(*M);
 

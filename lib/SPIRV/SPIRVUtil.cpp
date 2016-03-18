@@ -1,4 +1,4 @@
-//===- SPIRVUtil.cpp –  SPIR-V Utilities -------------------------*- C++ -*-===//
+//===- SPIRVUtil.cpp - SPIR-V Utilities -------------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -254,6 +254,26 @@ isOCLImageType(llvm::Type* Ty, StringRef *Name) {
         if (FullName.find(kSPR2TypeName::ImagePrefix) == 0) {
           if (Name)
             *Name = FullName.drop_front(strlen(kSPR2TypeName::OCLPrefix));
+          return true;
+        }
+      }
+  return false;
+}
+
+/// \param BaseTyName is the type name as in spirv.BaseTyName.Postfixes
+/// \param Postfix contains postfixes extracted from the SPIR-V image
+///   type name as spirv.BaseTyName.Postfixes.
+bool
+isSPIRVType(llvm::Type* Ty, StringRef BaseTyName, StringRef *Postfix) {
+  if (auto PT = dyn_cast<PointerType>(Ty))
+    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+      if (ST->isOpaque()) {
+        auto FullName = ST->getName();
+        const std::string N = std::string(kSPIRVTypeName::PrefixAndDelim) +
+            BaseTyName.str() + kSPIRVTypeName::Delimiter;
+        if (FullName.startswith(N)) {
+          if (Postfix)
+            *Postfix = FullName.drop_front(N.size());
           return true;
         }
       }
@@ -1018,7 +1038,7 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
       if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
-          TyName.startswith(SPIR_TYPE_NAME_PIPE_T)) {
+          TyName.startswith(kSPR2TypeName::Pipe)) {
         auto DelimPos = TyName.find_first_of(kSPR2TypeName::Delimiter,
             strlen(kSPR2TypeName::OCLPrefix));
         if (DelimPos != StringRef::npos)
@@ -1146,16 +1166,73 @@ dumpUsers(Value* V, StringRef Prompt) {
     DEBUG(dbgs() << "  " << **UI << '\n');
 }
 
+std::string
+getSPIRVTypeName(StringRef BaseName, StringRef Postfixes) {
+  assert(!BaseName.empty() && "Invalid SPIR-V type name");
+  auto TN = std::string(kSPIRVTypeName::PrefixAndDelim)
+    + BaseName.str();
+  if (Postfixes.empty())
+    return TN;
+  return TN + kSPIRVTypeName::Delimiter + Postfixes.str();
+}
+
 Type *
-getSPIRVSampledImageType(Module *M, Type *ImageType) {
-  StringRef ImgTyName;
-  if (isOCLImageType(ImageType, &ImgTyName))
-    return getOrCreateOpaquePtrType(M,
-        std::string(kSPIRVTypeName::SampledImg)
-          + kSPIRVTypeName::Delimiter + ImgTyName.str()
-          + kSPIRVTypeName::Delimiter + kAccessQualName::ReadOnly);
-  llvm_unreachable("Invalid image type");
+getSPIRVTypeByChangeBaseTypeName(Module *M, Type *T, StringRef OldName,
+    StringRef NewName) {
+  StringRef Postfixes;
+  if (isSPIRVType(T, OldName, &Postfixes))
+    return getOrCreateOpaquePtrType(M, getSPIRVTypeName(NewName, Postfixes));
+  DEBUG(dbgs() << " Invalid SPIR-V type " << *T << '\n');
+  llvm_unreachable("Invalid SPIRV-V type");
   return nullptr;
+}
+
+std::string
+getSPIRVImageTypePostfixes(SPIRVTypeImageDescriptor Desc,
+    SPIRVAccessQualifierKind Acc) {
+  std::string S;
+  raw_string_ostream OS(S);
+  OS << Desc.Dim << kSPIRVTypeName::PostfixDelim
+     << Desc.Depth << kSPIRVTypeName::PostfixDelim
+     << Desc.Arrayed << kSPIRVTypeName::PostfixDelim
+     << Desc.MS << kSPIRVTypeName::PostfixDelim
+     << Desc.Sampled << kSPIRVTypeName::PostfixDelim
+     << Desc.Format << kSPIRVTypeName::PostfixDelim
+     << Acc;
+  return OS.str();
+}
+
+std::string
+mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
+  std::string BaseTy;
+  std::string Postfixes;
+  raw_string_ostream OS(Postfixes);
+  if (!Acc.empty())
+    OS << kSPIRVTypeName::PostfixDelim;
+  if (Name.startswith(kSPR2TypeName::Pipe)) {
+    BaseTy = kSPIRVTypeName::Pipe;
+    OS << SPIRSPIRVAccessQualifierMap::map(Acc);
+  } else if (Name.startswith(kSPR2TypeName::ImagePrefix)) {
+    SmallVector<StringRef, 4> SubStrs;
+    const char Delims[] = {kSPR2TypeName::Delimiter, 0};
+    Name.split(SubStrs, Delims);
+    auto Desc = map<SPIRVTypeImageDescriptor>(SubStrs[1].str());
+    DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => " <<
+        "(" << (unsigned)Desc.Dim << ", " <<
+               Desc.Depth << ", " <<
+               Desc.Arrayed << ", " <<
+               Desc.MS << ", " <<
+               Desc.Sampled << ", " <<
+               Desc.Format << ")\n");
+
+    BaseTy = kSPIRVTypeName::Image;
+    OS << getSPIRVImageTypePostfixes(Desc,
+                                     SPIRSPIRVAccessQualifierMap::map(Acc));
+  } else {
+    DEBUG(dbgs() << "Mapping of " << Name << " is not implemented\n");
+    llvm_unreachable("Not implemented");
+  }
+  return getSPIRVTypeName(BaseTy, OS.str());
 }
 
 bool
@@ -1250,5 +1327,4 @@ mangleBuiltin(const std::string &UniqName,
   DEBUG(dbgs() << MangledName << '\n');
   return MangledName;
 }
-
 }
