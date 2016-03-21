@@ -196,51 +196,35 @@ public:
   SPIRVTypePointer(SPIRVModule *M, SPIRVId TheId,
       SPIRVStorageClassKind TheStorageClass,
       SPIRVType *ElementType)
-    :SPIRVType(M, 4, OpTypePointer, TheId), ElemStorageClass(TheStorageClass),
-     ElemTypeId(ElementType->getId()){
+    :SPIRVType(M, 4, OpTypePointer, TheId), StorageClass(TheStorageClass),
+     ElemType(ElementType){
     validate();
   }
   // Incomplete constructor
   SPIRVTypePointer():SPIRVType(OpTypePointer),
-      ElemStorageClass(StorageClassFunction),
-      ElemTypeId(0){}
+      StorageClass(StorageClassFunction),
+      ElemType(NULL){}
 
-  SPIRVType *getElementType() const {
-    return static_cast<SPIRVType *>(getEntry(ElemTypeId));
-  }
-  SPIRVStorageClassKind getStorageClass() const { return ElemStorageClass;}
+  SPIRVType *getElementType() const { return ElemType;}
+  SPIRVStorageClassKind getStorageClass() const { return StorageClass;}
   SPIRVCapVec getRequiredCapability() const {
     auto Cap = getVec(CapabilityAddresses);
-    if (getValueType(ElemTypeId)->isTypeFloat(16))
+    if (ElemType->isTypeFloat(16))
       Cap.push_back(CapabilityFloat16Buffer);
-    auto C = getCapability(ElemStorageClass);
+    auto C = getCapability(StorageClass);
     Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
 protected:
-  _SPIRV_DEF_ENCDEC3(Id, ElemStorageClass, ElemTypeId)
+  _SPIRV_DEF_ENCDEC3(Id, StorageClass, ElemType)
   void validate()const {
     SPIRVEntry::validate();
-    assert(isValid(ElemStorageClass));
+    ElemType->validate();
+    assert(isValid(StorageClass));
   }
 private:
-  SPIRVStorageClassKind ElemStorageClass; // Storage Class
-  SPIRVId   ElemTypeId;
-};
-
-class SPIRVTypeForwardPointer : public SPIRVEntryNoId<OpTypeForwardPointer> {
-public:
-  SPIRVTypeForwardPointer(SPIRVModule *M, SPIRVTypePointer *Pointer,
-                          SPIRVStorageClassKind SC)
-      : SPIRVEntryNoId(M, 3), Pointer(Pointer), SC(SC) {}
-
-  SPIRVTypeForwardPointer()
-      : Pointer(nullptr), SC(StorageClassUniformConstant) {}
-
-  _SPIRV_DCL_ENCDEC
-private:
-  SPIRVTypePointer *Pointer;
-  SPIRVStorageClassKind SC;
+  SPIRVStorageClassKind StorageClass;     // Storage Class
+  SPIRVType *ElemType;                    // Element Type
 };
 
 class SPIRVTypeVector:public SPIRVType {
@@ -484,50 +468,34 @@ protected:
   }
 };
 
-class SPIRVTypeStruct : public SPIRVType {
+class SPIRVTypeStruct:public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId,
-                  const std::vector<SPIRVType *> &TheMemberTypes,
-                  const std::string &TheName)
-      : SPIRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId) {
-    MemberTypeIdVec.resize(TheMemberTypes.size());
-    for (auto &t : TheMemberTypes)
-      MemberTypeIdVec.push_back(t->getId());
+      const std::vector<SPIRVType *> &TheMemberTypes, const std::string &TheName)
+    :SPIRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId),
+     MemberTypeVec(TheMemberTypes){
     Name = TheName;
     validate();
-  }
-  SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId, unsigned NumMembers,
-                  const std::string &TheName)
-      : SPIRVType(M, 2 + NumMembers, OpTypeStruct, TheId) {
-    Name = TheName;
-    validate();
-    MemberTypeIdVec.resize(NumMembers);
   }
   // Incomplete constructor
-  SPIRVTypeStruct() : SPIRVType(OpTypeStruct) {}
+  SPIRVTypeStruct():SPIRVType(OpTypeStruct){}
 
-  SPIRVWord getMemberCount() const { return MemberTypeIdVec.size(); }
-  SPIRVType *getMemberType(size_t I) const {
-    return static_cast<SPIRVType *>(getEntry(MemberTypeIdVec[I]));
-  }
-  void setMemberType(size_t I, SPIRVType *Ty) { MemberTypeIdVec[I] = Ty->getId(); }
-
+  SPIRVWord getMemberCount() const { return MemberTypeVec.size();}
+  SPIRVType *getMemberType(size_t I) const { return MemberTypeVec[I];}
   bool isPacked() const;
   void setPacked(bool Packed);
 
-  void setWordCount(SPIRVWord WordCount) {
-    SPIRVType::setWordCount(WordCount);
-    MemberTypeIdVec.resize(WordCount - 2);
-  }
-
 protected:
-  _SPIRV_DEF_ENCDEC2(Id, MemberTypeIdVec)
-
-  void validate() const { SPIRVEntry::validate(); }
-
+  _SPIRV_DEF_ENCDEC2(Id, MemberTypeVec)
+  void setWordCount(SPIRVWord WordCount) { MemberTypeVec.resize(WordCount - 2);}
+  void validate()const {
+    SPIRVEntry::validate();
+    for (auto T:MemberTypeVec)
+      T->validate();
+  }
 private:
-  std::vector<SPIRVId> MemberTypeIdVec; // Member Type Ids
+  std::vector<SPIRVType *> MemberTypeVec;      // Member Types
 };
 
 class SPIRVTypeFunction:public SPIRVType {

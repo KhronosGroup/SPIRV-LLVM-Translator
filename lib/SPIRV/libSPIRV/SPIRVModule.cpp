@@ -144,7 +144,6 @@ public:
   }
   void setGeneratorId(unsigned short Id) { GeneratorId = Id; }
   void setGeneratorVer(unsigned short Ver) { GeneratorVer = Ver; }
-  void resolveUnknownStructFields();
 
   // Object creation functions
   template<class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -153,8 +152,6 @@ public:
   virtual SPIRVString *getString(const std::string &Str);
   virtual SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST,
       SPIRVWord MemberNumber, const std::string &Name);
-  virtual void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
-                                     SPIRVId ID);
   virtual SPIRVLine *addLine(SPIRVEntry *E, SPIRVString *FileName, SPIRVWord Line,
       SPIRVWord Column);
   virtual void addCapability(SPIRVCapabilityKind);
@@ -192,13 +189,12 @@ public:
       const SPIRVTypeImageDescriptor &, SPIRVAccessQualifierKind);
   virtual SPIRVTypeSampler *addSamplerType();
   virtual SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T);
-  virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &);
-  virtual void closeStructType(SPIRVTypeStruct *T, bool);
+  virtual SPIRVTypeStruct *addStructType(const std::vector<SPIRVType *>&,
+      const std::string &, bool);
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord);
   virtual SPIRVType *addOpaqueGenericType(Op);
   virtual SPIRVTypePipe *addPipeType();
   virtual SPIRVTypeVoid *addVoidType();
-  virtual void createForwardPointers();
 
   // Constant creation functions
   virtual SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *);
@@ -308,7 +304,6 @@ private:
   typedef std::set<SPIRVId> SPIRVIdSet;
   typedef std::vector<SPIRVId> SPIRVIdVec;
   typedef std::vector<SPIRVFunction *> SPIRVFunctionVector;
-  typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
   typedef std::vector<SPIRVType *> SPIRVTypeVec;
   typedef std::vector<SPIRVValue *> SPIRVConstantVector;
   typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
@@ -321,10 +316,7 @@ private:
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdSet> SPIRVExecModelIdSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdVec> SPIRVExecModelIdVecMap;
   typedef std::unordered_map<std::string, SPIRVString*> SPIRVStringMap;
-  typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
-      SPIRVUnknownStructFieldMap;
 
-  SPIRVForwardPointerVec ForwardPointerVec;
   SPIRVTypeVec TypeVec;
   SPIRVIdToEntryMap IdEntryMap;
   SPIRVFunctionVector FuncVec;
@@ -343,7 +335,6 @@ private:
   SPIRVExecModelIdVecMap EntryPointVec;
   SPIRVStringMap StrMap;
   SPIRVCapSet CapSet;
-  SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt*> IntTypeMap;
   std::map<unsigned, SPIRVConstant*> LiteralMap;
 
@@ -611,19 +602,6 @@ SPIRVModuleImpl::setName(SPIRVEntry *E, const std::string &Name) {
     NamedId.erase(E->getId());
 }
 
-void SPIRVModuleImpl::resolveUnknownStructFields() {
-  for (auto &KV : UnknownStructFieldMap) {
-    auto *Struct = KV.first;
-    for (auto &Indices : KV.second) {
-      unsigned I = Indices.first;
-      SPIRVId ID = Indices.second;
-
-      auto Ty = static_cast<SPIRVType *>(getEntry(ID));
-      Struct->setMemberType(I, Ty);
-    }
-  }
-}
-
 // Type creation functions
 template<class T>
 T *
@@ -684,15 +662,13 @@ SPIRVModuleImpl::addOpaqueType(const std::string& Name) {
   return addType(new SPIRVTypeOpaque(this, getId(), Name));
 }
 
-SPIRVTypeStruct *SPIRVModuleImpl::openStructType(unsigned NumMembers,
-                                                 const std::string &Name) {
-  auto T = new SPIRVTypeStruct(this, getId(), NumMembers, Name);
-  return T;
-}
-
-void SPIRVModuleImpl::closeStructType(SPIRVTypeStruct *T, bool Packed) {
+SPIRVTypeStruct*
+SPIRVModuleImpl::addStructType(const std::vector<SPIRVType*> &MemberTypes,
+    const std::string &Name, bool Packed) {
+  auto T = new SPIRVTypeStruct(this, getId(), MemberTypes, Name);
   addType(T);
   T->setPacked(Packed);
+  return T;
 }
 
 SPIRVTypeVector*
@@ -730,31 +706,6 @@ SPIRVModuleImpl::addSamplerType() {
 SPIRVTypeSampledImage *
 SPIRVModuleImpl::addSampledImageType(SPIRVTypeImage *T) {
   return addType(new SPIRVTypeSampledImage(this, getId(), T));
-}
-
-void SPIRVModuleImpl::createForwardPointers() {
-  std::unordered_set<SPIRVId> Seen;
-
-  for (auto *T : TypeVec) {
-    if (T->hasId())
-      Seen.insert(T->getId());
-
-    if (!T->isTypeStruct())
-      continue;
-
-    auto ST = static_cast<SPIRVTypeStruct *>(T);
-
-    for (unsigned i = 0; i < ST->getStructMemberCount(); ++i) {
-      auto MemberTy = ST->getStructMemberType(i);
-      if (!MemberTy->isTypePointer()) continue;
-      auto Ptr = static_cast<SPIRVTypePointer *>(MemberTy);
-
-      if (Seen.find(Ptr->getId()) == Seen.end()) {
-        ForwardPointerVec.push_back(new SPIRVTypeForwardPointer(
-            this, Ptr, Ptr->getPointerStorageClass()));
-      }
-    }
-  }
 }
 
 SPIRVFunction *
@@ -1184,7 +1135,6 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
     << MI.DecGroupVec
     << MI.DecorateSet
     << MI.GroupDecVec
-    << MI.ForwardPointerVec
     << MI.TypeVec
     << MI.ConstVec
     << MI.VariableVec
@@ -1257,11 +1207,6 @@ SPIRVModuleImpl::addMemberName(SPIRVTypeStruct* ST,
   return add(new SPIRVMemberName(ST, MemberNumber, Name));
 }
 
-void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
-                                            SPIRVId ID) {
-  UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
-}
-
 std::istream &
 operator>> (std::istream &I, SPIRVModule &M) {
   SPIRVDecoder Decoder(I, M);
@@ -1289,8 +1234,6 @@ operator>> (std::istream &I, SPIRVModule &M) {
     Decoder.getEntry();
 
   MI.optimizeDecorates();
-  MI.resolveUnknownStructFields();
-  MI.createForwardPointers();
   return I;
 }
 
