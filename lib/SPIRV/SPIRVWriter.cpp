@@ -84,6 +84,7 @@
 #include <sstream>
 #include <vector>
 #include <functional>
+#include <cstdlib>
 
 #define DEBUG_TYPE "spirv"
 
@@ -400,7 +401,7 @@ static std::string
     SubStrs[2].split(Postfixes, PostDelim, -1, true);
     assert(Postfixes.size() > 1 && Postfixes[0].empty() && "Invalid postfix");
     for (unsigned I = 1, E = Postfixes.size(); I != E; ++I)
-      Ops.push_back(std::stoi(Postfixes[I]));
+      Ops.push_back(atoi(std::string(Postfixes[I]).c_str()));
   }
   return SubStrs[1].str();
 }
