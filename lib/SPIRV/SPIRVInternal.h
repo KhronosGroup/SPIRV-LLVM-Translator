@@ -69,6 +69,10 @@ namespace SPIRV{
 // This workaround checks metadata to determine if a function is kernel.
 #define SPCV_RELAX_KERNEL_CALLING_CONV 1
 
+class SPIRVOpaqueType;
+typedef SPIRVMap<std::string, Op, SPIRVOpaqueType>
+  SPIRVOpaqueTypeOpCodeMap;
+
 // Ad hoc function used by LLVM/SPIRV converter for type casting
 #define SPCV_CAST "spcv.cast"
 #define LLVM_MEMCPY "llvm.memcpy"
@@ -272,11 +276,15 @@ namespace kLLVMTypeName {
 
 namespace kSPIRVTypeName {
   const static char Delimiter        = '.';
+  const static char DeviceEvent[]    = "DeviceEvent";
+  const static char Event[]          = "Event";
   const static char Image[]          = "Image";
   const static char Pipe[]           = "Pipe";
   const static char PostfixDelim     = '_';
   const static char Prefix[]         = "spirv";
   const static char PrefixAndDelim[] = "spirv.";
+  const static char Queue[]          = "Queue";
+  const static char ReserveId[]      = "ReserveId";
   const static char SampledImg[]     = "SampledImage";
 }
 
@@ -867,6 +875,17 @@ PointerType *getInt8PtrTy(PointerType *T);
 /// Cast a value to a i8* by inserting a cast instruction.
 Value *
 castToInt8Ptr(Value *V, Instruction *Pos);
+
+template<> inline void
+SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
+  add(kSPIRVTypeName::DeviceEvent, OpTypeDeviceEvent);
+  add(kSPIRVTypeName::Event, OpTypeEvent);
+  add(kSPIRVTypeName::Image, OpTypeImage);
+  add(kSPIRVTypeName::Pipe, OpTypePipe);
+  add(kSPIRVTypeName::Queue, OpTypeQueue);
+  add(kSPIRVTypeName::ReserveId, OpTypeReserveId);
+  add(kSPIRVTypeName::SampledImg, OpTypeSampledImage);
+}
 
 }
 

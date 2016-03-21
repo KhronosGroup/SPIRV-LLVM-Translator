@@ -111,7 +111,7 @@ typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
 
 class OCLOpaqueType;
 typedef SPIRVMap<std::string, Op, OCLOpaqueType>
-  BuiltinOpaqueGenericTypeOpCodeMap;
+  OCLOpaqueTypeOpCodeMap;
 
 /// Information for translating OCL builtin.
 struct OCLBuiltinTransInfo {
