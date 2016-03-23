@@ -1188,11 +1188,13 @@ getSPIRVTypeByChangeBaseTypeName(Module *M, Type *T, StringRef OldName,
 }
 
 std::string
-getSPIRVImageTypePostfixes(SPIRVTypeImageDescriptor Desc,
+getSPIRVImageTypePostfixes(StringRef SampledType,
+    SPIRVTypeImageDescriptor Desc,
     SPIRVAccessQualifierKind Acc) {
   std::string S;
   raw_string_ostream OS(S);
-  OS << Desc.Dim << kSPIRVTypeName::PostfixDelim
+  OS << SampledType << kSPIRVTypeName::PostfixDelim
+     << Desc.Dim << kSPIRVTypeName::PostfixDelim
      << Desc.Depth << kSPIRVTypeName::PostfixDelim
      << Desc.Arrayed << kSPIRVTypeName::PostfixDelim
      << Desc.MS << kSPIRVTypeName::PostfixDelim
@@ -1200,6 +1202,51 @@ getSPIRVImageTypePostfixes(SPIRVTypeImageDescriptor Desc,
      << Desc.Format << kSPIRVTypeName::PostfixDelim
      << Acc;
   return OS.str();
+}
+
+std::string
+getSPIRVImageSampledTypeName(SPIRVType *Ty) {
+  switch(Ty->getOpCode()) {
+  case OpTypeVoid:
+    return kSPIRVImageSampledTypeName::Void;
+  case OpTypeInt:
+    if (Ty->getIntegerBitWidth() == 32)
+      if (static_cast<SPIRVTypeInt *>(Ty)->isSigned())
+        return kSPIRVImageSampledTypeName::Int;
+      else
+        return kSPIRVImageSampledTypeName::UInt;
+    break;
+  case OpTypeFloat:
+    switch(Ty->getFloatBitWidth()) {
+    case 16:
+      return kSPIRVImageSampledTypeName::Half;
+    case 32:
+      return kSPIRVImageSampledTypeName::Float;
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
+  }
+  llvm_unreachable("Invalid sampled type for image");
+}
+
+//ToDo: Find a way to represent uint sampled type in LLVM, maybe an
+//      opaque type.
+Type*
+getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
+  LLVMContext &Ctx) {
+  if (Postfix == kSPIRVImageSampledTypeName::Void)
+    return Type::getVoidTy(Ctx);
+  if (Postfix == kSPIRVImageSampledTypeName::Float)
+    return Type::getFloatTy(Ctx);
+  if (Postfix == kSPIRVImageSampledTypeName::Half)
+    return Type::getHalfTy(Ctx);
+  if (Postfix == kSPIRVImageSampledTypeName::Int ||
+      Postfix == kSPIRVImageSampledTypeName::UInt)
+    return Type::getInt32Ty(Ctx);
+  llvm_unreachable("Invalid sampled type postfix");
 }
 
 std::string
@@ -1226,7 +1273,8 @@ mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
                Desc.Format << ")\n");
 
     BaseTy = kSPIRVTypeName::Image;
-    OS << getSPIRVImageTypePostfixes(Desc,
+    OS << getSPIRVImageTypePostfixes(kSPIRVImageSampledTypeName::Void,
+                                     Desc,
                                      SPIRSPIRVAccessQualifierMap::map(Acc));
   } else {
     DEBUG(dbgs() << "Mapping of " << Name << " is not implemented\n");

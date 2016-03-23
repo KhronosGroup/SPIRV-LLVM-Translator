@@ -185,6 +185,7 @@ public:
   static char ID;
 
   SPIRVType *transType(Type *T);
+  SPIRVType *transSPIRVOpaqueType(Type *T);
 
   SPIRVValue *getTranslatedValue(Value *);
 
@@ -382,12 +383,12 @@ LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
 }
 
 /// Decode SPIR-V type name in the format spirv.{TypeName}._{Postfixes}
-/// where Postfixes are integers separated by underscores.
+/// where Postfixes are strings separated by underscores.
 /// \return TypeName.
 /// \param Ops contains the integers decoded from postfixes.
 static std::string
  decodeSPIRVTypeName(StringRef Name,
-    SmallVectorImpl<unsigned>& Ops) {
+    SmallVectorImpl<std::string>& Strs) {
   SmallVector<StringRef, 4> SubStrs;
   const char Delim[] = { kSPIRVTypeName::Delimiter, 0 };
   Name.split(SubStrs, Delim, -1, true);
@@ -401,7 +402,7 @@ static std::string
     SubStrs[2].split(Postfixes, PostDelim, -1, true);
     assert(Postfixes.size() > 1 && Postfixes[0].empty() && "Invalid postfix");
     for (unsigned I = 1, E = Postfixes.size(); I != E; ++I)
-      Ops.push_back(atoi(std::string(Postfixes[I]).c_str()));
+      Strs.push_back(std::string(Postfixes[I]).c_str());
   }
   return SubStrs[1].str();
 }
@@ -513,33 +514,9 @@ LLVMToSPIRV::transType(Type *T) {
       } else if (STName == kSPR2TypeName::Sampler) {
         assert(AddrSpc == SPIRAS_Global);
         return mapType(T, BM->addSamplerType());
-      } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim)) {
-          SmallVector<unsigned, 4> Ops;
-          auto TN = decodeSPIRVTypeName(STName, Ops);
-          if (TN == kSPIRVTypeName::Pipe) {
-            assert(AddrSpc == SPIRAS_Global);
-            assert(Ops.size() == 1 && "Invalid pipe type ops");
-            auto PipeT = BM->addPipeType();
-            PipeT->setPipeAcessQualifier(static_cast<spv::AccessQualifier>(
-              Ops[0]));
-            return mapType(T, PipeT);
-          } else if (TN == kSPIRVTypeName::Image) {
-            assert(AddrSpc == SPIRAS_Global);
-            auto VoidT = transType(Type::getVoidTy(*Ctx));
-            SPIRVTypeImageDescriptor Desc(static_cast<SPIRVImageDimKind>(Ops[0]),
-                Ops[1], Ops[2], Ops[3], Ops[4], Ops[5]);
-            return mapType(T, BM->addImageType(VoidT, Desc,
-                           static_cast<spv::AccessQualifier>(Ops[6])));
-          } else if (TN == kSPIRVTypeName::SampledImg) {
-            return mapType(T, BM->addSampledImageType(
-                static_cast<SPIRVTypeImage *>(
-                    transType(getSPIRVTypeByChangeBaseTypeName(M,
-                        T, kSPIRVTypeName::SampledImg,
-                        kSPIRVTypeName::Image)))));
-          } else
-            return mapType(T, BM->addOpaqueGenericType(
-              SPIRVOpaqueTypeOpCodeMap::map(TN)));
-      } else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
+      } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
+        return transSPIRVOpaqueType(T);
+      else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
         if (OpCode == OpTypePipe) {
           return mapType(T, BM->addPipeType());
         }
@@ -611,6 +588,47 @@ LLVMToSPIRV::transType(Type *T) {
 
   llvm_unreachable("Not implemented!");
   return 0;
+}
+
+SPIRVType *
+LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
+  auto ET = T->getPointerElementType();
+  auto ST = cast<StructType>(ET);
+  auto AddrSpc = T->getPointerAddressSpace();
+  auto STName = ST->getStructName();
+  assert (STName.startswith(kSPIRVTypeName::PrefixAndDelim) &&
+    "Invalid SPIR-V opaque type name");
+  SmallVector<std::string, 8> Postfixes;
+  auto TN = decodeSPIRVTypeName(STName, Postfixes);
+  if (TN == kSPIRVTypeName::Pipe) {
+    assert(AddrSpc == SPIRAS_Global);
+    assert(Postfixes.size() == 1 && "Invalid pipe type ops");
+    auto PipeT = BM->addPipeType();
+    PipeT->setPipeAcessQualifier(static_cast<spv::AccessQualifier>(
+      atoi(Postfixes[0].c_str())));
+    return mapType(T, PipeT);
+  } else if (TN == kSPIRVTypeName::Image) {
+    assert(AddrSpc == SPIRAS_Global);
+    // The sampled type needs to be translated through LLVM type to guarantee
+    // uniqueness.
+    auto SampledT = transType(getLLVMTypeForSPIRVImageSampledTypePostfix(
+      Postfixes[0], *Ctx));
+    SmallVector<int, 7> Ops;
+    for (unsigned I = 1; I < 8; ++I)
+      Ops.push_back(atoi(Postfixes[I].c_str()));
+    SPIRVTypeImageDescriptor Desc(static_cast<SPIRVImageDimKind>(Ops[0]),
+        Ops[1], Ops[2], Ops[3], Ops[4], Ops[5]);
+    return mapType(T, BM->addImageType(SampledT, Desc,
+                   static_cast<spv::AccessQualifier>(Ops[6])));
+  } else if (TN == kSPIRVTypeName::SampledImg) {
+    return mapType(T, BM->addSampledImageType(
+        static_cast<SPIRVTypeImage *>(
+            transType(getSPIRVTypeByChangeBaseTypeName(M,
+                T, kSPIRVTypeName::SampledImg,
+                kSPIRVTypeName::Image)))));
+  } else
+    return mapType(T, BM->addOpaqueGenericType(
+      SPIRVOpaqueTypeOpCodeMap::map(TN)));
 }
 
 SPIRVFunction *

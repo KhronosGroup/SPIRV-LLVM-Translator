@@ -629,7 +629,9 @@ SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST) {
 std::string
 SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST) {
   return getSPIRVTypeName(kSPIRVTypeName::SampledImg,
-    getSPIRVImageTypePostfixes(ST->getImageType()->getDescriptor(),
+    getSPIRVImageTypePostfixes(getSPIRVImageSampledTypeName(
+      ST->getImageType()->getSampledType()),
+      ST->getImageType()->getDescriptor(),
       ST->getImageType()->getAccessQualifier()));
 }
 

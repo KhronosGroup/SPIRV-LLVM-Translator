@@ -393,9 +393,7 @@ public:
     return Desc;
   }
   bool isOCLImage()const {
-    return get<SPIRVType>(SampledType)->isTypeVoid() &&
-        Desc.Sampled == 0 &&
-        Desc.Format == 0;
+    return Desc.Sampled == 0 && Desc.Format == 0;
   }
   bool hasAccessQualifier() const { return !Acc.empty();}
   SPIRVAccessQualifierKind getAccessQualifier() const {
@@ -411,6 +409,9 @@ public:
       CV.push_back(CapabilityImageMipmap);
     return CV;
   }
+  SPIRVType *getSampledType() const {
+    return get<SPIRVType>(SampledType);
+  }
 protected:
   _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth,
       Desc.Arrayed, Desc.MS, Desc.Sampled, Desc.Format, Acc)
@@ -418,7 +419,7 @@ protected:
   void validate()const {
     assert(OpCode == OC);
     assert(WordCount == FixedWC + Acc.size());
-    assert(get<SPIRVType>(SampledType)->isTypeVoid());
+    assert(SampledType != SPIRVID_INVALID && "Invalid sampled type");
     assert(Desc.Dim <= 5);
     assert(Desc.Depth <= 1);
     assert(Desc.Arrayed <= 1);

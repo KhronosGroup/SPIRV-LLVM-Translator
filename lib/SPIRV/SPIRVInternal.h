@@ -250,7 +250,6 @@ SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>::init() {
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>
   SPIRVExtSetShortNameMap;
 
-
 #define SPIR_MD_KERNELS                     "opencl.kernels"
 #define SPIR_MD_COMPILER_OPTIONS            "opencl.compiler.options"
 #define SPIR_MD_KERNEL_ARG_ADDR_SPACE       "kernel_arg_addr_space"
@@ -272,6 +271,14 @@ typedef SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>
 
 namespace kLLVMTypeName {
   const static char StructPrefix[] = "struct.";
+}
+
+namespace kSPIRVImageSampledTypeName {
+  const static char Float[] = "float";
+  const static char Half[]  = "half";
+  const static char Int[]   = "int";
+  const static char UInt[]  = "uint";
+  const static char Void[]  = "void";
 }
 
 namespace kSPIRVTypeName {
@@ -799,8 +806,19 @@ getSPIRVTypeByChangeBaseTypeName(Module *M, Type *T, StringRef OldName,
 
 /// Get the postfixes of SPIR-V image type name as in spirv.Image.postfixes.
 std::string
-getSPIRVImageTypePostfixes(SPIRVTypeImageDescriptor Desc,
+getSPIRVImageTypePostfixes(StringRef SampledType,
+    SPIRVTypeImageDescriptor Desc,
     SPIRVAccessQualifierKind Acc);
+
+/// Get the sampled type name used in postfix of image type in SPIR-V
+/// friendly LLVM IR.
+std::string
+getSPIRVImageSampledTypeName(SPIRVType *Ty);
+
+/// Get LLVM type for sampled type of SPIR-V image type by postfix.
+Type*
+getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
+  LLVMContext &Ctx);
 
 /// Map OpenCL opaque type name to SPIR-V type name.
 std::string

@@ -9,13 +9,16 @@
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: 2 TypeVoid [[VOID:[0-9]+]]
+; CHECK-SPIRV-DAG: 4 TypeInt [[INT:[0-9]+]] 32 0
+; CHECK-SPIRV-DAG: 3 TypeFloat [[HALF:[0-9]+]] 16
+; CHECK-SPIRV-DAG: 3 TypeFloat [[FLOAT:[0-9]+]] 32
 ; CHECK-SPIRV-DAG: 3 TypePipe [[PIPE_RD:[0-9]+]] 0
 ; CHECK-SPIRV-DAG: 3 TypePipe [[PIPE_WR:[0-9]+]] 1
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1D_RD:[0-9]+]] [[VOID]] 0 0 0 0 0 0 0
-; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2D_RD:[0-9]+]] [[VOID]] 1 0 0 0 0 0 0
-; CHECK-SPIRV-DAG: 10 TypeImage [[IMG3D_RD:[0-9]+]] [[VOID]] 2 0 0 0 0 0 0
-; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2DA_RD:[0-9]+]] [[VOID]] 1 0 1 0 0 0 0
-; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1DB_RD:[0-9]+]] [[VOID]] 5 0 0 0 0 0 0
+; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2D_RD:[0-9]+]] [[INT]] 1 0 0 0 0 0 0
+; CHECK-SPIRV-DAG: 10 TypeImage [[IMG3D_RD:[0-9]+]] [[INT]] 2 0 0 0 0 0 0
+; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2DA_RD:[0-9]+]] [[HALF]] 1 0 1 0 0 0 0
+; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1DB_RD:[0-9]+]] [[FLOAT]] 5 0 0 0 0 0 0
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1D_WR:[0-9]+]] [[VOID]] 0 0 0 0 0 0 1
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2D_RW:[0-9]+]] [[VOID]] 1 0 0 0 0 0 2
 ; CHECK-SPIRV-DAG: 2 TypeDeviceEvent [[DEVEVENT:[0-9]+]]
@@ -57,13 +60,13 @@ target triple = "spir-unknown-unknown"
 
 %spirv.Pipe._0 = type opaque ; read_only pipe
 %spirv.Pipe._1 = type opaque ; write_only pipe
-%spirv.Image._0_0_0_0_0_0_0 = type opaque ; read_only image1d_t
-%spirv.Image._1_0_0_0_0_0_0 = type opaque ; read_only image2d_t 
-%spirv.Image._2_0_0_0_0_0_0 = type opaque ; read_only image3d_t
-%spirv.Image._1_0_1_0_0_0_0 = type opaque ; read_only image2d_array_t
-%spirv.Image._5_0_0_0_0_0_0 = type opaque ; read_only image1d_buffer_t
-%spirv.Image._0_0_0_0_0_0_1 = type opaque ; write_only image1d_t
-%spirv.Image._1_0_0_0_0_0_2 = type opaque ; read_write image2d_t
+%spirv.Image._void_0_0_0_0_0_0_0 = type opaque ; read_only image1d_t
+%spirv.Image._int_1_0_0_0_0_0_0 = type opaque ; read_only image2d_t 
+%spirv.Image._uint_2_0_0_0_0_0_0 = type opaque ; read_only image3d_t
+%spirv.Image._half_1_0_1_0_0_0_0 = type opaque ; read_only image2d_array_t
+%spirv.Image._float_5_0_0_0_0_0_0 = type opaque ; read_only image1d_buffer_t
+%spirv.Image._void_0_0_0_0_0_0_1 = type opaque ; write_only image1d_t
+%spirv.Image._void_1_0_0_0_0_0_2 = type opaque ; read_write image2d_t
 %spirv.DeviceEvent          = type opaque ; clk_event_t
 %spirv.Event                = type opaque ; event_t
 %spirv.Queue                = type opaque ; queue_t
@@ -84,13 +87,13 @@ target triple = "spir-unknown-unknown"
 define spir_kernel void @foo(
   %spirv.Pipe._0 addrspace(1)* nocapture %a,
   %spirv.Pipe._1 addrspace(1)* nocapture %b,
-  %spirv.Image._0_0_0_0_0_0_0 addrspace(1)* nocapture %c1,
-  %spirv.Image._1_0_0_0_0_0_0 addrspace(1)* nocapture %d1,
-  %spirv.Image._2_0_0_0_0_0_0 addrspace(1)* nocapture %e1,
-  %spirv.Image._1_0_1_0_0_0_0 addrspace(1)* nocapture %f1,
-  %spirv.Image._5_0_0_0_0_0_0 addrspace(1)* nocapture %g1,
-  %spirv.Image._0_0_0_0_0_0_1 addrspace(1)* nocapture %c2,
-  %spirv.Image._1_0_0_0_0_0_2 addrspace(1)* nocapture %d3) #0 {
+  %spirv.Image._void_0_0_0_0_0_0_0 addrspace(1)* nocapture %c1,
+  %spirv.Image._int_1_0_0_0_0_0_0 addrspace(1)* nocapture %d1,
+  %spirv.Image._uint_2_0_0_0_0_0_0 addrspace(1)* nocapture %e1,
+  %spirv.Image._half_1_0_1_0_0_0_0 addrspace(1)* nocapture %f1,
+  %spirv.Image._float_5_0_0_0_0_0_0 addrspace(1)* nocapture %g1,
+  %spirv.Image._void_0_0_0_0_0_0_1 addrspace(1)* nocapture %c2,
+  %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)* nocapture %d3) #0 {
 entry:
   ret void
 }
@@ -126,7 +129,7 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 ; CHECK-LLVM-DAG: {{![0-9]+}} = !{!"kernel_arg_base_type", !"pipe", !"pipe", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
 ; CHECK-LLVM-DAG: {{![0-9]+}} = !{!"kernel_arg_type_qual", !"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
 
-!0 = !{void (%spirv.Pipe._0 addrspace(1)*, %spirv.Pipe._1 addrspace(1)*, %spirv.Image._0_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._1_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._2_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._1_0_1_0_0_0_0 addrspace(1)*, %spirv.Image._5_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._0_0_0_0_0_0_1 addrspace(1)*, %spirv.Image._1_0_0_0_0_0_2 addrspace(1)*)* @foo, !1, !2, !3, !4, !5}
+!0 = !{void (%spirv.Pipe._0 addrspace(1)*, %spirv.Pipe._1 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._int_1_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._uint_2_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._half_1_0_1_0_0_0_0 addrspace(1)*, %spirv.Image._float_5_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_1 addrspace(1)*, %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)*)* @foo, !1, !2, !3, !4, !5}
 !1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
 !2 = !{!"kernel_arg_access_qual", !"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write"}
 !3 = !{!"kernel_arg_type", !"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
