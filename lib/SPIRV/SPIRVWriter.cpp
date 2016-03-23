@@ -536,11 +536,10 @@ LLVMToSPIRV::transType(Type *T) {
                     transType(getSPIRVTypeByChangeBaseTypeName(M,
                         T, kSPIRVTypeName::SampledImg,
                         kSPIRVTypeName::Image)))));
-          } else {
-            // ToDo: translate other SPIRV types.
-            assert(0 && "Not implemented");
-          }
-      } else if (BuiltinOpaqueGenericTypeOpCodeMap::find(STName, &OpCode)) {
+          } else
+            return mapType(T, BM->addOpaqueGenericType(
+              SPIRVOpaqueTypeOpCodeMap::map(TN)));
+      } else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
         if (OpCode == OpTypePipe) {
           return mapType(T, BM->addPipeType());
         }

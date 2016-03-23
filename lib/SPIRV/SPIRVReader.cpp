@@ -715,7 +715,7 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     auto OC = T->getOpCode();
     if (isOpaqueGenericTypeOpCode(OC))
       return mapType(T, getOrCreateOpaquePtrType(M,
-          BuiltinOpaqueGenericTypeOpCodeMap::rmap(OC),
+          OCLOpaqueTypeOpCodeMap::rmap(OC),
           getOCLOpaqueTypeAddrSpace(OC)));
     llvm_unreachable("Not implemented");
     }
@@ -788,7 +788,7 @@ SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     return rmap<std::string>(static_cast<SPIRVTypeImage *>(T)->getDescriptor());
   default:
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
-        return BuiltinOpaqueGenericTypeOpCodeMap::rmap(T->getOpCode());
+        return OCLOpaqueTypeOpCodeMap::rmap(T->getOpCode());
       }
       llvm_unreachable("Not implemented");
       return "unknown";
