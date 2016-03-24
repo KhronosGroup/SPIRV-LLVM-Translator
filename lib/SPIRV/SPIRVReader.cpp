@@ -2443,8 +2443,14 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I, BasicBlock *BB
                Type *IntTy = Type::getInt32Ty(*Context);
                RetTy = IntTy;
                if (CI->getType()->isVectorTy()) {
-                 if(cast<VectorType>(CI->getOperand(0)->getType())->getElementType()->isDoubleTy())
+                 if (cast<VectorType>(CI->getOperand(0)->getType())
+                         ->getElementType()
+                         ->isDoubleTy())
                    IntTy = Type::getInt64Ty(*Context);
+                 if (cast<VectorType>(CI->getOperand(0)->getType())
+                         ->getElementType()
+                         ->isHalfTy())
+                   IntTy = Type::getInt16Ty(*Context);
                  RetTy = VectorType::get(IntTy,
                                          CI->getType()->getVectorNumElements());
                }

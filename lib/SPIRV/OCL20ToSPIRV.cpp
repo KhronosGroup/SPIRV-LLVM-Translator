@@ -1260,8 +1260,14 @@ void OCL20ToSPIRV::visitCallRelational(CallInst *CI,
         Value *False = nullptr, *True = nullptr;
         if (NewCI->getType()->isVectorTy()) {
           Type *IntTy = Type::getInt32Ty(*Ctx);
-          if(cast<VectorType>(NewCI->getOperand(0)->getType())->getElementType()->isDoubleTy())
+          if (cast<VectorType>(NewCI->getOperand(0)->getType())
+                  ->getElementType()
+                  ->isDoubleTy())
             IntTy = Type::getInt64Ty(*Ctx);
+          if (cast<VectorType>(NewCI->getOperand(0)->getType())
+                  ->getElementType()
+                  ->isHalfTy())
+            IntTy = Type::getInt16Ty(*Ctx);
           Type *VTy = VectorType::get(IntTy,
                                       NewCI->getType()->getVectorNumElements());
           False = Constant::getNullValue(VTy);
