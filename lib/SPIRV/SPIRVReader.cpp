@@ -1368,8 +1368,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
 
-  case OpBitcast:
-    return mapValue(BV, transConvertInst(BV, F, BB));
+  case OpBitcast: // Can be translated without BB pointer
+    if(!CreatePlaceHolder) // May be a placeholder
+      return mapValue(BV, transConvertInst(BV, F, BB));
 
   default:
     // do nothing
