@@ -226,7 +226,7 @@ private:
             // Handle context_ptr = spir_get_block_context(block)
             lowerGetBlockContext(CI, Ctx);
             changed = true;
-          } else if (oclIsBuiltin(Name, 20, &DemangledName)) {
+          } else if (oclIsBuiltin(Name, &DemangledName)) {
             lowerBlockBuiltin(CI, InvF, Ctx, CtxLen, CtxAlign, DemangledName);
             changed = true;
           } else

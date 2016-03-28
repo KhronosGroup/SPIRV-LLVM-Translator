@@ -230,12 +230,11 @@ OCLTypeToSPIRV::getArgBaseTypeMetadata(Function *F) {
 
 // Handle functions with sampler arguments that don't get called by
 // a kernel function.
-void OCLTypeToSPIRV::adaptArgumentsBySamplerUse(Module &M)
-{
-  SmallPtrSet<Function*, 5> Processed;
+void OCLTypeToSPIRV::adaptArgumentsBySamplerUse(Module &M) {
+  SmallPtrSet<Function *, 5> Processed;
 
-  std::function<void(Function*, unsigned)> TraceArg = [&](Function *F,
-                                                          unsigned Idx) {
+  std::function<void(Function *, unsigned)> TraceArg = [&](Function *F,
+                                                           unsigned Idx) {
     // If we have cycles in the call graph in the future, bail out
     // if we've already processed this function.
     if (Processed.insert(F).second == false)
@@ -264,7 +263,7 @@ void OCLTypeToSPIRV::adaptArgumentsBySamplerUse(Module &M)
       continue;
     auto MangledName = F.getName();
     std::string DemangledName;
-    if (!oclIsBuiltin(MangledName, 12, &DemangledName, false))
+    if (!oclIsBuiltin(MangledName, &DemangledName, false))
       continue;
     if (DemangledName.find(kSPIRVName::SampledImage) == std::string::npos)
       continue;

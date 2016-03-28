@@ -165,7 +165,7 @@ SPIRVToOCL20::visitCallInst(CallInst& CI) {
   auto MangledName = F->getName();
   std::string DemangledName;
   Op OC = OpNop;
-  if (!oclIsBuiltin(MangledName, 20, &DemangledName) ||
+  if (!oclIsBuiltin(MangledName, &DemangledName) ||
       (OC = getSPIRVFuncOC(DemangledName)) == OpNop)
     return;
   DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n'
@@ -479,7 +479,7 @@ void SPIRVToOCL20::translateMangledAtomicTypeName() {
       continue;
     std::string MangledName = I.getName();
     std::string DemangledName;
-    if (!oclIsBuiltin(MangledName, 20, &DemangledName) ||
+    if (!oclIsBuiltin(MangledName, &DemangledName) ||
         DemangledName.find(kOCLBuiltinName::AtomPrefix) != 0)
       continue;
     auto Loc = MangledName.find(kOCLBuiltinName::AtomPrefix);

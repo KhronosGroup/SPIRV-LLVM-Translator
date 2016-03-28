@@ -362,7 +362,7 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
 
   auto MangledName = F->getName();
   std::string DemangledName;
-  if (!oclIsBuiltin(MangledName, 20, &DemangledName))
+  if (!oclIsBuiltin(MangledName, &DemangledName))
     return;
   DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
@@ -1148,7 +1148,7 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
   std::vector<Function *> WorkList;
   for (auto I = M->begin(), E = M->end(); I != E; ++I) {
     std::string DemangledName;
-    if (!oclIsBuiltin(I->getName(), 20, &DemangledName))
+    if (!oclIsBuiltin(I->getName(), &DemangledName))
       continue;
     DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;

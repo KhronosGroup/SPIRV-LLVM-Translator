@@ -74,7 +74,7 @@ namespace kExt {
   const char SpirvBinary[] = ".spv";
   const char SpirvText[] = ".spt";
   const char LLVMBinary[] = ".bc";
-};
+}
 
 using namespace llvm;
 

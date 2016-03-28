@@ -138,7 +138,7 @@ OCL21ToSPIRV::visitCallInst(CallInst& CI) {
 
   auto MangledName = F->getName();
   std::string DemangledName;
-  if (!oclIsBuiltin(MangledName, CLVer, &DemangledName, true))
+  if (!oclIsBuiltin(MangledName, &DemangledName, true))
     return;
   DEBUG(dbgs() << "DemangledName:" << DemangledName << '\n');
   StringRef Ref(DemangledName);
@@ -178,7 +178,7 @@ void OCL21ToSPIRV::visitCallDecorate(CallInst* CI,
   auto F = Target->getCalledFunction();
   auto Name = F->getName().str();
   std::string DemangledName;
-  oclIsBuiltin(Name, CLVer, &DemangledName);
+  oclIsBuiltin(Name, &DemangledName);
   BuiltinFuncMangleInfo Info;
   F->setName(mangleBuiltin(DemangledName + kSPIRVPostfix::Divider +
       getPostfix(getArgAsDecoration(CI, 1), getArgAsInt(CI, 2)),
