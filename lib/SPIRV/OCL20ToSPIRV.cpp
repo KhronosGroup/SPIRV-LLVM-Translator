@@ -1052,16 +1052,15 @@ void
 OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
-  SPIRVTypeImageDescriptor Desc;
-  unsigned Dim = 0;
+  StringRef TyName;
+  auto IsImg = isOCLImageType(CI->getArgOperand(0)->getType(), &TyName);
+  assert(IsImg);
+  SPIRVTypeImageDescriptor Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
+  unsigned Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
+  assert(Dim > 0 && "Ivalid image dimention.");
   mutateCallInstSPIRV(M, CI,
     [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
       assert(Args.size() == 1);
-      StringRef TyName;
-      auto IsImg = isOCLImageType(Args[0]->getType(), &TyName);
-      assert(IsImg);
-      Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
-      Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
       Ret = CI->getType()->isIntegerTy(64) ? Type::getInt64Ty(*Ctx)
                                            : Type::getInt32Ty(*Ctx);
       if (Dim > 1)
@@ -1093,12 +1092,12 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
         }
         return NCI;
       }
-      auto I = StringSwitch<unsigned>(DemangledName)
+      unsigned I = StringSwitch<unsigned>(DemangledName)
           .Case(kOCLBuiltinName::GetImageWidth, 0)
           .Case(kOCLBuiltinName::GetImageHeight, 1)
           .Case(kOCLBuiltinName::GetImageDepth, 2)
           .Case(kOCLBuiltinName::GetImageArraySize, Dim - 1);
-      return ExtractElementInst::Create(NCI, getInt32(M, I), "",
+      return ExtractElementInst::Create(NCI, getUInt32(M, I), "",
           NCI->getNextNode());
     },
   &Attrs);
