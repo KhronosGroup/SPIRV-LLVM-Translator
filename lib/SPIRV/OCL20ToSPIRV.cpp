@@ -935,6 +935,8 @@ OCL20ToSPIRV::transBuiltin(CallInst* CI,
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
   unsigned ExtOp = ~0U;
+  if (StringRef(Info.UniqName).startswith(kSPIRVName::Prefix))
+      return;
   if (OCLSPIRVBuiltinMap::find(Info.UniqName, &OC))
     Info.UniqName = getSPIRVFuncName(OC);
   else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)

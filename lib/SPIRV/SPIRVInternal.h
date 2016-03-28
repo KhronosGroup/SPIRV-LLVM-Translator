@@ -293,6 +293,7 @@ namespace kSPIRVTypeName {
   const static char Queue[]          = "Queue";
   const static char ReserveId[]      = "ReserveId";
   const static char SampledImg[]     = "SampledImage";
+  const static char Sampler[]        = "Sampler";
 }
 
 namespace kSPR2TypeName {
@@ -569,6 +570,12 @@ bool isPointerToOpaqueStructType(llvm::Type* Ty, const std::string &Name);
 /// Check if a type is OCL image type.
 /// \return type name without "opencl." prefix.
 bool isOCLImageType(llvm::Type* Ty, StringRef *Name = nullptr);
+
+/// \param BaseTyName is the type name as in spirv.BaseTyName.Postfixes
+/// \param Postfix contains postfixes extracted from the SPIR-V image
+///   type name as spirv.BaseTyName.Postfixes.
+bool
+isSPIRVType(llvm::Type* Ty, StringRef BaseTyName, StringRef *Postfix = 0);
 
 /// Decorate a function name as __spirv_{Name}_
 std::string decorateSPIRVFunction(const std::string &S);
@@ -900,6 +907,7 @@ SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
   add(kSPIRVTypeName::Pipe, OpTypePipe);
   add(kSPIRVTypeName::Queue, OpTypeQueue);
   add(kSPIRVTypeName::ReserveId, OpTypeReserveId);
+  add(kSPIRVTypeName::Sampler, OpTypeSampler);
   add(kSPIRVTypeName::SampledImg, OpTypeSampledImage);
 }
 

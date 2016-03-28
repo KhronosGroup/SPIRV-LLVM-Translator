@@ -269,8 +269,10 @@ isSPIRVType(llvm::Type* Ty, StringRef BaseTyName, StringRef *Postfix) {
     if (auto ST = dyn_cast<StructType>(PT->getElementType()))
       if (ST->isOpaque()) {
         auto FullName = ST->getName();
-        const std::string N = std::string(kSPIRVTypeName::PrefixAndDelim) +
-            BaseTyName.str() + kSPIRVTypeName::Delimiter;
+        std::string N = std::string(kSPIRVTypeName::PrefixAndDelim) +
+          BaseTyName.str();
+        if (FullName != N)
+          N = N + kSPIRVTypeName::Delimiter;
         if (FullName.startswith(N)) {
           if (Postfix)
             *Postfix = FullName.drop_front(N.size());
