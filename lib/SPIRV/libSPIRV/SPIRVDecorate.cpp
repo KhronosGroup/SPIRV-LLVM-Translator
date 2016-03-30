@@ -52,14 +52,20 @@ operator<< (spv_ostream &O, const std::multiset<T *, B>& V) {
 }
 
 SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
-    Decoration TheDec, SPIRVEntry *TheTarget)
-  :SPIRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
+                                           Decoration TheDec,
+                                           SPIRVEntry *TheTarget)
+    : SPIRVAnnotationGeneric(TheTarget->getModule(), WC, OC,
+                             TheTarget->getId()),
+      Dec(TheDec), Owner(nullptr) {
   validate();
 }
 
 SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
-    Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V)
-  :SPIRVAnnotationGeneric(TheTarget, WC, OC), Dec(TheDec), Owner(nullptr){
+                                           Decoration TheDec,
+                                           SPIRVEntry *TheTarget, SPIRVWord V)
+    : SPIRVAnnotationGeneric(TheTarget->getModule(), WC, OC,
+                             TheTarget->getId()),
+      Dec(TheDec), Owner(nullptr) {
   Literals.push_back(V);
   validate();
 }

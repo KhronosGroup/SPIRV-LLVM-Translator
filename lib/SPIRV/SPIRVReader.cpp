@@ -274,8 +274,8 @@ class SPIRVToLLVM {
 public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
     :M(LLVMModule), BM(TheSPIRVModule), DbgTran(BM, M){
-    if (M)
-      Context = &M->getContext();
+    assert(M);
+    Context = &M->getContext();
   }
 
   std::string getOCLBuiltinName(SPIRVInstruction* BI);
@@ -463,6 +463,7 @@ private:
 
   void setCallingConv(CallInst *Call) {
     Function *F = Call->getCalledFunction();
+    assert(F);
     Call->setCallingConv(F->getCallingConv());
   }
 
@@ -510,6 +511,7 @@ SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV){
 void
 SPIRVToLLVM::setAttrByCalledFunc(CallInst *Call) {
   Function *F = Call->getCalledFunction();
+  assert(F);
   if (F->isIntrinsic()) {
     return;
   }
@@ -984,6 +986,7 @@ SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
     if (auto CI = dyn_cast<CallInst>(*I++)) {
       auto ST = dyn_cast<StoreInst>(*(CI->user_begin()));
+      assert(ST);
       std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(), PointerType::get(F->getReturnType(),
@@ -1704,6 +1707,7 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   FunctionType *FT = dyn_cast<FunctionType>(transType(BF->getFunctionType()));
   Function *F = dyn_cast<Function>(mapValue(BF, Function::Create(FT, Linkage,
       BF->getName(), M)));
+  assert(F);
   mapFunction(BF, F);
   if (!F->isIntrinsic()) {
     F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL :
@@ -2110,6 +2114,7 @@ SPIRVToLLVM::transKernelMetadata() {
       std::vector<Metadata*> MetadataVec;
       MetadataVec.push_back(MDString::get(*Context, kSPIR2MD::VecTyHint));
       Type *VecHintTy = decodeVecTypeHint(*Context, EM->getLiterals()[0]);
+      assert(VecHintTy);
       MetadataVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
       MetadataVec.push_back(
           ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),

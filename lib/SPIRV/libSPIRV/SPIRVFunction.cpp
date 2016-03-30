@@ -109,6 +109,7 @@ SPIRVFunction::decode(std::istream &I) {
     switch(Decoder.OpCode) {
     case OpFunctionParameter: {
       auto Param = static_cast<SPIRVFunctionParameter *>(Decoder.getEntry());
+      assert(Param);
       Param->setParent(this);
       Parameters.push_back(Param);
       Decoder.getWordCountAndOpCode();
@@ -130,6 +131,7 @@ SPIRVFunction::decode(std::istream &I) {
 void
 SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
   SPIRVBasicBlock *BB = static_cast<SPIRVBasicBlock*>(Decoder.getEntry());
+  assert(BB);
   addBasicBlock(BB);
   SPIRVDBG(spvdbgs() << "Decode BB: " << BB->getId() << '\n');
 
@@ -147,6 +149,7 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     }
 
     SPIRVInstruction *Inst = static_cast<SPIRVInstruction *>(Decoder.getEntry());
+    assert(Inst);
     BB->addInstruction(Inst);
   }
   Decoder.setScope(this);
@@ -163,6 +166,3 @@ SPIRVFunction::foreachReturnValueAttr(
     Func(Attr);
   }
 }
-
-
-

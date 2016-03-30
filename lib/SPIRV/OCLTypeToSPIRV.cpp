@@ -297,6 +297,7 @@ OCLTypeToSPIRV::adaptArgumentsByMetadata(Function* F) {
           STName == kSPR2TypeName::Pipe) {
         auto Ty = STName.str();
         auto AccMD = getArgAccessQualifierMetadata(F);
+        assert(AccMD && "Invalid access qualifier metadata");
         auto AccStr = getMDOperandAsString(AccMD, I);
         addAdaptedType(Arg, getOrCreateOpaquePtrType(M,
             mapOCLTypeNameToSPIRV(Ty, AccStr)));
