@@ -67,6 +67,7 @@ Other SPIR-V Types
 * OpTypeDeviceEvent
 * OpTypeReserveId
 * OpTypeQueue
+* OpTypeSampler
 The above SPIR-V types are mapped to LLVM opaque type spirv.{TypeName} and
 mangled as __spirv_{TypeName}, where {TypeName} is the name of the SPIR-V
 type with "OpType" removed, e.g., OpTypeEvent is mapped to spirv.Event and
