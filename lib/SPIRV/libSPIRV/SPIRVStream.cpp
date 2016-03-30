@@ -235,6 +235,7 @@ SPIRVDecoder::getEntry() {
   if (WordCount == 0 || OpCode == OpNop)
     return NULL;
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
+  assert(Entry);
   Entry->setModule(&M);
   if (isModuleScopeAllowedOpCode(OpCode) && !Scope) {}
   else

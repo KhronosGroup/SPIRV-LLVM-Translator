@@ -181,6 +181,7 @@ public:
   /// e.g. whether an operand is literal.
   static SPIRVInstTemplateBase *create(Op TheOC){
     auto Inst = static_cast<SPIRVInstTemplateBase *>(SPIRVEntry::create(TheOC));
+    assert(Inst);
     Inst->init();
     return Inst;
   }

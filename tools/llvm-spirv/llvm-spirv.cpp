@@ -320,4 +320,6 @@ main(int ac, char** av) {
 
   if (IsRegularization)
     return regularizeLLVM();
+
+  return 0;
 }

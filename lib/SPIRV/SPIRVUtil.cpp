@@ -866,10 +866,13 @@ getMDOperandAsInt(MDNode* N, unsigned I) {
 
 std::string
 getMDOperandAsString(MDNode* N, unsigned I) {
-  Metadata* Op = N->getOperand(I);
+  if (!N)
+    return "";
 
+  Metadata* Op = N->getOperand(I);
   if (!Op)
     return "";
+
   if (MDString* Str = dyn_cast<MDString>(Op)) {
     return Str->getString().str();
   }
@@ -1161,6 +1164,7 @@ getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len, uint64_t V,
 
 void
 dumpUsers(Value* V, StringRef Prompt) {
+  if (!V) return;
   DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
   for (auto UI = V->user_begin(), UE = V->user_end(); UI != UE; ++UI)
     DEBUG(dbgs() << "  " << **UI << '\n');

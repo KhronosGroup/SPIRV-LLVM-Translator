@@ -390,10 +390,9 @@ protected:
 class SPIRVAnnotationGeneric:public SPIRVEntryNoIdGeneric {
 public:
   // Complete constructor
-  SPIRVAnnotationGeneric(const SPIRVEntry *TheTarget, unsigned TheWordCount,
-      Op OC)
-    :SPIRVEntryNoIdGeneric(TheTarget->getModule(), TheWordCount, OC),
-     Target(TheTarget ? TheTarget->getId() : SPIRVID_INVALID){}
+  SPIRVAnnotationGeneric(SPIRVModule *TheModule, unsigned TheWordCount, Op OC,
+                         SPIRVId TheTarget = SPIRVID_INVALID)
+      : SPIRVEntryNoIdGeneric(TheModule, TheWordCount, OC), Target(TheTarget) {}
   // Incomplete constructor
   SPIRVAnnotationGeneric(Op OC):SPIRVEntryNoIdGeneric(OC),
       Target(SPIRVID_INVALID){}
@@ -410,7 +409,8 @@ class SPIRVAnnotation:public SPIRVAnnotationGeneric {
 public:
   // Complete constructor
   SPIRVAnnotation(const SPIRVEntry *TheTarget, unsigned TheWordCount)
-    :SPIRVAnnotationGeneric(TheTarget, TheWordCount, OC){}
+      : SPIRVAnnotationGeneric(TheTarget->getModule(), TheWordCount, OC,
+                               TheTarget->getId()) {}
   // Incomplete constructor
   SPIRVAnnotation():SPIRVAnnotationGeneric(OC){}
 };
