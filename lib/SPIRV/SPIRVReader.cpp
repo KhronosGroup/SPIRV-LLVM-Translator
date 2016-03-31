@@ -1800,6 +1800,12 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
   }
   if (OC == OpGenericPtrMemSemantics)
     return BinaryOperator::CreateShl(CI, getInt32(M, 8), "", BB);
+  if (OC == OpImageQueryFormat)
+    return BinaryOperator::CreateSub(
+        CI, getInt32(M, OCLImageChannelDataTypeOffset), "", BB);
+  if (OC == OpImageQueryOrder)
+    return BinaryOperator::CreateSub(
+        CI, getInt32(M, OCLImageChannelOrderOffset), "", BB);
   if (OC == OpBuildNDRange)
     return postProcessOCLBuildNDRange(BI, CI, DemangledName);
   if (OC == OpGroupAll || OC == OpGroupAny)

@@ -157,6 +157,8 @@ namespace kOCLBuiltinName {
   const static char FMin[]               = "fmin";
   const static char GetFence[]           = "get_fence";
   const static char GetImageArraySize[]  = "get_image_array_size";
+  const static char GetImageChannelOrder[]    = "get_image_channel_order";
+  const static char GetImageChannelDataType[] = "get_image_channel_data_type";
   const static char GetImageDepth[]      = "get_image_depth";
   const static char GetImageDim[]        = "get_image_dim";
   const static char GetImageHeight[]     = "get_image_height";
@@ -200,6 +202,12 @@ namespace kOCLBuiltinName {
   const static char SubGroupAny[]        = "sub_group_any";
   const static char WorkPrefix[]         = "work_";
 }
+
+/// Offset for OpenCL image channel order enumeration values.
+const unsigned int OCLImageChannelOrderOffset = 0x10B0;
+
+/// Offset for OpenCL image channel data type enumeration values.
+const unsigned int OCLImageChannelDataTypeOffset = 0x10D0;
 
 /// OCL 1.x atomic memory order when translated to 2.0 atomics.
 const OCLMemOrderKind OCLLegacyAtomicMemOrder = OCLMO_seq_cst;
