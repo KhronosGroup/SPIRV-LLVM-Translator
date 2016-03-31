@@ -251,6 +251,12 @@ public:
   void visitCallScalToVec(CallInst *CI, StringRef MangledName,
                           const std::string &DemangledName);
 
+  /// Transform get_image_channel_{order|data_type} built-in functions to
+  ///   __spirv_ocl_{ImageQueryOrder|ImageQueryFormat}
+  void visitCallGetImageChannel(CallInst *CI, StringRef MangledName,
+                                const std::string &DemangledName,
+                                unsigned int Offset);
+
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I){
     I.dropAllReferences();
     I.eraseFromParent();
@@ -488,6 +494,16 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
       DemangledName == kOCLBuiltinName::Clamp ||
       DemangledName == kOCLBuiltinName::Mix) {
     visitCallScalToVec(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::GetImageChannelDataType) {
+    visitCallGetImageChannel(&CI, MangledName, DemangledName,
+                             OCLImageChannelDataTypeOffset);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::GetImageChannelOrder) {
+    visitCallGetImageChannel(&CI, MangledName, DemangledName,
+                             OCLImageChannelOrderOffset);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -1324,7 +1340,6 @@ OCL20ToSPIRV::visitCallVecLoadStore(CallInst* CI,
   transBuiltin(CI, Info);
 }
 
-
 void OCL20ToSPIRV::visitCallGetFence(CallInst *CI, StringRef MangledName,
                                      const std::string &DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
@@ -1409,6 +1424,22 @@ void OCL20ToSPIRV::visitCallScalToVec(CallInst *CI, StringRef MangledName,
                                    getExtOp(MangledName, DemangledName));
       },
       &Attrs);
+}
+
+void OCL20ToSPIRV::visitCallGetImageChannel(CallInst *CI, StringRef MangledName,
+                                            const std::string &DemangledName,
+                                            unsigned int Offset) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  Op OC = OpNop;
+  OCLSPIRVBuiltinMap::find(DemangledName, &OC);
+  std::string SPIRVName = getSPIRVFuncName(OC);
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args,
+                                 Type *&Ret) { return SPIRVName; },
+                      [=](CallInst *NewCI) -> Instruction * {
+                        return BinaryOperator::CreateAdd(
+                            NewCI, getInt32(M, Offset), "", CI);
+                      },
+                      &Attrs);
 }
 }
 
