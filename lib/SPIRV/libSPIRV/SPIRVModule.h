@@ -252,8 +252,8 @@ public:
   virtual SPIRVInstruction *addCmpInst(Op, SPIRVType *, SPIRVValue *,
       SPIRVValue *, SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addControlBarrierInst(
-      Scope ExecKind, Scope MemKind,
-      SPIRVWord MemSema, SPIRVBasicBlock *BB) = 0;
+      SPIRVValue *ExecKind, SPIRVValue *MemKind,
+      SPIRVValue *MemSema, SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type,
       Scope Scope, const std::vector<SPIRVValue *> &Ops,
       SPIRVBasicBlock *BB) = 0;

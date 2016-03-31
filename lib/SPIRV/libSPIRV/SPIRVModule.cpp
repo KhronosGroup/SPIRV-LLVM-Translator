@@ -250,8 +250,8 @@ public:
   virtual SPIRVInstruction *addCopyMemorySizedInst(SPIRVValue *, SPIRVValue *,
       SPIRVValue *, const std::vector<SPIRVWord>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addControlBarrierInst(
-      Scope ExecKind, Scope MemKind,
-      SPIRVWord MemSema, SPIRVBasicBlock *BB);
+      SPIRVValue *ExecKind, SPIRVValue *MemKind,
+      SPIRVValue *MemSema, SPIRVBasicBlock *BB);
   virtual SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type,
       Scope Scope, const std::vector<SPIRVValue *> &Ops,
       SPIRVBasicBlock *BB);
@@ -1016,8 +1016,8 @@ SPIRVModuleImpl::addCmpInst(Op TheOpCode, SPIRVType *TheType,
 }
 
 SPIRVInstruction *
-SPIRVModuleImpl::addControlBarrierInst(Scope ExecKind,
-    Scope MemKind, SPIRVWord MemSema, SPIRVBasicBlock *BB) {
+SPIRVModuleImpl::addControlBarrierInst(SPIRVValue *ExecKind,
+    SPIRVValue *MemKind, SPIRVValue *MemSema, SPIRVBasicBlock *BB) {
   return addInstruction(
       new SPIRVControlBarrier(ExecKind, MemKind, MemSema, BB), BB);
 }
