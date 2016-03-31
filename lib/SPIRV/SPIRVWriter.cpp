@@ -298,7 +298,6 @@ private:
       CallInst* CI, SPIRVBasicBlock* BB);
   void mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       Function* F);
-  bool oclIsSamplerType(llvm::Type* RT);
 
   SPIRVValue *transSpcvCast(CallInst* CI, SPIRVBasicBlock *BB);
   SPIRVValue *oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB);
@@ -511,9 +510,6 @@ LLVMToSPIRV::transType(Type *T) {
         auto VoidT = transType(Type::getVoidTy(*Ctx));
         return mapType(T, BM->addImageType(VoidT, Desc,
           SPIRSPIRVAccessQualifierMap::map(Acc)));
-      } else if (STName == kSPR2TypeName::Sampler) {
-        assert(AddrSpc == SPIRAS_Global);
-        return mapType(T, BM->addSamplerType());
       } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
       else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
@@ -1057,19 +1053,6 @@ LLVMToSPIRV::transBuiltinSet() {
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
 }
 
-bool
-LLVMToSPIRV::oclIsSamplerType(llvm::Type* T) {
-  auto PT = dyn_cast<PointerType>(T);
-  if (!PT)
-    return false;
-  auto ST = dyn_cast<StructType>(PT->getElementType());
-  if (!ST)
-    return false;
-  bool isSampler =
-      ST->isOpaque() && ST->getStructName() == kSPR2TypeName::Sampler;
-  return isSampler;
-}
-
 /// Transform sampler* spcv.cast(i32 arg)
 /// Only two cases are possible:
 ///   arg = ConstantInt x -> SPIRVConstantSampler
@@ -1081,7 +1064,8 @@ LLVMToSPIRV::oclTransSpvcCastSampler(CallInst* CI, SPIRVBasicBlock *BB) {
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();
   assert(FT->getNumParams() == 1);
-  assert(oclIsSamplerType(RT) && FT->getParamType(0)->isIntegerTy());
+  assert(isSPIRVType(RT, kSPIRVTypeName::Sampler) &&
+    FT->getParamType(0)->isIntegerTy() && "Invalid sampler type");
   auto Arg = CI->getArgOperand(0);
 
   auto GetSamplerConstant = [&](uint64_t SamplerValue) {
@@ -1357,7 +1341,7 @@ LLVMToSPIRV::oclGetMutatedArgumentTypesByBuiltin(
   if (Demangled.find(kSPIRVName::SampledImage) == std::string::npos)
     return;
   ChangedType[1] = getOrCreateOpaquePtrType(F->getParent(),
-      kSPR2TypeName::Sampler);
+    getSPIRVTypeName(kSPIRVTypeName::Sampler));
 }
 
 SPIRVInstruction *
