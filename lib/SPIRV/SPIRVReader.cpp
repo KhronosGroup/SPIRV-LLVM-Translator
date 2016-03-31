@@ -2251,18 +2251,21 @@ Instruction *
 SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction* MB, BasicBlock *BB) {
   assert(BB && "Invalid BB");
   std::string FuncName;
+  auto getIntVal = [](SPIRVValue *value){
+    return static_cast<SPIRVConstant*>(value)->getZExtIntValue();
+  };
   SPIRVWord MemSema = 0;
   if (MB->getOpCode() == OpMemoryBarrier) {
     auto MemB = static_cast<SPIRVMemoryBarrier*>(MB);
     FuncName = "mem_fence";
-    MemSema = MemB->getOpWord(1);
+    MemSema = getIntVal(MemB->getOpValue(1));
   } else if (MB->getOpCode() == OpControlBarrier) {
     auto CtlB = static_cast<SPIRVControlBarrier*>(MB);
     SPIRVWord Ver = 1;
     BM->getSourceLanguage(&Ver);
     FuncName = (Ver <= 12) ? kOCLBuiltinName::Barrier :
         kOCLBuiltinName::WorkGroupBarrier;
-    MemSema = CtlB->getMemSemantic();
+    MemSema = getIntVal(CtlB->getMemSemantic());
   } else {
     llvm_unreachable("Invalid instruction");
   }

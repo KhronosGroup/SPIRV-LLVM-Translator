@@ -1510,11 +1510,11 @@ SPIRVInstruction *
 LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
     CallInst* CI, SPIRVBasicBlock* BB) {
   switch (OC) {
-  case OpControlBarrier:
+  case OpControlBarrier: {
+    auto BArgs = transValue(getArguments(CI), BB);
     return BM->addControlBarrierInst(
-        getArgAsScope(CI, 0),
-        getArgAsScope(CI, 1),
-        getArgAsInt(CI, 2), BB);
+      BArgs[0], BArgs[1], BArgs[2], BB);
+    }
     break;
   case OpGroupAsyncCopy: {
     auto BArgs = transValue(getArguments(CI), BB);

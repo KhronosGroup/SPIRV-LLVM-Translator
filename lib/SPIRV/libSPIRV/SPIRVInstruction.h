@@ -1593,11 +1593,11 @@ class SPIRVControlBarrier:public SPIRVInstruction {
 public:
   static const Op OC = OpControlBarrier;
   // Complete constructor
-  SPIRVControlBarrier(Scope TheScope,
-      Scope TheMemScope, SPIRVWord TheMemSema,
+  SPIRVControlBarrier(SPIRVValue *TheScope,
+      SPIRVValue *TheMemScope, SPIRVValue *TheMemSema,
       SPIRVBasicBlock *TheBB)
-    :SPIRVInstruction(4, OC, TheBB),ExecScope(TheScope),
-     MemScope(TheMemScope), MemSema(TheMemSema){
+    :SPIRVInstruction(4, OC, TheBB), ExecScope(TheScope->getId()),
+    MemScope(TheMemScope->getId()), MemSema(TheMemSema->getId()){
     validate();
     assert(TheBB && "Invalid BB");
   }
@@ -1609,17 +1609,15 @@ public:
   void setWordCount(SPIRVWord TheWordCount) {
     SPIRVEntry::setWordCount(TheWordCount);
   }
-  Scope getExecScope() const {
-    return ExecScope;
-  }
-  Scope getMemScope() const {
-    return MemScope;
-  }
-  bool hasMemSemantic() const {
-    return MemSema != 0;
-  }
-  SPIRVWord getMemSemantic() const {
-    return MemSema;
+  SPIRVValue *getExecScope() const { return getValue(ExecScope); }
+  SPIRVValue *getMemScope() const { return getValue(MemScope); }
+  SPIRVValue *getMemSemantic() const { return getValue(MemSema); }
+  std::vector<SPIRVValue *> getOperands() {
+    std::vector<SPIRVId> Operands;
+    Operands.push_back(ExecScope);
+    Operands.push_back(MemScope);
+    Operands.push_back(MemSema);
+    return getValues(Operands);
   }
 protected:
   _SPIRV_DEF_ENCDEC3(ExecScope, MemScope, MemSema)
@@ -1627,12 +1625,10 @@ protected:
     assert(OpCode == OC);
     assert(WordCount == 4);
     SPIRVInstruction::validate();
-    isValid(ExecScope);
-    isValid(MemScope);
   }
-  Scope ExecScope;
-  Scope MemScope;
-  SPIRVWord MemSema;
+  SPIRVId ExecScope;
+  SPIRVId MemScope;
+  SPIRVId MemSema;
 };
 
 class SPIRVGroupAsyncCopy:public SPIRVInstruction {
