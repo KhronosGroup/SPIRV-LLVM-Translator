@@ -899,12 +899,8 @@ getNamedMDAsStringSet(Module *M, const std::string &MDName) {
     MDNode *MD = NamedMD->getOperand(I);
     if (!MD || MD->getNumOperands() == 0)
       continue;
-    assert(MD->getNumOperands() == 1 && "Invalid SPIR");
-    auto S = getMDOperandAsString(MD, 0);
-    SmallVector<StringRef, 10> Exts;
-    StringRef(S).split(Exts, " ", -1, false);
-    for (auto S:Exts)
-      StrSet.insert(std::move(S.str()));
+    for (unsigned J = 0, N = MD->getNumOperands(); J != N; ++J)
+      StrSet.insert(std::move(getMDOperandAsString(MD, J)));
   }
 
   return std::move(StrSet);

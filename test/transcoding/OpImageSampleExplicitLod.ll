@@ -65,5 +65,5 @@ attributes #1 = { nounwind readnone }
 !4 = !{!"kernel_arg_type_qual", !"", !"", !"", !"", !""}
 !5 = !{!"kernel_arg_base_type", !"image2d_depth_t", !"sampler_t", !"float*", !"float*", !"float*"}
 !6 = !{i32 2, i32 0}
-!7 = !{!" cl_khr_depth_images"}
+!7 = !{!"cl_khr_depth_images"}
 !8 = !{!"cl_images"}
