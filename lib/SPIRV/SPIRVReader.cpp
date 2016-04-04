@@ -155,10 +155,14 @@ addOCLVersionMetadata(LLVMContext *Context, Module *M,
 }
 
 static void
-addNamedMetadataString(LLVMContext *Context, Module *M,
-    const std::string &MDName, const std::string &Str) {
+addNamedMetadataStringSet(LLVMContext *Context, Module *M,
+    const std::string &MDName, const std::set<std::string> &StrSet) {
   NamedMDNode *NamedMD = M->getOrInsertNamedMetadata(MDName);
-  NamedMD->addOperand(getMDString(Context, Str));
+  std::vector<Metadata*> ValueVec;
+  for (auto &&Str : StrSet) {
+    ValueVec.push_back(MDString::get(*Context, Str));
+  }
+  NamedMD->addOperand(MDNode::get(*Context, ValueVec));
 }
 
 static void
@@ -2330,29 +2334,22 @@ bool
 SPIRVToLLVM::transSourceExtension() {
   auto ExtSet = rmap<OclExt::Kind>(BM->getExtension());
   auto CapSet = rmap<OclExt::Kind>(BM->getCapability());
-  for (auto &I:CapSet)
-    ExtSet.insert(I);
-  auto OCLExtensions = getStr(map<std::string>(ExtSet));
-  std::string OCLOptionalCoreFeatures;
-  bool First = true;
+  ExtSet.insert(CapSet.begin(), CapSet.end());
+  auto OCLExtensions = map<std::string>(ExtSet);
+  std::set<std::string> OCLOptionalCoreFeatures;
   static const char *OCLOptCoreFeatureNames[] = {
-      "cl_images",
-      "cl_doubles",
+      "cl_images", "cl_doubles",
   };
-  for (auto &I:OCLOptCoreFeatureNames) {
-    size_t Loc = OCLExtensions.find(I);
-    if (Loc != std::string::npos) {
-      OCLExtensions.erase(Loc, strlen(I));
-      if (First)
-        First = false;
-      else
-        OCLOptionalCoreFeatures += ' ';
-      OCLOptionalCoreFeatures += I;
+  for (auto &I : OCLOptCoreFeatureNames) {
+    auto Loc = OCLExtensions.find(I);
+    if (Loc != OCLExtensions.end()) {
+      OCLExtensions.erase(Loc);
+      OCLOptionalCoreFeatures.insert(I);
     }
   }
-  addNamedMetadataString(Context, M, kSPIR2MD::Extensions, OCLExtensions);
-  addNamedMetadataString(Context, M, kSPIR2MD::OptFeatures,
-      OCLOptionalCoreFeatures);
+  addNamedMetadataStringSet(Context, M, kSPIR2MD::Extensions, OCLExtensions);
+  addNamedMetadataStringSet(Context, M, kSPIR2MD::OptFeatures,
+                            OCLOptionalCoreFeatures);
   return true;
 }
 

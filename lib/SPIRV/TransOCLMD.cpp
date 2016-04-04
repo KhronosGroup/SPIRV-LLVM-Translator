@@ -129,8 +129,6 @@ TransOCLMD::visit(Module *M) {
 
   // Add extensions
   auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
-  for (auto &&I:getNamedMDAsStringSet(M, kSPIR2MD::OptFeatures))
-      Exts.insert(std::move(I));
   if (!Exts.empty()) {
     auto N = B.addNamedMD(kSPIRVMD::Extension);
     for (auto &I:Exts)

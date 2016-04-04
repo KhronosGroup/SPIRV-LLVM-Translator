@@ -44,7 +44,9 @@ entry:
 
 attributes #0 = { nounwind }
 
-; CHECK-DAG: 4 Extension "cl_images"
+; "cl_images" should be encoded as BasicImage capability, 
+; but images are not used in this test case, so this capability is not required.
+; CHECK-DAG-NOT: 4 Extension "cl_images"
 ; CHECK-DAG: 8 Extension "cl_khr_int64_base_atomics"
 ; CHECK-DAG: 9 Extension "cl_khr_int64_extended_atomics"
 ; CHECK: 3 Source 3 200000
@@ -82,6 +84,6 @@ attributes #0 = { nounwind }
 !22 = !{!23, !23, i64 0}
 !23 = !{!"any pointer", !15, i64 0}
 !24 = !{!"cl_khr_int64_base_atomics"}
-!25 = !{!"cl_khr_int64_base_atomics cl_khr_int64_extended_atomics"}
+!25 = !{!"cl_khr_int64_base_atomics", !"cl_khr_int64_extended_atomics"}
 !26 = !{!"cl_images"}
 !27 = !{!""}

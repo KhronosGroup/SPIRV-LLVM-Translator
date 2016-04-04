@@ -752,10 +752,16 @@ std::string getMDOperandAsString(MDNode* N, unsigned I);
 Type* getMDOperandAsType(MDNode* N, unsigned I);
 
 /// Get a named metadata as a set of string.
-/// Assume the named metadata has one or more operands each of which contains
-/// one string.
+/// Assume the named metadata has one or more operands each of which might
+/// contain set of strings. For instance:
+/// !opencl.used.optional.core.features = !{!0}
+/// !0 = !{!"cl_doubles", !"cl_images"}
+/// or if we linked two modules we may have
+/// !opencl.used.optional.core.features = !{!0, !1}
+/// !0 = !{!"cl_doubles"}
+/// !1 = !{!"cl_images"}
 std::set<std::string> getNamedMDAsStringSet(Module *M,
-    const std::string &MDName);
+                                            const std::string &MDName);
 
 /// Get SPIR-V language by SPIR-V metadata spirv.Source
 std::tuple<unsigned, unsigned, std::string>
