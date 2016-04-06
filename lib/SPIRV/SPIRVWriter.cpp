@@ -1155,8 +1155,6 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
     BB);
 }
 
-
-
 bool
 LLVMToSPIRV::transAddressingMode() {
   Triple TargetTriple(M->getTargetTriple());
@@ -1170,6 +1168,8 @@ LLVMToSPIRV::transAddressingMode() {
     BM->setAddressingModel(AddressingModelPhysical32);
   else
     BM->setAddressingModel(AddressingModelPhysical64);
+  // Physical addressing model requires Addresses capability
+  BM->addCapability(CapabilityAddresses);
   return true;
 }
 std::vector<SPIRVValue*>
