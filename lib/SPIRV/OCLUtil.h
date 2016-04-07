@@ -352,6 +352,10 @@ void
 mutateFunctionOCL(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
     AttributeSet *Attrs = nullptr);
+
+/// Check if instruction is bitcast from spirv.ConstantSampler to spirv.Sampler
+bool
+isSamplerInitializer(llvm::Instruction *Inst);
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////

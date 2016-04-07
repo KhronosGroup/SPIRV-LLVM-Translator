@@ -526,6 +526,24 @@ mutateFunctionOCL(Function *F,
   return mutateFunction(F, ArgMutate, &BtnInfo, Attrs, false);
 }
 
+bool
+isSamplerInitializer(Instruction *Inst) {
+  BitCastInst *BIC = dyn_cast<BitCastInst>(Inst);
+  if (!BIC)
+    return false;
+  Type *SrcTy = BIC->getSrcTy();
+  Type *DstTy = BIC->getDestTy();
+  if (SrcTy->isPointerTy())
+    SrcTy = SrcTy->getPointerElementType();
+  if (DstTy->isPointerTy())
+    DstTy = DstTy->getPointerElementType();
+  auto SrcST = dyn_cast<StructType>(SrcTy);
+  auto DstST = dyn_cast<StructType>(DstTy);
+  return DstST && DstST->hasName() && SrcST && SrcST->hasName() &&
+    DstST->getName() == getSPIRVTypeName(kSPIRVTypeName::Sampler) &&
+    SrcST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler);
+}
+
 } // namespace OCLUtil
 
 void
