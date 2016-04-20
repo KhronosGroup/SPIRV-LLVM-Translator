@@ -1023,10 +1023,11 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
-        auto SampledImgTy = getSPIRVTypeByChangeBaseTypeName(M,
-            getAnalysis<OCLTypeToSPIRV>().getAdaptedType(Args[0]),
-            kSPIRVTypeName::Image,
-            kSPIRVTypeName::SampledImg);
+        auto ImageTy = getAnalysis<OCLTypeToSPIRV>().getAdaptedType(Args[0]);
+        if (isOCLImageType(ImageTy))
+          ImageTy = getSPIRVImageTypeFromOCL(M, ImageTy);
+        auto SampledImgTy = getSPIRVTypeByChangeBaseTypeName(
+            M, ImageTy, kSPIRVTypeName::Image, kSPIRVTypeName::SampledImg);
         Value *SampledImgArgs[] = {Args[0], Args[1]};
         auto SampledImg = addCallInstSPIRV(
             M, getSPIRVFuncName(OpSampledImage), SampledImgTy, SampledImgArgs,
@@ -1035,19 +1036,21 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
         Args[0] = SampledImg;
         Args.erase(Args.begin() + 1, Args.begin() + 2);
 
-        switch (Args.size())
-        {
+        switch (Args.size()) {
         case 2: // no lod
-            Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
-            Args.push_back(getFloat32(M, 0.f));
-            break;
+          Args.push_back(getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+          Args.push_back(getFloat32(M, 0.f));
+          break;
         case 3: // explicit lod
-            Args.insert(Args.begin() + 2, getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
-            break;
+          Args.insert(Args.begin() + 2,
+                      getInt32(M, ImageOperandsMask::ImageOperandsLodMask));
+          break;
         case 4: // gradient
-            Args.insert(Args.begin() + 2, getInt32(M, ImageOperandsMask::ImageOperandsGradMask));
-            break;
-        default: assert(0 && "read_image* with unhandled number of args!");
+          Args.insert(Args.begin() + 2,
+                      getInt32(M, ImageOperandsMask::ImageOperandsGradMask));
+          break;
+        default:
+          assert(0 && "read_image* with unhandled number of args!");
         }
 
         // SPIR-V intruction always returns 4-element vector

@@ -89,7 +89,7 @@ OCLTypeToSPIRV::runOnModule(Module& Module) {
     WorkSet.erase(WorkSet.begin());
 
     adaptFunction(F);
-   }
+  }
 
   return false;
 }
