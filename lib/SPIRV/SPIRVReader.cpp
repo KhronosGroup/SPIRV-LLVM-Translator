@@ -2128,7 +2128,7 @@ SPIRVToLLVM::transKernelMetadata() {
       MetadataVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
       MetadataVec.push_back(
           ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),
-              0)));
+              1)));
       KernelMD.push_back(MDNode::get(*Context, MetadataVec));
     }
 
