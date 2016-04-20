@@ -826,6 +826,10 @@ getSPIRVImageTypePostfixes(StringRef SampledType,
 std::string
 getSPIRVImageSampledTypeName(SPIRVType *Ty);
 
+/// Translates OpenCL image type names to SPIR-V.
+/// E.g. %opencl.image1d_rw_t -> %spirv.Image._void_0_0_0_0_0_0_2
+Type *getSPIRVImageTypeFromOCL(Module *M, Type *T);
+
 /// Get LLVM type for sampled type of SPIR-V image type by postfix.
 Type*
 getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
@@ -834,6 +838,12 @@ getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
 /// Map OpenCL opaque type name to SPIR-V type name.
 std::string
 mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc = "");
+
+/// Check if access qualifier is encoded in the type name.
+bool hasAccessQualifiedName(StringRef TyName);
+
+/// Get access qualifier from the type name.
+StringRef getAccessQualifier(StringRef TyName);
 
 bool
 eraseUselessFunctions(Module *M);

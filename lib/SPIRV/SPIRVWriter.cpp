@@ -492,24 +492,8 @@ LLVMToSPIRV::transType(Type *T) {
         return mapType(T, PipeT);
       } else if (STName.find(kSPR2TypeName::ImagePrefix) == 0) {
         assert(AddrSpc == SPIRAS_Global);
-        SmallVector<StringRef, 4> SubStrs;
-        const char Delims[] = {kSPR2TypeName::Delimiter, 0};
-        STName.split(SubStrs, Delims);
-        std::string Acc = kAccessQualName::ReadOnly;
-        if (SubStrs.size() > 2) {
-          Acc = SubStrs[2];
-        }
-        auto Desc = map<SPIRVTypeImageDescriptor>(SubStrs[1].str());
-        DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => " <<
-            "(" << (unsigned)Desc.Dim << ", " <<
-                   Desc.Depth << ", " <<
-                   Desc.Arrayed << ", " <<
-                   Desc.MS << ", " <<
-                   Desc.Sampled << ", " <<
-                   Desc.Format << ")\n");
-        auto VoidT = transType(Type::getVoidTy(*Ctx));
-        return mapType(T, BM->addImageType(VoidT, Desc,
-          SPIRSPIRVAccessQualifierMap::map(Acc)));
+        auto SPIRVImageTy = getSPIRVImageTypeFromOCL(M, T);
+        return mapType(T, transSPIRVOpaqueType(SPIRVImageTy));
       } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
       else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {

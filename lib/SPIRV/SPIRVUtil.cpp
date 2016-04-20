@@ -1265,7 +1265,10 @@ mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
     SmallVector<StringRef, 4> SubStrs;
     const char Delims[] = {kSPR2TypeName::Delimiter, 0};
     Name.split(SubStrs, Delims);
-    auto Desc = map<SPIRVTypeImageDescriptor>(SubStrs[1].str());
+    std::string ImageTyName = SubStrs[1].str();
+    if (hasAccessQualifiedName(Name))
+      ImageTyName.erase(ImageTyName.size() - 5, 3);
+    auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
     DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => " <<
         "(" << (unsigned)Desc.Dim << ", " <<
                Desc.Depth << ", " <<
@@ -1337,7 +1340,6 @@ eraseUselessFunctions(Module *M) {
   return changed;
 }
 
-
 std::string
 mangleBuiltin(const std::string &UniqName,
     ArrayRef<Type*> ArgTypes, BuiltinFuncMangleInfo* BtnInfo) {
@@ -1376,5 +1378,35 @@ mangleBuiltin(const std::string &UniqName,
   Mangler.mangle(FD, MangledName);
   DEBUG(dbgs() << MangledName << '\n');
   return MangledName;
+}
+
+/// Check if access qualifier is encoded in the type name.
+bool hasAccessQualifiedName(StringRef TyName) {
+  if (TyName.endswith("_ro_t") || TyName.endswith("_wo_t") ||
+      TyName.endswith("_rw_t"))
+    return true;
+  return false;
+}
+
+/// Get access qualifier from the type name.
+StringRef getAccessQualifier(StringRef TyName) {
+  assert(hasAccessQualifiedName(TyName) &&
+         "Type is not qualified with access.");
+  auto Acc = TyName.substr(TyName.size() - 4, 2);
+  return llvm::StringSwitch<StringRef>(Acc)
+      .Case("ro", "read_only")
+      .Case("wo", "write_only")
+      .Case("rw", "read_write")
+      .Default("");
+}
+
+/// Translates OpenCL image type names to SPIR-V.
+Type *getSPIRVImageTypeFromOCL(Module *M, Type *ImageTy) {
+  assert(isOCLImageType(ImageTy) && "Unsupported type");
+  auto ImageTypeName = ImageTy->getPointerElementType()->getStructName();
+  std::string Acc = kAccessQualName::ReadOnly;
+  if (hasAccessQualifiedName(ImageTypeName))
+    Acc = getAccessQualifier(ImageTypeName);
+  return getOrCreateOpaquePtrType(M, mapOCLTypeNameToSPIRV(ImageTypeName, Acc));
 }
 }
