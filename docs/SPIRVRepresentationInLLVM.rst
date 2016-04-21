@@ -68,6 +68,7 @@ Other SPIR-V Types
 * OpTypeReserveId
 * OpTypeQueue
 * OpTypeSampler
+* OpTypePipeStorage (SPIR-V 1.1)
 The above SPIR-V types are mapped to LLVM opaque type spirv.{TypeName} and
 mangled as __spirv_{TypeName}, where {TypeName} is the name of the SPIR-V
 type with "OpType" removed, e.g., OpTypeEvent is mapped to spirv.Event and
@@ -149,6 +150,15 @@ The unmangled names of SPIR-V builtin GenericCastToPtrExplicit function follow t
 .. code-block:: c
 
   __spirv_GenericCastToPtrExplicit_To{Global|Local|Private}
+  
+SPIR-V 1.1 Builtin CreatePipeFromPipeStorage Function Name 
+----------------------------------------
+
+The unmangled names of SPIR-V builtin CreatePipeFromPipeStorage function follow the convention:
+
+.. code-block:: c
+
+  __spirv_CreatePipeFromPipeStorage_{read|write}
 
 SPIR-V Extended Instructions Mapped to LLVM Function Calls
 ==========================================================
