@@ -1,4 +1,4 @@
-﻿//===- OCLTypeToSPIRV.cpp - Adapt types from OCL for SPIRV ------*- C++ -*-===//
+//===- OCLTypeToSPIRV.cpp - Adapt types from OCL for SPIRV ------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -253,9 +253,7 @@ void OCLTypeToSPIRV::adaptArgumentsBySamplerUse(Module &M) {
       if (isSPIRVType(SamplerArg->getType(), kSPIRVTypeName::Sampler))
         return;
 
-      addAdaptedType(SamplerArg,
-                     getOrCreateOpaquePtrType(&M,
-                       getSPIRVTypeName(kSPIRVTypeName::Sampler)));
+      addAdaptedType(SamplerArg, getSamplerType(&M));
       auto Caller = cast<Argument>(SamplerArg)->getParent();
       addWork(Caller);
       TraceArg(Caller, getArgIndex(Caller, SamplerArg));
@@ -293,8 +291,7 @@ OCLTypeToSPIRV::adaptArgumentsByMetadata(Function* F) {
     auto OCLTyStr = getMDOperandAsString(TypeMD, I);
     auto NewTy = *PI;
     if (OCLTyStr == OCL_TYPE_NAME_SAMPLER_T && !NewTy->isStructTy()) {
-      addAdaptedType(Arg, getOrCreateOpaquePtrType(M,
-        getSPIRVTypeName(kSPIRVTypeName::Sampler)));
+      addAdaptedType(Arg, getSamplerType(M));
       Changed = true;
     } else if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();

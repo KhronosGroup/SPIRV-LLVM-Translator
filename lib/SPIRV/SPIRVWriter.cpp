@@ -531,11 +531,14 @@ LLVMToSPIRV::transType(Type *T) {
 
   if (auto ST = dyn_cast<StructType>(T)) {
     assert(ST->isSized());
-    std::vector<SPIRVType *> MT(T->getStructNumElements(), nullptr);
 
     std::string Name;
     if (ST->hasName())
       Name = ST->getName();
+
+    if(Name == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
+      return transType(getSamplerType(M));
+
     auto *Struct = BM->openStructType(T->getStructNumElements(), Name);
     mapType(T, Struct);
 
@@ -606,7 +609,9 @@ LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
             transType(getSPIRVTypeByChangeBaseTypeName(M,
                 T, kSPIRVTypeName::SampledImg,
                 kSPIRVTypeName::Image)))));
-  } else
+  } else if(TN == kSPIRVTypeName::Sampler)
+    return mapType(T, BM->addSamplerType());
+  else
     return mapType(T, BM->addOpaqueGenericType(
       SPIRVOpaqueTypeOpCodeMap::map(TN)));
 }
@@ -667,8 +672,14 @@ LLVMToSPIRV::transConstant(Value *V) {
     return BM->addNullConstant(bcast<SPIRVTypePointer>(transType(
         CPNull->getType())));
 
-  if (auto CAZero = dyn_cast<ConstantAggregateZero>(V))
-    return BM->addNullConstant(transType(CAZero->getType()));
+  if (auto CAZero = dyn_cast<ConstantAggregateZero>(V)) {
+    Type *AggType = CAZero->getType();
+    if (const StructType* ST = dyn_cast<StructType>(AggType)) {
+      if (ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
+        return BM->addSamplerConstant(transType(AggType), 0,0,0);
+    } else
+      return BM->addNullConstant(transType(AggType));
+  }
 
   if (auto ConstI = dyn_cast<ConstantInt>(V))
     return BM->addConstant(transType(V->getType()), ConstI->getZExtValue());
@@ -708,6 +719,20 @@ LLVMToSPIRV::transConstant(Value *V) {
   }
 
   if (auto ConstV = dyn_cast<ConstantStruct>(V)) {
+    if (ConstV->getType()->getName() ==
+        getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
+      assert(ConstV->getNumOperands() == 3);
+      SPIRVWord
+        AddrMode   = ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
+        Normalized = ConstV->getOperand(1)->getUniqueInteger().getZExtValue(),
+        FilterMode = ConstV->getOperand(2)->getUniqueInteger().getZExtValue();
+      assert(AddrMode < 5 && "Invalid addressing mode");
+      assert(Normalized < 2 && "Invalid value of normalized coords");
+      assert(FilterMode < 2 && "Invalid filter mode");
+      SPIRVType* SamplerTy = transType(ConstV->getType());
+      return BM->addSamplerConstant(SamplerTy,
+                                    AddrMode, Normalized, FilterMode);
+    }
     std::vector<SPIRVValue *> BV;
     for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I)
       BV.push_back(transValue(*I, nullptr));
@@ -788,6 +813,7 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
     auto OpCode = U->getOpcode();
     BOC = OpCodeMap::map(OpCode);
   }
+
   auto Op = transValue(U->getOperand(0), BB);
   return BM->addUnaryInst(transBoolOpCode(Op, BOC),
       transType(U->getType()), Op, BB);
@@ -812,19 +838,35 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return transFunctionDecl(F);
 
   if (auto GV = dyn_cast<GlobalVariable>(V)) {
+    llvm::PointerType * Ty = GV->getType();
+    // Though variables with common linkage type are initialized by 0,
+    // they can be represented in SPIR-V as uninitialized variables with
+    // 'Export' linkage type, just as tentative definitions look in C
+    llvm::Value *Init = GV->hasInitializer() && !GV->hasCommonLinkage() ?
+      GV->getInitializer() : nullptr;
+    StructType *ST = Init ? dyn_cast<StructType>(Init->getType()) : nullptr;
+    if (ST && ST->hasName() &&
+        ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
+      auto BV = transConstant(Init);
+      assert(BV);
+      return mapValue(V, BV);
+    } else if (ConstantExpr *ConstUE = dyn_cast_or_null<ConstantExpr>(Init)) {
+      Instruction * Inst = ConstUE->getAsInstruction();
+      if (isSamplerInitializer(Inst)) {
+        Init = Inst->getOperand(0);
+        Ty = static_cast<PointerType*>(Init->getType());
+      }
+      Inst->dropAllReferences();
+    }
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
-        transType(GV->getType()), GV->isConstant(),
-        transLinkageType(GV),
-        // Though variables with common linkage type are initialized by 0,
-        // they can be represented in SPIR-V as uninitialized variables with
-        // 'Export' linkage type, just as tentative definitions look in C
-        (GV->hasInitializer() && !GV->hasCommonLinkage()) ?
-            transValue(GV->getInitializer(), nullptr) : nullptr,
-        GV->getName(),
-        SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(
-            GV->getType()->getAddressSpace())),
-        nullptr
-        ));
+      transType(Ty), GV->isConstant(),
+      transLinkageType(GV),
+      Init ? transValue(Init, nullptr) : nullptr,
+      GV->getName(),
+      SPIRSPIRVAddrSpaceMap::map(
+        static_cast<SPIRAddressSpace>(Ty->getAddressSpace())),
+      nullptr
+      ));
     mapValue(V, BVar);
     spv::BuiltIn Builtin = spv::BuiltInPosition;
     if (!GV->hasName() || !getSPIRVBuiltin(GV->getName().str(), Builtin))
@@ -937,6 +979,8 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (UnaryInstruction *U = dyn_cast<UnaryInstruction>(V)) {
+    if(isSamplerInitializer(U))
+      return mapValue(V, transValue(U->getOperand(0), BB));
     return mapValue(V, transUnaryInst(U, BB));
   }
 
@@ -1324,8 +1368,8 @@ LLVMToSPIRV::oclGetMutatedArgumentTypesByBuiltin(
     return;
   if (Demangled.find(kSPIRVName::SampledImage) == std::string::npos)
     return;
-  ChangedType[1] = getOrCreateOpaquePtrType(F->getParent(),
-    getSPIRVTypeName(kSPIRVTypeName::Sampler));
+  if (FT->getParamType(1)->isIntegerTy())
+    ChangedType[1] = getSamplerType(F->getParent());
 }
 
 SPIRVInstruction *

@@ -214,6 +214,13 @@ getOrCreateOpaquePtrType(Module *M, const std::string &Name,
   return PointerType::get(OpaqueType, AddrSpace);
 }
 
+PointerType*
+getSamplerType(Module *M) {
+  return getOrCreateOpaquePtrType(M, getSPIRVTypeName(kSPIRVTypeName::Sampler),
+                                  SPIRAS_Constant);
+}
+
+
 void
 getFunctionTypeParameterTypes(llvm::FunctionType* FT,
     std::vector<Type*>& ArgTys) {
