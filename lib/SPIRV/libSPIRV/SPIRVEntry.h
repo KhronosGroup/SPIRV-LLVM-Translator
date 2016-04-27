@@ -323,6 +323,10 @@ public:
   void validateValues(const std::vector<SPIRVId> &)const;
   void validateBuiltin(SPIRVWord, SPIRVWord)const;
 
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry*>();
+  }
+
 protected:
   /// An entry may have multiple FuncParamAttr decorations.
   typedef std::multimap<Decoration, const SPIRVDecorate*> DecorateMapType;

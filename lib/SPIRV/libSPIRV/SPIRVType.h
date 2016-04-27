@@ -217,6 +217,10 @@ public:
     Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry*>(1, getEntry(ElemTypeId));
+  }
+
 protected:
   _SPIRV_DEF_ENCDEC3(Id, ElemStorageClass, ElemTypeId)
   void validate()const {
@@ -237,6 +241,7 @@ public:
   SPIRVTypeForwardPointer()
       : Pointer(nullptr), SC(StorageClassUniformConstant) {}
 
+  SPIRVTypePointer *getPointer() const { return Pointer; }
   _SPIRV_DCL_ENCDEC
 private:
   SPIRVTypePointer *Pointer;
@@ -264,6 +269,10 @@ public:
     if (CompCount >= 8)
       V.push_back(CapabilityVector16);
     return std::move(V);
+  }
+
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry*>(1, CompType);
   }
 
 protected:
@@ -294,6 +303,12 @@ public:
   SPIRVCapVec getRequiredCapability() const {
     return std::move(getElementType()->getRequiredCapability());
   }
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry*> Operands(2, ElemType);
+    Operands[1] = (SPIRVEntry*)getLength();
+    return Operands;
+  }
+
 
 protected:
   _SPIRV_DCL_ENCDEC
@@ -412,6 +427,11 @@ public:
   SPIRVType *getSampledType() const {
     return get<SPIRVType>(SampledType);
   }
+
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry*>(1, get<SPIRVType>(SampledType));
+  }
+
 protected:
   _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth,
       Desc.Arrayed, Desc.MS, Desc.Sampled, Desc.Format, Acc)
@@ -475,6 +495,10 @@ public:
     ImgTy = TheImgTy;
   }
 
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry*>(1, ImgTy);
+  }
+
 protected:
   SPIRVTypeImage *ImgTy;
   _SPIRV_DEF_ENCDEC2(Id, ImgTy)
@@ -522,6 +546,13 @@ public:
     MemberTypeIdVec.resize(WordCount - 2);
   }
 
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry*> Operands(MemberTypeIdVec.size());
+    for (size_t I = 0, E = MemberTypeIdVec.size(); I < E; ++I)
+      Operands[I] = getEntry(MemberTypeIdVec[I]);
+    return Operands;
+  }
+
 protected:
   _SPIRV_DEF_ENCDEC2(Id, MemberTypeIdVec)
 
@@ -546,6 +577,11 @@ public:
   SPIRVType *getReturnType() const { return ReturnType;}
   SPIRVWord getNumParameters() const { return ParamTypeVec.size();}
   SPIRVType *getParameterType(unsigned I) const { return ParamTypeVec[I];}
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry*> Operands( 1 + ParamTypeVec.size(), ReturnType);
+    std::copy(ParamTypeVec.begin(), ParamTypeVec.end(), ++Operands.begin());
+    return Operands;
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, ReturnType, ParamTypeVec)

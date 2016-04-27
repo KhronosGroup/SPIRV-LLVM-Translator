@@ -266,7 +266,4 @@ enum Entrypoints {
     UMad_hi = 204,
 };
 
-
-
-}; // end namespace OpenCL20
-
+} // end namespace OpenCL20

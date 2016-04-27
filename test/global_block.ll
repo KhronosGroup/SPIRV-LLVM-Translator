@@ -19,12 +19,12 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-SPIRV: TypeInt [[int:[0-9]+]] 32
 ; CHECK-SPIRV: TypeInt [[int8:[0-9]+]] 8
+; CHECK-SPIRV: Constant [[int]] [[five:[0-9]+]] 5
 ; CHECK-SPIRV: TypePointer [[void_ptr:[0-9]+]] {{.*}} [[int8]]
 
 %opencl.block = type opaque
 ; CHECK-LLVM:  %opencl.block = type opaque
 ; CHECK-SPIRV: ConstantNull [[void_ptr]] [[void_null_ptr:[0-9]+]]
-; CHECK-SPIRV: Constant [[int]] [[five:[0-9]+]] 5
 
 @block_kernel.b1 = internal addrspace(2) constant %opencl.block* bitcast (i32 (i8*, i32)* @_block_invoke to %opencl.block*), align 4
 ; CHECK-LLVM:  @block_kernel.b1 = internal addrspace(2) constant %opencl.block* bitcast (i32 (i8*, i32)* @_block_invoke to %opencl.block*), align 4

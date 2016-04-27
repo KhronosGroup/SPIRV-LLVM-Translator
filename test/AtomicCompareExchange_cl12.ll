@@ -9,9 +9,9 @@ target triple = "spir-unknown-unknown"
 ; CHECK: Name [[Comparator:[0-9]+]] "expected"
 ; CHECK: Name [[Value:[0-9]+]] "desired"
 ; CHECK: 4 TypeInt [[int:[0-9]+]] 32 0
-; CHECK: 4 TypePointer [[int_ptr:[0-9]+]] 5 [[int]]
 ; CHECK: Constant [[int]] [[DeviceScope:[0-9]+]] 1
 ; CHECK: Constant [[int]] [[SequentiallyConsistent_MS:[0-9]+]] 16
+; CHECK: 4 TypePointer [[int_ptr:[0-9]+]] 5 [[int]]
 
 ; Function Attrs: nounwind
 define spir_func i32 @test(i32 addrspace(1)* %object, i32 %expected, i32 %desired) #0 {

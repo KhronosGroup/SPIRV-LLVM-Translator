@@ -324,6 +324,14 @@ public:
     return VOps;
   }
 
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry*> Operands;
+    for (size_t I = getOperandOffset(), E = Ops.size(); I < E; ++I)
+      if (!isOperandLiteral(I))
+        Operands.push_back(getEntry(Ops[I]));
+    return Operands;
+  }
+
   virtual SPIRVValue *getOperand(unsigned I) {
     return getOpValue(I + getOperandOffset());
   }
@@ -475,6 +483,11 @@ public:
       addDecorate(new SPIRVDecorate(DecorationConstant, this));
     else
       eraseDecorate(DecorationConstant);
+  }
+  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    if (SPIRVValue *V = getInitializer())
+      return std::vector<SPIRVEntry*>(1, V);
+    return std::vector<SPIRVEntry*>();
   }
 protected:
   void validate() const {
@@ -1831,7 +1844,7 @@ _SPIRV_OP(ImageQuerySamples, true, 4)
   typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> \
       SPIRV##x;
 // Other instructions
-_SPIRV_OP(SpecConstantOp, true, 4, true)
+_SPIRV_OP(SpecConstantOp, true, 4, true, 0)
 _SPIRV_OP(GenericPtrMemSemantics, true, 4, false)
 _SPIRV_OP(GenericCastToPtrExplicit, true, 5, false, 1)
 #undef _SPIRV_OP
