@@ -117,6 +117,10 @@ enum ExecutionMode {
     ExecutionModeOutputTriangleStrip = 29,
     ExecutionModeVecTypeHint = 30,
     ExecutionModeContractionOff = 31,
+    ExecutionModeInitializer = 33,
+    ExecutionModeFinalizer = 34,
+    ExecutionModeSubgroupSize = 35,
+    ExecutionModeSubgroupsPerWorkgroup = 36,
 };
 
 enum StorageClass {
@@ -357,6 +361,7 @@ enum Decoration {
     DecorationNoContraction = 42,
     DecorationInputAttachmentIndex = 43,
     DecorationAlignment = 44,
+    DecorationMaxByteOffset = 45,
 };
 
 enum BuiltIn {
