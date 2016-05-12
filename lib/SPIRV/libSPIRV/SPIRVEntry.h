@@ -550,10 +550,9 @@ public:
   // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
       SPIRVWord code)
-  :SPIRVAnnotation(TheTarget, 4),
-    ExecMode(TheExecMode) {
-      WordLiterals.push_back(code);
-      updateModuleVersion();
+  :SPIRVAnnotation(TheTarget, 4), ExecMode(TheExecMode){
+    WordLiterals.push_back(code);
+    updateModuleVersion();
   }
   // Complete constructor for ContractionOff
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode)
