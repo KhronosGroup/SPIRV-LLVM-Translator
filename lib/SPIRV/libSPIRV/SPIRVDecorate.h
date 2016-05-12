@@ -51,12 +51,10 @@ namespace SPIRV{
 class SPIRVDecorationGroup;
 class SPIRVDecorateGeneric:public SPIRVAnnotationGeneric{
 public:
-  // Complete constructor for decorations without literals
+  // Complete constructor
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-      SPIRVEntry *TheTarget);
-  // Complete constructor for decorations with one word literal
-  SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-      SPIRVEntry *TheTarget, SPIRVWord V);
+      SPIRVEntry *TheTarget, SPIRVOptParams Params = {});
+
   // Incomplete constructor
   SPIRVDecorateGeneric(Op OC);
 
@@ -83,9 +81,25 @@ public:
     return getCapability(Dec);
   }
 
+  SPIRVWord getRequiredSPIRVVersion() const override {
+    switch (Dec) {
+    case DecorationSpecId:
+      if (getModule()->hasCapability(CapabilityKernel))
+        return SPIRV_1_1;
+      else
+        return SPIRV_1_0;
+
+    case DecorationMaxByteOffset:
+      return SPIRV_1_1;
+
+    default:
+      return SPIRV_1_0;
+    }
+  }
+
 protected:
   Decoration Dec;
-  std::vector<SPIRVWord> Literals;
+  SPIRVOptParams Literals;
   SPIRVDecorationGroup *Owner; // Owning decorate group
 };
 
@@ -114,10 +128,10 @@ public:
   static const SPIRVWord FixedWC = 3;
   // Complete constructor for decorations without literals
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, 3, TheDec, TheTarget){}
+    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget){}
   // Complete constructor for decorations with one word literal
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget, V){}
+    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget, { V }){}
   // Incomplete constructor
   SPIRVDecorate():SPIRVDecorateGeneric(OC){}
 
@@ -183,12 +197,17 @@ public:
   static const Op OC = OpMemberDecorate;
   static const SPIRVWord FixedWC = 4;
   // Complete constructor for decorations without literals
-  SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member, SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget), MemberNumber(Member){}
+  SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
+      SPIRVEntry *TheTarget)
+    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget),
+      MemberNumber(Member){}
+
   // Complete constructor for decorations with one word literal
-  SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member, SPIRVEntry *TheTarget,
-      SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, 5, TheDec, TheTarget, V), MemberNumber(Member){}
+  SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
+      SPIRVEntry *TheTarget, SPIRVWord V)
+    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget, {V}),
+      MemberNumber(Member){}
+
   // Incomplete constructor
   SPIRVMemberDecorate():SPIRVDecorateGeneric(OC), MemberNumber(SPIRVWORD_MAX){}
 

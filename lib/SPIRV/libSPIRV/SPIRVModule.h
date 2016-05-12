@@ -107,6 +107,7 @@ public:
   // Module query functions
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
   virtual const SPIRVCapSet &getCapability() const = 0;
+  virtual bool hasCapability(SPIRVCapabilityKind) const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
   virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind, unsigned) const
     = 0;
@@ -131,6 +132,7 @@ public:
   virtual bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId) const = 0;
   virtual unsigned short getGeneratorId() const = 0;
   virtual unsigned short getGeneratorVer() const = 0;
+  virtual SPIRVWord getSPIRVVersion() const = 0;
 
   // Module changing functions
   virtual bool importBuiltinSet(const std::string &, SPIRVId *) = 0;
@@ -146,6 +148,11 @@ public:
   virtual void setGeneratorId(unsigned short) = 0;
   virtual void setGeneratorVer(unsigned short) = 0;
   virtual void resolveUnknownStructFields() = 0;
+  virtual void setSPIRVVersion(SPIRVWord) = 0;
+  
+  void setMinSPIRVVersion(SPIRVWord Ver) { 
+    setSPIRVVersion(std::max(Ver, getSPIRVVersion()));
+  }
 
   // Object creation functions
   template<class T> T *add(T *Entry) { addEntry(Entry); return Entry;}
