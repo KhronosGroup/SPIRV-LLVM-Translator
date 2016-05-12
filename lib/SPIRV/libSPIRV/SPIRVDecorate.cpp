@@ -53,7 +53,7 @@ operator<< (spv_ostream &O, const std::multiset<T *, B>& V) {
 
 SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
                                            Decoration TheDec,
-                                           SPIRVEntry *TheTarget, 
+                                           SPIRVEntry *TheTarget,
                                            SPIRVOptParams Params)
     : SPIRVAnnotationGeneric(TheTarget->getModule(), WC+Params.size(), OC,
                              TheTarget->getId()),

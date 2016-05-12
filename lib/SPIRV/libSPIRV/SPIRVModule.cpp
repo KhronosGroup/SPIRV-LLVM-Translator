@@ -89,7 +89,7 @@ public:
   SPIRVAddressingModelKind getAddressingModel() { return AddrModel;}
   SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const;
   const SPIRVCapSet &getCapability() const { return CapSet;}
-  bool hasCapability(SPIRVCapabilityKind Cap) const { 
+  bool hasCapability(SPIRVCapabilityKind Cap) const {
     return CapSet.find(Cap) != CapSet.end();
   }
   std::set<std::string> &getExtension() { return SPIRVExt;}
