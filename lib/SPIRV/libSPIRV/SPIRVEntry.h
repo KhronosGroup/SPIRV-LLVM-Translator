@@ -545,17 +545,21 @@ public:
     WordLiterals.push_back(x);
     WordLiterals.push_back(y);
     WordLiterals.push_back(z);
+    updateModuleVersion();
   }
-  // Complete constructor for VecTypeHint
+  // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
       SPIRVWord code)
   :SPIRVAnnotation(TheTarget, 4),
-   ExecMode(TheExecMode) {
-    WordLiterals.push_back(code);
+    ExecMode(TheExecMode) {
+      WordLiterals.push_back(code);
+      updateModuleVersion();
   }
   // Complete constructor for ContractionOff
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode)
-  :SPIRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){}
+  :SPIRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){
+    updateModuleVersion();
+  }
   // Incomplete constructor
   SPIRVExecutionMode():ExecMode(ExecutionModeInvocations){}
   SPIRVExecutionModeKind getExecutionMode()const { return ExecMode;}

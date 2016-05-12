@@ -51,9 +51,12 @@ namespace SPIRV{
 class SPIRVDecorationGroup;
 class SPIRVDecorateGeneric:public SPIRVAnnotationGeneric{
 public:
+  // Complete constructor for decorations without literals
+  SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
+    SPIRVEntry *TheTarget);
   // Complete constructor
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-      SPIRVEntry *TheTarget, SPIRVOptParams Params = {});
+      SPIRVEntry *TheTarget, SPIRVWord V);
 
   // Incomplete constructor
   SPIRVDecorateGeneric(Op OC);
@@ -99,7 +102,7 @@ public:
 
 protected:
   Decoration Dec;
-  SPIRVOptParams Literals;
+  std::vector<SPIRVWord> Literals;
   SPIRVDecorationGroup *Owner; // Owning decorate group
 };
 
@@ -128,10 +131,10 @@ public:
   static const SPIRVWord FixedWC = 3;
   // Complete constructor for decorations without literals
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget){}
+    :SPIRVDecorateGeneric(OC, 3, TheDec, TheTarget){}
   // Complete constructor for decorations with one word literal
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget, { V }){}
+    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget, V){}
   // Incomplete constructor
   SPIRVDecorate():SPIRVDecorateGeneric(OC){}
 
@@ -199,13 +202,13 @@ public:
   // Complete constructor for decorations without literals
   SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
       SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget),
+    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget),
       MemberNumber(Member){}
 
   // Complete constructor for decorations with one word literal
   SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
       SPIRVEntry *TheTarget, SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, FixedWC, TheDec, TheTarget, {V}),
+    :SPIRVDecorateGeneric(OC, 5, TheDec, TheTarget, V),
       MemberNumber(Member){}
 
   // Incomplete constructor
