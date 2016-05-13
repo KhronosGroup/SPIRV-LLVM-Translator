@@ -196,6 +196,7 @@ public:
   virtual void closeStructType(SPIRVTypeStruct *T, bool);
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord);
   virtual SPIRVType *addOpaqueGenericType(Op);
+  virtual SPIRVTypeDeviceEvent *addDeviceEventType();
   virtual SPIRVTypePipe *addPipeType();
   virtual SPIRVTypeVoid *addVoidType();
   virtual void createForwardPointers();
@@ -703,6 +704,12 @@ SPIRVType *
 SPIRVModuleImpl::addOpaqueGenericType(Op TheOpCode) {
   return addType(new SPIRVTypeOpaqueGeneric(TheOpCode, this, getId()));
 }
+
+SPIRVTypeDeviceEvent *
+SPIRVModuleImpl::addDeviceEventType() {
+  return addType(new SPIRVTypeDeviceEvent(this, getId()));
+}
+
 SPIRVTypePipe*
 SPIRVModuleImpl::addPipeType() {
   return addType(new SPIRVTypePipe(this, getId()));

@@ -8,6 +8,7 @@
 ; CHECK-LLVM: call spir_func i32 @_Z14work_group_alli(
 ; CHECK-LLVM: call spir_func i32 @_Z14work_group_anyi(
 
+; CHECK-SPIRV: 2 Capability Groups
 ; CHECK-SPIRV: 2 TypeBool [[BoolTypeID:[0-9]+]]
 ; CHECK-SPIRV: 3 ConstantTrue [[BoolTypeID]] [[ConstID:[0-9]+]]
 ; CHECK-SPIRV: 5 GroupAll [[BoolTypeID]] {{[0-9]+}} {{[0-9]+}} [[ConstID]]

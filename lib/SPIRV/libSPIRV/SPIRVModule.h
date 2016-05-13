@@ -70,6 +70,7 @@ class SPIRVTypeSampledImage;
 class SPIRVTypeStruct;
 class SPIRVTypeVector;
 class SPIRVTypeVoid;
+class SPIRVTypeDeviceEvent;
 class SPIRVTypePipe;
 class SPIRVValue;
 class SPIRVVariable;
@@ -197,6 +198,7 @@ public:
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord) = 0;
   virtual SPIRVTypeVoid *addVoidType() = 0;
   virtual SPIRVType *addOpaqueGenericType(Op) = 0;
+  virtual SPIRVTypeDeviceEvent *addDeviceEventType() = 0;
   virtual SPIRVTypePipe *addPipeType() = 0;
   virtual void createForwardPointers() = 0;
 

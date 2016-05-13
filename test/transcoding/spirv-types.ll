@@ -8,6 +8,12 @@
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
+; CHECK-SPIRV: 2 Capability Float16
+; CHECK-SPIRV: 2 Capability ImageBasic
+; CHECK-SPIRV: 2 Capability ImageReadWrite
+; CHECK-SPIRV: 2 Capability Pipes
+; CHECK-SPIRV: 2 Capability DeviceEnqueue
+
 ; CHECK-SPIRV-DAG: 2 TypeVoid [[VOID:[0-9]+]]
 ; CHECK-SPIRV-DAG: 4 TypeInt [[INT:[0-9]+]] 32 0
 ; CHECK-SPIRV-DAG: 3 TypeFloat [[HALF:[0-9]+]] 16
