@@ -1124,6 +1124,102 @@ operator<< (spv_ostream &O, const std::multiset<T *, B>& V) {
   return O;
 }
 
+// To satisfy SPIR-V spec requirement:
+// "All operands must be declared before being used",
+// we do DFS based topological sort
+// https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
+class TopologicalSort {
+  enum DFSState : char {
+    Unvisited,
+    Discovered,
+    Visited
+  };
+  typedef std::vector<SPIRVType *> SPIRVTypeVec;
+  typedef std::vector<SPIRVValue *> SPIRVConstantVector;
+  typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
+  typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
+  typedef std::function<bool(SPIRVEntry*, SPIRVEntry*)> IdComp;
+  typedef std::map<SPIRVEntry*, DFSState, IdComp> EntryStateMapTy;
+
+  SPIRVTypeVec TypeIntVec;
+  SPIRVConstantVector ConstIntVec;
+  SPIRVTypeVec TypeVec;
+  SPIRVConstantVector ConstVec;
+  SPIRVVariableVec VariableVec;
+  const SPIRVForwardPointerVec& ForwardPointerVec;
+  EntryStateMapTy EntryStateMap;
+
+  friend spv_ostream & operator<<(spv_ostream &O, const TopologicalSort &S);
+
+// This method implements recursive depth-first search among all Entries in
+// EntryStateMap. Traversing entries and adding them to corresponding container
+// after visiting all dependent entries(post-order traversal) guarantees that
+// the entry's operands will appear in the container before the entry itslef.
+  void visit(SPIRVEntry* E) {
+    DFSState& State = EntryStateMap[E];
+    assert(State != Discovered && "Cyclic dependency detected");
+    if (State == Visited)
+      return;
+    State = Discovered;
+    for (SPIRVEntry *Op : E->getNonLiteralOperands()) {
+      auto Comp = [&Op](SPIRVTypeForwardPointer *FwdPtr) {
+        return FwdPtr->getPointer() == Op;
+      };
+      // Skip forward referenced pointers
+      if (Op->getOpCode() == OpTypePointer &&
+          find_if(ForwardPointerVec.begin(), ForwardPointerVec.end(), Comp) !=
+          ForwardPointerVec.end())
+        continue;
+      visit(Op);
+    }
+    State = Visited;
+    Op OC = E->getOpCode();
+    if (OC == OpTypeInt)
+      TypeIntVec.push_back(static_cast<SPIRVType*>(E));
+    else if (isConstantOpCode(OC)) {
+      SPIRVConstant *C = static_cast<SPIRVConstant*>(E);
+      if (C->getType()->isTypeInt())
+        ConstIntVec.push_back(C);
+      else
+        ConstVec.push_back(C);
+    } else if (isTypeOpCode(OC))
+      TypeVec.push_back(static_cast<SPIRVType*>(E));
+    else if (E->isVariable())
+      VariableVec.push_back(static_cast<SPIRVVariable*>(E));
+  }
+public:
+  TopologicalSort(const SPIRVTypeVec &_TypeVec,
+                  const SPIRVConstantVector &_ConstVec,
+                  const SPIRVVariableVec &_VariableVec,
+                  const SPIRVForwardPointerVec &_ForwardPointerVec) :
+  ForwardPointerVec(_ForwardPointerVec),
+  EntryStateMap([](SPIRVEntry* a, SPIRVEntry* b) -> bool {
+                  return a->getId() < b->getId();
+                })
+  {
+    // Collect entries for sorting
+    for (auto *T : _TypeVec)
+      EntryStateMap[T] = DFSState::Unvisited;
+    for (auto *C : _ConstVec)
+      EntryStateMap[C] = DFSState::Unvisited;
+    for (auto *V : _VariableVec)
+      EntryStateMap[V] = DFSState::Unvisited;
+    // Run topoligical sort
+    for (auto ES : EntryStateMap)
+      visit(ES.first);
+  }
+};
+
+spv_ostream &
+operator<< (spv_ostream &O, const TopologicalSort &S) {
+  O << S.TypeIntVec
+    << S.ConstIntVec
+    << S.TypeVec
+    << S.ConstVec
+    << S.VariableVec;
+  return O;
+}
+
 spv_ostream &
 operator<< (spv_ostream &O, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl*>(&M);
@@ -1185,9 +1281,8 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
     << MI.DecorateSet
     << MI.GroupDecVec
     << MI.ForwardPointerVec
-    << MI.TypeVec
-    << MI.ConstVec
-    << MI.VariableVec
+    << TopologicalSort(MI.TypeVec, MI.ConstVec, MI.VariableVec,
+                       MI.ForwardPointerVec)
     << SPIRVNL()
     << MI.FuncVec;
   return O;
@@ -1197,7 +1292,6 @@ template<class T>
 void SPIRVModuleImpl::addTo(std::vector<T*>& V, SPIRVEntry* E) {
   V.push_back(static_cast<T *>(E));
 }
-
 
 // The first decoration group includes all the previously defined decorates.
 // The second decoration group includes all the decorates defined between the

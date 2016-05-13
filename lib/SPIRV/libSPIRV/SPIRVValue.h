@@ -280,6 +280,10 @@ public:
   std::vector<SPIRVValue*> getElements()const {
     return getValues(Elements);
   }
+  std::vector<SPIRVEntry*> getNonLiteralOperands() const {
+    std::vector<SPIRVValue*> Elements = getElements();
+    return std::vector<SPIRVEntry*>(Elements.begin(), Elements.end());
+  }
 protected:
   void validate() const {
     SPIRVValue::validate();
