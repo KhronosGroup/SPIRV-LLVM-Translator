@@ -611,6 +611,8 @@ LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
                 kSPIRVTypeName::Image)))));
   } else if(TN == kSPIRVTypeName::Sampler)
     return mapType(T, BM->addSamplerType());
+  else if (TN == kSPIRVTypeName::DeviceEvent)
+    return mapType(T, BM->addDeviceEventType());
   else
     return mapType(T, BM->addOpaqueGenericType(
       SPIRVOpaqueTypeOpCodeMap::map(TN)));
@@ -1537,6 +1539,8 @@ LLVMToSPIRV::transBoolOpCode(SPIRVValue* Opn, Op OC) {
 SPIRVInstruction *
 LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
     CallInst* CI, SPIRVBasicBlock* BB) {
+  if (isGroupOpCode(OC))
+    BM->addCapability(CapabilityGroups);
   switch (OC) {
   case OpControlBarrier: {
     auto BArgs = transValue(getArguments(CI), BB);
