@@ -53,11 +53,10 @@ class SPIRVDecorateGeneric:public SPIRVAnnotationGeneric{
 public:
   // Complete constructor for decorations without literals
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-    SPIRVEntry *TheTarget);
-  // Complete constructor
+      SPIRVEntry *TheTarget);
+  // Complete constructor for decorations with one word literal
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
       SPIRVEntry *TheTarget, SPIRVWord V);
-
   // Incomplete constructor
   SPIRVDecorateGeneric(Op OC);
 

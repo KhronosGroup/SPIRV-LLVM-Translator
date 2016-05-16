@@ -396,7 +396,6 @@ public:
     SPIRVEntry::WordCount = 1;
     validate();
   }
-
 protected:
   _SPIRV_DEF_ENCDEC0
   void validate()const {
