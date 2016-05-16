@@ -330,6 +330,9 @@ public:
   void validateValues(const std::vector<SPIRVId> &)const;
   void validateBuiltin(SPIRVWord, SPIRVWord)const;
 
+  // By default assume SPIRV 1.0 as required version
+  virtual SPIRVWord getRequiredSPIRVVersion() const { return SPIRV_1_0; }
+
   virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
     return std::vector<SPIRVEntry*>();
   }
