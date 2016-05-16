@@ -86,7 +86,7 @@ struct SPIRVTypeImageDescriptor;
 
 class SPIRVModule {
 public:
-  typedef std::set<SPIRVCapabilityKind> SPIRVCapSet;
+  typedef std::map<SPIRVCapabilityKind, SPIRVCapability*> SPIRVCapMap;
 
   static SPIRVModule* createSPIRVModule();
   SPIRVModule();
@@ -106,7 +106,7 @@ public:
 
   // Module query functions
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
-  virtual const SPIRVCapSet &getCapability() const = 0;
+  virtual const SPIRVCapMap &getCapability() const = 0;
   virtual bool hasCapability(SPIRVCapabilityKind) const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
   virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind, unsigned) const

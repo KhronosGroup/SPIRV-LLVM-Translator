@@ -88,9 +88,9 @@ public:
   // Module query functions
   SPIRVAddressingModelKind getAddressingModel() { return AddrModel;}
   SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const;
-  const SPIRVCapSet &getCapability() const { return CapSet;}
+  const SPIRVCapMap &getCapability() const { return CapMap; }
   bool hasCapability(SPIRVCapabilityKind Cap) const {
-    return CapSet.find(Cap) != CapSet.end();
+    return CapMap.find(Cap) != CapMap.end();
   }
   std::set<std::string> &getExtension() { return SPIRVExt;}
   SPIRVFunction *getFunction(unsigned I) const { return FuncVec[I];}
@@ -328,7 +328,6 @@ private:
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdSet> SPIRVExecModelIdSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdVec> SPIRVExecModelIdVecMap;
   typedef std::unordered_map<std::string, SPIRVString*> SPIRVStringMap;
-  typedef std::vector<SPIRVCapability*> SPIRVCapVector;
   typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
       SPIRVUnknownStructFieldMap;
 
@@ -350,8 +349,7 @@ private:
   SPIRVExecModelIdSetMap EntryPointSet;
   SPIRVExecModelIdVecMap EntryPointVec;
   SPIRVStringMap StrMap;
-  SPIRVCapSet CapSet;
-  SPIRVCapVector CapObjs;
+  SPIRVCapMap CapMap;
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt*> IntTypeMap;
   std::map<unsigned, SPIRVConstant*> LiteralMap;
@@ -370,8 +368,8 @@ SPIRVModuleImpl::~SPIRVModuleImpl() {
   //  delete I;
   //}
 
-  for (auto C : CapObjs)
-    delete C;
+  for (auto C : CapMap)
+    delete C.second;
 }
 
 SPIRVLine*
@@ -443,17 +441,19 @@ void
 SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
   addCapabilities(SPIRV::getCapability(Cap));
   SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
-  if (!hasCapability(Cap))
-    CapObjs.push_back(new SPIRVCapability(this, Cap));
-  CapSet.insert(Cap);
+  if (hasCapability(Cap))
+    return;
+
+  CapMap.insert(std::make_pair(Cap, new SPIRVCapability(this, Cap)));
 }
 
 void
 SPIRVModuleImpl::addCapabilityInternal(SPIRVCapabilityKind Cap) {
   if (AutoAddCapability) {
-    if (!hasCapability(Cap))
-      CapObjs.push_back(new SPIRVCapability(this, Cap));
-    CapSet.insert(Cap);
+    if (hasCapability(Cap))
+      return;
+
+    CapMap.insert(std::make_pair(Cap, new SPIRVCapability(this, Cap)));
   }
 }
 
@@ -530,7 +530,7 @@ SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
   }
   if (ValidateCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      assert(CapSet.count(I));
+      assert(CapMap.count(I));
     }
   }
   return Entry;
@@ -1255,8 +1255,8 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
           << MI.InstSchema;
   O << SPIRVNL();
 
-  for (auto &I:MI.CapObjs)
-    O << *I;
+  for (auto &I:MI.CapMap)
+    O << *I.second;
 
   for (auto &I:M.getExtension()) {
     assert(!I.empty() && "Invalid extension");

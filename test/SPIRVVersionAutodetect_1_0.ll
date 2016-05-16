@@ -15,7 +15,6 @@ entry:
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!spirv.ExecutionMode = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -25,7 +24,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 !llvm.ident = !{!9}
 !spirv.Source = !{!10}
 
-!0 = !{void ()* @worker, i32 18, i32 128, i32 10, i32 1}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 2}
 !8 = !{}
