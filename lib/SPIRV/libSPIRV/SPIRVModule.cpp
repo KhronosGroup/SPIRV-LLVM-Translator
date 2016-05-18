@@ -62,7 +62,7 @@ SPIRVModule::~SPIRVModule()
 class SPIRVModuleImpl : public SPIRVModule {
 public:
   SPIRVModuleImpl():SPIRVModule(), NextId(1), BoolType(NULL),
-    SPIRVVersion(SPIRV_1_0),
+    SPIRVVersion(SPV_VERSION),
     GeneratorId(SPIRVGEN_KhronosLLVMSPIRVTranslator),
     GeneratorVer(0),
     InstSchema(SPIRVISCH_Default),
@@ -88,10 +88,7 @@ public:
   // Module query functions
   SPIRVAddressingModelKind getAddressingModel() { return AddrModel;}
   SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const;
-  const SPIRVCapMap &getCapability() const { return CapMap; }
-  bool hasCapability(SPIRVCapabilityKind Cap) const {
-    return CapMap.find(Cap) != CapMap.end();
-  }
+  const SPIRVCapSet &getCapability() const { return CapSet;}
   std::set<std::string> &getExtension() { return SPIRVExt;}
   SPIRVFunction *getFunction(unsigned I) const { return FuncVec[I];}
   SPIRVVariable *getVariable(unsigned I) const { return VariableVec[I];}
@@ -128,7 +125,6 @@ public:
   bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId EP) const;
   unsigned short getGeneratorId() const { return GeneratorId; }
   unsigned short getGeneratorVer() const { return GeneratorVer; }
-  SPIRVWord getSPIRVVersion() const { return SPIRVVersion; }
 
   // Module changing functions
   bool importBuiltinSet(const std::string &, SPIRVId *);
@@ -149,8 +145,6 @@ public:
   void setGeneratorId(unsigned short Id) { GeneratorId = Id; }
   void setGeneratorVer(unsigned short Ver) { GeneratorVer = Ver; }
   void resolveUnknownStructFields();
-
-  void setSPIRVVersion(SPIRVWord Ver) override { SPIRVVersion = Ver; }
 
   // Object creation functions
   template<class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -349,7 +343,7 @@ private:
   SPIRVExecModelIdSetMap EntryPointSet;
   SPIRVExecModelIdVecMap EntryPointVec;
   SPIRVStringMap StrMap;
-  SPIRVCapMap CapMap;
+  SPIRVCapSet CapSet;
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt*> IntTypeMap;
   std::map<unsigned, SPIRVConstant*> LiteralMap;
@@ -367,9 +361,6 @@ SPIRVModuleImpl::~SPIRVModuleImpl() {
   //  bildbgs() << "[delete] " << *I;
   //  delete I;
   //}
-
-  for (auto C : CapMap)
-    delete C.second;
 }
 
 SPIRVLine*
@@ -441,20 +432,13 @@ void
 SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
   addCapabilities(SPIRV::getCapability(Cap));
   SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
-  if (hasCapability(Cap))
-    return;
-
-  CapMap.insert(std::make_pair(Cap, new SPIRVCapability(this, Cap)));
+  CapSet.insert(Cap);
 }
 
 void
 SPIRVModuleImpl::addCapabilityInternal(SPIRVCapabilityKind Cap) {
-  if (AutoAddCapability) {
-    if (hasCapability(Cap))
-      return;
-
-    CapMap.insert(std::make_pair(Cap, new SPIRVCapability(this, Cap)));
-  }
+  if (AutoAddCapability)
+    CapSet.insert(Cap);
 }
 
 SPIRVConstant*
@@ -530,7 +514,7 @@ SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
   }
   if (ValidateCapability) {
     for (auto &I:Entry->getRequiredCapability()) {
-      assert(CapMap.count(I));
+      assert(CapSet.count(I));
     }
   }
   return Entry;
@@ -1255,8 +1239,8 @@ operator<< (spv_ostream &O, SPIRVModule &M) {
           << MI.InstSchema;
   O << SPIRVNL();
 
-  for (auto &I:MI.CapMap)
-    O << *I.second;
+  for (auto &I:MI.CapSet)
+    O << SPIRVCapability(&M, I);
 
   for (auto &I:M.getExtension()) {
     assert(!I.empty() && "Invalid extension");
