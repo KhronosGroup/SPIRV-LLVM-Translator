@@ -253,18 +253,6 @@ rmap(const std::set<VT> &KSet) {
   return VSet;
 }
 
-template<typename KT, typename VT, typename Any>
-std::set<KT>
-rmap(const std::map<VT, Any>& KMap) {
-  KT V;
-  std::set<KT> VSet;
-  for (auto &I : KMap)
-    if (SPIRVMap<KT, VT>::rfind(I.first, &V))
-      VSet.insert(V);
-
-  return VSet;
-}
-
 template<typename K>
 std::string
 getName(K Key) {

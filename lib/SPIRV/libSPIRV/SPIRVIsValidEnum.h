@@ -141,10 +141,6 @@ isValid(spv::ExecutionMode V) {
     case ExecutionModeOutputTriangleStrip:
     case ExecutionModeVecTypeHint:
     case ExecutionModeContractionOff:
-    case ExecutionModeInitializer:
-    case ExecutionModeFinalizer:
-    case ExecutionModeSubgroupSize:
-    case ExecutionModeSubgroupsPerWorkgroup:
       return true;
     default:
       return false;
@@ -280,7 +276,6 @@ isValid(spv::ImageChannelOrder V) {
     case ImageChannelOrderRGBx:
     case ImageChannelOrderDepth:
     case ImageChannelOrderDepthStencil:
-    case ImageChannelOrderABGR:
       return true;
     default:
       return false;
@@ -413,7 +408,6 @@ isValid(spv::Decoration V) {
     case DecorationNoContraction:
     case DecorationInputAttachmentIndex:
     case DecorationAlignment:
-    case DecorationMaxByteOffset:
       return true;
     default:
       return false;
@@ -567,9 +561,6 @@ isValid(spv::Capability V) {
     case CapabilityStorageImageReadWithoutFormat:
     case CapabilityStorageImageWriteWithoutFormat:
     case CapabilityMultiViewport:
-    case CapabilitySubgroupDispatch:
-    case CapabilityNamedBarrier:
-    case CapabilityPipeStorage:
       return true;
     default:
       return false;
@@ -873,16 +864,6 @@ isValid(spv::Op V) {
     case OpAtomicFlagTestAndSet:
     case OpAtomicFlagClear:
     case OpImageSparseRead:
-    case OpSizeOf:
-    case OpTypePipeStorage:
-    case OpConstantPipeStorage:
-    case OpCreatePipeFromPipeStorage:
-    case OpGetKernelLocalSizeForSubgroupCount:
-    case OpGetKernelMaxNumSubgroups:
-    case OpTypeNamedBarrier:
-    case OpNamedBarrierInitialize:
-    case OpMemoryNamedBarrier:
-    case OpModuleProcessed:
     case OpForward:
       return true;
     default:
@@ -931,8 +912,6 @@ isValidLoopControlMask(SPIRVWord Mask) {
   SPIRVWord ValidMask = 0u;
   ValidMask |= LoopControlUnrollMask;
   ValidMask |= LoopControlDontUnrollMask;
-  ValidMask |= LoopControlDependencyInfiniteMask;
-  ValidMask |= LoopControlDependencyLengthMask;
 
   return (Mask & ~ValidMask) == 0;
 }

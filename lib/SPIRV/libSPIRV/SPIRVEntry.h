@@ -71,9 +71,6 @@ class SPIRVExtInst;
     void encode(spv_ostream &O) const; \
     void decode(std::istream &I);
 
-#define _REQ_SPIRV_VER(Version) \
-    SPIRVWord getRequiredSPIRVVersion() const override { return Version; }
-
 // Add implementation of encode/decode functions to a class.
 // Used out side of class definition.
 #define _SPIRV_IMP_ENCDEC0(Ty) \
@@ -186,12 +183,8 @@ class SPIRVExtInst;
 ///    setWordCount().
 /// 5. If the class has special attributes, e.g. having no id, or having no
 ///    type as a value, set them in the constructors.
-/// 6. If the class may represent SPIRV entity which has been added in version
-///    later than 1.0, implement virtual function getRequiredSPIRVVersion().
-///    To automaticly update module's version you can also call protected
-///    function updateModuleVersion() in the constructor.
-/// 7. Add the class to the Table of SPIRVEntry::create().
-/// 8. Add the class to SPIRVToLLVM and LLVMToSPIRV.
+/// 6. Add the class to the Table of SPIRVEntry::create().
+/// 7. Add the class to SPIRVToLLVM and LLVMToSPIRV.
 
 class SPIRVEntry {
 public:
@@ -330,9 +323,6 @@ public:
   void validateValues(const std::vector<SPIRVId> &)const;
   void validateBuiltin(SPIRVWord, SPIRVWord)const;
 
-  // By default assume SPIRV 1.0 as required version
-  virtual SPIRVWord getRequiredSPIRVVersion() const { return SPIRV_1_0; }
-
   virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
     return std::vector<SPIRVEntry*>();
   }
@@ -351,8 +341,6 @@ protected:
     assert(canHaveMemberDecorates());
     return MemberDecorates;
   }
-
-  void updateModuleVersion() const;
 
   SPIRVModule *Module;
   Op OpCode;
@@ -547,20 +535,17 @@ public:
     WordLiterals.push_back(x);
     WordLiterals.push_back(y);
     WordLiterals.push_back(z);
-    updateModuleVersion();
   }
-  // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
+  // Complete constructor for VecTypeHint
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
       SPIRVWord code)
-  :SPIRVAnnotation(TheTarget, 4), ExecMode(TheExecMode){
+  :SPIRVAnnotation(TheTarget, 4),
+   ExecMode(TheExecMode) {
     WordLiterals.push_back(code);
-    updateModuleVersion();
   }
   // Complete constructor for ContractionOff
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode)
-  :SPIRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){
-    updateModuleVersion();
-  }
+  :SPIRVAnnotation(TheTarget, 3), ExecMode(TheExecMode){}
   // Incomplete constructor
   SPIRVExecutionMode():ExecMode(ExecutionModeInvocations){}
   SPIRVExecutionModeKind getExecutionMode()const { return ExecMode;}
@@ -568,20 +553,6 @@ public:
   SPIRVCapVec getRequiredCapability() const {
     return getCapability(ExecMode);
   }
-
-  SPIRVWord getRequiredSPIRVVersion() const override {
-    switch (ExecMode) {
-    case ExecutionModeFinalizer:
-    case ExecutionModeInitializer:
-    case ExecutionModeSubgroupSize:
-    case ExecutionModeSubgroupsPerWorkgroup:
-      return SPIRV_1_1;
-
-    default:
-      return SPIRV_1_0;
-    }
-  }
-
 protected:
   _SPIRV_DCL_ENCDEC
   SPIRVExecutionModeKind ExecMode;
@@ -659,18 +630,6 @@ public:
   SPIRVCapability(SPIRVModule *M, SPIRVCapabilityKind K);
   SPIRVCapability():Kind(CapabilityMatrix){}
   _SPIRV_DCL_ENCDEC
-
-  SPIRVWord getRequiredSPIRVVersion() const override {
-    switch (Kind) {
-    case CapabilityNamedBarrier:
-    case CapabilitySubgroupDispatch:
-    case CapabilityPipeStorage:
-      return SPIRV_1_1;
-
-    default:
-      return SPIRV_1_0;
-    }
-  }
 private:
   SPIRVCapabilityKind Kind;
 };
@@ -757,15 +716,6 @@ _SPIRV_OP(ImageSparseGather, 314)
 _SPIRV_OP(ImageSparseDrefGather, 315)
 _SPIRV_OP(ImageSparseTexelsResident, 316)
 _SPIRV_OP(NoLine, 317)
-_SPIRV_OP(TypeNamedBarrier)
-_SPIRV_OP(NamedBarrierInitialize)
-_SPIRV_OP(MemoryNamedBarrier)
-_SPIRV_OP(GetKernelMaxNumSubgroups)
-_SPIRV_OP(GetKernelLocalSizeForSubgroupCount)
-_SPIRV_OP(TypePipeStorage)
-_SPIRV_OP(ConstantPipeStorage)
-_SPIRV_OP(CreatePipeFromPipeStorage)
-_SPIRV_OP(SizeOf)
 #undef _SPIRV_OP
 
 }

@@ -389,14 +389,6 @@ SPIRVEntry::setLinkageType(SPIRVLinkageTypeKind LT) {
   addDecorate(new SPIRVDecorateLinkageAttr(this, Name, LT));
 }
 
-void
-SPIRVEntry::updateModuleVersion() const {
-  if (!Module)
-    return;
-
-  Module->setMinSPIRVVersion(getRequiredSPIRVVersion());
-}
-
 spv_ostream &
 operator<<(spv_ostream &O, const SPIRVEntry &E) {
   E.validate();
@@ -611,7 +603,6 @@ SPIRVExtension::decode(std::istream &I) {
 
 SPIRVCapability::SPIRVCapability(SPIRVModule *M, SPIRVCapabilityKind K)
   :SPIRVEntryNoId(M, 2), Kind(K){
-  updateModuleVersion();
 }
 
 void

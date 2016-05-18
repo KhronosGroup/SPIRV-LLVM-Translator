@@ -63,11 +63,6 @@ mkWord(unsigned WordCount, Op OpCode) {
 
 const static unsigned kSPIRVMemOrderSemanticMask = 0x1F;
 
-enum SPIRVVersion : SPIRVWord {
-  SPIRV_1_0 = 0x00010000,
-  SPIRV_1_1 = 0x00010100
-};
-
 enum SPIRVGeneratorKind {
   SPIRVGEN_KhronosLLVMSPIRVTranslator   = 6,
   SPIRVGEN_KhronosSPIRVAssembler        = 7,
