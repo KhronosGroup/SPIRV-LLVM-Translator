@@ -79,6 +79,11 @@ public:
   ///   y = __spirv_{OpName}{Postfix(type,value)}
   void visitCallDecorate(CallInst *CI, StringRef MangledName);
 
+  /// Transform sub_group_barrier to __spirv_ControlBarrier.
+  /// sub_group_barrier(scope, flag) =>
+  ///   __spirv_ControlBarrier(subgroup, map(scope), map(flag))
+  void visitCallSubGroupBarrier(CallInst *CI);
+
   /// Transform OCL C++ builtin function to SPIR-V builtin function.
   /// Assuming there is no argument changes.
   /// Should be called at last.
@@ -86,6 +91,10 @@ public:
 
   static char ID;
 private:
+  ConstantInt *addInt32(int I) {
+    return getInt32(M, I);
+  }
+
   Module *M;
   LLVMContext *Ctx;
   unsigned CLVer;                   /// OpenCL version as major*10+minor
@@ -138,6 +147,14 @@ OCL21ToSPIRV::visitCallInst(CallInst& CI) {
 
   auto MangledName = F->getName();
   std::string DemangledName;
+
+  if (oclIsBuiltin(MangledName, &DemangledName)) {
+    if (DemangledName == kOCLBuiltinName::SubGroupBarrier) {
+      visitCallSubGroupBarrier(&CI);
+      return;
+    }
+  }
+
   if (!oclIsBuiltin(MangledName, &DemangledName, true))
     return;
   DEBUG(dbgs() << "DemangledName:" << DemangledName << '\n');
@@ -186,6 +203,20 @@ void OCL21ToSPIRV::visitCallDecorate(CallInst* CI,
   CI->replaceAllUsesWith(Target);
   ValuesToDelete.insert(CI);
   ValuesToDelete.insert(CI->getCalledFunction());
+}
+
+void
+OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
+  DEBUG(dbgs() << "[visitCallSubGroupBarrier] "<< *CI << '\n');
+  auto Lit = getBarrierLiterals(CI);
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
+      Args.resize(3);
+      Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
+      Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
+      Args[2] = addInt32(mapOCLMemFenceFlagToSPIRV(std::get<0>(Lit)));
+      return getSPIRVFuncName(OpControlBarrier);
+    }, &Attrs);
 }
 
 void

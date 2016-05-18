@@ -494,6 +494,12 @@ private:
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue* V);
   Instruction *transOCLAllAny(SPIRVInstruction* BI, BasicBlock *BB);
   Instruction *transOCLRelational(SPIRVInstruction* BI, BasicBlock *BB);
+
+  CallInst *transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
+                            SPIRVWord MemSema, SPIRVWord MemScope);
+
+  CallInst *transOCLMemFence(BasicBlock *BB,
+                             SPIRVWord MemSema, SPIRVWord MemScope);
 };
 
 Type *
@@ -2257,32 +2263,40 @@ SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
   return transOCLBuiltinPostproc(BC, Call, BB, UnmangledName);
 }
 
-Instruction *
-SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction* MB, BasicBlock *BB) {
-  assert(BB && "Invalid BB");
-  std::string FuncName;
-  auto getIntVal = [](SPIRVValue *value){
-    return static_cast<SPIRVConstant*>(value)->getZExtIntValue();
-  };
-  SPIRVWord MemSema = 0;
-  if (MB->getOpCode() == OpMemoryBarrier) {
-    auto MemB = static_cast<SPIRVMemoryBarrier*>(MB);
-    FuncName = "mem_fence";
-    MemSema = getIntVal(MemB->getOpValue(1));
-  } else if (MB->getOpCode() == OpControlBarrier) {
-    auto CtlB = static_cast<SPIRVControlBarrier*>(MB);
-    SPIRVWord Ver = 1;
-    BM->getSourceLanguage(&Ver);
-    FuncName = (Ver <= 12) ? kOCLBuiltinName::Barrier :
-        kOCLBuiltinName::WorkGroupBarrier;
-    MemSema = getIntVal(CtlB->getMemSemantic());
-  } else {
-    llvm_unreachable("Invalid instruction");
-  }
-  std::string MangledName;
+CallInst *
+SPIRVToLLVM::transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
+                             SPIRVWord MemSema, SPIRVWord MemScope) {
+  SPIRVWord Ver = 0;
+  BM->getSourceLanguage(&Ver);
+
   Type* Int32Ty = Type::getInt32Ty(*Context);
   Type* VoidTy = Type::getVoidTy(*Context);
-  Type* ArgTy[] = {Int32Ty};
+
+  std::string FuncName;
+  SmallVector<Type *, 2> ArgTy;
+  SmallVector<Value *, 2> Arg;
+
+  Constant *MemFenceFlags =
+    ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
+
+  FuncName = (ExecScope == ScopeWorkgroup) ? kOCLBuiltinName::WorkGroupBarrier
+                                           : kOCLBuiltinName::SubGroupBarrier;
+
+  if (ExecScope == ScopeWorkgroup && Ver > 0 && Ver <= kOCLVer::CL12) {
+    FuncName = kOCLBuiltinName::Barrier;
+    ArgTy.push_back(Int32Ty);
+    Arg.push_back(MemFenceFlags);
+  } else {
+    Constant *Scope = ConstantInt::get(Int32Ty, OCLMemScopeMap::rmap(
+                                           static_cast<spv::Scope>(MemScope)));
+
+    ArgTy.append(2, Int32Ty);
+    Arg.push_back(MemFenceFlags);
+    Arg.push_back(Scope);
+  }
+
+  std::string MangledName;
+
   MangleOpenCLBuiltin(FuncName, ArgTy, MangledName);
   Function *Func = M->getFunction(MangledName);
   if (!Func) {
@@ -2292,13 +2306,93 @@ SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction* MB, BasicBlock *BB) {
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
   }
-  Value *Arg[] = {ConstantInt::get(Int32Ty,
-      rmapBitMask<OCLMemFenceMap>(MemSema))};
-  auto Call = CallInst::Create(Func, Arg, "", BB);
+
+  return CallInst::Create(Func, Arg, "", BB);
+}
+
+CallInst *
+SPIRVToLLVM::transOCLMemFence(BasicBlock *BB,
+                              SPIRVWord MemSema, SPIRVWord MemScope) {
+  SPIRVWord Ver = 0;
+  BM->getSourceLanguage(&Ver);
+
+  Type* Int32Ty = Type::getInt32Ty(*Context);
+  Type* VoidTy = Type::getVoidTy(*Context);
+
+  std::string FuncName;
+  SmallVector<Type *, 3> ArgTy;
+  SmallVector<Value *, 3> Arg;
+
+  Constant *MemFenceFlags =
+    ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
+
+  if (Ver > 0 && Ver <= kOCLVer::CL12) {
+    FuncName = kOCLBuiltinName::MemFence;
+    ArgTy.push_back(Int32Ty);
+    Arg.push_back(MemFenceFlags);
+  } else {
+    Constant *Order =
+      ConstantInt::get(Int32Ty, mapSPIRVMemOrderToOCL(MemSema));
+
+    Constant *Scope = ConstantInt::get(Int32Ty, OCLMemScopeMap::rmap(
+                                    static_cast<spv::Scope>(MemScope)));
+
+    FuncName = kOCLBuiltinName::AtomicWorkItemFence;
+    ArgTy.append(3, Int32Ty);
+    Arg.push_back(MemFenceFlags);
+    Arg.push_back(Order);
+    Arg.push_back(Scope);
+  }
+
+  std::string MangledName;
+
+  MangleOpenCLBuiltin(FuncName, ArgTy, MangledName);
+  Function *Func = M->getFunction(MangledName);
+  if (!Func) {
+    FunctionType *FT = FunctionType::get(VoidTy, ArgTy, false);
+    Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
+    Func->setCallingConv(CallingConv::SPIR_FUNC);
+    if (isFuncNoUnwind())
+      Func->addFnAttr(Attribute::NoUnwind);
+  }
+
+  return CallInst::Create(Func, Arg, "", BB);
+}
+
+Instruction *
+SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB, BasicBlock *BB) {
+  assert(BB && "Invalid BB");
+  std::string FuncName;
+  auto getIntVal = [](SPIRVValue *value){
+    return static_cast<SPIRVConstant*>(value)->getZExtIntValue();
+  };
+
+  CallInst* Call = nullptr;
+
+  if (MB->getOpCode() == OpMemoryBarrier) {
+    auto MemB = static_cast<SPIRVMemoryBarrier*>(MB);
+
+    SPIRVWord MemScope = getIntVal(MemB->getOpValue(0));
+    SPIRVWord MemSema = getIntVal(MemB->getOpValue(1));
+
+    Call = transOCLMemFence(BB, MemSema, MemScope);
+  } else if (MB->getOpCode() == OpControlBarrier) {
+    auto CtlB = static_cast<SPIRVControlBarrier*>(MB);
+
+    SPIRVWord ExecScope = getIntVal(CtlB->getExecScope());
+    SPIRVWord MemSema = getIntVal(CtlB->getMemSemantic());
+    SPIRVWord MemScope = getIntVal(CtlB->getMemScope());
+
+    Call = transOCLBarrier(BB, ExecScope, MemSema, MemScope);
+  } else {
+    llvm_unreachable("Invalid instruction");
+  }
+
   setName(Call, MB);
   setAttrByCalledFunc(Call);
   SPIRVDBG(spvdbgs() << "[transBarrier] " << *MB << " -> ";
-    dbgs() << *Call << '\n';)
+           dbgs() << *Call << '\n';)
+
   return Call;
 }
 

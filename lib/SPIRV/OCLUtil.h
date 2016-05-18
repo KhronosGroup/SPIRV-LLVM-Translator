@@ -105,9 +105,10 @@ typedef SPIRVMap<std::string, SPIRVBuiltinVariableKind>
 typedef std::tuple<unsigned, OCLMemOrderKind, OCLScopeKind>
   AtomicWorkItemFenceLiterals;
 
-/// Tuple of literals for work_group_barrier (flag, mem_scope, exec_scope)
+/// Tuple of literals for work_group_barrier or sub_group_barrier
+///     (flag, mem_scope, exec_scope)
 typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
-  WorkGroupBarrierLiterals;
+  BarrierLiterals;
 
 class OCLOpaqueType;
 typedef SPIRVMap<std::string, Op, OCLOpaqueType>
@@ -182,6 +183,7 @@ namespace kOCLBuiltinName {
   const static char SmoothStep[]         = "smoothstep";
   const static char Step[]               = "step";
   const static char SubGroupPrefix[]     = "sub_group_";
+  const static char SubGroupBarrier[]    = "sub_group_barrier";
   const static char SubPrefix[]          = "sub_";
   const static char ToGlobal[]           = "to_global";
   const static char ToLocal[]            = "to_local";
@@ -276,8 +278,8 @@ getSPIRVInst(const OCLBuiltinTransInfo &Info);
 /// Get literal arguments of call of atomic_work_item_fence.
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI);
 
-/// Get literal arguments of call of work_group_barrier.
-WorkGroupBarrierLiterals getWorkGroupBarrierLiterals(CallInst* CI);
+/// Get literal arguments of call of work_group_barrier or sub_group_barrier.
+BarrierLiterals getBarrierLiterals(CallInst* CI);
 
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
