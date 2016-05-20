@@ -83,15 +83,12 @@ public:
 
   virtual void visitCallInst(CallInst &CI);
 
-  /// Transform barrier/work_group_barrier/sub_group_barrier
-  ///     to __spirv_ControlBarrier.
+  /// Transform barrier/work_group_barrier to __spirv_ControlBarrier.
   /// barrier(flag) =>
   ///   __spirv_ControlBarrier(workgroup, workgroup, map(flag))
-  /// work_group_barrier(scope, flag) =>
+  /// workgroup_barrier(scope, flag) =>
   ///   __spirv_ControlBarrier(workgroup, map(scope), map(flag))
-  /// sub_group_barrier(scope, flag) =>
-  ///   __spirv_ControlBarrier(subgroup, map(scope), map(flag))
-  void visitCallBarrier(CallInst *CI);
+  void visitCallWorkGroupBarrier(CallInst *CI);
 
   /// Erase useless convert functions.
   /// \return true if the call instruction is erased.
@@ -373,7 +370,6 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   std::string DemangledName;
   if (!oclIsBuiltin(MangledName, &DemangledName))
     return;
-
   DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
     visitCallNDRange(&CI, DemangledName);
@@ -429,8 +425,7 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   if ((DemangledName.find(kOCLBuiltinName::WorkGroupPrefix) == 0 &&
       DemangledName != kOCLBuiltinName::WorkGroupBarrier) ||
       DemangledName == kOCLBuiltinName::WaitGroupEvent ||
-      (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0 &&
-       DemangledName != kOCLBuiltinName::SubGroupBarrier)) {
+      DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0) {
     visitCallGroupBuiltin(&CI, MangledName, DemangledName);
     return;
   }
@@ -478,7 +473,7 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
   }
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
       DemangledName == kOCLBuiltinName::Barrier) {
-    visitCallBarrier(&CI);
+    visitCallWorkGroupBarrier(&CI);
     return;
   }
   if (DemangledName == kOCLBuiltinName::GetFence) {
@@ -812,8 +807,8 @@ OCL20ToSPIRV::transAtomicBuiltin(CallInst* CI,
 }
 
 void
-OCL20ToSPIRV::visitCallBarrier(CallInst* CI) {
-  auto Lit = getBarrierLiterals(CI);
+OCL20ToSPIRV::visitCallWorkGroupBarrier(CallInst* CI) {
+  auto Lit = getWorkGroupBarrierLiterals(CI);
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.resize(3);
@@ -1079,11 +1074,15 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   StringRef TyName;
+  SmallVector<StringRef, 4> SubStrs;
   auto IsImg = isOCLImageType(CI->getArgOperand(0)->getType(), &TyName);
   assert(IsImg);
-  SPIRVTypeImageDescriptor Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
+  std::string ImageTyName = TyName.str();
+  if (hasAccessQualifiedName(TyName))
+    ImageTyName.erase(ImageTyName.size() - 5, 3);
+  auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
   unsigned Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-  assert(Dim > 0 && "Ivalid image dimention.");
+  assert(Dim > 0 && "Invalid image dimension.");
   mutateCallInstSPIRV(M, CI,
     [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
       assert(Args.size() == 1);
