@@ -1,0 +1,31 @@
+# Linux Build Configuration for Travis
+
+language: cpp
+
+os:
+  - linux
+
+# Use Ubuntu 14.04 LTS (Trusty) as the Linux testing environment.
+sudo: required
+dist: trusty
+
+env:
+  # Each line is a set of environment variables set before a build.
+  # Thus each line represents a different build configuration.
+  - BUILD_TYPE=Release
+  - BUILD_TYPE=Debug
+
+compiler:
+  - gcc
+  - clang
+
+# To avoid Go bindings related issues in LIT tests, hide Go binaries from CMake:
+# substitute paths to Go binaries in $PATH with empty string
+install:
+  - export GOBIN=`go env GOROOT`/bin
+  - PATH=${PATH//${GOBIN//\//\\\/}/}
+
+script:
+  - mkdir build && cd build
+  - cmake -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF -D CMAKE_COLOR_MAKEFILE:BOOL=ON -D LLVM_INCLUDE_EXAMPLES:BOOL=OFF -D LLVM_INCLUDE_TESTS:BOOL=ON -D LLVM_BUILD_TESTS:BOOL=ON -D LLVM_TARGETS_TO_BUILD="X86" -D LLVM_LIT_ARGS:STRING="-sv --no-progress-bar" -G "Unix Makefiles" -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}  ..
+  - make check-llvm -j 2
