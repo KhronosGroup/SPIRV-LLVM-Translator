@@ -1739,6 +1739,13 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
         return;
       F->addAttribute(I->getArgNo() + 1, SPIRSPIRVFuncParamAttrMap::rmap(Kind));
     });
+
+    SPIRVWord MaxOffset = 0;
+    if (BA->hasDecorate(DecorationMaxByteOffset, 0, &MaxOffset)) {
+      AttrBuilder Builder;
+      Builder.addDereferenceableAttr(MaxOffset);
+      I->addAttr(AttributeSet::get(*Context, I->getArgNo() + 1, Builder));
+    }
   }
   BF->foreachReturnValueAttr([&](SPIRVFuncParamAttrKind Kind){
     if (Kind == FunctionParameterAttributeNoWrite)

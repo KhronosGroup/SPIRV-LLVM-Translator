@@ -343,6 +343,7 @@ SPIRVMap<Decoration, std::string>::init() {
   add(DecorationNoContraction, "NoContraction");
   add(DecorationInputAttachmentIndex, "InputAttachmentIndex");
   add(DecorationAlignment, "Alignment");
+  add(DecorationMaxByteOffset, "MaxByteOffset");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 
