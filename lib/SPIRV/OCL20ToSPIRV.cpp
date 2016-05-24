@@ -1079,11 +1079,15 @@ OCL20ToSPIRV::visitCallGetImageSize(CallInst* CI,
     StringRef MangledName, const std::string& DemangledName) {
   AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
   StringRef TyName;
+  SmallVector<StringRef, 4> SubStrs;
   auto IsImg = isOCLImageType(CI->getArgOperand(0)->getType(), &TyName);
   assert(IsImg);
-  SPIRVTypeImageDescriptor Desc = map<SPIRVTypeImageDescriptor>(TyName.str());
+  std::string ImageTyName = TyName.str();
+  if (hasAccessQualifiedName(TyName))
+    ImageTyName.erase(ImageTyName.size() - 5, 3);
+  auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
   unsigned Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
-  assert(Dim > 0 && "Ivalid image dimention.");
+  assert(Dim > 0 && "Invalid image dimension.");
   mutateCallInstSPIRV(M, CI,
     [&](CallInst *, std::vector<Value *> &Args, Type *&Ret){
       assert(Args.size() == 1);
