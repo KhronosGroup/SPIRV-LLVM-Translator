@@ -680,11 +680,11 @@ LLVMToSPIRV::transConstant(Value *V) {
 
   if (auto CAZero = dyn_cast<ConstantAggregateZero>(V)) {
     Type *AggType = CAZero->getType();
-    if (const StructType* ST = dyn_cast<StructType>(AggType)) {
+    if (const StructType* ST = dyn_cast<StructType>(AggType))
       if (ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
         return BM->addSamplerConstant(transType(AggType), 0,0,0);
-    } else
-      return BM->addNullConstant(transType(AggType));
+
+    return BM->addNullConstant(transType(AggType));
   }
 
   if (auto ConstI = dyn_cast<ConstantInt>(V))
@@ -1397,42 +1397,37 @@ LLVMToSPIRV::transExecutionMode() {
   if (auto NMD = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::ExecutionMode)) {
     while (!NMD.atEnd()) {
       unsigned EMode = ~0U;
-      unsigned EModel = ~0U;
       Function *F = nullptr;
       auto N = NMD.nextOp(); /* execution mode MDNode */
-      N.nextOp() /* entry point MDNode */
-          .get(EModel)
-          .get(F)
-          .done()
-       .get(EMode);
-      assert (EModel == spv::ExecutionModelKernel &&
-          "Unsupported execution model");
+      N.get(F).get(EMode);
+
       SPIRVFunction *BF = static_cast<SPIRVFunction *>(getTranslatedValue(F));
       assert(BF && "Invalid kernel function");
-      switch(EMode) {
+      if (!BF)
+        return false;
+
+      switch (EMode) {
       case spv::ExecutionModeContractionOff:
+      case spv::ExecutionModeInitializer:
+      case spv::ExecutionModeFinalizer:
         BF->addExecutionMode(new SPIRVExecutionMode(BF,
-            ExecutionModeContractionOff));
+            static_cast<ExecutionMode>(EMode)));
         break;
-      case spv::ExecutionModeLocalSize: {
-        unsigned X, Y, Z;
-        N.get(X).get(Y).get(Z);
-        BF->addExecutionMode(new SPIRVExecutionMode(BF,
-            ExecutionModeLocalSize, X, Y, Z));
-      }
-      break;
+      case spv::ExecutionModeLocalSize:
       case spv::ExecutionModeLocalSizeHint: {
         unsigned X, Y, Z;
         N.get(X).get(Y).get(Z);
         BF->addExecutionMode(new SPIRVExecutionMode(BF,
-            ExecutionModeLocalSizeHint, X, Y, Z));
+            static_cast<ExecutionMode>(EMode), X, Y, Z));
       }
       break;
-      case spv::ExecutionModeVecTypeHint: {
+      case spv::ExecutionModeVecTypeHint:
+      case spv::ExecutionModeSubgroupSize:
+      case spv::ExecutionModeSubgroupsPerWorkgroup: {
         unsigned X;
         N.get(X);
         BF->addExecutionMode(new SPIRVExecutionMode(BF,
-            ExecutionModeVecTypeHint, X));
+            static_cast<ExecutionMode>(EMode), X));
       }
       break;
       default:

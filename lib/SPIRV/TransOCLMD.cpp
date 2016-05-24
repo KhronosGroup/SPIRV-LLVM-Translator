@@ -173,7 +173,7 @@ TransOCLMD::visit(Module *M) {
 
     if (!HasFPContract)
       EM.addOp()
-        .addOp(EPNode)
+        .add(Kernel)
         .add(spv::ExecutionModeContractionOff)
         .done();
 
@@ -189,7 +189,7 @@ TransOCLMD::visit(Module *M) {
         unsigned X, Y, Z;
         decodeMDNode(MD, X, Y, Z);
         EM.addOp()
-            .addOp(EPNode)
+            .add(Kernel)
             .add(spv::ExecutionModeLocalSizeHint)
             .add(X).add(Y).add(Z)
             .done();
@@ -197,13 +197,13 @@ TransOCLMD::visit(Module *M) {
         unsigned X, Y, Z;
         decodeMDNode(MD, X, Y, Z);
         EM.addOp()
-            .addOp(EPNode)
+            .add(Kernel)
             .add(spv::ExecutionModeLocalSize)
             .add(X).add(Y).add(Z)
             .done();
       } else if (Name == kSPIR2MD::VecTyHint) {
         EM.addOp()
-            .addOp(EPNode)
+            .add(Kernel)
             .add(spv::ExecutionModeVecTypeHint)
             .add(transVecTypeHint(MD))
             .done();
