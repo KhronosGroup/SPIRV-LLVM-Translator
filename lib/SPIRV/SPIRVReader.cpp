@@ -489,6 +489,7 @@ private:
 
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
   void setName(llvm::Value* V, SPIRVValue* BV);
+  void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name);
   template<class Source, class Func>
   bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue* V);
@@ -633,8 +634,7 @@ SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST) {
   std::string Name = std::string(kSPR2TypeName::OCLPrefix)
     + rmap<std::string>(ST->getDescriptor());
   if (SPIRVGenImgTypeAccQualPostfix)
-    Name = Name + kSPR2TypeName::Delimiter
-      + rmap<std::string>(ST->getAccessQualifier());
+    SPIRVToLLVM::insertImageNameAccessQualifier(ST, Name);
   return std::move(Name);
 }
 
@@ -798,8 +798,15 @@ SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     return "pipe";
   case OpTypeSampler:
     return "sampler_t";
-  case OpTypeImage:
-    return rmap<std::string>(static_cast<SPIRVTypeImage *>(T)->getDescriptor());
+  case OpTypeImage: {
+    std::string Name;
+    Name = rmap<std::string>(static_cast<SPIRVTypeImage *>(T)->getDescriptor());
+    if (SPIRVGenImgTypeAccQualPostfix) {
+      auto ST = static_cast<SPIRVTypeImage *>(T);
+      insertImageNameAccessQualifier(ST, Name);
+    }
+    return Name;
+  }
   default:
       if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
         return OCLOpaqueTypeOpCodeMap::rmap(T->getOpCode());
@@ -849,6 +856,14 @@ SPIRVToLLVM::setName(llvm::Value* V, SPIRVValue* BV) {
   auto Name = BV->getName();
   if (!Name.empty() && (!V->hasName() || Name != V->getName()))
     V->setName(Name);
+}
+
+void SPIRVToLLVM::insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name) {
+  std::string QName = rmap<std::string>(ST->getAccessQualifier());
+  // transform: read_only -> ro, write_only -> wo, read_write -> rw
+  QName = QName.substr(0,1) + QName.substr(QName.find("_") + 1, 1) + "_";
+  assert(!Name.empty() && "image name should not be empty");
+  Name.insert(Name.size() - 1, QName);
 }
 
 Value *
