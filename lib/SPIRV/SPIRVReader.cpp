@@ -2603,7 +2603,6 @@ llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
   M = new Module("", C);
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 
-  BM->setAutoAddCapability(false);
   IS >> *BM;
 
   SPIRVToLLVM BTL(M, BM.get());

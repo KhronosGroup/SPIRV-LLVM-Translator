@@ -497,10 +497,14 @@ LLVMToSPIRV::transType(Type *T) {
       } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
       else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
-        if (OpCode == OpTypePipe) {
+        switch (OpCode) {
+        default:
+          return mapType(T, BM->addOpaqueGenericType(OpCode));
+        case OpTypePipe:
           return mapType(T, BM->addPipeType());
+        case OpTypeDeviceEvent:
+          return mapType(T, BM->addDeviceEventType());
         }
-        return mapType(T, BM->addOpaqueGenericType(OpCode));
       } else if (isPointerToOpaqueStructType(T)) {
         return mapType(T, BM->addPointerType(SPIRSPIRVAddrSpaceMap::map(
           static_cast<SPIRAddressSpace>(AddrSpc)),

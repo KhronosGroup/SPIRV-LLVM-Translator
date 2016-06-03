@@ -1383,6 +1383,8 @@ std::istream &
 operator>> (std::istream &I, SPIRVModule &M) {
   SPIRVDecoder Decoder(I, M);
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl*>(&M);
+  // Disable automatic capability filling.
+  MI.setAutoAddCapability(false);
 
   SPIRVWord Magic;
   Decoder >> Magic;
