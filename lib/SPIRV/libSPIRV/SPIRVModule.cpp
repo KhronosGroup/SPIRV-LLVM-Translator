@@ -203,6 +203,7 @@ public:
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord);
   virtual SPIRVType *addOpaqueGenericType(Op);
   virtual SPIRVTypeDeviceEvent *addDeviceEventType();
+  virtual SPIRVTypeQueue *addQueueType();
   virtual SPIRVTypePipe *addPipeType();
   virtual SPIRVTypeVoid *addVoidType();
   virtual void createForwardPointers();
@@ -724,6 +725,11 @@ SPIRVModuleImpl::addOpaqueGenericType(Op TheOpCode) {
 SPIRVTypeDeviceEvent *
 SPIRVModuleImpl::addDeviceEventType() {
   return addType(new SPIRVTypeDeviceEvent(this, getId()));
+}
+
+SPIRVTypeQueue *
+SPIRVModuleImpl::addQueueType() {
+  return addType(new SPIRVTypeQueue(this, getId()));
 }
 
 SPIRVTypePipe*

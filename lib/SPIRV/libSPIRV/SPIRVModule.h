@@ -1,4 +1,4 @@
-//===- SPIRVModule.h – Class to represent a SPIR-V module --------*- C++ -*-===//
+//===- SPIRVModule.h - Class to represent a SPIR-V module --------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -71,6 +71,7 @@ class SPIRVTypeStruct;
 class SPIRVTypeVector;
 class SPIRVTypeVoid;
 class SPIRVTypeDeviceEvent;
+class SPIRVTypeQueue;
 class SPIRVTypePipe;
 class SPIRVValue;
 class SPIRVVariable;
@@ -206,6 +207,7 @@ public:
   virtual SPIRVTypeVoid *addVoidType() = 0;
   virtual SPIRVType *addOpaqueGenericType(Op) = 0;
   virtual SPIRVTypeDeviceEvent *addDeviceEventType() = 0;
+  virtual SPIRVTypeQueue *addQueueType() = 0;
   virtual SPIRVTypePipe *addPipeType() = 0;
   virtual void createForwardPointers() = 0;
 

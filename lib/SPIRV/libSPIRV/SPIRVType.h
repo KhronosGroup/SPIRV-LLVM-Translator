@@ -636,7 +636,6 @@ public:
 #define _SPIRV_OP(x) typedef SPIRVOpaqueGenericType<OpType##x> SPIRVType##x;
 _SPIRV_OP(Event)
 _SPIRV_OP(ReserveId)
-_SPIRV_OP(Queue)
 #undef _SPIRV_OP
 
 class SPIRVTypeDeviceEvent : public SPIRVType {
@@ -657,6 +656,25 @@ public:
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
   void validate() const { SPIRVEntry::validate(); }
+};
+
+class SPIRVTypeQueue : public SPIRVType {
+public:
+  // Complete constructor
+  SPIRVTypeQueue(SPIRVModule *M, SPIRVId TheId)
+      : SPIRVType(M, 2, OpTypeQueue, TheId) {
+    validate();
+  }
+
+  // Incomplete constructor
+  SPIRVTypeQueue() : SPIRVType(OpTypeQueue) {}
+
+  SPIRVCapVec getRequiredCapability() const {
+    return getVec(CapabilityDeviceEnqueue);
+  }
+
+protected:
+  _SPIRV_DEF_ENCDEC1(Id)
 };
 
 class SPIRVTypePipe :public SPIRVType {

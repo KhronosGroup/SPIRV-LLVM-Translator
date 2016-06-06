@@ -504,6 +504,8 @@ LLVMToSPIRV::transType(Type *T) {
           return mapType(T, BM->addPipeType());
         case OpTypeDeviceEvent:
           return mapType(T, BM->addDeviceEventType());
+        case OpTypeQueue:
+          return mapType(T, BM->addQueueType());
         }
       } else if (isPointerToOpaqueStructType(T)) {
         return mapType(T, BM->addPointerType(SPIRSPIRVAddrSpaceMap::map(
@@ -617,6 +619,8 @@ LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
     return mapType(T, BM->addSamplerType());
   else if (TN == kSPIRVTypeName::DeviceEvent)
     return mapType(T, BM->addDeviceEventType());
+  else if (TN == kSPIRVTypeName::Queue)
+    return mapType(T, BM->addQueueType());
   else
     return mapType(T, BM->addOpaqueGenericType(
       SPIRVOpaqueTypeOpCodeMap::map(TN)));
