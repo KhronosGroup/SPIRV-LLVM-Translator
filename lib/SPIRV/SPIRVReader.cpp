@@ -304,6 +304,7 @@ public:
   Function *transFunction(SPIRVFunction *F);
   bool transFPContractMetadata();
   bool transKernelMetadata();
+  bool transNonTemporalMetadata(Instruction *I);
   bool transSourceLanguage();
   bool transSourceExtension();
   void transGeneratorMD();
@@ -1465,19 +1466,23 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpStore: {
     SPIRVStore *BS = static_cast<SPIRVStore*>(BV);
-    return mapValue(BV,
-                    new StoreInst(transValue(BS->getSrc(), F, BB),
+    StoreInst *SI = new StoreInst(transValue(BS->getSrc(), F, BB),
                                   transValue(BS->getDst(), F, BB),
                                   BS->SPIRVMemoryAccess::isVolatile(),
-                                  BS->SPIRVMemoryAccess::getAlignment(), BB));
+                                  BS->SPIRVMemoryAccess::getAlignment(), BB);
+    if (BS->SPIRVMemoryAccess::isNonTemporal())
+      transNonTemporalMetadata(SI);
+    return mapValue(BV, SI);
   }
 
   case OpLoad: {
     SPIRVLoad *BL = static_cast<SPIRVLoad*>(BV);
-    return mapValue(BV,
-                    new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
-                                 BL->SPIRVMemoryAccess::isVolatile(),
-                                 BL->SPIRVMemoryAccess::getAlignment(), BB));
+    LoadInst *LI = new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
+                                BL->SPIRVMemoryAccess::isVolatile(),
+                                BL->SPIRVMemoryAccess::getAlignment(), BB);
+    if (BL->SPIRVMemoryAccess::isNonTemporal())
+      transNonTemporalMetadata(LI);
+    return mapValue(BV, LI);
   }
 
   case OpCopyMemorySized: {
@@ -2042,6 +2047,14 @@ SPIRVToLLVM::transFPContractMetadata() {
 std::string SPIRVToLLVM::transOCLImageTypeAccessQualifier(
     SPIRV::SPIRVTypeImage* ST) {
   return SPIRSPIRVAccessQualifierMap::rmap(ST->getAccessQualifier());
+}
+
+bool
+SPIRVToLLVM::transNonTemporalMetadata(Instruction *I) {
+  Constant* One = ConstantInt::get(Type::getInt32Ty(*Context), 1);
+  MDNode *Node = MDNode::get(*Context, ConstantAsMetadata::get(One));
+  I->setMetadata(M->getMDKindID("nontemporal"), Node);
+  return true;
 }
 
 bool

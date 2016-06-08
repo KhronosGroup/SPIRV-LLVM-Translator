@@ -906,11 +906,17 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BM->addForward(transType(V->getType())));
 
   if (StoreInst *ST = dyn_cast<StoreInst>(V)) {
-    std::vector<SPIRVWord> MemoryAccess;
+    std::vector<SPIRVWord> MemoryAccess(1,0);
     if (ST->isVolatile())
-      MemoryAccess.push_back(MemoryAccessVolatileMask);
-    MemoryAccess.push_back(MemoryAccessAlignedMask);
-    MemoryAccess.push_back(ST->getAlignment());
+      MemoryAccess[0] |= MemoryAccessVolatileMask;
+    if (ST->getAlignment()) {
+      MemoryAccess[0] |= MemoryAccessAlignedMask;
+      MemoryAccess.push_back(ST->getAlignment());
+    }
+    if (ST->getMetadata(LLVMContext::MD_nontemporal))
+      MemoryAccess[0] |= MemoryAccessNontemporalMask;
+    if (MemoryAccess.front() == 0)
+      MemoryAccess.clear();
     return mapValue(V, BM->addStoreInst(
         transValue(ST->getPointerOperand(), BB),
         transValue(ST->getValueOperand(), BB),
@@ -918,11 +924,17 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (LoadInst *LD = dyn_cast<LoadInst>(V)) {
-    std::vector<SPIRVWord> MemoryAccess;
+    std::vector<SPIRVWord> MemoryAccess(1,0);
     if (LD->isVolatile())
-      MemoryAccess.push_back(MemoryAccessVolatileMask);
-    MemoryAccess.push_back(MemoryAccessAlignedMask);
-    MemoryAccess.push_back(LD->getAlignment());
+      MemoryAccess[0] |= MemoryAccessVolatileMask;
+    if (LD->getAlignment()) {
+      MemoryAccess[0] |= MemoryAccessAlignedMask;
+      MemoryAccess.push_back(LD->getAlignment());
+    }
+    if (LD->getMetadata(LLVMContext::MD_nontemporal))
+      MemoryAccess[0] |= MemoryAccessNontemporalMask;
+    if (MemoryAccess.front() == 0)
+      MemoryAccess.clear();
     return mapValue(V, BM->addLoadInst(
         transValue(LD->getPointerOperand(), BB),
         MemoryAccess, BB));
