@@ -1004,6 +1004,20 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         BB));
   }
 
+  if (auto Ext = dyn_cast<ExtractValueInst>(V)) {
+    return mapValue(V, BM->addCompositeExtractInst(
+        transType(Ext->getType()),
+        transValue(Ext->getAggregateOperand(), BB),
+        Ext->getIndices(), BB));
+  }
+
+  if (auto Ins = dyn_cast<InsertValueInst>(V)) {
+    return mapValue(V, BM->addCompositeInsertInst(
+        transValue(Ins->getInsertedValueOperand(), BB),
+        transValue(Ins->getAggregateOperand(), BB),
+        Ins->getIndices(), BB));
+  }
+
   if (UnaryInstruction *U = dyn_cast<UnaryInstruction>(V)) {
     if(isSamplerInitializer(U))
       return mapValue(V, transValue(U->getOperand(0), BB));

@@ -1574,13 +1574,18 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpCompositeExtract: {
     SPIRVCompositeExtract *CE = static_cast<SPIRVCompositeExtract *>(BV);
-    assert(CE->getComposite()->getType()->isTypeVector() && "Invalid type");
-    assert(CE->getIndices().size() == 1 && "Invalid index");
+    if (CE->getComposite()->getType()->isTypeVector()) {
+      assert(CE->getIndices().size() == 1 && "Invalid index");
+      return mapValue(
+          BV, ExtractElementInst::Create(
+                  transValue(CE->getComposite(), F, BB),
+                  ConstantInt::get(*Context, APInt(32, CE->getIndices()[0])),
+                  BV->getName(), BB));
+    }
     return mapValue(
-        BV, ExtractElementInst::Create(
+        BV, ExtractValueInst::Create(
                 transValue(CE->getComposite(), F, BB),
-                ConstantInt::get(*Context, APInt(32, CE->getIndices()[0])),
-                BV->getName(), BB));
+                CE->getIndices(), BV->getName(), BB));
   }
 
   case OpVectorExtractDynamic: {
@@ -1589,18 +1594,24 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         BV, ExtractElementInst::Create(transValue(CE->getVector(), F, BB),
                                        transValue(CE->getIndex(), F, BB),
                                        BV->getName(), BB));
-    }
+  }
 
   case OpCompositeInsert: {
     auto CI = static_cast<SPIRVCompositeInsert *>(BV);
-    assert(CI->getComposite()->getType()->isTypeVector() && "Invalid type");
-    assert(CI->getIndices().size() == 1 && "Invalid index");
+    if (CI->getComposite()->getType()->isTypeVector()) {
+      assert(CI->getIndices().size() == 1 && "Invalid index");
+      return mapValue(
+          BV, InsertElementInst::Create(
+                  transValue(CI->getComposite(), F, BB),
+                  transValue(CI->getObject(), F, BB),
+                  ConstantInt::get(*Context, APInt(32, CI->getIndices()[0])),
+                  BV->getName(), BB));
+    }
     return mapValue(
-        BV, InsertElementInst::Create(
+        BV, InsertValueInst::Create(
                 transValue(CI->getComposite(), F, BB),
                 transValue(CI->getObject(), F, BB),
-                ConstantInt::get(*Context, APInt(32, CI->getIndices()[0])),
-                BV->getName(), BB));
+                CI->getIndices(), BV->getName(), BB));
   }
 
   case OpVectorInsertDynamic: {
