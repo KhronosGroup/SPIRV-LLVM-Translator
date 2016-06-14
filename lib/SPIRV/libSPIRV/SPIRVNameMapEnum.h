@@ -438,6 +438,7 @@ SPIRVMap<Capability, std::string>::init() {
   add(CapabilityImageReadWrite, "ImageReadWrite");
   add(CapabilityImageMipmap, "ImageMipmap");
   add(CapabilityPipes, "Pipes");
+  add(CapabilityPipeStorage, "PipeStorage");
   add(CapabilityGroups, "Groups");
   add(CapabilityDeviceEnqueue, "DeviceEnqueue");
   add(CapabilityLiteralSampler, "LiteralSampler");

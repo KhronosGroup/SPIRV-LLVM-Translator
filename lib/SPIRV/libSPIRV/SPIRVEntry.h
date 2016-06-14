@@ -762,9 +762,6 @@ _SPIRV_OP(NamedBarrierInitialize)
 _SPIRV_OP(MemoryNamedBarrier)
 _SPIRV_OP(GetKernelMaxNumSubgroups)
 _SPIRV_OP(GetKernelLocalSizeForSubgroupCount)
-_SPIRV_OP(TypePipeStorage)
-_SPIRV_OP(ConstantPipeStorage)
-_SPIRV_OP(CreatePipeFromPipeStorage)
 _SPIRV_OP(SizeOf)
 #undef _SPIRV_OP
 

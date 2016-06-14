@@ -1755,6 +1755,20 @@ _SPIRV_OP(GetNumPipePackets, true, 6)
 _SPIRV_OP(GetMaxPipePackets, true, 6)
 #undef _SPIRV_OP
 
+class SPIRVPipeStorageInstBase :public SPIRVInstTemplateBase {
+public:
+  SPIRVCapVec getRequiriedCapability() const {
+    return getVec(CapabilityPipeStorage, CapabilityPipes);
+  }
+};
+
+#define _SPIRV_OP(x, ...) \
+  typedef SPIRVInstTemplate<SPIRVPipeStorageInstBase, Op##x, __VA_ARGS__> \
+  SPIRV##x;
+
+_SPIRV_OP(CreatePipeFromPipeStorage, true, 4)
+#undef _SPIRV_OP
+
 class SPIRVGroupInstBase:public SPIRVInstTemplateBase {
 public:
   SPIRVCapVec getRequiriedCapability() const {

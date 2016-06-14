@@ -282,19 +282,21 @@ namespace kSPIRVImageSampledTypeName {
 }
 
 namespace kSPIRVTypeName {
-  const static char Delimiter         = '.';
-  const static char DeviceEvent[]     = "DeviceEvent";
-  const static char Event[]           = "Event";
-  const static char Image[]           = "Image";
-  const static char Pipe[]            = "Pipe";
-  const static char PostfixDelim      = '_';
-  const static char Prefix[]          = "spirv";
-  const static char PrefixAndDelim[]  = "spirv.";
-  const static char Queue[]           = "Queue";
-  const static char ReserveId[]       = "ReserveId";
-  const static char SampledImg[]      = "SampledImage";
-  const static char Sampler[]         = "Sampler";
-  const static char ConstantSampler[] = "ConstantSampler";
+  const static char Delimiter             = '.';
+  const static char DeviceEvent[]         = "DeviceEvent";
+  const static char Event[]               = "Event";
+  const static char Image[]               = "Image";
+  const static char Pipe[]                = "Pipe";
+  const static char PostfixDelim          = '_';
+  const static char Prefix[]              = "spirv";
+  const static char PrefixAndDelim[]      = "spirv.";
+  const static char Queue[]               = "Queue";
+  const static char ReserveId[]           = "ReserveId";
+  const static char SampledImg[]          = "SampledImage";
+  const static char Sampler[]             = "Sampler";
+  const static char ConstantSampler[]     = "ConstantSampler";
+  const static char PipeStorage[]         = "PipeStorage";
+  const static char ConstantPipeStorage[] = "ConstantPipeStorage";
 }
 
 namespace kSPR2TypeName {
@@ -534,6 +536,7 @@ SPIRVValue *addDecorations(SPIRVValue *Target,
 PointerType *getOrCreateOpaquePtrType(Module *M, const std::string &Name,
     unsigned AddrSpace = SPIRAS_Global);
 PointerType* getSamplerType(Module *M);
+PointerType* getPipeStorageType(Module *M);
 void getFunctionTypeParameterTypes(llvm::FunctionType* FT,
     std::vector<Type*>& ArgTys);
 Function *getOrCreateFunction(Module *M, Type *RetTy,
@@ -810,6 +813,10 @@ dumpUsers(Value* V, StringRef Prompt = "");
 /// Get SPIR-V type name as spirv.BaseTyName.Postfixes.
 std::string
 getSPIRVTypeName(StringRef BaseTyName, StringRef Postfixes = "");
+
+/// Checks if given type name is either ConstantSampler or ConsantPipeStorage.
+bool
+isSPIRVConstantName(StringRef TyName);
 
 /// Get SPIR-V type by changing the type name from spirv.OldName.Postfixes
 /// to spirv.NewName.Postfixes.

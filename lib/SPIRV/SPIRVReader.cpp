@@ -286,7 +286,7 @@ public:
   std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
   std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
-  Type *transType(SPIRVType *BT);
+  Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
   std::vector<Type *> transTypeVector(const std::vector<SPIRVType *>&);
   bool translate();
@@ -484,11 +484,14 @@ private:
       CallInst* CI, BasicBlock* BB, const std::string &DemangledName);
   std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST);
   std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST);
-  std::string transOCLPipeTypeName(SPIRV::SPIRVTypePipe* ST);
+  std::string transOCLPipeTypeName(SPIRV::SPIRVTypePipe* ST,
+      bool UseSPIRVFriendlyFormat = false, int PipeAccess = 0);
+  std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage* PST);
   std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage* ST);
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST);
 
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
+  Value * oclTransConstantPipeStorage(SPIRV::SPIRVConstantPipeStorage* BCPS);
   void setName(llvm::Value* V, SPIRVValue* BV);
   void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name);
   template<class Source, class Func>
@@ -649,12 +652,26 @@ SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST) {
 }
 
 std::string
-SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe* PT) {
-  return kSPR2TypeName::Pipe;
+SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe* PT,
+                                  bool UseSPIRVFriendlyFormat, int PipeAccess){
+  if (!UseSPIRVFriendlyFormat)
+    return kSPR2TypeName::Pipe;
+  else
+    return std::string(kSPIRVTypeName::PrefixAndDelim)
+          + kSPIRVTypeName::Pipe
+          + kSPIRVTypeName::Delimiter
+          + kSPIRVTypeName::PostfixDelim
+          + PipeAccess;
+}
+
+std::string
+SPIRVToLLVM::transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage* PST) {
+  return std::string(kSPIRVTypeName::PrefixAndDelim)
+            + kSPIRVTypeName::PipeStorage;
 }
 
 Type *
-SPIRVToLLVM::transType(SPIRVType *T) {
+SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   auto Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
     return Loc->second;
@@ -674,7 +691,8 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     return mapType(T, ArrayType::get(transType(T->getArrayElementType()),
         T->getArrayLength()));
   case OpTypePointer:
-    return mapType(T, PointerType::get(transType(T->getPointerElementType()),
+    return mapType(T, PointerType::get(transType(
+        T->getPointerElementType(), IsClassMember),
         SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass())));
   case OpTypeVector:
     return mapType(T, VectorType::get(transType(T->getVectorComponentType()),
@@ -716,14 +734,21 @@ SPIRVToLLVM::transType(SPIRVType *T) {
     mapType(ST, StructTy);
     SmallVector<Type *, 4> MT;
     for (size_t I = 0, E = ST->getMemberCount(); I != E; ++I)
-      MT.push_back(transType(ST->getMemberType(I)));
+      MT.push_back(transType(ST->getMemberType(I), true));
     StructTy->setBody(MT, ST->isPacked());
     return StructTy;
   }
   case OpTypePipe: {
     auto PT = static_cast<SPIRVTypePipe *>(T);
     return mapType(T, getOrCreateOpaquePtrType(M,
-        transOCLPipeTypeName(PT),
+        transOCLPipeTypeName(PT, IsClassMember, PT->getAccessQualifier()),
+        getOCLOpaqueTypeAddrSpace(T->getOpCode())));
+
+    }
+  case OpTypePipeStorage: {
+    auto PST = static_cast<SPIRVTypePipeStorage *>(T);
+    return mapType(T, getOrCreateOpaquePtrType(M,
+        transOCLPipeStorageTypeName(PST),
         getOCLOpaqueTypeAddrSpace(T->getOpCode())));
     }
   default: {
@@ -1252,6 +1277,33 @@ SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS) {
   return ConstantInt::get(Ty, Lit);
 }
 
+Value *
+SPIRVToLLVM::oclTransConstantPipeStorage(
+                        SPIRV::SPIRVConstantPipeStorage* BCPS) {
+
+  string CPSName = string(kSPIRVTypeName::PrefixAndDelim)
+                        + kSPIRVTypeName::ConstantPipeStorage;
+
+  auto Int32Ty = IntegerType::getInt32Ty(*Context);
+  auto CPSTy = M->getTypeByName(CPSName);
+  if (!CPSTy) {
+    Type* CPSElemsTy[] = { Int32Ty, Int32Ty, Int32Ty };
+    CPSTy = StructType::create(*Context, CPSElemsTy, CPSName);
+  }
+
+  assert(CPSTy != nullptr && "Could not create spirv.ConstantPipeStorage");
+
+  Constant* CPSElems[] = {
+    ConstantInt::get(Int32Ty, BCPS->getPacketSize()),
+    ConstantInt::get(Int32Ty, BCPS->getPacketAlign()),
+    ConstantInt::get(Int32Ty, BCPS->getCapacity())
+  };
+
+  return new GlobalVariable(*M, CPSTy, false, GlobalValue::LinkOnceODRLinkage,
+                        ConstantStruct::get(CPSTy, CPSElems), BCPS->getName(),
+                        nullptr, GlobalValue::NotThreadLocal, SPIRAS_Global);
+}
+
 /// For instructions, this function assumes they are created in order
 /// and appended to the given basic block. An instruction may use a
 /// instruction from another BB which has not been translated. Such
@@ -1326,9 +1378,27 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case OpTypeArray:
       return mapValue(BV, ConstantArray::get(
           dyn_cast<ArrayType>(transType(BCC->getType())), CV));
-    case OpTypeStruct:
+    case OpTypeStruct: {
+      auto BCCTy = dyn_cast<StructType>(transType(BCC->getType()));
+      auto Members = BCCTy->getNumElements();
+      auto Constants = CV.size();
+      //if we try to initialize constant TypeStruct, add bitcasts
+      //if src and dst types are both pointers but to different types
+      if (Members == Constants) {
+        for (unsigned i = 0; i < Members; ++i) {
+          if (CV[i]->getType() == BCCTy->getElementType(i))
+            continue;
+          if (!CV[i]->getType()->isPointerTy() ||
+              !BCCTy->getElementType(i)->isPointerTy())
+            continue;
+
+          CV[i] = ConstantExpr::getBitCast(CV[i], BCCTy->getElementType(i));
+        }
+      }
+
       return mapValue(BV, ConstantStruct::get(
           dyn_cast<StructType>(transType(BCC->getType())), CV));
+    }
     default:
       llvm_unreachable("not implemented");
       return nullptr;
@@ -1338,6 +1408,11 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpConstantSampler: {
     auto BCS = static_cast<SPIRVConstantSampler*>(BV);
     return mapValue(BV, oclTransConstantSampler(BCS));
+  }
+
+  case OpConstantPipeStorage: {
+    auto BCPS = static_cast<SPIRVConstantPipeStorage*>(BV);
+    return mapValue(BV, oclTransConstantPipeStorage(BCPS));
   }
 
   case OpSpecConstantOp: {
@@ -1971,7 +2046,20 @@ SPIRVToLLVM::transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB) {
 Instruction *
 SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB) {
   assert(BB && "Invalid BB");
-  return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode()), BI, BB);
+  string Suffix = "";
+  if (BI->getOpCode() == OpCreatePipeFromPipeStorage) {
+    auto CPFPS = static_cast<SPIRVCreatePipeFromPipeStorage*>(BI);
+    assert(CPFPS->getType()->isTypePipe() &&
+      "Invalid type of CreatePipeFromStorage");
+    auto PipeType = static_cast<SPIRVTypePipe*>(CPFPS->getType());
+    switch (PipeType->getAccessQualifier()) {
+    case AccessQualifierReadOnly: Suffix = "_read"; break;
+    case AccessQualifierWriteOnly: Suffix = "_write"; break;
+    case AccessQualifierReadWrite: Suffix = "_read_write"; break;
+    }
+  }
+
+  return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), Suffix), BI, BB);
 }
 
 bool

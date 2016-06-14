@@ -155,7 +155,7 @@ operator>>(const SPIRVDecoder&I, std::string& Str) {
 
   uint64_t Count = 0;
   char Ch;
-  while (I.IS >> Ch && Ch != '\0') {
+  while (I.IS.get(Ch) && Ch != '\0') {
     Str += Ch;
     ++Count;
   }

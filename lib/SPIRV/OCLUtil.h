@@ -357,7 +357,17 @@ mutateFunctionOCL(Function *F,
 
 /// Check if instruction is bitcast from spirv.ConstantSampler to spirv.Sampler
 bool
-isSamplerInitializer(llvm::Instruction *Inst);
+isSamplerInitializer(Instruction *Inst);
+
+/// Check if instruction is bitcast from spirv.ConstantPipeStorage
+/// to spirv.PipeStorage
+bool
+isPipeStorageInitializer(Instruction *Inst);
+
+/// Check (isSamplerInitializer || isPipeStorageInitializer)
+bool
+isSpecialTypeInitializer(Instruction* Inst);
+
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -340,6 +340,48 @@ protected:
   _SPIRV_DEF_ENCDEC5(Type, Id, AddrMode, Normalized, FilterMode)
 };
 
+class SPIRVConstantPipeStorage : public SPIRVValue {
+public:
+  const static Op OC = OpConstantPipeStorage;
+  const static SPIRVWord WC = 6;
+  // Complete constructor
+  SPIRVConstantPipeStorage(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId,
+    SPIRVWord ThePacketSize, SPIRVWord ThePacketAlign, SPIRVWord TheCapacity)
+    :SPIRVValue(M, WC, OC, TheType, TheId), PacketSize(ThePacketSize),
+    PacketAlign(ThePacketAlign), Capacity(TheCapacity){
+    validate();
+  }
+  // Incomplete constructor
+  SPIRVConstantPipeStorage() :SPIRVValue(OC), PacketSize(0),
+    PacketAlign(0), Capacity(0){}
+
+  SPIRVWord getPacketSize() const {
+    return PacketSize;
+  }
+
+  SPIRVWord getPacketAlign() const {
+    return PacketAlign;
+  }
+
+  SPIRVWord getCapacity() const {
+    return Capacity;
+  }
+  SPIRVCapVec getRequiredCapability() const {
+    return getVec(CapabilityPipes, CapabilityPipeStorage);
+  }
+protected:
+  SPIRVWord PacketSize;
+  SPIRVWord PacketAlign;
+  SPIRVWord Capacity;
+  void validate() const {
+    SPIRVValue::validate();
+    assert(OpCode == OC);
+    assert(WordCount == WC);
+    assert(Type->isTypePipeStorage());
+  }
+  _SPIRV_DEF_ENCDEC5(Type, Id, PacketSize, PacketAlign, Capacity)
+};
+
 class SPIRVForward:public SPIRVValue, public SPIRVComponentExecutionModes {
 public:
   const static Op OC = OpForward;

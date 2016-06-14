@@ -197,6 +197,7 @@ public:
   virtual SPIRVTypeImage *addImageType(SPIRVType *,
       const SPIRVTypeImageDescriptor &, SPIRVAccessQualifierKind);
   virtual SPIRVTypeSampler *addSamplerType();
+  virtual SPIRVTypePipeStorage *addPipeStorageType();
   virtual SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T);
   virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &);
   virtual void closeStructType(SPIRVTypeStruct *T, bool);
@@ -223,6 +224,8 @@ public:
   virtual SPIRVValue *addUndef(SPIRVType *TheType);
   virtual SPIRVValue *addSamplerConstant(SPIRVType *TheType, SPIRVWord AddrMode,
       SPIRVWord ParametricMode, SPIRVWord FilterMode);
+  virtual SPIRVValue* addPipeStorageConstant(SPIRVType* TheType,
+    SPIRVWord PacketSize, SPIRVWord PacketAlign, SPIRVWord Capacity);
 
   // Instruction creation functions
   virtual SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,
@@ -436,6 +439,13 @@ SPIRVModuleImpl::addSamplerConstant(SPIRVType* TheType,
     SPIRVWord AddrMode, SPIRVWord ParametricMode, SPIRVWord FilterMode) {
   return addConstant(new SPIRVConstantSampler(this, TheType, getId(), AddrMode,
       ParametricMode, FilterMode));
+}
+
+SPIRVValue*
+SPIRVModuleImpl::addPipeStorageConstant(SPIRVType* TheType,
+    SPIRVWord PacketSize, SPIRVWord PacketAlign, SPIRVWord Capacity) {
+  return addConstant(new SPIRVConstantPipeStorage(this, TheType, getId(),
+    PacketSize, PacketAlign, Capacity));
 }
 
 void
@@ -754,6 +764,11 @@ SPIRVModuleImpl::addImageType(SPIRVType *SampledType,
 SPIRVTypeSampler *
 SPIRVModuleImpl::addSamplerType() {
   return addType(new SPIRVTypeSampler(this, getId()));
+}
+
+SPIRVTypePipeStorage*
+SPIRVModuleImpl::addPipeStorageType() {
+  return addType(new SPIRVTypePipeStorage(this, getId()));
 }
 
 SPIRVTypeSampledImage *

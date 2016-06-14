@@ -88,6 +88,7 @@ public:
   bool isTypeImage() const;
   bool isTypeOCLImage() const;
   bool isTypePipe()const;
+  bool isTypePipeStorage() const;
   bool isTypeInt(unsigned Bits = 0) const;
   bool isTypeOpaque() const;
   bool isTypePointer() const;
@@ -506,6 +507,24 @@ protected:
     assert(OpCode == OC);
     assert(WordCount == FixedWC);
     assert(ImgTy && ImgTy->isTypeImage());
+  }
+};
+
+class SPIRVTypePipeStorage :public SPIRVType {
+public:
+  const static Op OC = OpTypePipeStorage;
+  const static SPIRVWord FixedWC = 2;
+  SPIRVTypePipeStorage(SPIRVModule *M, SPIRVId TheId)
+    :SPIRVType(M, FixedWC, OC, TheId){
+    validate();
+  }
+  SPIRVTypePipeStorage() :SPIRVType(OC){
+  }
+protected:
+  _SPIRV_DEF_ENCDEC1(Id)
+    void validate()const {
+      assert(OpCode == OC);
+      assert(WordCount == FixedWC);
   }
 };
 

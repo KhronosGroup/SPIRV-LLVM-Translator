@@ -14,6 +14,7 @@
 #include "ManglingUtils.h"
 #include "NameMangleAPI.h"
 #include "ParameterType.h"
+#include "SPIRVInternal.h"
 #include <algorithm>
 #include <string>
 #include <sstream>

@@ -161,6 +161,11 @@ SPIRVType::isTypePipe()const {
 }
 
 bool
+SPIRVType::isTypePipeStorage() const {
+  return OpCode == OpTypePipeStorage;
+}
+
+bool
 SPIRVType::isTypeReserveId() const {
   return OpCode == OpTypeReserveId;
 }

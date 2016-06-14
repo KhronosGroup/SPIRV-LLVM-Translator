@@ -67,6 +67,7 @@ class SPIRVTypePointer;
 class SPIRVTypeImage;
 class SPIRVTypeSampler;
 class SPIRVTypeSampledImage;
+class SPIRVTypePipeStorage;
 class SPIRVTypeStruct;
 class SPIRVTypeVector;
 class SPIRVTypeVoid;
@@ -197,6 +198,7 @@ public:
   virtual SPIRVTypeImage *addImageType(SPIRVType *,
       const SPIRVTypeImageDescriptor &, SPIRVAccessQualifierKind) = 0;
   virtual SPIRVTypeSampler *addSamplerType() = 0;
+  virtual SPIRVTypePipeStorage *addPipeStorageType() = 0;
   virtual SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T) = 0;
   virtual SPIRVTypeInt *addIntegerType(unsigned) = 0;
   virtual SPIRVTypeOpaque *addOpaqueType(const std::string &) = 0;
@@ -223,6 +225,8 @@ public:
   virtual SPIRVValue *addUndef(SPIRVType *TheType) = 0;
   virtual SPIRVValue *addSamplerConstant(SPIRVType *TheType, SPIRVWord AddrMode,
       SPIRVWord ParametricMode, SPIRVWord FilterMode) = 0;
+  virtual SPIRVValue* addPipeStorageConstant(SPIRVType* TheType,
+    SPIRVWord PacketSize, SPIRVWord PacketAlign, SPIRVWord Capacity) = 0;
 
   // Instruction creation functions
   virtual SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,

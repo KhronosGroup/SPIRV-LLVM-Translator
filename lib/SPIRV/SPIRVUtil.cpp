@@ -220,6 +220,13 @@ getSamplerType(Module *M) {
                                   SPIRAS_Constant);
 }
 
+PointerType*
+getPipeStorageType(Module* M) {
+  return getOrCreateOpaquePtrType(M, getSPIRVTypeName(
+                                        kSPIRVTypeName::PipeStorage),
+                                        SPIRAS_Constant);
+}
+
 
 void
 getFunctionTypeParameterTypes(llvm::FunctionType* FT,
@@ -1025,13 +1032,25 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
   }
   if (Ty->isStructTy()) {
     auto Name = Ty->getStructName();
+    std::string Tmp;
+
     if (Name.startswith(kLLVMTypeName::StructPrefix))
       Name = Name.drop_front(strlen(kLLVMTypeName::StructPrefix));
+    if (Name.startswith(kSPIRVTypeName::PrefixAndDelim)) {
+      Name = Name.substr(sizeof(kSPIRVTypeName::PrefixAndDelim) - 1);
+      Tmp = Name.str();
+      auto pos = Tmp.find(kSPIRVTypeName::Delimiter); //first dot
+      while (pos != std::string::npos) {
+        Tmp[pos] = '_';
+        pos = Tmp.find(kSPIRVTypeName::Delimiter, pos);
+      }
+      Name = Tmp = kSPIRVName::Prefix + Tmp;
+    }
     // ToDo: Create a better unique name for struct without name
     if (Name.empty()) {
       std::ostringstream OS;
       OS << reinterpret_cast<size_t>(Ty);
-      Name = std::string("struct_") + OS.str();
+      Name = Tmp = std::string("struct_") + OS.str();
     }
     return SPIR::RefParamType(new SPIR::UserDefinedType(Name));
   }
@@ -1183,6 +1202,15 @@ getSPIRVTypeName(StringRef BaseName, StringRef Postfixes) {
   if (Postfixes.empty())
     return TN;
   return TN + kSPIRVTypeName::Delimiter + Postfixes.str();
+}
+
+bool
+isSPIRVConstantName(StringRef TyName) {
+  if (TyName == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler) ||
+      TyName == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage))
+    return true;
+
+  return false;
 }
 
 Type *

@@ -544,6 +544,8 @@ LLVMToSPIRV::transType(Type *T) {
 
     if(Name == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
       return transType(getSamplerType(M));
+    if (Name == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage))
+      return transType(getPipeStorageType(M));
 
     auto *Struct = BM->openStructType(T->getStructNumElements(), Name);
     mapType(T, Struct);
@@ -621,6 +623,8 @@ LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
     return mapType(T, BM->addDeviceEventType());
   else if (TN == kSPIRVTypeName::Queue)
     return mapType(T, BM->addQueueType());
+  else if (TN == kSPIRVTypeName::PipeStorage)
+    return mapType(T, BM->addPipeStorageType());
   else
     return mapType(T, BM->addOpaqueGenericType(
       SPIRVOpaqueTypeOpCodeMap::map(TN)));
@@ -747,6 +751,20 @@ LLVMToSPIRV::transConstant(Value *V) {
       return BM->addSamplerConstant(SamplerTy,
                                     AddrMode, Normalized, FilterMode);
     }
+    if (ConstV->getType()->getName() ==
+      getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage)) {
+      assert(ConstV->getNumOperands() == 3);
+      SPIRVWord
+        PacketSize = ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
+        PacketAlign = ConstV->getOperand(1)->getUniqueInteger().getZExtValue(),
+        Capacity = ConstV->getOperand(2)->getUniqueInteger().getZExtValue();
+      assert(PacketAlign >= 1 && "Invalid packet alignment");
+      assert(PacketSize >= PacketAlign && PacketSize % PacketAlign == 0 &&
+        "Invalid packet size and/or alignment.");
+      SPIRVType* PipeStorageTy = transType(ConstV->getType());
+      return BM->addPipeStorageConstant(PipeStorageTy, PacketSize, PacketAlign,
+                                        Capacity);
+    }
     std::vector<SPIRVValue *> BV;
     for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I)
       BV.push_back(transValue(*I, nullptr));
@@ -859,14 +877,13 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     llvm::Value *Init = GV->hasInitializer() && !GV->hasCommonLinkage() ?
       GV->getInitializer() : nullptr;
     StructType *ST = Init ? dyn_cast<StructType>(Init->getType()) : nullptr;
-    if (ST && ST->hasName() &&
-        ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
+    if (ST && ST->hasName() && isSPIRVConstantName(ST->getName())) {
       auto BV = transConstant(Init);
       assert(BV);
       return mapValue(V, BV);
     } else if (ConstantExpr *ConstUE = dyn_cast_or_null<ConstantExpr>(Init)) {
       Instruction * Inst = ConstUE->getAsInstruction();
-      if (isSamplerInitializer(Inst)) {
+      if (isSpecialTypeInitializer(Inst)) {
         Init = Inst->getOperand(0);
         Ty = static_cast<PointerType*>(Init->getType());
       }
@@ -1019,7 +1036,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (UnaryInstruction *U = dyn_cast<UnaryInstruction>(V)) {
-    if(isSamplerInitializer(U))
+    if (isSpecialTypeInitializer(U))
       return mapValue(V, transValue(U->getOperand(0), BB));
     return mapValue(V, transUnaryInst(U, BB));
   }

@@ -154,14 +154,14 @@ inline bool isPipeOpCode(Op OpCode) {
 }
 inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return OpTypeVoid <= OC && OC <= OpTypePipe;
+  return (OpTypeVoid <= OC && OC <= OpTypePipe) || OC == OpTypePipeStorage;
 }
 
 inline bool isConstantOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return (OpConstantTrue <= OC
       && OC <= OpSpecConstantOp)
-      || OC == OpUndef;
+      || OC == OpUndef || OC == OpConstantPipeStorage;
 }
 
 inline bool isModuleScopeAllowedOpCode(Op OpCode) {
