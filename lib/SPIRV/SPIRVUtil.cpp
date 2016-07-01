@@ -1247,11 +1247,12 @@ getSPIRVImageSampledTypeName(SPIRVType *Ty) {
   case OpTypeVoid:
     return kSPIRVImageSampledTypeName::Void;
   case OpTypeInt:
-    if (Ty->getIntegerBitWidth() == 32)
+    if (Ty->getIntegerBitWidth() == 32) {
       if (static_cast<SPIRVTypeInt *>(Ty)->isSigned())
         return kSPIRVImageSampledTypeName::Int;
       else
         return kSPIRVImageSampledTypeName::UInt;
+    }
     break;
   case OpTypeFloat:
     switch(Ty->getFloatBitWidth()) {
