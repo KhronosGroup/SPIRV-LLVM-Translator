@@ -1472,17 +1472,17 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
 
-  case OpBitcast: // Can be translated without BB pointer
-    if(!CreatePlaceHolder) // May be a placeholder
-      return mapValue(BV, transConvertInst(BV, F, BB));
-
   default:
     // do nothing
     break;
   }
 
+  // During translation of OpSpecConstantOp we create an instruction
+  // corresponding to the Opcode operand and then translate this instruction.
+  // For such instruction BB and F should be nullptr, because it is a constant
+  // expression declared out of scope of any basic block or function.
   // All other values require valid BB pointer.
-  assert(BB && "Invalid BB");
+  assert(((isSpecConstantOpAllowedOp(OC) && !F && !BB) || BB) && "Invalid BB");
 
   // Creation of place holder
   if (CreatePlaceHolder) {
