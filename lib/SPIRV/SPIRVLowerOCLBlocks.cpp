@@ -66,7 +66,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Transforms/Utils/Cloning.h"
-
+#include "llvm/Transforms/Utils/GlobalStatus.h"
 #include <iostream>
 #include <list>
 #include <memory>
@@ -112,6 +112,8 @@ public:
     lowerBlockBind();
     lowerGetBlockInvoke();
     lowerGetBlockContext();
+    EraseUselessGlobalVars();
+    EliminateDeadArgs();
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE));
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_CONTEXT));
     erase(M->getFunction(SPIR_INTRINSIC_BLOCK_BIND));
@@ -346,6 +348,120 @@ private:
       Inlined = true;
     }
     return changed || Inlined;
+  }
+
+/// Looking for a global variables initialized by opencl.block*. If found, check
+/// its users. If users are trivially dead, erase them. If the global variable
+/// has no users left after that, erase it too.
+  void EraseUselessGlobalVars() {
+    std::vector<GlobalVariable*> GlobalVarsToDelete;
+    for(GlobalVariable &G : M->globals()) {
+      if(!G.hasInitializer())
+        continue;
+      Type *T = G.getInitializer()->getType();
+      if(!T->isPointerTy())
+        continue;
+      T = cast<PointerType>(T)->getElementType();
+      if(!T->isStructTy())
+        continue;
+      StringRef STName = cast<StructType>(T)->getName();
+      if(STName != "opencl.block")
+        continue;
+
+      std::vector<User*> UsersToDelete;
+      for (User *U : G.users())
+        if (U->use_empty())
+          UsersToDelete.push_back(U);
+      for (User* U : UsersToDelete)
+        erase(dyn_cast<Instruction>(U));
+
+      if(G.use_empty()) {
+        GlobalVarsToDelete.push_back(&G);
+      }
+    }
+    for(GlobalVariable *G: GlobalVarsToDelete) {
+      if (G->hasInitializer()) {
+        Constant *Init = G->getInitializer();
+        G->setInitializer(nullptr);
+        if (llvm::isSafeToDestroyConstant(Init))
+          Init->destroyConstant();
+      }
+      M->getGlobalList().erase(G);
+    }
+  }
+
+/// Looking for functions which first argument is i8* %.block_descriptor
+/// If users of this argument are dead, erase them.
+/// After that clone the found function, removing its first argument
+/// Then adjust all users/callers of the function with new arguments
+/// Implementation of this function is based on
+/// the dead argument elimination pass.
+  void EliminateDeadArgs() {
+    std::vector<Function*> FunctionsToDelete;
+    for (Function &F : M->functions()) {
+      if(F.arg_size() < 1)
+        continue;
+      auto FirstArg = F.arg_begin();
+      if (FirstArg->getName() != ".block_descriptor")
+        continue;
+
+      std::vector<User*> UsersToDelete;
+      for (User *U : FirstArg->users())
+        if (U->use_empty())
+          UsersToDelete.push_back(U);
+
+      for (User *U : UsersToDelete)
+          erase(dyn_cast<Instruction>(U));
+      UsersToDelete.clear();
+
+      if (!FirstArg->use_empty())
+        continue;
+
+      // Create new function without block descriptor argument.
+      ValueToValueMapTy VMap;
+      // If any of the arguments to the function are in the VMap,
+      // the arguments are deleted from the resultant function.
+      VMap[FirstArg] = llvm::UndefValue::get(FirstArg->getType());
+      Function *NF = CloneFunction(&F, VMap, true);
+      F.getParent()->getFunctionList().insert(F, NF);
+      NF->takeName(&F);
+
+      // Redirect all users of the old function to the new one.
+      for (User *U : F.users()) {
+        ConstantExpr *CE = dyn_cast<ConstantExpr>(U);
+        CallSite CS(U);
+        if (CE && CE->getOpcode() == Instruction::BitCast) {
+          Constant *NewCE = ConstantExpr::getBitCast(NF, CE->getType());
+          U->replaceAllUsesWith(NewCE);
+        } else if (CS) {
+          assert(isa<CallInst>(CS.getInstruction()) && "Call instruction is expected");
+          CallInst * Call = cast<CallInst>(CS.getInstruction());
+
+          std::vector<Value*> Args;
+          auto I = CS.arg_begin();
+          Args.assign(++I, CS.arg_end()); // Skip first argument.
+          CallInst *New = CallInst::Create(NF, Args, "", Call);
+          assert(New->getType() == Call->getType());
+          New->setCallingConv(CS.getCallingConv());
+          New->setAttributes(NF->getAttributes());
+          if (Call->isTailCall())
+            New->setTailCall();
+          New->setDebugLoc(Call->getDebugLoc());
+          New->takeName(Call);
+          Call->replaceAllUsesWith(New);
+          UsersToDelete.push_back(Call);
+        } else {
+          llvm_unreachable("Unexpected user of function");
+        }
+      }
+      for(User* U : UsersToDelete)
+        erase(cast<Instruction>(U));
+      UsersToDelete.clear();
+      FunctionsToDelete.push_back(&F);
+    } // iteration over module's functions.
+
+    for (Function *F : FunctionsToDelete)
+      erase(F);
   }
 
   void
