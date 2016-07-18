@@ -189,7 +189,7 @@ SPIRVGroupMemberDecorate::decorateTargets() {
 
 bool
 SPIRVDecorateGeneric::Comparator::operator()(const SPIRVDecorateGeneric *A,
-    const SPIRVDecorateGeneric *B) {
+    const SPIRVDecorateGeneric *B) const {
   auto Action = [=](){
   if (A->getOpCode() < B->getOpCode())
     return true;

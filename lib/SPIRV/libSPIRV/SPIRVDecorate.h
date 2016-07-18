@@ -65,7 +65,7 @@ public:
   size_t getLiteralCount() const;
   /// Compare for kind and literal only.
   struct Comparator {
-    bool operator()(const SPIRVDecorateGeneric *A, const SPIRVDecorateGeneric *B);
+    bool operator ()(const SPIRVDecorateGeneric *A, const SPIRVDecorateGeneric *B) const;
   };
   /// Compare kind, literals and target.
   friend bool operator==(const SPIRVDecorateGeneric &A,
