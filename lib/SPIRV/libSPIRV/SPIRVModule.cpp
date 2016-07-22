@@ -282,7 +282,7 @@ public:
   virtual SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addSwitchInst(SPIRVValue *, SPIRVBasicBlock *,
-      const std::vector<std::pair<SPIRVWord, SPIRVBasicBlock *>>&,
+      const std::vector<std::pair<std::vector<SPIRVWord>, SPIRVBasicBlock *>>&,
       SPIRVBasicBlock *);
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
       SPIRVBasicBlock *);
@@ -935,7 +935,7 @@ SPIRVModuleImpl::addStoreInst(SPIRVValue *Target, SPIRVValue *Source,
 
 SPIRVInstruction *
 SPIRVModuleImpl::addSwitchInst(SPIRVValue *Select, SPIRVBasicBlock *Default,
-    const std::vector<std::pair<SPIRVWord, SPIRVBasicBlock *>>& Pairs,
+    const std::vector<std::pair<std::vector<SPIRVWord>, SPIRVBasicBlock *>>& Pairs,
     SPIRVBasicBlock *BB) {
   return BB->addInstruction(new SPIRVSwitch(Select, Default, Pairs, BB));
 }

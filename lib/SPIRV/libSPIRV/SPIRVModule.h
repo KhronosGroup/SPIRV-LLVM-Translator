@@ -291,7 +291,7 @@ public:
   virtual SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addSwitchInst(SPIRVValue *, SPIRVBasicBlock *,
-      const std::vector<std::pair<SPIRVWord, SPIRVBasicBlock *>>&,
+      const std::vector<std::pair<std::vector<SPIRVWord>, SPIRVBasicBlock *>>&,
       SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
       SPIRVBasicBlock *) = 0;

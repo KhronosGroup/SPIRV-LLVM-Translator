@@ -1617,9 +1617,14 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         Select, dyn_cast<BasicBlock>(transValue(BS->getDefault(), F, BB)),
         BS->getNumPairs(), BB);
     BS->foreachPair(
-        [&](SPIRVWord Literal, SPIRVBasicBlock *Label, size_t Index) {
-          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()),
-                                       Literal),
+        [&](SPIRVSwitch::LiteralTy Literals, SPIRVBasicBlock *Label) {
+        assert(!Literals.empty() && "Literals should not be empty");
+        assert(Literals.size() <= 2 && "Number of literals should not be more then two");
+        uint64_t Literal = uint64_t(Literals.at(0));
+        if (Literals.size() == 2) {
+          Literal += uint64_t(Literals.at(1)) << 32;
+        }
+          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()), Literal),
                       dyn_cast<BasicBlock>(transValue(Label, F, BB)));
         });
     return mapValue(BV, LS);

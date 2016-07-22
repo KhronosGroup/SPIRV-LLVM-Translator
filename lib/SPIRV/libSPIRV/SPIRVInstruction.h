@@ -990,13 +990,18 @@ class SPIRVSwitch: public SPIRVInstruction {
 public:
   static const Op OC = OpSwitch;
   static const SPIRVWord FixedWordCount = 3;
+  typedef std::vector<SPIRVWord> LiteralTy;
+  typedef std::pair<LiteralTy, SPIRVBasicBlock *> PairTy;
+
   SPIRVSwitch(SPIRVValue *TheSelect, SPIRVBasicBlock *TheDefault,
-      const std::vector<std::pair<SPIRVWord, SPIRVBasicBlock *>> &ThePairs,
-      SPIRVBasicBlock *BB)
-    :SPIRVInstruction(ThePairs.size() * 2 + FixedWordCount, OC, BB),
-     Select(TheSelect->getId()), Default(TheDefault->getId()) {
-    for (auto &I:ThePairs) {
-      Pairs.push_back(I.first);
+    const std::vector<PairTy> &ThePairs,
+    SPIRVBasicBlock *BB)
+    :SPIRVInstruction(ThePairs.size() * (ThePairs.at(0).first.size() + 1) + FixedWordCount, OC, BB),
+    Select(TheSelect->getId()), Default(TheDefault->getId()) {
+
+    for (auto &I : ThePairs) {
+      for (auto &U : I.first)
+        Pairs.push_back(U);
       Pairs.push_back(I.second->getId());
     }
     validate();
@@ -1014,14 +1019,22 @@ public:
   SPIRVBasicBlock *getDefault() const {
     return static_cast<SPIRVBasicBlock *>(getValue(Default));
   }
-  size_t getNumPairs() const { return Pairs.size()/2;}
-  void foreachPair(std::function<void(SPIRVWord, SPIRVBasicBlock *, size_t)> Func)
+  size_t getLiteralsCount() const { return getSelect()->getType()->getBitWidth() / (sizeof(SPIRVWord) * 8);}
+  size_t getPairSize() const { return getLiteralsCount() + 1; }
+  size_t getNumPairs() const { return Pairs.size()/getPairSize();}
+  void foreachPair(std::function<void(LiteralTy, SPIRVBasicBlock *)> Func)
     const {
-    for (size_t I = 0, E = Pairs.size()/2; I != E; ++I) {
+    unsigned PairSize = getPairSize();
+    for (size_t I = 0, E = getNumPairs(); I != E; ++I) {
       SPIRVEntry *BB;
-      if (!Module->exist(Pairs[2*I+1], &BB))
+      LiteralTy Literals;
+      if (!Module->exist(Pairs[PairSize*I + getLiteralsCount()], &BB))
         continue;
-      Func(Pairs[2*I], static_cast<SPIRVBasicBlock *>(BB), I);
+
+      for (int i = 0; i < getLiteralsCount(); ++i) {
+        Literals.push_back(Pairs.at(PairSize*I + i));
+      }
+      Func(Literals, static_cast<SPIRVBasicBlock *>(BB));
     }
   }
   void setWordCount(SPIRVWord TheWordCount) {
@@ -1032,8 +1045,8 @@ public:
   void validate()const {
     assert(WordCount == Pairs.size() + FixedWordCount);
     assert(OpCode == OC);
-    assert(Pairs.size() % 2 == 0);
-    foreachPair([=](SPIRVWord Literal, SPIRVBasicBlock *BB, size_t Index){
+    assert(Pairs.size() % getPairSize() == 0);
+    foreachPair([=](LiteralTy Literals, SPIRVBasicBlock *BB){
       assert(BB->isBasicBlock() || BB->isForward());
     });
     SPIRVInstruction::validate();

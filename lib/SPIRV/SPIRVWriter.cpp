@@ -988,13 +988,26 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       StorageClassFunction, BB));
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
-    std::vector<std::pair<SPIRVWord, SPIRVBasicBlock *>> Pairs;
-    for (auto I = Switch->case_begin(), E = Switch->case_end(); I != E; ++I)
-      Pairs.push_back(std::make_pair(I.getCaseValue()->getZExtValue(),
+    std::vector<SPIRVSwitch::PairTy> Pairs;
+    auto Select = transValue(Switch->getCondition(), BB);
+
+    unsigned BitWidth = Select->getType()->getBitWidth();
+
+    for (auto I = Switch->case_begin(), E = Switch->case_end(); I != E; ++I) {
+      SPIRVSwitch::LiteralTy Lit;
+      uint64_t CaseValue = I.getCaseValue()->getZExtValue();
+
+      Lit.push_back(CaseValue);
+      assert(Select->getType()->getBitWidth() <= 64 && "unexpected selector bitwidth");
+      if(Select->getType()->getBitWidth() == 64)
+        Lit.push_back(CaseValue >> 32);
+
+      Pairs.push_back(std::make_pair(Lit,
           static_cast<SPIRVBasicBlock*>(transValue(I.getCaseSuccessor(),
               nullptr))));
-    return mapValue(V, BM->addSwitchInst(
-        transValue(Switch->getCondition(), BB),
+    }
+
+    return mapValue(V, BM->addSwitchInst(Select,
         static_cast<SPIRVBasicBlock*>(transValue(Switch->getDefaultDest(),
             nullptr)), Pairs, BB));
   }
