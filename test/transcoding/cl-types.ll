@@ -26,6 +26,8 @@
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
+; CHECK-SPIRV-DAG: 2 Capability Sampled1D
+; CHECK-SPIRV-DAG: 2 Capability SampledBuffer
 ; CHECK-SPIRV-DAG: 2 TypeVoid [[VOID:[0-9]+]]
 ; CHECK-SPIRV-DAG: 3 TypePipe [[PIPE_RD:[0-9]+]] 0
 ; CHECK-SPIRV-DAG: 3 TypePipe [[PIPE_WR:[0-9]+]] 1
