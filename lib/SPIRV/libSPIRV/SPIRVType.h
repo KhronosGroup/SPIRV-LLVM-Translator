@@ -173,8 +173,13 @@ public:
 
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec CV;
-    if (isTypeFloat(16))
-      CV.push_back(CapabilityFloat16);
+    if (isTypeFloat(16)) {
+      CV.push_back(CapabilityFloat16Buffer);
+      auto extensions = getModule()->getExtension();
+      if (std::any_of(extensions.begin(), extensions.end(),
+          [](const std::string &I){return I == "cl_khr_fp16";}))
+        CV.push_back(CapabilityFloat16);
+    }
     else if (isTypeFloat(64))
       CV.push_back(CapabilityFloat64);
     return std::move(CV);
