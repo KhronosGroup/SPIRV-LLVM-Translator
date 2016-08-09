@@ -1629,6 +1629,13 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         });
     return mapValue(BV, LS);
   }
+  case OpCopyObject: {
+    SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
+    AllocaInst* AI = new AllocaInst(transType(CO->getOperand()->getType()), "", BB);
+    StoreInst* SI = new StoreInst(transValue(CO->getOperand(), F, BB), AI, BB);
+    LoadInst* LI = new LoadInst(AI, "", BB);
+    return mapValue(BV, LI);
+  }
 
   case OpAccessChain:
   case OpInBoundsAccessChain:
