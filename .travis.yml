@@ -21,9 +21,9 @@ compiler:
 
 # To avoid Go bindings related issues in LIT tests, hide Go binaries from CMake:
 # substitute paths to Go binaries in $PATH with empty string
-install:
-  - export GOBIN=`go env GOROOT`/bin
-  - PATH=${PATH//${GOBIN//\//\\\/}/}
+#install:
+#  - export GOBIN=`go env GOROOT`/bin
+#  - PATH=${PATH//${GOBIN//\//\\\/}/}
 
 script:
   - mkdir build && cd build
