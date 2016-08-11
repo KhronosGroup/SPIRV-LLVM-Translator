@@ -169,10 +169,8 @@ SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
   ADD_VEC_INIT(CapabilityInputAttachment, { CapabilityShader });
   ADD_VEC_INIT(CapabilitySparseResidency, { CapabilityShader });
   ADD_VEC_INIT(CapabilityMinLod, { CapabilityShader });
-  ADD_VEC_INIT(CapabilitySampled1D, { CapabilityShader });
   ADD_VEC_INIT(CapabilityImage1D, { CapabilitySampled1D });
   ADD_VEC_INIT(CapabilitySampledCubeArray, { CapabilityShader });
-  ADD_VEC_INIT(CapabilitySampledBuffer, { CapabilityShader });
   ADD_VEC_INIT(CapabilityImageBuffer, { CapabilitySampledBuffer });
   ADD_VEC_INIT(CapabilityImageMSArray, { CapabilityShader });
   ADD_VEC_INIT(CapabilityStorageImageExtendedFormats, { CapabilityShader });
