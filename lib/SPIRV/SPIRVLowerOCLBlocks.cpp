@@ -350,9 +350,9 @@ private:
     return changed || Inlined;
   }
 
-/// Looking for a global variables initialized by opencl.block*. If found, check
-/// its users. If users are trivially dead, erase them. If the global variable
-/// has no users left after that, erase it too.
+  /// Looking for a global variables initialized by opencl.block*. If found, check
+  /// its users. If users are trivially dead, erase them. If the global variable
+  /// has no users left after that, erase it too.
   void EraseUselessGlobalVars() {
     std::vector<GlobalVariable*> GlobalVarsToDelete;
     for(GlobalVariable &G : M->globals()) {
@@ -390,12 +390,35 @@ private:
     }
   }
 
-/// Looking for functions which first argument is i8* %.block_descriptor
-/// If users of this argument are dead, erase them.
-/// After that clone the found function, removing its first argument
-/// Then adjust all users/callers of the function with new arguments
-/// Implementation of this function is based on
-/// the dead argument elimination pass.
+  /// This method identifies F as an enqueued function iff:
+  /// 1. F is bitcasted to a pointer, and
+  /// 2. is passed to a function call of _Z21__spirv_EnqueueKernel
+  /// Returns true if F is enqueued function, false otherwise.
+  bool isEnqueuedFunction(Function &F) const {
+    for (User* U : F.users()) {
+      if (ConstantExpr *CE = dyn_cast<ConstantExpr>(U)) {
+        if (CE->getOpcode() != Instruction::BitCast)
+          continue;
+        if (!CE->getType()->isPointerTy())
+          continue;
+        // lowerBlockBind() should already have substituted last argument
+        // of enqueue_kernel() call with arguments of spir_block_bind().
+        for (User *UU : CE->users())
+          if (CallInst* C = dyn_cast<CallInst>(UU))
+            if (Function *CF = C->getCalledFunction())
+              if (CF->getName().startswith("_Z21__spirv_EnqueueKernel"))
+                return true;
+      }
+    }
+    return false;
+  }
+
+  /// Looking for functions which first argument is i8* %.block_descriptor
+  /// If users of this argument are dead, erase them.
+  /// After that clone the found function, removing its first argument
+  /// Then adjust all users/callers of the function with new arguments
+  /// Implementation of this function is based on
+  /// the dead argument elimination pass.
   void EliminateDeadArgs() {
     std::vector<Function*> FunctionsToDelete;
     for (Function &F : M->functions()) {
@@ -403,6 +426,12 @@ private:
         continue;
       auto FirstArg = F.arg_begin();
       if (FirstArg->getName() != ".block_descriptor")
+        continue;
+
+      // Skip the function if it is an enqueued kernel, because per SPIR-V spec,
+      // function invoked with OpEnqueueKernel must have at least one argument
+      // of type i8*
+      if (isEnqueuedFunction(F))
         continue;
 
       std::vector<User*> UsersToDelete;
