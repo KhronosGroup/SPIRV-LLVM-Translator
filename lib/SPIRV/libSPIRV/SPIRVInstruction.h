@@ -1057,6 +1057,47 @@ protected:
   std::vector<SPIRVWord> Pairs;
 };
 
+class SPIRVFMod : public SPIRVInstruction {
+public:
+  static const Op OC = OpFMod;
+  static const SPIRVWord FixedWordCount = 4;
+  // Complete constructor
+  SPIRVFMod(SPIRVType *TheType, SPIRVId TheId, SPIRVId TheDividend,
+      SPIRVId TheDivisor, SPIRVBasicBlock *BB)
+      :SPIRVInstruction(5, OC, TheType, TheId, BB), Dividend(TheDividend), Divisor(TheDivisor) {
+    validate();
+    assert(BB && "Invalid BB");
+  }
+  // Incomplete constructor
+  SPIRVFMod() :SPIRVInstruction(OC), Dividend(SPIRVID_INVALID),
+    Divisor(SPIRVID_INVALID) {
+  }
+  SPIRVValue *getDividend() const { return getValue(Dividend); }
+  SPIRVValue *getDivisor() const { return getValue(Divisor); }
+
+  std::vector<SPIRVValue*> getOperands() {
+    std::vector<SPIRVId> Operands;
+    Operands.push_back(Dividend);
+    Operands.push_back(Divisor);
+    return getValues(Operands);
+  }
+
+  void setWordCount(SPIRVWord FixedWordCount) {
+    SPIRVEntry::setWordCount(FixedWordCount);
+  }
+  _SPIRV_DEF_ENCDEC4(Type, Id, Dividend, Divisor)
+  void validate()const {
+    SPIRVInstruction::validate();
+    if (getValue(Dividend)->isForward() ||
+        getValue(Divisor)->isForward())
+      return;
+    SPIRVInstruction::validate();
+  }
+protected:
+  SPIRVId Dividend;
+  SPIRVId Divisor;
+};
+
 class SPIRVUnary:public SPIRVInstTemplateBase {
 protected:
   void validate()const {

@@ -135,6 +135,7 @@ struct OCLBuiltinTransInfo {
 //
 ///////////////////////////////////////////////////////////////////////////////
 namespace kOCLBuiltinName {
+  const static char FMod[]                      = "fmod";
   const static char All[]                       = "all";
   const static char Any[]                       = "any";
   const static char AsyncWorkGroupCopy[]        = "async_work_group_copy";
@@ -528,6 +529,7 @@ _SPIRV_OP(fetch_or_explicit, AtomicOr)
 _SPIRV_OP(fetch_xor_explicit, AtomicXor)
 #undef _SPIRV_OP
 #define _SPIRV_OP(x,y) add(#x, Op##y);
+_SPIRV_OP(fmod, FMod)
 _SPIRV_OP(dot, Dot)
 _SPIRV_OP(async_work_group_copy, GroupAsyncCopy)
 _SPIRV_OP(async_work_group_strided_copy, GroupAsyncCopy)

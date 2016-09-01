@@ -293,6 +293,8 @@ public:
   virtual SPIRVInstruction *addSwitchInst(SPIRVValue *, SPIRVBasicBlock *,
       const std::vector<std::pair<std::vector<SPIRVWord>, SPIRVBasicBlock *>>&,
       SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addFModInst(SPIRVType *TheType, SPIRVId TheDividend,
+      SPIRVId TheDivisor, SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
       SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addVariable(SPIRVType *, bool, SPIRVLinkageTypeKind,

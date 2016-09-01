@@ -122,6 +122,11 @@ public:
   ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
   void transMemoryBarrier(CallInst *CI, AtomicWorkItemFenceLiterals);
 
+  /// Transform fmod to __spirv_OpFMod.
+  /// fmod(dividend, divisor) =>
+  ///   __spirv_OpFMod(map(dividend), map(divisor))
+  void visitCallFMod(CallInst *CI);
+
   /// Transform all to __spirv_Op(All|Any).  Note that the types mismatch so
   // some extra code is emitted to convert between the two.
   void visitCallAllAny(spv::Op OC, CallInst *CI);
@@ -379,6 +384,10 @@ OCL20ToSPIRV::visitCallInst(CallInst& CI) {
     visitCallNDRange(&CI, DemangledName);
     return;
   }
+  if (DemangledName == kOCLBuiltinName::FMod) {
+      visitCallFMod(&CI);
+      return;
+  }
   if (DemangledName == kOCLBuiltinName::All) {
       visitCallAllAny(OpAll, &CI);
       return;
@@ -608,6 +617,14 @@ OCL20ToSPIRV::visitCallAtomicInit(CallInst* CI) {
   ST->takeName(CI);
   CI->dropAllReferences();
   CI->eraseFromParent();
+}
+
+void
+OCL20ToSPIRV::visitCallFMod(CallInst* CI) {
+  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
+    return getSPIRVFuncName(OpFMod);
+  }, &Attrs);
 }
 
 void
