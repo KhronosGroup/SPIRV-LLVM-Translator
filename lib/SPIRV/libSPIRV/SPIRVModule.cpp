@@ -286,6 +286,8 @@ public:
       SPIRVBasicBlock *);
   virtual SPIRVInstruction *addFModInst(SPIRVType *TheType, SPIRVId TheDividend,
       SPIRVId TheDivisor, SPIRVBasicBlock *BB);
+  virtual SPIRVInstruction *addVectorTimesScalarInst(SPIRVType *TheType,
+      SPIRVId TheVector, SPIRVId TheScalar, SPIRVBasicBlock *BB);
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
       SPIRVBasicBlock *);
   virtual SPIRVInstruction *addVariable(SPIRVType *, bool, SPIRVLinkageTypeKind,
@@ -946,6 +948,13 @@ SPIRVModuleImpl::addFModInst(SPIRVType *TheType, SPIRVId TheDividend,
     SPIRVId TheDivisor, SPIRVBasicBlock *BB) {
     return BB->addInstruction(new SPIRVFMod(TheType, getId(), TheDividend,
         TheDivisor, BB));
+}
+
+SPIRVInstruction *
+SPIRVModuleImpl::addVectorTimesScalarInst(SPIRVType *TheType, SPIRVId TheVector,
+    SPIRVId TheScalar, SPIRVBasicBlock *BB) {
+  return BB->addInstruction(new SPIRVVectorTimesScalar(TheType, getId(),
+        TheVector, TheScalar, BB));
 }
 
 SPIRVInstruction *

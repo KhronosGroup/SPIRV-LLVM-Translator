@@ -53,6 +53,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/DIBuilder.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
@@ -1629,6 +1630,20 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         });
     return mapValue(BV, LS);
   }
+
+  case OpVectorTimesScalar: {
+    auto VTS = static_cast<SPIRVVectorTimesScalar*>(BV);
+    IRBuilder<> Builder(BB);
+    auto Scalar = transValue(VTS->getScalar(), F, BB);
+    auto Vector = transValue(VTS->getVector(), F, BB);
+    assert(Vector->getType()->isVectorTy() && "Invalid type");
+    unsigned vecSize = Vector->getType()->getVectorNumElements();
+    auto NewVec = Builder.CreateVectorSplat(vecSize, Scalar, Scalar->getName());
+    NewVec->takeName(Scalar);
+    auto Scale = Builder.CreateFMul(Vector, NewVec, "scale");
+    return mapValue(BV, Scale);
+  }
+
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     AllocaInst* AI = new AllocaInst(transType(CO->getOperand()->getType()), "", BB);

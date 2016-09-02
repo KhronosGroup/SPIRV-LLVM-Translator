@@ -1098,6 +1098,57 @@ protected:
   SPIRVId Divisor;
 };
 
+class SPIRVVectorTimesScalar : public SPIRVInstruction {
+public:
+  static const Op OC = OpVectorTimesScalar;
+  static const SPIRVWord FixedWordCount = 4;
+  // Complete constructor
+  SPIRVVectorTimesScalar(SPIRVType *TheType, SPIRVId TheId, SPIRVId TheVector,
+      SPIRVId TheScalar, SPIRVBasicBlock *BB)
+      :SPIRVInstruction(5, OC, TheType, TheId, BB), Vector(TheVector), Scalar(TheScalar) {
+    validate();
+    assert(BB && "Invalid BB");
+  }
+  // Incomplete constructor
+  SPIRVVectorTimesScalar() :SPIRVInstruction(OC), Vector(SPIRVID_INVALID),
+      Scalar(SPIRVID_INVALID) {
+  }
+  SPIRVValue *getVector() const { return getValue(Vector); }
+  SPIRVValue *getScalar() const { return getValue(Scalar); }
+
+  std::vector<SPIRVValue*> getOperands() {
+    std::vector<SPIRVId> Operands;
+    Operands.push_back(Vector);
+    Operands.push_back(Scalar);
+    return getValues(Operands);
+  }
+
+  void setWordCount(SPIRVWord FixedWordCount) {
+    SPIRVEntry::setWordCount(FixedWordCount);
+  }
+  _SPIRV_DEF_ENCDEC4(Type, Id, Vector, Scalar)
+  void validate()const {
+    SPIRVInstruction::validate();
+    if (getValue(Vector)->isForward() ||
+        getValue(Scalar)->isForward())
+      return;
+
+    assert(getValueType(Vector)->isTypeVector() &&
+        getValueType(Vector)->getVectorComponentType()->isTypeFloat() &&
+        "First operand must be a vector of floating-point type");
+    assert(getValueType(getId())->isTypeVector() &&
+        getValueType(getId())->getVectorComponentType()->isTypeFloat() &&
+        "Result type must be a vector of floating-point type");
+    assert(getValueType(Vector)->getVectorComponentType() ==
+        getValueType(getId())->getVectorComponentType() &&
+        "Scalar must have the same type as the Component Type in Result Type");
+    SPIRVInstruction::validate();
+  }
+protected:
+  SPIRVId Vector;
+  SPIRVId Scalar;
+};
+
 class SPIRVUnary:public SPIRVInstTemplateBase {
 protected:
   void validate()const {
