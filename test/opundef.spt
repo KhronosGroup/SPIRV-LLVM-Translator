@@ -1,18 +1,3 @@
-; RUN: llvm-spirv %s -to-binary -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.bc
-; RUN: llvm-dis < %t.bc | FileCheck %s
-
-; CHECK: define spir_func void @foo() #0 {
-; CHECK-NEXT: entry:
-; CHECK-NEXT: %agg1 = insertvalue %{{[0-9]*}} undef
-; CHECK-NEXT: ret void
-; CHECK-NEXT: } 
-; CHECK: define spir_func void @bar() #0 {
-; CHECK-NEXT: entry:
-; CHECK-NEXT: %agg2 = insertvalue %{{[0-9]*}} undef
-; CHECK-NEXT: ret void
-; CHECK-NEXT: } 
-
 119734787 65536 393230 16 0 
 2 Capability Addresses 
 2 Capability Linkage 
@@ -52,4 +37,22 @@
 1 Return 
 
 1 FunctionEnd 
+
+; FIXME: LIT comments/commands are moved at the end because llvm-spirv stops
+; reading the file after first ';' symbol
+
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s
+
+; CHECK: define spir_func void @foo() #0 {
+; CHECK-NEXT: entry:
+; CHECK-NEXT: %agg1 = insertvalue %{{[0-9]*}} undef
+; CHECK-NEXT: ret void
+; CHECK-NEXT: }
+; CHECK: define spir_func void @bar() #0 {
+; CHECK-NEXT: entry:
+; CHECK-NEXT: %agg2 = insertvalue %{{[0-9]*}} undef
+; CHECK-NEXT: ret void
+; CHECK-NEXT: }
 

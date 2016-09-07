@@ -253,10 +253,14 @@ SPIRVEntry::validateBuiltin(SPIRVWord TheSet, SPIRVWord Index)const {
 }
 
 void
-SPIRVEntry::addDecorate(const SPIRVDecorate *Dec){
+SPIRVEntry::addDecorate(const SPIRVDecorate *Dec) {
   auto Kind = Dec->getDecorateKind();
   Decorates.insert(std::make_pair(Dec->getDecorateKind(), Dec));
   Module->addDecorate(Dec);
+  if (Kind == spv::DecorationLinkageAttributes) {
+    auto *LinkageAttr = static_cast<const SPIRVDecorateLinkageAttr*>(Dec);
+    setName(LinkageAttr->getLinkageName());
+  }
   SPIRVDBG(spvdbgs() << "[addDecorate] " << *Dec << '\n';)
 }
 
