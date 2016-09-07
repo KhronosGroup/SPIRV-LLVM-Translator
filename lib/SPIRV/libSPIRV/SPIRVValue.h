@@ -291,6 +291,7 @@ protected:
       getValue(I)->validate();
   }
   void setWordCount(SPIRVWord WordCount) {
+    SPIRVEntry::setWordCount(WordCount);
     Elements.resize(WordCount - 3);
   }
   _SPIRV_DEF_ENCDEC3(Type, Id, Elements)

@@ -250,6 +250,8 @@ public:
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addPhiInst(SPIRVType *, std::vector<SPIRVValue *>,
       SPIRVBasicBlock *);
+  virtual SPIRVInstruction *addCompositeConstructInst(SPIRVType *,
+      const std::vector<SPIRVId>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addCompositeExtractInst(SPIRVType *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addCompositeInsertInst(SPIRVValue *Object,
@@ -1114,6 +1116,13 @@ SPIRVModuleImpl::addAsyncGroupCopy(SPIRVValue *Scope,
     SPIRVValue *Event, SPIRVBasicBlock *BB) {
   return addInstruction(new SPIRVGroupAsyncCopy(Scope, getId(), Dest, Src,
     NumElems, Stride, Event, BB), BB);
+}
+
+SPIRVInstruction *
+SPIRVModuleImpl::addCompositeConstructInst(SPIRVType *Type,
+    const std::vector<SPIRVId>& Constituents, SPIRVBasicBlock *BB) {
+  return addInstruction(new SPIRVCompositeConstruct(Type, getId(),
+      Constituents, BB), BB);
 }
 
 SPIRVInstruction *

@@ -254,6 +254,8 @@ public:
   virtual void addCapabilityInternal(SPIRVCapabilityKind) = 0;
   virtual SPIRVInstruction *addCallInst(SPIRVFunction*,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addCompositeConstructInst(SPIRVType *,
+      const std::vector<SPIRVId>&, SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addCompositeExtractInst(SPIRVType *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addCompositeInsertInst(SPIRVValue *,

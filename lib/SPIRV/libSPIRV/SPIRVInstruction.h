@@ -1384,6 +1384,46 @@ protected:
   SPIRVExtInstSetKind ExtSetKind;
 };
 
+class SPIRVCompositeConstruct : public SPIRVInstruction {
+public:
+  const static Op OC = OpCompositeConstruct;
+  const static SPIRVWord FixedWordCount = 3;
+  // Complete constructor
+  SPIRVCompositeConstruct(SPIRVType *TheType, SPIRVId TheId,
+    const std::vector<SPIRVId>& TheConstituents, SPIRVBasicBlock *TheBB) :
+    SPIRVInstruction(TheConstituents.size() + FixedWordCount, OC,
+        TheType, TheId, TheBB), Constituents(TheConstituents) {
+    validate();
+    assert(TheBB && "Invalid BB");
+  }
+  // Incomplete constructor
+  SPIRVCompositeConstruct():SPIRVInstruction(OC) {}
+
+  const std::vector<SPIRVValue*> getConstituents() const {
+    return getValues(Constituents);
+  }
+protected:
+  void setWordCount(SPIRVWord TheWordCount) {
+    SPIRVEntry::setWordCount(TheWordCount);
+    Constituents.resize(TheWordCount - FixedWordCount);
+  }
+  _SPIRV_DEF_ENCDEC3(Type, Id, Constituents)
+  void validate() const {
+    SPIRVInstruction::validate();
+    switch (getValueType(this->getId())->getOpCode()) {
+    case OpTypeVector:
+      assert(getConstituents().size() > 1 &&
+          "There must be at least two Constituent operands in vector");
+    case OpTypeArray:
+    case OpTypeStruct:
+      break;
+    default:
+      assert("Invalid type");
+    }
+  }
+  std::vector<SPIRVId> Constituents;
+};
+
 class SPIRVCompositeExtract:public SPIRVInstruction {
 public:
   const static Op OC = OpCompositeExtract;
