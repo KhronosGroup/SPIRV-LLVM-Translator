@@ -424,9 +424,9 @@ public:
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec CV;
     CV.push_back(CapabilityImageBasic);
-    if (Desc.Dim == 1)
+    if (Desc.Dim == SPIRVImageDimKind::Dim1D)
       CV.push_back(CapabilitySampled1D);
-    else if (Desc.Dim == 5)
+    else if (Desc.Dim == SPIRVImageDimKind::DimBuffer)
       CV.push_back(CapabilitySampledBuffer);
     if (Acc.size() > 0 && Acc[0] == AccessQualifierReadWrite)
       CV.push_back(CapabilityImageReadWrite);
