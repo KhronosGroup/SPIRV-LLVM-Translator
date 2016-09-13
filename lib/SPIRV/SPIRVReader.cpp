@@ -1611,6 +1611,11 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                        BV->getName(), BB));
   }
 
+  case OpSelectionMerge: {
+    // OpenCL Compiler does not use this instruction
+    return nullptr;
+  }
+
   case OpSwitch: {
     auto BS = static_cast<SPIRVSwitch *>(BV);
     auto Select = transValue(BS->getSelect(), F, BB);

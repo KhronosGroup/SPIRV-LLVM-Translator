@@ -986,6 +986,35 @@ protected:
   SPIRVId Op2;
 };
 
+class SPIRVSelectionMerge: public SPIRVInstruction {
+public:
+  static const Op OC = OpSelectionMerge;
+  static const SPIRVWord FixedWordCount = 3;
+
+  SPIRVSelectionMerge(SPIRVId TheMergeBlock,
+      SPIRVWord TheSelectionControl, SPIRVBasicBlock *BB)
+      :SPIRVInstruction(3, OC, BB), MergeBlock(TheMergeBlock),
+      SelectionControl(TheSelectionControl) {
+    validate();
+    assert(BB && "Invalid BB");
+  }
+
+  SPIRVSelectionMerge() :SPIRVInstruction(OC), MergeBlock(SPIRVID_INVALID),
+      SelectionControl(SPIRVWORD_MAX) {
+    setHasNoId();
+    setHasNoType();
+  }
+
+  SPIRVId getMergeBlock() { return MergeBlock; }
+  SPIRVWord getSelectionControl() { return SelectionControl; }
+
+  _SPIRV_DEF_ENCDEC2(MergeBlock, SelectionControl)
+
+protected:
+  SPIRVId MergeBlock;
+  SPIRVWord SelectionControl;
+};
+
 class SPIRVSwitch: public SPIRVInstruction {
 public:
   static const Op OC = OpSwitch;

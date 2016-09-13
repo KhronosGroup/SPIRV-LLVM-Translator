@@ -281,6 +281,8 @@ public:
   virtual SPIRVInstruction *addReturnValueInst(SPIRVValue *, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
       SPIRVBasicBlock *);
+  virtual SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
+      SPIRVWord SelectionControl, SPIRVBasicBlock *BB);
   virtual SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addSwitchInst(SPIRVValue *, SPIRVBasicBlock *,
@@ -1099,6 +1101,12 @@ SPIRVModuleImpl::addSelectInst(SPIRVValue *Condition, SPIRVValue *Op1,
     SPIRVValue *Op2, SPIRVBasicBlock *BB) {
   return addInstruction(new SPIRVSelect(getId(), Condition->getId(),
       Op1->getId(), Op2->getId(), BB), BB);
+}
+
+SPIRVInstruction *
+SPIRVModuleImpl::addSelectionMergeInst(SPIRVId MergeBlock,
+    SPIRVWord SelectionControl, SPIRVBasicBlock *BB) {
+    return addInstruction(new SPIRVSelectionMerge(MergeBlock, SelectionControl, BB), BB);
 }
 
 SPIRVInstruction *
