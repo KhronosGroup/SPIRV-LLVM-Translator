@@ -892,7 +892,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
       transType(Ty), GV->isConstant(),
       transLinkageType(GV),
-      Init ? transValue(Init, nullptr) : nullptr,
+      (Init && !isa<UndefValue>(Init)) ? transValue(Init, nullptr) : nullptr,
       GV->getName(),
       SPIRSPIRVAddrSpaceMap::map(
         static_cast<SPIRAddressSpace>(Ty->getAddressSpace())),
