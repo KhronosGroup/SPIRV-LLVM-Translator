@@ -174,8 +174,37 @@ SPIRVEntry::encodeName(spv_ostream &O) const {
     O << SPIRVName(this, Name);
 }
 
+bool SPIRVEntry::isEndOfBlock() const {
+  switch (OpCode) {
+  case OpBranch:
+  case OpBranchConditional:
+  case OpSwitch:
+  case OpKill:
+  case OpReturn:
+  case OpReturnValue:
+  case OpUnreachable:
+    return true;
+  default:
+    return false;
+  }
+}
+
+void
+SPIRVEntry::encodeLine(spv_ostream &O) const {
+  if (!Module)
+    return;
+  const std::shared_ptr<const SPIRVLine> &CurrLine = Module->getCurrentLine();
+  if (Line && ((CurrLine && *Line != *CurrLine) || !CurrLine)) {
+    O << *Line;
+    Module->setCurrentLine(Line);
+  }
+  if (isEndOfBlock() || OpCode == OpNoLine)
+    Module->setCurrentLine(nullptr);
+}
+
 void
 SPIRVEntry::encodeAll(spv_ostream &O) const {
+  encodeLine(O);
   encodeWordCountOpCode(O);
   encode(O);
   encodeChildren(O);
@@ -286,19 +315,9 @@ SPIRVEntry::takeDecorates(SPIRVEntry *E){
 }
 
 void
-SPIRVEntry::setLine(SPIRVLine *L){
+SPIRVEntry::setLine(const std::shared_ptr<const SPIRVLine>& L){
   Line = L;
-  L->setTargetId(Id);
   SPIRVDBG(spvdbgs() << "[setLine] " << *L << '\n';)
-}
-
-void
-SPIRVEntry::takeLine(SPIRVEntry *E){
-  Line = E->Line;
-  if (Line == nullptr)
-    return;
-  Line->setTargetId(Id);
-  E->Line = nullptr;
 }
 
 void
@@ -337,7 +356,6 @@ SPIRVEntry::takeAnnotations(SPIRVForward *E){
   Module->setName(this, E->getName());
   takeDecorates(E);
   takeMemberDecorates(E);
-  takeLine(E);
   if (OpCode == OpFunction)
     static_cast<SPIRVFunction *>(this)->takeExecutionModes(E);
 }
@@ -496,23 +514,24 @@ _SPIRV_IMP_ENCDEC3(SPIRVMemberName, Target, MemberNumber, Str)
 
 void
 SPIRVLine::encode(spv_ostream &O) const {
-  getEncoder(O) << Target << FileName << Line << Column;
+  getEncoder(O) << FileName << Line << Column;
 }
 
 void
 SPIRVLine::decode(std::istream &I) {
-  getDecoder(I) >> Target >> FileName >> Line >> Column;
-  Module->addLine(getOrCreateTarget(), get<SPIRVString>(FileName), Line, Column);
+  getDecoder(I) >> FileName >> Line >> Column;
+  std::shared_ptr<const SPIRVLine> L(this);
+  Module->setCurrentLine(L);
 }
 
 void
 SPIRVLine::validate() const {
   assert(OpCode == OpLine);
-  assert(WordCount == 5);
-  assert(get<SPIRVEntry>(Target));
+  assert(WordCount == 4);
   assert(get<SPIRVEntry>(FileName)->getOpCode() == OpString);
   assert(Line != SPIRVWORD_MAX);
   assert(Column != SPIRVWORD_MAX);
+  assert(!hasId());
 }
 
 void

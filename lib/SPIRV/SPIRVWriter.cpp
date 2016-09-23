@@ -137,16 +137,12 @@ public:
       if (!DL.isUnknown()) {
         DILocation DIL(DL.getAsMDNode());
         auto File = BM->getString(DIL.getFilename().str());
-        // ToDo: SPIR-V rev.31 cannot add debug info for instructions without ids.
-        // This limitation needs to be addressed.
-        if (!BV->hasId())
-          return;
-        BM->addLine(BV, File, DIL.getLineNumber(), DIL.getColumnNumber());
+        BM->addLine(BV, File->getId(), DIL.getLineNumber(), DIL.getColumnNumber());
       }
     } else if (auto F = dyn_cast<Function>(V)) {
       if (auto DIS = getDISubprogram(F)) {
         auto File = BM->getString(DIS.getFilename().str());
-        BM->addLine(BV, File, DIS.getLineNumber(), 0);
+        BM->addLine(BV, File->getId(), DIS.getLineNumber(), 0);
       }
     }
   }

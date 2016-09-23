@@ -1613,6 +1613,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                        BV->getName(), BB));
   }
 
+  case OpLine:
   case OpSelectionMerge: {
     // OpenCL Compiler does not use this instruction
     return nullptr;

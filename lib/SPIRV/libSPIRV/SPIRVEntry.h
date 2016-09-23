@@ -243,7 +243,7 @@ public:
   virtual SPIRVEncoder getEncoder(spv_ostream &)const;
   SPIRVErrorLog &getErrorLog()const;
   SPIRVId getId() const { assert(hasId()); return Id;}
-  SPIRVLine *getLine() const { return Line;}
+  std::shared_ptr<const SPIRVLine> getLine() const { return Line;}
   SPIRVLinkageTypeKind getLinkageType() const;
   Op getOpCode() const { return OpCode;}
   SPIRVModule *getModule() const { return Module;}
@@ -266,6 +266,7 @@ public:
   bool isControlBarrier() const { return OpCode == OpControlBarrier;}
   bool isMemoryBarrier() const { return OpCode == OpMemoryBarrier;}
   bool isVariable() const { return OpCode == OpVariable;}
+  bool isEndOfBlock() const;
   virtual bool isInst() const { return false;}
   virtual bool isOperandLiteral(unsigned Index) const {
     assert(0 && "not implemented");
@@ -283,7 +284,7 @@ public:
   void eraseMemberDecorate(SPIRVWord MemberNumber, Decoration Kind);
   void setHasNoId() { Attrib |= SPIRVEA_NOID;}
   void setId(SPIRVId TheId) { Id = TheId;}
-  void setLine(SPIRVLine*);
+  void setLine(const std::shared_ptr<const SPIRVLine>& L);
   void setLinkageType(SPIRVLinkageTypeKind);
   void setModule(SPIRVModule *TheModule);
   void setName(const std::string& TheName);
@@ -291,7 +292,6 @@ public:
   void takeAnnotations(SPIRVForward *);
   void takeDecorates(SPIRVEntry *);
   void takeMemberDecorates(SPIRVEntry *);
-  void takeLine(SPIRVEntry *);
 
   /// After a SPIRV entry is created during reading SPIRV binary by default
   /// constructor, this function is called to allow the SPIRV entry to resize
@@ -310,6 +310,7 @@ public:
 
   friend spv_ostream &operator<<(spv_ostream &O, const SPIRVEntry &E);
   friend std::istream &operator>>(std::istream &I, SPIRVEntry &E);
+  virtual void encodeLine(spv_ostream &O) const;
   virtual void encodeAll(spv_ostream &O) const;
   virtual void encodeName(spv_ostream &O) const;
   virtual void encodeChildren(spv_ostream &O)const;
@@ -363,7 +364,7 @@ protected:
 
   DecorateMapType Decorates;
   MemberDecorateMapType MemberDecorates;
-  SPIRVLine *Line;
+  std::shared_ptr<const SPIRVLine> Line;
 };
 
 class SPIRVEntryNoIdGeneric:public SPIRVEntry {
@@ -488,25 +489,30 @@ protected:
   std::string Str;
 };
 
-class SPIRVLine:public SPIRVAnnotation<OpLine> {
+class SPIRVLine: public SPIRVEntry {
 public:
-  static const SPIRVWord WC = 5;
+  static const SPIRVWord WC = 4;
   // Complete constructor
-  SPIRVLine(const SPIRVEntry *TheTarget, SPIRVId TheFileName, SPIRVWord TheLine,
-      SPIRVWord TheColumn)
-    :SPIRVAnnotation(TheTarget, WC), FileName(TheFileName), Line(TheLine),
-     Column(TheColumn){
+  SPIRVLine(SPIRVModule *M, SPIRVId TheFileName, SPIRVWord TheLine,
+            SPIRVWord TheColumn)
+    :SPIRVEntry(M, WC, OpLine),
+    FileName(TheFileName),
+    Line(TheLine),
+    Column(TheColumn) {
+    Attrib = SPIRVEA_NOID | SPIRVEA_NOTYPE;
     validate();
   }
   // Incomplete constructor
-  SPIRVLine():FileName(SPIRVID_INVALID), Line(SPIRVWORD_MAX),
-      Column(SPIRVWORD_MAX){}
+  SPIRVLine():SPIRVEntry(OpLine), FileName(SPIRVID_INVALID), Line(SPIRVWORD_MAX),
+      Column(SPIRVWORD_MAX) {
+    Attrib = SPIRVEA_NOID | SPIRVEA_NOTYPE;
+  }
 
   SPIRVWord getColumn() const {
     return Column;
   }
 
-  void setColumn(SPIRVWord column) {
+  void setColumn(const SPIRVWord column) {
     Column = column;
   }
 
@@ -518,7 +524,7 @@ public:
     return get<SPIRVString>(FileName)->getStr();
   }
 
-  void setFileName(SPIRVId fileName) {
+  void setFileName(const SPIRVId fileName) {
     FileName = fileName;
   }
 
@@ -526,8 +532,18 @@ public:
     return Line;
   }
 
-  void setLine(SPIRVWord line) {
+  void setLine(const SPIRVWord line) {
     Line = line;
+  }
+
+  bool operator!=(const SPIRVLine &O) const {
+    return !equals(O.FileName, O.Line, O.Column);
+  }
+
+  bool equals(const SPIRVId TheFileName,
+              const SPIRVWord TheLine,
+              const SPIRVWord TheColumn) const {
+    return FileName == TheFileName && Line == TheLine && Column == TheColumn;
   }
 
 protected:

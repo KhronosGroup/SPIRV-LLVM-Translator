@@ -1,4 +1,4 @@
-//===- SPIRVFunction.cpp – Class to represent a SPIR-V Function --*- C++ -*-===//
+//===- SPIRVFunction.cpp - Class to represent a SPIR-V Function --*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -142,8 +142,7 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
       break;
     }
 
-    if (Decoder.OpCode == OpName ||
-        Decoder.OpCode == OpDecorate) {
+    if (Decoder.OpCode == OpLine) {
       Decoder.getEntry();
       continue;
     }
