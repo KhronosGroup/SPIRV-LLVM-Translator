@@ -64,6 +64,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Verifier.h"
@@ -165,6 +166,10 @@ public:
         DbgTran(nullptr, SMod){
   }
 
+  virtual const char* getPassName() const {
+    return "LLVMToSPIRV";
+  }
+
   bool runOnModule(Module &Mod) override {
     M = &Mod;
     Ctx = &M->getContext();
@@ -183,7 +188,7 @@ public:
   SPIRVType *transType(Type *T);
   SPIRVType *transSPIRVOpaqueType(Type *T);
 
-  SPIRVValue *getTranslatedValue(Value *);
+  SPIRVValue *getTranslatedValue(Value *) const;
 
   // Translation functions
   bool transAddressingMode();
@@ -194,6 +199,7 @@ public:
   bool transSourceLanguage();
   bool transExtension();
   bool transBuiltinSet();
+  SPIRVValue *transIntrinsicInst(IntrinsicInst *Intrinsic, SPIRVBasicBlock *BB);
   SPIRVValue *transCallInst(CallInst *Call, SPIRVBasicBlock *BB);
   bool transDecoration(Value *V, SPIRVValue *BV);
   SPIRVWord transFunctionControlMask(CallInst *);
@@ -310,8 +316,8 @@ private:
 
 
 SPIRVValue *
-LLVMToSPIRV::getTranslatedValue(Value *V) {
-  LLVMToSPIRVValueMap::iterator Loc = ValueMap.find(V);
+LLVMToSPIRV::getTranslatedValue(Value *V) const {
+  auto Loc = ValueMap.find(V);
   if (Loc != ValueMap.end())
     return Loc->second;
   return nullptr;
@@ -628,8 +634,16 @@ LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
 
 SPIRVFunction *
 LLVMToSPIRV::transFunctionDecl(Function *F) {
-  if (auto BF= getTranslatedValue(F))
+  if (auto BF = getTranslatedValue(F))
     return static_cast<SPIRVFunction *>(BF);
+
+  if (F->isIntrinsic()) {
+    // We should not translate LLVM intrinsics as a function
+    assert(none_of(F->user_begin(), F->user_end(),
+                   [this](User *U){ return getTranslatedValue(U);}) &&
+           "LLVM intrinsics shouldn't be called in SPIRV");
+    return nullptr;
+  }
 
   SPIRVTypeFunction *BFT = static_cast<SPIRVTypeFunction *>(transType(
       getAnalysis<OCLTypeToSPIRV>().getAdaptedType(F)));
@@ -795,11 +809,11 @@ LLVMToSPIRV::transValue(Value *V, SPIRVBasicBlock *BB, bool CreateForward) {
       "Invalid SPIRV BB");
 
   auto BV = transValueWithoutDecoration(V, BB, CreateForward);
+  if (!BV || !transDecoration(V, BV))
+    return nullptr;
   std::string name = V->getName();
   if (!name.empty()) // Don't erase the name, which BM might already have
     BM->setName(BV, name);
-  if(!transDecoration(V, BV))
-    return nullptr;
   return BV;
 }
 
@@ -1103,6 +1117,11 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         BB));
   }
 
+  if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(V)) {
+    SPIRVValue *BV = transIntrinsicInst(II, BB);
+    return BV ? mapValue(V, BV) : nullptr;
+  }
+
   if (CallInst *CI = dyn_cast<CallInst>(V))
     return mapValue(V, transCallInst(CI, BB));
 
@@ -1197,6 +1216,67 @@ LLVMToSPIRV::transSpcvCast(CallInst* CI, SPIRVBasicBlock *BB) {
 }
 
 SPIRVValue *
+LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
+  auto getMemoryAccess = [](MemIntrinsic *MI)->std::vector<SPIRVWord> {
+    std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
+    if (SPIRVWord AlignVal = MI->getAlignment()) {
+      MemoryAccess[0] |= MemoryAccessAlignedMask;
+      MemoryAccess.push_back(AlignVal);
+    }
+    if (MI->isVolatile())
+      MemoryAccess[0] |= MemoryAccessVolatileMask;
+    return MemoryAccess;
+  };
+
+  switch (II->getIntrinsicID()) {
+  case Intrinsic::fmuladd : {
+    // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add
+    // is required the corresponding llvm.fma.* intrinsic function should be
+    // used instead.
+    SPIRVType *Ty = transType(II->getType());
+    SPIRVValue *Mul = BM->addBinaryInst(OpFMul, Ty,
+                                        transValue(II->getArgOperand(0), BB),
+                                        transValue(II->getArgOperand(1), BB),
+                                        BB);
+    return BM->addBinaryInst(OpFAdd, Ty, Mul,
+                             transValue(II->getArgOperand(2), BB), BB);
+  }
+  case Intrinsic::memset : {
+    // If memset is used for zero-initialization, find a variable which is being
+    // initialized and store null constant of the same type to this variable
+    MemSetInst *MSI = cast<MemSetInst>(II);
+    AllocaInst *AI = dyn_cast<AllocaInst>(MSI->getDest());
+    ConstantInt *Val = dyn_cast<ConstantInt>(MSI->getValue());
+    ConstantInt *Len = dyn_cast<ConstantInt>(MSI->getLength());
+    if (AI && Val && Val->isZero() && Len &&
+        AI->getAlignment() == MSI->getAlignment() && Len->getZExtValue()*8 ==
+        M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType())) {
+      SPIRVValue *Var = transValue(MSI->getDest(), BB);
+      assert(Var && Var->isVariable());
+      auto *VarTy = static_cast<SPIRVTypePointer *>(Var->getType());
+      return BM->addStoreInst(Var, BM->addNullConstant(VarTy->getElementType()),
+                              getMemoryAccess(MSI), BB);
+    }
+    assert(!"Can't translate llvm.memset with non-zero value argument");
+  }
+  break;
+  case Intrinsic::memcpy :
+    return BM->addCopyMemorySizedInst(
+      transValue(II->getOperand(0), BB),
+      transValue(II->getOperand(1), BB),
+      transValue(II->getOperand(2), BB),
+      getMemoryAccess(cast<MemIntrinsic>(II)),
+      BB);
+  default:
+    // LLVM intrinsic functions shouldn't get to SPIRV, because they
+    // would have no definition there.
+    BM->getErrorLog().checkError(false, SPIRVEC_InvalidFunctionCall,
+                                 II->getName().str(), "", __FILE__, __LINE__);
+  }
+  return nullptr;
+}
+
+SPIRVValue *
 LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
   SPIRVExtInstSetKind ExtSetKind = SPIRVEIS_Count;
   SPIRVWord ExtOp = SPIRVWORD_MAX;
@@ -1206,27 +1286,6 @@ LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 
   if (MangledName.startswith(SPCV_CAST))
     return transSpcvCast(CI, BB);
-
-  if (MangledName.startswith("llvm.memcpy")) {
-    std::vector<SPIRVWord> MemoryAccess;
-
-    if (isa<ConstantInt>(CI->getOperand(4)) &&
-      dyn_cast<ConstantInt>(CI->getOperand(4))
-      ->getZExtValue() == 1)
-      MemoryAccess.push_back(MemoryAccessVolatileMask);
-    if (isa<ConstantInt>(CI->getOperand(3))) {
-        MemoryAccess.push_back(MemoryAccessAlignedMask);
-        MemoryAccess.push_back(dyn_cast<ConstantInt>(CI->getOperand(3))
-          ->getZExtValue());
-    }
-
-    return BM->addCopyMemorySizedInst(
-      transValue(CI->getOperand(0), BB),
-      transValue(CI->getOperand(1), BB),
-      transValue(CI->getOperand(2), BB),
-      MemoryAccess,
-      BB);
-  }
 
   if (oclIsBuiltin(MangledName, &DemangledName) ||
       isDecoratedSPIRVFunc(F, &DemangledName))
