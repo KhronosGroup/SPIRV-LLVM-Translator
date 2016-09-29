@@ -43,6 +43,8 @@
 ; CHECK: {{[0-9]*}} TypeForwardPointer [[AFwdPtr:[0-9]+]]
 ; CHECK: {{[0-9]*}} TypeInt [[TypeInt:[0-9]+]]
 ; CHECK: {{[0-9]*}} Constant [[TypeInt]] [[Two:[0-9]+]] 2
+; CHECK: {{[0-9]*}} TypePointer [[TPointer:[0-9]+]]
+; CHECK: {{[0-9]*}} TypePointer [[SConstOpType:[0-9]+]]
 ; CHECK: {{[0-9]*}} TypeFloat [[TypeFloat:[0-9]+]]
 ; CHECK: {{[0-9]*}} TypeArray [[TypeArray:[0-9]+]] [[TypeFloat]] [[Two]]
 ; CHECK: {{[0-9]*}} TypeVector [[TypeVectorInt3:[0-9]+]] [[TypeInt]] 3
@@ -53,6 +55,9 @@
 ; CHECK: {{[0-9]*}} TypeVoid [[Void:[0-9]+]]
 ; CHECK: {{[0-9]*}} TypePointer [[Int3Ptr:[0-9]+]] {{[0-9]+}} [[TypeVectorInt3]]
 ; CHECK: {{[0-9]*}} TypeFunction [[TypeBar1:[0-9]+]] [[Void]] [[Int3Ptr]]
+; CHECK: {{[0-9]*}} Variable [[TPointer]] [[Var:[0-9]+]]
+; CHECK: {{[0-9]*}} SpecConstantOp [[SConstOpType]] [[SConstOp:[0-9]+]] 70 [[Var]]
+; CHECK: {{[0-9]*}} Variable {{[0-9]+}} {{[0-9]+}} 5 [[SConstOp]]
 
 ; CHECK-NOT: {{[0-9]*}} Capability
 ; CHECK-NOT: {{[0-9]*}} ExtInstImport
@@ -60,17 +65,6 @@
 ; CHECK-NOT: {{[0-9]*}} EntryPoint
 ; CHECK-NOT: {{[0-9]*}} Source
 ; CHECK-NOT: {{[0-9]*}} Name
-; CHECK-NOT: {{[0-9]*}} Decorate
-
-; CHECK: {{[0-9]*}} Variable
-
-; CHECK-NOT: {{[0-9]*}} Capability
-; CHECK-NOT: {{[0-9]*}} ExtInstImport
-; CHECK-NOT: {{[0-9]*}} MemoryModel
-; CHECK-NOT: {{[0-9]*}} EntryPoint
-; CHECK-NOT: {{[0-9]*}} Source
-; CHECK-NOT: {{[0-9]*}} Name
-; CHECK-NOT: {{[0-9]*}} Type
 ; CHECK-NOT: {{[0-9]*}} Decorate
 
 ; CHECK: {{[0-9]*}} Function
@@ -125,6 +119,9 @@
 ; ModuleID = 'layout.bc'
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
+
+@v = addrspace(1) global [2 x i32] [i32 1, i32 2], align 4
+@s = addrspace(1) global i32 addrspace(1)* getelementptr inbounds ([2 x i32] addrspace(1)* @v, i32 0, i32 0), align 4
 
 %struct.A = type { i32, %struct.C }
 %struct.C = type { i32, %struct.B }

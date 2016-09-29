@@ -1225,6 +1225,7 @@ class TopologicalSort {
   typedef std::vector<SPIRVType *> SPIRVTypeVec;
   typedef std::vector<SPIRVValue *> SPIRVConstantVector;
   typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
+  typedef std::vector<SPIRVEntry *> SPIRVConstAndVarVec;
   typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
   typedef std::function<bool(SPIRVEntry*, SPIRVEntry*)> IdComp;
   typedef std::map<SPIRVEntry*, DFSState, IdComp> EntryStateMapTy;
@@ -1232,8 +1233,7 @@ class TopologicalSort {
   SPIRVTypeVec TypeIntVec;
   SPIRVConstantVector ConstIntVec;
   SPIRVTypeVec TypeVec;
-  SPIRVConstantVector ConstVec;
-  SPIRVVariableVec VariableVec;
+  SPIRVConstAndVarVec ConstAndVarVec;
   const SPIRVForwardPointerVec& ForwardPointerVec;
   EntryStateMapTy EntryStateMap;
 
@@ -1269,11 +1269,11 @@ class TopologicalSort {
       if (C->getType()->isTypeInt())
         ConstIntVec.push_back(C);
       else
-        ConstVec.push_back(C);
+	 ConstAndVarVec.push_back(E);
     } else if (isTypeOpCode(OC))
       TypeVec.push_back(static_cast<SPIRVType*>(E));
-    else if (E->isVariable())
-      VariableVec.push_back(static_cast<SPIRVVariable*>(E));
+    else
+      ConstAndVarVec.push_back(E);
   }
 public:
   TopologicalSort(const SPIRVTypeVec &_TypeVec,
@@ -1303,8 +1303,7 @@ operator<< (spv_ostream &O, const TopologicalSort &S) {
   O << S.TypeIntVec
     << S.ConstIntVec
     << S.TypeVec
-    << S.ConstVec
-    << S.VariableVec;
+    << S.ConstAndVarVec;
   return O;
 }
 
