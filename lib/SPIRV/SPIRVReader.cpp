@@ -1795,6 +1795,36 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                          BV->getName(), BB));
   }
 
+  case OpFMod: {
+    // translate OpFMod(a, b) to copysign(frem(a, b), b)
+    SPIRVFMod *FMod = static_cast<SPIRVFMod *>(BV);
+    auto Dividend = transValue(FMod->getDividend(), F, BB);
+    auto Divisor = transValue(FMod->getDivisor(), F, BB);
+    auto FRem = BinaryOperator::CreateFRem(Dividend, Divisor, "frem.res", BB);
+
+    std::string UnmangledName = OCLExtOpMap::map(OpenCLLIB::Copysign);
+    std::string MangledName = "copysign";
+
+    std::vector<Type *> ArgTypes;
+    ArgTypes.push_back(FRem->getType());
+    ArgTypes.push_back(Divisor->getType());
+    MangleOpenCLBuiltin(UnmangledName, ArgTypes, MangledName);
+
+    auto FT = FunctionType::get(transType(BV->getType()), ArgTypes, false);
+    auto Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
+    Func->setCallingConv(CallingConv::SPIR_FUNC);
+    if (isFuncNoUnwind())
+      Func->addFnAttr(Attribute::NoUnwind);
+
+    std::vector<Value *> Args;
+    Args.push_back(FRem);
+    Args.push_back(Divisor);
+
+    auto Call = CallInst::Create(Func, Args, "copysign", BB);
+    setCallingConv(Call);
+    addFnAttr(Context, Call, Attribute::NoUnwind);
+    return mapValue(BV, Call);
+  }
   case OpFNegate: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
     return mapValue(

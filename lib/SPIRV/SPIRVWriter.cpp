@@ -1672,11 +1672,6 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
                                  BArgs[4], BArgs[5], BB);
     }
     break;
-  case OpFMod: {
-    auto BArgs = transValue(getArguments(CI), BB);
-    return BM->addFModInst(transType(CI->getType()),
-                           BArgs[0]->getId(), BArgs[1]->getId(), BB);
-  }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transType(CI->getType()),

@@ -8,13 +8,12 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: 5 FMod {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV: 7 ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} fmod {{[0-9]+}} {{[0-9]+}}
 ; CHECK-LLVM: call spir_func float @_Z4fmodff
 ; CHECK-LLVM: declare spir_func float @_Z4fmodff(float, float)
 
-; ModuleID = 'test.bc'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
-target triple = "spir64-unkwnown-unknown"
+target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: nounwind
 define spir_kernel void @fmod_kernel(float %out, float %in1, float %in2) #0 {
@@ -48,4 +47,4 @@ attributes #2 = { nounwind readnone }
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}
-!9 = !{!"clang version 3.6.1"}
+!9 = !{!"clang version 3.6.1"} 
