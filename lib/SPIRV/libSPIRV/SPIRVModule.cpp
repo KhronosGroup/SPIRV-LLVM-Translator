@@ -279,6 +279,7 @@ public:
       const std::vector<SPIRVWord>& Ops, SPIRVBasicBlock* BB, SPIRVType *Ty);
   virtual SPIRVInstruction *addMemoryBarrierInst(
       Scope ScopeKind, SPIRVWord MemFlag, SPIRVBasicBlock *BB);
+  virtual SPIRVInstruction *addUnreachableInst(SPIRVBasicBlock *);
   virtual SPIRVInstruction *addReturnInst(SPIRVBasicBlock *);
   virtual SPIRVInstruction *addReturnValueInst(SPIRVValue *, SPIRVBasicBlock *);
   virtual SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
@@ -1030,6 +1031,11 @@ SPIRVModuleImpl::addBinaryInst(Op TheOpCode, SPIRVType *Type,
     SPIRVValue *Op1, SPIRVValue *Op2, SPIRVBasicBlock *BB){
   return addInstruction(SPIRVInstTemplateBase::create(TheOpCode, Type, getId(),
       getVec(Op1->getId(), Op2->getId()), BB, this), BB);
+}
+
+SPIRVInstruction *
+SPIRVModuleImpl::addUnreachableInst(SPIRVBasicBlock *BB) {
+  return addInstruction(new SPIRVUnreachable(BB), BB);
 }
 
 SPIRVInstruction *

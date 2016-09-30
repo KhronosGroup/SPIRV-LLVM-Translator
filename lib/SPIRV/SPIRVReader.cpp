@@ -1532,6 +1532,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return LPhi;
   }
 
+  case OpUnreachable:
+    return mapValue(BV, new UnreachableInst(*Context, BB));
+
   case OpReturn:
     return mapValue(BV, ReturnInst::Create(*Context, BB));
 

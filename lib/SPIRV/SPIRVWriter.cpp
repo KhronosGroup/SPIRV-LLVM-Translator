@@ -972,6 +972,9 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
+  if (auto U = dyn_cast<UnreachableInst>(V))
+      return mapValue(V, BM->addUnreachableInst(BB));
+
   if (auto RI = dyn_cast<ReturnInst>(V)) {
     if (auto RV = RI->getReturnValue())
       return mapValue(V, BM->addReturnValueInst(

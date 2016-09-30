@@ -705,6 +705,7 @@ protected:
 };
 
 typedef SPIRVInstNoOperand<OpReturn> SPIRVReturn;
+typedef SPIRVInstNoOperand<OpUnreachable> SPIRVUnreachable;
 
 class SPIRVReturnValue:public SPIRVInstruction {
 public:
