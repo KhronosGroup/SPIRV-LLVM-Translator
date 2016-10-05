@@ -1820,6 +1820,47 @@ protected:
   SPIRVId MemSema;
 };
 
+template<Op OC>
+class SPIRVLifetime : public SPIRVInstruction {
+public:
+  // Complete constructor
+  SPIRVLifetime(SPIRVId TheObject, SPIRVWord TheSize,
+      SPIRVBasicBlock *TheBB) :
+      SPIRVInstruction(3, OC, TheBB), Object(TheObject), Size(TheSize) {
+    validate();
+    assert(TheBB && "Invalid BB");
+  };
+  // Incomplete constructor
+  SPIRVLifetime() :SPIRVInstruction(OC), Object(SPIRVID_INVALID),
+      Size(SPIRVWORD_MAX) {
+    setHasNoId();
+    setHasNoType();
+  }
+  SPIRVCapVec getRequiredCapability() const {
+    return getVec(CapabilityKernel);
+  }
+  SPIRVValue *getObject() { return getValue(Object); };
+  SPIRVWord getSize() { return Size; };
+protected:
+  void validate() const {
+    auto Obj = static_cast<SPIRVVariable*>(getValue(Object));
+    assert(Obj->getStorageClass() == StorageClassFunction &&
+        "Invalid storage class");
+    assert(Obj->getType()->isTypePointer() &&
+        Obj->getType()->getPointerElementType()->isTypeInt() &&
+        "Object type must be an integer type scalar");
+    if (!Obj->getType()->getPointerElementType()->isTypeVoid() ||
+        !Module->hasCapability(CapabilityAddresses))
+      assert(Size == 0 && "Size must be 0");
+  }
+  _SPIRV_DEF_ENCDEC2(Object, Size)
+  SPIRVId Object;
+  SPIRVWord Size;
+};
+
+typedef SPIRVLifetime<OpLifetimeStart> SPIRVLifetimeStart;
+typedef SPIRVLifetime<OpLifetimeStop> SPIRVLifetimeStop;
+
 class SPIRVGroupAsyncCopy:public SPIRVInstruction {
 public:
   static const Op OC = OpGroupAsyncCopy;

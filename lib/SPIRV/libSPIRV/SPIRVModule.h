@@ -188,6 +188,7 @@ public:
   virtual SPIRVFunction *addFunction(SPIRVTypeFunction *,
       SPIRVId Id = SPIRVID_INVALID) = 0;
   virtual SPIRVEntry *replaceForward(SPIRVForward *, SPIRVEntry *) = 0;
+  virtual void eraseInstruction(SPIRVInstruction *, SPIRVBasicBlock *) = 0;
 
   // Type creation functions
   virtual SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *) = 0;
@@ -282,6 +283,8 @@ public:
       const std::vector<SPIRVWord>& Ops, SPIRVBasicBlock* BB, SPIRVType *Ty) = 0;
   virtual SPIRVInstruction *addLoadInst(SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addLifetimeInst(Op OC, SPIRVValue *Object,
+      SPIRVWord Size, SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addMemoryBarrierInst(
       Scope ScopeKind, SPIRVWord MemFlag, SPIRVBasicBlock *BB)
     = 0;

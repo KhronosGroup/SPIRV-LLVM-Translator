@@ -79,6 +79,11 @@ public:
   void setScope(SPIRVEntry *Scope);
   void setParent(SPIRVFunction *F) { ParentF = F;}
   SPIRVInstruction *addInstruction(SPIRVInstruction *I);
+  void eraseInstruction(const SPIRVInstruction *I) {
+    auto Loc = find(I);
+    assert(Loc != InstVec.end());
+    InstVec.erase(Loc);
+  }
 
   void setAttr() { setHasNoType();}
   _SPIRV_DCL_ENCDEC
@@ -95,6 +100,10 @@ private:
 
   SPIRVInstructionVector::const_iterator find(const SPIRVInstruction *Inst)
     const {
+    return std::find(InstVec.begin(), InstVec.end(), Inst);
+  }
+
+  SPIRVInstructionVector::iterator find(const SPIRVInstruction *Inst) {
     return std::find(InstVec.begin(), InstVec.end(), Inst);
   }
 };

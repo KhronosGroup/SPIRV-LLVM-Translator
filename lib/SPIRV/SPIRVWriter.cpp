@@ -276,6 +276,7 @@ private:
 
   SPIRVInstruction* transBinaryInst(BinaryOperator* B, SPIRVBasicBlock* BB);
   SPIRVInstruction* transCmpInst(CmpInst* Cmp, SPIRVBasicBlock* BB);
+  SPIRVInstruction* transLifetimeIntrinsicInst(Op OC, IntrinsicInst *Intrinsic, SPIRVBasicBlock *BB);
 
   void dumpUsers(Value *V);
 
@@ -837,6 +838,38 @@ LLVMToSPIRV::transCmpInst(CmpInst* Cmp, SPIRVBasicBlock* BB) {
   return BI;
 }
 
+SPIRVInstruction *
+LLVMToSPIRV::transLifetimeIntrinsicInst(Op OC, IntrinsicInst *II, SPIRVBasicBlock *BB) {
+  int64_t Size = dyn_cast<ConstantInt>(II->getOperand(0))->getSExtValue();
+  if (Size == -1)
+    Size = 0;
+  auto Op1 = II->getOperand(1);
+
+  if (auto AI = dyn_cast<AllocaInst>(Op1)) {
+    assert(!Size ||
+      M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType()) == Size * 8 &&
+      "Size of the argument should match the allocated memory");
+    return BM->addLifetimeInst(OC, transValue(Op1, BB), Size, BB);
+  }
+  // Bitcast might be inserted during translation of OpLifetimeStart
+  assert(isa<BitCastInst>(Op1));
+  for (const auto &U : Op1->users()) {
+    auto BCU = dyn_cast<IntrinsicInst>(U);
+    assert(BCU && (BCU->getIntrinsicID() == Intrinsic::lifetime_start ||
+        BCU->getIntrinsicID() == Intrinsic::lifetime_end) &&
+        "The only users of this bitcast instruction are lifetime intrinsics");
+  }
+  auto AI = dyn_cast<AllocaInst>(dyn_cast<BitCastInst>(Op1)->getOperand(0));
+  assert(AI && (!Size ||
+      M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType()) == Size * 8) &&
+      "Size of the argument should match the allocated memory");
+  auto LT = BM->addLifetimeInst(OC, transValue(AI, BB), Size, BB);
+  auto BC = LT->getPrevious();
+  if (BC && BC->getOpCode() == OpBitcast)
+    BM->eraseInstruction(BC, BB);
+  return LT;
+}
+
 SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
                                                   SPIRVBasicBlock *BB) {
   Op BOC = OpNop;
@@ -1270,6 +1303,10 @@ LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
       transValue(II->getOperand(2), BB),
       getMemoryAccess(cast<MemIntrinsic>(II)),
       BB);
+  case Intrinsic::lifetime_start:
+    return transLifetimeIntrinsicInst(OpLifetimeStart, II, BB);
+  case Intrinsic::lifetime_end:
+    return transLifetimeIntrinsicInst(OpLifetimeStop, II, BB);
   default:
     // LLVM intrinsic functions shouldn't get to SPIRV, because they
     // would have no definition there.

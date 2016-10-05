@@ -55,6 +55,7 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
@@ -462,6 +463,7 @@ private:
 
   Value *getTranslatedValue(SPIRVValue *BV);
   Type *getTranslatedType(SPIRVType *BT);
+  IntrinsicInst *getLifetimeStartIntrinsic(Instruction *I);
 
   SPIRVErrorLog &getErrorLog() {
     return BM->getErrorLog();
@@ -521,6 +523,23 @@ SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV){
   auto Loc = ValueMap.find(BV);
   if (Loc != ValueMap.end())
     return Loc->second;
+  return nullptr;
+}
+
+IntrinsicInst *
+SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
+  auto II = dyn_cast<IntrinsicInst>(I);
+  if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
+    return II;
+  // Bitcast might be inserted during translation of OpLifetimeStart
+  auto BC = dyn_cast<BitCastInst>(I);
+  if (BC) {
+    for (const auto &U : BC->users()) {
+      II = dyn_cast<IntrinsicInst>(U);
+      if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
+        return II;;
+    }
+  }
   return nullptr;
 }
 
@@ -1543,6 +1562,32 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(
         BV, ReturnInst::Create(*Context,
                                transValue(RV->getReturnValue(), F, BB), BB));
+  }
+
+  case OpLifetimeStart: {
+    SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart*>(BV);
+    IRBuilder<> Builder(BB);
+    SPIRVWord Size = LTStart->getSize();
+	ConstantInt *S = nullptr;
+    if (Size)
+      S = Builder.getInt64(Size);
+    Value* Var = transValue(LTStart->getObject(), F, BB);
+    CallInst *Start = Builder.CreateLifetimeStart(Var, S);
+    return mapValue(BV, Start->getOperand(1));
+  }
+
+  case OpLifetimeStop: {
+    SPIRVLifetimeStop *LTStop = static_cast<SPIRVLifetimeStop*>(BV);
+    IRBuilder<> Builder(BB);
+    SPIRVWord Size = LTStop->getSize();
+    ConstantInt *S = nullptr;
+    if (Size)
+      S = Builder.getInt64(Size);
+    auto Var = transValue(LTStop->getObject(), F, BB);
+    for (const auto &I : Var->users())
+      if (auto II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))
+        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(1), S));
+    return mapValue(BV, Builder.CreateLifetimeEnd(Var, S));
   }
 
   case OpStore: {
