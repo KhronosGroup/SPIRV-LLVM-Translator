@@ -298,6 +298,8 @@ public:
       SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
       SPIRVWord SelectionControl, SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addLoopMergeInst(SPIRVId MergeBlock,
+      SPIRVId ContinueTarget, SPIRVWord LoopControl, SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
       const std::vector<SPIRVWord>&, SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addSwitchInst(SPIRVValue *, SPIRVBasicBlock *,

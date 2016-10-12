@@ -496,6 +496,7 @@ private:
   Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
   Value * oclTransConstantPipeStorage(SPIRV::SPIRVConstantPipeStorage* BCPS);
   void setName(llvm::Value* V, SPIRVValue* BV);
+  void setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI);
   void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name);
   template<class Source, class Func>
   bool foreachFuncCtlMask(Source, Func);
@@ -902,6 +903,37 @@ SPIRVToLLVM::setName(llvm::Value* V, SPIRVValue* BV) {
   auto Name = BV->getName();
   if (!Name.empty() && (!V->hasName() || Name != V->getName()))
     V->setName(Name);
+}
+
+void
+SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI) {
+  if (!LM)
+    return;
+  llvm::MDString *Name = nullptr;
+  auto Temp = MDNode::getTemporary(*Context, None);
+  auto Self = MDNode::get(*Context, Temp);
+  Self->replaceOperandWith(0, Self);
+  MDNode::deleteTemporary(Temp);
+
+  if (LM->getLoopControl() == LoopControlMaskNone) {
+    BI->setMetadata("llvm.loop", Self);
+    return;
+  }
+  else if(LM->getLoopControl() == LoopControlUnrollMask)
+    Name = llvm::MDString::get(*Context, "llvm.loop.unroll.full");
+  else if (LM->getLoopControl() == LoopControlDontUnrollMask)
+    Name = llvm::MDString::get(*Context, "llvm.loop.unroll.disable");
+  else
+    return;
+
+  std::vector<llvm::Metadata *> OpValues(1, Name);
+  SmallVector<llvm::Metadata *, 2> Metadata;
+  Metadata.push_back(llvm::MDNode::get(*Context, Self));
+  Metadata.push_back(llvm::MDNode::get(*Context, OpValues));
+
+  llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);
+  Node->replaceOperandWith(0, Node);
+  BI->setMetadata("llvm.loop", Node);
 }
 
 void SPIRVToLLVM::insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name) {
@@ -1524,17 +1556,22 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   switch (BV->getOpCode()) {
   case OpBranch: {
     auto BR = static_cast<SPIRVBranch *>(BV);
-    return mapValue(BV, BranchInst::Create(
-      dyn_cast<BasicBlock>(transValue(BR->getTargetLabel(), F, BB)), BB));
+    auto BI = BranchInst::Create(
+        dyn_cast<BasicBlock>(transValue(BR->getTargetLabel(), F, BB)), BB);
+    if (auto LM = static_cast<SPIRVLoopMerge *>(BR->getPrevious()))
+      setLLVMLoopMetadata(LM, BI);
+    return mapValue(BV, BI);
   }
 
   case OpBranchConditional: {
     auto BR = static_cast<SPIRVBranchConditional *>(BV);
-    return mapValue(
-        BV, BranchInst::Create(
-                dyn_cast<BasicBlock>(transValue(BR->getTrueLabel(), F, BB)),
-                dyn_cast<BasicBlock>(transValue(BR->getFalseLabel(), F, BB)),
-                transValue(BR->getCondition(), F, BB), BB));
+    auto BC = BranchInst::Create(
+        dyn_cast<BasicBlock>(transValue(BR->getTrueLabel(), F, BB)),
+        dyn_cast<BasicBlock>(transValue(BR->getFalseLabel(), F, BB)),
+        transValue(BR->getCondition(), F, BB), BB);
+    if (auto LM = static_cast<SPIRVLoopMerge *>(BR->getPrevious()))
+      setLLVMLoopMetadata(LM, BC);
+    return mapValue(BV, BC);
   }
 
   case OpPhi: {
@@ -1662,10 +1699,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpLine:
-  case OpSelectionMerge: {
-    // OpenCL Compiler does not use this instruction
+  case OpSelectionMerge: // OpenCL Compiler does not use this instruction
+  case OpLoopMerge:      // Should be translated at OpBranch or OpBranchConditional cases
     return nullptr;
-  }
 
   case OpSwitch: {
     auto BS = static_cast<SPIRVSwitch *>(BV);
