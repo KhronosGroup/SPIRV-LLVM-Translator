@@ -74,6 +74,7 @@ private:
   MDNode *getArgAccessQualifierMetadata(Function *);
   MDNode *getArgMetadata(Function *, const std::string& MDName);
   MDNode *getKernelMetadata(Function *F);
+  void adaptFunctionArguments(Function* F);
   void adaptArgumentsByMetadata(Function* F);
   void adaptArgumentsBySamplerUse(Module &M);
   void adaptFunction(Function *F);

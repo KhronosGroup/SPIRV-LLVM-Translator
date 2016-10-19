@@ -82,6 +82,9 @@ OCLTypeToSPIRV::runOnModule(Module& Module) {
   for (auto &F:Module.functions())
     adaptArgumentsByMetadata(&F);
 
+  for (auto &F:Module.functions())
+    adaptFunctionArguments(&F);
+
   adaptArgumentsBySamplerUse(Module);
 
   while (!WorkSet.empty()) {
@@ -272,6 +275,35 @@ void OCLTypeToSPIRV::adaptArgumentsBySamplerUse(Module &M) {
 
     TraceArg(&F, 1);
   }
+}
+
+void
+OCLTypeToSPIRV::adaptFunctionArguments(Function* F) {
+  auto TypeMD = getArgBaseTypeMetadata(F);
+  if (TypeMD)
+    return;
+  bool Changed = false;
+  auto FT = F->getFunctionType();
+  auto PI = FT->param_begin();
+  auto Arg = F->arg_begin();
+  for (unsigned I = 0; I < F->getArgumentList().size(); ++I, ++PI, ++Arg) {
+    auto NewTy = *PI;
+    if (isPointerToOpaqueStructType(NewTy)) {
+      auto STName = NewTy->getPointerElementType()->getStructName();
+      if (!hasAccessQualifiedName(STName))
+          continue;
+      if (STName.startswith(kSPR2TypeName::ImagePrefix) ||
+          STName == kSPR2TypeName::Pipe) {
+        auto Ty = STName.str();
+        auto AccStr = getAccessQualifier(Ty);
+        addAdaptedType(Arg, getOrCreateOpaquePtrType(M,
+                       mapOCLTypeNameToSPIRV(Ty, AccStr)));
+        Changed = true;
+      }
+    }
+  }
+  if (Changed)
+    addWork(F);
 }
 
 /// Go through all kernel functions, get access qualifier for image and pipe
