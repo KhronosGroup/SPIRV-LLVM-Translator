@@ -669,7 +669,9 @@ SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST) {
     getSPIRVImageTypePostfixes(getSPIRVImageSampledTypeName(
       ST->getImageType()->getSampledType()),
       ST->getImageType()->getDescriptor(),
-      ST->getImageType()->getAccessQualifier()));
+      ST->getImageType()->hasAccessQualifier() ?
+        ST->getImageType()->getAccessQualifier() :
+        AccessQualifierReadOnly));
 }
 
 std::string
@@ -2313,7 +2315,8 @@ SPIRVToLLVM::transFPContractMetadata() {
 
 std::string SPIRVToLLVM::transOCLImageTypeAccessQualifier(
     SPIRV::SPIRVTypeImage* ST) {
-  return SPIRSPIRVAccessQualifierMap::rmap(ST->getAccessQualifier());
+  return SPIRSPIRVAccessQualifierMap::rmap(ST->hasAccessQualifier() ?
+      ST->getAccessQualifier() : AccessQualifierReadOnly);
 }
 
 bool
