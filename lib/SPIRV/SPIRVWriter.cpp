@@ -1712,6 +1712,10 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
                                  BArgs[4], BArgs[5], BB);
     }
     break;
+  case OpSelect: {
+    auto BArgs = transValue(getArguments(CI), BB);
+    return BM->addSelectInst(BArgs[0], BArgs[1], BArgs[2], BB);
+  }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
@@ -1727,6 +1731,10 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC,
       auto Cmp = BM->addCmpInst(OC, BBT,
         transValue(CI->getArgOperand(0), BB),
         transValue(CI->getArgOperand(1), BB), BB);
+      // OpenCL C and OpenCL C++ built-ins may have different return type
+      if (ResultTy == BoolTy)
+        return Cmp;
+      assert(IsVector || (!IsVector && ResultTy->isIntegerTy(32)));
       auto Zero = transValue(Constant::getNullValue(ResultTy), BB);
       auto One = transValue(
           IsVector ? Constant::getAllOnesValue(ResultTy) : getInt32(M, 1), BB);
