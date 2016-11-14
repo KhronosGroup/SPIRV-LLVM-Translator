@@ -83,30 +83,29 @@ if.then:                                          ; preds = %while.body
 ; CHECK-LLVM: br label %if.end, !dbg ![[Line_7]]
   br label %if.end, !dbg !38
 
-; CHECK-SPIRV: Label [[if_end]]
-if.else:                                          ; preds = %while.body
-; CHECK-SPIRV: 4 Line [[str]] 5 0
-; CHECK-SPIRV-NEXT: Branch [[while_cond]]
-; CHECK-LLVM: br label %while.cond, !dbg ![[Line_5]]
-  %add1 = add nsw i32 %a.addr.0, 1, !dbg !39
-  call void @llvm.dbg.value(metadata i32 %add1, i64 0, metadata !28, metadata !25), !dbg !29
-  %mul = mul nsw i32 %a.addr.0, 3, !dbg !41
-  call void @llvm.dbg.value(metadata i32 %mul, i64 0, metadata !24, metadata !25), !dbg !26
-  br label %if.end
-
 ; CHECK-SPIRV: Label [[if_else]]
-if.end:                                           ; preds = %if.else, %if.then
+if.else:                                          ; preds = %while.body
 ; CHECK-SPIRV: 4 Line [[str]] 9 0
 ; CHECK-SPIRV-NEXT: IAdd
 ; CHECK-LLVM: %add1 = add i32 %a.addr.0, 1, !dbg ![[Line_9:[0-9]+]]
+  %add1 = add nsw i32 %a.addr.0, 1, !dbg !39
+  call void @llvm.dbg.value(metadata i32 %add1, i64 0, metadata !28, metadata !25), !dbg !29
 ; CHECK-SPIRV: 4 Line [[str]] 10 0
 ; CHECK-SPIRV-NEXT: IMul
 ; CHECK-LLVM: %mul = mul  i32 %a.addr.0, 3, !dbg ![[Line_10:[0-9]+]]
+  %mul = mul nsw i32 %a.addr.0, 3, !dbg !41
+  call void @llvm.dbg.value(metadata i32 %mul, i64 0, metadata !24, metadata !25), !dbg !26
 ; CHECK-SPIRV-NEXT: Branch [[if_end]]
 ; CHECK-LLVM: br label %if.end, !dbg ![[Line_10]]
+  br label %if.end
+
+; CHECK-SPIRV: Label [[if_end]]
+if.end:                                           ; preds = %if.else, %if.then
   %b.1 = phi i32 [ %sub, %if.then ], [ %add1, %if.else ]
   %a.addr.1 = phi i32 [ %a.addr.0, %if.then ], [ %mul, %if.else ]
-
+; CHECK-SPIRV: 4 Line [[str]] 5 0
+; CHECK-SPIRV-NEXT: Branch [[while_cond]]
+; CHECK-LLVM: br label %while.cond, !dbg ![[Line_5]]
   br label %while.cond, !dbg !30
 
 ; CHECK-SPIRV: Label [[while_end]]

@@ -13,29 +13,44 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @unreachable_simple() #0 {
-entry:
+define spir_kernel void @unreachable_simple(i32 addrspace(1)* nocapture %in, i32 addrspace(1)* %out) #0 {
+  %1 = call spir_func i64 @_Z13get_global_idj(i32 0) #1
+  %2 = shl i64 %1, 32
+  %3 = ashr exact i64 %2, 32
+  %4 = getelementptr inbounds i32 addrspace(1)* %in, i64 %3
+  %5 = getelementptr inbounds i32 addrspace(1)* %out, i64 %3
+  br label %7
+                                                  ; No predecessors!
   unreachable
+
+; <label>:7                                       ; preds = %0
+  %8 = load i32 addrspace(1)* %4
+  store i32 %8, i32 addrspace(1)* %5
+  ret void
 }
 
+; Function Attrs: nounwind readnone
+declare spir_func i64 @_Z13get_global_idj(i32) #1
+
 attributes #0 = { nounwind }
+attributes #1 = { nounwind readnone }
 
 !opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
+!spirv.Source = !{!6}
+!opencl.spir.version = !{!7}
 !opencl.ocl.version = !{!7}
 !opencl.used.extensions = !{!8}
 !opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
-!llvm.ident = !{!9}
+!spirv.Generator = !{!9}
 
-!0 = !{void ()* @unreachable_simple, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
+!0 = !{void (i32 addrspace(1)*, i32 addrspace(1)*)* @unreachable_simple, !1, !2, !3, !4, !5}
+!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
+!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
+!3 = !{!"kernel_arg_type", !"int*", !"int*"}
+!4 = !{!"kernel_arg_type_qual", !"", !""}
+!5 = !{!"kernel_arg_base_type", !"int*", !"int*"}
+!6 = !{i32 3, i32 102000}
+!7 = !{i32 1, i32 2}
 !8 = !{}
-!9 = !{!"clang version 3.6.1"}
+!9 = !{i16 7, i16 0}

@@ -42,10 +42,8 @@
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
 
-#include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/IR/CFG.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
@@ -82,8 +80,6 @@ public:
   /// Assuming F is a SPIR-V builtin function with op code \param OC.
   void lowerFuncPtr(Function *F, Op OC);
   void lowerFuncPtr(Module *M);
-
-  bool getSwitchCaseOrdering(BasicBlock *BB);
 
   static char ID;
 private:
@@ -158,22 +154,6 @@ SPIRVRegularizeLLVM::regularize() {
         }
       }
     }
-
-    if (F->getBasicBlockList().size() < 2)
-      continue;
-    // The order of blocks in a function must satisfy the rule
-    // that blocks appear before all blocks they dominate.
-    // We iterate over the SCCs in a graph in post-order
-    for (scc_iterator<Function*> SCCI = scc_begin(F); !SCCI.isAtEnd(); ++SCCI) {
-      const std::vector<BasicBlock *> &NextSCC = *SCCI;
-      assert(!NextSCC.empty());
-      for (const auto &I : NextSCC) {
-        BasicBlock *BB = I;
-        // The order of blocks in switch instruction shouldn't be changed
-        if (!getSwitchCaseOrdering(BB))
-          BB->moveAfter(&F->getEntryBlock());
-      }
-    }
   }
 
   std::string Err;
@@ -225,26 +205,8 @@ SPIRVRegularizeLLVM::lowerFuncPtr(Module* M) {
     lowerFuncPtr(I.first, I.second);
 }
 
-bool
-SPIRVRegularizeLLVM::getSwitchCaseOrdering(BasicBlock *BB) {
-  // The order of the BBs was reversed
-  // We want to restore the original order of switch statement
-  for (pred_iterator PI = pred_begin(BB), E = pred_end(BB); PI != E; ++PI) {
-    BasicBlock *Pred = *PI;
-    // Check if we have a case value
-    if (auto SI = dyn_cast<SwitchInst>(Pred->getTerminator())) {
-      BasicBlock* Default = SI->getDefaultDest();
-      if (BB == Default)
-        BB->moveAfter(Pred);
-      else
-        BB->moveBefore(Default);
-      return true;
-    }
-  }
-  return false;
 }
 
-}
 
 INITIALIZE_PASS(SPIRVRegularizeLLVM, "spvregular",
     "Regularize LLVM for SPIR-V", false, false)
