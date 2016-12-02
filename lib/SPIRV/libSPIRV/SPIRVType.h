@@ -142,10 +142,19 @@ public:
   bool isSigned() const { return IsSigned;}
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec CV;
-    if (isTypeInt(16))
+    switch (BitWidth) {
+    case 8:
+      CV.push_back(CapabilityInt8);
+      break;
+    case 16:
       CV.push_back(CapabilityInt16);
-    else if (isTypeInt(64))
+      break;
+    case 64:
       CV.push_back(CapabilityInt64);
+      break;
+    default:
+      break;
+    }
     return std::move(CV);
   }
 
