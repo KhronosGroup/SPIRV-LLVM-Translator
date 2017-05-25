@@ -1661,11 +1661,34 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Type* SrcTy = transType(BS);
     Type* TrgTy = transType(BT);
     Type* SizeTy = transType(BC->getSize()->getType());
-    Type* ArgTy[] = { TrgTy, SrcTy, SizeTy, Int32Ty, Int1Ty };
 
     ostringstream TempName;
-    TempName << ".p" << SPIRSPIRVAddrSpaceMap::rmap(BT->getPointerStorageClass()) << "i8";
-    TempName << ".p" << SPIRSPIRVAddrSpaceMap::rmap(BS->getPointerStorageClass()) << "i8";
+    TempName << ".p"
+             << SPIRSPIRVAddrSpaceMap::rmap(BT->getPointerStorageClass())
+             << "i8";
+    Value *Src = nullptr;
+    // If we copy from zero-initialized array, we can optimize it to llvm.memset
+    if (BC->getSource()->isVariable()) {
+      auto *Init = static_cast<SPIRVVariable*>(BC->getSource())->getInitializer();
+      if (isa<OpConstantNull>(Init)) {
+        SPIRVType *Ty = static_cast<SPIRVConstantNull*>(Init)->getType();
+        if (isa<OpTypeArray>(Ty)) {
+          SPIRVTypeArray *AT = static_cast<SPIRVTypeArray*>(Ty);
+          SrcTy = transType(AT->getArrayElementType());
+          assert(SrcTy->isIntegerTy(8));
+          Src = ConstantInt::get(SrcTy, 0);
+          FuncName = "llvm.memset";
+        }
+      }
+    }
+    if (!Src) {
+      Src = transValue(BC->getSource(), F, BB);
+      TempName << ".p"
+               << SPIRSPIRVAddrSpaceMap::rmap(BS->getPointerStorageClass())
+               << "i8";
+    }
+    Type* ArgTy[] = { TrgTy, SrcTy, SizeTy, Int32Ty, Int1Ty };
+
     FuncName += TempName.str();
     if (BC->getSize()->getType()->getBitWidth() == 32)
       FuncName += ".i32";
@@ -1680,8 +1703,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
 
-    Value *Arg[] = { transValue(BC->getTarget(), Func, BB),
-                     transValue(BC->getSource(), Func, BB),
+    Value *Arg[] = { transValue(BC->getTarget(), Func, BB), Src,
                      dyn_cast<llvm::ConstantInt>(transValue(BC->getSize(),
                          Func, BB)),
                      ConstantInt::get(Int32Ty,

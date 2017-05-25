@@ -495,6 +495,7 @@ protected:
     SPIRVValue::validate();
     assert(isValid(StorageClass));
     assert(Initializer.size() == 1 || Initializer.empty());
+    assert(getType()->isTypePointer());
   }
   void setWordCount(SPIRVWord TheWordCount) {
     SPIRVEntry::setWordCount(TheWordCount);

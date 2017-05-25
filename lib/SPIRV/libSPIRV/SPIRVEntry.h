@@ -696,6 +696,11 @@ T* bcast(SPIRVEntry *E) {
   return static_cast<T*>(E);
 }
 
+template<spv::Op OC>
+bool isa(SPIRVEntry *E) {
+  return E->getOpCode() == OC;
+}
+
 // ToDo: The following typedef's are place holders for SPIRV entity classes
 // to be implemented.
 // Each time a new class is implemented, remove the corresponding typedef.

@@ -1278,22 +1278,36 @@ LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
                              transValue(II->getArgOperand(2), BB), BB);
   }
   case Intrinsic::memset : {
-    // If memset is used for zero-initialization, find a variable which is being
-    // initialized and store null constant of the same type to this variable
+    // Generally memset can't be translated with current version of SPIRV spec.
+    // But in most cases it turns out that memset is emited by Clang to do
+    // zero-initializtion in default constructors.
+    // The code below handles only cases with val = 0 and constant len.
     MemSetInst *MSI = cast<MemSetInst>(II);
-    AllocaInst *AI = dyn_cast<AllocaInst>(MSI->getDest());
-    ConstantInt *Val = dyn_cast<ConstantInt>(MSI->getValue());
-    ConstantInt *Len = dyn_cast<ConstantInt>(MSI->getLength());
-    if (AI && Val && Val->isZero() && Len &&
-        AI->getAlignment() == MSI->getAlignment() && Len->getZExtValue()*8 ==
-        M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType())) {
-      SPIRVValue *Var = transValue(MSI->getDest(), BB);
-      assert(Var && Var->isVariable());
-      auto *VarTy = static_cast<SPIRVTypePointer *>(Var->getType());
-      return BM->addStoreInst(Var, BM->addNullConstant(VarTy->getElementType()),
-                              getMemoryAccess(MSI), BB);
+    Value *Val = MSI->getValue();
+    if (!isa<Constant>(Val)) {
+      assert(!"Can't translate llvm.memset with non-const `value` argument");
+      return nullptr;
     }
-    assert(!"Can't translate llvm.memset with non-zero value argument");
+    if (!cast<Constant>(Val)->isZeroValue()) {
+      assert(!"Can't translate llvm.memset with non-zero `value` argument");
+      return nullptr;
+    }
+    Value *Len = MSI->getLength();
+    if (!isa<ConstantInt>(Len)) {
+      assert(!"Can't translate llvm.memset with non-const `length` argument");
+      return nullptr;
+    }
+    uint64_t NumElements = static_cast<ConstantInt*>(Len)->getZExtValue();
+    auto *AT = ArrayType::get(Val->getType(), NumElements);
+    SPIRVTypeArray *CompositeTy = static_cast<SPIRVTypeArray*>(transType(AT));
+    SPIRVValue *Init = BM->addNullConstant(CompositeTy);
+    SPIRVType *VarTy = transType(PointerType::get(AT, SPIRV::SPIRAS_Constant));
+    SPIRVValue *Source = BM->addVariable(VarTy,/*isConstant*/true,
+                                         spv::LinkageTypeInternal, Init, "",
+                                         StorageClassUniformConstant, nullptr);
+    SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
+    return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
+                                      getMemoryAccess(MSI), BB);
   }
   break;
   case Intrinsic::memcpy :
