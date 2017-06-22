@@ -1968,7 +1968,8 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto OC = BV->getOpCode();
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
-    } else if (OCLSPIRVBuiltinMap::rfind(OC, nullptr) &&
+    } else if ((OCLSPIRVBuiltinMap::rfind(OC, nullptr) ||
+                isIntelSubgroupOpCode(OC)) &&
                !isAtomicOpCode(OC) &&
                !isGroupOpCode(OC) &&
                !isPipeOpCode(OC)) {
@@ -2209,6 +2210,34 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
     assert((EleTy->isTypeInt() && Dim == 1) ||
         (EleTy->isTypeArray() && Dim >= 2 && Dim <= 3));
     return std::string(kOCLBuiltinName::NDRangePrefix) + OS.str() + "D";
+  }
+  if (isIntelSubgroupOpCode(OC)) {
+    std::stringstream Name;
+    SPIRVType *DataTy = nullptr;
+    switch (OC) {
+    case OpSubgroupBlockReadINTEL:
+    case OpSubgroupImageBlockReadINTEL:
+      Name << "intel_sub_group_block_read";
+      DataTy = BI->getType();
+      break;
+    case OpSubgroupBlockWriteINTEL:
+      Name << "intel_sub_group_block_write";
+      DataTy = BI->getOperands()[1]->getType();
+      break;
+    case OpSubgroupImageBlockWriteINTEL:
+      Name << "intel_sub_group_block_write";
+      DataTy = BI->getOperands()[2]->getType();
+      break;
+    default:
+      return OCLSPIRVBuiltinMap::rmap(OC);
+    }
+    if (DataTy && DataTy->isTypeVector()) {
+      if (DataTy->getVectorComponentType()->getBitWidth() == 16)
+        Name << "_us";
+      if (unsigned ComponentCount = DataTy->getVectorComponentCount())
+        Name << ComponentCount;
+    }
+    return Name.str();
   }
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
 

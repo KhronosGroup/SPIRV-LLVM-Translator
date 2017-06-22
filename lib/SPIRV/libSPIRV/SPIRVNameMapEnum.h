@@ -478,6 +478,9 @@ SPIRVMap<Capability, std::string>::init() {
   add(CapabilityStorageImageReadWithoutFormat, "StorageImageReadWithoutFormat");
   add(CapabilityStorageImageWriteWithoutFormat, "StorageImageWriteWithoutFormat");
   add(CapabilityMultiViewport, "MultiViewport");
+  add(CapabilitySubgroupShuffleINTEL, "SubgroupShuffleINTEL");
+  add(CapabilitySubgroupBufferBlockIOINTEL, "SubgroupBufferBlockIOINTEL");
+  add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

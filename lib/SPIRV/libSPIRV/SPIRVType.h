@@ -281,7 +281,7 @@ public:
   bool isValidIndex(SPIRVWord Index) const { return Index < CompCount;}
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec V(getComponentType()->getRequiredCapability());
-    if (CompCount >= 8)
+    if (CompCount > 8)
       V.push_back(CapabilityVector16);
     return std::move(V);
   }
