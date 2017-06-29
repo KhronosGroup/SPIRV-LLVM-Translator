@@ -1838,6 +1838,7 @@ addPassesForSPIRV(PassManager &PassMgr) {
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
   PassMgr.add(createSPIRVLowerBool());
+  PassMgr.add(createSPIRVLowerMemmove());
 }
 
 bool

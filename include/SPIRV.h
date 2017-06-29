@@ -56,6 +56,7 @@ void initializeOCLTypeToSPIRVPass(PassRegistry&);
 void initializeSPIRVLowerBoolPass(PassRegistry&);
 void initializeSPIRVLowerConstExprPass(PassRegistry&);
 void initializeSPIRVLowerOCLBlocksPass(PassRegistry&);
+void initializeSPIRVLowerMemmovePass(PassRegistry&);
 void initializeSPIRVRegularizeLLVMPass(PassRegistry&);
 void initializeSPIRVToOCL20Pass(PassRegistry&);
 void initializeTransOCLMDPass(PassRegistry&);
@@ -134,6 +135,9 @@ ModulePass *createSPIRVLowerConstExpr();
 
 /// Create a pass for lowering OCL 2.0 blocks to functions calls.
 ModulePass *createSPIRVLowerOCLBlocks();
+
+/// Create a pass for lowering llvm.memmove to llvm.memcpys with a temporary variable.
+ModulePass *createSPIRVLowerMemmove();
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
 ModulePass *createSPIRVRegularizeLLVM();

@@ -1878,8 +1878,7 @@ protected:
     assert(Obj->getStorageClass() == StorageClassFunction &&
         "Invalid storage class");
     assert(Obj->getType()->isTypePointer() &&
-        Obj->getType()->getPointerElementType()->isTypeInt() &&
-        "Object type must be an integer type scalar");
+        "Objects type must be a pointer");
     if (!Obj->getType()->getPointerElementType()->isTypeVoid() ||
         !Module->hasCapability(CapabilityAddresses))
       assert(Size == 0 && "Size must be 0");
