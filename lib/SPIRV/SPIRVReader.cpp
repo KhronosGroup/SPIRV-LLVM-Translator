@@ -124,12 +124,12 @@ dumpLLVM(Module *M, const std::string &FName) {
 }
 
 static MDNode*
-getMDNodeStringIntVec(LLVMContext *Context, const std::string& Str,
-    const std::vector<SPIRVWord>& IntVals) {
+getMDNodeStringIntVec(LLVMContext *Context,
+                      const std::vector<SPIRVWord>& IntVals) {
   std::vector<Metadata*> ValueVec;
-  ValueVec.push_back(MDString::get(*Context, Str));
   for (auto &I:IntVals)
-    ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), I)));
+    ValueVec.push_back(ConstantAsMetadata::get(
+        ConstantInt::get(Type::getInt32Ty(*Context), I)));
   return MDNode::get(*Context, ValueVec);
 }
 
@@ -168,15 +168,14 @@ addNamedMetadataStringSet(LLVMContext *Context, Module *M,
 }
 
 static void
-addOCLKernelArgumentMetadata(LLVMContext *Context,
-  std::vector<llvm::Metadata*> &KernelMD, const std::string &MDName,
-    SPIRVFunction *BF, std::function<Metadata *(SPIRVFunctionParameter *)>Func){
+addOCLKernelArgumentMetadata(LLVMContext *Context, const std::string &MDName,
+                   SPIRVFunction *BF, llvm::Function *Fn,
+                   std::function<Metadata *(SPIRVFunctionParameter *)>Func) {
   std::vector<Metadata*> ValueVec;
-    ValueVec.push_back(MDString::get(*Context, MDName));
   BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
     ValueVec.push_back(Func(Arg));
   });
-  KernelMD.push_back(MDNode::get(*Context, ValueVec));
+  Fn->setMetadata(MDName, MDNode::get(*Context, ValueVec));
 }
 
 class SPIRVToLLVMDbgTran {
@@ -297,12 +296,17 @@ public:
       bool CreatePlaceHolder = true);
   Value *transValueWithoutDecoration(SPIRVValue *, Function *F, BasicBlock *,
       bool CreatePlaceHolder = true);
+  Value *transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB);
+  Value *transEnqueuedBlock(SPIRVValue *BF, SPIRVValue *BC, SPIRVValue *BCSize,
+                            SPIRVValue *BCAligment, Function *F, BasicBlock *BB);
   bool transDecoration(SPIRVValue *, Value *);
   bool transAlign(SPIRVValue *, Value *);
   Instruction *transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB);
   std::vector<Value *> transValue(const std::vector<SPIRVValue *>&, Function *F,
       BasicBlock *);
   Function *transFunction(SPIRVFunction *F);
+  Instruction *transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB);
   bool transFPContractMetadata();
   bool transKernelMetadata();
   bool transNonTemporalMetadata(Instruction *I);
@@ -327,13 +331,6 @@ public:
   /// struct type result, e.g. NDRange creation functions. Such functions
   /// need to be post-processed to return the struct through sret argument.
   bool postProcessOCLBuiltinReturnStruct(Function *F);
-
-  /// \brief Post-process OpenCL builtin functions having block argument.
-  ///
-  /// These functions are translated to functions with function pointer type
-  /// argument first, then post-processed to have block argument.
-  bool postProcessOCLBuiltinWithFuncPointer(Function *F,
-      Function::arg_iterator I);
 
   /// \brief Post-process OpenCL builtin functions having array argument.
   ///
@@ -387,6 +384,7 @@ public:
 
   typedef DenseMap<SPIRVType *, Type *> SPIRVToLLVMTypeMap;
   typedef DenseMap<SPIRVValue *, Value *> SPIRVToLLVMValueMap;
+  typedef DenseMap<SPIRVValue *, Value *> SPIRVBlockToLLVMStructMap;
   typedef DenseMap<SPIRVFunction *, Function *> SPIRVToLLVMFunctionMap;
   typedef DenseMap<GlobalVariable *, SPIRVBuiltinVariableKind> BuiltinVarMap;
 
@@ -402,6 +400,7 @@ private:
   SPIRVToLLVMTypeMap TypeMap;
   SPIRVToLLVMValueMap ValueMap;
   SPIRVToLLVMFunctionMap FuncMap;
+  SPIRVBlockToLLVMStructMap BlockMap;
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   SPIRVToLLVMDbgTran DbgTran;
 
@@ -781,6 +780,7 @@ SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   return 0;
 }
 
+
 std::string
 SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
   switch(T->getOpCode()) {
@@ -969,6 +969,19 @@ SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
 }
 
 Value *
+SPIRVToLLVM::transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB) {
+  auto Val = transValue(BV, F, BB, false);
+  auto Ty = dyn_cast<PointerType>(Val->getType());
+  assert(Ty && "Invalid Device Event");
+  if (Ty->getAddressSpace() == SPIRAS_Generic)
+    return Val;
+
+  IRBuilder<> Builder(BB);
+  auto EventTy = PointerType::get(Ty->getElementType(), SPIRAS_Generic);
+  return Builder.CreateAddrSpaceCast(Val, EventTy);
+}
+
+Value *
 SPIRVToLLVM::transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB) {
   SPIRVUnary* BC = static_cast<SPIRVUnary*>(BV);
   auto Src = transValue(BC->getOperand(0), F, BB, BB ? true : false);
@@ -1060,16 +1073,6 @@ SPIRVToLLVM::postProcessOCL() {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
-      DEBUG(dbgs() << "[postProcessOCL func ptr] " << *F << '\n');
-      auto AI = F->arg_begin();
-      if (hasFunctionPointerArg(&(*F), AI) && isDecoratedSPIRVFunc(&(*F)))
-        if (!postProcessOCLBuiltinWithFuncPointer(&(*F), AI))
-          return false;
-    }
-  }
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    auto F = I++;
-    if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
       if (hasArrayArg(&(*F)) && oclIsBuiltin(F->getName(), &DemangledName, isCPP))
         if (!postProcessOCLBuiltinWithArrayArguments(&(*F), DemangledName))
@@ -1103,40 +1106,6 @@ SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
     }
   }
   F->eraseFromParent();
-  return true;
-}
-
-bool
-SPIRVToLLVM::postProcessOCLBuiltinWithFuncPointer(Function* F,
-    Function::arg_iterator I) {
-  auto Name = undecorateSPIRVFunction(F->getName());
-  std::set<Value *> InvokeFuncPtrs;
-  mutateFunctionOCL (F, [=, &InvokeFuncPtrs](
-      CallInst *CI, std::vector<Value *> &Args) {
-    auto ALoc = std::find_if(Args.begin(), Args.end(), [](Value * elem) {
-        return isFunctionPointerType(elem->getType());
-      });
-    assert(ALoc != Args.end() && "Buit-in must accept a pointer to function");
-    assert(isa<Function>(*ALoc) && "Invalid function pointer usage");
-    Value *Ctx = ALoc[1];
-    Value *CtxLen = ALoc[2];
-    Value *CtxAlign = ALoc[3];
-    if (Name == kOCLBuiltinName::EnqueueKernel)
-      assert(Args.end() - ALoc > 3);
-    else
-      assert(Args.end() - ALoc > 0);
-    // Erase arguments what are hanled by "spir_block_bind" according to SPIR 2.0
-    Args.erase(ALoc + 1, ALoc + 4);
-
-    InvokeFuncPtrs.insert(*ALoc);
-    // There will be as many calls to spir_block_bind as how much device execution
-    // bult-ins using this block. This doesn't contradict SPIR 2.0 specification.
-    *ALoc = addBlockBind(M, cast<Function>(removeCast(*ALoc)),
-        Ctx, CtxLen, CtxAlign, CI);
-    return Name;
-  });
-  for (auto &I:InvokeFuncPtrs)
-    eraseIfNoUse(I);
   return true;
 }
 
@@ -1955,7 +1924,13 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpSignBitSet :
     return mapValue(BV,
                     transOCLRelational(static_cast<SPIRVInstruction *>(BV), BB));
-
+  case OpEnqueueKernel :
+    return mapValue(BV, transEnqueueKernelBI(
+        static_cast<SPIRVInstruction *>(BV), BB));
+  case OpGetKernelWorkGroupSize :
+  case OpGetKernelPreferredWorkGroupSizeMultiple :
+    return mapValue(BV, transWGSizeBI(
+        static_cast<SPIRVInstruction *>(BV), BB));
   default: {
     auto OC = BV->getOpCode();
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
@@ -2127,6 +2102,249 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
        DemangledName == "step"))
     return expandOCLBuiltinWithScalarArg(CI, DemangledName);
   return CI;
+}
+
+static void adaptBlockInvoke(Function *Invoke, Type *BlockStructTy) {
+  // As first argument block invoke takes a pointer to captured data.
+  // We pass to block invoke whole block structure, not only captured data
+  // as it expected. So we need to update original function to unpack expected
+  // captured data and use it instead of an original argument
+  //
+  // %block = bitcast i8 addrspace(4)* to <{ ..., [X x i8] }> addrspace(4)*
+  // %block.1 = addrspacecast %block to <{ ..., [X x i8] }>*
+  // %captured = getelementptr <{ ..., [X x i8] }>, i32 0, i32 5
+  // %captured.1 = bitcast %captured to i8*
+
+  BasicBlock *BB = &(Invoke->getEntryBlock());
+  BB->splitBasicBlock(BB->begin(), "invoke");
+  auto FirstArg = &*(Invoke->arg_begin());
+  IRBuilder<> Builder(BB, BB->begin());
+
+  auto FirstArgTy = dyn_cast<PointerType>(FirstArg->getType());
+  assert(FirstArgTy && "Expects that first argument of invoke is a pointer");
+  unsigned FirstArgAS = FirstArgTy->getAddressSpace();
+
+  auto Int8PtrTy =
+    Type::getInt8PtrTy(Invoke->getParent()->getContext(), FirstArgAS);
+  auto BlockStructPtrTy = PointerType::get(BlockStructTy, FirstArgAS);
+
+  auto Int32Ty = Type::getInt32Ty(Invoke->getParent()->getContext());
+  Value *CapturedGEPIndices[2] = { ConstantInt::get(Int32Ty, 0),
+                                   ConstantInt::get(Int32Ty, 5) };
+  auto BlockToStructCast =
+    Builder.CreateBitCast(FirstArg, BlockStructPtrTy, "block");
+  auto CapturedGEP = Builder.CreateGEP(BlockToStructCast, CapturedGEPIndices);
+  auto CapturedToInt8Cast = Builder.CreateBitCast(CapturedGEP, Int8PtrTy);
+
+  FirstArg->replaceUsesOutsideBlock(CapturedToInt8Cast, BB);
+}
+
+static Type *getOrCreateBlockDescTy(Module *M) {
+  // Get or create block descriptor type which contains block size
+  // in the last element:  %struct.__block_descriptor = type { i64, i64 }
+  auto BlockDescTy = M->getTypeByName("struct.__block_descriptor");
+  if (BlockDescTy)
+    return BlockDescTy;
+
+  auto Int64Ty = Type::getInt64Ty(M->getContext());
+  Type *BlockDescElements[2] = {/*Reserved*/ Int64Ty, /*Block size*/ Int64Ty };
+  return StructType::create(M->getContext(), BlockDescElements,
+                            "struct.__block_descriptor");
+}
+
+Value *
+SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
+                                SPIRVValue *SCaptSize, SPIRVValue *SCaptAlignment,
+                                Function *LBI, BasicBlock *LBB) {
+  // Search if that block have been already translated
+  auto Loc = BlockMap.find(SInvoke);
+  if (Loc != BlockMap.end())
+    return Loc->second;
+
+  IRBuilder<> Builder(LBB);
+  const DataLayout &DL = M->getDataLayout();
+
+  // Translate block and its arguments from SPIRV values to LLVM
+  auto LInvoke = transFunction(static_cast<SPIRVFunction *>(SInvoke));
+  auto LCaptured = transValue(SCaptured, LBI, LBB, false);
+  auto LCaptSize =
+    dyn_cast<ConstantInt>(transValue(SCaptSize, LBI, LBB, false));
+  auto LCaptAlignment =
+    dyn_cast<ConstantInt>(transValue(SCaptAlignment, LBI, LBB, false));
+
+  // Create basic types
+  auto Int8Ty = Type::getInt8Ty(*Context);
+  auto Int32Ty = Type::getInt32Ty(*Context);
+  auto Int8PtrTy = Type::getInt8PtrTy(*Context, SPIRAS_Private);
+  auto Int8PtrTyGen = Type::getInt8PtrTy(*Context, SPIRAS_Generic);
+  auto BlockDescTy = getOrCreateBlockDescTy(M);
+  auto BlockDescPtrTy = BlockDescTy->getPointerTo(SPIRAS_Private);
+
+  // Create a block as structure:
+  // <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>
+  SmallVector<Type *, 8> BlockEls =
+    { /*isa*/ Int8PtrTy, /*flags*/ Int32Ty, /*reserved*/ Int32Ty,
+      /*invoke*/ Int8PtrTy, /*block_descriptor*/ BlockDescPtrTy };
+
+  // Add captured if any
+  // <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [X x i8] }>
+  // Note: captured data stored in structure as array of char
+  if (LCaptSize->getZExtValue() > 0)
+    BlockEls.push_back(ArrayType::get(Int8Ty, LCaptSize->getZExtValue()));
+
+  auto BlockTy = StructType::get(*Context, BlockEls, /*isPacked*/ true);
+
+  // Allocate block on the stack, then store data to it
+  auto BlockAlloca = Builder.CreateAlloca(BlockTy, nullptr, "block");
+  BlockAlloca->setAlignment(DL.getPrefTypeAlignment(BlockTy));
+
+  auto getIndices = [Int32Ty](int a, int b) -> SmallVector<Value *, 2> {
+    return { ConstantInt::get(Int32Ty, a), ConstantInt::get(Int32Ty, b) };
+  };
+
+  // 1. isa, flags and reserved fields isn't used in current implementation
+  // Fill them the same way as clang does
+  auto IsaGEP = Builder.CreateGEP(BlockAlloca, getIndices(0, 0));
+  Builder.CreateStore(ConstantPointerNull::get(Int8PtrTy), IsaGEP);
+  auto FlagsGEP = Builder.CreateGEP(BlockAlloca, getIndices(0, 1));
+  Builder.CreateStore(ConstantInt::get(Int32Ty, 1342177280), FlagsGEP);
+  auto ReservedGEP = Builder.CreateGEP(BlockAlloca, getIndices(0, 2));
+  Builder.CreateStore(ConstantInt::get(Int32Ty, 0), ReservedGEP);
+
+  // 2. Store pointer to block invoke to the structure
+  auto InvokeCast = Builder.CreateBitCast(LInvoke, Int8PtrTy, "invoke");
+  auto InvokeGEP = Builder.CreateGEP(BlockAlloca, getIndices(0, 3));
+  Builder.CreateStore(InvokeCast, InvokeGEP);
+
+  // 3. Create and store a pointer to the block descriptor global value
+  uint64_t SizeOfBlock = DL.getTypeAllocSize(BlockTy);
+
+  auto Int64Ty = Type::getInt64Ty(*Context);
+  Constant *BlockDescEls[2] = { ConstantInt::get(Int64Ty, 0),
+                                ConstantInt::get(Int64Ty, SizeOfBlock) };
+  auto BlockDesc =
+    ConstantStruct::get(dyn_cast<StructType>(BlockDescTy), BlockDescEls);
+
+  auto BlockDescGV =
+    new GlobalVariable(*M, BlockDescTy, true, GlobalValue::InternalLinkage,
+                       BlockDesc, "__block_descriptor_spirv");
+  auto BlockDescGEP =
+      Builder.CreateGEP(BlockAlloca, getIndices(0, 4), "block.descriptor");
+  Builder.CreateStore(BlockDescGV, BlockDescGEP);
+
+  // 4. Copy captured data to the structure
+  if (LCaptSize->getZExtValue() > 0) {
+    auto CapturedGEP =
+      Builder.CreateGEP(BlockAlloca, getIndices(0, 5), "block.captured");
+    auto CapturedGEPCast = Builder.CreateBitCast(CapturedGEP, Int8PtrTy);
+
+    // We can't make any guesses about type of captured data, so
+    // let's copy it through memcpy
+    std::string MemCpyName = "llvm.memcpy.p0i8.p0i8";
+    MemCpyName += (LCaptSize->getType()->getBitWidth() == 32) ? ".i32" : ".i64";
+    SmallVector<Type*, 8> MemCpyArgTys = {
+      Int8PtrTy, Int8PtrTy,                    // src and dst pointers
+      LCaptSize->getType(),                    // size
+      Int32Ty,                                 // alignment
+      Type::getInt1Ty(*Context)                // isVolatile
+    };
+
+    FunctionType *MemCpyTy =
+      FunctionType::get(Type::getVoidTy(*Context), MemCpyArgTys, false);
+    Function *MemCpy =
+      dyn_cast<Function>(M->getOrInsertFunction(MemCpyName, MemCpyTy));
+    assert(MemCpy && "Can't create memcpy intrinsic");
+    MemCpy->setLinkage(GlobalValue::ExternalLinkage);
+    SmallVector<Value*, 8> MemCpyArgs =
+      { CapturedGEPCast, LCaptured, LCaptSize, LCaptAlignment,
+        ConstantInt::get(Type::getInt1Ty(*Context), SCaptured->isVolatile()) };
+    Builder.CreateCall(MemCpy, MemCpyArgs);
+
+    // Fix invoke function to correctly process its first argument
+    adaptBlockInvoke(LInvoke, BlockTy);
+  }
+  auto BlockCast = Builder.CreateBitCast(BlockAlloca, Int8PtrTy);
+  auto BlockCastGen = Builder.CreateAddrSpaceCast(BlockCast, Int8PtrTyGen);
+  BlockMap[SInvoke] = BlockCastGen;
+  return BlockCastGen;
+}
+
+Instruction *
+SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB) {
+  Type *IntTy = Type::getInt32Ty(*Context);
+
+  // Find or create enqueue kernel BI declaration
+  auto Ops = BI->getOperands();
+  bool hasVaargs = Ops.size() > 10;
+
+  std::string FName = hasVaargs ? "__enqueue_kernel_events_vaargs"
+                                : "__enqueue_kernel_basic_events";
+  Function* F = M->getFunction(FName);
+  if (!F) {
+    Type *EventTy = PointerType::get(
+      getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T, SPIRAS_Private),
+      SPIRAS_Generic);
+
+    SmallVector<Type *, 8> Tys = {
+     transType(Ops[0]->getType()), // queue
+     IntTy,                        // flags
+     transType(Ops[2]->getType()), // ndrange
+     IntTy, EventTy, EventTy,      // events
+     Type::getInt8PtrTy(*Context, SPIRAS_Generic) // block
+    };
+    if (hasVaargs)
+      Tys.push_back(IntTy); // Number of variadics if any
+
+    FunctionType* FT = FunctionType::get(IntTy, Tys, hasVaargs);
+    F = Function::Create(FT, GlobalValue::ExternalLinkage, FName, M);
+    if (isFuncNoUnwind())
+      F->addFnAttr(Attribute::NoUnwind);
+  }
+
+  // Create call to enqueue kernel BI
+  SmallVector<Value *, 8> Args = {
+    transValue(Ops[0], F, BB, false), // queue
+    transValue(Ops[1], F, BB, false), // flags
+    transValue(Ops[2], F, BB, false), // ndrange
+    transValue(Ops[3], F, BB, false), // events number
+    transDeviceEvent(Ops[4], F, BB), // event_wait_list
+    transDeviceEvent(Ops[5], F, BB), // event_ret
+    transEnqueuedBlock(Ops[6], Ops[7], Ops[8], Ops[9], F, BB) // block
+  };
+
+  if (hasVaargs) {
+    Args.push_back(ConstantInt::get(IntTy, Ops.size() - 10)); // Number of vaargs
+    for (unsigned i = 10; i < Ops.size(); ++i)
+      Args.push_back(transValue(Ops[i], F, BB, false));
+  }
+  auto Call = CallInst::Create(F, Args, "", BB);
+  setName(Call, BI);
+  setAttrByCalledFunc(Call);
+  return Call;
+}
+
+Instruction *
+SPIRVToLLVM::transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB) {
+  std::string FName =
+    (BI->getOpCode() == OpGetKernelWorkGroupSize)
+    ? "__get_kernel_work_group_size_impl"
+    : "__get_kernel_preferred_work_group_multiple_impl";
+
+  Function* F = M->getFunction(FName);
+  if (!F) {
+    auto Int8PtrTyGen = Type::getInt8PtrTy(*Context, SPIRAS_Generic);
+    FunctionType* FT =
+      FunctionType::get(Type::getInt32Ty(*Context), Int8PtrTyGen, false);
+    F = Function::Create(FT, GlobalValue::ExternalLinkage, FName, M);
+    if (isFuncNoUnwind())
+      F->addFnAttr(Attribute::NoUnwind);
+  }
+  auto Ops = BI->getOperands();
+  auto Block = transEnqueuedBlock(Ops[0], Ops[1], Ops[2], Ops[3], F, BB);
+  auto Call = CallInst::Create(F, Block, "", BB);
+  setName(Call, BI);
+  setAttrByCalledFunc(Call);
+  return Call;
 }
 
 Instruction *
@@ -2378,19 +2596,15 @@ SPIRVToLLVM::transNonTemporalMetadata(Instruction *I) {
 
 bool
 SPIRVToLLVM::transKernelMetadata() {
-  NamedMDNode *KernelMDs = M->getOrInsertNamedMetadata(SPIR_MD_KERNELS);
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     SPIRVFunction *BF = BM->getFunction(I);
     Function *F = static_cast<Function *>(getTranslatedValue(BF));
     assert(F && "Invalid translated function");
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
-    std::vector<llvm::Metadata*> KernelMD;
-    KernelMD.push_back(ValueAsMetadata::get(F));
 
     // Generate metadata for kernel_arg_address_spaces
-    addOCLKernelArgumentMetadata(Context, KernelMD,
-        SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF,
+    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF, F,
         [=](SPIRVFunctionParameter *Arg){
       SPIRVType *ArgTy = Arg->getType();
       SPIRAddressSpace AS = SPIRAS_Private;
@@ -2402,9 +2616,8 @@ SPIRVToLLVM::transKernelMetadata() {
           ConstantInt::get(Type::getInt32Ty(*Context), AS));
     });
     // Generate metadata for kernel_arg_access_qual
-    addOCLKernelArgumentMetadata(Context, KernelMD,
-        SPIR_MD_KERNEL_ARG_ACCESS_QUAL, BF,
-        [=](SPIRVFunctionParameter *Arg){
+    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_ACCESS_QUAL, BF, F,
+      [=](SPIRVFunctionParameter *Arg){
       std::string Qual;
       auto T = Arg->getType();
       if (T->isTypeOCLImage()) {
@@ -2418,14 +2631,12 @@ SPIRVToLLVM::transKernelMetadata() {
       return MDString::get(*Context, Qual);
     });
     // Generate metadata for kernel_arg_type
-    addOCLKernelArgumentMetadata(Context, KernelMD,
-        SPIR_MD_KERNEL_ARG_TYPE, BF,
+    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_TYPE, BF, F,
         [=](SPIRVFunctionParameter *Arg){
       return transOCLKernelArgTypeName(Arg);
     });
     // Generate metadata for kernel_arg_type_qual
-    addOCLKernelArgumentMetadata(Context, KernelMD,
-        SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF,
+    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF, F,
         [=](SPIRVFunctionParameter *Arg){
       std::string Qual;
       if (Arg->hasDecorate(DecorationVolatile))
@@ -2451,8 +2662,7 @@ SPIRVToLLVM::transKernelMetadata() {
       return MDString::get(*Context, Qual);
     });
     // Generate metadata for kernel_arg_base_type
-    addOCLKernelArgumentMetadata(Context, KernelMD,
-        SPIR_MD_KERNEL_ARG_BASE_TYPE, BF,
+    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_BASE_TYPE, BF, F,
         [=](SPIRVFunctionParameter *Arg){
       return transOCLKernelArgTypeName(Arg);
     });
@@ -2463,37 +2673,32 @@ SPIRVToLLVM::transKernelMetadata() {
         ArgHasName &= !Arg->getName().empty();
       });
       if (ArgHasName)
-        addOCLKernelArgumentMetadata(Context, KernelMD,
-            SPIR_MD_KERNEL_ARG_NAME, BF,
+        addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_NAME, BF, F,
             [=](SPIRVFunctionParameter *Arg){
           return MDString::get(*Context, Arg->getName());
         });
     }
     // Generate metadata for reqd_work_group_size
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSize)) {
-      KernelMD.push_back(getMDNodeStringIntVec(Context,
-          kSPIR2MD::WGSize, EM->getLiterals()));
+      F->setMetadata(kSPIR2MD::WGSize,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
     // Generate metadata for work_group_size_hint
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSizeHint)) {
-      KernelMD.push_back(getMDNodeStringIntVec(Context,
-          kSPIR2MD::WGSizeHint, EM->getLiterals()));
+      F->setMetadata(kSPIR2MD::WGSizeHint,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
     // Generate metadata for vec_type_hint
     if (auto EM = BF->getExecutionMode(ExecutionModeVecTypeHint)) {
       std::vector<Metadata*> MetadataVec;
-      MetadataVec.push_back(MDString::get(*Context, kSPIR2MD::VecTyHint));
       Type *VecHintTy = decodeVecTypeHint(*Context, EM->getLiterals()[0]);
       assert(VecHintTy);
       MetadataVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
       MetadataVec.push_back(
           ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),
               1)));
-      KernelMD.push_back(MDNode::get(*Context, MetadataVec));
+      F->setMetadata(kSPIR2MD::VecTyHint, MDNode::get(*Context, MetadataVec));
     }
-
-    llvm::MDNode *Node = MDNode::get(*Context, KernelMD);
-    KernelMDs->addOperand(Node);
   }
   return true;
 }

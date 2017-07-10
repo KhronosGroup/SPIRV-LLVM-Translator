@@ -1,15 +1,15 @@
 ; kernel
 ; __attribute__((vec_type_hint(float4)))
 ; void test_float() {}
-; 
+;
 ; kernel
 ; __attribute__((vec_type_hint(double)))
 ; void test_double() {}
-; 
+;
 ; kernel
 ; __attribute__((vec_type_hint(uint4)))
 ; void test_uint() {}
-; 
+;
 ; kernel
 ; __attribute__((vec_type_hint(int8)))
 ; void test_int() {}
@@ -26,33 +26,41 @@
 ; CHECK-SPIRV: {{[0-9]+}} EntryPoint {{[0-9]+}} {{[0-9]+}} "test_double"
 ; CHECK-SPIRV: {{[0-9]+}} EntryPoint {{[0-9]+}} {{[0-9]+}} "test_uint"
 ; CHECK-SPIRV: {{[0-9]+}} EntryPoint {{[0-9]+}} {{[0-9]+}} "test_int"
-; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}} 
 ; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}}
-; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}} 
-; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}} 
+; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}}
+; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}}
+; CHECK-SPIRV: {{[0-9]+}} ExecutionMode {{[0-9]+}} 30 {{[0-9]+}}
 
 ; ModuleID = 'vec_type_hint.cl'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
 
+; CHECK-LLVM: define spir_kernel void @test_float()
+; CHECK-LLVM-SAME: !vec_type_hint [[VFLOAT:![0-9]+]]
 ; Function Attrs: nounwind
 define spir_kernel void @test_float() #0 {
 entry:
   ret void
 }
 
+; CHECK-LLVM: define spir_kernel void @test_double()
+; CHECK-LLVM-SAME: !vec_type_hint [[VDOUBLE:![0-9]+]]
 ; Function Attrs: nounwind
 define spir_kernel void @test_double() #0 {
 entry:
   ret void
 }
 
+; CHECK-LLVM: define spir_kernel void @test_uint()
+; CHECK-LLVM-SAME: !vec_type_hint [[VUINT:![0-9]+]]
 ; Function Attrs: nounwind
 define spir_kernel void @test_uint() #0 {
 entry:
   ret void
 }
 
+; CHECK-LLVM: define spir_kernel void @test_int()
+; CHECK-LLVM-SAME: !vec_type_hint [[VINT:![0-9]+]]
 ; Function Attrs: nounwind
 define spir_kernel void @test_int() #0 {
 entry:
@@ -70,14 +78,10 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 !opencl.compiler.options = !{!15}
 !llvm.ident = !{!16}
 
-; CHECK-LLVM: @test_float
-; CHECK-LLVM: {!"vec_type_hint", <4 x float> undef, i32 1}
-; CHECK-LLVM: @test_double
-; CHECK-LLVM: {!"vec_type_hint", double undef, i32 1}
-; CHECK-LLVM: @test_uint
-; CHECK-LLVM: {!"vec_type_hint", <4 x i32> undef, i32 1}
-; CHECK-LLVM: @test_int
-; CHECK-LLVM: {!"vec_type_hint", <8 x i32> undef, i32 1}
+; CHECK-LLVM: [[VFLOAT]] = !{<4 x float> undef, i32 1}
+; CHECK-LLVM: [[VDOUBLE]] = !{double undef, i32 1}
+; CHECK-LLVM: [[VUINT]] = !{<4 x i32> undef, i32 1}
+; CHECK-LLVM: [[VINT]] = !{<8 x i32> undef, i32 1}
 
 !0 = !{void ()* @test_float, !1, !2, !3, !4, !5, !6}
 !1 = !{!"kernel_arg_addr_space"}

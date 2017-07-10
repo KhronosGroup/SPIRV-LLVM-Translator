@@ -68,30 +68,40 @@ entry:
 
 ; Function Attrs: nounwind
 define spir_kernel void @enqueue_block_get_kernel_preferred_work_group_size_multiple(i32 addrspace(1)* %res) #0 {
+; CHECK: [[CTX:%.*]] = bitcast %0* %captured to i8*
+; CHECK: [[BLOCK:%.*]] = alloca <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, align 8
+; CHECK: store i8* {{.*}} @__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke
+; CHECK: [[CAPTUREDGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK]], i32 0, i32 5
+; CHECK: [[CAPTUREDCAST:%.*]] = bitcast [8 x i8]* [[CAPTUREDGEP]] to i8*
+; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* [[CAPTUREDCAST]], i8* [[CTX]], i32 8, i32 8, i1 false)
+; CHECK: [[BLOCKBCST:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK]] to i8*
+; CHECK: [[BLOCKADDRCST:%.*]] = addrspacecast i8* [[BLOCKBCST]] to i8 addrspace(4)*
+; CHECK: call i32 @__get_kernel_work_group_size_impl(i8 addrspace(4)* [[BLOCKADDRCST]])
+; CHECK: call i32 @__get_kernel_preferred_work_group_multiple_impl(i8 addrspace(4)* [[BLOCKADDRCST]])
+; CHECK: call i32 @__enqueue_kernel_basic_events({{.*}} i8 addrspace(4)* [[BLOCKADDRCST]])
+
+; CHECK: [[BLOCK2:%.*]] = alloca <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>, align 8
+; CHECK: store i8* {{.*}} @kernelBlockNoCtx_block_invoke
+; CHECK: [[BLOCKBCST2:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>* [[BLOCK2]] to i8*
+; CHECK: [[BLOCKADDRCST2:%.*]] = addrspacecast i8* [[BLOCKBCST2]] to i8 addrspace(4)*
+; CHECK-NOT: call void @llvm.memcpy
+; CHECK: call i32 @__enqueue_kernel_basic_events({{.*}} i8 addrspace(4)* [[BLOCKADDRCST2]])
+
 entry:
   %captured = alloca <{ i32 addrspace(1)* }>, align 8
   %ndrange = alloca %struct.ndrange_t, align 8
   %block.captured = getelementptr inbounds <{ i32 addrspace(1)* }>, <{ i32 addrspace(1)* }>* %captured, i64 0, i32 0
   store i32 addrspace(1)* %res, i32 addrspace(1)** %block.captured, align 8
   %0 = bitcast <{ i32 addrspace(1)* }>* %captured to i8*
-; CHECK: [[CTX:.*]] = bitcast %0* %captured to i8*
   %1 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*)* @__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke to i8*), i32 8, i32 8, i8* %0) #2
-; CHECK: [[BLOCK0:.*]] = call {{.*}} @spir_block_bind({{.*}}@__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke{{.*}}, i32 8, i32 8, i8*[[CTX]])
-; CHECK: call {{.*}} @_Z26get_kernel_work_group_sizeU13block_pointerFvvE(%opencl.block*[[BLOCK0]])
   %call = call spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvvE(%opencl.block* %1) #2
-; CHECK: [[BLOCK1:.*]] = call {{.*}} @spir_block_bind({{.*}}@__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke{{.*}}, i32 8, i32 8, i8*[[CTX]])
-; CHECK:  call {{.*}} @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvvE(%opencl.block*[[BLOCK1]])
   %call1 = call spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvvE(%opencl.block* %1) #2
   %div = udiv i32 %call, %call1
   %call2 = call spir_func %opencl.queue_t* @get_default_queue() #2
   %conv = zext i32 %div to i64
   %conv3 = zext i32 %call to i64
   call spir_func void @_Z10ndrange_1Dmm(%struct.ndrange_t* sret %ndrange, i64 %conv, i64 %conv3) #2
-; CHECK: [[BLOCK2:.*]] = call {{.*}} @spir_block_bind({{.*}}@__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke{{.*}}, i32 8, i32 8, i8*[[CTX]])
-; CHECK:  call {{.*}} @_Z14enqueue_kernel{{.*}}, %opencl.block*[[BLOCK2]])
   %call4 = call spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tU13block_pointerFvvE(%opencl.queue_t* %call2, i32 241, %struct.ndrange_t* byval %ndrange, %opencl.block* %1) #2
-; CHECK: [[BLOCK3:.*]] = call {{.*}} @spir_block_bind({{.*}}@kernelBlockNoCtx_block_invoke{{.*}}, i32 0, i32 0, i8* null)
-; CHECK: call {{.*}} @_Z14enqueue_kernel{{.*}}, %opencl.block*[[BLOCK3]])
   %2 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*)* @kernelBlockNoCtx_block_invoke to i8*), i32 0, i32 0, i8* null) #2
   %call5 = call spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tU13block_pointerFvvE(%opencl.queue_t* %call2, i32 241, %struct.ndrange_t* byval %ndrange, %opencl.block* %2) #2
   ret void

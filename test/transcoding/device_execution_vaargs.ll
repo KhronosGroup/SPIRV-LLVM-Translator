@@ -30,12 +30,49 @@
 ;; bash$
 ;;$PATH_TO_GEN/bin/clang -cc1 -x cl -O0 -cl-std=CL2.0 -triple spir64-unknonw-unknown -include $PATH_TO_GEN/lib/clang/3.6.1/include/opencl-20.h -emit-llvm device_execution_overloading.cl -o device_execution_overloading.ll
 
-;; Test overloading of device exectuion built-ins is OK after translation from SPIR-V
+;; Test enqueue_kernel with and wthout vaargs
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s
+
+; CHECK: %struct.__block_descriptor = type { i64, i64 }
+
+; CHECK: [[BLOCK:%.*]] = alloca <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>, align 8
+; CHECK: [[INVOKEGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>* [[BLOCK]], i32 0, i32 3
+; CHECK: store i8* bitcast (void (i8*, i8 addrspace(3)*, i8 addrspace(3)*)* @__host_kernel_block_invoke to i8*), i8** [[INVOKEGEP]]
+; CHECK: [[BLOCKDESCGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>* [[BLOCK]], i32 0, i32 4
+; CHECK: store %struct.__block_descriptor* @__block_descriptor_spirv, %struct.__block_descriptor** [[BLOCKDESCGEP]]
+; CHECK: [[BLOCKBCAST:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>* [[BLOCK]] to i8*
+; CHECK: [[BLOCKADDRCAST:%.*]] = addrspacecast i8* [[BLOCKBCAST]] to i8 addrspace(4)*
+; CHECK: call i32 @__get_kernel_work_group_size_impl(i8 addrspace(4)* [[BLOCKADDRCAST]])
+; CHECK: call i32 @__get_kernel_preferred_work_group_multiple_impl(i8 addrspace(4)* [[BLOCKADDRCAST]])
+; CHECK: call i32 {{.*}} @__enqueue_kernel_events_vaargs
+
+; CHECK: [[BLOCK2:%.*]] = alloca <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, align 8
+; CHECK: [[INVOKEGEP2:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]], i32 0, i32 3
+; CHECK: store i8* bitcast (void (i8*)* @__host_kernel_block_invoke_2 to i8*), i8** [[INVOKEGEP2]]
+; CHECK: [[BLOCKDESCGEP2:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]], i32 0, i32 4
+; CHECK: store %struct.__block_descriptor* @__block_descriptor_spirv.1, %struct.__block_descriptor** [[BLOCKDESCGEP2]]
+; CHECK: [[CAPTUREDGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]], i32 0, i32 5
+; CHECK: [[CAPTUREDCAST:%.*]] = bitcast [8 x i8]* [[CAPTUREDGEP]] to i8*
+; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* [[CAPTUREDCAST]], i8* %0, i32 8, i32 8, i1 false)
+; CHECK: [[BLOCKBCAST2:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]] to i8*
+; CHECK: [[BLOCKADDRCAST2:%.*]] = addrspacecast i8* [[BLOCKBCAST2]] to i8 addrspace(4)*
+; CHECK: call i32 @__get_kernel_work_group_size_impl(i8 addrspace(4)* [[BLOCKADDRCAST2]])
+; CHECK: call i32 @__get_kernel_preferred_work_group_multiple_impl(i8 addrspace(4)* [[BLOCKADDRCAST2]]) #0
+; CHECK: call i32 @__enqueue_kernel_basic_events
+
+; CHECK: define internal spir_func void @__host_kernel_block_invoke(
+; CHECK-NOT: bitcast i8* %.block_descriptor to <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [0 x i8] }>*
+
+; CHECK: define internal spir_func void @__host_kernel_block_invoke_2(
+; CHECK-NEXT: entry:
+; CHECK-NEXT: [[INV_BLOCK:%.*]] = bitcast i8* %.block_descriptor to <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>*
+; CHECK-NEXT: [[INV_CAPTUREDGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[INV_BLOCK]], i32 0, i32 5
+; CHECK-NEXT: bitcast [8 x i8]* [[INV_CAPTUREDGEP]] to i8*
+; CHECK-NEXT: br label %invoke
 
 ; ModuleID = 'device_execution_overloading.cl'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
@@ -69,15 +106,6 @@ entry:
   store float 3.000000e+00, float addrspace(1)* %0, align 4
   ret void
 }
-
-; CHECK: @__get_kernel_work_group_size_impl
-; CHECK: @__get_kernel_preferred_work_group_multiple_impl
-; CHECK: @__enqueue_kernel_events_vaargs
-
-; CHECK: @__get_kernel_work_group_size_impl
-; CHECK: @__get_kernel_preferred_work_group_multiple_impl
-; CHECK: @__enqueue_kernel_basic_events
-
 ; Function Attrs: nounwind
 define spir_kernel void @host_kernel(i32 %size, float addrspace(1)* %ptr) #0 {
 entry:

@@ -24,8 +24,9 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s
 
-; CHECK-NOT: @_Z14enqueue_kernel{{.*}}{{S_|S0_|S1_}}
-; CHECK:     @_Z14enqueue_kernel9ocl_queue{{22kernel_enqueue_flags_t|i}}9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE
+; CHECK-NOT: @_Z14enqueue_kernel9ocl_queue{{22kernel_enqueue_flags_t|i}}9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE
+; CHECK-NOT: @spir_block_bind
+; CHECK: call i32 @__enqueue_kernel_basic_events
 declare spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE(%opencl.queue_t*, i32, %struct.ndrange_t* byval, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*) #1
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

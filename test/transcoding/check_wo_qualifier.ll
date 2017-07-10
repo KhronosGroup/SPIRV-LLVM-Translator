@@ -5,14 +5,17 @@
 
 ; CHECK-LLVM: opencl.image2d_array_wo_t = type opaque
 ; CHECK-LLVM: define spir_kernel void @sample_kernel(%opencl.image2d_array_wo_t addrspace(1)
+; CHECK-LLVM-SAME: !kernel_arg_access_qual [[AQ:![0-9]+]]
+; CHECK-LLVM-SAME: !kernel_arg_type [[TYPE:![0-9]+]]
+; CHECK-LLVM-SAME: !kernel_arg_base_type [[BT:![0-9]+]]
+
 ; CHECK-LLVM: call spir_func <2 x i32> @_Z13get_image_dimPU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
 ; CHECK-LLVM: call spir_func i64 @_Z20get_image_array_sizePU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
 ; CHECK-LLVM: declare spir_func <2 x i32> @_Z13get_image_dimPU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
 ; CHECK-LLVM: declare spir_func i64 @_Z20get_image_array_sizePU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
-; CHECK-LLVM: !{{[0-9]+}} = !{void (%opencl.image2d_array_wo_t
-; CHECK-LLVM: !{{[0-9]+}} = !{!"kernel_arg_type", !"image2d_array_wo_t"}
-; CHECK-LLVM: !{{[0-9]+}} = !{!"kernel_arg_base_type", !"image2d_array_wo_t"}
-
+; CHECK-LLVM-DAG: [[AQ]] = !{!"write_only"}
+; CHECK-LLVM-DAG: [[TYPE]] = !{!"image2d_array_wo_t"}
+; CHECK-LLVM-DAG: [[BT]] = !{!"image2d_array_wo_t"}
 
 ; ModuleID = 'out.ll'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

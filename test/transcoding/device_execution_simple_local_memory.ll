@@ -18,8 +18,8 @@
 ;; bash$ export PATH_TO_INCLUDE= $PATH_TO_GEN/lib/clang/3.6.1/include
 ;; bash$ $PATH_TO_GEN/bin/clang -cc1 -x cl -cl-std=CL2.0 -triple spir64-unknonw-unknown -emit-llvm  -include opencl-20.h  repro.cl -o device_execution.ll
 
-;; 1. Check mangling of device execution built-ins for blocks with local memory arguments
-;; 2. Check there is an enqueue_kernel with ellipsis
+;; Check that device enqueue BIs wasn't mangled
+
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
@@ -61,11 +61,11 @@ entry:
   %0 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*, i8 addrspace(3)*, i8 addrspace(3)*)* @__host_kernel_block_invoke to i8*), i32 0, i32 0, i8* null)
   store %opencl.block* %0, %opencl.block** %block, align 8
   %1 = load %opencl.block*, %opencl.block** %block, align 8
-; CHECK: call {{.*}} @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE
+; CHECK: call {{.*}} @__get_kernel_work_group_size_impl
   %call = call spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE(%opencl.block* %1)
   store i32 %call, i32* %wgSize, align 4
   %2 = load %opencl.block*, %opencl.block** %block, align 8
-; CHECK: call {{.*}} @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE
+; CHECK: call {{.*}} @__get_kernel_preferred_work_group_multiple_impl
   %call1 = call spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE(%opencl.block* %2)
   store i32 %call1, i32* %prefMul, align 4
   %call2 = call spir_func %opencl.queue_t* @_Z17get_default_queuev()
@@ -75,7 +75,7 @@ entry:
   %5 = load i32, i32* %wgSize, align 4
   %6 = load i32, i32* %prefMul, align 4
   %mul = mul i32 %5, %6
-; CHECK: call {{.*}} @_Z14enqueue_kernel{{.*}}U13block_pointerFvPU3AS3vzEjz({{.*}}, %opencl.block* {{.*}}, i32 {{.*}}, i32 {{.*}})
+; CHECK: call {{.*}} @__enqueue_kernel_events_vaargs({{.*}}, i32 {{.*}}, i32 {{.*}})
   %call3 = call spir_func i32 (%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...) @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t* %call2, i32 241, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %3, i32 %4, i32 %mul)
   ret void
 }
@@ -108,7 +108,7 @@ declare spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE
 
 declare spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE(%opencl.block*) #1
 
-; CHECK: declare {{.*}} @_Z14enqueue_kernel{{.*}}U13block_pointerFvPU3AS3vzEjz({{.*}}, %opencl.block*, i32, ...)
+; CHECK: declare {{.*}} @__enqueue_kernel_events_vaargs{{.*}}({{.*}}, i32, ...)
 declare spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t*, i32, %struct.ndrange_t* byval, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...) #1
 
 declare spir_func %opencl.queue_t* @_Z17get_default_queuev() #1

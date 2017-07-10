@@ -15,11 +15,9 @@
 
 ; LLVM => SPIRV => LLVM checks
 ; CHECK-LLVM: define spir_kernel void @worker()
-; CHECK-LLVM: !opencl.kernels = !{![[KERNEL_MD:[0-9]+]]}
+; CHECK-LLVM-SAME: !work_group_size_hint [[WG:![0-9]+]]
 
-; CHECK-LLVM-DAG: ![[EXEC_MODE_MD:[0-9]+]] = !{!"work_group_size_hint", i32 128, i32 10, i32 1}
-; CHECK-LLVM-DAG: ![[KERNEL_MD]] = !{void ()* @worker, {{.*}}![[EXEC_MODE_MD]]{{.*}}}
-
+; CHECK-LLVM: [[WG]] = !{i32 128, i32 10, i32 1}
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir-unknown-unknown"
