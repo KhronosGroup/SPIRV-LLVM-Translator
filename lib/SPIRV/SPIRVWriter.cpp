@@ -1302,9 +1302,12 @@ LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
     SPIRVTypeArray *CompositeTy = static_cast<SPIRVTypeArray*>(transType(AT));
     SPIRVValue *Init = BM->addNullConstant(CompositeTy);
     SPIRVType *VarTy = transType(PointerType::get(AT, SPIRV::SPIRAS_Constant));
-    SPIRVValue *Source = BM->addVariable(VarTy,/*isConstant*/true,
-                                         spv::LinkageTypeInternal, Init, "",
-                                         StorageClassUniformConstant, nullptr);
+    SPIRVValue *Var = BM->addVariable(VarTy,/*isConstant*/true,
+                                      spv::LinkageTypeInternal, Init, "",
+                                      StorageClassUniformConstant, nullptr);
+    SPIRVType *SourceTy = transType(PointerType::get(Val->getType(),
+                                                     SPIRV::SPIRAS_Constant));
+    SPIRVValue *Source = BM->addUnaryInst(OpBitcast, SourceTy, Var, BB);
     SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
     return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
                                       getMemoryAccess(MSI), BB);

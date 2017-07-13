@@ -698,7 +698,7 @@ T* bcast(SPIRVEntry *E) {
 
 template<spv::Op OC>
 bool isa(SPIRVEntry *E) {
-  return E->getOpCode() == OC;
+  return E ? E->getOpCode() == OC : false;
 }
 
 // ToDo: The following typedef's are place holders for SPIRV entity classes

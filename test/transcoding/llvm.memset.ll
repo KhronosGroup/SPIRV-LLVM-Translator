@@ -20,10 +20,12 @@
 ; CHECK-SPIRV: Constant {{[0-9]+}} [[Len:[0-9]+]] 12
 ; CHECK-SPIRV: TypePointer [[Int8Ptr:[0-9]+]] 8 [[Int8]]
 ; CHECK-SPIRV: TypeArray [[Int8x12:[0-9]+]] [[Int8]] [[Len]]
+; CHECK-SPIRV: TypePointer [[Int8PtrConst:[0-9]+]] 0 [[Int8]]
 ; CHECK-SPIRV: ConstantNull [[Int8x12]] [[Init:[0-9]+]]
-; CHECK-SPIRV: Variable {{[0-9]+}} [[Source:[0-9]+]] 0 [[Init]]
+; CHECK-SPIRV: Variable {{[0-9]+}} [[Val:[0-9]+]] 0 [[Init]]
 
 ; CHECK-SPIRV: Bitcast [[Int8Ptr]] [[Target:[0-9]+]] {{[0-9]+}}
+; CHECK-SPIRV: Bitcast [[Int8PtrConst]] [[Source:[0-9]+]] [[Val]]
 ; CHECK-SPIRV: CopyMemorySized [[Target]] [[Source]] [[Len]] 2 4
 
 

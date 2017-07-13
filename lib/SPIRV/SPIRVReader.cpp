@@ -1668,16 +1668,20 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
              << "i8";
     Value *Src = nullptr;
     // If we copy from zero-initialized array, we can optimize it to llvm.memset
-    if (BC->getSource()->isVariable()) {
-      auto *Init = static_cast<SPIRVVariable*>(BC->getSource())->getInitializer();
-      if (isa<OpConstantNull>(Init)) {
-        SPIRVType *Ty = static_cast<SPIRVConstantNull*>(Init)->getType();
-        if (isa<OpTypeArray>(Ty)) {
-          SPIRVTypeArray *AT = static_cast<SPIRVTypeArray*>(Ty);
-          SrcTy = transType(AT->getArrayElementType());
-          assert(SrcTy->isIntegerTy(8));
-          Src = ConstantInt::get(SrcTy, 0);
-          FuncName = "llvm.memset";
+    if (BC->getSource()->getOpCode() == OpBitcast) {
+      SPIRVValue *Source =
+        static_cast<SPIRVBitcast*>(BC->getSource())->getOperand(0);
+      if (Source->isVariable()) {
+        auto *Init = static_cast<SPIRVVariable*>(Source)->getInitializer();
+        if (isa<OpConstantNull>(Init)) {
+          SPIRVType *Ty = static_cast<SPIRVConstantNull*>(Init)->getType();
+          if (isa<OpTypeArray>(Ty)) {
+            SPIRVTypeArray *AT = static_cast<SPIRVTypeArray*>(Ty);
+            SrcTy = transType(AT->getArrayElementType());
+            assert(SrcTy->isIntegerTy(8));
+            Src = ConstantInt::get(SrcTy, 0);
+            FuncName = "llvm.memset";
+          }
         }
       }
     }
