@@ -1,4 +1,4 @@
-//===- SPIRVtype.cpp – Class to represent a SPIR-V type ----------*- C++ -*-===//
+//===- SPIRVtype.cpp â€“ Class to represent a SPIR-V type ----------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -70,7 +70,7 @@ SPIRVType::getBitWidth() const {
 
 SPIRVWord
 SPIRVType::getFloatBitWidth()const {
-  assert(OpCode == OpTypeFloat && "Not an integer type");
+  assert(OpCode == OpTypeFloat && "Not a float type");
   return static_cast<const SPIRVTypeFloat *const>(this)->getBitWidth();
 }
 

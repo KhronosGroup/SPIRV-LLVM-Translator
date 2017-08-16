@@ -84,7 +84,7 @@ SPIRVDecorateGeneric::getDecorateKind()const {
 
 SPIRVWord
 SPIRVDecorateGeneric::getLiteral(size_t i) const {
-  assert(0 <= i && i <= Literals.size() && "Out of bounds");
+  assert(i <= Literals.size() && "Out of bounds");
   return Literals[i];
 }
 

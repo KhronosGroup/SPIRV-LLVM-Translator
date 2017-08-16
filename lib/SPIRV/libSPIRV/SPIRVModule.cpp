@@ -924,7 +924,7 @@ SPIRVModuleImpl::addConstant(SPIRVType *Ty, uint64_t V) {
 SPIRVValue *
 SPIRVModuleImpl::addIntegerConstant(SPIRVTypeInt *Ty, uint64_t V) {
   if (Ty->getBitWidth() == 32) {
-    unsigned I32 = V;
+    unsigned I32 = static_cast<unsigned>(V);
     assert(I32 == V && "Integer value truncated");
     return getLiteralAsConstant(I32);
   }
