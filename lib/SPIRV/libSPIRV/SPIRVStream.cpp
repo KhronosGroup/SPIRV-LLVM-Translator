@@ -241,12 +241,12 @@ SPIRVDecoder::getEntry() {
   else
     Entry->setScope(Scope);
   Entry->setWordCount(WordCount);
-  Entry->setLine(M.getCurrentLine());
+  if (OpCode != OpLine)
+    Entry->setLine(M.getCurrentLine());
   IS >> *Entry;
-  if(Entry->isEndOfBlock() || OpCode == OpNoLine)
+  if (Entry->isEndOfBlock() || OpCode == OpNoLine)
     M.setCurrentLine(nullptr);
   assert(!IS.bad() && !IS.fail() && "SPIRV stream fails");
-  M.add(Entry);
   return Entry;
 }
 

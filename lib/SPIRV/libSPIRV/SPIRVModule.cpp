@@ -332,7 +332,7 @@ private:
   SPIRVMemoryModelKind MemoryModel;
 
   typedef std::map<SPIRVId, SPIRVEntry *> SPIRVIdToEntryMap;
-  typedef std::vector<SPIRVEntry *> SPIRVEntryVector;
+  typedef std::set<SPIRVEntry *> SPIRVEntrySet;
   typedef std::set<SPIRVId> SPIRVIdSet;
   typedef std::vector<SPIRVId> SPIRVIdVec;
   typedef std::vector<SPIRVFunction *> SPIRVFunctionVector;
@@ -357,7 +357,7 @@ private:
   SPIRVFunctionVector FuncVec;
   SPIRVConstantVector ConstVec;
   SPIRVVariableVec VariableVec;
-  SPIRVEntryVector EntryNoId;         // Entries without id
+  SPIRVEntrySet EntryNoId;          // Entries without id
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
   SPIRVStringVec StringVec;
@@ -382,11 +382,8 @@ SPIRVModuleImpl::~SPIRVModuleImpl() {
   //for (auto I:IdEntryMap)
   //  delete I.second;
 
-  // ToDo: Fix bug causing crash
-  //for (auto I:EntryNoId) {
-  //  bildbgs() << "[delete] " << *I;
-  //  delete I;
-  //}
+  for (auto I : EntryNoId)
+    delete I;
 
   for (auto C : CapMap)
     delete C.second;
@@ -552,7 +549,9 @@ SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
     } else
       IdEntryMap[Id] = Entry;
   } else {
-    EntryNoId.push_back(Entry);
+    // Entry of OpLine will be deleted by std::shared_ptr automatically.
+    if (Entry->getOpCode() != OpLine)
+      EntryNoId.insert(Entry);
   }
 
   Entry->setModule(this);
@@ -1507,7 +1506,7 @@ operator>> (std::istream &I, SPIRVModule &M) {
   assert(MI.InstSchema == SPIRVISCH_Default && "Unsupported instruction schema");
 
   while(Decoder.getWordCountAndOpCode())
-    Decoder.getEntry();
+    M.add(Decoder.getEntry());
 
   MI.optimizeDecorates();
   MI.resolveUnknownStructFields();

@@ -110,6 +110,7 @@ SPIRVFunction::decode(std::istream &I) {
     case OpFunctionParameter: {
       auto Param = static_cast<SPIRVFunctionParameter *>(Decoder.getEntry());
       assert(Param);
+      Module->add(Param);
       Param->setParent(this);
       Parameters.push_back(Param);
       Decoder.getWordCountAndOpCode();
@@ -143,7 +144,7 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     }
 
     if (Decoder.OpCode == OpLine) {
-      Decoder.getEntry();
+      Module->add(Decoder.getEntry());
       continue;
     }
 
@@ -151,6 +152,8 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     assert(Inst);
     if (Inst->getOpCode() != OpUndef)
       BB->addInstruction(Inst);
+    else
+      Module->add(Inst);
   }
   Decoder.setScope(this);
 }
