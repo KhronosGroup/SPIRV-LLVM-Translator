@@ -247,7 +247,6 @@ private:
       assert (Loc->second->isForward() &&
           "LLVM Value is mapped to different SPIRV Values");
       auto Forward = static_cast<SPIRVForward *>(Loc->second);
-      BV->setId(Forward->getId());
       BM->replaceForward(Forward, BV);
     }
     ValueMap[V] = BV;
