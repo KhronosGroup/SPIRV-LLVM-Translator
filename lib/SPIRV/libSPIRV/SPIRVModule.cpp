@@ -1504,8 +1504,11 @@ operator>> (std::istream &I, SPIRVModule &M) {
   Decoder >> MI.InstSchema;
   assert(MI.InstSchema == SPIRVISCH_Default && "Unsupported instruction schema");
 
-  while(Decoder.getWordCountAndOpCode())
-    M.add(Decoder.getEntry());
+  while (Decoder.getWordCountAndOpCode()) {
+    SPIRVEntry *Entry = Decoder.getEntry();
+    if (Entry != nullptr)
+      M.add(Entry);
+  }
 
   MI.optimizeDecorates();
   MI.resolveUnknownStructFields();

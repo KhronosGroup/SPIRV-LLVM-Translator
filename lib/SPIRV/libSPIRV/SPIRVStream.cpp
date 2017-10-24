@@ -233,7 +233,7 @@ SPIRVDecoder::getWordCountAndOpCode() {
 SPIRVEntry *
 SPIRVDecoder::getEntry() {
   if (WordCount == 0 || OpCode == OpNop)
-    return NULL;
+    return nullptr;
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
   assert(Entry);
   Entry->setModule(&M);
