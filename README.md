@@ -29,6 +29,16 @@ Alternatively,
 1.  Clone the `khronos/spirv-3.6.1` branch.
 2.  Follow [LLVM build instructions](http://llvm.org/docs/GettingStarted.html).
 
+Test instructions
+-----------------
+
+All tests related to the translator are placed in [test/SPIRV](https://github.com/KhronosGroup/SPIRV-LLVM/tree/khronos/spirv-3.6.1/test/SPIRV).
+
+Execute the following command to run translator tests:
+```
+llvm-lit test/SPIRV
+```
+
 Run Instructions for `llvm-spirv`
 ----------------
 
