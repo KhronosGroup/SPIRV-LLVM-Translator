@@ -169,6 +169,10 @@ inline bool isModuleScopeAllowedOpCode(Op OpCode) {
       isConstantOpCode(OpCode);
 }
 
+inline bool isIntelSubgroupOpCode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OpSubgroupShuffleINTEL <= OC && OC <=OpSubgroupImageBlockWriteINTEL;
+}
 }
 
 #endif /* SPIRVOPCODE_HPP_ */

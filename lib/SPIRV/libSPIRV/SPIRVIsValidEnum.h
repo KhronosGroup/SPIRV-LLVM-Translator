@@ -884,6 +884,14 @@ isValid(spv::Op V) {
     case OpMemoryNamedBarrier:
     case OpModuleProcessed:
     case OpForward:
+    case OpSubgroupShuffleINTEL:
+    case OpSubgroupShuffleDownINTEL:
+    case OpSubgroupShuffleUpINTEL:
+    case OpSubgroupShuffleXorINTEL:
+    case OpSubgroupBlockReadINTEL:
+    case OpSubgroupBlockWriteINTEL:
+    case OpSubgroupImageBlockReadINTEL:
+    case OpSubgroupImageBlockWriteINTEL:
       return true;
     default:
       return false;

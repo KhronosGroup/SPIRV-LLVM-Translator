@@ -203,6 +203,8 @@ namespace kOCLBuiltinName {
   const static char SubGroupAll[]        = "sub_group_all";
   const static char SubGroupAny[]        = "sub_group_any";
   const static char WorkPrefix[]         = "work_";
+  const static char SubgroupBlockReadINTELPrefix[]  = "intel_sub_group_block_read";
+  const static char SubgroupBlockWriteINTELPrefix[] = "intel_sub_group_block_write";
 }
 
 /// Offset for OpenCL image channel order enumeration values.
@@ -608,6 +610,11 @@ _SPIRV_OP(get_image_channel_data_type, ImageQueryFormat)
 _SPIRV_OP(get_image_channel_order, ImageQueryOrder)
 _SPIRV_OP(get_image_num_mip_levels, ImageQueryLevels)
 _SPIRV_OP(get_image_num_samples, ImageQuerySamples)
+// Intel Subgroups builtins
+_SPIRV_OP(intel_sub_group_shuffle, SubgroupShuffleINTEL)
+_SPIRV_OP(intel_sub_group_shuffle_down, SubgroupShuffleDownINTEL)
+_SPIRV_OP(intel_sub_group_shuffle_up, SubgroupShuffleUpINTEL)
+_SPIRV_OP(intel_sub_group_shuffle_xor, SubgroupShuffleXorINTEL)
 #undef _SPIRV_OP
 }
 
