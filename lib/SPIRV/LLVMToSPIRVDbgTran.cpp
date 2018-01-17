@@ -54,6 +54,9 @@ void LLVMToSPIRVDbgTran::transDebugMetadata() {
   DICompileUnit *CU = *DIF.compile_units().begin();
   transDbgEntry(CU);
 
+  for (DIImportedEntity *IE : CU->getImportedEntities())
+    transDbgEntry(IE);
+
   for (const DIType *T : DIF.types())
     transDbgEntry(T);
 
@@ -240,6 +243,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
     case dwarf::DW_TAG_const_type:
     case dwarf::DW_TAG_restrict_type:
     case dwarf::DW_TAG_volatile_type:
+    case dwarf::DW_TAG_atomic_type:
       return transDbgQualifiedType(cast<DIDerivedType>(DIEntry));
 
     case dwarf::DW_TAG_subroutine_type:
@@ -301,6 +305,10 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
     case dwarf::DW_TAG_GNU_template_parameter_pack:
       return transDbgTemplateParameterPack(
           cast<DITemplateValueParameter>(DIEntry));
+
+    case dwarf::DW_TAG_imported_module:
+    case dwarf::DW_TAG_imported_declaration:
+      return transDbgImportedEntry(cast<DIImportedEntity>(DIEntry));
 
     default:
       return getDebugInfoNone();
@@ -427,6 +435,8 @@ LLVMToSPIRVDbgTran::transDbgCompilationUnit(const DICompileUnit *CU) {
   Ops[SPIRVDebugInfoVersionIdx] = SPIRVDebug::DebugInfoVersion;
   Ops[DWARFVersionIdx] = M->getDwarfVersion();
   Ops[SourceIdx] = getSource(CU)->getId();
+  Ops[LanguageIdx] = CU->getSourceLanguage();
+  // Cache CU in a member.
   SPIRVCU = static_cast<SPIRVExtInst *>(
       BM->addDebugInfo(SPIRVDebug::CompilationUnit, getVoidTy(), Ops));
   return SPIRVCU;
@@ -515,11 +525,12 @@ SPIRVEntry *
 LLVMToSPIRVDbgTran::transDbgSubroutineType(const DISubroutineType *FT) {
   using namespace SPIRVDebug::Operand::TypeFunction;
   SPIRVWordVec Ops(MinOperandCount);
+  Ops[FlagsIdx] = transDebugFlags(FT);
 
   DITypeRefArray Types = FT->getTypeArray();
   const size_t NumElements = Types.size();
   if (NumElements) {
-    Ops.resize(NumElements);
+    Ops.resize(1 + NumElements);
     // First element of the TypeArray is the type of the return value,
     // followed by types of the function arguments' types.
     // The same order is preserved in SPIRV.
@@ -574,6 +585,10 @@ LLVMToSPIRVDbgTran::transDbgCompositeType(const DICompositeType *CT) {
   MDMap.insert(std::make_pair(CT, Tmp));
 
   auto Tag = static_cast<dwarf::Tag>(CT->getTag());
+  SPIRVId UniqId = getDebugInfoNoneId();
+  StringRef Identifier = CT->getIdentifier();
+  if (!Identifier.empty())
+    UniqId = BM->getString(Identifier)->getId();
   ConstantInt *Size = getUInt(M, CT->getSizeInBits());
 
   Ops[NameIdx] = BM->getString(CT->getName())->getId();
@@ -582,6 +597,7 @@ LLVMToSPIRVDbgTran::transDbgCompositeType(const DICompositeType *CT) {
   Ops[LineIdx] = CT->getLine();
   Ops[ColumnIdx] = 0; // This version of DICompositeType has no column number
   Ops[ParentIdx] = getScope(CT->getScope())->getId();
+  Ops[LinkageNameIdx] = UniqId;
   Ops[SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
   Ops[FlagsIdx] = transDebugFlags(CT);
 
@@ -872,9 +888,19 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInlinedAt(const DILocation *Loc) {
 
 template <class T>
 SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
-  // By the spec we should return OpSource and then get its id.
-  // But this is a bug (in the spec), because OpSource has no id!
-  return static_cast<SPIRVExtInst *>(getDebugInfoNone());
+  const std::string FileName = getFullPath(DIEntry);
+  auto It = FileMap.find(FileName);
+  if (It != FileMap.end())
+    return It->second;
+
+  using namespace SPIRVDebug::Operand::Source;
+  SPIRVWordVec Ops(OperandCount);
+  Ops[FileIdx] = BM->getString(FileName)->getId();
+  Ops[TextIdx] = getDebugInfoNone()->getId();
+  SPIRVExtInst *Source = static_cast<SPIRVExtInst *>(
+      BM->addDebugInfo(SPIRVDebug::Source, getVoidTy(), Ops));
+  FileMap[FileName] = Source;
+  return Source;
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFileType(const DIFile *F) {
@@ -894,6 +920,7 @@ LLVMToSPIRVDbgTran::transDbgLocalVariable(const DILocalVariable *Var) {
   Ops[LineIdx] = Var->getLine();
   Ops[ColumnIdx] = 0; // This version of DILocalVariable has no column number
   Ops[ParentIdx] = getScope(Var->getScope())->getId();
+  Ops[FlagsIdx] = transDebugFlags(Var);
   if (SPIRVWord ArgNumber = Var->getArg())
     Ops.push_back(ArgNumber);
   return BM->addDebugInfo(SPIRVDebug::LocalVariable, getVoidTy(), Ops);
@@ -919,4 +946,21 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
     Operations.push_back(Operation->getId());
   }
   return BM->addDebugInfo(SPIRVDebug::Expression, getVoidTy(), Operations);
+}
+
+// Imported entries (C++ using directive)
+
+SPIRVEntry *
+LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
+  using namespace SPIRVDebug::Operand::ImportedEntity;
+  SPIRVWordVec Ops(OperandCount);
+  auto Tag = static_cast<dwarf::Tag>(IE->getTag());
+  Ops[NameIdx] = BM->getString(IE->getName())->getId();
+  Ops[TagIdx] = SPIRV::DbgImportedEntityMap::map(Tag);
+  Ops[SourceIdx] = getSource(IE->getFile())->getId();
+  Ops[EntityIdx] = transDbgEntryRef(IE->getEntity())->getId();
+  Ops[LineIdx] = IE->getLine();
+  Ops[ColumnIdx] = 0; // This version of DIImportedEntity has no column number
+  Ops[ParentIdx] = getScope(IE->getScope())->getId();
+  return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
 }
