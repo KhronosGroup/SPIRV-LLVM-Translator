@@ -252,6 +252,7 @@ typedef SPIRVDebug::Instruction SPIRVDebugExtOpKind;
 template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::DebugInfoNone, "DebugInfoNone");
   add(SPIRVDebug::CompilationUnit, "DebugCompileUnit");
+  add(SPIRVDebug::Source, "DebugSource");
   add(SPIRVDebug::TypeBasic, "DebugTypeBasic");
   add(SPIRVDebug::TypePointer, "DebugTypePointer");
   add(SPIRVDebug::TypeArray, "DebugTypeArray");
@@ -281,6 +282,7 @@ template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::Scope, "DebugScope");
   add(SPIRVDebug::NoScope, "DebugNoScope");
   add(SPIRVDebug::InlinedAt, "DebugInlinedAt");
+  add(SPIRVDebug::ImportedEntity, "DebugImportedEntity");
   add(SPIRVDebug::Expression, "DebugExpression");
   add(SPIRVDebug::Operation, "DebugOperation");
 }
