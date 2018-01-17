@@ -44,7 +44,9 @@ enum Instruction {
   Expression                    = 31,
   MacroDef                      = 32,
   MacroUndef                    = 33,
-  InstCount                     = 34
+  ImportedEntity                = 34,
+  Source                        = 35,
+  InstCount                     = 36
 };
 
 enum Flag {
@@ -63,7 +65,8 @@ enum Flag {
   FlagIsIndirectVariable = 1 << 10,
   FlagIsLValueReference  = 1 << 11,
   FlagIsRValueReference  = 1 << 12,
-  FlagIsOptimized        = 1 << 13
+  FlagIsOptimized        = 1 << 13,
+  FlagIsEnumClass        = 1 << 14,
 };
 
 enum EncodingTag {
@@ -87,6 +90,7 @@ enum TypeQualifierTag {
   ConstType    = 0,
   VolatileType = 1,
   RestrictType = 2,
+  AtomicType   = 3
 };
 
 enum ExpressionOpCode {
@@ -99,6 +103,7 @@ enum ExpressionOpCode {
   Xderef     = 6,
   StackValue = 7,
   Constu     = 8,
+  Fragment   = 9
 };
 
 enum ImportedEntityTag {
@@ -113,7 +118,8 @@ enum {
   SPIRVDebugInfoVersionIdx = 0,
   DWARFVersionIdx          = 1,
   SourceIdx                = 2,
-  OperandCount             = 3
+  LanguageIdx              = 3,
+  OperandCount             = 4
 };
 }
 
@@ -175,9 +181,10 @@ enum {
 
 namespace TypeFunction {
 enum {
-  ReturnTypeIdx     = 0,
-  FirstParameterIdx = 1,
-  MinOperandCount   = 1
+  FlagsIdx          = 0,
+  ReturnTypeIdx     = 1,
+  FirstParameterIdx = 2,
+  MinOperandCount   = 2
 };
 }
 
@@ -204,10 +211,11 @@ enum {
   LineIdx         = 3,
   ColumnIdx       = 4,
   ParentIdx       = 5,
-  SizeIdx         = 6,
-  FlagsIdx        = 7,
-  FirstMemberIdx  = 8,
-  MinOperandCount = 8
+  LinkageNameIdx  = 6,
+  SizeIdx         = 7,
+  FlagsIdx        = 8,
+  FirstMemberIdx  = 9,
+  MinOperandCount = 9
 };
 }
 
@@ -384,8 +392,9 @@ enum {
   LineIdx         = 3,
   ColumnIdx       = 4,
   ParentIdx       = 5,
-  ArgNumberIdx    = 6,
-  MinOperandCount = 6
+  FlagsIdx        = 6,
+  ArgNumberIdx    = 7,
+  MinOperandCount = 7
 };
 }
 
@@ -429,7 +438,8 @@ static std::map<ExpressionOpCode, unsigned> OpCountMap {
   { Swap,       1 },
   { Xderef,     1 },
   { StackValue, 1 },
-  { Constu,     2 }
+  { Constu,     2 },
+  { Fragment,   3 }
 };
 }
 
@@ -471,6 +481,7 @@ inline void DbgTypeQulifierMap::init() {
   add(dwarf::DW_TAG_const_type,    SPIRVDebug::ConstType);
   add(dwarf::DW_TAG_volatile_type, SPIRVDebug::VolatileType);
   add(dwarf::DW_TAG_restrict_type, SPIRVDebug::RestrictType);
+  add(dwarf::DW_TAG_atomic_type,   SPIRVDebug::AtomicType);
 }
 
 typedef SPIRVMap<dwarf::Tag, SPIRVDebug::CompositeTypeTag> DbgCompositeTypeMap;
@@ -494,9 +505,16 @@ inline void DbgExpressionOpCodeMap::init() {
   add(dwarf::DW_OP_xderef,        SPIRVDebug::Xderef);
   add(dwarf::DW_OP_stack_value,   SPIRVDebug::StackValue);
   add(dwarf::DW_OP_constu,        SPIRVDebug::Constu);
+  add(dwarf::DW_OP_LLVM_fragment, SPIRVDebug::Fragment);
 }
 
-// clang-format on
+typedef SPIRVMap<dwarf::Tag, SPIRVDebug::ImportedEntityTag>
+  DbgImportedEntityMap;
+template <>
+inline void DbgImportedEntityMap::init() {
+  add(dwarf::DW_TAG_imported_module,      SPIRVDebug::ImportedModule);
+  add(dwarf::DW_TAG_imported_declaration, SPIRVDebug::ImportedDeclaration);
+}
 
 } // namespace SPIRV
 
