@@ -2044,10 +2044,32 @@ _SPIRV_OP(GroupCommitReadPipe, false, 6)
 _SPIRV_OP(GroupCommitWritePipe, false, 6)
 #undef _SPIRV_OP
 
-class SPIRVAtomicInstBase:public SPIRVInstTemplateBase {
+class SPIRVAtomicInstBase : public SPIRVInstTemplateBase {
 public:
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(CapabilityInt64Atomics);
+    SPIRVCapVec CapVec;
+    // Most of atomic instructions do not require any capabilities
+    // ... unless they operate on 64-bit integers.
+    if (hasType() && getType()->isTypeInt(64)) {
+      // In SPIRV 1.2 spec only 2 atomic instructions have no result type:
+      // 1. OpAtomicStore - need to check type of the Value operand
+      // 2. OpAtomicFlagClear - doesn't require Int64Atomics capability.
+      CapVec.push_back(CapabilityInt64Atomics);
+    }
+    // Per the spec OpAtomicCompareExchangeWeak, OpAtomicFlagTestAndSet and
+    // OpAtomicFlagClear instructions require kernel capability. But this
+    // capability should be added by setting OpenCL memory model.
+    return CapVec;
+  }
+
+  // Overriding the following method only because of OpAtomicStore.
+  // We have to declare Int64Atomics capability if the Value operand is int64.
+  void setOpWords(const std::vector<SPIRVWord> &TheOps) override {
+    SPIRVInstTemplateBase::setOpWords(TheOps);
+    static const unsigned ValueOperandIndex = 3;
+    if (getOpCode() == OpAtomicStore &&
+        getOperand(ValueOperandIndex)->getType()->isTypeInt(64))
+      Module->addCapability(CapabilityInt64Atomics);
   }
 };
 

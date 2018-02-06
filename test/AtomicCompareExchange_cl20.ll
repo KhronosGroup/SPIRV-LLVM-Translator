@@ -5,6 +5,9 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK: 3 Source 3 200000
 
+; Int64Atomics capability must be declared only if atomic builtins have 64-bit integers arguments.
+; CHECK-NOT: Capability Int64Atomics
+
 ; CHECK: Name [[Pointer:[0-9]+]] "object"
 ; CHECK: Name [[ComparatorPtr:[0-9]+]] "expected"
 ; CHECK: Name [[Value:[0-9]+]] "desired"
