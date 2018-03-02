@@ -31,7 +31,7 @@ target triple = "spir"
 %opencl.image2d_wo_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @vme_kernel(<2 x i32> %edgeCoord, %opencl.image2d_ro_t addrspace(1)* %src_luma_image, %opencl.image2d_wo_t addrspace(1)* %dst_luma_image) local_unnamed_addr #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 !kernel_arg_host_accessible !10 {
+define spir_kernel void @vme_kernel(<2 x i32> %edgeCoord, %opencl.image2d_ro_t addrspace(1)* %src_luma_image, %opencl.image2d_wo_t addrspace(1)* %dst_luma_image) local_unnamed_addr #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 {
 entry:
 ; CHECK: SubgroupImageMediaBlockReadINTEL [[TypeInt]] [[Data:[0-9]+]] [[SrcImage]] [[Coord]] [[One]] [[Sixteen]]
   %call = tail call spir_func i32 @_Z35intel_sub_group_media_block_read_uiDv2_iii14ocl_image2d_ro(<2 x i32> %edgeCoord, i32 1, i32 16, %opencl.image2d_ro_t addrspace(1)* %src_luma_image) #2
@@ -71,4 +71,3 @@ attributes #2 = { nounwind }
 !7 = !{!"int2", !"image2d_t", !"image2d_t"}
 !8 = !{!"int __attribute__((ext_vector_type(2)))", !"image2d_t", !"image2d_t"}
 !9 = !{!"", !"", !""}
-!10 = !{i1 false, i1 false, i1 false}

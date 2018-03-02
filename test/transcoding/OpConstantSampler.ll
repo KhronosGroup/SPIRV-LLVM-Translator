@@ -31,7 +31,7 @@ target triple = "spir"
 %opencl.sampler_t = type opaque
 
 ; Function Attrs: noinline nounwind optnone
-define spir_kernel void @foo(%opencl.image2d_ro_t addrspace(1)* %src) #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !7 !kernel_arg_type_qual !8 !kernel_arg_host_accessible !9 {
+define spir_kernel void @foo(%opencl.image2d_ro_t addrspace(1)* %src) #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !7 !kernel_arg_type_qual !8 {
 entry:
   %src.addr = alloca %opencl.image2d_ro_t addrspace(1)*, align 4
   store %opencl.image2d_ro_t addrspace(1)* %src, %opencl.image2d_ro_t addrspace(1)** %src.addr, align 4
@@ -71,4 +71,3 @@ attributes #2 = { nounwind readonly }
 !6 = !{!"read_only"}
 !7 = !{!"image2d_t"}
 !8 = !{!""}
-!9 = !{i1 false}
