@@ -179,5 +179,5 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 !5 = !{!"kernel_arg_type_qual", !"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
-!8 = !{}
+!8 = !{!"cl_khr_fp16"}
 !9 = !{!"cl_images"}
