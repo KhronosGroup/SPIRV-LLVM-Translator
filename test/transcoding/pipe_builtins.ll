@@ -109,7 +109,7 @@
 
 ; ModuleID = 'pipe_builtins.cl'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
-target triple = "spir64-unknonw-unknown"
+target triple = "spir64-unknown-unknown"
 
 %opencl.reserve_id_t = type opaque
 %opencl.pipe_t = type opaque
@@ -117,77 +117,78 @@ target triple = "spir64-unknonw-unknown"
 @test_pipe_workgroup_write_char.res_id = internal unnamed_addr addrspace(3) global %opencl.reserve_id_t* undef, align 8
 @test_pipe_workgroup_read_char.res_id = internal unnamed_addr addrspace(3) global %opencl.reserve_id_t* undef, align 8
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_convenience_write_uint(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_convenience_write_uint(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !6 !kernel_arg_base_type !7 !kernel_arg_type_qual !8 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_convenience_write_uint
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %0 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %0, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %src, i64 %idxprom
-  %0 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %1 = addrspacecast i8 addrspace(1)* %0 to i8 addrspace(4)*
+  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
   ; CHECK-LLVM: call{{.*}}@__write_pipe_2
   ; CHECK-SPIRV: WritePipe {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %2 = tail call i32 @_Z10write_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, i8 addrspace(4)* %1, i32 4, i32 4) #2
+  %3 = tail call i32 @_Z10write_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, i8 addrspace(4)* %2, i32 4, i32 4) #5
   ret void
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare spir_func i64 @_Z13get_global_idj(i32) #1
+; Function Attrs: convergent nounwind readnone
+declare spir_func i64 @_Z13get_global_idj(i32) local_unnamed_addr #1
 
-declare i32 @_Z10write_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)*, i8 addrspace(4)*, i32, i32)
+declare i32 @_Z10write_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)*, i8 addrspace(4)*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_convenience_read_uint(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_convenience_read_uint(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !12 !kernel_arg_type !13 !kernel_arg_base_type !14 !kernel_arg_type_qual !15 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_convenience_read_uint
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %0 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %0, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %dst, i64 %idxprom
-  %0 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %1 = addrspacecast i8 addrspace(1)* %0 to i8 addrspace(4)*
+  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
   ; CHECK-LLVM: call{{.*}}@__read_pipe_2
   ; CHECK-SPIRV: ReadPipe {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %2 = tail call i32 @_Z9read_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, i8 addrspace(4)* %1, i32 4, i32 4) #2
+  %3 = tail call i32 @_Z9read_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, i8 addrspace(4)* %2, i32 4, i32 4) #5
   ret void
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare i32 @_Z9read_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)*, i8 addrspace(4)*, i32, i32)
+declare i32 @_Z9read_pipePU3AS18ocl_pipePU3AS4vjj(%opencl.pipe_t addrspace(1)*, i8 addrspace(4)*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_write(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_write(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !16 !kernel_arg_base_type !16 !kernel_arg_type_qual !8 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_write
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
   ; CHECK-LLVM: @__reserve_write_pipe
   ; CHECK-SPIRV: ReserveWritePipePackets {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %0 = tail call %opencl.reserve_id_t* @_Z18reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 1, i32 4, i32 4) #2
-  %call1 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #2
+  %0 = tail call %opencl.reserve_id_t* @_Z18reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 1, i32 4, i32 4) #5
+  %call1 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #6
   br i1 %call1, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %1 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %1, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %src, i64 %idxprom
-  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
+  %2 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %3 = addrspacecast i8 addrspace(1)* %2 to i8 addrspace(4)*
   ; CHECK-LLVM: call{{.*}}@__write_pipe_4
   ; CHECK-SPIRV: ReservedWritePipe {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %3 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 0, i8 addrspace(4)* %2, i32 4, i32 4) #2
+  %4 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 0, i8 addrspace(4)* %3, i32 4, i32 4) #5
   ; CHECK-LLVM: call{{.*}}@__commit_write_pipe
   ; CHECK-SPIRV: CommitWritePipe [[PipeArgID]] {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z17commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #2
+  tail call void @_Z17commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -195,61 +196,62 @@ if.end:                                           ; preds = %if.then, %entry
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare %opencl.reserve_id_t* @_Z18reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z18reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t*) #1
+; Function Attrs: convergent
+declare spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t*) local_unnamed_addr #2
 
-declare i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i8 addrspace(4)*, i32, i32)
+declare i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i8 addrspace(4)*, i32, i32) local_unnamed_addr
 
-declare void @_Z17commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z17commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_pipe_query_functions(%opencl.pipe_t addrspace(1)* %out_pipe, i32 addrspace(1)* nocapture %num_packets, i32 addrspace(1)* nocapture %max_packets) #0 {
+define spir_kernel void @test_pipe_query_functions(%opencl.pipe_t addrspace(1)* %out_pipe, i32 addrspace(1)* nocapture %num_packets, i32 addrspace(1)* nocapture %max_packets) local_unnamed_addr #3 !kernel_arg_addr_space !17 !kernel_arg_access_qual !18 !kernel_arg_type !19 !kernel_arg_base_type !19 !kernel_arg_type_qual !20 !kernel_arg_host_accessible !21 !kernel_arg_pipe_depth !22 !kernel_arg_pipe_io !23 !kernel_arg_buffer_location !23 {
 ; CHECK-LLVM-LABEL: @test_pipe_query_functions
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
   ; CHECK-LLVM: call{{.*}}@__get_pipe_max_packets
   ; CHECK-SPIRV: GetMaxPipePackets {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}}
-  %0 = tail call i32 @_Z20get_pipe_max_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 4, i32 4) #2
-  store i32 %0, i32 addrspace(1)* %max_packets, align 4, !tbaa !35
+  %0 = tail call i32 @_Z20get_pipe_max_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 4, i32 4) #5
+  store i32 %0, i32 addrspace(1)* %max_packets, align 4, !tbaa !24
   ; CHECK-LLVM: call{{.*}}@__get_pipe_num_packets
   ; CHECK-SPIRV: GetNumPipePackets {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}}
-  %1 = tail call i32 @_Z20get_pipe_num_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 4, i32 4) #2
-  store i32 %1, i32 addrspace(1)* %num_packets, align 4, !tbaa !35
+  %1 = tail call i32 @_Z20get_pipe_num_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 4, i32 4) #5
+  store i32 %1, i32 addrspace(1)* %num_packets, align 4, !tbaa !24
   ret void
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare i32 @_Z20get_pipe_max_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)*, i32, i32)
+declare i32 @_Z20get_pipe_max_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)*, i32, i32) local_unnamed_addr
 
-declare i32 @_Z20get_pipe_num_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)*, i32, i32)
+declare i32 @_Z20get_pipe_num_packetsPU3AS18ocl_pipejj(%opencl.pipe_t addrspace(1)*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_read(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_read(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !12 !kernel_arg_type !28 !kernel_arg_base_type !28 !kernel_arg_type_qual !15 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_read
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
   ; CHECK-LLVM: call{{.*}}@__reserve_read_pipe
   ; CHECK-SPIRV: ReserveReadPipePackets {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %0 = tail call %opencl.reserve_id_t* @_Z17reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 1, i32 4, i32 4) #2
-  %call1 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #2
+  %0 = tail call %opencl.reserve_id_t* @_Z17reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 1, i32 4, i32 4) #5
+  %call1 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #6
   br i1 %call1, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %1 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %1, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %dst, i64 %idxprom
-  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
+  %2 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %3 = addrspacecast i8 addrspace(1)* %2 to i8 addrspace(4)*
   ; CHECK-LLVM: call{{.*}}@__read_pipe_4
   ; CHECK-SPIRV: ReservedReadPipe {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %3 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 0, i8 addrspace(4)* %2, i32 4, i32 4) #2
+  %4 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 0, i8 addrspace(4)* %3, i32 4, i32 4) #5
   ; CHECK-LLVM: call{{.*}}@__commit_read_pipe
   ; CHECK-SPIRV: CommitReadPipe [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z16commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #2
+  tail call void @_Z16commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -257,42 +259,42 @@ if.end:                                           ; preds = %if.then, %entry
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare %opencl.reserve_id_t* @_Z17reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z17reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i8 addrspace(4)*, i32, i32)
+declare i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i8 addrspace(4)*, i32, i32) local_unnamed_addr
 
-declare void @_Z16commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z16commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_workgroup_write_char(i8 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_workgroup_write_char(i8 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !29 !kernel_arg_base_type !29 !kernel_arg_type_qual !8 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_workgroup_write_char
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %call1 = tail call spir_func i64 @_Z14get_local_sizej(i32 0) #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %call1 = tail call spir_func i64 @_Z14get_local_sizej(i32 0) #4
   %0 = trunc i64 %call1 to i32
   ; CHECK-LLVM: call{{.*}}@__work_group_reserve_write_pipe
   ; CHECK-SPIRV: GroupReserveWritePipePackets {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %1 = tail call %opencl.reserve_id_t* @_Z29work_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 %0, i32 1, i32 1) #2
-  store %opencl.reserve_id_t* %1, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !39
-  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %1) #2
+  %1 = tail call %opencl.reserve_id_t* @_Z29work_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 %0, i32 1, i32 1) #5
+  store %opencl.reserve_id_t* %1, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !30
+  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %1) #6
   br i1 %call2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %2 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !39
-  %call3 = tail call spir_func i64 @_Z12get_local_idj(i32 0) #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %2 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !30
+  %call3 = tail call spir_func i64 @_Z12get_local_idj(i32 0) #4
+  %3 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %3, 32
   %arrayidx = getelementptr inbounds i8, i8 addrspace(1)* %src, i64 %idxprom
-  %3 = addrspacecast i8 addrspace(1)* %arrayidx to i8 addrspace(4)*
-  %4 = trunc i64 %call3 to i32
-  %5 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %2, i32 %4, i8 addrspace(4)* %3, i32 1, i32 1) #2
-  %6 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !39
+  %4 = addrspacecast i8 addrspace(1)* %arrayidx to i8 addrspace(4)*
+  %5 = trunc i64 %call3 to i32
+  %6 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %2, i32 %5, i8 addrspace(4)* %4, i32 1, i32 1) #5
+  %7 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_write_char.res_id, align 8, !tbaa !30
   ; CHECK-LLVM: call{{.*}}@__work_group_commit_write_pipe
   ; CHECK-SPIRV: GroupCommitWritePipe {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z28work_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %6, i32 1, i32 1) #2
+  tail call void @_Z28work_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %7, i32 1, i32 1) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -300,43 +302,45 @@ if.end:                                           ; preds = %if.then, %entry
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare spir_func i64 @_Z14get_local_sizej(i32) #1
+; Function Attrs: convergent nounwind readnone
+declare spir_func i64 @_Z14get_local_sizej(i32) local_unnamed_addr #1
 
-declare %opencl.reserve_id_t* @_Z29work_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z29work_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare spir_func i64 @_Z12get_local_idj(i32) #1
+; Function Attrs: convergent nounwind readnone
+declare spir_func i64 @_Z12get_local_idj(i32) local_unnamed_addr #1
 
-declare void @_Z28work_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z28work_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_workgroup_read_char(%opencl.pipe_t addrspace(1)* %in_pipe, i8 addrspace(1)* %dst) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_workgroup_read_char(%opencl.pipe_t addrspace(1)* %in_pipe, i8 addrspace(1)* %dst) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !12 !kernel_arg_type !32 !kernel_arg_base_type !32 !kernel_arg_type_qual !15 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_workgroup_read_char
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %call1 = tail call spir_func i64 @_Z14get_local_sizej(i32 0) #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %call1 = tail call spir_func i64 @_Z14get_local_sizej(i32 0) #4
   %0 = trunc i64 %call1 to i32
   ; CHECK-LLVM: call{{.*}}@__work_group_reserve_read_pipe
   ; CHECK-SPIRV: GroupReserveReadPipePackets {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %1 = tail call %opencl.reserve_id_t* @_Z28work_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 %0, i32 1, i32 1) #2
-  store %opencl.reserve_id_t* %1, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !39
-  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %1) #2
+  %1 = tail call %opencl.reserve_id_t* @_Z28work_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 %0, i32 1, i32 1) #5
+  store %opencl.reserve_id_t* %1, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !30
+  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %1) #6
   br i1 %call2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %2 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !39
-  %call3 = tail call spir_func i64 @_Z12get_local_idj(i32 0) #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %2 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !30
+  %call3 = tail call spir_func i64 @_Z12get_local_idj(i32 0) #4
+  %3 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %3, 32
   %arrayidx = getelementptr inbounds i8, i8 addrspace(1)* %dst, i64 %idxprom
-  %3 = addrspacecast i8 addrspace(1)* %arrayidx to i8 addrspace(4)*
-  %4 = trunc i64 %call3 to i32
-  %5 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %2, i32 %4, i8 addrspace(4)* %3, i32 1, i32 1) #2
-  %6 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !39
+  %4 = addrspacecast i8 addrspace(1)* %arrayidx to i8 addrspace(4)*
+  %5 = trunc i64 %call3 to i32
+  %6 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %2, i32 %5, i8 addrspace(4)* %4, i32 1, i32 1) #5
+  %7 = load %opencl.reserve_id_t*, %opencl.reserve_id_t* addrspace(3)* @test_pipe_workgroup_read_char.res_id, align 8, !tbaa !30
   ; CHECK-LLVM: call{{.*}}@__work_group_commit_read_pipe
   ; CHECK-SPIRV: GroupCommitReadPipe {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z27work_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %6, i32 1, i32 1) #2
+  tail call void @_Z27work_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %7, i32 1, i32 1) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -344,78 +348,77 @@ if.end:                                           ; preds = %if.then, %entry
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare %opencl.reserve_id_t* @_Z28work_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z28work_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare void @_Z27work_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z27work_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_subgroup_write_uint(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_subgroup_write_uint(i32 addrspace(1)* %src, %opencl.pipe_t addrspace(1)* %out_pipe) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !6 !kernel_arg_base_type !7 !kernel_arg_type_qual !8 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_subgroup_write_uint
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %call1 = tail call spir_func i32 @_Z18get_sub_group_sizev() #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %call1 = tail call spir_func i32 @_Z18get_sub_group_sizev() #6
   ; CHECK-LLVM: call{{.*}}@__sub_group_reserve_write_pipe
   ; CHECK-SPIRV: GroupReserveWritePipePackets {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %0 = tail call %opencl.reserve_id_t* @_Z28sub_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 %call1, i32 4, i32 4) #2
-  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #2
+  %0 = tail call %opencl.reserve_id_t* @_Z28sub_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %out_pipe, i32 %call1, i32 4, i32 4) #5
+  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #6
   br i1 %call2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call3 = tail call spir_func i32 @_Z22get_sub_group_local_idv() #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %call3 = tail call spir_func i32 @_Z22get_sub_group_local_idv() #6
+  %1 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %1, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %src, i64 %idxprom
-  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
-  %3 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 %call3, i8 addrspace(4)* %2, i32 4, i32 4) #2
+  %2 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %3 = addrspacecast i8 addrspace(1)* %2 to i8 addrspace(4)*
+  %4 = tail call i32 @_Z10write_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 %call3, i8 addrspace(4)* %3, i32 4, i32 4) #5
   ; CHECK-LLVM: call{{.*}}@__sub_group_commit_write_pipe
   ; CHECK-SPIRV: GroupCommitWritePipe {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z27sub_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #2
+  tail call void @_Z27sub_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %out_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
-; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare spir_func i32 @_Z18get_sub_group_sizev() #1
+; Function Attrs: convergent
+declare spir_func i32 @_Z18get_sub_group_sizev() local_unnamed_addr #2
 
-declare %opencl.reserve_id_t* @_Z28sub_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z28sub_group_reserve_write_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare spir_func i32 @_Z22get_sub_group_local_idv() #1
+; Function Attrs: convergent
+declare spir_func i32 @_Z22get_sub_group_local_idv() local_unnamed_addr #2
 
-declare void @_Z27sub_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z27sub_group_commit_write_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
-
-
-; Function Attrs: nounwind
-define spir_kernel void @test_pipe_subgroup_read_uint(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_pipe_subgroup_read_uint(%opencl.pipe_t addrspace(1)* %in_pipe, i32 addrspace(1)* %dst) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !12 !kernel_arg_type !13 !kernel_arg_base_type !14 !kernel_arg_type_qual !15 !kernel_arg_host_accessible !9 !kernel_arg_pipe_depth !10 !kernel_arg_pipe_io !11 !kernel_arg_buffer_location !11 {
 ; CHECK-LLVM-LABEL: @test_pipe_subgroup_read_uint
 ; CHECK-SPIRV-LABEL: 5 Function
 ; CHECK-SPIRV-NEXT:  FunctionParameter {{[0-9]+}} [[PipeArgID:[0-9]+]]
 entry:
-  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
-  %call1 = tail call spir_func i32 @_Z18get_sub_group_sizev() #2
+  %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #4
+  %call1 = tail call spir_func i32 @_Z18get_sub_group_sizev() #6
   ; CHECK-LLVM: call{{.*}}@__sub_group_reserve_read_pipe
   ; CHECK-SPIRV: GroupReserveReadPipePackets {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  %0 = tail call %opencl.reserve_id_t* @_Z27sub_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 %call1, i32 4, i32 4) #2
-  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #2
+  %0 = tail call %opencl.reserve_id_t* @_Z27sub_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)* %in_pipe, i32 %call1, i32 4, i32 4) #5
+  %call2 = tail call spir_func zeroext i1 @_Z19is_valid_reserve_id13ocl_reserveid(%opencl.reserve_id_t* %0) #6
   br i1 %call2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call3 = tail call spir_func i32 @_Z22get_sub_group_local_idv() #2
-  %sext = shl i64 %call, 32
-  %idxprom = ashr exact i64 %sext, 32
+  %call3 = tail call spir_func i32 @_Z22get_sub_group_local_idv() #6
+  %1 = shl i64 %call, 32
+  %idxprom = ashr exact i64 %1, 32
   %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %dst, i64 %idxprom
-  %1 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
-  %2 = addrspacecast i8 addrspace(1)* %1 to i8 addrspace(4)*
-  %3 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 %call3, i8 addrspace(4)* %2, i32 4, i32 4) #2
+  %2 = bitcast i32 addrspace(1)* %arrayidx to i8 addrspace(1)*
+  %3 = addrspacecast i8 addrspace(1)* %2 to i8 addrspace(4)*
+  %4 = tail call i32 @_Z9read_pipePU3AS18ocl_pipe13ocl_reserveidjPU3AS4vjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 %call3, i8 addrspace(4)* %3, i32 4, i32 4) #5
   ; CHECK-LLVM: call{{.*}}@__sub_group_commit_read_pipe
   ; CHECK-SPIRV: GroupCommitReadPipe {{[0-9]+}} [[PipeArgID]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-  tail call void @_Z26sub_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #2
+  tail call void @_Z26sub_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)* %in_pipe, %opencl.reserve_id_t* %0, i32 4, i32 4) #5
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -423,61 +426,67 @@ if.end:                                           ; preds = %if.then, %entry
 ; CHECK-SPIRV-LABEL: 1 FunctionEnd
 }
 
-declare %opencl.reserve_id_t* @_Z27sub_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32)
+declare %opencl.reserve_id_t* @_Z27sub_group_reserve_read_pipePU3AS18ocl_pipejjj(%opencl.pipe_t addrspace(1)*, i32, i32, i32) local_unnamed_addr
 
-declare void @_Z26sub_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32)
+declare void @_Z26sub_group_commit_read_pipePU3AS18ocl_pipe13ocl_reserveidjj(%opencl.pipe_t addrspace(1)*, %opencl.reserve_id_t*, i32, i32) local_unnamed_addr
 
-attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nounwind }
+attributes #0 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { convergent nounwind readnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { convergent "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { convergent nounwind readnone }
+attributes #5 = { nounwind }
+attributes #6 = { convergent nounwind }
 
-!opencl.kernels = !{!0, !6, !11, !14, !20, !23, !26, !29, !30}
+!llvm.module.flags = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!31}
-!opencl.ocl.version = !{!32}
-!opencl.used.extensions = !{!33}
-!opencl.used.optional.core.features = !{!33}
-!opencl.compiler.options = !{!33}
-!llvm.ident = !{!34}
+!opencl.ocl.version = !{!1}
+!opencl.spir.version = !{!1}
+!opencl.used.extensions = !{!2}
+!opencl.used.optional.core.features = !{!2}
+!opencl.compiler.options = !{!2}
+!llvm.ident = !{!3}
+!opencl.kernels = !{!33, !34, !35, !36, !37, !38, !39, !40, !41}
 
-!0 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_convenience_write_uint, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"write_only"}
-!3 = !{!"kernel_arg_type", !"uint*", !"uint"}
-!4 = !{!"kernel_arg_base_type", !"uint*", !"uint"}
-!5 = !{!"kernel_arg_type_qual", !"", !"pipe"}
-!6 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_convenience_read_uint, !1, !7, !8, !9, !10}
-!7 = !{!"kernel_arg_access_qual", !"read_only", !"none"}
-!8 = !{!"kernel_arg_type", !"uint", !"uint*"}
-!9 = !{!"kernel_arg_base_type", !"uint", !"uint*"}
-!10 = !{!"kernel_arg_type_qual", !"pipe", !""}
-!11 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_write, !1, !2, !12, !13, !5}
-!12 = !{!"kernel_arg_type", !"int*", !"int"}
-!13 = !{!"kernel_arg_base_type", !"int*", !"int"}
-!14 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*, i32 addrspace(1)*)* @test_pipe_query_functions, !15, !16, !17, !18, !19}
-!15 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1}
-!16 = !{!"kernel_arg_access_qual", !"write_only", !"none", !"none"}
-!17 = !{!"kernel_arg_type", !"int", !"int*", !"int*"}
-!18 = !{!"kernel_arg_base_type", !"int", !"int*", !"int*"}
-!19 = !{!"kernel_arg_type_qual", !"pipe", !"", !""}
-!20 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_read, !1, !7, !21, !22, !10}
-!21 = !{!"kernel_arg_type", !"int", !"int*"}
-!22 = !{!"kernel_arg_base_type", !"int", !"int*"}
-!23 = !{void (i8 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_workgroup_write_char, !1, !2, !24, !25, !5}
-!24 = !{!"kernel_arg_type", !"char*", !"char"}
-!25 = !{!"kernel_arg_base_type", !"char*", !"char"}
-!26 = !{void (%opencl.pipe_t addrspace(1)*, i8 addrspace(1)*)* @test_pipe_workgroup_read_char, !1, !7, !27, !28, !10}
-!27 = !{!"kernel_arg_type", !"char", !"char*"}
-!28 = !{!"kernel_arg_base_type", !"char", !"char*"}
-!29 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_subgroup_write_uint, !1, !2, !3, !4, !5}
-!30 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_subgroup_read_uint, !1, !7, !8, !9, !10}
-!31 = !{i32 1, i32 2}
-!32 = !{i32 2, i32 0}
-!33 = !{}
-!34 = !{!"clang version 3.6.1"}
-!35 = !{!36, !36, i64 0}
-!36 = !{!"int", !37, i64 0}
-!37 = !{!"omnipotent char", !38, i64 0}
-!38 = !{!"Simple C/C++ TBAA"}
-!39 = !{!40, !40, i64 0}
-!40 = !{!"reserve_id_t", !37, i64 0}
+!0 = !{i32 1, !"wchar_size", i32 4}
+!1 = !{i32 2, i32 0}
+!2 = !{}
+!3 = !{!"clang version 6.0.0"}
+!4 = !{i32 1, i32 1}
+!5 = !{!"none", !"write_only"}
+!6 = !{!"uint*", !"unsigned int"}
+!7 = !{!"uint*", !"uint"}
+!8 = !{!"", !"pipe"}
+!9 = !{i1 false, i1 false}
+!10 = !{i32 0, i32 0}
+!11 = !{!"", !""}
+!12 = !{!"read_only", !"none"}
+!13 = !{!"unsigned int", !"uint*"}
+!14 = !{!"uint", !"uint*"}
+!15 = !{!"pipe", !""}
+!16 = !{!"int*", !"int"}
+!17 = !{i32 1, i32 1, i32 1}
+!18 = !{!"write_only", !"none", !"none"}
+!19 = !{!"int", !"int*", !"int*"}
+!20 = !{!"pipe", !"", !""}
+!21 = !{i1 false, i1 false, i1 false}
+!22 = !{i32 0, i32 0, i32 0}
+!23 = !{!"", !"", !""}
+!24 = !{!25, !25, i64 0}
+!25 = !{!"int", !26, i64 0}
+!26 = !{!"omnipotent char", !27, i64 0}
+!27 = !{!"Simple C/C++ TBAA"}
+!28 = !{!"int", !"int*"}
+!29 = !{!"char*", !"char"}
+!30 = !{!31, !31, i64 0}
+!31 = !{!"reserve_id_t", !26, i64 0}
+!32 = !{!"char", !"char*"}
+!33 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_convenience_write_uint}
+!34 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_convenience_read_uint}
+!35 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_write}
+!36 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*, i32 addrspace(1)*)* @test_pipe_query_functions}
+!37 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_read}
+!38 = !{void (i8 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_workgroup_write_char}
+!39 = !{void (%opencl.pipe_t addrspace(1)*, i8 addrspace(1)*)* @test_pipe_workgroup_read_char}
+!40 = !{void (i32 addrspace(1)*, %opencl.pipe_t addrspace(1)*)* @test_pipe_subgroup_write_uint}
+!41 = !{void (%opencl.pipe_t addrspace(1)*, i32 addrspace(1)*)* @test_pipe_subgroup_read_uint}

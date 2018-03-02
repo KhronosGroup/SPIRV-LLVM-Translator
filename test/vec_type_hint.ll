@@ -37,66 +37,57 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-LLVM: define spir_kernel void @test_float()
 ; CHECK-LLVM-SAME: !vec_type_hint [[VFLOAT:![0-9]+]]
-; Function Attrs: nounwind
-define spir_kernel void @test_float() #0 {
+; Function Attrs: norecurse nounwind readnone
+define spir_kernel void @test_float() local_unnamed_addr #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 !kernel_arg_host_accessible !2 !kernel_arg_pipe_depth !2 !kernel_arg_pipe_io !2 !kernel_arg_buffer_location !2 !vec_type_hint !4 {
 entry:
   ret void
 }
 
 ; CHECK-LLVM: define spir_kernel void @test_double()
 ; CHECK-LLVM-SAME: !vec_type_hint [[VDOUBLE:![0-9]+]]
-; Function Attrs: nounwind
-define spir_kernel void @test_double() #0 {
+; Function Attrs: norecurse nounwind readnone
+define spir_kernel void @test_double() local_unnamed_addr #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 !kernel_arg_host_accessible !2 !kernel_arg_pipe_depth !2 !kernel_arg_pipe_io !2 !kernel_arg_buffer_location !2 !vec_type_hint !5 {
 entry:
   ret void
 }
 
 ; CHECK-LLVM: define spir_kernel void @test_uint()
 ; CHECK-LLVM-SAME: !vec_type_hint [[VUINT:![0-9]+]]
-; Function Attrs: nounwind
-define spir_kernel void @test_uint() #0 {
+; Function Attrs: norecurse nounwind readnone
+define spir_kernel void @test_uint() local_unnamed_addr #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 !kernel_arg_host_accessible !2 !kernel_arg_pipe_depth !2 !kernel_arg_pipe_io !2 !kernel_arg_buffer_location !2 !vec_type_hint !6 {
 entry:
   ret void
 }
 
 ; CHECK-LLVM: define spir_kernel void @test_int()
 ; CHECK-LLVM-SAME: !vec_type_hint [[VINT:![0-9]+]]
-; Function Attrs: nounwind
-define spir_kernel void @test_int() #0 {
+; Function Attrs: norecurse nounwind readnone
+define spir_kernel void @test_int() local_unnamed_addr #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 !kernel_arg_host_accessible !2 !kernel_arg_pipe_depth !2 !kernel_arg_pipe_io !2 !kernel_arg_buffer_location !2 !vec_type_hint !7 {
 entry:
   ret void
 }
 
-attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { norecurse nounwind readnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0, !7, !9, !11}
+!llvm.module.flags = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!13}
-!opencl.ocl.version = !{!14}
-!opencl.used.extensions = !{!15}
-!opencl.used.optional.core.features = !{!15}
-!opencl.compiler.options = !{!15}
-!llvm.ident = !{!16}
+!opencl.ocl.version = !{!1}
+!opencl.spir.version = !{!1}
+!opencl.used.extensions = !{!2}
+!opencl.used.optional.core.features = !{!2}
+!opencl.compiler.options = !{!2}
+!llvm.ident = !{!3}
 
 ; CHECK-LLVM: [[VFLOAT]] = !{<4 x float> undef, i32 1}
 ; CHECK-LLVM: [[VDOUBLE]] = !{double undef, i32 1}
 ; CHECK-LLVM: [[VUINT]] = !{<4 x i32> undef, i32 1}
 ; CHECK-LLVM: [[VINT]] = !{<8 x i32> undef, i32 1}
 
-!0 = !{void ()* @test_float, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{!"vec_type_hint", <4 x float> undef, i32 1}
-!7 = !{void ()* @test_double, !1, !2, !3, !4, !5, !8}
-!8 = !{!"vec_type_hint", double undef, i32 1}
-!9 = !{void ()* @test_uint, !1, !2, !3, !4, !5, !10}
-!10 = !{!"vec_type_hint", <4 x i32> undef, i32 0}
-!11 = !{void ()* @test_int, !1, !2, !3, !4, !5, !12}
-!12 = !{!"vec_type_hint", <8 x i32> undef, i32 1}
-!13 = !{i32 1, i32 2}
-!14 = !{i32 2, i32 0}
-!15 = !{}
-!16 = !{!"clang version 3.6.1"}
+!0 = !{i32 1, !"wchar_size", i32 4}
+!1 = !{i32 2, i32 0}
+!2 = !{}
+!3 = !{!"clang version 6.0.0 (cfe/trunk)"}
+!4 = !{<4 x float> undef, i32 0}
+!5 = !{double undef, i32 0}
+!6 = !{<4 x i32> undef, i32 0}
+!7 = !{<8 x i32> undef, i32 1}

@@ -75,10 +75,6 @@ private:
   std::map<Value *, Type *> AdaptedTy; // Adapted types for values
   std::set<Function *> WorkSet;        // Functions to be adapted
 
-  MDNode *getArgBaseTypeMetadata(Function *);
-  MDNode *getArgAccessQualifierMetadata(Function *);
-  MDNode *getArgMetadata(Function *, const std::string &MDName);
-  MDNode *getKernelMetadata(Function *F);
   void adaptFunctionArguments(Function *F);
   void adaptArgumentsByMetadata(Function *F);
   void adaptArgumentsBySamplerUse(Module &M);
