@@ -37,7 +37,7 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: FunctionParameter {{.*}} [[InputImage:[0-9]+]]
 ; CHECK-SPIRV: FunctionParameter [[TypeSampler]] [[argSampl:[0-9]+]]
 ; CHECK-LLVM: define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, <2 x float> %coords, <4 x float> addrspace(1)* nocapture %results, i32 %argSampl)
-define spir_kernel void @sample_kernel(%opencl.image2d_ro_t addrspace(1)* %input, <2 x float> %coords, <4 x float> addrspace(1)* nocapture %results, %opencl.sampler_t addrspace(2)* %argSampl) local_unnamed_addr #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 !kernel_arg_host_accessible !10 !kernel_arg_pipe_depth !11 !kernel_arg_pipe_io !9 !kernel_arg_buffer_location !9 {
+define spir_kernel void @sample_kernel(%opencl.image2d_ro_t addrspace(1)* %input, <2 x float> %coords, <4 x float> addrspace(1)* nocapture %results, %opencl.sampler_t addrspace(2)* %argSampl) local_unnamed_addr #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 {
 entry:
   %0 = tail call %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32 32) #2
 
@@ -92,8 +92,6 @@ attributes #3 = { convergent nounwind readonly }
 !7 = !{!"image2d_t", !"float2", !"float4*", !"sampler_t"}
 !8 = !{!"image2d_t", !"float __attribute__((ext_vector_type(2)))", !"float __attribute__((ext_vector_type(4)))*", !"sampler_t"}
 !9 = !{!"", !"", !"", !""}
-!10 = !{i1 false, i1 false, i1 false, i1 false}
-!11 = !{i32 0, i32 0, i32 0, i32 0}
 !12 = !{!13, !13, i64 0}
 !13 = !{!"omnipotent char", !14, i64 0}
 !14 = !{!"Simple C/C++ TBAA"}

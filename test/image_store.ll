@@ -19,7 +19,7 @@ target triple = "spir64"
 %spirv.Image._void_1_0_0_0_0_0_0 = type opaque
 
 ; Function Attrs: convergent noinline nounwind optnone
-define spir_kernel void @read_image(%opencl.image2d_ro_t addrspace(1)* %srcimg) #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 !kernel_arg_host_accessible !10 !kernel_arg_pipe_depth !11 !kernel_arg_pipe_io !9 !kernel_arg_buffer_location !9 {
+define spir_kernel void @read_image(%opencl.image2d_ro_t addrspace(1)* %srcimg) #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 {
 entry:
   %srcimg.addr = alloca %opencl.image2d_ro_t addrspace(1)*, align 8
   %spirvimg.addr = alloca %spirv.Image._void_1_0_0_0_0_0_0 addrspace(1)*, align 8
@@ -48,5 +48,3 @@ attributes #0 = { convergent noinline nounwind optnone "correctly-rounded-divide
 !7 = !{!"image2d_t"}
 !8 = !{!"image2d_t"}
 !9 = !{!""}
-!10 = !{i1 false}
-!11 = !{i32 0}

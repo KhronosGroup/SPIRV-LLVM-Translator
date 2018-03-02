@@ -102,7 +102,7 @@ define spir_kernel void @foo(
   %opencl.image1d_buffer_t addrspace(1)* nocapture %g1,
   %opencl.image1d_t addrspace(1)* nocapture %c2,
   %opencl.image2d_t addrspace(1)* nocapture %d3,
-  i32 %s) #0 {
+  i32 %s) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
 ; CHECK-SPIRV: 5 SampledImage [[SAMPIMG]] [[SAMPIMG_VAR1:[0-9]+]] [[IMG_ARG]] [[SAMP_ARG]]
 ; CHECK-SPIRV: 7 ImageSampleExplicitLod {{[0-9]+}} {{[0-9]+}} [[SAMPIMG_VAR1]]
@@ -134,11 +134,11 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 ; CHECK-LLVM-DAG: [[TQ]] = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !"", !""}
 
 !0 = !{void (%opencl.pipe_ro_t addrspace(1)*, %opencl.pipe_wo_t addrspace(1)*, %opencl.image1d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*, %opencl.image3d_t addrspace(1)*, %opencl.image2d_array_t addrspace(1)*, %opencl.image1d_buffer_t addrspace(1)*, %opencl.image1d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*, i32)* @foo, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write", !"none"}
-!3 = !{!"kernel_arg_type", !"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}
-!4 = !{!"kernel_arg_base_type", !"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}
-!5 = !{!"kernel_arg_type_qual", !"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !"", !""}
+!1 = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 0}
+!2 = !{!"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write", !"none"}
+!3 = !{!"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}
+!4 = !{!"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}
+!5 = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}
