@@ -12,7 +12,7 @@ target triple = "spir64-unknown-unknown"
 %opencl.image2d_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @image_copy(%opencl.image2d_t addrspace(1)* readnone %image1, %opencl.image2d_t addrspace(1)* %image2) #0 {
+define spir_kernel void @image_copy(%opencl.image2d_t addrspace(1)* readnone %image1, %opencl.image2d_t addrspace(1)* %image2) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #3
   %conv = trunc i64 %call to i32
@@ -48,12 +48,12 @@ attributes #4 = { nounwind }
 !opencl.compiler.options = !{!7}
 !llvm.ident = !{!9}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*)* @image_copy, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"write_only"}
-!3 = !{!"kernel_arg_type", !"image2d_t", !"image2d_t"}
-!4 = !{!"kernel_arg_type_qual", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"image2d_t", !"image2d_t"}
+!0 = !{void (%opencl.image2d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*)* @image_copy}
+!1 = !{i32 1, i32 1}
+!2 = !{!"read_only", !"write_only"}
+!3 = !{!"image2d_t", !"image2d_t"}
+!4 = !{!"", !""}
+!5 = !{!"image2d_t", !"image2d_t"}
 !6 = !{i32 2, i32 0}
 !7 = !{}
 !8 = !{!"cl_images"}
