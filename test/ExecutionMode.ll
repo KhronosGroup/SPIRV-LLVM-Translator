@@ -40,8 +40,8 @@ entry:
   %i.addr = alloca i32, align 4
   store %struct.global_ctor_dtor addrspace(4)* %this, %struct.global_ctor_dtor addrspace(4)** %this.addr, align 4
   store i32 %i, i32* %i.addr, align 4
-  %this1 = load %struct.global_ctor_dtor addrspace(4)** %this.addr
-  %0 = load i32* %i.addr, align 4
+  %this1 = load %struct.global_ctor_dtor addrspace(4)*, %struct.global_ctor_dtor addrspace(4)** %this.addr
+  %0 = load i32, i32* %i.addr, align 4
   call spir_func void @_ZNU3AS416global_ctor_dtorC2Ei(%struct.global_ctor_dtor addrspace(4)* %this1, i32 %0)
   ret void
 }
@@ -51,7 +51,7 @@ define linkonce_odr spir_func void @_ZNU3AS416global_ctor_dtorD1Ev(%struct.globa
 entry:
   %this.addr = alloca %struct.global_ctor_dtor addrspace(4)*, align 4
   store %struct.global_ctor_dtor addrspace(4)* %this, %struct.global_ctor_dtor addrspace(4)** %this.addr, align 4
-  %this1 = load %struct.global_ctor_dtor addrspace(4)** %this.addr
+  %this1 = load %struct.global_ctor_dtor addrspace(4)*, %struct.global_ctor_dtor addrspace(4)** %this.addr
   call spir_func void @_ZNU3AS416global_ctor_dtorD2Ev(%struct.global_ctor_dtor addrspace(4)* %this1) #0
   ret void
 }
@@ -76,8 +76,8 @@ define linkonce_odr spir_func void @_ZNU3AS416global_ctor_dtorD2Ev(%struct.globa
 entry:
   %this.addr = alloca %struct.global_ctor_dtor addrspace(4)*, align 4
   store %struct.global_ctor_dtor addrspace(4)* %this, %struct.global_ctor_dtor addrspace(4)** %this.addr, align 4
-  %this1 = load %struct.global_ctor_dtor addrspace(4)** %this.addr
-  %a = getelementptr inbounds %struct.global_ctor_dtor addrspace(4)* %this1, i32 0, i32 0
+  %this1 = load %struct.global_ctor_dtor addrspace(4)*, %struct.global_ctor_dtor addrspace(4)** %this.addr
+  %a = getelementptr inbounds %struct.global_ctor_dtor, %struct.global_ctor_dtor addrspace(4)* %this1, i32 0, i32 0
   store i32 0, i32 addrspace(4)* %a, align 4
   ret void
 }
@@ -89,9 +89,9 @@ entry:
   %i.addr = alloca i32, align 4
   store %struct.global_ctor_dtor addrspace(4)* %this, %struct.global_ctor_dtor addrspace(4)** %this.addr, align 4
   store i32 %i, i32* %i.addr, align 4
-  %this1 = load %struct.global_ctor_dtor addrspace(4)** %this.addr
-  %0 = load i32* %i.addr, align 4
-  %a = getelementptr inbounds %struct.global_ctor_dtor addrspace(4)* %this1, i32 0, i32 0
+  %this1 = load %struct.global_ctor_dtor addrspace(4)*, %struct.global_ctor_dtor addrspace(4)** %this.addr
+  %0 = load i32, i32* %i.addr, align 4
+  %a = getelementptr inbounds %struct.global_ctor_dtor, %struct.global_ctor_dtor addrspace(4)* %this1, i32 0, i32 0
   store i32 %0, i32 addrspace(4)* %a, align 4
   ret void
 }

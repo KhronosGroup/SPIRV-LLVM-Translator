@@ -53,9 +53,9 @@ entry:
   %ptr1.addr = alloca float addrspace(3)*, align 8
   store float addrspace(3)* %ptr0, float addrspace(3)** %ptr0.addr, align 8
   store float addrspace(3)* %ptr1, float addrspace(3)** %ptr1.addr, align 8
-  %0 = load float addrspace(3)** %ptr0.addr, align 8
+  %0 = load float addrspace(3)*, float addrspace(3)** %ptr0.addr, align 8
   store float 0.000000e+00, float addrspace(3)* %0, align 4
-  %1 = load float addrspace(3)** %ptr1.addr, align 8
+  %1 = load float addrspace(3)*, float addrspace(3)** %ptr1.addr, align 8
   store float 1.000000e+00, float addrspace(3)* %1, align 4
   ret void
 }
@@ -65,7 +65,7 @@ define spir_func void @device_kernel(float addrspace(1)* %ptr) #0 {
 entry:
   %ptr.addr = alloca float addrspace(1)*, align 8
   store float addrspace(1)* %ptr, float addrspace(1)** %ptr.addr, align 8
-  %0 = load float addrspace(1)** %ptr.addr, align 8
+  %0 = load float addrspace(1)*, float addrspace(1)** %ptr.addr, align 8
   store float 3.000000e+00, float addrspace(1)* %0, align 4
   ret void
 }
@@ -94,35 +94,35 @@ entry:
   store float addrspace(1)* %ptr, float addrspace(1)** %ptr.addr, align 8
   %0 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*, i8 addrspace(3)*, i8 addrspace(3)*)* @__host_kernel_block_invoke to i8*), i32 0, i32 0, i8* null)
   store %opencl.block* %0, %opencl.block** %block_with_local, align 8
-  %block.captured = getelementptr inbounds <{ float addrspace(1)* }>* %captured, i32 0, i32 0
-  %1 = load float addrspace(1)** %ptr.addr, align 8
+  %block.captured = getelementptr inbounds <{ float addrspace(1)* }>, <{ float addrspace(1)* }>* %captured, i32 0, i32 0
+  %1 = load float addrspace(1)*, float addrspace(1)** %ptr.addr, align 8
   store float addrspace(1)* %1, float addrspace(1)** %block.captured, align 8
   %2 = bitcast <{ float addrspace(1)* }>* %captured to i8*
   %3 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*)* @__host_kernel_block_invoke_2 to i8*), i32 8, i32 8, i8* %2)
   store %opencl.block* %3, %opencl.block** %block, align 8
-  %4 = load %opencl.block** %block_with_local, align 8
+  %4 = load %opencl.block*, %opencl.block** %block_with_local, align 8
   %call = call spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE(%opencl.block* %4)
   store i32 %call, i32* %wgSize, align 4
-  %5 = load %opencl.block** %block_with_local, align 8
+  %5 = load %opencl.block*, %opencl.block** %block_with_local, align 8
   %call2 = call spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE(%opencl.block* %5)
   store i32 %call2, i32* %prefMul, align 4
   %call3 = call spir_func %opencl.queue_t* @_Z17get_default_queuev()
   call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %agg.tmp, i64 1)
-  %6 = load %opencl.block** %block_with_local, align 8
-  %7 = load i32* %size.addr, align 4
-  %8 = load i32* %wgSize, align 4
-  %9 = load i32* %prefMul, align 4
+  %6 = load %opencl.block*, %opencl.block** %block_with_local, align 8
+  %7 = load i32, i32* %size.addr, align 4
+  %8 = load i32, i32* %wgSize, align 4
+  %9 = load i32, i32* %prefMul, align 4
   %mul = mul i32 %8, %9
-  %call4 = call spir_func i32 (%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...)* @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t* %call3, i32 241, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %6, i32 %7, i32 %mul)
-  %10 = load %opencl.block** %block, align 8
+  %call4 = call spir_func i32 (%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...) @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t* %call3, i32 241, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %6, i32 %7, i32 %mul)
+  %10 = load %opencl.block*, %opencl.block** %block, align 8
   %call5 = call spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvvE(%opencl.block* %10)
   store i32 %call5, i32* %wgSize, align 4
-  %11 = load %opencl.block** %block, align 8
+  %11 = load %opencl.block*, %opencl.block** %block, align 8
   %call6 = call spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvvE(%opencl.block* %11)
   store i32 %call6, i32* %prefMul, align 4
   %call7 = call spir_func %opencl.queue_t* @_Z17get_default_queuev()
   call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %agg.tmp8, i64 1)
-  %12 = load %opencl.block** %block, align 8
+  %12 = load %opencl.block*, %opencl.block** %block, align 8
   %call9 = call spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE(%opencl.queue_t* %call7, i32 241, %struct.ndrange_t* byval %agg.tmp8, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %12)
   ret void
 }
@@ -135,14 +135,14 @@ entry:
   %ptr1.addr = alloca i8 addrspace(3)*, align 8
   %block.addr = alloca <{}>*, align 8
   store i8* %.block_descriptor, i8** %.block_descriptor.addr, align 8
-  %0 = load i8** %.block_descriptor.addr
+  %0 = load i8*, i8** %.block_descriptor.addr
   store i8 addrspace(3)* %ptr0, i8 addrspace(3)** %ptr0.addr, align 8
   store i8 addrspace(3)* %ptr1, i8 addrspace(3)** %ptr1.addr, align 8
   %block = bitcast i8* %.block_descriptor to <{}>*
   store <{}>* %block, <{}>** %block.addr, align 8
-  %1 = load i8 addrspace(3)** %ptr0.addr, align 8
+  %1 = load i8 addrspace(3)*, i8 addrspace(3)** %ptr0.addr, align 8
   %2 = bitcast i8 addrspace(3)* %1 to float addrspace(3)*
-  %3 = load i8 addrspace(3)** %ptr1.addr, align 8
+  %3 = load i8 addrspace(3)*, i8 addrspace(3)** %ptr1.addr, align 8
   %4 = bitcast i8 addrspace(3)* %3 to float addrspace(3)*
   call spir_func void @device_kernel_with_local_args(float addrspace(3)* %2, float addrspace(3)* %4)
   ret void
@@ -156,11 +156,11 @@ entry:
   %.block_descriptor.addr = alloca i8*, align 8
   %block.addr = alloca <{ float addrspace(1)* }>*, align 8
   store i8* %.block_descriptor, i8** %.block_descriptor.addr, align 8
-  %0 = load i8** %.block_descriptor.addr
+  %0 = load i8*, i8** %.block_descriptor.addr
   %block = bitcast i8* %.block_descriptor to <{ float addrspace(1)* }>*
   store <{ float addrspace(1)* }>* %block, <{ float addrspace(1)* }>** %block.addr, align 8
-  %block.capture.addr = getelementptr inbounds <{ float addrspace(1)* }>* %block, i32 0, i32 0
-  %1 = load float addrspace(1)** %block.capture.addr, align 8
+  %block.capture.addr = getelementptr inbounds <{ float addrspace(1)* }>, <{ float addrspace(1)* }>* %block, i32 0, i32 0
+  %1 = load float addrspace(1)*, float addrspace(1)** %block.capture.addr, align 8
   call spir_func void @device_kernel(float addrspace(1)* %1)
   ret void
 }

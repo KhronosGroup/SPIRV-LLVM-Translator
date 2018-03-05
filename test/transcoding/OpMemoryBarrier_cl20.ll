@@ -5,20 +5,20 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-LLVM:      call spir_func void @_Z22atomic_work_item_fencejii(i32 2, i32 3, i32 0)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 2, i32 3, i32 1)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 2, i32 3, i32 2)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 2, i32 3, i32 3)
+; CHECK-LLVM:      call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 2, i32 3, i32 0)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 2, i32 3, i32 1)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 2, i32 3, i32 2)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 2, i32 3, i32 3)
 
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 1, i32 3, i32 0)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 1, i32 3, i32 1)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 1, i32 3, i32 2)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 1, i32 3, i32 3)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 1, i32 3, i32 0)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 1, i32 3, i32 1)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 1, i32 3, i32 2)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 1, i32 3, i32 3)
 
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 4, i32 3, i32 0)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 4, i32 3, i32 1)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 4, i32 3, i32 2)
-; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencejii(i32 4, i32 3, i32 3)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 4, i32 3, i32 0)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 4, i32 3, i32 1)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 4, i32 3, i32 2)
+; CHECK-LLVM-NEXT: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 4, i32 3, i32 3)
 
 ; global | acquire_release
 ; CHECK-SPIRV-DAG: 4 Constant {{[0-9]+}} [[MemSema1:[0-9]+]] 520

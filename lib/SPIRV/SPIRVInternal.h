@@ -407,7 +407,7 @@ public:
       init(UniqName);
   }
   virtual ~BuiltinFuncMangleInfo(){}
-  const std::string &getUnmangledName() const { return UnmangledName;}
+  const std::string &getUnmangledName() const { return UnmangledName; }
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx);}
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx);}
   void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx);}

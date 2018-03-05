@@ -26,15 +26,15 @@ entry:
   store i32 addrspace(1)* %object, i32 addrspace(1)** %object.addr, align 4
   store i32 %expected, i32* %expected.addr, align 4
   store i32 %desired, i32* %desired.addr, align 4
-  %0 = load i32 addrspace(1)** %object.addr, align 4
-  %1 = load i32* %expected.addr, align 4
-  %2 = load i32* %desired.addr, align 4
+  %0 = load i32 addrspace(1)*, i32 addrspace(1)** %object.addr, align 4
+  %1 = load i32, i32* %expected.addr, align 4
+  %2 = load i32, i32* %desired.addr, align 4
 
   %call = call spir_func i32 @_Z14atomic_cmpxchgPVU3AS1iii(i32 addrspace(1)* %0, i32 %1, i32 %2)
 ; CHECK 9 AtomicCompareExchange [[int]] [[result:[0-9]+]] [[Pointer]] [[DeviceScope]] [[SequentiallyConsistent_MS]] [[SequentiallyConsistent_MS]] [[Value]] [[Comparator]]
 
   store i32 %call, i32* %res, align 4
-  %3 = load i32* %res, align 4
+  %3 = load i32, i32* %res, align 4
   ret i32 %3
 ; CHECK 2 ReturnValue [[result]]
 }

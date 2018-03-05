@@ -29,14 +29,14 @@ define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, <
 ; CHECK-SPIRV: FunctionParameter [[TypeSampler]] [[argSampl:[0-9]+]]
 ; CHECK-LLVM: define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, <2 x float> %coords, <4 x float> addrspace(1)* %results, i32 %argSampl)
 entry:
-  %0 = load i32* @imageSampler, align 4
+  %0 = load i32, i32* @imageSampler, align 4
 
   %call = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 %0, <2 x float> %coords)
 ; CHECK-SPIRV: SampledImage [[SampledImageTy]] [[SampledImage1:[0-9]+]] [[InputImage]] [[ConstSampler1]]
 ; CHECK-SPIRV: ImageSampleExplicitLod {{.*}} [[SampledImage1]]
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 32, <2 x float> %coords)
 
-  %arrayidx = getelementptr inbounds <4 x float> addrspace(1)* %results, i32 0
+  %arrayidx = getelementptr inbounds <4 x float>, <4 x float> addrspace(1)* %results, i32 0
   store <4 x float> %call, <4 x float> addrspace(1)* %arrayidx, align 16
 
   %call1 = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 %argSampl, <2 x float> %coords)
@@ -44,7 +44,7 @@ entry:
 ; CHECK-SPIRV: ImageSampleExplicitLod {{.*}} [[SampledImage2]]
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 %argSampl, <2 x float> %coords)
 
-  %arrayidx2 = getelementptr inbounds <4 x float> addrspace(1)* %results, i32 0
+  %arrayidx2 = getelementptr inbounds <4 x float>, <4 x float> addrspace(1)* %results, i32 0
   store <4 x float> %call1, <4 x float> addrspace(1)* %arrayidx2, align 16
 
   %call3 = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 22, <2 x float> %coords)
@@ -52,7 +52,7 @@ entry:
 ; CHECK-SPIRV: ImageSampleExplicitLod {{.*}} [[SampledImage3]]
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 22, <2 x float> %coords)
 
-  %arrayidx4 = getelementptr inbounds <4 x float> addrspace(1)* %results, i32 0
+  %arrayidx4 = getelementptr inbounds <4 x float>, <4 x float> addrspace(1)* %results, i32 0
   store <4 x float> %call3, <4 x float> addrspace(1)* %arrayidx4, align 16
   ret void
 }

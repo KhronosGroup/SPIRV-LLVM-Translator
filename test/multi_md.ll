@@ -19,10 +19,10 @@ entry:
   %i.addr = alloca i32, align 4
   store i8 %c, i8* %c.addr, align 1, !tbaa !14
   store i32 %i, i32* %i.addr, align 4, !tbaa !17
-  %0 = load i8* %c.addr, align 1, !tbaa !14
-  store i8 %0, i8 addrspace(1)* getelementptr inbounds (%struct.my_struct_t addrspace(1)* @var, i32 0, i32 0), align 1, !tbaa !19
-  %1 = load i32* %i.addr, align 4, !tbaa !17
-  store i32 %1, i32 addrspace(1)* getelementptr inbounds (%struct.my_struct_t addrspace(1)* @var, i32 0, i32 1), align 4, !tbaa !21
+  %0 = load i8, i8* %c.addr, align 1, !tbaa !14
+  store i8 %0, i8 addrspace(1)* getelementptr inbounds (%struct.my_struct_t, %struct.my_struct_t addrspace(1)* @var, i32 0, i32 0), align 1, !tbaa !19
+  %1 = load i32, i32* %i.addr, align 4, !tbaa !17
+  store i32 %1, i32 addrspace(1)* getelementptr inbounds (%struct.my_struct_t, %struct.my_struct_t addrspace(1)* @var, i32 0, i32 1), align 4, !tbaa !21
   ret void
 }
 
@@ -33,11 +33,11 @@ entry:
   %I.addr = alloca i32 addrspace(1)*, align 8
   store i8 addrspace(1)* %C, i8 addrspace(1)** %C.addr, align 8, !tbaa !22
   store i32 addrspace(1)* %I, i32 addrspace(1)** %I.addr, align 8, !tbaa !22
-  %0 = load i8 addrspace(1)* getelementptr inbounds (%struct.my_struct_t addrspace(1)* @var, i32 0, i32 0), align 1, !tbaa !19
-  %1 = load i8 addrspace(1)** %C.addr, align 8, !tbaa !22
+  %0 = load i8, i8 addrspace(1)* getelementptr inbounds (%struct.my_struct_t, %struct.my_struct_t addrspace(1)* @var, i32 0, i32 0), align 1, !tbaa !19
+  %1 = load i8 addrspace(1)*, i8 addrspace(1)** %C.addr, align 8, !tbaa !22
   store i8 %0, i8 addrspace(1)* %1, align 1, !tbaa !14
-  %2 = load i32 addrspace(1)* getelementptr inbounds (%struct.my_struct_t addrspace(1)* @var, i32 0, i32 1), align 4, !tbaa !21
-  %3 = load i32 addrspace(1)** %I.addr, align 8, !tbaa !22
+  %2 = load i32, i32 addrspace(1)* getelementptr inbounds (%struct.my_struct_t, %struct.my_struct_t addrspace(1)* @var, i32 0, i32 1), align 4, !tbaa !21
+  %3 = load i32 addrspace(1)*, i32 addrspace(1)** %I.addr, align 8, !tbaa !22
   store i32 %2, i32 addrspace(1)* %3, align 4, !tbaa !17
   ret void
 }

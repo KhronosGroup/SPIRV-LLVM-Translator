@@ -363,9 +363,9 @@ getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim) {
 // Fetch type of invoke function passed to device execution built-ins
 static FunctionType *
 getBlockInvokeTy(Function * F, unsigned blockIdx) {
-    auto params = F->getFunctionType()->params();
-    PointerType * funcPtr = cast<PointerType>(params[blockIdx]);
-    return cast<FunctionType>(funcPtr->getElementType());
+  auto params = F->getFunctionType()->params();
+  PointerType * funcPtr = cast<PointerType>(params[blockIdx]);
+  return cast<FunctionType>(funcPtr->getElementType());
 }
 
 class OCLBuiltinFuncMangleInfo : public SPIRV::BuiltinFuncMangleInfo {
@@ -406,9 +406,9 @@ public:
   } else if (UnmangledName.find("get_") == 0 ||
       UnmangledName == "nan" ||
       UnmangledName == "mem_fence" ||
-      UnmangledName.find("shuffle") == 0){
+      UnmangledName.find("shuffle") == 0) {
     addUnsignedArg(-1);
-    if (UnmangledName.find(kOCLBuiltinName::GetFence) == 0){
+    if (UnmangledName.find(kOCLBuiltinName::GetFence) == 0) {
       setArgAttr(0, SPIR::ATTR_CONST);
       addVoidPtrArg(0);
     }
@@ -418,10 +418,12 @@ public:
     addUnsignedArg(0);
   } else if (UnmangledName.find("atomic_work_item_fence") == 0) {
     addUnsignedArg(0);
+    setEnumArg(1, SPIR::PRIMITIVE_MEMORY_ORDER);
+    setEnumArg(2, SPIR::PRIMITIVE_MEMORY_SCOPE);
   } else if (UnmangledName.find("atomic") == 0) {
     setArgAttr(0, SPIR::ATTR_VOLATILE);
     if (UnmangledName.find("atomic_umax") == 0 ||
-        UnmangledName.find("atomic_umin") == 0) {
+      UnmangledName.find("atomic_umin") == 0) {
       addUnsignedArg(0);
       addUnsignedArg(1);
       UnmangledName.erase(7, 1);
@@ -430,6 +432,21 @@ public:
       addUnsignedArg(0);
       addUnsignedArg(1);
       UnmangledName.erase(13, 1);
+    }
+    if (UnmangledName.find("store_explicit") != std::string::npos ||
+        UnmangledName.find("exchange_explicit") != std::string::npos ||
+        (UnmangledName.find("atomic_fetch") == 0 && UnmangledName.find("explicit") != std::string::npos)) {
+      setEnumArg(2, SPIR::PRIMITIVE_MEMORY_ORDER);
+      setEnumArg(3, SPIR::PRIMITIVE_MEMORY_SCOPE);
+    } else if (UnmangledName.find("load_explicit") != std::string::npos ||
+              (UnmangledName.find("atomic_flag") == 0 && UnmangledName.find("explicit") != std::string::npos)) {
+      setEnumArg(1, SPIR::PRIMITIVE_MEMORY_ORDER);
+      setEnumArg(2, SPIR::PRIMITIVE_MEMORY_SCOPE);
+    } else if (UnmangledName.find("compare_exchange_strong_explicit") != std::string::npos ||
+               UnmangledName.find("compare_exchange_weak_explicit") != std::string::npos) {
+      setEnumArg(3, SPIR::PRIMITIVE_MEMORY_ORDER);
+      setEnumArg(4, SPIR::PRIMITIVE_MEMORY_ORDER);
+      setEnumArg(5, SPIR::PRIMITIVE_MEMORY_SCOPE);
     }
     // Don't set atomic property to the first argument of 1.2 atomic built-ins.
     if(UnmangledName.find("atomic_add")  != 0 && UnmangledName.find("atomic_sub") != 0 &&

@@ -118,9 +118,9 @@ SPIRVLowerConstExpr::visit(Module *M) {
       std::map<ConstantExpr*, Instruction *> CMap;
       std::list<Instruction *> WorkList;
       auto FBegin = I->begin();
-      for (auto BI = FBegin, BE = I->end(); BI != BE; ++BI) {
-        for (auto II = BI->begin(), IE = BI->end(); II != IE; ++II) {
-          WorkList.push_back(II);
+      for (auto &BI:*I) {
+        for (auto &II:BI) {
+          WorkList.push_back(&II);
         }
       }
       while (!WorkList.empty()) {

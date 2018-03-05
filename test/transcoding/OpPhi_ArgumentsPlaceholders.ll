@@ -42,13 +42,13 @@ for.cond:                                         ; preds = %for.inc, %entry
   br i1 %cmp, label %for.body, label %for.end
 
 for.body:                                         ; preds = %for.cond
-  %pNext = getelementptr inbounds %struct.Node addrspace(1)* %pNode.0, i32 0, i32 0
+  %pNext = getelementptr inbounds %struct.Node, %struct.Node addrspace(1)* %pNode.0, i32 0, i32 0
 
-  %0 = load %struct.Node.0 addrspace(1)* addrspace(1)* %pNext, align 4
+  %0 = load %struct.Node.0 addrspace(1)*, %struct.Node.0 addrspace(1)* addrspace(1)* %pNext, align 4
   %1 = bitcast %struct.Node.0 addrspace(1)* %0 to %struct.Node addrspace(1)*
 ;CHECK-SPIRV: Load {{[0-9]+}} [[LoadResultId:[0-9]+]] 
 ;CHECK-SPIRV: Bitcast {{[0-9]+}} [[BitcastResultId]] [[LoadResultId]]
-;CHECK-LLVM: [[LoadResult:%[0-9]+]] = load %struct.Node.0 addrspace(1)* addrspace(1)* {{.*}}
+;CHECK-LLVM: [[LoadResult:%[0-9]+]] = load %struct.Node.0 addrspace(1)*, %struct.Node.0 addrspace(1)* addrspace(1)* {{.*}}
 ;CHECK-LLVM: [[BitcastResult]] = bitcast %struct.Node.0 addrspace(1)* [[LoadResult]] to %struct.Node addrspace(1)*
 
   br label %for.inc

@@ -42,9 +42,9 @@ entry:
   %ptr1.addr = alloca float addrspace(3)*, align 8
   store float addrspace(3)* %ptr0, float addrspace(3)** %ptr0.addr, align 8
   store float addrspace(3)* %ptr1, float addrspace(3)** %ptr1.addr, align 8
-  %0 = load float addrspace(3)** %ptr0.addr, align 8
+  %0 = load float addrspace(3)*, float addrspace(3)** %ptr0.addr, align 8
   store float 0.000000e+00, float addrspace(3)* %0, align 4
-  %1 = load float addrspace(3)** %ptr1.addr, align 8
+  %1 = load float addrspace(3)*, float addrspace(3)** %ptr1.addr, align 8
   store float 1.000000e+00, float addrspace(3)* %1, align 4
   ret void
 }
@@ -60,23 +60,23 @@ entry:
   store i32 %size, i32* %size.addr, align 4
   %0 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*, i8 addrspace(3)*, i8 addrspace(3)*)* @__host_kernel_block_invoke to i8*), i32 0, i32 0, i8* null)
   store %opencl.block* %0, %opencl.block** %block, align 8
-  %1 = load %opencl.block** %block, align 8
+  %1 = load %opencl.block*, %opencl.block** %block, align 8
 ; CHECK: call {{.*}} @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE
   %call = call spir_func i32 @_Z26get_kernel_work_group_sizeU13block_pointerFvPU3AS3vzE(%opencl.block* %1)
   store i32 %call, i32* %wgSize, align 4
-  %2 = load %opencl.block** %block, align 8
+  %2 = load %opencl.block*, %opencl.block** %block, align 8
 ; CHECK: call {{.*}} @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE
   %call1 = call spir_func i32 @_Z45get_kernel_preferred_work_group_size_multipleU13block_pointerFvPU3AS3vzE(%opencl.block* %2)
   store i32 %call1, i32* %prefMul, align 4
   %call2 = call spir_func %opencl.queue_t* @_Z17get_default_queuev()
   call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %agg.tmp, i64 1)
-  %3 = load %opencl.block** %block, align 8
-  %4 = load i32* %size.addr, align 4
-  %5 = load i32* %wgSize, align 4
-  %6 = load i32* %prefMul, align 4
+  %3 = load %opencl.block*, %opencl.block** %block, align 8
+  %4 = load i32, i32* %size.addr, align 4
+  %5 = load i32, i32* %wgSize, align 4
+  %6 = load i32, i32* %prefMul, align 4
   %mul = mul i32 %5, %6
 ; CHECK: call {{.*}} @_Z14enqueue_kernel{{.*}}U13block_pointerFvPU3AS3vzEjz({{.*}}, %opencl.block* {{.*}}, i32 {{.*}}, i32 {{.*}})
-  %call3 = call spir_func i32 (%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...)* @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t* %call2, i32 241, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %3, i32 %4, i32 %mul)
+  %call3 = call spir_func i32 (%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*, i32, ...) @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvPU3AS3vzEjz(%opencl.queue_t* %call2, i32 241, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %3, i32 %4, i32 %mul)
   ret void
 }
 
@@ -89,14 +89,14 @@ entry:
   %ptr1.addr = alloca i8 addrspace(3)*, align 8
   %block.addr = alloca <{}>*, align 8
   store i8* %.block_descriptor, i8** %.block_descriptor.addr, align 8
-  %0 = load i8** %.block_descriptor.addr
+  %0 = load i8*, i8** %.block_descriptor.addr
   store i8 addrspace(3)* %ptr0, i8 addrspace(3)** %ptr0.addr, align 8
   store i8 addrspace(3)* %ptr1, i8 addrspace(3)** %ptr1.addr, align 8
   %block = bitcast i8* %.block_descriptor to <{}>*
   store <{}>* %block, <{}>** %block.addr, align 8
-  %1 = load i8 addrspace(3)** %ptr0.addr, align 8
+  %1 = load i8 addrspace(3)*, i8 addrspace(3)** %ptr0.addr, align 8
   %2 = bitcast i8 addrspace(3)* %1 to float addrspace(3)*
-  %3 = load i8 addrspace(3)** %ptr1.addr, align 8
+  %3 = load i8 addrspace(3)*, i8 addrspace(3)** %ptr1.addr, align 8
   %4 = bitcast i8 addrspace(3)* %3 to float addrspace(3)*
   call spir_func void @device_kernel(float addrspace(3)* %2, float addrspace(3)* %4)
   ret void

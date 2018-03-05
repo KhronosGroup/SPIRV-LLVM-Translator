@@ -34,8 +34,8 @@ define spir_kernel void @test2(%opencl.image2d_t addrspace(1)* %Img, float addrs
 ;CHECK: Function  {{[0-9]+}} [[KernelId]]
 entry:
   %call = call spir_func float @test(%opencl.image2d_t addrspace(1)* %Img, i32 0)
-  %arrayidx = getelementptr inbounds float addrspace(1)* %result, i32 0
-  %0 = load float addrspace(1)* %arrayidx, align 4
+  %arrayidx = getelementptr inbounds float, float addrspace(1)* %result, i32 0
+  %0 = load float, float addrspace(1)* %arrayidx, align 4
   %add = fadd float %0, %call
   store float %add, float addrspace(1)* %arrayidx, align 4
   ret void

@@ -27,6 +27,8 @@ namespace SPIR {
   const char* getSPIRVersionAsString(SPIRversion version);
 
   const char* mangledPrimitiveStringfromName(std::string type);
+
+  bool isPipeBuiltin(std::string unmangledName);
 } // End SPIR namespace
 
 #endif //__MANGLING_UTILS_H__

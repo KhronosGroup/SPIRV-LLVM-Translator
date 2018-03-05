@@ -17,10 +17,10 @@ entry:
   %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
   %sext = shl i64 %call, 32
   %idxprom = ashr exact i64 %sext, 32
-  %arrayidx = getelementptr inbounds <2 x i8> addrspace(1)* %src, i64 %idxprom
-  %0 = load <2 x i8> addrspace(1)* %arrayidx, align 2, !tbaa !9
+  %arrayidx = getelementptr inbounds <2 x i8>, <2 x i8> addrspace(1)* %src, i64 %idxprom
+  %0 = load <2 x i8>, <2 x i8> addrspace(1)* %arrayidx, align 2, !tbaa !9
   %astype = bitcast <2 x i8> %0 to i16
-  %arrayidx2 = getelementptr inbounds i16 addrspace(1)* %dst, i64 %idxprom
+  %arrayidx2 = getelementptr inbounds i16, i16 addrspace(1)* %dst, i64 %idxprom
   store i16 %astype, i16 addrspace(1)* %arrayidx2, align 2, !tbaa !12
   ret void
 }

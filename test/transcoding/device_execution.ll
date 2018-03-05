@@ -39,7 +39,7 @@ target triple = "spir64-unknonw-unknown"
 ; Function Attrs: nounwind
 define spir_kernel void @device_kernel(float addrspace(1)* nocapture %inout) #0 {
 entry:
-  %0 = load float addrspace(1)* %inout, align 4, !tbaa !11
+  %0 = load float, float addrspace(1)* %inout, align 4, !tbaa !11
   %call = tail call spir_func float @_Z3cosf(float %0) #2
   store float %call, float addrspace(1)* %inout, align 4, !tbaa !11
   ret void
@@ -54,7 +54,7 @@ entry:
   %agg.tmp = alloca %struct.ndrange_t, align 8
   %call = tail call spir_func %opencl.queue_t* @get_default_queue() #2
   call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %agg.tmp, i64 1) #2
-  %block.captured = getelementptr inbounds <{ float addrspace(1)* }>* %captured, i64 0, i32 0
+  %block.captured = getelementptr inbounds <{ float addrspace(1)* }>, <{ float addrspace(1)* }>* %captured, i64 0, i32 0
   store float addrspace(1)* %inout, float addrspace(1)** %block.captured, align 8, !tbaa !15
   %0 = bitcast <{ float addrspace(1)* }>* %captured to i8*
   %1 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*)* @__host_kernel_block_invoke to i8*), i32 8, i32 8, i8* %0) #2
@@ -70,8 +70,8 @@ declare spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret, i64) #1
 define internal spir_func void @__host_kernel_block_invoke(i8* nocapture readonly %.block_descriptor) #0 {
 entry:
   %block.capture.addr = bitcast i8* %.block_descriptor to float addrspace(1)**
-  %0 = load float addrspace(1)** %block.capture.addr, align 8, !tbaa !15
-  %1 = load float addrspace(1)* %0, align 4, !tbaa !11
+  %0 = load float addrspace(1)*, float addrspace(1)** %block.capture.addr, align 8, !tbaa !15
+  %1 = load float, float addrspace(1)* %0, align 4, !tbaa !11
   %call.i = tail call spir_func float @_Z3cosf(float %1) #2
   store float %call.i, float addrspace(1)* %0, align 4, !tbaa !11
   ret void

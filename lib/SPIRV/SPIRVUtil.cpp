@@ -41,6 +41,10 @@
 #include "SPIRVInternal.h"
 #include "libSPIRV/SPIRVDecorate.h"
 #include "libSPIRV/SPIRVValue.h"
+#include "NameMangleAPI.h"
+#include "ManglingUtils.h"
+#include "ParameterType.h"
+#include "FunctionDescriptor.h"
 #include "SPIRVMDWalker.h"
 #include "OCLUtil.h"
 
@@ -819,7 +823,7 @@ addBlockBind(Module *M, Function *InvokeFunc, Value *BlkCtx, Value *CtxLen,
 
 IntegerType* getSizetType(Module *M) {
   return IntegerType::getIntNTy(M->getContext(),
-    M->getDataLayout()->getPointerSizeInBits(0));
+    M->getDataLayout().getPointerSizeInBits(0));
 }
 
 Type *
@@ -1370,19 +1374,37 @@ bool
 eraseUselessFunctions(Module *M) {
   bool changed = false;
   for (auto I = M->begin(), E = M->end(); I != E;)
-    changed |= eraseIfNoUse(I++);
+    changed |= eraseIfNoUse(&(*I++));
   return changed;
+}
+
+// The mangling algorithm follows OpenCL pipe built-ins clang 3.8 CodeGen rules.
+static SPIR::MangleError
+manglePipeBuiltin(const SPIR::FunctionDescriptor &fd, std::string &mangledName) {
+  assert(SPIR::isPipeBuiltin(fd.name) &&
+    "Method is expected to be called only for pipe builtins!");
+  if (fd.isNull()) {
+    mangledName.assign(SPIR::FunctionDescriptor::nullString());
+    return SPIR::MANGLE_NULL_FUNC_DESCRIPTOR;
+  }
+  mangledName.assign("__" + fd.name);
+  if (fd.name.compare("write_pipe") == 0 || fd.name.compare("read_pipe") == 0) {
+    // add "_2" or "_4" postfix reflecting the number of explicit args.
+    mangledName.append("_");
+    // subtruct 2 in order to not count size and alignment of packet.
+    mangledName.append(std::to_string(fd.parameters.size() - 2));
+  }
+  return SPIR::MANGLE_SUCCESS;
 }
 
 std::string
 mangleBuiltin(const std::string &UniqName,
-    ArrayRef<Type*> ArgTypes, BuiltinFuncMangleInfo* BtnInfo) {
+  ArrayRef<Type*> ArgTypes, BuiltinFuncMangleInfo* BtnInfo) {
   if (!BtnInfo)
     return UniqName;
   BtnInfo->init(UniqName);
   std::string MangledName;
   DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
-  SPIR::NameMangler Mangler(SPIR::SPIR20);
   SPIR::FunctionDescriptor FD;
   FD.name = BtnInfo->getUnmangledName();
   bool BIVarArgNegative = BtnInfo->getVarArg() < 0;
@@ -1390,26 +1412,38 @@ mangleBuiltin(const std::string &UniqName,
   if (ArgTypes.empty()) {
     // Function signature cannot be ()(void, ...) so if there is an ellipsis
     // it must be ()(...)
-    if(BIVarArgNegative) {
+    if (BIVarArgNegative) {
       FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
         SPIR::PRIMITIVE_VOID)));
     }
   } else {
-    for (unsigned I = 0, 
-         E = BIVarArgNegative ? ArgTypes.size() : (unsigned)BtnInfo->getVarArg();
-         I != E; ++I) {
+    for (unsigned I = 0,
+      E = BIVarArgNegative ? ArgTypes.size() : (unsigned)BtnInfo->getVarArg();
+      I != E; ++I) {
       auto T = ArgTypes[I];
       FD.parameters.emplace_back(transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
     }
   }
   // Ellipsis must be the last argument of any function
-  if(!BIVarArgNegative) {
+  if (!BIVarArgNegative) {
     assert((unsigned)BtnInfo->getVarArg() <= ArgTypes.size()
-           && "invalid index of an ellipsis");
+      && "invalid index of an ellipsis");
     FD.parameters.emplace_back(SPIR::RefParamType(new SPIR::PrimitiveType(
-        SPIR::PRIMITIVE_VAR_ARG)));
+      SPIR::PRIMITIVE_VAR_ARG)));
   }
+
+#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
+  SPIR::NameMangler Mangler(SPIR::SPIR20);
   Mangler.mangle(FD, MangledName);
+#else
+  if (SPIR::isPipeBuiltin(BtnInfo->getUnmangledName())) {
+    manglePipeBuiltin(FD, MangledName);
+  } else {
+    SPIR::NameMangler Mangler(SPIR::SPIR20);
+    Mangler.mangle(FD, MangledName);
+  }
+#endif
+
   DEBUG(dbgs() << MangledName << '\n');
   return MangledName;
 }

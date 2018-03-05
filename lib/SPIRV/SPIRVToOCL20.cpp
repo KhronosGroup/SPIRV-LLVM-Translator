@@ -308,7 +308,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
   if (imgArray) {
     assert((imgDim == 1 || imgDim == 2) && "invalid image array type");
     // Insert get_image_array_size to the last position of the resulting vector.
-    Type * sizeTy = Type::getIntNTy(*Ctx, M->getDataLayout()->getPointerSizeInBits(0));
+    Type * sizeTy = Type::getIntNTy(*Ctx, M->getDataLayout().getPointerSizeInBits(0));
     Instruction * getImageArraySize =
       addCallInst(M, kOCLBuiltinName::GetImageArraySize, sizeTy,
                   CI->getArgOperand(0), &attributes,
@@ -370,7 +370,7 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {
       // value by pointer passed as 2nd argument (aka expected) while SPIR-V
       // instructions returns this new/original value as a resulting value.
       AllocaInst *pExpected = new AllocaInst(CI->getType(), "expected",
-        pInsertBefore->getParent()->getParent()->getEntryBlock().getFirstInsertionPt());
+        &(*pInsertBefore->getParent()->getParent()->getEntryBlock().getFirstInsertionPt()));
       pExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
       new StoreInst(Args[1], pExpected, pInsertBefore);
       Args[1] = pExpected;

@@ -33,9 +33,9 @@ entry:
   store i32 addrspace(4)* %object, i32 addrspace(4)** %object.addr, align 4
   store i32 addrspace(4)* %expected, i32 addrspace(4)** %expected.addr, align 4
   store i32 %desired, i32* %desired.addr, align 4
-  %0 = load i32 addrspace(4)** %object.addr, align 4
-  %1 = load i32 addrspace(4)** %expected.addr, align 4
-  %2 = load i32* %desired.addr, align 4
+  %0 = load i32 addrspace(4)*, i32 addrspace(4)** %object.addr, align 4
+  %1 = load i32 addrspace(4)*, i32 addrspace(4)** %expected.addr, align 4
+  %2 = load i32, i32* %desired.addr, align 4
 
   %call = call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %2)
 ; CHECK: Load [[int]] [[Comparator:[0-9]+]] [[ComparatorPtr]]
@@ -45,14 +45,14 @@ entry:
 ; CHECK-NOT: [[Result]]
   %frombool = zext i1 %call to i8
   store i8 %frombool, i8* %strong_res, align 1
-  %3 = load i8* %strong_res, align 1
+  %3 = load i8, i8* %strong_res, align 1
   %tobool = trunc i8 %3 to i1
   %lnot = xor i1 %tobool, true
   %frombool1 = zext i1 %lnot to i8
   store i8 %frombool1, i8* %res, align 1
-  %4 = load i32 addrspace(4)** %object.addr, align 4
-  %5 = load i32 addrspace(4)** %expected.addr, align 4
-  %6 = load i32* %desired.addr, align 4
+  %4 = load i32 addrspace(4)*, i32 addrspace(4)** %object.addr, align 4
+  %5 = load i32 addrspace(4)*, i32 addrspace(4)** %expected.addr, align 4
+  %6 = load i32, i32* %desired.addr, align 4
 
   %call2 = call spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)* %4, i32 addrspace(4)* %5, i32 %6)
 ; CHECK: Load [[int]] [[ComparatorWeak:[0-9]+]] [[ComparatorPtr]]
@@ -63,7 +63,7 @@ entry:
 
   %frombool3 = zext i1 %call2 to i8
   store i8 %frombool3, i8* %weak_res, align 1
-  %7 = load i8* %weak_res, align 1
+  %7 = load i8, i8* %weak_res, align 1
   %tobool4 = trunc i8 %7 to i1
   %lnot5 = xor i1 %tobool4, true
   %frombool6 = zext i1 %lnot5 to i8

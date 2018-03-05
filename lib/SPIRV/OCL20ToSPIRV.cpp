@@ -1191,9 +1191,9 @@ OCL20ToSPIRV::visitCallBuiltinSimple(CallInst* CI,
 void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
   DEBUG(dbgs() << "Enter transWorkItemBuiltinsToVariables\n");
   std::vector<Function *> WorkList;
-  for (auto I = M->begin(), E = M->end(); I != E; ++I) {
+  for (auto &I:*M) {
     std::string DemangledName;
-    if (!oclIsBuiltin(I->getName(), &DemangledName))
+    if (!oclIsBuiltin(I.getName(), &DemangledName))
       continue;
     DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;
@@ -1203,9 +1203,9 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
     BuiltinVarName = std::string(kSPIRVName::Prefix) +
         SPIRVBuiltInNameMap::map(BVKind);
     DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
-    bool IsVec = I->getFunctionType()->getNumParams() > 0;
-    Type *GVType = IsVec ? VectorType::get(I->getReturnType(),3) :
-        I->getReturnType();
+    bool IsVec = I.getFunctionType()->getNumParams() > 0;
+    Type *GVType = IsVec ? VectorType::get(I.getReturnType(),3) :
+        I.getReturnType();
     auto BV = new GlobalVariable(*M, GVType,
         true,
         GlobalValue::ExternalLinkage,
@@ -1214,7 +1214,7 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
         GlobalVariable::NotThreadLocal,
         SPIRAS_Constant);
     std::vector<Instruction *> InstList;
-    for (auto UI = I->user_begin(), UE = I->user_end(); UI != UE; ++UI) {
+    for (auto UI = I.user_begin(), UE = I.user_end(); UI != UE; ++UI) {
       auto CI = dyn_cast<CallInst>(*UI);
       assert(CI && "invalid instruction");
       Value * NewValue = new LoadInst(BV, "", CI);
@@ -1232,7 +1232,7 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
     for (auto &Inst:InstList) {
       Inst->eraseFromParent();
     }
-    WorkList.push_back(I);
+    WorkList.push_back(&I);
   }
   for (auto &I:WorkList) {
     I->eraseFromParent();

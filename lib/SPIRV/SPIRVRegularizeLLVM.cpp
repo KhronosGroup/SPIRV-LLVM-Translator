@@ -116,7 +116,7 @@ SPIRVRegularizeLLVM::regularize() {
   //lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = I++;
+    Function *F = &(*I++);
     if (F->isDeclaration() && F->use_empty()) {
       F->eraseFromParent();
       continue;
@@ -192,13 +192,12 @@ void SPIRVRegularizeLLVM::lowerFuncPtr(Function* F, Op OC) {
 void
 SPIRVRegularizeLLVM::lowerFuncPtr(Module* M) {
   std::vector<std::pair<Function *, Op>> Work;
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = I++;
-    auto AI = F->arg_begin();
-    if (hasFunctionPointerArg(F, AI)) {
-      auto OC = getSPIRVFuncOC(F->getName());
+  for (auto &F:*M) {
+    auto AI = F.arg_begin();
+    if (hasFunctionPointerArg(&F, AI)) {
+      auto OC = getSPIRVFuncOC(F.getName());
       assert(OC != OpNop && "Invalid function pointer usage");
-      Work.push_back(std::make_pair(F, OC));
+      Work.push_back(std::make_pair(&F, OC));
     }
   }
   for (auto &I:Work)

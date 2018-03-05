@@ -135,7 +135,7 @@ target triple = "spir"
 define spir_kernel void @foo(<3 x i32> addrspace(1)* %a) #0 {
 entry:
   call spir_func void @bar1(<3 x i32> addrspace(1)* %a)
-  %loadVec4 = load <4 x i32> addrspace(2)* bitcast (<3 x i32> addrspace(2)* @b to <4 x i32> addrspace(2)*)
+  %loadVec4 = load <4 x i32> , <4 x i32> addrspace(2)* bitcast (<3 x i32> addrspace(2)* @b to <4 x i32> addrspace(2)*)
   %extractVec = shufflevector <4 x i32> %loadVec4, <4 x i32> undef, <3 x i32> <i32 0, i32 1, i32 2>
   call spir_func void @bar2(<3 x i32> addrspace(1)* %a, <3 x i32> %extractVec)
   ret void

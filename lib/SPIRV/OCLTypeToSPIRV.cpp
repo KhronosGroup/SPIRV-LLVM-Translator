@@ -128,7 +128,7 @@ static unsigned
 getArgIndex(Function *F, Value *V) {
   auto A = F->arg_begin(), E = F->arg_end();
   for (unsigned I = 0; A != E; ++I, ++A) {
-    if (A == V)
+    if (&(*A) == V)
       return I;
   }
   llvm_unreachable("Not argument of function");
@@ -139,7 +139,7 @@ static Argument*
 getArg(Function *F, unsigned I) {
   auto AI = F->arg_begin();
   std::advance(AI, I);
-  return AI;
+  return &(*AI);
 }
 
 /// Create a new function type if \param F has arguments in AdaptedTy, and
@@ -323,7 +323,7 @@ OCLTypeToSPIRV::adaptArgumentsByMetadata(Function* F) {
     auto OCLTyStr = getMDOperandAsString(TypeMD, I);
     auto NewTy = *PI;
     if (OCLTyStr == OCL_TYPE_NAME_SAMPLER_T && !NewTy->isStructTy()) {
-      addAdaptedType(Arg, getSamplerType(M));
+      addAdaptedType(&(*Arg), getSamplerType(M));
       Changed = true;
     } else if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();
@@ -333,7 +333,7 @@ OCLTypeToSPIRV::adaptArgumentsByMetadata(Function* F) {
         auto AccMD = getArgAccessQualifierMetadata(F);
         assert(AccMD && "Invalid access qualifier metadata");
         auto AccStr = getMDOperandAsString(AccMD, I);
-        addAdaptedType(Arg, getOrCreateOpaquePtrType(M,
+        addAdaptedType(&(*Arg), getOrCreateOpaquePtrType(M,
             mapOCLTypeNameToSPIRV(Ty, AccStr)));
         Changed = true;
       }

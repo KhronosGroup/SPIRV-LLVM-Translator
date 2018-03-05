@@ -16,14 +16,14 @@ target triple = "spir-unknown-unknown"
 ; CHECK:         [[PTR_STRONG:%expected[0-9]*]] = alloca i32, align 4
 ; CHECK:         store i32 {{.*}}, i32* [[PTR_STRONG]]
 ; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(i32 {{.*}}* %object, i32* [[PTR_STRONG]], i32 %desired, i32 4, i32 4, i32 2)
-; CHECK:         load i32* [[PTR_STRONG]]
+; CHECK:         load i32, i32* [[PTR_STRONG]]
 
 ; CHECK-LABEL:   define spir_func void @test_weak
 ; CHECK-NEXT:    entry:
 ; CHECK:         [[PTR_WEAK:%expected[0-9]*]] = alloca i32, align 4
 ; CHECK:         store i32 {{.*}}, i32* [[PTR_WEAK]]
-; CHECK:         call spir_func i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPiiiii{{.*}}(i32 {{.*}}* %object, i32* [[PTR_WEAK]], i32 %desired, i32 4, i32 4, i32 2)
-; CHECK:         load i32* [[PTR_WEAK]]
+; CHECK:         call spir_func i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPii12memory_orderS3_12memory_scope{{.*}}(i32 {{.*}}* %object, i32* [[PTR_WEAK]], i32 %desired, i32 4, i32 4, i32 2)
+; CHECK:         load i32, i32* [[PTR_WEAK]]
 
 ; Check that alloca for atomic_compare_exchange is being created in the entry block.
 
@@ -66,23 +66,23 @@ entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.inc, %entry
-  %0 = load i32* %i, align 4
+  %0 = load i32, i32* %i, align 4
   %cmp = icmp slt i32 %0, 100000
   br i1 %cmp, label %for.body, label %for.end
 
 for.body:                                         ; preds = %for.cond
-  %1 = load i32 addrspace(1)** %destMemory.addr, align 8
-  %arrayidx = getelementptr inbounds i32 addrspace(1)* %1, i64 0
+  %1 = load i32 addrspace(1)*, i32 addrspace(1)** %destMemory.addr, align 8
+  %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %1, i64 0
   %2 = addrspacecast i32 addrspace(1)* %arrayidx to i32 addrspace(4)*
   %3 = addrspacecast i32* %expected to i32 addrspace(4)*
-  %4 = load i32 addrspace(1)** %oldValues.addr, align 8
-  %arrayidx1 = getelementptr inbounds i32 addrspace(1)* %4, i64 0
-  %5 = load i32 addrspace(1)* %arrayidx1, align 4
+  %4 = load i32 addrspace(1)*, i32 addrspace(1)** %oldValues.addr, align 8
+  %arrayidx1 = getelementptr inbounds i32, i32 addrspace(1)* %4, i64 0
+  %5 = load i32, i32 addrspace(1)* %arrayidx1, align 4
   %call = call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)* %2, i32 addrspace(4)* %3, i32 %5)
   br label %for.inc
 
 for.inc:                                          ; preds = %for.body
-  %6 = load i32* %i, align 4
+  %6 = load i32, i32* %i, align 4
   %inc = add nsw i32 %6, 1
   store i32 %inc, i32* %i, align 4
   br label %for.cond

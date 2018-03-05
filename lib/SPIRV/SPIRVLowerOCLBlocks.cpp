@@ -103,7 +103,7 @@ public:
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.addRequired<CallGraphWrapperPass>();
-    AU.addRequired<AliasAnalysis>();
+    AU.addRequired<AAResultsWrapperPass>();
     AU.addRequired<AssumptionCacheTracker>();
   }
 
@@ -146,7 +146,7 @@ private:
   eraseUselessFunctions() {
     bool changed = false;
     for (auto I = M->begin(), E = M->end(); I != E;) {
-      Function *F = I++;
+      Function *F = &(*I++);
       if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
           !F->isDeclaration())
         continue;
@@ -161,10 +161,20 @@ private:
           }
         }
       }
-      if (F->use_empty()) {
-        erase(F);
-        changed = true;
+
+      if (!F->use_empty()) {
+        continue;
       }
+
+      auto &CG = getAnalysis<CallGraphWrapperPass>().getCallGraph();
+      CallGraphNode* CGN = CG[F];
+
+      if (CGN->getNumReferences() != 0) {
+        continue;
+      }
+
+      erase(F);
+      changed = true;
     }
     return changed;
   }
@@ -342,8 +352,7 @@ private:
       DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
       auto CG = &getAnalysis<CallGraphWrapperPass>().getCallGraph();
       auto ACT = &getAnalysis<AssumptionCacheTracker>();
-      auto AA = &getAnalysis<AliasAnalysis>();
-      InlineFunctionInfo IFI(CG, M->getDataLayout(), AA, ACT);
+      InlineFunctionInfo IFI(CG, ACT);
       InlineFunction(CI, IFI);
       Inlined = true;
     }
@@ -567,9 +576,18 @@ private:
       dumpUsers(F);
       return;
     }
+
     F->dropAllReferences();
+
     auto &CG = getAnalysis<CallGraphWrapperPass>().getCallGraph();
-    CG.removeFunctionFromModule(new CallGraphNode(F));
+    CallGraphNode* CGN = CG[F];
+
+    if (CGN->getNumReferences() != 0) {
+      return;
+    }
+
+    CGN->removeAllCalledFunctions();
+    delete CG.removeFunctionFromModule(CGN);
   }
 
   llvm::PointerType* getOCLClkEventType() {
@@ -605,7 +623,7 @@ INITIALIZE_PASS_BEGIN(SPIRVLowerOCLBlocks, "spvblocks",
     "SPIR-V lower OCL blocks", false, false)
 INITIALIZE_PASS_DEPENDENCY(CallGraphWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
-INITIALIZE_AG_DEPENDENCY(AliasAnalysis)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
 INITIALIZE_PASS_END(SPIRVLowerOCLBlocks, "spvblocks",
     "SPIR-V lower OCL blocks", false, false)
 

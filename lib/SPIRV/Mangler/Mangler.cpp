@@ -84,8 +84,25 @@ public:
 // Visit methods
 //
   MangleError visit(const PrimitiveType* t) {
+    MangleError me = MANGLE_SUCCESS;
+#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
     m_stream << mangledPrimitiveString(t->getPrimitive());
-    return MANGLE_SUCCESS;
+#else
+    std::string mangledPrimitive = std::string(mangledPrimitiveString(t->getPrimitive()));
+    // out of all enums it makes sense to substitute only memory_scope/memory_order
+    // since only they appear several times in the builtin declaration.
+    if (mangledPrimitive.compare("12memory_scope") == 0 ||
+        mangledPrimitive.compare("12memory_order") == 0) {
+      if (!mangleSubstitution(t, mangledPrimitiveString(t->getPrimitive()))) {
+        size_t index = m_stream.str().size();
+        m_stream << mangledPrimitiveString(t->getPrimitive());
+        substitutions[m_stream.str().substr(index)] = seqId++;
+      }
+    } else {
+      m_stream << mangledPrimitive;
+    }
+#endif
+    return me;
   }
 
   MangleError visit(const PointerType* p) {
@@ -133,8 +150,15 @@ public:
   }
 
   MangleError visit(const AtomicType* p) {
-    m_stream << "U" << "7_Atomic";
-    return p->getBaseType()->accept(this);
+    MangleError me = MANGLE_SUCCESS;
+    size_t index = m_stream.str().size();
+    const char* typeStr = "U7_Atomic";
+    if (!mangleSubstitution(p, typeStr)) {
+      m_stream << typeStr;
+      me = p->getBaseType()->accept(this);
+      substitutions[m_stream.str().substr(index)] = seqId++;
+    }
+    return me;
   }
 
   MangleError visit(const BlockType* p) {

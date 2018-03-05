@@ -27,7 +27,7 @@ define spir_func void @sampFun(%opencl.image1d_rw_t addrspace(1)* %image) #0 {
 entry:
   %image.addr = alloca %opencl.image1d_rw_t addrspace(1)*, align 4
   store %opencl.image1d_rw_t addrspace(1)* %image, %opencl.image1d_rw_t addrspace(1)** %image.addr, align 4
-  %0 = load %opencl.image1d_rw_t addrspace(1)** %image.addr, align 4
+  %0 = load %opencl.image1d_rw_t addrspace(1)*, %opencl.image1d_rw_t addrspace(1)** %image.addr, align 4
   %call = call spir_func <4 x float> @_Z11read_imagef14ocl_image1d_rw11ocl_sampleri(%opencl.image1d_rw_t addrspace(1)* %0, i32 8, i32 2) #2
   ret void
 }

@@ -25,7 +25,7 @@ define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, f
   %11 = insertelement <2 x float> %9, float %10, i32 1
   %12 = tail call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %input, i32 36, <2 x float> %11) #1
   %13 = sext i32 %7 to i64
-  %14 = getelementptr inbounds <4 x float> addrspace(1)* %results, i64 %13
+  %14 = getelementptr inbounds <4 x float>, <4 x float> addrspace(1)* %results, i64 %13
   store <4 x float> %12, <4 x float> addrspace(1)* %14, align 16, !tbaa !11
   ret void
 }

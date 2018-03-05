@@ -119,14 +119,14 @@ convertLLVMToSPIRV() {
   LLVMContext Context;
 
   std::string Err;
-  DataStreamer *DS = getDataFileStreamer(InputFile, &Err);
+  std::unique_ptr<DataStreamer> DS = getDataFileStreamer(InputFile, &Err);
   if (!DS) {
     errs() << "Fails to open input file: " << Err;
     return -1;
   }
 
   ErrorOr<std::unique_ptr<Module>> MOrErr =
-      getStreamedBitcodeModule(InputFile, DS, Context);
+    getStreamedBitcodeModule(InputFile, std::move(DS), Context);
 
   if (std::error_code EC = MOrErr.getError()) {
     errs() << "Fails to load bitcode: " << EC.message();
@@ -135,7 +135,7 @@ convertLLVMToSPIRV() {
 
   std::unique_ptr<Module> M = std::move(*MOrErr);
 
-  if (std::error_code EC = M->materializeAllPermanently()){
+  if (std::error_code EC = M->materializeAll()){
     errs() << "Fails to materialize: " << EC.message();
     return -1;
   }
@@ -239,14 +239,14 @@ regularizeLLVM() {
   LLVMContext Context;
 
   std::string Err;
-  DataStreamer *DS = getDataFileStreamer(InputFile, &Err);
+  std::unique_ptr<DataStreamer> DS = getDataFileStreamer(InputFile, &Err);
   if (!DS) {
     errs() << "Fails to open input file: " << Err;
     return -1;
   }
 
   ErrorOr<std::unique_ptr<Module>> MOrErr =
-      getStreamedBitcodeModule(InputFile, DS, Context);
+    getStreamedBitcodeModule(InputFile, std::move(DS), Context);
 
   if (std::error_code EC = MOrErr.getError()) {
     errs() << "Fails to load bitcode: " << EC.message();
@@ -255,7 +255,7 @@ regularizeLLVM() {
 
   std::unique_ptr<Module> M = std::move(*MOrErr);
 
-  if (std::error_code EC = M->materializeAllPermanently()){
+  if (std::error_code EC = M->materializeAll()){
     errs() << "Fails to materialize: " << EC.message();
     return -1;
   }

@@ -32,7 +32,7 @@ entry:
   %0 = bitcast i32 addrspace(4)* %ptr to i8 addrspace(4)*
   %call = tail call spir_func i32 @_Z9get_fencePU3AS4v(i8 addrspace(4)* %0) #3
   %switch.i = icmp ult i32 %call, 4
-  %1 = load i32 addrspace(4)* %ptr, align 4
+  %1 = load i32, i32 addrspace(4)* %ptr, align 4
   %cmp = icmp eq i32 %1, %val
   %and4 = and i1 %switch.i, %cmp
   %and = zext i1 %and4 to i32
@@ -46,14 +46,14 @@ declare spir_func i32 @_Z9get_fencePU3AS4v(i8 addrspace(4)*) #2
 define spir_kernel void @testKernel(i32 addrspace(1)* nocapture %results) #1 {
 entry:
   %call = tail call spir_func i32 @_Z13get_global_idj(i32 0) #3
-  %0 = load i32 addrspace(1)* @gint, align 4
+  %0 = load i32, i32 addrspace(1)* @gint, align 4
   %call.i = tail call spir_func i32 @_Z9get_fencePU3AS4v(i8 addrspace(4)* addrspacecast (i8 addrspace(1)* bitcast (i32 addrspace(1)* @gint to i8 addrspace(1)*) to i8 addrspace(4)*)) #3
   %switch.i.i = icmp ult i32 %call.i, 4
-  %1 = load i32 addrspace(4)* addrspacecast (i32 addrspace(1)* @gint to i32 addrspace(4)*), align 4
+  %1 = load i32, i32 addrspace(4)* addrspacecast (i32 addrspace(1)* @gint to i32 addrspace(4)*), align 4
   %cmp.i = icmp eq i32 %1, %0
   %and4.i = and i1 %switch.i.i, %cmp.i
   %cond = zext i1 %and4.i to i32
-  %arrayidx = getelementptr inbounds i32 addrspace(1)* %results, i32 %call
+  %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %results, i32 %call
   store i32 %cond, i32 addrspace(1)* %arrayidx, align 4
   ret void
 }

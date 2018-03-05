@@ -17,9 +17,9 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_kernel void @test_scalar(float addrspace(1)* nocapture readonly %f) #0 {
 entry:
-  %0 = load float addrspace(1)* %f, align 4
+  %0 = load float, float addrspace(1)* %f, align 4
   %call = tail call spir_func float @_Z5clampfff(float %0, float 0.000000e+00, float 1.000000e+00) #2
-  %1 = load float addrspace(1)* %f, align 4
+  %1 = load float, float addrspace(1)* %f, align 4
   %conv = fptrunc float %1 to half
   %call1 = tail call spir_func half @_Z5clampDhDhDh(half %conv, half %conv, half %conv) #2
   ret void

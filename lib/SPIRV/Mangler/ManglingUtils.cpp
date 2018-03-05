@@ -51,6 +51,8 @@ namespace SPIR {
     "sampler_t",
     "kernel_enqueue_flags_t",
     "clk_profiling_info",
+    "memory_order",
+    "memory_scope"
   };
 
   const char* mangledTypes[PRIMITIVE_NUM] = {
@@ -87,12 +89,14 @@ namespace SPIR {
     "9ndrange_t",                    //PRIMITIVE_NDRANGE_T
     "12ocl_clkevent",                //PRIMITIVE_CLK_EVENT_T
     "11ocl_sampler",                 //PRIMITIVE_SAMPLER_T
-#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
     "i",                             //PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T
     "i",                             //PRIMITIVE_CLK_PROFILING_INFO
+#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
+    "i",                             //PRIMITIVE_MEMORY_ORDER
+    "i",                             //PRIMITIVE_MEMORY_SCOPE
 #else
-    "22kernel_enqueue_flags_t",      //PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T
-    "18clk_profiling_info",          //PRIMITIVE_CLK_PROFILING_INFO
+    "12memory_order",                //PRIMITIVE_MEMORY_ORDER
+    "12memory_scope"                 //PRIMITIVE_MEMORY_SCOPE
 #endif
   };
 
@@ -190,6 +194,26 @@ namespace SPIR {
         assert(false && "Unknown SPIR Version");
         return "Unknown SPIR Version";
     }
+  }
+
+  bool isPipeBuiltin(std::string unmangledName) {
+    return
+      unmangledName == "write_pipe" ||
+      unmangledName == "read_pipe" ||
+      unmangledName == "reserve_write_pipe" ||
+      unmangledName == "reserve_read_pipe" ||
+      unmangledName == "commit_write_pipe" ||
+      unmangledName == "commit_read_pipe" ||
+      unmangledName == "work_group_reserve_write_pipe" ||
+      unmangledName == "work_group_reserve_read_pipe" ||
+      unmangledName == "work_group_commit_write_pipe" ||
+      unmangledName == "work_group_commit_read_pipe" ||
+      unmangledName == "get_pipe_num_packets" ||
+      unmangledName == "get_pipe_max_packets" ||
+      unmangledName == "sub_group_reserve_write_pipe" ||
+      unmangledName == "sub_group_reserve_read_pipe" ||
+      unmangledName == "sub_group_commit_write_pipe" ||
+      unmangledName == "sub_group_commit_read_pipe";
   }
 
 } // End SPIR namespace
