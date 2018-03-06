@@ -45,14 +45,16 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Bitcode/BitcodeReader.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/DataStream.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Signals.h"
@@ -114,31 +116,18 @@ removeExt(const std::string& FileName) {
   return FileName;
 }
 
+static ExitOnError ExitOnErr;
+
 static int
 convertLLVMToSPIRV() {
   LLVMContext Context;
 
-  std::string Err;
-  std::unique_ptr<DataStreamer> DS = getDataFileStreamer(InputFile, &Err);
-  if (!DS) {
-    errs() << "Fails to open input file: " << Err;
-    return -1;
-  }
-
-  ErrorOr<std::unique_ptr<Module>> MOrErr =
-    getStreamedBitcodeModule(InputFile, std::move(DS), Context);
-
-  if (std::error_code EC = MOrErr.getError()) {
-    errs() << "Fails to load bitcode: " << EC.message();
-    return -1;
-  }
-
-  std::unique_ptr<Module> M = std::move(*MOrErr);
-
-  if (std::error_code EC = M->materializeAll()){
-    errs() << "Fails to materialize: " << EC.message();
-    return -1;
-  }
+  std::unique_ptr<MemoryBuffer> MB =
+      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
+  std::unique_ptr<Module> M =
+      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
+                                           /*ShouldLazyLoadMetadata=*/true));
+  ExitOnErr(M->materializeAll());
 
   if (OutputFile.empty()) {
     if (InputFile == "-")
@@ -150,6 +139,7 @@ convertLLVMToSPIRV() {
 
   llvm::StringRef outFile(OutputFile);
   std::error_code EC;
+  std::string Err;
   llvm::raw_fd_ostream OFS(outFile, EC, llvm::sys::fs::F_None);
   if (!WriteSPIRV(M.get(), OFS, Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
@@ -187,13 +177,13 @@ convertSPIRVToLLVM() {
   }
 
   std::error_code EC;
-  tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
+  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
     errs() << "Fails to open output file: " << EC.message();
     return -1;
   }
 
-  WriteBitcodeToFile(M, Out.os());
+  WriteBitcodeToFile(*M, Out.os());
   Out.keep();
   delete M;
   return 0;
@@ -238,27 +228,12 @@ static int
 regularizeLLVM() {
   LLVMContext Context;
 
-  std::string Err;
-  std::unique_ptr<DataStreamer> DS = getDataFileStreamer(InputFile, &Err);
-  if (!DS) {
-    errs() << "Fails to open input file: " << Err;
-    return -1;
-  }
-
-  ErrorOr<std::unique_ptr<Module>> MOrErr =
-    getStreamedBitcodeModule(InputFile, std::move(DS), Context);
-
-  if (std::error_code EC = MOrErr.getError()) {
-    errs() << "Fails to load bitcode: " << EC.message();
-    return -1;
-  }
-
-  std::unique_ptr<Module> M = std::move(*MOrErr);
-
-  if (std::error_code EC = M->materializeAll()){
-    errs() << "Fails to materialize: " << EC.message();
-    return -1;
-  }
+  std::unique_ptr<MemoryBuffer> MB =
+      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
+  std::unique_ptr<Module> M =
+      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
+                                           /*ShouldLazyLoadMetadata=*/true));
+  ExitOnErr(M->materializeAll());
 
   if (OutputFile.empty()) {
     if (InputFile == "-")
@@ -267,19 +242,20 @@ regularizeLLVM() {
       OutputFile = removeExt(InputFile) + ".regularized.bc";
   }
 
+  std::string Err;
   if (!RegularizeLLVMForSPIRV(M.get(), Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
 
   std::error_code EC;
-  tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
+  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
     errs() << "Fails to open output file: " << EC.message();
     return -1;
   }
 
-  WriteBitcodeToFile(M.get(), Out.os());
+  WriteBitcodeToFile(*M.get(), Out.os());
   Out.keep();
   return 0;
 }
@@ -288,7 +264,7 @@ regularizeLLVM() {
 int
 main(int ac, char** av) {
   EnablePrettyStackTrace();
-  sys::PrintStackTraceOnErrorSignal();
+  sys::PrintStackTraceOnErrorSignal(av[0]);
   PrettyStackTraceProgram X(ac, av);
 
   cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");

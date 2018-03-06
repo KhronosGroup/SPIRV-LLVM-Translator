@@ -114,15 +114,15 @@ SPIRVLowerConstExpr::runOnModule(Module& Module) {
 
 void
 SPIRVLowerConstExpr::visit(Module *M) {
-    for (auto I = M->begin(), E = M->end(); I != E; ++I) {
+    for (auto &I : M->functions()) {
       std::map<ConstantExpr*, Instruction *> CMap;
       std::list<Instruction *> WorkList;
-      auto FBegin = I->begin();
-      for (auto &BI:*I) {
-        for (auto &II:BI) {
+      for (auto &BI : I) {
+        for (auto &II : BI) {
           WorkList.push_back(&II);
         }
       }
+      auto FBegin = I.begin();
       while (!WorkList.empty()) {
         auto II = WorkList.front();
         WorkList.pop_front();
@@ -132,7 +132,7 @@ SPIRVLowerConstExpr::visit(Module *M) {
           if (auto CE = dyn_cast<ConstantExpr>(Op)) {
             SPIRVDBG(dbgs() << "[lowerConstantExpressions] " << *CE;)
             auto ReplInst = CE->getAsInstruction();
-            auto InsPoint = II->getParent() == FBegin ? II : &FBegin->back();
+            auto InsPoint = II->getParent() == &*FBegin ? II : &FBegin->back();
             ReplInst->insertBefore(InsPoint);
             SPIRVDBG(dbgs() << " -> " << *ReplInst << '\n';)
             WorkList.push_front(ReplInst);
@@ -143,7 +143,7 @@ SPIRVLowerConstExpr::visit(Module *M) {
                   *U << '\n';)
               if (auto InstUser = dyn_cast<Instruction>(U)) {
                 // Only replace users in scope of current function
-                if (InstUser->getParent()->getParent() == I)
+                if (InstUser->getParent()->getParent() == &I)
                   Users.push_back(InstUser);
               }
             }

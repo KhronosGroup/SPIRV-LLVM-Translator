@@ -51,7 +51,7 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CallGraph.h"
 #include "llvm/IR/Verifier.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -352,14 +352,17 @@ private:
       DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
       auto CG = &getAnalysis<CallGraphWrapperPass>().getCallGraph();
       auto ACT = &getAnalysis<AssumptionCacheTracker>();
-      InlineFunctionInfo IFI(CG, ACT);
+      std::function<AssumptionCache &(Function &)> GetAssumptionCache = [&](
+        Function &F) -> AssumptionCache & { return ACT->getAssumptionCache(F); };
+      InlineFunctionInfo IFI(CG, &GetAssumptionCache);
       InlineFunction(CI, IFI);
       Inlined = true;
     }
     return changed || Inlined;
   }
 
-  /// Looking for a global variables initialized by opencl.block*. If found, check
+  /// Looking for a global variables initialized by opencl.block*. If found,
+  /// check
   /// its users. If users are trivially dead, erase them. If the global variable
   /// has no users left after that, erase it too.
   void EraseUselessGlobalVars() {
@@ -459,9 +462,8 @@ private:
       ValueToValueMapTy VMap;
       // If any of the arguments to the function are in the VMap,
       // the arguments are deleted from the resultant function.
-      VMap[FirstArg] = llvm::UndefValue::get(FirstArg->getType());
-      Function *NF = CloneFunction(&F, VMap, true);
-      F.getParent()->getFunctionList().insert(F, NF);
+      VMap[&*FirstArg] = llvm::UndefValue::get(FirstArg->getType());
+      Function *NF = CloneFunction(&F, VMap);
       NF->takeName(&F);
 
       // Redirect all users of the old function to the new one.

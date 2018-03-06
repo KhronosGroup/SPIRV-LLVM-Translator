@@ -193,7 +193,7 @@ private:
 //
 // NameMangler
 //
-  NameMangler::NameMangler(SPIRversion version):m_spir_version(version) {};
+  NameMangler::NameMangler(SPIRversion version):m_spir_version(version) {}
 
   MangleError NameMangler::mangle(const FunctionDescriptor& fd, std::string& mangledName ) {
     if (fd.isNull()) {

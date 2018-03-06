@@ -178,7 +178,7 @@ OCL21ToSPIRV::visitCallInst(CallInst& CI) {
 
 void OCL21ToSPIRV::visitCallConvert(CallInst* CI,
     StringRef MangledName, Op OC) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.pop_back();
     return getSPIRVFuncName(OC, kSPIRVPostfix::Divider +
@@ -209,7 +209,7 @@ void
 OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
   DEBUG(dbgs() << "[visitCallSubGroupBarrier] "<< *CI << '\n');
   auto Lit = getBarrierLiterals(CI);
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
       Args.resize(3);
       Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
@@ -221,7 +221,7 @@ OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
 
 void
 OCL21ToSPIRV::transBuiltin(CallInst* CI, Op OC) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   assert(OC != OpExtInst && "not supported");
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     return getSPIRVFuncName(OC);

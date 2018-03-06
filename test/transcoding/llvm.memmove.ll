@@ -20,15 +20,15 @@
 
 ; CHECK-LLVM: [[local:%[0-9]+]] = alloca %struct.SomeStruct
 ; CHECK-LLVM: [[tmp1:%[0-9]+]] = bitcast %struct.SomeStruct* [[local]] to [[type:i[0-9]+\*]]
-; CHECK-LLVM: call void @llvm.lifetime.start({{i[0-9]+}} {{-?[0-9]+}}, [[type]] [[tmp1]])
+; CHECK-LLVM: call void @llvm.lifetime.start.p0i8({{i[0-9]+}} {{-?[0-9]+}}, [[type]] [[tmp1]])
 ; CHECK-LLVM: [[tmp2:%[0-9]+]] = bitcast %struct.SomeStruct* [[local]] to [[type]]
 ; CHECK-LLVM: call void @llvm.memcpy
-; CHECK-LLVM:  ([[type]] [[tmp2]],
+; CHECK-LLVM:  ([[type]] align 64 [[tmp2]],
 ; CHECK-LLVM:  {{i[0-9]+}} [[size:[0-9]+]]
 ; CHECK-LLVM: [[tmp3:%[0-9]+]] = bitcast %struct.SomeStruct* [[local]] to [[type]]
 ; CHECK-LLVM: call void @llvm.memcpy
-; CHECK-LLVM:  , [[type]] [[tmp3]], {{i[0-9]+}} [[size]]
-; CHECK-LLVM: call void @llvm.lifetime.end({{i[0-9]+}} {{-?[0-9]+}}, [[type]] [[tmp1]])
+; CHECK-LLVM:  , [[type]] align 64 [[tmp3]], {{i[0-9]+}} [[size]]
+; CHECK-LLVM: call void @llvm.lifetime.end.p0i8({{i[0-9]+}} {{-?[0-9]+}}, [[type]] [[tmp1]])
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir-unknown-unknown"

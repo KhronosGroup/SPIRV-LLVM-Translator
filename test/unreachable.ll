@@ -17,14 +17,14 @@ define spir_kernel void @unreachable_simple(i32 addrspace(1)* nocapture %in, i32
   %1 = call spir_func i64 @_Z13get_global_idj(i32 0) #1
   %2 = shl i64 %1, 32
   %3 = ashr exact i64 %2, 32
-  %4 = getelementptr inbounds i32 addrspace(1)* %in, i64 %3
-  %5 = getelementptr inbounds i32 addrspace(1)* %out, i64 %3
+  %4 = getelementptr inbounds i32, i32 addrspace(1)* %in, i64 %3
+  %5 = getelementptr inbounds i32, i32 addrspace(1)* %out, i64 %3
   br label %7
                                                   ; No predecessors!
   unreachable
 
 ; <label>:7                                       ; preds = %0
-  %8 = load i32 addrspace(1)* %4
+  %8 = load i32, i32 addrspace(1)* %4
   store i32 %8, i32 addrspace(1)* %5
   ret void
 }

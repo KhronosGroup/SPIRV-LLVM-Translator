@@ -197,7 +197,7 @@ SPIRVToOCL20::visitCallInst(CallInst& CI) {
 }
 
 void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst* CI) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     auto getArg = [=](unsigned I){
       return cast<ConstantInt>(Args[I])->getZExtValue();
@@ -238,7 +238,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
     imgArray = true;
   }
 
-  AttributeSet attributes = CI->getCalledFunction()->getAttributes();
+  AttributeList attributes = CI->getCalledFunction()->getAttributes();
   BuiltinFuncMangleInfo mangle;
   Type * int32Ty = Type::getInt32Ty(*Ctx);
   Instruction * getImageSize = nullptr;
@@ -333,7 +333,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
 }
 
 void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Instruction * pInsertBefore = CI;
 
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args, Type *& RetTy){
@@ -369,7 +369,7 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {
       // OCL built-ins returns boolean value and stores a new/original
       // value by pointer passed as 2nd argument (aka expected) while SPIR-V
       // instructions returns this new/original value as a resulting value.
-      AllocaInst *pExpected = new AllocaInst(CI->getType(), "expected",
+      AllocaInst *pExpected = new AllocaInst(CI->getType(), 0, "expected",
         &(*pInsertBefore->getParent()->getParent()->getEntryBlock().getFirstInsertionPt()));
       pExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
       new StoreInst(Args[1], pExpected, pInsertBefore);
@@ -397,7 +397,7 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst* CI, Op OC) {
 }
 
 void SPIRVToOCL20::visitCallSPIRVBuiltin(CallInst* CI, Op OC) {
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     return OCLSPIRVBuiltinMap::rmap(OC);
   }, &Attrs);
@@ -422,7 +422,7 @@ void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst* CI, Op OC) {
     DemangledName = Prefix + kSPIRVName::GroupPrefix +
         SPIRSPIRVGroupOperationMap::rmap(GO) + '_' + Op.str();
   }
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.erase(Args.begin(), Args.begin() + (HasGroupOperation ? 2 : 1));
     if (OC == OpGroupBroadcast)
@@ -449,7 +449,7 @@ void SPIRVToOCL20::visitCallSPIRVPipeBuiltin(CallInst* CI, Op OC) {
   if (HasScope)
     DemangledName = getGroupBuiltinPrefix(CI) + DemangledName;
 
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     if (HasScope)
       Args.erase(Args.begin(), Args.begin() + 1);
@@ -537,7 +537,7 @@ void SPIRVToOCL20::visitCastInst(CastInst &Cast) {
   if(isa<ZExtInst>(Cast) || isa<UIToFPInst>(Cast))
     mangle.addUnsignedArg(0);
 
-  AttributeSet attributes;
+  AttributeList attributes;
   CallInst *call = addCallInst(M, castBuiltInName, dstVecTy, Cast.getOperand(0),
                               &attributes, &Cast, &mangle, Cast.getName(), false);
   Cast.replaceAllUsesWith(call);

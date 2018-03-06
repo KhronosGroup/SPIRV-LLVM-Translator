@@ -10,10 +10,10 @@
 ; CHECK-SPIRV: 3 LifetimeStop [[tmp]] 0
 
 ; CHECK-LLVM: %[[tmp1:[0-9]+]] = bitcast i32* %{{[0-9]+}} to i8*
-; CHECK-LLVM: call void @llvm.lifetime.start(i64 -1, i8* %[[tmp1]])
-; CHECK-LLVM: call void @llvm.lifetime.end(i64 -1, i8* %[[tmp1]])
-; CHECK-LLVM: declare void @llvm.lifetime.start(i64, i8* nocapture)
-; CHECK-LLVM: declare void @llvm.lifetime.end(i64, i8* nocapture)
+; CHECK-LLVM: call void @llvm.lifetime.start.p0i8(i64 -1, i8* %[[tmp1]])
+; CHECK-LLVM: call void @llvm.lifetime.end.p0i8(i64 -1, i8* %[[tmp1]])
+; CHECK-LLVM: declare void @llvm.lifetime.start.p0i8(i64, i8* nocapture)
+; CHECK-LLVM: declare void @llvm.lifetime.end.p0i8(i64, i8* nocapture)
 
 ; ModuleID = 'main'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
@@ -25,26 +25,26 @@ define spir_kernel void @lifetime_simple(i32 addrspace(1)* nocapture %res, i32 a
   %2 = call spir_func i64 @_Z13get_global_idj(i32 0) #1
   %3 = shl i64 %2, 32
   %4 = ashr exact i64 %3, 32
-  %5 = getelementptr inbounds i32 addrspace(1)* %lhs, i64 %4
-  %6 = load i32 addrspace(1)* %5, align 4
-  %7 = getelementptr inbounds i32 addrspace(1)* %rhs, i64 %4
-  %8 = load i32 addrspace(1)* %7, align 4
+  %5 = getelementptr inbounds i32, i32 addrspace(1)* %lhs, i64 %4
+  %6 = load i32, i32 addrspace(1)* %5, align 4
+  %7 = getelementptr inbounds i32, i32 addrspace(1)* %rhs, i64 %4
+  %8 = load i32, i32 addrspace(1)* %7, align 4
   %9 = sub i32 %6, %8
   %10 = bitcast i32* %1 to i8*
-  call void @llvm.lifetime.start(i64 -1, i8* %10)
+  call void @llvm.lifetime.start.p0i8(i64 -1, i8* %10)
   store i32 %9, i32* %1
-  %11 = load i32* %1
-  call void @llvm.lifetime.end(i64 -1, i8* %10)
-  %12 = getelementptr inbounds i32 addrspace(1)* %res, i64 %4
+  %11 = load i32, i32* %1
+  call void @llvm.lifetime.end.p0i8(i64 -1, i8* %10)
+  %12 = getelementptr inbounds i32, i32 addrspace(1)* %res, i64 %4
   store i32 %11, i32 addrspace(1)* %12, align 4
   ret void
 }
 
 ; Function Attrs: nounwind
-declare void @llvm.lifetime.start(i64, i8* nocapture) #0
+declare void @llvm.lifetime.start.p0i8(i64, i8* nocapture) #0
 
 ; Function Attrs: nounwind
-declare void @llvm.lifetime.end(i64, i8* nocapture) #0
+declare void @llvm.lifetime.end.p0i8(i64, i8* nocapture) #0
 
 ; Function Attrs: nounwind readnone
 declare spir_func i64 @_Z13get_global_idj(i32) #1

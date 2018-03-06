@@ -230,7 +230,7 @@ define spir_kernel void @test_image2d_array_depth_t(i32 addrspace(1)* nocapture 
   %4 = trunc i64 %3 to i32
   %5 = add nsw i32 %2, %1
   %6 = add nsw i32 %5, %4
-  store i32 %5, i32 addrspace(1)* %sizes, align 4, !tbaa !25
+  store i32 %5, i32 addrspace(1)* %sizes, align 4, !tbaa !22
   ret void
 }
 

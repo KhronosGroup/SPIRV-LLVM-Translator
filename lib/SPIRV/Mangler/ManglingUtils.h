@@ -23,7 +23,7 @@ namespace SPIR {
   const char* getMangledAttribute(TypeAttributeEnum attribute);
   const char* getReadableAttribute(TypeAttributeEnum attribute);
 
-  const SPIRversion getSupportedVersion(TypePrimitiveEnum t);
+  SPIRversion getSupportedVersion(TypePrimitiveEnum t);
   const char* getSPIRVersionAsString(SPIRversion version);
 
   const char* mangledPrimitiveStringfromName(std::string type);

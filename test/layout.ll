@@ -121,7 +121,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir"
 
 @v = addrspace(1) global [2 x i32] [i32 1, i32 2], align 4
-@s = addrspace(1) global i32 addrspace(1)* getelementptr inbounds ([2 x i32] addrspace(1)* @v, i32 0, i32 0), align 4
+@s = addrspace(1) global i32 addrspace(1)* getelementptr inbounds ([2 x i32], [2 x i32] addrspace(1)* @v, i32 0, i32 0), align 4
 
 %struct.A = type { i32, %struct.C }
 %struct.C = type { i32, %struct.B }

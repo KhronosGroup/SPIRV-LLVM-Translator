@@ -60,6 +60,6 @@
 
 ; CHECK-LLVM: %frem.res = frem double %[[dividend:[0-9]+]], %[[divisor:[0-9]+]]
 ; CHECK-LLVM: %copysign = call spir_func double @_Z8copysigndd(double %frem.res, double %[[divisor]]) #0
-; CHECK-LLVM: %[[ptr:[0-9]+]] = getelementptr inbounds double addrspace(1)* %res, i64 %{{[0-9]*}}
+; CHECK-LLVM: %[[ptr:[0-9]+]] = getelementptr inbounds double, double addrspace(1)* %res, i64 %{{[0-9]*}}
 ; CHECK-LLVM: store double %copysign, double addrspace(1)* %[[ptr]], align 8
   

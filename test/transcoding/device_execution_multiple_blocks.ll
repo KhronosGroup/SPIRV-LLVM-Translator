@@ -73,7 +73,7 @@ define spir_kernel void @enqueue_block_get_kernel_preferred_work_group_size_mult
 ; CHECK: store i8* {{.*}} @__enqueue_block_get_kernel_preferred_work_group_size_multiple_block_invoke
 ; CHECK: [[CAPTUREDGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK]], i32 0, i32 5
 ; CHECK: [[CAPTUREDCAST:%.*]] = bitcast [8 x i8]* [[CAPTUREDGEP]] to i8*
-; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* [[CAPTUREDCAST]], i8* [[CTX]], i32 8, i32 8, i1 false)
+; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* align 8 [[CAPTUREDCAST]], i8* align 8 [[CTX]], i32 8, i1 false)
 ; CHECK: [[BLOCKBCST:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK]] to i8*
 ; CHECK: [[BLOCKADDRCST:%.*]] = addrspacecast i8* [[BLOCKBCST]] to i8 addrspace(4)*
 ; CHECK: call i32 @__get_kernel_work_group_size_impl(i8 addrspace(4)* [[BLOCKADDRCST]])

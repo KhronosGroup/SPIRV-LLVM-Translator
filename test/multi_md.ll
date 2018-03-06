@@ -46,7 +46,7 @@ attributes #0 = { nounwind }
 
 ; "cl_images" should be encoded as BasicImage capability, 
 ; but images are not used in this test case, so this capability is not required.
-; CHECK-DAG-NOT: 4 Extension "cl_images"
+; CHECK-NOT: 4 Extension "cl_images"
 ; CHECK-DAG: 8 Extension "cl_khr_int64_base_atomics"
 ; CHECK-DAG: 9 Extension "cl_khr_int64_extended_atomics"
 ; CHECK: 3 Source 3 200000

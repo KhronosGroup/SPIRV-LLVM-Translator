@@ -49,7 +49,7 @@
 #include "OCLUtil.h"
 
 #include "llvm/ADT/StringSwitch.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -81,13 +81,12 @@ EnableDbgOutput("spirv-debug",
 
 void
 addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
-  Call->addAttribute(AttributeSet::FunctionIndex, Attr);
+  Call->addAttribute(AttributeList::FunctionIndex, Attr);
 }
 
 void
 removeFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
-  Call->removeAttribute(AttributeSet::FunctionIndex,
-      Attribute::get(*Context, Attr));
+  Call->removeAttribute(AttributeList::FunctionIndex, Attr);
 }
 
 Value *
@@ -104,13 +103,13 @@ removeCast(Value *V) {
 void
 saveLLVMModule(Module *M, const std::string &OutputFile) {
   std::error_code EC;
-  tool_output_file Out(OutputFile.c_str(), EC, sys::fs::F_None);
+  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::F_None);
   if (EC) {
     SPIRVDBG(errs() << "Fails to open output file: " << EC.message();)
     return;
   }
 
-  WriteBitcodeToFile(M, Out.os());
+  WriteBitcodeToFile(*M, Out.os());
   Out.keep();
 }
 
@@ -302,7 +301,7 @@ isSPIRVType(llvm::Type* Ty, StringRef BaseTyName, StringRef *Postfix) {
 
 Function *
 getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
-    StringRef Name, BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs,
+    StringRef Name, BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs,
     bool takeName) {
   std::string MangledName = Name;
   bool isVarArg = false;
@@ -645,7 +644,7 @@ hasArrayArg(Function *F) {
 CallInst *
 mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+    BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeFuncName) {
   DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
@@ -668,7 +667,7 @@ mutateCallInst(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)>ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs, bool TakeFuncName) {
+    BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeFuncName) {
   DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
@@ -692,7 +691,7 @@ mutateCallInst(Module *M, CallInst *CI,
 void
 mutateFunction(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    BuiltinFuncMangleInfo *Mangle, AttributeSet *Attrs,
+    BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs,
     bool TakeFuncName) {
   auto M = F->getParent();
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
@@ -706,7 +705,7 @@ mutateFunction(Function *F,
 CallInst *
 mutateCallInstSPIRV(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    AttributeSet *Attrs) {
+    AttributeList *Attrs) {
   BuiltinFuncMangleInfo BtnInfo;
   return mutateCallInst(M, CI, ArgMutate, &BtnInfo, Attrs);
 }
@@ -716,14 +715,14 @@ mutateCallInstSPIRV(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    AttributeSet *Attrs) {
+    AttributeList *Attrs) {
   BuiltinFuncMangleInfo BtnInfo;
   return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
 }
 
 CallInst *
 addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
-    AttributeSet *Attrs, Instruction *Pos, BuiltinFuncMangleInfo *Mangle,
+    AttributeList *Attrs, Instruction *Pos, BuiltinFuncMangleInfo *Mangle,
     StringRef InstName, bool TakeFuncName) {
 
   auto F = getOrCreateFunction(M, RetTy, getTypes(Args),
@@ -736,7 +735,7 @@ addCallInst(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
 
 CallInst *
 addCallInstSPIRV(Module *M, StringRef FuncName, Type *RetTy, ArrayRef<Value *> Args,
-    AttributeSet *Attrs, Instruction *Pos, StringRef InstName) {
+    AttributeList *Attrs, Instruction *Pos, StringRef InstName) {
   BuiltinFuncMangleInfo BtnInfo;
   return addCallInst(M, FuncName, RetTy, Args, Attrs, Pos, &BtnInfo,
       InstName);
@@ -1060,8 +1059,8 @@ transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info) {
   if (Ty->isPointerTy()) {
     auto ET = Ty->getPointerElementType();
     SPIR::ParamType *EPT = nullptr;
-    if (auto FT = dyn_cast<FunctionType>(ET)) {
-      assert(isVoidFuncTy(FT) && "Not supported");
+    if (isa<FunctionType>(ET)) {
+      assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
       EPT = new SPIR::BlockType;
     } else if (auto StructTy = dyn_cast<StructType>(ET)) {
       DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
@@ -1134,10 +1133,8 @@ getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
   assert(GEP->getNumOperands() == 3 && "must be a GEP from an array");
   auto P = GEP->getOperand(0);
   assert(P->getType()->getPointerElementType()->getArrayNumElements() == Size);
-  auto Index0 = GEP->getOperand(1);
-  assert(dyn_cast<ConstantInt>(Index0)->getZExtValue() == 0);
-  auto Index1 = GEP->getOperand(2);
-  assert(dyn_cast<ConstantInt>(Index1)->getZExtValue() == 0);
+  assert(dyn_cast<ConstantInt>(GEP->getOperand(1))->getZExtValue() == 0);
+  assert(dyn_cast<ConstantInt>(GEP->getOperand(2))->getZExtValue() == 0);
   return new LoadInst(P, "", Pos);
 }
 
@@ -1166,7 +1163,7 @@ getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len, uint64_t V,
     auto AT = ArrayType::get(ET, Len);
     std::vector<Constant *> EV(Len, ConstantInt::get(ET, V, isSigned));
     auto CA = ConstantArray::get(AT, EV);
-    auto Alloca = new AllocaInst(AT, "", Pos);
+    auto Alloca = new AllocaInst(AT, 0, "", Pos);
     new StoreInst(CA, Alloca, Pos);
     auto Zero = ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
     Value *Index[] = {Zero, Zero};

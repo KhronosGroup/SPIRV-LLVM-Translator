@@ -629,6 +629,8 @@ protected:
       op2Ty = getValueType(Op2);
     }
 
+    (void)op1Ty;
+    (void)op2Ty;
     if (isBinaryOpCode(OpCode)) {
       assert(getValueType(Op1)== getValueType(Op2) &&
              "Invalid type for binary instruction");
@@ -899,6 +901,9 @@ protected:
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
       return;
 
+    (void)op1Ty;
+    (void)op2Ty;
+    (void)resTy;
     if (getValueType(Op1)->isTypeVector()) {
       op1Ty = getValueType(Op1)->getVectorComponentType();
       op2Ty = getValueType(Op2)->getVectorComponentType();
@@ -979,6 +984,7 @@ protected:
     SPIRVType *conTy = getValueType(Condition)->isTypeVector() ?
         getValueType(Condition)->getVectorComponentType() :
         getValueType(Condition);
+    (void)conTy;
     assert(conTy->isTypeBool() && "Invalid type");
     assert(getType() == getValueType(Op1) && getType() == getValueType(Op2) &&
         "Inconsistent type");
@@ -1223,6 +1229,8 @@ protected:
       SPIRVType *opTy = Type->isTypeVector() ?
         getValueType(Op)->getVectorComponentType() : getValueType(Op);
 
+      (void)resTy;
+      (void)opTy;
       assert(getType() == getValueType(Op)  &&
         "Inconsistent type");
       assert((resTy->isTypeInt() || resTy->isTypeFloat()) &&
@@ -1800,8 +1808,7 @@ protected:
         getValue(Vector2)->isForward())
       return;
     assert(getValueType(Vector1) == getValueType(Vector2));
-    size_t CompCount = Type->getVectorComponentCount();
-    assert(Components.size() == CompCount);
+    assert(Components.size() == Type->getVectorComponentCount());
     assert(Components.size() > 1);
   }
   SPIRVId Vector1;

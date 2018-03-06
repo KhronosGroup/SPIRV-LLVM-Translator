@@ -122,7 +122,7 @@ void OCL20To12::visitCallAtomicWorkItemFence(CallInst* CI) {
     report_fatal_error("OCL 2.0 builtin atomic_work_item_fence used in 1.2",
         false);
 
-  AttributeSet Attrs = CI->getCalledFunction()->getAttributes();
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
     Args.resize(1);
     Args[0] = getInt32(M, std::get<0>(Lit));

@@ -20,8 +20,8 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-LLVM:         define spir_func void @array_test
 ; CHECK-LLVM-LABEL:   entry
-; CHECK-LLVM:         %0 = getelementptr inbounds %struct.arr addrspace(1)* %object, i32 0, i32 0
-; CHECK-LLVM:         %1 = load [7 x float] addrspace(1)* %0, align 4
+; CHECK-LLVM:         %0 = getelementptr inbounds %struct.arr, %struct.arr addrspace(1)* %object, i32 0, i32 0
+; CHECK-LLVM:         %1 = load [7 x float], [7 x float] addrspace(1)* %0, align 4
 ; CHECK-LLVM:         %2 = extractvalue [7 x float] %1, 4
 ; CHECK-LLVM:         %3 = extractvalue [7 x float] %1, 2
 ; CHECK-LLVM:         %4 = fadd float %2, %3
@@ -42,8 +42,8 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_func void @array_test(%struct.arr addrspace(1)* %object) #0 {
 entry:
-  %0 = getelementptr inbounds %struct.arr addrspace(1)* %object, i32 0, i32 0
-  %1 = load [7 x float] addrspace(1)* %0, align 4
+  %0 = getelementptr inbounds %struct.arr, %struct.arr addrspace(1)* %object, i32 0, i32 0
+  %1 = load [7 x float], [7 x float] addrspace(1)* %0, align 4
   %2 = extractvalue [7 x float] %1, 4
   %3 = extractvalue [7 x float] %1, 2
   %4 = fadd float %2, %3
@@ -54,8 +54,8 @@ entry:
 
 ; CHECK-LLVM:         define spir_func void @struct_test
 ; CHECK-LLVM-LABEL:   entry
-; CHECK-LLVM:         %0 = getelementptr inbounds %struct.st addrspace(1)* %object, i32 0, i32 0
-; CHECK-LLVM:         %1 = load %struct.inner addrspace(1)* %0, align 4
+; CHECK-LLVM:         %0 = getelementptr inbounds %struct.st, %struct.st addrspace(1)* %object, i32 0, i32 0
+; CHECK-LLVM:         %1 = load %struct.inner, %struct.inner addrspace(1)* %0, align 4
 ; CHECK-LLVM:         %2 = extractvalue %struct.inner %1, 0
 ; CHECK-LLVM:         %3 = fadd float %2, 1.000000e+00
 ; CHECK-LLVM:         %4 = insertvalue %struct.inner %1, float %3, 0
@@ -74,8 +74,8 @@ entry:
 ; Function Attrs: nounwind
 define spir_func void @struct_test(%struct.st addrspace(1)* %object) #0 {
 entry:
-  %0 = getelementptr inbounds %struct.st addrspace(1)* %object, i32 0, i32 0
-  %1 = load %struct.inner addrspace(1)* %0, align 4
+  %0 = getelementptr inbounds %struct.st, %struct.st addrspace(1)* %object, i32 0, i32 0
+  %1 = load %struct.inner, %struct.inner addrspace(1)* %0, align 4
   %2 = extractvalue %struct.inner %1, 0
   %3 = fadd float %2, 1.000000e+00
   %4 = insertvalue %struct.inner %1, float %3, 0

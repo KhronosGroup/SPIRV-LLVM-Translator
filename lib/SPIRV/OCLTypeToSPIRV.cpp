@@ -286,7 +286,7 @@ OCLTypeToSPIRV::adaptFunctionArguments(Function* F) {
   auto FT = F->getFunctionType();
   auto PI = FT->param_begin();
   auto Arg = F->arg_begin();
-  for (unsigned I = 0; I < F->getArgumentList().size(); ++I, ++PI, ++Arg) {
+  for (unsigned I = 0; I < F->arg_size(); ++I, ++PI, ++Arg) {
     auto NewTy = *PI;
     if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();
@@ -296,7 +296,7 @@ OCLTypeToSPIRV::adaptFunctionArguments(Function* F) {
           STName == kSPR2TypeName::Pipe) {
         auto Ty = STName.str();
         auto AccStr = getAccessQualifier(Ty);
-        addAdaptedType(Arg, getOrCreateOpaquePtrType(M,
+        addAdaptedType(&*Arg, getOrCreateOpaquePtrType(M,
                        mapOCLTypeNameToSPIRV(Ty, AccStr)));
         Changed = true;
       }

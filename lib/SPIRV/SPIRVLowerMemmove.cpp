@@ -54,7 +54,7 @@ using namespace SPIRV;
 
 namespace SPIRV {
 cl::opt<bool> SPIRVLowerMemmoveValidate("spvmemmove-validate",
-    cl::desc("Validate module after lowering llvm.memmove instructions into " 
+    cl::desc("Validate module after lowering llvm.memmove instructions into "
         "llvm.memcpy"));
 
 class SPIRVLowerMemmove: public ModulePass,
@@ -69,13 +69,13 @@ public:
     auto *Dest = I.getRawDest();
     auto *Src = I.getRawSource();
     auto *SrcTy = Src->getType();
-    if (!isa<ConstantInt>(I.getLength())) 
-        // ToDo: for non-constant length, could use a loop to copy a 
+    if (!isa<ConstantInt>(I.getLength()))
+        // ToDo: for non-constant length, could use a loop to copy a
         // fixed length chunk at a time. For now simply fail
-        report_fatal_error("llvm.memmove of non-constant length not supported", 
+        report_fatal_error("llvm.memmove of non-constant length not supported",
             false);
     auto *Length = cast<ConstantInt>(I.getLength());
-    if (isa<BitCastInst>(Src)) 
+    if (isa<BitCastInst>(Src))
         // The source could be bit-cast from another type,
         // need the original type for the allocation of the temporary variable
         SrcTy = cast<BitCastInst>(Src)->getOperand(0)->getType();
@@ -87,18 +87,18 @@ public:
         NumElements = Builder.getInt32(SrcTy->getArrayNumElements());
         ElementsCount = SrcTy->getArrayNumElements();
     }
-    if (Mod->getDataLayout()->getTypeSizeInBits(SrcTy->getPointerElementType()) 
+    if (Mod->getDataLayout().getTypeSizeInBits(SrcTy->getPointerElementType())
         * ElementsCount !=  Length->getZExtValue() * 8)
-        report_fatal_error("Size of the memcpy should match the allocated memory", 
+        report_fatal_error("Size of the memcpy should match the allocated memory",
             false);
 
-    auto *Alloca = Builder.CreateAlloca(SrcTy->getPointerElementType(), 
+    auto *Alloca = Builder.CreateAlloca(SrcTy->getPointerElementType(),
         NumElements);
-    auto *LifetimeStart = Builder.CreateLifetimeStart(Alloca);
-    auto *FirstCpy = Builder.CreateMemCpy(Alloca, Src, Length, Align, Volatile);
-    auto *SecondCpy = Builder.CreateMemCpy(Dest, Alloca, Length, Align, 
+    Builder.CreateLifetimeStart(Alloca);
+    Builder.CreateMemCpy(Alloca, Src, Length, Align, Volatile);
+    auto *SecondCpy = Builder.CreateMemCpy(Dest, Alloca, Length, Align,
         Volatile);
-    auto *LifetimeEnd = Builder.CreateLifetimeEnd(Alloca);
+    Builder.CreateLifetimeEnd(Alloca);
 
     SecondCpy->takeName(&I);
     I.replaceAllUsesWith(SecondCpy);

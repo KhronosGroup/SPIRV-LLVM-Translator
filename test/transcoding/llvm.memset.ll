@@ -38,7 +38,7 @@ target triple = "spir"
 define spir_func void @_Z5foo11v(%struct.S1 addrspace(4)* noalias nocapture sret %agg.result) #0 {
   %1 = bitcast %struct.S1 addrspace(4)* %agg.result to i8 addrspace(4)*
   tail call void @llvm.memset.p4i8.i32(i8 addrspace(4)* %1, i8 0, i32 12, i32 4, i1 false)
-; CHECK-LLVM: call void @llvm.memset.p4i8.i32(i8 addrspace(4)* %1, i8 0, i32 12, i32 4, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p4i8.i32(i8 addrspace(4)* align 4 %1, i8 0, i32 12, i1 false)
   ret void
 }
 

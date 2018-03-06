@@ -57,7 +57,7 @@
 ; CHECK: store %struct.__block_descriptor* @__block_descriptor_spirv.1, %struct.__block_descriptor** [[BLOCKDESCGEP2]]
 ; CHECK: [[CAPTUREDGEP:%.*]] = getelementptr <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>, <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]], i32 0, i32 5
 ; CHECK: [[CAPTUREDCAST:%.*]] = bitcast [8 x i8]* [[CAPTUREDGEP]] to i8*
-; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* [[CAPTUREDCAST]], i8* %0, i32 8, i32 8, i1 false)
+; CHECK: call void @llvm.memcpy.p0i8.p0i8.i32(i8* align 8 [[CAPTUREDCAST]], i8* align 8 %0, i32 8, i1 false)
 ; CHECK: [[BLOCKBCAST2:%.*]] = bitcast <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [8 x i8] }>* [[BLOCK2]] to i8*
 ; CHECK: [[BLOCKADDRCAST2:%.*]] = addrspacecast i8* [[BLOCKBCAST2]] to i8 addrspace(4)*
 ; CHECK: call i32 @__get_kernel_work_group_size_impl(i8 addrspace(4)* [[BLOCKADDRCAST2]])

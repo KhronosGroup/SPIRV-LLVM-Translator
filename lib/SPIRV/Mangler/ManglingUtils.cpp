@@ -175,7 +175,7 @@ namespace SPIR {
     return readableAttribute[attribute];
   }
 
-  const SPIRversion getSupportedVersion(TypePrimitiveEnum t) {
+  SPIRversion getSupportedVersion(TypePrimitiveEnum t) {
     return primitiveSupportedVersions[t];
   }
 

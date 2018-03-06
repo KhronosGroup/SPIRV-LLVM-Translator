@@ -57,7 +57,7 @@
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/DebugInfo.h"
@@ -137,10 +137,10 @@ public:
       auto DL = I->getDebugLoc();
       if (DL) {
         auto File = BM->getString(DL->getFilename().str());
-        BM->addLine(BV, File, DL->getLine(), DL->getColumn());
+        BM->addLine(BV, File->getId(), DL->getLine(), DL->getColumn());
       }
     } else if (auto F = dyn_cast<Function>(V)) {
-      if (auto DIS = getDISubprogram(F)) {
+      if (auto DIS = F->getSubprogram()) {
         auto File = BM->getString(DIS->getFilename().str());
         BM->addLine(BV, File->getId(), DIS->getLine(), 0);
       }
@@ -165,7 +165,7 @@ public:
         DbgTran(nullptr, SMod){
   }
 
-  virtual const char* getPassName() const {
+  virtual StringRef getPassName() const {
     return "LLVMToSPIRV";
   }
 
@@ -411,7 +411,7 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
   SmallPtrSet<const StructType *, 4> Seen;
 
   std::function<bool(const Type *Ty)> Run = [&](const Type *Ty) {
-    if (!isa<CompositeType>(Ty))
+    if (!isa<CompositeType>(Ty) && !Ty->isPointerTy())
       return false;
 
     if (auto *StructTy = dyn_cast<StructType>(Ty)) {
@@ -423,8 +423,8 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
 
       Seen.insert(StructTy);
 
-      return find_if(StructTy->subtype_begin(), StructTy->subtype_end(), Run) !=
-             StructTy->subtype_end();
+      return find_if(StructTy->element_begin(), StructTy->element_end(), Run) !=
+             StructTy->element_end();
     }
 
     if (auto *PtrTy = dyn_cast<PointerType>(Ty))
@@ -531,6 +531,7 @@ LLVMToSPIRV::transType(Type *T) {
 
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
+    (void)ST; // Silence warning
     assert(!ST->getName().startswith(kSPR2TypeName::Pipe));
     assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
@@ -555,7 +556,7 @@ LLVMToSPIRV::transType(Type *T) {
 
     for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
       auto *ElemTy = ST->getElementType(I);
-      if (isa<CompositeType>(ElemTy) && recursiveType(ST, ElemTy))
+      if ((isa<CompositeType>(ElemTy) || isa<PointerType>(ElemTy)) && recursiveType(ST, ElemTy))
         ForwardRefs.push_back(I);
       else
         Struct->setMemberType(I, transType(ST->getElementType(I)));
@@ -573,7 +574,8 @@ LLVMToSPIRV::transType(Type *T) {
     SPIRVType *RT = transType(FT->getReturnType());
     std::vector<SPIRVType *> PT;
     for (FunctionType::param_iterator I = FT->param_begin(),
-        E = FT->param_end(); I != E; ++I)
+                                      E = FT->param_end();
+         I != E; ++I)
       PT.push_back(transType(*I));
     return mapType(T, BM->addFunctionType(RT, PT));
   }
@@ -586,21 +588,20 @@ SPIRVType *
 LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
   auto ET = T->getPointerElementType();
   auto ST = cast<StructType>(ET);
-  auto AddrSpc = T->getPointerAddressSpace();
   auto STName = ST->getStructName();
   assert (STName.startswith(kSPIRVTypeName::PrefixAndDelim) &&
     "Invalid SPIR-V opaque type name");
   SmallVector<std::string, 8> Postfixes;
   auto TN = decodeSPIRVTypeName(STName, Postfixes);
   if (TN == kSPIRVTypeName::Pipe) {
-    assert(AddrSpc == SPIRAS_Global);
+    assert(T->getPointerAddressSpace() == SPIRAS_Global);
     assert(Postfixes.size() == 1 && "Invalid pipe type ops");
     auto PipeT = BM->addPipeType();
     PipeT->setPipeAcessQualifier(static_cast<spv::AccessQualifier>(
       atoi(Postfixes[0].c_str())));
     return mapType(T, PipeT);
   } else if (TN == kSPIRVTypeName::Image) {
-    assert(AddrSpc == SPIRAS_Global);
+    assert(T->getPointerAddressSpace() == SPIRAS_Global);
     // The sampled type needs to be translated through LLVM type to guarantee
     // uniqueness.
     auto SampledT = transType(getLLVMTypeForSPIRVImageSampledTypePostfix(
@@ -679,9 +680,9 @@ LLVMToSPIRV::transFunctionDecl(Function *F) {
                       Attrs.getAttribute(ArgNo + 1, Attribute::Dereferenceable)
                         .getDereferenceableBytes());
   }
-  if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::ZExt))
+  if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::ZExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeZext);
-  if (Attrs.hasAttribute(AttributeSet::ReturnIndex, Attribute::SExt))
+  if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::SExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
   DbgTran.transDbgInfo(F, BF);
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
@@ -844,8 +845,10 @@ LLVMToSPIRV::transLifetimeIntrinsicInst(Op OC, IntrinsicInst *II, SPIRVBasicBloc
   auto Op1 = II->getOperand(1);
 
   if (auto AI = dyn_cast<AllocaInst>(Op1)) {
-    assert(!Size ||
-      M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType()) == Size * 8 &&
+    (void)AI;
+    assert((!Size ||
+      M->getDataLayout().getTypeSizeInBits(AI->getAllocatedType()) ==
+      (uint64_t)(Size * 8)) &&
       "Size of the argument should match the allocated memory");
     return BM->addLifetimeInst(OC, transValue(Op1, BB), Size, BB);
   }
@@ -853,13 +856,15 @@ LLVMToSPIRV::transLifetimeIntrinsicInst(Op OC, IntrinsicInst *II, SPIRVBasicBloc
   assert(isa<BitCastInst>(Op1));
   for (const auto &U : Op1->users()) {
     auto BCU = dyn_cast<IntrinsicInst>(U);
+    (void)BCU;
     assert(BCU && (BCU->getIntrinsicID() == Intrinsic::lifetime_start ||
         BCU->getIntrinsicID() == Intrinsic::lifetime_end) &&
         "The only users of this bitcast instruction are lifetime intrinsics");
   }
   auto AI = dyn_cast<AllocaInst>(dyn_cast<BitCastInst>(Op1)->getOperand(0));
   assert(AI && (!Size ||
-      M->getDataLayout()->getTypeSizeInBits(AI->getAllocatedType()) == Size * 8) &&
+      M->getDataLayout().getTypeSizeInBits(AI->getAllocatedType()) ==
+      (uint64_t)(Size * 8)) &&
       "Size of the argument should match the allocated memory");
   auto LT = BM->addLifetimeInst(OC, transValue(AI, BB), Size, BB);
   auto BC = LT->getPrevious();
@@ -1003,7 +1008,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
-  if (auto U = dyn_cast<UnreachableInst>(V))
+  if (dyn_cast<UnreachableInst>(V))
       return mapValue(V, BM->addUnreachableInst(BB));
 
   if (auto RI = dyn_cast<ReturnInst>(V)) {
@@ -1035,11 +1040,9 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     std::vector<SPIRVSwitch::PairTy> Pairs;
     auto Select = transValue(Switch->getCondition(), BB);
 
-    unsigned BitWidth = Select->getType()->getBitWidth();
-
     for (auto I = Switch->case_begin(), E = Switch->case_end(); I != E; ++I) {
       SPIRVSwitch::LiteralTy Lit;
-      uint64_t CaseValue = I.getCaseValue()->getZExtValue();
+      uint64_t CaseValue = I->getCaseValue()->getZExtValue();
 
       Lit.push_back(CaseValue);
       assert(Select->getType()->getBitWidth() <= 64 && "unexpected selector bitwidth");
@@ -1047,7 +1050,7 @@ LLVMToSPIRV::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         Lit.push_back(CaseValue >> 32);
 
       Pairs.push_back(std::make_pair(Lit,
-          static_cast<SPIRVBasicBlock*>(transValue(I.getCaseSuccessor(),
+          static_cast<SPIRVBasicBlock*>(transValue(I->getCaseSuccessor(),
               nullptr))));
     }
 
@@ -1192,9 +1195,10 @@ LLVMToSPIRV::transAlign(Value *V, SPIRVValue *BV) {
 bool
 LLVMToSPIRV::transBuiltinSet() {
   SPIRVWord Ver = 0;
-  SourceLanguage Kind = BM->getSourceLanguage(&Ver);
-  assert((Kind == SourceLanguageOpenCL_C ||
-      Kind == SourceLanguageOpenCL_CPP ) && "not supported");
+  (void)Ver;
+  assert((BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_C ||
+          BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_CPP) &&
+         "not supported");
   std::stringstream SS;
   SS << "OpenCL.std";
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
@@ -1455,7 +1459,7 @@ LLVMToSPIRV::mutateFuncArgType(const std::map<unsigned, Type*>& ChangedType,
       if (OrigTy == I.second)
         continue;
       SPIRVDBG(dbgs() << "[mutate arg type] " << *Call << ", " << *Arg << '\n');
-      auto CastF = M->getOrInsertFunction(SPCV_CAST, I.second, OrigTy, nullptr);
+      auto CastF = M->getOrInsertFunction(SPCV_CAST, I.second, OrigTy);
       std::vector<Value *> Args;
       Args.push_back(Arg);
       auto Cast = CallInst::Create(CastF, Args, "", Call);

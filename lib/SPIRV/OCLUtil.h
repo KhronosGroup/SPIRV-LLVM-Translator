@@ -341,7 +341,7 @@ mapSPIRVMemOrderToOCL(unsigned Sema) {
 CallInst *
 mutateCallInstOCL(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    AttributeSet *Attrs = nullptr);
+    AttributeList *Attrs = nullptr);
 
 /// Mutate call instruction to call OpenCL builtin function.
 Instruction *
@@ -349,13 +349,13 @@ mutateCallInstOCL(Module *M, CallInst *CI,
     std::function<std::string (CallInst *, std::vector<Value *> &,
         Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
-    AttributeSet *Attrs = nullptr);
+    AttributeList *Attrs = nullptr);
 
 /// Mutate a function to OpenCL builtin function.
 void
 mutateFunctionOCL(Function *F,
     std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
-    AttributeSet *Attrs = nullptr);
+    AttributeList *Attrs = nullptr);
 
 /// Check if instruction is bitcast from spirv.ConstantSampler to spirv.Sampler
 bool
