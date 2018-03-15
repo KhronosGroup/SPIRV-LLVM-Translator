@@ -105,12 +105,12 @@ protected:
   SPIRVDecorationGroup *Owner; // Owning decorate group
 };
 
-class SPIRVDecorateSet: public std::multiset<const SPIRVDecorateGeneric *,
+class SPIRVDecorateSet: public std::multiset<SPIRVDecorateGeneric *,
     SPIRVDecorateGeneric::Comparator> {
     public:
-  typedef std::multiset<const SPIRVDecorateGeneric *,
+  typedef std::multiset<SPIRVDecorateGeneric *,
       SPIRVDecorateGeneric::Comparator> BaseType;
-  iterator insert(const value_type& Dec) {
+  iterator insert(value_type& Dec) {
     auto ER = BaseType::equal_range(Dec);
     for (auto I = ER.first, E = ER.second; I != E; ++I) {
       SPIRVDBG(spvdbgs() << "[compare decorate] " << *Dec
