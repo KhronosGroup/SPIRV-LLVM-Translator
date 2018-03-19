@@ -170,7 +170,7 @@ public:
       SPIRVWord Column) = 0;
   virtual const std::shared_ptr<const SPIRVLine>& getCurrentLine() const = 0;
   virtual void setCurrentLine(const std::shared_ptr<const SPIRVLine>&) = 0;
-  virtual const SPIRVDecorateGeneric *addDecorate(const SPIRVDecorateGeneric*)
+  virtual const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric*)
     = 0;
   virtual SPIRVDecorationGroup *addDecorationGroup() = 0;
   virtual SPIRVDecorationGroup *addDecorationGroup(SPIRVDecorationGroup *Group)

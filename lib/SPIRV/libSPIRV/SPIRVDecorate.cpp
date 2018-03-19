@@ -171,7 +171,7 @@ SPIRVGroupDecorate::decorateTargets() {
     auto Target = getOrCreate(I);
     for (auto &Dec:DecorationGroup->getDecorations()) {
       assert(Dec->isDecorate());
-      Target->addDecorate(static_cast<const SPIRVDecorate *const>(Dec));
+      Target->addDecorate(static_cast<SPIRVDecorate *const>(Dec));
     }
   }
 }
@@ -182,7 +182,7 @@ SPIRVGroupMemberDecorate::decorateTargets() {
     auto Target = getOrCreate(I);
     for (auto &Dec:DecorationGroup->getDecorations()) {
       assert(Dec->isMemberDecorate());
-      Target->addMemberDecorate(static_cast<const SPIRVMemberDecorate*>(Dec));
+      Target->addMemberDecorate(static_cast<SPIRVMemberDecorate*>(Dec));
     }
   }
 }

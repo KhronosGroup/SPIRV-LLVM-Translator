@@ -168,7 +168,7 @@ public:
   virtual void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line);
   virtual void addCapability(SPIRVCapabilityKind);
   virtual void addCapabilityInternal(SPIRVCapabilityKind);
-  virtual const SPIRVDecorateGeneric *addDecorate(const SPIRVDecorateGeneric *);
+  virtual const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *);
   virtual SPIRVDecorationGroup *addDecorationGroup();
   virtual SPIRVDecorationGroup *addDecorationGroup(SPIRVDecorationGroup *Group);
   virtual SPIRVGroupDecorate *addGroupDecorate(SPIRVDecorationGroup *Group,
@@ -433,7 +433,7 @@ SPIRVModuleImpl::optimizeDecorates() {
       continue;
     }
     SPIRVDBG(spvdbgs() << "  add deco group. erase equal range\n");
-    auto G = new SPIRVDecorationGroup(this, getId());
+    auto G = add(new SPIRVDecorationGroup(this, getId()));
     std::vector<SPIRVId> Targets;
     Targets.push_back(D->getTargetId());
     const_cast<SPIRVDecorateGeneric*>(D)->setTargetId(G->getId());
@@ -450,7 +450,7 @@ SPIRVModuleImpl::optimizeDecorates() {
     // For now, just skip using a group if the number of targets to too big
     if (Targets.size() < 65530) {
       DecorateSet.erase(ER.first, ER.second);
-      auto GD = new SPIRVGroupDecorate(G, Targets);
+      auto GD = add(new SPIRVGroupDecorate(G, Targets));
       DecGroupVec.push_back(G);
       GroupDecVec.push_back(GD);
     }
@@ -841,7 +841,8 @@ SPIRVModuleImpl::addBasicBlock(SPIRVFunction *Func, SPIRVId Id) {
 }
 
 const SPIRVDecorateGeneric *
-SPIRVModuleImpl::addDecorate(const SPIRVDecorateGeneric *Dec) {
+SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
+  add(Dec);
   SPIRVId Id = Dec->getTargetId();
   SPIRVEntry *Target = nullptr;
   bool Found = exist(Id, &Target);

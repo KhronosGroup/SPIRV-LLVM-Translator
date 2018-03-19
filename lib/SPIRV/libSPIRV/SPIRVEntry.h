@@ -273,11 +273,11 @@ public:
     return false;
   }
 
-  void addDecorate(const SPIRVDecorate *);
+  void addDecorate(SPIRVDecorate *);
   void addDecorate(Decoration Kind);
   void addDecorate(Decoration Kind, SPIRVWord Literal);
   void eraseDecorate(Decoration);
-  void addMemberDecorate(const SPIRVMemberDecorate *);
+  void addMemberDecorate(SPIRVMemberDecorate *);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind,
       SPIRVWord Literal);

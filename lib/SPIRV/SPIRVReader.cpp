@@ -427,10 +427,8 @@ private:
           "A value is translated twice");
       // Replaces placeholders for PHI nodes
       LD->replaceAllUsesWith(V);
-      LD->dropAllReferences();
-      LD->removeFromParent();
-      Placeholder->dropAllReferences();
-      Placeholder->removeFromParent();
+      LD->eraseFromParent();
+      Placeholder->eraseFromParent();
     }
     ValueMap[BV] = V;
     return V;
@@ -567,8 +565,7 @@ SPIRVToLLVM::transOCLBuiltinsFromVariables(){
     WorkList.push_back(I);
   }
   for (auto &I:WorkList) {
-    I->dropAllReferences();
-    I->removeFromParent();
+    I->eraseFromParent();
   }
   return true;
 }
@@ -636,8 +633,7 @@ SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
     I->replaceAllUsesWith(Call);
   }
   for (auto &I:Deletes) {
-    I->dropAllReferences();
-    I->removeFromParent();
+    I->eraseFromParent();
   }
   return true;
 }
@@ -1103,14 +1099,11 @@ SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
       Args.insert(Args.begin(), ST->getPointerOperand());
       auto NewCI = CallInst::Create(newF, Args, CI->getName(), CI);
       NewCI->setCallingConv(CI->getCallingConv());
-      ST->dropAllReferences();
-      ST->removeFromParent();
-      CI->dropAllReferences();
-      CI->removeFromParent();
+      ST->eraseFromParent();
+      CI->eraseFromParent();
     }
   }
-  F->dropAllReferences();
-  F->removeFromParent();
+  F->eraseFromParent();
   return true;
 }
 

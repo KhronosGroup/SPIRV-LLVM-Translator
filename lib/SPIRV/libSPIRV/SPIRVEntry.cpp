@@ -282,7 +282,7 @@ SPIRVEntry::validateBuiltin(SPIRVWord TheSet, SPIRVWord Index)const {
 }
 
 void
-SPIRVEntry::addDecorate(const SPIRVDecorate *Dec) {
+SPIRVEntry::addDecorate(SPIRVDecorate *Dec) {
   auto Kind = Dec->getDecorateKind();
   Decorates.insert(std::make_pair(Dec->getDecorateKind(), Dec));
   Module->addDecorate(Dec);
@@ -321,7 +321,7 @@ SPIRVEntry::setLine(const std::shared_ptr<const SPIRVLine>& L){
 }
 
 void
-SPIRVEntry::addMemberDecorate(const SPIRVMemberDecorate *Dec){
+SPIRVEntry::addMemberDecorate(SPIRVMemberDecorate *Dec){
   assert(canHaveMemberDecorates() && MemberDecorates.find(Dec->getPair()) ==
       MemberDecorates.end());
   MemberDecorates[Dec->getPair()] = Dec;

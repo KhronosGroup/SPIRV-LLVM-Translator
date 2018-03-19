@@ -655,8 +655,7 @@ mutateCallInst(Module *M, CallInst *CI,
       InstName, TakeFuncName);
   DEBUG(dbgs() << " => " << *NewCI << '\n');
   CI->replaceAllUsesWith(NewCI);
-  CI->dropAllReferences();
-  CI->removeFromParent();
+  CI->eraseFromParent();
   return NewCI;
 }
 
@@ -682,8 +681,7 @@ mutateCallInst(Module *M, CallInst *CI,
   NewI->takeName(CI);
   DEBUG(dbgs() << " => " << *NewI << '\n');
   CI->replaceAllUsesWith(NewI);
-  CI->dropAllReferences();
-  CI->removeFromParent();
+  CI->eraseFromParent();
   return NewI;
 }
 
