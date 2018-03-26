@@ -2224,11 +2224,13 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
     default:
       return OCLSPIRVBuiltinMap::rmap(OC);
     }
-    if (DataTy && DataTy->isTypeVector()) {
-      if (DataTy->getVectorComponentType()->getBitWidth() == 16)
+    if (DataTy) {
+      if (DataTy->getBitWidth() == 16)
         Name << "_us";
-      if (unsigned ComponentCount = DataTy->getVectorComponentCount())
-        Name << ComponentCount;
+      if (DataTy->isTypeVector()) {
+        if (unsigned ComponentCount = DataTy->getVectorComponentCount())
+          Name << ComponentCount;
+      }
     }
     return Name.str();
   }
