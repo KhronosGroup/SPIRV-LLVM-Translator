@@ -196,12 +196,21 @@ void TransOCLMD::visit(Module *M) {
           .done();
     }
 
-    // !{void (i32 addrspace(1)*)* @kernel, i32 30, i32 X, i32 Y, i32 Z}
+    // !{void (i32 addrspace(1)*)* @kernel, i32 30, i32 hint}
     if (MDNode *VecTypeHint = Kernel.getMetadata(kSPIR2MD::VecTyHint)) {
       EM.addOp()
           .add(&Kernel)
           .add(spv::ExecutionModeVecTypeHint)
           .add(transVecTypeHint(VecTypeHint))
+          .done();
+    }
+
+    // !{void (i32 addrspace(1)*)* @kernel, i32 35, i32 size}
+    if (MDNode *ReqdSubgroupSize = Kernel.getMetadata(kSPIR2MD::SubgroupSize)) {
+      EM.addOp()
+          .add(&Kernel)
+          .add(spv::ExecutionModeSubgroupSize)
+          .add(getMDOperandAsInt(ReqdSubgroupSize, 0))
           .done();
     }
   }
