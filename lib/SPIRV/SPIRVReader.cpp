@@ -2562,6 +2562,11 @@ bool SPIRVToLLVM::transKernelMetadata() {
           ConstantInt::get(Type::getInt32Ty(*Context), 1)));
       F->setMetadata(kSPIR2MD::VecTyHint, MDNode::get(*Context, MetadataVec));
     }
+    // Generate metadata for intel_reqd_sub_group_size
+    if (auto *EM = BF->getExecutionMode(ExecutionModeSubgroupSize)) {
+      auto SizeMD = ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0]));
+      F->setMetadata(kSPIR2MD::SubgroupSize, MDNode::get(*Context, SizeMD));
+    }
   }
   return true;
 }
