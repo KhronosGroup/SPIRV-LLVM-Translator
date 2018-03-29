@@ -292,7 +292,6 @@ private:
   void mutateFuncArgType(const std::map<unsigned, Type *> &ChangedType,
                          Function *F);
 
-  SPIRVValue *transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB);
   SPIRVValue *oclTransSpvcCastSampler(CallInst *CI, SPIRVBasicBlock *BB);
 
   SPIRV::SPIRVInstruction *transUnaryInst(UnaryInstruction *U,
@@ -465,11 +464,15 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
                                          ? AccessQualifierReadOnly
                                          : AccessQualifierWriteOnly);
         return mapType(T, PipeT);
-      } else if (STName.find(kSPR2TypeName::ImagePrefix) == 0) {
+      }
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         assert(AddrSpc == SPIRAS_Global);
         auto SPIRVImageTy = getSPIRVImageTypeFromOCL(M, T);
         return mapType(T, transType(SPIRVImageTy));
-      } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
+      }
+      if (STName == kSPR2TypeName::Sampler)
+        return mapType(T, transType(getSamplerType(M)));
+      if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
       else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
         switch (OpCode) {
@@ -1180,8 +1183,9 @@ bool LLVMToSPIRV::transBuiltinSet() {
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
 }
 
-/// Transform sampler* spcv.cast(i32 arg)
-/// Only two cases are possible:
+/// Translate sampler* spcv.cast(i32 arg) or
+/// sampler* __translate_sampler_initializer(i32 arg)
+/// Three cases are possible:
 ///   arg = ConstantInt x -> SPIRVConstantSampler
 ///   arg = i32 argument -> transValue(arg)
 ///   arg = load from sampler -> look through load
@@ -1191,7 +1195,8 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();
   assert(FT->getNumParams() == 1);
-  assert(isSPIRVType(RT, kSPIRVTypeName::Sampler) &&
+  assert((isSPIRVType(RT, kSPIRVTypeName::Sampler) ||
+          isPointerToOpaqueStructType(RT, kSPR2TypeName::Sampler)) &&
          FT->getParamType(0)->isIntegerTy() && "Invalid sampler type");
   auto Arg = CI->getArgOperand(0);
 
@@ -1222,10 +1227,6 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
   auto BV = transValue(Arg, BB);
   assert(BV && BV->getType() == transType(RT));
   return BV;
-}
-
-SPIRVValue *LLVMToSPIRV::transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB) {
-  return oclTransSpvcCastSampler(CI, BB);
 }
 
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
@@ -1316,8 +1317,8 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
   auto MangledName = F->getName();
   std::string DemangledName;
 
-  if (MangledName.startswith(SPCV_CAST))
-    return transSpcvCast(CI, BB);
+  if (MangledName.startswith(SPCV_CAST) || MangledName == SAMPLER_INIT)
+    return oclTransSpvcCastSampler(CI, BB);
 
   if (oclIsBuiltin(MangledName, &DemangledName) ||
       isDecoratedSPIRVFunc(F, &DemangledName))
@@ -1479,7 +1480,8 @@ bool LLVMToSPIRV::translate() {
   for (auto &F : *M) {
     if (isBuiltinTransToInst(&F) || isBuiltinTransToExtInst(&F) ||
         F.getName().startswith(SPCV_CAST) ||
-        F.getName().startswith(LLVM_MEMCPY))
+        F.getName().startswith(LLVM_MEMCPY) ||
+        F.getName().startswith(SAMPLER_INIT))
       continue;
     if (F.isDeclaration())
       Decls.push_back(&F);
