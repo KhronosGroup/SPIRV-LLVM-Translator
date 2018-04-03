@@ -1,0 +1,41 @@
+# -*- Python -*-
+
+import lit.formats
+import lit.util
+
+from lit.llvm import llvm_config
+from lit.llvm.subst import ToolSubst
+from lit.llvm.subst import FindTool
+
+# Configuration file for the 'lit' test runner.
+
+# name: The name of this test suite.
+config.name = 'LLVM_SPIRV'
+
+# testFormat: The test format to use to interpret tests.
+config.test_format = lit.formats.ShTest(True)
+
+# suffixes: A list of file extensions to treat as test files.
+config.suffixes = ['.ll', '.spt']
+
+# excludes: A list of directories  and fles to exclude from the testsuite.
+config.excludes = ['CMakeLists.txt']
+
+# test_source_root: The root path where tests are located.
+config.test_source_root = os.path.dirname(__file__)
+
+# test_exec_root: The root path where tests should be run.
+config.test_exec_root = os.path.join(config.llvm_obj_root, 'test')
+
+llvm_config.use_default_substitutions()
+
+#llvm_config.use_clang()
+
+config.substitutions.append(('%PATH%', config.environment['PATH']))
+
+tool_dirs = [config.llvm_tools_dir]
+
+tools = ['llvm-as', 'llvm-dis', 'llvm-spirv']
+
+llvm_config.add_tool_substitutions(tools, tool_dirs)
+
