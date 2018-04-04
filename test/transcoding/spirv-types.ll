@@ -42,7 +42,8 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
 
-; CHECK-LLVM-DAG: %opencl.pipe_t = type opaque
+; CHECK-LLVM-DAG: %opencl.pipe_ro_t = type opaque
+; CHECK-LLVM-DAG: %opencl.pipe_wo_t = type opaque
 ; CHECK-LLVM-DAG: %opencl.image3d_t = type opaque
 ; CHECK-LLVM_DAG: %opencl.image2d_depth_t = type opaque
 ; CHECK-LLVM-DAG: %opencl.image2d_array_t = type opaque
@@ -83,8 +84,8 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: 3 FunctionParameter [[IMG2D_RW]] {{[0-9]+}}
 
 ; CHECK-LLVM:        define spir_kernel void @foo(
-; CHECK-LLVM-SAME:     %opencl.pipe_t addrspace(1)* nocapture %a,
-; CHECK-LLVM-SAME:     %opencl.pipe_t addrspace(1)* nocapture %b,
+; CHECK-LLVM-SAME:     %opencl.pipe_ro_t addrspace(1)* nocapture %a,
+; CHECK-LLVM-SAME:     %opencl.pipe_wo_t addrspace(1)* nocapture %b,
 ; CHECK-LLVM-SAME:     %opencl.image1d_t addrspace(1)* nocapture %c1,
 ; CHECK-LLVM-SAME:     %opencl.image2d_t addrspace(1)* nocapture %d1,
 ; CHECK-LLVM-SAME:     %opencl.image3d_t addrspace(1)* nocapture %e1,
@@ -163,7 +164,6 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 !opencl.used.extensions = !{!8}
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!8}
-!llvm.ident = !{!10}
 
 ; CHECK-LLVM-DAG: [[AS]] = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
 ; CHECK-LLVM-DAG: [[AQ]] = !{!"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write"}
@@ -179,4 +179,3 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 !7 = !{i32 2, i32 0}
 !8 = !{!"cl_khr_fp16"}
 !9 = !{!"cl_images"}
-!10 = !{!"clang version 3.6.1 "}

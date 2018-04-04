@@ -295,7 +295,8 @@ namespace kSPR2TypeName {
 const static char Delimiter = '.';
 const static char OCLPrefix[] = "opencl.";
 const static char ImagePrefix[] = "opencl.image";
-const static char Pipe[] = "opencl.pipe_t";
+const static char PipeRO[] = "opencl.pipe_ro_t";
+const static char PipeWO[] = "opencl.pipe_wo_t";
 const static char Sampler[] = "opencl.sampler_t";
 const static char Event[] = "opencl.event_t";
 } // namespace kSPR2TypeName
