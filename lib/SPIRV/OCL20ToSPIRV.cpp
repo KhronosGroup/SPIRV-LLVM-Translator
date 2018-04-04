@@ -195,10 +195,6 @@ public:
 
   void visitCallNDRange(CallInst *CI, const std::string &DemangledName);
 
-  /// Transform OCL pipe builtin function to SPIR-V pipe builtin function.
-  void visitCallPipeBuiltin(CallInst *CI, StringRef MangledName,
-                            const std::string &DemangledName);
-
   /// Transform read_image with sampler arguments.
   /// read_image(image, sampler, ...) =>
   ///   sampled_image = __spirv_SampledImage(image, sampler);
@@ -441,10 +437,6 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
       (DemangledName.find(kOCLBuiltinName::SubGroupPrefix) == 0 &&
        DemangledName != kOCLBuiltinName::SubGroupBarrier)) {
     visitCallGroupBuiltin(&CI, MangledName, DemangledName);
-    return;
-  }
-  if (DemangledName.find(kOCLBuiltinName::Pipe) != std::string::npos) {
-    visitCallPipeBuiltin(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::MemFence) {
@@ -1013,20 +1005,6 @@ void OCL20ToSPIRV::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
                 NewCI, CI->getType(), "", CI);
         },
         &Attrs);
-}
-
-void OCL20ToSPIRV::visitCallPipeBuiltin(CallInst *CI, StringRef MangledName,
-                                        const std::string &DemangledName) {
-  std::string NewName = DemangledName;
-  // Transform OpenCL read_pipe/write_pipe builtin function names
-  // with reserve_id argument to reserved_read_pipe/reserved_write_pipe.
-  if ((DemangledName.find(kOCLBuiltinName::ReadPipe) == 0 ||
-       DemangledName.find(kOCLBuiltinName::WritePipe) == 0) &&
-      CI->getNumArgOperands() > 4)
-    NewName = std::string(kSPIRVName::ReservedPrefix) + DemangledName;
-  OCLBuiltinTransInfo Info;
-  Info.UniqName = NewName;
-  transBuiltin(CI, Info);
 }
 
 void OCL20ToSPIRV::visitCallReadImageMSAA(CallInst *CI, StringRef MangledName,

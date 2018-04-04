@@ -458,23 +458,12 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
         STName = kSPR2TypeName::Event;
         ST->setName(STName);
       }
-      assert(!STName.startswith(kSPR2TypeName::Pipe) &&
-             "OpenCL type names should be translated to SPIR-V type names");
-      // ToDo: For SPIR1.2/2.0 there may still be load/store or bitcast
-      // instructions using opencl.* type names. We need to handle these
-      // type names until they are all mapped or FE generates SPIR-V type
-      // names.
-      if (STName.find(kSPR2TypeName::Pipe) == 0) {
-        assert(AddrSpc == SPIRAS_Global);
-        SmallVector<StringRef, 4> SubStrs;
-        const char Delims[] = {kSPR2TypeName::Delimiter, 0};
-        STName.split(SubStrs, Delims);
-        std::string Acc = kAccessQualName::ReadOnly;
-        if (SubStrs.size() > 2) {
-          Acc = SubStrs[2];
-        }
+      if (STName.startswith(kSPR2TypeName::PipeRO) ||
+          STName.startswith(kSPR2TypeName::PipeWO)) {
         auto PipeT = BM->addPipeType();
-        PipeT->setPipeAcessQualifier(SPIRSPIRVAccessQualifierMap::map(Acc));
+        PipeT->setPipeAcessQualifier(STName.startswith(kSPR2TypeName::PipeRO)
+                                         ? AccessQualifierReadOnly
+                                         : AccessQualifierWriteOnly);
         return mapType(T, PipeT);
       } else if (STName.find(kSPR2TypeName::ImagePrefix) == 0) {
         assert(AddrSpc == SPIRAS_Global);
@@ -486,8 +475,6 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
         switch (OpCode) {
         default:
           return mapType(T, BM->addOpaqueGenericType(OpCode));
-        case OpTypePipe:
-          return mapType(T, BM->addPipeType());
         case OpTypeDeviceEvent:
           return mapType(T, BM->addDeviceEventType());
         case OpTypeQueue:
@@ -522,7 +509,8 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
     (void)ST; // Silence warning
-    assert(!ST->getName().startswith(kSPR2TypeName::Pipe));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeRO));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeWO));
     assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
   }
