@@ -1,4 +1,4 @@
-//===- SPIRVLowerOCLBlocks.cpp - Lower OpenCL blocks ------------*- C++ -*-===//
+//===- SPIRVLowerSPIRBlocks.cpp - Lower SPIR 2.0 blocks ---------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -33,7 +33,7 @@
 //===----------------------------------------------------------------------===//
 /// \file
 ///
-/// This file implements lowering of OpenCL blocks to functions.
+/// This file implements lowering of SPIR 2.0 blocks to functions.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -71,7 +71,7 @@
 #include <sstream>
 #include <vector>
 
-#define DEBUG_TYPE "spvblocks"
+#define DEBUG_TYPE "spv-lower-spir-blocks"
 
 using namespace llvm;
 using namespace SPIRV;
@@ -92,10 +92,10 @@ namespace SPIRV {
 /// Propagates block_func to each spir_get_block_invoke through def-use chain of
 /// spir_block_bind, so that
 /// ret = block_func(context, args)
-class SPIRVLowerOCLBlocks : public ModulePass {
+class SPIRVLowerSPIRBlocks : public ModulePass {
 public:
-  SPIRVLowerOCLBlocks() : ModulePass(ID), M(nullptr) {
-    initializeSPIRVLowerOCLBlocksPass(*PassRegistry::getPassRegistry());
+  SPIRVLowerSPIRBlocks() : ModulePass(ID), M(nullptr) {
+    initializeSPIRVLowerSPIRBlocksPass(*PassRegistry::getPassRegistry());
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
@@ -611,17 +611,17 @@ private:
   }
 };
 
-char SPIRVLowerOCLBlocks::ID = 0;
+char SPIRVLowerSPIRBlocks::ID = 0;
 } // namespace SPIRV
 
-INITIALIZE_PASS_BEGIN(SPIRVLowerOCLBlocks, "spvblocks",
-                      "SPIR-V lower OCL blocks", false, false)
+INITIALIZE_PASS_BEGIN(SPIRVLowerSPIRBlocks, "spv-lower-spir-blocks",
+                      "SPIR-V lower SPIR blocks", false, false)
 INITIALIZE_PASS_DEPENDENCY(CallGraphWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
-INITIALIZE_PASS_END(SPIRVLowerOCLBlocks, "spvblocks", "SPIR-V lower OCL blocks",
-                    false, false)
+INITIALIZE_PASS_END(SPIRVLowerSPIRBlocks, "spv-lower-spir-blocks",
+                    "SPIR-V lower SPIR blocks", false, false)
 
-ModulePass *llvm::createSPIRVLowerOCLBlocks() {
-  return new SPIRVLowerOCLBlocks();
+ModulePass *llvm::createSPIRVLowerSPIRBlocks() {
+  return new SPIRVLowerSPIRBlocks();
 }
