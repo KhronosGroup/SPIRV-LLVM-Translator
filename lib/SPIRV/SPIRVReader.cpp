@@ -481,9 +481,9 @@ private:
                                        const std::string &DemangledName);
   std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST);
-  std::string transOCLPipeTypeName(SPIRV::SPIRVTypePipe *ST,
-                                   bool UseSPIRVFriendlyFormat = false,
-                                   int PipeAccess = 0);
+  std::string transOCLPipeTypeName(
+      SPIRV::SPIRVTypePipe *ST, bool UseSPIRVFriendlyFormat = false,
+      SPIRVAccessQualifierKind PipeAccess = AccessQualifierReadOnly);
   std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST);
   std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe *ST);
@@ -663,11 +663,17 @@ SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST) {
               : AccessQualifierReadOnly));
 }
 
-std::string SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe *PT,
-                                              bool UseSPIRVFriendlyFormat,
-                                              int PipeAccess) {
+std::string
+SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe *PT,
+                                  bool UseSPIRVFriendlyFormat,
+                                  SPIRVAccessQualifierKind PipeAccess) {
+  assert((PipeAccess == AccessQualifierReadOnly ||
+          PipeAccess == AccessQualifierWriteOnly) &&
+         "Invalid access qualifier");
+
   if (!UseSPIRVFriendlyFormat)
-    return kSPR2TypeName::Pipe;
+    return PipeAccess == AccessQualifierWriteOnly ? kSPR2TypeName::PipeWO
+                                                  : kSPR2TypeName::PipeRO;
   else
     return std::string(kSPIRVTypeName::PrefixAndDelim) + kSPIRVTypeName::Pipe +
            kSPIRVTypeName::Delimiter + kSPIRVTypeName::PostfixDelim +
