@@ -370,6 +370,7 @@ bool isPipeStorageInitializer(Instruction *Inst);
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
 bool isSpecialTypeInitializer(Instruction *Inst);
 
+bool isPipeBI(const StringRef MangledName);
 bool isEnqueueKernelBI(const StringRef MangledName);
 bool isKernelQueryBI(const StringRef MangledName);
 
@@ -573,10 +574,10 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(to_private, GenericCastToPtrExplicit)
   _SPIRV_OP(work_group_barrier, ControlBarrier)
   // CL 2.0 pipe builtins
-  _SPIRV_OP(read_pipe, ReadPipe)
-  _SPIRV_OP(write_pipe, WritePipe)
-  _SPIRV_OP(reserved_read_pipe, ReservedReadPipe)
-  _SPIRV_OP(reserved_write_pipe, ReservedWritePipe)
+  _SPIRV_OP(read_pipe_2, ReadPipe)
+  _SPIRV_OP(write_pipe_2, WritePipe)
+  _SPIRV_OP(read_pipe_4, ReservedReadPipe)
+  _SPIRV_OP(write_pipe_4, ReservedWritePipe)
   _SPIRV_OP(reserve_read_pipe, ReserveReadPipePackets)
   _SPIRV_OP(reserve_write_pipe, ReserveWritePipePackets)
   _SPIRV_OP(commit_read_pipe, CommitReadPipe)
@@ -586,8 +587,10 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
   _SPIRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
   _SPIRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
-  _SPIRV_OP(get_pipe_num_packets, GetNumPipePackets)
-  _SPIRV_OP(get_pipe_max_packets, GetMaxPipePackets)
+  _SPIRV_OP(get_pipe_num_packets_ro, GetNumPipePackets)
+  _SPIRV_OP(get_pipe_num_packets_wo, GetNumPipePackets)
+  _SPIRV_OP(get_pipe_max_packets_ro, GetMaxPipePackets)
+  _SPIRV_OP(get_pipe_max_packets_wo, GetMaxPipePackets)
   // CL 2.0 workgroup builtins
   _SPIRV_OP(group_all, GroupAll)
   _SPIRV_OP(group_any, GroupAny)

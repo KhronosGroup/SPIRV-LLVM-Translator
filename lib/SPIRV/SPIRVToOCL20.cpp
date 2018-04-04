@@ -450,19 +450,7 @@ void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst *CI, Op OC) {
 }
 
 void SPIRVToOCL20::visitCallSPIRVPipeBuiltin(CallInst *CI, Op OC) {
-  switch (OC) {
-  case OpReservedReadPipe:
-    OC = OpReadPipe;
-    break;
-  case OpReservedWritePipe:
-    OC = OpWritePipe;
-    break;
-  default:
-    // Do nothing.
-    break;
-  }
   auto DemangledName = OCLSPIRVBuiltinMap::rmap(OC);
-
   bool HasScope = DemangledName.find(kSPIRVName::GroupPrefix) == 0;
   if (HasScope)
     DemangledName = getGroupBuiltinPrefix(CI) + DemangledName;

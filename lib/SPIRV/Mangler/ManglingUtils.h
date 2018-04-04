@@ -27,8 +27,6 @@ SPIRversion getSupportedVersion(TypePrimitiveEnum T);
 const char *getSPIRVersionAsString(SPIRversion Version);
 
 const char *mangledPrimitiveStringfromName(std::string Type);
-
-bool isPipeBuiltin(std::string UnmangledName);
 } // namespace SPIR
 
 #endif // SPIRV_MANGLER_MANGLINGUTILS_H
