@@ -278,8 +278,7 @@ void OCLTypeToSPIRV::adaptFunctionArguments(Function *F) {
       auto STName = NewTy->getPointerElementType()->getStructName();
       if (!hasAccessQualifiedName(STName))
         continue;
-      if (STName.startswith(kSPR2TypeName::ImagePrefix) ||
-          STName == kSPR2TypeName::Pipe) {
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         auto Ty = STName.str();
         auto AccStr = getAccessQualifier(Ty);
         addAdaptedType(&*Arg, getOrCreateOpaquePtrType(
@@ -311,8 +310,7 @@ void OCLTypeToSPIRV::adaptArgumentsByMetadata(Function *F) {
       Changed = true;
     } else if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();
-      if (STName.startswith(kSPR2TypeName::ImagePrefix) ||
-          STName == kSPR2TypeName::Pipe) {
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         auto Ty = STName.str();
         auto AccMD = getArgAccessQualifierMetadata(F);
         assert(AccMD && "Invalid access qualifier metadata");
