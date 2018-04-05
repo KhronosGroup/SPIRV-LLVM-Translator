@@ -16,7 +16,7 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @fmod_kernel(float %out, float %in1, float %in2) #0 {
+define spir_kernel void @fmod_kernel(float %out, float %in1, float %in2) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = call spir_func float @_Z4fmodff(float %in1, float %in2) #2
   ret void
@@ -29,7 +29,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -38,13 +37,12 @@ attributes #2 = { nounwind readnone }
 !opencl.compiler.options = !{!8}
 !llvm.ident = !{!9}
 
-!0 = !{void (float, float, float)* @fmod_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 0, i32 0, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"float", !"float", !"float"}
-!4 = !{!"kernel_arg_base_type", !"float", !"float", !"float"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !""}
+!1 = !{i32 0, i32 0, i32 0}
+!2 = !{!"none", !"none", !"none"}
+!3 = !{!"float", !"float", !"float"}
+!4 = !{!"float", !"float", !"float"}
+!5 = !{!"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}
-!9 = !{!"clang version 3.6.1"} 
+!9 = !{!"clang version 3.6.1"}

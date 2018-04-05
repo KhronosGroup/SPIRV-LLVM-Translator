@@ -16,7 +16,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @testKernel() #0 {
+define spir_kernel void @testKernel() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
   %cmp = icmp ne <2 x i64> zeroinitializer, <i64 1, i64 1>
   %sext = sext <2 x i1> %cmp to <2 x i64>
@@ -35,20 +35,13 @@ declare spir_func i32 @_Z3anyDv2_l(<2 x i64>) #1
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
+!opencl.spir.version = !{!1}
+!opencl.ocl.version = !{!2}
+!opencl.used.extensions = !{!0}
+!opencl.used.optional.core.features = !{!0}
+!opencl.compiler.options = !{!0}
 
-!0 = !{void ()* @testKernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
-!8 = !{}
+!0 = !{}
+!1 = !{i32 1, i32 2}
+!2 = !{i32 2, i32 0}

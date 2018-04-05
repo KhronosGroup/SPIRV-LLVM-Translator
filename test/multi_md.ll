@@ -13,7 +13,7 @@ target triple = "spir64-unknown-unknown"
 @var = addrspace(1) global %struct.my_struct_t { i8 97, i32 42 }, align 4
 
 ; Function Attrs: nounwind
-define spir_kernel void @__OpenCL_writer_kernel(i8 zeroext %c, i32 %i) #0 {
+define spir_kernel void @__OpenCL_writer_kernel(i8 zeroext %c, i32 %i) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %c.addr = alloca i8, align 1
   %i.addr = alloca i32, align 4
@@ -27,7 +27,7 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define spir_kernel void @__OpenCL_reader_kernel(i8 addrspace(1)* %C, i32 addrspace(1)* %I) #0 {
+define spir_kernel void @__OpenCL_reader_kernel(i8 addrspace(1)* %C, i32 addrspace(1)* %I) #0 !kernel_arg_addr_space !8 !kernel_arg_access_qual !2 !kernel_arg_type !9 !kernel_arg_base_type !10 !kernel_arg_type_qual !5 {
 entry:
   %C.addr = alloca i8 addrspace(1)*, align 8
   %I.addr = alloca i32 addrspace(1)*, align 8
@@ -44,14 +44,13 @@ entry:
 
 attributes #0 = { nounwind }
 
-; "cl_images" should be encoded as BasicImage capability, 
+; "cl_images" should be encoded as BasicImage capability,
 ; but images are not used in this test case, so this capability is not required.
 ; CHECK-NOT: 4 Extension "cl_images"
 ; CHECK-DAG: 8 SourceExtension "cl_khr_int64_base_atomics"
 ; CHECK-DAG: 9 SourceExtension "cl_khr_int64_extended_atomics"
 ; CHECK: 3 Source 3 200000
 
-!opencl.kernels = !{!0, !7}
 !opencl.enable.FP_CONTRACT = !{}
 !llvm.ident = !{!12, !12}
 !opencl.ocl.version = !{!13, !13}
@@ -59,18 +58,14 @@ attributes #0 = { nounwind }
 !opencl.used.extensions = !{!24, !25}
 !opencl.used.optional.core.features = !{!26, !27}
 
-!0 = !{void (i8, i32)* @__OpenCL_writer_kernel, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space", i32 0, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"uchar", !"uint"}
-!4 = !{!"kernel_arg_base_type", !"uchar", !"uint"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
-!6 = !{!"kernel_arg_name", !"c", !"i"}
-!7 = !{void (i8 addrspace(1)*, i32 addrspace(1)*)* @__OpenCL_reader_kernel, !8, !2, !9, !10, !5, !11}
-!8 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!9 = !{!"kernel_arg_type", !"uchar*", !"uint*"}
-!10 = !{!"kernel_arg_base_type", !"uchar*", !"uint*"}
-!11 = !{!"kernel_arg_name", !"C", !"I"}
+!1 = !{i32 0, i32 0}
+!2 = !{!"none", !"none"}
+!3 = !{!"uchar", !"uint"}
+!4 = !{!"uchar", !"uint"}
+!5 = !{!"", !""}
+!8 = !{i32 1, i32 1}
+!9 = !{!"uchar*", !"uint*"}
+!10 = !{!"uchar*", !"uint*"}
 !12 = !{!"clang version 3.6 (tags/RELEASE_361/rc1)"}
 !13 = !{i32 2, i32 0}
 !14 = !{!15, !15, i64 0}

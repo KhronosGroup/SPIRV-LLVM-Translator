@@ -59,7 +59,7 @@ target triple = "spir-unknown-unknown"
 @__spirv_BuiltInSubgroupLocalInvocationId = external addrspace(1) global i32
 
 ; Function Attrs: nounwind readnone
-define spir_kernel void @_Z1wv() #1 {
+define spir_kernel void @_Z1wv() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
   ret void
 }
@@ -67,7 +67,6 @@ entry:
 attributes #0 = { alwaysinline nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -78,12 +77,7 @@ attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 !spirv.Source = !{!10}
 !spirv.String = !{!11}
 
-!0 = !{void ()* @_Z1wv, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
+!0 = !{}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 1}
 !8 = !{}

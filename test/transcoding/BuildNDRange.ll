@@ -20,7 +20,7 @@ target triple = "spir"
 %struct.ndrange_t = type { i32, [3 x i32], [3 x i32], [3 x i32] }
 
 ; Function Attrs: nounwind
-define spir_kernel void @test() #0 {
+define spir_kernel void @test() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
   %ndrange = alloca %struct.ndrange_t, align 4
   call spir_func void @_Z10ndrange_1Djj(%struct.ndrange_t* sret %ndrange, i32 123, i32 456)
   ret void
@@ -31,22 +31,13 @@ declare spir_func void @_Z10ndrange_1Djj(%struct.ndrange_t* sret, i32, i32) #1
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
-!llvm.ident = !{!9}
+!opencl.spir.version = !{!1}
+!opencl.ocl.version = !{!2}
+!opencl.used.extensions = !{!0}
+!opencl.used.optional.core.features = !{!0}
+!opencl.compiler.options = !{!0}
 
-!0 = !{void ()* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
-!8 = !{}
-!9 = !{!"clang version 3.6.1 "}
+!0 = !{}
+!1 = !{i32 1, i32 2}
+!2 = !{i32 2, i32 0}

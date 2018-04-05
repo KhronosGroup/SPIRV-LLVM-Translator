@@ -39,7 +39,7 @@ target triple = "spir-unknown-unknown"
 %opencl.image2d_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_kernel_read(<4 x float> addrspace(1)* %results, %opencl.image2d_t addrspace(1)* %image, i32 %imageSampler, <2 x float> %coord, <2 x float> %dx, <2 x float> %dy) #0 {
+define spir_kernel void @sample_kernel_read(<4 x float> addrspace(1)* %results, %opencl.image2d_t addrspace(1)* %image, i32 %imageSampler, <2 x float> %coord, <2 x float> %dx, <2 x float> %dy) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %image, i32 %imageSampler, <2 x float> %coord)
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%opencl.image2d_t addrspace(1)* %image, i32 %imageSampler, <2 x float> %coord)
@@ -65,7 +65,6 @@ declare spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_fDv2
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -73,12 +72,11 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (<4 x float> addrspace(1)*, %opencl.image2d_t addrspace(1)*, i32, <2 x float>, <2 x float>, <2 x float>)* @sample_kernel_read, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 0, i32 0, i32 0, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"read_only", !"none", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"float4*", !"image2d_t", !"sampler_t", !"float2", !"float2", !"float2"}
-!4 = !{!"kernel_arg_base_type", !"float4*", !"image2d_t", !"sampler_t", !"float2", !"float2", !"float2"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !"", !"", !"", !""}
+!1 = !{i32 1, i32 1, i32 0, i32 0, i32 0, i32 0}
+!2 = !{!"none", !"read_only", !"none", !"none", !"none", !"none"}
+!3 = !{!"float4*", !"image2d_t", !"sampler_t", !"float2", !"float2", !"float2"}
+!4 = !{!"float4*", !"image2d_t", !"sampler_t", !"float2", !"float2", !"float2"}
+!5 = !{!"", !"", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

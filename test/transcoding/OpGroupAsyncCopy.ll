@@ -16,7 +16,7 @@ target triple = "spir-unknown-unknown"
 %opencl.event_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_fn(<2 x i8> addrspace(1)* %src, <2 x i8> addrspace(1)* %dst, <2 x i8> addrspace(3)* %localBuffer, i32 %copiesPerWorkgroup, i32 %copiesPerWorkItem) #0 {
+define spir_kernel void @test_fn(<2 x i8> addrspace(1)* %src, <2 x i8> addrspace(1)* %dst, <2 x i8> addrspace(3)* %localBuffer, i32 %copiesPerWorkgroup, i32 %copiesPerWorkItem) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %src.addr = alloca <2 x i8> addrspace(1)*, align 4
   %dst.addr = alloca <2 x i8> addrspace(1)*, align 4
@@ -123,7 +123,6 @@ declare spir_func void @_Z17wait_group_eventsiPU3AS49ocl_event(i32, %opencl.even
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -131,12 +130,11 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (<2 x i8> addrspace(1)*, <2 x i8> addrspace(1)*, <2 x i8> addrspace(3)*, i32, i32)* @test_fn, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 3, i32 0, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"char2*", !"char2*", !"char2*", !"int", !"int"}
-!4 = !{!"kernel_arg_base_type", !"char2*", !"char2*", !"char2*", !"int", !"int"}
-!5 = !{!"kernel_arg_type_qual", !"const", !"", !"", !"", !""}
+!1 = !{i32 1, i32 1, i32 3, i32 0, i32 0}
+!2 = !{!"none", !"none", !"none", !"none", !"none"}
+!3 = !{!"char2*", !"char2*", !"char2*", !"int", !"int"}
+!4 = !{!"char2*", !"char2*", !"char2*", !"int", !"int"}
+!5 = !{!"const", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

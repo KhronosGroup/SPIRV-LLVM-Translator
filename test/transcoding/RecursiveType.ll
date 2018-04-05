@@ -29,13 +29,12 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LLVM: %struct.Node = type { %struct.Node addrspace(1)*, i32 }
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(%struct.A addrspace(1)* %result, %struct.Node addrspace(1)* %node) #0 {
+define spir_kernel void @test(%struct.A addrspace(1)* %result, %struct.Node addrspace(1)* %node) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
   ret void
 }
 
 attributes #0 = { nounwind "less-precise-fpmad"="true" "no-frame-pointer-elim"="false" "no-infs-fp-math"="true" "no-nans-fp-math"="true" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="true" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!7}
 !opencl.ocl.version = !{!8}
@@ -44,13 +43,12 @@ attributes #0 = { nounwind "less-precise-fpmad"="true" "no-frame-pointer-elim"="
 !opencl.compiler.options = !{!9}
 !llvm.ident = !{!10}
 
-!0 = !{void (%struct.A addrspace(1)*, %struct.Node addrspace(1)*)* @test, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"struct A*", !"struct Node*"}
-!4 = !{!"kernel_arg_base_type", !"struct A*", !"struct Node*"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
-!6 = !{!"kernel_arg_name", !"result", !"node"}
+!1 = !{i32 1, i32 1}
+!2 = !{!"none", !"none"}
+!3 = !{!"struct A*", !"struct Node*"}
+!4 = !{!"struct A*", !"struct Node*"}
+!5 = !{!"", !""}
+!6 = !{!"result", !"node"}
 !7 = !{i32 1, i32 2}
 !8 = !{i32 2, i32 0}
 !9 = !{}

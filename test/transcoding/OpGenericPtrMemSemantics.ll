@@ -43,7 +43,7 @@ entry:
 declare spir_func i32 @_Z9get_fencePU3AS4v(i8 addrspace(4)*) #2
 
 ; Function Attrs: nounwind
-define spir_kernel void @testKernel(i32 addrspace(1)* nocapture %results) #1 {
+define spir_kernel void @testKernel(i32 addrspace(1)* nocapture %results) #1 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func i32 @_Z13get_global_idj(i32 0) #3
   %0 = load i32, i32 addrspace(1)* @gint, align 4
@@ -65,7 +65,6 @@ attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -73,12 +72,11 @@ attributes #3 = { nounwind }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (i32 addrspace(1)*)* @testKernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"uint*"}
-!4 = !{!"kernel_arg_base_type", !"uint*"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"uint*"}
+!4 = !{!"uint*"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

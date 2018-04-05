@@ -15,7 +15,7 @@ target triple = "spir-unknown-unknown"
 %opencl.image2d_msaa_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_test(%opencl.image2d_msaa_t addrspace(1)* %source, i32 %sampler, <4 x float> addrspace(1)* nocapture %results) #0 {
+define spir_kernel void @sample_test(%opencl.image2d_msaa_t addrspace(1)* %source, i32 %sampler, <4 x float> addrspace(1)* nocapture %results) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func i32 @_Z13get_global_idj(i32 0) #2
   %call1 = tail call spir_func i32 @_Z13get_global_idj(i32 1) #2
@@ -64,7 +64,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -72,12 +71,11 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!10}
 
-!0 = !{void (%opencl.image2d_msaa_t addrspace(1)*, i32, <4 x float> addrspace(1)*)* @sample_test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_msaa_t", !"sampler_t", !"float4*"}
-!4 = !{!"kernel_arg_base_type", !"image2d_msaa_t", !"sampler_t", !"float4*"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !""}
+!1 = !{i32 1, i32 0, i32 1}
+!2 = !{!"read_only", !"none", !"none"}
+!3 = !{!"image2d_msaa_t", !"sampler_t", !"float4*"}
+!4 = !{!"image2d_msaa_t", !"sampler_t", !"float4*"}
+!5 = !{!"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{!"cl_khr_gl_msaa_sharing"}

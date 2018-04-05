@@ -17,7 +17,7 @@ target triple = "spir-unknown-unknown"
 %opencl.image2d_depth_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_kernel(%opencl.image2d_depth_t addrspace(1)* %input, i32 %imageSampler, float addrspace(1)* %xOffsets, float addrspace(1)* %yOffsets, float addrspace(1)* %results) #0 {
+define spir_kernel void @sample_kernel(%opencl.image2d_depth_t addrspace(1)* %input, i32 %imageSampler, float addrspace(1)* %xOffsets, float addrspace(1)* %yOffsets, float addrspace(1)* %results) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   %call = call spir_func i32 @_Z13get_global_idj(i32 0) #1
   %call1 = call spir_func i32 @_Z13get_global_idj(i32 1) #1
@@ -51,19 +51,17 @@ declare spir_func <2 x i32> @_Z13get_image_dim16ocl_image2ddepth(%opencl.image2d
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
 !opencl.used.extensions = !{!7}
 !opencl.used.optional.core.features = !{!8}
 
-!0 = !{void (%opencl.image2d_depth_t addrspace(1)*, i32, float addrspace(1)*, float addrspace(1)*, float addrspace(1)*)* @sample_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0, i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_depth_t", !"sampler_t", !"float*", !"float*", !"float*"}
-!4 = !{!"kernel_arg_type_qual", !"", !"", !"", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"image2d_depth_t", !"sampler_t", !"float*", !"float*", !"float*"}
+!1 = !{i32 1, i32 0, i32 1, i32 1, i32 1}
+!2 = !{!"read_only", !"none", !"none", !"none", !"none"}
+!3 = !{!"image2d_depth_t", !"sampler_t", !"float*", !"float*", !"float*"}
+!4 = !{!"", !"", !"", !"", !""}
+!5 = !{!"image2d_depth_t", !"sampler_t", !"float*", !"float*", !"float*"}
 !6 = !{i32 2, i32 0}
 !7 = !{!"cl_khr_depth_images"}
 !8 = !{!"cl_images"}
