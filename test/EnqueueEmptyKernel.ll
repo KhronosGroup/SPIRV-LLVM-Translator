@@ -32,7 +32,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Variable {{[0-9]+}} [[Block:[0-9]+]]
 
 ; Function Attrs: convergent nounwind
-define spir_kernel void @test_enqueue_empty() #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 {
+define spir_kernel void @test_enqueue_empty() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
   %tmp = alloca %struct.ndrange_t, align 8
   %call = call spir_func %opencl.queue_t* @_Z17get_default_queuev() #4
@@ -78,8 +78,12 @@ attributes #3 = { nounwind }
 attributes #4 = { convergent }
 
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.ocl.version = !{!0}
-!opencl.spir.version = !{!0}
+!opencl.spir.version = !{!1}
+!opencl.ocl.version = !{!2}
+!opencl.used.extensions = !{!0}
+!opencl.used.optional.core.features = !{!0}
+!opencl.compiler.options = !{!0}
 
-!0 = !{i32 2, i32 0}
-!2 = !{}
+!0 = !{}
+!1 = !{i32 1, i32 2}
+!2 = !{i32 2, i32 0}

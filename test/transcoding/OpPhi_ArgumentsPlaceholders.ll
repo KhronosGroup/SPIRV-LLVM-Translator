@@ -26,7 +26,7 @@ target triple = "spir"
 %struct.Node.0 = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @verify_linked_lists(%struct.Node addrspace(1)* %pNodes) #0 {
+define spir_kernel void @verify_linked_lists(%struct.Node addrspace(1)* %pNodes) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   br label %for.cond
 
@@ -46,7 +46,7 @@ for.body:                                         ; preds = %for.cond
 
   %0 = load %struct.Node.0 addrspace(1)*, %struct.Node.0 addrspace(1)* addrspace(1)* %pNext, align 4
   %1 = bitcast %struct.Node.0 addrspace(1)* %0 to %struct.Node addrspace(1)*
-;CHECK-SPIRV: Load {{[0-9]+}} [[LoadResultId:[0-9]+]] 
+;CHECK-SPIRV: Load {{[0-9]+}} [[LoadResultId:[0-9]+]]
 ;CHECK-SPIRV: Bitcast {{[0-9]+}} [[BitcastResultId]] [[LoadResultId]]
 ;CHECK-LLVM: [[LoadResult:%[0-9]+]] = load %struct.Node.0 addrspace(1)*, %struct.Node.0 addrspace(1)* addrspace(1)* {{.*}}
 ;CHECK-LLVM: [[BitcastResult]] = bitcast %struct.Node.0 addrspace(1)* [[LoadResult]] to %struct.Node addrspace(1)*
@@ -63,7 +63,6 @@ for.end:                                          ; preds = %for.cond
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -71,12 +70,11 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (%struct.Node addrspace(1)*)* @verify_linked_lists, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"Node*"}
-!4 = !{!"kernel_arg_base_type", !"struct __Node*"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"Node*"}
+!4 = !{!"struct __Node*"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

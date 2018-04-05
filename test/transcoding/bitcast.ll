@@ -12,7 +12,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK: bitcast
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_fn(<2 x i8> addrspace(1)* nocapture readonly %src, i16 addrspace(1)* nocapture %dst) #0 {
+define spir_kernel void @test_fn(<2 x i8> addrspace(1)* nocapture readonly %src, i16 addrspace(1)* nocapture %dst) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #2
   %sext = shl i64 %call, 32
@@ -32,7 +32,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -41,12 +40,11 @@ attributes #2 = { nounwind readnone }
 !opencl.compiler.options = !{!7}
 !llvm.ident = !{!8}
 
-!0 = !{void (<2 x i8> addrspace(1)*, i16 addrspace(1)*)* @test_fn, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"char2*", !"short*"}
-!4 = !{!"kernel_arg_type_qual", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"char2*", !"short*"}
+!1 = !{i32 1, i32 1}
+!2 = !{!"none", !"none"}
+!3 = !{!"char2*", !"short*"}
+!4 = !{!"", !""}
+!5 = !{!"char2*", !"short*"}
 !6 = !{i32 2, i32 0}
 !7 = !{}
 !8 = !{!"clang version 3.4 "}

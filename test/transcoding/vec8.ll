@@ -16,7 +16,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(<8 x i32> %v) #0 {
+define spir_kernel void @test(<8 x i32> %v) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 ; CHECK-LLVM: <8 x i32>
   %1 = alloca <8 x i32>, align 32
   store <8 x i32> %v, <8 x i32>* %1, align 32
@@ -25,21 +25,17 @@ define spir_kernel void @test(<8 x i32> %v) #0 {
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
 !opencl.used.extensions = !{!7}
 !opencl.used.optional.core.features = !{!7}
 !opencl.compiler.options = !{!7}
-!llvm.ident = !{!8}
 
-!0 = !{void (<8 x i32>)* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int8"}
-!4 = !{!"kernel_arg_base_type", !"int8"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 0}
+!2 = !{!"none"}
+!3 = !{!"int8"}
+!4 = !{!"int8"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{}
-!8 = !{!"clang version 3.6.1 (https://github.com/KhronosGroup/SPIR 2b577882b436ba3133457f27e0aa999f2ac8b11c) (https://github.com/KhronosGroup/SPIRV-LLVM.git 44ec76519179879c7900a5da4e724c751ce516a9)"}

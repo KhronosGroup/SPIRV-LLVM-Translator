@@ -51,7 +51,7 @@ target triple = "spir64"
 %opencl.image2d_wo_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(<2 x float> %x, i32 %c, %opencl.image2d_ro_t addrspace(1)* %image_in, %opencl.image2d_wo_t addrspace(1)* %image_out, <2 x i32> %coord, i32 addrspace(1)* %p, i16 addrspace(1)* %sp) #0 {
+define spir_kernel void @test(<2 x float> %x, i32 %c, %opencl.image2d_ro_t addrspace(1)* %image_in, %opencl.image2d_wo_t addrspace(1)* %image_out, <2 x i32> %coord, i32 addrspace(1)* %p, i16 addrspace(1)* %sp) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func <2 x float> @_Z23intel_sub_group_shuffleDv2_fj(<2 x float> %x, i32 %c) #3
   %call1 = tail call spir_func <2 x float> @_Z28intel_sub_group_shuffle_downDv2_fDv2_fj(<2 x float> %x, <2 x float> %x, i32 %c) #3
@@ -106,7 +106,6 @@ attributes #2 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-point
 attributes #3 = { nounwind }
 attributes #4 = { nounwind readonly }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -114,12 +113,11 @@ attributes #4 = { nounwind readonly }
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!9}
 
-!0 = !{void (<2 x float>, i32, %opencl.image2d_ro_t addrspace(1)*, %opencl.image2d_wo_t addrspace(1)*, <2 x i32>, i32 addrspace(1)*, i16 addrspace(1)*)* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 0, i32 0, i32 1, i32 1, i32 0, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"read_only", !"write_only", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"float2", !"uint", !"__read_only image2d_t", !"__write_only image2d_t", !"int2", !"uint*", !"ushort*"}
-!4 = !{!"kernel_arg_base_type", !"float2", !"uint", !"__read_only image2d_t", !"__write_only image2d_t", !"int2", !"uint*", !"ushort*"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !"", !"", !"", !"", !""}
+!1 = !{i32 0, i32 0, i32 1, i32 1, i32 0, i32 1, i32 1}
+!2 = !{!"none", !"none", !"read_only", !"write_only", !"none", !"none", !"none"}
+!3 = !{!"float2", !"uint", !"__read_only image2d_t", !"__write_only image2d_t", !"int2", !"uint*", !"ushort*"}
+!4 = !{!"float2", !"uint", !"__read_only image2d_t", !"__write_only image2d_t", !"int2", !"uint*", !"ushort*"}
+!5 = !{!"", !"", !"", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{!"cl_intel_subgroups", !"cl_intel_subgroups_short"}

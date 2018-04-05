@@ -34,7 +34,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_scalar(i32 addrspace(1)* nocapture %out, half %f) #0 {
+define spir_kernel void @test_scalar(i32 addrspace(1)* nocapture %out, half %f) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func i32 @_Z8isfiniteDh(half %f) #2
   %call1 = tail call spir_func i32 @_Z5isnanDh(half %f) #2
@@ -60,7 +60,7 @@ declare spir_func i32 @_Z8isnormalDh(half) #1
 declare spir_func i32 @_Z7signbitDh(half) #1
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_vector(<2 x i16> addrspace(1)* nocapture %out, <2 x half> %f) #0 {
+define spir_kernel void @test_vector(<2 x i16> addrspace(1)* nocapture %out, <2 x half> %f) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func <2 x i16> @_Z8isfiniteDv2_Dh(<2 x half> %f) #2
   %call1 = tail call spir_func <2 x i16> @_Z5isnanDv2_Dh(<2 x half> %f) #2
@@ -85,7 +85,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0, !6}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!9}
 !opencl.ocl.version = !{!10}
@@ -93,15 +92,13 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!11}
 !opencl.compiler.options = !{!11}
 
-!0 = !{void (i32 addrspace(1)*, half)* @test_scalar, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"int*", !"half"}
-!4 = !{!"kernel_arg_base_type", !"int*", !"half"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
-!6 = !{void (<2 x i16> addrspace(1)*, <2 x half>)* @test_vector, !1, !2, !7, !8, !5}
-!7 = !{!"kernel_arg_type", !"short2*", !"half2"}
-!8 = !{!"kernel_arg_base_type", !"short2*", !"half2"}
+!1 = !{i32 1, i32 0}
+!2 = !{!"none", !"none"}
+!3 = !{!"int*", !"half"}
+!4 = !{!"int*", !"half"}
+!5 = !{!"", !""}
+!7 = !{!"short2*", !"half2"}
+!8 = !{!"short2*", !"half2"}
 !9 = !{i32 1, i32 2}
 !10 = !{i32 2, i32 0}
 !11 = !{}

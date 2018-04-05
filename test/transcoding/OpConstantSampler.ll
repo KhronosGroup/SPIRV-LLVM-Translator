@@ -25,49 +25,36 @@
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f
 
+target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
 
 %opencl.image2d_ro_t = type opaque
 %opencl.sampler_t = type opaque
 
-; Function Attrs: noinline nounwind optnone
-define spir_kernel void @foo(%opencl.image2d_ro_t addrspace(1)* %src) #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !7 !kernel_arg_type_qual !8 {
+; Function Attrs: convergent nounwind
+define spir_func <4 x float> @foo(%opencl.image2d_ro_t addrspace(1)* %src) local_unnamed_addr #0 {
 entry:
-  %src.addr = alloca %opencl.image2d_ro_t addrspace(1)*, align 4
-  store %opencl.image2d_ro_t addrspace(1)* %src, %opencl.image2d_ro_t addrspace(1)** %src.addr, align 4
-  %sampler1 = call %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32 23)
-  %sampler2 = call %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32 0)
-  %0 = load %opencl.image2d_ro_t addrspace(1)*, %opencl.image2d_ro_t addrspace(1)** %src.addr, align 4
-  %call = call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)* %0, %opencl.sampler_t addrspace(2)* %sampler1, <2 x float> zeroinitializer, float 0.000000e+00) #2
-  %1 = load %opencl.image2d_ro_t addrspace(1)*, %opencl.image2d_ro_t addrspace(1)** %src.addr, align 4
-  %call1 = call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)* %1, %opencl.sampler_t addrspace(2)* %sampler2, <2 x float> zeroinitializer, float 0.000000e+00) #2
-  ret void
+  %0 = tail call %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32 23) #2
+  %1 = tail call %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32 0) #2
+  %call = tail call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)* %src, %opencl.sampler_t addrspace(2)* %0, <2 x float> zeroinitializer, float 0.000000e+00) #3
+  %call1 = tail call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)* %src, %opencl.sampler_t addrspace(2)* %1, <2 x float> zeroinitializer, float 0.000000e+00) #3
+  %add = fadd <4 x float> %call, %call1
+  ret <4 x float> %add
 }
 
-declare %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32)
+declare %opencl.sampler_t addrspace(2)* @__translate_sampler_initializer(i32) local_unnamed_addr
 
-; Function Attrs: nounwind readonly
-declare spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)*, %opencl.sampler_t addrspace(2)*, <2 x float>, float) #1
+; Function Attrs: convergent nounwind readonly
+declare spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_ff(%opencl.image2d_ro_t addrspace(1)*, %opencl.sampler_t addrspace(2)*, <2 x float>, float) local_unnamed_addr #1
 
-attributes #0 = { noinline nounwind optnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readonly "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nounwind readonly }
+attributes #0 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "denorms-are-zero"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { convergent nounwind readonly "correctly-rounded-divide-sqrt-fp-math"="false" "denorms-are-zero"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
+attributes #3 = { convergent nounwind readonly }
 
 !llvm.module.flags = !{!0}
-!opencl.enable.FP_CONTRACT = !{}
 !opencl.ocl.version = !{!1}
 !opencl.spir.version = !{!1}
-!opencl.used.extensions = !{!2}
-!opencl.used.optional.core.features = !{!3}
-!opencl.compiler.options = !{!2}
-!llvm.ident = !{!4}
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 2, i32 0}
-!2 = !{}
-!3 = !{!"cl_images"}
-!4 = !{!"clang version 5.0.1 (cfe/trunk)"}
-!5 = !{i32 1}
-!6 = !{!"read_only"}
-!7 = !{!"image2d_t"}
-!8 = !{!""}
