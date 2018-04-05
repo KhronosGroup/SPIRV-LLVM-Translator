@@ -29,7 +29,7 @@ target triple = "spir64"
 ; CHECK-SPIRV: 4 Line [[str]] 1 0
 ; CHECK-SPIRV-NEXT: Function
 ; Function Attrs: nounwind
-define spir_kernel void @foo() #0 {
+define spir_kernel void @foo() #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 {
 entry:
 ; CHECK-LLVM: ret void, !dbg ![[Line_1:[0-9]+]]
 ret void, !dbg !23
@@ -131,7 +131,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone }
 
 !llvm.dbg.cu = !{!0}
-!opencl.kernels = !{!13}
 !llvm.module.flags = !{!19, !20}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!21}
@@ -154,12 +153,6 @@ attributes #1 = { nounwind readnone }
 !10 = !{!"0x15\00\000\000\000\000\000\000", null, null, null, !11, null, null, null} ; [ DW_TAG_subroutine_type ] [line 0, size 0, align 0, offset 0] [from ]
 !11 = !{!12, !12}
 !12 = !{!"0x24\00int\000\0032\0032\000\000\005", null, null} ; [ DW_TAG_base_type ] [int] [line 0, size 32, align 32, offset 0, enc DW_ATE_signed]
-!13 = !{void ()* @foo, !14, !15, !16, !17, !18}
-!14 = !{!"kernel_arg_addr_space"}
-!15 = !{!"kernel_arg_access_qual"}
-!16 = !{!"kernel_arg_type"}
-!17 = !{!"kernel_arg_base_type"}
-!18 = !{!"kernel_arg_type_qual"}
 !19 = !{i32 2, !"Dwarf Version", i32 4}
 !20 = !{i32 2, !"Debug Info Version", i32 2}
 !21 = !{i32 1, i32 2}

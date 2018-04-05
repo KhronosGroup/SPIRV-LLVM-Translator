@@ -21,7 +21,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK:    call spir_func <8 x i32> @_Z12convert_int8Dv8_f(<8 x float>
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_default_conversions(<8 x double> addrspace(1)* nocapture %out, <8 x i8> %in) #0 {
+define spir_kernel void @test_default_conversions(<8 x double> addrspace(1)* nocapture %out, <8 x i8> %in) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   %1 = tail call spir_func <8 x i16> @_Z15convert_ushort8Dv8_c(<8 x i8> %in) #1
   %2 = tail call spir_func <8 x i32> @_Z12convert_int8Dv8_t(<8 x i16> %1) #1
   %3 = tail call spir_func <8 x i8> @_Z13convert_char8Dv8_i(<8 x i32> %2) #1
@@ -69,7 +69,6 @@ declare spir_func <8 x double> @_Z15convert_double8Dv8_i(<8 x i32>) #1
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -77,12 +76,11 @@ attributes #1 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!7}
 
-!0 = !{void (<8 x double> addrspace(1)*, <8 x i8>)* @test_default_conversions, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"double8*", !"char8"}
-!4 = !{!"kernel_arg_type_qual", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"double8*", !"char8"}
+!1 = !{i32 1, i32 0}
+!2 = !{!"none", !"none"}
+!3 = !{!"double8*", !"char8"}
+!4 = !{!"", !""}
+!5 = !{!"double8*", !"char8"}
 !6 = !{i32 1, i32 2}
 !7 = !{}
 !8 = !{!"cl_doubles"}

@@ -31,7 +31,7 @@ declare spir_func i64 @_Z13get_global_idj(i32) #1
 ; CHECK-NOT: {{[0-9]*}} Capability Shader
 ; CHECK-NOT: {{[0-9]*}} Capability Float64
 ; Function Attrs: nounwind
-define spir_kernel void @func_kernel(i32 addrspace(1)* %a) #0 {
+define spir_kernel void @func_kernel(i32 addrspace(1)* %a) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   tail call spir_func void @func_import(i32 addrspace(1)* %a) #4
   ret void
@@ -45,7 +45,6 @@ attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 attributes #3 = { nounwind readnone }
 attributes #4 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -54,12 +53,11 @@ attributes #4 = { nounwind }
 !opencl.compiler.options = !{!7}
 !llvm.ident = !{!8}
 
-!0 = !{void (i32 addrspace(1)*)* @func_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int*"}
-!4 = !{!"kernel_arg_type_qual", !""}
-!5 = !{!"kernel_arg_base_type", !"int*"}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"int*"}
+!4 = !{!""}
+!5 = !{!"int*"}
 !6 = !{i32 2, i32 0}
 !7 = !{}
 !8 = !{!"clang version 3.4 "}

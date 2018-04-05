@@ -18,7 +18,6 @@ entry:
 
 attributes #0 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -26,7 +25,6 @@ attributes #0 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!7}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (<4 x i8> addrspace(1)*, <4 x i8> addrspace(1)*, <4 x i8> addrspace(1)*)* @test}
 !1 = !{i32 1, i32 1, i32 1}
 !2 = !{!"none", !"none", !"none"}
 !3 = !{!"char4*", !"char4*", !"char4*"}

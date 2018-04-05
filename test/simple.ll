@@ -7,7 +7,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK: Capability Float64
 ; CHECK: "fun01"
 ; Function Attrs: nounwind
-define spir_kernel void @fun01(i32 addrspace(1)* noalias %a, i32 addrspace(1)* %b, i32 %c) #0 {
+define spir_kernel void @fun01(i32 addrspace(1)* noalias %a, i32 addrspace(1)* %b, i32 %c) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 !reqd_work_group_size !6 {
 entry:
   %a.addr = alloca i32 addrspace(1)*, align 8
   %b.addr = alloca i32 addrspace(1)*, align 8
@@ -37,7 +37,7 @@ if.end:                                           ; preds = %if.then, %entry
 
 ; CHECK: "fun02"
 ; Function Attrs: nounwind
-define spir_kernel void @fun02(double addrspace(1)* %a, double addrspace(1)* %b, i32 %c) #0 {
+define spir_kernel void @fun02(double addrspace(1)* %a, double addrspace(1)* %b, i32 %c) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !8 !kernel_arg_base_type !9 !kernel_arg_type_qual !10 !vec_type_hint !11 {
 entry:
   %a.addr = alloca double addrspace(1)*, align 8
   %b.addr = alloca double addrspace(1)*, align 8
@@ -133,7 +133,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
 
-!opencl.kernels = !{!0, !7}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!12}
 !opencl.ocl.version = !{!12}
@@ -141,18 +140,16 @@ attributes #2 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!14}
 !opencl.compiler.options = !{!13}
 
-!0 = !{void (i32 addrspace(1)*, i32 addrspace(1)*, i32)* @fun01, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"int*", !"int*", !"int"}
-!4 = !{!"kernel_arg_base_type", !"int*", !"int*", !"int"}
-!5 = !{!"kernel_arg_type_qual", !"restrict", !"const", !""}
-!6 = !{!"reqd_work_group_size", i32 1, i32 2, i32 3}
-!7 = !{void (double addrspace(1)*, double addrspace(1)*, i32)* @fun02, !1, !2, !8, !9, !10, !11}
-!8 = !{!"kernel_arg_type", !"double*", !"double*", !"int"}
-!9 = !{!"kernel_arg_base_type", !"double*", !"double*", !"int"}
-!10 = !{!"kernel_arg_type_qual", !"", !"", !""}
-!11 = !{!"vec_type_hint", double undef, i32 1}
+!1 = !{i32 1, i32 1, i32 0}
+!2 = !{!"none", !"none", !"none"}
+!3 = !{!"int*", !"int*", !"int"}
+!4 = !{!"int*", !"int*", !"int"}
+!5 = !{!"restrict", !"const", !""}
+!6 = !{i32 1, i32 2, i32 3}
+!8 = !{!"double*", !"double*", !"int"}
+!9 = !{!"double*", !"double*", !"int"}
+!10 = !{!"", !"", !""}
+!11 = !{double undef, i32 1}
 !12 = !{i32 1, i32 2}
 !13 = !{}
 !14 = !{!"cl_doubles"}

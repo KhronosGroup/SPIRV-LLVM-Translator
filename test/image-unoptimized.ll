@@ -8,7 +8,7 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind
 ; CHECK: {{[0-9]*}} Store
 ; CHECK-NEXT: 1 Return
-define spir_kernel void @test_fn(%opencl.image2d_t addrspace(1)* %srcimg, i32 %sampler, <4 x float> addrspace(1)* %results) #0 {
+define spir_kernel void @test_fn(%opencl.image2d_t addrspace(1)* %srcimg, i32 %sampler, <4 x float> addrspace(1)* %results) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %srcimg.addr = alloca %opencl.image2d_t addrspace(1)*, align 4
   %sampler.addr = alloca i32, align 4
@@ -57,7 +57,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -65,12 +64,11 @@ attributes #2 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!7}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, i32, <4 x float> addrspace(1)*)* @test_fn, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_t", !"sampler_t", !"float4*"}
-!4 = !{!"kernel_arg_base_type", !"image2d_t", !"sampler_t", !"float4*"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !""}
+!1 = !{i32 1, i32 0, i32 1}
+!2 = !{!"read_only", !"none", !"none"}
+!3 = !{!"image2d_t", !"sampler_t", !"float4*"}
+!4 = !{!"image2d_t", !"sampler_t", !"float4*"}
+!5 = !{!"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{}
 !8 = !{!"cl_images"}

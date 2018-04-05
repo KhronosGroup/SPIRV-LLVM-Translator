@@ -11,7 +11,7 @@ target triple = "spir64-unknown-unknown"
 @imageSampler = addrspace(2) constant i32 36, align 4
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, float addrspace(1)* nocapture %xOffsets, float addrspace(1)* nocapture %yOffsets, <4 x float> addrspace(1)* nocapture %results) #0 {
+define spir_kernel void @sample_kernel(%opencl.image2d_t addrspace(1)* %input, float addrspace(1)* nocapture %xOffsets, float addrspace(1)* nocapture %yOffsets, <4 x float> addrspace(1)* nocapture %results) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   %1 = tail call spir_func i64 @_Z13get_global_idj(i32 0) #1
   %2 = trunc i64 %1 to i32
   %3 = tail call spir_func i64 @_Z13get_global_idj(i32 1) #1
@@ -42,7 +42,6 @@ declare spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_f(%o
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!7}
 !opencl.ocl.version = !{!7}
@@ -50,13 +49,11 @@ attributes #1 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!10}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, float addrspace(1)*, float addrspace(1)*, <4 x float> addrspace(1)*)* @sample_kernel, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_float", !"float*", !"float*", !"float4*"}
-!4 = !{!"kernel_arg_type_qual", !"", !"", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"image2d_t", !"float*", !"float*", !"float4*"}
-!6 = !{!"kernel_arg_name", !"input", !"xOffsets", !"yOffsets", !"results"}
+!1 = !{i32 1, i32 1, i32 1, i32 1}
+!2 = !{!"read_only", !"none", !"none", !"none"}
+!3 = !{!"image2d_float", !"float*", !"float*", !"float4*"}
+!4 = !{!"", !"", !"", !""}
+!5 = !{!"image2d_t", !"float*", !"float*", !"float4*"}
 !7 = !{i32 1, i32 2}
 !8 = !{}
 !9 = !{!"cl_images"}
