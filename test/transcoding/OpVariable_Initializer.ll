@@ -16,29 +16,22 @@ target triple = "spir-unknown-unknown"
 @test_atomic_fn.L = internal addrspace(3) global [64 x i32] undef, align 4
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_atomic_fn() #0 {
+define spir_kernel void @test_atomic_fn() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
   ret void
 }
 
 attributes #0 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !spirv.Source = !{!6}
 !opencl.spir.version = !{!7}
 !opencl.ocl.version = !{!8}
-!opencl.used.extensions = !{!9}
-!opencl.used.optional.core.features = !{!9}
+!opencl.used.extensions = !{!0}
+!opencl.used.optional.core.features = !{!0}
 !spirv.Generator = !{!10}
 
-!0 = !{void ()* @test_atomic_fn, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_type_qual"}
-!5 = !{!"kernel_arg_base_type"}
+!0 = !{}
 !6 = !{i32 3, i32 100000}
 !7 = !{i32 1, i32 2}
 !8 = !{i32 1, i32 0}
-!9 = !{}
 !10 = !{i16 7, i16 0}

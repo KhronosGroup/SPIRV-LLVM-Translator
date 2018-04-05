@@ -1591,25 +1591,14 @@ bool LLVMToSPIRV::transExecutionMode() {
 }
 
 bool LLVMToSPIRV::transOCLKernelMetadata() {
-  NamedMDNode *KernelMDs = M->getNamedMetadata(SPIR_MD_KERNELS);
-  std::vector<std::string> ArgAccessQual;
-  if (!KernelMDs)
-    return true;
-
-  for (unsigned I = 0, E = KernelMDs->getNumOperands(); I < E; ++I) {
-    MDNode *KernelMD = KernelMDs->getOperand(I);
-    if (KernelMD->getNumOperands() == 0)
+  for (auto &F : *M) {
+    if (F.getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
-    Function *Kernel = mdconst::dyn_extract<Function>(KernelMD->getOperand(0));
 
-    SPIRVFunction *BF =
-        static_cast<SPIRVFunction *>(getTranslatedValue(Kernel));
+    SPIRVFunction *BF = static_cast<SPIRVFunction *>(getTranslatedValue(&F));
     assert(BF && "Kernel function should be translated first");
-    assert(Kernel && oclIsKernel(Kernel) &&
-           "Invalid kernel calling convention or metadata");
 
-    if (auto *KernelArgTypeQual =
-            Kernel->getMetadata(SPIR_MD_KERNEL_ARG_TYPE_QUAL)) {
+    if (auto *KernelArgTypeQual = F.getMetadata(SPIR_MD_KERNEL_ARG_TYPE_QUAL)) {
       foreachKernelArgMD(
           KernelArgTypeQual, BF,
           [](const std::string &Str, SPIRVFunctionParameter *BA) {
@@ -1625,7 +1614,7 @@ bool LLVMToSPIRV::transOCLKernelMetadata() {
                                     FunctionParameterAttributeNoWrite));
           });
     }
-    if (auto *KernelArgName = Kernel->getMetadata(SPIR_MD_KERNEL_ARG_NAME)) {
+    if (auto *KernelArgName = F.getMetadata(SPIR_MD_KERNEL_ARG_NAME)) {
       foreachKernelArgMD(
           KernelArgName, BF,
           [=](const std::string &Str, SPIRVFunctionParameter *BA) {

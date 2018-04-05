@@ -52,7 +52,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-NOT: {{[0-9]*}} ExtInst {{[0-9]*}} {{[0-9]*}} {{[0-9]*}} get_image_array_size
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_image1d(i32 addrspace(1)* nocapture %sizes, %opencl.image1d_t addrspace(1)* %img, %opencl.image1d_buffer_t addrspace(1)* %buffer, %opencl.image1d_array_t addrspace(1)* %array) #0 {
+define spir_kernel void @test_image1d(i32 addrspace(1)* nocapture %sizes, %opencl.image1d_t addrspace(1)* %img, %opencl.image1d_buffer_t addrspace(1)* %buffer, %opencl.image1d_array_t addrspace(1)* %array) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   %1 = tail call spir_func i32 @_Z15get_image_width11ocl_image1d(%opencl.image1d_t addrspace(1)* %img) #1
   %2 = tail call spir_func i32 @_Z15get_image_width17ocl_image1dbuffer(%opencl.image1d_buffer_t addrspace(1)* %buffer) #1
   %3 = tail call spir_func i32 @_Z15get_image_width16ocl_image1darray(%opencl.image1d_array_t addrspace(1)* %array) #1
@@ -110,7 +110,7 @@ declare spir_func i64 @_Z20get_image_array_size16ocl_image1darray(%opencl.image1
 ; CHECK:   shufflevector <3 x i32> {{.*}} <2 x i32>
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_image2d(i32 addrspace(1)* nocapture %sizes, %opencl.image2d_t addrspace(1)* %img, %opencl.image2d_depth_t addrspace(1)* nocapture %img_depth, %opencl.image2d_array_t addrspace(1)* %array, %opencl.image2d_array_depth_t addrspace(1)* nocapture %array_depth) #0 {
+define spir_kernel void @test_image2d(i32 addrspace(1)* nocapture %sizes, %opencl.image2d_t addrspace(1)* %img, %opencl.image2d_depth_t addrspace(1)* nocapture %img_depth, %opencl.image2d_array_t addrspace(1)* %array, %opencl.image2d_array_depth_t addrspace(1)* nocapture %array_depth) #0 !kernel_arg_addr_space !7 !kernel_arg_access_qual !8 !kernel_arg_type !9 !kernel_arg_base_type !11 !kernel_arg_type_qual !10 {
   %1 = tail call spir_func i32 @_Z15get_image_width11ocl_image2d(%opencl.image2d_t addrspace(1)* %img) #1
   %2 = tail call spir_func i32 @_Z16get_image_height11ocl_image2d(%opencl.image2d_t addrspace(1)* %img) #1
   %3 = tail call spir_func <2 x i32> @_Z13get_image_dim11ocl_image2d(%opencl.image2d_t addrspace(1)* %img) #1
@@ -175,7 +175,7 @@ declare spir_func <2 x i32> @_Z13get_image_dim16ocl_image2darray(%opencl.image2d
 ; CHECK:   shufflevector <3 x i32> {{.*}} <4 x i32>
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_image3d(i32 addrspace(1)* nocapture %sizes, %opencl.image3d_t addrspace(1)* %img) #0 {
+define spir_kernel void @test_image3d(i32 addrspace(1)* nocapture %sizes, %opencl.image3d_t addrspace(1)* %img) #0 !kernel_arg_addr_space !13 !kernel_arg_access_qual !14 !kernel_arg_type !15 !kernel_arg_base_type !17 !kernel_arg_type_qual !16 {
   %1 = tail call spir_func i32 @_Z15get_image_width11ocl_image3d(%opencl.image3d_t addrspace(1)* %img) #1
   %2 = tail call spir_func i32 @_Z16get_image_height11ocl_image3d(%opencl.image3d_t addrspace(1)* %img) #1
   %3 = tail call spir_func i32 @_Z15get_image_depth11ocl_image3d(%opencl.image3d_t addrspace(1)* %img) #1
@@ -223,7 +223,7 @@ declare spir_func <4 x i32> @_Z13get_image_dim11ocl_image3d(%opencl.image3d_t ad
 ; CHECK:   extractelement <3 x i32> {{.*}} 1
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_image2d_array_depth_t(i32 addrspace(1)* nocapture %sizes, %opencl.image2d_array_depth_t addrspace(1)* %array) #0 {
+define spir_kernel void @test_image2d_array_depth_t(i32 addrspace(1)* nocapture %sizes, %opencl.image2d_array_depth_t addrspace(1)* %array) #0 !kernel_arg_addr_space !27 !kernel_arg_access_qual !28 !kernel_arg_type !29 !kernel_arg_base_type !31 !kernel_arg_type_qual !30 {
   %1 = tail call spir_func i32 @_Z15get_image_width21ocl_image2darraydepth(%opencl.image2d_array_depth_t addrspace(1)* %array) #1
   %2 = tail call spir_func i32 @_Z16get_image_height21ocl_image2darraydepth(%opencl.image2d_array_depth_t addrspace(1)* %array) #1
   %3 = tail call spir_func i64 @_Z20get_image_array_size21ocl_image2darraydepth(%opencl.image2d_array_depth_t addrspace(1)* %array) #1
@@ -246,7 +246,6 @@ declare spir_func i64 @_Z20get_image_array_size21ocl_image2darraydepth(%opencl.i
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0, !6, !12}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!18}
 !opencl.ocl.version = !{!18}
@@ -254,24 +253,21 @@ attributes #1 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!20}
 !opencl.compiler.options = !{!21}
 
-!0 = !{void (i32 addrspace(1)*, %opencl.image1d_t addrspace(1)*, %opencl.image1d_buffer_t addrspace(1)*, %opencl.image1d_array_t addrspace(1)*)* @test_image1d, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"read_only", !"read_only", !"read_only"}
-!3 = !{!"kernel_arg_type", !"int*", !"image1d_t", !"image1d_buffer_t", !"image1d_array_t"}
-!4 = !{!"kernel_arg_type_qual", !"", !"", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"int*", !"image1d_t", !"image1d_buffer_t", !"image1d_array_t"}
-!6 = !{void (i32 addrspace(1)*, %opencl.image2d_t addrspace(1)*, %opencl.image2d_depth_t addrspace(1)*, %opencl.image2d_array_t addrspace(1)*, %opencl.image2d_array_depth_t addrspace(1)*)* @test_image2d, !7, !8, !9, !10, !11}
-!7 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1, i32 1}
-!8 = !{!"kernel_arg_access_qual", !"none", !"read_only", !"read_only", !"read_only", !"read_only"}
-!9 = !{!"kernel_arg_type", !"int*", !"image2d_t", !"image2d_depth_t", !"image2d_array_t", !"image2d_array_depth_t"}
-!10 = !{!"kernel_arg_type_qual", !"", !"", !"", !"", !""}
-!11 = !{!"kernel_arg_base_type", !"int*", !"image2d_t", !"image2d_depth_t", !"image2d_array_t", !"image2d_array_depth_t"}
-!12 = !{void (i32 addrspace(1)*, %opencl.image3d_t addrspace(1)*)* @test_image3d, !13, !14, !15, !16, !17}
-!13 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!14 = !{!"kernel_arg_access_qual", !"none", !"read_only"}
-!15 = !{!"kernel_arg_type", !"int*", !"image3d_t"}
-!16 = !{!"kernel_arg_type_qual", !"", !""}
-!17 = !{!"kernel_arg_base_type", !"int*", !"image3d_t"}
+!1 = !{i32 1, i32 1, i32 1, i32 1}
+!2 = !{!"none", !"read_only", !"read_only", !"read_only"}
+!3 = !{!"int*", !"image1d_t", !"image1d_buffer_t", !"image1d_array_t"}
+!4 = !{!"", !"", !"", !""}
+!5 = !{!"int*", !"image1d_t", !"image1d_buffer_t", !"image1d_array_t"}
+!7 = !{i32 1, i32 1, i32 1, i32 1, i32 1}
+!8 = !{!"none", !"read_only", !"read_only", !"read_only", !"read_only"}
+!9 = !{!"int*", !"image2d_t", !"image2d_depth_t", !"image2d_array_t", !"image2d_array_depth_t"}
+!10 = !{!"", !"", !"", !"", !""}
+!11 = !{!"int*", !"image2d_t", !"image2d_depth_t", !"image2d_array_t", !"image2d_array_depth_t"}
+!13 = !{i32 1, i32 1}
+!14 = !{!"none", !"read_only"}
+!15 = !{!"int*", !"image3d_t"}
+!16 = !{!"", !""}
+!17 = !{!"int*", !"image3d_t"}
 !18 = !{i32 1, i32 2}
 !19 = !{!"cl_khr_depth_images"}
 !20 = !{!"cl_images"}
@@ -280,9 +276,8 @@ attributes #1 = { nounwind readnone }
 !23 = !{!"int", !24}
 !24 = !{!"omnipotent char", !25}
 !25 = !{!"Simple C/C++ TBAA"}
-!26 = !{void (i32 addrspace(1)*, %opencl.image2d_array_depth_t addrspace(1)*)* @test_image2d_array_depth_t, !27, !28, !29, !30, !31}
-!27 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!28 = !{!"kernel_arg_access_qual", !"none", !"read_only"}
-!29 = !{!"kernel_arg_type", !"int*", !"image2d_array_depth_t"}
-!30 = !{!"kernel_arg_type_qual", !"", !""}
-!31 = !{!"kernel_arg_base_type", !"int*", !"image2d_array_depth_t"}
+!27 = !{i32 1, i32 1}
+!28 = !{!"none", !"read_only"}
+!29 = !{!"int*", !"image2d_array_depth_t"}
+!30 = !{!"", !""}
+!31 = !{!"int*", !"image2d_array_depth_t"}

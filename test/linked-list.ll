@@ -8,14 +8,13 @@ target triple = "spir-unknown-unknown"
 %struct.Node.0 = type opaque
 
 ; Function Attrs: nounwind readnone
-define spir_kernel void @create_linked_lists(%struct.Node addrspace(1)* nocapture %pNodes, i32 addrspace(1)* nocapture %allocation_index, i32 %list_length) #0 {
+define spir_kernel void @create_linked_lists(%struct.Node addrspace(1)* nocapture %pNodes, i32 addrspace(1)* nocapture %allocation_index, i32 %list_length) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   ret void
 }
 
 attributes #0 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -23,12 +22,11 @@ attributes #0 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!7}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (%struct.Node addrspace(1)*, i32 addrspace(1)*, i32)* @create_linked_lists, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"struct Node*", !"int*", !"int"}
-!4 = !{!"kernel_arg_type_qual", !"", !"volatile ", !""}
-!5 = !{!"kernel_arg_base_type", !"struct Node*", !"int*", !"int"}
+!1 = !{i32 1, i32 1, i32 0}
+!2 = !{!"none", !"none", !"none"}
+!3 = !{!"struct Node*", !"int*", !"int"}
+!4 = !{!"", !"volatile ", !""}
+!5 = !{!"struct Node*", !"int*", !"int"}
 !6 = !{i32 2, i32 0}
 !7 = !{}
 !8 = !{!""}

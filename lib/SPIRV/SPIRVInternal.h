@@ -243,7 +243,6 @@ SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>::init() {
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>
     SPIRVExtSetShortNameMap;
 
-#define SPIR_MD_KERNELS "opencl.kernels"
 #define SPIR_MD_COMPILER_OPTIONS "opencl.compiler.options"
 #define SPIR_MD_KERNEL_ARG_ADDR_SPACE "kernel_arg_addr_space"
 #define SPIR_MD_KERNEL_ARG_ACCESS_QUAL "kernel_arg_access_qual"

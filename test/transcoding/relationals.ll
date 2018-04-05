@@ -34,7 +34,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_scalar(i32 addrspace(1)* nocapture %out, float %f) #0 {
+define spir_kernel void @test_scalar(i32 addrspace(1)* nocapture %out, float %f) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func i32 @_Z8isfinitef(float %f) #2
   %call1 = tail call spir_func i32 @_Z5isnanf(float %f) #2
@@ -60,7 +60,7 @@ declare spir_func i32 @_Z8isnormalf(float) #1
 declare spir_func i32 @_Z7signbitf(float) #1
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_vector(<2 x i32> addrspace(1)* nocapture %out, <2 x float> %f) #0 {
+define spir_kernel void @test_vector(<2 x i32> addrspace(1)* nocapture %out, <2 x float> %f) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func <2 x i32> @_Z8isfiniteDv2_f(<2 x float> %f) #2
   %call1 = tail call spir_func <2 x i32> @_Z5isnanDv2_f(<2 x float> %f) #2
@@ -85,7 +85,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0, !6}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!9}
 !opencl.ocl.version = !{!10}
@@ -93,15 +92,13 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!11}
 !opencl.compiler.options = !{!11}
 
-!0 = !{void (i32 addrspace(1)*, float)* @test_scalar, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"int*", !"float"}
-!4 = !{!"kernel_arg_base_type", !"int*", !"float"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
-!6 = !{void (<2 x i32> addrspace(1)*, <2 x float>)* @test_vector, !1, !2, !7, !8, !5}
-!7 = !{!"kernel_arg_type", !"int2*", !"float2"}
-!8 = !{!"kernel_arg_base_type", !"int2*", !"float2"}
+!1 = !{i32 1, i32 0}
+!2 = !{!"none", !"none"}
+!3 = !{!"int*", !"float"}
+!4 = !{!"int*", !"float"}
+!5 = !{!"", !""}
+!7 = !{!"int2*", !"float2"}
+!8 = !{!"int2*", !"float2"}
 !9 = !{i32 1, i32 2}
 !10 = !{i32 2, i32 0}
 !11 = !{}

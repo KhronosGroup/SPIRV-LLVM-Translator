@@ -118,7 +118,6 @@ declare spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%
 
 attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -132,7 +131,6 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 ; CHECK-LLVM-DAG: [[TYPE]] = !{!"pipe", !"pipe", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}
 ; CHECK-LLVM-DAG: [[TQ]] = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !"", !""}
 
-!0 = !{void (%opencl.pipe_t addrspace(1)*, %opencl.pipe_t addrspace(1)*, %opencl.image1d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*, %opencl.image3d_t addrspace(1)*, %opencl.image2d_array_t addrspace(1)*, %opencl.image1d_buffer_t addrspace(1)*, %opencl.image1d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*, i32)* @foo, !1, !2, !3, !4, !5}
 !1 = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 0}
 !2 = !{!"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write", !"none"}
 !3 = !{!"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t", !"sampler_t"}

@@ -30,7 +30,7 @@ entry:
 declare spir_func <4 x i32> @_Z11read_imagef11ocl_image2d11ocl_samplerDv2_i(%opencl.image2d_t addrspace(1)*, i32, <2 x i32>) #1
 
 ; Function Attrs: nounwind
-define spir_kernel void @test2(%opencl.image2d_t addrspace(1)* %Img, float addrspace(1)* %result) #0 {
+define spir_kernel void @test2(%opencl.image2d_t addrspace(1)* %Img, float addrspace(1)* %result) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 ;CHECK: Function  {{[0-9]+}} [[KernelId]]
 entry:
   %call = call spir_func float @test(%opencl.image2d_t addrspace(1)* %Img, i32 0)
@@ -44,7 +44,6 @@ entry:
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -52,12 +51,11 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, float addrspace(1)*)* @test2, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_t", !"float*"}
-!4 = !{!"kernel_arg_base_type", !"image2d_t", !"float*"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
+!1 = !{i32 1, i32 1}
+!2 = !{!"read_only", !"none"}
+!3 = !{!"image2d_t", !"float*"}
+!4 = !{!"image2d_t", !"float*"}
+!5 = !{!"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

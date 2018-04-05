@@ -18,7 +18,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(i32 addrspace(1)* nocapture readnone %i) #0 {
+define spir_kernel void @test(i32 addrspace(1)* nocapture readnone %i) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = tail call spir_func i32 @_Z14work_group_alli(i32 5) #2
   %call1 = tail call spir_func i32 @_Z14work_group_anyi(i32 5) #2
@@ -33,7 +33,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -41,12 +40,11 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (i32 addrspace(1)*)* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int*"}
-!4 = !{!"kernel_arg_base_type", !"int*"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"int*"}
+!4 = !{!"int*"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

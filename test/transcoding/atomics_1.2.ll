@@ -14,7 +14,7 @@ target triple = "spir64-unknown-unknown"
 
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 {
+define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   ; atomic_inc
   %inc_ig = tail call spir_func i32 @_Z10atomic_incPVU3AS1i(i32 addrspace(1)* %dst) #0
   ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS1U7_Atomicii12memory_order12memory_scope(i32 addrspace(1)* {{.*}}, i32 1
@@ -78,7 +78,7 @@ define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 {
 }
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_atomic_local(i32 addrspace(3)* %dst) #0 {
+define spir_kernel void @test_atomic_local(i32 addrspace(3)* %dst) #0 !kernel_arg_addr_space !11 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   ; atomic_inc
   %inc_il = tail call spir_func i32 @_Z10atomic_incPVU3AS3i(i32 addrspace(3)* %dst) #0
   ; CHECK: _Z25atomic_fetch_add_explicitPVU3AS3U7_Atomicii12memory_order12memory_scope(i32 addrspace(3)* {{.*}}, i32 1
@@ -190,7 +190,6 @@ declare spir_func i32 @_Z11atomic_xchgPVU3AS3jj(i32 addrspace(3)*, i32)
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0, !10}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!7}
 !opencl.ocl.version = !{!7}
@@ -198,15 +197,12 @@ attributes #1 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!9}
 
-!0 = !{void (i32 addrspace(1)*)* @test_atomic_global, !1, !2, !3, !4, !5, !6}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int*"}
-!4 = !{!"kernel_arg_type_qual", !"volatile"}
-!5 = !{!"kernel_arg_base_type", !"int*"}
-!6 = !{!"kernel_arg_name", !"dst"}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"int*"}
+!4 = !{!"volatile"}
+!5 = !{!"int*"}
 !7 = !{i32 1, i32 2}
 !8 = !{}
 !9 = !{!"-cl-kernel-arg-info"}
-!10 = !{void (i32 addrspace(3)*)* @test_atomic_local, !11, !2, !3, !4, !5, !6}
-!11 = !{!"kernel_arg_addr_space", i32 1}
+!11 = !{i32 1}

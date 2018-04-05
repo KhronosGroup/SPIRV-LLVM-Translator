@@ -20,7 +20,7 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @lifetime_simple(i32 addrspace(1)* nocapture %res, i32 addrspace(1)* nocapture %lhs, i32 addrspace(1)* nocapture %rhs) #0 {
+define spir_kernel void @lifetime_simple(i32 addrspace(1)* nocapture %res, i32 addrspace(1)* nocapture %lhs, i32 addrspace(1)* nocapture %rhs) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   %1 = alloca i32
   %2 = call spir_func i64 @_Z13get_global_idj(i32 0) #1
   %3 = shl i64 %2, 32
@@ -52,7 +52,6 @@ declare spir_func i64 @_Z13get_global_idj(i32) #1
 attributes #0 = { nounwind }
 attributes #1 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !spirv.Source = !{!6}
 !opencl.spir.version = !{!7}
@@ -61,12 +60,11 @@ attributes #1 = { nounwind readnone }
 !opencl.used.optional.core.features = !{!8}
 !spirv.Generator = !{!9}
 
-!0 = !{void (i32 addrspace(1)*, i32 addrspace(1)*, i32 addrspace(1)*)* @lifetime_simple, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"int*", !"int*", !"int*"}
-!4 = !{!"kernel_arg_type_qual", !"", !"", !""}
-!5 = !{!"kernel_arg_base_type", !"int*", !"int*", !"int*"}
+!1 = !{i32 1, i32 1, i32 1}
+!2 = !{!"none", !"none", !"none"}
+!3 = !{!"int*", !"int*", !"int*"}
+!4 = !{!"", !"", !""}
+!5 = !{!"int*", !"int*", !"int*"}
 !6 = !{i32 3, i32 102000}
 !7 = !{i32 1, i32 2}
 !8 = !{}

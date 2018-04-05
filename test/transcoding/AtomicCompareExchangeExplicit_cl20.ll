@@ -53,7 +53,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir"
 
 ; Function Attrs: nounwind
-define spir_kernel void @testAtomicCompareExchangeExplicit_cl20(i32 addrspace(1)* %object, i32 addrspace(1)* %expected, i32 %desired) #0 {
+define spir_kernel void @testAtomicCompareExchangeExplicit_cl20(i32 addrspace(1)* %object, i32 addrspace(1)* %expected, i32 %desired) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %0 = addrspacecast i32 addrspace(1)* %object to i32 addrspace(4)*
   %1 = addrspacecast i32 addrspace(1)* %expected to i32 addrspace(4)*
@@ -76,7 +76,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -84,12 +83,11 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (i32 addrspace(1)*, i32 addrspace(1)*, i32)* @testAtomicCompareExchangeExplicit_cl20, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"atomic_int*", !"int*", !"int"}
-!4 = !{!"kernel_arg_base_type", !"_Atomic(int)*", !"int*", !"int"}
-!5 = !{!"kernel_arg_type_qual", !"volatile", !"", !""}
+!1 = !{i32 1, i32 1, i32 0}
+!2 = !{!"none", !"none", !"none"}
+!3 = !{!"atomic_int*", !"int*", !"int"}
+!4 = !{!"_Atomic(int)*", !"int*", !"int"}
+!5 = !{!"volatile", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

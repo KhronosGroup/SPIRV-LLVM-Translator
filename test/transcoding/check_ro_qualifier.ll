@@ -24,7 +24,7 @@ target triple = "spir64-unknown-unknown"
 %opencl.image2d_array_ro_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_kernel(%opencl.image2d_array_ro_t addrspace(1)* %input) #0 {
+define spir_kernel void @sample_kernel(%opencl.image2d_array_ro_t addrspace(1)* %input) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
 entry:
   %call.tmp1 = call spir_func <2 x i32> @_Z13get_image_dimPU3AS125opencl.image2d_array_ro_t(%opencl.image2d_array_ro_t addrspace(1)* %input)
   %call.tmp2 = shufflevector <2 x i32> %call.tmp1, <2 x i32> undef, <3 x i32> <i32 0, i32 1, i32 2>
@@ -43,7 +43,6 @@ declare spir_func i64 @_Z20get_image_array_sizePU3AS125opencl.image2d_array_ro_t
 
 attributes #0 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !spirv.Source = !{!6}
 !opencl.spir.version = !{!7}
@@ -52,12 +51,11 @@ attributes #0 = { nounwind }
 !opencl.used.optional.core.features = !{!9}
 !spirv.Generator = !{!10}
 
-!0 = !{void (%opencl.image2d_array_ro_t addrspace(1)*)* @sample_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only"}
-!3 = !{!"kernel_arg_type", !"image2d_array_ro_t"}
-!4 = !{!"kernel_arg_type_qual", !""}
-!5 = !{!"kernel_arg_base_type", !"image2d_array_ro_t"}
+!1 = !{i32 1}
+!2 = !{!"read_only"}
+!3 = !{!"image2d_array_ro_t"}
+!4 = !{!""}
+!5 = !{!"image2d_array_ro_t"}
 !6 = !{i32 3, i32 102000}
 !7 = !{i32 1, i32 2}
 !8 = !{}

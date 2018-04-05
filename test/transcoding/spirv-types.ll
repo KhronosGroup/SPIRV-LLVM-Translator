@@ -108,7 +108,7 @@ define spir_kernel void @foo(
   %spirv.Image._half_1_0_1_0_0_0_0 addrspace(1)* nocapture %f1,
   %spirv.Image._float_5_0_0_0_0_0_0 addrspace(1)* nocapture %g1,
   %spirv.Image._void_0_0_0_0_0_0_1 addrspace(1)* nocapture %c2,
-  %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)* nocapture %d3) #0 {
+  %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)* nocapture %d3) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   ret void
 }
@@ -157,7 +157,6 @@ declare spir_func <4 x float> @_Z38__spirv_ImageSampleExplicitLod_Rfloat4PU3AS12
 
 attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -171,12 +170,11 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 ; CHECK-LLVM-DAG: [[TYPE]] = !{!"pipe", !"pipe", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
 ; CHECK-LLVM-DAG: [[TQ]] = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
 
-!0 = !{void (%spirv.Pipe._0 addrspace(1)*, %spirv.Pipe._1 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._int_1_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._uint_2_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._half_1_0_1_0_0_0_0 addrspace(1)*, %spirv.Image._float_5_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_1 addrspace(1)*, %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)*)* @foo, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write"}
-!3 = !{!"kernel_arg_type", !"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
-!4 = !{!"kernel_arg_base_type", !"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
-!5 = !{!"kernel_arg_type_qual", !"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
+!1 = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
+!2 = !{!"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write"}
+!3 = !{!"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
+!4 = !{!"int", !"int", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
+!5 = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{!"cl_khr_fp16"}

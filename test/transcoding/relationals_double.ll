@@ -22,7 +22,7 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test_vector_double(<2 x i64> addrspace(1)* nocapture %out, <2 x double> %in) #0 {
+define spir_kernel void @test_vector_double(<2 x i64> addrspace(1)* nocapture %out, <2 x double> %in) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
   %1 = tail call spir_func <2 x i64> @_Z5isinfDv2_d(<2 x double> %in) #2
   %2 = tail call spir_func <2 x i64> @_Z5isnanDv2_d(<2 x double> %in) #2
   %3 = add <2 x i64> %1, %2
@@ -46,7 +46,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -55,12 +54,11 @@ attributes #2 = { nounwind }
 !opencl.compiler.options = !{!8}
 !llvm.ident = !{!10}
 
-!0 = !{void (<2 x i64> addrspace(1)*, <2 x double>)* @test_vector_double, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 0}
-!2 = !{!"kernel_arg_access_qual", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"long2*", !"double2"}
-!4 = !{!"kernel_arg_base_type", !"long2*", !"double2"}
-!5 = !{!"kernel_arg_type_qual", !"", !""}
+!1 = !{i32 1, i32 0}
+!2 = !{!"none", !"none"}
+!3 = !{!"long2*", !"double2"}
+!4 = !{!"long2*", !"double2"}
+!5 = !{!"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

@@ -19,7 +19,7 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(i32 addrspace(1)* %i) #0 {
+define spir_kernel void @test(i32 addrspace(1)* %i) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %i.addr = alloca i32 addrspace(1)*, align 4
   store i32 addrspace(1)* %i, i32 addrspace(1)** %i.addr, align 4
@@ -32,7 +32,6 @@ entry:
 
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -40,12 +39,11 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (i32 addrspace(1)*)* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int*"}
-!4 = !{!"kernel_arg_base_type", !"int*"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 1}
+!2 = !{!"none"}
+!3 = !{!"int*"}
+!4 = !{!"int*"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}
