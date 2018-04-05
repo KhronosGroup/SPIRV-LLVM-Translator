@@ -138,7 +138,7 @@ entry:
 ; SPIRV: Function {{[0-9]+}} [[kern]]
 ; BACK-TO-LLVM: define spir_kernel void @kern()
 ; Function Attrs: nounwind
-define spir_kernel void @kern() #0 {
+define spir_kernel void @kern() #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !1 !kernel_arg_type !1 !kernel_arg_base_type !1 !kernel_arg_type_qual !1 {
 entry:
   call spir_func void @f()
   ret void
@@ -148,20 +148,13 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { inlinehint nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
+!opencl.spir.version = !{!2}
+!opencl.ocl.version = !{!3}
+!opencl.used.extensions = !{!1}
+!opencl.used.optional.core.features = !{!1}
+!opencl.compiler.options = !{!1}
 
-!0 = !{void ()* @kern, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
-!8 = !{}
+!1 = !{}
+!2 = !{i32 1, i32 2}
+!3 = !{i32 2, i32 0}

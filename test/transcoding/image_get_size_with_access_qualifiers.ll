@@ -20,7 +20,7 @@ target triple = "spir64"
 %opencl.image2d_array_ro_t = type opaque
 
 ; Function Attrs: nounwind
-define spir_kernel void @sample_kernel(%opencl.image2d_array_ro_t addrspace(1)* %input) #0 {
+define spir_kernel void @sample_kernel(%opencl.image2d_array_ro_t addrspace(1)* %input) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
   %call = call spir_func i32 @_Z15get_image_width20ocl_image2d_array_ro(%opencl.image2d_array_ro_t addrspace(1)* %input) #2
   ret void
@@ -33,7 +33,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -42,12 +41,11 @@ attributes #2 = { nounwind readnone }
 !opencl.compiler.options = !{!7}
 !llvm.ident = !{!8}
 
-!0 = !{void (%opencl.image2d_array_ro_t addrspace(1)*)* @sample_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only"}
-!3 = !{!"kernel_arg_type", !"__read_only image2d_array_t"}
-!4 = !{!"kernel_arg_base_type", !"__read_only image2d_array_t"}
-!5 = !{!"kernel_arg_type_qual", !""}
+!1 = !{i32 1}
+!2 = !{!"read_only"}
+!3 = !{!"__read_only image2d_array_t"}
+!4 = !{!"__read_only image2d_array_t"}
+!5 = !{!""}
 !6 = !{i32 1, i32 2}
 !7 = !{}
 !8 = !{!"clang version 3.6.1 "}

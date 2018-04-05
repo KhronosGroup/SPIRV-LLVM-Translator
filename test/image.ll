@@ -39,7 +39,6 @@ attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 attributes #3 = { nounwind readnone }
 attributes #4 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!6}
@@ -48,7 +47,6 @@ attributes #4 = { nounwind }
 !opencl.compiler.options = !{!7}
 !llvm.ident = !{!9}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, %opencl.image2d_t addrspace(1)*)* @image_copy}
 !1 = !{i32 1, i32 1}
 !2 = !{!"read_only", !"write_only"}
 !3 = !{!"image2d_t", !"image2d_t"}

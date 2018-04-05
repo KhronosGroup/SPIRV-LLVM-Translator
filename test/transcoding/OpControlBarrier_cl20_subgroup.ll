@@ -103,7 +103,6 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
@@ -111,12 +110,6 @@ attributes #2 = { nounwind }
 !opencl.used.optional.core.features = !{!8}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void ()* @test, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}

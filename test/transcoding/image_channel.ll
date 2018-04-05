@@ -11,10 +11,10 @@ target triple = "spir-unknown-unknown"
 
 %opencl.image2d_t = type opaque
 ; CHECK-SPIRV-DAG: 4 Constant {{[0-9]+}} [[DataTypeOffsetId:[0-9]+]] 4304
-; CHECK-SPIRV-DAG: 4 Constant {{[0-9]+}} [[OrderOffsetId:[0-9]+]] 4272 
+; CHECK-SPIRV-DAG: 4 Constant {{[0-9]+}} [[OrderOffsetId:[0-9]+]] 4272
 
 ; Function Attrs: nounwind
-define spir_kernel void @f(%opencl.image2d_t addrspace(1)* %img, i32 addrspace(1)* nocapture %type, i32 addrspace(1)* nocapture %order) #0 {
+define spir_kernel void @f(%opencl.image2d_t addrspace(1)* %img, i32 addrspace(1)* nocapture %type, i32 addrspace(1)* nocapture %order) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 ; CHECK-LLVM-DAG: [[DTCALL:%.+]] ={{.*}} call spir_func i32 @_Z27get_image_channel_data_type11ocl_image2d
 ; CHECK-LLVM: [[DTSUB:%.+]] = sub i32 [[DTCALL]], 4304
 ; CHECK-LLVM: [[DTADD:%.+]] = add i32 [[DTSUB]], 4304
@@ -44,19 +44,17 @@ attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
-!opencl.kernels = !{!0}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
 !opencl.used.extensions = !{!8}
 !opencl.used.optional.core.features = !{!9}
 !opencl.compiler.options = !{!8}
 
-!0 = !{void (%opencl.image2d_t addrspace(1)*, i32 addrspace(1)*, i32 addrspace(1)*)* @f, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1, i32 1, i32 1}
-!2 = !{!"kernel_arg_access_qual", !"read_only", !"none", !"none"}
-!3 = !{!"kernel_arg_type", !"image2d_t", !"int*", !"int*"}
-!4 = !{!"kernel_arg_base_type", !"image2d_t", !"int*", !"int*"}
-!5 = !{!"kernel_arg_type_qual", !"", !"", !""}
+!1 = !{i32 1, i32 1, i32 1}
+!2 = !{!"read_only", !"none", !"none"}
+!3 = !{!"image2d_t", !"int*", !"int*"}
+!4 = !{!"image2d_t", !"int*", !"int*"}
+!5 = !{!"", !"", !""}
 !6 = !{i32 1, i32 2}
 !7 = !{i32 2, i32 0}
 !8 = !{}
