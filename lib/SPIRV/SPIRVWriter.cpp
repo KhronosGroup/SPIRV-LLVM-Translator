@@ -1257,7 +1257,7 @@ SPIRVValue *
 LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
   auto getMemoryAccess = [](MemIntrinsic *MI)->std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
-    if (SPIRVWord AlignVal = MI->getAlignment()) {
+    if (SPIRVWord AlignVal = MI->getDestAlignment()) {
       MemoryAccess[0] |= MemoryAccessAlignedMask;
       MemoryAccess.push_back(AlignVal);
     }
@@ -1313,9 +1313,10 @@ LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II, SPIRVBasicBlock *BB) {
     SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
     return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
                                       getMemoryAccess(MSI), BB);
-  }
-  break;
-  case Intrinsic::memcpy :
+  } break;
+  case Intrinsic::memcpy:
+    assert(cast<MemCpyInst>(II)->getSourceAlignment() ==
+           cast<MemCpyInst>(II)->getDestAlignment() && "Alignment mismatch!");
     return BM->addCopyMemorySizedInst(
       transValue(II->getOperand(0), BB),
       transValue(II->getOperand(1), BB),
