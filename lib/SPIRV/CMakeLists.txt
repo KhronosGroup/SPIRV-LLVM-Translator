@@ -1,15 +1,9 @@
-include_directories(
-  ${LLVM_SPIRV_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/Mangler
-  ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
-  ${CMAKE_CURRENT_SOURCE_DIR})
-
 option(SPIRV_USE_LLVM_API "Enable usage of LLVM API for libSPIRV." ON)
-if ( SPIRV_USE_LLVM_API )
+if(SPIRV_USE_LLVM_API)
   add_definitions(-D_SPIRV_LLVM_API)
-endif()
+endif(SPIRV_USE_LLVM_API)
 
-add_llvm_library(LLVMSPIRVLib
+add_llvm_library(LLVMSPIRVLib SHARED
   libSPIRV/SPIRVBasicBlock.cpp
   libSPIRV/SPIRVDebug.cpp
   libSPIRV/SPIRVDecorate.cpp
@@ -31,8 +25,8 @@ add_llvm_library(LLVMSPIRVLib
   OCLUtil.cpp
   SPIRVLowerBool.cpp
   SPIRVLowerConstExpr.cpp
-  SPIRVLowerOCLBlocks.cpp
   SPIRVLowerMemmove.cpp
+  SPIRVLowerOCLBlocks.cpp
   SPIRVReader.cpp
   SPIRVRegularizeLLVM.cpp
   SPIRVToOCL20.cpp
@@ -40,6 +34,19 @@ add_llvm_library(LLVMSPIRVLib
   SPIRVWriter.cpp
   SPIRVWriterPass.cpp
   TransOCLMD.cpp
-  )
+  LINK_COMPONENTS
+    Analysis
+    BitWriter
+    Core
+    Support
+    TransformUtils
+)
 
-add_dependencies(LLVMSPIRVLib intrinsics_gen)
+target_include_directories(LLVMSPIRVLib
+  PRIVATE
+    ${LLVM_INCLUDE_DIR}
+    ${LLVM_SPIRV_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/libSPIRV
+    ${CMAKE_CURRENT_SOURCE_DIR}/Mangler
+)

@@ -25,7 +25,7 @@ config.excludes = ['CMakeLists.txt']
 config.test_source_root = os.path.dirname(__file__)
 
 # test_exec_root: The root path where tests should be run.
-config.test_exec_root = os.path.join(config.llvm_obj_root, 'test')
+config.test_exec_root = os.path.join(config.test_run_dir, 'test_output')
 
 llvm_config.use_default_substitutions()
 
@@ -33,7 +33,7 @@ llvm_config.use_default_substitutions()
 
 config.substitutions.append(('%PATH%', config.environment['PATH']))
 
-tool_dirs = [config.llvm_tools_dir]
+tool_dirs = [config.llvm_tools_dir, config.llvm_spirv_dir]
 
 tools = ['llvm-as', 'llvm-dis', 'llvm-spirv']
 
