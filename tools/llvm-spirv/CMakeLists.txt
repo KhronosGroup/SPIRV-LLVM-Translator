@@ -1,15 +1,15 @@
 set(LLVM_LINK_COMPONENTS
-  Analysis
-  BitReader
-  BitWriter
-  Core
   SPIRVLib
-  Support
-  TransformUtils
-  )
-
-include_directories(${LLVM_SPIRV_INCLUDE_DIRS})
+)
 
 add_llvm_tool(llvm-spirv
   llvm-spirv.cpp
-  )
+  # llvm_setup_rpath messes with the rpath making llvm-spirv not executable from the build directory
+  NO_INSTALL_RPATH
+)
+
+target_include_directories(llvm-spirv
+  PRIVATE
+    ${LLVM_INCLUDE_DIR}
+    ${LLVM_SPIRV_INCLUDE_DIRS}
+)
