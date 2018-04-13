@@ -1,4 +1,4 @@
-//===- SPIRVStream.cpp - Class to represent a SPIR-V Stream ------*- C++ -*-===//
+//===- SPIRVStream.cpp - Class to represent a SPIR-V Stream -----*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -36,16 +36,16 @@
 /// This file implements SPIR-V stream class.
 ///
 //===----------------------------------------------------------------------===//
-#include "SPIRVDebug.h"
 #include "SPIRVStream.h"
+#include "SPIRVDebug.h"
 #include "SPIRVFunction.h"
-#include "SPIRVOpCode.h"
 #include "SPIRVNameMapEnum.h"
+#include "SPIRVOpCode.h"
 
-namespace SPIRV{
+namespace SPIRV {
 
 /// Write string with quote. Replace " with \".
-static void writeQuotedString(spv_ostream& O, const std::string& Str) {
+static void writeQuotedString(spv_ostream &O, const std::string &Str) {
   O << '"';
   for (auto I : Str) {
     if (I == '"')
@@ -56,7 +56,7 @@ static void writeQuotedString(spv_ostream& O, const std::string& Str) {
 }
 
 /// Read quoted string. Replace \" with ".
-static void readQuotedString(std::istream &IS, std::string& Str) {
+static void readQuotedString(std::istream &IS, std::string &Str) {
   char Ch = ' ';
   char PreCh = ' ';
   while (IS >> Ch && Ch != '"')
@@ -68,8 +68,7 @@ static void readQuotedString(std::istream &IS, std::string& Str) {
         if (PreCh != '\\') {
           Str += PreCh;
           break;
-        }
-        else
+        } else
           PreCh = Ch;
       } else {
         Str += PreCh;
@@ -84,23 +83,20 @@ bool SPIRVUseTextFormat = false;
 #endif
 
 SPIRVDecoder::SPIRVDecoder(std::istream &InputStream, SPIRVFunction &F)
-  :IS(InputStream), M(*F.getModule()), WordCount(0), OpCode(OpNop),
-   Scope(&F){}
+    : IS(InputStream), M(*F.getModule()), WordCount(0), OpCode(OpNop),
+      Scope(&F) {}
 
 SPIRVDecoder::SPIRVDecoder(std::istream &InputStream, SPIRVBasicBlock &BB)
-  :IS(InputStream), M(*BB.getModule()), WordCount(0), OpCode(OpNop),
-   Scope(&BB){}
+    : IS(InputStream), M(*BB.getModule()), WordCount(0), OpCode(OpNop),
+      Scope(&BB) {}
 
-void
-SPIRVDecoder::setScope(SPIRVEntry *TheScope) {
+void SPIRVDecoder::setScope(SPIRVEntry *TheScope) {
   assert(TheScope && (TheScope->getOpCode() == OpFunction ||
-      TheScope->getOpCode() == OpLabel));
+                      TheScope->getOpCode() == OpLabel));
   Scope = TheScope;
 }
 
-template<class T>
-const SPIRVDecoder&
-decode(const SPIRVDecoder& I, T &V) {
+template <class T> const SPIRVDecoder &decode(const SPIRVDecoder &I, T &V) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     std::string W;
@@ -113,9 +109,7 @@ decode(const SPIRVDecoder& I, T &V) {
   return DecodeBinary(I, V);
 }
 
-template<class T>
-const SPIRVEncoder&
-encode(const SPIRVEncoder& O, T V) {
+template <class T> const SPIRVEncoder &encode(const SPIRVEncoder &O, T V) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     O.OS << getNameMap(V).map(V) << " ";
@@ -125,15 +119,13 @@ encode(const SPIRVEncoder& O, T V) {
   return O << static_cast<SPIRVWord>(V);
 }
 
-#define SPIRV_DEF_ENCDEC(Type) \
-const SPIRVDecoder& \
-operator>>(const SPIRVDecoder& I, Type &V) { \
-  return decode(I, V); \
-}\
-const SPIRVEncoder& \
-operator<<(const SPIRVEncoder& O, Type V) { \
-  return encode(O, V); \
-}
+#define SPIRV_DEF_ENCDEC(Type)                                                 \
+  const SPIRVDecoder &operator>>(const SPIRVDecoder &I, Type &V) {             \
+    return decode(I, V);                                                       \
+  }                                                                            \
+  const SPIRVEncoder &operator<<(const SPIRVEncoder &O, Type V) {              \
+    return encode(O, V);                                                       \
+  }
 
 SPIRV_DEF_ENCDEC(Op)
 SPIRV_DEF_ENCDEC(Capability)
@@ -143,8 +135,7 @@ SPIRV_DEF_ENCDEC(LinkageType)
 
 // Read a string with padded 0's at the end so that they form a stream of
 // words.
-const SPIRVDecoder&
-operator>>(const SPIRVDecoder&I, std::string& Str) {
+const SPIRVDecoder &operator>>(const SPIRVDecoder &I, std::string &Str) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     readQuotedString(I.IS, Str);
@@ -161,7 +152,7 @@ operator>>(const SPIRVDecoder&I, std::string& Str) {
   }
   Count = (Count + 1) % 4;
   Count = Count ? 4 - Count : 0;
-  for (;Count; --Count) {
+  for (; Count; --Count) {
     I.IS >> Ch;
     assert(Ch == '\0' && "Invalid string in SPIRV");
   }
@@ -171,8 +162,7 @@ operator>>(const SPIRVDecoder&I, std::string& Str) {
 
 // Write a string with padded 0's at the end so that they form a stream of
 // words.
-const SPIRVEncoder&
-operator<<(const SPIRVEncoder&O, const std::string& Str) {
+const SPIRVEncoder &operator<<(const SPIRVEncoder &O, const std::string &Str) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     writeQuotedString(O.OS, Str);
@@ -183,17 +173,16 @@ operator<<(const SPIRVEncoder&O, const std::string& Str) {
   size_t L = Str.length();
   O.OS.write(Str.c_str(), L);
   char Zeros[4] = {0, 0, 0, 0};
-  O.OS.write(Zeros, 4-L%4);
+  O.OS.write(Zeros, 4 - L % 4);
   return O;
 }
 
-bool
-SPIRVDecoder::getWordCountAndOpCode() {
+bool SPIRVDecoder::getWordCountAndOpCode() {
   if (IS.eof()) {
     WordCount = 0;
     OpCode = OpNop;
-    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode EOF " <<
-        WordCount << " " << OpCode << '\n');
+    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode EOF "
+                       << WordCount << " " << OpCode << '\n');
     return false;
   }
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -203,17 +192,17 @@ SPIRVDecoder::getWordCountAndOpCode() {
     if (IS.fail()) {
       WordCount = 0;
       OpCode = OpNop;
-      SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
-          WordCount << " " << OpCode << '\n');
+      SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL "
+                         << WordCount << " " << OpCode << '\n');
       return false;
     }
     *this >> OpCode;
   } else {
 #endif
-  SPIRVWord WordCountAndOpCode;
-  *this >> WordCountAndOpCode;
-  WordCount = WordCountAndOpCode >> 16;
-  OpCode = static_cast<Op>(WordCountAndOpCode & 0xFFFF);
+    SPIRVWord WordCountAndOpCode;
+    *this >> WordCountAndOpCode;
+    WordCount = WordCountAndOpCode >> 16;
+    OpCode = static_cast<Op>(WordCountAndOpCode & 0xFFFF);
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   }
 #endif
@@ -221,24 +210,23 @@ SPIRVDecoder::getWordCountAndOpCode() {
   if (IS.fail()) {
     WordCount = 0;
     OpCode = OpNop;
-    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL " <<
-        WordCount << " " << OpCode << '\n');
+    SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode FAIL "
+                       << WordCount << " " << OpCode << '\n');
     return false;
   }
-  SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode " << WordCount <<
-      " " << OpCodeNameMap::map(OpCode) << '\n');
+  SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode " << WordCount
+                     << " " << OpCodeNameMap::map(OpCode) << '\n');
   return true;
 }
 
-SPIRVEntry *
-SPIRVDecoder::getEntry() {
+SPIRVEntry *SPIRVDecoder::getEntry() {
   if (WordCount == 0 || OpCode == OpNop)
     return nullptr;
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
   assert(Entry);
   Entry->setModule(&M);
-  if (isModuleScopeAllowedOpCode(OpCode) && !Scope) {}
-  else
+  if (isModuleScopeAllowedOpCode(OpCode) && !Scope) {
+  } else
     Entry->setScope(Scope);
   Entry->setWordCount(WordCount);
   if (OpCode != OpLine)
@@ -250,15 +238,13 @@ SPIRVDecoder::getEntry() {
   return Entry;
 }
 
-void
-SPIRVDecoder::validate()const {
+void SPIRVDecoder::validate() const {
   assert(OpCode != OpNop && "Invalid op code");
   assert(WordCount && "Invalid word count");
   assert(!IS.bad() && "Bad iInput stream");
 }
 
-spv_ostream &
-operator<<(spv_ostream &O, const SPIRVNL &E) {
+spv_ostream &operator<<(spv_ostream &O, const SPIRVNL &E) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat)
     O << '\n';
@@ -266,5 +252,4 @@ operator<<(spv_ostream &O, const SPIRVNL &E) {
   return O;
 }
 
-} // end of SPIRV namespace
-
+} // namespace SPIRV

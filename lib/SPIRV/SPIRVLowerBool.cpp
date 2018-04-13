@@ -1,4 +1,4 @@
-//===- SPIRVLowerBool.cpp – Lower instructions with bool operands ----------===//
+//===- SPIRVLowerBool.cpp - Lower instructions with bool operands ---------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -38,9 +38,9 @@
 #define DEBUG_TYPE "spvbool"
 
 #include "SPIRVInternal.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
@@ -52,13 +52,13 @@ using namespace llvm;
 using namespace SPIRV;
 
 namespace SPIRV {
-cl::opt<bool> SPIRVLowerBoolValidate("spvbool-validate",
+cl::opt<bool> SPIRVLowerBoolValidate(
+    "spvbool-validate",
     cl::desc("Validate module after lowering boolean instructions for SPIR-V"));
 
-class SPIRVLowerBool: public ModulePass,
-  public InstVisitor<SPIRVLowerBool> {
+class SPIRVLowerBool : public ModulePass, public InstVisitor<SPIRVLowerBool> {
 public:
-  SPIRVLowerBool():ModulePass(ID), Context(nullptr) {
+  SPIRVLowerBool() : ModulePass(ID), Context(nullptr) {
     initializeSPIRVLowerBoolPass(*PassRegistry::getPassRegistry());
   }
   void replace(Instruction *I, Instruction *NewI) {
@@ -110,7 +110,7 @@ public:
       DEBUG(dbgs() << "After SPIRVLowerBool:\n" << M);
       std::string Err;
       raw_string_ostream ErrorOS(Err);
-      if (verifyModule(M, &ErrorOS)){
+      if (verifyModule(M, &ErrorOS)) {
         Err = std::string("Fails to verify module: ") + Err;
         report_fatal_error(Err.c_str(), false);
       }
@@ -119,16 +119,15 @@ public:
   }
 
   static char ID;
+
 private:
   LLVMContext *Context;
 };
 
 char SPIRVLowerBool::ID = 0;
-}
+} // namespace SPIRV
 
 INITIALIZE_PASS(SPIRVLowerBool, "spvbool",
-    "Lower instructions with bool operands", false, false)
+                "Lower instructions with bool operands", false, false)
 
-ModulePass *llvm::createSPIRVLowerBool() {
-  return new SPIRVLowerBool();
-}
+ModulePass *llvm::createSPIRVLowerBool() { return new SPIRVLowerBool(); }

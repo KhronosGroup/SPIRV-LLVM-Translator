@@ -37,9 +37,9 @@
 //===----------------------------------------------------------------------===//
 #include "SPIRVInternal.h"
 
-#include <utility>
-#include <tuple>
 #include <functional>
+#include <tuple>
+#include <utility>
 using namespace SPIRV;
 using namespace llvm;
 using namespace spv;
@@ -80,52 +80,46 @@ enum OCLMemOrderKind {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>
-  OCLMemFenceMap;
+typedef SPIRVMap<OCLMemFenceKind, MemorySemanticsMask> OCLMemFenceMap;
 
-typedef SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>
-  OCLMemOrderMap;
+typedef SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask> OCLMemOrderMap;
 
-typedef SPIRVMap<OCLScopeKind, Scope>
-  OCLMemScopeMap;
+typedef SPIRVMap<OCLScopeKind, Scope> OCLMemScopeMap;
 
 typedef SPIRVMap<std::string, SPIRVGroupOperationKind>
-  SPIRSPIRVGroupOperationMap;
+    SPIRSPIRVGroupOperationMap;
 
 typedef SPIRVMap<std::string, SPIRVFPRoundingModeKind>
-  SPIRSPIRVFPRoundingModeMap;
+    SPIRSPIRVFPRoundingModeMap;
 
-typedef SPIRVMap<std::string, Op, SPIRVInstruction>
-  OCLSPIRVBuiltinMap;
+typedef SPIRVMap<std::string, Op, SPIRVInstruction> OCLSPIRVBuiltinMap;
 
 typedef SPIRVMap<std::string, SPIRVBuiltinVariableKind>
-  SPIRSPIRVBuiltinVariableMap;
+    SPIRSPIRVBuiltinVariableMap;
 
 /// Tuple of literals for atomic_work_item_fence (flag, order, scope)
 typedef std::tuple<unsigned, OCLMemOrderKind, OCLScopeKind>
-  AtomicWorkItemFenceLiterals;
+    AtomicWorkItemFenceLiterals;
 
 /// Tuple of literals for work_group_barrier or sub_group_barrier
 ///     (flag, mem_scope, exec_scope)
-typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind>
-  BarrierLiterals;
+typedef std::tuple<unsigned, OCLScopeKind, OCLScopeKind> BarrierLiterals;
 
 class OCLOpaqueType;
-typedef SPIRVMap<std::string, Op, OCLOpaqueType>
-  OCLOpaqueTypeOpCodeMap;
+typedef SPIRVMap<std::string, Op, OCLOpaqueType> OCLOpaqueTypeOpCodeMap;
 
 /// Information for translating OCL builtin.
 struct OCLBuiltinTransInfo {
   std::string UniqName;
   std::string MangledName;
-  std::string Postfix;      // Postfix to be added
+  std::string Postfix; // Postfix to be added
   /// Postprocessor of operands
-  std::function<void(std::vector<Value *>&)> PostProc;
-  Type* RetTy;              // Return type of the translated function
-  bool isRetSigned;         // When RetTy is int, determines if extensions
-                            // on it should be a sext or zet.
+  std::function<void(std::vector<Value *> &)> PostProc;
+  Type *RetTy;      // Return type of the translated function
+  bool isRetSigned; // When RetTy is int, determines if extensions
+                    // on it should be a sext or zet.
   OCLBuiltinTransInfo() : RetTy(nullptr), isRetSigned(false) {
-    PostProc = [](std::vector<Value *>&){};
+    PostProc = [](std::vector<Value *> &) {};
   }
 };
 
@@ -135,77 +129,80 @@ struct OCLBuiltinTransInfo {
 //
 ///////////////////////////////////////////////////////////////////////////////
 namespace kOCLBuiltinName {
-  const static char All[]                       = "all";
-  const static char Any[]                       = "any";
-  const static char AsyncWorkGroupCopy[]        = "async_work_group_copy";
-  const static char AsyncWorkGroupStridedCopy[] = "async_work_group_strided_copy";
-  const static char AtomPrefix[]         = "atom_";
-  const static char AtomCmpXchg[]        = "atom_cmpxchg";
-  const static char AtomicPrefix[]       = "atomic_";
-  const static char AtomicCmpXchg[]      = "atomic_cmpxchg";
-  const static char AtomicCmpXchgStrong[]         = "atomic_compare_exchange_strong";
-  const static char AtomicCmpXchgStrongExplicit[] = "atomic_compare_exchange_strong_explicit";
-  const static char AtomicCmpXchgWeak[]           = "atomic_compare_exchange_weak";
-  const static char AtomicCmpXchgWeakExplicit[]   = "atomic_compare_exchange_weak_explicit";
-  const static char AtomicInit[]          = "atomic_init";
-  const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
-  const static char Barrier[]            = "barrier";
-  const static char Clamp[]              = "clamp";
-  const static char ConvertPrefix[]      = "convert_";
-  const static char Dot[]                = "dot";
-  const static char EnqueueKernel[]      = "enqueue_kernel";
-  const static char FMax[]               = "fmax";
-  const static char FMin[]               = "fmin";
-  const static char GetFence[]           = "get_fence";
-  const static char GetImageArraySize[]  = "get_image_array_size";
-  const static char GetImageChannelOrder[]    = "get_image_channel_order";
-  const static char GetImageChannelDataType[] = "get_image_channel_data_type";
-  const static char GetImageDepth[]      = "get_image_depth";
-  const static char GetImageDim[]        = "get_image_dim";
-  const static char GetImageHeight[]     = "get_image_height";
-  const static char GetImageWidth[]      = "get_image_width";
-  const static char IsFinite[]           = "isfinite";
-  const static char IsNan[]              = "isnan";
-  const static char IsNormal[]           = "isnormal";
-  const static char IsInf[]              = "isinf";
-  const static char Max[]                = "max";
-  const static char MemFence[]           = "mem_fence";
-  const static char Min[]                = "min";
-  const static char Mix[]                = "mix";
-  const static char NDRangePrefix[]      = "ndrange_";
-  const static char Pipe[]               = "pipe";
-  const static char ReadImage[]          = "read_image";
-  const static char ReadPipe[]           = "read_pipe";
-  const static char RoundingPrefix[]     = "_r";
-  const static char Sampled[]            = "sampled_";
-  const static char SampledReadImage[]   = "sampled_read_image";
-  const static char Signbit[]            = "signbit";
-  const static char SmoothStep[]         = "smoothstep";
-  const static char Step[]               = "step";
-  const static char SubGroupPrefix[]     = "sub_group_";
-  const static char SubGroupBarrier[]    = "sub_group_barrier";
-  const static char SubPrefix[]          = "sub_";
-  const static char ToGlobal[]           = "to_global";
-  const static char ToLocal[]            = "to_local";
-  const static char ToPrivate[]          = "to_private";
-  const static char VLoadPrefix[]        = "vload";
-  const static char VLoadAPrefix[]       = "vloada";
-  const static char VLoadHalf[]          = "vload_half";
-  const static char VStorePrefix[]       = "vstore";
-  const static char VStoreAPrefix[]      = "vstorea";
-  const static char WaitGroupEvent[]     = "wait_group_events";
-  const static char WriteImage[]         = "write_image";
-  const static char WorkGroupBarrier[]   = "work_group_barrier";
-  const static char WritePipe[]          = "write_pipe";
-  const static char WorkGroupPrefix[]    = "work_group_";
-  const static char WorkGroupAll[]       = "work_group_all";
-  const static char WorkGroupAny[]       = "work_group_any";
-  const static char SubGroupAll[]        = "sub_group_all";
-  const static char SubGroupAny[]        = "sub_group_any";
-  const static char WorkPrefix[]         = "work_";
-  const static char SubgroupBlockReadINTELPrefix[]  = "intel_sub_group_block_read";
-  const static char SubgroupBlockWriteINTELPrefix[] = "intel_sub_group_block_write";
-}
+const static char All[] = "all";
+const static char Any[] = "any";
+const static char AsyncWorkGroupCopy[] = "async_work_group_copy";
+const static char AsyncWorkGroupStridedCopy[] = "async_work_group_strided_copy";
+const static char AtomPrefix[] = "atom_";
+const static char AtomCmpXchg[] = "atom_cmpxchg";
+const static char AtomicPrefix[] = "atomic_";
+const static char AtomicCmpXchg[] = "atomic_cmpxchg";
+const static char AtomicCmpXchgStrong[] = "atomic_compare_exchange_strong";
+const static char AtomicCmpXchgStrongExplicit[] =
+    "atomic_compare_exchange_strong_explicit";
+const static char AtomicCmpXchgWeak[] = "atomic_compare_exchange_weak";
+const static char AtomicCmpXchgWeakExplicit[] =
+    "atomic_compare_exchange_weak_explicit";
+const static char AtomicInit[] = "atomic_init";
+const static char AtomicWorkItemFence[] = "atomic_work_item_fence";
+const static char Barrier[] = "barrier";
+const static char Clamp[] = "clamp";
+const static char ConvertPrefix[] = "convert_";
+const static char Dot[] = "dot";
+const static char EnqueueKernel[] = "enqueue_kernel";
+const static char FMax[] = "fmax";
+const static char FMin[] = "fmin";
+const static char GetFence[] = "get_fence";
+const static char GetImageArraySize[] = "get_image_array_size";
+const static char GetImageChannelOrder[] = "get_image_channel_order";
+const static char GetImageChannelDataType[] = "get_image_channel_data_type";
+const static char GetImageDepth[] = "get_image_depth";
+const static char GetImageDim[] = "get_image_dim";
+const static char GetImageHeight[] = "get_image_height";
+const static char GetImageWidth[] = "get_image_width";
+const static char IsFinite[] = "isfinite";
+const static char IsNan[] = "isnan";
+const static char IsNormal[] = "isnormal";
+const static char IsInf[] = "isinf";
+const static char Max[] = "max";
+const static char MemFence[] = "mem_fence";
+const static char Min[] = "min";
+const static char Mix[] = "mix";
+const static char NDRangePrefix[] = "ndrange_";
+const static char Pipe[] = "pipe";
+const static char ReadImage[] = "read_image";
+const static char ReadPipe[] = "read_pipe";
+const static char RoundingPrefix[] = "_r";
+const static char Sampled[] = "sampled_";
+const static char SampledReadImage[] = "sampled_read_image";
+const static char Signbit[] = "signbit";
+const static char SmoothStep[] = "smoothstep";
+const static char Step[] = "step";
+const static char SubGroupPrefix[] = "sub_group_";
+const static char SubGroupBarrier[] = "sub_group_barrier";
+const static char SubPrefix[] = "sub_";
+const static char ToGlobal[] = "to_global";
+const static char ToLocal[] = "to_local";
+const static char ToPrivate[] = "to_private";
+const static char VLoadPrefix[] = "vload";
+const static char VLoadAPrefix[] = "vloada";
+const static char VLoadHalf[] = "vload_half";
+const static char VStorePrefix[] = "vstore";
+const static char VStoreAPrefix[] = "vstorea";
+const static char WaitGroupEvent[] = "wait_group_events";
+const static char WriteImage[] = "write_image";
+const static char WorkGroupBarrier[] = "work_group_barrier";
+const static char WritePipe[] = "write_pipe";
+const static char WorkGroupPrefix[] = "work_group_";
+const static char WorkGroupAll[] = "work_group_all";
+const static char WorkGroupAny[] = "work_group_any";
+const static char SubGroupAll[] = "sub_group_all";
+const static char SubGroupAny[] = "sub_group_any";
+const static char WorkPrefix[] = "work_";
+const static char SubgroupBlockReadINTELPrefix[] = "intel_sub_group_block_read";
+const static char SubgroupBlockWriteINTELPrefix[] =
+    "intel_sub_group_block_write";
+} // namespace kOCLBuiltinName
 
 /// Offset for OpenCL image channel order enumeration values.
 const unsigned int OCLImageChannelOrderOffset = 0x10B0;
@@ -220,12 +217,13 @@ const OCLMemOrderKind OCLLegacyAtomicMemOrder = OCLMO_seq_cst;
 const OCLScopeKind OCLLegacyAtomicMemScope = OCLMS_device;
 
 namespace kOCLVer {
-  const unsigned CL12 = 102000;
-  const unsigned CL20 = 200000;
-  const unsigned CL21 = 201000;
-}
+const unsigned CL12 = 102000;
+const unsigned CL20 = 200000;
+const unsigned CL21 = 201000;
+} // namespace kOCLVer
 
 namespace OclExt {
+// clang-format off
 enum Kind {
 #define _SPIRV_OP(x) x,
   _SPIRV_OP(cl_images)
@@ -254,8 +252,8 @@ enum Kind {
   _SPIRV_OP(cl_khr_srgb_image_writes)
 #undef _SPIRV_OP
 };
-}
-
+// clang-format on
+} // namespace OclExt
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -270,18 +268,16 @@ enum Kind {
 ///   not empty.
 /// \return instruction index of extended instruction if the OpenCL builtin
 ///   function is translated to an extended instruction, otherwise ~0U.
-unsigned getExtOp(StringRef MangledName,
-    const std::string &DemangledName = "");
+unsigned getExtOp(StringRef MangledName, const std::string &DemangledName = "");
 
 /// Get an empty SPIR-V instruction.
-std::unique_ptr<SPIRVEntry>
-getSPIRVInst(const OCLBuiltinTransInfo &Info);
+std::unique_ptr<SPIRVEntry> getSPIRVInst(const OCLBuiltinTransInfo &Info);
 
 /// Get literal arguments of call of atomic_work_item_fence.
-AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst* CI);
+AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst *CI);
 
 /// Get literal arguments of call of work_group_barrier or sub_group_barrier.
-BarrierLiterals getBarrierLiterals(CallInst* CI);
+BarrierLiterals getBarrierLiterals(CallInst *CI);
 
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
@@ -295,20 +291,19 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
 unsigned getOCLVersion(Module *M, bool AllowMulti = false);
 
 /// Encode OpenCL version as Major*10^5+Minor*10^3+Rev.
-unsigned
-encodeOCLVer(unsigned short Major,
-    unsigned char Minor, unsigned char Rev);
+unsigned encodeOCLVer(unsigned short Major, unsigned char Minor,
+                      unsigned char Rev);
 
 /// Decode OpenCL version which is encoded as Major*10^5+Minor*10^3+Rev
 std::tuple<unsigned short, unsigned char, unsigned char>
 decodeOCLVer(unsigned Ver);
 
 /// Decode a MDNode assuming it contains three integer constants.
-void decodeMDNode(MDNode* N, unsigned& X, unsigned& Y, unsigned& Z);
+void decodeMDNode(MDNode *N, unsigned &X, unsigned &Y, unsigned &Z);
 
 /// Decode OpenCL vector type hint MDNode and encode it as SPIR-V execution
 /// mode VecTypeHint.
-unsigned transVecTypeHint(MDNode* Node);
+unsigned transVecTypeHint(MDNode *Node);
 
 /// Decode SPIR-V encoding of vector type hint execution mode.
 Type *decodeVecTypeHint(LLVMContext &C, unsigned code);
@@ -317,9 +312,8 @@ SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
 SPIR::TypeAttributeEnum getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim);
 
 inline unsigned mapOCLMemSemanticToSPIRV(unsigned MemFenceFlag,
-    OCLMemOrderKind Order) {
-  return OCLMemOrderMap::map(Order) |
-      mapBitMask<OCLMemFenceMap>(MemFenceFlag);
+                                         OCLMemOrderKind Order) {
+  return OCLMemOrderMap::map(Order) | mapBitMask<OCLMemFenceMap>(MemFenceFlag);
 }
 
 inline unsigned mapOCLMemFenceFlagToSPIRV(unsigned MemFenceFlag) {
@@ -328,47 +322,44 @@ inline unsigned mapOCLMemFenceFlagToSPIRV(unsigned MemFenceFlag) {
 
 inline std::pair<unsigned, OCLMemOrderKind>
 mapSPIRVMemSemanticToOCL(unsigned Sema) {
-  return std::make_pair(rmapBitMask<OCLMemFenceMap>(Sema),
-    OCLMemOrderMap::rmap(extractSPIRVMemOrderSemantic(Sema)));
+  return std::make_pair(
+      rmapBitMask<OCLMemFenceMap>(Sema),
+      OCLMemOrderMap::rmap(extractSPIRVMemOrderSemantic(Sema)));
 }
 
-inline OCLMemOrderKind
-mapSPIRVMemOrderToOCL(unsigned Sema) {
+inline OCLMemOrderKind mapSPIRVMemOrderToOCL(unsigned Sema) {
   return OCLMemOrderMap::rmap(extractSPIRVMemOrderSemantic(Sema));
 }
 
 /// Mutate call instruction to call OpenCL builtin function.
-CallInst *
-mutateCallInstOCL(Module *M, CallInst *CI,
-    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+CallInst *mutateCallInstOCL(
+    Module *M, CallInst *CI,
+    std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
     AttributeList *Attrs = nullptr);
 
 /// Mutate call instruction to call OpenCL builtin function.
-Instruction *
-mutateCallInstOCL(Module *M, CallInst *CI,
-    std::function<std::string (CallInst *, std::vector<Value *> &,
-        Type *&RetTy)> ArgMutate,
+Instruction *mutateCallInstOCL(
+    Module *M, CallInst *CI,
+    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
+        ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     AttributeList *Attrs = nullptr);
 
 /// Mutate a function to OpenCL builtin function.
-void
-mutateFunctionOCL(Function *F,
-    std::function<std::string (CallInst *, std::vector<Value *> &)>ArgMutate,
+void mutateFunctionOCL(
+    Function *F,
+    std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
     AttributeList *Attrs = nullptr);
 
 /// Check if instruction is bitcast from spirv.ConstantSampler to spirv.Sampler
-bool
-isSamplerInitializer(Instruction *Inst);
+bool isSamplerInitializer(Instruction *Inst);
 
 /// Check if instruction is bitcast from spirv.ConstantPipeStorage
 /// to spirv.PipeStorage
-bool
-isPipeStorageInitializer(Instruction *Inst);
+bool isPipeStorageInitializer(Instruction *Inst);
 
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
-bool
-isSpecialTypeInitializer(Instruction* Inst);
+bool isSpecialTypeInitializer(Instruction *Inst);
 
 } // namespace OCLUtil
 
@@ -380,15 +371,14 @@ isSpecialTypeInitializer(Instruction* Inst);
 
 using namespace OCLUtil;
 namespace SPIRV {
-template<> inline void
-SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
+template <> inline void SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
   add(OCLMF_Local, MemorySemanticsWorkgroupMemoryMask);
   add(OCLMF_Global, MemorySemanticsCrossWorkgroupMemoryMask);
   add(OCLMF_Image, MemorySemanticsImageMemoryMask);
 }
 
-template<> inline void
-SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
+template <>
+inline void SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
   add(OCLMO_relaxed, MemorySemanticsMaskNone);
   add(OCLMO_acquire, MemorySemanticsAcquireMask);
   add(OCLMO_release, MemorySemanticsReleaseMask);
@@ -396,8 +386,7 @@ SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask>::init() {
   add(OCLMO_seq_cst, MemorySemanticsSequentiallyConsistentMask);
 }
 
-template<> inline void
-SPIRVMap<OCLScopeKind, Scope>::init() {
+template <> inline void SPIRVMap<OCLScopeKind, Scope>::init() {
   add(OCLMS_work_item, ScopeInvocation);
   add(OCLMS_work_group, ScopeWorkgroup);
   add(OCLMS_device, ScopeDevice);
@@ -405,23 +394,20 @@ SPIRVMap<OCLScopeKind, Scope>::init() {
   add(OCLMS_sub_group, ScopeSubgroup);
 }
 
-template<> inline void
-SPIRVMap<std::string, SPIRVGroupOperationKind>::init() {
+template <> inline void SPIRVMap<std::string, SPIRVGroupOperationKind>::init() {
   add("reduce", GroupOperationReduce);
   add("scan_inclusive", GroupOperationInclusiveScan);
   add("scan_exclusive", GroupOperationExclusiveScan);
 }
 
-template<> inline void
-SPIRVMap<std::string, SPIRVFPRoundingModeKind>::init() {
+template <> inline void SPIRVMap<std::string, SPIRVFPRoundingModeKind>::init() {
   add("rte", FPRoundingModeRTE);
   add("rtz", FPRoundingModeRTZ);
   add("rtp", FPRoundingModeRTP);
   add("rtn", FPRoundingModeRTN);
 }
 
-template<> inline void
-SPIRVMap<OclExt::Kind, std::string>::init() {
+template <> inline void SPIRVMap<OclExt::Kind, std::string>::init() {
 #define _SPIRV_OP(x) add(OclExt::x, #x);
   _SPIRV_OP(cl_images)
   _SPIRV_OP(cl_doubles)
@@ -450,8 +436,7 @@ SPIRVMap<OclExt::Kind, std::string>::init() {
 #undef _SPIRV_OP
 }
 
-template<> inline void
-SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
+template <> inline void SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
   add(OclExt::cl_images, CapabilityImageBasic);
   add(OclExt::cl_doubles, CapabilityFloat64);
   add(OclExt::cl_khr_int64_base_atomics, CapabilityInt64Atomics);
@@ -463,8 +448,8 @@ SPIRVMap<OclExt::Kind, SPIRVCapabilityKind>::init() {
 }
 
 /// Map OpenCL work functions to SPIR-V builtin variables.
-template<> inline void
-SPIRVMap<std::string, SPIRVBuiltinVariableKind>::init() {
+template <>
+inline void SPIRVMap<std::string, SPIRVBuiltinVariableKind>::init() {
   add("get_work_dim", BuiltInWorkDim);
   add("get_global_size", BuiltInGlobalSize);
   add("get_global_id", BuiltInGlobalInvocationId);
@@ -491,135 +476,135 @@ SPIRVMap<std::string, SPIRVBuiltinVariableKind>::init() {
 // work_group_ and sub_group_ functions are unified as group_ functions
 // except work_group_barrier.
 class SPIRVInstruction;
-template<> inline void
-SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
-#define _SPIRV_OP(x,y) add("atom_"#x, OpAtomic##y);
-// cl_khr_int64_base_atomics builtins
-_SPIRV_OP(add, IAdd)
-_SPIRV_OP(sub, ISub)
-_SPIRV_OP(xchg, Exchange)
-_SPIRV_OP(dec, IDecrement)
-_SPIRV_OP(inc, IIncrement)
-_SPIRV_OP(cmpxchg, CompareExchange)
-// cl_khr_int64_extended_atomics builtins
-_SPIRV_OP(min, SMin)
-_SPIRV_OP(max, SMax)
-_SPIRV_OP(and, And)
-_SPIRV_OP(or, Or)
-_SPIRV_OP(xor, Xor)
+template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
+#define _SPIRV_OP(x, y) add("atom_" #x, OpAtomic##y);
+  // cl_khr_int64_base_atomics builtins
+  _SPIRV_OP(add, IAdd)
+  _SPIRV_OP(sub, ISub)
+  _SPIRV_OP(xchg, Exchange)
+  _SPIRV_OP(dec, IDecrement)
+  _SPIRV_OP(inc, IIncrement)
+  _SPIRV_OP(cmpxchg, CompareExchange)
+  // cl_khr_int64_extended_atomics builtins
+  _SPIRV_OP(min, SMin)
+  _SPIRV_OP(max, SMax)
+  _SPIRV_OP(and, And)
+  _SPIRV_OP(or, Or)
+  _SPIRV_OP (xor, Xor)
 #undef _SPIRV_OP
-#define _SPIRV_OP(x,y) add("atomic_"#x, Op##y);
-// CL 2.0 atomic builtins
-_SPIRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
-_SPIRV_OP(flag_clear_explicit, AtomicFlagClear)
-_SPIRV_OP(load_explicit, AtomicLoad)
-_SPIRV_OP(store_explicit, AtomicStore)
-_SPIRV_OP(exchange_explicit, AtomicExchange)
-_SPIRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
-_SPIRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
-_SPIRV_OP(inc, AtomicIIncrement)
-_SPIRV_OP(dec, AtomicIDecrement)
-_SPIRV_OP(fetch_add_explicit, AtomicIAdd)
-_SPIRV_OP(fetch_sub_explicit, AtomicISub)
-_SPIRV_OP(fetch_umin_explicit, AtomicUMin)
-_SPIRV_OP(fetch_umax_explicit, AtomicUMax)
-_SPIRV_OP(fetch_min_explicit, AtomicSMin)
-_SPIRV_OP(fetch_max_explicit, AtomicSMax)
-_SPIRV_OP(fetch_and_explicit, AtomicAnd)
-_SPIRV_OP(fetch_or_explicit, AtomicOr)
-_SPIRV_OP(fetch_xor_explicit, AtomicXor)
+#define _SPIRV_OP(x, y) add("atomic_" #x, Op##y);
+  // CL 2.0 atomic builtins
+  _SPIRV_OP(flag_test_and_set_explicit, AtomicFlagTestAndSet)
+  _SPIRV_OP(flag_clear_explicit, AtomicFlagClear)
+  _SPIRV_OP(load_explicit, AtomicLoad)
+  _SPIRV_OP(store_explicit, AtomicStore)
+  _SPIRV_OP(exchange_explicit, AtomicExchange)
+  _SPIRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
+  _SPIRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
+  _SPIRV_OP(inc, AtomicIIncrement)
+  _SPIRV_OP(dec, AtomicIDecrement)
+  _SPIRV_OP(fetch_add_explicit, AtomicIAdd)
+  _SPIRV_OP(fetch_sub_explicit, AtomicISub)
+  _SPIRV_OP(fetch_umin_explicit, AtomicUMin)
+  _SPIRV_OP(fetch_umax_explicit, AtomicUMax)
+  _SPIRV_OP(fetch_min_explicit, AtomicSMin)
+  _SPIRV_OP(fetch_max_explicit, AtomicSMax)
+  _SPIRV_OP(fetch_and_explicit, AtomicAnd)
+  _SPIRV_OP(fetch_or_explicit, AtomicOr)
+  _SPIRV_OP(fetch_xor_explicit, AtomicXor)
 #undef _SPIRV_OP
-#define _SPIRV_OP(x,y) add(#x, Op##y);
-_SPIRV_OP(dot, Dot)
-_SPIRV_OP(async_work_group_copy, GroupAsyncCopy)
-_SPIRV_OP(async_work_group_strided_copy, GroupAsyncCopy)
-_SPIRV_OP(wait_group_events, GroupWaitEvents)
-_SPIRV_OP(isequal, FOrdEqual)
-_SPIRV_OP(isnotequal, FUnordNotEqual)
-_SPIRV_OP(isgreater, FOrdGreaterThan)
-_SPIRV_OP(isgreaterequal, FOrdGreaterThanEqual)
-_SPIRV_OP(isless, FOrdLessThan)
-_SPIRV_OP(islessequal, FOrdLessThanEqual)
-_SPIRV_OP(islessgreater, LessOrGreater)
-_SPIRV_OP(isordered, Ordered)
-_SPIRV_OP(isunordered, Unordered)
-_SPIRV_OP(isfinite, IsFinite)
-_SPIRV_OP(isinf, IsInf)
-_SPIRV_OP(isnan, IsNan)
-_SPIRV_OP(isnormal, IsNormal)
-_SPIRV_OP(signbit, SignBitSet)
-_SPIRV_OP(any, Any)
-_SPIRV_OP(all, All)
-_SPIRV_OP(get_fence, GenericPtrMemSemantics)
-// CL 2.0 kernel enqueue builtins
-_SPIRV_OP(enqueue_marker, EnqueueMarker)
-_SPIRV_OP(enqueue_kernel, EnqueueKernel)
-_SPIRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
-_SPIRV_OP(get_kernel_ndrange_max_subgroup_count, GetKernelNDrangeMaxSubGroupSize)
-_SPIRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
-_SPIRV_OP(get_kernel_preferred_work_group_size_multiple, GetKernelPreferredWorkGroupSizeMultiple)
-_SPIRV_OP(retain_event, RetainEvent)
-_SPIRV_OP(release_event, ReleaseEvent)
-_SPIRV_OP(create_user_event, CreateUserEvent)
-_SPIRV_OP(is_valid_event, IsValidEvent)
-_SPIRV_OP(set_user_event_status, SetUserEventStatus)
-_SPIRV_OP(capture_event_profiling_info, CaptureEventProfilingInfo)
-_SPIRV_OP(get_default_queue, GetDefaultQueue)
-_SPIRV_OP(ndrange_1D, BuildNDRange)
-_SPIRV_OP(ndrange_2D, BuildNDRange)
-_SPIRV_OP(ndrange_3D, BuildNDRange)
-// Generic Address Space Casts
-_SPIRV_OP(to_global, GenericCastToPtrExplicit)
-_SPIRV_OP(to_local, GenericCastToPtrExplicit)
-_SPIRV_OP(to_private, GenericCastToPtrExplicit)
-_SPIRV_OP(work_group_barrier, ControlBarrier)
-// CL 2.0 pipe builtins
-_SPIRV_OP(read_pipe, ReadPipe)
-_SPIRV_OP(write_pipe, WritePipe)
-_SPIRV_OP(reserved_read_pipe, ReservedReadPipe)
-_SPIRV_OP(reserved_write_pipe, ReservedWritePipe)
-_SPIRV_OP(reserve_read_pipe, ReserveReadPipePackets)
-_SPIRV_OP(reserve_write_pipe, ReserveWritePipePackets)
-_SPIRV_OP(commit_read_pipe, CommitReadPipe)
-_SPIRV_OP(commit_write_pipe, CommitWritePipe)
-_SPIRV_OP(is_valid_reserve_id, IsValidReserveId)
-_SPIRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
-_SPIRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
-_SPIRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
-_SPIRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
-_SPIRV_OP(get_pipe_num_packets, GetNumPipePackets)
-_SPIRV_OP(get_pipe_max_packets, GetMaxPipePackets)
-// CL 2.0 workgroup builtins
-_SPIRV_OP(group_all, GroupAll)
-_SPIRV_OP(group_any, GroupAny)
-_SPIRV_OP(group_broadcast, GroupBroadcast)
-_SPIRV_OP(group_iadd, GroupIAdd)
-_SPIRV_OP(group_fadd, GroupFAdd)
-_SPIRV_OP(group_fmin, GroupFMin)
-_SPIRV_OP(group_umin, GroupUMin)
-_SPIRV_OP(group_smin, GroupSMin)
-_SPIRV_OP(group_fmax, GroupFMax)
-_SPIRV_OP(group_umax, GroupUMax)
-_SPIRV_OP(group_smax, GroupSMax)
-// CL image builtins
-_SPIRV_OP(SampledImage, SampledImage)
-_SPIRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
-_SPIRV_OP(read_image, ImageRead)
-_SPIRV_OP(write_image, ImageWrite)
-_SPIRV_OP(get_image_channel_data_type, ImageQueryFormat)
-_SPIRV_OP(get_image_channel_order, ImageQueryOrder)
-_SPIRV_OP(get_image_num_mip_levels, ImageQueryLevels)
-_SPIRV_OP(get_image_num_samples, ImageQuerySamples)
-// Intel Subgroups builtins
-_SPIRV_OP(intel_sub_group_shuffle, SubgroupShuffleINTEL)
-_SPIRV_OP(intel_sub_group_shuffle_down, SubgroupShuffleDownINTEL)
-_SPIRV_OP(intel_sub_group_shuffle_up, SubgroupShuffleUpINTEL)
-_SPIRV_OP(intel_sub_group_shuffle_xor, SubgroupShuffleXorINTEL)
+#define _SPIRV_OP(x, y) add(#x, Op##y);
+  _SPIRV_OP(dot, Dot)
+  _SPIRV_OP(async_work_group_copy, GroupAsyncCopy)
+  _SPIRV_OP(async_work_group_strided_copy, GroupAsyncCopy)
+  _SPIRV_OP(wait_group_events, GroupWaitEvents)
+  _SPIRV_OP(isequal, FOrdEqual)
+  _SPIRV_OP(isnotequal, FUnordNotEqual)
+  _SPIRV_OP(isgreater, FOrdGreaterThan)
+  _SPIRV_OP(isgreaterequal, FOrdGreaterThanEqual)
+  _SPIRV_OP(isless, FOrdLessThan)
+  _SPIRV_OP(islessequal, FOrdLessThanEqual)
+  _SPIRV_OP(islessgreater, LessOrGreater)
+  _SPIRV_OP(isordered, Ordered)
+  _SPIRV_OP(isunordered, Unordered)
+  _SPIRV_OP(isfinite, IsFinite)
+  _SPIRV_OP(isinf, IsInf)
+  _SPIRV_OP(isnan, IsNan)
+  _SPIRV_OP(isnormal, IsNormal)
+  _SPIRV_OP(signbit, SignBitSet)
+  _SPIRV_OP(any, Any)
+  _SPIRV_OP(all, All)
+  _SPIRV_OP(get_fence, GenericPtrMemSemantics)
+  // CL 2.0 kernel enqueue builtins
+  _SPIRV_OP(enqueue_marker, EnqueueMarker)
+  _SPIRV_OP(enqueue_kernel, EnqueueKernel)
+  _SPIRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
+  _SPIRV_OP(get_kernel_ndrange_max_subgroup_count,
+            GetKernelNDrangeMaxSubGroupSize)
+  _SPIRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
+  _SPIRV_OP(get_kernel_preferred_work_group_size_multiple,
+            GetKernelPreferredWorkGroupSizeMultiple)
+  _SPIRV_OP(retain_event, RetainEvent)
+  _SPIRV_OP(release_event, ReleaseEvent)
+  _SPIRV_OP(create_user_event, CreateUserEvent)
+  _SPIRV_OP(is_valid_event, IsValidEvent)
+  _SPIRV_OP(set_user_event_status, SetUserEventStatus)
+  _SPIRV_OP(capture_event_profiling_info, CaptureEventProfilingInfo)
+  _SPIRV_OP(get_default_queue, GetDefaultQueue)
+  _SPIRV_OP(ndrange_1D, BuildNDRange)
+  _SPIRV_OP(ndrange_2D, BuildNDRange)
+  _SPIRV_OP(ndrange_3D, BuildNDRange)
+  // Generic Address Space Casts
+  _SPIRV_OP(to_global, GenericCastToPtrExplicit)
+  _SPIRV_OP(to_local, GenericCastToPtrExplicit)
+  _SPIRV_OP(to_private, GenericCastToPtrExplicit)
+  _SPIRV_OP(work_group_barrier, ControlBarrier)
+  // CL 2.0 pipe builtins
+  _SPIRV_OP(read_pipe, ReadPipe)
+  _SPIRV_OP(write_pipe, WritePipe)
+  _SPIRV_OP(reserved_read_pipe, ReservedReadPipe)
+  _SPIRV_OP(reserved_write_pipe, ReservedWritePipe)
+  _SPIRV_OP(reserve_read_pipe, ReserveReadPipePackets)
+  _SPIRV_OP(reserve_write_pipe, ReserveWritePipePackets)
+  _SPIRV_OP(commit_read_pipe, CommitReadPipe)
+  _SPIRV_OP(commit_write_pipe, CommitWritePipe)
+  _SPIRV_OP(is_valid_reserve_id, IsValidReserveId)
+  _SPIRV_OP(group_reserve_read_pipe, GroupReserveReadPipePackets)
+  _SPIRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
+  _SPIRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
+  _SPIRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
+  _SPIRV_OP(get_pipe_num_packets, GetNumPipePackets)
+  _SPIRV_OP(get_pipe_max_packets, GetMaxPipePackets)
+  // CL 2.0 workgroup builtins
+  _SPIRV_OP(group_all, GroupAll)
+  _SPIRV_OP(group_any, GroupAny)
+  _SPIRV_OP(group_broadcast, GroupBroadcast)
+  _SPIRV_OP(group_iadd, GroupIAdd)
+  _SPIRV_OP(group_fadd, GroupFAdd)
+  _SPIRV_OP(group_fmin, GroupFMin)
+  _SPIRV_OP(group_umin, GroupUMin)
+  _SPIRV_OP(group_smin, GroupSMin)
+  _SPIRV_OP(group_fmax, GroupFMax)
+  _SPIRV_OP(group_umax, GroupUMax)
+  _SPIRV_OP(group_smax, GroupSMax)
+  // CL image builtins
+  _SPIRV_OP(SampledImage, SampledImage)
+  _SPIRV_OP(ImageSampleExplicitLod, ImageSampleExplicitLod)
+  _SPIRV_OP(read_image, ImageRead)
+  _SPIRV_OP(write_image, ImageWrite)
+  _SPIRV_OP(get_image_channel_data_type, ImageQueryFormat)
+  _SPIRV_OP(get_image_channel_order, ImageQueryOrder)
+  _SPIRV_OP(get_image_num_mip_levels, ImageQueryLevels)
+  _SPIRV_OP(get_image_num_samples, ImageQuerySamples)
+  // Intel Subgroups builtins
+  _SPIRV_OP(intel_sub_group_shuffle, SubgroupShuffleINTEL)
+  _SPIRV_OP(intel_sub_group_shuffle_down, SubgroupShuffleDownINTEL)
+  _SPIRV_OP(intel_sub_group_shuffle_up, SubgroupShuffleUpINTEL)
+  _SPIRV_OP(intel_sub_group_shuffle_xor, SubgroupShuffleXorINTEL)
 #undef _SPIRV_OP
 }
 
-template<> inline void
-SPIRVMap<std::string, Op, OCLOpaqueType>::init() {
+template <> inline void SPIRVMap<std::string, Op, OCLOpaqueType>::init() {
   add("opencl.event_t", OpTypeEvent);
   add("opencl.pipe_t", OpTypePipe);
   add("opencl.clk_event_t", OpTypeDeviceEvent);

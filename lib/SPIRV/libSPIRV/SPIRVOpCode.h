@@ -45,10 +45,9 @@
 #include <string>
 
 using namespace spv;
-namespace SPIRV{
+namespace SPIRV {
 
-template<> inline void
-SPIRVMap<Op, std::string>::init() {
+template <> inline void SPIRVMap<Op, std::string>::init() {
 #define _SPIRV_OP(x, ...) add(Op##x, #x);
 #include "SPIRVOpCodeEnum.h"
 #undef _SPIRV_OP
@@ -57,85 +56,72 @@ SPIRV_DEF_NAMEMAP(Op, OpCodeNameMap)
 
 inline bool isAtomicOpCode(Op OpCode) {
   assert(OpAtomicLoad < OpAtomicXor);
-  return ((unsigned)OpCode >= OpAtomicLoad
-      && (unsigned)OpCode <= OpAtomicXor)
-      || OpCode == OpAtomicFlagTestAndSet
-      || OpCode == OpAtomicFlagClear;
+  return ((unsigned)OpCode >= OpAtomicLoad &&
+          (unsigned)OpCode <= OpAtomicXor) ||
+         OpCode == OpAtomicFlagTestAndSet || OpCode == OpAtomicFlagClear;
 }
 inline bool isBinaryOpCode(Op OpCode) {
-  return ((unsigned)OpCode >= OpIAdd &&
-      (unsigned)OpCode <= OpFMod) ||
-      OpCode == OpDot;
+  return ((unsigned)OpCode >= OpIAdd && (unsigned)OpCode <= OpFMod) ||
+         OpCode == OpDot;
 }
 
 inline bool isShiftOpCode(Op OpCode) {
   return (unsigned)OpCode >= OpShiftRightLogical &&
-      (unsigned)OpCode <= OpShiftLeftLogical;
+         (unsigned)OpCode <= OpShiftLeftLogical;
 }
 
 inline bool isLogicalOpCode(Op OpCode) {
-  return (unsigned)OpCode >= OpLogicalEqual &&
-      (unsigned)OpCode <= OpLogicalNot;
+  return (unsigned)OpCode >= OpLogicalEqual && (unsigned)OpCode <= OpLogicalNot;
 }
 
 inline bool isBitwiseOpCode(Op OpCode) {
-  return (unsigned)OpCode >= OpBitwiseOr &&
-      (unsigned)OpCode <= OpBitwiseAnd;
+  return (unsigned)OpCode >= OpBitwiseOr && (unsigned)OpCode <= OpBitwiseAnd;
 }
 
 inline bool isBinaryShiftLogicalBitwiseOpCode(Op OpCode) {
   return (((unsigned)OpCode >= OpShiftRightLogical &&
-      (unsigned)OpCode <= OpBitwiseAnd) ||
-      isBinaryOpCode(OpCode));
+           (unsigned)OpCode <= OpBitwiseAnd) ||
+          isBinaryOpCode(OpCode));
 }
 
 inline bool isCmpOpCode(Op OpCode) {
   return ((unsigned)OpCode >= OpIEqual &&
-      (unsigned)OpCode <= OpFUnordGreaterThanEqual) ||
-      (OpCode >= OpLessOrGreater && OpCode <= OpLogicalNotEqual);
+          (unsigned)OpCode <= OpFUnordGreaterThanEqual) ||
+         (OpCode >= OpLessOrGreater && OpCode <= OpLogicalNotEqual);
 }
 
 inline bool isCvtOpCode(Op OpCode) {
-  return ((unsigned)OpCode >= OpConvertFToU &&
-      (unsigned)OpCode <= OpBitcast) ||
-      OpCode == OpSatConvertSToU ||
-      OpCode == OpSatConvertUToS;
+  return ((unsigned)OpCode >= OpConvertFToU && (unsigned)OpCode <= OpBitcast) ||
+         OpCode == OpSatConvertSToU || OpCode == OpSatConvertUToS;
 }
 
 inline bool isCvtToUnsignedOpCode(Op OpCode) {
-  return OpCode == OpConvertFToU ||
-      OpCode == OpUConvert ||
-      OpCode == OpSatConvertSToU;
+  return OpCode == OpConvertFToU || OpCode == OpUConvert ||
+         OpCode == OpSatConvertSToU;
 }
 
 inline bool isCvtFromUnsignedOpCode(Op OpCode) {
-  return OpCode == OpConvertUToF ||
-      OpCode == OpUConvert ||
-      OpCode == OpSatConvertUToS;
+  return OpCode == OpConvertUToF || OpCode == OpUConvert ||
+         OpCode == OpSatConvertUToS;
 }
 
 inline bool isOpaqueGenericTypeOpCode(Op OpCode) {
-  return (unsigned)OpCode >= OpTypeEvent &&
-      (unsigned)OpCode <= OpTypeQueue;
+  return (unsigned)OpCode >= OpTypeEvent && (unsigned)OpCode <= OpTypeQueue;
 }
 
 inline bool isGenericNegateOpCode(Op OpCode) {
-  return (unsigned)OpCode == OpSNegate ||
-      (unsigned)OpCode == OpFNegate ||
-      (unsigned)OpCode == OpNot;
+  return (unsigned)OpCode == OpSNegate || (unsigned)OpCode == OpFNegate ||
+         (unsigned)OpCode == OpNot;
 }
 
 inline bool isAccessChainOpCode(Op OpCode) {
-  return OpCode == OpAccessChain ||
-      OpCode == OpInBoundsAccessChain;
+  return OpCode == OpAccessChain || OpCode == OpInBoundsAccessChain;
 }
 
 inline bool hasExecScope(Op OpCode) {
   unsigned OC = OpCode;
-  return (OpGroupWaitEvents <= OC &&
-            OC <= OpGroupSMax) ||
-      (OpGroupReserveReadPipePackets <= OC &&
-          OC <= OpGroupCommitWritePipe);
+  return (OpGroupWaitEvents <= OC && OC <= OpGroupSMax) ||
+         (OpGroupReserveReadPipePackets <= OC && OC <= OpGroupCommitWritePipe);
 }
 
 inline bool hasGroupOperation(Op OpCode) {
@@ -159,20 +145,18 @@ inline bool isTypeOpCode(Op OpCode) {
 
 inline bool isConstantOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return (OpConstantTrue <= OC
-      && OC <= OpSpecConstantOp)
-      || OC == OpUndef || OC == OpConstantPipeStorage;
+  return (OpConstantTrue <= OC && OC <= OpSpecConstantOp) || OC == OpUndef ||
+         OC == OpConstantPipeStorage;
 }
 
 inline bool isModuleScopeAllowedOpCode(Op OpCode) {
-  return OpCode == OpVariable ||
-      isConstantOpCode(OpCode);
+  return OpCode == OpVariable || isConstantOpCode(OpCode);
 }
 
 inline bool isIntelSubgroupOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return OpSubgroupShuffleINTEL <= OC && OC <=OpSubgroupImageBlockWriteINTEL;
+  return OpSubgroupShuffleINTEL <= OC && OC <= OpSubgroupImageBlockWriteINTEL;
 }
-}
+} // namespace SPIRV
 
 #endif /* SPIRVOPCODE_HPP_ */

@@ -1,4 +1,4 @@
-//===- SPIRVDecorate.h - SPIR-V Decorations ----------------------*- C++ -*-===//
+//===- SPIRVDecorate.h - SPIR-V Decorations ---------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -41,22 +41,22 @@
 #define SPIRVDECORATE_HPP_
 
 #include "SPIRVEntry.h"
-#include "SPIRVUtil.h"
 #include "SPIRVStream.h"
+#include "SPIRVUtil.h"
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
-namespace SPIRV{
+namespace SPIRV {
 class SPIRVDecorationGroup;
-class SPIRVDecorateGeneric:public SPIRVAnnotationGeneric{
+class SPIRVDecorateGeneric : public SPIRVAnnotationGeneric {
 public:
   // Complete constructor for decorations without literals
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-      SPIRVEntry *TheTarget);
+                       SPIRVEntry *TheTarget);
   // Complete constructor for decorations with one word literal
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
-      SPIRVEntry *TheTarget, SPIRVWord V);
+                       SPIRVEntry *TheTarget, SPIRVWord V);
   // Incomplete constructor
   SPIRVDecorateGeneric(Op OC);
 
@@ -65,23 +65,18 @@ public:
   size_t getLiteralCount() const;
   /// Compare for kind and literal only.
   struct Comparator {
-    bool operator ()(const SPIRVDecorateGeneric *A, const SPIRVDecorateGeneric *B) const;
+    bool operator()(const SPIRVDecorateGeneric *A,
+                    const SPIRVDecorateGeneric *B) const;
   };
   /// Compare kind, literals and target.
   friend bool operator==(const SPIRVDecorateGeneric &A,
-      const SPIRVDecorateGeneric &B);
+                         const SPIRVDecorateGeneric &B);
 
-  SPIRVDecorationGroup* getOwner() const {
-    return Owner;
-  }
+  SPIRVDecorationGroup *getOwner() const { return Owner; }
 
-  void setOwner(SPIRVDecorationGroup* owner) {
-    Owner = owner;
-  }
+  void setOwner(SPIRVDecorationGroup *owner) { Owner = owner; }
 
-  SPIRVCapVec getRequiredCapability() const {
-    return getCapability(Dec);
-  }
+  SPIRVCapVec getRequiredCapability() const { return getCapability(Dec); }
 
   SPIRVWord getRequiredSPIRVVersion() const override {
     switch (Dec) {
@@ -105,16 +100,18 @@ protected:
   SPIRVDecorationGroup *Owner; // Owning decorate group
 };
 
-class SPIRVDecorateSet: public std::multiset<SPIRVDecorateGeneric *,
-    SPIRVDecorateGeneric::Comparator> {
-    public:
+class SPIRVDecorateSet
+    : public std::multiset<SPIRVDecorateGeneric *,
+                           SPIRVDecorateGeneric::Comparator> {
+public:
   typedef std::multiset<SPIRVDecorateGeneric *,
-      SPIRVDecorateGeneric::Comparator> BaseType;
-  iterator insert(value_type& Dec) {
+                        SPIRVDecorateGeneric::Comparator>
+      BaseType;
+  iterator insert(value_type &Dec) {
     auto ER = BaseType::equal_range(Dec);
     for (auto I = ER.first, E = ER.second; I != E; ++I) {
-      SPIRVDBG(spvdbgs() << "[compare decorate] " << *Dec
-                        << " vs " << **I << " : ");
+      SPIRVDBG(spvdbgs() << "[compare decorate] " << *Dec << " vs " << **I
+                         << " : ");
       if (**I == *Dec)
         return I;
       SPIRVDBG(spvdbgs() << " diff\n");
@@ -124,41 +121,40 @@ class SPIRVDecorateSet: public std::multiset<SPIRVDecorateGeneric *,
   }
 };
 
-class SPIRVDecorate:public SPIRVDecorateGeneric{
+class SPIRVDecorate : public SPIRVDecorateGeneric {
 public:
   static const Op OC = OpDecorate;
   static const SPIRVWord FixedWC = 3;
   // Complete constructor for decorations without literals
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, 3, TheDec, TheTarget){}
+      : SPIRVDecorateGeneric(OC, 3, TheDec, TheTarget) {}
   // Complete constructor for decorations with one word literal
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget, V){}
+      : SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget, V) {}
   // Incomplete constructor
-  SPIRVDecorate():SPIRVDecorateGeneric(OC){}
+  SPIRVDecorate() : SPIRVDecorateGeneric(OC) {}
 
   _SPIRV_DCL_ENCDEC
   void setWordCount(SPIRVWord);
-  void validate()const {
+  void validate() const {
     SPIRVDecorateGeneric::validate();
     assert(WordCount == Literals.size() + FixedWC);
   }
-
 };
 
-class SPIRVDecorateLinkageAttr:public SPIRVDecorate{
+class SPIRVDecorateLinkageAttr : public SPIRVDecorate {
 public:
   // Complete constructor for LinkageAttributes decorations
-  SPIRVDecorateLinkageAttr(SPIRVEntry *TheTarget,
-      const std::string &Name, SPIRVLinkageTypeKind Kind)
-    :SPIRVDecorate(DecorationLinkageAttributes, TheTarget) {
-      for (auto &I:getVec(Name))
-        Literals.push_back(I);
-      Literals.push_back(Kind);
-      WordCount += Literals.size();
-    }
+  SPIRVDecorateLinkageAttr(SPIRVEntry *TheTarget, const std::string &Name,
+                           SPIRVLinkageTypeKind Kind)
+      : SPIRVDecorate(DecorationLinkageAttributes, TheTarget) {
+    for (auto &I : getVec(Name))
+      Literals.push_back(I);
+    Literals.push_back(Kind);
+    WordCount += Literals.size();
+  }
   // Incomplete constructor
-  SPIRVDecorateLinkageAttr():SPIRVDecorate(){}
+  SPIRVDecorateLinkageAttr() : SPIRVDecorate() {}
 
   std::string getLinkageName() const {
     return getString(Literals.cbegin(), Literals.cend() - 1);
@@ -167,53 +163,54 @@ public:
     return (SPIRVLinkageTypeKind)Literals.back();
   }
 
-  static void encodeLiterals(SPIRVEncoder& Encoder,
-                             const std::vector<SPIRVWord>& Literals) {
+  static void encodeLiterals(SPIRVEncoder &Encoder,
+                             const std::vector<SPIRVWord> &Literals) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
-    if(SPIRVUseTextFormat) {
+    if (SPIRVUseTextFormat) {
       Encoder << getString(Literals.cbegin(), Literals.cend() - 1);
       Encoder.OS << " ";
       Encoder << (SPIRVLinkageTypeKind)Literals.back();
     } else
 #endif
-     Encoder << Literals;
+      Encoder << Literals;
   }
 
-  static void decodeLiterals(SPIRVDecoder& Decoder, std::vector<SPIRVWord>& Literals) {
+  static void decodeLiterals(SPIRVDecoder &Decoder,
+                             std::vector<SPIRVWord> &Literals) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
-    if(SPIRVUseTextFormat) {
+    if (SPIRVUseTextFormat) {
       std::string Name;
       Decoder >> Name;
       SPIRVLinkageTypeKind Kind;
       Decoder >> Kind;
-      std::copy_n(getVec(Name).begin(), Literals.size()-1, Literals.begin());
+      std::copy_n(getVec(Name).begin(), Literals.size() - 1, Literals.begin());
       Literals.back() = Kind;
-   } else
+    } else
 #endif
-     Decoder >> Literals;
+      Decoder >> Literals;
   }
 };
 
-class SPIRVMemberDecorate:public SPIRVDecorateGeneric{
+class SPIRVMemberDecorate : public SPIRVDecorateGeneric {
 public:
   static const Op OC = OpMemberDecorate;
   static const SPIRVWord FixedWC = 4;
   // Complete constructor for decorations without literals
   SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
-      SPIRVEntry *TheTarget)
-    :SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget),
-      MemberNumber(Member){}
+                      SPIRVEntry *TheTarget)
+      : SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget), MemberNumber(Member) {}
 
   // Complete constructor for decorations with one word literal
   SPIRVMemberDecorate(Decoration TheDec, SPIRVWord Member,
-      SPIRVEntry *TheTarget, SPIRVWord V)
-    :SPIRVDecorateGeneric(OC, 5, TheDec, TheTarget, V),
-      MemberNumber(Member){}
+                      SPIRVEntry *TheTarget, SPIRVWord V)
+      : SPIRVDecorateGeneric(OC, 5, TheDec, TheTarget, V),
+        MemberNumber(Member) {}
 
   // Incomplete constructor
-  SPIRVMemberDecorate():SPIRVDecorateGeneric(OC), MemberNumber(SPIRVWORD_MAX){}
+  SPIRVMemberDecorate()
+      : SPIRVDecorateGeneric(OC), MemberNumber(SPIRVWORD_MAX) {}
 
-  SPIRVWord getMemberNumber() const { return MemberNumber;}
+  SPIRVWord getMemberNumber() const { return MemberNumber; }
   std::pair<SPIRVWord, Decoration> getPair() const {
     return std::make_pair(MemberNumber, Dec);
   }
@@ -221,60 +218,58 @@ public:
   _SPIRV_DCL_ENCDEC
   void setWordCount(SPIRVWord);
 
-  void validate()const {
+  void validate() const {
     SPIRVDecorateGeneric::validate();
     assert(WordCount == Literals.size() + FixedWC);
   }
+
 protected:
   SPIRVWord MemberNumber;
 };
 
-class SPIRVDecorationGroup:public SPIRVEntry{
+class SPIRVDecorationGroup : public SPIRVEntry {
 public:
   static const Op OC = OpDecorationGroup;
   static const SPIRVWord WC = 2;
   // Complete constructor. Does not populate Decorations.
   SPIRVDecorationGroup(SPIRVModule *TheModule, SPIRVId TheId)
-    :SPIRVEntry(TheModule, WC, OC, TheId){
+      : SPIRVEntry(TheModule, WC, OC, TheId) {
     validate();
   };
   // Incomplete constructor
-  SPIRVDecorationGroup():SPIRVEntry(OC){}
+  SPIRVDecorationGroup() : SPIRVEntry(OC) {}
   void encodeAll(spv_ostream &O) const;
   _SPIRV_DCL_ENCDEC
   // Move the given decorates to the decoration group
   void takeDecorates(SPIRVDecorateSet &Decs) {
     Decorations = std::move(Decs);
-    for (auto &I:Decorations)
+    for (auto &I : Decorations)
       const_cast<SPIRVDecorateGeneric *>(I)->setOwner(this);
     Decs.clear();
   }
 
-  SPIRVDecorateSet& getDecorations() {
-    return Decorations;
-  }
+  SPIRVDecorateSet &getDecorations() { return Decorations; }
 
 protected:
   SPIRVDecorateSet Decorations;
-  void validate()const {
+  void validate() const {
     assert(OpCode == OC);
     assert(WordCount == WC);
   }
 };
 
-class SPIRVGroupDecorateGeneric:public SPIRVEntryNoIdGeneric{
+class SPIRVGroupDecorateGeneric : public SPIRVEntryNoIdGeneric {
 public:
   static const SPIRVWord FixedWC = 2;
   // Complete constructor
   SPIRVGroupDecorateGeneric(Op OC, SPIRVDecorationGroup *TheGroup,
-      const std::vector<SPIRVId> &TheTargets)
-    :SPIRVEntryNoIdGeneric(TheGroup->getModule(), FixedWC + TheTargets.size(),
-        OC),
-     DecorationGroup(TheGroup), Targets(TheTargets){
-  }
+                            const std::vector<SPIRVId> &TheTargets)
+      : SPIRVEntryNoIdGeneric(TheGroup->getModule(),
+                              FixedWC + TheTargets.size(), OC),
+        DecorationGroup(TheGroup), Targets(TheTargets) {}
   // Incomplete constructor
   SPIRVGroupDecorateGeneric(Op OC)
-    :SPIRVEntryNoIdGeneric(OC), DecorationGroup(nullptr){}
+      : SPIRVEntryNoIdGeneric(OC), DecorationGroup(nullptr) {}
 
   void setWordCount(SPIRVWord WC) {
     SPIRVEntryNoIdGeneric::setWordCount(WC);
@@ -287,35 +282,32 @@ protected:
   std::vector<SPIRVId> Targets;
 };
 
-class SPIRVGroupDecorate:public SPIRVGroupDecorateGeneric{
+class SPIRVGroupDecorate : public SPIRVGroupDecorateGeneric {
 public:
   static const Op OC = OpGroupDecorate;
   // Complete constructor
   SPIRVGroupDecorate(SPIRVDecorationGroup *TheGroup,
-      const std::vector<SPIRVId> &TheTargets)
-    :SPIRVGroupDecorateGeneric(OC, TheGroup, TheTargets){}
+                     const std::vector<SPIRVId> &TheTargets)
+      : SPIRVGroupDecorateGeneric(OC, TheGroup, TheTargets) {}
   // Incomplete constructor
-  SPIRVGroupDecorate()
-    :SPIRVGroupDecorateGeneric(OC){}
+  SPIRVGroupDecorate() : SPIRVGroupDecorateGeneric(OC) {}
 
   virtual void decorateTargets();
 };
 
-class SPIRVGroupMemberDecorate:public SPIRVGroupDecorateGeneric{
+class SPIRVGroupMemberDecorate : public SPIRVGroupDecorateGeneric {
 public:
   static const Op OC = OpGroupMemberDecorate;
   // Complete constructor
   SPIRVGroupMemberDecorate(SPIRVDecorationGroup *TheGroup,
-      const std::vector<SPIRVId> &TheTargets)
-    :SPIRVGroupDecorateGeneric(OC, TheGroup, TheTargets){}
+                           const std::vector<SPIRVId> &TheTargets)
+      : SPIRVGroupDecorateGeneric(OC, TheGroup, TheTargets) {}
   // Incomplete constructor
-  SPIRVGroupMemberDecorate()
-    :SPIRVGroupDecorateGeneric(OC){}
+  SPIRVGroupMemberDecorate() : SPIRVGroupDecorateGeneric(OC) {}
 
   virtual void decorateTargets();
 };
 
-}
-
+} // namespace SPIRV
 
 #endif /* SPIRVDECORATE_HPP_ */

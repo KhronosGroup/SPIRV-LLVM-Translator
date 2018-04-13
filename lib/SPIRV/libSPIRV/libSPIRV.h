@@ -40,13 +40,13 @@
 #ifndef LIBSPIRV_H_
 #define LIBSPIRV_H_
 
-#include "SPIRVOpCode.h"
+#include "SPIRVBasicBlock.h"
 #include "SPIRVEntry.h"
+#include "SPIRVFunction.h"
+#include "SPIRVInstruction.h"
+#include "SPIRVModule.h"
+#include "SPIRVOpCode.h"
 #include "SPIRVType.h"
 #include "SPIRVValue.h"
-#include "SPIRVModule.h"
-#include "SPIRVFunction.h"
-#include "SPIRVBasicBlock.h"
-#include "SPIRVInstruction.h"
 
 #endif

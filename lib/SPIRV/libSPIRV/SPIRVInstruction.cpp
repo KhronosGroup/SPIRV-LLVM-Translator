@@ -1,4 +1,4 @@
-//===- SPIRVInstruction.cpp -Class to represent SPIR-V instruction - C++ -*-===//
+//===- SPIRVInstruction.cpp -Class to represent SPIR-V instruction - C++ --===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -47,39 +47,40 @@ namespace SPIRV {
 
 // Complete constructor for instruction with type and id
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
-    SPIRVType *TheType, SPIRVId TheId, SPIRVBasicBlock *TheBB)
-  :SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType, TheId),
-   BB(TheBB){
+                                   SPIRVType *TheType, SPIRVId TheId,
+                                   SPIRVBasicBlock *TheBB)
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType, TheId),
+      BB(TheBB) {
   validate();
 }
 
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
-  SPIRVType *TheType, SPIRVId TheId, SPIRVBasicBlock *TheBB, SPIRVModule *TheBM)
-  : SPIRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB){
+                                   SPIRVType *TheType, SPIRVId TheId,
+                                   SPIRVBasicBlock *TheBB, SPIRVModule *TheBM)
+    : SPIRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB) {
   validate();
 }
 
 // Complete constructor for instruction with id but no type
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
-    SPIRVId TheId, SPIRVBasicBlock *TheBB)
-  :SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheId), BB(TheBB){
+                                   SPIRVId TheId, SPIRVBasicBlock *TheBB)
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheId), BB(TheBB) {
   validate();
 }
 // Complete constructor for instruction without type and id
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
-    SPIRVBasicBlock *TheBB)
-  :SPIRVValue(TheBB->getModule(), TheWordCount, TheOC), BB(TheBB){
+                                   SPIRVBasicBlock *TheBB)
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC), BB(TheBB) {
   validate();
 }
 // Complete constructor for instruction with type but no id
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
-    SPIRVType *TheType, SPIRVBasicBlock *TheBB)
-  :SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType), BB(TheBB){
+                                   SPIRVType *TheType, SPIRVBasicBlock *TheBB)
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType), BB(TheBB) {
   validate();
 }
 
-void
-SPIRVInstruction::setParent(SPIRVBasicBlock *TheBB) {
+void SPIRVInstruction::setParent(SPIRVBasicBlock *TheBB) {
   assert(TheBB && "Invalid BB");
   if (BB == TheBB)
     return;
@@ -87,40 +88,38 @@ SPIRVInstruction::setParent(SPIRVBasicBlock *TheBB) {
   BB = TheBB;
 }
 
-void
-SPIRVInstruction::setScope(SPIRVEntry *Scope) {
+void SPIRVInstruction::setScope(SPIRVEntry *Scope) {
   assert(Scope && Scope->getOpCode() == OpLabel && "Invalid scope");
-  setParent(static_cast<SPIRVBasicBlock*>(Scope));
+  setParent(static_cast<SPIRVBasicBlock *>(Scope));
 }
 
 SPIRVFunctionCall::SPIRVFunctionCall(SPIRVId TheId, SPIRVFunction *TheFunction,
-    const std::vector<SPIRVWord> &TheArgs, SPIRVBasicBlock *BB)
-  :SPIRVFunctionCallGeneric(
-      TheFunction->getFunctionType()->getReturnType(),
-      TheId, TheArgs, BB), FunctionId(TheFunction->getId()){
+                                     const std::vector<SPIRVWord> &TheArgs,
+                                     SPIRVBasicBlock *BB)
+    : SPIRVFunctionCallGeneric(TheFunction->getFunctionType()->getReturnType(),
+                               TheId, TheArgs, BB),
+      FunctionId(TheFunction->getId()) {
   validate();
 }
 
-void
-SPIRVFunctionCall::validate()const {
+void SPIRVFunctionCall::validate() const {
   SPIRVFunctionCallGeneric::validate();
 }
 
 // ToDo: Each instruction should implement this function
-std::vector<SPIRVValue *>
-SPIRVInstruction::getOperands() {
+std::vector<SPIRVValue *> SPIRVInstruction::getOperands() {
   std::vector<SPIRVValue *> Empty;
   assert(0 && "not supported");
   return Empty;
 }
 
-std::vector<SPIRVType*>
+std::vector<SPIRVType *>
 SPIRVInstruction::getOperandTypes(const std::vector<SPIRVValue *> &Ops) {
-  std::vector<SPIRVType*> Tys;
-  for (auto& I : Ops) {
-    SPIRVType* Ty = nullptr;
+  std::vector<SPIRVType *> Tys;
+  for (auto &I : Ops) {
+    SPIRVType *Ty = nullptr;
     if (I->getOpCode() == OpFunction)
-      Ty = reinterpret_cast<SPIRVFunction*>(I)->getFunctionType();
+      Ty = reinterpret_cast<SPIRVFunction *>(I)->getFunctionType();
     else
       Ty = I->getType();
 
@@ -129,104 +128,96 @@ SPIRVInstruction::getOperandTypes(const std::vector<SPIRVValue *> &Ops) {
   return Tys;
 }
 
-std::vector<SPIRVType*>
-SPIRVInstruction::getOperandTypes() {
+std::vector<SPIRVType *> SPIRVInstruction::getOperandTypes() {
   return getOperandTypes(getOperands());
 }
 
-bool
-isSpecConstantOpAllowedOp(Op OC) {
-  static SPIRVWord Table[] =
-  {
-    OpSConvert,
-    OpFConvert,
-    OpConvertFToS,
-    OpConvertSToF,
-    OpConvertFToU,
-    OpConvertUToF,
-    OpUConvert,
-    OpConvertPtrToU,
-    OpConvertUToPtr,
-    OpGenericCastToPtr,
-    OpPtrCastToGeneric,
-    OpBitcast,
-    OpQuantizeToF16,
-    OpSNegate,
-    OpNot,
-    OpIAdd,
-    OpISub,
-    OpIMul,
-    OpUDiv,
-    OpSDiv,
-    OpUMod,
-    OpSRem,
-    OpSMod,
-    OpShiftRightLogical,
-    OpShiftRightArithmetic,
-    OpShiftLeftLogical,
-    OpBitwiseOr,
-    OpBitwiseXor,
-    OpBitwiseAnd,
-    OpFNegate,
-    OpFAdd,
-    OpFSub,
-    OpFMul,
-    OpFDiv,
-    OpFRem,
-    OpFMod,
-    OpVectorShuffle,
-    OpCompositeExtract,
-    OpCompositeInsert,
-    OpLogicalOr,
-    OpLogicalAnd,
-    OpLogicalNot,
-    OpLogicalEqual,
-    OpLogicalNotEqual,
-    OpSelect,
-    OpIEqual,
-    OpULessThan,
-    OpSLessThan,
-    OpUGreaterThan,
-    OpSGreaterThan,
-    OpULessThanEqual,
-    OpSLessThanEqual,
-    OpUGreaterThanEqual,
-    OpSGreaterThanEqual,
-    OpAccessChain,
-    OpInBoundsAccessChain,
-    OpPtrAccessChain,
-    OpInBoundsPtrAccessChain,
+bool isSpecConstantOpAllowedOp(Op OC) {
+  static SPIRVWord Table[] = {
+      OpSConvert,
+      OpFConvert,
+      OpConvertFToS,
+      OpConvertSToF,
+      OpConvertFToU,
+      OpConvertUToF,
+      OpUConvert,
+      OpConvertPtrToU,
+      OpConvertUToPtr,
+      OpGenericCastToPtr,
+      OpPtrCastToGeneric,
+      OpBitcast,
+      OpQuantizeToF16,
+      OpSNegate,
+      OpNot,
+      OpIAdd,
+      OpISub,
+      OpIMul,
+      OpUDiv,
+      OpSDiv,
+      OpUMod,
+      OpSRem,
+      OpSMod,
+      OpShiftRightLogical,
+      OpShiftRightArithmetic,
+      OpShiftLeftLogical,
+      OpBitwiseOr,
+      OpBitwiseXor,
+      OpBitwiseAnd,
+      OpFNegate,
+      OpFAdd,
+      OpFSub,
+      OpFMul,
+      OpFDiv,
+      OpFRem,
+      OpFMod,
+      OpVectorShuffle,
+      OpCompositeExtract,
+      OpCompositeInsert,
+      OpLogicalOr,
+      OpLogicalAnd,
+      OpLogicalNot,
+      OpLogicalEqual,
+      OpLogicalNotEqual,
+      OpSelect,
+      OpIEqual,
+      OpULessThan,
+      OpSLessThan,
+      OpUGreaterThan,
+      OpSGreaterThan,
+      OpULessThanEqual,
+      OpSLessThanEqual,
+      OpUGreaterThanEqual,
+      OpSGreaterThanEqual,
+      OpAccessChain,
+      OpInBoundsAccessChain,
+      OpPtrAccessChain,
+      OpInBoundsPtrAccessChain,
   };
-  static std::unordered_set<SPIRVWord>
-    Allow(std::begin(Table), std::end(Table));
+  static std::unordered_set<SPIRVWord> Allow(std::begin(Table),
+                                             std::end(Table));
   return Allow.count(OC);
 }
 
-SPIRVSpecConstantOp *
-createSpecConstantOpInst(SPIRVInstruction *Inst) {
+SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst) {
   auto OC = Inst->getOpCode();
-  assert (isSpecConstantOpAllowedOp(OC) &&
-      "Op code not allowed for OpSpecConstantOp");
+  assert(isSpecConstantOpAllowedOp(OC) &&
+         "Op code not allowed for OpSpecConstantOp");
   auto Ops = Inst->getIds(Inst->getOperands());
   Ops.insert(Ops.begin(), OC);
-  return static_cast<SPIRVSpecConstantOp *>(
-    SPIRVSpecConstantOp::create(OpSpecConstantOp, Inst->getType(),
-        Inst->getId(), Ops, nullptr, Inst->getModule()));
+  return static_cast<SPIRVSpecConstantOp *>(SPIRVSpecConstantOp::create(
+      OpSpecConstantOp, Inst->getType(), Inst->getId(), Ops, nullptr,
+      Inst->getModule()));
 }
 
-SPIRVInstruction *
-createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
-  assert(Inst->getOpCode() == OpSpecConstantOp &&
-      "Not OpSpecConstantOp");
+SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
+  assert(Inst->getOpCode() == OpSpecConstantOp && "Not OpSpecConstantOp");
   auto Ops = Inst->getOpWords();
   auto OC = static_cast<Op>(Ops[0]);
-  assert (isSpecConstantOpAllowedOp(OC) &&
-      "Op code not allowed for OpSpecConstantOp");
+  assert(isSpecConstantOpAllowedOp(OC) &&
+         "Op code not allowed for OpSpecConstantOp");
   Ops.erase(Ops.begin(), Ops.begin() + 1);
-  return SPIRVInstTemplateBase::create(OC, Inst->getType(),
-      Inst->getId(), Ops, nullptr, Inst->getModule());
+  return SPIRVInstTemplateBase::create(OC, Inst->getType(), Inst->getId(), Ops,
+                                       nullptr, Inst->getModule());
 }
 
-}
-
-
+} // namespace SPIRV

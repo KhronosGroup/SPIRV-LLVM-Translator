@@ -1,4 +1,4 @@
-//===- SPIRVDebug.cpp - SPIR-V Debug Utility ---------------------*- C++ -*-===//
+//===- SPIRVDebug.cpp - SPIR-V Debug Utility --------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //

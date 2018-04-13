@@ -36,20 +36,21 @@
 /// This file implements conversion of SPIR-V binary to LLVM IR.
 ///
 //===----------------------------------------------------------------------===//
-#include "SPIRVUtil.h"
-#include "SPIRVType.h"
-#include "SPIRVValue.h"
-#include "SPIRVModule.h"
-#include "SPIRVFunction.h"
+#include "OCLUtil.h"
 #include "SPIRVBasicBlock.h"
-#include "SPIRVInstruction.h"
 #include "SPIRVExtInst.h"
+#include "SPIRVFunction.h"
+#include "SPIRVInstruction.h"
 #include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
-#include "OCLUtil.h"
+#include "SPIRVModule.h"
+#include "SPIRVType.h"
+#include "SPIRVUtil.h"
+#include "SPIRVValue.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -64,14 +65,13 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <algorithm>
 #include <cstdlib>
-#include <functional>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -86,42 +86,43 @@ using namespace llvm;
 using namespace SPIRV;
 using namespace OCLUtil;
 
-namespace SPIRV{
+namespace SPIRV {
 
-cl::opt<bool> SPIRVEnableStepExpansion("spirv-expand-step", cl::init(true),
-  cl::desc("Enable expansion of OpenCL step and smoothstep function"));
+cl::opt<bool> SPIRVEnableStepExpansion(
+    "spirv-expand-step", cl::init(true),
+    cl::desc("Enable expansion of OpenCL step and smoothstep function"));
 
-cl::opt<bool> SPIRVGenKernelArgNameMD("spirv-gen-kernel-arg-name-md",
-    cl::init(false), cl::desc("Enable generating OpenCL kernel argument name "
-    "metadata"));
+cl::opt<bool> SPIRVGenKernelArgNameMD(
+    "spirv-gen-kernel-arg-name-md", cl::init(false),
+    cl::desc("Enable generating OpenCL kernel argument name "
+             "metadata"));
 
-cl::opt<bool> SPIRVGenImgTypeAccQualPostfix("spirv-gen-image-type-acc-postfix",
-    cl::init(false), cl::desc("Enable generating access qualifier postfix"
-        " in OpenCL image type names"));
+cl::opt<bool> SPIRVGenImgTypeAccQualPostfix(
+    "spirv-gen-image-type-acc-postfix", cl::init(false),
+    cl::desc("Enable generating access qualifier postfix"
+             " in OpenCL image type names"));
 
 // Prefix for placeholder global variable name.
-const char* kPlaceholderPrefix = "placeholder.";
+const char *kPlaceholderPrefix = "placeholder.";
 
 // Save the translated LLVM before validation for debugging purpose.
 static bool DbgSaveTmpLLVM = false;
 static const char *DbgTmpLLVMFileName = "_tmp_llvmbil.ll";
 
 namespace kOCLTypeQualifierName {
-  const static char *Const      = "const";
-  const static char *Volatile   = "volatile";
-  const static char *Restrict   = "restrict";
-  const static char *Pipe       = "pipe";
-}
+const static char *Const = "const";
+const static char *Volatile = "volatile";
+const static char *Restrict = "restrict";
+const static char *Pipe = "pipe";
+} // namespace kOCLTypeQualifierName
 
-typedef std::pair < unsigned, AttributeList > AttributeWithIndex;
+typedef std::pair<unsigned, AttributeList> AttributeWithIndex;
 
-static bool
-isOpenCLKernel(SPIRVFunction *BF) {
+static bool isOpenCLKernel(SPIRVFunction *BF) {
   return BF->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId());
 }
 
-static void
-dumpLLVM(Module *M, const std::string &FName) {
+static void dumpLLVM(Module *M, const std::string &FName) {
   std::error_code EC;
   raw_fd_ostream FS(FName, EC, sys::fs::F_None);
   if (EC) {
@@ -130,57 +131,56 @@ dumpLLVM(Module *M, const std::string &FName) {
   }
 }
 
-static MDNode*
-getMDNodeStringIntVec(LLVMContext *Context,
-                      const std::vector<SPIRVWord>& IntVals) {
-  std::vector<Metadata*> ValueVec;
-  for (auto &I:IntVals)
+static MDNode *getMDNodeStringIntVec(LLVMContext *Context,
+                                     const std::vector<SPIRVWord> &IntVals) {
+  std::vector<Metadata *> ValueVec;
+  for (auto &I : IntVals)
     ValueVec.push_back(ConstantAsMetadata::get(
         ConstantInt::get(Type::getInt32Ty(*Context), I)));
   return MDNode::get(*Context, ValueVec);
 }
 
-static MDNode*
-getMDTwoInt(LLVMContext *Context, unsigned Int1, unsigned Int2) {
-  std::vector<Metadata*> ValueVec;
-  ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), Int1)));
-  ValueVec.push_back(ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context), Int2)));
+static MDNode *getMDTwoInt(LLVMContext *Context, unsigned Int1, unsigned Int2) {
+  std::vector<Metadata *> ValueVec;
+  ValueVec.push_back(ConstantAsMetadata::get(
+      ConstantInt::get(Type::getInt32Ty(*Context), Int1)));
+  ValueVec.push_back(ConstantAsMetadata::get(
+      ConstantInt::get(Type::getInt32Ty(*Context), Int2)));
   return MDNode::get(*Context, ValueVec);
 }
 
-static void
-addOCLVersionMetadata(LLVMContext *Context, Module *M,
-    const std::string &MDName, unsigned Major, unsigned Minor) {
+static void addOCLVersionMetadata(LLVMContext *Context, Module *M,
+                                  const std::string &MDName, unsigned Major,
+                                  unsigned Minor) {
   NamedMDNode *NamedMD = M->getOrInsertNamedMetadata(MDName);
   NamedMD->addOperand(getMDTwoInt(Context, Major, Minor));
 }
 
-static void
-addNamedMetadataStringSet(LLVMContext *Context, Module *M,
-    const std::string &MDName, const std::set<std::string> &StrSet) {
+static void addNamedMetadataStringSet(LLVMContext *Context, Module *M,
+                                      const std::string &MDName,
+                                      const std::set<std::string> &StrSet) {
   NamedMDNode *NamedMD = M->getOrInsertNamedMetadata(MDName);
-  std::vector<Metadata*> ValueVec;
+  std::vector<Metadata *> ValueVec;
   for (auto &&Str : StrSet) {
     ValueVec.push_back(MDString::get(*Context, Str));
   }
   NamedMD->addOperand(MDNode::get(*Context, ValueVec));
 }
 
-static void
-addOCLKernelArgumentMetadata(LLVMContext *Context, const std::string &MDName,
-                   SPIRVFunction *BF, llvm::Function *Fn,
-                   std::function<Metadata *(SPIRVFunctionParameter *)>Func) {
-  std::vector<Metadata*> ValueVec;
-  BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
-    ValueVec.push_back(Func(Arg));
-  });
+static void addOCLKernelArgumentMetadata(
+    LLVMContext *Context, const std::string &MDName, SPIRVFunction *BF,
+    llvm::Function *Fn,
+    std::function<Metadata *(SPIRVFunctionParameter *)> Func) {
+  std::vector<Metadata *> ValueVec;
+  BF->foreachArgument(
+      [&](SPIRVFunctionParameter *Arg) { ValueVec.push_back(Func(Arg)); });
   Fn->setMetadata(MDName, MDNode::get(*Context, ValueVec));
 }
 
 class SPIRVToLLVMDbgTran {
 public:
   SPIRVToLLVMDbgTran(SPIRVModule *TBM, Module *TM)
-  :BM(TBM), M(TM), SpDbg(BM), Builder(*M){
+      : BM(TBM), M(TM), SpDbg(BM), Builder(*M) {
     Enable = BM->hasDebugInfo();
   }
 
@@ -192,20 +192,20 @@ public:
     std::string Path;
     splitFileName(File, BaseName, Path);
     Builder.createCompileUnit(dwarf::DW_LANG_C99,
-      Builder.createFile(BaseName, Path), "spirv", false, "", 0, "", DICompileUnit::LineTablesOnly);
+                              Builder.createFile(BaseName, Path), "spirv",
+                              false, "", 0, "", DICompileUnit::LineTablesOnly);
   }
 
   void addDbgInfoVersion() {
     if (!Enable)
       return;
-    M->addModuleFlag(Module::Warning, "Dwarf Version",
-        dwarf::DWARF_VERSION);
+    M->addModuleFlag(Module::Warning, "Dwarf Version", dwarf::DWARF_VERSION);
     M->addModuleFlag(Module::Warning, "Debug Info Version",
-        DEBUG_METADATA_VERSION);
+                     DEBUG_METADATA_VERSION);
   }
 
-  DIFile* getDIFile(const std::string &FileName){
-    return getOrInsert(FileMap, FileName, [=]() -> DIFile* {
+  DIFile *getDIFile(const std::string &FileName) {
+    return getOrInsert(FileMap, FileName, [=]() -> DIFile * {
       std::string BaseName;
       std::string Path;
       splitFileName(FileName, BaseName, Path);
@@ -216,15 +216,15 @@ public:
     });
   }
 
-  DISubprogram* getDISubprogram(SPIRVFunction *SF, Function *F){
-    return getOrInsert(FuncMap, F, [=](){
+  DISubprogram *getDISubprogram(SPIRVFunction *SF, Function *F) {
+    return getOrInsert(FuncMap, F, [=]() {
       auto DF = getDIFile(SpDbg.getFunctionFileStr(SF));
       auto FN = F->getName();
       auto LN = SpDbg.getFunctionLineNo(SF);
-      return Builder.createFunction(DF, FN, FN, DF, LN,
-        Builder.createSubroutineType(Builder.getOrCreateTypeArray(None)),
-        Function::isInternalLinkage(F->getLinkage()),
-        true, LN);
+      return Builder.createFunction(
+          DF, FN, FN, DF, LN,
+          Builder.createSubroutineType(Builder.getOrCreateTypeArray(None)),
+          Function::isInternalLinkage(F->getLinkage()), true, LN);
     });
   }
 
@@ -234,13 +234,13 @@ public:
     if (auto I = dyn_cast<Instruction>(V)) {
       assert(SV->isInst() && "Invalid instruction");
       auto SI = static_cast<SPIRVInstruction *>(SV);
-      assert(SI->getParent() &&
-             SI->getParent()->getParent() &&
+      assert(SI->getParent() && SI->getParent()->getParent() &&
              "Invalid instruction");
       auto Line = SV->getLine();
-      I->setDebugLoc(DebugLoc::get(Line->getLine(), Line->getColumn(),
-          getDISubprogram(SI->getParent()->getParent(),
-              I->getParent()->getParent())));
+      I->setDebugLoc(
+          DebugLoc::get(Line->getLine(), Line->getColumn(),
+                        getDISubprogram(SI->getParent()->getParent(),
+                                        I->getParent()->getParent())));
     }
   }
 
@@ -259,9 +259,8 @@ private:
   std::unordered_map<std::string, DIFile *> FileMap;
   std::unordered_map<Function *, DISubprogram *> FuncMap;
 
-  void splitFileName(const std::string &FileName,
-      std::string &BaseName,
-      std::string &Path) {
+  void splitFileName(const std::string &FileName, std::string &BaseName,
+                     std::string &Path) {
     auto Loc = FileName.find_last_of("/\\");
     if (Loc != std::string::npos) {
       BaseName = FileName.substr(Loc + 1);
@@ -276,33 +275,34 @@ private:
 class SPIRVToLLVM {
 public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
-    :M(LLVMModule), BM(TheSPIRVModule), DbgTran(BM, M){
+      : M(LLVMModule), BM(TheSPIRVModule), DbgTran(BM, M) {
     assert(M);
     Context = &M->getContext();
   }
 
-  std::string getOCLBuiltinName(SPIRVInstruction* BI);
+  std::string getOCLBuiltinName(SPIRVInstruction *BI);
   std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
   std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
-  std::vector<Type *> transTypeVector(const std::vector<SPIRVType *>&);
+  std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &);
   bool translate();
   bool transAddressingModel();
 
   Value *transValue(SPIRVValue *, Function *F, BasicBlock *,
-      bool CreatePlaceHolder = true);
+                    bool CreatePlaceHolder = true);
   Value *transValueWithoutDecoration(SPIRVValue *, Function *F, BasicBlock *,
-      bool CreatePlaceHolder = true);
+                                     bool CreatePlaceHolder = true);
   Value *transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB);
   Value *transEnqueuedBlock(SPIRVValue *BF, SPIRVValue *BC, SPIRVValue *BCSize,
-                            SPIRVValue *BCAligment, Function *F, BasicBlock *BB);
+                            SPIRVValue *BCAligment, Function *F,
+                            BasicBlock *BB);
   bool transDecoration(SPIRVValue *, Value *);
   bool transAlign(SPIRVValue *, Value *);
   Instruction *transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB);
-  std::vector<Value *> transValue(const std::vector<SPIRVValue *>&, Function *F,
-      BasicBlock *);
+  std::vector<Value *> transValue(const std::vector<SPIRVValue *> &,
+                                  Function *F, BasicBlock *);
   Function *transFunction(SPIRVFunction *F);
   Instruction *transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB);
@@ -312,14 +312,14 @@ public:
   bool transSourceLanguage();
   bool transSourceExtension();
   void transGeneratorMD();
-  Value *transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB);
-  Instruction *transBuiltinFromInst(const std::string& FuncName,
-      SPIRVInstruction* BI, BasicBlock* BB);
+  Value *transConvertInst(SPIRVValue *BV, Function *F, BasicBlock *BB);
+  Instruction *transBuiltinFromInst(const std::string &FuncName,
+                                    SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB);
-  Instruction *transOCLBarrierFence(SPIRVInstruction* BI, BasicBlock *BB);
-  void transOCLVectorLoadStore(std::string& UnmangledName,
-      std::vector<SPIRVWord> &BArgs);
+  Instruction *transOCLBarrierFence(SPIRVInstruction *BI, BasicBlock *BB);
+  void transOCLVectorLoadStore(std::string &UnmangledName,
+                               std::vector<SPIRVWord> &BArgs);
 
   /// Post-process translated LLVM module for OpenCL.
   bool postProcessOCL();
@@ -335,8 +335,9 @@ public:
   ///
   /// These functions are translated to functions with array type argument
   /// first, then post-processed to have pointer arguments.
-  bool postProcessOCLBuiltinWithArrayArguments(Function *F,
-      const std::string &DemangledName);
+  bool
+  postProcessOCLBuiltinWithArrayArguments(Function *F,
+                                          const std::string &DemangledName);
 
   /// \brief Post-process OpImageSampleExplicitLod.
   ///   sampled_image = __spirv_SampledImage__(image, sampler);
@@ -346,7 +347,7 @@ public:
   ///   read_image(image, sampler, ...)
   /// \return transformed call instruction.
   Instruction *postProcessOCLReadImage(SPIRVInstruction *BI, CallInst *CI,
-      const std::string &DemangledName);
+                                       const std::string &DemangledName);
 
   /// \brief Post-process OpImageWrite.
   ///   return write_image(image, coord, color, image_operands, ...);
@@ -354,7 +355,7 @@ public:
   ///   write_image(image, coord, ..., color)
   /// \return transformed call instruction.
   CallInst *postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
-      const std::string &DemangledName);
+                                     const std::string &DemangledName);
 
   /// \brief Post-process OpBuildNDRange.
   ///   OpBuildNDRange GlobalWorkSize, LocalWorkSize, GlobalWorkOffset
@@ -362,7 +363,7 @@ public:
   ///   call ndrange_XD(GlobalWorkOffset, GlobalWorkSize, LocalWorkSize)
   /// \return transformed call instruction.
   CallInst *postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
-      const std::string &DemangledName);
+                                       const std::string &DemangledName);
 
   /// \brief Expand OCL builtin functions with scalar argument, e.g.
   /// step, smoothstep.
@@ -370,8 +371,8 @@ public:
   /// =>
   /// gentype func (gentype edge, gentype x)
   /// \return transformed call instruction.
-  CallInst *expandOCLBuiltinWithScalarArg(CallInst* CI,
-      const std::string &FuncName);
+  CallInst *expandOCLBuiltinWithScalarArg(CallInst *CI,
+                                          const std::string &FuncName);
 
   /// \brief Post-process OpGroupAll and OpGroupAny instructions translation.
   /// i1 func (<n x i1> arg)
@@ -390,7 +391,8 @@ public:
   // A SPIRV value may be translated to a load instruction of a placeholder
   // global variable. This map records load instruction of these placeholders
   // which are supposed to be replaced by the real values later.
-  typedef std::map<SPIRVValue *, LoadInst*> SPIRVToLLVMPlaceholderMap;
+  typedef std::map<SPIRVValue *, LoadInst *> SPIRVToLLVMPlaceholderMap;
+
 private:
   Module *M;
   BuiltinVarMap BuiltinGVMap;
@@ -419,9 +421,9 @@ private:
         return V;
       auto LD = dyn_cast<LoadInst>(Loc->second);
       auto Placeholder = dyn_cast<GlobalVariable>(LD->getPointerOperand());
-      assert (LD && Placeholder &&
-          Placeholder->getName().startswith(kPlaceholderPrefix) &&
-          "A value is translated twice");
+      assert(LD && Placeholder &&
+             Placeholder->getName().startswith(kPlaceholderPrefix) &&
+             "A value is translated twice");
       // Replaces placeholders for PHI nodes
       LD->replaceAllUsesWith(V);
       LD->eraseFromParent();
@@ -432,7 +434,7 @@ private:
   }
 
   bool isSPIRVBuiltinVariable(GlobalVariable *GV,
-      SPIRVBuiltinVariableKind *Kind = nullptr) {
+                              SPIRVBuiltinVariableKind *Kind = nullptr) {
     auto Loc = BuiltinGVMap.find(GV);
     if (Loc == BuiltinGVMap.end())
       return false;
@@ -442,16 +444,16 @@ private:
   }
   // OpenCL function always has NoUnwound attribute.
   // Change this if it is no longer true.
-  bool isFuncNoUnwind() const { return true;}
+  bool isFuncNoUnwind() const { return true; }
   bool isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const;
   bool transOCLBuiltinsFromVariables();
   bool transOCLBuiltinFromVariable(GlobalVariable *GV,
-      SPIRVBuiltinVariableKind Kind);
+                                   SPIRVBuiltinVariableKind Kind);
   MDString *transOCLKernelArgTypeName(SPIRVFunctionParameter *);
 
   Value *mapFunction(SPIRVFunction *BF, Function *F) {
     SPIRVDBG(spvdbgs() << "[mapFunction] " << *BF << " -> ";
-      dbgs() << *F << '\n';)
+             dbgs() << *F << '\n';)
     FuncMap[BF] = F;
     return F;
   }
@@ -460,9 +462,7 @@ private:
   Type *getTranslatedType(SPIRVType *BT);
   IntrinsicInst *getLifetimeStartIntrinsic(Instruction *I);
 
-  SPIRVErrorLog &getErrorLog() {
-    return BM->getErrorLog();
-  }
+  SPIRVErrorLog &getErrorLog() { return BM->getErrorLog(); }
 
   void setCallingConv(CallInst *Call) {
     Function *F = Call->getCalledFunction();
@@ -471,59 +471,58 @@ private:
   }
 
   void setAttrByCalledFunc(CallInst *Call);
-  Type *transFPType(SPIRVType* T);
-  BinaryOperator *transShiftLogicalBitwiseInst(SPIRVValue* BV, BasicBlock* BB,
-      Function* F);
-  void transFlags(llvm::Value* V);
-  Instruction *transCmpInst(SPIRVValue* BV, BasicBlock* BB, Function* F);
-  void transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
-      std::vector<SPIRVValue *> &Args);
-  Instruction* transOCLBuiltinPostproc(SPIRVInstruction* BI,
-      CallInst* CI, BasicBlock* BB, const std::string &DemangledName);
-  std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST);
-  std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST);
-  std::string transOCLPipeTypeName(SPIRV::SPIRVTypePipe* ST,
-      bool UseSPIRVFriendlyFormat = false, int PipeAccess = 0);
-  std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage* PST);
-  std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage* ST);
-  std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST);
+  Type *transFPType(SPIRVType *T);
+  BinaryOperator *transShiftLogicalBitwiseInst(SPIRVValue *BV, BasicBlock *BB,
+                                               Function *F);
+  void transFlags(llvm::Value *V);
+  Instruction *transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F);
+  void transOCLBuiltinFromInstPreproc(SPIRVInstruction *BI, Type *&RetTy,
+                                      std::vector<SPIRVValue *> &Args);
+  Instruction *transOCLBuiltinPostproc(SPIRVInstruction *BI, CallInst *CI,
+                                       BasicBlock *BB,
+                                       const std::string &DemangledName);
+  std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST);
+  std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST);
+  std::string transOCLPipeTypeName(SPIRV::SPIRVTypePipe *ST,
+                                   bool UseSPIRVFriendlyFormat = false,
+                                   int PipeAccess = 0);
+  std::string transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST);
+  std::string transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST);
+  std::string transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe *ST);
 
-  Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS);
-  Value * oclTransConstantPipeStorage(SPIRV::SPIRVConstantPipeStorage* BCPS);
-  void setName(llvm::Value* V, SPIRVValue* BV);
-  void setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI);
-  void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name);
-  template<class Source, class Func>
-  bool foreachFuncCtlMask(Source, Func);
-  llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue* V);
-  Instruction *transOCLAllAny(SPIRVInstruction* BI, BasicBlock *BB);
-  Instruction *transOCLRelational(SPIRVInstruction* BI, BasicBlock *BB);
+  Value *oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS);
+  Value *oclTransConstantPipeStorage(SPIRV::SPIRVConstantPipeStorage *BCPS);
+  void setName(llvm::Value *V, SPIRVValue *BV);
+  void setLLVMLoopMetadata(SPIRVLoopMerge *LM, BranchInst *BI);
+  void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
+                                      std::string &Name);
+  template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
+  llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue *V);
+  Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transOCLRelational(SPIRVInstruction *BI, BasicBlock *BB);
 
   CallInst *transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
                             SPIRVWord MemSema, SPIRVWord MemScope);
 
-  CallInst *transOCLMemFence(BasicBlock *BB,
-                             SPIRVWord MemSema, SPIRVWord MemScope);
+  CallInst *transOCLMemFence(BasicBlock *BB, SPIRVWord MemSema,
+                             SPIRVWord MemScope);
 };
 
-Type *
-SPIRVToLLVM::getTranslatedType(SPIRVType *BV){
+Type *SPIRVToLLVM::getTranslatedType(SPIRVType *BV) {
   auto Loc = TypeMap.find(BV);
   if (Loc != TypeMap.end())
     return Loc->second;
   return nullptr;
 }
 
-Value *
-SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV){
+Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   auto Loc = ValueMap.find(BV);
   if (Loc != ValueMap.end())
     return Loc->second;
   return nullptr;
 }
 
-IntrinsicInst *
-SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
+IntrinsicInst *SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
   auto II = dyn_cast<IntrinsicInst>(I);
   if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
     return II;
@@ -533,14 +532,14 @@ SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
     for (const auto &U : BC->users()) {
       II = dyn_cast<IntrinsicInst>(U);
       if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
-        return II;;
+        return II;
+      ;
     }
   }
   return nullptr;
 }
 
-void
-SPIRVToLLVM::setAttrByCalledFunc(CallInst *Call) {
+void SPIRVToLLVM::setAttrByCalledFunc(CallInst *Call) {
   Function *F = Call->getCalledFunction();
   assert(F);
   if (F->isIntrinsic()) {
@@ -550,8 +549,7 @@ SPIRVToLLVM::setAttrByCalledFunc(CallInst *Call) {
   Call->setAttributes(F->getAttributes());
 }
 
-bool
-SPIRVToLLVM::transOCLBuiltinsFromVariables(){
+bool SPIRVToLLVM::transOCLBuiltinsFromVariables() {
   std::vector<GlobalVariable *> WorkList;
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
     SPIRVBuiltinVariableKind Kind;
@@ -561,7 +559,7 @@ SPIRVToLLVM::transOCLBuiltinsFromVariables(){
       return false;
     WorkList.push_back(&(*I));
   }
-  for (auto &I:WorkList) {
+  for (auto &I : WorkList) {
     I->eraseFromParent();
   }
   return true;
@@ -569,25 +567,23 @@ SPIRVToLLVM::transOCLBuiltinsFromVariables(){
 
 // For integer types shorter than 32 bit, unsigned/signedness can be inferred
 // from zext/sext attribute.
-MDString *
-SPIRVToLLVM::transOCLKernelArgTypeName(SPIRVFunctionParameter *Arg) {
-  auto Ty = Arg->isByVal() ? Arg->getType()->getPointerElementType() :
-    Arg->getType();
+MDString *SPIRVToLLVM::transOCLKernelArgTypeName(SPIRVFunctionParameter *Arg) {
+  auto Ty =
+      Arg->isByVal() ? Arg->getType()->getPointerElementType() : Arg->getType();
   return MDString::get(*Context, transTypeToOCLTypeName(Ty, !Arg->isZext()));
 }
 
 // Variable like GlobalInvolcationId[x] -> get_global_id(x).
 // Variable like WorkDim -> get_work_dim().
-bool
-SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
-    SPIRVBuiltinVariableKind Kind) {
+bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
+                                              SPIRVBuiltinVariableKind Kind) {
   std::string FuncName = SPIRSPIRVBuiltinVariableMap::rmap(Kind);
   std::string MangledName;
-  Type *ReturnTy =  GV->getType()->getPointerElementType();
+  Type *ReturnTy = GV->getType()->getPointerElementType();
   bool IsVec = ReturnTy->isVectorTy();
   if (IsVec)
     ReturnTy = cast<VectorType>(ReturnTy)->getElementType();
-  std::vector<Type*> ArgTy;
+  std::vector<Type *> ArgTy;
   if (IsVec)
     ArgTy.push_back(Type::getInt32Ty(*Context));
   MangleOpenCLBuiltin(FuncName, ArgTy, MangledName);
@@ -602,7 +598,7 @@ SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   std::vector<Instruction *> Deletes;
   std::vector<Instruction *> Uses;
   for (auto UI = GV->user_begin(), UE = GV->user_end(); UI != UE; ++UI) {
-    assert (isa<LoadInst>(*UI) && "Unsupported use");
+    assert(isa<LoadInst>(*UI) && "Unsupported use");
     auto LD = dyn_cast<LoadInst>(*UI);
     if (!IsVec) {
       Uses.push_back(LD);
@@ -610,7 +606,7 @@ SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
       continue;
     }
     for (auto LDUI = LD->user_begin(), LDUE = LD->user_end(); LDUI != LDUE;
-        ++LDUI) {
+         ++LDUI) {
       assert(isa<ExtractElementInst>(*LDUI) && "Unsupported use");
       auto EEI = dyn_cast<ExtractElementInst>(*LDUI);
       Uses.push_back(EEI);
@@ -618,83 +614,82 @@ SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
     }
     Deletes.push_back(LD);
   }
-  for (auto &I:Uses) {
+  for (auto &I : Uses) {
     std::vector<Value *> Arg;
     if (auto EEI = dyn_cast<ExtractElementInst>(I))
       Arg.push_back(EEI->getIndexOperand());
     auto Call = CallInst::Create(Func, Arg, "", I);
     Call->takeName(I);
     setAttrByCalledFunc(Call);
-    SPIRVDBG(dbgs() << "[transOCLBuiltinFromVariable] " << *I << " -> " <<
-        *Call << '\n';)
+    SPIRVDBG(dbgs() << "[transOCLBuiltinFromVariable] " << *I << " -> " << *Call
+                    << '\n';)
     I->replaceAllUsesWith(Call);
   }
-  for (auto &I:Deletes) {
+  for (auto &I : Deletes) {
     I->eraseFromParent();
   }
   return true;
 }
 
-Type *
-SPIRVToLLVM::transFPType(SPIRVType* T) {
-  switch(T->getFloatBitWidth()) {
-  case 16: return Type::getHalfTy(*Context);
-  case 32: return Type::getFloatTy(*Context);
-  case 64: return Type::getDoubleTy(*Context);
+Type *SPIRVToLLVM::transFPType(SPIRVType *T) {
+  switch (T->getFloatBitWidth()) {
+  case 16:
+    return Type::getHalfTy(*Context);
+  case 32:
+    return Type::getFloatTy(*Context);
+  case 64:
+    return Type::getDoubleTy(*Context);
   default:
     llvm_unreachable("Invalid type");
     return nullptr;
   }
 }
 
-std::string
-SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage* ST) {
-  std::string Name = std::string(kSPR2TypeName::OCLPrefix)
-    + rmap<std::string>(ST->getDescriptor());
+std::string SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST) {
+  std::string Name = std::string(kSPR2TypeName::OCLPrefix) +
+                     rmap<std::string>(ST->getDescriptor());
   if (SPIRVGenImgTypeAccQualPostfix)
     SPIRVToLLVM::insertImageNameAccessQualifier(ST, Name);
   return std::move(Name);
 }
 
 std::string
-SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage* ST) {
-  return getSPIRVTypeName(kSPIRVTypeName::SampledImg,
-    getSPIRVImageTypePostfixes(getSPIRVImageSampledTypeName(
-      ST->getImageType()->getSampledType()),
-      ST->getImageType()->getDescriptor(),
-      ST->getImageType()->hasAccessQualifier() ?
-        ST->getImageType()->getAccessQualifier() :
-        AccessQualifierReadOnly));
+SPIRVToLLVM::transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST) {
+  return getSPIRVTypeName(
+      kSPIRVTypeName::SampledImg,
+      getSPIRVImageTypePostfixes(
+          getSPIRVImageSampledTypeName(ST->getImageType()->getSampledType()),
+          ST->getImageType()->getDescriptor(),
+          ST->getImageType()->hasAccessQualifier()
+              ? ST->getImageType()->getAccessQualifier()
+              : AccessQualifierReadOnly));
 }
 
-std::string
-SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe* PT,
-                                  bool UseSPIRVFriendlyFormat, int PipeAccess){
+std::string SPIRVToLLVM::transOCLPipeTypeName(SPIRV::SPIRVTypePipe *PT,
+                                              bool UseSPIRVFriendlyFormat,
+                                              int PipeAccess) {
   if (!UseSPIRVFriendlyFormat)
     return kSPR2TypeName::Pipe;
   else
-    return std::string(kSPIRVTypeName::PrefixAndDelim)
-          + kSPIRVTypeName::Pipe
-          + kSPIRVTypeName::Delimiter
-          + kSPIRVTypeName::PostfixDelim
-          + PipeAccess;
+    return std::string(kSPIRVTypeName::PrefixAndDelim) + kSPIRVTypeName::Pipe +
+           kSPIRVTypeName::Delimiter + kSPIRVTypeName::PostfixDelim +
+           PipeAccess;
 }
 
 std::string
-SPIRVToLLVM::transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage* PST) {
-  return std::string(kSPIRVTypeName::PrefixAndDelim)
-            + kSPIRVTypeName::PipeStorage;
+SPIRVToLLVM::transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST) {
+  return std::string(kSPIRVTypeName::PrefixAndDelim) +
+         kSPIRVTypeName::PipeStorage;
 }
 
-Type *
-SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
+Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   auto Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
     return Loc->second;
 
   SPIRVDBG(spvdbgs() << "[transType] " << *T << " -> ";)
   T->validate();
-  switch(T->getOpCode()) {
+  switch (T->getOpCode()) {
   case OpTypeVoid:
     return mapType(T, Type::getVoidTy(*Context));
   case OpTypeBool:
@@ -705,14 +700,15 @@ SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     return mapType(T, transFPType(T));
   case OpTypeArray:
     return mapType(T, ArrayType::get(transType(T->getArrayElementType()),
-        T->getArrayLength()));
+                                     T->getArrayLength()));
   case OpTypePointer:
-    return mapType(T, PointerType::get(transType(
-        T->getPointerElementType(), IsClassMember),
-        SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass())));
+    return mapType(
+        T, PointerType::get(
+               transType(T->getPointerElementType(), IsClassMember),
+               SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass())));
   case OpTypeVector:
     return mapType(T, VectorType::get(transType(T->getVectorComponentType()),
-        T->getVectorComponentCount()));
+                                      T->getVectorComponentCount()));
   case OpTypeOpaque:
     return mapType(T, StructType::create(*Context, T->getName()));
   case OpTypeFunction: {
@@ -722,12 +718,11 @@ SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     for (size_t I = 0, E = FT->getNumParameters(); I != E; ++I)
       PT.push_back(transType(FT->getParameterType(I)));
     return mapType(T, FunctionType::get(RT, PT, false));
-    }
+  }
   case OpTypeImage: {
     auto ST = static_cast<SPIRVTypeImage *>(T);
     if (ST->isOCLImage())
-      return mapType(T, getOrCreateOpaquePtrType(M,
-          transOCLImageTypeName(ST)));
+      return mapType(T, getOrCreateOpaquePtrType(M, transOCLImageTypeName(ST)));
     else
       llvm_unreachable("Unsupported image type");
     return nullptr;
@@ -736,8 +731,8 @@ SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     return mapType(T, Type::getInt32Ty(*Context));
   case OpTypeSampledImage: {
     auto ST = static_cast<SPIRVTypeSampledImage *>(T);
-    return mapType(T, getOrCreateOpaquePtrType(M,
-        transOCLSampledImageTypeName(ST)));
+    return mapType(
+        T, getOrCreateOpaquePtrType(M, transOCLSampledImageTypeName(ST)));
   }
   case OpTypeStruct: {
     auto ST = static_cast<SPIRVTypeStruct *>(T);
@@ -756,40 +751,39 @@ SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   }
   case OpTypePipe: {
     auto PT = static_cast<SPIRVTypePipe *>(T);
-    return mapType(T, getOrCreateOpaquePtrType(M,
-        transOCLPipeTypeName(PT, IsClassMember, PT->getAccessQualifier()),
-        getOCLOpaqueTypeAddrSpace(T->getOpCode())));
-
-    }
+    return mapType(T, getOrCreateOpaquePtrType(
+                          M,
+                          transOCLPipeTypeName(PT, IsClassMember,
+                                               PT->getAccessQualifier()),
+                          getOCLOpaqueTypeAddrSpace(T->getOpCode())));
+  }
   case OpTypePipeStorage: {
     auto PST = static_cast<SPIRVTypePipeStorage *>(T);
-    return mapType(T, getOrCreateOpaquePtrType(M,
-        transOCLPipeStorageTypeName(PST),
-        getOCLOpaqueTypeAddrSpace(T->getOpCode())));
-    }
+    return mapType(
+        T, getOrCreateOpaquePtrType(M, transOCLPipeStorageTypeName(PST),
+                                    getOCLOpaqueTypeAddrSpace(T->getOpCode())));
+  }
   default: {
     auto OC = T->getOpCode();
     if (isOpaqueGenericTypeOpCode(OC))
-      return mapType(T, getOrCreateOpaquePtrType(M,
-          OCLOpaqueTypeOpCodeMap::rmap(OC),
-          getOCLOpaqueTypeAddrSpace(OC)));
+      return mapType(
+          T, getOrCreateOpaquePtrType(M, OCLOpaqueTypeOpCodeMap::rmap(OC),
+                                      getOCLOpaqueTypeAddrSpace(OC)));
     llvm_unreachable("Not implemented");
-    }
+  }
   }
   return 0;
 }
 
-
-std::string
-SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
-  switch(T->getOpCode()) {
+std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
+  switch (T->getOpCode()) {
   case OpTypeVoid:
     return "void";
   case OpTypeBool:
     return "bool";
   case OpTypeInt: {
     std::string Prefix = IsSigned ? "" : "u";
-    switch(T->getIntegerBitWidth()) {
+    switch (T->getIntegerBitWidth()) {
     case 8:
       return Prefix + "char";
     case 16:
@@ -802,10 +796,9 @@ SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
       llvm_unreachable("invalid integer size");
       return Prefix + std::string("int") + T->getIntegerBitWidth() + "_t";
     }
-  }
-  break;
+  } break;
   case OpTypeFloat:
-    switch(T->getFloatBitWidth()){
+    switch (T->getFloatBitWidth()) {
     case 16:
       return "half";
     case 32:
@@ -823,9 +816,9 @@ SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     return transTypeToOCLTypeName(T->getPointerElementType()) + "*";
   case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
-        T->getVectorComponentCount();
+           T->getVectorComponentCount();
   case OpTypeOpaque:
-      return T->getName();
+    return T->getName();
   case OpTypeFunction:
     llvm_unreachable("Unsupported");
     return "function";
@@ -851,41 +844,38 @@ SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     return Name;
   }
   default:
-      if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
-        return OCLOpaqueTypeOpCodeMap::rmap(T->getOpCode());
-      }
-      llvm_unreachable("Not implemented");
-      return "unknown";
+    if (isOpaqueGenericTypeOpCode(T->getOpCode())) {
+      return OCLOpaqueTypeOpCodeMap::rmap(T->getOpCode());
+    }
+    llvm_unreachable("Not implemented");
+    return "unknown";
   }
 }
 
 std::vector<Type *>
 SPIRVToLLVM::transTypeVector(const std::vector<SPIRVType *> &BT) {
   std::vector<Type *> T;
-  for (auto I: BT)
+  for (auto I : BT)
     T.push_back(transType(I));
   return T;
 }
 
 std::vector<Value *>
 SPIRVToLLVM::transValue(const std::vector<SPIRVValue *> &BV, Function *F,
-    BasicBlock *BB) {
+                        BasicBlock *BB) {
   std::vector<Value *> V;
-  for (auto I: BV)
+  for (auto I : BV)
     V.push_back(transValue(I, F, BB));
   return V;
 }
 
-bool
-SPIRVToLLVM::isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction* BI) const {
+bool SPIRVToLLVM::isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const {
   auto OC = BI->getOpCode();
-  return isCmpOpCode(OC) &&
-      !(OC >= OpLessOrGreater && OC <= OpUnordered);
+  return isCmpOpCode(OC) && !(OC >= OpLessOrGreater && OC <= OpUnordered);
 }
 
-void
-SPIRVToLLVM::transFlags(llvm::Value* V) {
-  if(!isa<Instruction>(V))
+void SPIRVToLLVM::transFlags(llvm::Value *V) {
+  if (!isa<Instruction>(V))
     return;
   auto OC = cast<Instruction>(V)->getOpcode();
   if (OC == Instruction::AShr || OC == Instruction::LShr) {
@@ -894,15 +884,13 @@ SPIRVToLLVM::transFlags(llvm::Value* V) {
   }
 }
 
-void
-SPIRVToLLVM::setName(llvm::Value* V, SPIRVValue* BV) {
+void SPIRVToLLVM::setName(llvm::Value *V, SPIRVValue *BV) {
   auto Name = BV->getName();
   if (!Name.empty() && (!V->hasName() || Name != V->getName()))
     V->setName(Name);
 }
 
-void
-SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI) {
+void SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge *LM, BranchInst *BI) {
   if (!LM)
     return;
   llvm::MDString *Name = nullptr;
@@ -913,8 +901,7 @@ SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI) {
   if (LM->getLoopControl() == LoopControlMaskNone) {
     BI->setMetadata("llvm.loop", Self);
     return;
-  }
-  else if(LM->getLoopControl() == LoopControlUnrollMask)
+  } else if (LM->getLoopControl() == LoopControlUnrollMask)
     Name = llvm::MDString::get(*Context, "llvm.loop.unroll.full");
   else if (LM->getLoopControl() == LoopControlDontUnrollMask)
     Name = llvm::MDString::get(*Context, "llvm.loop.unroll.disable");
@@ -931,17 +918,17 @@ SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge* LM, BranchInst* BI) {
   BI->setMetadata("llvm.loop", Node);
 }
 
-void SPIRVToLLVM::insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage* ST, std::string &Name) {
+void SPIRVToLLVM::insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
+                                                 std::string &Name) {
   std::string QName = rmap<std::string>(ST->getAccessQualifier());
   // transform: read_only -> ro, write_only -> wo, read_write -> rw
-  QName = QName.substr(0,1) + QName.substr(QName.find("_") + 1, 1) + "_";
+  QName = QName.substr(0, 1) + QName.substr(QName.find("_") + 1, 1) + "_";
   assert(!Name.empty() && "image name should not be empty");
   Name.insert(Name.size() - 1, QName);
 }
 
-Value *
-SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
-    bool CreatePlaceHolder){
+Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
+                               bool CreatePlaceHolder) {
   SPIRVToLLVMValueMap::iterator Loc = ValueMap.find(BV);
   if (Loc != ValueMap.end() && (!PlaceholderMap.count(BV) || CreatePlaceHolder))
     return Loc->second;
@@ -956,7 +943,7 @@ SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
   }
   setName(V, BV);
   if (!transDecoration(BV, V)) {
-    assert (0 && "trans decoration fail");
+    assert(0 && "trans decoration fail");
     return nullptr;
   }
   transFlags(V);
@@ -966,8 +953,8 @@ SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
   return V;
 }
 
-Value *
-SPIRVToLLVM::transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB) {
+Value *SPIRVToLLVM::transDeviceEvent(SPIRVValue *BV, Function *F,
+                                     BasicBlock *BB) {
   auto Val = transValue(BV, F, BB, false);
   auto Ty = dyn_cast<PointerType>(Val->getType());
   assert(Ty && "Invalid Device Event");
@@ -979,14 +966,14 @@ SPIRVToLLVM::transDeviceEvent(SPIRVValue *BV, Function *F, BasicBlock *BB) {
   return Builder.CreateAddrSpaceCast(Val, EventTy);
 }
 
-Value *
-SPIRVToLLVM::transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB) {
-  SPIRVUnary* BC = static_cast<SPIRVUnary*>(BV);
+Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
+                                     BasicBlock *BB) {
+  SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
   auto Src = transValue(BC->getOperand(0), F, BB, BB ? true : false);
   auto Dst = transType(BC->getType());
   CastInst::CastOps CO = Instruction::BitCast;
-  bool IsExt = Dst->getScalarSizeInBits()
-      > Src->getType()->getScalarSizeInBits();
+  bool IsExt =
+      Dst->getScalarSizeInBits() > Src->getType()->getScalarSizeInBits();
   switch (BC->getOpCode()) {
   case OpPtrCastToGeneric:
   case OpGenericCastToPtr:
@@ -1014,45 +1001,45 @@ SPIRVToLLVM::transConvertInst(SPIRVValue* BV, Function* F, BasicBlock* BB) {
   return ConstantExpr::getCast(CO, dyn_cast<Constant>(Src), Dst);
 }
 
-BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue* BV,
-    BasicBlock* BB,Function* F) {
-  SPIRVBinary* BBN = static_cast<SPIRVBinary*>(BV);
+BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV,
+                                                          BasicBlock *BB,
+                                                          Function *F) {
+  SPIRVBinary *BBN = static_cast<SPIRVBinary *>(BV);
   assert(BB && "Invalid BB");
   Instruction::BinaryOps BO;
   auto OP = BBN->getOpCode();
   if (isLogicalOpCode(OP))
     OP = IntBoolOpMap::rmap(OP);
   BO = static_cast<Instruction::BinaryOps>(OpCodeMap::rmap(OP));
-  auto Inst = BinaryOperator::Create(BO,
-      transValue(BBN->getOperand(0), F, BB),
-      transValue(BBN->getOperand(1), F, BB), BV->getName(), BB);
+  auto Inst = BinaryOperator::Create(BO, transValue(BBN->getOperand(0), F, BB),
+                                     transValue(BBN->getOperand(1), F, BB),
+                                     BV->getName(), BB);
   return Inst;
 }
 
-Instruction *
-SPIRVToLLVM::transCmpInst(SPIRVValue* BV, BasicBlock* BB, Function* F) {
-  SPIRVCompare* BC = static_cast<SPIRVCompare*>(BV);
+Instruction *SPIRVToLLVM::transCmpInst(SPIRVValue *BV, BasicBlock *BB,
+                                       Function *F) {
+  SPIRVCompare *BC = static_cast<SPIRVCompare *>(BV);
   assert(BB && "Invalid BB");
-  SPIRVType* BT = BC->getOperand(0)->getType();
-  Instruction* Inst = nullptr;
+  SPIRVType *BT = BC->getOperand(0)->getType();
+  Instruction *Inst = nullptr;
   auto OP = BC->getOpCode();
   if (isLogicalOpCode(OP))
     OP = IntBoolOpMap::rmap(OP);
   if (BT->isTypeVectorOrScalarInt() || BT->isTypeVectorOrScalarBool() ||
       BT->isTypePointer())
     Inst = new ICmpInst(*BB, CmpMap::rmap(OP),
-        transValue(BC->getOperand(0), F, BB),
-        transValue(BC->getOperand(1), F, BB));
+                        transValue(BC->getOperand(0), F, BB),
+                        transValue(BC->getOperand(1), F, BB));
   else if (BT->isTypeVectorOrScalarFloat())
     Inst = new FCmpInst(*BB, CmpMap::rmap(OP),
-        transValue(BC->getOperand(0), F, BB),
-        transValue(BC->getOperand(1), F, BB));
+                        transValue(BC->getOperand(0), F, BB),
+                        transValue(BC->getOperand(1), F, BB));
   assert(Inst && "not implemented");
   return Inst;
 }
 
-bool
-SPIRVToLLVM::postProcessOCL() {
+bool SPIRVToLLVM::postProcessOCL() {
   std::string DemangledName;
   SPIRVWord SrcLangVer = 0;
   BM->getSourceLanguage(&SrcLangVer);
@@ -1072,7 +1059,8 @@ SPIRVToLLVM::postProcessOCL() {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
       DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
-      if (hasArrayArg(&(*F)) && oclIsBuiltin(F->getName(), &DemangledName, isCPP))
+      if (hasArrayArg(&(*F)) &&
+          oclIsBuiltin(F->getName(), &DemangledName, isCPP))
         if (!postProcessOCLBuiltinWithArrayArguments(&(*F), DemangledName))
           return false;
     }
@@ -1080,8 +1068,7 @@ SPIRVToLLVM::postProcessOCL() {
   return true;
 }
 
-bool
-SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
+bool SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
   std::string Name = F->getName();
   F->setName(Name + ".old");
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
@@ -1090,10 +1077,10 @@ SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
       assert(ST);
       std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
-      ArgTys.insert(ArgTys.begin(), PointerType::get(F->getReturnType(),
-          SPIRAS_Private));
-      auto newF = getOrCreateFunction(M, Type::getVoidTy(*Context),
-          ArgTys, Name);
+      ArgTys.insert(ArgTys.begin(),
+                    PointerType::get(F->getReturnType(), SPIRAS_Private));
+      auto newF =
+          getOrCreateFunction(M, Type::getVoidTy(*Context), ArgTys, Name);
       newF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), ST->getPointerOperand());
@@ -1107,33 +1094,37 @@ SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
   return true;
 }
 
-bool
-SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(Function* F,
-    const std::string &DemangledName) {
+bool SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(
+    Function *F, const std::string &DemangledName) {
   DEBUG(dbgs() << "[postProcessOCLBuiltinWithArrayArguments] " << *F << '\n');
   auto Attrs = F->getAttributes();
   auto Name = F->getName();
-  mutateFunction(F, [=](CallInst *CI, std::vector<Value *> &Args) {
-    auto FBegin = CI->getParent()->getParent()->begin()->getFirstInsertionPt();
-    for (auto &I:Args) {
-      auto T = I->getType();
-      if (!T->isArrayTy())
-        continue;
-      auto Alloca = new AllocaInst(T, 0, "", &(*FBegin));
-      new StoreInst(I, Alloca, false, CI);
-      auto Zero = ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
-      Value *Index[] = {Zero, Zero};
-      I = GetElementPtrInst::CreateInBounds(Alloca, Index, "", CI);
-    }
-    return Name;
-  }, nullptr, &Attrs);
+  mutateFunction(
+      F,
+      [=](CallInst *CI, std::vector<Value *> &Args) {
+        auto FBegin =
+            CI->getParent()->getParent()->begin()->getFirstInsertionPt();
+        for (auto &I : Args) {
+          auto T = I->getType();
+          if (!T->isArrayTy())
+            continue;
+          auto Alloca = new AllocaInst(T, 0, "", &(*FBegin));
+          new StoreInst(I, Alloca, false, CI);
+          auto Zero =
+              ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
+          Value *Index[] = {Zero, Zero};
+          I = GetElementPtrInst::CreateInBounds(Alloca, Index, "", CI);
+        }
+        return Name;
+      },
+      nullptr, &Attrs);
   return true;
 }
 
 // ToDo: Handle unsigned integer return type. May need spec change.
-Instruction *
-SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
-    const std::string &FuncName) {
+Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
+                                                  CallInst *CI,
+                                                  const std::string &FuncName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   StringRef ImageTypeName;
   bool isDepthImage = false;
@@ -1150,14 +1141,14 @@ SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
         auto Sampler = CallSampledImg->getArgOperand(1);
         Args[0] = Img;
         Args.insert(Args.begin() + 1, Sampler);
-        if(Args.size() > 4 ) {
-          ConstantInt* ImOp = dyn_cast<ConstantInt>(Args[3]);
-          ConstantFP* LodVal = dyn_cast<ConstantFP>(Args[4]);
+        if (Args.size() > 4) {
+          ConstantInt *ImOp = dyn_cast<ConstantInt>(Args[3]);
+          ConstantFP *LodVal = dyn_cast<ConstantFP>(Args[4]);
           // Drop "Image Operands" argument.
           Args.erase(Args.begin() + 3, Args.begin() + 4);
           // If the image operand is LOD and its value is zero, drop it too.
           if (ImOp && LodVal && LodVal->isNullValue() &&
-              ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask )
+              ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask)
             Args.erase(Args.begin() + 3, Args.end());
         }
         if (CallSampledImg->hasOneUse()) {
@@ -1183,32 +1174,35 @@ SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI, CallInst* CI,
       &Attrs);
 }
 
-CallInst*
+CallInst *
 SPIRVToLLVM::postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
                                       const std::string &DemangledName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
-    llvm::Type *T = Args[2]->getType();
-    if (Args.size() > 4) {
-      ConstantInt* ImOp = dyn_cast<ConstantInt>(Args[3]);
-      ConstantFP* LodVal = dyn_cast<ConstantFP>(Args[4]);
-      // Drop "Image Operands" argument.
-      Args.erase(Args.begin() + 3, Args.begin() + 4);
-      // If the image operand is LOD and its value is zero, drop it too.
-      if (ImOp && LodVal && LodVal->isNullValue() &&
-          ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask )
-        Args.erase(Args.begin() + 3, Args.end());
-      else
-        std::swap(Args[2], Args[3]);
-    }
-    return std::string(kOCLBuiltinName::WriteImage) +
-            (T->isFPOrFPVectorTy() ? 'f' : 'i');
-    }, &Attrs);
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        llvm::Type *T = Args[2]->getType();
+        if (Args.size() > 4) {
+          ConstantInt *ImOp = dyn_cast<ConstantInt>(Args[3]);
+          ConstantFP *LodVal = dyn_cast<ConstantFP>(Args[4]);
+          // Drop "Image Operands" argument.
+          Args.erase(Args.begin() + 3, Args.begin() + 4);
+          // If the image operand is LOD and its value is zero, drop it too.
+          if (ImOp && LodVal && LodVal->isNullValue() &&
+              ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask)
+            Args.erase(Args.begin() + 3, Args.end());
+          else
+            std::swap(Args[2], Args[3]);
+        }
+        return std::string(kOCLBuiltinName::WriteImage) +
+               (T->isFPOrFPVectorTy() ? 'f' : 'i');
+      },
+      &Attrs);
 }
 
-CallInst *
-SPIRVToLLVM::postProcessOCLBuildNDRange(SPIRVInstruction *BI, CallInst *CI,
-    const std::string &FuncName) {
+CallInst *SPIRVToLLVM::postProcessOCLBuildNDRange(SPIRVInstruction *BI,
+                                                  CallInst *CI,
+                                                  const std::string &FuncName) {
   assert(CI->getNumArgOperands() == 3);
   auto GWS = CI->getArgOperand(0);
   auto LWS = CI->getArgOperand(1);
@@ -1240,81 +1234,81 @@ SPIRVToLLVM::postProcessGroupAllAny(CallInst *CI,
 }
 
 CallInst *
-SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst* CI,
-    const std::string &FuncName) {
+SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst *CI,
+                                           const std::string &FuncName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   if (!CI->getOperand(0)->getType()->isVectorTy() &&
-    CI->getOperand(1)->getType()->isVectorTy()) {
-    return mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-      unsigned vecSize = CI->getOperand(1)->getType()->getVectorNumElements();
-      Value *NewVec = nullptr;
-      if (auto CA = dyn_cast<Constant>(Args[0]))
-        NewVec = ConstantVector::getSplat(vecSize, CA);
-      else {
-        NewVec = ConstantVector::getSplat(vecSize,
-            Constant::getNullValue(Args[0]->getType()));
-        NewVec = InsertElementInst::Create(NewVec, Args[0], getInt32(M, 0), "",
-            CI);
-        NewVec = new ShuffleVectorInst(NewVec, NewVec,
-            ConstantVector::getSplat(vecSize, getInt32(M, 0)), "", CI);
-      }
-      NewVec->takeName(Args[0]);
-      Args[0] = NewVec;
-      return FuncName;
-    }, &Attrs);
+      CI->getOperand(1)->getType()->isVectorTy()) {
+    return mutateCallInstOCL(
+        M, CI,
+        [=](CallInst *, std::vector<Value *> &Args) {
+          unsigned vecSize =
+              CI->getOperand(1)->getType()->getVectorNumElements();
+          Value *NewVec = nullptr;
+          if (auto CA = dyn_cast<Constant>(Args[0]))
+            NewVec = ConstantVector::getSplat(vecSize, CA);
+          else {
+            NewVec = ConstantVector::getSplat(
+                vecSize, Constant::getNullValue(Args[0]->getType()));
+            NewVec = InsertElementInst::Create(NewVec, Args[0], getInt32(M, 0),
+                                               "", CI);
+            NewVec = new ShuffleVectorInst(
+                NewVec, NewVec,
+                ConstantVector::getSplat(vecSize, getInt32(M, 0)), "", CI);
+          }
+          NewVec->takeName(Args[0]);
+          Args[0] = NewVec;
+          return FuncName;
+        },
+        &Attrs);
   }
   return CI;
 }
 
 std::string
-SPIRVToLLVM::transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe* ST) {
+SPIRVToLLVM::transOCLPipeTypeAccessQualifier(SPIRV::SPIRVTypePipe *ST) {
   return SPIRSPIRVAccessQualifierMap::rmap(ST->getAccessQualifier());
 }
 
-void
-SPIRVToLLVM::transGeneratorMD() {
+void SPIRVToLLVM::transGeneratorMD() {
   SPIRVMDBuilder B(*M);
   B.addNamedMD(kSPIRVMD::Generator)
       .addOp()
-        .addU16(BM->getGeneratorId())
-        .addU16(BM->getGeneratorVer())
-        .done();
+      .addU16(BM->getGeneratorId())
+      .addU16(BM->getGeneratorVer())
+      .done();
 }
 
-Value *
-SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler* BCS) {
-  auto Lit = (BCS->getAddrMode() << 1) |
-      BCS->getNormalized() |
-      ((BCS->getFilterMode() + 1) << 4);
+Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS) {
+  auto Lit = (BCS->getAddrMode() << 1) | BCS->getNormalized() |
+             ((BCS->getFilterMode() + 1) << 4);
   auto Ty = IntegerType::getInt32Ty(*Context);
   return ConstantInt::get(Ty, Lit);
 }
 
-Value *
-SPIRVToLLVM::oclTransConstantPipeStorage(
-                        SPIRV::SPIRVConstantPipeStorage* BCPS) {
+Value *SPIRVToLLVM::oclTransConstantPipeStorage(
+    SPIRV::SPIRVConstantPipeStorage *BCPS) {
 
-  string CPSName = string(kSPIRVTypeName::PrefixAndDelim)
-                        + kSPIRVTypeName::ConstantPipeStorage;
+  string CPSName = string(kSPIRVTypeName::PrefixAndDelim) +
+                   kSPIRVTypeName::ConstantPipeStorage;
 
   auto Int32Ty = IntegerType::getInt32Ty(*Context);
   auto CPSTy = M->getTypeByName(CPSName);
   if (!CPSTy) {
-    Type* CPSElemsTy[] = { Int32Ty, Int32Ty, Int32Ty };
+    Type *CPSElemsTy[] = {Int32Ty, Int32Ty, Int32Ty};
     CPSTy = StructType::create(*Context, CPSElemsTy, CPSName);
   }
 
   assert(CPSTy != nullptr && "Could not create spirv.ConstantPipeStorage");
 
-  Constant* CPSElems[] = {
-    ConstantInt::get(Int32Ty, BCPS->getPacketSize()),
-    ConstantInt::get(Int32Ty, BCPS->getPacketAlign()),
-    ConstantInt::get(Int32Ty, BCPS->getCapacity())
-  };
+  Constant *CPSElems[] = {ConstantInt::get(Int32Ty, BCPS->getPacketSize()),
+                          ConstantInt::get(Int32Ty, BCPS->getPacketAlign()),
+                          ConstantInt::get(Int32Ty, BCPS->getCapacity())};
 
   return new GlobalVariable(*M, CPSTy, false, GlobalValue::LinkOnceODRLinkage,
-                        ConstantStruct::get(CPSTy, CPSElems), BCPS->getName(),
-                        nullptr, GlobalValue::NotThreadLocal, SPIRAS_Global);
+                            ConstantStruct::get(CPSTy, CPSElems),
+                            BCPS->getName(), nullptr,
+                            GlobalValue::NotThreadLocal, SPIRAS_Global);
 }
 
 /// For instructions, this function assumes they are created in order
@@ -1327,24 +1321,25 @@ SPIRVToLLVM::oclTransConstantPipeStorage(
 /// When CreatePlaceHolder is true, create a load instruction of a
 /// global variable as placeholder for SPIRV instruction. Otherwise,
 /// create instruction and replace placeholder if there is one.
-Value *
-SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
-    BasicBlock *BB, bool CreatePlaceHolder){
+Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
+                                                BasicBlock *BB,
+                                                bool CreatePlaceHolder) {
 
   auto OC = BV->getOpCode();
   IntBoolOpMap::rfind(OC, &OC);
 
   // Translation of non-instruction values
-  switch(OC) {
+  switch (OC) {
   case OpConstant: {
     SPIRVConstant *BConst = static_cast<SPIRVConstant *>(BV);
     SPIRVType *BT = BV->getType();
     Type *LT = transType(BT);
-    switch(BT->getOpCode()) {
+    switch (BT->getOpCode()) {
     case OpTypeBool:
     case OpTypeInt:
-      return mapValue(BV, ConstantInt::get(LT, BConst->getZExtIntValue(),
-          static_cast<SPIRVTypeInt*>(BT)->isSigned()));
+      return mapValue(
+          BV, ConstantInt::get(LT, BConst->getZExtIntValue(),
+                               static_cast<SPIRVTypeInt *>(BT)->isSigned()));
     case OpTypeFloat: {
       const llvm::fltSemantics *FS = nullptr;
       switch (BT->getFloatBitWidth()) {
@@ -1360,8 +1355,10 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       default:
         llvm_unreachable("invalid float type");
       }
-      return mapValue(BV, ConstantFP::get(*Context, APFloat(*FS,
-          APInt(BT->getFloatBitWidth(), BConst->getZExtIntValue()))));
+      return mapValue(
+          BV, ConstantFP::get(*Context,
+                              APFloat(*FS, APInt(BT->getFloatBitWidth(),
+                                                 BConst->getZExtIntValue()))));
     }
     default:
       llvm_unreachable("Not implemented");
@@ -1381,22 +1378,23 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpConstantComposite: {
-    auto BCC = static_cast<SPIRVConstantComposite*>(BV);
+    auto BCC = static_cast<SPIRVConstantComposite *>(BV);
     std::vector<Constant *> CV;
-    for (auto &I:BCC->getElements())
+    for (auto &I : BCC->getElements())
       CV.push_back(dyn_cast<Constant>(transValue(I, F, BB)));
-    switch(BV->getType()->getOpCode()) {
+    switch (BV->getType()->getOpCode()) {
     case OpTypeVector:
       return mapValue(BV, ConstantVector::get(CV));
     case OpTypeArray:
-      return mapValue(BV, ConstantArray::get(
-          dyn_cast<ArrayType>(transType(BCC->getType())), CV));
+      return mapValue(
+          BV, ConstantArray::get(dyn_cast<ArrayType>(transType(BCC->getType())),
+                                 CV));
     case OpTypeStruct: {
       auto BCCTy = dyn_cast<StructType>(transType(BCC->getType()));
       auto Members = BCCTy->getNumElements();
       auto Constants = CV.size();
-      //if we try to initialize constant TypeStruct, add bitcasts
-      //if src and dst types are both pointers but to different types
+      // if we try to initialize constant TypeStruct, add bitcasts
+      // if src and dst types are both pointers but to different types
       if (Members == Constants) {
         for (unsigned i = 0; i < Members; ++i) {
           if (CV[i]->getType() == BCCTy->getElementType(i))
@@ -1409,8 +1407,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         }
       }
 
-      return mapValue(BV, ConstantStruct::get(
-          dyn_cast<StructType>(transType(BCC->getType())), CV));
+      return mapValue(BV,
+                      ConstantStruct::get(
+                          dyn_cast<StructType>(transType(BCC->getType())), CV));
     }
     default:
       llvm_unreachable("not implemented");
@@ -1419,18 +1418,18 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpConstantSampler: {
-    auto BCS = static_cast<SPIRVConstantSampler*>(BV);
+    auto BCS = static_cast<SPIRVConstantSampler *>(BV);
     return mapValue(BV, oclTransConstantSampler(BCS));
   }
 
   case OpConstantPipeStorage: {
-    auto BCPS = static_cast<SPIRVConstantPipeStorage*>(BV);
+    auto BCPS = static_cast<SPIRVConstantPipeStorage *>(BV);
     return mapValue(BV, oclTransConstantPipeStorage(BCPS));
   }
 
   case OpSpecConstantOp: {
-    auto BI = createInstFromSpecConstantOp(
-        static_cast<SPIRVSpecConstantOp*>(BV));
+    auto BI =
+        createInstFromSpecConstantOp(static_cast<SPIRVSpecConstantOp *>(BV));
     return mapValue(BV, transValue(BI, nullptr, nullptr, false));
   }
 
@@ -1445,21 +1444,23 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Constant *Initializer = nullptr;
     SPIRVValue *Init = BVar->getInitializer();
     if (Init)
-        Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
+      Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
     else if (LinkageTy == GlobalValue::CommonLinkage)
-        // In LLVM variables with common linkage type must be initilized by 0
-        Initializer = Constant::getNullValue(Ty);
-    else if (BVar->getStorageClass() == SPIRVStorageClassKind::StorageClassWorkgroup)
-        Initializer = dyn_cast<Constant>(UndefValue::get(Ty));
+      // In LLVM variables with common linkage type must be initilized by 0
+      Initializer = Constant::getNullValue(Ty);
+    else if (BVar->getStorageClass() ==
+             SPIRVStorageClassKind::StorageClassWorkgroup)
+      Initializer = dyn_cast<Constant>(UndefValue::get(Ty));
 
     SPIRVStorageClassKind BS = BVar->getStorageClass();
     if (BS == StorageClassFunction && !Init) {
-        assert (BB && "Invalid BB");
-        return mapValue(BV, new AllocaInst(Ty, 0, BV->getName(), BB));
+      assert(BB && "Invalid BB");
+      return mapValue(BV, new AllocaInst(Ty, 0, BV->getName(), BB));
     }
     auto AddrSpace = SPIRSPIRVAddrSpaceMap::rmap(BS);
     auto LVar = new GlobalVariable(*M, Ty, IsConst, LinkageTy, Initializer,
-        BV->getName(), 0, GlobalVariable::NotThreadLocal, AddrSpace);
+                                   BV->getName(), 0,
+                                   GlobalVariable::NotThreadLocal, AddrSpace);
     LVar->setUnnamedAddr((IsConst && Ty->isArrayTy() &&
                           Ty->getArrayElementType()->isIntegerTy(8))
                              ? GlobalValue::UnnamedAddr::Global
@@ -1471,11 +1472,11 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpFunctionParameter: {
-    auto BA = static_cast<SPIRVFunctionParameter*>(BV);
-    assert (F && "Invalid function");
+    auto BA = static_cast<SPIRVFunctionParameter *>(BV);
+    assert(F && "Invalid function");
     unsigned ArgNo = 0;
     for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
-        ++I, ++ArgNo) {
+         ++I, ++ArgNo) {
       if (ArgNo == BA->getArgNo())
         return mapValue(BV, &(*I));
     }
@@ -1503,13 +1504,10 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   // Creation of place holder
   if (CreatePlaceHolder) {
-    auto GV = new GlobalVariable(*M,
-        transType(BV->getType()),
-        false,
-        GlobalValue::PrivateLinkage,
-        nullptr,
-        std::string(kPlaceholderPrefix) + BV->getName(),
-        0, GlobalVariable::NotThreadLocal, 0);
+    auto GV = new GlobalVariable(
+        *M, transType(BV->getType()), false, GlobalValue::PrivateLinkage,
+        nullptr, std::string(kPlaceholderPrefix) + BV->getName(), 0,
+        GlobalVariable::NotThreadLocal, 0);
     auto LD = new LoadInst(GV, BV->getName(), BB);
     PlaceholderMap[BV] = LD;
     return mapValue(BV, LD);
@@ -1565,19 +1563,19 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpLifetimeStart: {
-    SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart*>(BV);
+    SPIRVLifetimeStart *LTStart = static_cast<SPIRVLifetimeStart *>(BV);
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStart->getSize();
-	ConstantInt *S = nullptr;
+    ConstantInt *S = nullptr;
     if (Size)
       S = Builder.getInt64(Size);
-    Value* Var = transValue(LTStart->getObject(), F, BB);
+    Value *Var = transValue(LTStart->getObject(), F, BB);
     CallInst *Start = Builder.CreateLifetimeStart(Var, S);
     return mapValue(BV, Start->getOperand(1));
   }
 
   case OpLifetimeStop: {
-    SPIRVLifetimeStop *LTStop = static_cast<SPIRVLifetimeStop*>(BV);
+    SPIRVLifetimeStop *LTStop = static_cast<SPIRVLifetimeStop *>(BV);
     IRBuilder<> Builder(BB);
     SPIRVWord Size = LTStop->getSize();
     ConstantInt *S = nullptr;
@@ -1591,7 +1589,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpStore: {
-    SPIRVStore *BS = static_cast<SPIRVStore*>(BV);
+    SPIRVStore *BS = static_cast<SPIRVStore *>(BV);
     StoreInst *SI = new StoreInst(transValue(BS->getSrc(), F, BB),
                                   transValue(BS->getDst(), F, BB),
                                   BS->SPIRVMemoryAccess::isVolatile(),
@@ -1602,7 +1600,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpLoad: {
-    SPIRVLoad *BL = static_cast<SPIRVLoad*>(BV);
+    SPIRVLoad *BL = static_cast<SPIRVLoad *>(BV);
     LoadInst *LI = new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
                                 BL->SPIRVMemoryAccess::isVolatile(),
                                 BL->SPIRVMemoryAccess::getAlignment(), BB);
@@ -1623,13 +1621,13 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     // If we copy from zero-initialized array, we can optimize it to llvm.memset
     if (BC->getSource()->getOpCode() == OpBitcast) {
       SPIRVValue *Source =
-        static_cast<SPIRVBitcast*>(BC->getSource())->getOperand(0);
+          static_cast<SPIRVBitcast *>(BC->getSource())->getOperand(0);
       if (Source->isVariable()) {
-        auto *Init = static_cast<SPIRVVariable*>(Source)->getInitializer();
+        auto *Init = static_cast<SPIRVVariable *>(Source)->getInitializer();
         if (isa<OpConstantNull>(Init)) {
-          SPIRVType *Ty = static_cast<SPIRVConstantNull*>(Init)->getType();
+          SPIRVType *Ty = static_cast<SPIRVConstantNull *>(Init)->getType();
           if (isa<OpTypeArray>(Ty)) {
-            SPIRVTypeArray *AT = static_cast<SPIRVTypeArray*>(Ty);
+            SPIRVTypeArray *AT = static_cast<SPIRVTypeArray *>(Ty);
             Type *SrcTy = transType(AT->getArrayElementType());
             assert(SrcTy->isIntegerTy(8));
             llvm::Value *Src = ConstantInt::get(SrcTy, 0);
@@ -1648,7 +1646,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpSelect: {
-    SPIRVSelect *BS = static_cast<SPIRVSelect*>(BV);
+    SPIRVSelect *BS = static_cast<SPIRVSelect *>(BV);
     return mapValue(BV,
                     SelectInst::Create(transValue(BS->getCondition(), F, BB),
                                        transValue(BS->getTrueValue(), F, BB),
@@ -1658,7 +1656,8 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpLine:
   case OpSelectionMerge: // OpenCL Compiler does not use this instruction
-  case OpLoopMerge:      // Should be translated at OpBranch or OpBranchConditional cases
+  case OpLoopMerge: // Should be translated at OpBranch or OpBranchConditional
+                    // cases
     return nullptr;
 
   case OpSwitch: {
@@ -1669,20 +1668,22 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         BS->getNumPairs(), BB);
     BS->foreachPair(
         [&](SPIRVSwitch::LiteralTy Literals, SPIRVBasicBlock *Label) {
-        assert(!Literals.empty() && "Literals should not be empty");
-        assert(Literals.size() <= 2 && "Number of literals should not be more then two");
-        uint64_t Literal = uint64_t(Literals.at(0));
-        if (Literals.size() == 2) {
-          Literal += uint64_t(Literals.at(1)) << 32;
-        }
-          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()), Literal),
+          assert(!Literals.empty() && "Literals should not be empty");
+          assert(Literals.size() <= 2 &&
+                 "Number of literals should not be more then two");
+          uint64_t Literal = uint64_t(Literals.at(0));
+          if (Literals.size() == 2) {
+            Literal += uint64_t(Literals.at(1)) << 32;
+          }
+          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()),
+                                       Literal),
                       dyn_cast<BasicBlock>(transValue(Label, F, BB)));
         });
     return mapValue(BV, LS);
   }
 
   case OpVectorTimesScalar: {
-    auto VTS = static_cast<SPIRVVectorTimesScalar*>(BV);
+    auto VTS = static_cast<SPIRVVectorTimesScalar *>(BV);
     IRBuilder<> Builder(BB);
     auto Scalar = transValue(VTS->getScalar(), F, BB);
     auto Vector = transValue(VTS->getVector(), F, BB);
@@ -1696,9 +1697,10 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
-    AllocaInst* AI = new AllocaInst(transType(CO->getOperand()->getType()), 0, "", BB);
+    AllocaInst *AI =
+        new AllocaInst(transType(CO->getOperand()->getType()), 0, "", BB);
     new StoreInst(transValue(CO->getOperand(), F, BB), AI, BB);
-    LoadInst* LI = new LoadInst(AI, "", BB);
+    LoadInst *LI = new LoadInst(AI, "", BB);
     return mapValue(BV, LI);
   }
 
@@ -1714,12 +1716,13 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto IsInbound = AC->isInBounds();
     Value *V = nullptr;
     if (BB) {
-      auto GEP = GetElementPtrInst::Create(nullptr, Base, Index, BV->getName(), BB);
+      auto GEP =
+          GetElementPtrInst::Create(nullptr, Base, Index, BV->getName(), BB);
       GEP->setIsInBounds(IsInbound);
       V = GEP;
     } else {
-      V = ConstantExpr::getGetElementPtr(nullptr, dyn_cast<Constant>(Base), Index,
-                                         IsInbound);
+      V = ConstantExpr::getGetElementPtr(nullptr, dyn_cast<Constant>(Base),
+                                         Index, IsInbound);
     }
     return mapValue(BV, V);
   }
@@ -1727,7 +1730,7 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpCompositeConstruct: {
     auto CC = static_cast<SPIRVCompositeConstruct *>(BV);
     auto Constituents = transValue(CC->getConstituents(), F, BB);
-    std::vector<Constant*> CV;
+    std::vector<Constant *> CV;
     for (const auto &I : Constituents) {
       CV.push_back(dyn_cast<Constant>(I));
     }
@@ -1735,13 +1738,15 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case OpTypeVector:
       return mapValue(BV, ConstantVector::get(CV));
     case OpTypeArray:
-      return mapValue(BV, ConstantArray::get(
-          dyn_cast<ArrayType>(transType(CC->getType())), CV));
+      return mapValue(
+          BV, ConstantArray::get(dyn_cast<ArrayType>(transType(CC->getType())),
+                                 CV));
     case OpTypeStruct:
-      return mapValue(BV, ConstantStruct::get(
-          dyn_cast<StructType>(transType(CC->getType())), CV));
+      return mapValue(BV,
+                      ConstantStruct::get(
+                          dyn_cast<StructType>(transType(CC->getType())), CV));
     default:
-        llvm_unreachable("Unhandled type!");
+      llvm_unreachable("Unhandled type!");
     }
   }
 
@@ -1756,9 +1761,8 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                   BV->getName(), BB));
     }
     return mapValue(
-        BV, ExtractValueInst::Create(
-                transValue(CE->getComposite(), F, BB),
-                CE->getIndices(), BV->getName(), BB));
+        BV, ExtractValueInst::Create(transValue(CE->getComposite(), F, BB),
+                                     CE->getIndices(), BV->getName(), BB));
   }
 
   case OpVectorExtractDynamic: {
@@ -1781,10 +1785,9 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                   BV->getName(), BB));
     }
     return mapValue(
-        BV, InsertValueInst::Create(
-                transValue(CI->getComposite(), F, BB),
-                transValue(CI->getObject(), F, BB),
-                CI->getIndices(), BV->getName(), BB));
+        BV, InsertValueInst::Create(transValue(CI->getComposite(), F, BB),
+                                    transValue(CI->getObject(), F, BB),
+                                    CI->getIndices(), BV->getName(), BB));
   }
 
   case OpVectorInsertDynamic: {
@@ -1855,7 +1858,8 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     MangleOpenCLBuiltin(UnmangledName, ArgTypes, MangledName);
 
     auto FT = FunctionType::get(transType(BV->getType()), ArgTypes, false);
-    auto Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
+    auto Func =
+        Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
@@ -1883,72 +1887,66 @@ SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                       BV->getName(), BB));
   }
 
-  case OpAll :
-  case OpAny :
+  case OpAll:
+  case OpAny:
     return mapValue(BV,
                     transOCLAllAny(static_cast<SPIRVInstruction *>(BV), BB));
 
-  case OpIsFinite :
-  case OpIsInf :
-  case OpIsNan :
-  case OpIsNormal :
-  case OpSignBitSet :
-    return mapValue(BV,
-                    transOCLRelational(static_cast<SPIRVInstruction *>(BV), BB));
-  case OpEnqueueKernel :
-    return mapValue(BV, transEnqueueKernelBI(
-        static_cast<SPIRVInstruction *>(BV), BB));
-  case OpGetKernelWorkGroupSize :
-  case OpGetKernelPreferredWorkGroupSizeMultiple :
-    return mapValue(BV, transWGSizeBI(
-        static_cast<SPIRVInstruction *>(BV), BB));
+  case OpIsFinite:
+  case OpIsInf:
+  case OpIsNan:
+  case OpIsNormal:
+  case OpSignBitSet:
+    return mapValue(
+        BV, transOCLRelational(static_cast<SPIRVInstruction *>(BV), BB));
+  case OpEnqueueKernel:
+    return mapValue(
+        BV, transEnqueueKernelBI(static_cast<SPIRVInstruction *>(BV), BB));
+  case OpGetKernelWorkGroupSize:
+  case OpGetKernelPreferredWorkGroupSizeMultiple:
+    return mapValue(BV, transWGSizeBI(static_cast<SPIRVInstruction *>(BV), BB));
   default: {
     auto OC = BV->getOpCode();
-    if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction*>(BV))) {
+    if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction *>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
     } else if ((OCLSPIRVBuiltinMap::rfind(OC, nullptr) ||
                 isIntelSubgroupOpCode(OC)) &&
-               !isAtomicOpCode(OC) &&
-               !isGroupOpCode(OC) &&
-               !isPipeOpCode(OC)) {
-      return mapValue(BV, transOCLBuiltinFromInst(
-          static_cast<SPIRVInstruction *>(BV), BB));
-    } else if (isBinaryShiftLogicalBitwiseOpCode(OC) ||
-                isLogicalOpCode(OC)) {
-          return mapValue(BV, transShiftLogicalBitwiseInst(BV, BB, F));
+               !isAtomicOpCode(OC) && !isGroupOpCode(OC) && !isPipeOpCode(OC)) {
+      return mapValue(
+          BV, transOCLBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB));
+    } else if (isBinaryShiftLogicalBitwiseOpCode(OC) || isLogicalOpCode(OC)) {
+      return mapValue(BV, transShiftLogicalBitwiseInst(BV, BB, F));
     } else if (isCvtOpCode(OC)) {
-        auto BI = static_cast<SPIRVInstruction *>(BV);
-        Value *Inst = nullptr;
-        if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
-          Inst = transOCLBuiltinFromInst(BI, BB);
-        else
-          Inst = transConvertInst(BV, F, BB);
-        return mapValue(BV, Inst);
+      auto BI = static_cast<SPIRVInstruction *>(BV);
+      Value *Inst = nullptr;
+      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
+        Inst = transOCLBuiltinFromInst(BI, BB);
+      else
+        Inst = transConvertInst(BV, F, BB);
+      return mapValue(BV, Inst);
     }
-    return mapValue(BV, transSPIRVBuiltinFromInst(
-      static_cast<SPIRVInstruction *>(BV), BB));
+    return mapValue(
+        BV, transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB));
   }
 
-  SPIRVDBG(spvdbgs() << "Cannot translate " << *BV << '\n';)
-  llvm_unreachable("Translation of SPIRV instruction not implemented");
-  return NULL;
+    SPIRVDBG(spvdbgs() << "Cannot translate " << *BV << '\n';)
+    llvm_unreachable("Translation of SPIRV instruction not implemented");
+    return NULL;
   }
 }
 
-template<class SourceTy, class FuncTy>
-bool
-SPIRVToLLVM::foreachFuncCtlMask(SourceTy Source, FuncTy Func) {
+template <class SourceTy, class FuncTy>
+bool SPIRVToLLVM::foreachFuncCtlMask(SourceTy Source, FuncTy Func) {
   SPIRVWord FCM = Source->getFuncCtlMask();
-  SPIRSPIRVFuncCtlMaskMap::foreach([&](Attribute::AttrKind Attr,
-      SPIRVFunctionControlMaskKind Mask){
-    if (FCM & Mask)
-      Func(Attr);
-  });
+  SPIRSPIRVFuncCtlMaskMap::foreach (
+      [&](Attribute::AttrKind Attr, SPIRVFunctionControlMaskKind Mask) {
+        if (FCM & Mask)
+          Func(Attr);
+      });
   return true;
 }
 
-Function *
-SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
+Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   auto Loc = FuncMap.find(BF);
   if (Loc != FuncMap.end())
     return Loc->second;
@@ -1956,26 +1954,25 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   auto IsKernel = BM->isEntryPoint(ExecutionModelKernel, BF->getId());
   auto Linkage = IsKernel ? GlobalValue::ExternalLinkage : transLinkageType(BF);
   FunctionType *FT = dyn_cast<FunctionType>(transType(BF->getFunctionType()));
-  Function *F = dyn_cast<Function>(mapValue(BF, Function::Create(FT, Linkage,
-      BF->getName(), M)));
+  Function *F = dyn_cast<Function>(
+      mapValue(BF, Function::Create(FT, Linkage, BF->getName(), M)));
   assert(F);
   mapFunction(BF, F);
   if (!F->isIntrinsic()) {
-    F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL :
-        CallingConv::SPIR_FUNC);
+    F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL
+                               : CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
-    foreachFuncCtlMask(BF, [&](Attribute::AttrKind Attr){
-      F->addFnAttr(Attr);
-    });
+    foreachFuncCtlMask(BF,
+                       [&](Attribute::AttrKind Attr) { F->addFnAttr(Attr); });
   }
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
-      ++I) {
+       ++I) {
     auto BA = BF->getArgument(I->getArgNo());
     mapValue(BA, &(*I));
     setName(&(*I), BA);
-    BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind){
+    BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
       if (Kind == FunctionParameterAttributeNoWrite)
         return;
       F->addAttribute(I->getArgNo() + 1, SPIRSPIRVFuncParamAttrMap::rmap(Kind));
@@ -1988,11 +1985,11 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
       I->addAttrs(Builder);
     }
   }
-  BF->foreachReturnValueAttr([&](SPIRVFuncParamAttrKind Kind){
+  BF->foreachReturnValueAttr([&](SPIRVFuncParamAttrKind Kind) {
     if (Kind == FunctionParameterAttributeNoWrite)
       return;
     F->addAttribute(AttributeList::ReturnIndex,
-        SPIRSPIRVFuncParamAttrMap::rmap(Kind));
+                    SPIRSPIRVFuncParamAttrMap::rmap(Kind));
   });
 
   // Creating all basic blocks before creating instructions.
@@ -2018,9 +2015,8 @@ SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
 /// w = bool LessGreater(float x, float z) ->
 ///     w = bool Trunc(i32 islessgreater(float x, float z))
 /// Optimizer should be able to remove the redundant trunc/zext
-void
-SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
-    std::vector<SPIRVValue *> &Args) {
+void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
+    SPIRVInstruction *BI, Type *&RetTy, std::vector<SPIRVValue *> &Args) {
   if (!BI->hasType())
     return;
   auto BT = BI->getType();
@@ -2029,11 +2025,15 @@ SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
     else if (BT->isTypeVectorBool())
-      RetTy = VectorType::get(IntegerType::get(*Context,
-          Args[0]->getType()->getVectorComponentType()->isTypeFloat(64)?64:32),
+      RetTy = VectorType::get(
+          IntegerType::get(
+              *Context,
+              Args[0]->getType()->getVectorComponentType()->isTypeFloat(64)
+                  ? 64
+                  : 32),
           BT->getVectorComponentCount());
     else
-       llvm_unreachable("invalid compare instruction");
+      llvm_unreachable("invalid compare instruction");
   } else if (OC == OpGenericCastToPtrExplicit)
     Args.pop_back();
   else if (OC == OpImageRead && Args.size() > 2) {
@@ -2042,14 +2042,14 @@ SPIRVToLLVM::transOCLBuiltinFromInstPreproc(SPIRVInstruction* BI, Type *&RetTy,
   }
 }
 
-Instruction*
-SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
-    CallInst* CI, BasicBlock* BB, const std::string &DemangledName) {
+Instruction *
+SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction *BI, CallInst *CI,
+                                     BasicBlock *BB,
+                                     const std::string &DemangledName) {
   auto OC = BI->getOpCode();
-  if (isCmpOpCode(OC) &&
-      BI->getType()->isTypeVectorOrScalarBool()) {
+  if (isCmpOpCode(OC) && BI->getType()->isTypeVectorOrScalarBool()) {
     return CastInst::Create(Instruction::Trunc, CI, transType(BI->getType()),
-        "cvt", BB);
+                            "cvt", BB);
   }
   if (OC == OpImageSampleExplicitLod)
     return postProcessOCLReadImage(BI, CI, DemangledName);
@@ -2069,8 +2069,7 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction* BI,
   if (OC == OpGroupAll || OC == OpGroupAny)
     return postProcessGroupAllAny(CI, DemangledName);
   if (SPIRVEnableStepExpansion &&
-      (DemangledName == "smoothstep" ||
-       DemangledName == "step"))
+      (DemangledName == "smoothstep" || DemangledName == "step"))
     return expandOCLBuiltinWithScalarArg(CI, DemangledName);
   return CI;
 }
@@ -2096,14 +2095,14 @@ static void adaptBlockInvoke(Function *Invoke, Type *BlockStructTy) {
   unsigned FirstArgAS = FirstArgTy->getAddressSpace();
 
   auto Int8PtrTy =
-    Type::getInt8PtrTy(Invoke->getParent()->getContext(), FirstArgAS);
+      Type::getInt8PtrTy(Invoke->getParent()->getContext(), FirstArgAS);
   auto BlockStructPtrTy = PointerType::get(BlockStructTy, FirstArgAS);
 
   auto Int32Ty = Type::getInt32Ty(Invoke->getParent()->getContext());
-  Value *CapturedGEPIndices[2] = { ConstantInt::get(Int32Ty, 0),
-                                   ConstantInt::get(Int32Ty, 5) };
+  Value *CapturedGEPIndices[2] = {ConstantInt::get(Int32Ty, 0),
+                                  ConstantInt::get(Int32Ty, 5)};
   auto BlockToStructCast =
-    Builder.CreateBitCast(FirstArg, BlockStructPtrTy, "block");
+      Builder.CreateBitCast(FirstArg, BlockStructPtrTy, "block");
   auto CapturedGEP = Builder.CreateGEP(BlockToStructCast, CapturedGEPIndices);
   auto CapturedToInt8Cast = Builder.CreateBitCast(CapturedGEP, Int8PtrTy);
 
@@ -2118,15 +2117,16 @@ static Type *getOrCreateBlockDescTy(Module *M) {
     return BlockDescTy;
 
   auto Int64Ty = Type::getInt64Ty(M->getContext());
-  Type *BlockDescElements[2] = {/*Reserved*/ Int64Ty, /*Block size*/ Int64Ty };
+  Type *BlockDescElements[2] = {/*Reserved*/ Int64Ty, /*Block size*/ Int64Ty};
   return StructType::create(M->getContext(), BlockDescElements,
                             "struct.__block_descriptor");
 }
 
-Value *
-SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
-                                SPIRVValue *SCaptSize, SPIRVValue *SCaptAlignment,
-                                Function *LBI, BasicBlock *LBB) {
+Value *SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke,
+                                       SPIRVValue *SCaptured,
+                                       SPIRVValue *SCaptSize,
+                                       SPIRVValue *SCaptAlignment,
+                                       Function *LBI, BasicBlock *LBB) {
   // Search if that block have been already translated
   auto Loc = BlockMap.find(SInvoke);
   if (Loc != BlockMap.end())
@@ -2139,9 +2139,9 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
   auto LInvoke = transFunction(static_cast<SPIRVFunction *>(SInvoke));
   auto LCaptured = transValue(SCaptured, LBI, LBB, false);
   auto LCaptSize =
-    dyn_cast<ConstantInt>(transValue(SCaptSize, LBI, LBB, false));
+      dyn_cast<ConstantInt>(transValue(SCaptSize, LBI, LBB, false));
   auto LCaptAlignment =
-    dyn_cast<ConstantInt>(transValue(SCaptAlignment, LBI, LBB, false));
+      dyn_cast<ConstantInt>(transValue(SCaptAlignment, LBI, LBB, false));
 
   // Create basic types
   auto Int8Ty = Type::getInt8Ty(*Context);
@@ -2153,9 +2153,9 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
 
   // Create a block as structure:
   // <{ i8*, i32, i32, i8*, %struct.__block_descriptor* }>
-  SmallVector<Type *, 8> BlockEls =
-    { /*isa*/ Int8PtrTy, /*flags*/ Int32Ty, /*reserved*/ Int32Ty,
-      /*invoke*/ Int8PtrTy, /*block_descriptor*/ BlockDescPtrTy };
+  SmallVector<Type *, 8> BlockEls = {
+      /*isa*/ Int8PtrTy, /*flags*/ Int32Ty, /*reserved*/ Int32Ty,
+      /*invoke*/ Int8PtrTy, /*block_descriptor*/ BlockDescPtrTy};
 
   // Add captured if any
   // <{ i8*, i32, i32, i8*, %struct.__block_descriptor*, [X x i8] }>
@@ -2170,7 +2170,7 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
   BlockAlloca->setAlignment(DL.getPrefTypeAlignment(BlockTy));
 
   auto getIndices = [Int32Ty](int a, int b) -> SmallVector<Value *, 2> {
-    return { ConstantInt::get(Int32Ty, a), ConstantInt::get(Int32Ty, b) };
+    return {ConstantInt::get(Int32Ty, a), ConstantInt::get(Int32Ty, b)};
   };
 
   // 1. isa, flags and reserved fields isn't used in current implementation
@@ -2191,14 +2191,14 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
   uint64_t SizeOfBlock = DL.getTypeAllocSize(BlockTy);
 
   auto Int64Ty = Type::getInt64Ty(*Context);
-  Constant *BlockDescEls[2] = { ConstantInt::get(Int64Ty, 0),
-                                ConstantInt::get(Int64Ty, SizeOfBlock) };
+  Constant *BlockDescEls[2] = {ConstantInt::get(Int64Ty, 0),
+                               ConstantInt::get(Int64Ty, SizeOfBlock)};
   auto BlockDesc =
-    ConstantStruct::get(dyn_cast<StructType>(BlockDescTy), BlockDescEls);
+      ConstantStruct::get(dyn_cast<StructType>(BlockDescTy), BlockDescEls);
 
   auto BlockDescGV =
-    new GlobalVariable(*M, BlockDescTy, true, GlobalValue::InternalLinkage,
-                       BlockDesc, "__block_descriptor_spirv");
+      new GlobalVariable(*M, BlockDescTy, true, GlobalValue::InternalLinkage,
+                         BlockDesc, "__block_descriptor_spirv");
   auto BlockDescGEP =
       Builder.CreateGEP(BlockAlloca, getIndices(0, 4), "block.descriptor");
   Builder.CreateStore(BlockDescGV, BlockDescGEP);
@@ -2206,7 +2206,7 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
   // 4. Copy captured data to the structure
   if (LCaptSize->getZExtValue() > 0) {
     auto CapturedGEP =
-      Builder.CreateGEP(BlockAlloca, getIndices(0, 5), "block.captured");
+        Builder.CreateGEP(BlockAlloca, getIndices(0, 5), "block.captured");
     auto CapturedGEPCast = Builder.CreateBitCast(CapturedGEP, Int8PtrTy);
 
     // We can't make any guesses about type of captured data, so
@@ -2224,8 +2224,8 @@ SPIRVToLLVM::transEnqueuedBlock(SPIRVValue *SInvoke, SPIRVValue *SCaptured,
   return BlockCastGen;
 }
 
-Instruction *
-SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
+                                               BasicBlock *BB) {
   Type *IntTy = Type::getInt32Ty(*Context);
 
   // Find or create enqueue kernel BI declaration
@@ -2234,23 +2234,25 @@ SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB) {
 
   std::string FName = hasVaargs ? "__enqueue_kernel_events_vaargs"
                                 : "__enqueue_kernel_basic_events";
-  Function* F = M->getFunction(FName);
+  Function *F = M->getFunction(FName);
   if (!F) {
     Type *EventTy = PointerType::get(
-      getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T, SPIRAS_Private),
-      SPIRAS_Generic);
+        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T, SPIRAS_Private),
+        SPIRAS_Generic);
 
     SmallVector<Type *, 8> Tys = {
-     transType(Ops[0]->getType()), // queue
-     IntTy,                        // flags
-     transType(Ops[2]->getType()), // ndrange
-     IntTy, EventTy, EventTy,      // events
-     Type::getInt8PtrTy(*Context, SPIRAS_Generic) // block
+        transType(Ops[0]->getType()), // queue
+        IntTy,                        // flags
+        transType(Ops[2]->getType()), // ndrange
+        IntTy,
+        EventTy,
+        EventTy,                                     // events
+        Type::getInt8PtrTy(*Context, SPIRAS_Generic) // block
     };
     if (hasVaargs)
       Tys.push_back(IntTy); // Number of variadics if any
 
-    FunctionType* FT = FunctionType::get(IntTy, Tys, hasVaargs);
+    FunctionType *FT = FunctionType::get(IntTy, Tys, hasVaargs);
     F = Function::Create(FT, GlobalValue::ExternalLinkage, FName, M);
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
@@ -2258,17 +2260,18 @@ SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB) {
 
   // Create call to enqueue kernel BI
   SmallVector<Value *, 8> Args = {
-    transValue(Ops[0], F, BB, false), // queue
-    transValue(Ops[1], F, BB, false), // flags
-    transValue(Ops[2], F, BB, false), // ndrange
-    transValue(Ops[3], F, BB, false), // events number
-    transDeviceEvent(Ops[4], F, BB), // event_wait_list
-    transDeviceEvent(Ops[5], F, BB), // event_ret
-    transEnqueuedBlock(Ops[6], Ops[7], Ops[8], Ops[9], F, BB) // block
+      transValue(Ops[0], F, BB, false), // queue
+      transValue(Ops[1], F, BB, false), // flags
+      transValue(Ops[2], F, BB, false), // ndrange
+      transValue(Ops[3], F, BB, false), // events number
+      transDeviceEvent(Ops[4], F, BB),  // event_wait_list
+      transDeviceEvent(Ops[5], F, BB),  // event_ret
+      transEnqueuedBlock(Ops[6], Ops[7], Ops[8], Ops[9], F, BB) // block
   };
 
   if (hasVaargs) {
-    Args.push_back(ConstantInt::get(IntTy, Ops.size() - 10)); // Number of vaargs
+    Args.push_back(
+        ConstantInt::get(IntTy, Ops.size() - 10)); // Number of vaargs
     for (unsigned i = 10; i < Ops.size(); ++i)
       Args.push_back(transValue(Ops[i], F, BB, false));
   }
@@ -2278,18 +2281,16 @@ SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI, BasicBlock *BB) {
   return Call;
 }
 
-Instruction *
-SPIRVToLLVM::transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB) {
-  std::string FName =
-    (BI->getOpCode() == OpGetKernelWorkGroupSize)
-    ? "__get_kernel_work_group_size_impl"
-    : "__get_kernel_preferred_work_group_multiple_impl";
+Instruction *SPIRVToLLVM::transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB) {
+  std::string FName = (BI->getOpCode() == OpGetKernelWorkGroupSize)
+                          ? "__get_kernel_work_group_size_impl"
+                          : "__get_kernel_preferred_work_group_multiple_impl";
 
-  Function* F = M->getFunction(FName);
+  Function *F = M->getFunction(FName);
   if (!F) {
     auto Int8PtrTyGen = Type::getInt8PtrTy(*Context, SPIRAS_Generic);
-    FunctionType* FT =
-      FunctionType::get(Type::getInt32Ty(*Context), Int8PtrTyGen, false);
+    FunctionType *FT =
+        FunctionType::get(Type::getInt32Ty(*Context), Int8PtrTyGen, false);
     F = Function::Create(FT, GlobalValue::ExternalLinkage, FName, M);
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
@@ -2302,18 +2303,18 @@ SPIRVToLLVM::transWGSizeBI(SPIRVInstruction *BI, BasicBlock *BB) {
   return Call;
 }
 
-Instruction *
-SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
-    SPIRVInstruction* BI, BasicBlock* BB) {
+Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
+                                               SPIRVInstruction *BI,
+                                               BasicBlock *BB) {
   std::string MangledName;
   auto Ops = BI->getOperands();
-  Type* RetTy = BI->hasType() ? transType(BI->getType()) :
-      Type::getVoidTy(*Context);
+  Type *RetTy =
+      BI->hasType() ? transType(BI->getType()) : Type::getVoidTy(*Context);
   transOCLBuiltinFromInstPreproc(BI, RetTy, Ops);
-  std::vector<Type*> ArgTys = transTypeVector(
-      SPIRVInstruction::getOperandTypes(Ops));
+  std::vector<Type *> ArgTys =
+      transTypeVector(SPIRVInstruction::getOperandTypes(Ops));
   bool HasFuncPtrArg = false;
-  for (auto& I:ArgTys) {
+  for (auto &I : ArgTys) {
     if (isa<FunctionType>(I)) {
       I = PointerType::get(I, SPIRAS_Private);
       HasFuncPtrArg = true;
@@ -2323,43 +2324,38 @@ SPIRVToLLVM::transBuiltinFromInst(const std::string& FuncName,
     MangleOpenCLBuiltin(FuncName, ArgTys, MangledName);
   else
     MangledName = decorateSPIRVFunction(FuncName);
-  Function* Func = M->getFunction(MangledName);
-  FunctionType* FT = FunctionType::get(RetTy, ArgTys, false);
+  Function *Func = M->getFunction(MangledName);
+  FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
   // ToDo: Some intermediate functions have duplicate names with
   // different function types. This is OK if the function name
   // is used internally and finally translated to unique function
   // names. However it is better to have a way to differentiate
   // between intermidiate functions and final functions and make
   // sure final functions have unique names.
-  SPIRVDBG(
-  if (!HasFuncPtrArg && Func && Func->getFunctionType() != FT) {
+  SPIRVDBG(if (!HasFuncPtrArg && Func && Func->getFunctionType() != FT) {
     dbgs() << "Warning: Function name conflict:\n"
-       << *Func << '\n'
-       << " => " << *FT << '\n';
-  }
-  )
+           << *Func << '\n'
+           << " => " << *FT << '\n';
+  })
   if (!Func || Func->getFunctionType() != FT) {
-    DEBUG(for (auto& I:ArgTys) {
-      dbgs() << *I << '\n';
-    });
+    DEBUG(for (auto &I : ArgTys) { dbgs() << *I << '\n'; });
     Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
   }
-  auto Call = CallInst::Create(Func,
-      transValue(Ops, BB->getParent(), BB), "", BB);
+  auto Call =
+      CallInst::Create(Func, transValue(Ops, BB->getParent(), BB), "", BB);
   setName(Call, BI);
   setAttrByCalledFunc(Call);
-  SPIRVDBG(spvdbgs() << "[transInstToBuiltinCall] " << *BI << " -> "; dbgs() <<
-      *Call << '\n';)
+  SPIRVDBG(spvdbgs() << "[transInstToBuiltinCall] " << *BI << " -> ";
+           dbgs() << *Call << '\n';)
   Instruction *Inst = Call;
   Inst = transOCLBuiltinPostproc(BI, Call, BB, FuncName);
   return Inst;
 }
 
-std::string
-SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
+std::string SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction *BI) {
   auto OC = BI->getOpCode();
   if (OC == OpGenericCastToPtrExplicit)
     return getOCLGenericCastToPtrName(BI);
@@ -2373,7 +2369,7 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
     ostringstream OS;
     OS << Dim;
     assert((EleTy->isTypeInt() && Dim == 1) ||
-        (EleTy->isTypeArray() && Dim >= 2 && Dim <= 3));
+           (EleTy->isTypeArray() && Dim >= 2 && Dim <= 3));
     return std::string(kOCLBuiltinName::NDRangePrefix) + OS.str() + "D";
   }
   if (isIntelSubgroupOpCode(OC)) {
@@ -2409,7 +2405,7 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
 
   SPIRVType *T = nullptr;
-  switch(OC) {
+  switch (OC) {
   case OpImageRead:
     T = BI->getType();
     break;
@@ -2423,40 +2419,46 @@ SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction* BI) {
   if (T && T->isTypeVector())
     T = T->getVectorComponentType();
   if (T)
-    Name += T->isTypeFloat()?'f':'i';
+    Name += T->isTypeFloat() ? 'f' : 'i';
 
   return Name;
 }
 
-Instruction *
-SPIRVToLLVM::transOCLBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transOCLBuiltinFromInst(SPIRVInstruction *BI,
+                                                  BasicBlock *BB) {
   assert(BB && "Invalid BB");
   auto FuncName = getOCLBuiltinName(BI);
   return transBuiltinFromInst(FuncName, BI, BB);
 }
 
-Instruction *
-SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
+                                                    BasicBlock *BB) {
   assert(BB && "Invalid BB");
   string Suffix = "";
   if (BI->getOpCode() == OpCreatePipeFromPipeStorage) {
-    auto CPFPS = static_cast<SPIRVCreatePipeFromPipeStorage*>(BI);
+    auto CPFPS = static_cast<SPIRVCreatePipeFromPipeStorage *>(BI);
     assert(CPFPS->getType()->isTypePipe() &&
-      "Invalid type of CreatePipeFromStorage");
-    auto PipeType = static_cast<SPIRVTypePipe*>(CPFPS->getType());
+           "Invalid type of CreatePipeFromStorage");
+    auto PipeType = static_cast<SPIRVTypePipe *>(CPFPS->getType());
     switch (PipeType->getAccessQualifier()) {
     default:
-    case AccessQualifierReadOnly: Suffix = "_read"; break;
-    case AccessQualifierWriteOnly: Suffix = "_write"; break;
-    case AccessQualifierReadWrite: Suffix = "_read_write"; break;
+    case AccessQualifierReadOnly:
+      Suffix = "_read";
+      break;
+    case AccessQualifierWriteOnly:
+      Suffix = "_write";
+      break;
+    case AccessQualifierReadWrite:
+      Suffix = "_read_write";
+      break;
     }
   }
 
-  return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), Suffix), BI, BB);
+  return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), Suffix), BI,
+                              BB);
 }
 
-bool
-SPIRVToLLVM::translate() {
+bool SPIRVToLLVM::translate() {
   if (!transAddressingModel())
     return false;
 
@@ -2490,8 +2492,7 @@ SPIRVToLLVM::translate() {
   return true;
 }
 
-bool
-SPIRVToLLVM::transAddressingModel() {
+bool SPIRVToLLVM::transAddressingModel() {
   switch (BM->getAddressingModel()) {
   case AddressingModelPhysical64:
     M->setTargetTriple(SPIR_TARGETTRIPLE64);
@@ -2505,22 +2506,21 @@ SPIRVToLLVM::transAddressingModel() {
     // Do not set target triple and data layout
     break;
   default:
-    SPIRVCKRT(0, InvalidAddressingModel, "Actual addressing mode is " +
-        (unsigned)BM->getAddressingModel());
+    SPIRVCKRT(0, InvalidAddressingModel,
+              "Actual addressing mode is " +
+                  (unsigned)BM->getAddressingModel());
   }
   return true;
 }
 
-bool
-SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
+bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
   if (!transAlign(BV, V))
     return false;
   DbgTran.transDbgInfo(BV, V);
   return true;
 }
 
-bool
-SPIRVToLLVM::transFPContractMetadata() {
+bool SPIRVToLLVM::transFPContractMetadata() {
   bool ContractOff = false;
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     SPIRVFunction *BF = BM->getFunction(I);
@@ -2536,22 +2536,21 @@ SPIRVToLLVM::transFPContractMetadata() {
   return true;
 }
 
-std::string SPIRVToLLVM::transOCLImageTypeAccessQualifier(
-    SPIRV::SPIRVTypeImage* ST) {
-  return SPIRSPIRVAccessQualifierMap::rmap(ST->hasAccessQualifier() ?
-      ST->getAccessQualifier() : AccessQualifierReadOnly);
+std::string
+SPIRVToLLVM::transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST) {
+  return SPIRSPIRVAccessQualifierMap::rmap(ST->hasAccessQualifier()
+                                               ? ST->getAccessQualifier()
+                                               : AccessQualifierReadOnly);
 }
 
-bool
-SPIRVToLLVM::transNonTemporalMetadata(Instruction *I) {
-  Constant* One = ConstantInt::get(Type::getInt32Ty(*Context), 1);
+bool SPIRVToLLVM::transNonTemporalMetadata(Instruction *I) {
+  Constant *One = ConstantInt::get(Type::getInt32Ty(*Context), 1);
   MDNode *Node = MDNode::get(*Context, ConstantAsMetadata::get(One));
   I->setMetadata(M->getMDKindID("nontemporal"), Node);
   return true;
 }
 
-bool
-SPIRVToLLVM::transKernelMetadata() {
+bool SPIRVToLLVM::transKernelMetadata() {
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     SPIRVFunction *BF = BM->getFunction(I);
     Function *F = static_cast<Function *>(getTranslatedValue(BF));
@@ -2560,79 +2559,83 @@ SPIRVToLLVM::transKernelMetadata() {
       continue;
 
     // Generate metadata for kernel_arg_address_spaces
-    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF, F,
-        [=](SPIRVFunctionParameter *Arg){
-      SPIRVType *ArgTy = Arg->getType();
-      SPIRAddressSpace AS = SPIRAS_Private;
-      if (ArgTy->isTypePointer())
-        AS = SPIRSPIRVAddrSpaceMap::rmap(ArgTy->getPointerStorageClass());
-      else if (ArgTy->isTypeOCLImage() || ArgTy->isTypePipe())
-        AS = SPIRAS_Global;
-      return ConstantAsMetadata::get(
-          ConstantInt::get(Type::getInt32Ty(*Context), AS));
-    });
+    addOCLKernelArgumentMetadata(
+        Context, SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF, F,
+        [=](SPIRVFunctionParameter *Arg) {
+          SPIRVType *ArgTy = Arg->getType();
+          SPIRAddressSpace AS = SPIRAS_Private;
+          if (ArgTy->isTypePointer())
+            AS = SPIRSPIRVAddrSpaceMap::rmap(ArgTy->getPointerStorageClass());
+          else if (ArgTy->isTypeOCLImage() || ArgTy->isTypePipe())
+            AS = SPIRAS_Global;
+          return ConstantAsMetadata::get(
+              ConstantInt::get(Type::getInt32Ty(*Context), AS));
+        });
     // Generate metadata for kernel_arg_access_qual
     addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_ACCESS_QUAL, BF, F,
-      [=](SPIRVFunctionParameter *Arg){
-      std::string Qual;
-      auto T = Arg->getType();
-      if (T->isTypeOCLImage()) {
-        auto ST = static_cast<SPIRVTypeImage *>(T);
-        Qual = transOCLImageTypeAccessQualifier(ST);
-      } else if (T->isTypePipe()){
-        auto PT = static_cast<SPIRVTypePipe *>(T);
-        Qual = transOCLPipeTypeAccessQualifier(PT);
-      } else
-        Qual = "none";
-      return MDString::get(*Context, Qual);
-    });
+                                 [=](SPIRVFunctionParameter *Arg) {
+                                   std::string Qual;
+                                   auto T = Arg->getType();
+                                   if (T->isTypeOCLImage()) {
+                                     auto ST = static_cast<SPIRVTypeImage *>(T);
+                                     Qual =
+                                         transOCLImageTypeAccessQualifier(ST);
+                                   } else if (T->isTypePipe()) {
+                                     auto PT = static_cast<SPIRVTypePipe *>(T);
+                                     Qual = transOCLPipeTypeAccessQualifier(PT);
+                                   } else
+                                     Qual = "none";
+                                   return MDString::get(*Context, Qual);
+                                 });
     // Generate metadata for kernel_arg_type
     addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_TYPE, BF, F,
-        [=](SPIRVFunctionParameter *Arg){
-      return transOCLKernelArgTypeName(Arg);
-    });
+                                 [=](SPIRVFunctionParameter *Arg) {
+                                   return transOCLKernelArgTypeName(Arg);
+                                 });
     // Generate metadata for kernel_arg_type_qual
-    addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF, F,
-        [=](SPIRVFunctionParameter *Arg){
-      std::string Qual;
-      if (Arg->hasDecorate(DecorationVolatile))
-        Qual = kOCLTypeQualifierName::Volatile;
-      Arg->foreachAttr([&](SPIRVFuncParamAttrKind Kind){
-        Qual += Qual.empty() ? "" : " ";
-        switch(Kind){
-        case FunctionParameterAttributeNoAlias:
-          Qual += kOCLTypeQualifierName::Restrict;
-          break;
-        case FunctionParameterAttributeNoWrite:
-          Qual += kOCLTypeQualifierName::Const;
-          break;
-        default:
-          // do nothing.
-          break;
-        }
-      });
-      if (Arg->getType()->isTypePipe()) {
-        Qual += Qual.empty() ? "" : " ";
-        Qual += kOCLTypeQualifierName::Pipe;
-      }
-      return MDString::get(*Context, Qual);
-    });
+    addOCLKernelArgumentMetadata(
+        Context, SPIR_MD_KERNEL_ARG_TYPE_QUAL, BF, F,
+        [=](SPIRVFunctionParameter *Arg) {
+          std::string Qual;
+          if (Arg->hasDecorate(DecorationVolatile))
+            Qual = kOCLTypeQualifierName::Volatile;
+          Arg->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
+            Qual += Qual.empty() ? "" : " ";
+            switch (Kind) {
+            case FunctionParameterAttributeNoAlias:
+              Qual += kOCLTypeQualifierName::Restrict;
+              break;
+            case FunctionParameterAttributeNoWrite:
+              Qual += kOCLTypeQualifierName::Const;
+              break;
+            default:
+              // do nothing.
+              break;
+            }
+          });
+          if (Arg->getType()->isTypePipe()) {
+            Qual += Qual.empty() ? "" : " ";
+            Qual += kOCLTypeQualifierName::Pipe;
+          }
+          return MDString::get(*Context, Qual);
+        });
     // Generate metadata for kernel_arg_base_type
     addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_BASE_TYPE, BF, F,
-        [=](SPIRVFunctionParameter *Arg){
-      return transOCLKernelArgTypeName(Arg);
-    });
+                                 [=](SPIRVFunctionParameter *Arg) {
+                                   return transOCLKernelArgTypeName(Arg);
+                                 });
     // Generate metadata for kernel_arg_name
     if (SPIRVGenKernelArgNameMD) {
       bool ArgHasName = true;
-      BF->foreachArgument([&](SPIRVFunctionParameter *Arg){
+      BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
         ArgHasName &= !Arg->getName().empty();
       });
       if (ArgHasName)
         addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_NAME, BF, F,
-            [=](SPIRVFunctionParameter *Arg){
-          return MDString::get(*Context, Arg->getName());
-        });
+                                     [=](SPIRVFunctionParameter *Arg) {
+                                       return MDString::get(*Context,
+                                                            Arg->getName());
+                                     });
     }
     // Generate metadata for reqd_work_group_size
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSize)) {
@@ -2646,21 +2649,19 @@ SPIRVToLLVM::transKernelMetadata() {
     }
     // Generate metadata for vec_type_hint
     if (auto EM = BF->getExecutionMode(ExecutionModeVecTypeHint)) {
-      std::vector<Metadata*> MetadataVec;
+      std::vector<Metadata *> MetadataVec;
       Type *VecHintTy = decodeVecTypeHint(*Context, EM->getLiterals()[0]);
       assert(VecHintTy);
       MetadataVec.push_back(ValueAsMetadata::get(UndefValue::get(VecHintTy)));
-      MetadataVec.push_back(
-          ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(*Context),
-              1)));
+      MetadataVec.push_back(ConstantAsMetadata::get(
+          ConstantInt::get(Type::getInt32Ty(*Context), 1)));
       F->setMetadata(kSPIR2MD::VecTyHint, MDNode::get(*Context, MetadataVec));
     }
   }
   return true;
 }
 
-bool
-SPIRVToLLVM::transAlign(SPIRVValue *BV, Value *V) {
+bool SPIRVToLLVM::transAlign(SPIRVValue *BV, Value *V) {
   if (auto AL = dyn_cast<AllocaInst>(V)) {
     SPIRVWord Align = 0;
     if (BV->hasAlignment(&Align))
@@ -2676,9 +2677,8 @@ SPIRVToLLVM::transAlign(SPIRVValue *BV, Value *V) {
   return true;
 }
 
-void
-SPIRVToLLVM::transOCLVectorLoadStore(std::string& UnmangledName,
-    std::vector<SPIRVWord> &BArgs) {
+void SPIRVToLLVM::transOCLVectorLoadStore(std::string &UnmangledName,
+                                          std::vector<SPIRVWord> &BArgs) {
   if (UnmangledName.find("vload") == 0 &&
       UnmangledName.find("n") != std::string::npos) {
     if (BArgs.back() != 1) {
@@ -2702,18 +2702,20 @@ SPIRVToLLVM::transOCLVectorLoadStore(std::string& UnmangledName,
       }
     }
     if (UnmangledName.find("_r") != std::string::npos) {
-      UnmangledName.replace(UnmangledName.find("_r"), 2, std::string("_") +
-          SPIRSPIRVFPRoundingModeMap::rmap(static_cast<SPIRVFPRoundingModeKind>(
-              BArgs.back())));
+      UnmangledName.replace(
+          UnmangledName.find("_r"), 2,
+          std::string("_") +
+              SPIRSPIRVFPRoundingModeMap::rmap(
+                  static_cast<SPIRVFPRoundingModeKind>(BArgs.back())));
       BArgs.pop_back();
     }
-   }
+  }
 }
 
 // printf is not mangled. The function type should have just one argument.
 // read_image*: the second argument should be mangled as sampler.
-Instruction *
-SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
+                                                     BasicBlock *BB) {
   assert(BB && "Invalid BB");
   std::string MangledName;
   SPIRVWord EntryPoint = BC->getExtOp();
@@ -2727,12 +2729,11 @@ SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
   if (EntryPoint == OpenCLLIB::Printf)
     IsPrintf = true;
   else {
-    UnmangledName = OCLExtOpMap::map(static_cast<OCLExtOpKind>(
-        EntryPoint));
+    UnmangledName = OCLExtOpMap::map(static_cast<OCLExtOpKind>(EntryPoint));
   }
 
-  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] OrigUnmangledName: " <<
-      UnmangledName << '\n');
+  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] OrigUnmangledName: "
+                     << UnmangledName << '\n');
   transOCLVectorLoadStore(UnmangledName, BArgs);
 
   std::vector<Type *> ArgTypes = transTypeVector(BC->getValueTypes(BArgs));
@@ -2748,51 +2749,46 @@ SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB) {
   } else {
     MangleOpenCLBuiltin(UnmangledName, ArgTypes, MangledName);
   }
-  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: " <<
-      UnmangledName << " MangledName: " << MangledName << '\n');
+  SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] ModifiedUnmangledName: "
+                     << UnmangledName << " MangledName: " << MangledName
+                     << '\n');
 
-  FunctionType *FT = FunctionType::get(
-      transType(BC->getType()),
-      ArgTypes,
-      IsVarArg);
+  FunctionType *FT =
+      FunctionType::get(transType(BC->getType()), ArgTypes, IsVarArg);
   Function *F = M->getFunction(MangledName);
   if (!F) {
-    F = Function::Create(FT,
-      GlobalValue::ExternalLinkage,
-      MangledName,
-      M);
+    F = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     F->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
   }
   auto Args = transValue(BC->getValues(BArgs), F, BB);
-  SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F <<
-      ", Args: ";
-    for (auto &I:Args) dbgs() << *I << ", "; dbgs() << '\n');
-  CallInst *Call = CallInst::Create(F,
-      Args,
-      BC->getName(),
-      BB);
+  SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F
+                  << ", Args: ";
+           for (auto &I
+                : Args) dbgs()
+           << *I << ", ";
+           dbgs() << '\n');
+  CallInst *Call = CallInst::Create(F, Args, BC->getName(), BB);
   setCallingConv(Call);
   addFnAttr(Context, Call, Attribute::NoUnwind);
   return transOCLBuiltinPostproc(BC, Call, BB, UnmangledName);
 }
 
-CallInst *
-SPIRVToLLVM::transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
-                             SPIRVWord MemSema, SPIRVWord MemScope) {
+CallInst *SPIRVToLLVM::transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
+                                       SPIRVWord MemSema, SPIRVWord MemScope) {
   SPIRVWord Ver = 0;
   BM->getSourceLanguage(&Ver);
 
-  Type* Int32Ty = Type::getInt32Ty(*Context);
-  Type* VoidTy = Type::getVoidTy(*Context);
+  Type *Int32Ty = Type::getInt32Ty(*Context);
+  Type *VoidTy = Type::getVoidTy(*Context);
 
   std::string FuncName;
   SmallVector<Type *, 2> ArgTy;
   SmallVector<Value *, 2> Arg;
 
   Constant *MemFenceFlags =
-    ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
+      ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
 
   FuncName = (ExecScope == ScopeWorkgroup) ? kOCLBuiltinName::WorkGroupBarrier
                                            : kOCLBuiltinName::SubGroupBarrier;
@@ -2802,8 +2798,8 @@ SPIRVToLLVM::transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
     ArgTy.push_back(Int32Ty);
     Arg.push_back(MemFenceFlags);
   } else {
-    Constant *Scope = ConstantInt::get(Int32Ty, OCLMemScopeMap::rmap(
-                                           static_cast<spv::Scope>(MemScope)));
+    Constant *Scope = ConstantInt::get(
+        Int32Ty, OCLMemScopeMap::rmap(static_cast<spv::Scope>(MemScope)));
 
     ArgTy.append(2, Int32Ty);
     Arg.push_back(MemFenceFlags);
@@ -2825,32 +2821,30 @@ SPIRVToLLVM::transOCLBarrier(BasicBlock *BB, SPIRVWord ExecScope,
   return CallInst::Create(Func, Arg, "", BB);
 }
 
-CallInst *
-SPIRVToLLVM::transOCLMemFence(BasicBlock *BB,
-                              SPIRVWord MemSema, SPIRVWord MemScope) {
+CallInst *SPIRVToLLVM::transOCLMemFence(BasicBlock *BB, SPIRVWord MemSema,
+                                        SPIRVWord MemScope) {
   SPIRVWord Ver = 0;
   BM->getSourceLanguage(&Ver);
 
-  Type* Int32Ty = Type::getInt32Ty(*Context);
-  Type* VoidTy = Type::getVoidTy(*Context);
+  Type *Int32Ty = Type::getInt32Ty(*Context);
+  Type *VoidTy = Type::getVoidTy(*Context);
 
   std::string FuncName;
   SmallVector<Type *, 3> ArgTy;
   SmallVector<Value *, 3> Arg;
 
   Constant *MemFenceFlags =
-    ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
+      ConstantInt::get(Int32Ty, rmapBitMask<OCLMemFenceMap>(MemSema));
 
   if (Ver > 0 && Ver <= kOCLVer::CL12) {
     FuncName = kOCLBuiltinName::MemFence;
     ArgTy.push_back(Int32Ty);
     Arg.push_back(MemFenceFlags);
   } else {
-    Constant *Order =
-      ConstantInt::get(Int32Ty, mapSPIRVMemOrderToOCL(MemSema));
+    Constant *Order = ConstantInt::get(Int32Ty, mapSPIRVMemOrderToOCL(MemSema));
 
-    Constant *Scope = ConstantInt::get(Int32Ty, OCLMemScopeMap::rmap(
-                                    static_cast<spv::Scope>(MemScope)));
+    Constant *Scope = ConstantInt::get(
+        Int32Ty, OCLMemScopeMap::rmap(static_cast<spv::Scope>(MemScope)));
 
     FuncName = kOCLBuiltinName::AtomicWorkItemFence;
     ArgTy.append(3, Int32Ty);
@@ -2874,25 +2868,25 @@ SPIRVToLLVM::transOCLMemFence(BasicBlock *BB,
   return CallInst::Create(Func, Arg, "", BB);
 }
 
-Instruction *
-SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB,
+                                               BasicBlock *BB) {
   assert(BB && "Invalid BB");
   std::string FuncName;
-  auto getIntVal = [](SPIRVValue *value){
-    return static_cast<SPIRVConstant*>(value)->getZExtIntValue();
+  auto getIntVal = [](SPIRVValue *value) {
+    return static_cast<SPIRVConstant *>(value)->getZExtIntValue();
   };
 
-  CallInst* Call = nullptr;
+  CallInst *Call = nullptr;
 
   if (MB->getOpCode() == OpMemoryBarrier) {
-    auto MemB = static_cast<SPIRVMemoryBarrier*>(MB);
+    auto MemB = static_cast<SPIRVMemoryBarrier *>(MB);
 
     SPIRVWord MemScope = getIntVal(MemB->getOpValue(0));
     SPIRVWord MemSema = getIntVal(MemB->getOpValue(1));
 
     Call = transOCLMemFence(BB, MemSema, MemScope);
   } else if (MB->getOpCode() == OpControlBarrier) {
-    auto CtlB = static_cast<SPIRVControlBarrier*>(MB);
+    auto CtlB = static_cast<SPIRVControlBarrier *>(MB);
 
     SPIRVWord ExecScope = getIntVal(CtlB->getExecScope());
     SPIRVWord MemSema = getIntVal(CtlB->getMemSemantic());
@@ -2913,22 +2907,17 @@ SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB, BasicBlock *BB) {
 
 // SPIR-V only contains language version. Use OpenCL language version as
 // SPIR version.
-bool
-SPIRVToLLVM::transSourceLanguage() {
+bool SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
-  assert((Lang == SourceLanguageOpenCL_C ||
-      Lang == SourceLanguageOpenCL_CPP) && "Unsupported source language");
+  assert((Lang == SourceLanguageOpenCL_C || Lang == SourceLanguageOpenCL_CPP) &&
+         "Unsupported source language");
   unsigned short Major = 0;
   unsigned char Minor = 0;
   unsigned char Rev = 0;
   std::tie(Major, Minor, Rev) = decodeOCLVer(Ver);
   SPIRVMDBuilder Builder(*M);
-  Builder.addNamedMD(kSPIRVMD::Source)
-            .addOp()
-              .add(Lang)
-              .add(Ver)
-              .done();
+  Builder.addNamedMD(kSPIRVMD::Source).addOp().add(Lang).add(Ver).done();
   // ToDo: Phasing out usage of old SPIR metadata
   if (Ver <= kOCLVer::CL12)
     addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 1, 2);
@@ -2939,15 +2928,15 @@ SPIRVToLLVM::transSourceLanguage() {
   return true;
 }
 
-bool
-SPIRVToLLVM::transSourceExtension() {
+bool SPIRVToLLVM::transSourceExtension() {
   auto ExtSet = rmap<OclExt::Kind>(BM->getExtension());
   auto CapSet = rmap<OclExt::Kind>(BM->getCapability());
   ExtSet.insert(CapSet.begin(), CapSet.end());
   auto OCLExtensions = map<std::string>(ExtSet);
   std::set<std::string> OCLOptionalCoreFeatures;
   static const char *OCLOptCoreFeatureNames[] = {
-      "cl_images", "cl_doubles",
+      "cl_images",
+      "cl_doubles",
   };
   for (auto &I : OCLOptCoreFeatureNames) {
     auto Loc = OCLExtensions.find(I);
@@ -2963,8 +2952,7 @@ SPIRVToLLVM::transSourceExtension() {
 }
 
 // If the argument is unsigned return uconvert*, otherwise return convert*.
-std::string
-SPIRVToLLVM::getOCLConvertBuiltinName(SPIRVInstruction* BI) {
+std::string SPIRVToLLVM::getOCLConvertBuiltinName(SPIRVInstruction *BI) {
   auto OC = BI->getOpCode();
   assert(isCvtOpCode(OC) && "Not convert instruction");
   auto U = static_cast<SPIRVUnary *>(BI);
@@ -2972,8 +2960,7 @@ SPIRVToLLVM::getOCLConvertBuiltinName(SPIRVInstruction* BI) {
   if (isCvtFromUnsignedOpCode(OC))
     Name = "u";
   Name += "convert_";
-  Name += mapSPIRVTypeToOCLType(U->getType(),
-      !isCvtToUnsignedOpCode(OC));
+  Name += mapSPIRVTypeToOCLType(U->getType(), !isCvtToUnsignedOpCode(OC));
   SPIRVFPRoundingModeKind Rounding;
   if (U->isSaturatedConversion())
     Name += "_sat";
@@ -2984,45 +2971,42 @@ SPIRVToLLVM::getOCLConvertBuiltinName(SPIRVInstruction* BI) {
   return Name;
 }
 
-//Check Address Space of the Pointer Type
-std::string
-SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction* BI) {
+// Check Address Space of the Pointer Type
+std::string SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction *BI) {
   auto GenericCastToPtrInst = BI->getType()->getPointerStorageClass();
   switch (GenericCastToPtrInst) {
-    case StorageClassCrossWorkgroup:
-      return std::string(kOCLBuiltinName::ToGlobal);
-    case StorageClassWorkgroup:
-      return std::string(kOCLBuiltinName::ToLocal);
-    case StorageClassFunction:
-      return std::string(kOCLBuiltinName::ToPrivate);
-    default:
-      llvm_unreachable("Invalid address space");
-      return "";
+  case StorageClassCrossWorkgroup:
+    return std::string(kOCLBuiltinName::ToGlobal);
+  case StorageClassWorkgroup:
+    return std::string(kOCLBuiltinName::ToLocal);
+  case StorageClassFunction:
+    return std::string(kOCLBuiltinName::ToPrivate);
+  default:
+    llvm_unreachable("Invalid address space");
+    return "";
   }
 }
 
 llvm::GlobalValue::LinkageTypes
-SPIRVToLLVM::transLinkageType(const SPIRVValue* V) {
+SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
   if (V->getLinkageType() == LinkageTypeInternal) {
     return GlobalValue::InternalLinkage;
-  }
-  else if (V->getLinkageType() == LinkageTypeImport) {
+  } else if (V->getLinkageType() == LinkageTypeImport) {
     // Function declaration
     if (V->getOpCode() == OpFunction) {
-      if (static_cast<const SPIRVFunction*>(V)->getNumBasicBlock() == 0)
+      if (static_cast<const SPIRVFunction *>(V)->getNumBasicBlock() == 0)
         return GlobalValue::ExternalLinkage;
     }
     // Variable declaration
     if (V->getOpCode() == OpVariable) {
-      if (static_cast<const SPIRVVariable*>(V)->getInitializer() == 0)
+      if (static_cast<const SPIRVVariable *>(V)->getInitializer() == 0)
         return GlobalValue::ExternalLinkage;
     }
     // Definition
     return GlobalValue::AvailableExternallyLinkage;
-  }
-  else {// LinkageTypeExport
+  } else { // LinkageTypeExport
     if (V->getOpCode() == OpVariable) {
-      if (static_cast<const SPIRVVariable*>(V)->getInitializer() == 0 )
+      if (static_cast<const SPIRVVariable *>(V)->getInitializer() == 0)
         // Tentative definition
         return GlobalValue::CommonLinkage;
     }
@@ -3054,7 +3038,8 @@ Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
              &Attrs)));
 }
 
-Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I, BasicBlock *BB) {
+Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
+                                             BasicBlock *BB) {
   CallInst *CI = cast<CallInst>(transSPIRVBuiltinFromInst(I, BB));
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   return cast<Instruction>(mapValue(
@@ -3088,11 +3073,10 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I, BasicBlock *BB
              },
              &Attrs)));
 }
-}
+} // namespace SPIRV
 
-bool
-llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
-    std::string &ErrMsg) {
+bool llvm::ReadSPIRV(LLVMContext &C, std::istream &IS, Module *&M,
+                     std::string &ErrMsg) {
   M = new Module("", C);
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 

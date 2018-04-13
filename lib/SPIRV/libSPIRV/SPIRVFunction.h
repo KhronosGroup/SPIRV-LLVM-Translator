@@ -1,4 +1,4 @@
-//===- SPIRVFunction.h - Class to represent a SPIR-V function ----*- C++ -*-===//
+//===- SPIRVFunction.h - Class to represent a SPIR-V function ---*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -38,39 +38,40 @@
 
 #ifndef SPIRVFUNCTION_HPP_
 #define SPIRVFUNCTION_HPP_
-#include "SPIRVValue.h"
 #include "SPIRVBasicBlock.h"
+#include "SPIRVValue.h"
 #include <functional>
 
-namespace SPIRV{
+namespace SPIRV {
 
 class BIFunction;
 class SPIRVDecoder;
 
-class SPIRVFunctionParameter: public SPIRVValue {
+class SPIRVFunctionParameter : public SPIRVValue {
 public:
   SPIRVFunctionParameter(SPIRVType *TheType, SPIRVId TheId,
-      SPIRVFunction *TheParent, unsigned TheArgNo);
-  SPIRVFunctionParameter():SPIRVValue(OpFunctionParameter),
-      ParentFunc(nullptr), ArgNo(0){}
-  unsigned getArgNo()const { return ArgNo;}
+                         SPIRVFunction *TheParent, unsigned TheArgNo);
+  SPIRVFunctionParameter()
+      : SPIRVValue(OpFunctionParameter), ParentFunc(nullptr), ArgNo(0) {}
+  unsigned getArgNo() const { return ArgNo; }
   void foreachAttr(std::function<void(SPIRVFuncParamAttrKind)>);
   void addAttr(SPIRVFuncParamAttrKind Kind) {
     addDecorate(new SPIRVDecorate(DecorationFuncParamAttr, this, Kind));
   }
-  void setParent(SPIRVFunction *Parent) { ParentFunc = Parent;}
+  void setParent(SPIRVFunction *Parent) { ParentFunc = Parent; }
   bool hasAttr(SPIRVFuncParamAttrKind Kind) const {
-    return getDecorate(DecorationFuncParamAttr).count(Kind) ;
+    return getDecorate(DecorationFuncParamAttr).count(Kind);
   }
-  bool isByVal()const { return hasAttr(FunctionParameterAttributeByVal);}
-  bool isZext()const { return hasAttr(FunctionParameterAttributeZext);}
+  bool isByVal() const { return hasAttr(FunctionParameterAttributeByVal); }
+  bool isZext() const { return hasAttr(FunctionParameterAttributeZext); }
   SPIRVCapVec getRequiredCapability() const {
     if (hasLinkageType() && getLinkageType() == LinkageTypeImport)
       return getVec(CapabilityLinkage);
     return SPIRVCapVec();
   }
+
 protected:
-  void validate()const {
+  void validate() const {
     SPIRVValue::validate();
     assert(ParentFunc && "Invalid parent function");
   }
@@ -80,42 +81,39 @@ private:
   unsigned ArgNo;
 };
 
-class SPIRVFunction: public SPIRVValue, public SPIRVComponentExecutionModes {
+class SPIRVFunction : public SPIRVValue, public SPIRVComponentExecutionModes {
 public:
   // Complete constructor. It does not construct basic blocks.
   SPIRVFunction(SPIRVModule *M, SPIRVTypeFunction *FunctionType, SPIRVId TheId)
-    :SPIRVValue(M, 5, OpFunction, FunctionType->getReturnType(), TheId),
-     FuncType(FunctionType), FCtrlMask(FunctionControlMaskNone) {
+      : SPIRVValue(M, 5, OpFunction, FunctionType->getReturnType(), TheId),
+        FuncType(FunctionType), FCtrlMask(FunctionControlMaskNone) {
     addAllArguments(TheId + 1);
     validate();
   }
 
   // Incomplete constructor
-  SPIRVFunction():SPIRVValue(OpFunction),FuncType(NULL),
-      FCtrlMask(FunctionControlMaskNone){}
+  SPIRVFunction()
+      : SPIRVValue(OpFunction), FuncType(NULL),
+        FCtrlMask(FunctionControlMaskNone) {}
 
   SPIRVDecoder getDecoder(std::istream &IS);
-  SPIRVTypeFunction *getFunctionType() const { return FuncType;}
-  SPIRVWord getFuncCtlMask() const { return FCtrlMask;}
-  size_t getNumBasicBlock() const { return BBVec.size();}
-  SPIRVBasicBlock *getBasicBlock(size_t i) const { return BBVec[i];}
+  SPIRVTypeFunction *getFunctionType() const { return FuncType; }
+  SPIRVWord getFuncCtlMask() const { return FCtrlMask; }
+  size_t getNumBasicBlock() const { return BBVec.size(); }
+  SPIRVBasicBlock *getBasicBlock(size_t i) const { return BBVec[i]; }
   size_t getNumArguments() const {
     return getFunctionType()->getNumParameters();
   }
-  SPIRVId getArgumentId(size_t i)const { return Parameters[i]->getId();}
-  SPIRVFunctionParameter *getArgument(size_t i) const {
-    return Parameters[i];
-  }
-  void foreachArgument(std::function<void(SPIRVFunctionParameter *)>Func) {
+  SPIRVId getArgumentId(size_t i) const { return Parameters[i]->getId(); }
+  SPIRVFunctionParameter *getArgument(size_t i) const { return Parameters[i]; }
+  void foreachArgument(std::function<void(SPIRVFunctionParameter *)> Func) {
     for (size_t I = 0, E = getNumArguments(); I != E; ++I)
       Func(getArgument(I));
   }
 
   void foreachReturnValueAttr(std::function<void(SPIRVFuncParamAttrKind)>);
 
-  void setFunctionControlMask(SPIRVWord Mask) {
-    FCtrlMask = Mask;
-  }
+  void setFunctionControlMask(SPIRVWord Mask) { FCtrlMask = Mask; }
 
   void takeExecutionModes(SPIRVForward *Forward) {
     ExecModes = std::move(Forward->ExecModes);
@@ -129,10 +127,10 @@ public:
     return BB;
   }
 
-  void encodeChildren(spv_ostream &)const;
-  void encodeExecutionModes(spv_ostream &)const;
+  void encodeChildren(spv_ostream &) const;
+  void encodeExecutionModes(spv_ostream &) const;
   _SPIRV_DCL_ENCDEC
-  void validate()const {
+  void validate() const {
     SPIRVValue::validate();
     assert(FuncType && "Invalid func type");
   }
@@ -140,8 +138,7 @@ public:
 private:
   SPIRVFunctionParameter *addArgument(unsigned TheArgNo, SPIRVId TheId) {
     SPIRVFunctionParameter *Arg = new SPIRVFunctionParameter(
-        getFunctionType()->getParameterType(TheArgNo),
-        TheId, this, TheArgNo);
+        getFunctionType()->getParameterType(TheArgNo), TheId, this, TheArgNo);
     Module->add(Arg);
     Parameters.push_back(Arg);
     return Arg;
@@ -153,8 +150,8 @@ private:
   }
   void decodeBB(SPIRVDecoder &);
 
-  SPIRVTypeFunction *FuncType;                  // Function type
-  SPIRVWord FCtrlMask;                          // Function control mask
+  SPIRVTypeFunction *FuncType; // Function type
+  SPIRVWord FCtrlMask;         // Function control mask
 
   std::vector<SPIRVFunctionParameter *> Parameters;
   typedef std::vector<SPIRVBasicBlock *> SPIRVLBasicBlockVector;
@@ -163,6 +160,6 @@ private:
 
 typedef SPIRVEntryOpCodeOnly<OpFunctionEnd> SPIRVFunctionEnd;
 
-}
+} // namespace SPIRV
 
 #endif /* SPIRVFUNCTION_HPP_ */

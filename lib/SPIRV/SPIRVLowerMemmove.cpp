@@ -1,4 +1,4 @@
-//===- SPIRVLowerMemmove.cpp - Lower llvm.memmove to llvm.memcpys ----------===//
+//===- SPIRVLowerMemmove.cpp - Lower llvm.memmove to llvm.memcpys ---------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -38,9 +38,9 @@
 #define DEBUG_TYPE "spvmemmove"
 
 #include "SPIRVInternal.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
@@ -53,14 +53,15 @@ using namespace llvm;
 using namespace SPIRV;
 
 namespace SPIRV {
-cl::opt<bool> SPIRVLowerMemmoveValidate("spvmemmove-validate",
+cl::opt<bool> SPIRVLowerMemmoveValidate(
+    "spvmemmove-validate",
     cl::desc("Validate module after lowering llvm.memmove instructions into "
-        "llvm.memcpy"));
+             "llvm.memcpy"));
 
-class SPIRVLowerMemmove: public ModulePass,
-  public InstVisitor<SPIRVLowerMemmove> {
+class SPIRVLowerMemmove : public ModulePass,
+                          public InstVisitor<SPIRVLowerMemmove> {
 public:
-  SPIRVLowerMemmove():ModulePass(ID), Context(nullptr) {
+  SPIRVLowerMemmove() : ModulePass(ID), Context(nullptr) {
     initializeSPIRVLowerMemmovePass(*PassRegistry::getPassRegistry());
   }
   virtual void visitMemMoveInst(MemMoveInst &I) {
@@ -70,30 +71,31 @@ public:
     auto *Src = I.getRawSource();
     auto *SrcTy = Src->getType();
     if (!isa<ConstantInt>(I.getLength()))
-        // ToDo: for non-constant length, could use a loop to copy a
-        // fixed length chunk at a time. For now simply fail
-        report_fatal_error("llvm.memmove of non-constant length not supported",
-            false);
+      // ToDo: for non-constant length, could use a loop to copy a
+      // fixed length chunk at a time. For now simply fail
+      report_fatal_error("llvm.memmove of non-constant length not supported",
+                         false);
     auto *Length = cast<ConstantInt>(I.getLength());
     if (isa<BitCastInst>(Src))
-        // The source could be bit-cast from another type,
-        // need the original type for the allocation of the temporary variable
-        SrcTy = cast<BitCastInst>(Src)->getOperand(0)->getType();
+      // The source could be bit-cast from another type,
+      // need the original type for the allocation of the temporary variable
+      SrcTy = cast<BitCastInst>(Src)->getOperand(0)->getType();
     auto Align = I.getSourceAlignment();
     auto Volatile = I.isVolatile();
     Value *NumElements = nullptr;
     uint64_t ElementsCount = 1;
     if (SrcTy->isArrayTy()) {
-        NumElements = Builder.getInt32(SrcTy->getArrayNumElements());
-        ElementsCount = SrcTy->getArrayNumElements();
+      NumElements = Builder.getInt32(SrcTy->getArrayNumElements());
+      ElementsCount = SrcTy->getArrayNumElements();
     }
-    if (Mod->getDataLayout().getTypeSizeInBits(SrcTy->getPointerElementType())
-        * ElementsCount !=  Length->getZExtValue() * 8)
-        report_fatal_error("Size of the memcpy should match the allocated memory",
-            false);
+    if (Mod->getDataLayout().getTypeSizeInBits(SrcTy->getPointerElementType()) *
+            ElementsCount !=
+        Length->getZExtValue() * 8)
+      report_fatal_error("Size of the memcpy should match the allocated memory",
+                         false);
 
-    auto *Alloca = Builder.CreateAlloca(SrcTy->getPointerElementType(),
-        NumElements);
+    auto *Alloca =
+        Builder.CreateAlloca(SrcTy->getPointerElementType(), NumElements);
     Alloca->setAlignment(Align);
     Builder.CreateLifetimeStart(Alloca);
     Builder.CreateMemCpy(Alloca, Align, Src, Align, Length, Volatile);
@@ -115,7 +117,7 @@ public:
       DEBUG(dbgs() << "After SPIRVLowerMemmove:\n" << M);
       std::string Err;
       raw_string_ostream ErrorOS(Err);
-      if (verifyModule(M, &ErrorOS)){
+      if (verifyModule(M, &ErrorOS)) {
         Err = std::string("Fails to verify module: ") + Err;
         report_fatal_error(Err.c_str(), false);
       }
@@ -124,17 +126,16 @@ public:
   }
 
   static char ID;
+
 private:
   LLVMContext *Context;
   Module *Mod;
 };
 
 char SPIRVLowerMemmove::ID = 0;
-}
+} // namespace SPIRV
 
 INITIALIZE_PASS(SPIRVLowerMemmove, "spvmemmove",
-    "Lower llvm.memmove into llvm.memcpy", false, false)
+                "Lower llvm.memmove into llvm.memcpy", false, false)
 
-ModulePass *llvm::createSPIRVLowerMemmove() {
-  return new SPIRVLowerMemmove();
-}
+ModulePass *llvm::createSPIRVLowerMemmove() { return new SPIRVLowerMemmove(); }

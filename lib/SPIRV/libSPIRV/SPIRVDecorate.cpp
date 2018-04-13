@@ -1,4 +1,4 @@
-//===- SPIRVDecorate.cpp -SPIR-V Decorations ---------------------*- C++ -*-===//
+//===- SPIRVDecorate.cpp -SPIR-V Decorations --------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -38,15 +38,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVDecorate.h"
+#include "SPIRVModule.h"
 #include "SPIRVStream.h"
 #include "SPIRVValue.h"
-#include "SPIRVModule.h"
 
-namespace SPIRV{
-template<class T, class B>
-spv_ostream &
-operator<< (spv_ostream &O, const std::multiset<T *, B>& V) {
-  for (auto &I: V)
+namespace SPIRV {
+template <class T, class B>
+spv_ostream &operator<<(spv_ostream &O, const std::multiset<T *, B> &V) {
+  for (auto &I : V)
     O << *I;
   return O;
 }
@@ -63,8 +62,7 @@ SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
 
 SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
                                            Decoration TheDec,
-                                           SPIRVEntry *TheTarget,
-                                           SPIRVWord V)
+                                           SPIRVEntry *TheTarget, SPIRVWord V)
     : SPIRVAnnotationGeneric(TheTarget->getModule(), WC, OC,
                              TheTarget->getId()),
       Dec(TheDec), Owner(nullptr) {
@@ -74,144 +72,121 @@ SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC, SPIRVWord WC,
 }
 
 SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC)
-  :SPIRVAnnotationGeneric(OC), Dec(DecorationRelaxedPrecision), Owner(nullptr){
-}
+    : SPIRVAnnotationGeneric(OC), Dec(DecorationRelaxedPrecision),
+      Owner(nullptr) {}
 
-Decoration
-SPIRVDecorateGeneric::getDecorateKind()const {
-  return Dec;
-}
+Decoration SPIRVDecorateGeneric::getDecorateKind() const { return Dec; }
 
-SPIRVWord
-SPIRVDecorateGeneric::getLiteral(size_t i) const {
+SPIRVWord SPIRVDecorateGeneric::getLiteral(size_t i) const {
   assert(i <= Literals.size() && "Out of bounds");
   return Literals[i];
 }
 
-size_t
-SPIRVDecorateGeneric::getLiteralCount() const {
-  return Literals.size();
-}
+size_t SPIRVDecorateGeneric::getLiteralCount() const { return Literals.size(); }
 
-void
-SPIRVDecorate::encode(spv_ostream &O)const {
+void SPIRVDecorate::encode(spv_ostream &O) const {
   SPIRVEncoder Encoder = getEncoder(O);
   Encoder << Target << Dec;
-  if ( Dec == DecorationLinkageAttributes )
+  if (Dec == DecorationLinkageAttributes)
     SPIRVDecorateLinkageAttr::encodeLiterals(Encoder, Literals);
   else
     Encoder << Literals;
 }
 
-void
-SPIRVDecorate::setWordCount(SPIRVWord Count){
+void SPIRVDecorate::setWordCount(SPIRVWord Count) {
   WordCount = Count;
   Literals.resize(WordCount - FixedWC);
 }
 
-void
-SPIRVDecorate::decode(std::istream &I){
+void SPIRVDecorate::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Target >> Dec;
-  if(Dec == DecorationLinkageAttributes)
+  if (Dec == DecorationLinkageAttributes)
     SPIRVDecorateLinkageAttr::decodeLiterals(Decoder, Literals);
   else
     Decoder >> Literals;
   getOrCreateTarget()->addDecorate(this);
 }
 
-void
-SPIRVMemberDecorate::encode(spv_ostream &O)const {
+void SPIRVMemberDecorate::encode(spv_ostream &O) const {
   getEncoder(O) << Target << MemberNumber << Dec << Literals;
 }
 
-void
-SPIRVMemberDecorate::setWordCount(SPIRVWord Count){
+void SPIRVMemberDecorate::setWordCount(SPIRVWord Count) {
   WordCount = Count;
   Literals.resize(WordCount - FixedWC);
 }
 
-void
-SPIRVMemberDecorate::decode(std::istream &I){
+void SPIRVMemberDecorate::decode(std::istream &I) {
   getDecoder(I) >> Target >> MemberNumber >> Dec >> Literals;
   getOrCreateTarget()->addMemberDecorate(this);
 }
 
-void
-SPIRVDecorationGroup::encode(spv_ostream &O)const {
-  getEncoder(O) << Id;
-}
+void SPIRVDecorationGroup::encode(spv_ostream &O) const { getEncoder(O) << Id; }
 
-void
-SPIRVDecorationGroup::decode(std::istream &I){
+void SPIRVDecorationGroup::decode(std::istream &I) {
   getDecoder(I) >> Id;
   Module->addDecorationGroup(this);
 }
 
-void
-SPIRVDecorationGroup::encodeAll(spv_ostream &O) const {
+void SPIRVDecorationGroup::encodeAll(spv_ostream &O) const {
   O << Decorations;
   SPIRVEntry::encodeAll(O);
 }
 
-void
-SPIRVGroupDecorateGeneric::encode(spv_ostream &O)const {
+void SPIRVGroupDecorateGeneric::encode(spv_ostream &O) const {
   getEncoder(O) << DecorationGroup << Targets;
 }
 
-void
-SPIRVGroupDecorateGeneric::decode(std::istream &I){
+void SPIRVGroupDecorateGeneric::decode(std::istream &I) {
   getDecoder(I) >> DecorationGroup >> Targets;
   Module->addGroupDecorateGeneric(this);
 }
 
-void
-SPIRVGroupDecorate::decorateTargets() {
-  for(auto &I:Targets) {
+void SPIRVGroupDecorate::decorateTargets() {
+  for (auto &I : Targets) {
     auto Target = getOrCreate(I);
-    for (auto &Dec:DecorationGroup->getDecorations()) {
+    for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isDecorate());
       Target->addDecorate(static_cast<SPIRVDecorate *const>(Dec));
     }
   }
 }
 
-void
-SPIRVGroupMemberDecorate::decorateTargets() {
-  for(auto &I:Targets) {
+void SPIRVGroupMemberDecorate::decorateTargets() {
+  for (auto &I : Targets) {
     auto Target = getOrCreate(I);
-    for (auto &Dec:DecorationGroup->getDecorations()) {
+    for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isMemberDecorate());
-      Target->addMemberDecorate(static_cast<SPIRVMemberDecorate*>(Dec));
+      Target->addMemberDecorate(static_cast<SPIRVMemberDecorate *>(Dec));
     }
   }
 }
 
-bool
-SPIRVDecorateGeneric::Comparator::operator()(const SPIRVDecorateGeneric *A,
-    const SPIRVDecorateGeneric *B) const {
-  auto Action = [=](){
-  if (A->getOpCode() < B->getOpCode())
-    return true;
-  if (A->getOpCode() > B->getOpCode())
-    return false;
-  if (A->getDecorateKind() < B->getDecorateKind())
-    return true;
-  if (A->getDecorateKind() > B->getDecorateKind())
-    return false;
-  if (A->getLiteralCount() < B->getLiteralCount())
-    return true;
-  if (A->getLiteralCount() > B->getLiteralCount())
-    return false;
-  for (size_t I = 0, E = A->getLiteralCount(); I != E; ++I) {
-    auto EA = A->getLiteral(I);
-    auto EB = B->getLiteral(I);
-    if (EA < EB)
+bool SPIRVDecorateGeneric::Comparator::
+operator()(const SPIRVDecorateGeneric *A, const SPIRVDecorateGeneric *B) const {
+  auto Action = [=]() {
+    if (A->getOpCode() < B->getOpCode())
       return true;
-    if (EA > EB)
+    if (A->getOpCode() > B->getOpCode())
       return false;
-  }
-  return false;
+    if (A->getDecorateKind() < B->getDecorateKind())
+      return true;
+    if (A->getDecorateKind() > B->getDecorateKind())
+      return false;
+    if (A->getLiteralCount() < B->getLiteralCount())
+      return true;
+    if (A->getLiteralCount() > B->getLiteralCount())
+      return false;
+    for (size_t I = 0, E = A->getLiteralCount(); I != E; ++I) {
+      auto EA = A->getLiteral(I);
+      auto EB = B->getLiteral(I);
+      if (EA < EB)
+        return true;
+      if (EA > EB)
+        return false;
+    }
+    return false;
   };
   auto Res = Action();
   return Res;
@@ -234,5 +209,4 @@ bool operator==(const SPIRVDecorateGeneric &A, const SPIRVDecorateGeneric &B) {
   }
   return true;
 }
-}
-
+} // namespace SPIRV

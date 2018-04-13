@@ -1,4 +1,4 @@
-//===- SPIRVError.h - SPIR-V error code and checking -------------*- C++ -*-===//
+//===- SPIRVError.h - SPIR-V error code and checking ------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -39,36 +39,37 @@
 #ifndef SPIRVERROR_HPP_
 #define SPIRVERROR_HPP_
 
-#include "SPIRVUtil.h"
 #include "SPIRVDebug.h"
-#include <string>
+#include "SPIRVUtil.h"
 #include <sstream>
+#include <string>
 
-namespace SPIRV{
+namespace SPIRV {
 
 // Check condition and set error code and error msg.
 // To use this macro, function checkError must be defined in the scope.
-#define SPIRVCK(Condition,ErrCode,ErrMsg) \
-  getErrorLog().checkError(Condition, SPIRVEC_##ErrCode, std::string()+ErrMsg,\
-      #Condition, __FILE__, __LINE__)
+#define SPIRVCK(Condition, ErrCode, ErrMsg)                                    \
+  getErrorLog().checkError(Condition, SPIRVEC_##ErrCode,                       \
+                           std::string() + ErrMsg, #Condition, __FILE__,       \
+                           __LINE__)
 
 // Check condition and set error code and error msg. If fail returns false.
-#define SPIRVCKRT(Condition,ErrCode,ErrMsg) \
-  if (!getErrorLog().checkError(Condition, SPIRVEC_##ErrCode,\
-      std::string()+ErrMsg, #Condition, __FILE__, __LINE__))\
+#define SPIRVCKRT(Condition, ErrCode, ErrMsg)                                  \
+  if (!getErrorLog().checkError(Condition, SPIRVEC_##ErrCode,                  \
+                                std::string() + ErrMsg, #Condition, __FILE__,  \
+                                __LINE__))                                     \
     return false;
 
 // Defines error code enum type SPIRVErrorCode.
 enum SPIRVErrorCode {
-#define _SPIRV_OP(x,y) SPIRVEC_##x,
+#define _SPIRV_OP(x, y) SPIRVEC_##x,
 #include "SPIRVErrorEnum.h"
 #undef _SPIRV_OP
 };
 
 // Defines OpErorMap which maps error code to a string describing the error.
-template<> inline void
-SPIRVMap<SPIRVErrorCode, std::string>::init() {
-#define _SPIRV_OP(x,y) add(SPIRVEC_##x, std::string(#x)+": "+y);
+template <> inline void SPIRVMap<SPIRVErrorCode, std::string>::init() {
+#define _SPIRV_OP(x, y) add(SPIRVEC_##x, std::string(#x) + ": " + y);
 #include "SPIRVErrorEnum.h"
 #undef _SPIRV_OP
 }
@@ -77,32 +78,31 @@ typedef SPIRVMap<SPIRVErrorCode, std::string> SPIRVErrorMap;
 
 class SPIRVErrorLog {
 public:
-  SPIRVErrorLog():ErrorCode(SPIRVEC_Success){}
-  SPIRVErrorCode getError(std::string& ErrMsg) {
+  SPIRVErrorLog() : ErrorCode(SPIRVEC_Success) {}
+  SPIRVErrorCode getError(std::string &ErrMsg) {
     ErrMsg = ErrorMsg;
     return ErrorCode;
   }
-  void setError(SPIRVErrorCode ErrCode, const std::string& ErrMsg) {
+  void setError(SPIRVErrorCode ErrCode, const std::string &ErrMsg) {
     ErrorCode = ErrCode;
     ErrorMsg = ErrMsg;
   }
   // Check if Condition is satisfied and set ErrCode and DetailedMsg
   // if not. Returns true if no error.
   bool checkError(bool Condition, SPIRVErrorCode ErrCode,
-      const std::string& DetailedMsg = "",
-      const char *CondString = nullptr,
-      const char *FileName = nullptr,
-      unsigned LineNumber = 0);
+                  const std::string &DetailedMsg = "",
+                  const char *CondString = nullptr,
+                  const char *FileName = nullptr, unsigned LineNumber = 0);
+
 protected:
   SPIRVErrorCode ErrorCode;
   std::string ErrorMsg;
-
 };
 
-inline bool
-SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
-    const std::string& Msg, const char *CondString, const char *FileName,
-    unsigned LineNo) {
+inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
+                                      const std::string &Msg,
+                                      const char *CondString,
+                                      const char *FileName, unsigned LineNo) {
   std::stringstream SS;
   if (Cond)
     return Cond;
@@ -111,17 +111,16 @@ SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
     return Cond;
   SS << SPIRVErrorMap::map(ErrCode) << " " << Msg;
   if (SPIRVDbgErrorMsgIncludesSourceInfo)
-    SS <<" [Src: " << FileName << ":" << LineNo << " " << CondString << " ]";
+    SS << " [Src: " << FileName << ":" << LineNo << " " << CondString << " ]";
   setError(ErrCode, SS.str());
   if (SPIRVDbgAssertOnError) {
     spvdbgs() << SS.str() << '\n';
     spvdbgs().flush();
-    assert (0);
+    assert(0);
   }
   return Cond;
 }
 
-}
-
+} // namespace SPIRV
 
 #endif /* SPIRVERROR_HPP_ */

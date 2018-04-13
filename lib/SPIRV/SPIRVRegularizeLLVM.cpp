@@ -37,16 +37,16 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "spvregular"
 
-#include "SPIRVInternal.h"
 #include "OCLUtil.h"
+#include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
@@ -65,9 +65,9 @@ namespace SPIRV {
 static bool SPIRVDbgSaveRegularizedModule = false;
 static std::string RegularizedModuleTmpFile = "regularized.bc";
 
-class SPIRVRegularizeLLVM: public ModulePass {
+class SPIRVRegularizeLLVM : public ModulePass {
 public:
-  SPIRVRegularizeLLVM():ModulePass(ID), M(nullptr), Ctx(nullptr) {
+  SPIRVRegularizeLLVM() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeSPIRVRegularizeLLVMPass(*PassRegistry::getPassRegistry());
   }
 
@@ -82,6 +82,7 @@ public:
   void lowerFuncPtr(Module *M);
 
   static char ID;
+
 private:
   Module *M;
   LLVMContext *Ctx;
@@ -89,8 +90,7 @@ private:
 
 char SPIRVRegularizeLLVM::ID = 0;
 
-bool
-SPIRVRegularizeLLVM::runOnModule(Module& Module) {
+bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
@@ -100,20 +100,19 @@ SPIRVRegularizeLLVM::runOnModule(Module& Module) {
   DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)) {
     DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
 
 /// Remove entities not representable by SPIR-V
-bool
-SPIRVRegularizeLLVM::regularize() {
+bool SPIRVRegularizeLLVM::regularize() {
   LLVMContext *Context = &M->getContext();
 
   eraseUselessFunctions(M);
   lowerFuncPtr(M);
-  //lowerConstantExpressions();
+  // lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
@@ -147,7 +146,7 @@ SPIRVRegularizeLLVM::regularize() {
             "tbaa",
             "range",
         };
-        for (auto &MDName:MDs) {
+        for (auto &MDName : MDs) {
           if (II->getMetadata(MDName)) {
             II->setMetadata(MDName, nullptr);
           }
@@ -158,7 +157,7 @@ SPIRVRegularizeLLVM::regularize() {
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)) {
     SPIRVDBG(errs() << "Fails to verify module: " << ErrorOS.str();)
     return false;
   }
@@ -170,29 +169,30 @@ SPIRVRegularizeLLVM::regularize() {
 
 // Assume F is a SPIR-V builtin function with a function pointer argument which
 // is a bitcast instruction casting a function to a void(void) function pointer.
-void SPIRVRegularizeLLVM::lowerFuncPtr(Function* F, Op OC) {
+void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
   DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
   auto Name = decorateSPIRVFunction(getName(OC));
   std::set<Value *> InvokeFuncPtrs;
   auto Attrs = F->getAttributes();
-  mutateFunction(F, [=, &InvokeFuncPtrs](
-      CallInst *CI, std::vector<Value *> &Args) {
-    for (auto &I:Args) {
-      if (isFunctionPointerType(I->getType())) {
-        InvokeFuncPtrs.insert(I);
-        I = removeCast(I);
-      }
-    }
-    return Name;
-  }, nullptr, &Attrs, false);
-  for (auto &I:InvokeFuncPtrs)
+  mutateFunction(
+      F,
+      [=, &InvokeFuncPtrs](CallInst *CI, std::vector<Value *> &Args) {
+        for (auto &I : Args) {
+          if (isFunctionPointerType(I->getType())) {
+            InvokeFuncPtrs.insert(I);
+            I = removeCast(I);
+          }
+        }
+        return Name;
+      },
+      nullptr, &Attrs, false);
+  for (auto &I : InvokeFuncPtrs)
     eraseIfNoUse(I);
 }
 
-void
-SPIRVRegularizeLLVM::lowerFuncPtr(Module* M) {
+void SPIRVRegularizeLLVM::lowerFuncPtr(Module *M) {
   std::vector<std::pair<Function *, Op>> Work;
-  for (auto &F:*M) {
+  for (auto &F : *M) {
     auto AI = F.arg_begin();
     if (hasFunctionPointerArg(&F, AI)) {
       auto OC = getSPIRVFuncOC(F.getName());
@@ -200,15 +200,14 @@ SPIRVRegularizeLLVM::lowerFuncPtr(Module* M) {
       Work.push_back(std::make_pair(&F, OC));
     }
   }
-  for (auto &I:Work)
+  for (auto &I : Work)
     lowerFuncPtr(I.first, I.second);
 }
 
-}
+} // namespace SPIRV
 
-
-INITIALIZE_PASS(SPIRVRegularizeLLVM, "spvregular",
-    "Regularize LLVM for SPIR-V", false, false)
+INITIALIZE_PASS(SPIRVRegularizeLLVM, "spvregular", "Regularize LLVM for SPIR-V",
+                false, false)
 
 ModulePass *llvm::createSPIRVRegularizeLLVM() {
   return new SPIRVRegularizeLLVM();

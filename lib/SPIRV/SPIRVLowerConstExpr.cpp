@@ -37,16 +37,16 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "spv-lower-const-expr"
 
-#include "SPIRVInternal.h"
 #include "OCLUtil.h"
+#include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
@@ -63,12 +63,13 @@ using namespace OCLUtil;
 
 namespace SPIRV {
 
-cl::opt<bool> SPIRVLowerConst("spirv-lower-const-expr", cl::init(true),
+cl::opt<bool> SPIRVLowerConst(
+    "spirv-lower-const-expr", cl::init(true),
     cl::desc("LLVM/SPIR-V translation enalbe lowering constant expression"));
 
-class SPIRVLowerConstExpr: public ModulePass {
+class SPIRVLowerConstExpr : public ModulePass {
 public:
-  SPIRVLowerConstExpr():ModulePass(ID), M(nullptr), Ctx(nullptr) {
+  SPIRVLowerConstExpr() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeSPIRVLowerConstExprPass(*PassRegistry::getPassRegistry());
   }
 
@@ -76,6 +77,7 @@ public:
   void visit(Module *M);
 
   static char ID;
+
 private:
   Module *M;
   LLVMContext *Ctx;
@@ -83,8 +85,7 @@ private:
 
 char SPIRVLowerConstExpr::ID = 0;
 
-bool
-SPIRVLowerConstExpr::runOnModule(Module& Module) {
+bool SPIRVLowerConstExpr::runOnModule(Module &Module) {
   if (!SPIRVLowerConst)
     return false;
 
@@ -97,7 +98,7 @@ SPIRVLowerConstExpr::runOnModule(Module& Module) {
   DEBUG(dbgs() << "After SPIRVLowerConstExpr:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)) {
     DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
@@ -112,53 +113,52 @@ SPIRVLowerConstExpr::runOnModule(Module& Module) {
 /// is replaced by one instruction.
 /// ToDo: remove redundant instructions for common subexpression
 
-void
-SPIRVLowerConstExpr::visit(Module *M) {
-    for (auto &I : M->functions()) {
-      std::map<ConstantExpr*, Instruction *> CMap;
-      std::list<Instruction *> WorkList;
-      for (auto &BI : I) {
-        for (auto &II : BI) {
-          WorkList.push_back(&II);
-        }
+void SPIRVLowerConstExpr::visit(Module *M) {
+  for (auto &I : M->functions()) {
+    std::map<ConstantExpr *, Instruction *> CMap;
+    std::list<Instruction *> WorkList;
+    for (auto &BI : I) {
+      for (auto &II : BI) {
+        WorkList.push_back(&II);
       }
-      auto FBegin = I.begin();
-      while (!WorkList.empty()) {
-        auto II = WorkList.front();
-        WorkList.pop_front();
-        for (unsigned OI = 0, OE = II->getNumOperands(); OI != OE; ++OI) {
-          auto Op = II->getOperand(OI);
+    }
+    auto FBegin = I.begin();
+    while (!WorkList.empty()) {
+      auto II = WorkList.front();
+      WorkList.pop_front();
+      for (unsigned OI = 0, OE = II->getNumOperands(); OI != OE; ++OI) {
+        auto Op = II->getOperand(OI);
 
-          if (auto CE = dyn_cast<ConstantExpr>(Op)) {
-            SPIRVDBG(dbgs() << "[lowerConstantExpressions] " << *CE;)
-            auto ReplInst = CE->getAsInstruction();
-            auto InsPoint = II->getParent() == &*FBegin ? II : &FBegin->back();
-            ReplInst->insertBefore(InsPoint);
-            SPIRVDBG(dbgs() << " -> " << *ReplInst << '\n';)
-            WorkList.push_front(ReplInst);
-            std::vector<Instruction *> Users;
-            // Do not replace use during iteration of use. Do it in another loop
-            for (auto U:CE->users()) {
-              SPIRVDBG(dbgs() << "[lowerConstantExpressions] Use: " <<
-                  *U << '\n';)
-              if (auto InstUser = dyn_cast<Instruction>(U)) {
-                // Only replace users in scope of current function
-                if (InstUser->getParent()->getParent() == &I)
-                  Users.push_back(InstUser);
-              }
+        if (auto CE = dyn_cast<ConstantExpr>(Op)) {
+          SPIRVDBG(dbgs() << "[lowerConstantExpressions] " << *CE;)
+          auto ReplInst = CE->getAsInstruction();
+          auto InsPoint = II->getParent() == &*FBegin ? II : &FBegin->back();
+          ReplInst->insertBefore(InsPoint);
+          SPIRVDBG(dbgs() << " -> " << *ReplInst << '\n';)
+          WorkList.push_front(ReplInst);
+          std::vector<Instruction *> Users;
+          // Do not replace use during iteration of use. Do it in another loop
+          for (auto U : CE->users()) {
+            SPIRVDBG(dbgs()
+                         << "[lowerConstantExpressions] Use: " << *U << '\n';)
+            if (auto InstUser = dyn_cast<Instruction>(U)) {
+              // Only replace users in scope of current function
+              if (InstUser->getParent()->getParent() == &I)
+                Users.push_back(InstUser);
             }
-            for (auto &User:Users)
-              User->replaceUsesOfWith(CE, ReplInst);
           }
+          for (auto &User : Users)
+            User->replaceUsesOfWith(CE, ReplInst);
         }
       }
     }
+  }
 }
 
-}
+} // namespace SPIRV
 
 INITIALIZE_PASS(SPIRVLowerConstExpr, "spv-lower-const-expr",
-    "Regularize LLVM for SPIR-V", false, false)
+                "Regularize LLVM for SPIR-V", false, false)
 
 ModulePass *llvm::createSPIRVLowerConstExpr() {
   return new SPIRVLowerConstExpr();

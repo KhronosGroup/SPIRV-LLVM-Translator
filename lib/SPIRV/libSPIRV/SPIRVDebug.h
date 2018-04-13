@@ -1,4 +1,4 @@
-//===- SPIRVDebug.h - SPIR-V Debug Utility -----------------------*- C++ -*-===//
+//===- SPIRVDebug.h - SPIR-V Debug Utility ----------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -46,12 +46,15 @@
 #endif
 #include <iostream>
 
-namespace SPIRV{
+namespace SPIRV {
 
 #define _SPIRVDBG
 #ifdef _SPIRVDBG
 
-#define SPIRVDBG(x) if(SPIRVDbgEnable) {x;}
+#define SPIRVDBG(x)                                                            \
+  if (SPIRVDbgEnable) {                                                        \
+    x;                                                                         \
+  }
 
 // Enable debug output.
 extern bool SPIRVDbgEnable;
@@ -77,5 +80,5 @@ inline spv_ostream &spvdbgs() {
 
 #endif
 
-}
+} // namespace SPIRV
 #endif /* SPIRVDEBUG_HPP_ */

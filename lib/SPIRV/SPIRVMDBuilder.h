@@ -40,8 +40,8 @@
 #ifndef LIB_SPIRV_SPIRVMDBUILDER_H_
 #define LIB_SPIRV_SPIRVMDBUILDER_H_
 
-#include "llvm/IR/Metadata.h"
 #include "SPIRVInternal.h"
+#include "llvm/IR/Metadata.h"
 
 #include <functional>
 using namespace llvm;
@@ -50,10 +50,10 @@ namespace SPIRV {
 
 class SPIRVMDBuilder {
 public:
-  template<typename ParentT> struct MDWrapper;
+  template <typename ParentT> struct MDWrapper;
   struct NamedMDWrapper {
-    NamedMDWrapper(NamedMDNode &Named, SPIRVMDBuilder& BB)
-      :NMD(Named), B(BB){}
+    NamedMDWrapper(NamedMDNode &Named, SPIRVMDBuilder &BB)
+        : NMD(Named), B(BB) {}
     MDWrapper<NamedMDWrapper> addOp() {
       return MDWrapper<NamedMDWrapper>(*this, B);
     }
@@ -64,10 +64,9 @@ public:
     NamedMDNode &NMD;
     SPIRVMDBuilder &B;
   };
-  template<typename ParentT>
-  struct MDWrapper {
+  template <typename ParentT> struct MDWrapper {
     MDWrapper(ParentT &Parent, SPIRVMDBuilder &Builder)
-      :M(nullptr), P(Parent), B(Builder){}
+        : M(nullptr), P(Parent), B(Builder) {}
     MDWrapper &add(unsigned I) {
       V.push_back(ConstantAsMetadata::get(getUInt32(&B.M, I)));
       return *this;
@@ -85,7 +84,7 @@ public:
       return *this;
     }
     MDWrapper &add(SmallVectorImpl<StringRef> &S) {
-      for (auto &I:S)
+      for (auto &I : S)
         add(I);
       return *this;
     }
@@ -93,9 +92,7 @@ public:
       V.push_back(Node);
       return *this;
     }
-    MDWrapper<MDWrapper> addOp() {
-      return MDWrapper<MDWrapper>(*this, B);
-    }
+    MDWrapper<MDWrapper> addOp() { return MDWrapper<MDWrapper>(*this, B); }
     MDWrapper &addOp(MDWrapper<MDWrapper> &MD) {
       V.push_back(MD.M);
       return *this;
@@ -113,7 +110,7 @@ public:
     SPIRVMDBuilder &B;
     SmallVector<Metadata *, 10> V;
   };
-  explicit SPIRVMDBuilder(Module &Mod):M(Mod), C(Mod.getContext()){}
+  explicit SPIRVMDBuilder(Module &Mod) : M(Mod), C(Mod.getContext()) {}
   NamedMDWrapper addNamedMD(StringRef Name) {
     return NamedMDWrapper(*M.getOrInsertNamedMetadata(Name), *this);
   }
@@ -123,9 +120,10 @@ public:
     return *this;
   }
   friend struct NamedMDWrapper;
+
 private:
-  Module& M;
-  LLVMContext& C;
+  Module &M;
+  LLVMContext &C;
 };
 
 } /* namespace SPIRV */
