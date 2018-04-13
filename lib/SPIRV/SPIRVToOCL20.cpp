@@ -1,4 +1,4 @@
-﻿//===- SPIRVToOCL20.cpp - Transform SPIR-V builtins to OCL20 builtins-------===//
+//===- SPIRVToOCL20.cpp - Transform SPIR-V builtins to OCL20 builtins-------===//
 //
 //                     The LLVM/SPIRV Translator
 //
