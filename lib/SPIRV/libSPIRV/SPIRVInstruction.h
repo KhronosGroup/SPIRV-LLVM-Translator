@@ -1720,7 +1720,7 @@ public:
   SPIRVVectorInsertDynamic(SPIRVId TheId, SPIRVValue *TheVector,
                            SPIRVValue *TheComponent, SPIRVValue *TheIndex,
                            SPIRVBasicBlock *TheBB)
-      : SPIRVInstruction(6, OC, TheVector->getType()->getVectorComponentType(),
+    :SPIRVInstruction(6, OC, TheVector->getType(),
                          TheId, TheBB),
         VectorId(TheVector->getId()), IndexId(TheIndex->getId()),
         ComponentId(TheComponent->getId()) {
