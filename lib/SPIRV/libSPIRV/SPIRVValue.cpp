@@ -1,4 +1,4 @@
-//===- SPIRVValue.cpp – Class to represent a SPIR-V Value --------*- C++ -*-===//
+//===- SPIRVValue.cpp - Class to represent a SPIR-V Value -------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -42,9 +42,8 @@
 
 #include "SPIRVValue.h"
 #include "SPIRVEnum.h"
-namespace SPIRV{
-void
-SPIRVValue::setAlignment(SPIRVWord A) {
+namespace SPIRV {
+void SPIRVValue::setAlignment(SPIRVWord A) {
   if (A == 0) {
     eraseDecorate(DecorationAlignment);
     return;
@@ -53,24 +52,20 @@ SPIRVValue::setAlignment(SPIRVWord A) {
   SPIRVDBG(spvdbgs() << "Set alignment " << A << " for obj " << Id << "\n")
 }
 
-bool
-SPIRVValue::hasAlignment(SPIRVWord *Result)const {
+bool SPIRVValue::hasAlignment(SPIRVWord *Result) const {
   return hasDecorate(DecorationAlignment, 0, Result);
 }
 
-bool
-SPIRVValue::isVolatile()const {
-  return hasDecorate(DecorationVolatile);
-}
+bool SPIRVValue::isVolatile() const { return hasDecorate(DecorationVolatile); }
 
-void
-SPIRVValue::setVolatile(bool IsVolatile) {
+void SPIRVValue::setVolatile(bool IsVolatile) {
   if (!IsVolatile) {
     eraseDecorate(DecorationVolatile);
     return;
   }
   addDecorate(new SPIRVDecorate(DecorationVolatile, this));
-  SPIRVDBG(spvdbgs() << "Set volatile " << " for obj " << Id << "\n")
+  SPIRVDBG(spvdbgs() << "Set volatile "
+                     << " for obj " << Id << "\n")
 }
 
-}
+} // namespace SPIRV

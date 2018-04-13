@@ -46,15 +46,14 @@
 #ifndef SPIRVNAMEMAPENUM_H_
 #define SPIRVNAMEMAPENUM_H_
 
-#include "spirv.hpp"
 #include "SPIRVEnum.h"
+#include "spirv.hpp"
 
 using namespace spv;
 
 namespace SPIRV {
 
-template<> inline void
-SPIRVMap<SourceLanguage, std::string>::init() {
+template <> inline void SPIRVMap<SourceLanguage, std::string>::init() {
   add(SourceLanguageUnknown, "Unknown");
   add(SourceLanguageESSL, "ESSL");
   add(SourceLanguageGLSL, "GLSL");
@@ -63,8 +62,7 @@ SPIRVMap<SourceLanguage, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(SourceLanguage, SPIRVSourceLanguageNameMap)
 
-template<> inline void
-SPIRVMap<ExecutionModel, std::string>::init() {
+template <> inline void SPIRVMap<ExecutionModel, std::string>::init() {
   add(ExecutionModelVertex, "Vertex");
   add(ExecutionModelTessellationControl, "TessellationControl");
   add(ExecutionModelTessellationEvaluation, "TessellationEvaluation");
@@ -75,24 +73,21 @@ SPIRVMap<ExecutionModel, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(ExecutionModel, SPIRVExecutionModelNameMap)
 
-template<> inline void
-SPIRVMap<AddressingModel, std::string>::init() {
+template <> inline void SPIRVMap<AddressingModel, std::string>::init() {
   add(AddressingModelLogical, "Logical");
   add(AddressingModelPhysical32, "Physical32");
   add(AddressingModelPhysical64, "Physical64");
 }
 SPIRV_DEF_NAMEMAP(AddressingModel, SPIRVAddressingModelNameMap)
 
-template<> inline void
-SPIRVMap<MemoryModel, std::string>::init() {
+template <> inline void SPIRVMap<MemoryModel, std::string>::init() {
   add(MemoryModelSimple, "Simple");
   add(MemoryModelGLSL450, "GLSL450");
   add(MemoryModelOpenCL, "OpenCL");
 }
 SPIRV_DEF_NAMEMAP(MemoryModel, SPIRVMemoryModelNameMap)
 
-template<> inline void
-SPIRVMap<ExecutionMode, std::string>::init() {
+template <> inline void SPIRVMap<ExecutionMode, std::string>::init() {
   add(ExecutionModeInvocations, "Invocations");
   add(ExecutionModeSpacingEqual, "SpacingEqual");
   add(ExecutionModeSpacingFractionalEven, "SpacingFractionalEven");
@@ -127,8 +122,7 @@ SPIRVMap<ExecutionMode, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(ExecutionMode, SPIRVExecutionModeNameMap)
 
-template<> inline void
-SPIRVMap<StorageClass, std::string>::init() {
+template <> inline void SPIRVMap<StorageClass, std::string>::init() {
   add(StorageClassUniformConstant, "UniformConstant");
   add(StorageClassInput, "Input");
   add(StorageClassUniform, "Uniform");
@@ -144,8 +138,7 @@ SPIRVMap<StorageClass, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(StorageClass, SPIRVStorageClassNameMap)
 
-template<> inline void
-SPIRVMap<Dim, std::string>::init() {
+template <> inline void SPIRVMap<Dim, std::string>::init() {
   add(Dim1D, "1D");
   add(Dim2D, "2D");
   add(Dim3D, "3D");
@@ -156,8 +149,7 @@ SPIRVMap<Dim, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(Dim, SPIRVDimNameMap)
 
-template<> inline void
-SPIRVMap<SamplerAddressingMode, std::string>::init() {
+template <> inline void SPIRVMap<SamplerAddressingMode, std::string>::init() {
   add(SamplerAddressingModeNone, "None");
   add(SamplerAddressingModeClampToEdge, "ClampToEdge");
   add(SamplerAddressingModeClamp, "Clamp");
@@ -166,15 +158,13 @@ SPIRVMap<SamplerAddressingMode, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(SamplerAddressingMode, SPIRVSamplerAddressingModeNameMap)
 
-template<> inline void
-SPIRVMap<SamplerFilterMode, std::string>::init() {
+template <> inline void SPIRVMap<SamplerFilterMode, std::string>::init() {
   add(SamplerFilterModeNearest, "Nearest");
   add(SamplerFilterModeLinear, "Linear");
 }
 SPIRV_DEF_NAMEMAP(SamplerFilterMode, SPIRVSamplerFilterModeNameMap)
 
-template<> inline void
-SPIRVMap<ImageFormat, std::string>::init() {
+template <> inline void SPIRVMap<ImageFormat, std::string>::init() {
   add(ImageFormatUnknown, "Unknown");
   add(ImageFormatRgba32f, "Rgba32f");
   add(ImageFormatRgba16f, "Rgba16f");
@@ -218,8 +208,7 @@ SPIRVMap<ImageFormat, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(ImageFormat, SPIRVImageFormatNameMap)
 
-template<> inline void
-SPIRVMap<ImageChannelOrder, std::string>::init() {
+template <> inline void SPIRVMap<ImageChannelOrder, std::string>::init() {
   add(ImageChannelOrderR, "R");
   add(ImageChannelOrderA, "A");
   add(ImageChannelOrderRG, "RG");
@@ -238,8 +227,7 @@ SPIRVMap<ImageChannelOrder, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(ImageChannelOrder, SPIRVImageChannelOrderNameMap)
 
-template<> inline void
-SPIRVMap<ImageChannelDataType, std::string>::init() {
+template <> inline void SPIRVMap<ImageChannelDataType, std::string>::init() {
   add(ImageChannelDataTypeSnormInt8, "SnormInt8");
   add(ImageChannelDataTypeSnormInt16, "SnormInt16");
   add(ImageChannelDataTypeUnormInt8, "UnormInt8");
@@ -260,8 +248,7 @@ SPIRVMap<ImageChannelDataType, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(ImageChannelDataType, SPIRVImageChannelDataTypeNameMap)
 
-template<> inline void
-SPIRVMap<FPRoundingMode, std::string>::init() {
+template <> inline void SPIRVMap<FPRoundingMode, std::string>::init() {
   add(FPRoundingModeRTE, "RTE");
   add(FPRoundingModeRTZ, "RTZ");
   add(FPRoundingModeRTP, "RTP");
@@ -269,24 +256,22 @@ SPIRVMap<FPRoundingMode, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(FPRoundingMode, SPIRVFPRoundingModeNameMap)
 
-template<> inline void
-SPIRVMap<LinkageType, std::string>::init() {
+template <> inline void SPIRVMap<LinkageType, std::string>::init() {
   add(LinkageTypeExport, "Export");
   add(LinkageTypeImport, "Import");
   add(LinkageTypeInternal, "Internal");
 }
 SPIRV_DEF_NAMEMAP(LinkageType, SPIRVLinkageTypeNameMap)
 
-template<> inline void
-SPIRVMap<AccessQualifier, std::string>::init() {
+template <> inline void SPIRVMap<AccessQualifier, std::string>::init() {
   add(AccessQualifierReadOnly, "ReadOnly");
   add(AccessQualifierWriteOnly, "WriteOnly");
   add(AccessQualifierReadWrite, "ReadWrite");
 }
 SPIRV_DEF_NAMEMAP(AccessQualifier, SPIRVAccessQualifierNameMap)
 
-template<> inline void
-SPIRVMap<FunctionParameterAttribute, std::string>::init() {
+template <>
+inline void SPIRVMap<FunctionParameterAttribute, std::string>::init() {
   add(FunctionParameterAttributeZext, "Zext");
   add(FunctionParameterAttributeSext, "Sext");
   add(FunctionParameterAttributeByVal, "ByVal");
@@ -296,10 +281,10 @@ SPIRVMap<FunctionParameterAttribute, std::string>::init() {
   add(FunctionParameterAttributeNoWrite, "NoWrite");
   add(FunctionParameterAttributeNoReadWrite, "NoReadWrite");
 }
-SPIRV_DEF_NAMEMAP(FunctionParameterAttribute, SPIRVFunctionParameterAttributeNameMap)
+SPIRV_DEF_NAMEMAP(FunctionParameterAttribute,
+                  SPIRVFunctionParameterAttributeNameMap)
 
-template<> inline void
-SPIRVMap<Decoration, std::string>::init() {
+template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationRelaxedPrecision, "RelaxedPrecision");
   add(DecorationSpecId, "SpecId");
   add(DecorationBlock, "Block");
@@ -347,8 +332,7 @@ SPIRVMap<Decoration, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 
-template<> inline void
-SPIRVMap<BuiltIn, std::string>::init() {
+template <> inline void SPIRVMap<BuiltIn, std::string>::init() {
   add(BuiltInPosition, "BuiltInPosition");
   add(BuiltInPointSize, "BuiltInPointSize");
   add(BuiltInClipDistance, "BuiltInClipDistance");
@@ -393,8 +377,7 @@ SPIRVMap<BuiltIn, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(BuiltIn, SPIRVBuiltInNameMap)
 
-template<> inline void
-SPIRVMap<Scope, std::string>::init() {
+template <> inline void SPIRVMap<Scope, std::string>::init() {
   add(ScopeCrossDevice, "CrossDevice");
   add(ScopeDevice, "Device");
   add(ScopeWorkgroup, "Workgroup");
@@ -403,24 +386,21 @@ SPIRVMap<Scope, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(Scope, SPIRVScopeNameMap)
 
-template<> inline void
-SPIRVMap<GroupOperation, std::string>::init() {
+template <> inline void SPIRVMap<GroupOperation, std::string>::init() {
   add(GroupOperationReduce, "Reduce");
   add(GroupOperationInclusiveScan, "InclusiveScan");
   add(GroupOperationExclusiveScan, "ExclusiveScan");
 }
 SPIRV_DEF_NAMEMAP(GroupOperation, SPIRVGroupOperationNameMap)
 
-template<> inline void
-SPIRVMap<KernelEnqueueFlags, std::string>::init() {
+template <> inline void SPIRVMap<KernelEnqueueFlags, std::string>::init() {
   add(KernelEnqueueFlagsNoWait, "NoWait");
   add(KernelEnqueueFlagsWaitKernel, "WaitKernel");
   add(KernelEnqueueFlagsWaitWorkGroup, "WaitWorkGroup");
 }
 SPIRV_DEF_NAMEMAP(KernelEnqueueFlags, SPIRVKernelEnqueueFlagsNameMap)
 
-template<> inline void
-SPIRVMap<Capability, std::string>::init() {
+template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityMatrix, "Matrix");
   add(CapabilityShader, "Shader");
   add(CapabilityGeometry, "Geometry");
@@ -448,10 +428,14 @@ SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGeometryPointSize, "GeometryPointSize");
   add(CapabilityImageGatherExtended, "ImageGatherExtended");
   add(CapabilityStorageImageMultisample, "StorageImageMultisample");
-  add(CapabilityUniformBufferArrayDynamicIndexing, "UniformBufferArrayDynamicIndexing");
-  add(CapabilitySampledImageArrayDynamicIndexing, "SampledImageArrayDynamicIndexing");
-  add(CapabilityStorageBufferArrayDynamicIndexing, "StorageBufferArrayDynamicIndexing");
-  add(CapabilityStorageImageArrayDynamicIndexing, "StorageImageArrayDynamicIndexing");
+  add(CapabilityUniformBufferArrayDynamicIndexing,
+      "UniformBufferArrayDynamicIndexing");
+  add(CapabilitySampledImageArrayDynamicIndexing,
+      "SampledImageArrayDynamicIndexing");
+  add(CapabilityStorageBufferArrayDynamicIndexing,
+      "StorageBufferArrayDynamicIndexing");
+  add(CapabilityStorageImageArrayDynamicIndexing,
+      "StorageImageArrayDynamicIndexing");
   add(CapabilityClipDistance, "ClipDistance");
   add(CapabilityCullDistance, "CullDistance");
   add(CapabilityImageCubeArray, "ImageCubeArray");
@@ -476,7 +460,8 @@ SPIRVMap<Capability, std::string>::init() {
   add(CapabilityTransformFeedback, "TransformFeedback");
   add(CapabilityGeometryStreams, "GeometryStreams");
   add(CapabilityStorageImageReadWithoutFormat, "StorageImageReadWithoutFormat");
-  add(CapabilityStorageImageWriteWithoutFormat, "StorageImageWriteWithoutFormat");
+  add(CapabilityStorageImageWriteWithoutFormat,
+      "StorageImageWriteWithoutFormat");
   add(CapabilityMultiViewport, "MultiViewport");
   add(CapabilitySubgroupShuffleINTEL, "SubgroupShuffleINTEL");
   add(CapabilitySubgroupBufferBlockIOINTEL, "SubgroupBufferBlockIOINTEL");

@@ -46,6 +46,6 @@ public:
   static StringRef name() { return "SPIRVWriterPass"; }
 };
 
-}
+} // namespace llvm
 
 #endif

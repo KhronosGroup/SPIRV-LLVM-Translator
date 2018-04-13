@@ -48,21 +48,20 @@
 #include "SPIRVStream.h"
 
 #include <cassert>
+#include <iostream>
+#include <map>
 #include <tuple>
 #include <vector>
-#include <map>
-#include <iostream>
 
-namespace SPIRV{
+namespace SPIRV {
 
-class SPIRVType: public SPIRVEntry {
+class SPIRVType : public SPIRVEntry {
 public:
   // Complete constructor
-  SPIRVType(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode,
-      SPIRVId TheId)
-    :SPIRVEntry(M, TheWordCount, TheOpCode, TheId){}
+  SPIRVType(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode, SPIRVId TheId)
+      : SPIRVEntry(M, TheWordCount, TheOpCode, TheId) {}
   // Incomplete constructor
-  SPIRVType(Op TheOpCode):SPIRVEntry(TheOpCode){}
+  SPIRVType(Op TheOpCode) : SPIRVEntry(TheOpCode) {}
 
   SPIRVType *getArrayElementType() const;
   uint64_t getArrayLength() const;
@@ -87,7 +86,7 @@ public:
   bool isTypeFloat(unsigned Bits = 0) const;
   bool isTypeImage() const;
   bool isTypeOCLImage() const;
-  bool isTypePipe()const;
+  bool isTypePipe() const;
   bool isTypePipeStorage() const;
   bool isTypeInt(unsigned Bits = 0) const;
   bool isTypeOpaque() const;
@@ -103,43 +102,45 @@ public:
   bool isTypeVectorOrScalarBool() const;
 };
 
-class SPIRVTypeVoid:public SPIRVType {
+class SPIRVTypeVoid : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeVoid(SPIRVModule *M, SPIRVId TheId)
-    :SPIRVType(M, 2, OpTypeVoid, TheId){}
+      : SPIRVType(M, 2, OpTypeVoid, TheId) {}
   // Incomplete constructor
-  SPIRVTypeVoid():SPIRVType(OpTypeVoid){}
+  SPIRVTypeVoid() : SPIRVType(OpTypeVoid) {}
+
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
 };
 
-class SPIRVTypeBool:public SPIRVType {
+class SPIRVTypeBool : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeBool(SPIRVModule *M, SPIRVId TheId)
-    :SPIRVType(M, 2, OpTypeBool, TheId){}
+      : SPIRVType(M, 2, OpTypeBool, TheId) {}
   // Incomplete constructor
-  SPIRVTypeBool():SPIRVType(OpTypeBool){}
+  SPIRVTypeBool() : SPIRVType(OpTypeBool) {}
+
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
 };
 
-class SPIRVTypeInt:public SPIRVType {
+class SPIRVTypeInt : public SPIRVType {
 public:
   static const Op OC = OpTypeInt;
   // Complete constructor
   SPIRVTypeInt(SPIRVModule *M, SPIRVId TheId, unsigned TheBitWidth,
-      bool ItIsSigned)
-    :SPIRVType(M, 4, OC , TheId), BitWidth(TheBitWidth),
-     IsSigned(ItIsSigned){
-     validate();
-     }
+               bool ItIsSigned)
+      : SPIRVType(M, 4, OC, TheId), BitWidth(TheBitWidth),
+        IsSigned(ItIsSigned) {
+    validate();
+  }
   // Incomplete constructor
-  SPIRVTypeInt():SPIRVType(OC), BitWidth(0), IsSigned(false){}
+  SPIRVTypeInt() : SPIRVType(OC), BitWidth(0), IsSigned(false) {}
 
-  unsigned getBitWidth() const { return BitWidth;}
-  bool isSigned() const { return IsSigned;}
+  unsigned getBitWidth() const { return BitWidth; }
+  bool isSigned() const { return IsSigned; }
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec CV;
     switch (BitWidth) {
@@ -160,25 +161,26 @@ public:
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, BitWidth, IsSigned)
-  void validate()const {
+  void validate() const {
     SPIRVEntry::validate();
     assert(BitWidth > 1 && BitWidth <= 64 && "Invalid bit width");
   }
+
 private:
-  unsigned BitWidth;    // Bit width
-  bool IsSigned;        // Whether it is signed
+  unsigned BitWidth; // Bit width
+  bool IsSigned;     // Whether it is signed
 };
 
-class SPIRVTypeFloat:public SPIRVType {
+class SPIRVTypeFloat : public SPIRVType {
 public:
   static const Op OC = OpTypeFloat;
   // Complete constructor
   SPIRVTypeFloat(SPIRVModule *M, SPIRVId TheId, unsigned TheBitWidth)
-    :SPIRVType(M, 3, OC, TheId), BitWidth(TheBitWidth){}
+      : SPIRVType(M, 3, OC, TheId), BitWidth(TheBitWidth) {}
   // Incomplete constructor
-  SPIRVTypeFloat():SPIRVType(OC), BitWidth(0){}
+  SPIRVTypeFloat() : SPIRVType(OC), BitWidth(0) {}
 
-  unsigned getBitWidth() const { return BitWidth;}
+  unsigned getBitWidth() const { return BitWidth; }
 
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec CV;
@@ -186,44 +188,43 @@ public:
       CV.push_back(CapabilityFloat16Buffer);
       auto extensions = getModule()->getExtension();
       if (std::any_of(extensions.begin(), extensions.end(),
-          [](const std::string &I){return I == "cl_khr_fp16";}))
+                      [](const std::string &I) { return I == "cl_khr_fp16"; }))
         CV.push_back(CapabilityFloat16);
-    }
-    else if (isTypeFloat(64))
+    } else if (isTypeFloat(64))
       CV.push_back(CapabilityFloat64);
     return std::move(CV);
   }
 
-
 protected:
   _SPIRV_DEF_ENCDEC2(Id, BitWidth)
-  void validate()const {
+  void validate() const {
     SPIRVEntry::validate();
     assert(BitWidth >= 16 && BitWidth <= 64 && "Invalid bit width");
   }
+
 private:
-  unsigned BitWidth;    // Bit width
+  unsigned BitWidth; // Bit width
 };
 
-class SPIRVTypePointer:public SPIRVType {
+class SPIRVTypePointer : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypePointer(SPIRVModule *M, SPIRVId TheId,
-      SPIRVStorageClassKind TheStorageClass,
-      SPIRVType *ElementType)
-    :SPIRVType(M, 4, OpTypePointer, TheId), ElemStorageClass(TheStorageClass),
-     ElemTypeId(ElementType->getId()){
+                   SPIRVStorageClassKind TheStorageClass,
+                   SPIRVType *ElementType)
+      : SPIRVType(M, 4, OpTypePointer, TheId),
+        ElemStorageClass(TheStorageClass), ElemTypeId(ElementType->getId()) {
     validate();
   }
   // Incomplete constructor
-  SPIRVTypePointer():SPIRVType(OpTypePointer),
-      ElemStorageClass(StorageClassFunction),
-      ElemTypeId(0){}
+  SPIRVTypePointer()
+      : SPIRVType(OpTypePointer), ElemStorageClass(StorageClassFunction),
+        ElemTypeId(0) {}
 
   SPIRVType *getElementType() const {
     return static_cast<SPIRVType *>(getEntry(ElemTypeId));
   }
-  SPIRVStorageClassKind getStorageClass() const { return ElemStorageClass;}
+  SPIRVStorageClassKind getStorageClass() const { return ElemStorageClass; }
   SPIRVCapVec getRequiredCapability() const {
     auto Cap = getVec(CapabilityAddresses);
     if (getElementType()->isTypeFloat(16))
@@ -232,19 +233,20 @@ public:
     Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    return std::vector<SPIRVEntry*>(1, getEntry(ElemTypeId));
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry *>(1, getEntry(ElemTypeId));
   }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, ElemStorageClass, ElemTypeId)
-  void validate()const {
+  void validate() const {
     SPIRVEntry::validate();
     assert(isValid(ElemStorageClass));
   }
+
 private:
   SPIRVStorageClassKind ElemStorageClass; // Storage Class
-  SPIRVId   ElemTypeId;
+  SPIRVId ElemTypeId;
 };
 
 class SPIRVTypeForwardPointer : public SPIRVEntryNoId<OpTypeForwardPointer> {
@@ -263,22 +265,22 @@ private:
   SPIRVStorageClassKind SC;
 };
 
-class SPIRVTypeVector:public SPIRVType {
+class SPIRVTypeVector : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeVector(SPIRVModule *M, SPIRVId TheId, SPIRVType *TheCompType,
-      SPIRVWord TheCompCount)
-    :SPIRVType(M, 4, OpTypeVector, TheId), CompType(TheCompType),
-     CompCount(TheCompCount){
+                  SPIRVWord TheCompCount)
+      : SPIRVType(M, 4, OpTypeVector, TheId), CompType(TheCompType),
+        CompCount(TheCompCount) {
     validate();
   }
   // Incomplete constructor
-  SPIRVTypeVector():SPIRVType(OpTypeVector), CompType(nullptr),
-      CompCount(0){}
+  SPIRVTypeVector()
+      : SPIRVType(OpTypeVector), CompType(nullptr), CompCount(0) {}
 
-  SPIRVType *getComponentType() const { return CompType;}
-  SPIRVWord getComponentCount() const { return CompCount;}
-  bool isValidIndex(SPIRVWord Index) const { return Index < CompCount;}
+  SPIRVType *getComponentType() const { return CompType; }
+  SPIRVWord getComponentCount() const { return CompCount; }
+  bool isValidIndex(SPIRVWord Index) const { return Index < CompCount; }
   SPIRVCapVec getRequiredCapability() const {
     SPIRVCapVec V(getComponentType()->getRequiredCapability());
     // Even though the capability name is "Vector16", it describes
@@ -288,69 +290,68 @@ public:
     return std::move(V);
   }
 
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    return std::vector<SPIRVEntry*>(1, CompType);
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry *>(1, CompType);
   }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, CompType, CompCount)
-  void validate()const {
+  void validate() const {
     SPIRVEntry::validate();
     CompType->validate();
     assert(CompCount == 2 || CompCount == 3 || CompCount == 4 ||
-        CompCount == 8 || CompCount == 16);
+           CompCount == 8 || CompCount == 16);
   }
+
 private:
-  SPIRVType *CompType;                // Component Type
-  SPIRVWord CompCount;                // Component Count
+  SPIRVType *CompType; // Component Type
+  SPIRVWord CompCount; // Component Count
 };
 
 class SPIRVConstant;
-class SPIRVTypeArray:public SPIRVType {
+class SPIRVTypeArray : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeArray(SPIRVModule *M, SPIRVId TheId, SPIRVType *TheElemType,
-      SPIRVConstant* TheLength);
+                 SPIRVConstant *TheLength);
   // Incomplete constructor
-  SPIRVTypeArray():SPIRVType(OpTypeArray), ElemType(nullptr),
-      Length(SPIRVID_INVALID){}
+  SPIRVTypeArray()
+      : SPIRVType(OpTypeArray), ElemType(nullptr), Length(SPIRVID_INVALID) {}
 
-  SPIRVType *getElementType() const { return ElemType;}
+  SPIRVType *getElementType() const { return ElemType; }
   SPIRVConstant *getLength() const;
   SPIRVCapVec getRequiredCapability() const {
     return std::move(getElementType()->getRequiredCapability());
   }
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    std::vector<SPIRVEntry*> Operands(2, ElemType);
-    Operands[1] = (SPIRVEntry*)getLength();
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry *> Operands(2, ElemType);
+    Operands[1] = (SPIRVEntry *)getLength();
     return Operands;
   }
 
-
 protected:
   _SPIRV_DCL_ENCDEC
-  void validate()const;
+  void validate() const;
+
 private:
-  SPIRVType *ElemType;                // Element Type
-  SPIRVId Length;                     // Array Length
+  SPIRVType *ElemType; // Element Type
+  SPIRVId Length;      // Array Length
 };
 
-class SPIRVTypeOpaque:public SPIRVType {
+class SPIRVTypeOpaque : public SPIRVType {
 public:
   // Complete constructor
-  SPIRVTypeOpaque(SPIRVModule *M, SPIRVId TheId, const std::string& TheName)
-    :SPIRVType(M, 2 + getSizeInWords(TheName), OpTypeOpaque, TheId) {
+  SPIRVTypeOpaque(SPIRVModule *M, SPIRVId TheId, const std::string &TheName)
+      : SPIRVType(M, 2 + getSizeInWords(TheName), OpTypeOpaque, TheId) {
     Name = TheName;
     validate();
   }
   // Incomplete constructor
-  SPIRVTypeOpaque():SPIRVType(OpTypeOpaque){}
+  SPIRVTypeOpaque() : SPIRVType(OpTypeOpaque) {}
 
 protected:
   _SPIRV_DEF_ENCDEC2(Id, Name)
-  void validate()const {
-    SPIRVEntry::validate();
-  }
+  void validate() const { SPIRVEntry::validate(); }
 };
 
 struct SPIRVTypeImageDescriptor {
@@ -360,74 +361,74 @@ struct SPIRVTypeImageDescriptor {
   SPIRVWord MS;
   SPIRVWord Sampled;
   SPIRVWord Format;
-  static std::tuple<std::tuple<SPIRVImageDimKind, SPIRVWord, SPIRVWord, SPIRVWord,
-    SPIRVWord>, SPIRVWord>
-    getAsTuple (const SPIRVTypeImageDescriptor &Desc) {
+  static std::tuple<
+      std::tuple<SPIRVImageDimKind, SPIRVWord, SPIRVWord, SPIRVWord, SPIRVWord>,
+      SPIRVWord>
+  getAsTuple(const SPIRVTypeImageDescriptor &Desc) {
     return std::make_tuple(std::make_tuple(Desc.Dim, Desc.Depth, Desc.Arrayed,
-      Desc.MS, Desc.Sampled), Desc.Format);
+                                           Desc.MS, Desc.Sampled),
+                           Desc.Format);
   }
-  SPIRVTypeImageDescriptor():Dim(Dim1D), Depth(0), Arrayed(0),
-      MS(0), Sampled(0), Format(0){}
+  SPIRVTypeImageDescriptor()
+      : Dim(Dim1D), Depth(0), Arrayed(0), MS(0), Sampled(0), Format(0) {}
   SPIRVTypeImageDescriptor(SPIRVImageDimKind Dim, SPIRVWord Cont, SPIRVWord Arr,
-      SPIRVWord Comp,  SPIRVWord Mult, SPIRVWord F):Dim(Dim), Depth(Cont),
-          Arrayed(Arr), MS(Comp), Sampled(Mult), Format(F){}
+                           SPIRVWord Comp, SPIRVWord Mult, SPIRVWord F)
+      : Dim(Dim), Depth(Cont), Arrayed(Arr), MS(Comp), Sampled(Mult),
+        Format(F) {}
 };
 
-template<> inline void
-SPIRVMap<std::string, SPIRVTypeImageDescriptor>::init() {
-#define _SPIRV_OP(x,...) {SPIRVTypeImageDescriptor S(__VA_ARGS__); \
-  add(#x, S);}
-_SPIRV_OP(image1d_t,                  Dim1D,      0, 0, 0, 0, 0)
-_SPIRV_OP(image1d_buffer_t,           DimBuffer,  0, 0, 0, 0, 0)
-_SPIRV_OP(image1d_array_t,            Dim1D,      0, 1, 0, 0, 0)
-_SPIRV_OP(image2d_t,                  Dim2D,      0, 0, 0, 0, 0)
-_SPIRV_OP(image2d_array_t,            Dim2D,      0, 1, 0, 0, 0)
-_SPIRV_OP(image2d_depth_t,            Dim2D,      1, 0, 0, 0, 0)
-_SPIRV_OP(image2d_array_depth_t,      Dim2D,      1, 1, 0, 0, 0)
-_SPIRV_OP(image2d_msaa_t,             Dim2D,      0, 0, 1, 0, 0)
-_SPIRV_OP(image2d_array_msaa_t,       Dim2D,      0, 1, 1, 0, 0)
-_SPIRV_OP(image2d_msaa_depth_t,       Dim2D,      1, 0, 1, 0, 0)
-_SPIRV_OP(image2d_array_msaa_depth_t, Dim2D,      1, 1, 1, 0, 0)
-_SPIRV_OP(image3d_t,                  Dim3D,      0, 0, 0, 0, 0)
+template <>
+inline void SPIRVMap<std::string, SPIRVTypeImageDescriptor>::init() {
+#define _SPIRV_OP(x, ...)                                                      \
+  {                                                                            \
+    SPIRVTypeImageDescriptor S(__VA_ARGS__);                                   \
+    add(#x, S);                                                                \
+  }
+  _SPIRV_OP(image1d_t, Dim1D, 0, 0, 0, 0, 0)
+  _SPIRV_OP(image1d_buffer_t, DimBuffer, 0, 0, 0, 0, 0)
+  _SPIRV_OP(image1d_array_t, Dim1D, 0, 1, 0, 0, 0)
+  _SPIRV_OP(image2d_t, Dim2D, 0, 0, 0, 0, 0)
+  _SPIRV_OP(image2d_array_t, Dim2D, 0, 1, 0, 0, 0)
+  _SPIRV_OP(image2d_depth_t, Dim2D, 1, 0, 0, 0, 0)
+  _SPIRV_OP(image2d_array_depth_t, Dim2D, 1, 1, 0, 0, 0)
+  _SPIRV_OP(image2d_msaa_t, Dim2D, 0, 0, 1, 0, 0)
+  _SPIRV_OP(image2d_array_msaa_t, Dim2D, 0, 1, 1, 0, 0)
+  _SPIRV_OP(image2d_msaa_depth_t, Dim2D, 1, 0, 1, 0, 0)
+  _SPIRV_OP(image2d_array_msaa_depth_t, Dim2D, 1, 1, 1, 0, 0)
+  _SPIRV_OP(image3d_t, Dim3D, 0, 0, 0, 0, 0)
 #undef _SPIRV_OP
 }
-typedef SPIRVMap<std::string, SPIRVTypeImageDescriptor>
-  OCLSPIRVImageTypeMap;
+typedef SPIRVMap<std::string, SPIRVTypeImageDescriptor> OCLSPIRVImageTypeMap;
 
 // Comparision function required to use the struct as map key.
-inline bool
-operator<(const SPIRVTypeImageDescriptor &A,
-    const SPIRVTypeImageDescriptor &B){
+inline bool operator<(const SPIRVTypeImageDescriptor &A,
+                      const SPIRVTypeImageDescriptor &B) {
   return SPIRVTypeImageDescriptor::getAsTuple(A) <
-      SPIRVTypeImageDescriptor::getAsTuple(B);
+         SPIRVTypeImageDescriptor::getAsTuple(B);
 }
 
-class SPIRVTypeImage:public SPIRVType {
+class SPIRVTypeImage : public SPIRVType {
 public:
   const static Op OC = OpTypeImage;
   const static SPIRVWord FixedWC = 9;
   SPIRVTypeImage(SPIRVModule *M, SPIRVId TheId, SPIRVId TheSampledType,
-      const SPIRVTypeImageDescriptor &TheDesc)
-    :SPIRVType(M, FixedWC, OC, TheId), SampledType(TheSampledType),
-     Desc(TheDesc){
+                 const SPIRVTypeImageDescriptor &TheDesc)
+      : SPIRVType(M, FixedWC, OC, TheId), SampledType(TheSampledType),
+        Desc(TheDesc) {
     validate();
   }
   SPIRVTypeImage(SPIRVModule *M, SPIRVId TheId, SPIRVId TheSampledType,
-      const SPIRVTypeImageDescriptor &TheDesc, SPIRVAccessQualifierKind TheAcc)
-    :SPIRVType(M, FixedWC + 1, OC, TheId), SampledType(TheSampledType),
-     Desc(TheDesc){
+                 const SPIRVTypeImageDescriptor &TheDesc,
+                 SPIRVAccessQualifierKind TheAcc)
+      : SPIRVType(M, FixedWC + 1, OC, TheId), SampledType(TheSampledType),
+        Desc(TheDesc) {
     Acc.push_back(TheAcc);
     validate();
   }
-  SPIRVTypeImage():SPIRVType(OC), SampledType(SPIRVID_INVALID), Desc(){
-  }
-  const SPIRVTypeImageDescriptor &getDescriptor()const {
-    return Desc;
-  }
-  bool isOCLImage()const {
-    return Desc.Sampled == 0 && Desc.Format == 0;
-  }
-  bool hasAccessQualifier() const { return !Acc.empty();}
+  SPIRVTypeImage() : SPIRVType(OC), SampledType(SPIRVID_INVALID), Desc() {}
+  const SPIRVTypeImageDescriptor &getDescriptor() const { return Desc; }
+  bool isOCLImage() const { return Desc.Sampled == 0 && Desc.Format == 0; }
+  bool hasAccessQualifier() const { return !Acc.empty(); }
   SPIRVAccessQualifierKind getAccessQualifier() const {
     assert(hasAccessQualifier());
     return Acc[0];
@@ -445,19 +446,17 @@ public:
       CV.push_back(CapabilityImageMipmap);
     return CV;
   }
-  SPIRVType *getSampledType() const {
-    return get<SPIRVType>(SampledType);
-  }
+  SPIRVType *getSampledType() const { return get<SPIRVType>(SampledType); }
 
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    return std::vector<SPIRVEntry*>(1, get<SPIRVType>(SampledType));
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry *>(1, get<SPIRVType>(SampledType));
   }
 
 protected:
-  _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth,
-      Desc.Arrayed, Desc.MS, Desc.Sampled, Desc.Format, Acc)
+  _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth, Desc.Arrayed,
+                     Desc.MS, Desc.Sampled, Desc.Format, Acc)
   // The validation assumes OpenCL image or sampler type.
-  void validate()const {
+  void validate() const {
     assert(OpCode == OC);
     assert(WordCount == FixedWC + Acc.size());
     assert(SampledType != SPIRVID_INVALID && "Invalid sampled type");
@@ -473,78 +472,74 @@ protected:
     WordCount = TheWC;
     Acc.resize(WordCount - FixedWC);
   }
+
 private:
   SPIRVId SampledType;
   SPIRVTypeImageDescriptor Desc;
   std::vector<SPIRVAccessQualifierKind> Acc;
 };
 
-class SPIRVTypeSampler:public SPIRVType {
+class SPIRVTypeSampler : public SPIRVType {
 public:
   const static Op OC = OpTypeSampler;
   const static SPIRVWord FixedWC = 2;
   SPIRVTypeSampler(SPIRVModule *M, SPIRVId TheId)
-    :SPIRVType(M, FixedWC, OC, TheId){
+      : SPIRVType(M, FixedWC, OC, TheId) {
     validate();
   }
-  SPIRVTypeSampler():SPIRVType(OC){
-  }
+  SPIRVTypeSampler() : SPIRVType(OC) {}
+
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
-  void validate()const {
+  void validate() const {
     assert(OpCode == OC);
     assert(WordCount == FixedWC);
   }
 };
 
-class SPIRVTypeSampledImage:public SPIRVType {
+class SPIRVTypeSampledImage : public SPIRVType {
 public:
   const static Op OC = OpTypeSampledImage;
   const static SPIRVWord FixedWC = 3;
   SPIRVTypeSampledImage(SPIRVModule *M, SPIRVId TheId, SPIRVTypeImage *TheImgTy)
-    :SPIRVType(M, FixedWC, OC, TheId), ImgTy(TheImgTy){
+      : SPIRVType(M, FixedWC, OC, TheId), ImgTy(TheImgTy) {
     validate();
   }
-  SPIRVTypeSampledImage():SPIRVType(OC), ImgTy(nullptr){
-  }
+  SPIRVTypeSampledImage() : SPIRVType(OC), ImgTy(nullptr) {}
 
-  const SPIRVTypeImage *getImageType() const {
-    return ImgTy;
-  }
+  const SPIRVTypeImage *getImageType() const { return ImgTy; }
 
-  void setImageType(SPIRVTypeImage *TheImgTy) {
-    ImgTy = TheImgTy;
-  }
+  void setImageType(SPIRVTypeImage *TheImgTy) { ImgTy = TheImgTy; }
 
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    return std::vector<SPIRVEntry*>(1, ImgTy);
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    return std::vector<SPIRVEntry *>(1, ImgTy);
   }
 
 protected:
   SPIRVTypeImage *ImgTy;
   _SPIRV_DEF_ENCDEC2(Id, ImgTy)
-  void validate()const {
+  void validate() const {
     assert(OpCode == OC);
     assert(WordCount == FixedWC);
     assert(ImgTy && ImgTy->isTypeImage());
   }
 };
 
-class SPIRVTypePipeStorage :public SPIRVType {
+class SPIRVTypePipeStorage : public SPIRVType {
 public:
   const static Op OC = OpTypePipeStorage;
   const static SPIRVWord FixedWC = 2;
   SPIRVTypePipeStorage(SPIRVModule *M, SPIRVId TheId)
-    :SPIRVType(M, FixedWC, OC, TheId){
+      : SPIRVType(M, FixedWC, OC, TheId) {
     validate();
   }
-  SPIRVTypePipeStorage() :SPIRVType(OC){
-  }
+  SPIRVTypePipeStorage() : SPIRVType(OC) {}
+
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
-    void validate()const {
-      assert(OpCode == OC);
-      assert(WordCount == FixedWC);
+  void validate() const {
+    assert(OpCode == OC);
+    assert(WordCount == FixedWC);
   }
 };
 
@@ -575,7 +570,9 @@ public:
   SPIRVType *getMemberType(size_t I) const {
     return static_cast<SPIRVType *>(getEntry(MemberTypeIdVec[I]));
   }
-  void setMemberType(size_t I, SPIRVType *Ty) { MemberTypeIdVec[I] = Ty->getId(); }
+  void setMemberType(size_t I, SPIRVType *Ty) {
+    MemberTypeIdVec[I] = Ty->getId();
+  }
 
   bool isPacked() const;
   void setPacked(bool Packed);
@@ -585,8 +582,8 @@ public:
     MemberTypeIdVec.resize(WordCount - 2);
   }
 
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    std::vector<SPIRVEntry*> Operands(MemberTypeIdVec.size());
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry *> Operands(MemberTypeIdVec.size());
     for (size_t I = 0, E = MemberTypeIdVec.size(); I < E; ++I)
       Operands[I] = getEntry(MemberTypeIdVec[I]);
     return Operands;
@@ -601,23 +598,23 @@ private:
   std::vector<SPIRVId> MemberTypeIdVec; // Member Type Ids
 };
 
-class SPIRVTypeFunction:public SPIRVType {
+class SPIRVTypeFunction : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeFunction(SPIRVModule *M, SPIRVId TheId, SPIRVType *TheReturnType,
-      const std::vector<SPIRVType *> &TheParameterTypes)
-    :SPIRVType(M, 3 + TheParameterTypes.size(), OpTypeFunction, TheId),
-     ReturnType(TheReturnType), ParamTypeVec(TheParameterTypes){
-     validate();
+                    const std::vector<SPIRVType *> &TheParameterTypes)
+      : SPIRVType(M, 3 + TheParameterTypes.size(), OpTypeFunction, TheId),
+        ReturnType(TheReturnType), ParamTypeVec(TheParameterTypes) {
+    validate();
   }
   // Incomplete constructor
-  SPIRVTypeFunction():SPIRVType(OpTypeFunction), ReturnType(NULL){}
+  SPIRVTypeFunction() : SPIRVType(OpTypeFunction), ReturnType(NULL) {}
 
-  SPIRVType *getReturnType() const { return ReturnType;}
-  SPIRVWord getNumParameters() const { return ParamTypeVec.size();}
-  SPIRVType *getParameterType(unsigned I) const { return ParamTypeVec[I];}
-  virtual std::vector<SPIRVEntry*> getNonLiteralOperands() const {
-    std::vector<SPIRVEntry*> Operands( 1 + ParamTypeVec.size(), ReturnType);
+  SPIRVType *getReturnType() const { return ReturnType; }
+  SPIRVWord getNumParameters() const { return ParamTypeVec.size(); }
+  SPIRVType *getParameterType(unsigned I) const { return ParamTypeVec[I]; }
+  virtual std::vector<SPIRVEntry *> getNonLiteralOperands() const {
+    std::vector<SPIRVEntry *> Operands(1 + ParamTypeVec.size(), ReturnType);
     std::copy(ParamTypeVec.begin(), ParamTypeVec.end(), ++Operands.begin());
     return Operands;
   }
@@ -628,48 +625,46 @@ protected:
     SPIRVType::setWordCount(WordCount);
     ParamTypeVec.resize(WordCount - 3);
   }
-  void validate()const {
+  void validate() const {
     SPIRVEntry::validate();
     ReturnType->validate();
-    for (auto T:ParamTypeVec)
+    for (auto T : ParamTypeVec)
       T->validate();
   }
+
 private:
-  SPIRVType *ReturnType;                      // Return Type
-  std::vector<SPIRVType *> ParamTypeVec;      // Parameter Types
+  SPIRVType *ReturnType;                 // Return Type
+  std::vector<SPIRVType *> ParamTypeVec; // Parameter Types
 };
 
-class SPIRVTypeOpaqueGeneric:public SPIRVType {
+class SPIRVTypeOpaqueGeneric : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypeOpaqueGeneric(Op TheOpCode, SPIRVModule *M, SPIRVId TheId)
-    :SPIRVType(M, 2, TheOpCode, TheId){
+      : SPIRVType(M, 2, TheOpCode, TheId) {
     validate();
   }
 
   // Incomplete constructor
-  SPIRVTypeOpaqueGeneric(Op TheOpCode):SPIRVType(TheOpCode),
-      Opn(SPIRVID_INVALID) {}
+  SPIRVTypeOpaqueGeneric(Op TheOpCode)
+      : SPIRVType(TheOpCode), Opn(SPIRVID_INVALID) {}
 
-  SPIRVValue *getOperand() {
-    return getValue(Opn);
-  }
+  SPIRVValue *getOperand() { return getValue(Opn); }
+
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
-  void validate()const {
-    SPIRVEntry::validate();
-    }
+  void validate() const { SPIRVEntry::validate(); }
   SPIRVId Opn;
 };
 
-template<Op TheOpCode>
-class SPIRVOpaqueGenericType:public SPIRVTypeOpaqueGeneric {
+template <Op TheOpCode>
+class SPIRVOpaqueGenericType : public SPIRVTypeOpaqueGeneric {
 public:
   // Complete constructor
   SPIRVOpaqueGenericType(SPIRVModule *M, SPIRVId TheId)
-    :SPIRVTypeOpaqueGeneric(TheOpCode, M, TheId){}
+      : SPIRVTypeOpaqueGeneric(TheOpCode, M, TheId) {}
   // Incomplete constructor
-  SPIRVOpaqueGenericType():SPIRVTypeOpaqueGeneric(TheOpCode){}
+  SPIRVOpaqueGenericType() : SPIRVTypeOpaqueGeneric(TheOpCode) {}
 };
 
 #define _SPIRV_OP(x) typedef SPIRVOpaqueGenericType<OpType##x> SPIRVType##x;
@@ -716,49 +711,45 @@ protected:
   _SPIRV_DEF_ENCDEC1(Id)
 };
 
-class SPIRVTypePipe :public SPIRVType {
+class SPIRVTypePipe : public SPIRVType {
 public:
   // Complete constructor
   SPIRVTypePipe(SPIRVModule *M, SPIRVId TheId,
-      SPIRVAccessQualifierKind AccessQual = AccessQualifierReadOnly)
-    :SPIRVType(M, 3, OpTypePipe, TheId),
-     AccessQualifier(AccessQual){
-       validate();
-     }
+                SPIRVAccessQualifierKind AccessQual = AccessQualifierReadOnly)
+      : SPIRVType(M, 3, OpTypePipe, TheId), AccessQualifier(AccessQual) {
+    validate();
+  }
 
   // Incomplete constructor
-  SPIRVTypePipe() :SPIRVType(OpTypePipe),
-    AccessQualifier(AccessQualifierReadOnly){}
+  SPIRVTypePipe()
+      : SPIRVType(OpTypePipe), AccessQualifier(AccessQualifierReadOnly) {}
 
   SPIRVAccessQualifierKind getAccessQualifier() const {
-      return AccessQualifier;
+    return AccessQualifier;
   }
   void setPipeAcessQualifier(SPIRVAccessQualifierKind AccessQual) {
     AccessQualifier = AccessQual;
     assert(isValid(AccessQualifier));
   }
-  SPIRVCapVec getRequiredCapability() const {
-    return getVec(CapabilityPipes);
-  }
+  SPIRVCapVec getRequiredCapability() const { return getVec(CapabilityPipes); }
+
 protected:
   _SPIRV_DEF_ENCDEC2(Id, AccessQualifier)
-  void validate()const {
-    SPIRVEntry::validate();
-  }
+  void validate() const { SPIRVEntry::validate(); }
+
 private:
-  SPIRVAccessQualifierKind AccessQualifier;     // Access Qualifier
+  SPIRVAccessQualifierKind AccessQualifier; // Access Qualifier
 };
 
-template<typename T2, typename T1>
-bool
-isType(const T1 *Ty, unsigned Bits = 0) {
+template <typename T2, typename T1>
+bool isType(const T1 *Ty, unsigned Bits = 0) {
   bool Is = Ty->getOpCode() == T2::OC;
   if (!Is)
     return false;
   if (Bits == 0)
     return true;
-  return static_cast<const T2*>(Ty)->getBitWidth() == Bits;
+  return static_cast<const T2 *>(Ty)->getBitWidth() == Bits;
 }
 
-}
+} // namespace SPIRV
 #endif // SPIRVTYPE_HPP_

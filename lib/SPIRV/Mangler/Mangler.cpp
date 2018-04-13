@@ -16,9 +16,9 @@
 #include "ParameterType.h"
 #include "SPIRVInternal.h"
 #include <algorithm>
-#include <string>
-#include <sstream>
 #include <map>
+#include <sstream>
+#include <string>
 
 // According to IA64 name mangling spec,
 // builtin vector types should not be substituted
@@ -27,15 +27,14 @@
 
 namespace SPIR {
 
-class MangleVisitor: public TypeVisitor {
+class MangleVisitor : public TypeVisitor {
 public:
+  MangleVisitor(SPIRversion ver, std::stringstream &s)
+      : TypeVisitor(ver), m_stream(s), seqId(0) {}
 
-  MangleVisitor(SPIRversion ver, std::stringstream& s) : TypeVisitor(ver), m_stream(s), seqId(0) {
-  }
-
-//
-// mangle substitution methods
-//
+  //
+  // mangle substitution methods
+  //
   void mangleSequenceID(unsigned SeqID) {
     if (SeqID == 1)
       m_stream << '0';
@@ -52,23 +51,26 @@ public:
     m_stream << '_';
   }
 
-  bool mangleSubstitution(const ParamType* type, std::string typeStr) {
+  bool mangleSubstitution(const ParamType *type, std::string typeStr) {
     size_t fpos;
     std::stringstream thistypeStr;
     thistypeStr << typeStr;
     if ((fpos = m_stream.str().find(typeStr)) != std::string::npos) {
-      const char* nType;
-      if (const PointerType* p = SPIR::dyn_cast<PointerType>(type)) {
-        if ((nType = mangledPrimitiveStringfromName(p->getPointee()->toString())))
+      const char *nType;
+      if (const PointerType *p = SPIR::dyn_cast<PointerType>(type)) {
+        if ((nType =
+                 mangledPrimitiveStringfromName(p->getPointee()->toString())))
           thistypeStr << nType;
       }
 #if defined(ENABLE_MANGLER_VECTOR_SUBSTITUTION)
-      else if (const VectorType* pVec = SPIR::dyn_cast<VectorType>(type)) {
-        if ((nType = mangledPrimitiveStringfromName(pVec->getScalarType()->toString())))
+      else if (const VectorType *pVec = SPIR::dyn_cast<VectorType>(type)) {
+        if ((nType = mangledPrimitiveStringfromName(
+                 pVec->getScalarType()->toString())))
           thistypeStr << nType;
       }
 #endif
-      std::map<std::string, unsigned>::iterator I = substitutions.find(thistypeStr.str());
+      std::map<std::string, unsigned>::iterator I =
+          substitutions.find(thistypeStr.str());
       if (I == substitutions.end())
         return false;
 
@@ -80,17 +82,19 @@ public:
     return false;
   }
 
-//
-// Visit methods
-//
-  MangleError visit(const PrimitiveType* t) {
+  //
+  // Visit methods
+  //
+  MangleError visit(const PrimitiveType *t) {
     MangleError me = MANGLE_SUCCESS;
 #if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
     m_stream << mangledPrimitiveString(t->getPrimitive());
 #else
-    std::string mangledPrimitive = std::string(mangledPrimitiveString(t->getPrimitive()));
-    // out of all enums it makes sense to substitute only memory_scope/memory_order
-    // since only they appear several times in the builtin declaration.
+    std::string mangledPrimitive =
+        std::string(mangledPrimitiveString(t->getPrimitive()));
+    // out of all enums it makes sense to substitute only
+    // memory_scope/memory_order since only they appear several times in the
+    // builtin declaration.
     if (mangledPrimitive.compare("12memory_scope") == 0 ||
         mangledPrimitive.compare("12memory_order") == 0) {
       if (!mangleSubstitution(t, mangledPrimitiveString(t->getPrimitive()))) {
@@ -105,7 +109,7 @@ public:
     return me;
   }
 
-  MangleError visit(const PointerType* p) {
+  MangleError visit(const PointerType *p) {
     size_t fpos = m_stream.str().size();
     std::string qualStr;
     MangleError me = MANGLE_SUCCESS;
@@ -125,7 +129,7 @@ public:
       // and the pointee type itself.
       me = p->getPointee()->accept(this);
       // The type qualifiers plus a pointee type is a substitutable entity
-      if(qualStr.length() > 0)
+      if (qualStr.length() > 0)
         substitutions[m_stream.str().substr(fpos + 1)] = seqId++;
       // The complete pointer type is substitutable as well
       substitutions[m_stream.str().substr(fpos)] = seqId++;
@@ -133,7 +137,7 @@ public:
     return me;
   }
 
-  MangleError visit(const VectorType* v) {
+  MangleError visit(const VectorType *v) {
     size_t index = m_stream.str().size();
     std::stringstream typeStr;
     typeStr << "Dv" << v->getLength() << "_";
@@ -149,10 +153,10 @@ public:
     return me;
   }
 
-  MangleError visit(const AtomicType* p) {
+  MangleError visit(const AtomicType *p) {
     MangleError me = MANGLE_SUCCESS;
     size_t index = m_stream.str().size();
-    const char* typeStr = "U7_Atomic";
+    const char *typeStr = "U7_Atomic";
     if (!mangleSubstitution(p, typeStr)) {
       m_stream << typeStr;
       me = p->getBaseType()->accept(this);
@@ -161,12 +165,13 @@ public:
     return me;
   }
 
-  MangleError visit(const BlockType* p) {
-    m_stream << "U" << "13block_pointerFv";
+  MangleError visit(const BlockType *p) {
+    m_stream << "U"
+             << "13block_pointerFv";
     if (p->getNumOfParams() == 0)
       m_stream << "v";
     else
-      for (unsigned int i=0; i < p->getNumOfParams(); ++i) {
+      for (unsigned int i = 0; i < p->getNumOfParams(); ++i) {
         MangleError err = p->getParam(i)->accept(this);
         if (err != MANGLE_SUCCESS) {
           return err;
@@ -176,16 +181,15 @@ public:
     return MANGLE_SUCCESS;
   }
 
-  MangleError visit(const UserDefinedType* pTy) {
+  MangleError visit(const UserDefinedType *pTy) {
     std::string name = pTy->toString();
     m_stream << name.size() << name;
     return MANGLE_SUCCESS;
   }
 
 private:
-
   // Holds the mangled string representing the prototype of the function.
-  std::stringstream& m_stream;
+  std::stringstream &m_stream;
   unsigned seqId;
   std::map<std::string, unsigned> substitutions;
 };
@@ -193,29 +197,30 @@ private:
 //
 // NameMangler
 //
-  NameMangler::NameMangler(SPIRversion version):m_spir_version(version) {}
+NameMangler::NameMangler(SPIRversion version) : m_spir_version(version) {}
 
-  MangleError NameMangler::mangle(const FunctionDescriptor& fd, std::string& mangledName ) {
-    if (fd.isNull()) {
-      mangledName.assign(FunctionDescriptor::nullString());
-      return MANGLE_NULL_FUNC_DESCRIPTOR;
-    }
-    std::stringstream ret;
-    ret << "_Z" << fd.name.length() << fd.name;
-    MangleVisitor visitor(m_spir_version, ret);
-    for (unsigned int i=0; i < fd.parameters.size(); ++i) {
-      MangleError err = fd.parameters[i]->accept(&visitor);
-      if(err == MANGLE_TYPE_NOT_SUPPORTED) {
-        mangledName.assign("Type ");
-        mangledName.append(fd.parameters[i]->toString());
-        mangledName.append(" is not supported in ");
-        std::string ver = getSPIRVersionAsString(m_spir_version);
-        mangledName.append(ver);
-        return err;
-      }
-    }
-    mangledName.assign(ret.str());
-    return MANGLE_SUCCESS;
+MangleError NameMangler::mangle(const FunctionDescriptor &fd,
+                                std::string &mangledName) {
+  if (fd.isNull()) {
+    mangledName.assign(FunctionDescriptor::nullString());
+    return MANGLE_NULL_FUNC_DESCRIPTOR;
   }
+  std::stringstream ret;
+  ret << "_Z" << fd.name.length() << fd.name;
+  MangleVisitor visitor(m_spir_version, ret);
+  for (unsigned int i = 0; i < fd.parameters.size(); ++i) {
+    MangleError err = fd.parameters[i]->accept(&visitor);
+    if (err == MANGLE_TYPE_NOT_SUPPORTED) {
+      mangledName.assign("Type ");
+      mangledName.append(fd.parameters[i]->toString());
+      mangledName.append(" is not supported in ");
+      std::string ver = getSPIRVersionAsString(m_spir_version);
+      mangledName.append(ver);
+      return err;
+    }
+  }
+  mangledName.assign(ret.str());
+  return MANGLE_SUCCESS;
+}
 
-} // End SPIR namespace
+} // namespace SPIR

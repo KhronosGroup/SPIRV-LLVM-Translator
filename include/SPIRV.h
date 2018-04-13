@@ -41,26 +41,26 @@
 #ifndef LLVM_SUPPORT_SPIRV_H
 #define LLVM_SUPPORT_SPIRV_H
 
-#include <string>
 #include <iostream>
+#include <string>
 
 namespace llvm {
 // Pass initialization functions need to be declared before inclusion of
 // PassSupport.h.
 class PassRegistry;
-void initializeLLVMToSPIRVPass(PassRegistry&);
-void initializeOCL20To12Pass(PassRegistry&);
-void initializeOCL20ToSPIRVPass(PassRegistry&);
-void initializeOCL21ToSPIRVPass(PassRegistry&);
-void initializeOCLTypeToSPIRVPass(PassRegistry&);
-void initializeSPIRVLowerBoolPass(PassRegistry&);
-void initializeSPIRVLowerConstExprPass(PassRegistry&);
-void initializeSPIRVLowerOCLBlocksPass(PassRegistry&);
-void initializeSPIRVLowerMemmovePass(PassRegistry&);
-void initializeSPIRVRegularizeLLVMPass(PassRegistry&);
-void initializeSPIRVToOCL20Pass(PassRegistry&);
-void initializeTransOCLMDPass(PassRegistry&);
-}
+void initializeLLVMToSPIRVPass(PassRegistry &);
+void initializeOCL20To12Pass(PassRegistry &);
+void initializeOCL20ToSPIRVPass(PassRegistry &);
+void initializeOCL21ToSPIRVPass(PassRegistry &);
+void initializeOCLTypeToSPIRVPass(PassRegistry &);
+void initializeSPIRVLowerBoolPass(PassRegistry &);
+void initializeSPIRVLowerConstExprPass(PassRegistry &);
+void initializeSPIRVLowerOCLBlocksPass(PassRegistry &);
+void initializeSPIRVLowerMemmovePass(PassRegistry &);
+void initializeSPIRVRegularizeLLVMPass(PassRegistry &);
+void initializeSPIRVToOCL20Pass(PassRegistry &);
+void initializeTransOCLMDPass(PassRegistry &);
+} // namespace llvm
 
 #include "llvm/IR/Module.h"
 
@@ -75,14 +75,14 @@ bool IsSPIRVBinary(std::string &Img);
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
 /// \returns true if succeeds.
-bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS,
-    std::string &ErrMsg, bool FromText, bool ToText);
+bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS, std::string &ErrMsg,
+                  bool FromText, bool ToText);
 
 /// \brief Convert SPIR-V between binary and internel text formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
-bool ConvertSPIRV(std::string &Input, std::string &Out,
-    std::string &ErrMsg, bool ToText);
+bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
+                  bool ToText);
 
 /// \brief Check if a string contains SPIR-V in internal text format.
 bool IsSPIRVText(std::string &Img);
@@ -99,7 +99,7 @@ bool WriteSPIRV(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
 /// \brief Load SPIRV from istream and translate to LLVM module.
 /// \returns true if succeeds.
 bool ReadSPIRV(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
-    std::string &ErrMsg);
+               std::string &ErrMsg);
 
 /// \brief Regularize LLVM module by removing entities not representable by
 /// SPIRV.
@@ -107,7 +107,7 @@ bool RegularizeLLVMForSPIRV(llvm::Module *M, std::string &ErrMsg);
 
 /// \brief Mangle OpenCL builtin function function name.
 void MangleOpenCLBuiltin(const std::string &UnmangledName,
-    ArrayRef<Type*> ArgTypes, std::string &MangledName);
+                         ArrayRef<Type *> ArgTypes, std::string &MangledName);
 
 /// Create a pass for translating LLVM to SPIR-V.
 ModulePass *createLLVMToSPIRV(SPIRV::SPIRVModule *);
@@ -136,7 +136,8 @@ ModulePass *createSPIRVLowerConstExpr();
 /// Create a pass for lowering OCL 2.0 blocks to functions calls.
 ModulePass *createSPIRVLowerOCLBlocks();
 
-/// Create a pass for lowering llvm.memmove to llvm.memcpys with a temporary variable.
+/// Create a pass for lowering llvm.memmove to llvm.memcpys with a temporary
+/// variable.
 ModulePass *createSPIRVLowerMemmove();
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
@@ -155,7 +156,5 @@ ModulePass *createTransOCLMD();
 ModulePass *createSPIRVWriterPass(llvm::raw_ostream &Str);
 
 } // namespace llvm
-
-
 
 #endif

@@ -28,21 +28,20 @@ std::string FunctionDescriptor::toString() const {
   stream << name << "(";
   size_t paramCount = parameters.size();
   if (paramCount > 0) {
-    for (size_t i=0 ; i<paramCount-1 ; ++i)
+    for (size_t i = 0; i < paramCount - 1; ++i)
       stream << parameters[i]->toString() << ", ";
-    stream << parameters[paramCount-1]->toString();
+    stream << parameters[paramCount - 1]->toString();
   }
   stream << ")";
   return stream.str();
 }
 
-static bool equal(const TypeVector& l, const TypeVector& r) {
+static bool equal(const TypeVector &l, const TypeVector &r) {
   if (&l == &r)
     return true;
   if (l.size() != r.size())
     return false;
-  TypeVector::const_iterator itl = l.begin(), itr = r.begin(),
-  endl = l.end();
+  TypeVector::const_iterator itl = l.begin(), itr = r.begin(), endl = l.end();
   while (itl != endl) {
     if (!(*itl)->equals(*itr))
       return false;
@@ -56,7 +55,7 @@ static bool equal(const TypeVector& l, const TypeVector& r) {
 // FunctionDescriptor
 //
 
-bool FunctionDescriptor::operator == (const FunctionDescriptor& that) const {
+bool FunctionDescriptor::operator==(const FunctionDescriptor &that) const {
   if (this == &that)
     return true;
   if (name != that.name)
@@ -64,15 +63,15 @@ bool FunctionDescriptor::operator == (const FunctionDescriptor& that) const {
   return equal(parameters, that.parameters);
 }
 
-bool FunctionDescriptor::operator < (const FunctionDescriptor& that) const {
+bool FunctionDescriptor::operator<(const FunctionDescriptor &that) const {
   int strCmp = name.compare(that.name);
   if (strCmp)
     return (strCmp < 0);
   size_t len = parameters.size(), thatLen = that.parameters.size();
   if (len != thatLen)
     return len < thatLen;
-  TypeVector::const_iterator it = parameters.begin(),
-  e = parameters.end(), thatit = that.parameters.begin();
+  TypeVector::const_iterator it = parameters.begin(), e = parameters.end(),
+                             thatit = that.parameters.begin();
   while (it != e) {
     int cmp = (*it)->toString().compare((*thatit)->toString());
     if (cmp)
@@ -93,4 +92,4 @@ FunctionDescriptor FunctionDescriptor::null() {
   return fd;
 }
 
-} // End SPIR namespace
+} // namespace SPIR

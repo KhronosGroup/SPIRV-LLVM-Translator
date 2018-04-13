@@ -1,4 +1,4 @@
-//===- SPIRVBuiltin.h - SPIR-V extended instruction --------------*- C++ -*-===//
+//===- SPIRVBuiltin.h - SPIR-V extended instruction -------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -40,24 +40,22 @@
 #ifndef SPIRVBUILTIN_HPP_
 #define SPIRVBUILTIN_HPP_
 
-#include "SPIRVUtil.h"
 #include "OpenCL.std.h"
+#include "SPIRVEnum.h"
+#include "SPIRVUtil.h"
 
 #include <string>
 #include <vector>
 
-namespace SPIRV{
+namespace SPIRV {
 
-
-inline bool
-isOpenCLBuiltinSet (SPIRVExtInstSetKind Set) {
+inline bool isOpenCLBuiltinSet(SPIRVExtInstSetKind Set) {
   return Set == SPIRVEIS_OpenCL;
 }
 
 typedef OpenCLLIB::Entrypoints OCLExtOpKind;
 
-template<> inline void
-SPIRVMap<OCLExtOpKind, std::string>::init() {
+template <> inline void SPIRVMap<OCLExtOpKind, std::string>::init() {
   add(OpenCLLIB::Acos, "acos");
   add(OpenCLLIB::Acosh, "acosh");
   add(OpenCLLIB::Acospi, "acospi");
@@ -253,23 +251,20 @@ SPIRVMap<OCLExtOpKind, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(OCLExtOpKind, OCLExtOpMap)
 
-inline bool
-isReadImage(SPIRVWord EntryPoint) {
+inline bool isReadImage(SPIRVWord EntryPoint) {
   return EntryPoint >= OpenCLLIB::Read_imagef &&
-      EntryPoint <= OpenCLLIB::Read_imageui;
+         EntryPoint <= OpenCLLIB::Read_imageui;
 }
 
-inline bool
-isWriteImage(SPIRVWord EntryPoint) {
+inline bool isWriteImage(SPIRVWord EntryPoint) {
   return EntryPoint >= OpenCLLIB::Write_imagef &&
-      EntryPoint <= OpenCLLIB::Write_imageui;
+         EntryPoint <= OpenCLLIB::Write_imageui;
 }
 
-inline bool
-isReadOrWriteImage(SPIRVWord EntryPoint) {
+inline bool isReadOrWriteImage(SPIRVWord EntryPoint) {
   return isReadImage(EntryPoint) || isWriteImage(EntryPoint);
 }
 
-}
+} // namespace SPIRV
 
 #endif

@@ -12,10 +12,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVWriterPass.h"
+#include "SPIRV.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
-#include "SPIRV.h"
 using namespace llvm;
 
 PreservedAnalyses SPIRVWriterPass::run(Module &M) {
@@ -26,23 +26,22 @@ PreservedAnalyses SPIRVWriterPass::run(Module &M) {
 }
 
 namespace {
-  class WriteSPIRVPass : public ModulePass {
-    raw_ostream &OS; // raw_ostream to print on
-  public:
-    static char ID; // Pass identification, replacement for typeid
-    explicit WriteSPIRVPass(raw_ostream &o)
-      : ModulePass(ID), OS(o) {}
+class WriteSPIRVPass : public ModulePass {
+  raw_ostream &OS; // raw_ostream to print on
+public:
+  static char ID; // Pass identification, replacement for typeid
+  explicit WriteSPIRVPass(raw_ostream &o) : ModulePass(ID), OS(o) {}
 
-    StringRef getPassName() const override { return "SPIRV Writer"; }
+  StringRef getPassName() const override { return "SPIRV Writer"; }
 
-    bool runOnModule(Module &M) override {
-      // FIXME: at the moment LLVM/SPIR-V translation errors are ignored.
-      std::string err;
-      WriteSPIRV(&M, OS, err);
-      return false;
-    }
-  };
-}
+  bool runOnModule(Module &M) override {
+    // FIXME: at the moment LLVM/SPIR-V translation errors are ignored.
+    std::string err;
+    WriteSPIRV(&M, OS, err);
+    return false;
+  }
+};
+} // namespace
 
 char WriteSPIRVPass::ID = 0;
 

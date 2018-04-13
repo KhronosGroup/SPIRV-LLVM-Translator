@@ -1,4 +1,4 @@
-//===- SPIRVFunction.cpp - Class to represent a SPIR-V Function --*- C++ -*-===//
+//===- SPIRVFunction.cpp - Class to represent a SPIR-V Function --- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -36,66 +36,60 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "SPIRVEntry.h"
 #include "SPIRVFunction.h"
 #include "SPIRVBasicBlock.h"
+#include "SPIRVEntry.h"
 #include "SPIRVInstruction.h"
 #include "SPIRVStream.h"
 
-#include <functional>
 #include <algorithm>
+#include <functional>
 using namespace SPIRV;
 
-SPIRVFunctionParameter::SPIRVFunctionParameter(SPIRVType *TheType, SPIRVId TheId,
-    SPIRVFunction *TheParent, unsigned TheArgNo):
-        SPIRVValue(TheParent->getModule(), 3, OpFunctionParameter,
-        TheType, TheId),
-    ParentFunc(TheParent),
-    ArgNo(TheArgNo){
+SPIRVFunctionParameter::SPIRVFunctionParameter(SPIRVType *TheType,
+                                               SPIRVId TheId,
+                                               SPIRVFunction *TheParent,
+                                               unsigned TheArgNo)
+    : SPIRVValue(TheParent->getModule(), 3, OpFunctionParameter, TheType,
+                 TheId),
+      ParentFunc(TheParent), ArgNo(TheArgNo) {
   validate();
 }
 
-void
-SPIRVFunctionParameter::foreachAttr(
-    std::function<void(SPIRVFuncParamAttrKind)>Func){
+void SPIRVFunctionParameter::foreachAttr(
+    std::function<void(SPIRVFuncParamAttrKind)> Func) {
   auto Locs = Decorates.equal_range(DecorationFuncParamAttr);
-  for (auto I = Locs.first, E = Locs.second; I != E; ++I){
-    auto Attr = static_cast<SPIRVFuncParamAttrKind>(
-        I->second->getLiteral(0));
+  for (auto I = Locs.first, E = Locs.second; I != E; ++I) {
+    auto Attr = static_cast<SPIRVFuncParamAttrKind>(I->second->getLiteral(0));
     assert(isValid(Attr));
     Func(Attr);
   }
 }
 
-SPIRVDecoder
-SPIRVFunction::getDecoder(std::istream &IS) {
+SPIRVDecoder SPIRVFunction::getDecoder(std::istream &IS) {
   return SPIRVDecoder(IS, *this);
 }
 
-void
-SPIRVFunction::encode(spv_ostream &O) const {
+void SPIRVFunction::encode(spv_ostream &O) const {
   getEncoder(O) << Type << Id << FCtrlMask << FuncType;
 }
 
-void
-SPIRVFunction::encodeChildren(spv_ostream &O) const {
+void SPIRVFunction::encodeChildren(spv_ostream &O) const {
   O << SPIRVNL();
-  for (auto &I:Parameters)
+  for (auto &I : Parameters)
     O << *I;
   O << SPIRVNL();
-  for (auto &I:BBVec)
+  for (auto &I : BBVec)
     O << *I;
   O << SPIRVFunctionEnd();
 }
 
-void
-SPIRVFunction::encodeExecutionModes(spv_ostream &O)const {
-  for (auto &I:ExecModes)
+void SPIRVFunction::encodeExecutionModes(spv_ostream &O) const {
+  for (auto &I : ExecModes)
     O << *I.second;
 }
 
-void
-SPIRVFunction::decode(std::istream &I) {
+void SPIRVFunction::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Type >> Id >> FCtrlMask >> FuncType;
   Module->addFunction(this);
@@ -106,7 +100,7 @@ SPIRVFunction::decode(std::istream &I) {
     if (Decoder.OpCode == OpFunctionEnd)
       break;
 
-    switch(Decoder.OpCode) {
+    switch (Decoder.OpCode) {
     case OpFunctionParameter: {
       auto Param = static_cast<SPIRVFunctionParameter *>(Decoder.getEntry());
       assert(Param);
@@ -122,24 +116,22 @@ SPIRVFunction::decode(std::istream &I) {
       break;
     }
     default:
-      assert (0 && "Invalid SPIRV format");
+      assert(0 && "Invalid SPIRV format");
     }
   }
 }
 
 /// Decode basic block and contained instructions.
 /// Do it here instead of in BB:decode to avoid back track in input stream.
-void
-SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
-  SPIRVBasicBlock *BB = static_cast<SPIRVBasicBlock*>(Decoder.getEntry());
+void SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
+  SPIRVBasicBlock *BB = static_cast<SPIRVBasicBlock *>(Decoder.getEntry());
   assert(BB);
   addBasicBlock(BB);
   SPIRVDBG(spvdbgs() << "Decode BB: " << BB->getId() << '\n');
 
   Decoder.setScope(BB);
-  while(Decoder.getWordCountAndOpCode()) {
-    if (Decoder.OpCode == OpFunctionEnd ||
-        Decoder.OpCode == OpLabel) {
+  while (Decoder.getWordCountAndOpCode()) {
+    if (Decoder.OpCode == OpFunctionEnd || Decoder.OpCode == OpLabel) {
       break;
     }
 
@@ -148,7 +140,8 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
       continue;
     }
 
-    SPIRVInstruction *Inst = static_cast<SPIRVInstruction *>(Decoder.getEntry());
+    SPIRVInstruction *Inst =
+        static_cast<SPIRVInstruction *>(Decoder.getEntry());
     assert(Inst);
     if (Inst->getOpCode() != OpUndef)
       BB->addInstruction(Inst);
@@ -158,13 +151,11 @@ SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
   Decoder.setScope(this);
 }
 
-void
-SPIRVFunction::foreachReturnValueAttr(
-    std::function<void(SPIRVFuncParamAttrKind)>Func){
+void SPIRVFunction::foreachReturnValueAttr(
+    std::function<void(SPIRVFuncParamAttrKind)> Func) {
   auto Locs = Decorates.equal_range(DecorationFuncParamAttr);
-  for (auto I = Locs.first, E = Locs.second; I != E; ++I){
-    auto Attr = static_cast<SPIRVFuncParamAttrKind>(
-        I->second->getLiteral(0));
+  for (auto I = Locs.first, E = Locs.second; I != E; ++I) {
+    auto Attr = static_cast<SPIRVFuncParamAttrKind>(I->second->getLiteral(0));
     assert(isValid(Attr));
     Func(Attr);
   }

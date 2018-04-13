@@ -37,12 +37,12 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "ocl20to12"
 
-#include "SPIRVInternal.h"
 #include "OCLUtil.h"
+#include "SPIRVInternal.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
@@ -55,10 +55,9 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
-class OCL20To12: public ModulePass,
-  public InstVisitor<OCL20To12> {
+class OCL20To12 : public ModulePass, public InstVisitor<OCL20To12> {
 public:
-  OCL20To12():ModulePass(ID), M(nullptr), Ctx(nullptr) {
+  OCL20To12() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeOCL20To12Pass(*PassRegistry::getPassRegistry());
   }
   virtual bool runOnModule(Module &M);
@@ -70,6 +69,7 @@ public:
   void visitCallAtomicWorkItemFence(CallInst *CI);
 
   static char ID;
+
 private:
   Module *M;
   LLVMContext *Ctx;
@@ -77,8 +77,7 @@ private:
 
 char OCL20To12::ID = 0;
 
-bool
-OCL20To12::runOnModule(Module& Module) {
+bool OCL20To12::runOnModule(Module &Module) {
   M = &Module;
   if (getOCLVersion(M) >= kOCLVer::CL20)
     return false;
@@ -90,14 +89,13 @@ OCL20To12::runOnModule(Module& Module) {
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)) {
     DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
 
-void
-OCL20To12::visitCallInst(CallInst& CI) {
+void OCL20To12::visitCallInst(CallInst &CI) {
   DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto F = CI.getCalledFunction();
   if (!F)
@@ -115,26 +113,26 @@ OCL20To12::visitCallInst(CallInst& CI) {
   }
 }
 
-void OCL20To12::visitCallAtomicWorkItemFence(CallInst* CI) {
+void OCL20To12::visitCallAtomicWorkItemFence(CallInst *CI) {
   auto Lit = getAtomicWorkItemFenceLiterals(CI);
   if (std::get<1>(Lit) != OCLLegacyAtomicMemOrder ||
       std::get<2>(Lit) != OCLLegacyAtomicMemScope)
     report_fatal_error("OCL 2.0 builtin atomic_work_item_fence used in 1.2",
-        false);
+                       false);
 
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args){
-    Args.resize(1);
-    Args[0] = getInt32(M, std::get<0>(Lit));
-    return kOCLBuiltinName::MemFence;
-  }, &Attrs);
+  mutateCallInstOCL(M, CI,
+                    [=](CallInst *, std::vector<Value *> &Args) {
+                      Args.resize(1);
+                      Args[0] = getInt32(M, std::get<0>(Lit));
+                      return kOCLBuiltinName::MemFence;
+                    },
+                    &Attrs);
 }
 
-}
+} // namespace SPIRV
 
 INITIALIZE_PASS(OCL20To12, "ocl20to12",
-    "Translate OCL 2.0 builtins to OCL 1.2 builtins", false, false)
+                "Translate OCL 2.0 builtins to OCL 1.2 builtins", false, false)
 
-ModulePass *llvm::createOCL20To12() {
-  return new OCL20To12();
-}
+ModulePass *llvm::createOCL20To12() { return new OCL20To12(); }

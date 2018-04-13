@@ -40,8 +40,8 @@
 #ifndef LIB_SPIRV_SPIRVMDWALKER_H_
 #define LIB_SPIRV_SPIRVMDWALKER_H_
 
-#include "llvm/IR/Metadata.h"
 #include "SPIRVInternal.h"
+#include "llvm/IR/Metadata.h"
 
 #include <functional>
 using namespace llvm;
@@ -50,23 +50,23 @@ namespace SPIRV {
 
 class SPIRVMDWalker {
 public:
-  template<typename ParentT> struct MDWrapper;
+  template <typename ParentT> struct MDWrapper;
 
   struct NamedMDWrapper {
-    NamedMDWrapper(NamedMDNode *Named, SPIRVMDWalker& WW)
-      :NMD(Named), W(WW), I(0), Q(true){
+    NamedMDWrapper(NamedMDNode *Named, SPIRVMDWalker &WW)
+        : NMD(Named), W(WW), I(0), Q(true) {
       E = Named ? Named->getNumOperands() : 0;
     }
 
-    operator bool() const { return NMD;}
+    operator bool() const { return NMD; }
 
-    bool atEnd() const { return !(NMD && I < E);}
+    bool atEnd() const { return !(NMD && I < E); }
 
     MDWrapper<NamedMDWrapper> nextOp() {
       if (!Q)
         assert(I < E && "out of bound");
-      return MDWrapper<NamedMDWrapper>((NMD && I < E) ? NMD->getOperand(I++)
-          : nullptr, *this, W);
+      return MDWrapper<NamedMDWrapper>(
+          (NMD && I < E) ? NMD->getOperand(I++) : nullptr, *this, W);
     }
 
     NamedMDWrapper &setQuiet(bool Quiet) {
@@ -81,34 +81,31 @@ public:
     bool Q; // Quiet
   };
 
-  template<typename ParentT>
-  struct MDWrapper {
+  template <typename ParentT> struct MDWrapper {
     MDWrapper(MDNode *Node, ParentT &Parent, SPIRVMDWalker &Walker)
-      :M(Node), P(Parent), W(Walker), I(0), Q(false){
+        : M(Node), P(Parent), W(Walker), I(0), Q(false) {
       E = Node ? Node->getNumOperands() : 0;
     }
 
-    operator bool() const { return M;}
+    operator bool() const { return M; }
 
-    bool atEnd() const { return !(M && I < E);}
+    bool atEnd() const { return !(M && I < E); }
 
-    template<typename T>
-    MDWrapper &get(T &V) {
+    template <typename T> MDWrapper &get(T &V) {
       if (!Q)
         assert(I < E && "out of bound");
       if (atEnd())
         return *this;
-      V = mdconst::dyn_extract<ConstantInt>(M->getOperand(I++))
-          ->getZExtValue();
+      V = mdconst::dyn_extract<ConstantInt>(M->getOperand(I++))->getZExtValue();
       return *this;
     }
 
     MDWrapper &get(std::string &S) {
       if (!Q)
-        assert (I < E && "out of bound");
+        assert(I < E && "out of bound");
       if (atEnd())
         return *this;
-      Metadata* Op = M->getOperand(I++);
+      Metadata *Op = M->getOperand(I++);
       if (!Op)
         S = "";
       else if (auto Str = dyn_cast<MDString>(Op))
@@ -120,7 +117,7 @@ public:
 
     MDWrapper &get(Function *&F) {
       if (!Q)
-        assert (I < E && "out of bound");
+        assert(I < E && "out of bound");
       if (atEnd())
         return *this;
       F = mdconst::dyn_extract<Function>(M->getOperand(I++));
@@ -140,14 +137,13 @@ public:
 
     MDWrapper<MDWrapper> nextOp() {
       if (!Q)
-        assert (I < E && "out of bound");
-      return MDWrapper<MDWrapper>((M && I < E) ?
-          dyn_cast<MDNode>(M->getOperand(I++)) : nullptr, *this, W);
+        assert(I < E && "out of bound");
+      return MDWrapper<MDWrapper>(
+          (M && I < E) ? dyn_cast<MDNode>(M->getOperand(I++)) : nullptr, *this,
+          W);
     }
 
-    ParentT &done() {
-      return P;
-    }
+    ParentT &done() { return P; }
 
     MDWrapper &setQuiet(bool Quiet) {
       Q = Quiet;
@@ -163,16 +159,17 @@ public:
     bool Q; // Quiet
   };
 
-  explicit SPIRVMDWalker(Module &Mod):M(Mod), C(Mod.getContext()){}
+  explicit SPIRVMDWalker(Module &Mod) : M(Mod), C(Mod.getContext()) {}
 
   NamedMDWrapper getNamedMD(StringRef Name) {
     return NamedMDWrapper(M.getNamedMetadata(Name), *this);
   }
 
   friend struct NamedMDWrapper;
+
 private:
-  Module& M;
-  LLVMContext& C;
+  Module &M;
+  LLVMContext &C;
 };
 
 } /* namespace SPIRV */

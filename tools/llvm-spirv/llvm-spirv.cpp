@@ -56,9 +56,9 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PrettyStackTrace.h"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
 
 #ifndef _SPIRV_SUPPORT_TEXT_FMT
 #define _SPIRV_SUPPORT_TEXT_FMT
@@ -66,50 +66,50 @@
 
 #include "SPIRV.h"
 
-#include <memory>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #define DEBUG_TYPE "spirv"
 
 namespace kExt {
-  const char SpirvBinary[] = ".spv";
-  const char SpirvText[] = ".spt";
-  const char LLVMBinary[] = ".bc";
-}
+const char SpirvBinary[] = ".spv";
+const char SpirvText[] = ".spt";
+const char LLVMBinary[] = ".bc";
+} // namespace kExt
 
 using namespace llvm;
 
-static cl::opt<std::string>
-InputFile(cl::Positional, cl::desc("<input file>"), cl::init("-"));
+static cl::opt<std::string> InputFile(cl::Positional, cl::desc("<input file>"),
+                                      cl::init("-"));
 
-static cl::opt<std::string>
-OutputFile("o", cl::desc("Override output filename"),
-               cl::value_desc("filename"));
-
-static cl::opt<bool>
-IsReverse("r", cl::desc("Reverse translation (SPIR-V to LLVM)"));
+static cl::opt<std::string> OutputFile("o",
+                                       cl::desc("Override output filename"),
+                                       cl::value_desc("filename"));
 
 static cl::opt<bool>
-IsRegularization("s", cl::desc(
-    "Regularize LLVM to be representable by SPIR-V"));
+    IsReverse("r", cl::desc("Reverse translation (SPIR-V to LLVM)"));
+
+static cl::opt<bool>
+    IsRegularization("s",
+                     cl::desc("Regularize LLVM to be representable by SPIR-V"));
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 namespace SPIRV {
 // Use textual format for SPIRV.
 extern bool SPIRVUseTextFormat;
-}
+} // namespace SPIRV
 
 static cl::opt<bool>
-ToText("to-text", cl::desc("Convert input SPIR-V binary to internal textual format"));
+    ToText("to-text",
+           cl::desc("Convert input SPIR-V binary to internal textual format"));
 
-static cl::opt<bool>
-ToBinary("to-binary",
+static cl::opt<bool> ToBinary(
+    "to-binary",
     cl::desc("Convert input SPIR-V in internal textual format to binary"));
 #endif
 
-static std::string
-removeExt(const std::string& FileName) {
+static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
     return FileName.substr(0, Pos);
@@ -118,8 +118,7 @@ removeExt(const std::string& FileName) {
 
 static ExitOnError ExitOnErr;
 
-static int
-convertLLVMToSPIRV() {
+static int convertLLVMToSPIRV() {
   LLVMContext Context;
 
   std::unique_ptr<MemoryBuffer> MB =
@@ -133,8 +132,9 @@ convertLLVMToSPIRV() {
     if (InputFile == "-")
       OutputFile = "-";
     else
-      OutputFile = removeExt(InputFile) +
-                   (SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
+      OutputFile =
+          removeExt(InputFile) +
+          (SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
   }
 
   llvm::StringRef outFile(OutputFile);
@@ -148,8 +148,7 @@ convertLLVMToSPIRV() {
   return 0;
 }
 
-static int
-convertSPIRVToLLVM() {
+static int convertSPIRVToLLVM() {
   LLVMContext Context;
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
@@ -162,9 +161,8 @@ convertSPIRVToLLVM() {
 
   DEBUG(dbgs() << "Converted LLVM module:\n" << *M);
 
-
   raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)){
+  if (verifyModule(*M, &ErrorOS)) {
     errs() << "Fails to verify module: " << ErrorOS.str();
     return -1;
   }
@@ -190,8 +188,7 @@ convertSPIRVToLLVM() {
 }
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
-static int
-convertSPIRV() {
+static int convertSPIRV() {
   if (ToBinary == ToText) {
     errs() << "Invalid arguments\n";
     return -1;
@@ -202,14 +199,14 @@ convertSPIRV() {
     if (InputFile == "-")
       OutputFile = "-";
     else {
-      OutputFile = removeExt(InputFile)
-                 + (ToBinary?kExt::SpirvBinary:kExt::SpirvText);
+      OutputFile = removeExt(InputFile) +
+                   (ToBinary ? kExt::SpirvBinary : kExt::SpirvText);
     }
   }
 
   auto Action = [&](llvm::raw_ostream &OFS) {
     std::string Err;
-      if (!SPIRV::ConvertSPIRV(IFS, OFS, Err, ToBinary, ToText)) {
+    if (!SPIRV::ConvertSPIRV(IFS, OFS, Err, ToBinary, ToText)) {
       errs() << "Fails to convert SPIR-V : " << Err << '\n';
       return -1;
     }
@@ -217,15 +214,15 @@ convertSPIRV() {
   };
   if (OutputFile != "-") {
     std::error_code EC;
-    llvm::raw_fd_ostream OFS(llvm::StringRef(OutputFile), EC, llvm::sys::fs::F_None);
+    llvm::raw_fd_ostream OFS(llvm::StringRef(OutputFile), EC,
+                             llvm::sys::fs::F_None);
     return Action(OFS);
   } else
     return Action(outs());
 }
 #endif
 
-static int
-regularizeLLVM() {
+static int regularizeLLVM() {
   LLVMContext Context;
 
   std::unique_ptr<MemoryBuffer> MB =
@@ -260,9 +257,7 @@ regularizeLLVM() {
   return 0;
 }
 
-
-int
-main(int ac, char** av) {
+int main(int ac, char **av) {
   EnablePrettyStackTrace();
   sys::PrintStackTraceOnErrorSignal(av[0]);
   PrettyStackTraceProgram X(ac, av);
