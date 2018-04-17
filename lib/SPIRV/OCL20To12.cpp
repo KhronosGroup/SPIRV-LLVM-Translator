@@ -60,7 +60,7 @@ public:
   OCL20To12() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeOCL20To12Pass(*PassRegistry::getPassRegistry());
   }
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
   virtual void visitCallInst(CallInst &CI);
 
   /// Transform atomic_work_item_fence to mem_fence.

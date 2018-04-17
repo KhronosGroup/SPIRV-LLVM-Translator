@@ -413,7 +413,7 @@ public:
 
 protected:
   _SPIRV_DEF_ENCDEC0
-  void validate() const { assert(isValidId(SPIRVEntry::OpCode)); }
+  void validate() const override { assert(isValidId(SPIRVEntry::OpCode)); }
 };
 
 class SPIRVAnnotationGeneric : public SPIRVEntryNoIdGeneric {
@@ -464,7 +464,7 @@ public:
 
 protected:
   _SPIRV_DCL_ENCDEC
-  void validate() const;
+  void validate() const override;
 
   std::string Str;
 };
@@ -484,7 +484,7 @@ public:
 
 protected:
   _SPIRV_DCL_ENCDEC
-  void validate() const;
+  void validate() const override;
   SPIRVWord MemberNumber;
   std::string Str;
 };
@@ -550,7 +550,7 @@ public:
 
 protected:
   _SPIRV_DCL_ENCDEC
-  void validate() const;
+  void validate() const override;
   SPIRVId FileName;
   SPIRVWord Line;
   SPIRVWord Column;
@@ -583,7 +583,9 @@ public:
   SPIRVExecutionMode() : ExecMode(ExecutionModeInvocations) {}
   SPIRVExecutionModeKind getExecutionMode() const { return ExecMode; }
   const std::vector<SPIRVWord> &getLiterals() const { return WordLiterals; }
-  SPIRVCapVec getRequiredCapability() const { return getCapability(ExecMode); }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getCapability(ExecMode);
+  }
 
   SPIRVWord getRequiredSPIRVVersion() const override {
     switch (ExecMode) {
@@ -634,7 +636,7 @@ public:
 
 protected:
   _SPIRV_DCL_ENCDEC
-  void validate() const;
+  void validate() const override;
 
   std::string Str;
 };
@@ -644,7 +646,7 @@ public:
   SPIRVMemoryModel(SPIRVModule *M) : SPIRVEntryNoId(M, 3) {}
   SPIRVMemoryModel() {}
   _SPIRV_DCL_ENCDEC
-  void validate() const;
+  void validate() const override;
 };
 
 class SPIRVSource : public SPIRVEntryNoId<OpSource> {

@@ -64,14 +64,14 @@ public:
   }
   bool isByVal() const { return hasAttr(FunctionParameterAttributeByVal); }
   bool isZext() const { return hasAttr(FunctionParameterAttributeZext); }
-  SPIRVCapVec getRequiredCapability() const {
+  SPIRVCapVec getRequiredCapability() const override {
     if (hasLinkageType() && getLinkageType() == LinkageTypeImport)
       return getVec(CapabilityLinkage);
     return SPIRVCapVec();
   }
 
 protected:
-  void validate() const {
+  void validate() const override {
     SPIRVValue::validate();
     assert(ParentFunc && "Invalid parent function");
   }
@@ -96,7 +96,7 @@ public:
       : SPIRVValue(OpFunction), FuncType(NULL),
         FCtrlMask(FunctionControlMaskNone) {}
 
-  SPIRVDecoder getDecoder(std::istream &IS);
+  SPIRVDecoder getDecoder(std::istream &IS) override;
   SPIRVTypeFunction *getFunctionType() const { return FuncType; }
   SPIRVWord getFuncCtlMask() const { return FCtrlMask; }
   size_t getNumBasicBlock() const { return BBVec.size(); }
@@ -127,10 +127,10 @@ public:
     return BB;
   }
 
-  void encodeChildren(spv_ostream &) const;
+  void encodeChildren(spv_ostream &) const override;
   void encodeExecutionModes(spv_ostream &) const;
   _SPIRV_DCL_ENCDEC
-  void validate() const {
+  void validate() const override {
     SPIRVValue::validate();
     assert(FuncType && "Invalid func type");
   }

@@ -108,7 +108,7 @@ public:
     I.dropAllReferences();
     I.eraseFromParent();
   }
-  virtual bool runOnModule(Module &M) {
+  bool runOnModule(Module &M) override {
     Context = &M.getContext();
     Mod = &M;
     visit(M);

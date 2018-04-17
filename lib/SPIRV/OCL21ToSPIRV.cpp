@@ -62,7 +62,7 @@ public:
   OCL21ToSPIRV() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
     initializeOCL21ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
   virtual void visitCallInst(CallInst &CI);
 
   /// Transform SPIR-V convert function

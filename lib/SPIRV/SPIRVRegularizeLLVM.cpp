@@ -71,7 +71,7 @@ public:
     initializeSPIRVRegularizeLLVMPass(*PassRegistry::getPassRegistry());
   }
 
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
 
   // Lower functions
   bool regularize();
