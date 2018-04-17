@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVSTREAM_H
-#define SPIRVSTREAM_H
+#ifndef SPIRV_LIBSPIRV_SPIRVSTREAM_H
+#define SPIRV_LIBSPIRV_SPIRVSTREAM_H
 
 #include "SPIRVDebug.h"
 #include "SPIRVExtInst.h"
@@ -187,4 +187,4 @@ const SPIRVEncoder &operator<<(const SPIRVEncoder &O, const std::string &Str);
 const SPIRVDecoder &operator>>(const SPIRVDecoder &I, std::string &Str);
 
 } // namespace SPIRV
-#endif
+#endif // SPIRV_LIBSPIRV_SPIRVSTREAM_H

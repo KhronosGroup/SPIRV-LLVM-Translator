@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVMODULE_HPP_
-#define SPIRVMODULE_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVMODULE_H
+#define SPIRV_LIBSPIRV_SPIRVMODULE_H
 
 #include "SPIRVEntry.h"
 
@@ -401,4 +401,4 @@ bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
 #endif
 } // namespace SPIRV
 
-#endif /* SPIRVMODULE_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVMODULE_H

@@ -43,8 +43,8 @@
 // script and any other source file instead, before re-generating this file.
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVISVALIDENUM_H_
-#define SPIRVISVALIDENUM_H_
+#ifndef SPIRV_LIBSPIRV_SPIRVISVALIDENUM_H
+#define SPIRV_LIBSPIRV_SPIRVISVALIDENUM_H
 
 #include "SPIRVEnum.h"
 #include "spirv.hpp"
@@ -962,4 +962,4 @@ inline bool isValidKernelProfilingInfoMask(SPIRVWord Mask) {
 
 } /* namespace SPIRV */
 
-#endif /* SPIRVISVALIDENUM_H_ */
+#endif // SPIRV_LIBSPIRV_SPIRVISVALIDENUM_H

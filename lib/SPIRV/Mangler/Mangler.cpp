@@ -95,8 +95,8 @@ public:
     // out of all enums it makes sense to substitute only
     // memory_scope/memory_order since only they appear several times in the
     // builtin declaration.
-    if (mangledPrimitive.compare("12memory_scope") == 0 ||
-        mangledPrimitive.compare("12memory_order") == 0) {
+    if (mangledPrimitive == "12memory_scope" ||
+        mangledPrimitive == "12memory_order") {
       if (!mangleSubstitution(t, mangledPrimitiveString(t->getPrimitive()))) {
         size_t index = m_stream.str().size();
         m_stream << mangledPrimitiveString(t->getPrimitive());

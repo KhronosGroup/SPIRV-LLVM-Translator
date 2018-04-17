@@ -40,8 +40,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVVALUE_HPP_
-#define SPIRVVALUE_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVVALUE_H
+#define SPIRV_LIBSPIRV_SPIRVVALUE_H
 
 #include "SPIRVDecorate.h"
 #include "SPIRVEntry.h"
@@ -112,8 +112,8 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVCapVec CV;
     if (!hasType())
-      return std::move(CV);
-    return std::move(Type->getRequiredCapability());
+      return CV;
+    return Type->getRequiredCapability();
   }
 
 protected:
@@ -387,4 +387,4 @@ protected:
 
 } // namespace SPIRV
 
-#endif /* SPIRVVALUE_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVVALUE_H

@@ -10,8 +10,8 @@
  * Contributed by: Intel Corporation.
  */
 
-#ifndef __FUNCTION_DESCRIPTOR_H__
-#define __FUNCTION_DESCRIPTOR_H__
+#ifndef SPIRV_MANGLER_FUNCTIONDESCRIPTOR_H
+#define SPIRV_MANGLER_FUNCTIONDESCRIPTOR_H
 
 #include "ParameterType.h"
 #include "Refcount.h"
@@ -52,4 +52,4 @@ std::ostream &operator<<(T &o, const SPIR::FunctionDescriptor &fd) {
 }
 } // namespace SPIR
 
-#endif //__FUNCTION_DESCRIPTOR_H__
+#endif // SPIRV_MANGLER_FUNCTIONDESCRIPTOR_H

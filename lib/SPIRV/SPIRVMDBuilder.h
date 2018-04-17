@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef LIB_SPIRV_SPIRVMDBUILDER_H_
-#define LIB_SPIRV_SPIRVMDBUILDER_H_
+#ifndef SPIRV_SPIRVMDBUILDER_H
+#define SPIRV_SPIRVMDBUILDER_H
 
 #include "SPIRVInternal.h"
 #include "llvm/IR/Metadata.h"
@@ -128,4 +128,4 @@ private:
 
 } /* namespace SPIRV */
 
-#endif /* LIB_SPIRV_SPIRVMDBUILDER_H_ */
+#endif // SPIRV_SPIRVMDBUILDER_H

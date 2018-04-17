@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVINSTRUCTION_HPP_
-#define SPIRVINSTRUCTION_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H
+#define SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H
 
 #include "SPIRVBasicBlock.h"
 #include "SPIRVEnum.h"
@@ -1462,7 +1462,7 @@ protected:
     case OpTypeStruct:
       break;
     default:
-      assert("Invalid type");
+      static_assert("Invalid type", "");
     }
   }
   std::vector<SPIRVId> Constituents;
@@ -2164,4 +2164,4 @@ SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst);
 SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *C);
 } // namespace SPIRV
 
-#endif // SPIRVINSTRUCTION_HPP_
+#endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

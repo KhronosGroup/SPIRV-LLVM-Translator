@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVENUM_HPP_
-#define SPIRVENUM_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVENUM_H
+#define SPIRV_LIBSPIRV_SPIRVENUM_H
 
 #include "SPIRVOpCode.h"
 #include "spirv.hpp"
@@ -120,7 +120,7 @@ typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
 template <typename K> SPIRVCapVec getCapability(K Key) {
   SPIRVCapVec V;
   SPIRVMap<K, SPIRVCapVec>::find(Key, &V);
-  return std::move(V);
+  return V;
 }
 
 #define ADD_VEC_INIT(Cap, ...)                                                 \
@@ -408,4 +408,4 @@ inline unsigned extractSPIRVMemOrderSemantic(unsigned Sema) {
 
 } // namespace SPIRV
 
-#endif /* SPIRVENUM_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVENUM_H

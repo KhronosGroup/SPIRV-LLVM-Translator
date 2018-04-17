@@ -43,8 +43,8 @@
 // script and any other source file instead, before re-generating this file.
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVNAMEMAPENUM_H_
-#define SPIRVNAMEMAPENUM_H_
+#ifndef SPIRV_LIBSPIRV_SPIRVNAMEMAPENUM_H
+#define SPIRV_LIBSPIRV_SPIRVNAMEMAPENUM_H
 
 #include "SPIRVEnum.h"
 #include "spirv.hpp"
@@ -471,4 +471,4 @@ SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
 } /* namespace SPIRV */
 
-#endif /* SPIRVNAMEMAPENUM_H_ */
+#endif // SPIRV_LIBSPIRV_SPIRVNAMEMAPENUM_H

@@ -35,6 +35,10 @@
 // This file declares OCL utility functions.
 //
 //===----------------------------------------------------------------------===//
+
+#ifndef SPIRV_OCLUTIL_H
+#define SPIRV_OCLUTIL_H
+
 #include "SPIRVInternal.h"
 
 #include <functional>
@@ -613,3 +617,5 @@ template <> inline void SPIRVMap<std::string, Op, OCLOpaqueType>::init() {
 }
 
 } // namespace SPIRV
+
+#endif // SPIRV_OCLUTIL_H

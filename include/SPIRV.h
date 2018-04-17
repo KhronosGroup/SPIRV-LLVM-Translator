@@ -1,4 +1,4 @@
-//===- SPIRV.h – Read and write SPIR-V binary -------------------*- C++ -*-===//
+//===- SPIRV.h - Read and write SPIR-V binary -------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -38,8 +38,8 @@
 ///
 ///
 //===----------------------------------------------------------------------===//
-#ifndef LLVM_SUPPORT_SPIRV_H
-#define LLVM_SUPPORT_SPIRV_H
+#ifndef SPIRV_H
+#define SPIRV_H
 
 #include <iostream>
 #include <string>
@@ -157,4 +157,4 @@ ModulePass *createSPIRVWriterPass(llvm::raw_ostream &Str);
 
 } // namespace llvm
 
-#endif
+#endif // SPIRV_H

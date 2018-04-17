@@ -36,8 +36,8 @@
 /// This file declares classes and functions shared by SPIR-V reader/writer.
 ///
 //===----------------------------------------------------------------------===//
-#ifndef LLVMSPIRVINTERNAL_HPP_
-#define LLVMSPIRVINTERNAL_HPP_
+#ifndef SPIRV_SPIRVINTERNAL_H
+#define SPIRV_SPIRVINTERNAL_H
 
 #include "NameMangleAPI.h"
 #include "libSPIRV/SPIRVEnum.h"
@@ -264,7 +264,7 @@ typedef SPIRVMap<SPIRVExtInstSetKind, std::string, SPIRVExtSetShortName>
 
 namespace kLLVMTypeName {
 const static char StructPrefix[] = "struct.";
-}
+} // namespace kLLVMTypeName
 
 namespace kSPIRVImageSampledTypeName {
 const static char Float[] = "float";
@@ -893,4 +893,4 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
 
 } // namespace SPIRV
 
-#endif
+#endif // SPIRV_SPIRVINTERNAL_H

@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVDECORATE_HPP_
-#define SPIRVDECORATE_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVDECORATE_H
+#define SPIRV_LIBSPIRV_SPIRVDECORATE_H
 
 #include "SPIRVEntry.h"
 #include "SPIRVStream.h"
@@ -312,4 +312,4 @@ public:
 
 } // namespace SPIRV
 
-#endif /* SPIRVDECORATE_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVDECORATE_H
