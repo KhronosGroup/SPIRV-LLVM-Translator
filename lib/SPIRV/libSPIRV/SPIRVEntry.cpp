@@ -508,8 +508,9 @@ void SPIRVMemoryModel::decode(std::istream &I) {
 void SPIRVMemoryModel::validate() const {
   auto AM = Module->getAddressingModel();
   auto MM = Module->getMemoryModel();
-  SPIRVCK(isValid(AM), InvalidAddressingModel, "Actual is " + AM);
-  SPIRVCK(isValid(MM), InvalidMemoryModel, "Actual is " + MM);
+  SPIRVCK(isValid(AM), InvalidAddressingModel,
+          "Actual is " + std::to_string(AM));
+  SPIRVCK(isValid(MM), InvalidMemoryModel, "Actual is " + std::to_string(MM));
 }
 
 void SPIRVSource::encode(spv_ostream &O) const {

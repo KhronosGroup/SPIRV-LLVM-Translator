@@ -2508,7 +2508,7 @@ bool SPIRVToLLVM::transAddressingModel() {
   default:
     SPIRVCKRT(0, InvalidAddressingModel,
               "Actual addressing mode is " +
-                  (unsigned)BM->getAddressingModel());
+                  std::to_string(BM->getAddressingModel()));
   }
   return true;
 }
