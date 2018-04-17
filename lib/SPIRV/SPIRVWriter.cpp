@@ -95,7 +95,7 @@ using namespace OCLUtil;
 
 namespace llvm {
 FunctionPass *createPromoteMemoryToRegisterPass();
-}
+} // namespace llvm
 
 namespace SPIRV {
 

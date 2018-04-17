@@ -41,8 +41,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVTYPE_HPP_
-#define SPIRVTYPE_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVTYPE_H
+#define SPIRV_LIBSPIRV_SPIRVTYPE_H
 
 #include "SPIRVEntry.h"
 #include "SPIRVStream.h"
@@ -156,7 +156,7 @@ public:
     default:
       break;
     }
-    return std::move(CV);
+    return CV;
   }
 
 protected:
@@ -192,7 +192,7 @@ public:
         CV.push_back(CapabilityFloat16);
     } else if (isTypeFloat(64))
       CV.push_back(CapabilityFloat64);
-    return std::move(CV);
+    return CV;
   }
 
 protected:
@@ -287,7 +287,7 @@ public:
     // usage of 8-component or 16-component vectors.
     if (CompCount >= 8)
       V.push_back(CapabilityVector16);
-    return std::move(V);
+    return V;
   }
 
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
@@ -321,7 +321,7 @@ public:
   SPIRVType *getElementType() const { return ElemType; }
   SPIRVConstant *getLength() const;
   SPIRVCapVec getRequiredCapability() const override {
-    return std::move(getElementType()->getRequiredCapability());
+    return getElementType()->getRequiredCapability();
   }
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVEntry *> Operands(2, ElemType);
@@ -754,4 +754,4 @@ bool isType(const T1 *Ty, unsigned Bits = 0) {
 }
 
 } // namespace SPIRV
-#endif // SPIRVTYPE_HPP_
+#endif // SPIRV_LIBSPIRV_SPIRVTYPE_H

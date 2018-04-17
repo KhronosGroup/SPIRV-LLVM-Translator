@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVBASICBLOCK_HPP_
-#define SPIRVBASICBLOCK_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVBASICBLOCK_H
+#define SPIRV_LIBSPIRV_SPIRVBASICBLOCK_H
 
 #include "SPIRVValue.h"
 #include <algorithm>
@@ -109,4 +109,4 @@ private:
 typedef SPIRVBasicBlock SPIRVLabel;
 } // namespace SPIRV
 
-#endif
+#endif // SPIRV_LIBSPIRV_SPIRVBASICBLOCK_H

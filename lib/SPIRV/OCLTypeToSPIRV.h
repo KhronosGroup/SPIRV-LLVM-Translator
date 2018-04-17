@@ -38,6 +38,10 @@
 // type instead of the original type.
 //
 //===----------------------------------------------------------------------===//
+
+#ifndef SPIRV_OCLTYPETOSPIRV_H
+#define SPIRV_OCLTYPETOSPIRV_H
+
 #include "SPIRV.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
@@ -84,3 +88,5 @@ private:
 };
 
 } // namespace SPIRV
+
+#endif // SPIRV_OCLTYPETOSPIRV_H

@@ -36,8 +36,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVFUNCTION_HPP_
-#define SPIRVFUNCTION_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVFUNCTION_H
+#define SPIRV_LIBSPIRV_SPIRVFUNCTION_H
 #include "SPIRVBasicBlock.h"
 #include "SPIRVValue.h"
 #include <functional>
@@ -162,4 +162,4 @@ typedef SPIRVEntryOpCodeOnly<OpFunctionEnd> SPIRVFunctionEnd;
 
 } // namespace SPIRV
 
-#endif /* SPIRVFUNCTION_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVFUNCTION_H

@@ -10,8 +10,8 @@
  * Contributed by: Intel Corporation
  */
 
-#ifndef __REF_COUNT_H__
-#define __REF_COUNT_H__
+#ifndef SPIRV_MANGLER_REFCOUNT_H
+#define SPIRV_MANGLER_REFCOUNT_H
 
 #include <assert.h>
 
@@ -97,4 +97,4 @@ private:
 
 } // namespace SPIR
 
-#endif //__REF_COUNT_H__
+#endif // SPIRV_MANGLER_REFCOUNT_H

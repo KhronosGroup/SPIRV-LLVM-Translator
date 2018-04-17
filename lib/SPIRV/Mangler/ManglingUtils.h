@@ -10,8 +10,8 @@
  * Contributed by: Intel Corporation.
  */
 
-#ifndef __MANGLING_UTILS_H__
-#define __MANGLING_UTILS_H__
+#ifndef SPIRV_MANGLER_MANGLINGUTILS_H
+#define SPIRV_MANGLER_MANGLINGUTILS_H
 
 #include "ParameterType.h"
 
@@ -31,4 +31,4 @@ const char *mangledPrimitiveStringfromName(std::string type);
 bool isPipeBuiltin(std::string unmangledName);
 } // namespace SPIR
 
-#endif //__MANGLING_UTILS_H__
+#endif // SPIRV_MANGLER_MANGLINGUTILS_H

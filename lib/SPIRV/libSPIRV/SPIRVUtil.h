@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVUTIL_H_
-#define SPIRVUTIL_H_
+#ifndef SPIRV_LIBSPIRV_SPIRVUTIL_H
+#define SPIRV_LIBSPIRV_SPIRVUTIL_H
 
 #ifdef _SPIRV_LLVM_API
 #include "llvm/Support/raw_ostream.h"
@@ -74,7 +74,7 @@ static llvm::sys::Mutex MapLock;
 #endif // LLVM_MSC_PREREQ(1900)
 
 #define SPIRV_DEF_NAMEMAP(Type, MapType)                                       \
-  typedef SPIRVMap<Type, std::string> MapType;                                 \
+  typedef SPIRVMap<Type, std::string>(MapType);                                \
   inline MapType getNameMap(Type) {                                            \
     MapType MT;                                                                \
     return MT;                                                                 \
@@ -409,4 +409,4 @@ getOrInsert(MapTy &Map, typename MapTy::key_type Key, FuncTy Func) {
 
 } // namespace SPIRV
 
-#endif /* SPIRVUTIL_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVUTIL_H

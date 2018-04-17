@@ -10,8 +10,8 @@
  * Contributed by: Intel Corporation.
  */
 
-#ifndef __PARAMETER_TYPE_H__
-#define __PARAMETER_TYPE_H__
+#ifndef SPIRV_MANGLER_PARAMETERTYPE_H
+#define SPIRV_MANGLER_PARAMETERTYPE_H
 
 #include "Refcount.h"
 #include <string>
@@ -449,4 +449,4 @@ template <typename T> const T *dyn_cast(const ParamType *pType) {
 }
 
 } // namespace SPIR
-#endif //__PARAMETER_TYPE_H__
+#endif // SPIRV_MANGLER_PARAMETERTYPE_H

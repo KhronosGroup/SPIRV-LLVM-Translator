@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVBUILTIN_HPP_
-#define SPIRVBUILTIN_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVEXTINST_H
+#define SPIRV_LIBSPIRV_SPIRVEXTINST_H
 
 #include "OpenCL.std.h"
 #include "SPIRVEnum.h"
@@ -267,4 +267,4 @@ inline bool isReadOrWriteImage(SPIRVWord EntryPoint) {
 
 } // namespace SPIRV
 
-#endif
+#endif // SPIRV_LIBSPIRV_SPIRVEXTINST_H

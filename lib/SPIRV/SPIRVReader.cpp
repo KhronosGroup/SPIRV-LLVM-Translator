@@ -650,7 +650,7 @@ std::string SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST) {
                      rmap<std::string>(ST->getDescriptor());
   if (SPIRVGenImgTypeAccQualPostfix)
     SPIRVToLLVM::insertImageNameAccessQualifier(ST, Name);
-  return std::move(Name);
+  return Name;
 }
 
 std::string

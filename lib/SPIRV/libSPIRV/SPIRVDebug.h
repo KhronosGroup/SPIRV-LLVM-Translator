@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVDEBUG_HPP_
-#define SPIRVDEBUG_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVDEBUG_H
+#define SPIRV_LIBSPIRV_SPIRVDEBUG_H
 
 #include "SPIRVUtil.h"
 #ifdef _SPIRV_LLVM_API
@@ -81,4 +81,4 @@ inline spv_ostream &spvdbgs() {
 #endif
 
 } // namespace SPIRV
-#endif /* SPIRVDEBUG_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVDEBUG_H

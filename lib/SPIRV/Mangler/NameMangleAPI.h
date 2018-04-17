@@ -9,8 +9,8 @@
 /*
  * Contributed by: Intel Corporation.
  */
-#ifndef __NAME_MANGLE_API_H__
-#define __NAME_MANGLE_API_H__
+#ifndef SPIRV_MANGLER_NAMEMANGLEAPI_H
+#define SPIRV_MANGLER_NAMEMANGLEAPI_H
 
 #include "FunctionDescriptor.h"
 #include <string>
@@ -38,4 +38,4 @@ private:
 };
 } // namespace SPIR
 
-#endif //__NAME_MANGLE_API_H__
+#endif // SPIRV_MANGLER_NAMEMANGLEAPI_H

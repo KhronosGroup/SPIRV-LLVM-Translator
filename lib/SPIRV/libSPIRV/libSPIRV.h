@@ -1,4 +1,4 @@
-//===- libSPIRV.h – SPIR-V Header files -------------------------*- C++ -*-===//
+//===- libSPIRV.h - SPIR-V Header files -------------------------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -49,4 +49,4 @@
 #include "SPIRVType.h"
 #include "SPIRVValue.h"
 
-#endif
+#endif // LIBSPIRV_H_

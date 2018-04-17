@@ -37,9 +37,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef OCLLOWERBLOCKS_H_
-#define OCLLOWERBLOCKS_H_
-
 #include "OCLUtil.h"
 #include "SPIRVInternal.h"
 
@@ -627,5 +624,3 @@ INITIALIZE_PASS_END(SPIRVLowerOCLBlocks, "spvblocks", "SPIR-V lower OCL blocks",
 ModulePass *llvm::createSPIRVLowerOCLBlocks() {
   return new SPIRVLowerOCLBlocks();
 }
-
-#endif /* OCLLOWERBLOCKS_H_ */

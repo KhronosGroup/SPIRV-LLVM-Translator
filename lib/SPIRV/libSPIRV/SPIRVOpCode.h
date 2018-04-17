@@ -37,8 +37,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRVOPCODE_HPP_
-#define SPIRVOPCODE_HPP_
+#ifndef SPIRV_LIBSPIRV_SPIRVOPCODE_H
+#define SPIRV_LIBSPIRV_SPIRVOPCODE_H
 
 #include "SPIRVUtil.h"
 #include "spirv.hpp"
@@ -55,7 +55,7 @@ template <> inline void SPIRVMap<Op, std::string>::init() {
 SPIRV_DEF_NAMEMAP(Op, OpCodeNameMap)
 
 inline bool isAtomicOpCode(Op OpCode) {
-  assert(OpAtomicLoad < OpAtomicXor);
+  static_assert(OpAtomicLoad < OpAtomicXor, "");
   return ((unsigned)OpCode >= OpAtomicLoad &&
           (unsigned)OpCode <= OpAtomicXor) ||
          OpCode == OpAtomicFlagTestAndSet || OpCode == OpAtomicFlagClear;
@@ -159,4 +159,4 @@ inline bool isIntelSubgroupOpCode(Op OpCode) {
 }
 } // namespace SPIRV
 
-#endif /* SPIRVOPCODE_HPP_ */
+#endif // SPIRV_LIBSPIRV_SPIRVOPCODE_H

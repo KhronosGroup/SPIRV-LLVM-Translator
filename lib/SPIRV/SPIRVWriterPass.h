@@ -12,8 +12,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_SPIRVWRITERPASS_H
-#define LLVM_SPIRVWRITERPASS_H
+#ifndef SPIRV_SPIRVWRITERPASS_H
+#define SPIRV_SPIRVWRITERPASS_H
 
 #include "llvm/ADT/StringRef.h"
 
@@ -48,4 +48,4 @@ public:
 
 } // namespace llvm
 
-#endif
+#endif // SPIRV_SPIRVWRITERPASS_H
