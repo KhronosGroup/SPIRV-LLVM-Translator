@@ -114,7 +114,7 @@ struct TypeVisitor;
 struct ParamType {
   /// @brief Constructor.
   /// @param TypeEnum type id.
-  ParamType(TypeEnum typeId) : m_typeId(typeId){};
+  ParamType(TypeEnum typeId) : TypeId(typeId){};
 
   /// @brief Destructor.
   virtual ~ParamType(){};
@@ -141,7 +141,7 @@ struct ParamType {
 
   /// @brief Returns type id of underlying type.
   /// @return type id.
-  TypeEnum getTypeId() const { return m_typeId; }
+  TypeEnum getTypeId() const { return TypeId; }
 
 private:
   // @brief Default Constructor.
@@ -149,7 +149,7 @@ private:
 
 protected:
   /// An enumeration to identify the type id of this instance.
-  TypeEnum m_typeId;
+  TypeEnum TypeId;
 };
 
 struct PrimitiveType : public ParamType {
@@ -182,11 +182,11 @@ struct PrimitiveType : public ParamType {
 
   /// @brief Returns the primitive enumeration of the type.
   /// @return primitive type.
-  TypePrimitiveEnum getPrimitive() const { return m_primitive; }
+  TypePrimitiveEnum getPrimitive() const { return Primitive; }
 
 protected:
   /// An enumeration to identify the primitive type.
-  TypePrimitiveEnum m_primitive;
+  TypePrimitiveEnum Primitive;
 };
 
 struct PointerType : public ParamType {
@@ -219,7 +219,7 @@ struct PointerType : public ParamType {
 
   /// @brief Returns the type the pointer is pointing at.
   /// @return pointee type.
-  const RefParamType &getPointee() const { return m_pType; }
+  const RefParamType &getPointee() const { return PType; }
 
   /// @brief Sets the address space attribute - default is __private
   /// @param TypeAttributeEnum address space attribute id.
@@ -242,11 +242,11 @@ struct PointerType : public ParamType {
 
 private:
   /// The type this pointer is pointing at.
-  RefParamType m_pType;
+  RefParamType PType;
   /// Array of the pointer's enabled type qualifiers.
-  bool m_qualifiers[ATTR_QUALIFIER_LAST - ATTR_QUALIFIER_FIRST + 1];
+  bool Qualifiers[ATTR_QUALIFIER_LAST - ATTR_QUALIFIER_FIRST + 1];
   /// Pointer's address space.
-  TypeAttributeEnum m_address_space;
+  TypeAttributeEnum Address_space;
 };
 
 struct VectorType : public ParamType {
@@ -280,17 +280,17 @@ struct VectorType : public ParamType {
 
   /// @brief Returns the type the vector is packing.
   /// @return scalar type.
-  const RefParamType &getScalarType() const { return m_pType; }
+  const RefParamType &getScalarType() const { return PType; }
 
   /// @brief Returns the length of the vector type.
   /// @return vector type length.
-  int getLength() const { return m_len; }
+  int getLength() const { return Len; }
 
 private:
   /// The scalar type of this vector type.
-  RefParamType m_pType;
+  RefParamType PType;
   /// The length of the vector.
-  int m_len;
+  int Len;
 };
 
 struct AtomicType : public ParamType {
@@ -322,11 +322,11 @@ struct AtomicType : public ParamType {
 
   /// @brief returns the base type of the atomic parameter.
   /// @return base type
-  const RefParamType &getBaseType() const { return m_pType; }
+  const RefParamType &getBaseType() const { return PType; }
 
 private:
   /// the type this pointer is pointing at
-  RefParamType m_pType;
+  RefParamType PType;
 };
 
 struct BlockType : public ParamType {
@@ -357,14 +357,14 @@ struct BlockType : public ParamType {
 
   /// @brief returns the number of parameters of the block.
   /// @return parameters count
-  unsigned int getNumOfParams() const { return (unsigned int)m_params.size(); }
+  unsigned int getNumOfParams() const { return (unsigned int)Params.size(); }
 
   ///@brief returns the type of parameter "index" of the block.
   // @param index the sequential number of the queried parameter
   ///@return parameter type
   const RefParamType &getParam(unsigned int index) const {
-    assert(m_params.size() > index && "index is OOB");
-    return m_params[index];
+    assert(Params.size() > index && "index is OOB");
+    return Params[index];
   }
 
   ///@brief set the type of parameter "index" of the block.
@@ -372,9 +372,9 @@ struct BlockType : public ParamType {
   // @param type the parameter type
   void setParam(unsigned int index, RefParamType type) {
     if (index < getNumOfParams()) {
-      m_params[index] = type;
+      Params[index] = type;
     } else if (index == getNumOfParams()) {
-      m_params.push_back(type);
+      Params.push_back(type);
     } else {
       assert(false && "index is OOB");
     }
@@ -382,7 +382,7 @@ struct BlockType : public ParamType {
 
 protected:
   /// an enumeration to identify the primitive type
-  std::vector<RefParamType> m_params;
+  std::vector<RefParamType> Params;
 };
 
 struct UserDefinedType : public ParamType {
@@ -412,7 +412,7 @@ struct UserDefinedType : public ParamType {
 
 protected:
   /// The name of the user defined type.
-  std::string m_name;
+  std::string Name;
 };
 
 /// @brief Can be overridden so an object of static type Type* will

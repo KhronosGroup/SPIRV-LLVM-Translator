@@ -19,9 +19,9 @@ namespace SPIR {
 
 template <typename T> class RefCount {
 public:
-  RefCount() : Count(0), m_ptr(0) {}
+  RefCount() : Count(0), Ptr(0) {}
 
-  RefCount(T *ptr) : m_ptr(ptr) { Count = new int(1); }
+  RefCount(T *ptr) : Ptr(ptr) { Count = new int(1); }
 
   RefCount(const RefCount<T> &other) { cpy(other); }
 
@@ -40,43 +40,43 @@ public:
   }
 
   void init(T *ptr) {
-    assert(!m_ptr && "overrunning non NULL pointer");
+    assert(!Ptr && "overrunning non NULL pointer");
     assert(!Count && "overrunning non NULL pointer");
     Count = new int(1);
-    m_ptr = ptr;
+    Ptr = ptr;
   }
 
-  bool isNull() const { return (!m_ptr); }
+  bool isNull() const { return (!Ptr); }
 
   // Pointer access
   const T &operator*() const {
     sanity();
-    return *m_ptr;
+    return *Ptr;
   }
 
   T &operator*() {
     sanity();
-    return *m_ptr;
+    return *Ptr;
   }
 
-  operator T *() { return m_ptr; }
+  operator T *() { return Ptr; }
 
-  operator const T *() const { return m_ptr; }
+  operator const T *() const { return Ptr; }
 
-  T *operator->() { return m_ptr; }
+  T *operator->() { return Ptr; }
 
-  const T *operator->() const { return m_ptr; }
+  const T *operator->() const { return Ptr; }
 
 private:
   void sanity() const {
-    assert(m_ptr && "NULL pointer");
+    assert(Ptr && "NULL pointer");
     assert(Count && "NULL ref counter");
     assert(*Count && "zero ref counter");
   }
 
   void cpy(const RefCount<T> &other) {
     Count = other.Count;
-    m_ptr = other.m_ptr;
+    Ptr = other.Ptr;
     if (Count)
       ++*Count;
   }
@@ -85,14 +85,14 @@ private:
     sanity();
     if (0 == --*Count) {
       delete Count;
-      delete m_ptr;
-      m_ptr = 0;
+      delete Ptr;
+      Ptr = 0;
       Count = 0;
     }
   }
 
   int *Count;
-  T *m_ptr;
+  T *Ptr;
 }; // End RefCount
 
 } // namespace SPIR

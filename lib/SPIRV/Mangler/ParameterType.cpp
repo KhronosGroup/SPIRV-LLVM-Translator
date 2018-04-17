@@ -21,7 +21,7 @@ namespace SPIR {
 //
 
 PrimitiveType::PrimitiveType(TypePrimitiveEnum primitive)
-    : ParamType(TYPE_ID_PRIMITIVE), m_primitive(primitive) {}
+    : ParamType(TYPE_ID_PRIMITIVE), Primitive(primitive) {}
 
 MangleError PrimitiveType::accept(TypeVisitor *visitor) const {
   if (getSupportedVersion(this->getPrimitive()) >= SPIR20 &&
@@ -32,16 +32,16 @@ MangleError PrimitiveType::accept(TypeVisitor *visitor) const {
 }
 
 std::string PrimitiveType::toString() const {
-  assert((m_primitive >= PRIMITIVE_FIRST && m_primitive <= PRIMITIVE_LAST) &&
+  assert((Primitive >= PRIMITIVE_FIRST && Primitive <= PRIMITIVE_LAST) &&
          "illegal primitive");
   std::stringstream myName;
-  myName << readablePrimitiveString(m_primitive);
+  myName << readablePrimitiveString(Primitive);
   return myName.str();
 }
 
 bool PrimitiveType::equals(const ParamType *type) const {
   const PrimitiveType *p = SPIR::dyn_cast<PrimitiveType>(type);
-  return p && (m_primitive == p->m_primitive);
+  return p && (Primitive == p->Primitive);
 }
 
 //
@@ -49,11 +49,11 @@ bool PrimitiveType::equals(const ParamType *type) const {
 //
 
 PointerType::PointerType(const RefParamType type)
-    : ParamType(TYPE_ID_POINTER), m_pType(type) {
+    : ParamType(TYPE_ID_POINTER), PType(type) {
   for (unsigned int i = ATTR_QUALIFIER_FIRST; i <= ATTR_QUALIFIER_LAST; i++) {
     setQualifier((TypeAttributeEnum)i, false);
   }
-  m_address_space = ATTR_PRIVATE;
+  Address_space = ATTR_PRIVATE;
 }
 
 MangleError PointerType::accept(TypeVisitor *visitor) const {
@@ -64,25 +64,25 @@ void PointerType::setAddressSpace(TypeAttributeEnum attr) {
   if (attr < ATTR_ADDR_SPACE_FIRST || attr > ATTR_ADDR_SPACE_LAST) {
     return;
   }
-  m_address_space = attr;
+  Address_space = attr;
 }
 
 TypeAttributeEnum PointerType::getAddressSpace() const {
-  return m_address_space;
+  return Address_space;
 }
 
 void PointerType::setQualifier(TypeAttributeEnum qual, bool enabled) {
   if (qual < ATTR_QUALIFIER_FIRST || qual > ATTR_QUALIFIER_LAST) {
     return;
   }
-  m_qualifiers[qual - ATTR_QUALIFIER_FIRST] = enabled;
+  Qualifiers[qual - ATTR_QUALIFIER_FIRST] = enabled;
 }
 
 bool PointerType::hasQualifier(TypeAttributeEnum qual) const {
   if (qual < ATTR_QUALIFIER_FIRST || qual > ATTR_QUALIFIER_LAST) {
     return false;
   }
-  return m_qualifiers[qual - ATTR_QUALIFIER_FIRST];
+  return Qualifiers[qual - ATTR_QUALIFIER_FIRST];
 }
 
 std::string PointerType::toString() const {
@@ -93,7 +93,7 @@ std::string PointerType::toString() const {
       myName << getReadableAttribute(qual) << " ";
     }
   }
-  myName << getReadableAttribute(TypeAttributeEnum(m_address_space)) << " ";
+  myName << getReadableAttribute(TypeAttributeEnum(Address_space)) << " ";
   myName << getPointee()->toString() << " *";
   return myName.str();
 }
@@ -120,7 +120,7 @@ bool PointerType::equals(const ParamType *type) const {
 //
 
 VectorType::VectorType(const RefParamType type, int len)
-    : ParamType(TYPE_ID_VECTOR), m_pType(type), m_len(len) {}
+    : ParamType(TYPE_ID_VECTOR), PType(type), Len(len) {}
 
 MangleError VectorType::accept(TypeVisitor *visitor) const {
   return visitor->visit(this);
@@ -129,13 +129,13 @@ MangleError VectorType::accept(TypeVisitor *visitor) const {
 std::string VectorType::toString() const {
   std::stringstream myName;
   myName << getScalarType()->toString();
-  myName << m_len;
+  myName << Len;
   return myName.str();
 }
 
 bool VectorType::equals(const ParamType *type) const {
   const VectorType *pVec = SPIR::dyn_cast<VectorType>(type);
-  return pVec && (m_len == pVec->m_len) &&
+  return pVec && (Len == pVec->Len) &&
          (*getScalarType()).equals(&*(pVec->getScalarType()));
 }
 
@@ -144,7 +144,7 @@ bool VectorType::equals(const ParamType *type) const {
 //
 
 AtomicType::AtomicType(const RefParamType type)
-    : ParamType(TYPE_ID_ATOMIC), m_pType(type) {}
+    : ParamType(TYPE_ID_ATOMIC), PType(type) {}
 
 MangleError AtomicType::accept(TypeVisitor *visitor) const {
   if (visitor->spirVer < SPIR20) {
@@ -183,7 +183,7 @@ std::string BlockType::toString() const {
   for (unsigned int i = 0; i < getNumOfParams(); ++i) {
     if (i > 0)
       myName << ", ";
-    myName << m_params[i]->toString();
+    myName << Params[i]->toString();
   }
   myName << ")*";
   return myName.str();
@@ -206,7 +206,7 @@ bool BlockType::equals(const ParamType *type) const {
 // User Defined Type
 //
 UserDefinedType::UserDefinedType(const std::string &name)
-    : ParamType(TYPE_ID_STRUCTURE), m_name(name) {}
+    : ParamType(TYPE_ID_STRUCTURE), Name(name) {}
 
 MangleError UserDefinedType::accept(TypeVisitor *visitor) const {
   return visitor->visit(this);
@@ -214,13 +214,13 @@ MangleError UserDefinedType::accept(TypeVisitor *visitor) const {
 
 std::string UserDefinedType::toString() const {
   std::stringstream myName;
-  myName << m_name;
+  myName << Name;
   return myName.str();
 }
 
 bool UserDefinedType::equals(const ParamType *pType) const {
   const UserDefinedType *pTy = SPIR::dyn_cast<UserDefinedType>(pType);
-  return pTy && (m_name == pTy->m_name);
+  return pTy && (Name == pTy->Name);
 }
 
 //
