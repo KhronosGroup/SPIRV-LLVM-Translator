@@ -419,7 +419,7 @@ protected:
 ///        dispatch the correct visit method according to its dynamic type.
 struct TypeVisitor {
   SPIRversion spirVer;
-  TypeVisitor(SPIRversion ver) : spirVer(ver){};
+  TypeVisitor(SPIRversion ver) : spirVer(ver) {}
   virtual ~TypeVisitor() {}
   virtual MangleError visit(const PrimitiveType *) = 0;
   virtual MangleError visit(const VectorType *) = 0;
