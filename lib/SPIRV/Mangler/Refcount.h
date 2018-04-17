@@ -19,21 +19,21 @@ namespace SPIR {
 
 template <typename T> class RefCount {
 public:
-  RefCount() : m_refCount(0), m_ptr(0) {}
+  RefCount() : Count(0), m_ptr(0) {}
 
-  RefCount(T *ptr) : m_ptr(ptr) { m_refCount = new int(1); }
+  RefCount(T *ptr) : m_ptr(ptr) { Count = new int(1); }
 
   RefCount(const RefCount<T> &other) { cpy(other); }
 
   ~RefCount() {
-    if (m_refCount)
+    if (Count)
       dispose();
   }
 
   RefCount &operator=(const RefCount<T> &other) {
     if (this == &other)
       return *this;
-    if (m_refCount)
+    if (Count)
       dispose();
     cpy(other);
     return *this;
@@ -41,8 +41,8 @@ public:
 
   void init(T *ptr) {
     assert(!m_ptr && "overrunning non NULL pointer");
-    assert(!m_refCount && "overrunning non NULL pointer");
-    m_refCount = new int(1);
+    assert(!Count && "overrunning non NULL pointer");
+    Count = new int(1);
     m_ptr = ptr;
   }
 
@@ -70,28 +70,28 @@ public:
 private:
   void sanity() const {
     assert(m_ptr && "NULL pointer");
-    assert(m_refCount && "NULL ref counter");
-    assert(*m_refCount && "zero ref counter");
+    assert(Count && "NULL ref counter");
+    assert(*Count && "zero ref counter");
   }
 
   void cpy(const RefCount<T> &other) {
-    m_refCount = other.m_refCount;
+    Count = other.Count;
     m_ptr = other.m_ptr;
-    if (m_refCount)
-      ++*m_refCount;
+    if (Count)
+      ++*Count;
   }
 
   void dispose() {
     sanity();
-    if (0 == --*m_refCount) {
-      delete m_refCount;
+    if (0 == --*Count) {
+      delete Count;
       delete m_ptr;
       m_ptr = 0;
-      m_refCount = 0;
+      Count = 0;
     }
   }
 
-  int *m_refCount;
+  int *Count;
   T *m_ptr;
 }; // End RefCount
 
