@@ -62,7 +62,7 @@ namespace SPIRV {
 /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
 /// generator's magic number in the generated SPIR-V module.
 /// This number should be bumped up whenever the generated SPIR-V changes.
-const static unsigned short kTranslatorVer = 14;
+const static unsigned short KTranslatorVer = 14;
 
 #define SPCV_TARGET_LLVM_IMAGE_TYPE_ENCODE_ACCESS_QUAL 0
 // Workaround for SPIR 2 producer bug about kernel function calling convention.
@@ -485,19 +485,19 @@ template <class T> std::vector<Type *> getTypes(T V) {
 
 /// Move elements of std::vector from [begin, end) to target.
 template <typename T>
-void move(std::vector<T> &V, size_t begin, size_t end, size_t target) {
-  assert(begin < end && end <= V.size() && target <= V.size() &&
-         !(begin < target && target < end));
-  if (begin <= target && target <= end)
+void move(std::vector<T> &V, size_t Begin, size_t End, size_t Target) {
+  assert(Begin < End && End <= V.size() && Target <= V.size() &&
+         !(Begin < Target && Target < End));
+  if (Begin <= Target && Target <= End)
     return;
-  auto B = V.begin() + begin, E = V.begin() + end;
-  if (target > V.size())
-    target = V.size();
-  if (target > end)
-    target -= (end - begin);
+  auto B = V.begin() + Begin, E = V.begin() + End;
+  if (Target > V.size())
+    Target = V.size();
+  if (Target > End)
+    Target -= (End - Begin);
   std::vector<T> Segment(B, E);
   V.erase(B, E);
-  V.insert(V.begin() + target, Segment.begin(), Segment.end());
+  V.insert(V.begin() + Target, Segment.begin(), Segment.end());
 }
 
 /// Find position of first pointer type value in a vector.
@@ -531,7 +531,7 @@ Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
                               StringRef Name,
                               BuiltinFuncMangleInfo *Mangle = nullptr,
                               AttributeList *Attrs = nullptr,
-                              bool takeName = true);
+                              bool TakeName = true);
 
 /// Get function call arguments.
 /// \param Start Starting index.
@@ -582,7 +582,7 @@ bool isDecoratedSPIRVFunc(const Function *F, std::string *UndecName = nullptr);
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPIRVFuncName(Op OC, StringRef PostFix = "");
 
-std::string getSPIRVFuncName(Op OC, const Type *pRetTy, bool IsSigned = false);
+std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned = false);
 
 /// Get a canonical function name for a SPIR-V extended instruction
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
@@ -608,7 +608,7 @@ bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
 bool oclIsBuiltin(const StringRef &Name, std::string *DemangledName = nullptr,
-                  bool isCPP = false);
+                  bool IsCpp = false);
 
 /// Check if a function type is void(void).
 bool isVoidFuncTy(FunctionType *FT);
@@ -630,7 +630,7 @@ CallInst *mutateCallInst(
     Module *M, CallInst *CI,
     std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
     BuiltinFuncMangleInfo *Mangle = nullptr, AttributeList *Attrs = nullptr,
-    bool takeName = false);
+    bool TakeName = false);
 
 /// Mutates function call instruction by changing the arguments and return
 /// value.
@@ -643,7 +643,7 @@ Instruction *mutateCallInst(
         ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle = nullptr, AttributeList *Attrs = nullptr,
-    bool takeName = false);
+    bool TakeName = false);
 
 /// Mutate call instruction to call SPIR-V builtin function.
 CallInst *mutateCallInstSPIRV(
@@ -714,25 +714,25 @@ Type *getVoidFuncType(Module *M);
 Type *getVoidFuncPtrType(Module *M, unsigned AddrSpace = 0);
 
 /// Get a 64 bit integer constant.
-ConstantInt *getInt64(Module *M, int64_t value);
+ConstantInt *getInt64(Module *M, int64_t Value);
 
 /// Get a 32 bit integer constant.
-ConstantInt *getInt32(Module *M, int value);
+ConstantInt *getInt32(Module *M, int Value);
 
 /// Get a 32 bit unsigned integer constant.
-ConstantInt *getUInt32(Module *M, unsigned value);
+ConstantInt *getUInt32(Module *M, unsigned Value);
 
 /// Get a 16 bit unsigned integer constant.
-ConstantInt *getUInt16(Module *M, unsigned short value);
+ConstantInt *getUInt16(Module *M, unsigned short Value);
 
 // Get a 32 bit floating point constant.
-Constant *getFloat32(Module *M, float value);
+Constant *getFloat32(Module *M, float Value);
 
 /// Get a 32 bit integer constant vector.
-std::vector<Value *> getInt32(Module *M, const std::vector<int> &value);
+std::vector<Value *> getInt32(Module *M, const std::vector<int> &Value);
 
 /// Get a size_t type constant.
-ConstantInt *getSizet(Module *M, uint64_t value);
+ConstantInt *getSizet(Module *M, uint64_t Value);
 
 /// Get metadata operand as int.
 int getMDOperandAsInt(MDNode *N, unsigned I);
@@ -772,10 +772,10 @@ std::string getPostfix(Decoration Dec, unsigned Value = 0);
 /// Get postfix _R{ReturnType} for return type
 /// The returned postfix does not includ "_" at the beginning
 std::string getPostfixForReturnType(CallInst *CI, bool IsSigned = false);
-std::string getPostfixForReturnType(const Type *pRetTy, bool IsSigned = false);
+std::string getPostfixForReturnType(const Type *PRetTy, bool IsSigned = false);
 
 Constant *getScalarOrVectorConstantInt(Type *T, uint64_t V,
-                                       bool isSigned = false);
+                                       bool IsSigned = false);
 
 /// Get a constant int or a constant int array.
 /// \param T is the type of the constant. It should be an integer type or
@@ -783,7 +783,7 @@ Constant *getScalarOrVectorConstantInt(Type *T, uint64_t V,
 /// \param Len is the length of the array.
 /// \param V is the value to fill the array.
 Value *getScalarOrArrayConstantInt(Instruction *P, Type *T, unsigned Len,
-                                   uint64_t V, bool isSigned = false);
+                                   uint64_t V, bool IsSigned = false);
 
 /// Get the array from GEP.
 /// \param V is a GEP whose pointer operand is a pointer to an array of size
@@ -853,7 +853,7 @@ bool isValidVectorSize(unsigned I);
 
 enum class ParamType { FLOAT = 0, SIGNED = 1, UNSIGNED = 2, UNKNOWN = 3 };
 
-ParamType LastFuncParamType(const std::string &MangledName);
+ParamType lastFuncParamType(const std::string &MangledName);
 
 // Check if the last function parameter is signed
 bool isLastFuncParamSigned(const std::string &MangledName);

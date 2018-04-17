@@ -186,8 +186,8 @@ public:
     SPIRVCapVec CV;
     if (isTypeFloat(16)) {
       CV.push_back(CapabilityFloat16Buffer);
-      auto extensions = getModule()->getExtension();
-      if (std::any_of(extensions.begin(), extensions.end(),
+      auto Extensions = getModule()->getExtension();
+      if (std::any_of(Extensions.begin(), Extensions.end(),
                       [](const std::string &I) { return I == "cl_khr_fp16"; }))
         CV.push_back(CapabilityFloat16);
     } else if (isTypeFloat(64))
@@ -551,8 +551,8 @@ public:
                   const std::string &TheName)
       : SPIRVType(M, 2 + TheMemberTypes.size(), OpTypeStruct, TheId) {
     MemberTypeIdVec.resize(TheMemberTypes.size());
-    for (auto &t : TheMemberTypes)
-      MemberTypeIdVec.push_back(t->getId());
+    for (auto &T : TheMemberTypes)
+      MemberTypeIdVec.push_back(T->getId());
     Name = TheName;
     validate();
   }

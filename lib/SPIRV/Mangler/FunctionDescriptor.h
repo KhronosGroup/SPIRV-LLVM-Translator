@@ -28,9 +28,9 @@ struct FunctionDescriptor {
   std::string toString() const;
 
   /// The name of the function (stripped).
-  std::string name;
+  std::string Name;
   /// Parameter list of the function.
-  TypeVector parameters;
+  TypeVector Parameters;
 
   bool operator==(const FunctionDescriptor &) const;
 
@@ -46,9 +46,9 @@ struct FunctionDescriptor {
 };
 
 template <typename T>
-std::ostream &operator<<(T &o, const SPIR::FunctionDescriptor &fd) {
-  o << fd.toString();
-  return o;
+std::ostream &operator<<(T &O, const SPIR::FunctionDescriptor &Fd) {
+  O << Fd.toString();
+  return O;
 }
 } // namespace SPIR
 

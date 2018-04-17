@@ -68,24 +68,24 @@ namespace SPIRV {
 class SPIRVModule;
 
 /// \brief Check if a string contains SPIR-V binary.
-bool IsSPIRVBinary(std::string &Img);
+bool isSpirvBinary(std::string &Img);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 /// \brief Convert SPIR-V between binary and internal textual formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
 /// \returns true if succeeds.
-bool ConvertSPIRV(std::istream &IS, llvm::raw_ostream &OS, std::string &ErrMsg,
+bool convertSpirv(std::istream &IS, llvm::raw_ostream &OS, std::string &ErrMsg,
                   bool FromText, bool ToText);
 
 /// \brief Convert SPIR-V between binary and internel text formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
-bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
+bool convertSpirv(std::string &Input, std::string &Out, std::string &ErrMsg,
                   bool ToText);
 
 /// \brief Check if a string contains SPIR-V in internal text format.
-bool IsSPIRVText(std::string &Img);
+bool isSpirvText(std::string &Img);
 #endif
 
 } // End namespace SPIRV
@@ -94,19 +94,19 @@ namespace llvm {
 
 /// \brief Translate LLVM module to SPIRV and write to ostream.
 /// \returns true if succeeds.
-bool WriteSPIRV(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
+bool writeSpirv(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
 
 /// \brief Load SPIRV from istream and translate to LLVM module.
 /// \returns true if succeeds.
-bool ReadSPIRV(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
+bool readSpirv(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
                std::string &ErrMsg);
 
 /// \brief Regularize LLVM module by removing entities not representable by
 /// SPIRV.
-bool RegularizeLLVMForSPIRV(llvm::Module *M, std::string &ErrMsg);
+bool regularizeLlvmForSpirv(llvm::Module *M, std::string &ErrMsg);
 
 /// \brief Mangle OpenCL builtin function function name.
-void MangleOpenCLBuiltin(const std::string &UnmangledName,
+void mangleOpenClBuiltin(const std::string &UnmangledName,
                          ArrayRef<Type *> ArgTypes, std::string &MangledName);
 
 /// Create a pass for translating LLVM to SPIR-V.

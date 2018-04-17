@@ -34,7 +34,7 @@ struct NameMangler {
   MangleError mangle(const FunctionDescriptor &, std::string &);
 
 private:
-  SPIRversion Spir_version;
+  SPIRversion SpirVersion;
 };
 } // namespace SPIR
 

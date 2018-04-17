@@ -88,12 +88,12 @@ SPIRVEntry *SPIRVEntry::create(Op OpCode) {
   return 0;
 }
 
-std::unique_ptr<SPIRV::SPIRVEntry> SPIRVEntry::create_unique(Op OC) {
+std::unique_ptr<SPIRV::SPIRVEntry> SPIRVEntry::createUnique(Op OC) {
   return std::unique_ptr<SPIRVEntry>(create(OC));
 }
 
 std::unique_ptr<SPIRV::SPIRVExtInst>
-SPIRVEntry::create_unique(SPIRVExtInstSetKind Set, unsigned ExtOp) {
+SPIRVEntry::createUnique(SPIRVExtInstSetKind Set, unsigned ExtOp) {
   return std::unique_ptr<SPIRVExtInst>(new SPIRVExtInst(Set, ExtOp));
 }
 
@@ -205,24 +205,24 @@ void SPIRVEntry::decode(std::istream &I) { assert(0 && "Not implemented"); }
 std::vector<SPIRVValue *>
 SPIRVEntry::getValues(const std::vector<SPIRVId> &IdVec) const {
   std::vector<SPIRVValue *> ValueVec;
-  for (auto i : IdVec)
-    ValueVec.push_back(getValue(i));
+  for (auto I : IdVec)
+    ValueVec.push_back(getValue(I));
   return ValueVec;
 }
 
 std::vector<SPIRVType *>
 SPIRVEntry::getValueTypes(const std::vector<SPIRVId> &IdVec) const {
   std::vector<SPIRVType *> TypeVec;
-  for (auto i : IdVec)
-    TypeVec.push_back(getValue(i)->getType());
+  for (auto I : IdVec)
+    TypeVec.push_back(getValue(I)->getType());
   return TypeVec;
 }
 
 std::vector<SPIRVId>
 SPIRVEntry::getIds(const std::vector<SPIRVValue *> ValueVec) const {
   std::vector<SPIRVId> IdVec;
-  for (auto i : ValueVec)
-    IdVec.push_back(i->getId());
+  for (auto I : ValueVec)
+    IdVec.push_back(I->getId());
   return IdVec;
 }
 
@@ -339,8 +339,8 @@ bool SPIRVEntry::hasLinkageType() const {
 }
 
 void SPIRVEntry::encodeDecorate(spv_ostream &O) const {
-  for (auto &i : Decorates)
-    O << *i.second;
+  for (auto &I : Decorates)
+    O << *I.second;
 }
 
 SPIRVLinkageTypeKind SPIRVEntry::getLinkageType() const {

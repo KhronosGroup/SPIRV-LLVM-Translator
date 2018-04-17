@@ -608,12 +608,12 @@ bool SPIRVModuleImpl::exist(SPIRVId Id, SPIRVEntry **Entry) const {
 
 // If Id is invalid, returns the next available id.
 // Otherwise returns the given id and adjust the next available id by increment.
-SPIRVId SPIRVModuleImpl::getId(SPIRVId Id, unsigned increment) {
+SPIRVId SPIRVModuleImpl::getId(SPIRVId Id, unsigned Increment) {
   if (!isValidId(Id))
     Id = NextId;
   else
     NextId = std::max(Id, NextId);
-  NextId += increment;
+  NextId += Increment;
   return Id;
 }
 
@@ -809,8 +809,8 @@ void SPIRVModuleImpl::createForwardPointers() {
 
     auto ST = static_cast<SPIRVTypeStruct *>(T);
 
-    for (unsigned i = 0; i < ST->getStructMemberCount(); ++i) {
-      auto MemberTy = ST->getStructMemberType(i);
+    for (unsigned I = 0; I < ST->getStructMemberCount(); ++I) {
+      auto MemberTy = ST->getStructMemberType(I);
       if (!MemberTy->isTypePointer())
         continue;
       auto Ptr = static_cast<SPIRVTypePointer *>(MemberTy);
@@ -1311,20 +1311,20 @@ class TopologicalSort {
   }
 
 public:
-  TopologicalSort(const SPIRVTypeVec &_TypeVec,
-                  const SPIRVConstantVector &_ConstVec,
-                  const SPIRVVariableVec &_VariableVec,
-                  const SPIRVForwardPointerVec &_ForwardPointerVec)
-      : ForwardPointerVec(_ForwardPointerVec),
-        EntryStateMap([](SPIRVEntry *a, SPIRVEntry *b) -> bool {
-          return a->getId() < b->getId();
+  TopologicalSort(const SPIRVTypeVec &TypeVec,
+                  const SPIRVConstantVector &ConstVec,
+                  const SPIRVVariableVec &VariableVec,
+                  const SPIRVForwardPointerVec &ForwardPointerVec)
+      : ForwardPointerVec(ForwardPointerVec),
+        EntryStateMap([](SPIRVEntry *A, SPIRVEntry *B) -> bool {
+          return A->getId() < B->getId();
         }) {
     // Collect entries for sorting
-    for (auto *T : _TypeVec)
+    for (auto *T : TypeVec)
       EntryStateMap[T] = DFSState::Unvisited;
-    for (auto *C : _ConstVec)
+    for (auto *C : ConstVec)
       EntryStateMap[C] = DFSState::Unvisited;
-    for (auto *V : _VariableVec)
+    for (auto *V : VariableVec)
       EntryStateMap[V] = DFSState::Unvisited;
     // Run topoligical sort
     for (auto ES : EntryStateMap)
@@ -1513,32 +1513,32 @@ SPIRVType *SPIRVModuleImpl::getValueType(SPIRVId TheId) const {
 std::vector<SPIRVValue *>
 SPIRVModuleImpl::getValues(const std::vector<SPIRVId> &IdVec) const {
   std::vector<SPIRVValue *> ValueVec;
-  for (auto i : IdVec)
-    ValueVec.push_back(getValue(i));
+  for (auto I : IdVec)
+    ValueVec.push_back(getValue(I));
   return ValueVec;
 }
 
 std::vector<SPIRVType *>
 SPIRVModuleImpl::getValueTypes(const std::vector<SPIRVId> &IdVec) const {
   std::vector<SPIRVType *> TypeVec;
-  for (auto i : IdVec)
-    TypeVec.push_back(getValue(i)->getType());
+  for (auto I : IdVec)
+    TypeVec.push_back(getValue(I)->getType());
   return TypeVec;
 }
 
 std::vector<SPIRVId>
 SPIRVModuleImpl::getIds(const std::vector<SPIRVEntry *> &ValueVec) const {
   std::vector<SPIRVId> IdVec;
-  for (auto i : ValueVec)
-    IdVec.push_back(i->getId());
+  for (auto I : ValueVec)
+    IdVec.push_back(I->getId());
   return IdVec;
 }
 
 std::vector<SPIRVId>
 SPIRVModuleImpl::getIds(const std::vector<SPIRVValue *> &ValueVec) const {
   std::vector<SPIRVId> IdVec;
-  for (auto i : ValueVec)
-    IdVec.push_back(i->getId());
+  for (auto I : ValueVec)
+    IdVec.push_back(I->getId());
   return IdVec;
 }
 
@@ -1582,7 +1582,7 @@ unsigned SPIRVDbgInfo::getFunctionLineNo(SPIRVFunction *F) {
   return 0;
 }
 
-bool IsSPIRVBinary(const std::string &Img) {
+bool isSpirvBinary(const std::string &Img) {
   if (Img.size() < sizeof(unsigned))
     return false;
   auto Magic = reinterpret_cast<const unsigned *>(Img.data());
@@ -1591,7 +1591,7 @@ bool IsSPIRVBinary(const std::string &Img) {
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 
-bool ConvertSPIRV(std::istream &IS, spv_ostream &OS, std::string &ErrMsg,
+bool convertSpirv(std::istream &IS, spv_ostream &OS, std::string &ErrMsg,
                   bool FromText, bool ToText) {
   auto SaveOpt = SPIRVUseTextFormat;
   SPIRVUseTextFormat = FromText;
@@ -1611,7 +1611,7 @@ bool ConvertSPIRV(std::istream &IS, spv_ostream &OS, std::string &ErrMsg,
   return true;
 }
 
-bool IsSPIRVText(const std::string &Img) {
+bool isSpirvText(const std::string &Img) {
   std::istringstream SS(Img);
   unsigned Magic = 0;
   SS >> Magic;
@@ -1620,9 +1620,9 @@ bool IsSPIRVText(const std::string &Img) {
   return Magic == MagicNumber;
 }
 
-bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
+bool convertSpirv(std::string &Input, std::string &Out, std::string &ErrMsg,
                   bool ToText) {
-  auto FromText = IsSPIRVText(Input);
+  auto FromText = isSpirvText(Input);
   if (ToText == FromText) {
     Out = Input;
     return true;
@@ -1633,7 +1633,7 @@ bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
 #else
   std::ostringstream OS;
 #endif
-  if (!ConvertSPIRV(IS, OS, ErrMsg, FromText, ToText))
+  if (!convertSpirv(IS, OS, ErrMsg, FromText, ToText))
     return false;
   Out = OS.str();
   return true;

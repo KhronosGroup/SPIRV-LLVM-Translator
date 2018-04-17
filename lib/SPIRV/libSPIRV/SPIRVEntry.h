@@ -341,11 +341,11 @@ public:
   /// Create an empty SPIRV object by op code, e.g. OpTypeInt creates
   /// SPIRVTypeInt.
   static SPIRVEntry *create(Op);
-  static std::unique_ptr<SPIRVEntry> create_unique(Op);
+  static std::unique_ptr<SPIRVEntry> createUnique(Op);
 
   /// Create an empty extended instruction.
-  static std::unique_ptr<SPIRVExtInst> create_unique(SPIRVExtInstSetKind Set,
-                                                     unsigned ExtOp);
+  static std::unique_ptr<SPIRVExtInst> createUnique(SPIRVExtInstSetKind Set,
+                                                    unsigned ExtOp);
 
   friend spv_ostream &operator<<(spv_ostream &O, const SPIRVEntry &E);
   friend std::istream &operator>>(std::istream &I, SPIRVEntry &E);
@@ -547,7 +547,7 @@ public:
 
   SPIRVWord getColumn() const { return Column; }
 
-  void setColumn(const SPIRVWord column) { Column = column; }
+  void setColumn(const SPIRVWord Column) { this->Column = Column; }
 
   SPIRVId getFileName() const { return FileName; }
 
@@ -555,11 +555,11 @@ public:
     return get<SPIRVString>(FileName)->getStr();
   }
 
-  void setFileName(const SPIRVId fileName) { FileName = fileName; }
+  void setFileName(const SPIRVId FileName) { this->FileName = FileName; }
 
   SPIRVWord getLine() const { return Line; }
 
-  void setLine(const SPIRVWord line) { Line = line; }
+  void setLine(const SPIRVWord Line) { this->Line = Line; }
 
   bool operator!=(const SPIRVLine &O) const {
     return !equals(O.FileName, O.Line, O.Column);
@@ -582,18 +582,18 @@ class SPIRVExecutionMode : public SPIRVAnnotation<OpExecutionMode> {
 public:
   // Complete constructor for LocalSize, LocalSizeHint
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
-                     SPIRVWord x, SPIRVWord y, SPIRVWord z)
+                     SPIRVWord X, SPIRVWord Y, SPIRVWord Z)
       : SPIRVAnnotation(TheTarget, 6), ExecMode(TheExecMode) {
-    WordLiterals.push_back(x);
-    WordLiterals.push_back(y);
-    WordLiterals.push_back(z);
+    WordLiterals.push_back(X);
+    WordLiterals.push_back(Y);
+    WordLiterals.push_back(Z);
     updateModuleVersion();
   }
   // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
   SPIRVExecutionMode(SPIRVEntry *TheTarget, SPIRVExecutionModeKind TheExecMode,
-                     SPIRVWord code)
+                     SPIRVWord Code)
       : SPIRVAnnotation(TheTarget, 4), ExecMode(TheExecMode) {
-    WordLiterals.push_back(code);
+    WordLiterals.push_back(Code);
     updateModuleVersion();
   }
   // Complete constructor for ContractionOff

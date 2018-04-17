@@ -21,32 +21,32 @@ std::string FunctionDescriptor::nullString() {
 }
 
 std::string FunctionDescriptor::toString() const {
-  std::stringstream stream;
+  std::stringstream Stream;
   if (isNull()) {
     return FunctionDescriptor::nullString();
   }
-  stream << name << "(";
-  size_t paramCount = parameters.size();
-  if (paramCount > 0) {
-    for (size_t i = 0; i < paramCount - 1; ++i)
-      stream << parameters[i]->toString() << ", ";
-    stream << parameters[paramCount - 1]->toString();
+  Stream << Name << "(";
+  size_t ParamCount = Parameters.size();
+  if (ParamCount > 0) {
+    for (size_t I = 0; I < ParamCount - 1; ++I)
+      Stream << Parameters[I]->toString() << ", ";
+    Stream << Parameters[ParamCount - 1]->toString();
   }
-  stream << ")";
-  return stream.str();
+  Stream << ")";
+  return Stream.str();
 }
 
-static bool equal(const TypeVector &l, const TypeVector &r) {
-  if (&l == &r)
+static bool equal(const TypeVector &L, const TypeVector &R) {
+  if (&L == &R)
     return true;
-  if (l.size() != r.size())
+  if (L.size() != R.size())
     return false;
-  TypeVector::const_iterator itl = l.begin(), itr = r.begin(), endl = l.end();
-  while (itl != endl) {
-    if (!(*itl)->equals(*itr))
+  TypeVector::const_iterator Itl = L.begin(), Itr = R.begin(), Endl = L.end();
+  while (Itl != Endl) {
+    if (!(*Itl)->equals(*Itr))
       return false;
-    ++itl;
-    ++itr;
+    ++Itl;
+    ++Itr;
   }
   return true;
 }
@@ -55,41 +55,41 @@ static bool equal(const TypeVector &l, const TypeVector &r) {
 // FunctionDescriptor
 //
 
-bool FunctionDescriptor::operator==(const FunctionDescriptor &that) const {
-  if (this == &that)
+bool FunctionDescriptor::operator==(const FunctionDescriptor &That) const {
+  if (this == &That)
     return true;
-  if (name != that.name)
+  if (Name != That.Name)
     return false;
-  return equal(parameters, that.parameters);
+  return equal(Parameters, That.Parameters);
 }
 
-bool FunctionDescriptor::operator<(const FunctionDescriptor &that) const {
-  int strCmp = name.compare(that.name);
-  if (strCmp)
-    return (strCmp < 0);
-  size_t len = parameters.size(), thatLen = that.parameters.size();
-  if (len != thatLen)
-    return len < thatLen;
-  TypeVector::const_iterator it = parameters.begin(), e = parameters.end(),
-                             thatit = that.parameters.begin();
-  while (it != e) {
-    int cmp = (*it)->toString().compare((*thatit)->toString());
-    if (cmp)
-      return (cmp < 0);
-    ++thatit;
-    ++it;
+bool FunctionDescriptor::operator<(const FunctionDescriptor &That) const {
+  int StrCmp = Name.compare(That.Name);
+  if (StrCmp)
+    return (StrCmp < 0);
+  size_t Len = Parameters.size(), ThatLen = That.Parameters.size();
+  if (Len != ThatLen)
+    return Len < ThatLen;
+  TypeVector::const_iterator It = Parameters.begin(), E = Parameters.end(),
+                             Thatit = That.Parameters.begin();
+  while (It != E) {
+    int Cmp = (*It)->toString().compare((*Thatit)->toString());
+    if (Cmp)
+      return (Cmp < 0);
+    ++Thatit;
+    ++It;
   }
   return false;
 }
 
 bool FunctionDescriptor::isNull() const {
-  return (name.empty() && parameters.empty());
+  return (Name.empty() && Parameters.empty());
 }
 
 FunctionDescriptor FunctionDescriptor::null() {
-  FunctionDescriptor fd;
-  fd.name = "";
-  return fd;
+  FunctionDescriptor Fd;
+  Fd.Name = "";
+  return Fd;
 }
 
 } // namespace SPIR

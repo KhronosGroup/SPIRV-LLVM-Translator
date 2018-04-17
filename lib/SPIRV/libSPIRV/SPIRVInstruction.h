@@ -381,12 +381,12 @@ class SPIRVMemoryAccess {
 public:
   SPIRVMemoryAccess(const std::vector<SPIRVWord> &TheMemoryAccess)
       : TheMemoryAccessMask(0), Alignment(0) {
-    MemoryAccessUpdate(TheMemoryAccess);
+    memoryAccessUpdate(TheMemoryAccess);
   }
 
   SPIRVMemoryAccess() : TheMemoryAccessMask(0), Alignment(0) {}
 
-  void MemoryAccessUpdate(const std::vector<SPIRVWord> &MemoryAccess) {
+  void memoryAccessUpdate(const std::vector<SPIRVWord> &MemoryAccess) {
     if (!MemoryAccess.size())
       return;
     assert((MemoryAccess.size() == 1 || MemoryAccess.size() == 2) &&
@@ -520,7 +520,7 @@ protected:
 
   void decode(std::istream &I) override {
     getDecoder(I) >> PtrId >> ValId >> MemoryAccess;
-    MemoryAccessUpdate(MemoryAccess);
+    memoryAccessUpdate(MemoryAccess);
   }
 
   void validate() const override {
@@ -572,7 +572,7 @@ protected:
 
   void decode(std::istream &I) override {
     getDecoder(I) >> Type >> Id >> PtrId >> MemoryAccess;
-    MemoryAccessUpdate(MemoryAccess);
+    memoryAccessUpdate(MemoryAccess);
   }
 
   void validate() const override {
@@ -592,40 +592,40 @@ protected:
   void validate() const override {
     SPIRVId Op1 = Ops[0];
     SPIRVId Op2 = Ops[1];
-    SPIRVType *op1Ty, *op2Ty;
+    SPIRVType *Op1Ty, *Op2Ty;
     SPIRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
       return;
     if (getValueType(Op1)->isTypeVector()) {
-      op1Ty = getValueType(Op1)->getVectorComponentType();
-      op2Ty = getValueType(Op2)->getVectorComponentType();
+      Op1Ty = getValueType(Op1)->getVectorComponentType();
+      Op2Ty = getValueType(Op2)->getVectorComponentType();
       assert(getValueType(Op1)->getVectorComponentCount() ==
                  getValueType(Op2)->getVectorComponentCount() &&
              "Inconsistent Vector component width");
     } else {
-      op1Ty = getValueType(Op1);
-      op2Ty = getValueType(Op2);
+      Op1Ty = getValueType(Op1);
+      Op2Ty = getValueType(Op2);
     }
 
-    (void)op1Ty;
-    (void)op2Ty;
+    (void)Op1Ty;
+    (void)Op2Ty;
     if (isBinaryOpCode(OpCode)) {
       assert(getValueType(Op1) == getValueType(Op2) &&
              "Invalid type for binary instruction");
-      assert((op1Ty->isTypeInt() || op2Ty->isTypeFloat()) &&
+      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
              "Invalid type for Binary instruction");
-      assert((op1Ty->getBitWidth() == op2Ty->getBitWidth()) &&
+      assert((Op1Ty->getBitWidth() == Op2Ty->getBitWidth()) &&
              "Inconsistent BitWidth");
     } else if (isShiftOpCode(OpCode)) {
-      assert((op1Ty->isTypeInt() || op2Ty->isTypeInt()) &&
+      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
              "Invalid type for shift instruction");
     } else if (isLogicalOpCode(OpCode)) {
-      assert((op1Ty->isTypeBool() || op2Ty->isTypeBool()) &&
+      assert((Op1Ty->isTypeBool() || Op2Ty->isTypeBool()) &&
              "Invalid type for logical instruction");
     } else if (isBitwiseOpCode(OpCode)) {
-      assert((op1Ty->isTypeInt() || op2Ty->isTypeInt()) &&
+      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
              "Invalid type for bitwise instruction");
-      assert((op1Ty->getIntegerBitWidth() == op2Ty->getIntegerBitWidth()) &&
+      assert((Op1Ty->getIntegerBitWidth() == Op2Ty->getIntegerBitWidth()) &&
              "Inconsistent BitWidth");
     } else {
       assert(0 && "Invalid op code!");
@@ -867,30 +867,30 @@ protected:
   void validate() const override {
     auto Op1 = Ops[0];
     auto Op2 = Ops[1];
-    SPIRVType *op1Ty, *op2Ty, *resTy;
+    SPIRVType *Op1Ty, *Op2Ty, *ResTy;
     SPIRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
       return;
 
-    (void)op1Ty;
-    (void)op2Ty;
-    (void)resTy;
+    (void)Op1Ty;
+    (void)Op2Ty;
+    (void)ResTy;
     if (getValueType(Op1)->isTypeVector()) {
-      op1Ty = getValueType(Op1)->getVectorComponentType();
-      op2Ty = getValueType(Op2)->getVectorComponentType();
-      resTy = Type->getVectorComponentType();
+      Op1Ty = getValueType(Op1)->getVectorComponentType();
+      Op2Ty = getValueType(Op2)->getVectorComponentType();
+      ResTy = Type->getVectorComponentType();
       assert(getValueType(Op1)->getVectorComponentCount() ==
                  getValueType(Op2)->getVectorComponentCount() &&
              "Inconsistent Vector component width");
     } else {
-      op1Ty = getValueType(Op1);
-      op2Ty = getValueType(Op2);
-      resTy = Type;
+      Op1Ty = getValueType(Op1);
+      Op2Ty = getValueType(Op2);
+      ResTy = Type;
     }
     assert(isCmpOpCode(OpCode) && "Invalid op code for cmp inst");
-    assert((resTy->isTypeBool() || resTy->isTypeInt()) &&
+    assert((ResTy->isTypeBool() || ResTy->isTypeInt()) &&
            "Invalid type for compare instruction");
-    assert(op1Ty == op2Ty && "Inconsistent types");
+    assert(Op1Ty == Op2Ty && "Inconsistent types");
   }
 };
 
@@ -953,11 +953,11 @@ protected:
         getValue(Op2)->isForward())
       return;
 
-    SPIRVType *conTy = getValueType(Condition)->isTypeVector()
+    SPIRVType *ConTy = getValueType(Condition)->isTypeVector()
                            ? getValueType(Condition)->getVectorComponentType()
                            : getValueType(Condition);
-    (void)conTy;
-    assert(conTy->isTypeBool() && "Invalid type");
+    (void)ConTy;
+    assert(ConTy->isTypeBool() && "Invalid type");
     assert(getType() == getValueType(Op1) && getType() == getValueType(Op2) &&
            "Inconsistent type");
   }
@@ -1073,8 +1073,8 @@ public:
       if (!Module->exist(Pairs[PairSize * I + getLiteralsCount()], &BB))
         continue;
 
-      for (size_t i = 0; i < getLiteralsCount(); ++i) {
-        Literals.push_back(Pairs.at(PairSize * I + i));
+      for (size_t J = 0; J < getLiteralsCount(); ++J) {
+        Literals.push_back(Pairs.at(PairSize * I + J));
       }
       Func(Literals, static_cast<SPIRVBasicBlock *>(BB));
     }
@@ -1203,18 +1203,18 @@ protected:
     if (getValue(Op)->isForward())
       return;
     if (isGenericNegateOpCode(OpCode)) {
-      SPIRVType *resTy =
+      SPIRVType *ResTy =
           Type->isTypeVector() ? Type->getVectorComponentType() : Type;
-      SPIRVType *opTy = Type->isTypeVector()
+      SPIRVType *OpTy = Type->isTypeVector()
                             ? getValueType(Op)->getVectorComponentType()
                             : getValueType(Op);
 
-      (void)resTy;
-      (void)opTy;
+      (void)ResTy;
+      (void)OpTy;
       assert(getType() == getValueType(Op) && "Inconsistent type");
-      assert((resTy->isTypeInt() || resTy->isTypeFloat()) &&
+      assert((ResTy->isTypeInt() || ResTy->isTypeFloat()) &&
              "Invalid type for Generic Negate instruction");
-      assert((resTy->getBitWidth() == opTy->getBitWidth()) &&
+      assert((ResTy->getBitWidth() == OpTy->getBitWidth()) &&
              "Invalid bitwidth for Generic Negate instruction");
       assert((Type->isTypeVector()
                   ? (Type->getVectorComponentCount() ==
@@ -1614,7 +1614,7 @@ protected:
 
   void decode(std::istream &I) override {
     getDecoder(I) >> Target >> Source >> MemoryAccess;
-    MemoryAccessUpdate(MemoryAccess);
+    memoryAccessUpdate(MemoryAccess);
   }
 
   void validate() const override {
@@ -1670,7 +1670,7 @@ protected:
 
   void decode(std::istream &I) override {
     getDecoder(I) >> Target >> Source >> Size >> MemoryAccess;
-    MemoryAccessUpdate(MemoryAccess);
+    memoryAccessUpdate(MemoryAccess);
   }
 
   void validate() const override { SPIRVInstruction::validate(); }

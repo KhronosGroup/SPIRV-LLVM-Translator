@@ -77,9 +77,9 @@ SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC)
 
 Decoration SPIRVDecorateGeneric::getDecorateKind() const { return Dec; }
 
-SPIRVWord SPIRVDecorateGeneric::getLiteral(size_t i) const {
-  assert(i <= Literals.size() && "Out of bounds");
-  return Literals[i];
+SPIRVWord SPIRVDecorateGeneric::getLiteral(size_t I) const {
+  assert(I <= Literals.size() && "Out of bounds");
+  return Literals[I];
 }
 
 size_t SPIRVDecorateGeneric::getLiteralCount() const { return Literals.size(); }

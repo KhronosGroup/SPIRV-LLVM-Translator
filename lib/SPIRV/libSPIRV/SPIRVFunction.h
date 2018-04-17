@@ -100,12 +100,12 @@ public:
   SPIRVTypeFunction *getFunctionType() const { return FuncType; }
   SPIRVWord getFuncCtlMask() const { return FCtrlMask; }
   size_t getNumBasicBlock() const { return BBVec.size(); }
-  SPIRVBasicBlock *getBasicBlock(size_t i) const { return BBVec[i]; }
+  SPIRVBasicBlock *getBasicBlock(size_t I) const { return BBVec[I]; }
   size_t getNumArguments() const {
     return getFunctionType()->getNumParameters();
   }
-  SPIRVId getArgumentId(size_t i) const { return Parameters[i]->getId(); }
-  SPIRVFunctionParameter *getArgument(size_t i) const { return Parameters[i]; }
+  SPIRVId getArgumentId(size_t I) const { return Parameters[I]->getId(); }
+  SPIRVFunctionParameter *getArgument(size_t I) const { return Parameters[I]; }
   void foreachArgument(std::function<void(SPIRVFunctionParameter *)> Func) {
     for (size_t I = 0, E = getNumArguments(); I != E; ++I)
       Func(getArgument(I));
@@ -145,8 +145,8 @@ private:
   }
 
   void addAllArguments(SPIRVId FirstArgId) {
-    for (size_t i = 0, e = getFunctionType()->getNumParameters(); i != e; ++i)
-      addArgument(i, FirstArgId + i);
+    for (size_t I = 0, E = getFunctionType()->getNumParameters(); I != E; ++I)
+      addArgument(I, FirstArgId + I);
   }
   void decodeBB(SPIRVDecoder &);
 

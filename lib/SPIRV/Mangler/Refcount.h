@@ -21,29 +21,29 @@ template <typename T> class RefCount {
 public:
   RefCount() : Count(0), Ptr(0) {}
 
-  RefCount(T *ptr) : Ptr(ptr) { Count = new int(1); }
+  RefCount(T *Ptr) : Ptr(Ptr) { Count = new int(1); }
 
-  RefCount(const RefCount<T> &other) { cpy(other); }
+  RefCount(const RefCount<T> &Other) { cpy(Other); }
 
   ~RefCount() {
     if (Count)
       dispose();
   }
 
-  RefCount &operator=(const RefCount<T> &other) {
-    if (this == &other)
+  RefCount &operator=(const RefCount<T> &Other) {
+    if (this == &Other)
       return *this;
     if (Count)
       dispose();
-    cpy(other);
+    cpy(Other);
     return *this;
   }
 
-  void init(T *ptr) {
+  void init(T *Ptr) {
     assert(!Ptr && "overrunning non NULL pointer");
     assert(!Count && "overrunning non NULL pointer");
     Count = new int(1);
-    Ptr = ptr;
+    this->Ptr = Ptr;
   }
 
   bool isNull() const { return (!Ptr); }
@@ -74,9 +74,9 @@ private:
     assert(*Count && "zero ref counter");
   }
 
-  void cpy(const RefCount<T> &other) {
-    Count = other.Count;
-    Ptr = other.Ptr;
+  void cpy(const RefCount<T> &Other) {
+    Count = Other.Count;
+    Ptr = Other.Ptr;
     if (Count)
       ++*Count;
   }

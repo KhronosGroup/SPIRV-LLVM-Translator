@@ -799,9 +799,9 @@ SPIRVValue *LLVMToSPIRV::transValue(Value *V, SPIRVBasicBlock *BB,
   auto BV = transValueWithoutDecoration(V, BB, CreateForward);
   if (!BV || !transDecoration(V, BV))
     return nullptr;
-  std::string name = V->getName();
-  if (!name.empty()) // Don't erase the name, which BM might already have
-    BM->setName(BV, name);
+  std::string Name = V->getName();
+  if (!Name.empty()) // Don't erase the name, which BM might already have
+    BM->setName(BV, Name);
   return BV;
 }
 
@@ -1092,8 +1092,8 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
 
   if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(V)) {
     std::vector<SPIRVValue *> Indices;
-    for (unsigned i = 0, e = GEP->getNumIndices(); i != e; ++i)
-      Indices.push_back(transValue(GEP->getOperand(i + 1), BB));
+    for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
+      Indices.push_back(transValue(GEP->getOperand(I + 1), BB));
     return mapValue(
         V, BM->addPtrAccessChainInst(transType(GEP->getType()),
                                      transValue(GEP->getPointerOperand(), BB),
@@ -1235,7 +1235,7 @@ SPIRVValue *LLVMToSPIRV::transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB) {
 
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                             SPIRVBasicBlock *BB) {
-  auto getMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
+  auto GetMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
     if (SPIRVWord AlignVal = MI->getDestAlignment()) {
       MemoryAccess[0] |= MemoryAccessAlignedMask;
@@ -1291,7 +1291,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     SPIRVValue *Source = BM->addUnaryInst(OpBitcast, SourceTy, Var, BB);
     SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
     return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
-                                      getMemoryAccess(MSI), BB);
+                                      GetMemoryAccess(MSI), BB);
   } break;
   case Intrinsic::memcpy:
     assert(cast<MemCpyInst>(II)->getSourceAlignment() ==
@@ -1300,7 +1300,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     return BM->addCopyMemorySizedInst(
         transValue(II->getOperand(0), BB), transValue(II->getOperand(1), BB),
         transValue(II->getOperand(2), BB),
-        getMemoryAccess(cast<MemIntrinsic>(II)), BB);
+        GetMemoryAccess(cast<MemIntrinsic>(II)), BB);
   case Intrinsic::lifetime_start:
     return transLifetimeIntrinsicInst(OpLifetimeStart, II, BB);
   case Intrinsic::lifetime_end:
@@ -1336,13 +1336,13 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
         BM->addExtInst(
             transType(CI->getType()), ExtSetId, ExtOp,
             transArguments(CI, BB,
-                           SPIRVEntry::create_unique(ExtSetKind, ExtOp).get()),
+                           SPIRVEntry::createUnique(ExtSetKind, ExtOp).get()),
             BB),
         Dec);
 
   return BM->addCallInst(
       transFunctionDecl(CI->getCalledFunction()),
-      transArguments(CI, BB, SPIRVEntry::create_unique(OpFunctionCall).get()),
+      transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
       BB);
 }
 
@@ -1458,7 +1458,7 @@ void LLVMToSPIRV::transFunction(Function *I) {
 }
 
 bool LLVMToSPIRV::translate() {
-  BM->setGeneratorVer(kTranslatorVer);
+  BM->setGeneratorVer(KTranslatorVer);
 
   if (!transSourceLanguage())
     return false;
@@ -1585,7 +1585,7 @@ bool LLVMToSPIRV::transExecutionMode() {
 
 bool LLVMToSPIRV::transOCLKernelMetadata() {
   NamedMDNode *KernelMDs = M->getNamedMetadata(SPIR_MD_KERNELS);
-  std::vector<std::string> argAccessQual;
+  std::vector<std::string> ArgAccessQual;
   if (!KernelMDs)
     return true;
 
@@ -1802,7 +1802,7 @@ void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   PassMgr.add(createSPIRVLowerMemmove());
 }
 
-bool llvm::WriteSPIRV(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
+bool llvm::writeSpirv(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
@@ -1815,7 +1815,7 @@ bool llvm::WriteSPIRV(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
   return true;
 }
 
-bool llvm::RegularizeLLVMForSPIRV(Module *M, std::string &ErrMsg) {
+bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr);

@@ -120,9 +120,9 @@ struct OCLBuiltinTransInfo {
   /// Postprocessor of operands
   std::function<void(std::vector<Value *> &)> PostProc;
   Type *RetTy;      // Return type of the translated function
-  bool isRetSigned; // When RetTy is int, determines if extensions
+  bool IsRetSigned; // When RetTy is int, determines if extensions
                     // on it should be a sext or zet.
-  OCLBuiltinTransInfo() : RetTy(nullptr), isRetSigned(false) {
+  OCLBuiltinTransInfo() : RetTy(nullptr), IsRetSigned(false) {
     PostProc = [](std::vector<Value *> &) {};
   }
 };
@@ -310,10 +310,10 @@ void decodeMDNode(MDNode *N, unsigned &X, unsigned &Y, unsigned &Z);
 unsigned transVecTypeHint(MDNode *Node);
 
 /// Decode SPIR-V encoding of vector type hint execution mode.
-Type *decodeVecTypeHint(LLVMContext &C, unsigned code);
+Type *decodeVecTypeHint(LLVMContext &C, unsigned Code);
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode);
-SPIR::TypeAttributeEnum getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim);
+SPIR::TypeAttributeEnum getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum Prim);
 
 inline unsigned mapOCLMemSemanticToSPIRV(unsigned MemFenceFlag,
                                          OCLMemOrderKind Order) {
