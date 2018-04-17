@@ -420,6 +420,7 @@ protected:
 struct TypeVisitor {
   SPIRversion spirVer;
   TypeVisitor(SPIRversion ver) : spirVer(ver){};
+  virtual ~TypeVisitor() {}
   virtual MangleError visit(const PrimitiveType *) = 0;
   virtual MangleError visit(const VectorType *) = 0;
   virtual MangleError visit(const PointerType *) = 0;
