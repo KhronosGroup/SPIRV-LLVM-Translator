@@ -85,7 +85,7 @@ public:
   //
   // Visit methods
   //
-  MangleError visit(const PrimitiveType *t) {
+  MangleError visit(const PrimitiveType *t) override {
     MangleError me = MANGLE_SUCCESS;
 #if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
     m_stream << mangledPrimitiveString(t->getPrimitive());
@@ -109,7 +109,7 @@ public:
     return me;
   }
 
-  MangleError visit(const PointerType *p) {
+  MangleError visit(const PointerType *p) override {
     size_t fpos = m_stream.str().size();
     std::string qualStr;
     MangleError me = MANGLE_SUCCESS;
@@ -137,7 +137,7 @@ public:
     return me;
   }
 
-  MangleError visit(const VectorType *v) {
+  MangleError visit(const VectorType *v) override {
     size_t index = m_stream.str().size();
     std::stringstream typeStr;
     typeStr << "Dv" << v->getLength() << "_";
@@ -153,7 +153,7 @@ public:
     return me;
   }
 
-  MangleError visit(const AtomicType *p) {
+  MangleError visit(const AtomicType *p) override {
     MangleError me = MANGLE_SUCCESS;
     size_t index = m_stream.str().size();
     const char *typeStr = "U7_Atomic";
@@ -165,7 +165,7 @@ public:
     return me;
   }
 
-  MangleError visit(const BlockType *p) {
+  MangleError visit(const BlockType *p) override {
     m_stream << "U"
              << "13block_pointerFv";
     if (p->getNumOfParams() == 0)
@@ -181,7 +181,7 @@ public:
     return MANGLE_SUCCESS;
   }
 
-  MangleError visit(const UserDefinedType *pTy) {
+  MangleError visit(const UserDefinedType *pTy) override {
     std::string name = pTy->toString();
     m_stream << name.size() << name;
     return MANGLE_SUCCESS;

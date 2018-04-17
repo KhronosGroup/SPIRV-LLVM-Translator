@@ -73,9 +73,9 @@ public:
   OCL20ToSPIRV() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
     initializeOCL20ToSPIRVPass(*PassRegistry::getPassRegistry());
   }
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
 
-  void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<OCLTypeToSPIRV>();
   }
 

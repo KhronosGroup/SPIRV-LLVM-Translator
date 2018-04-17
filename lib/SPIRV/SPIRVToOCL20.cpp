@@ -68,7 +68,7 @@ public:
   SPIRVToOCL20() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializeSPIRVToOCL20Pass(*PassRegistry::getPassRegistry());
   }
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
 
   void visitCallInst(CallInst &CI);
 

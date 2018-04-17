@@ -101,13 +101,13 @@ public:
     initializeSPIRVLowerOCLBlocksPass(*PassRegistry::getPassRegistry());
   }
 
-  virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<CallGraphWrapperPass>();
     AU.addRequired<AAResultsWrapperPass>();
     AU.addRequired<AssumptionCacheTracker>();
   }
 
-  virtual bool runOnModule(Module &Module) {
+  bool runOnModule(Module &Module) override {
     M = &Module;
     lowerBlockBind();
     lowerGetBlockInvoke();

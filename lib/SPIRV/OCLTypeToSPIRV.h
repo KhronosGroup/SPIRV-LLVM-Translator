@@ -53,8 +53,8 @@ namespace SPIRV {
 class OCLTypeToSPIRV : public ModulePass {
 public:
   OCLTypeToSPIRV();
-  virtual void getAnalysisUsage(AnalysisUsage &AU) const;
-  virtual bool runOnModule(Module &M);
+  void getAnalysisUsage(AnalysisUsage &AU) const override;
+  bool runOnModule(Module &M) override;
 
   /// \return Adapted type based on kernel argument metadata. If \p V is
   ///   a function, returns function type.

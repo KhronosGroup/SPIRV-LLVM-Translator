@@ -157,7 +157,7 @@ public:
         ExtSetId(SPIRVID_INVALID), SrcLang(0), SrcLangVer(0),
         DbgTran(nullptr, SMod) {}
 
-  virtual StringRef getPassName() const { return "LLVMToSPIRV"; }
+  StringRef getPassName() const override { return "LLVMToSPIRV"; }
 
   bool runOnModule(Module &Mod) override {
     M = &Mod;
@@ -168,7 +168,7 @@ public:
     return true;
   }
 
-  void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<OCLTypeToSPIRV>();
   }
 

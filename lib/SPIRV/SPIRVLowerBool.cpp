@@ -102,7 +102,7 @@ public:
       replace(&I, Sel);
     }
   }
-  virtual bool runOnModule(Module &M) {
+  bool runOnModule(Module &M) override {
     Context = &M.getContext();
     visit(M);
 

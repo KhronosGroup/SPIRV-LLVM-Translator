@@ -70,281 +70,281 @@ public:
     // OpenCL memory model requires Kernel capability
     setMemoryModel(MemoryModelOpenCL);
   }
-  virtual ~SPIRVModuleImpl();
+  ~SPIRVModuleImpl() override;
 
   // Object query functions
-  bool exist(SPIRVId) const;
-  bool exist(SPIRVId, SPIRVEntry **) const;
+  bool exist(SPIRVId) const override;
+  bool exist(SPIRVId, SPIRVEntry **) const override;
   SPIRVId getId(SPIRVId Id = SPIRVID_INVALID, unsigned Increment = 1);
-  virtual SPIRVEntry *getEntry(SPIRVId Id) const;
-  bool hasDebugInfo() const { return !StringVec.empty(); }
+  SPIRVEntry *getEntry(SPIRVId Id) const override;
+  bool hasDebugInfo() const override { return !StringVec.empty(); }
 
   // Error handling functions
-  SPIRVErrorLog &getErrorLog() { return ErrLog; }
-  SPIRVErrorCode getError(std::string &ErrMsg) {
+  SPIRVErrorLog &getErrorLog() override { return ErrLog; }
+  SPIRVErrorCode getError(std::string &ErrMsg) override {
     return ErrLog.getError(ErrMsg);
   }
 
   // Module query functions
-  SPIRVAddressingModelKind getAddressingModel() { return AddrModel; }
-  SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const;
-  const SPIRVCapMap &getCapability() const { return CapMap; }
-  bool hasCapability(SPIRVCapabilityKind Cap) const {
+  SPIRVAddressingModelKind getAddressingModel() override { return AddrModel; }
+  SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const override;
+  const SPIRVCapMap &getCapability() const override { return CapMap; }
+  bool hasCapability(SPIRVCapabilityKind Cap) const override {
     return CapMap.find(Cap) != CapMap.end();
   }
-  std::set<std::string> &getExtension() { return SPIRVExt; }
-  SPIRVFunction *getFunction(unsigned I) const { return FuncVec[I]; }
-  SPIRVVariable *getVariable(unsigned I) const { return VariableVec[I]; }
-  virtual SPIRVValue *getValue(SPIRVId TheId) const;
-  virtual std::vector<SPIRVValue *>
-  getValues(const std::vector<SPIRVId> &) const;
-  virtual std::vector<SPIRVId> getIds(const std::vector<SPIRVEntry *> &) const;
-  virtual std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *> &) const;
-  virtual SPIRVType *getValueType(SPIRVId TheId) const;
-  virtual std::vector<SPIRVType *>
-  getValueTypes(const std::vector<SPIRVId> &) const;
-  SPIRVMemoryModelKind getMemoryModel() const { return MemoryModel; }
-  virtual SPIRVConstant *getLiteralAsConstant(unsigned Literal);
-  unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const {
+  std::set<std::string> &getExtension() override { return SPIRVExt; }
+  SPIRVFunction *getFunction(unsigned I) const override { return FuncVec[I]; }
+  SPIRVVariable *getVariable(unsigned I) const override {
+    return VariableVec[I];
+  }
+  SPIRVValue *getValue(SPIRVId TheId) const override;
+  std::vector<SPIRVValue *>
+  getValues(const std::vector<SPIRVId> &) const override;
+  std::vector<SPIRVId> getIds(const std::vector<SPIRVEntry *> &) const override;
+  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *> &) const override;
+  SPIRVType *getValueType(SPIRVId TheId) const override;
+  std::vector<SPIRVType *>
+  getValueTypes(const std::vector<SPIRVId> &) const override;
+  SPIRVMemoryModelKind getMemoryModel() const override { return MemoryModel; }
+  SPIRVConstant *getLiteralAsConstant(unsigned Literal) override;
+  unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const override {
     auto Loc = EntryPointVec.find(EM);
     if (Loc == EntryPointVec.end())
       return 0;
     return Loc->second.size();
   }
-  SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind EM, unsigned I) const {
+  SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind EM,
+                               unsigned I) const override {
     auto Loc = EntryPointVec.find(EM);
     if (Loc == EntryPointVec.end())
       return nullptr;
     assert(I < Loc->second.size());
     return get<SPIRVFunction>(Loc->second[I]);
   }
-  unsigned getNumFunctions() const { return FuncVec.size(); }
-  unsigned getNumVariables() const { return VariableVec.size(); }
-  SourceLanguage getSourceLanguage(SPIRVWord *Ver = nullptr) const {
+  unsigned getNumFunctions() const override { return FuncVec.size(); }
+  unsigned getNumVariables() const override { return VariableVec.size(); }
+  SourceLanguage getSourceLanguage(SPIRVWord *Ver = nullptr) const override {
     if (Ver)
       *Ver = SrcLangVer;
     return SrcLang;
   }
-  std::set<std::string> &getSourceExtension() { return SrcExtension; }
-  bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId EP) const;
-  unsigned short getGeneratorId() const { return GeneratorId; }
-  unsigned short getGeneratorVer() const { return GeneratorVer; }
-  SPIRVWord getSPIRVVersion() const { return SPIRVVersion; }
+  std::set<std::string> &getSourceExtension() override { return SrcExtension; }
+  bool isEntryPoint(SPIRVExecutionModelKind, SPIRVId EP) const override;
+  unsigned short getGeneratorId() const override { return GeneratorId; }
+  unsigned short getGeneratorVer() const override { return GeneratorVer; }
+  SPIRVWord getSPIRVVersion() const override { return SPIRVVersion; }
 
   // Module changing functions
-  bool importBuiltinSet(const std::string &, SPIRVId *);
-  bool importBuiltinSetWithId(const std::string &, SPIRVId);
-  void optimizeDecorates();
-  void setAddressingModel(SPIRVAddressingModelKind AM) { AddrModel = AM; }
-  void setAlignment(SPIRVValue *, SPIRVWord);
-  void setMemoryModel(SPIRVMemoryModelKind MM) {
+  bool importBuiltinSet(const std::string &, SPIRVId *) override;
+  bool importBuiltinSetWithId(const std::string &, SPIRVId) override;
+  void optimizeDecorates() override;
+  void setAddressingModel(SPIRVAddressingModelKind AM) override {
+    AddrModel = AM;
+  }
+  void setAlignment(SPIRVValue *, SPIRVWord) override;
+  void setMemoryModel(SPIRVMemoryModelKind MM) override {
     MemoryModel = MM;
     if (MemoryModel == spv::MemoryModelOpenCL)
       addCapability(CapabilityKernel);
   }
-  void setName(SPIRVEntry *E, const std::string &Name);
-  void setSourceLanguage(SourceLanguage Lang, SPIRVWord Ver) {
+  void setName(SPIRVEntry *E, const std::string &Name) override;
+  void setSourceLanguage(SourceLanguage Lang, SPIRVWord Ver) override {
     SrcLang = Lang;
     SrcLangVer = Ver;
   }
-  void setGeneratorId(unsigned short Id) { GeneratorId = Id; }
-  void setGeneratorVer(unsigned short Ver) { GeneratorVer = Ver; }
-  void resolveUnknownStructFields();
+  void setGeneratorId(unsigned short Id) override { GeneratorId = Id; }
+  void setGeneratorVer(unsigned short Ver) override { GeneratorVer = Ver; }
+  void resolveUnknownStructFields() override;
 
   void setSPIRVVersion(SPIRVWord Ver) override { SPIRVVersion = Ver; }
 
   // Object creation functions
   template <class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
-  virtual SPIRVEntry *addEntry(SPIRVEntry *E);
-  virtual SPIRVBasicBlock *addBasicBlock(SPIRVFunction *, SPIRVId);
-  virtual SPIRVString *getString(const std::string &Str);
-  virtual SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST,
-                                         SPIRVWord MemberNumber,
-                                         const std::string &Name);
-  virtual void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
-                                     SPIRVId ID);
-  virtual void addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
-                       SPIRVWord Column);
-  virtual const std::shared_ptr<const SPIRVLine> &getCurrentLine() const;
-  virtual void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line);
-  virtual void addCapability(SPIRVCapabilityKind);
-  virtual void addCapabilityInternal(SPIRVCapabilityKind);
-  virtual const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *);
-  virtual SPIRVDecorationGroup *addDecorationGroup();
-  virtual SPIRVDecorationGroup *addDecorationGroup(SPIRVDecorationGroup *Group);
-  virtual SPIRVGroupDecorate *
+  SPIRVEntry *addEntry(SPIRVEntry *E) override;
+  SPIRVBasicBlock *addBasicBlock(SPIRVFunction *, SPIRVId) override;
+  SPIRVString *getString(const std::string &Str) override;
+  SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST, SPIRVWord MemberNumber,
+                                 const std::string &Name) override;
+  void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
+                             SPIRVId ID) override;
+  void addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
+               SPIRVWord Column) override;
+  const std::shared_ptr<const SPIRVLine> &getCurrentLine() const override;
+  void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
+  void addCapability(SPIRVCapabilityKind) override;
+  void addCapabilityInternal(SPIRVCapabilityKind) override;
+  const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *) override;
+  SPIRVDecorationGroup *addDecorationGroup() override;
+  SPIRVDecorationGroup *
+  addDecorationGroup(SPIRVDecorationGroup *Group) override;
+  SPIRVGroupDecorate *
   addGroupDecorate(SPIRVDecorationGroup *Group,
-                   const std::vector<SPIRVEntry *> &Targets);
-  virtual SPIRVGroupDecorateGeneric *
-  addGroupDecorateGeneric(SPIRVGroupDecorateGeneric *GDec);
-  virtual SPIRVGroupMemberDecorate *
+                   const std::vector<SPIRVEntry *> &Targets) override;
+  SPIRVGroupDecorateGeneric *
+  addGroupDecorateGeneric(SPIRVGroupDecorateGeneric *GDec) override;
+  SPIRVGroupMemberDecorate *
   addGroupMemberDecorate(SPIRVDecorationGroup *Group,
-                         const std::vector<SPIRVEntry *> &Targets);
-  virtual void addEntryPoint(SPIRVExecutionModelKind ExecModel,
-                             SPIRVId EntryPoint);
-  virtual SPIRVForward *addForward(SPIRVType *Ty);
-  virtual SPIRVForward *addForward(SPIRVId, SPIRVType *Ty);
-  virtual SPIRVFunction *addFunction(SPIRVFunction *);
-  virtual SPIRVFunction *addFunction(SPIRVTypeFunction *, SPIRVId);
-  virtual SPIRVEntry *replaceForward(SPIRVForward *, SPIRVEntry *);
-  virtual void eraseInstruction(SPIRVInstruction *, SPIRVBasicBlock *);
+                         const std::vector<SPIRVEntry *> &Targets) override;
+  void addEntryPoint(SPIRVExecutionModelKind ExecModel,
+                     SPIRVId EntryPoint) override;
+  SPIRVForward *addForward(SPIRVType *Ty) override;
+  SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) override;
+  SPIRVFunction *addFunction(SPIRVFunction *) override;
+  SPIRVFunction *addFunction(SPIRVTypeFunction *, SPIRVId) override;
+  SPIRVEntry *replaceForward(SPIRVForward *, SPIRVEntry *) override;
+  void eraseInstruction(SPIRVInstruction *, SPIRVBasicBlock *) override;
 
   // Type creation functions
   template <class T> T *addType(T *Ty);
-  virtual SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *);
-  virtual SPIRVTypeBool *addBoolType();
-  virtual SPIRVTypeFloat *addFloatType(unsigned BitWidth);
-  virtual SPIRVTypeFunction *addFunctionType(SPIRVType *,
-                                             const std::vector<SPIRVType *> &);
-  virtual SPIRVTypeInt *addIntegerType(unsigned BitWidth);
-  virtual SPIRVTypeOpaque *addOpaqueType(const std::string &);
-  virtual SPIRVTypePointer *addPointerType(SPIRVStorageClassKind, SPIRVType *);
-  virtual SPIRVTypeImage *addImageType(SPIRVType *,
-                                       const SPIRVTypeImageDescriptor &);
-  virtual SPIRVTypeImage *addImageType(SPIRVType *,
-                                       const SPIRVTypeImageDescriptor &,
-                                       SPIRVAccessQualifierKind);
-  virtual SPIRVTypeSampler *addSamplerType();
-  virtual SPIRVTypePipeStorage *addPipeStorageType();
-  virtual SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T);
-  virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &);
-  virtual void closeStructType(SPIRVTypeStruct *T, bool);
-  virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord);
-  virtual SPIRVType *addOpaqueGenericType(Op);
-  virtual SPIRVTypeDeviceEvent *addDeviceEventType();
-  virtual SPIRVTypeQueue *addQueueType();
-  virtual SPIRVTypePipe *addPipeType();
-  virtual SPIRVTypeVoid *addVoidType();
-  virtual void createForwardPointers();
+  SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *) override;
+  SPIRVTypeBool *addBoolType() override;
+  SPIRVTypeFloat *addFloatType(unsigned BitWidth) override;
+  SPIRVTypeFunction *addFunctionType(SPIRVType *,
+                                     const std::vector<SPIRVType *> &) override;
+  SPIRVTypeInt *addIntegerType(unsigned BitWidth) override;
+  SPIRVTypeOpaque *addOpaqueType(const std::string &) override;
+  SPIRVTypePointer *addPointerType(SPIRVStorageClassKind, SPIRVType *) override;
+  SPIRVTypeImage *addImageType(SPIRVType *,
+                               const SPIRVTypeImageDescriptor &) override;
+  SPIRVTypeImage *addImageType(SPIRVType *, const SPIRVTypeImageDescriptor &,
+                               SPIRVAccessQualifierKind) override;
+  SPIRVTypeSampler *addSamplerType() override;
+  SPIRVTypePipeStorage *addPipeStorageType() override;
+  SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T) override;
+  SPIRVTypeStruct *openStructType(unsigned, const std::string &) override;
+  void closeStructType(SPIRVTypeStruct *T, bool) override;
+  SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord) override;
+  SPIRVType *addOpaqueGenericType(Op) override;
+  SPIRVTypeDeviceEvent *addDeviceEventType() override;
+  SPIRVTypeQueue *addQueueType() override;
+  SPIRVTypePipe *addPipeType() override;
+  SPIRVTypeVoid *addVoidType() override;
+  void createForwardPointers() override;
 
   // Constant creation functions
-  virtual SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addBranchConditionalInst(SPIRVValue *, SPIRVLabel *,
-                                                     SPIRVLabel *,
-                                                     SPIRVBasicBlock *);
-  virtual SPIRVValue *addCompositeConstant(SPIRVType *,
-                                           const std::vector<SPIRVValue *> &);
-  virtual SPIRVValue *addConstant(SPIRVValue *);
-  virtual SPIRVValue *addConstant(SPIRVType *, uint64_t);
-  virtual SPIRVValue *addDoubleConstant(SPIRVTypeFloat *, double);
-  virtual SPIRVValue *addFloatConstant(SPIRVTypeFloat *, float);
-  virtual SPIRVValue *addIntegerConstant(SPIRVTypeInt *, uint64_t);
-  virtual SPIRVValue *addNullConstant(SPIRVType *);
-  virtual SPIRVValue *addUndef(SPIRVType *TheType);
-  virtual SPIRVValue *addSamplerConstant(SPIRVType *TheType, SPIRVWord AddrMode,
-                                         SPIRVWord ParametricMode,
-                                         SPIRVWord FilterMode);
-  virtual SPIRVValue *addPipeStorageConstant(SPIRVType *TheType,
-                                             SPIRVWord PacketSize,
-                                             SPIRVWord PacketAlign,
-                                             SPIRVWord Capacity);
+  SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *) override;
+  SPIRVInstruction *addBranchConditionalInst(SPIRVValue *, SPIRVLabel *,
+                                             SPIRVLabel *,
+                                             SPIRVBasicBlock *) override;
+  SPIRVValue *addCompositeConstant(SPIRVType *,
+                                   const std::vector<SPIRVValue *> &) override;
+  SPIRVValue *addConstant(SPIRVValue *) override;
+  SPIRVValue *addConstant(SPIRVType *, uint64_t) override;
+  SPIRVValue *addDoubleConstant(SPIRVTypeFloat *, double) override;
+  SPIRVValue *addFloatConstant(SPIRVTypeFloat *, float) override;
+  SPIRVValue *addIntegerConstant(SPIRVTypeInt *, uint64_t) override;
+  SPIRVValue *addNullConstant(SPIRVType *) override;
+  SPIRVValue *addUndef(SPIRVType *TheType) override;
+  SPIRVValue *addSamplerConstant(SPIRVType *TheType, SPIRVWord AddrMode,
+                                 SPIRVWord ParametricMode,
+                                 SPIRVWord FilterMode) override;
+  SPIRVValue *addPipeStorageConstant(SPIRVType *TheType, SPIRVWord PacketSize,
+                                     SPIRVWord PacketAlign,
+                                     SPIRVWord Capacity) override;
 
   // Instruction creation functions
-  virtual SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,
-                                                  std::vector<SPIRVValue *>,
-                                                  SPIRVBasicBlock *, bool);
-  virtual SPIRVInstruction *
-  addAsyncGroupCopy(SPIRVValue *Scope, SPIRVValue *Dest, SPIRVValue *Src,
-                    SPIRVValue *NumElems, SPIRVValue *Stride, SPIRVValue *Event,
-                    SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
-                                       const std::vector<SPIRVWord> &,
-                                       SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
-                                       const std::vector<SPIRVValue *> &,
-                                       SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *,
-                                          SPIRVValue *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addCallInst(SPIRVFunction *,
-                                        const std::vector<SPIRVWord> &,
-                                        SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addCmpInst(Op, SPIRVType *, SPIRVValue *,
-                                       SPIRVValue *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *
-  addLoadInst(SPIRVValue *, const std::vector<SPIRVWord> &, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addPhiInst(SPIRVType *, std::vector<SPIRVValue *>,
-                                       SPIRVBasicBlock *);
-  virtual SPIRVInstruction *
-  addCompositeConstructInst(SPIRVType *, const std::vector<SPIRVId> &,
-                            SPIRVBasicBlock *);
-  virtual SPIRVInstruction *
-  addCompositeExtractInst(SPIRVType *, SPIRVValue *,
-                          const std::vector<SPIRVWord> &, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *
+  SPIRVInstruction *addPtrAccessChainInst(SPIRVType *, SPIRVValue *,
+                                          std::vector<SPIRVValue *>,
+                                          SPIRVBasicBlock *, bool) override;
+  SPIRVInstruction *addAsyncGroupCopy(SPIRVValue *Scope, SPIRVValue *Dest,
+                                      SPIRVValue *Src, SPIRVValue *NumElems,
+                                      SPIRVValue *Stride, SPIRVValue *Event,
+                                      SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
+                               const std::vector<SPIRVWord> &,
+                               SPIRVBasicBlock *) override;
+  SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
+                               const std::vector<SPIRVValue *> &,
+                               SPIRVBasicBlock *) override;
+  SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
+                                  SPIRVBasicBlock *) override;
+  SPIRVInstruction *addCallInst(SPIRVFunction *, const std::vector<SPIRVWord> &,
+                                SPIRVBasicBlock *) override;
+  SPIRVInstruction *addCmpInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
+                               SPIRVBasicBlock *) override;
+  SPIRVInstruction *addLoadInst(SPIRVValue *, const std::vector<SPIRVWord> &,
+                                SPIRVBasicBlock *) override;
+  SPIRVInstruction *addPhiInst(SPIRVType *, std::vector<SPIRVValue *>,
+                               SPIRVBasicBlock *) override;
+  SPIRVInstruction *addCompositeConstructInst(SPIRVType *,
+                                              const std::vector<SPIRVId> &,
+                                              SPIRVBasicBlock *) override;
+  SPIRVInstruction *addCompositeExtractInst(SPIRVType *, SPIRVValue *,
+                                            const std::vector<SPIRVWord> &,
+                                            SPIRVBasicBlock *) override;
+  SPIRVInstruction *
   addCompositeInsertInst(SPIRVValue *Object, SPIRVValue *Composite,
                          const std::vector<SPIRVWord> &Indices,
-                         SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addCopyObjectInst(SPIRVType *TheType,
-                                              SPIRVValue *Operand,
-                                              SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addCopyMemoryInst(SPIRVValue *, SPIRVValue *,
-                                              const std::vector<SPIRVWord> &,
-                                              SPIRVBasicBlock *);
-  virtual SPIRVInstruction *
-  addCopyMemorySizedInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
-                         const std::vector<SPIRVWord> &, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addControlBarrierInst(SPIRVValue *ExecKind,
-                                                  SPIRVValue *MemKind,
-                                                  SPIRVValue *MemSema,
-                                                  SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type,
-                                         Scope Scope,
-                                         const std::vector<SPIRVValue *> &Ops,
-                                         SPIRVBasicBlock *BB);
+                         SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addCopyObjectInst(SPIRVType *TheType, SPIRVValue *Operand,
+                                      SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addCopyMemoryInst(SPIRVValue *, SPIRVValue *,
+                                      const std::vector<SPIRVWord> &,
+                                      SPIRVBasicBlock *) override;
+  SPIRVInstruction *addCopyMemorySizedInst(SPIRVValue *, SPIRVValue *,
+                                           SPIRVValue *,
+                                           const std::vector<SPIRVWord> &,
+                                           SPIRVBasicBlock *) override;
+  SPIRVInstruction *addControlBarrierInst(SPIRVValue *ExecKind,
+                                          SPIRVValue *MemKind,
+                                          SPIRVValue *MemSema,
+                                          SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type, Scope Scope,
+                                 const std::vector<SPIRVValue *> &Ops,
+                                 SPIRVBasicBlock *BB) override;
   virtual SPIRVInstruction *addInstruction(SPIRVInstruction *Inst,
                                            SPIRVBasicBlock *BB);
-  virtual SPIRVInstTemplateBase *addInstTemplate(Op OC, SPIRVBasicBlock *BB,
-                                                 SPIRVType *Ty);
-  virtual SPIRVInstTemplateBase *
-  addInstTemplate(Op OC, const std::vector<SPIRVWord> &Ops, SPIRVBasicBlock *BB,
-                  SPIRVType *Ty);
-  virtual SPIRVInstruction *addLifetimeInst(Op OC, SPIRVValue *Object,
-                                            SPIRVWord Size,
-                                            SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *
-  addMemoryBarrierInst(Scope ScopeKind, SPIRVWord MemFlag, SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addUnreachableInst(SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addReturnInst(SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addReturnValueInst(SPIRVValue *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *,
-                                          SPIRVValue *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addLoopMergeInst(SPIRVId MergeBlock,
-                                             SPIRVId ContinueTarget,
-                                             SPIRVWord LoopControl,
-                                             SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
-                                                  SPIRVWord SelectionControl,
-                                                  SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
-                                         const std::vector<SPIRVWord> &,
-                                         SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addSwitchInst(
+  SPIRVInstTemplateBase *addInstTemplate(Op OC, SPIRVBasicBlock *BB,
+                                         SPIRVType *Ty) override;
+  SPIRVInstTemplateBase *addInstTemplate(Op OC,
+                                         const std::vector<SPIRVWord> &Ops,
+                                         SPIRVBasicBlock *BB,
+                                         SPIRVType *Ty) override;
+  SPIRVInstruction *addLifetimeInst(Op OC, SPIRVValue *Object, SPIRVWord Size,
+                                    SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addMemoryBarrierInst(Scope ScopeKind, SPIRVWord MemFlag,
+                                         SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addUnreachableInst(SPIRVBasicBlock *) override;
+  SPIRVInstruction *addReturnInst(SPIRVBasicBlock *) override;
+  SPIRVInstruction *addReturnValueInst(SPIRVValue *,
+                                       SPIRVBasicBlock *) override;
+  SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
+                                  SPIRVBasicBlock *) override;
+  SPIRVInstruction *addLoopMergeInst(SPIRVId MergeBlock, SPIRVId ContinueTarget,
+                                     SPIRVWord LoopControl,
+                                     SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
+                                          SPIRVWord SelectionControl,
+                                          SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addStoreInst(SPIRVValue *, SPIRVValue *,
+                                 const std::vector<SPIRVWord> &,
+                                 SPIRVBasicBlock *) override;
+  SPIRVInstruction *addSwitchInst(
       SPIRVValue *, SPIRVBasicBlock *,
       const std::vector<std::pair<std::vector<SPIRVWord>, SPIRVBasicBlock *>> &,
-      SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addFModInst(SPIRVType *TheType, SPIRVId TheDividend,
-                                        SPIRVId TheDivisor,
-                                        SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addVectorTimesScalarInst(SPIRVType *TheType,
-                                                     SPIRVId TheVector,
-                                                     SPIRVId TheScalar,
-                                                     SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
-                                         SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addVariable(SPIRVType *, bool, SPIRVLinkageTypeKind,
-                                        SPIRVValue *, const std::string &,
-                                        SPIRVStorageClassKind,
-                                        SPIRVBasicBlock *);
-  virtual SPIRVValue *
-  addVectorShuffleInst(SPIRVType *Type, SPIRVValue *Vec1, SPIRVValue *Vec2,
-                       const std::vector<SPIRVWord> &Components,
-                       SPIRVBasicBlock *BB);
-  virtual SPIRVInstruction *
-  addVectorExtractDynamicInst(SPIRVValue *, SPIRVValue *, SPIRVBasicBlock *);
-  virtual SPIRVInstruction *addVectorInsertDynamicInst(SPIRVValue *,
-                                                       SPIRVValue *,
-                                                       SPIRVValue *,
-                                                       SPIRVBasicBlock *);
+      SPIRVBasicBlock *) override;
+  SPIRVInstruction *addFModInst(SPIRVType *TheType, SPIRVId TheDividend,
+                                SPIRVId TheDivisor,
+                                SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addVectorTimesScalarInst(SPIRVType *TheType,
+                                             SPIRVId TheVector,
+                                             SPIRVId TheScalar,
+                                             SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
+                                 SPIRVBasicBlock *) override;
+  SPIRVInstruction *addVariable(SPIRVType *, bool, SPIRVLinkageTypeKind,
+                                SPIRVValue *, const std::string &,
+                                SPIRVStorageClassKind,
+                                SPIRVBasicBlock *) override;
+  SPIRVValue *addVectorShuffleInst(SPIRVType *Type, SPIRVValue *Vec1,
+                                   SPIRVValue *Vec2,
+                                   const std::vector<SPIRVWord> &Components,
+                                   SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addVectorExtractDynamicInst(SPIRVValue *, SPIRVValue *,
+                                                SPIRVBasicBlock *) override;
+  SPIRVInstruction *addVectorInsertDynamicInst(SPIRVValue *, SPIRVValue *,
+                                               SPIRVValue *,
+                                               SPIRVBasicBlock *) override;
 
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);

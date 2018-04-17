@@ -71,7 +71,7 @@ public:
     initializeTransOCLMDPass(*PassRegistry::getPassRegistry());
   }
 
-  virtual bool runOnModule(Module &M);
+  bool runOnModule(Module &M) override;
   void visit(Module *M);
 
   static char ID;
