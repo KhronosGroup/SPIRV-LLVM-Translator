@@ -95,7 +95,7 @@ class SPIRVNL {
 };
 
 template <typename T>
-const SPIRVDecoder &DecodeBinary(const SPIRVDecoder &I, T &V) {
+const SPIRVDecoder &decodeBinary(const SPIRVDecoder &I, T &V) {
   uint32_t W;
   I.IS.read(reinterpret_cast<char *>(&W), sizeof(W));
   V = static_cast<T>(W);
@@ -114,7 +114,7 @@ const SPIRVDecoder &operator>>(const SPIRVDecoder &I, T &V) {
     return I;
   }
 #endif
-  return DecodeBinary(I, V);
+  return decodeBinary(I, V);
 }
 
 template <typename T>
@@ -135,8 +135,8 @@ const SPIRVDecoder &operator>>(const SPIRVDecoder &Decoder,
 
 template <typename T>
 const SPIRVDecoder &operator>>(const SPIRVDecoder &I, std::vector<T> &V) {
-  for (size_t i = 0, e = V.size(); i != e; ++i)
-    I >> V[i];
+  for (size_t J = 0, E = V.size(); J != E; ++J)
+    I >> V[J];
   return I;
 }
 
@@ -160,8 +160,8 @@ const SPIRVEncoder &operator<<(const SPIRVEncoder &O, T *P) {
 
 template <typename T>
 const SPIRVEncoder &operator<<(const SPIRVEncoder &O, const std::vector<T> &V) {
-  for (size_t i = 0, e = V.size(); i != e; ++i)
-    O << V[i];
+  for (size_t I = 0, E = V.size(); I != E; ++I)
+    O << V[I];
   return O;
 }
 

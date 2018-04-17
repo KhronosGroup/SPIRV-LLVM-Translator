@@ -198,11 +198,11 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI,
                     [=](CallInst *, std::vector<Value *> &Args) {
-                      auto getArg = [=](unsigned I) {
+                      auto GetArg = [=](unsigned I) {
                         return cast<ConstantInt>(Args[I])->getZExtValue();
                       };
-                      auto MScope = static_cast<Scope>(getArg(0));
-                      auto Sema = mapSPIRVMemSemanticToOCL(getArg(1));
+                      auto MScope = static_cast<Scope>(GetArg(0));
+                      auto Sema = mapSPIRVMemSemanticToOCL(GetArg(1));
                       Args.resize(3);
                       Args[0] = getInt32(M, Sema.first);
                       Args[1] = getInt32(M, Sema.second);
@@ -213,128 +213,128 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
 }
 
 void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
-  Function *func = CI->getCalledFunction();
+  Function *Func = CI->getCalledFunction();
   // Get image type
-  Type *argTy = func->getFunctionType()->getParamType(0);
-  assert(argTy->isPointerTy() &&
+  Type *ArgTy = Func->getFunctionType()->getParamType(0);
+  assert(ArgTy->isPointerTy() &&
          "argument must be a pointer to opaque structure");
-  StructType *imgTy = cast<StructType>(argTy->getPointerElementType());
-  assert(imgTy->isOpaque() && "image type must be an opaque structure");
-  StringRef imgTyName = imgTy->getName();
-  assert(imgTyName.startswith("opencl.image") && "not an OCL image type");
+  StructType *ImgTy = cast<StructType>(ArgTy->getPointerElementType());
+  assert(ImgTy->isOpaque() && "image type must be an opaque structure");
+  StringRef ImgTyName = ImgTy->getName();
+  assert(ImgTyName.startswith("opencl.image") && "not an OCL image type");
 
-  unsigned imgDim = 0;
-  bool imgArray = false;
+  unsigned ImgDim = 0;
+  bool ImgArray = false;
 
-  if (imgTyName.startswith("opencl.image1d")) {
-    imgDim = 1;
-  } else if (imgTyName.startswith("opencl.image2d")) {
-    imgDim = 2;
-  } else if (imgTyName.startswith("opencl.image3d")) {
-    imgDim = 3;
+  if (ImgTyName.startswith("opencl.image1d")) {
+    ImgDim = 1;
+  } else if (ImgTyName.startswith("opencl.image2d")) {
+    ImgDim = 2;
+  } else if (ImgTyName.startswith("opencl.image3d")) {
+    ImgDim = 3;
   }
-  assert(imgDim != 0 && "unexpected image dimensionality");
+  assert(ImgDim != 0 && "unexpected image dimensionality");
 
-  if (imgTyName.count("_array_") != 0) {
-    imgArray = true;
+  if (ImgTyName.count("_array_") != 0) {
+    ImgArray = true;
   }
 
-  AttributeList attributes = CI->getCalledFunction()->getAttributes();
-  BuiltinFuncMangleInfo mangle;
-  Type *int32Ty = Type::getInt32Ty(*Ctx);
-  Instruction *getImageSize = nullptr;
+  AttributeList Attributes = CI->getCalledFunction()->getAttributes();
+  BuiltinFuncMangleInfo Mangle;
+  Type *Int32Ty = Type::getInt32Ty(*Ctx);
+  Instruction *GetImageSize = nullptr;
 
-  if (imgDim == 1) {
+  if (ImgDim == 1) {
     // OpImageQuerySize from non-arrayed 1d image is always translated
     // into get_image_width returning scalar argument
-    getImageSize = addCallInst(M, kOCLBuiltinName::GetImageWidth, int32Ty,
-                               CI->getArgOperand(0), &attributes, CI, &mangle,
+    GetImageSize = addCallInst(M, kOCLBuiltinName::GetImageWidth, Int32Ty,
+                               CI->getArgOperand(0), &Attributes, CI, &Mangle,
                                CI->getName(), false);
     // The width of integer type returning by OpImageQuerySize[Lod] may
     // differ from i32
-    if (CI->getType()->getScalarType() != int32Ty) {
-      getImageSize = CastInst::CreateIntegerCast(getImageSize,
+    if (CI->getType()->getScalarType() != Int32Ty) {
+      GetImageSize = CastInst::CreateIntegerCast(GetImageSize,
                                                  CI->getType()->getScalarType(),
                                                  false, CI->getName(), CI);
     }
   } else {
-    assert((imgDim == 2 || imgDim == 3) && "invalid image type");
+    assert((ImgDim == 2 || ImgDim == 3) && "invalid image type");
     assert(CI->getType()->isVectorTy() &&
            "this code can handle vector result type only");
     // get_image_dim returns int2 and int4 for 2d and 3d images respecitvely.
-    const unsigned imgDimRetEls = imgDim == 2 ? 2 : 4;
-    VectorType *retTy = VectorType::get(int32Ty, imgDimRetEls);
-    getImageSize = addCallInst(M, kOCLBuiltinName::GetImageDim, retTy,
-                               CI->getArgOperand(0), &attributes, CI, &mangle,
+    const unsigned ImgDimRetEls = ImgDim == 2 ? 2 : 4;
+    VectorType *RetTy = VectorType::get(Int32Ty, ImgDimRetEls);
+    GetImageSize = addCallInst(M, kOCLBuiltinName::GetImageDim, RetTy,
+                               CI->getArgOperand(0), &Attributes, CI, &Mangle,
                                CI->getName(), false);
     // The width of integer type returning by OpImageQuerySize[Lod] may
     // differ from i32
-    if (CI->getType()->getScalarType() != int32Ty) {
-      getImageSize = CastInst::CreateIntegerCast(
-          getImageSize,
+    if (CI->getType()->getScalarType() != Int32Ty) {
+      GetImageSize = CastInst::CreateIntegerCast(
+          GetImageSize,
           VectorType::get(CI->getType()->getScalarType(),
-                          getImageSize->getType()->getVectorNumElements()),
+                          GetImageSize->getType()->getVectorNumElements()),
           false, CI->getName(), CI);
     }
   }
 
-  if (imgArray || imgDim == 3) {
+  if (ImgArray || ImgDim == 3) {
     assert(
         CI->getType()->isVectorTy() &&
         "OpImageQuerySize[Lod] must return vector for arrayed and 3d images");
-    const unsigned imgQuerySizeRetEls = CI->getType()->getVectorNumElements();
+    const unsigned ImgQuerySizeRetEls = CI->getType()->getVectorNumElements();
 
-    if (imgDim == 1) {
+    if (ImgDim == 1) {
       // get_image_width returns scalar result while OpImageQuerySize
       // for image1d_array_t returns <2 x i32> vector.
-      assert(imgQuerySizeRetEls == 2 &&
+      assert(ImgQuerySizeRetEls == 2 &&
              "OpImageQuerySize[Lod] must return <2 x iN> vector type");
-      getImageSize = InsertElementInst::Create(
-          UndefValue::get(CI->getType()), getImageSize,
-          ConstantInt::get(int32Ty, 0), CI->getName(), CI);
+      GetImageSize = InsertElementInst::Create(
+          UndefValue::get(CI->getType()), GetImageSize,
+          ConstantInt::get(Int32Ty, 0), CI->getName(), CI);
     } else {
       // get_image_dim and OpImageQuerySize returns different vector
       // types for arrayed and 3d images.
-      SmallVector<Constant *, 4> maskEls;
-      for (unsigned idx = 0; idx < imgQuerySizeRetEls; ++idx)
-        maskEls.push_back(ConstantInt::get(int32Ty, idx));
-      Constant *mask = ConstantVector::get(maskEls);
+      SmallVector<Constant *, 4> MaskEls;
+      for (unsigned Idx = 0; Idx < ImgQuerySizeRetEls; ++Idx)
+        MaskEls.push_back(ConstantInt::get(Int32Ty, Idx));
+      Constant *Mask = ConstantVector::get(MaskEls);
 
-      getImageSize = new ShuffleVectorInst(
-          getImageSize, UndefValue::get(getImageSize->getType()), mask,
+      GetImageSize = new ShuffleVectorInst(
+          GetImageSize, UndefValue::get(GetImageSize->getType()), Mask,
           CI->getName(), CI);
     }
   }
 
-  if (imgArray) {
-    assert((imgDim == 1 || imgDim == 2) && "invalid image array type");
+  if (ImgArray) {
+    assert((ImgDim == 1 || ImgDim == 2) && "invalid image array type");
     // Insert get_image_array_size to the last position of the resulting vector.
-    Type *sizeTy =
+    Type *SizeTy =
         Type::getIntNTy(*Ctx, M->getDataLayout().getPointerSizeInBits(0));
-    Instruction *getImageArraySize = addCallInst(
-        M, kOCLBuiltinName::GetImageArraySize, sizeTy, CI->getArgOperand(0),
-        &attributes, CI, &mangle, CI->getName(), false);
+    Instruction *GetImageArraySize = addCallInst(
+        M, kOCLBuiltinName::GetImageArraySize, SizeTy, CI->getArgOperand(0),
+        &Attributes, CI, &Mangle, CI->getName(), false);
     // The width of integer type returning by OpImageQuerySize[Lod] may
     // differ from size_t which is returned by get_image_array_size
-    if (getImageArraySize->getType() != CI->getType()->getScalarType()) {
-      getImageArraySize = CastInst::CreateIntegerCast(
-          getImageArraySize, CI->getType()->getScalarType(), false,
+    if (GetImageArraySize->getType() != CI->getType()->getScalarType()) {
+      GetImageArraySize = CastInst::CreateIntegerCast(
+          GetImageArraySize, CI->getType()->getScalarType(), false,
           CI->getName(), CI);
     }
-    getImageSize = InsertElementInst::Create(
-        getImageSize, getImageArraySize,
-        ConstantInt::get(int32Ty, CI->getType()->getVectorNumElements() - 1),
+    GetImageSize = InsertElementInst::Create(
+        GetImageSize, GetImageArraySize,
+        ConstantInt::get(Int32Ty, CI->getType()->getVectorNumElements() - 1),
         CI->getName(), CI);
   }
 
-  assert(getImageSize && "must not be null");
-  CI->replaceAllUsesWith(getImageSize);
+  assert(GetImageSize && "must not be null");
+  CI->replaceAllUsesWith(GetImageSize);
   CI->eraseFromParent();
 }
 
 void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  Instruction *pInsertBefore = CI;
+  Instruction *PInsertBefore = CI;
 
   mutateCallInstOCL(
       M, CI,
@@ -374,15 +374,15 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
           // OCL built-ins returns boolean value and stores a new/original
           // value by pointer passed as 2nd argument (aka expected) while SPIR-V
           // instructions returns this new/original value as a resulting value.
-          AllocaInst *pExpected =
+          AllocaInst *PExpected =
               new AllocaInst(CI->getType(), 0, "expected",
-                             &(*pInsertBefore->getParent()
+                             &(*PInsertBefore->getParent()
                                     ->getParent()
                                     ->getEntryBlock()
                                     .getFirstInsertionPt()));
-          pExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
-          new StoreInst(Args[1], pExpected, pInsertBefore);
-          Args[1] = pExpected;
+          PExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
+          new StoreInst(Args[1], PExpected, PInsertBefore);
+          Args[1] = PExpected;
           std::swap(Args[3], Args[4]);
           std::swap(Args[2], Args[3]);
           RetTy = Type::getInt1Ty(*Ctx);
@@ -397,9 +397,9 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
           // returning it has to be loaded from the memory where 'expected'
           // value is stored. This memory must contain the needed value after a
           // call to OCL built-in is completed.
-          LoadInst *pOriginal =
-              new LoadInst(CI->getArgOperand(1), "original", pInsertBefore);
-          return pOriginal;
+          LoadInst *POriginal =
+              new LoadInst(CI->getArgOperand(1), "original", PInsertBefore);
+          return POriginal;
         }
         // For other built-ins the return values match.
         return CI;
@@ -530,31 +530,31 @@ void SPIRVToOCL20::visitCastInst(CastInst &Cast) {
       !isa<UIToFPInst>(Cast) && !isa<SIToFPInst>(Cast))
     return;
 
-  Type const *srcTy = Cast.getSrcTy();
-  Type *dstVecTy = Cast.getDestTy();
+  Type const *SrcTy = Cast.getSrcTy();
+  Type *DstVecTy = Cast.getDestTy();
   // Leave scalar casts as is. Skip boolean vector casts becase there
   // are no suitable OCL built-ins.
-  if (!dstVecTy->isVectorTy() || srcTy->getScalarSizeInBits() == 1 ||
-      dstVecTy->getScalarSizeInBits() == 1)
+  if (!DstVecTy->isVectorTy() || SrcTy->getScalarSizeInBits() == 1 ||
+      DstVecTy->getScalarSizeInBits() == 1)
     return;
 
   // Assemble built-in name -> convert_gentypeN
-  std::string castBuiltInName(kOCLBuiltinName::ConvertPrefix);
+  std::string CastBuiltInName(kOCLBuiltinName::ConvertPrefix);
   // Check if this is 'floating point -> unsigned integer' cast
-  castBuiltInName += mapLLVMTypeToOCLType(dstVecTy, !isa<FPToUIInst>(Cast));
+  CastBuiltInName += mapLLVMTypeToOCLType(DstVecTy, !isa<FPToUIInst>(Cast));
 
   // Replace LLVM conversion instruction with call to conversion built-in
-  BuiltinFuncMangleInfo mangle;
+  BuiltinFuncMangleInfo Mangle;
   // It does matter if the source is unsigned integer or not. SExt is for
   // signed source, ZExt and UIToFPInst are for unsigned source.
   if (isa<ZExtInst>(Cast) || isa<UIToFPInst>(Cast))
-    mangle.addUnsignedArg(0);
+    Mangle.addUnsignedArg(0);
 
-  AttributeList attributes;
-  CallInst *call =
-      addCallInst(M, castBuiltInName, dstVecTy, Cast.getOperand(0), &attributes,
-                  &Cast, &mangle, Cast.getName(), false);
-  Cast.replaceAllUsesWith(call);
+  AttributeList Attributes;
+  CallInst *Call =
+      addCallInst(M, CastBuiltInName, DstVecTy, Cast.getOperand(0), &Attributes,
+                  &Cast, &Mangle, Cast.getName(), false);
+  Cast.replaceAllUsesWith(Call);
   Cast.eraseFromParent();
 }
 

@@ -109,8 +109,8 @@ public:
     lowerBlockBind();
     lowerGetBlockInvoke();
     lowerGetBlockContext();
-    EraseUselessGlobalVars();
-    EliminateDeadArgs();
+    eraseUselessGlobalVars();
+    eliminateDeadArgs();
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE));
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_CONTEXT));
     erase(M->getFunction(SPIR_INTRINSIC_BLOCK_BIND));
@@ -141,7 +141,7 @@ private:
   }
 
   bool eraseUselessFunctions() {
-    bool changed = false;
+    bool Changed = false;
     for (auto I = M->begin(), E = M->end(); I != E;) {
       Function *F = &(*I++);
       if (!GlobalValue::isInternalLinkage(F->getLinkage()) &&
@@ -154,7 +154,7 @@ private:
         if (auto CE = dyn_cast<ConstantExpr>(U)) {
           if (CE->use_empty()) {
             CE->dropAllReferences();
-            changed = true;
+            Changed = true;
           }
         }
       }
@@ -171,9 +171,9 @@ private:
       }
 
       erase(F);
-      changed = true;
+      Changed = true;
     }
-    return changed;
+    return Changed;
   }
 
   void lowerGetBlockInvoke() {
@@ -198,7 +198,7 @@ private:
   /// Lower calls of spir_block_bind.
   /// Return true if the Module is changed.
   bool lowerBlockBind(Function *BlockBindFunc) {
-    bool changed = false;
+    bool Changed = false;
     for (auto I = BlockBindFunc->user_begin(), E = BlockBindFunc->user_end();
          I != E;) {
       DEBUG(dbgs() << "[lowerBlockBind] " << **I << '\n');
@@ -217,7 +217,7 @@ private:
         SPIRVDBG(dbgs() << "  Block user: " << *BlkUser << '\n');
         if (auto Ret = dyn_cast<ReturnInst>(BlkUser)) {
           bool Inlined = false;
-          changed |= lowerReturnBlock(Ret, CallBlkBind, Inlined);
+          Changed |= lowerReturnBlock(Ret, CallBlkBind, Inlined);
           if (Inlined)
             return true;
         } else if (auto CI = dyn_cast<CallInst>(BlkUser)) {
@@ -226,23 +226,23 @@ private:
           std::string DemangledName;
           if (Name == SPIR_INTRINSIC_GET_BLOCK_INVOKE) {
             assert(CI->getArgOperand(0) == CallBlkBind);
-            changed |= lowerGetBlockInvoke(CI, cast<Function>(InvF));
+            Changed |= lowerGetBlockInvoke(CI, cast<Function>(InvF));
           } else if (Name == SPIR_INTRINSIC_GET_BLOCK_CONTEXT) {
             assert(CI->getArgOperand(0) == CallBlkBind);
             // Handle context_ptr = spir_get_block_context(block)
             lowerGetBlockContext(CI, Ctx);
-            changed = true;
+            Changed = true;
           } else if (oclIsBuiltin(Name, &DemangledName)) {
             lowerBlockBuiltin(CI, InvF, Ctx, CtxLen, CtxAlign, DemangledName);
-            changed = true;
+            Changed = true;
           } else
             llvm_unreachable("Invalid block user");
         }
       }
       erase(CallBlkBind);
     }
-    changed |= eraseUselessFunctions();
-    return changed;
+    Changed |= eraseUselessFunctions();
+    return Changed;
   }
 
   void lowerGetBlockContext(CallInst *CallGetBlkCtx, Value *Ctx = nullptr) {
@@ -257,7 +257,7 @@ private:
 
   bool lowerGetBlockInvoke(CallInst *CallGetBlkInvoke,
                            Function *InvokeF = nullptr) {
-    bool changed = false;
+    bool Changed = false;
     for (auto UI = CallGetBlkInvoke->user_begin(),
               UE = CallGetBlkInvoke->user_end();
          UI != UE;) {
@@ -279,10 +279,10 @@ private:
       CI->replaceUsesOfWith(F, InvokeF);
       DEBUG(dbgs() << " => " << *CI << "\n\n");
       erase(Cast);
-      changed = true;
+      Changed = true;
     }
     erase(CallGetBlkInvoke);
-    return changed;
+    return Changed;
   }
 
   void lowerBlockBuiltin(CallInst *CI, Function *InvF, Value *Ctx,
@@ -326,14 +326,14 @@ private:
   /// Returns true of module is changed.
   bool lowerReturnBlock(ReturnInst *Ret, Value *CallBlkBind, bool &Inlined) {
     auto F = Ret->getParent()->getParent();
-    auto changed = false;
+    auto Changed = false;
     for (auto UI = F->user_begin(), UE = F->user_end(); UI != UE;) {
       auto U = *UI++;
       dumpUsers(U);
       auto Inst = dyn_cast<Instruction>(U);
       if (Inst && Inst->use_empty()) {
         erase(Inst);
-        changed = true;
+        Changed = true;
         continue;
       }
       auto CI = dyn_cast<CallInst>(U);
@@ -351,14 +351,14 @@ private:
       InlineFunction(CI, IFI);
       Inlined = true;
     }
-    return changed || Inlined;
+    return Changed || Inlined;
   }
 
   /// Looking for a global variables initialized by opencl.block*. If found,
   /// check
   /// its users. If users are trivially dead, erase them. If the global variable
   /// has no users left after that, erase it too.
-  void EraseUselessGlobalVars() {
+  void eraseUselessGlobalVars() {
     std::vector<GlobalVariable *> GlobalVarsToDelete;
     for (GlobalVariable &G : M->globals()) {
       if (!G.hasInitializer())
@@ -424,7 +424,7 @@ private:
   /// Then adjust all users/callers of the function with new arguments
   /// Implementation of this function is based on
   /// the dead argument elimination pass.
-  void EliminateDeadArgs() {
+  void eliminateDeadArgs() {
     std::vector<Function *> FunctionsToDelete;
     for (Function &F : M->functions()) {
       if (F.arg_size() < 1)

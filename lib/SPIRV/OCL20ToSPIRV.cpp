@@ -526,8 +526,8 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
 void OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
                                     const std::string &DemangledName) {
   assert(DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0);
-  std::string lenStr = DemangledName.substr(8, 1);
-  auto Len = atoi(lenStr.c_str());
+  std::string LenStr = DemangledName.substr(8, 1);
+  auto Len = atoi(LenStr.c_str());
   assert(Len >= 1 && Len <= 3);
   // SPIR-V ndrange structure requires 3 members in the following order:
   //   global work offset
@@ -566,7 +566,7 @@ void OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
         // Translate ndrange_ND into differently named SPIR-V decorated
         // functions because they have array arugments of different dimension
         // which mangled the same way.
-        return getSPIRVFuncName(OpBuildNDRange, "_" + lenStr + "D");
+        return getSPIRVFuncName(OpBuildNDRange, "_" + LenStr + "D");
       },
       &Attrs);
 }
@@ -803,10 +803,10 @@ void OCL20ToSPIRV::transAtomicBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
           // For atomic_compare_exchange the swap above puts Comparator/Expected
           // argument just where it should be, so don't move the last argument
           // then.
-          int offset =
+          int Offset =
               Info.UniqName.find("atomic_compare_exchange") == 0 ? 1 : 0;
           std::rotate(Args.begin() + 2, Args.begin() + OrderIdx,
-                      Args.end() - offset);
+                      Args.end() - Offset);
         }
         return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
       },
@@ -903,7 +903,7 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI, StringRef MangledName,
   if (DemangledName != kOCLBuiltinName::WaitGroupEvent) {
     StringRef GroupOp = DemangledName;
     GroupOp = GroupOp.drop_front(strlen(kSPIRVName::GroupPrefix));
-    SPIRSPIRVGroupOperationMap::foreach_conditional(
+    SPIRSPIRVGroupOperationMap::foreachConditional(
         [&](const std::string &S, SPIRVGroupOperationKind G) {
           if (!GroupOp.startswith(S))
             return true; // continue
@@ -987,7 +987,7 @@ void OCL20ToSPIRV::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
         [=](CallInst *NewCI) -> Instruction * {
           if (NewCI->getType()->isIntegerTy() && CI->getType()->isIntegerTy())
             return CastInst::CreateIntegerCast(NewCI, CI->getType(),
-                                               Info.isRetSigned, "", CI);
+                                               Info.IsRetSigned, "", CI);
           else
             return CastInst::CreatePointerBitCastOrAddrSpaceCast(
                 NewCI, CI->getType(), "", CI);
@@ -1028,7 +1028,7 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
     CallInst *CI, StringRef MangledName, const std::string &DemangledName) {
   assert(MangledName.find(kMangledName::Sampler) != StringRef::npos);
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  bool isRetScalar = !CI->getType()->isVectorTy();
+  bool IsRetScalar = !CI->getType()->isVectorTy();
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
@@ -1063,14 +1063,14 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
         }
 
         // SPIR-V intruction always returns 4-element vector
-        if (isRetScalar)
+        if (IsRetScalar)
           Ret = VectorType::get(Ret, 4);
         return getSPIRVFuncName(OpImageSampleExplicitLod,
                                 std::string(kSPIRVPostfix::ExtDivider) +
                                     getPostfixForReturnType(Ret));
       },
       [&](CallInst *CI) -> Instruction * {
-        if (isRetScalar)
+        if (IsRetScalar)
           return ExtractElementInst::Create(CI, getSizet(M, 0), "",
                                             CI->getNextNode());
         return CI;
@@ -1122,9 +1122,9 @@ void OCL20ToSPIRV::visitCallGetImageSize(CallInst *CI, StringRef MangledName,
 
           } else if (Desc.Dim == Dim2D && Desc.Arrayed) {
             Constant *Index[] = {getInt32(M, 0), getInt32(M, 1)};
-            Constant *mask = ConstantVector::get(Index);
+            Constant *Mask = ConstantVector::get(Index);
             return new ShuffleVectorInst(NCI, UndefValue::get(NCI->getType()),
-                                         mask, NCI->getName(), CI);
+                                         Mask, NCI->getName(), CI);
           }
           return NCI;
         }
@@ -1501,9 +1501,9 @@ void OCL20ToSPIRV::visitSubgroupBlockWriteINTEL(
     Info.UniqName = getSPIRVFuncName(spv::OpSubgroupImageBlockWriteINTEL);
   else
     Info.UniqName = getSPIRVFuncName(spv::OpSubgroupBlockWriteINTEL);
-  unsigned numArgs = CI->getNumArgOperands();
-  if (numArgs && CI->getArgOperand(numArgs - 1)->getType()->isVectorTy()) {
-    switch (CI->getArgOperand(numArgs - 1)->getType()->getVectorNumElements()) {
+  unsigned NumArgs = CI->getNumArgOperands();
+  if (NumArgs && CI->getArgOperand(NumArgs - 1)->getType()->isVectorTy()) {
+    switch (CI->getArgOperand(NumArgs - 1)->getType()->getVectorNumElements()) {
     case 2:
       Info.Postfix = "_v2";
       break;

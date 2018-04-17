@@ -127,7 +127,7 @@ public:
 
   // For each key/value in the map executes function \p F.
   // If \p F returns false break the iteration.
-  static void foreach_conditional(std::function<bool(const Ty1 &, Ty2)> F) {
+  static void foreachConditional(std::function<bool(const Ty1 &, Ty2)> F) {
     for (auto &I : getMap().Map) {
       if (!F(I.first, I.second))
         break;
@@ -270,10 +270,10 @@ template <typename K> bool getByName(const std::string &Name, K &Key) {
 }
 
 // Add a number as a string to a string
-template <class T> std::string concat(const std::string &s, const T &n) {
-  std::stringstream ss;
-  ss << s << n;
-  return ss.str();
+template <class T> std::string concat(const std::string &S, const T &N) {
+  std::stringstream Ss;
+  Ss << S << N;
+  return Ss.str();
 }
 
 inline std::string concat(const std::string &S1, const std::string &S2,
@@ -286,12 +286,12 @@ inline std::string concat(const std::string &S1, const std::string &S2,
   return S;
 }
 
-inline std::string operator+(const std::string &s, int n) {
-  return concat(s, n);
+inline std::string operator+(const std::string &S, int N) {
+  return concat(S, N);
 }
 
-inline std::string operator+(const std::string &s, unsigned n) {
-  return concat(s, n);
+inline std::string operator+(const std::string &S, unsigned N) {
+  return concat(S, N);
 }
 
 template <typename T> std::string getStr(const T &C, char Delim = ' ') {

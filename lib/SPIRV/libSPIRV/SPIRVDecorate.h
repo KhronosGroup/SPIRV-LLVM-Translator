@@ -74,7 +74,7 @@ public:
 
   SPIRVDecorationGroup *getOwner() const { return Owner; }
 
-  void setOwner(SPIRVDecorationGroup *owner) { Owner = owner; }
+  void setOwner(SPIRVDecorationGroup *Owner) { this->Owner = Owner; }
 
   SPIRVCapVec getRequiredCapability() const override {
     return getCapability(Dec);

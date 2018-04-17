@@ -54,7 +54,7 @@ static const char *PrimitiveNames[PRIMITIVE_NUM] = {
     "memory_order",
     "memory_scope"};
 
-const char *mangledTypes[PRIMITIVE_NUM] = {
+const char *MangledTypes[PRIMITIVE_NUM] = {
     "b",                           // BOOL
     "h",                           // UCHAR
     "c",                           // CHAR
@@ -99,17 +99,17 @@ const char *mangledTypes[PRIMITIVE_NUM] = {
 #endif
 };
 
-const char *readableAttribute[ATTR_NUM] = {
+const char *ReadableAttribute[ATTR_NUM] = {
     "restrict", "volatile",   "const",   "__private",
     "__global", "__constant", "__local", "__generic",
 };
 
-const char *mangledAttribute[ATTR_NUM] = {
+const char *MangledAttribute[ATTR_NUM] = {
     "r", "V", "K", "", "U3AS1", "U3AS2", "U3AS3", "U3AS4",
 };
 
 // SPIR supported version - stated version is oldest supported version.
-static const SPIRversion primitiveSupportedVersions[PRIMITIVE_NUM] = {
+static const SPIRversion PrimitiveSupportedVersions[PRIMITIVE_NUM] = {
     SPIR12, // BOOL
     SPIR12, // UCHAR
     SPIR12, // CHAR
@@ -145,36 +145,36 @@ static const SPIRversion primitiveSupportedVersions[PRIMITIVE_NUM] = {
     SPIR12  // PRIMITIVE_SAMPLER_T
 };
 
-const char *mangledPrimitiveString(TypePrimitiveEnum t) {
-  return mangledTypes[t];
+const char *mangledPrimitiveString(TypePrimitiveEnum T) {
+  return MangledTypes[T];
 }
 
-const char *readablePrimitiveString(TypePrimitiveEnum t) {
-  return PrimitiveNames[t];
+const char *readablePrimitiveString(TypePrimitiveEnum T) {
+  return PrimitiveNames[T];
 }
 
-const char *getMangledAttribute(TypeAttributeEnum attribute) {
-  return mangledAttribute[attribute];
+const char *getMangledAttribute(TypeAttributeEnum Attribute) {
+  return MangledAttribute[Attribute];
 }
 
-const char *getReadableAttribute(TypeAttributeEnum attribute) {
-  return readableAttribute[attribute];
+const char *getReadableAttribute(TypeAttributeEnum Attribute) {
+  return ReadableAttribute[Attribute];
 }
 
-SPIRversion getSupportedVersion(TypePrimitiveEnum t) {
-  return primitiveSupportedVersions[t];
+SPIRversion getSupportedVersion(TypePrimitiveEnum T) {
+  return PrimitiveSupportedVersions[T];
 }
 
-const char *mangledPrimitiveStringfromName(std::string type) {
-  for (size_t i = 0; i < (sizeof(PrimitiveNames) / sizeof(PrimitiveNames[0]));
-       i++)
-    if (type == PrimitiveNames[i])
-      return mangledTypes[i];
+const char *mangledPrimitiveStringfromName(std::string Type) {
+  for (size_t I = 0; I < (sizeof(PrimitiveNames) / sizeof(PrimitiveNames[0]));
+       I++)
+    if (Type == PrimitiveNames[I])
+      return MangledTypes[I];
   return NULL;
 }
 
-const char *getSPIRVersionAsString(SPIRversion version) {
-  switch (version) {
+const char *getSPIRVersionAsString(SPIRversion Version) {
+  switch (Version) {
   case SPIR12:
     return "SPIR 1.2";
   case SPIR20:
@@ -185,22 +185,22 @@ const char *getSPIRVersionAsString(SPIRversion version) {
   }
 }
 
-bool isPipeBuiltin(std::string unmangledName) {
-  return unmangledName == "write_pipe" || unmangledName == "read_pipe" ||
-         unmangledName == "reserve_write_pipe" ||
-         unmangledName == "reserve_read_pipe" ||
-         unmangledName == "commit_write_pipe" ||
-         unmangledName == "commit_read_pipe" ||
-         unmangledName == "work_group_reserve_write_pipe" ||
-         unmangledName == "work_group_reserve_read_pipe" ||
-         unmangledName == "work_group_commit_write_pipe" ||
-         unmangledName == "work_group_commit_read_pipe" ||
-         unmangledName == "get_pipe_num_packets" ||
-         unmangledName == "get_pipe_max_packets" ||
-         unmangledName == "sub_group_reserve_write_pipe" ||
-         unmangledName == "sub_group_reserve_read_pipe" ||
-         unmangledName == "sub_group_commit_write_pipe" ||
-         unmangledName == "sub_group_commit_read_pipe";
+bool isPipeBuiltin(std::string UnmangledName) {
+  return UnmangledName == "write_pipe" || UnmangledName == "read_pipe" ||
+         UnmangledName == "reserve_write_pipe" ||
+         UnmangledName == "reserve_read_pipe" ||
+         UnmangledName == "commit_write_pipe" ||
+         UnmangledName == "commit_read_pipe" ||
+         UnmangledName == "work_group_reserve_write_pipe" ||
+         UnmangledName == "work_group_reserve_read_pipe" ||
+         UnmangledName == "work_group_commit_write_pipe" ||
+         UnmangledName == "work_group_commit_read_pipe" ||
+         UnmangledName == "get_pipe_num_packets" ||
+         UnmangledName == "get_pipe_max_packets" ||
+         UnmangledName == "sub_group_reserve_write_pipe" ||
+         UnmangledName == "sub_group_reserve_read_pipe" ||
+         UnmangledName == "sub_group_commit_write_pipe" ||
+         UnmangledName == "sub_group_commit_read_pipe";
 }
 
 } // namespace SPIR

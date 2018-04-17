@@ -106,7 +106,7 @@ template <class T> const SPIRVDecoder &decode(const SPIRVDecoder &I, T &V) {
     return I;
   }
 #endif
-  return DecodeBinary(I, V);
+  return decodeBinary(I, V);
 }
 
 template <class T> const SPIRVEncoder &encode(const SPIRVEncoder &O, T V) {

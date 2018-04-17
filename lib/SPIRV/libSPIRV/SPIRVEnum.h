@@ -59,7 +59,7 @@ inline SPIRVWord mkWord(unsigned WordCount, Op OpCode) {
   return (WordCount << 16) | OpCode;
 }
 
-const static unsigned kSPIRVMemOrderSemanticMask = 0x1F;
+const static unsigned KSpirvMemOrderSemanticMask = 0x1F;
 
 enum SPIRVVersion : SPIRVWord {
   SPIRV_1_0 = 0x00010000,
@@ -403,7 +403,7 @@ inline unsigned getImageDimension(SPIRVImageDimKind K) {
 
 /// Extract memory order part of SPIR-V memory semantics.
 inline unsigned extractSPIRVMemOrderSemantic(unsigned Sema) {
-  return Sema & kSPIRVMemOrderSemanticMask;
+  return Sema & KSpirvMemOrderSemanticMask;
 }
 
 } // namespace SPIRV

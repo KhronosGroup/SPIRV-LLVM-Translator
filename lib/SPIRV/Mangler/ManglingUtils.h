@@ -17,18 +17,18 @@
 
 namespace SPIR {
 
-const char *mangledPrimitiveString(TypePrimitiveEnum primitive);
-const char *readablePrimitiveString(TypePrimitiveEnum primitive);
+const char *mangledPrimitiveString(TypePrimitiveEnum Primitive);
+const char *readablePrimitiveString(TypePrimitiveEnum Primitive);
 
-const char *getMangledAttribute(TypeAttributeEnum attribute);
-const char *getReadableAttribute(TypeAttributeEnum attribute);
+const char *getMangledAttribute(TypeAttributeEnum Attribute);
+const char *getReadableAttribute(TypeAttributeEnum Attribute);
 
-SPIRversion getSupportedVersion(TypePrimitiveEnum t);
-const char *getSPIRVersionAsString(SPIRversion version);
+SPIRversion getSupportedVersion(TypePrimitiveEnum T);
+const char *getSPIRVersionAsString(SPIRversion Version);
 
-const char *mangledPrimitiveStringfromName(std::string type);
+const char *mangledPrimitiveStringfromName(std::string Type);
 
-bool isPipeBuiltin(std::string unmangledName);
+bool isPipeBuiltin(std::string UnmangledName);
 } // namespace SPIR
 
 #endif // SPIRV_MANGLER_MANGLINGUTILS_H

@@ -114,7 +114,7 @@ struct TypeVisitor;
 struct ParamType {
   /// @brief Constructor.
   /// @param TypeEnum type id.
-  ParamType(TypeEnum typeId) : TypeId(typeId){};
+  ParamType(TypeEnum TypeId) : TypeId(TypeId){};
 
   /// @brief Destructor.
   virtual ~ParamType(){};
@@ -154,7 +154,7 @@ protected:
 
 struct PrimitiveType : public ParamType {
   /// An enumeration to identify the type id of this class.
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   /// @brief Constructor.
   /// @param TypePrimitiveEnum primitive id.
@@ -191,11 +191,11 @@ protected:
 
 struct PointerType : public ParamType {
   /// An enumeration to identify the type id of this class.
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   /// @brief Constructor.
   /// @param RefParamType the type of pointee (that the pointer points at).
-  PointerType(const RefParamType type);
+  PointerType(const RefParamType Type);
 
   /// Implementation of Abstract Methods ///
 
@@ -223,7 +223,7 @@ struct PointerType : public ParamType {
 
   /// @brief Sets the address space attribute - default is __private
   /// @param TypeAttributeEnum address space attribute id.
-  void setAddressSpace(TypeAttributeEnum attr);
+  void setAddressSpace(TypeAttributeEnum Attr);
 
   /// @brief Returns the pointer's address space.
   /// @return pointer's address space.
@@ -233,12 +233,12 @@ struct PointerType : public ParamType {
   /// @param TypeAttributeEnum qual - qualifier to add/remove.
   /// @param bool enabled - true if qualifier should exist false otherwise.
   ///        default is set to false.
-  void setQualifier(TypeAttributeEnum qual, bool enabled);
+  void setQualifier(TypeAttributeEnum Qual, bool Enabled);
 
   /// @brief Checks if the pointer has a certain qualifier.
   /// @param TypeAttributeEnum qual - qualifier to check.
   /// @return true if the qualifier exists and false otherwise.
-  bool hasQualifier(TypeAttributeEnum qual) const;
+  bool hasQualifier(TypeAttributeEnum Qual) const;
 
 private:
   /// The type this pointer is pointing at.
@@ -246,17 +246,17 @@ private:
   /// Array of the pointer's enabled type qualifiers.
   bool Qualifiers[ATTR_QUALIFIER_LAST - ATTR_QUALIFIER_FIRST + 1];
   /// Pointer's address space.
-  TypeAttributeEnum Address_space;
+  TypeAttributeEnum AddressSpace;
 };
 
 struct VectorType : public ParamType {
   /// An enumeration to identify the type id of this class.
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   /// @brief Constructor.
   /// @param RefParamType the type of each scalar element in the vector.
   /// @param int the length of the vector.
-  VectorType(const RefParamType type, int len);
+  VectorType(const RefParamType Type, int Len);
 
   /// Implementation of Abstract Methods ///
 
@@ -295,11 +295,11 @@ private:
 
 struct AtomicType : public ParamType {
   /// an enumeration to identify the type id of this class
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   /// @brief Constructor
   /// @param RefParamType the type refernced as atomic.
-  AtomicType(const RefParamType type);
+  AtomicType(const RefParamType Type);
 
   /// Implementation of Abstract Methods ///
 
@@ -331,7 +331,7 @@ private:
 
 struct BlockType : public ParamType {
   /// an enumeration to identify the type id of this class
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   ///@brief Constructor
   BlockType();
@@ -362,19 +362,19 @@ struct BlockType : public ParamType {
   ///@brief returns the type of parameter "index" of the block.
   // @param index the sequential number of the queried parameter
   ///@return parameter type
-  const RefParamType &getParam(unsigned int index) const {
-    assert(Params.size() > index && "index is OOB");
-    return Params[index];
+  const RefParamType &getParam(unsigned int Index) const {
+    assert(Params.size() > Index && "index is OOB");
+    return Params[Index];
   }
 
   ///@brief set the type of parameter "index" of the block.
   // @param index the sequential number of the queried parameter
   // @param type the parameter type
-  void setParam(unsigned int index, RefParamType type) {
-    if (index < getNumOfParams()) {
-      Params[index] = type;
-    } else if (index == getNumOfParams()) {
-      Params.push_back(type);
+  void setParam(unsigned int Index, RefParamType Type) {
+    if (Index < getNumOfParams()) {
+      Params[Index] = Type;
+    } else if (Index == getNumOfParams()) {
+      Params.push_back(Type);
     } else {
       assert(false && "index is OOB");
     }
@@ -387,7 +387,7 @@ protected:
 
 struct UserDefinedType : public ParamType {
   /// An enumeration to identify the type id of this class.
-  const static TypeEnum enumTy;
+  const static TypeEnum EnumTy;
 
   /// @brief Constructor.
   UserDefinedType(const std::string &);
@@ -418,8 +418,8 @@ protected:
 /// @brief Can be overridden so an object of static type Type* will
 ///        dispatch the correct visit method according to its dynamic type.
 struct TypeVisitor {
-  SPIRversion spirVer;
-  TypeVisitor(SPIRversion ver) : spirVer(ver) {}
+  SPIRversion SpirVer;
+  TypeVisitor(SPIRversion Ver) : SpirVer(Ver) {}
   virtual ~TypeVisitor() {}
   virtual MangleError visit(const PrimitiveType *) = 0;
   virtual MangleError visit(const VectorType *) = 0;
@@ -433,9 +433,9 @@ struct TypeVisitor {
 /// @param ParamType given param type.
 /// @return required casting type if given param type is an instance if
 //          that type, NULL otherwise.
-template <typename T> T *dyn_cast(ParamType *pType) {
-  assert(pType && "dyn_cast does not support casting of NULL");
-  return (T::enumTy == pType->getTypeId()) ? (T *)pType : NULL;
+template <typename T> T *dynCast(ParamType *PType) {
+  assert(PType && "dyn_cast does not support casting of NULL");
+  return (T::EnumTy == PType->getTypeId()) ? (T *)PType : NULL;
 }
 
 /// @brief Template dynamic cast function for ParamType derived classes
@@ -443,9 +443,9 @@ template <typename T> T *dyn_cast(ParamType *pType) {
 /// @param ParamType given param type.
 /// @return required casting type if given param type is an instance if
 //          that type, NULL otherwise.
-template <typename T> const T *dyn_cast(const ParamType *pType) {
-  assert(pType && "dyn_cast does not support casting of NULL");
-  return (T::enumTy == pType->getTypeId()) ? (const T *)pType : NULL;
+template <typename T> const T *dynCast(const ParamType *PType) {
+  assert(PType && "dyn_cast does not support casting of NULL");
+  return (T::EnumTy == PType->getTypeId()) ? (const T *)PType : NULL;
 }
 
 } // namespace SPIR

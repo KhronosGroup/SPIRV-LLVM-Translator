@@ -168,8 +168,8 @@ protected:
   }
   void encode(spv_ostream &O) const override {
     getEncoder(O) << Type << Id;
-    for (unsigned i = 0; i < NumWords; ++i)
-      getEncoder(O) << Union.Words[i];
+    for (unsigned I = 0; I < NumWords; ++I)
+      getEncoder(O) << Union.Words[I];
   }
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVValue::setWordCount(WordCount);
@@ -177,8 +177,8 @@ protected:
   }
   void decode(std::istream &I) override {
     getDecoder(I) >> Type >> Id;
-    for (unsigned i = 0; i < NumWords; ++i)
-      getDecoder(I) >> Union.Words[i];
+    for (unsigned J = 0; J < NumWords; ++J)
+      getDecoder(I) >> Union.Words[J];
   }
 
   unsigned NumWords;

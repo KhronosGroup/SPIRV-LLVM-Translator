@@ -137,11 +137,11 @@ static int convertLLVMToSPIRV() {
           (SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
   }
 
-  llvm::StringRef outFile(OutputFile);
+  llvm::StringRef OutFile(OutputFile);
   std::error_code EC;
   std::string Err;
-  llvm::raw_fd_ostream OFS(outFile, EC, llvm::sys::fs::F_None);
-  if (!WriteSPIRV(M.get(), OFS, Err)) {
+  llvm::raw_fd_ostream OFS(OutFile, EC, llvm::sys::fs::F_None);
+  if (!writeSpirv(M.get(), OFS, Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
@@ -154,7 +154,7 @@ static int convertSPIRVToLLVM() {
   Module *M;
   std::string Err;
 
-  if (!ReadSPIRV(Context, IFS, M, Err)) {
+  if (!readSpirv(Context, IFS, M, Err)) {
     errs() << "Fails to load SPIRV as LLVM Module: " << Err << '\n';
     return -1;
   }
@@ -206,7 +206,7 @@ static int convertSPIRV() {
 
   auto Action = [&](llvm::raw_ostream &OFS) {
     std::string Err;
-    if (!SPIRV::ConvertSPIRV(IFS, OFS, Err, ToBinary, ToText)) {
+    if (!SPIRV::convertSpirv(IFS, OFS, Err, ToBinary, ToText)) {
       errs() << "Fails to convert SPIR-V : " << Err << '\n';
       return -1;
     }
@@ -240,7 +240,7 @@ static int regularizeLLVM() {
   }
 
   std::string Err;
-  if (!RegularizeLLVMForSPIRV(M.get(), Err)) {
+  if (!regularizeLlvmForSpirv(M.get(), Err)) {
     errs() << "Fails to save LLVM as SPIRV: " << Err << '\n';
     return -1;
   }
@@ -257,12 +257,12 @@ static int regularizeLLVM() {
   return 0;
 }
 
-int main(int ac, char **av) {
+int main(int Ac, char **Av) {
   EnablePrettyStackTrace();
-  sys::PrintStackTraceOnErrorSignal(av[0]);
-  PrettyStackTraceProgram X(ac, av);
+  sys::PrintStackTraceOnErrorSignal(Av[0]);
+  PrettyStackTraceProgram X(Ac, Av);
 
-  cl::ParseCommandLineOptions(ac, av, "LLVM/SPIR-V translator");
+  cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {

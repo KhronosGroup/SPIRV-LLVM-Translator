@@ -171,8 +171,8 @@ public:
   virtual SPIRVMemberName *addMemberName(SPIRVTypeStruct *ST,
                                          SPIRVWord MemberNumber,
                                          const std::string &Name) = 0;
-  virtual void addUnknownStructField(SPIRVTypeStruct *, unsigned idx,
-                                     SPIRVId id) = 0;
+  virtual void addUnknownStructField(SPIRVTypeStruct *, unsigned Idx,
+                                     SPIRVId Id) = 0;
   virtual void addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
                        SPIRVWord Column) = 0;
   virtual const std::shared_ptr<const SPIRVLine> &getCurrentLine() const = 0;

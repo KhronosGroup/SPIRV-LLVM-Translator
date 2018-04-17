@@ -117,15 +117,15 @@ BarrierLiterals getBarrierLiterals(CallInst *CI) {
            "call must a builtin (work_group_barrier or sub_group_barrier)");
   }
 
-  OCLScopeKind scope = OCLMS_work_group;
+  OCLScopeKind Scope = OCLMS_work_group;
   if (DemangledName == kOCLBuiltinName::SubGroupBarrier) {
-    scope = OCLMS_sub_group;
+    Scope = OCLMS_sub_group;
   }
 
   return std::make_tuple(getArgAsInt(CI, 0),
                          N == 1 ? OCLMS_work_group
                                 : static_cast<OCLScopeKind>(getArgAsInt(CI, 1)),
-                         scope);
+                         Scope);
 }
 
 unsigned getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
@@ -137,7 +137,7 @@ unsigned getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
   if (!Found) {
     std::string Prefix;
-    switch (LastFuncParamType(OrigName)) {
+    switch (lastFuncParamType(OrigName)) {
     case ParamType::UNSIGNED:
       Prefix = "u_";
       break;
@@ -166,7 +166,7 @@ std::unique_ptr<SPIRVEntry> getSPIRVInst(const OCLBuiltinTransInfo &Info) {
     Entry = SPIRVEntry::create(OC);
   else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
     Entry = static_cast<SPIRVEntry *>(
-        SPIRVEntry::create_unique(SPIRVEIS_OpenCL, ExtOp).get());
+        SPIRVEntry::createUnique(SPIRVEIS_OpenCL, ExtOp).get());
   return std::unique_ptr<SPIRVEntry>(Entry);
 }
 
@@ -199,13 +199,13 @@ unsigned getOCLVersion(Module *M, bool AllowMulti) {
 
   // If the module was linked with another module, there may be multiple
   // operands.
-  auto getVer = [=](unsigned I) {
+  auto GetVer = [=](unsigned I) {
     auto MD = NamedMD->getOperand(I);
     return std::make_pair(getMDOperandAsInt(MD, 0), getMDOperandAsInt(MD, 1));
   };
-  auto Ver = getVer(0);
+  auto Ver = GetVer(0);
   for (unsigned I = 1, E = NamedMD->getNumOperands(); I != E; ++I)
-    if (Ver != getVer(I))
+    if (Ver != GetVer(I))
       report_fatal_error("OCL version mismatch");
 
   return encodeOCLVer(Ver.first, Ver.second, 0);
@@ -227,8 +227,8 @@ unsigned encodeVecTypeHint(Type *Ty) {
     return 5;
   if (Ty->isDoubleTy())
     return 6;
-  if (IntegerType *intTy = dyn_cast<IntegerType>(Ty)) {
-    switch (intTy->getIntegerBitWidth()) {
+  if (IntegerType *IntTy = dyn_cast<IntegerType>(Ty)) {
+    switch (IntTy->getIntegerBitWidth()) {
     case 8:
       return 0;
     case 16:
@@ -249,9 +249,9 @@ unsigned encodeVecTypeHint(Type *Ty) {
   llvm_unreachable("invalid type");
 }
 
-Type *decodeVecTypeHint(LLVMContext &C, unsigned code) {
-  unsigned VecWidth = code >> 16;
-  unsigned Scalar = code & 0xFFFF;
+Type *decodeVecTypeHint(LLVMContext &C, unsigned Code) {
+  unsigned VecWidth = Code >> 16;
+  unsigned Scalar = Code & 0xFFFF;
   Type *ST = nullptr;
   switch (Scalar) {
   case 0:
@@ -303,8 +303,8 @@ SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode) {
   }
 }
 
-static SPIR::TypeAttributeEnum mapAddrSpaceEnums(SPIRAddressSpace addrspace) {
-  switch (addrspace) {
+static SPIR::TypeAttributeEnum mapAddrSpaceEnums(SPIRAddressSpace Addrspace) {
+  switch (Addrspace) {
   case SPIRAS_Private:
     return SPIR::ATTR_PRIVATE;
   case SPIRAS_Global:
@@ -321,8 +321,8 @@ static SPIR::TypeAttributeEnum mapAddrSpaceEnums(SPIRAddressSpace addrspace) {
 }
 
 SPIR::TypeAttributeEnum
-getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim) {
-  switch (prim) {
+getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum Prim) {
+  switch (Prim) {
   case SPIR::PRIMITIVE_QUEUE_T:
     return mapAddrSpaceEnums(SPIRV_QUEUE_T_ADDR_SPACE);
   case SPIR::PRIMITIVE_EVENT_T:
@@ -352,15 +352,15 @@ getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum prim) {
 }
 
 // Fetch type of invoke function passed to device execution built-ins
-static FunctionType *getBlockInvokeTy(Function *F, unsigned blockIdx) {
-  auto params = F->getFunctionType()->params();
-  PointerType *funcPtr = cast<PointerType>(params[blockIdx]);
-  return cast<FunctionType>(funcPtr->getElementType());
+static FunctionType *getBlockInvokeTy(Function *F, unsigned BlockIdx) {
+  auto Params = F->getFunctionType()->params();
+  PointerType *FuncPtr = cast<PointerType>(Params[BlockIdx]);
+  return cast<FunctionType>(FuncPtr->getElementType());
 }
 
 class OCLBuiltinFuncMangleInfo : public SPIRV::BuiltinFuncMangleInfo {
 public:
-  OCLBuiltinFuncMangleInfo(Function *f) : F(f) {}
+  OCLBuiltinFuncMangleInfo(Function *F) : F(F) {}
   void init(const std::string &UniqName) override {
     UnmangledName = UniqName;
     size_t Pos = std::string::npos;
@@ -377,10 +377,10 @@ public:
                UnmangledName ==
                    "get_kernel_preferred_work_group_size_multiple") {
       assert(F && "lack of necessary information");
-      const size_t blockArgIdx = 0;
-      FunctionType *InvokeTy = getBlockInvokeTy(F, blockArgIdx);
+      const size_t BlockArgIdx = 0;
+      FunctionType *InvokeTy = getBlockInvokeTy(F, BlockArgIdx);
       if (InvokeTy->getNumParams() > 1)
-        setLocalArgBlock(blockArgIdx);
+        setLocalArgBlock(BlockArgIdx);
     } else if (UnmangledName == "enqueue_kernel") {
       assert(F && "lack of necessary information");
       setEnumArg(1, SPIR::PRIMITIVE_KERNEL_ENQUEUE_FLAGS_T);
@@ -388,12 +388,12 @@ public:
       setArgAttr(4, SPIR::ATTR_CONST);
       // If there are arguments other then block context then these are pointers
       // to local memory so this built-in must be mangled accordingly.
-      const size_t blockArgIdx = 6;
-      FunctionType *InvokeTy = getBlockInvokeTy(F, blockArgIdx);
+      const size_t BlockArgIdx = 6;
+      FunctionType *InvokeTy = getBlockInvokeTy(F, BlockArgIdx);
       if (InvokeTy->getNumParams() > 1) {
-        setLocalArgBlock(blockArgIdx);
-        addUnsignedArg(blockArgIdx + 1);
-        setVarArg(blockArgIdx + 2);
+        setLocalArgBlock(BlockArgIdx);
+        addUnsignedArg(BlockArgIdx + 1);
+        setVarArg(BlockArgIdx + 2);
       }
     } else if (UnmangledName.find("get_") == 0 || UnmangledName == "nan" ||
                UnmangledName == "mem_fence" ||
@@ -607,7 +607,7 @@ bool isSpecialTypeInitializer(Instruction *Inst) {
 
 } // namespace OCLUtil
 
-void llvm::MangleOpenCLBuiltin(const std::string &UniqName,
+void llvm::mangleOpenClBuiltin(const std::string &UniqName,
                                ArrayRef<Type *> ArgTypes,
                                std::string &MangledName) {
   OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo(nullptr);
