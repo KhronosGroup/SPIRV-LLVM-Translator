@@ -1213,7 +1213,7 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
   auto GetSamplerConstant = [&](uint64_t SamplerValue) {
     auto AddrMode = (SamplerValue & 0xE) >> 1;
     auto Param = SamplerValue & 0x1;
-    auto Filter = ((SamplerValue & 0x30) >> 4) - 1;
+    auto Filter = SamplerValue ? ((SamplerValue & 0x30) >> 4) - 1 : 0;
     auto BV = BM->addSamplerConstant(transType(RT), AddrMode, Param, Filter);
     return BV;
   };
