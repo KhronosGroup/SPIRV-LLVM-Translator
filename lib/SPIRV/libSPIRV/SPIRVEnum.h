@@ -237,7 +237,6 @@ template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
 }
 
 template <> inline void SPIRVMap<SPIRVStorageClassKind, SPIRVCapVec>::init() {
-  ADD_VEC_INIT(StorageClassInput, {CapabilityShader});
   ADD_VEC_INIT(StorageClassUniform, {CapabilityShader});
   ADD_VEC_INIT(StorageClassOutput, {CapabilityShader});
   ADD_VEC_INIT(StorageClassPrivate, {CapabilityShader});
