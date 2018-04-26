@@ -24,6 +24,7 @@ addons:
     - llvm-7-tools
     - llvm-7-dev
     - clang-format-7
+    - clang-tidy-7
 
 compiler:
   - gcc
@@ -33,6 +34,7 @@ env:
   global:
     - MAKEFLAGS="-j2"
     - CHECK_FORMAT=0
+    - CHECK_TIDY=0
   matrix:
     - BUILD_TYPE=Release BUILD_EXTERNAL=1 SHARED_LIBS=ON  MAKE_TARGETS=""           MAKE_TEST_TARGET="test"
     - BUILD_TYPE=Debug   BUILD_EXTERNAL=1 SHARED_LIBS=ON  MAKE_TARGETS=""           MAKE_TEST_TARGET="test"
@@ -55,6 +57,8 @@ matrix:
       osx_image: xcode9.3
 
     - env: BUILD_EXTERNAL=1 CHECK_FORMAT=1
+
+    - env: BUILD_EXTERNAL=1 CHECK_TIDY=1
   allow_failures:
     - compiler: clang
     - os: osx
@@ -79,6 +83,7 @@ script:
           -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-7/build/utils/lit/lit.py" \
           -DLLVM_INCLUDE_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=../install/ \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -G "Unix Makefiles"
       fi
     else
@@ -95,6 +100,10 @@ script:
       cd ..;
       ln -s /usr/share/clang/clang-format-7/clang-format-diff.py utils/;
       ./utils/check_code_format.sh;
+    elif [ $CHECK_TIDY == "1" ]; then
+      cd ..;
+      ln -s build/compile_commands.json;
+      ./utils/check_code_tidyness.sh;
     else
       make $MAKE_TARGETS && make $MAKE_TEST_TARGET && if [ $BUILD_EXTERNAL == "1" ]; then make install; fi
     fi
