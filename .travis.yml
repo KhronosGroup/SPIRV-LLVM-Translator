@@ -49,6 +49,8 @@ matrix:
       osx_image: xcode9.3
 
     - env: BUILD_EXTERNAL=1 CHECK_FORMAT=ON
+
+    - env: BUILD_EXTERNAL=1 CHECK_TIDY=ON
   allow_failures:
     - compiler: clang
     - os: osx
@@ -77,6 +79,7 @@ script:
           -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-7/build/utils/lit/lit.py" \
           -DLLVM_INCLUDE_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=../install/ \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -G "Unix Makefiles"
       fi
     else
@@ -91,6 +94,10 @@ script:
   - if [ $CHECK_FORMAT == "ON" ]; then
       cd ..;
       ./utils/check_code_format.sh;
+    elif [ $CHECK_TIDY == "ON" ]; then
+      cd ..;
+      ln -s build/compile_commands.json;
+      ./utils/check_code_tidyness.sh;
     else
       make $MAKE_TARGETS && make $MAKE_TEST_TARGET && if [ $BUILD_EXTERNAL == "1" ]; then make install; fi
     fi
