@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-set(LLVM_SPIRV_VERSION 0.2.0.0)
+set(LLVM_SPIRV_VERSION 0.2.1.0)
 
 # check if we build inside llvm or not
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -53,9 +53,9 @@ endif(LLVM_INCLUDE_TESTS)
 
 install(
   FILES
-    ${LLVM_SPIRV_INCLUDE_DIRS}/SPIRV.h
+    ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVLib.h
   DESTINATION
-    include
+    ${CMAKE_INSTALL_PREFIX}/include/LLVMSPIRVLib
 )
 
 get_target_property(LLVMSPIRVlib_LIBDIR LLVMSPIRVLib BINARY_DIR)

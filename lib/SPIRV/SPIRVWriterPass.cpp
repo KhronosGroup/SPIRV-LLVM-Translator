@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVWriterPass.h"
-#include "SPIRV.h"
+#include "LLVMSPIRVLib.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
