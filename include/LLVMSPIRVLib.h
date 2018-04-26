@@ -1,4 +1,4 @@
-//===- SPIRV.h - Read and write SPIR-V binary -------------------*- C++ -*-===//
+//===- LLVMSPIRVLib.h - Read and write SPIR-V binary ------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -31,7 +31,7 @@
 // THE SOFTWARE.
 //
 //===----------------------------------------------------------------------===//
-/// \file SPIRV.h
+/// \file LLVMSPIRVLib.h
 ///
 /// This files declares functions and passes for translating between LLVM and
 /// SPIR-V.

@@ -46,7 +46,7 @@
 #include "libSPIRV/SPIRVType.h"
 #include "libSPIRV/SPIRVUtil.h"
 
-#include "SPIRV.h"
+#include "LLVMSPIRVLib.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Instructions.h"

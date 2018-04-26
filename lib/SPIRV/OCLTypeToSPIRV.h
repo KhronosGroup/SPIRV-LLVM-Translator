@@ -42,7 +42,7 @@
 #ifndef SPIRV_OCLTYPETOSPIRV_H
 #define SPIRV_OCLTYPETOSPIRV_H
 
-#include "SPIRV.h"
+#include "LLVMSPIRVLib.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Pass.h"

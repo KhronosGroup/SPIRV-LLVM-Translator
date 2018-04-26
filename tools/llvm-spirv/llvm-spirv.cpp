@@ -64,7 +64,7 @@
 #define _SPIRV_SUPPORT_TEXT_FMT
 #endif
 
-#include "SPIRV.h"
+#include "LLVMSPIRVLib.h"
 
 #include <fstream>
 #include <iostream>
