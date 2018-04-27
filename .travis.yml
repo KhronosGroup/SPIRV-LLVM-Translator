@@ -50,7 +50,7 @@ matrix:
 
     - env: BUILD_EXTERNAL=1 CHECK_FORMAT=1
 
-    - env: BUILD_EXTERNAL=1 CHECK_TIDY=ON
+    - env: BUILD_EXTERNAL=1 CHECK_TIDY=1
   allow_failures:
     - compiler: clang
     - os: osx
@@ -94,7 +94,7 @@ script:
   - if [ $CHECK_FORMAT == "1" ]; then
       cd ..;
       ./utils/check_code_format.sh;
-    elif [ $CHECK_TIDY == "ON" ]; then
+    elif [ $CHECK_TIDY == "1" ]; then
       cd ..;
       ln -s build/compile_commands.json;
       ./utils/check_code_tidyness.sh;
