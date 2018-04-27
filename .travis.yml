@@ -56,11 +56,6 @@ matrix:
     - os: osx
   fast_finish: true
 
-before_install:
-  - if [ $CHECK_FORMAT == "1" ]; then
-      curl -L https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py -o utils/clang-format-diff.py;
-    fi
-
 script:
   - |
     if [ $BUILD_EXTERNAL == "0" ]; then
@@ -93,6 +88,7 @@ script:
     fi
   - if [ $CHECK_FORMAT == "1" ]; then
       cd ..;
+      ln -s /usr/share/clang/clang-format-diff.py utils/;
       ./utils/check_code_format.sh;
     elif [ $CHECK_TIDY == "1" ]; then
       cd ..;
