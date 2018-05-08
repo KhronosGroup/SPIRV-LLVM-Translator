@@ -3,7 +3,7 @@ if(SPIRV_USE_LLVM_API)
   add_definitions(-D_SPIRV_LLVM_API)
 endif(SPIRV_USE_LLVM_API)
 
-add_llvm_library(LLVMSPIRVLib SHARED
+add_llvm_library(LLVMSPIRVLib
   libSPIRV/SPIRVBasicBlock.cpp
   libSPIRV/SPIRVDebug.cpp
   libSPIRV/SPIRVDecorate.cpp
@@ -40,6 +40,8 @@ add_llvm_library(LLVMSPIRVLib SHARED
     Core
     Support
     TransformUtils
+  DEPENDS
+    intrinsics_gen
 )
 
 target_include_directories(LLVMSPIRVLib
