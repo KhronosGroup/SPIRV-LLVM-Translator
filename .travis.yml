@@ -92,10 +92,10 @@ script:
       cat utils/clang-format-diff.py;
       ls /usr/share/clang;
       ./utils/check_code_format.sh;
-    elif [ $CHECK_TIDY == "1" ]; then
-      cd ..;
-      ln -s build/compile_commands.json;
-      ./utils/check_code_tidyness.sh;
+      #elif [ $CHECK_TIDY == "1" ]; then
+      #  cd ..;
+      #  ln -s build/compile_commands.json;
+      #  ./utils/check_code_tidyness.sh;
     else
       make $MAKE_TARGETS && make $MAKE_TEST_TARGET && if [ $BUILD_EXTERNAL == "1" ]; then make install; fi
     fi
