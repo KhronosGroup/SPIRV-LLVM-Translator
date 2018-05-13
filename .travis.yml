@@ -89,6 +89,8 @@ script:
   - if [ $CHECK_FORMAT == "1" ]; then
       cd ..;
       ln -s /usr/share/clang/clang-format-diff.py utils/;
+      cat utils/clang-format-diff.py;
+      ls /usr/share/clang;
       ./utils/check_code_format.sh;
     elif [ $CHECK_TIDY == "1" ]; then
       cd ..;
