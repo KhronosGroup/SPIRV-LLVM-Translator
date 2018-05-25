@@ -114,8 +114,8 @@ public:
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE));
     erase(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_CONTEXT));
     erase(M->getFunction(SPIR_INTRINSIC_BLOCK_BIND));
-    DEBUG(dbgs() << "------- After OCLLowerBlocks ------------\n"
-                 << *M << '\n');
+    LLVM_DEBUG(dbgs() << "------- After OCLLowerBlocks ------------\n"
+                      << *M << '\n');
     return true;
   }
 
@@ -132,9 +132,9 @@ private:
     int Iter = MaxIter;
     while (lowerBlockBind(F) && Iter > 0) {
       Iter--;
-      DEBUG(dbgs() << "-------------- after iteration " << MaxIter - Iter
-                   << " --------------\n"
-                   << *M << '\n');
+      LLVM_DEBUG(dbgs() << "-------------- after iteration " << MaxIter - Iter
+                        << " --------------\n"
+                        << *M << '\n');
     }
     assert(Iter > 0 && "Too many iterations");
     return true;
@@ -201,7 +201,7 @@ private:
     bool Changed = false;
     for (auto I = BlockBindFunc->user_begin(), E = BlockBindFunc->user_end();
          I != E;) {
-      DEBUG(dbgs() << "[lowerBlockBind] " << **I << '\n');
+      LLVM_DEBUG(dbgs() << "[lowerBlockBind] " << **I << '\n');
       // Handle spir_block_bind(bitcast(block_func), context_len,
       // context_align, context)
       auto CallBlkBind = cast<CallInst>(*I++);
@@ -250,8 +250,8 @@ private:
       getBlockInvokeFuncAndContext(CallGetBlkCtx->getArgOperand(0), nullptr,
                                    &Ctx);
     CallGetBlkCtx->replaceAllUsesWith(Ctx);
-    DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => "
-                 << *Ctx << "\n\n");
+    LLVM_DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => "
+                      << *Ctx << "\n\n");
     erase(CallGetBlkCtx);
   }
 
@@ -266,7 +266,7 @@ private:
       auto Cast = dyn_cast<BitCastInst>(CallInv);
       if (Cast)
         CallInv = dyn_cast<Instruction>(*CallInv->user_begin());
-      DEBUG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
+      LLVM_DEBUG(dbgs() << "[lowerGetBlockInvoke]  " << *CallInv);
       // Handle ret = block_func_ptr(context_ptr, args)
       auto CI = cast<CallInst>(CallInv);
       auto F = CI->getCalledValue();
@@ -277,7 +277,7 @@ private:
       }
       assert(F->getType() == InvokeF->getType());
       CI->replaceUsesOfWith(F, InvokeF);
-      DEBUG(dbgs() << " => " << *CI << "\n\n");
+      LLVM_DEBUG(dbgs() << " => " << *CI << "\n\n");
       erase(Cast);
       Changed = true;
     }
@@ -340,7 +340,8 @@ private:
       if (!CI || CI->getCalledFunction() != F)
         continue;
 
-      DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName() << '\n');
+      LLVM_DEBUG(dbgs() << "[lowerReturnBlock] inline " << F->getName()
+                        << '\n');
       auto CG = &getAnalysis<CallGraphWrapperPass>().getCallGraph();
       auto ACT = &getAnalysis<AssumptionCacheTracker>();
       std::function<AssumptionCache &(Function &)> GetAssumptionCache =
@@ -533,8 +534,8 @@ private:
     } else {
       llvm_unreachable("Invalid block");
     }
-    DEBUG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n'
-                 << "  Block context: " << *Ctx << '\n');
+    LLVM_DEBUG(dbgs() << "  Block invocation func: " << InvF->getName() << '\n'
+                      << "  Block context: " << *Ctx << '\n');
     assert(InvF && Ctx && "Invalid block");
     if (PInvF)
       *PInvF = InvF;
@@ -605,7 +606,7 @@ private:
   }
 
   void dumpGetBlockInvokeUsers(StringRef Prompt) {
-    DEBUG(dbgs() << Prompt);
+    LLVM_DEBUG(dbgs() << Prompt);
     dumpUsers(M->getFunction(SPIR_INTRINSIC_GET_BLOCK_INVOKE));
   }
 };

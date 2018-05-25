@@ -132,7 +132,7 @@ unsigned getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
   std::string DemangledName = GivenDemangledName;
   if (!oclIsBuiltin(OrigName, DemangledName.empty() ? &DemangledName : nullptr))
     return ~0U;
-  DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
+  LLVM_DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;
   bool Found = OCLExtOpMap::rfind(DemangledName, &EOC);
   if (!Found) {

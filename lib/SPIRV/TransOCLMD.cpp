@@ -91,14 +91,14 @@ bool TransOCLMD::runOnModule(Module &Module) {
   if (CLVer == 0)
     return false;
 
-  DEBUG(dbgs() << "Enter TransOCLMD:\n");
+  LLVM_DEBUG(dbgs() << "Enter TransOCLMD:\n");
   visit(M);
 
-  DEBUG(dbgs() << "After TransOCLMD:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After TransOCLMD:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }

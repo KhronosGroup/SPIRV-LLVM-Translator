@@ -1047,7 +1047,7 @@ bool SPIRVToLLVM::postProcessOCL() {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
-      DEBUG(dbgs() << "[postProcessOCL sret] " << *F << '\n');
+      LLVM_DEBUG(dbgs() << "[postProcessOCL sret] " << *F << '\n');
       if (F->getReturnType()->isStructTy() &&
           oclIsBuiltin(F->getName(), &DemangledName, IsCpp)) {
         if (!postProcessOCLBuiltinReturnStruct(&(*F)))
@@ -1058,7 +1058,7 @@ bool SPIRVToLLVM::postProcessOCL() {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     auto F = I++;
     if (F->hasName() && F->isDeclaration()) {
-      DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
+      LLVM_DEBUG(dbgs() << "[postProcessOCL array arg] " << *F << '\n');
       if (hasArrayArg(&(*F)) &&
           oclIsBuiltin(F->getName(), &DemangledName, IsCpp))
         if (!postProcessOCLBuiltinWithArrayArguments(&(*F), DemangledName))
@@ -1096,7 +1096,8 @@ bool SPIRVToLLVM::postProcessOCLBuiltinReturnStruct(Function *F) {
 
 bool SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(
     Function *F, const std::string &DemangledName) {
-  DEBUG(dbgs() << "[postProcessOCLBuiltinWithArrayArguments] " << *F << '\n');
+  LLVM_DEBUG(dbgs() << "[postProcessOCLBuiltinWithArrayArguments] " << *F
+                    << '\n');
   auto Attrs = F->getAttributes();
   auto Name = F->getName();
   mutateFunction(
@@ -2338,7 +2339,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
            << " => " << *FT << '\n';
   })
   if (!Func || Func->getFunctionType() != FT) {
-    DEBUG(for (auto &I : ArgTys) { dbgs() << *I << '\n'; });
+    LLVM_DEBUG(for (auto &I : ArgTys) { dbgs() << *I << '\n'; });
     Func = Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())

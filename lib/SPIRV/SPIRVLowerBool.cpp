@@ -107,7 +107,7 @@ public:
     visit(M);
 
     if (SPIRVLowerBoolValidate) {
-      DEBUG(dbgs() << "After SPIRVLowerBool:\n" << M);
+      LLVM_DEBUG(dbgs() << "After SPIRVLowerBool:\n" << M);
       std::string Err;
       raw_string_ostream ErrorOS(Err);
       if (verifyModule(M, &ErrorOS)) {

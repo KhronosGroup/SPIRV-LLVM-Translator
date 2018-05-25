@@ -94,14 +94,14 @@ bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
-  DEBUG(dbgs() << "Enter SPIRVRegularizeLLVM:\n");
+  LLVM_DEBUG(dbgs() << "Enter SPIRVRegularizeLLVM:\n");
   regularize();
 
-  DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
@@ -170,7 +170,7 @@ bool SPIRVRegularizeLLVM::regularize() {
 // Assume F is a SPIR-V builtin function with a function pointer argument which
 // is a bitcast instruction casting a function to a void(void) function pointer.
 void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
-  DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
+  LLVM_DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
   auto Name = decorateSPIRVFunction(getName(OC));
   std::set<Value *> InvokeFuncPtrs;
   auto Attrs = F->getAttributes();

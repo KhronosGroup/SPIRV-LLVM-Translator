@@ -145,18 +145,18 @@ bool SPIRVToOCL20::runOnModule(Module &Module) {
 
   eraseUselessFunctions(&Module);
 
-  DEBUG(dbgs() << "After SPIRVToOCL20:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After SPIRVToOCL20:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
 
 void SPIRVToOCL20::visitCallInst(CallInst &CI) {
-  DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
+  LLVM_DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto F = CI.getCalledFunction();
   if (!F)
     return;
@@ -167,8 +167,8 @@ void SPIRVToOCL20::visitCallInst(CallInst &CI) {
   if (!oclIsBuiltin(MangledName, &DemangledName) ||
       (OC = getSPIRVFuncOC(DemangledName)) == OpNop)
     return;
-  DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n'
-               << "OpCode = " << OC << '\n');
+  LLVM_DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n'
+                    << "OpCode = " << OC << '\n');
 
   if (OC == OpImageQuerySize || OC == OpImageQuerySizeLod) {
     visitCallSPRIVImageQuerySize(&CI);

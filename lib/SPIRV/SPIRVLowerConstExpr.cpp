@@ -92,14 +92,14 @@ bool SPIRVLowerConstExpr::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
-  DEBUG(dbgs() << "Enter SPIRVLowerConstExpr:\n");
+  LLVM_DEBUG(dbgs() << "Enter SPIRVLowerConstExpr:\n");
   visit(M);
 
-  DEBUG(dbgs() << "After SPIRVLowerConstExpr:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After SPIRVLowerConstExpr:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
