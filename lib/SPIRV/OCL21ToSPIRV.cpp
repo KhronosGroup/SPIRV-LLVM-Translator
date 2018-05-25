@@ -113,7 +113,7 @@ bool OCL21ToSPIRV::runOnModule(Module &Module) {
   if (CLVer < kOCLVer::CL21)
     return false;
 
-  DEBUG(dbgs() << "Enter OCL21ToSPIRV:\n");
+  LLVM_DEBUG(dbgs() << "Enter OCL21ToSPIRV:\n");
   visit(*M);
 
   for (auto &I : ValuesToDelete)
@@ -123,11 +123,11 @@ bool OCL21ToSPIRV::runOnModule(Module &Module) {
     if (auto GV = dyn_cast<GlobalValue>(I))
       GV->eraseFromParent();
 
-  DEBUG(dbgs() << "After OCL21ToSPIRV:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After OCL21ToSPIRV:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
@@ -136,7 +136,7 @@ bool OCL21ToSPIRV::runOnModule(Module &Module) {
 // Workgroup functions need to be handled before pipe functions since
 // there are functions fall into both categories.
 void OCL21ToSPIRV::visitCallInst(CallInst &CI) {
-  DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
+  LLVM_DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto F = CI.getCalledFunction();
   if (!F)
     return;
@@ -153,13 +153,13 @@ void OCL21ToSPIRV::visitCallInst(CallInst &CI) {
 
   if (!oclIsBuiltin(MangledName, &DemangledName, true))
     return;
-  DEBUG(dbgs() << "DemangledName:" << DemangledName << '\n');
+  LLVM_DEBUG(dbgs() << "DemangledName:" << DemangledName << '\n');
   StringRef Ref(DemangledName);
 
   Op OC = OpNop;
   if (!OpCodeNameMap::rfind(Ref.str(), &OC))
     return;
-  DEBUG(dbgs() << "maps to opcode " << OC << '\n');
+  LLVM_DEBUG(dbgs() << "maps to opcode " << OC << '\n');
 
   if (isCvtOpCode(OC)) {
     visitCallConvert(&CI, MangledName, OC);
@@ -207,7 +207,7 @@ void OCL21ToSPIRV::visitCallDecorate(CallInst *CI, StringRef MangledName) {
 }
 
 void OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
-  DEBUG(dbgs() << "[visitCallSubGroupBarrier] " << *CI << '\n');
+  LLVM_DEBUG(dbgs() << "[visitCallSubGroupBarrier] " << *CI << '\n');
   auto Lit = getBarrierLiterals(CI);
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,

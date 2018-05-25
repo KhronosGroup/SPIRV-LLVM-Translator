@@ -338,7 +338,7 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
   if (CLVer > kOCLVer::CL20)
     return false;
 
-  DEBUG(dbgs() << "Enter OCL20ToSPIRV:\n");
+  LLVM_DEBUG(dbgs() << "Enter OCL20ToSPIRV:\n");
 
   transWorkItemBuiltinsToVariables();
 
@@ -351,12 +351,12 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
     if (auto GV = dyn_cast<GlobalValue>(I))
       GV->eraseFromParent();
 
-  DEBUG(dbgs() << "After OCL20ToSPIRV:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After OCL20ToSPIRV:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
-    DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
   }
   return true;
 }
@@ -365,7 +365,7 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
 // Workgroup functions need to be handled before pipe functions since
 // there are functions fall into both categories.
 void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
-  DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
+  LLVM_DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
   auto F = CI.getCalledFunction();
   if (!F)
     return;
@@ -375,7 +375,7 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   if (!oclIsBuiltin(MangledName, &DemangledName))
     return;
 
-  DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
+  LLVM_DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
   if (DemangledName.find(kOCLBuiltinName::NDRangePrefix) == 0) {
     visitCallNDRange(&CI, DemangledName);
     return;
@@ -1177,20 +1177,20 @@ void OCL20ToSPIRV::visitCallBuiltinSimple(CallInst *CI, StringRef MangledName,
 /// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
 /// Function like get_work_dim() -> load WorkDim
 void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
-  DEBUG(dbgs() << "Enter transWorkItemBuiltinsToVariables\n");
+  LLVM_DEBUG(dbgs() << "Enter transWorkItemBuiltinsToVariables\n");
   std::vector<Function *> WorkList;
   for (auto &I : *M) {
     std::string DemangledName;
     if (!oclIsBuiltin(I.getName(), &DemangledName))
       continue;
-    DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
+    LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     std::string BuiltinVarName;
     SPIRVBuiltinVariableKind BVKind;
     if (!SPIRSPIRVBuiltinVariableMap::find(DemangledName, &BVKind))
       continue;
     BuiltinVarName =
         std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
-    DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
+    LLVM_DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
     bool IsVec = I.getFunctionType()->getNumParams() > 0;
     Type *GVType =
         IsVec ? VectorType::get(I.getReturnType(), 3) : I.getReturnType();
@@ -1202,11 +1202,11 @@ void OCL20ToSPIRV::transWorkItemBuiltinsToVariables() {
       auto CI = dyn_cast<CallInst>(*UI);
       assert(CI && "invalid instruction");
       Value *NewValue = new LoadInst(BV, "", CI);
-      DEBUG(dbgs() << "Transform: " << *CI << " => " << *NewValue << '\n');
+      LLVM_DEBUG(dbgs() << "Transform: " << *CI << " => " << *NewValue << '\n');
       if (IsVec) {
         NewValue =
             ExtractElementInst::Create(NewValue, CI->getArgOperand(0), "", CI);
-        DEBUG(dbgs() << *NewValue << '\n');
+        LLVM_DEBUG(dbgs() << *NewValue << '\n');
       }
       NewValue->takeName(CI);
       CI->replaceAllUsesWith(NewValue);

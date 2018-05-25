@@ -307,13 +307,15 @@ Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
         Function::Create(FT, GlobalValue::ExternalLinkage, MangledName, M);
     if (F && TakeName) {
       NewF->takeName(F);
-      DEBUG(dbgs() << "[getOrCreateFunction] Warning: taking function Name\n");
+      LLVM_DEBUG(
+          dbgs() << "[getOrCreateFunction] Warning: taking function Name\n");
     }
     if (NewF->getName() != MangledName) {
-      DEBUG(dbgs() << "[getOrCreateFunction] Warning: function Name changed\n");
+      LLVM_DEBUG(
+          dbgs() << "[getOrCreateFunction] Warning: function Name changed\n");
     }
-    DEBUG(dbgs() << "[getOrCreateFunction] "; if (F) dbgs() << *F << " => ";
-          dbgs() << *NewF << '\n';);
+    LLVM_DEBUG(dbgs() << "[getOrCreateFunction] ";
+               if (F) dbgs() << *F << " => "; dbgs() << *NewF << '\n';);
     F = NewF;
     F->setCallingConv(CallingConv::SPIR_FUNC);
     if (Attrs)
@@ -573,7 +575,7 @@ bool isFunctionPointerType(Type *T) {
 bool hasFunctionPointerArg(Function *F, Function::arg_iterator &AI) {
   AI = F->arg_begin();
   for (auto AE = F->arg_end(); AI != AE; ++AI) {
-    DEBUG(dbgs() << "[hasFuncPointerArg] " << *AI << '\n');
+    LLVM_DEBUG(dbgs() << "[hasFuncPointerArg] " << *AI << '\n');
     if (isFunctionPointerType(AI->getType())) {
       return true;
     }
@@ -588,7 +590,7 @@ Constant *castToVoidFuncPtr(Function *F) {
 
 bool hasArrayArg(Function *F) {
   for (auto I = F->arg_begin(), E = F->arg_end(); I != E; ++I) {
-    DEBUG(dbgs() << "[hasArrayArg] " << *I << '\n');
+    LLVM_DEBUG(dbgs() << "[hasArrayArg] " << *I << '\n');
     if (I->getType()->isArrayTy()) {
       return true;
     }
@@ -600,7 +602,7 @@ CallInst *mutateCallInst(
     Module *M, CallInst *CI,
     std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
     BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeFuncName) {
-  DEBUG(dbgs() << "[mutateCallInst] " << *CI);
+  LLVM_DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
   auto NewName = ArgMutate(CI, Args);
@@ -611,7 +613,7 @@ CallInst *mutateCallInst(
   }
   auto NewCI = addCallInst(M, NewName, CI->getType(), Args, Attrs, CI, Mangle,
                            InstName, TakeFuncName);
-  DEBUG(dbgs() << " => " << *NewCI << '\n');
+  LLVM_DEBUG(dbgs() << " => " << *NewCI << '\n');
   CI->replaceAllUsesWith(NewCI);
   CI->eraseFromParent();
   return NewCI;
@@ -623,7 +625,7 @@ Instruction *mutateCallInst(
         ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeFuncName) {
-  DEBUG(dbgs() << "[mutateCallInst] " << *CI);
+  LLVM_DEBUG(dbgs() << "[mutateCallInst] " << *CI);
 
   auto Args = getArguments(CI);
   Type *RetTy = CI->getType();
@@ -637,7 +639,7 @@ Instruction *mutateCallInst(
                            InstName + ".tmp", TakeFuncName);
   auto NewI = RetMutate(NewCI);
   NewI->takeName(CI);
-  DEBUG(dbgs() << " => " << *NewI << '\n');
+  LLVM_DEBUG(dbgs() << " => " << *NewI << '\n');
   CI->replaceAllUsesWith(NewI);
   CI->eraseFromParent();
   return NewI;
@@ -995,7 +997,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
       assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
       EPT = new SPIR::BlockType;
     } else if (auto StructTy = dyn_cast<StructType>(ET)) {
-      DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
+      LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
       if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
           TyName.startswith(kSPR2TypeName::Pipe)) {
@@ -1004,7 +1006,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
         if (DelimPos != StringRef::npos)
           TyName = TyName.substr(0, DelimPos);
       }
-      DEBUG(dbgs() << "  type Name: " << TyName << '\n');
+      LLVM_DEBUG(dbgs() << "  type Name: " << TyName << '\n');
 
       auto Prim = getOCLTypePrimitiveEnum(TyName);
       if (StructTy->isOpaque()) {
@@ -1051,7 +1053,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
       PT->setQualifier(static_cast<SPIR::TypeAttributeEnum>(I), I & Attr);
     return SPIR::RefParamType(PT);
   }
-  DEBUG(dbgs() << "[transTypeDesc] " << *Ty << '\n');
+  LLVM_DEBUG(dbgs() << "[transTypeDesc] " << *Ty << '\n');
   assert(0 && "not implemented");
   return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
 }
@@ -1099,8 +1101,8 @@ Value *getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len,
     auto Zero = ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
     Value *Index[] = {Zero, Zero};
     auto Ret = GetElementPtrInst::CreateInBounds(Alloca, Index, "", Pos);
-    DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Alloca: " << *Alloca
-                 << ", Return: " << *Ret << '\n');
+    LLVM_DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Alloca: " << *Alloca
+                      << ", Return: " << *Ret << '\n');
     return Ret;
   }
   if (auto AT = dyn_cast<ArrayType>(T)) {
@@ -1108,8 +1110,8 @@ Value *getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len,
     assert(AT->getArrayNumElements() == Len);
     std::vector<Constant *> EV(Len, ConstantInt::get(ET, V, IsSigned));
     auto Ret = ConstantArray::get(AT, EV);
-    DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Array type: " << *AT
-                 << ", Return: " << *Ret << '\n');
+    LLVM_DEBUG(dbgs() << "[getScalarOrArrayConstantInt] Array type: " << *AT
+                      << ", Return: " << *Ret << '\n');
     return Ret;
   }
   llvm_unreachable("Invalid type");
@@ -1119,9 +1121,9 @@ Value *getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len,
 void dumpUsers(Value *V, StringRef Prompt) {
   if (!V)
     return;
-  DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
+  LLVM_DEBUG(dbgs() << Prompt << " Users of " << *V << " :\n");
   for (auto UI = V->user_begin(), UE = V->user_end(); UI != UE; ++UI)
-    DEBUG(dbgs() << "  " << **UI << '\n');
+    LLVM_DEBUG(dbgs() << "  " << **UI << '\n');
 }
 
 std::string getSPIRVTypeName(StringRef BaseName, StringRef Postfixes) {
@@ -1145,7 +1147,7 @@ Type *getSPIRVTypeByChangeBaseTypeName(Module *M, Type *T, StringRef OldName,
   StringRef Postfixes;
   if (isSPIRVType(T, OldName, &Postfixes))
     return getOrCreateOpaquePtrType(M, getSPIRVTypeName(NewName, Postfixes));
-  DEBUG(dbgs() << " Invalid SPIR-V type " << *T << '\n');
+  LLVM_DEBUG(dbgs() << " Invalid SPIR-V type " << *T << '\n');
   llvm_unreachable("Invalid SPIRV-V type");
   return nullptr;
 }
@@ -1225,16 +1227,16 @@ std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
     if (hasAccessQualifiedName(Name))
       ImageTyName.erase(ImageTyName.size() - 5, 3);
     auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
-    DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => "
-                 << "(" << (unsigned)Desc.Dim << ", " << Desc.Depth << ", "
-                 << Desc.Arrayed << ", " << Desc.MS << ", " << Desc.Sampled
-                 << ", " << Desc.Format << ")\n");
+    LLVM_DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => "
+                      << "(" << (unsigned)Desc.Dim << ", " << Desc.Depth << ", "
+                      << Desc.Arrayed << ", " << Desc.MS << ", " << Desc.Sampled
+                      << ", " << Desc.Format << ")\n");
 
     BaseTy = kSPIRVTypeName::Image;
     OS << getSPIRVImageTypePostfixes(kSPIRVImageSampledTypeName::Void, Desc,
                                      SPIRSPIRVAccessQualifierMap::map(Acc));
   } else {
-    DEBUG(dbgs() << "Mapping of " << Name << " is not implemented\n");
+    LLVM_DEBUG(dbgs() << "Mapping of " << Name << " is not implemented\n");
     llvm_unreachable("Not implemented");
   }
   return getSPIRVTypeName(BaseTy, OS.str());
@@ -1258,7 +1260,7 @@ bool eraseIfNoUse(Function *F) {
     }
   }
   if (F->use_empty()) {
-    DEBUG(dbgs() << "Erase "; F->printAsOperand(dbgs()); dbgs() << '\n');
+    LLVM_DEBUG(dbgs() << "Erase "; F->printAsOperand(dbgs()); dbgs() << '\n');
     F->eraseFromParent();
     Changed = true;
   }
@@ -1312,7 +1314,7 @@ std::string mangleBuiltin(const std::string &UniqName,
     return UniqName;
   BtnInfo->init(UniqName);
   std::string MangledName;
-  DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
+  LLVM_DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   SPIR::FunctionDescriptor FD;
   FD.Name = BtnInfo->getUnmangledName();
   bool BIVarArgNegative = BtnInfo->getVarArg() < 0;
@@ -1353,7 +1355,7 @@ std::string mangleBuiltin(const std::string &UniqName,
   }
 #endif
 
-  DEBUG(dbgs() << MangledName << '\n');
+  LLVM_DEBUG(dbgs() << MangledName << '\n');
   return MangledName;
 }
 

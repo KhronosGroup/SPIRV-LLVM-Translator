@@ -70,7 +70,7 @@ void OCLTypeToSPIRV::getAnalysisUsage(AnalysisUsage &AU) const {
 }
 
 bool OCLTypeToSPIRV::runOnModule(Module &Module) {
-  DEBUG(dbgs() << "Enter OCLTypeToSPIRV:\n");
+  LLVM_DEBUG(dbgs() << "Enter OCLTypeToSPIRV:\n");
   M = &Module;
   Ctx = &M->getContext();
   auto Src = getSPIRVSource(&Module);
@@ -96,14 +96,15 @@ bool OCLTypeToSPIRV::runOnModule(Module &Module) {
 }
 
 void OCLTypeToSPIRV::addAdaptedType(Value *V, Type *T) {
-  DEBUG(dbgs() << "[add adapted type] "; V->printAsOperand(dbgs(), true, M);
-        dbgs() << " => " << *T << '\n');
+  LLVM_DEBUG(dbgs() << "[add adapted type] ";
+             V->printAsOperand(dbgs(), true, M);
+             dbgs() << " => " << *T << '\n');
   AdaptedTy[V] = T;
 }
 
 void OCLTypeToSPIRV::addWork(Function *F) {
-  DEBUG(dbgs() << "[add work] "; F->printAsOperand(dbgs(), true, M);
-        dbgs() << '\n');
+  LLVM_DEBUG(dbgs() << "[add work] "; F->printAsOperand(dbgs(), true, M);
+             dbgs() << '\n');
   WorkSet.insert(F);
 }
 
@@ -136,8 +137,8 @@ static Argument *getArg(Function *F, unsigned I) {
 /// Create a new function type if \param F has arguments in AdaptedTy, and
 /// propagates the adapted arguments to functions called by \param F.
 void OCLTypeToSPIRV::adaptFunction(Function *F) {
-  DEBUG(dbgs() << "\n[work on function] "; F->printAsOperand(dbgs(), true, M);
-        dbgs() << '\n');
+  LLVM_DEBUG(dbgs() << "\n[work on function] ";
+             F->printAsOperand(dbgs(), true, M); dbgs() << '\n');
   assert(AdaptedTy.count(F) == 0);
 
   std::vector<Type *> ArgTys;
