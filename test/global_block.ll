@@ -26,62 +26,74 @@ target triple = "spir-unknown-unknown"
 ;; Check that block invoke function has no block descriptor argument in SPIR-V
 ; CHECK-SPIRV-NOT: TypeFunction [[block_invoke_type]] [[int]] {{[0-9]+}} [[int]]
 
-%opencl.block = type opaque
-
-@block_kernel.b1 = internal addrspace(2) constant %opencl.block* bitcast (i32 (i8*, i32)* @_block_invoke to %opencl.block*), align 4
 ;; This variable is not needed in SPIRV
-; CHECK-SPIRV-NOT Variable
+; CHECK-SPIRV-NOT: Name {{[0-9]+}} block_kernel.b1
 ; CHECK-LLVM-NOT: @block_kernel.b1
+@block_kernel.b1 = internal addrspace(2) constant i32 (i32) addrspace(4)* addrspacecast (i32 (i32) addrspace(1)* bitcast ({ i32, i32 } addrspace(1)* @__block_literal_global to i32 (i32) addrspace(1)*) to i32 (i32) addrspace(4)*), align 8
 
-; Function Attrs: nounwind
-define spir_kernel void @block_kernel(i32 addrspace(1)* %res) #0 {
+@__block_literal_global = internal addrspace(1) constant { i32, i32 } { i32 8, i32 4 }, align 4
+
+; Function Attrs: convergent nounwind
+define spir_kernel void @block_kernel(i32 addrspace(1)* %res) #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !6 !kernel_arg_base_type !6 !kernel_arg_type_qual !7 {
 entry:
-  %0 = load %opencl.block*, %opencl.block* addrspace(2)* @block_kernel.b1, align 4
-  %1 = call i8* @spir_get_block_invoke(%opencl.block* %0)
-  %2 = call i8* @spir_get_block_context(%opencl.block* %0)
-  %3 = bitcast i8* %1 to i32 (i8*, i32)*
-  %call = call spir_func i32 %3(i8* %2, i32 5)
+  %res.addr = alloca i32 addrspace(1)*, align 8
+  store i32 addrspace(1)* %res, i32 addrspace(1)** %res.addr, align 8, !tbaa !10
+
 ; CHECK-SPIRV: FunctionCall [[int]] {{[0-9]+}} [[block_invoke]] [[five]]
 ; CHECK-LLVM: %call = call spir_func i32 @_block_invoke(i32 5)
-  store i32 %call, i32 addrspace(1)* %res, align 4
+  %call = call spir_func i32 @_block_invoke(i8 addrspace(4)* addrspacecast (i8 addrspace(1)* bitcast ({ i32, i32 } addrspace(1)* @__block_literal_global to i8 addrspace(1)*) to i8 addrspace(4)*), i32 5) #2
+
+  %0 = load i32 addrspace(1)*, i32 addrspace(1)** %res.addr, align 8, !tbaa !10
+  store i32 %call, i32 addrspace(1)* %0, align 4, !tbaa !14
   ret void
 }
 
-; Function Attrs: nounwind
-define internal spir_func i32 @_block_invoke(i8* %.block_descriptor, i32 %i) #0 {
 ; CHECK-SPIRV: 5 Function [[int]] [[block_invoke]] 0 [[block_invoke_type]]
 ; CHECK-SPIRV-NEXT: 3 FunctionParameter [[int]] {{[0-9]+}}
 ; CHECK-LLVM: define internal spir_func i32 @_block_invoke(i32 %i)
+; Function Attrs: convergent nounwind
+define internal spir_func i32 @_block_invoke(i8 addrspace(4)* %.block_descriptor, i32 %i) #1 {
 entry:
-  %block = bitcast i8* %.block_descriptor to <{}>*
-;; Instruction above is useless and should be removed.
+  %.block_descriptor.addr = alloca i8 addrspace(4)*, align 8
+  %i.addr = alloca i32, align 4
+  store i8 addrspace(4)* %.block_descriptor, i8 addrspace(4)** %.block_descriptor.addr, align 8
+
+;; Instruction below is useless and should be removed.
 ; CHECK-SPIRV-NOT: Bitcast
 ; CHECK-LLVM-NOT: bitcast
-  %add = add nsw i32 %i, 1
+  %block = bitcast i8 addrspace(4)* %.block_descriptor to <{ i32, i32 }> addrspace(4)*
+  store i32 %i, i32* %i.addr, align 4, !tbaa !14
+  %0 = load i32, i32* %i.addr, align 4, !tbaa !14
+  %add = add nsw i32 %0, 1
   ret i32 %add
 }
 
-declare i8* @spir_get_block_invoke(%opencl.block*)
+attributes #0 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="false" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { convergent }
 
-declare i8* @spir_get_block_context(%opencl.block*)
-
-attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-
-!opencl.kernels = !{!0}
+!llvm.module.flags = !{!0}
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
+!opencl.ocl.version = !{!1}
+!opencl.spir.version = !{!1}
+!opencl.used.extensions = !{!2}
+!opencl.used.optional.core.features = !{!2}
+!opencl.compiler.options = !{!2}
+!llvm.ident = !{!3}
 
-!0 = !{void (i32 addrspace(1)*)* @block_kernel, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space", i32 1}
-!2 = !{!"kernel_arg_access_qual", !"none"}
-!3 = !{!"kernel_arg_type", !"int*"}
-!4 = !{!"kernel_arg_base_type", !"int*"}
-!5 = !{!"kernel_arg_type_qual", !""}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
-!8 = !{}
-
+!0 = !{i32 1, !"wchar_size", i32 4}
+!1 = !{i32 2, i32 0}
+!2 = !{}
+!3 = !{!"clang version 7.0.0"}
+!4 = !{i32 1}
+!5 = !{!"none"}
+!6 = !{!"int*"}
+!7 = !{!""}
+!8 = !{i1 false}
+!9 = !{i32 0}
+!10 = !{!11, !11, i64 0}
+!11 = !{!"any pointer", !12, i64 0}
+!12 = !{!"omnipotent char", !13, i64 0}
+!13 = !{!"Simple C/C++ TBAA"}
+!14 = !{!15, !15, i64 0}
+!15 = !{!"int", !12, i64 0}

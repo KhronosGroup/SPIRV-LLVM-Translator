@@ -1,6 +1,6 @@
 ;; This test checks that Invoke parameter of OpEnueueKernel instruction meet the
 ;; following specification requirements in case of enqueueing empty block:
-;;"Invoke must be an OpFunction whose OpTypeFunction operand has:
+;; "Invoke must be an OpFunction whose OpTypeFunction operand has:
 ;; - Result Type must be OpTypeVoid.
 ;; - The first parameter must have a type of OpTypePointer to an 8-bit OpTypeInt.
 ;; - An optional list of parameters, each of which must have a type of OpTypePointer to the Workgroup Storage Class.
@@ -11,6 +11,7 @@
 ;;                  ndrange_1D(1),
 ;;                  0, NULL, NULL,
 ;;                  ^(){});
+;; }
 ; RUN: llvm-as < %s > %t.bc
 ; RUN: llvm-spirv %t.bc -o - -spirv-text | FileCheck %s --check-prefix=CHECK-SPIRV
 
@@ -19,63 +20,66 @@ target triple = "spir64-unknown-unknown"
 
 %struct.ndrange_t = type { i32, [3 x i64], [3 x i64], [3 x i64] }
 %opencl.queue_t = type opaque
-%opencl.block = type opaque
 %opencl.clk_event_t = type opaque
 
+@__block_literal_global = internal addrspace(1) constant { i32, i32 } { i32 8, i32 4 }, align 4
+
+; CHECK-SPIRV: Name [[Block:[0-9]+]] "__block_literal_global"
 ; CHECK-SPIRV: TypeInt [[Int8:[0-9]+]] 8
 ; CHECK-SPIRV: TypeVoid [[Void:[0-9]+]]
-; CHECK-SPIRV: TypePointer [[Int8Ptr:[0-9]+]] {{[0-9]+}} [[Int8]]
-; CHECK-SPIRV: ConstantNull [[Int8Ptr]] [[NullInt8Ptr:[0-9]+]]
+; CHECK-SPIRV: TypePointer [[Int8Ptr:[0-9]+]] 5 [[Int8]]
+; CHECK-SPIRV: TypePointer [[Int8PtrGen:[0-9]+]] 8 [[Int8]]
+; CHECK-SPIRV: Variable {{[0-9]+}} [[Block:[0-9]+]]
 
-; Function Attrs: nounwind
-define spir_kernel void @test_enqueue_empty() #0 {
+; Function Attrs: convergent nounwind
+define spir_kernel void @test_enqueue_empty() #0 !kernel_arg_addr_space !2 !kernel_arg_access_qual !2 !kernel_arg_type !2 !kernel_arg_base_type !2 !kernel_arg_type_qual !2 {
 entry:
-  %agg.tmp = alloca %struct.ndrange_t, align 8
-  %call = call spir_func %opencl.queue_t* @_Z17get_default_queuev()
-  call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %agg.tmp, i64 1)
-  %0 = call %opencl.block* @spir_block_bind(i8* bitcast (void (i8*)* @__test_enqueue_empty_block_invoke to i8*), i32 0, i32 0, i8* null)
-  %call1 = call spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE(%opencl.queue_t* %call, i32 1, %struct.ndrange_t* byval %agg.tmp, i32 0, %opencl.clk_event_t** null, %opencl.clk_event_t** null, %opencl.block* %0)
+  %tmp = alloca %struct.ndrange_t, align 8
+  %call = call spir_func %opencl.queue_t* @_Z17get_default_queuev() #4
+  call spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret %tmp, i64 1) #4
+  %0 = call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* %call, i32 1, %struct.ndrange_t* %tmp, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* null, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*)* @__test_enqueue_empty_block_invoke_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* addrspacecast (i8 addrspace(1)* bitcast ({ i32, i32 } addrspace(1)* @__block_literal_global to i8 addrspace(1)*) to i8 addrspace(4)*))
   ret void
-; CHECK-SPIRV: EnqueueKernel {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[Invoke:[0-9]+]] [[NullInt8Ptr]] {{[0-9]+}} {{[0-9]+}}
-
+; CHECK-SPIRV: Bitcast [[Int8Ptr]] [[Int8PtrBlock:[0-9]+]] [[Block]]
+; CHECK-SPIRV: PtrCastToGeneric [[Int8PtrGen]] [[Int8PtrGenBlock:[0-9]+]] [[Int8PtrBlock]]
+; CHECK-SPIRV: EnqueueKernel {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[Invoke:[0-9]+]] [[Int8PtrGenBlock]] {{[0-9]+}} {{[0-9]+}}
 }
 
-declare spir_func i32 @_Z14enqueue_kernel9ocl_queuei9ndrange_tjPK12ocl_clkeventP12ocl_clkeventU13block_pointerFvvE(%opencl.queue_t*, i32, %struct.ndrange_t* byval, i32, %opencl.clk_event_t**, %opencl.clk_event_t**, %opencl.block*) #1
-
+; Function Attrs: convergent
 declare spir_func %opencl.queue_t* @_Z17get_default_queuev() #1
 
+; Function Attrs: convergent
 declare spir_func void @_Z10ndrange_1Dm(%struct.ndrange_t* sret, i64) #1
 
-
-; CHECK-SPIRV: Function [[Void]] [[Invoke]] {{[0-9]+}} {{[0-9]+}}
-; CHECK-SPIRV-NEXT: FunctionParameter [[Int8Ptr]]  {{[0-9]+}}
-
-; Function Attrs: nounwind
-define internal spir_func void @__test_enqueue_empty_block_invoke(i8* %.block_descriptor) #0 {
+; Function Attrs: convergent nounwind
+define internal spir_func void @__test_enqueue_empty_block_invoke(i8 addrspace(4)* %.block_descriptor) #2 {
 entry:
-  %block = bitcast i8* %.block_descriptor to <{}>*
+  %.block_descriptor.addr = alloca i8 addrspace(4)*, align 8
+  store i8 addrspace(4)* %.block_descriptor, i8 addrspace(4)** %.block_descriptor.addr, align 8
+  %block = bitcast i8 addrspace(4)* %.block_descriptor to <{ i32, i32 }> addrspace(4)*
   ret void
 }
 
-declare %opencl.block* @spir_block_bind(i8*, i32, i32, i8*)
+; Function Attrs: nounwind
+define internal spir_kernel void @__test_enqueue_empty_block_invoke_kernel(i8 addrspace(4)*) #3 {
+entry:
+  call void @__test_enqueue_empty_block_invoke(i8 addrspace(4)* %0)
+  ret void
+}
 
-attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+declare i32 @__enqueue_kernel_basic_events(%opencl.queue_t*, i32, %struct.ndrange_t*, i32, %opencl.clk_event_t* addrspace(4)*, %opencl.clk_event_t* addrspace(4)*, i8 addrspace(4)*, i8 addrspace(4)*)
 
-!opencl.kernels = !{!0}
+; CHECK-SPIRV: Function [[Void]] [[Invoke]] {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV-NEXT: FunctionParameter [[Int8PtrGen]]  {{[0-9]+}}
+
+attributes #0 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="false" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { convergent "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { convergent nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind }
+attributes #4 = { convergent }
+
 !opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!opencl.compiler.options = !{!8}
+!opencl.ocl.version = !{!0}
+!opencl.spir.version = !{!0}
 
-!0 = !{void ()* @test_enqueue_empty, !1, !2, !3, !4, !5}
-!1 = !{!"kernel_arg_addr_space"}
-!2 = !{!"kernel_arg_access_qual"}
-!3 = !{!"kernel_arg_type"}
-!4 = !{!"kernel_arg_base_type"}
-!5 = !{!"kernel_arg_type_qual"}
-!6 = !{i32 1, i32 2}
-!7 = !{i32 2, i32 0}
-!8 = !{}
+!0 = !{i32 2, i32 0}
+!2 = !{}

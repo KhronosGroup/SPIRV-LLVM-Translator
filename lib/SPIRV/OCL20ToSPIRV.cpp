@@ -42,6 +42,7 @@
 #include "SPIRVInternal.h"
 
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instruction.h"
@@ -236,7 +237,6 @@ public:
   void visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
                              const std::string &DemangledName);
 
-  /// Transforms get_mem_fence built-in to SPIR-V function and aligns result
   /// values with SPIR 1.2. get_mem_fence(ptr) => __spirv_GenericPtrMemSemantics
   /// GenericPtrMemSemantics valid values are 0x100, 0x200 and 0x300, where is
   /// SPIR 1.2 defines them as 0x1, 0x2 and 0x3, so this function adjusts
@@ -258,6 +258,12 @@ public:
   void visitCallGetImageChannel(CallInst *CI, StringRef MangledName,
                                 const std::string &DemangledName,
                                 unsigned int Offset);
+
+  /// Transform enqueue_kernel and kernel query built-in functions to
+  /// spirv-friendly format filling arguments, required for device-side enqueue
+  /// instructions, but missed in the original call
+  void visitCallEnqueueKernel(CallInst *CI, const std::string &DemangledName);
+  void visitCallKernelQuery(CallInst *CI, const std::string &DemangledName);
 
   /// For cl_intel_subgroups block read built-ins:
   void visitSubgroupBlockReadINTEL(CallInst *CI, StringRef MangledName,
@@ -351,6 +357,7 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
     if (auto GV = dyn_cast<GlobalValue>(I))
       GV->eraseFromParent();
 
+  eraseUselessFunctions(M); // remove unused functions declarations
   LLVM_DEBUG(dbgs() << "After OCL20ToSPIRV:\n" << *M);
 
   std::string Err;
@@ -510,6 +517,14 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   if (DemangledName == kOCLBuiltinName::GetImageChannelOrder) {
     visitCallGetImageChannel(&CI, MangledName, DemangledName,
                              OCLImageChannelOrderOffset);
+    return;
+  }
+  if (isEnqueueKernelBI(MangledName)) {
+    visitCallEnqueueKernel(&CI, DemangledName);
+    return;
+  }
+  if (isKernelQueryBI(MangledName)) {
+    visitCallKernelQuery(&CI, DemangledName);
     return;
   }
   if (DemangledName.find(kOCLBuiltinName::SubgroupBlockReadINTELPrefix) == 0) {
@@ -1448,6 +1463,110 @@ void OCL20ToSPIRV::visitCallGetImageChannel(CallInst *CI, StringRef MangledName,
                             NewCI, getInt32(M, Offset), "", CI);
                       },
                       &Attrs);
+}
+void OCL20ToSPIRV::visitCallEnqueueKernel(CallInst *CI,
+                                          const std::string &DemangledName) {
+  const DataLayout &DL = M->getDataLayout();
+  bool HasEvents = DemangledName.find("events") != std::string::npos;
+
+  // SPIRV OpEnqueueKernel instruction has 10+ arguments.
+  SmallVector<Value *, 16> Args;
+
+  // Copy all arguments before block invoke function pointer
+  // which match with what Clang 6.0 produced
+  const unsigned BlockFIdx = HasEvents ? 6 : 3;
+  Args.assign(CI->arg_begin(), CI->arg_begin() + BlockFIdx);
+
+  // If no event arguments in original call, add dummy ones
+  if (!HasEvents) {
+    Args.push_back(getInt32(M, 0));           // dummy num events
+    Args.push_back(getOCLNullClkEventPtr(M)); // dummy wait events
+    Args.push_back(getOCLNullClkEventPtr(M)); // dummy ret event
+  }
+
+  // Invoke: Pointer to invoke function
+  Value *BlockFunc = CI->getArgOperand(BlockFIdx);
+  Args.push_back(cast<Function>(GetUnderlyingObject(BlockFunc, DL)));
+
+  // Param: Pointer to block literal
+  Value *BlockLiteral = CI->getArgOperand(BlockFIdx + 1);
+  Args.push_back(BlockLiteral);
+
+  // Param Size: Size of block literal structure
+  // Param Aligment: Aligment of block literal structure
+  // TODO: these numbers should be obtained from block literal structure
+  Type *ParamType = GetUnderlyingObject(BlockLiteral, DL)->getType();
+  if (PointerType *PT = dyn_cast<PointerType>(ParamType))
+    ParamType = PT->getElementType();
+  Args.push_back(getInt32(M, DL.getTypeStoreSize(ParamType)));
+  Args.push_back(getInt32(M, DL.getPrefTypeAlignment(ParamType)));
+
+  // Local sizes arguments: Sizes of block invoke arguments
+  // Clang 6.0 and higher generates local size operands as an array,
+  // so we need to unpack them
+  if (DemangledName.find("_varargs") != std::string::npos) {
+    const unsigned LocalSizeArrayIdx = HasEvents ? 9 : 6;
+    auto *LocalSizeArray =
+        cast<GetElementPtrInst>(CI->getArgOperand(LocalSizeArrayIdx));
+    auto *LocalSizeArrayTy =
+        cast<ArrayType>(LocalSizeArray->getSourceElementType());
+    const uint64_t LocalSizeNum = LocalSizeArrayTy->getNumElements();
+    for (unsigned I = 0; I < LocalSizeNum; ++I)
+      Args.push_back(GetElementPtrInst::Create(
+          LocalSizeArray->getSourceElementType(), // Pointee type
+          LocalSizeArray->getPointerOperand(),    // Alloca
+          {getInt32(M, 0), getInt32(M, I)},       // Indices
+          "", CI));
+  }
+
+  StringRef NewName = "__spirv_EnqueueKernel__";
+  FunctionType *FT =
+      FunctionType::get(CI->getType(), getTypes(Args), false /*isVarArg*/);
+  Function *NewF =
+      Function::Create(FT, GlobalValue::ExternalLinkage, NewName, M);
+  NewF->setCallingConv(CallingConv::SPIR_FUNC);
+  CallInst *NewCall = CallInst::Create(NewF, Args, "", CI);
+  NewCall->setCallingConv(NewF->getCallingConv());
+  CI->replaceAllUsesWith(NewCall);
+  CI->eraseFromParent();
+}
+
+void OCL20ToSPIRV::visitCallKernelQuery(CallInst *CI,
+                                        const std::string &DemangledName) {
+  const DataLayout &DL = M->getDataLayout();
+  bool HasNDRange =
+      DemangledName.find("_for_ndrange_impl") != std::string::npos;
+  // BIs with "_for_ndrange_impl" suffix has NDRange argument first, and
+  // Invoke argument following. For other BIs Invoke function is the first arg
+  const unsigned BlockFIdx = HasNDRange ? 1 : 0;
+  Value *BlockFVal = CI->getArgOperand(BlockFIdx)->stripPointerCasts();
+
+  auto *BlockF = cast<Function>(GetUnderlyingObject(BlockFVal, DL));
+
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInst(M, CI,
+                 [=](CallInst *CI, std::vector<Value *> &Args) {
+                   Value *Param = *Args.rbegin();
+                   Type *ParamType = GetUnderlyingObject(Param, DL)->getType();
+                   if (PointerType *PT = dyn_cast<PointerType>(ParamType)) {
+                     ParamType = PT->getElementType();
+                   }
+                   // Last arg corresponds to SPIRV Param operand.
+                   // Insert Invoke in front of Param.
+                   // Add Param Size and Param Align at the end.
+                   Args[BlockFIdx] = BlockF;
+                   Args.push_back(getInt32(M, DL.getTypeStoreSize(ParamType)));
+                   Args.push_back(
+                       getInt32(M, DL.getPrefTypeAlignment(ParamType)));
+
+                   Op Opcode = OCLSPIRVBuiltinMap::map(DemangledName);
+                   // Adding "__" postfix, so in case we have multiple such
+                   // functions and their names will have numerical postfix,
+                   // then the numerical postfix will be droped and we will get
+                   // correct function name.
+                   return getSPIRVFuncName(Opcode, kSPIRVName::Postfix);
+                 },
+                 /*BuiltinFuncMangleInfo*/ nullptr, &Attrs);
 }
 
 // The intel_sub_group_block_read built-ins are overloaded to support both

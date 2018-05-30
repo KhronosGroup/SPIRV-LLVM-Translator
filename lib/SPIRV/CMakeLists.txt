@@ -27,6 +27,7 @@ add_llvm_library(LLVMSPIRVLib
   SPIRVLowerConstExpr.cpp
   SPIRVLowerSPIRBlocks.cpp
   SPIRVLowerMemmove.cpp
+  SPIRVLowerOCLBlocks.cpp
   SPIRVReader.cpp
   SPIRVRegularizeLLVM.cpp
   SPIRVToOCL20.cpp
