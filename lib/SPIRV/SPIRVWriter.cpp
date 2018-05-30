@@ -695,7 +695,8 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
   if (auto CAZero = dyn_cast<ConstantAggregateZero>(V)) {
     Type *AggType = CAZero->getType();
     if (const StructType *ST = dyn_cast<StructType>(AggType))
-      if (ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
+      if (ST->hasName() &&
+          ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
         return BM->addSamplerConstant(transType(AggType), 0, 0, 0);
 
     return BM->addNullConstant(transType(AggType));
@@ -738,9 +739,11 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
     return BM->addCompositeConstant(transType(V->getType()), BV);
   }
 
-  if (auto ConstV = dyn_cast<ConstantStruct>(V)) {
-    if (ConstV->getType()->getName() ==
-        getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
+  if (const auto *ConstV = dyn_cast<ConstantStruct>(V)) {
+    StringRef StructName;
+    if (ConstV->getType()->hasName())
+      StructName = ConstV->getType()->getName();
+    if (StructName == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
       assert(ConstV->getNumOperands() == 3);
       SPIRVWord AddrMode =
                     ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
@@ -755,8 +758,7 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
       return BM->addSamplerConstant(SamplerTy, AddrMode, Normalized,
                                     FilterMode);
     }
-    if (ConstV->getType()->getName() ==
-        getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage)) {
+    if (StructName == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage)) {
       assert(ConstV->getNumOperands() == 3);
       SPIRVWord PacketSize =
                     ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
@@ -1802,6 +1804,7 @@ void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerSPIRBlocks());
   PassMgr.add(createOCLTypeToSPIRV());
+  PassMgr.add(createSPIRVLowerOCLBlocks());
   PassMgr.add(createOCL20ToSPIRV());
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
