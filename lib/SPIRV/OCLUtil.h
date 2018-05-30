@@ -365,6 +365,9 @@ bool isPipeStorageInitializer(Instruction *Inst);
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
 bool isSpecialTypeInitializer(Instruction *Inst);
 
+bool isEnqueueKernelBI(const StringRef MangledName);
+bool isKernelQueryBI(const StringRef MangledName);
+
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -542,11 +545,12 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   // CL 2.0 kernel enqueue builtins
   _SPIRV_OP(enqueue_marker, EnqueueMarker)
   _SPIRV_OP(enqueue_kernel, EnqueueKernel)
-  _SPIRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
-  _SPIRV_OP(get_kernel_ndrange_max_subgroup_count,
+  _SPIRV_OP(get_kernel_sub_group_count_for_ndrange_impl,
+            GetKernelNDrangeSubGroupCount)
+  _SPIRV_OP(get_kernel_max_sub_group_size_for_ndrange_impl,
             GetKernelNDrangeMaxSubGroupSize)
-  _SPIRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
-  _SPIRV_OP(get_kernel_preferred_work_group_size_multiple,
+  _SPIRV_OP(get_kernel_work_group_size_impl, GetKernelWorkGroupSize)
+  _SPIRV_OP(get_kernel_preferred_work_group_size_multiple_impl,
             GetKernelPreferredWorkGroupSizeMultiple)
   _SPIRV_OP(retain_event, RetainEvent)
   _SPIRV_OP(release_event, ReleaseEvent)
