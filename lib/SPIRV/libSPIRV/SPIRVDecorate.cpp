@@ -134,11 +134,11 @@ void SPIRVDecorationGroup::encodeAll(spv_ostream &O) const {
   SPIRVEntry::encodeAll(O);
 }
 
-void SPIRVGroupDecorateGeneric::encode(spv_ostream &O) const {
+void SPIRVGroupDecorate::encode(spv_ostream &O) const {
   getEncoder(O) << DecorationGroup << Targets;
 }
 
-void SPIRVGroupDecorateGeneric::decode(std::istream &I) {
+void SPIRVGroupDecorate::decode(std::istream &I) {
   getDecoder(I) >> DecorationGroup >> Targets;
   Module->addGroupDecorateGeneric(this);
 }
@@ -148,17 +148,46 @@ void SPIRVGroupDecorate::decorateTargets() {
     auto Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isDecorate());
-      Target->addDecorate(static_cast<SPIRVDecorate *const>(Dec));
+      Target->addDecorate(static_cast<const SPIRVDecorate *const>(Dec));
     }
   }
 }
 
+void SPIRVGroupMemberDecorate::encode(spv_ostream &O) const {
+  std::vector<SPIRVWord> Pairs;
+  assert(Targets.size() == MemberNumbers.size());
+  for (uint32_t J = 0, E = Targets.size(); J < E; ++J) {
+    Pairs.push_back(Targets[J]);
+    Pairs.push_back(MemberNumbers[J]);
+  }
+  getEncoder(O) << DecorationGroup << Pairs;
+}
+
+void SPIRVGroupMemberDecorate::decode(std::istream &I) {
+  std::vector<SPIRVWord> Pairs(WordCount - FixedWC);
+  getDecoder(I) >> DecorationGroup >> Pairs;
+  assert(Pairs.size() % 2 == 0);
+  for (uint32_t J = 0, E = Pairs.size(); J < E; J += 2) {
+    Targets.push_back(Pairs[J]);
+    MemberNumbers.push_back(Pairs[J + 1]);
+  }
+  Module->addGroupDecorateGeneric(this);
+}
+
 void SPIRVGroupMemberDecorate::decorateTargets() {
-  for (auto &I : Targets) {
-    auto Target = getOrCreate(I);
-    for (auto &Dec : DecorationGroup->getDecorations()) {
-      assert(Dec->isMemberDecorate());
-      Target->addMemberDecorate(static_cast<SPIRVMemberDecorate *>(Dec));
+  assert(Targets.size() == MemberNumbers.size());
+  for (uint32_t I = 0, E = Targets.size(); I < E; ++I) {
+    auto Target = getOrCreate(Targets[I]);
+    for (auto &Dec:DecorationGroup->getDecorations()) {
+      assert(Dec->isDecorate());
+      auto TheDec = static_cast<const SPIRVDecorate*>(Dec);
+      if (TheDec->getLiteralCount() == 0)
+        Target->addMemberDecorate(MemberNumbers[I], TheDec->getDecorateKind());
+      else {
+        assert(TheDec->getLiteralCount() == 1);
+        Target->addMemberDecorate(MemberNumbers[I], TheDec->getDecorateKind(),
+          TheDec->getLiteral(0));
+      }
     }
   }
 }
