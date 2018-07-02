@@ -291,6 +291,8 @@ public:
   const std::string &getName() const { return Name; }
   bool hasDecorate(Decoration Kind, size_t Index = 0,
                    SPIRVWord *Result = 0) const;
+  bool hasMemberDecorate(SPIRVWord MemberIndex, Decoration Kind,
+                         size_t Index = 0, SPIRVWord *Result = 0) const;
   std::set<SPIRVWord> getDecorate(Decoration Kind, size_t Index = 0) const;
   bool hasId() const { return !(Attrib & SPIRVEA_NOID); }
   bool hasLine() const { return Line != nullptr; }
@@ -313,11 +315,11 @@ public:
     return false;
   }
 
-  void addDecorate(SPIRVDecorate *);
+  void addDecorate(const SPIRVDecorate *);
   void addDecorate(Decoration Kind);
   void addDecorate(Decoration Kind, SPIRVWord Literal);
   void eraseDecorate(Decoration);
-  void addMemberDecorate(SPIRVMemberDecorate *);
+  void addMemberDecorate(const SPIRVMemberDecorate *);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind,
                          SPIRVWord Literal);
