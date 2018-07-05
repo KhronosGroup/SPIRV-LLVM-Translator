@@ -22,7 +22,7 @@ target triple = "spir-unknown-unknown"
 ; CHECK-NEXT:    entry:
 ; CHECK:         [[PTR_WEAK:%expected[0-9]*]] = alloca i32, align 4
 ; CHECK:         store i32 {{.*}}, i32* [[PTR_WEAK]]
-; CHECK:         call spir_func i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPii12memory_orderS3_12memory_scope{{.*}}(i32 {{.*}}* %object, i32* [[PTR_WEAK]], i32 %desired, i32 4, i32 4, i32 2)
+; CHECK:         call spir_func i1 @_Z37atomic_compare_exchange_weak_explicitPU3AS4VU7_AtomiciPii12memory_orderS4_12memory_scope{{.*}}(i32 {{.*}}* %object, i32* [[PTR_WEAK]], i32 %desired, i32 4, i32 4, i32 2)
 ; CHECK:         load i32, i32* [[PTR_WEAK]]
 
 ; Check that alloca for atomic_compare_exchange is being created in the entry block.
