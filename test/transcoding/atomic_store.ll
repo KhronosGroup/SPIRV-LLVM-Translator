@@ -15,7 +15,7 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-LLVM:         define spir_func void @test
 ; CHECK-LLVM-LABEL:   entry
-; CHECK-LLVM:         call spir_func void @_Z21atomic_store_explicitPVU3AS4U7_Atomicii12memory_order12memory_scope(i32 addrspace(4)* %object, i32 %desired, i32 4, i32 2)
+; CHECK-LLVM:         call spir_func void @_Z21atomic_store_explicitPU3AS4VU7_Atomicii12memory_order12memory_scope(i32 addrspace(4)* %object, i32 %desired, i32 4, i32 2)
 
 ; CHECK-SPIRV-LABEL:  5 Function
 ; CHECK-SPIRV-NEXT:   FunctionParameter {{[0-9]+}} [[object:[0-9]+]]

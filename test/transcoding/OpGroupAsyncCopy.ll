@@ -5,7 +5,7 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-LLVM: call spir_func %opencl.event_t{{.*}}* @_Z29async_work_group_strided_copyPU3AS1Dv2_hPKU3AS3S_jj9ocl_event(
+; CHECK-LLVM: call spir_func %opencl.event_t{{.*}}* @_Z29async_work_group_strided_copyPU3AS1Dv2_hPU3AS3KS_jj9ocl_event(
 
 ; CHECK-SPIRV-DAG: GroupAsyncCopy {{[0-9]+}} {{[0-9]+}} [[Scope:[0-9]+]]
 ; CHECK-SPIRV-DAG: Constant {{[0-9]+}} [[Scope]]

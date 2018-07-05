@@ -9,7 +9,7 @@
 ; CHECK-SPIRV-NEXT: 5 ShiftRightLogical {{[0-9]+}} {{[0-9]+}} [[ResID]] {{[0-9]+}}
 
 ; Note that round-trip conversion replaces 'get_fence (gentype *ptr)' built-in function with 'get_fence (const gentype *ptr)'.
-; CHECK-LLVM: call spir_func i32 @_Z9get_fencePKU3AS4v(i8
+; CHECK-LLVM: call spir_func i32 @_Z9get_fencePU3AS4Kv(i8
 ; CHECK-LLVM-NEXT: shl
 ; CHECK-LLVM-NEXT: lshr
 
