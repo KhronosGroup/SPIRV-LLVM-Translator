@@ -96,7 +96,7 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LLVM-SAME:     !kernel_arg_access_qual [[AQ:![0-9]+]]
 ; CHECK-LLVM-SAME:     !kernel_arg_type [[TYPE:![0-9]+]]
 ; CHECK-LLVM-SAME:     !kernel_arg_type_qual [[TQ:![0-9]+]]
-; CHECK-LLVM-SAME:     !kernel_arg_base_type [[BT:![0-9]+]]
+; CHECK-LLVM-SAME:     !kernel_arg_base_type [[TYPE]]
 
 ; Function Attrs: nounwind readnone
 define spir_kernel void @foo(
@@ -169,7 +169,6 @@ attributes #0 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-point
 ; CHECK-LLVM-DAG: [[AS]] = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
 ; CHECK-LLVM-DAG: [[AQ]] = !{!"read_only", !"write_only", !"read_only", !"read_only", !"read_only", !"read_only", !"read_only", !"write_only", !"read_write"}
 ; CHECK-LLVM-DAG: [[TYPE]] = !{!"pipe", !"pipe", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
-; CHECK-LLVM-DAG: [[BT]] = !{!"pipe", !"pipe", !"image1d_t", !"image2d_t", !"image3d_t", !"image2d_array_t", !"image1d_buffer_t", !"image1d_t", !"image2d_t"}
 ; CHECK-LLVM-DAG: [[TQ]] = !{!"pipe", !"pipe", !"", !"", !"", !"", !"", !"", !""}
 
 !0 = !{void (%spirv.Pipe._0 addrspace(1)*, %spirv.Pipe._1 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._int_1_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._uint_2_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._half_1_0_1_0_0_0_0 addrspace(1)*, %spirv.Image._float_5_0_0_0_0_0_0 addrspace(1)*, %spirv.Image._void_0_0_0_0_0_0_1 addrspace(1)*, %spirv.Image._void_1_0_0_0_0_0_2 addrspace(1)*)* @foo, !1, !2, !3, !4, !5}
