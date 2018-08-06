@@ -14,6 +14,8 @@ add_llvm_tool(llvm-spirv
   NO_INSTALL_RPATH
 )
 
+target_link_libraries(llvm-spirv PRIVATE LLVMSPIRVLib)
+
 target_include_directories(llvm-spirv
   PRIVATE
     ${LLVM_INCLUDE_DIR}
