@@ -598,7 +598,7 @@ bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   std::vector<Instruction *> Uses;
   for (auto UI = GV->user_begin(), UE = GV->user_end(); UI != UE; ++UI) {
     assert(isa<LoadInst>(*UI) && "Unsupported use");
-    auto LD = dyn_cast<LoadInst>(*UI);
+    auto LD = cast<LoadInst>(*UI);
     if (!IsVec) {
       Uses.push_back(LD);
       Deletes.push_back(LD);
@@ -1114,6 +1114,7 @@ bool SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(
 Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
                                                   CallInst *CI,
                                                   const std::string &FuncName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   StringRef ImageTypeName;
   bool IsDepthImage = false;
@@ -1166,6 +1167,7 @@ Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
 CallInst *
 SPIRVToLLVM::postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
                                       const std::string &DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   return mutateCallInstOCL(
       M, CI,
@@ -1205,6 +1207,7 @@ CallInst *SPIRVToLLVM::postProcessOCLBuildNDRange(SPIRVInstruction *BI,
 Instruction *
 SPIRVToLLVM::postProcessGroupAllAny(CallInst *CI,
                                     const std::string &DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   return mutateCallInstSPIRV(
       M, CI,
@@ -1225,6 +1228,7 @@ SPIRVToLLVM::postProcessGroupAllAny(CallInst *CI,
 CallInst *
 SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst *CI,
                                            const std::string &FuncName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   if (!CI->getOperand(0)->getType()->isVectorTy() &&
       CI->getOperand(1)->getType()->isVectorTy()) {
@@ -1664,9 +1668,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
           if (Literals.size() == 2) {
             Literal += uint64_t(Literals.at(1)) << 32;
           }
-          LS->addCase(ConstantInt::get(dyn_cast<IntegerType>(Select->getType()),
-                                       Literal),
-                      dyn_cast<BasicBlock>(transValue(Label, F, BB)));
+          LS->addCase(
+              ConstantInt::get(cast<IntegerType>(Select->getType()), Literal),
+              cast<BasicBlock>(transValue(Label, F, BB)));
         });
     return mapValue(BV, LS);
   }
@@ -1943,9 +1947,8 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   auto IsKernel = BM->isEntryPoint(ExecutionModelKernel, BF->getId());
   auto Linkage = IsKernel ? GlobalValue::ExternalLinkage : transLinkageType(BF);
   FunctionType *FT = dyn_cast<FunctionType>(transType(BF->getFunctionType()));
-  Function *F = dyn_cast<Function>(
+  Function *F = cast<Function>(
       mapValue(BF, Function::Create(FT, Linkage, BF->getName(), M)));
-  assert(F);
   mapFunction(BF, F);
   if (!F->isIntrinsic()) {
     F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL
@@ -2884,6 +2887,7 @@ Instruction *SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB,
     Call = transOCLBarrier(BB, ExecScope, MemSema, MemScope);
   } else {
     llvm_unreachable("Invalid instruction");
+    return nullptr;
   }
 
   setName(Call, MB);
@@ -3005,6 +3009,7 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
 
 Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
   CallInst *CI = cast<CallInst>(transSPIRVBuiltinFromInst(I, BB));
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   return cast<Instruction>(mapValue(
       I, mutateCallInstOCL(
@@ -3030,6 +3035,7 @@ Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
 Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
                                              BasicBlock *BB) {
   CallInst *CI = cast<CallInst>(transSPIRVBuiltinFromInst(I, BB));
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   return cast<Instruction>(mapValue(
       I, mutateCallInstOCL(
