@@ -3065,7 +3065,7 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
 } // namespace SPIRV
 
 bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
-                     std::string &ErrMsg) {
+                     std::string &ErrMsg, spv::ExecutionModel ExecModel, std::string &EntryPoint) {
   M = new Module("", C);
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 

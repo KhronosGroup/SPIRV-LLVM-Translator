@@ -44,6 +44,8 @@
 #include <iostream>
 #include <string>
 
+#include "../lib/SPIRV/libSPIRV/spirv.hpp"
+
 namespace llvm {
 // Pass initialization functions need to be declared before inclusion of
 // PassSupport.h.
@@ -99,7 +101,7 @@ bool writeSpirv(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
 /// \brief Load SPIRV from istream and translate to LLVM module.
 /// \returns true if succeeds.
 bool readSpirv(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
-               std::string &ErrMsg);
+               std::string &ErrMsg, spv::ExecutionModel ExecModel, std::string &EntryPoint);
 
 /// \brief Regularize LLVM module by removing entities not representable by
 /// SPIRV.

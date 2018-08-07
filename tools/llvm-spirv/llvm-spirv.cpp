@@ -60,6 +60,8 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "../../lib/SPIRV/libSPIRV/spirv.hpp"
+
 #ifndef _SPIRV_SUPPORT_TEXT_FMT
 #define _SPIRV_SUPPORT_TEXT_FMT
 #endif
@@ -74,9 +76,27 @@
 
 namespace kExt {
 const char SpirvBinary[] = ".spv";
-const char SpirvText[] = ".spt";
-const char LLVMBinary[] = ".bc";
+const char SpirvText[]   = ".spt";
+const char LLVMBinary[]  = ".bc";
+const char GlslVert[]    = ".vert";
+const char GlslTesc[]    = ".tesc";
+const char GlslTese[]    = ".tese";
+const char GlslGeom[]    = ".geom";
+const char GlslFrag[]    = ".frag";
+const char GlslComp[]    = ".comp";
+const char OCLKern[]     = ".kern";
 } // namespace kExt
+
+std::map<std::string, spv::ExecutionModel> inputModelMap =
+{
+    { kExt::GlslVert, spv::ExecutionModelVertex },
+    { kExt::GlslTesc, spv::ExecutionModelTessellationControl },
+    { kExt::GlslTese, spv::ExecutionModelTessellationEvaluation },
+    { kExt::GlslGeom, spv::ExecutionModelGeometry },
+    { kExt::GlslFrag, spv::ExecutionModelFragment },
+    { kExt::GlslComp, spv::ExecutionModelGLCompute },
+    { kExt::OCLKern,  spv::ExecutionModelKernel }, // Default
+};
 
 using namespace llvm;
 
@@ -148,18 +168,58 @@ static int convertLLVMToSPIRV() {
   return 0;
 }
 
+spv::ExecutionModel getExecModelFilename( const std::string& InputFile )
+{
+    size_t extPos = InputFile.find_last_of(".");
+    if( extPos == std::string::npos )
+    {
+        return spv::ExecutionModelKernel;
+    }
+
+    size_t modelPos = InputFile.substr(0, extPos).find_last_of(".");
+
+    if( modelPos == std::string::npos )
+    {
+        return spv::ExecutionModelKernel;
+    }
+
+    std::string modelExt = InputFile.substr( modelPos, InputFile.size() - extPos + 1 );
+
+    if( modelExt.empty() )
+    {
+        return spv::ExecutionModelKernel;
+    }
+
+    auto modelType = inputModelMap.find( modelExt );
+
+    if( modelType == inputModelMap.end() )
+    {
+        return spv::ExecutionModelKernel;
+    }
+
+    return modelType->second;
+}
+
 static int convertSPIRVToLLVM() {
   LLVMContext Context;
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
   std::string Err;
 
-  if (!readSpirv(Context, IFS, M, Err)) {
+  // TODO: Multiple input files?
+{
+  spv::ExecutionModel execModel = getExecModelFilename(InputFile);
+
+  // TODO: Entry point name as argument
+  std::string entryPoint = "main";
+
+  if (!readSpirv(Context, IFS, M, Err, execModel, entryPoint)) {
     errs() << "Fails to load SPIRV as LLVM Module: " << Err << '\n';
     return -1;
   }
 
   LLVM_DEBUG(dbgs() << "Converted LLVM module:\n" << *M);
+}
 
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
