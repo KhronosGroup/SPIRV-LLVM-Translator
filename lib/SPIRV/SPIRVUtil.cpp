@@ -1210,6 +1210,7 @@ std::string getSPIRVImageSampledTypeName(SPIRVType *Ty) {
     break;
   }
   llvm_unreachable("Invalid sampled type for image");
+  return std::string();
 }
 
 // ToDo: Find a way to represent uint sampled type in LLVM, maybe an
@@ -1226,6 +1227,7 @@ Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
       Postfix == kSPIRVImageSampledTypeName::UInt)
     return Type::getInt32Ty(Ctx);
   llvm_unreachable("Invalid sampled type postfix");
+  return nullptr;
 }
 
 std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {

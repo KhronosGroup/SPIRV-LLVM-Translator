@@ -1191,6 +1191,7 @@ bool LLVMToSPIRV::transBuiltinSet() {
 ///   arg = load from sampler -> look through load
 SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
                                                  SPIRVBasicBlock *BB) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   llvm::Function *F = CI->getCalledFunction();
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();

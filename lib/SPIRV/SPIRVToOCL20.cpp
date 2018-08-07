@@ -333,6 +333,7 @@ void SPIRVToOCL20::visitCallSPRIVImageQuerySize(CallInst *CI) {
 }
 
 void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Instruction *PInsertBefore = CI;
 
@@ -435,6 +436,7 @@ void SPIRVToOCL20::visitCallSPIRVGroupBuiltin(CallInst *CI, Op OC) {
     DemangledName = Prefix + kSPIRVName::GroupPrefix +
                     SPIRSPIRVGroupOperationMap::rmap(GO) + '_' + Op.str();
   }
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI,
                     [=](CallInst *, std::vector<Value *> &Args) {
@@ -453,6 +455,7 @@ void SPIRVToOCL20::visitCallSPIRVPipeBuiltin(CallInst *CI, Op OC) {
   if (HasScope)
     DemangledName = getGroupBuiltinPrefix(CI) + DemangledName;
 
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(
       M, CI,

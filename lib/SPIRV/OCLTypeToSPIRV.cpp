@@ -115,6 +115,7 @@ static unsigned getArgIndex(CallInst *CI, Value *V) {
       return AI;
   }
   llvm_unreachable("Not argument of function call");
+  return ~0U;
 }
 
 /// Find index of \param V as argument of function call \param CI.
@@ -125,6 +126,7 @@ static unsigned getArgIndex(Function *F, Value *V) {
       return I;
   }
   llvm_unreachable("Not argument of function");
+  return ~0U;
 }
 
 /// Get i-th argument of a function.

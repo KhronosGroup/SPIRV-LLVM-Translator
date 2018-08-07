@@ -120,6 +120,7 @@ void OCL20To12::visitCallAtomicWorkItemFence(CallInst *CI) {
     report_fatal_error("OCL 2.0 builtin atomic_work_item_fence used in 1.2",
                        false);
 
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI,
                     [=](CallInst *, std::vector<Value *> &Args) {
