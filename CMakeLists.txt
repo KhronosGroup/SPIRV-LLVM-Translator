@@ -58,7 +58,6 @@ install(
     ${CMAKE_INSTALL_PREFIX}/include/LLVMSPIRVLib
 )
 
-get_target_property(LLVMSPIRVlib_LIBDIR LLVMSPIRVLib BINARY_DIR)
 configure_file(LLVMSPIRVLib.pc.in ${CMAKE_BINARY_DIR}/LLVMSPIRVLib.pc @ONLY)
 install(
   FILES
