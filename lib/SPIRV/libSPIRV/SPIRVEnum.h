@@ -71,6 +71,18 @@ enum SPIRVGeneratorKind {
   SPIRVGEN_KhronosSPIRVAssembler = 7,
 };
 
+#ifndef SPIRVGEN_ID
+#define SPIRVGEN_ID SPIRVGEN_KhronosLLVMSPIRVTranslator
+#endif
+
+/// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
+/// generator's magic number in the generated SPIR-V module.
+/// This number should be bumped up whenever format of the generated SPIR-V
+/// is changing (significantly).
+#ifndef SPIRVGEN_VER
+#define SPIRVGEN_VER 14
+#endif
+
 enum SPIRVInstructionSchemaKind {
   SPIRVISCH_Default,
 };

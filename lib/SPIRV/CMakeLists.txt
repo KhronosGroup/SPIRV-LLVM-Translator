@@ -3,6 +3,14 @@ if(SPIRV_USE_LLVM_API)
   add_definitions(-D_SPIRV_LLVM_API)
 endif(SPIRV_USE_LLVM_API)
 
+if (SPIRVGEN_ID)
+  add_definitions(-DSPIRVGEN_ID=${SPIRVGEN_ID})
+endif(SPIRVGEN_ID)
+
+if (SPIRVGEN_VER)
+  add_definitions(-DSPIRVGEN_VER=${SPIRVGEN_VER})
+endif(SPIRVGEN_VER)
+
 add_llvm_library(LLVMSPIRVLib
   libSPIRV/SPIRVBasicBlock.cpp
   libSPIRV/SPIRVDebug.cpp

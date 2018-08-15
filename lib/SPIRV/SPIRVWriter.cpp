@@ -1455,8 +1455,6 @@ void LLVMToSPIRV::transFunction(Function *I) {
 }
 
 bool LLVMToSPIRV::translate() {
-  BM->setGeneratorVer(KTranslatorVer);
-
   if (!transSourceLanguage())
     return false;
   if (!transExtension())

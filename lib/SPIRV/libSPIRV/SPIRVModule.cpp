@@ -62,7 +62,7 @@ class SPIRVModuleImpl : public SPIRVModule {
 public:
   SPIRVModuleImpl()
       : SPIRVModule(), NextId(1), BoolType(NULL), SPIRVVersion(SPIRV_1_0),
-        GeneratorId(SPIRVGEN_KhronosLLVMSPIRVTranslator), GeneratorVer(0),
+        GeneratorId(SPIRVGEN_ID), GeneratorVer(SPIRVGEN_VER),
         InstSchema(SPIRVISCH_Default), SrcLang(SourceLanguageOpenCL_C),
         SrcLangVer(102000) {
     AddrModel = sizeof(size_t) == 32 ? AddressingModelPhysical32
