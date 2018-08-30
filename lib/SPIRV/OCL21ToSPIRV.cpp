@@ -174,6 +174,7 @@ void OCL21ToSPIRV::visitCallInst(CallInst &CI) {
 
 void OCL21ToSPIRV::visitCallConvert(CallInst *CI, StringRef MangledName,
                                     Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,
@@ -192,6 +193,7 @@ void OCL21ToSPIRV::visitCallConvert(CallInst *CI, StringRef MangledName,
 
 void OCL21ToSPIRV::visitCallDecorate(CallInst *CI, StringRef MangledName) {
   auto Target = cast<CallInst>(CI->getArgOperand(0));
+  assert(Target->getCalledFunction() && "Unexpected indirect call");
   auto F = Target->getCalledFunction();
   auto Name = F->getName().str();
   std::string DemangledName;
@@ -223,6 +225,7 @@ void OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
 }
 
 void OCL21ToSPIRV::transBuiltin(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   assert(OC != OpExtInst && "not supported");
   mutateCallInstSPIRV(M, CI,

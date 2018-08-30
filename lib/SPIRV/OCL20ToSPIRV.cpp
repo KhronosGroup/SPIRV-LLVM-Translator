@@ -590,6 +590,7 @@ void OCL20ToSPIRV::visitCallNDRange(CallInst *CI,
 
 void OCL20ToSPIRV::visitCallAsyncWorkGroupCopy(
     CallInst *CI, const std::string &DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
@@ -640,6 +641,7 @@ void OCL20ToSPIRV::visitCallAtomicInit(CallInst *CI) {
 }
 
 void OCL20ToSPIRV::visitCallAllAny(spv::Op OC, CallInst *CI) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
 
   auto Args = getArguments(CI);
@@ -686,6 +688,7 @@ void OCL20ToSPIRV::visitCallMemFence(CallInst *CI) {
 
 void OCL20ToSPIRV::transMemoryBarrier(CallInst *CI,
                                       AtomicWorkItemFenceLiterals Lit) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
@@ -889,6 +892,7 @@ void OCL20ToSPIRV::visitCallConvert(CallInst *CI, StringRef MangledName,
   if (Loc != std::string::npos && !(isa<IntegerType>(SrcTy) && IsTargetInt)) {
     Rounding = DemangledName.substr(Loc, 4);
   }
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
@@ -1044,6 +1048,7 @@ void OCL20ToSPIRV::visitCallReadImageMSAA(CallInst *CI, StringRef MangledName,
 void OCL20ToSPIRV::visitCallReadImageWithSampler(
     CallInst *CI, StringRef MangledName, const std::string &DemangledName) {
   assert(MangledName.find(kMangledName::Sampler) != StringRef::npos);
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   bool IsRetScalar = !CI->getType()->isVectorTy();
   mutateCallInstSPIRV(
@@ -1282,6 +1287,7 @@ void OCL20ToSPIRV::visitCallToAddr(CallInst *CI, StringRef MangledName,
 
 void OCL20ToSPIRV::visitCallRelational(CallInst *CI,
                                        const std::string &DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
   OCLSPIRVBuiltinMap::find(DemangledName, &OC);
@@ -1452,6 +1458,7 @@ void OCL20ToSPIRV::visitCallScalToVec(CallInst *CI, StringRef MangledName,
 void OCL20ToSPIRV::visitCallGetImageChannel(CallInst *CI, StringRef MangledName,
                                             const std::string &DemangledName,
                                             unsigned int Offset) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
   OCLSPIRVBuiltinMap::find(DemangledName, &OC);
@@ -1601,6 +1608,7 @@ void OCL20ToSPIRV::visitSubgroupBlockReadINTEL(
     Info.Postfix += "_us";
   else
     Info.Postfix += "_ui";
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
@@ -1638,6 +1646,7 @@ void OCL20ToSPIRV::visitSubgroupBlockWriteINTEL(
       break;
     }
   }
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
@@ -1646,7 +1655,6 @@ void OCL20ToSPIRV::visitSubgroupBlockWriteINTEL(
                       },
                       &Attrs);
 }
-
 } // namespace SPIRV
 
 INITIALIZE_PASS_BEGIN(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
