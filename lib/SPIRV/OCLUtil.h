@@ -70,12 +70,17 @@ enum OCLScopeKind {
   OCLMS_sub_group,
 };
 
+// The enum below declares constants corresponding to memory synchronization
+// operations constants defined in
+// https://www.khronos.org/registry/OpenCL/sdk/2.1/docs/man/xhtml/memory_order.html
+// To avoid any inconsistence here, constants are explicitly initialized with
+// the corresponding constants from 'std::memory_order' enum.
 enum OCLMemOrderKind {
-  OCLMO_relaxed,
-  OCLMO_acquire,
-  OCLMO_release,
-  OCLMO_acq_rel,
-  OCLMO_seq_cst
+  OCLMO_relaxed = std::memory_order::memory_order_relaxed,
+  OCLMO_acquire = std::memory_order::memory_order_acquire,
+  OCLMO_release = std::memory_order::memory_order_release,
+  OCLMO_acq_rel = std::memory_order::memory_order_acq_rel,
+  OCLMO_seq_cst = std::memory_order::memory_order_seq_cst
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -365,6 +370,10 @@ bool isPipeStorageInitializer(Instruction *Inst);
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
 bool isSpecialTypeInitializer(Instruction *Inst);
 
+bool isPipeBI(const StringRef MangledName);
+bool isEnqueueKernelBI(const StringRef MangledName);
+bool isKernelQueryBI(const StringRef MangledName);
+
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -542,11 +551,12 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   // CL 2.0 kernel enqueue builtins
   _SPIRV_OP(enqueue_marker, EnqueueMarker)
   _SPIRV_OP(enqueue_kernel, EnqueueKernel)
-  _SPIRV_OP(get_kernel_ndrange_subgroup_count, GetKernelNDrangeSubGroupCount)
-  _SPIRV_OP(get_kernel_ndrange_max_subgroup_count,
+  _SPIRV_OP(get_kernel_sub_group_count_for_ndrange_impl,
+            GetKernelNDrangeSubGroupCount)
+  _SPIRV_OP(get_kernel_max_sub_group_size_for_ndrange_impl,
             GetKernelNDrangeMaxSubGroupSize)
-  _SPIRV_OP(get_kernel_work_group_size, GetKernelWorkGroupSize)
-  _SPIRV_OP(get_kernel_preferred_work_group_size_multiple,
+  _SPIRV_OP(get_kernel_work_group_size_impl, GetKernelWorkGroupSize)
+  _SPIRV_OP(get_kernel_preferred_work_group_size_multiple_impl,
             GetKernelPreferredWorkGroupSizeMultiple)
   _SPIRV_OP(retain_event, RetainEvent)
   _SPIRV_OP(release_event, ReleaseEvent)
@@ -564,10 +574,10 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(to_private, GenericCastToPtrExplicit)
   _SPIRV_OP(work_group_barrier, ControlBarrier)
   // CL 2.0 pipe builtins
-  _SPIRV_OP(read_pipe, ReadPipe)
-  _SPIRV_OP(write_pipe, WritePipe)
-  _SPIRV_OP(reserved_read_pipe, ReservedReadPipe)
-  _SPIRV_OP(reserved_write_pipe, ReservedWritePipe)
+  _SPIRV_OP(read_pipe_2, ReadPipe)
+  _SPIRV_OP(write_pipe_2, WritePipe)
+  _SPIRV_OP(read_pipe_4, ReservedReadPipe)
+  _SPIRV_OP(write_pipe_4, ReservedWritePipe)
   _SPIRV_OP(reserve_read_pipe, ReserveReadPipePackets)
   _SPIRV_OP(reserve_write_pipe, ReserveWritePipePackets)
   _SPIRV_OP(commit_read_pipe, CommitReadPipe)
@@ -577,8 +587,10 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(group_reserve_write_pipe, GroupReserveWritePipePackets)
   _SPIRV_OP(group_commit_read_pipe, GroupCommitReadPipe)
   _SPIRV_OP(group_commit_write_pipe, GroupCommitWritePipe)
-  _SPIRV_OP(get_pipe_num_packets, GetNumPipePackets)
-  _SPIRV_OP(get_pipe_max_packets, GetMaxPipePackets)
+  _SPIRV_OP(get_pipe_num_packets_ro, GetNumPipePackets)
+  _SPIRV_OP(get_pipe_num_packets_wo, GetNumPipePackets)
+  _SPIRV_OP(get_pipe_max_packets_ro, GetMaxPipePackets)
+  _SPIRV_OP(get_pipe_max_packets_wo, GetMaxPipePackets)
   // CL 2.0 workgroup builtins
   _SPIRV_OP(group_all, GroupAll)
   _SPIRV_OP(group_any, GroupAny)

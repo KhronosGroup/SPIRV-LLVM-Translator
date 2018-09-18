@@ -5,20 +5,20 @@
 ;;{
 ;;  // Values of memory order and memory scope arguments correspond to SPIR-2.0 spec.
 ;;  atomic_compare_exchange_strong_explicit(object, expected, desired,
-;;                                          memory_order_release, // 2
+;;                                          memory_order_release, // 3
 ;;                                          memory_order_relaxed  // 0
 ;;                                         ); // by default, assume device scope = 2
 ;;  atomic_compare_exchange_strong_explicit(object, expected, desired,
-;;                                          memory_order_acq_rel,   // 3
+;;                                          memory_order_acq_rel,   // 4
 ;;                                          memory_order_relaxed,   // 0
 ;;                                          memory_scope_work_group // 1
 ;;                                         );
 ;;  atomic_compare_exchange_weak_explicit(object, expected, desired,
-;;                                        memory_order_release, // 2
+;;                                        memory_order_release, // 3
 ;;                                        memory_order_relaxed  // 0
 ;;                                         ); // by default, assume device scope = 2
 ;;  atomic_compare_exchange_weak_explicit(object, expected, desired,
-;;                                        memory_order_acq_rel,   // 3
+;;                                        memory_order_acq_rel,   // 4
 ;;                                        memory_order_relaxed,   // 0
 ;;                                        memory_scope_work_group // 1
 ;;                                       );
@@ -57,10 +57,10 @@ define spir_kernel void @testAtomicCompareExchangeExplicit_cl20(i32 addrspace(1)
 entry:
   %0 = addrspacecast i32 addrspace(1)* %object to i32 addrspace(4)*
   %1 = addrspacecast i32 addrspace(1)* %expected to i32 addrspace(4)*
-  %call = tail call spir_func zeroext i1 @_Z39atomic_compare_exchange_strong_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 2, i32 0) #2
-  %call1 = tail call spir_func zeroext i1 @_Z39atomic_compare_exchange_strong_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 3, i32 0, i32 1) #2
-  %call2 = tail call spir_func zeroext i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 2, i32 0) #2
-  %call3 = tail call spir_func zeroext i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 3, i32 0, i32 1) #2
+  %call = tail call spir_func zeroext i1 @_Z39atomic_compare_exchange_strong_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 3, i32 0) #2
+  %call1 = tail call spir_func zeroext i1 @_Z39atomic_compare_exchange_strong_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 4, i32 0, i32 1) #2
+  %call2 = tail call spir_func zeroext i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 3, i32 0) #2
+  %call3 = tail call spir_func zeroext i1 @_Z37atomic_compare_exchange_weak_explicitPVU3AS4U7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope(i32 addrspace(4)* %0, i32 addrspace(4)* %1, i32 %desired, i32 4, i32 0, i32 1) #2
   ret void
 }
 

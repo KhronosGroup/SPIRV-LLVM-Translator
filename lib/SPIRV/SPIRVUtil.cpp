@@ -461,11 +461,25 @@ bool getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   return getByName(R.str(), B);
 }
 
+// Enqueue kernel, kernel query and pipe built-ins are not mangled
+bool isNonMangledOCLBuiltin(const StringRef &Name) {
+  if (!Name.startswith("__"))
+    return false;
+
+  return isEnqueueKernelBI(Name) || isKernelQueryBI(Name) ||
+         isPipeBI(Name.drop_front(2));
+}
+
 bool oclIsBuiltin(const StringRef &Name, std::string *DemangledName,
                   bool IsCpp) {
   if (Name == "printf") {
     if (DemangledName)
       *DemangledName = Name;
+    return true;
+  }
+  if (isNonMangledOCLBuiltin(Name)) {
+    if (DemangledName)
+      *DemangledName = Name.drop_front(2);
     return true;
   }
   if (!Name.startswith("_Z"))
@@ -903,7 +917,8 @@ SPIR::TypePrimitiveEnum getOCLTypePrimitiveEnum(StringRef TyName) {
       .Case("opencl.image2d_array_depth_t",
             SPIR::PRIMITIVE_IMAGE_2D_ARRAY_DEPTH_T)
       .Case("opencl.event_t", SPIR::PRIMITIVE_EVENT_T)
-      .Case("opencl.pipe_t", SPIR::PRIMITIVE_PIPE_T)
+      .Case("opencl.pipe_ro_t", SPIR::PRIMITIVE_PIPE_RO_T)
+      .Case("opencl.pipe_wo_t", SPIR::PRIMITIVE_PIPE_WO_T)
       .Case("opencl.reserve_id_t", SPIR::PRIMITIVE_RESERVE_ID_T)
       .Case("opencl.queue_t", SPIR::PRIMITIVE_QUEUE_T)
       .Case("opencl.clk_event_t", SPIR::PRIMITIVE_CLK_EVENT_T)
@@ -1000,7 +1015,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
       LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
       if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
-          TyName.startswith(kSPR2TypeName::Pipe)) {
+          TyName.startswith(kSPR2TypeName::PipeRO) ||
+          TyName.startswith(kSPR2TypeName::PipeWO)) {
         auto DelimPos = TyName.find_first_of(kSPR2TypeName::Delimiter,
                                              strlen(kSPR2TypeName::OCLPrefix));
         if (DelimPos != StringRef::npos)
@@ -1027,7 +1043,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
           }
           EPT = BlockTy;
         } else if (Prim != SPIR::PRIMITIVE_NONE) {
-          if (Prim == SPIR::PRIMITIVE_PIPE_T) {
+          if (Prim == SPIR::PRIMITIVE_PIPE_RO_T ||
+              Prim == SPIR::PRIMITIVE_PIPE_WO_T) {
             SPIR::RefParamType OpaqueTyRef(new SPIR::PrimitiveType(Prim));
             auto OpaquePtrTy = new SPIR::PointerType(OpaqueTyRef);
             OpaquePtrTy->setAddressSpace(getOCLOpaqueTypeAddrSpace(Prim));
@@ -1192,6 +1209,7 @@ std::string getSPIRVImageSampledTypeName(SPIRVType *Ty) {
     break;
   }
   llvm_unreachable("Invalid sampled type for image");
+  return std::string();
 }
 
 // ToDo: Find a way to represent uint sampled type in LLVM, maybe an
@@ -1208,6 +1226,7 @@ Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
       Postfix == kSPIRVImageSampledTypeName::UInt)
     return Type::getInt32Ty(Ctx);
   llvm_unreachable("Invalid sampled type postfix");
+  return nullptr;
 }
 
 std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
@@ -1216,10 +1235,7 @@ std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
   raw_string_ostream OS(Postfixes);
   if (!Acc.empty())
     OS << kSPIRVTypeName::PostfixDelim;
-  if (Name.startswith(kSPR2TypeName::Pipe)) {
-    BaseTy = kSPIRVTypeName::Pipe;
-    OS << SPIRSPIRVAccessQualifierMap::map(Acc);
-  } else if (Name.startswith(kSPR2TypeName::ImagePrefix)) {
+  if (Name.startswith(kSPR2TypeName::ImagePrefix)) {
     SmallVector<StringRef, 4> SubStrs;
     const char Delims[] = {kSPR2TypeName::Delimiter, 0};
     Name.split(SubStrs, Delims);
@@ -1291,19 +1307,13 @@ bool eraseUselessFunctions(Module *M) {
 // The mangling algorithm follows OpenCL pipe built-ins clang 3.8 CodeGen rules.
 static SPIR::MangleError manglePipeBuiltin(const SPIR::FunctionDescriptor &Fd,
                                            std::string &MangledName) {
-  assert(SPIR::isPipeBuiltin(Fd.Name) &&
+  assert(OCLUtil::isPipeBI(Fd.Name) &&
          "Method is expected to be called only for pipe builtins!");
   if (Fd.isNull()) {
     MangledName.assign(SPIR::FunctionDescriptor::nullString());
     return SPIR::MANGLE_NULL_FUNC_DESCRIPTOR;
   }
   MangledName.assign("__" + Fd.Name);
-  if (Fd.Name == "write_pipe" || Fd.Name == "read_pipe") {
-    // add "_2" or "_4" postfix reflecting the number of explicit args.
-    MangledName.append("_");
-    // subtruct 2 in order to not count size and alignment of packet.
-    MangledName.append(std::to_string(Fd.Parameters.size() - 2));
-  }
   return SPIR::MANGLE_SUCCESS;
 }
 
@@ -1347,7 +1357,7 @@ std::string mangleBuiltin(const std::string &UniqName,
   SPIR::NameMangler Mangler(SPIR::SPIR20);
   Mangler.mangle(FD, MangledName);
 #else
-  if (SPIR::isPipeBuiltin(BtnInfo->getUnmangledName())) {
+  if (OCLUtil::isPipeBI(BtnInfo->getUnmangledName())) {
     manglePipeBuiltin(FD, MangledName);
   } else {
     SPIR::NameMangler Mangler(SPIR::SPIR20);
@@ -1388,4 +1398,18 @@ Type *getSPIRVImageTypeFromOCL(Module *M, Type *ImageTy) {
     Acc = getAccessQualifier(ImageTypeName);
   return getOrCreateOpaquePtrType(M, mapOCLTypeNameToSPIRV(ImageTypeName, Acc));
 }
+
+llvm::PointerType *getOCLClkEventType(Module *M) {
+  return getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
+                                  SPIRAS_Private);
+}
+
+llvm::PointerType *getOCLClkEventPtrType(Module *M) {
+  return PointerType::get(getOCLClkEventType(M), SPIRAS_Generic);
+}
+
+llvm::Constant *getOCLNullClkEventPtr(Module *M) {
+  return Constant::getNullValue(getOCLClkEventPtrType(M));
+}
+
 } // namespace SPIRV

@@ -112,6 +112,7 @@ BarrierLiterals getBarrierLiterals(CallInst *CI) {
   assert(N == 1 || N == 2);
 
   std::string DemangledName;
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   if (!oclIsBuiltin(CI->getCalledFunction()->getName(), &DemangledName)) {
     assert(0 &&
            "call must a builtin (work_group_barrier or sub_group_barrier)");
@@ -247,6 +248,7 @@ unsigned encodeVecTypeHint(Type *Ty) {
     return Size << 16 | encodeVecTypeHint(EleTy);
   }
   llvm_unreachable("invalid type");
+  return ~0U;
 }
 
 Type *decodeVecTypeHint(LLVMContext &C, unsigned Code) {
@@ -271,6 +273,7 @@ Type *decodeVecTypeHint(LLVMContext &C, unsigned Code) {
     break;
   default:
     llvm_unreachable("Invalid vec type hint");
+    return nullptr;
   }
   if (VecWidth < 1)
     return ST;
@@ -318,6 +321,7 @@ static SPIR::TypeAttributeEnum mapAddrSpaceEnums(SPIRAddressSpace Addrspace) {
   default:
     llvm_unreachable("Invalid addrspace enum member");
   }
+  return SPIR::ATTR_NONE;
 }
 
 SPIR::TypeAttributeEnum
@@ -331,7 +335,8 @@ getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum Prim) {
     return mapAddrSpaceEnums(SPIRV_CLK_EVENT_T_ADDR_SPACE);
   case SPIR::PRIMITIVE_RESERVE_ID_T:
     return mapAddrSpaceEnums(SPIRV_RESERVE_ID_T_ADDR_SPACE);
-  case SPIR::PRIMITIVE_PIPE_T:
+  case SPIR::PRIMITIVE_PIPE_RO_T:
+  case SPIR::PRIMITIVE_PIPE_WO_T:
     return mapAddrSpaceEnums(SPIRV_PIPE_ADDR_SPACE);
   case SPIR::PRIMITIVE_IMAGE_1D_T:
   case SPIR::PRIMITIVE_IMAGE_1D_ARRAY_T:
@@ -349,6 +354,7 @@ getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum Prim) {
   default:
     llvm_unreachable("No address space is determined for a SPIR primitive");
   }
+  return SPIR::ATTR_NONE;
 }
 
 // Fetch type of invoke function passed to device execution built-ins
@@ -470,30 +476,27 @@ public:
       UnmangledName.erase(0, 2);
     } else if (UnmangledName == "fclamp") {
       UnmangledName.erase(0, 1);
-    } else if (UnmangledName == "read_pipe" || UnmangledName == "write_pipe") {
-      assert(F && "lack of necessary information");
-      // handle [read|write]pipe builtins (plus two i32 literal args
-      // required by SPIR 2.0 provisional specification):
-      if (F->arg_size() == 6) {
-        // with 4 arguments (plus two i32 literals):
-        // int read_pipe (read_only pipe gentype p, reserve_id_t reserve_id,
-        // uint index, gentype *ptr) int write_pipe (write_only pipe gentype p,
-        // reserve_id_t reserve_id, uint index, const gentype *ptr)
-        addUnsignedArg(2);
-        addVoidPtrArg(3);
-        addUnsignedArg(4);
-        addUnsignedArg(5);
-      } else if (F->arg_size() == 4) {
-        // with 2 arguments (plus two i32 literals):
-        // int read_pipe (read_only pipe gentype p, gentype *ptr)
-        // int write_pipe (write_only pipe gentype p, const gentype *ptr)
-        addVoidPtrArg(1);
-        addUnsignedArg(2);
-        addUnsignedArg(3);
-      } else {
-        llvm_unreachable(
-            "read/write pipe builtin with unexpected number of arguments");
-      }
+    }
+    // handle [read|write]pipe builtins (plus two i32 literal args
+    // required by SPIR 2.0 provisional specification):
+    else if (UnmangledName == "read_pipe_2" ||
+             UnmangledName == "write_pipe_2") {
+      // with 2 arguments (plus two i32 literals):
+      // int read_pipe (read_only pipe gentype p, gentype *ptr)
+      // int write_pipe (write_only pipe gentype p, const gentype *ptr)
+      addVoidPtrArg(1);
+      addUnsignedArg(2);
+      addUnsignedArg(3);
+    } else if (UnmangledName == "read_pipe_4" ||
+               UnmangledName == "write_pipe_4") {
+      // with 4 arguments (plus two i32 literals):
+      // int read_pipe (read_only pipe gentype p, reserve_id_t reserve_id, uint
+      // index, gentype *ptr) int write_pipe (write_only pipe gentype p,
+      // reserve_id_t reserve_id, uint index, const gentype *ptr)
+      addUnsignedArg(2);
+      addVoidPtrArg(3);
+      addUnsignedArg(4);
+      addUnsignedArg(5);
     } else if (UnmangledName.find("reserve_read_pipe") != std::string::npos ||
                UnmangledName.find("reserve_write_pipe") != std::string::npos) {
       // process [|work_group|sub_group]reserve[read|write]pipe builtins
@@ -605,6 +608,40 @@ bool isSpecialTypeInitializer(Instruction *Inst) {
   return isSamplerInitializer(Inst) || isPipeStorageInitializer(Inst);
 }
 
+bool isPipeBI(const StringRef MangledName) {
+  return MangledName == "write_pipe_2" || MangledName == "read_pipe_2" ||
+         MangledName == "write_pipe_4" || MangledName == "read_pipe_4" ||
+         MangledName == "reserve_write_pipe" ||
+         MangledName == "reserve_read_pipe" ||
+         MangledName == "commit_write_pipe" ||
+         MangledName == "commit_read_pipe" ||
+         MangledName == "work_group_reserve_write_pipe" ||
+         MangledName == "work_group_reserve_read_pipe" ||
+         MangledName == "work_group_commit_write_pipe" ||
+         MangledName == "work_group_commit_read_pipe" ||
+         MangledName == "get_pipe_num_packets_ro" ||
+         MangledName == "get_pipe_max_packets_ro" ||
+         MangledName == "get_pipe_num_packets_wo" ||
+         MangledName == "get_pipe_max_packets_wo" ||
+         MangledName == "sub_group_reserve_write_pipe" ||
+         MangledName == "sub_group_reserve_read_pipe" ||
+         MangledName == "sub_group_commit_write_pipe" ||
+         MangledName == "sub_group_commit_read_pipe";
+}
+
+bool isEnqueueKernelBI(const StringRef MangledName) {
+  return MangledName == "__enqueue_kernel_basic" ||
+         MangledName == "__enqueue_kernel_basic_events" ||
+         MangledName == "__enqueue_kernel_varargs" ||
+         MangledName == "__enqueue_kernel_events_varargs";
+}
+
+bool isKernelQueryBI(const StringRef MangledName) {
+  return MangledName == "__get_kernel_work_group_size_impl" ||
+         MangledName == "__get_kernel_sub_group_count_for_ndrange_impl" ||
+         MangledName == "__get_kernel_max_sub_group_size_for_ndrange_impl" ||
+         MangledName == "__get_kernel_preferred_work_group_size_multiple_impl";
+}
 } // namespace OCLUtil
 
 void llvm::mangleOpenClBuiltin(const std::string &UniqName,

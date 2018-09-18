@@ -115,6 +115,7 @@ static unsigned getArgIndex(CallInst *CI, Value *V) {
       return AI;
   }
   llvm_unreachable("Not argument of function call");
+  return ~0U;
 }
 
 /// Find index of \param V as argument of function call \param CI.
@@ -125,6 +126,7 @@ static unsigned getArgIndex(Function *F, Value *V) {
       return I;
   }
   llvm_unreachable("Not argument of function");
+  return ~0U;
 }
 
 /// Get i-th argument of a function.
@@ -276,8 +278,7 @@ void OCLTypeToSPIRV::adaptFunctionArguments(Function *F) {
       auto STName = NewTy->getPointerElementType()->getStructName();
       if (!hasAccessQualifiedName(STName))
         continue;
-      if (STName.startswith(kSPR2TypeName::ImagePrefix) ||
-          STName == kSPR2TypeName::Pipe) {
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         auto Ty = STName.str();
         auto AccStr = getAccessQualifier(Ty);
         addAdaptedType(&*Arg, getOrCreateOpaquePtrType(
@@ -309,8 +310,7 @@ void OCLTypeToSPIRV::adaptArgumentsByMetadata(Function *F) {
       Changed = true;
     } else if (isPointerToOpaqueStructType(NewTy)) {
       auto STName = NewTy->getPointerElementType()->getStructName();
-      if (STName.startswith(kSPR2TypeName::ImagePrefix) ||
-          STName == kSPR2TypeName::Pipe) {
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         auto Ty = STName.str();
         auto AccMD = getArgAccessQualifierMetadata(F);
         assert(AccMD && "Invalid access qualifier metadata");

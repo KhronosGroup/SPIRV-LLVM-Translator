@@ -292,7 +292,6 @@ private:
   void mutateFuncArgType(const std::map<unsigned, Type *> &ChangedType,
                          Function *F);
 
-  SPIRVValue *transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB);
   SPIRVValue *oclTransSpvcCastSampler(CallInst *CI, SPIRVBasicBlock *BB);
 
   SPIRV::SPIRVInstruction *transUnaryInst(UnaryInstruction *U,
@@ -458,36 +457,27 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
         STName = kSPR2TypeName::Event;
         ST->setName(STName);
       }
-      assert(!STName.startswith(kSPR2TypeName::Pipe) &&
-             "OpenCL type names should be translated to SPIR-V type names");
-      // ToDo: For SPIR1.2/2.0 there may still be load/store or bitcast
-      // instructions using opencl.* type names. We need to handle these
-      // type names until they are all mapped or FE generates SPIR-V type
-      // names.
-      if (STName.find(kSPR2TypeName::Pipe) == 0) {
-        assert(AddrSpc == SPIRAS_Global);
-        SmallVector<StringRef, 4> SubStrs;
-        const char Delims[] = {kSPR2TypeName::Delimiter, 0};
-        STName.split(SubStrs, Delims);
-        std::string Acc = kAccessQualName::ReadOnly;
-        if (SubStrs.size() > 2) {
-          Acc = SubStrs[2];
-        }
+      if (STName.startswith(kSPR2TypeName::PipeRO) ||
+          STName.startswith(kSPR2TypeName::PipeWO)) {
         auto PipeT = BM->addPipeType();
-        PipeT->setPipeAcessQualifier(SPIRSPIRVAccessQualifierMap::map(Acc));
+        PipeT->setPipeAcessQualifier(STName.startswith(kSPR2TypeName::PipeRO)
+                                         ? AccessQualifierReadOnly
+                                         : AccessQualifierWriteOnly);
         return mapType(T, PipeT);
-      } else if (STName.find(kSPR2TypeName::ImagePrefix) == 0) {
+      }
+      if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         assert(AddrSpc == SPIRAS_Global);
         auto SPIRVImageTy = getSPIRVImageTypeFromOCL(M, T);
         return mapType(T, transType(SPIRVImageTy));
-      } else if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
+      }
+      if (STName == kSPR2TypeName::Sampler)
+        return mapType(T, transType(getSamplerType(M)));
+      if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
       else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
         switch (OpCode) {
         default:
           return mapType(T, BM->addOpaqueGenericType(OpCode));
-        case OpTypePipe:
-          return mapType(T, BM->addPipeType());
         case OpTypeDeviceEvent:
           return mapType(T, BM->addDeviceEventType());
         case OpTypeQueue:
@@ -522,7 +512,8 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
     (void)ST; // Silence warning
-    assert(!ST->getName().startswith(kSPR2TypeName::Pipe));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeRO));
+    assert(!ST->getName().startswith(kSPR2TypeName::PipeWO));
     assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName()));
   }
@@ -692,7 +683,8 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
   if (auto CAZero = dyn_cast<ConstantAggregateZero>(V)) {
     Type *AggType = CAZero->getType();
     if (const StructType *ST = dyn_cast<StructType>(AggType))
-      if (ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
+      if (ST->hasName() &&
+          ST->getName() == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler))
         return BM->addSamplerConstant(transType(AggType), 0, 0, 0);
 
     return BM->addNullConstant(transType(AggType));
@@ -735,9 +727,11 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
     return BM->addCompositeConstant(transType(V->getType()), BV);
   }
 
-  if (auto ConstV = dyn_cast<ConstantStruct>(V)) {
-    if (ConstV->getType()->getName() ==
-        getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
+  if (const auto *ConstV = dyn_cast<ConstantStruct>(V)) {
+    StringRef StructName;
+    if (ConstV->getType()->hasName())
+      StructName = ConstV->getType()->getName();
+    if (StructName == getSPIRVTypeName(kSPIRVTypeName::ConstantSampler)) {
       assert(ConstV->getNumOperands() == 3);
       SPIRVWord AddrMode =
                     ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
@@ -752,8 +746,7 @@ SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
       return BM->addSamplerConstant(SamplerTy, AddrMode, Normalized,
                                     FilterMode);
     }
-    if (ConstV->getType()->getName() ==
-        getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage)) {
+    if (StructName == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage)) {
       assert(ConstV->getNumOperands() == 3);
       SPIRVWord PacketSize =
                     ConstV->getOperand(0)->getUniqueInteger().getZExtValue(),
@@ -1190,25 +1183,28 @@ bool LLVMToSPIRV::transBuiltinSet() {
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
 }
 
-/// Transform sampler* spcv.cast(i32 arg)
-/// Only two cases are possible:
+/// Translate sampler* spcv.cast(i32 arg) or
+/// sampler* __translate_sampler_initializer(i32 arg)
+/// Three cases are possible:
 ///   arg = ConstantInt x -> SPIRVConstantSampler
 ///   arg = i32 argument -> transValue(arg)
 ///   arg = load from sampler -> look through load
 SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
                                                  SPIRVBasicBlock *BB) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
   llvm::Function *F = CI->getCalledFunction();
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();
   assert(FT->getNumParams() == 1);
-  assert(isSPIRVType(RT, kSPIRVTypeName::Sampler) &&
+  assert((isSPIRVType(RT, kSPIRVTypeName::Sampler) ||
+          isPointerToOpaqueStructType(RT, kSPR2TypeName::Sampler)) &&
          FT->getParamType(0)->isIntegerTy() && "Invalid sampler type");
   auto Arg = CI->getArgOperand(0);
 
   auto GetSamplerConstant = [&](uint64_t SamplerValue) {
     auto AddrMode = (SamplerValue & 0xE) >> 1;
     auto Param = SamplerValue & 0x1;
-    auto Filter = ((SamplerValue & 0x30) >> 4) - 1;
+    auto Filter = SamplerValue ? ((SamplerValue & 0x30) >> 4) - 1 : 0;
     auto BV = BM->addSamplerConstant(transType(RT), AddrMode, Param, Filter);
     return BV;
   };
@@ -1232,10 +1228,6 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
   auto BV = transValue(Arg, BB);
   assert(BV && BV->getType() == transType(RT));
   return BV;
-}
-
-SPIRVValue *LLVMToSPIRV::transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB) {
-  return oclTransSpvcCastSampler(CI, BB);
 }
 
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
@@ -1326,8 +1318,8 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
   auto MangledName = F->getName();
   std::string DemangledName;
 
-  if (MangledName.startswith(SPCV_CAST))
-    return transSpcvCast(CI, BB);
+  if (MangledName.startswith(SPCV_CAST) || MangledName == SAMPLER_INIT)
+    return oclTransSpvcCastSampler(CI, BB);
 
   if (oclIsBuiltin(MangledName, &DemangledName) ||
       isDecoratedSPIRVFunc(F, &DemangledName))
@@ -1489,7 +1481,8 @@ bool LLVMToSPIRV::translate() {
   for (auto &F : *M) {
     if (isBuiltinTransToInst(&F) || isBuiltinTransToExtInst(&F) ||
         F.getName().startswith(SPCV_CAST) ||
-        F.getName().startswith(LLVM_MEMCPY))
+        F.getName().startswith(LLVM_MEMCPY) ||
+        F.getName().startswith(SAMPLER_INIT))
       continue;
     if (F.isDeclaration())
       Decls.push_back(&F);
@@ -1800,6 +1793,7 @@ void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerSPIRBlocks());
   PassMgr.add(createOCLTypeToSPIRV());
+  PassMgr.add(createSPIRVLowerOCLBlocks());
   PassMgr.add(createOCL20ToSPIRV());
   PassMgr.add(createSPIRVRegularizeLLVM());
   PassMgr.add(createSPIRVLowerConstExpr());
