@@ -70,12 +70,17 @@ enum OCLScopeKind {
   OCLMS_sub_group,
 };
 
+// The enum below declares constants corresponding to memory synchronization
+// operations constants defined in
+// https://www.khronos.org/registry/OpenCL/sdk/2.1/docs/man/xhtml/memory_order.html
+// To avoid any inconsistence here, constants are explicitly initialized with
+// the corresponding constants from 'std::memory_order' enum.
 enum OCLMemOrderKind {
-  OCLMO_relaxed,
-  OCLMO_acquire,
-  OCLMO_release,
-  OCLMO_acq_rel,
-  OCLMO_seq_cst
+  OCLMO_relaxed = std::memory_order::memory_order_relaxed,
+  OCLMO_acquire = std::memory_order::memory_order_acquire,
+  OCLMO_release = std::memory_order::memory_order_release,
+  OCLMO_acq_rel = std::memory_order::memory_order_acq_rel,
+  OCLMO_seq_cst = std::memory_order::memory_order_seq_cst
 };
 
 ///////////////////////////////////////////////////////////////////////////////
