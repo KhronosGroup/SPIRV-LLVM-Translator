@@ -53,6 +53,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <algorithm>
 #include <set>
 
 using namespace llvm;
@@ -269,6 +270,10 @@ public:
   /// For cl_intel_subgroups block write built-ins:
   void visitSubgroupBlockWriteINTEL(CallInst *CI, StringRef MangledName,
                                     const std::string &DemangledName);
+
+  /// For cl_intel_media_block_io built-ins:
+  void visitSubgroupImageMediaBlockINTEL(CallInst *CI,
+                                         const std::string &DemangledName);
 
   void visitDbgInfoIntrinsic(DbgInfoIntrinsic &I) {
     I.dropAllReferences();
@@ -527,6 +532,11 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   }
   if (DemangledName.find(kOCLBuiltinName::SubgroupBlockWriteINTELPrefix) == 0) {
     visitSubgroupBlockWriteINTEL(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::SubgroupImageMediaBlockINTELPrefix) ==
+      0) {
+    visitSubgroupImageMediaBlockINTEL(&CI, DemangledName);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -1633,6 +1643,22 @@ void OCL20ToSPIRV::visitSubgroupBlockWriteINTEL(
                       },
                       &Attrs);
 }
+
+void OCL20ToSPIRV::visitSubgroupImageMediaBlockINTEL(
+    CallInst *CI, const std::string &DemangledName) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  spv::Op OpCode = DemangledName.rfind("read") != std::string::npos
+                       ? spv::OpSubgroupImageMediaBlockReadINTEL
+                       : spv::OpSubgroupImageMediaBlockWriteINTEL;
+  mutateCallInstSPIRV(M, CI,
+                      [=](CallInst *, std::vector<Value *> &Args) {
+                        // Moving the last argument to the begining.
+                        std::rotate(Args.begin(), Args.end() - 1, Args.end());
+                        return getSPIRVFuncName(OpCode, CI->getType());
+                      },
+                      &Attrs);
+}
+
 } // namespace SPIRV
 
 INITIALIZE_PASS_BEGIN(OCL20ToSPIRV, "cl20tospv", "Transform OCL 2.0 to SPIR-V",
