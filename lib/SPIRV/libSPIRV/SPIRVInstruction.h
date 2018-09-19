@@ -2159,6 +2159,23 @@ _SPIRV_OP(SubgroupImageBlockReadINTEL, true, 5)
 _SPIRV_OP(SubgroupImageBlockWriteINTEL, false, 4)
 #undef _SPIRV_OP
 
+class SPIRVSubgroupImageMediaBlockIOINTELInstBase
+    : public SPIRVInstTemplateBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroupImageMediaBlockIOINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroupImageMediaBlockIOINTELInstBase,       \
+                            Op##x, __VA_ARGS__>                                \
+      SPIRV##x;
+// Intel Subgroup Image Media Block Read and Write Instructions
+_SPIRV_OP(SubgroupImageMediaBlockReadINTEL, true, 7)
+_SPIRV_OP(SubgroupImageMediaBlockWriteINTEL, false, 6)
+#undef _SPIRV_OP
+
 SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst);
 SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *C);
 } // namespace SPIRV
