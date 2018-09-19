@@ -104,7 +104,7 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "
 attributes #2 = { nounwind }
 
 !opencl.kernels = !{!0}
-!rpencl.enable.FP_CONTRACT = !{}
+!opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!6}
 !opencl.ocl.version = !{!7}
 !opencl.used.extensions = !{!8}
