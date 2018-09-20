@@ -478,7 +478,8 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
     return;
   }
   if (DemangledName == kOCLBuiltinName::WorkGroupBarrier ||
-      DemangledName == kOCLBuiltinName::Barrier) {
+      DemangledName == kOCLBuiltinName::Barrier ||
+      DemangledName == kOCLBuiltinName::SubGroupBarrier) {
     visitCallBarrier(&CI);
     return;
   }
