@@ -1521,23 +1521,23 @@ bool LLVMToSPIRV::transExecutionMode() {
       case spv::ExecutionModeContractionOff:
       case spv::ExecutionModeInitializer:
       case spv::ExecutionModeFinalizer:
-        BF->addExecutionMode(
-            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode)));
+        BF->addExecutionMode(BM->add(
+            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
         break;
       case spv::ExecutionModeLocalSize:
       case spv::ExecutionModeLocalSizeHint: {
         unsigned X, Y, Z;
         N.get(X).get(Y).get(Z);
-        BF->addExecutionMode(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), X, Y, Z));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
       } break;
       case spv::ExecutionModeVecTypeHint:
       case spv::ExecutionModeSubgroupSize:
       case spv::ExecutionModeSubgroupsPerWorkgroup: {
         unsigned X;
         N.get(X);
-        BF->addExecutionMode(
-            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X));
+        BF->addExecutionMode(BM->add(
+            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X)));
       } break;
       default:
         llvm_unreachable("invalid execution mode");
