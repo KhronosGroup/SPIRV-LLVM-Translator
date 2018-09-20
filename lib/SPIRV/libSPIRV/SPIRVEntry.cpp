@@ -416,7 +416,7 @@ void SPIRVExecutionMode::decode(std::istream &I) {
     break;
   }
   getDecoder(I) >> WordLiterals;
-  getOrCreateTarget()->addExecutionMode(this);
+  getOrCreateTarget()->addExecutionMode(Module->add(this));
 }
 
 SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
