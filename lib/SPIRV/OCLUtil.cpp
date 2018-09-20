@@ -107,6 +107,32 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
   return 1;
 }
 
+bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
+  if (!DemangledName.startswith(kOCLBuiltinName::AtomicPrefix) &&
+      !DemangledName.startswith(kOCLBuiltinName::AtomPrefix))
+    return false;
+
+  return llvm::StringSwitch<bool>(DemangledName)
+      .EndsWith("add", true)
+      .EndsWith("sub", true)
+      .EndsWith("inc", true)
+      .EndsWith("dec", true)
+      .EndsWith("cmpxchg", true)
+      .EndsWith("min", true)
+      .EndsWith("max", true)
+      .EndsWith("and", true)
+      .EndsWith("or", true)
+      .EndsWith("xor", true)
+      .EndsWith("add_explicit", true)
+      .EndsWith("sub_explicit", true)
+      .EndsWith("or_explicit", true)
+      .EndsWith("xor_explicit", true)
+      .EndsWith("and_explicit", true)
+      .EndsWith("min_explicit", true)
+      .EndsWith("max_explicit", true)
+      .Default(false);
+}
+
 BarrierLiterals getBarrierLiterals(CallInst *CI) {
   auto N = CI->getNumArgOperands();
   assert(N == 1 || N == 2);
