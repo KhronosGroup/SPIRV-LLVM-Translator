@@ -1036,10 +1036,12 @@ public:
 
   SPIRVSwitch(SPIRVValue *TheSelect, SPIRVBasicBlock *TheDefault,
               const std::vector<PairTy> &ThePairs, SPIRVBasicBlock *BB)
-      : SPIRVInstruction(ThePairs.size() * (ThePairs.at(0).first.size() + 1) +
-                             FixedWordCount,
-                         OC, BB),
-        Select(TheSelect->getId()), Default(TheDefault->getId()) {
+      : SPIRVInstruction(FixedWordCount, OC, BB), Select(TheSelect->getId()),
+        Default(TheDefault->getId()) {
+
+    if (!ThePairs.empty())
+      SPIRVEntry::setWordCount(
+          ThePairs.size() * (ThePairs.at(0).first.size() + 1) + FixedWordCount);
 
     for (auto &I : ThePairs) {
       for (auto &U : I.first)
