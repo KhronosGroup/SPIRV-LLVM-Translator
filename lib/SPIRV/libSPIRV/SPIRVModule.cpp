@@ -318,9 +318,11 @@ public:
                                        SPIRVBasicBlock *) override;
   SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
                                   SPIRVBasicBlock *) override;
-  SPIRVInstruction *addLoopMergeInst(SPIRVId MergeBlock, SPIRVId ContinueTarget,
-                                     SPIRVWord LoopControl,
-                                     SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *
+  addLoopMergeInst(SPIRVId MergeBlock, SPIRVId ContinueTarget,
+                   SPIRVWord LoopControl,
+                   std::vector<SPIRVWord> LoopControlParameters,
+                   SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
                                           SPIRVWord SelectionControl,
                                           SPIRVBasicBlock *BB) override;
@@ -1187,12 +1189,13 @@ SPIRVInstruction *SPIRVModuleImpl::addSelectionMergeInst(
       new SPIRVSelectionMerge(MergeBlock, SelectionControl, BB), BB);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(SPIRVId MergeBlock,
-                                                    SPIRVId ContinueTarget,
-                                                    SPIRVWord LoopControl,
-                                                    SPIRVBasicBlock *BB) {
+SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(
+    SPIRVId MergeBlock, SPIRVId ContinueTarget, SPIRVWord LoopControl,
+    std::vector<SPIRVWord> LoopControlParameters, SPIRVBasicBlock *BB) {
   return addInstruction(
-      new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl, BB), BB);
+      new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
+                         LoopControlParameters, BB),
+      BB, const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
 }
 
 SPIRVInstruction *
