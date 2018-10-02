@@ -1426,4 +1426,39 @@ llvm::Constant *getOCLNullClkEventPtr(Module *M) {
   return Constant::getNullValue(getOCLClkEventPtrType(M));
 }
 
+bool hasLoopUnrollMetadata(const Module *M) {
+  for (const Function &F : *M)
+    for (const BasicBlock &BB : F) {
+      const Instruction *Term = BB.getTerminator();
+      if (!Term)
+        continue;
+      if (const MDNode *MD = Term->getMetadata("llvm.loop"))
+        for (const MDOperand &MDOp : MD->operands())
+          if (getMDOperandAsString(dyn_cast<MDNode>(MDOp), 0)
+                  .find("llvm.loop.unroll.") == 0)
+            return true;
+    }
+  return false;
+}
+
+spv::LoopControlMask getLoopControl(const BranchInst *Branch,
+                                    std::vector<SPIRVWord> &Parameters) {
+  if (!Branch)
+    return spv::LoopControlMaskNone;
+  MDNode *LoopMD = Branch->getMetadata("llvm.loop");
+  if (!LoopMD)
+    return spv::LoopControlMaskNone;
+  for (const MDOperand &MDOp : LoopMD->operands()) {
+    if (MDNode *Node = dyn_cast<MDNode>(MDOp)) {
+      std::string S = getMDOperandAsString(Node, 0);
+      if (S == "llvm.loop.unroll.disable")
+        return spv::LoopControlDontUnrollMask;
+      // TODO Express partial unrolling in SPIRV.
+      if (S == "llvm.loop.unroll.count" || S == "llvm.loop.unroll.full")
+        return spv::LoopControlUnrollMask;
+    }
+  }
+  return spv::LoopControlMaskNone;
+}
+
 } // namespace SPIRV
