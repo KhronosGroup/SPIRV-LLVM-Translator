@@ -1002,9 +1002,14 @@ public:
   static const SPIRVWord FixedWordCount = 4;
 
   SPIRVLoopMerge(SPIRVId TheMergeBlock, SPIRVId TheContinueTarget,
-                 SPIRVWord TheLoopControl, SPIRVBasicBlock *BB)
-      : SPIRVInstruction(FixedWordCount, OC, BB), MergeBlock(TheMergeBlock),
-        ContinueTarget(TheContinueTarget), LoopControl(TheLoopControl) {
+                 SPIRVWord TheLoopControl,
+                 std::vector<SPIRVWord> TheLoopControlParameters,
+                 SPIRVBasicBlock *BB)
+      : SPIRVInstruction(FixedWordCount + TheLoopControlParameters.size(), OC,
+                         BB),
+        MergeBlock(TheMergeBlock), ContinueTarget(TheContinueTarget),
+        LoopControl(TheLoopControl),
+        LoopControlParameters(TheLoopControlParameters) {
     validate();
     assert(BB && "Invalid BB");
   }
@@ -1019,12 +1024,19 @@ public:
   SPIRVId getMergeBlock() { return MergeBlock; }
   SPIRVId getContinueTarget() { return ContinueTarget; }
   SPIRVWord getLoopControl() { return LoopControl; }
-  _SPIRV_DEF_ENCDEC3(MergeBlock, ContinueTarget, LoopControl)
+
+  void setWordCount(SPIRVWord TheWordCount) override {
+    SPIRVEntry::setWordCount(TheWordCount);
+    LoopControlParameters.resize(TheWordCount - FixedWordCount);
+  }
+  _SPIRV_DEF_ENCDEC4(MergeBlock, ContinueTarget, LoopControl,
+                     LoopControlParameters)
 
 protected:
   SPIRVId MergeBlock;
   SPIRVId ContinueTarget;
   SPIRVWord LoopControl;
+  std::vector<SPIRVWord> LoopControlParameters;
 };
 
 class SPIRVSwitch : public SPIRVInstruction {

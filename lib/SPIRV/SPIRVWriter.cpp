@@ -77,6 +77,7 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/Utils.h" // loop-simplify pass
 
 #include <cstdlib>
 #include <functional>
@@ -1004,18 +1005,50 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
                              Pairs, BB));
   }
 
-  if (auto Branch = dyn_cast<BranchInst>(V)) {
-    if (Branch->isUnconditional())
-      return mapValue(V, BM->addBranchInst(static_cast<SPIRVLabel *>(transValue(
-                                               Branch->getSuccessor(0), BB)),
-                                           BB));
+  if (BranchInst *Branch = dyn_cast<BranchInst>(V)) {
+    SPIRVLabel *SuccessorTrue =
+        static_cast<SPIRVLabel *>(transValue(Branch->getSuccessor(0), BB));
+
+    /// Clang attaches !llvm.loop metadata to "latch" BB. This kind of blocks
+    /// has an edge directed to the loop header. Thus latch BB matching to
+    /// "Continue Target" per the SPIR-V spec. This statement is true only after
+    /// applying the loop-simplify pass to the LLVM module.
+    /// For "for" and "while" loops latch BB is terminated by an
+    /// unconditional branch. Also for this kind of loops "Merge Block" can
+    /// be found as block targeted by false edge of the "Header" BB.
+    /// For "do while" loop the latch is terminated by a conditional branch
+    /// with true edge going to the header and the false edge going out of
+    /// the loop, which corresponds to a "Merge Block" per the SPIR-V spec.
+    std::vector<SPIRVWord> Parameters;
+    spv::LoopControlMask LoopControl = getLoopControl(Branch, Parameters);
+
+    if (Branch->isUnconditional()) {
+      // For "for" and "while" loops llvm.loop metadata is attached to
+      // an unconditional branch instruction.
+      if (LoopControl != spv::LoopControlMaskNone) {
+        // SuccessorTrue is the loop header BB.
+        const SPIRVInstruction *Term = SuccessorTrue->getTerminateInstr();
+        if (Term && Term->getOpCode() == OpBranchConditional) {
+          const auto *Br = static_cast<const SPIRVBranchConditional *>(Term);
+          BM->addLoopMergeInst(Br->getFalseLabel()->getId(), // Merge Block
+                               BB->getId(),                  // Continue Target
+                               LoopControl, Parameters, SuccessorTrue);
+        }
+      }
+      return mapValue(V, BM->addBranchInst(SuccessorTrue, BB));
+    }
+    // For "do-while" loops llvm.loop metadata is attached to a conditional
+    // branch instructions
+    SPIRVLabel *SuccessorFalse =
+        static_cast<SPIRVLabel *>(transValue(Branch->getSuccessor(1), BB));
+    if (LoopControl != spv::LoopControlMaskNone)
+      // SuccessorTrue is the loop header BB.
+      BM->addLoopMergeInst(SuccessorFalse->getId(), // Merge Block
+                           BB->getId(),             // Continue Target
+                           LoopControl, Parameters, SuccessorTrue);
     return mapValue(
-        V,
-        BM->addBranchConditionalInst(
-            transValue(Branch->getCondition(), BB),
-            static_cast<SPIRVLabel *>(transValue(Branch->getSuccessor(0), BB)),
-            static_cast<SPIRVLabel *>(transValue(Branch->getSuccessor(1), BB)),
-            BB));
+        V, BM->addBranchConditionalInst(transValue(Branch->getCondition(), BB),
+                                        SuccessorTrue, SuccessorFalse, BB));
   }
 
   if (auto Phi = dyn_cast<PHINode>(V)) {
@@ -1771,6 +1804,8 @@ bool llvm::writeSpirv(Module *M, llvm::raw_ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
+  if (hasLoopUnrollMetadata(M))
+    PassMgr.add(createLoopSimplifyPass());
   PassMgr.add(createLLVMToSPIRV(BM.get()));
   PassMgr.run(*M);
 

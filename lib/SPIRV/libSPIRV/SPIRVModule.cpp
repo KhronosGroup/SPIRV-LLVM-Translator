@@ -292,8 +292,9 @@ public:
   SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type, Scope Scope,
                                  const std::vector<SPIRVValue *> &Ops,
                                  SPIRVBasicBlock *BB) override;
-  virtual SPIRVInstruction *addInstruction(SPIRVInstruction *Inst,
-                                           SPIRVBasicBlock *BB);
+  virtual SPIRVInstruction *
+  addInstruction(SPIRVInstruction *Inst, SPIRVBasicBlock *BB,
+                 SPIRVInstruction *InsertBefore = nullptr);
   SPIRVInstTemplateBase *addInstTemplate(Op OC, SPIRVBasicBlock *BB,
                                          SPIRVType *Ty) override;
   SPIRVInstTemplateBase *addInstTemplate(Op OC,
@@ -310,9 +311,11 @@ public:
                                        SPIRVBasicBlock *) override;
   SPIRVInstruction *addSelectInst(SPIRVValue *, SPIRVValue *, SPIRVValue *,
                                   SPIRVBasicBlock *) override;
-  SPIRVInstruction *addLoopMergeInst(SPIRVId MergeBlock, SPIRVId ContinueTarget,
-                                     SPIRVWord LoopControl,
-                                     SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *
+  addLoopMergeInst(SPIRVId MergeBlock, SPIRVId ContinueTarget,
+                   SPIRVWord LoopControl,
+                   std::vector<SPIRVWord> LoopControlParameters,
+                   SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
                                           SPIRVWord SelectionControl,
                                           SPIRVBasicBlock *BB) override;
@@ -985,10 +988,11 @@ SPIRVModuleImpl::addGroupInst(Op OpCode, SPIRVType *Type, Scope Scope,
   return addInstTemplate(OpCode, WordOps, BB, Type);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addInstruction(SPIRVInstruction *Inst,
-                                                  SPIRVBasicBlock *BB) {
+SPIRVInstruction *
+SPIRVModuleImpl::addInstruction(SPIRVInstruction *Inst, SPIRVBasicBlock *BB,
+                                SPIRVInstruction *InsertBefore) {
   if (BB)
-    return BB->addInstruction(Inst);
+    return BB->addInstruction(Inst, InsertBefore);
   if (Inst->getOpCode() != OpSpecConstantOp)
     Inst = createSpecConstantOpInst(Inst);
   return static_cast<SPIRVInstruction *>(addConstant(Inst));
@@ -1149,12 +1153,13 @@ SPIRVInstruction *SPIRVModuleImpl::addSelectionMergeInst(
       new SPIRVSelectionMerge(MergeBlock, SelectionControl, BB), BB);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(SPIRVId MergeBlock,
-                                                    SPIRVId ContinueTarget,
-                                                    SPIRVWord LoopControl,
-                                                    SPIRVBasicBlock *BB) {
+SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(
+    SPIRVId MergeBlock, SPIRVId ContinueTarget, SPIRVWord LoopControl,
+    std::vector<SPIRVWord> LoopControlParameters, SPIRVBasicBlock *BB) {
   return addInstruction(
-      new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl, BB), BB);
+      new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
+                         LoopControlParameters, BB),
+      BB, const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
 }
 
 SPIRVInstruction *

@@ -73,10 +73,16 @@ public:
       return nullptr;
     return *Loc;
   }
+  // Return the last instruction in the BB or nullptr if the BB is empty.
+  const SPIRVInstruction *getTerminateInstr() const {
+    return InstVec.empty() ? nullptr : InstVec.back();
+  }
 
   void setScope(SPIRVEntry *Scope) override;
   void setParent(SPIRVFunction *F) { ParentF = F; }
-  SPIRVInstruction *addInstruction(SPIRVInstruction *I);
+  SPIRVInstruction *
+  addInstruction(SPIRVInstruction *I,
+                 const SPIRVInstruction *InsertBefore = nullptr);
   void eraseInstruction(const SPIRVInstruction *I) {
     auto Loc = find(I);
     assert(Loc != InstVec.end());
