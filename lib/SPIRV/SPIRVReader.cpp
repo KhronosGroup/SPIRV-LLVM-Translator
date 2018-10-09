@@ -2899,7 +2899,11 @@ Instruction *SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB,
 bool SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
-  assert((Lang == SourceLanguageOpenCL_C || Lang == SourceLanguageOpenCL_CPP) &&
+  assert((Lang == SourceLanguageUnknown ||
+          Lang == SourceLanguageOpenCL_C ||
+          Lang == SourceLanguageOpenCL_CPP ||
+          Lang == SourceLanguageGLSL ||
+          Lang == SourceLanguageESSL) &&
          "Unsupported source language");
   unsigned short Major = 0;
   unsigned char Minor = 0;
@@ -3070,6 +3074,14 @@ bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 
   IS >> *BM;
+
+  SourceLanguage SrcLang;
+  SPIRVWord SrcLangVer = 0;
+  SrcLang = BM->getSourceLanguage(&SrcLangVer);
+  if (SrcLang == SourceLanguageGLSL || SrcLang == SourceLanguageESSL)
+  {
+    assert (0 && "GLSL/ESSL currently unsupported for translation");
+  }
 
   SPIRVToLLVM BTL(M, BM.get());
   bool Succeed = true;
