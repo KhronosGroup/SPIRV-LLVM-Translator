@@ -178,7 +178,13 @@ enum SPIRAddressSpace {
   SPIRAS_Constant,
   SPIRAS_Local,
   SPIRAS_Generic,
-  SPIRAS_Count,
+  SPIRAS_Input,
+  SPIRAS_Output,
+  SPIRAS_PushConstant,
+  SPIRAS_AtomicCounter,
+  SPIRAS_Image,
+  SPIRAS_StorageBuffer,
+  SPIRAS_Uniform
 };
 
 template <> inline void SPIRVMap<SPIRAddressSpace, std::string>::init() {
@@ -194,10 +200,19 @@ typedef SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>
 template <>
 inline void SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind>::init() {
   add(SPIRAS_Private, StorageClassFunction);
+  add(SPIRAS_Private, StorageClassPrivate);
   add(SPIRAS_Global, StorageClassCrossWorkgroup);
   add(SPIRAS_Constant, StorageClassUniformConstant);
   add(SPIRAS_Local, StorageClassWorkgroup);
   add(SPIRAS_Generic, StorageClassGeneric);
+  add(SPIRAS_Input, StorageClassInput);
+  add(SPIRAS_Output, StorageClassOutput);
+  add(SPIRAS_PushConstant, StorageClassPushConstant);
+  add(SPIRAS_AtomicCounter, StorageClassAtomicCounter);
+  add(SPIRAS_Image, StorageClassImage);
+  add(SPIRAS_StorageBuffer, StorageClassStorageBuffer);
+  add(SPIRAS_Uniform, StorageClassUniform);
+
 }
 typedef SPIRVMap<SPIRAddressSpace, SPIRVStorageClassKind> SPIRSPIRVAddrSpaceMap;
 
