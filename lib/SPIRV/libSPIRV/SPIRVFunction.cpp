@@ -108,7 +108,6 @@ void SPIRVFunction::decode(std::istream &I) {
       Param->setParent(this);
       Parameters.push_back(Param);
       Decoder.getWordCountAndOpCode();
-      continue;
       break;
     }
     case OpLabel: {
