@@ -138,12 +138,12 @@ public:
     if (auto I = dyn_cast<Instruction>(V)) {
       auto DL = I->getDebugLoc();
       if (DL) {
-        auto File = BM->getString(DL->getFilename().str());
+        auto File = BM->getString(getFullPath(DL.get()));
         BM->addLine(BV, File->getId(), DL->getLine(), DL->getColumn());
       }
     } else if (auto F = dyn_cast<Function>(V)) {
       if (auto DIS = F->getSubprogram()) {
-        auto File = BM->getString(DIS->getFilename().str());
+        auto File = BM->getString(getFullPath(DIS));
         BM->addLine(BV, File->getId(), DIS->getLine(), 0);
       }
     }
