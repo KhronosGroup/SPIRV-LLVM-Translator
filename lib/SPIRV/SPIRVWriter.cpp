@@ -38,8 +38,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "OCLTypeToSPIRV.h"
-#include "OCLUtil.h"
+#include "SPIRVWriter.h"
 #include "SPIRVBasicBlock.h"
 #include "SPIRVEntry.h"
 #include "SPIRVEnum.h"
@@ -126,183 +125,21 @@ struct OCLBuiltinSPIRVTransInfo {
   }
 };
 
-class LLVMToSPIRVDbgTran {
-public:
-  LLVMToSPIRVDbgTran(Module *TM = nullptr, SPIRVModule *TBM = nullptr)
-      : BM(TBM), M(TM) {}
+LLVMToSPIRV::LLVMToSPIRV(SPIRVModule *SMod)
+    : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod),
+      ExtSetId(SPIRVID_INVALID), SrcLang(0), SrcLangVer(0),
+      DbgTran(nullptr, SMod) {}
 
-  void setModule(Module *Mod) { M = Mod; }
-  void setSPIRVModule(SPIRVModule *SMod) { BM = SMod; }
+bool LLVMToSPIRV::runOnModule(Module &Mod) {
+  M = &Mod;
+  Ctx = &M->getContext();
+  DbgTran.setModule(M);
+  assert(BM && "SPIR-V module not initialized");
+  translate();
+  return true;
+}
 
-  void transDbgInfo(Value *V, SPIRVValue *BV) {
-    if (auto I = dyn_cast<Instruction>(V)) {
-      auto DL = I->getDebugLoc();
-      if (DL) {
-        auto File = BM->getString(getFullPath(DL.get()));
-        BM->addLine(BV, File->getId(), DL->getLine(), DL->getColumn());
-      }
-    } else if (auto F = dyn_cast<Function>(V)) {
-      if (auto DIS = F->getSubprogram()) {
-        auto File = BM->getString(getFullPath(DIS));
-        BM->addLine(BV, File->getId(), DIS->getLine(), 0);
-      }
-    }
-  }
-
-private:
-  SPIRVModule *BM;
-  Module *M;
-};
-
-class LLVMToSPIRV : public ModulePass {
-public:
-  LLVMToSPIRV(SPIRVModule *SMod = nullptr)
-      : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod),
-        ExtSetId(SPIRVID_INVALID), SrcLang(0), SrcLangVer(0),
-        DbgTran(nullptr, SMod) {}
-
-  StringRef getPassName() const override { return "LLVMToSPIRV"; }
-
-  bool runOnModule(Module &Mod) override {
-    M = &Mod;
-    Ctx = &M->getContext();
-    DbgTran.setModule(M);
-    assert(BM && "SPIR-V module not initialized");
-    translate();
-    return true;
-  }
-
-  void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.addRequired<OCLTypeToSPIRV>();
-  }
-
-  static char ID;
-
-  SPIRVType *transType(Type *T);
-  SPIRVType *transSPIRVOpaqueType(Type *T);
-
-  SPIRVValue *getTranslatedValue(Value *) const;
-
-  // Translation functions
-  bool transAddressingMode();
-  bool transAlign(Value *V, SPIRVValue *BV);
-  std::vector<SPIRVValue *> transArguments(CallInst *, SPIRVBasicBlock *);
-  std::vector<SPIRVWord> transArguments(CallInst *, SPIRVBasicBlock *,
-                                        SPIRVEntry *);
-  bool transSourceLanguage();
-  bool transExtension();
-  bool transBuiltinSet();
-  SPIRVValue *transIntrinsicInst(IntrinsicInst *Intrinsic, SPIRVBasicBlock *BB);
-  SPIRVValue *transCallInst(CallInst *Call, SPIRVBasicBlock *BB);
-  bool transDecoration(Value *V, SPIRVValue *BV);
-  SPIRVWord transFunctionControlMask(CallInst *);
-  SPIRVWord transFunctionControlMask(Function *);
-  SPIRVFunction *transFunctionDecl(Function *F);
-  bool transGlobalVariables();
-
-  Op transBoolOpCode(SPIRVValue *Opn, Op OC);
-  // Translate LLVM module to SPIR-V module.
-  // Returns true if succeeds.
-  bool translate();
-  bool transExecutionMode();
-  SPIRVValue *transConstant(Value *V);
-  SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
-                         bool CreateForward = true);
-  SPIRVValue *transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
-                                          bool CreateForward = true);
-
-  typedef DenseMap<Type *, SPIRVType *> LLVMToSPIRVTypeMap;
-  typedef DenseMap<Value *, SPIRVValue *> LLVMToSPIRVValueMap;
-
-private:
-  Module *M;
-  LLVMContext *Ctx;
-  SPIRVModule *BM;
-  LLVMToSPIRVTypeMap TypeMap;
-  LLVMToSPIRVValueMap ValueMap;
-  // ToDo: support multiple builtin sets. Currently assume one builtin set.
-  SPIRVId ExtSetId;
-  SPIRVWord SrcLang;
-  SPIRVWord SrcLangVer;
-  LLVMToSPIRVDbgTran DbgTran;
-
-  SPIRVType *mapType(Type *T, SPIRVType *BT) {
-    TypeMap[T] = BT;
-    SPIRVDBG(dbgs() << "[mapType] " << *T << " => "; spvdbgs() << *BT << '\n');
-    return BT;
-  }
-
-  SPIRVValue *mapValue(Value *V, SPIRVValue *BV) {
-    auto Loc = ValueMap.find(V);
-    if (Loc != ValueMap.end()) {
-      if (Loc->second == BV)
-        return BV;
-      assert(Loc->second->isForward() &&
-             "LLVM Value is mapped to different SPIRV Values");
-      auto Forward = static_cast<SPIRVForward *>(Loc->second);
-      BM->replaceForward(Forward, BV);
-    }
-    ValueMap[V] = BV;
-    SPIRVDBG(dbgs() << "[mapValue] " << *V << " => "; spvdbgs() << *BV << "\n");
-    return BV;
-  }
-
-  SPIRVType *getSPIRVType(Type *T) { return TypeMap[T]; }
-
-  SPIRVValue *getSPIRVValue(Value *V) { return ValueMap[V]; }
-
-  SPIRVErrorLog &getErrorLog() { return BM->getErrorLog(); }
-
-  llvm::IntegerType *getSizetType();
-  std::vector<SPIRVValue *> transValue(const std::vector<Value *> &Values,
-                                       SPIRVBasicBlock *BB);
-  std::vector<SPIRVWord> transValue(const std::vector<Value *> &Values,
-                                    SPIRVBasicBlock *BB, SPIRVEntry *Entry);
-
-  SPIRVInstruction *transBinaryInst(BinaryOperator *B, SPIRVBasicBlock *BB);
-  SPIRVInstruction *transCmpInst(CmpInst *Cmp, SPIRVBasicBlock *BB);
-
-  void dumpUsers(Value *V);
-
-  template <class ExtInstKind>
-  bool oclGetExtInstIndex(const std::string &MangledName,
-                          const std::string &DemangledName,
-                          SPIRVWord *EntryPoint);
-  void
-  oclGetMutatedArgumentTypesByBuiltin(llvm::FunctionType *FT,
-                                      std::map<unsigned, Type *> &ChangedType,
-                                      Function *F);
-
-  bool isBuiltinTransToInst(Function *F);
-  bool isBuiltinTransToExtInst(Function *F,
-                               SPIRVExtInstSetKind *BuiltinSet = nullptr,
-                               SPIRVWord *EntryPoint = nullptr,
-                               SmallVectorImpl<std::string> *Dec = nullptr);
-  bool oclIsKernel(Function *F);
-
-  bool transOCLKernelMetadata();
-
-  SPIRVInstruction *transBuiltinToInst(const std::string &DemangledName,
-                                       const std::string &MangledName,
-                                       CallInst *CI, SPIRVBasicBlock *BB);
-  SPIRVInstruction *transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
-                                                        SPIRVBasicBlock *BB);
-  void mutateFuncArgType(const std::map<unsigned, Type *> &ChangedType,
-                         Function *F);
-
-  SPIRVValue *oclTransSpvcCastSampler(CallInst *CI, SPIRVBasicBlock *BB);
-
-  SPIRV::SPIRVInstruction *transUnaryInst(UnaryInstruction *U,
-                                          SPIRVBasicBlock *BB);
-
-  /// Add a 32 bit integer constant.
-  /// \return Id of the constant.
-  SPIRVId addInt32(int);
-  void transFunction(Function *I);
-  SPIRV::SPIRVLinkageTypeKind transLinkageType(const GlobalValue *GV);
-};
-
-SPIRVValue *LLVMToSPIRV::getTranslatedValue(Value *V) const {
+SPIRVValue *LLVMToSPIRV::getTranslatedValue(const Value *V) const {
   auto Loc = ValueMap.find(V);
   if (Loc != ValueMap.end())
     return Loc->second;
@@ -1109,6 +946,27 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
   return nullptr;
 }
 
+SPIRVType *LLVMToSPIRV::mapType(Type *T, SPIRVType *BT) {
+  TypeMap[T] = BT;
+  SPIRVDBG(dbgs() << "[mapType] " << *T << " => "; spvdbgs() << *BT << '\n');
+  return BT;
+}
+
+SPIRVValue *LLVMToSPIRV::mapValue(Value *V, SPIRVValue *BV) {
+  auto Loc = ValueMap.find(V);
+  if (Loc != ValueMap.end()) {
+    if (Loc->second == BV)
+      return BV;
+    assert(Loc->second->isForward() &&
+           "LLVM Value is mapped to different SPIRV Values");
+    auto Forward = static_cast<SPIRVForward *>(Loc->second);
+    BM->replaceForward(Forward, BV);
+  }
+  ValueMap[V] = BV;
+  SPIRVDBG(dbgs() << "[mapValue] " << *V << " => "; spvdbgs() << BV << "\n");
+  return BV;
+}
+
 bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
   if (!transAlign(V, BV))
     return false;
@@ -1723,6 +1581,29 @@ LLVMToSPIRV::transLinkageType(const GlobalValue *GV) {
     return SPIRVLinkageTypeKind::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
+
+LLVMToSPIRVDbgTran::LLVMToSPIRVDbgTran(Module *TM, SPIRVModule *TBM)
+    : BM(TBM), M(TM) {}
+
+void LLVMToSPIRVDbgTran::setModule(Module *Mod) { M = Mod; }
+
+void LLVMToSPIRVDbgTran::setSPIRVModule(SPIRVModule *SMod) { BM = SMod; }
+
+void LLVMToSPIRVDbgTran::transDbgInfo(Value *V, SPIRVValue *BV) {
+  if (auto I = dyn_cast<Instruction>(V)) {
+    auto DL = I->getDebugLoc();
+    if (DL) {
+      auto File = BM->getString(DL->getFilename().str());
+      BM->addLine(BV, File->getId(), DL->getLine(), DL->getColumn());
+    }
+  } else if (auto F = dyn_cast<Function>(V)) {
+    if (auto DIS = F->getSubprogram()) {
+      auto File = BM->getString(DIS->getFilename().str());
+      BM->addLine(BV, File->getId(), DIS->getLine(), 0);
+    }
+  }
+}
+
 } // namespace SPIRV
 
 char LLVMToSPIRV::ID = 0;
