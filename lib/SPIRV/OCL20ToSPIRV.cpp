@@ -400,7 +400,7 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   if (DemangledName.find(kOCLBuiltinName::AtomicPrefix) == 0 ||
       DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0) {
 
-    // Compute atomic bulitins do not support floating types.
+    // Compute atomic builtins do not support floating types.
     if (CI.getType()->isFloatingPointTy() &&
         isComputeAtomicOCLBuiltin(DemangledName))
       return;
