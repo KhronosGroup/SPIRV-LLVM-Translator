@@ -67,19 +67,7 @@ using namespace OCLUtil;
 
 namespace SPIRV {
 
-class LLVMToSPIRVDbgTran {
-public:
-  LLVMToSPIRVDbgTran(Module *TM = nullptr, SPIRVModule *TBM = nullptr);
-
-  void setModule(Module *Mod);
-  void setSPIRVModule(SPIRVModule *SMod);
-
-  void transDbgInfo(Value *V, SPIRVValue *BV);
-
-private:
-  SPIRVModule *BM;
-  Module *M;
-};
+class LLVMToSPIRVDbgTran;
 
 class LLVMToSPIRV : public ModulePass {
 public:
@@ -137,11 +125,9 @@ private:
   SPIRVModule *BM;
   LLVMToSPIRVTypeMap TypeMap;
   LLVMToSPIRVValueMap ValueMap;
-  // ToDo: support multiple builtin sets. Currently assume one builtin set.
-  SPIRVId ExtSetId;
   SPIRVWord SrcLang;
   SPIRVWord SrcLangVer;
-  LLVMToSPIRVDbgTran DbgTran;
+  std::unique_ptr<LLVMToSPIRVDbgTran> DbgTran;
 
   SPIRVType *mapType(Type *T, SPIRVType *BT);
   SPIRVValue *mapValue(Value *V, SPIRVValue *BV);

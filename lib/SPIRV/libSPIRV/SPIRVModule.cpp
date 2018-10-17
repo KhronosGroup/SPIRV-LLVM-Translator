@@ -133,6 +133,9 @@ public:
   unsigned short getGeneratorId() const override { return GeneratorId; }
   unsigned short getGeneratorVer() const override { return GeneratorVer; }
   SPIRVWord getSPIRVVersion() const override { return SPIRVVersion; }
+  const std::vector<SPIRVExtInst *> &getDebugInstVec() const override {
+    return DebugInstVec;
+  }
 
   // Module changing functions
   bool importBuiltinSet(const std::string &, SPIRVId *) override;
@@ -252,10 +255,14 @@ public:
                                       SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
                                const std::vector<SPIRVWord> &,
-                               SPIRVBasicBlock *) override;
+                               SPIRVBasicBlock *,
+                               SPIRVInstruction * = nullptr) override;
   SPIRVInstruction *addExtInst(SPIRVType *, SPIRVWord, SPIRVWord,
                                const std::vector<SPIRVValue *> &,
-                               SPIRVBasicBlock *) override;
+                               SPIRVBasicBlock *,
+                               SPIRVInstruction * = nullptr) override;
+  SPIRVEntry *addDebugInfo(SPIRVWord, SPIRVType *TheType,
+                           const std::vector<SPIRVWord> &) override;
   SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
                                   SPIRVBasicBlock *) override;
   SPIRVInstruction *addCallInst(SPIRVFunction *, const std::vector<SPIRVWord> &,
@@ -292,8 +299,9 @@ public:
   SPIRVInstruction *addGroupInst(Op OpCode, SPIRVType *Type, Scope Scope,
                                  const std::vector<SPIRVValue *> &Ops,
                                  SPIRVBasicBlock *BB) override;
-  virtual SPIRVInstruction *addInstruction(SPIRVInstruction *Inst,
-                                           SPIRVBasicBlock *BB);
+  virtual SPIRVInstruction *
+  addInstruction(SPIRVInstruction *Inst, SPIRVBasicBlock *BB,
+                 SPIRVInstruction *InsertBefore = nullptr);
   SPIRVInstTemplateBase *addInstTemplate(Op OC, SPIRVBasicBlock *BB,
                                          SPIRVType *Ty) override;
   SPIRVInstTemplateBase *addInstTemplate(Op OC,
@@ -346,6 +354,8 @@ public:
                                                SPIRVValue *,
                                                SPIRVBasicBlock *) override;
 
+  virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);
@@ -378,6 +388,8 @@ private:
   typedef std::vector<SPIRVMemberName *> SPIRVMemberNameVec;
   typedef std::vector<SPIRVDecorationGroup *> SPIRVDecGroupVec;
   typedef std::vector<SPIRVGroupDecorateGeneric *> SPIRVGroupDecVec;
+  typedef std::map<SPIRVId, SPIRVExtInstSetKind> SPIRVIdToInstructionSetMap;
+  std::map<SPIRVExtInstSetKind, SPIRVId> ExtInstSetIds;
   typedef std::map<SPIRVId, SPIRVExtInstSetKind> SPIRVIdToBuiltinSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdSet> SPIRVExecModelIdSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdVec> SPIRVExecModelIdVecMap;
@@ -392,6 +404,7 @@ private:
   SPIRVConstantVector ConstVec;
   SPIRVVariableVec VariableVec;
   SPIRVEntrySet EntryNoId; // Entries without id
+  SPIRVIdToInstructionSetMap IdToInstSetMap;
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
   SPIRVStringVec StringVec;
@@ -407,6 +420,7 @@ private:
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt *> IntTypeMap;
   std::map<unsigned, SPIRVConstant *> LiteralMap;
+  std::vector<SPIRVExtInst *> DebugInstVec;
 
   void layoutEntry(SPIRVEntry *Entry);
 };
@@ -544,6 +558,17 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
     if (!BV->getParent())
       addTo(VariableVec, E);
   } break;
+  case OpExtInst: {
+    SPIRVExtInst *EI = static_cast<SPIRVExtInst *>(E);
+    if (EI->getExtSetKind() == SPIRVEIS_Debug &&
+        EI->getExtOp() != SPIRVDebug::Declare &&
+        EI->getExtOp() != SPIRVDebug::Value &&
+        EI->getExtOp() != SPIRVDebug::Scope &&
+        EI->getExtOp() != SPIRVDebug::NoScope) {
+      DebugInstVec.push_back(EI);
+    }
+    break;
+  }
   default:
     if (isTypeOpCode(OC))
       TypeVec.push_back(static_cast<SPIRVType *>(E));
@@ -625,8 +650,8 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
 }
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {
-  auto Loc = IdBuiltinMap.find(SetId);
-  assert(Loc != IdBuiltinMap.end() && "Invalid builtin set id");
+  auto Loc = IdToInstSetMap.find(SetId);
+  assert(Loc != IdToInstSetMap.end() && "Invalid builtin set id");
   return Loc->second;
 }
 
@@ -656,7 +681,8 @@ bool SPIRVModuleImpl::importBuiltinSetWithId(const std::string &BuiltinSetName,
   SPIRVExtInstSetKind BuiltinSet = SPIRVEIS_Count;
   SPIRVCKRT(SPIRVBuiltinSetNameMap::rfind(BuiltinSetName, &BuiltinSet),
             InvalidBuiltinSetName, "Actual is " + BuiltinSetName);
-  IdBuiltinMap[BuiltinSetId] = BuiltinSet;
+  IdToInstSetMap[BuiltinSetId] = BuiltinSet;
+  ExtInstSetIds[BuiltinSet] = BuiltinSetId;
   return true;
 }
 
@@ -985,10 +1011,11 @@ SPIRVModuleImpl::addGroupInst(Op OpCode, SPIRVType *Type, Scope Scope,
   return addInstTemplate(OpCode, WordOps, BB, Type);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addInstruction(SPIRVInstruction *Inst,
-                                                  SPIRVBasicBlock *BB) {
+SPIRVInstruction *
+SPIRVModuleImpl::addInstruction(SPIRVInstruction *Inst, SPIRVBasicBlock *BB,
+                                SPIRVInstruction *InsertBefore) {
   if (BB)
-    return BB->addInstruction(Inst);
+    return BB->addInstruction(Inst, InsertBefore);
   if (Inst->getOpCode() != OpSpecConstantOp)
     Inst = createSpecConstantOpInst(Inst);
   return static_cast<SPIRVInstruction *>(addConstant(Inst));
@@ -1011,16 +1038,27 @@ SPIRVModuleImpl::addPhiInst(SPIRVType *Type,
 
 SPIRVInstruction *SPIRVModuleImpl::addExtInst(
     SPIRVType *TheType, SPIRVWord BuiltinSet, SPIRVWord EntryPoint,
-    const std::vector<SPIRVWord> &Args, SPIRVBasicBlock *BB) {
+    const std::vector<SPIRVWord> &Args, SPIRVBasicBlock *BB,
+    SPIRVInstruction *InsertBefore) {
   return addInstruction(
-      new SPIRVExtInst(TheType, getId(), BuiltinSet, EntryPoint, Args, BB), BB);
+      new SPIRVExtInst(TheType, getId(), BuiltinSet, EntryPoint, Args, BB), BB,
+      InsertBefore);
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addExtInst(
     SPIRVType *TheType, SPIRVWord BuiltinSet, SPIRVWord EntryPoint,
-    const std::vector<SPIRVValue *> &Args, SPIRVBasicBlock *BB) {
+    const std::vector<SPIRVValue *> &Args, SPIRVBasicBlock *BB,
+    SPIRVInstruction *InsertBefore) {
   return addInstruction(
-      new SPIRVExtInst(TheType, getId(), BuiltinSet, EntryPoint, Args, BB), BB);
+      new SPIRVExtInst(TheType, getId(), BuiltinSet, EntryPoint, Args, BB), BB,
+      InsertBefore);
+}
+
+SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
+                                          const std::vector<SPIRVWord> &Args) {
+  return addEntry(new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_Debug,
+                                   ExtInstSetIds[SPIRVEIS_Debug], InstId,
+                                   Args));
 }
 
 SPIRVInstruction *
@@ -1339,6 +1377,8 @@ spv_ostream &operator<<(spv_ostream &O, const TopologicalSort &S) {
 
 spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
+  // Start tracking of the current line with no line
+  MI.CurrentLine.reset();
 
   SPIRVEncoder Encoder(O);
   Encoder << MagicNumber << MI.SPIRVVersion
@@ -1355,7 +1395,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
     O << SPIRVExtension(&M, I);
   }
 
-  for (auto &I : MI.IdBuiltinMap)
+  for (auto &I : MI.IdToInstSetMap)
     O << SPIRVExtInstImport(&M, I.first, SPIRVBuiltinSetNameMap::map(I.second));
 
   O << SPIRVMemoryModel(&M);
@@ -1394,7 +1434,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
     << MI.ForwardPointerVec
     << TopologicalSort(MI.TypeVec, MI.ConstVec, MI.VariableVec,
                        MI.ForwardPointerVec)
-    << SPIRVNL() << MI.FuncVec;
+    << SPIRVNL() << MI.DebugInstVec << SPIRVNL() << MI.FuncVec;
   return O;
 }
 
@@ -1561,25 +1601,11 @@ SPIRVModuleImpl::addInstTemplate(Op OC, const std::vector<SPIRVWord> &Ops,
   return Ins;
 }
 
-SPIRVDbgInfo::SPIRVDbgInfo(SPIRVModule *TM) : M(TM) {}
-
-std::string SPIRVDbgInfo::getEntryPointFileStr(SPIRVExecutionModelKind EM,
-                                               unsigned I) {
-  if (M->getNumEntryPoints(EM) == 0)
-    return "";
-  return getFunctionFileStr(M->getEntryPoint(EM, I));
-}
-
-std::string SPIRVDbgInfo::getFunctionFileStr(SPIRVFunction *F) {
-  if (F->hasLine())
-    return F->getLine()->getFileNameStr();
-  return "";
-}
-
-unsigned SPIRVDbgInfo::getFunctionLineNo(SPIRVFunction *F) {
-  if (F->hasLine())
-    return F->getLine()->getLine();
-  return 0;
+SPIRVId SPIRVModuleImpl::getExtInstSetId(SPIRVExtInstSetKind Kind) const {
+  assert(Kind < SPIRVEIS_Count && "Unknown extended instruction set!");
+  auto Res = ExtInstSetIds.find(Kind);
+  assert(Res != ExtInstSetIds.end() && "extended instruction set not found!");
+  return Res->second;
 }
 
 bool isSpirvBinary(const std::string &Img) {

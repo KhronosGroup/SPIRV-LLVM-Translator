@@ -50,34 +50,47 @@ SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
                                    SPIRVType *TheType, SPIRVId TheId,
                                    SPIRVBasicBlock *TheBB)
     : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType, TheId),
-      BB(TheBB) {
-  validate();
+      BB(TheBB), DebugScope(nullptr) {
+  SPIRVInstruction::validate();
 }
 
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
                                    SPIRVType *TheType, SPIRVId TheId,
                                    SPIRVBasicBlock *TheBB, SPIRVModule *TheBM)
-    : SPIRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB) {
-  validate();
+    : SPIRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB),
+      DebugScope(nullptr) {
+  SPIRVInstruction::validate();
 }
 
 // Complete constructor for instruction with id but no type
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
                                    SPIRVId TheId, SPIRVBasicBlock *TheBB)
-    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheId), BB(TheBB) {
-  validate();
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheId), BB(TheBB),
+      DebugScope(nullptr) {
+  SPIRVInstruction::validate();
 }
 // Complete constructor for instruction without type and id
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
                                    SPIRVBasicBlock *TheBB)
-    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC), BB(TheBB) {
-  validate();
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC), BB(TheBB),
+      DebugScope(nullptr) {
+  SPIRVInstruction::validate();
 }
 // Complete constructor for instruction with type but no id
 SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
                                    SPIRVType *TheType, SPIRVBasicBlock *TheBB)
-    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType), BB(TheBB) {
-  validate();
+    : SPIRVValue(TheBB->getModule(), TheWordCount, TheOC, TheType), BB(TheBB),
+      DebugScope(nullptr) {
+  SPIRVInstruction::validate();
+}
+
+// Special constructor for debug instruction
+SPIRVInstruction::SPIRVInstruction(unsigned TheWordCount, Op TheOC,
+                                   SPIRVType *TheType, SPIRVId TheId,
+                                   SPIRVModule *TheBM, SPIRVBasicBlock *TheBB)
+    : SPIRVValue(TheBM, TheWordCount, TheOC, TheType, TheId), BB(TheBB),
+      DebugScope(nullptr) {
+  SPIRVInstruction::validate();
 }
 
 void SPIRVInstruction::setParent(SPIRVBasicBlock *TheBB) {

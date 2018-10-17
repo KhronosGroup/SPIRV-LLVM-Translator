@@ -732,6 +732,14 @@ ConstantInt *getInt32(Module *M, int Value);
 /// Get a 32 bit unsigned integer constant.
 ConstantInt *getUInt32(Module *M, unsigned Value);
 
+/// Get 32 bit integer constant if the value fits in 32 bits,
+/// return 64 bit integer constant otherwise
+ConstantInt *getInt(Module *M, int64_t Value);
+
+/// Get 32 bit unsigned integer constant if the value fits in 32 bits,
+/// return 64 bit unsigned integer constant otherwise
+ConstantInt *getUInt(Module *M, uint64_t Value);
+
 /// Get a 16 bit unsigned integer constant.
 ConstantInt *getUInt16(Module *M, unsigned short Value);
 

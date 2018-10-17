@@ -44,7 +44,6 @@
 #include "SPIRVModule.h"
 
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
 
 namespace llvm {
@@ -71,36 +70,7 @@ class SPIRVFunctionParameter;
 class SPIRVConstantSampler;
 class SPIRVConstantPipeStorage;
 class SPIRVLoopMerge;
-
-class SPIRVToLLVMDbgTran {
-public:
-  SPIRVToLLVMDbgTran(SPIRVModule *TBM, Module *TM);
-
-  void createCompileUnit();
-
-  void addDbgInfoVersion();
-
-  DIFile *getDIFile(const std::string &FileName);
-
-  DISubprogram *getDISubprogram(SPIRVFunction *SF, Function *F);
-
-  void transDbgInfo(SPIRVValue *SV, Value *V);
-
-  void finalize();
-
-private:
-  SPIRVModule *BM;
-  Module *M;
-  SPIRVDbgInfo SpDbg;
-  DIBuilder Builder;
-  bool Enable;
-  std::unordered_map<std::string, DIFile *> FileMap;
-  std::unordered_map<Function *, DISubprogram *> FuncMap;
-
-  void splitFileName(const std::string &FileName, std::string &BaseName,
-                     std::string &Path);
-};
-
+class SPIRVToLLVMDbgTran;
 class SPIRVToLLVM {
 public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
@@ -227,7 +197,7 @@ private:
   SPIRVToLLVMFunctionMap FuncMap;
   SPIRVBlockToLLVMStructMap BlockMap;
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
-  SPIRVToLLVMDbgTran DbgTran;
+  std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
 
   Type *mapType(SPIRVType *BT, Type *T);
 

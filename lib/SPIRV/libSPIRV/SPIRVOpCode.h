@@ -150,7 +150,8 @@ inline bool isConstantOpCode(Op OpCode) {
 }
 
 inline bool isModuleScopeAllowedOpCode(Op OpCode) {
-  return OpCode == OpVariable || isConstantOpCode(OpCode);
+  return OpCode == OpVariable || OpCode == OpExtInst ||
+         isConstantOpCode(OpCode);
 }
 
 inline bool isIntelSubgroupOpCode(Op OpCode) {

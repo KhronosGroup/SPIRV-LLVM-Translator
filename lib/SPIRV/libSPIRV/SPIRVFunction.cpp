@@ -129,6 +129,7 @@ void SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
   SPIRVDBG(spvdbgs() << "Decode BB: " << BB->getId() << '\n');
 
   Decoder.setScope(BB);
+  SPIRVEntry *DebugScope = nullptr;
   while (Decoder.getWordCountAndOpCode()) {
     if (Decoder.OpCode == OpFunctionEnd || Decoder.OpCode == OpLabel) {
       break;
@@ -139,13 +140,20 @@ void SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
       continue;
     }
 
-    SPIRVInstruction *Inst =
-        static_cast<SPIRVInstruction *>(Decoder.getEntry());
+    auto *Inst = static_cast<SPIRVInstruction *>(Decoder.getEntry());
     assert(Inst);
-    if (Inst->getOpCode() != OpUndef)
-      BB->addInstruction(Inst);
-    else
+    if (Inst->getOpCode() == OpUndef) {
       Module->add(Inst);
+    } else {
+      if (Inst->isExtInst(SPIRVEIS_Debug, SPIRVDebug::Scope)) {
+        DebugScope = Inst;
+      } else if (Inst->isExtInst(SPIRVEIS_Debug, SPIRVDebug::NoScope)) {
+        DebugScope = nullptr;
+      } else {
+        Inst->setDebugScope(DebugScope);
+      }
+      BB->addInstruction(Inst);
+    }
   }
   Decoder.setScope(this);
 }

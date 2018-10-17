@@ -76,7 +76,9 @@ public:
 
   void setScope(SPIRVEntry *Scope) override;
   void setParent(SPIRVFunction *F) { ParentF = F; }
-  SPIRVInstruction *addInstruction(SPIRVInstruction *I);
+  SPIRVInstruction *
+  addInstruction(SPIRVInstruction *I,
+                 const SPIRVInstruction *InsertBefore = nullptr);
   void eraseInstruction(const SPIRVInstruction *I) {
     auto Loc = find(I);
     assert(Loc != InstVec.end());
