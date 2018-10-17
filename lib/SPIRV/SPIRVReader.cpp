@@ -45,6 +45,7 @@
 #include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
 #include "SPIRVModule.h"
+#include "SPIRVToLLVMDbgTran.h"
 #include "SPIRVType.h"
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
@@ -1547,10 +1548,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, Call);
   }
 
-  case OpExtInst:
-    return mapValue(
-        BV, transOCLBuiltinFromExtInst(static_cast<SPIRVExtInst *>(BV), BB));
-
+  case OpExtInst: {
+    auto *ExtInst = static_cast<SPIRVExtInst *>(BV);
+    switch (ExtInst->getExtSetKind()) {
+    case SPIRVEIS_OpenCL:
+      return mapValue(BV, transOCLBuiltinFromExtInst(ExtInst, BB));
+    case SPIRVEIS_Debug:
+      return mapValue(BV, DbgTran->transDebugIntrinsic(ExtInst, BB));
+    default:
+      llvm_unreachable("Unknown extended instruction set!");
+    }
+  }
   case OpControlBarrier:
   case OpMemoryBarrier:
     return mapValue(
@@ -1984,9 +1992,10 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
 }
 
 SPIRVToLLVM::SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
-    : M(LLVMModule), BM(TheSPIRVModule), DbgTran(BM, M) {
-  assert(M);
+    : M(LLVMModule), BM(TheSPIRVModule) {
+  assert(M && "Initialization without an LLVM module is not allowed");
   Context = &M->getContext();
+  DbgTran.reset(new SPIRVToLLVMDbgTran(TheSPIRVModule, LLVMModule, this));
 }
 
 std::string SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction *BI) {
@@ -2096,18 +2105,30 @@ bool SPIRVToLLVM::translate() {
   if (!transAddressingModel())
     return false;
 
-  DbgTran.createCompileUnit();
-  DbgTran.addDbgInfoVersion();
-
   for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
     auto BV = BM->getVariable(I);
     if (BV->getStorageClass() != StorageClassFunction)
       transValue(BV, nullptr, nullptr);
   }
+  // Compile unit might be needed during translation of debug intrinsics.
+  for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    // Translate Compile Unit first.
+    // It shuldn't be far from the beginig of the vector
+    if (EI->getExtOp() == SPIRVDebug::CompilationUnit) {
+      DbgTran->transDebugInst(EI);
+      // Fixme: there might be more then one Compile Unit.
+      break;
+    }
+  }
+  // Then translate all debug instructions.
+  for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    DbgTran->transDebugInst(EI);
+  }
 
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     transFunction(BM->getFunction(I));
   }
+
   if (!transKernelMetadata())
     return false;
   if (!transFPContractMetadata())
@@ -2122,7 +2143,9 @@ bool SPIRVToLLVM::translate() {
   if (!postProcessOCL())
     return false;
   eraseUselessFunctions(M);
-  DbgTran.finalize();
+
+  DbgTran->addDbgInfoVersion();
+  DbgTran->finalize();
   return true;
 }
 
@@ -2150,7 +2173,7 @@ bool SPIRVToLLVM::transAddressingModel() {
 bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
   if (!transAlign(BV, V))
     return false;
-  DbgTran.transDbgInfo(BV, V);
+  DbgTran->transDbgInfo(BV, V);
   return true;
 }
 
@@ -2550,7 +2573,8 @@ Instruction *SPIRVToLLVM::transOCLBarrierFence(SPIRVInstruction *MB,
 bool SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
-  assert((Lang == SourceLanguageOpenCL_C || Lang == SourceLanguageOpenCL_CPP) &&
+  assert((Lang == SourceLanguageUnknown || // Allow unknown for debug info test
+          Lang == SourceLanguageOpenCL_C || Lang == SourceLanguageOpenCL_CPP) &&
          "Unsupported source language");
   unsigned short Major = 0;
   unsigned char Minor = 0;
@@ -2714,90 +2738,6 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
                                                      NewCI->getNextNode());
              },
              &Attrs)));
-}
-
-SPIRVToLLVMDbgTran::SPIRVToLLVMDbgTran(SPIRVModule *TBM, Module *TM)
-    : BM(TBM), M(TM), SpDbg(BM), Builder(*M) {
-  Enable = BM->hasDebugInfo();
-}
-
-void SPIRVToLLVMDbgTran::createCompileUnit() {
-  if (!Enable)
-    return;
-  auto File = SpDbg.getEntryPointFileStr(ExecutionModelKernel, 0);
-  std::string BaseName;
-  std::string Path;
-  splitFileName(File, BaseName, Path);
-  Builder.createCompileUnit(dwarf::DW_LANG_C99,
-                            Builder.createFile(BaseName, Path), "spirv", false,
-                            "", 0, "", DICompileUnit::LineTablesOnly);
-}
-
-void SPIRVToLLVMDbgTran::addDbgInfoVersion() {
-  if (!Enable)
-    return;
-  M->addModuleFlag(Module::Warning, "Dwarf Version", dwarf::DWARF_VERSION);
-  M->addModuleFlag(Module::Warning, "Debug Info Version",
-                   DEBUG_METADATA_VERSION);
-}
-
-DIFile *SPIRVToLLVMDbgTran::getDIFile(const std::string &FileName) {
-  return getOrInsert(FileMap, FileName, [=]() -> DIFile * {
-    std::string BaseName;
-    std::string Path;
-    splitFileName(FileName, BaseName, Path);
-    if (!BaseName.empty())
-      return Builder.createFile(BaseName, Path);
-    else
-      return nullptr;
-  });
-}
-
-DISubprogram *SPIRVToLLVMDbgTran::getDISubprogram(SPIRVFunction *SF,
-                                                  Function *F) {
-  return getOrInsert(FuncMap, F, [=]() {
-    auto DF = getDIFile(SpDbg.getFunctionFileStr(SF));
-    auto FN = F->getName();
-    auto LN = SpDbg.getFunctionLineNo(SF);
-    return Builder.createFunction(
-        DF, FN, FN, DF, LN,
-        Builder.createSubroutineType(Builder.getOrCreateTypeArray(None)),
-        Function::isInternalLinkage(F->getLinkage()), true, LN);
-  });
-}
-
-void SPIRVToLLVMDbgTran::transDbgInfo(SPIRVValue *SV, Value *V) {
-  if (!Enable || !SV->hasLine())
-    return;
-  if (auto I = dyn_cast<Instruction>(V)) {
-    assert(SV->isInst() && "Invalid instruction");
-    auto SI = static_cast<SPIRVInstruction *>(SV);
-    assert(SI->getParent() && SI->getParent()->getParent() &&
-           "Invalid instruction");
-    auto Line = SV->getLine();
-    I->setDebugLoc(DebugLoc::get(Line->getLine(), Line->getColumn(),
-                                 getDISubprogram(SI->getParent()->getParent(),
-                                                 I->getParent()->getParent())));
-  }
-}
-
-void SPIRVToLLVMDbgTran::finalize() {
-  if (!Enable)
-    return;
-  Builder.finalize();
-}
-
-void SPIRVToLLVMDbgTran::splitFileName(const std::string &FileName,
-                                       std::string &BaseName,
-                                       std::string &Path) {
-  auto Loc = FileName.find_last_of("/\\");
-  if (Loc != std::string::npos) {
-    BaseName = FileName.substr(Loc + 1);
-    Path = FileName.substr(0, Loc);
-  } else {
-    BaseName = FileName;
-    Path = ".";
-  }
 }
 
 } // namespace SPIRV
