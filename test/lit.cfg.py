@@ -35,7 +35,7 @@ config.substitutions.append(('%PATH%', config.environment['PATH']))
 
 tool_dirs = [config.llvm_tools_dir, config.llvm_spirv_dir]
 
-tools = ['llvm-as', 'llvm-dis', 'llvm-spirv']
+tools = ['llc', 'llvm-as', 'llvm-dis', 'llvm-dwarfdump', 'llvm-objdump', 'llvm-readelf', 'llvm-readobj',  'llvm-spirv']
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
 

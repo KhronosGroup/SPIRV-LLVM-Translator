@@ -93,6 +93,7 @@ script:
         -DLLVM_BUILD_TOOLS=ON \
         -DLLVM_BUILD_TESTS=ON \
         -DLLVM_INCLUDE_TESTS=ON \
+        -DSKIP_SPIRV_DEBUG_INFO_TESTS=ON \
         -DLLVM_LIT_ARGS="-sv --no-progress-bar" \
         -G "Unix Makefiles"
     fi

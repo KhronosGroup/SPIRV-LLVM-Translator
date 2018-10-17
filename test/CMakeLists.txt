@@ -1,3 +1,5 @@
+llvm_canonicalize_cmake_booleans(SKIP_SPIRV_DEBUG_INFO_TESTS)
+
 # required by lit.site.cfg.py.in
 get_target_property(LLVM_SPIRV_DIR llvm-spirv BINARY_DIR)
 set(LLVM_SPIRV_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -10,11 +12,22 @@ configure_lit_site_cfg(
 
 if(NOT BUILD_EXTERNAL)
   set(LLVM_SPIRV_TEST_DEPS
-    count
     FileCheck
+    count
+    llvm-as
+    llvm-dis
     not
   )
+  if(NOT SKIP_SPIRV_DEBUG_INFO_TESTS)
+    list(APPEND LLVM_SPIRV_TEST_DEPS
+      llc
+      llvm-dwarfdump
+      llvm-objdump
+      llvm-readobj
+    )
+  endif(NOT SKIP_SPIRV_DEBUG_INFO_TESTS)
 endif(NOT BUILD_EXTERNAL)
+
 
 add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -22,8 +35,6 @@ add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
     --verbose
   DEPENDS
     ${LLVM_SPIRV_TEST_DEPS}
-    llvm-as
-    llvm-dis
     llvm-spirv
 )
 
