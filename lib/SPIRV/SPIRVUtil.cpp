@@ -793,7 +793,11 @@ Type *getVoidFuncPtrType(Module *M, unsigned AddrSpace) {
 }
 
 ConstantInt *getInt64(Module *M, int64_t Value) {
-  return ConstantInt::get(Type::getInt64Ty(M->getContext()), Value, true);
+  return ConstantInt::getSigned(Type::getInt64Ty(M->getContext()), Value);
+}
+
+ConstantInt *getUInt64(Module *M, uint64_t Value) {
+  return ConstantInt::get(Type::getInt64Ty(M->getContext()), Value, false);
 }
 
 Constant *getFloat32(Module *M, float Value) {
@@ -806,6 +810,16 @@ ConstantInt *getInt32(Module *M, int Value) {
 
 ConstantInt *getUInt32(Module *M, unsigned Value) {
   return ConstantInt::get(Type::getInt32Ty(M->getContext()), Value, false);
+}
+
+ConstantInt *getInt(Module *M, int64_t Value) {
+  return Value >> 32 ? getInt64(M, Value)
+                     : getInt32(M, static_cast<int32_t>(Value));
+}
+
+ConstantInt *getUInt(Module *M, uint64_t Value) {
+  return Value >> 32 ? getUInt64(M, Value)
+                     : getUInt32(M, static_cast<uint32_t>(Value));
 }
 
 ConstantInt *getUInt16(Module *M, unsigned short Value) {

@@ -59,11 +59,17 @@ SPIRVDecoder SPIRVBasicBlock::getDecoder(std::istream &IS) {
 }
 
 /// Assume I contains valid Id.
-SPIRVInstruction *SPIRVBasicBlock::addInstruction(SPIRVInstruction *I) {
+SPIRVInstruction *
+SPIRVBasicBlock::addInstruction(SPIRVInstruction *I,
+                                const SPIRVInstruction *InsertBefore) {
   assert(I && "Invalid instruction");
   Module->add(I);
   I->setParent(this);
-  InstVec.push_back(I);
+  if (InsertBefore) {
+    auto Pos = std::find(InstVec.begin(), InstVec.end(), InsertBefore);
+    InstVec.insert(Pos, I);
+  } else
+    InstVec.push_back(I);
   return I;
 }
 

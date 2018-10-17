@@ -338,6 +338,25 @@ bool SPIRVEntry::hasLinkageType() const {
   return OpCode == OpFunction || OpCode == OpVariable;
 }
 
+bool SPIRVEntry::isExtInst(const SPIRVExtInstSetKind InstSet) const {
+  if (isExtInst()) {
+    const SPIRVExtInst *EI = static_cast<const SPIRVExtInst *>(this);
+    return EI->getExtSetKind() == InstSet;
+  }
+  return false;
+}
+
+bool SPIRVEntry::isExtInst(const SPIRVExtInstSetKind InstSet,
+                           const SPIRVWord ExtOp) const {
+  if (isExtInst()) {
+    const SPIRVExtInst *EI = static_cast<const SPIRVExtInst *>(this);
+    if (EI->getExtSetKind() == InstSet) {
+      return EI->getExtOp() == ExtOp;
+    }
+  }
+  return false;
+}
+
 void SPIRVEntry::encodeDecorate(spv_ostream &O) const {
   for (auto &I : Decorates)
     O << *I.second;
