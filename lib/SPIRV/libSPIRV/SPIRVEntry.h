@@ -243,14 +243,14 @@ public:
   SPIRVEntry(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode, SPIRVId TheId)
       : Module(M), OpCode(TheOpCode), Id(TheId), Attrib(SPIRVEA_DEFAULT),
         WordCount(TheWordCount), Line(nullptr) {
-    validate();
+    SPIRVEntry::validate();
   }
 
   // Complete constructor for objects without id
   SPIRVEntry(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode)
       : Module(M), OpCode(TheOpCode), Id(SPIRVID_INVALID), Attrib(SPIRVEA_NOID),
         WordCount(TheWordCount), Line(nullptr) {
-    validate();
+    SPIRVEntry::validate();
   }
 
   // Incomplete constructor
@@ -297,7 +297,10 @@ public:
   bool hasLinkageType() const;
   bool isAtomic() const { return isAtomicOpCode(OpCode); }
   bool isBasicBlock() const { return isLabel(); }
-  bool isBuiltinCall() const { return OpCode == OpExtInst; }
+  bool isExtInst() const { return OpCode == OpExtInst; }
+  bool isExtInst(const SPIRVExtInstSetKind InstSet) const;
+  bool isExtInst(const SPIRVExtInstSetKind InstSet,
+                 const SPIRVWord ExtOp) const;
   bool isDecorate() const { return OpCode == OpDecorate; }
   bool isMemberDecorate() const { return OpCode == OpMemberDecorate; }
   bool isForward() const { return OpCode == OpForward; }

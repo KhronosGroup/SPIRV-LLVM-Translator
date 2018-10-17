@@ -66,20 +66,20 @@ public:
              SPIRVType *TheType)
       : SPIRVEntry(M, TheWordCount, TheOpCode), Type(TheType) {
     setHasNoId();
-    validate();
+    SPIRVValue::validate();
   }
   // Complete constructor for value with id but without type
   SPIRVValue(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode, SPIRVId TheId)
       : SPIRVEntry(M, TheWordCount, TheOpCode, TheId), Type(NULL) {
     setHasNoType();
-    validate();
+    SPIRVValue::validate();
   }
   // Complete constructor for value without id and type
   SPIRVValue(SPIRVModule *M, unsigned TheWordCount, Op TheOpCode)
       : SPIRVEntry(M, TheWordCount, TheOpCode), Type(NULL) {
     setHasNoId();
     setHasNoType();
-    validate();
+    SPIRVValue::validate();
   }
   // Incomplete constructor
   SPIRVValue(Op TheOpCode) : SPIRVEntry(TheOpCode), Type(NULL) {}

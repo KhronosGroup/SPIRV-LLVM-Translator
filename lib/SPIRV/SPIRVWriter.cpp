@@ -39,6 +39,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVWriter.h"
+#include "LLVMToSPIRVDbgTran.h"
 #include "SPIRVBasicBlock.h"
 #include "SPIRVEntry.h"
 #include "SPIRVEnum.h"
@@ -126,14 +127,15 @@ struct OCLBuiltinSPIRVTransInfo {
 };
 
 LLVMToSPIRV::LLVMToSPIRV(SPIRVModule *SMod)
-    : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod),
-      ExtSetId(SPIRVID_INVALID), SrcLang(0), SrcLangVer(0),
-      DbgTran(nullptr, SMod) {}
+    : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod), SrcLang(0),
+      SrcLangVer(0) {
+  DbgTran = make_unique<LLVMToSPIRVDbgTran>(nullptr, SMod, this);
+}
 
 bool LLVMToSPIRV::runOnModule(Module &Mod) {
   M = &Mod;
   Ctx = &M->getContext();
-  DbgTran.setModule(M);
+  DbgTran->setModule(M);
   assert(BM && "SPIR-V module not initialized");
   translate();
   return true;
@@ -180,9 +182,8 @@ bool LLVMToSPIRV::isBuiltinTransToExtInst(Function *F,
   SPIRVExtInstSetKind Set = SPIRVEIS_Count;
   if (!SPIRVExtSetShortNameMap::rfind(ExtSetName, &Set))
     return false;
-  assert(Set == BM->getBuiltinSet(ExtSetId) &&
-         "Invalid extended instruction set");
-  assert(Set == SPIRVEIS_OpenCL && "Unsupported extended instruction set");
+  assert((Set == SPIRVEIS_OpenCL || Set == SPIRVEIS_Debug) &&
+         "Unsupported extended instruction set");
 
   auto ExtOpName = S.substr(Loc + 1);
   auto Splited = ExtOpName.split(kSPIRVPostfix::ExtDivider);
@@ -500,7 +501,6 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeZext);
   if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::SExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
-  DbgTran.transDbgInfo(F, BF);
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
            spvdbgs() << *BF << '\n';)
   return BF;
@@ -973,7 +973,6 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
   if ((isa<AtomicCmpXchgInst>(V) && cast<AtomicCmpXchgInst>(V)->isVolatile()) ||
       (isa<AtomicRMWInst>(V) && cast<AtomicRMWInst>(V)->isVolatile()))
     BV->setVolatile(true);
-  DbgTran.transDbgInfo(V, BV);
   return true;
 }
 
@@ -991,14 +990,14 @@ bool LLVMToSPIRV::transAlign(Value *V, SPIRVValue *BV) {
 
 /// Do this after source language is set.
 bool LLVMToSPIRV::transBuiltinSet() {
-  SPIRVWord Ver = 0;
-  (void)Ver;
-  assert((BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_C ||
-          BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_CPP) &&
-         "not supported");
-  std::stringstream SS;
-  SS << "OpenCL.std";
-  return BM->importBuiltinSet(SS.str(), &ExtSetId);
+  SPIRVId EISId;
+  if (!BM->importBuiltinSet("OpenCL.std", &EISId))
+    return false;
+  if (SPIRVMDWalker(*M).getNamedMD("llvm.dbg.cu")) {
+    if (!BM->importBuiltinSet("SPIRV.debug", &EISId))
+      return false;
+  }
+  return true;
 }
 
 /// Translate sampler* spcv.cast(i32 arg) or
@@ -1126,6 +1125,13 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
       Size = 0;
     return BM->addLifetimeInst(OC, transValue(II->getOperand(1), BB), Size, BB);
   }
+  // We don't want to mix translation of regular code and debug info, because
+  // it creates a mess, therefore translation of debug intrinsics is
+  // postponed until LLVMToSPIRVDbgTran::finalizeDebug...() methods.
+  case Intrinsic::dbg_declare:
+    return DbgTran->createDebugDeclarePlaceholder(cast<DbgDeclareInst>(II), BB);
+  case Intrinsic::dbg_value:
+    return DbgTran->createDebugValuePlaceholder(cast<DbgValueInst>(II), BB);
   default:
     // LLVM intrinsic functions shouldn't get to SPIRV, because they
     // would have no definition there.
@@ -1155,7 +1161,7 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
                               &Dec))
     return addDecorations(
         BM->addExtInst(
-            transType(CI->getType()), ExtSetId, ExtOp,
+            transType(CI->getType()), BM->getExtInstSetId(ExtSetKind), ExtOp,
             transArguments(CI, BB,
                            SPIRVEntry::createUnique(ExtSetKind, ExtOp).get()),
             BB),
@@ -1326,6 +1332,7 @@ bool LLVMToSPIRV::translate() {
   BM->optimizeDecorates();
   BM->resolveUnknownStructFields();
   BM->createForwardPointers();
+  DbgTran->transDebugMetadata();
   return true;
 }
 
@@ -1580,28 +1587,6 @@ LLVMToSPIRV::transLinkageType(const GlobalValue *GV) {
   if (GV->hasInternalLinkage() || GV->hasPrivateLinkage())
     return SPIRVLinkageTypeKind::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
-}
-
-LLVMToSPIRVDbgTran::LLVMToSPIRVDbgTran(Module *TM, SPIRVModule *TBM)
-    : BM(TBM), M(TM) {}
-
-void LLVMToSPIRVDbgTran::setModule(Module *Mod) { M = Mod; }
-
-void LLVMToSPIRVDbgTran::setSPIRVModule(SPIRVModule *SMod) { BM = SMod; }
-
-void LLVMToSPIRVDbgTran::transDbgInfo(Value *V, SPIRVValue *BV) {
-  if (auto I = dyn_cast<Instruction>(V)) {
-    auto DL = I->getDebugLoc();
-    if (DL) {
-      auto File = BM->getString(DL->getFilename().str());
-      BM->addLine(BV, File->getId(), DL->getLine(), DL->getColumn());
-    }
-  } else if (auto F = dyn_cast<Function>(V)) {
-    if (auto DIS = F->getSubprogram()) {
-      auto File = BM->getString(DIS->getFilename().str());
-      BM->addLine(BV, File->getId(), DIS->getLine(), 0);
-    }
-  }
 }
 
 } // namespace SPIRV
