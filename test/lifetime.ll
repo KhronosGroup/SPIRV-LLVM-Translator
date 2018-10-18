@@ -5,7 +5,6 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.spv.bc
 ; RUN: llvm-dis < %t.spv.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV-NOT: Bitcast
 ; CHECK-SPIRV: 3 LifetimeStart [[tmp:[0-9]+]] 0
 ; CHECK-SPIRV: 3 LifetimeStop [[tmp]] 0
 
