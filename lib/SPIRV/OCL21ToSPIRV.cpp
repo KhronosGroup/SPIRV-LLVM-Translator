@@ -215,10 +215,18 @@ void OCL21ToSPIRV::visitCallSubGroupBarrier(CallInst *CI) {
   mutateCallInstSPIRV(M, CI,
                       [=](CallInst *, std::vector<Value *> &Args) {
                         Args.resize(3);
+                        // Execution scope
                         Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
+                        // Memory scope
                         Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
-                        Args[2] = addInt32(
-                            mapOCLMemFenceFlagToSPIRV(std::get<0>(Lit)));
+                        // Use sequential consistent memory order by default.
+                        // But if the flags argument is set to 0, we use
+                        // None(Relaxed) memory order.
+                        unsigned MemFenceFlag = std::get<0>(Lit);
+                        OCLMemOrderKind MemOrder =
+                            MemFenceFlag ? OCLMO_seq_cst : OCLMO_relaxed;
+                        Args[2] = addInt32(mapOCLMemSemanticToSPIRV(
+                            MemFenceFlag, MemOrder)); // Memory semantics
                         return getSPIRVFuncName(OpControlBarrier);
                       },
                       &Attrs);
