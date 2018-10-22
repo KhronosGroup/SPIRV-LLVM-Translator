@@ -40,6 +40,8 @@
 #define SPIRV_OCLUTIL_H
 
 #include "SPIRVInternal.h"
+#include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/Support/Path.h"
 
 #include <functional>
 #include <tuple>
@@ -311,6 +313,19 @@ decodeOCLVer(unsigned Ver);
 
 /// Decode a MDNode assuming it contains three integer constants.
 void decodeMDNode(MDNode *N, unsigned &X, unsigned &Y, unsigned &Z);
+
+/// Get full path from debug info metadata
+/// Return empty string if the path is not available.
+template <typename T> std::string getFullPath(const T *Scope) {
+  if (!Scope)
+    return std::string();
+  std::string Filename = Scope->getFilename().str();
+  if (sys::path::is_absolute(Filename))
+    return Filename;
+  SmallString<16> DirName = Scope->getDirectory();
+  sys::path::append(DirName, Filename);
+  return DirName.str().str();
+}
 
 /// Decode OpenCL vector type hint MDNode and encode it as SPIR-V execution
 /// mode VecTypeHint.
