@@ -46,7 +46,7 @@ namespace spv {
 
 typedef unsigned int Id;
 
-#define SPV_VERSION 0x10100
+#define SPV_VERSION 0x10300
 #define SPV_REVISION 7
 
 static const unsigned int MagicNumber = 0x07230203;

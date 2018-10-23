@@ -1181,12 +1181,20 @@ bool LLVMToSPIRV::transAlign(Value *V, SPIRVValue *BV) {
 /// Do this after source language is set.
 bool LLVMToSPIRV::transBuiltinSet() {
   SPIRVWord Ver = 0;
-  (void)Ver;
-  assert((BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_C ||
-          BM->getSourceLanguage(&Ver) == SourceLanguageOpenCL_CPP) &&
+  SourceLanguage Lang = BM->getSourceLanguage(&Ver);
+
+  assert((Lang == SourceLanguageUnknown ||
+          Lang == SourceLanguageOpenCL_C ||
+          Lang == SourceLanguageOpenCL_CPP ||
+          Lang == SourceLanguageGLSL ||
+          Lang == SourceLanguageESSL) &&
          "not supported");
   std::stringstream SS;
-  SS << "OpenCL.std";
+  if (Lang == SourceLanguageOpenCL_C ||
+      Lang == SourceLanguageOpenCL_CPP)
+    SS << "OpenCL.std";
+  else
+    SS << "GLSL.std.450";
   return BM->importBuiltinSet(SS.str(), &ExtSetId);
 }
 
