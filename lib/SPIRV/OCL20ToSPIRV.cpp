@@ -274,6 +274,14 @@ public:
   /// For cl_intel_media_block_io built-ins:
   void visitSubgroupImageMediaBlockINTEL(CallInst *CI,
                                          const std::string &DemangledName);
+  // For cl_intel_device_side_avc_motion_estimation built-ins
+  void visitSubgroupAVCBuiltinCall(CallInst *CI, StringRef MangledName,
+                                   const std::string &DemangledName);
+  void visitSubgroupAVCWrapperBuiltinCall(CallInst *CI, Op WrappedOC,
+                                          const std::string &DemangledName);
+  void visitSubgroupAVCBuiltinCallWithSampler(CallInst *CI,
+                                              StringRef MangledName,
+                                              const std::string &DemangledName);
 
   static char ID;
 
@@ -539,6 +547,16 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   if (DemangledName.find(kOCLBuiltinName::SubgroupImageMediaBlockINTELPrefix) ==
       0) {
     visitSubgroupImageMediaBlockINTEL(&CI, DemangledName);
+    return;
+  }
+  // Handle 'cl_intel_device_side_avc_motion_estimation' extension built-ins
+  if (DemangledName.find(kOCLSubgroupsAVCIntel::Prefix) == 0 ||
+      // Workaround for a bug in the extension specification
+      DemangledName.find("intel_sub_group_ime_ref_window_size") == 0) {
+    if (MangledName.find(kMangledName::Sampler) != StringRef::npos)
+      visitSubgroupAVCBuiltinCallWithSampler(&CI, MangledName, DemangledName);
+    else
+      visitSubgroupAVCBuiltinCall(&CI, MangledName, DemangledName);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -1667,6 +1685,194 @@ void OCL20ToSPIRV::visitSubgroupImageMediaBlockINTEL(
                         return getSPIRVFuncName(OpCode, CI->getType());
                       },
                       &Attrs);
+}
+
+static const char *getSubgroupAVCIntelOpKind(const std::string &Name) {
+  return StringSwitch<const char *>(Name)
+      .StartsWith(kOCLSubgroupsAVCIntel::IMEPrefix, "ime")
+      .StartsWith(kOCLSubgroupsAVCIntel::REFPrefix, "ref")
+      .StartsWith(kOCLSubgroupsAVCIntel::SICPrefix, "sic");
+}
+
+static const char *getSubgroupAVCIntelTyKind(Type *Ty) {
+  auto STy = cast<StructType>(cast<PointerType>(Ty)->getElementType());
+  auto TName = STy->getName();
+  return TName.endswith("_payload_t") ? "payload" : "result";
+}
+
+static Type *getSubgroupAVCIntelMCEType(Module *M, std::string &TName) {
+  auto Ty = M->getTypeByName(TName);
+  if (Ty)
+    return Ty;
+
+  return StructType::create(M->getContext(), TName);
+}
+
+static Op
+getSubgroupAVCIntelMCEOpCodeForWrapper(const std::string &DemangledName) {
+  if (DemangledName.size() <= strlen(kOCLSubgroupsAVCIntel::MCEPrefix))
+    return OpNop; // this is not a VME built-in
+
+  std::string MCEName = DemangledName;
+  MCEName.replace(0, strlen(kOCLSubgroupsAVCIntel::MCEPrefix),
+                  kOCLSubgroupsAVCIntel::MCEPrefix);
+  Op MCEOC = OpNop;
+  OCLSPIRVSubgroupAVCIntelBuiltinMap::find(MCEName, &MCEOC);
+  return MCEOC;
+}
+
+// Handles Subgroup AVC Intel extension generic built-ins.
+void OCL20ToSPIRV::visitSubgroupAVCBuiltinCall(
+    CallInst *CI, StringRef MangledName, const std::string &DemangledName) {
+  Op OC = OpNop;
+  std::string FName = DemangledName;
+  std::string Prefix = kOCLSubgroupsAVCIntel::Prefix;
+
+  // Update names for built-ins mapped on two or more SPIRV instructions
+  if (FName.find(Prefix + "ime_get_streamout_major_shape_") == 0) {
+    auto PTy = cast<PointerType>(CI->getArgOperand(0)->getType());
+    auto STy = cast<StructType>(PTy->getElementType());
+    assert(STy->hasName() && "Invalid Subgroup AVC Intel built-in call");
+    FName += (STy->getName().contains("single")) ? "_single_reference"
+                                                 : "_dual_reference";
+  } else if (FName.find(Prefix + "sic_configure_ipe") == 0) {
+    FName += (CI->getNumArgOperands() == 8) ? "_luma" : "_luma_chroma";
+  }
+
+  OCLSPIRVSubgroupAVCIntelBuiltinMap::find(FName, &OC);
+  if (OC == OpNop) {
+    if (Op MCEOC = getSubgroupAVCIntelMCEOpCodeForWrapper(DemangledName))
+      // The called function is a VME wrapper built-in
+      return visitSubgroupAVCWrapperBuiltinCall(CI, MCEOC, DemangledName);
+    else
+      // The called function isn't a VME built-in
+      return;
+  }
+
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return getSPIRVFuncName(OC);
+      },
+      &Attrs);
+}
+
+// Handles Subgroup AVC Intel extension wrapper built-ins.
+// 'IME', 'REF' and 'SIC' sets contain wrapper built-ins which don't have
+// corresponded instructions in SPIRV and should be translated to a
+// conterpart from 'MCE' with conversion for an argument and result (if needed).
+void OCL20ToSPIRV::visitSubgroupAVCWrapperBuiltinCall(
+    CallInst *CI, Op WrappedOC, const std::string &DemangledName) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  std::string Prefix = kOCLSubgroupsAVCIntel::Prefix;
+
+  // Find 'to_mce' conversion function.
+  // The operand required conversion is always the last one.
+  const char *OpKind = getSubgroupAVCIntelOpKind(DemangledName);
+  const char *TyKind = getSubgroupAVCIntelTyKind(
+      CI->getArgOperand(CI->getNumArgOperands() - 1)->getType());
+  std::string MCETName =
+      std::string(kOCLSubgroupsAVCIntel::TypePrefix) + "mce_" + TyKind + "_t";
+  auto *MCETy =
+      PointerType::get(getSubgroupAVCIntelMCEType(M, MCETName), SPIRAS_Private);
+  std::string ToMCEFName = Prefix + OpKind + "_convert_to_mce_" + TyKind;
+  Op ToMCEOC = OpNop;
+  OCLSPIRVSubgroupAVCIntelBuiltinMap::find(ToMCEFName, &ToMCEOC);
+  assert(ToMCEOC != OpNop && "Invalid Subgroup AVC Intel built-in call");
+
+  if (std::strcmp(TyKind, "payload") == 0) {
+    // Wrapper built-ins which take the 'payload_t' argument return it as
+    // the result: two conversion calls required.
+    std::string FromMCEFName =
+        Prefix + "mce_convert_to_" + OpKind + "_" + TyKind;
+    Op FromMCEOC = OpNop;
+    OCLSPIRVSubgroupAVCIntelBuiltinMap::find(FromMCEFName, &FromMCEOC);
+    assert(FromMCEOC != OpNop && "Invalid Subgroup AVC Intel built-in call");
+
+    mutateCallInstSPIRV(
+        M, CI,
+        [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
+          Ret = MCETy;
+          // Create conversion function call for the last operand
+          Args[Args.size() - 1] =
+              addCallInstSPIRV(M, getSPIRVFuncName(ToMCEOC), MCETy,
+                               Args[Args.size() - 1], nullptr, CI, "");
+
+          return getSPIRVFuncName(WrappedOC);
+        },
+        [=](CallInst *NewCI) -> Instruction * {
+          // Create conversion function call for the return result
+          return addCallInstSPIRV(M, getSPIRVFuncName(FromMCEOC), CI->getType(),
+                                  NewCI, nullptr, CI, "");
+        },
+        &Attrs);
+  } else {
+    // Wrapper built-ins which take the 'result_t' argument requires only one
+    // conversion for the argument
+    mutateCallInstSPIRV(
+        M, CI,
+        [=](CallInst *, std::vector<Value *> &Args) {
+          // Create conversion function call for the last
+          // operand
+          Args[Args.size() - 1] =
+              addCallInstSPIRV(M, getSPIRVFuncName(ToMCEOC), MCETy,
+                               Args[Args.size() - 1], nullptr, CI, "");
+
+          return getSPIRVFuncName(WrappedOC);
+        },
+        &Attrs);
+  }
+}
+
+// Handles Subgroup AVC Intel extension built-ins which take sampler as
+// an argument (their SPIR-V counterparts take OpTypeVmeImageIntel instead)
+void OCL20ToSPIRV::visitSubgroupAVCBuiltinCallWithSampler(
+    CallInst *CI, StringRef MangledName, const std::string &DemangledName) {
+  std::string FName = DemangledName;
+  std::string Prefix = kOCLSubgroupsAVCIntel::Prefix;
+
+  // Update names for built-ins mapped on two or more SPIRV instructions
+  if (FName.find(Prefix + "ref_evaluate_with_multi_reference") == 0 ||
+      FName.find(Prefix + "sic_evaluate_with_multi_reference") == 0) {
+    FName += (CI->getNumArgOperands() == 5) ? "_interlaced" : "";
+  }
+
+  Op OC = OpNop;
+  OCLSPIRVSubgroupAVCIntelBuiltinMap::find(FName, &OC);
+  if (OC == OpNop)
+    return; // this is not a VME built-in
+
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        auto SamplerIt = std::find_if(Args.begin(), Args.end(), [](Value *V) {
+          return OCLUtil::isSamplerTy(V->getType());
+        });
+        assert(SamplerIt != Args.end() &&
+               "Invalid Subgroup AVC Intel built-in call");
+        auto *SamplerVal = *SamplerIt;
+        Args.erase(SamplerIt);
+
+        for (unsigned I = 0, E = Args.size(); I < E; ++I) {
+          if (!isOCLImageType(Args[I]->getType()))
+            continue;
+
+          auto *ImageTy = getAnalysis<OCLTypeToSPIRV>().getAdaptedType(Args[I]);
+          if (isOCLImageType(ImageTy))
+            ImageTy = getSPIRVImageTypeFromOCL(M, ImageTy);
+          auto *SampledImgTy = getSPIRVTypeByChangeBaseTypeName(
+              M, ImageTy, kSPIRVTypeName::Image, kSPIRVTypeName::VmeImageINTEL);
+
+          Value *SampledImgArgs[] = {Args[I], SamplerVal};
+          Args[I] = addCallInstSPIRV(M, getSPIRVFuncName(OpVmeImageINTEL),
+                                     SampledImgTy, SampledImgArgs, nullptr, CI,
+                                     kSPIRVName::TempSampledImage);
+        }
+        return getSPIRVFuncName(OC);
+      },
+      &Attrs);
 }
 
 } // namespace SPIRV
