@@ -138,9 +138,16 @@ inline bool isPipeOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OpReadPipe <= OC && OC <= OpGroupCommitWritePipe;
 }
+
+inline bool isSubgroupAvcINTELTypeOpCode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OpTypeAvcImePayloadINTEL <= OC && OC <= OpTypeAvcSicResultINTEL;
+}
+
 inline bool isTypeOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return (OpTypeVoid <= OC && OC <= OpTypePipe) || OC == OpTypePipeStorage;
+  return (OpTypeVoid <= OC && OC <= OpTypePipe) || OC == OpTypePipeStorage ||
+         isSubgroupAvcINTELTypeOpCode(OpCode) || OC == OpTypeVmeImageINTEL;
 }
 
 inline bool isConstantOpCode(Op OpCode) {

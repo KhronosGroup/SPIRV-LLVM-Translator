@@ -468,6 +468,12 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
   add(CapabilitySubgroupImageMediaBlockIOINTEL,
       "SubgroupImageMediaBlockIOINTEL");
+  add(CapabilitySubgroupAvcMotionEstimationINTEL,
+      "SubgroupAvcMotionEstimationINTEL");
+  add(CapabilitySubgroupAvcMotionEstimationIntraINTEL,
+      "SubgroupAvcMotionEstimationIntraINTEL");
+  add(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
+      "SubgroupAvcMotionEstimationChromaINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

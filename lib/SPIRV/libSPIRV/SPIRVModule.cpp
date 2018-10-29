@@ -223,6 +223,8 @@ public:
   SPIRVTypePipe *addPipeType() override;
   SPIRVTypeVoid *addVoidType() override;
   void createForwardPointers() override;
+  SPIRVType *addSubgroupAvcINTELType(Op) override;
+  SPIRVTypeVmeImageINTEL *addVmeImageINTELType(SPIRVTypeImage *T) override;
 
   // Constant creation functions
   SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *) override;
@@ -849,6 +851,15 @@ void SPIRVModuleImpl::createForwardPointers() {
       }
     }
   }
+}
+
+SPIRVTypeVmeImageINTEL *
+SPIRVModuleImpl::addVmeImageINTELType(SPIRVTypeImage *T) {
+  return addType(new SPIRVTypeVmeImageINTEL(this, getId(), T));
+}
+
+SPIRVType *SPIRVModuleImpl::addSubgroupAvcINTELType(Op TheOpCode) {
+  return addType(new SPIRVTypeSubgroupAvcINTEL(TheOpCode, this, getId()));
 }
 
 SPIRVFunction *SPIRVModuleImpl::addFunction(SPIRVFunction *Func) {
