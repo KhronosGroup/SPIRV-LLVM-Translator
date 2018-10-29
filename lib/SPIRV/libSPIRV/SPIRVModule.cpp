@@ -77,7 +77,10 @@ public:
   bool exist(SPIRVId, SPIRVEntry **) const override;
   SPIRVId getId(SPIRVId Id = SPIRVID_INVALID, unsigned Increment = 1);
   SPIRVEntry *getEntry(SPIRVId Id) const override;
-  bool hasDebugInfo() const override { return !StringVec.empty(); }
+  // If we have at least on OpLine in the module the CurrentLine is non-empty
+  bool hasDebugInfo() const override {
+    return CurrentLine.get() || !DebugInstVec.empty();
+  }
 
   // Error handling functions
   SPIRVErrorLog &getErrorLog() override { return ErrLog; }
@@ -136,7 +139,9 @@ public:
   const std::vector<SPIRVExtInst *> &getDebugInstVec() const override {
     return DebugInstVec;
   }
-
+  const std::vector<SPIRVString *> &getStringVec() const override {
+    return StringVec;
+  }
   // Module changing functions
   bool importBuiltinSet(const std::string &, SPIRVId *) override;
   bool importBuiltinSetWithId(const std::string &, SPIRVId) override;

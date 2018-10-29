@@ -6,7 +6,7 @@
 ; CHECK: {{[0-9]*}} ExtInstImport
 ; CHECK-NEXT: {{[0-9]*}} MemoryModel
 ; CHECK-NEXT: {{[0-9]*}} EntryPoint
-; CHECK-NEXT: {{[0-9]*}} Source
+; CHECK: {{[0-9]*}} Source
 
 ; CHECK-NOT: {{[0-9]*}} Capability
 ; CHECK-NOT: {{[0-9]*}} ExtInstImport
