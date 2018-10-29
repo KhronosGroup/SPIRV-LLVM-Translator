@@ -239,7 +239,9 @@ protected:
     SPIRVConstantEmpty::validate();
     assert((Type->isTypeComposite() || Type->isTypeOpaque() ||
             Type->isTypeEvent() || Type->isTypePointer() ||
-            Type->isTypeReserveId() || Type->isTypeDeviceEvent()) &&
+            Type->isTypeReserveId() || Type->isTypeDeviceEvent() ||
+            (Type->isTypeSubgroupAvcINTEL() &&
+             !Type->isTypeSubgroupAvcMceINTEL())) &&
            "Invalid type");
   }
 };

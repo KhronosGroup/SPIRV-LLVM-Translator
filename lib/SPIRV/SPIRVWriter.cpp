@@ -310,7 +310,13 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
         return mapType(T, transType(getSamplerType(M)));
       if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
         return transSPIRVOpaqueType(T);
-      else if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
+
+      if (STName.startswith(kOCLSubgroupsAVCIntel::TypePrefix))
+        return mapType(T,
+                       BM->addSubgroupAvcINTELType(
+                           OCLSubgroupINTELTypeOpCodeMap::map(ST->getName())));
+
+      if (OCLOpaqueTypeOpCodeMap::find(STName, &OpCode)) {
         switch (OpCode) {
         default:
           return mapType(T, BM->addOpaqueGenericType(OpCode));
@@ -319,7 +325,9 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
         case OpTypeQueue:
           return mapType(T, BM->addQueueType());
         }
-      } else if (isPointerToOpaqueStructType(T)) {
+      }
+
+      if (isPointerToOpaqueStructType(T)) {
         return mapType(
             T, BM->addPointerType(SPIRSPIRVAddrSpaceMap::map(
                                       static_cast<SPIRAddressSpace>(AddrSpc)),
@@ -436,6 +444,14 @@ SPIRVType *LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
         T, BM->addSampledImageType(static_cast<SPIRVTypeImage *>(
                transType(getSPIRVTypeByChangeBaseTypeName(
                    M, T, kSPIRVTypeName::SampledImg, kSPIRVTypeName::Image)))));
+  } else if (TN == kSPIRVTypeName::VmeImageINTEL) {
+    // This type is the same as SampledImageType, but consumed by Subgroup AVC
+    // Intel extension instructions.
+    return mapType(
+        T,
+        BM->addVmeImageINTELType(static_cast<SPIRVTypeImage *>(
+            transType(getSPIRVTypeByChangeBaseTypeName(
+                M, T, kSPIRVTypeName::VmeImageINTEL, kSPIRVTypeName::Image)))));
   } else if (TN == kSPIRVTypeName::Sampler)
     return mapType(T, BM->addSamplerType());
   else if (TN == kSPIRVTypeName::DeviceEvent)

@@ -294,6 +294,7 @@ const static char Sampler[] = "Sampler";
 const static char ConstantSampler[] = "ConstantSampler";
 const static char PipeStorage[] = "PipeStorage";
 const static char ConstantPipeStorage[] = "ConstantPipeStorage";
+const static char VmeImageINTEL[] = "VmeImageINTEL";
 } // namespace kSPIRVTypeName
 
 namespace kSPR2TypeName {

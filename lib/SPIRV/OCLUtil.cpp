@@ -634,6 +634,15 @@ bool isSpecialTypeInitializer(Instruction *Inst) {
   return isSamplerInitializer(Inst) || isPipeStorageInitializer(Inst);
 }
 
+bool isSamplerTy(Type *Ty) {
+  auto PTy = dyn_cast<PointerType>(Ty);
+  if (!PTy)
+    return false;
+
+  auto STy = dyn_cast<StructType>(PTy->getElementType());
+  return STy && STy->hasName() && STy->getName() == kSPR2TypeName::Sampler;
+}
+
 bool isPipeBI(const StringRef MangledName) {
   return MangledName == "write_pipe_2" || MangledName == "read_pipe_2" ||
          MangledName == "write_pipe_4" || MangledName == "read_pipe_4" ||

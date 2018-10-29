@@ -178,6 +178,11 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
   ADD_VEC_INIT(CapabilityStorageImageReadWithoutFormat, {CapabilityShader});
   ADD_VEC_INIT(CapabilityStorageImageWriteWithoutFormat, {CapabilityShader});
   ADD_VEC_INIT(CapabilityMultiViewport, {CapabilityGeometry});
+  ADD_VEC_INIT(CapabilitySubgroupAvcMotionEstimationINTEL, {CapabilityGroups});
+  ADD_VEC_INIT(CapabilitySubgroupAvcMotionEstimationIntraINTEL,
+               {CapabilitySubgroupAvcMotionEstimationINTEL});
+  ADD_VEC_INIT(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
+               {CapabilitySubgroupAvcMotionEstimationIntraINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {
