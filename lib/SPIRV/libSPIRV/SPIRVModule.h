@@ -74,6 +74,7 @@ class SPIRVTypeVoid;
 class SPIRVTypeDeviceEvent;
 class SPIRVTypeQueue;
 class SPIRVTypePipe;
+class SPIRVTypeVmeImageINTEL;
 class SPIRVValue;
 class SPIRVVariable;
 class SPIRVDecorateGeneric;
@@ -225,6 +226,8 @@ public:
   virtual SPIRVTypeDeviceEvent *addDeviceEventType() = 0;
   virtual SPIRVTypeQueue *addQueueType() = 0;
   virtual SPIRVTypePipe *addPipeType() = 0;
+  virtual SPIRVType *addSubgroupAvcINTELType(Op) = 0;
+  virtual SPIRVTypeVmeImageINTEL *addVmeImageINTELType(SPIRVTypeImage *) = 0;
   virtual void createForwardPointers() = 0;
 
   // Constants creation functions

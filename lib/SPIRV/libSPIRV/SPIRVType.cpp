@@ -178,6 +178,15 @@ bool SPIRVType::isTypeVectorOrScalarBool() const {
   return isTypeBool() || isTypeVectorBool();
 }
 
+bool SPIRVType::isTypeSubgroupAvcINTEL() const {
+  return isSubgroupAvcINTELTypeOpCode(OpCode);
+}
+
+bool SPIRVType::isTypeSubgroupAvcMceINTEL() const {
+  return OpCode == OpTypeAvcMcePayloadINTEL ||
+         OpCode == OpTypeAvcMceResultINTEL;
+}
+
 bool SPIRVType::isTypeVectorOrScalarInt() const {
   return isTypeInt() || isTypeVectorInt();
 }
