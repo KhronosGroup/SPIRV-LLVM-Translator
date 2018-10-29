@@ -139,6 +139,7 @@ public:
   virtual unsigned short getGeneratorVer() const = 0;
   virtual SPIRVWord getSPIRVVersion() const = 0;
   virtual const std::vector<SPIRVExtInst *> &getDebugInstVec() const = 0;
+  virtual const std::vector<SPIRVString *> &getStringVec() const = 0;
 
   // Module changing functions
   virtual bool importBuiltinSet(const std::string &, SPIRVId *) = 0;
