@@ -463,14 +463,14 @@ DINode *SPIRVToLLVMDbgTran::transFunction(const SPIRVExtInst *DebugInst) {
   llvm::DITemplateParameterArray TParamsArray = TParams.get();
 
   DISubprogram *DIS = nullptr;
+  DISubprogram::DISPFlags SPFlags =
+      DISubprogram::toSPFlags(IsLocal, IsDefinition, IsOptimized);
   if ((isa<DICompositeType>(Scope) || isa<DINamespace>(Scope)) && !IsDefinition)
-    DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty,
-                               IsLocal, IsDefinition, 0, 0, 0, nullptr, Flags,
-                               IsOptimized, TParamsArray);
+    DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty, 0, 0,
+                               nullptr, Flags, SPFlags, TParamsArray);
   else
     DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty,
-                                 IsLocal, IsDefinition, ScopeLine, Flags,
-                                 IsOptimized, TParamsArray, FD);
+                                 ScopeLine, Flags, SPFlags, TParamsArray, FD);
   DebugInstCache[DebugInst] = DIS;
   SPIRVId RealFuncId = Ops[FunctionIdIdx];
   FuncMap[RealFuncId] = DIS;
@@ -523,13 +523,14 @@ DINode *SPIRVToLLVMDbgTran::transFunctionDecl(const SPIRVExtInst *DebugInst) {
     Flags |= llvm::DINode::FlagPrivate;
 
   DISubprogram *DIS = nullptr;
+  DISubprogram::DISPFlags SPFlags =
+      DISubprogram::toSPFlags(IsLocal, IsDefinition, IsOptimized);
   if (isa<DICompositeType>(Scope) || isa<DINamespace>(Scope))
-    DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty,
-                               IsLocal, IsDefinition, 0, 0, 0, nullptr, Flags,
-                               IsOptimized);
+    DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty, 0, 0,
+                               nullptr, Flags, SPFlags);
   else
-    DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty,
-                                 IsLocal, IsDefinition, 0, Flags, IsOptimized);
+    DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty, 0,
+                                 Flags, SPFlags);
   DebugInstCache[DebugInst] = DIS;
 
   return DIS;
