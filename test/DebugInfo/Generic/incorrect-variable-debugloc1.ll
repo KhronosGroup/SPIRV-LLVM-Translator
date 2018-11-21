@@ -15,6 +15,7 @@
 ; This is a test for PR21176.
 ; DW_OP_const <const> doesn't describe a constant value, but a value at a constant address. 
 ; The proper way to describe a constant value is DW_OP_constu <const>, DW_OP_stack_value.
+; For values < 32 we emit the canonical DW_OP_lit<const>.
 
 ; Generated with clang -S -emit-llvm -g -O2 test.cpp
 
@@ -30,8 +31,8 @@
 ; CHECK: DW_TAG_variable
 ; CHECK: DW_AT_location
 ; CHECK-NOT: DW_AT
-; DWARF23: DW_OP_constu 0xd{{$}}
-; DWARF4: DW_OP_constu 0xd, DW_OP_stack_value{{$}}
+; DWARF23: DW_OP_lit13{{$}}
+; DWARF4: DW_OP_lit13, DW_OP_stack_value{{$}}
 
 ; Function Attrs: uwtable
 define i32 @main() #0 !dbg !4 {

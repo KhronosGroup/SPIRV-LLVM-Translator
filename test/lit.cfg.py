@@ -21,6 +21,18 @@ config.suffixes = ['.ll', '.spt']
 # excludes: A list of directories  and fles to exclude from the testsuite.
 config.excludes = ['CMakeLists.txt']
 
+if not config.skip_spirv_debug_info_tests:
+    # Direct object generation.
+    config.available_features.add('object-emission')
+    
+    # LLVM can be configured with an empty default triple.
+    # Some tests are "generic" and require a valid default triple.
+    if config.target_triple:
+        config.available_features.add('default_triple')
+    
+    # Ask llvm-config about asserts.
+    llvm_config.feature_config([('--assertion-mode', {'ON': 'asserts'})])
+
 # test_source_root: The root path where tests are located.
 config.test_source_root = os.path.dirname(__file__)
 
