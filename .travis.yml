@@ -3,8 +3,8 @@ language: cpp
 os:
   - linux
 
-# Use Ubuntu 14.04 LTS (Trusty) as the Linux testing environment.
-dist: trusty
+# Use Ubuntu 16.04 LTS (Xenial) as the Linux testing environment.
+dist: xenial
 sudo: false
 
 git:
@@ -17,8 +17,8 @@ branches:
 addons:
   apt:
     sources:
-    # adds deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main
-    - llvm-toolchain-trusty
+    - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main'
+      key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     - ubuntu-toolchain-r-test
     packages:
     - llvm-8-tools
