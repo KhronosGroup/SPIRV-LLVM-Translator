@@ -28,7 +28,7 @@ sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial m
 sudo apt-get update
 sudo apt-get install llvm-7-dev
 ```
-The intalled version of LLVM will be used by default for out-of-tree build of the translator.
+The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
 git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
 mkdir SPIRV-LLVM-Translator/build && cd SPIRV-LLVM-Translator/build
