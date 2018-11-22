@@ -406,6 +406,10 @@ bool isKernelQueryBI(const StringRef MangledName);
 /// Check that the type is the sampler_t
 bool isSamplerTy(Type *Ty);
 
+// Checks if clang did not generate llvm.fmuladd for fp multiply-add operations.
+// If so, it applies ContractionOff ExecutionMode to the kernel.
+void checkFpContract(BinaryOperator *B, SPIRVBasicBlock *BB);
+
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////
