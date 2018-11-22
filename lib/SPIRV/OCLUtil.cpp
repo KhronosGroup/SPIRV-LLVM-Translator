@@ -677,6 +677,36 @@ bool isKernelQueryBI(const StringRef MangledName) {
          MangledName == "__get_kernel_max_sub_group_size_for_ndrange_impl" ||
          MangledName == "__get_kernel_preferred_work_group_size_multiple_impl";
 }
+
+// Checks if we have the following (most common for fp contranction) pattern
+// in LLVM IR:
+// %mul = fmul float %a, %b
+// %add = fadd float %mul, %c
+// This pattern indicates that fp contraction could have been disabled by
+// // #pragma OPENCL FP_CONTRACT OFF. Otherwise the current version of clang
+// would generate:
+// %0 = call float @llvm.fmuladd.f32(float %a, float %b, float %c)
+// TODO We need a more reliable mechanism to expres the FP_CONTRACT pragma
+// in LLVM IR. Fox example adding the 'contract' attribute to fp operations
+// by default (according the OpenCL spec fp contraction is enabled by default).
+void checkFpContract(BinaryOperator *B, SPIRVBasicBlock *BB) {
+  if (B->getOpcode() != Instruction::FAdd &&
+      B->getOpcode() != Instruction::FSub)
+    return;
+  // Ok, this is fadd or fsub. Now check its operands.
+  for (auto *Op : B->operand_values()) {
+    if (auto *I = dyn_cast<Instruction>(Op)) {
+      if (I->getOpcode() == Instruction::FMul) {
+        SPIRVFunction *BF = BB->getParent();
+        if (BB->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId())) {
+          BF->addExecutionMode(BB->getModule()->add(
+              new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
+          break;
+        }
+      }
+    }
+  }
+}
 } // namespace OCLUtil
 
 void llvm::mangleOpenClBuiltin(const std::string &UniqName,
