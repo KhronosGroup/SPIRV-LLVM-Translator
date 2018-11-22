@@ -70,6 +70,7 @@ Execute the following command to run translator tests:
 ```
 llvm-lit test
 ```
+This requires that the `-DLLVM_INCLUDE_TESTS=ON` argument was passed to CMake during the build step.
 
 ## Run Instructions for `llvm-spirv`
 
