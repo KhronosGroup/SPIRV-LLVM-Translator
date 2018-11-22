@@ -526,15 +526,24 @@ DINode *SPIRVToLLVMDbgTran::transFunctionDecl(const SPIRVExtInst *DebugInst) {
   if (SPIRVDebugFlags & SPIRVDebug::FlagIsPrivate)
     Flags |= llvm::DINode::FlagPrivate;
 
+  // Here we create fake array of template parameters. If it was plain nullptr,
+  // the template parameter operand would be removed in DISubprogram::getImpl.
+  // But we want it to be there, because if there is DebugTemplate instruction
+  // refering to this function, TransTemplate method must be able to replace the
+  // template parameter operand, thus it must be in the operands list.
+  SmallVector<llvm::Metadata *, 8> Elts;
+  DINodeArray TParams = Builder.getOrCreateArray(Elts);
+  llvm::DITemplateParameterArray TParamsArray = TParams.get();
+
   DISubprogram *DIS = nullptr;
   DISubprogram::DISPFlags SPFlags =
       DISubprogram::toSPFlags(IsLocal, IsDefinition, IsOptimized);
   if (isa<DICompositeType>(Scope) || isa<DINamespace>(Scope))
     DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty, 0, 0,
-                               nullptr, Flags, SPFlags);
+                               nullptr, Flags, SPFlags, TParamsArray);
   else
     DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty, 0,
-                                 Flags, SPFlags);
+                                 Flags, SPFlags, TParamsArray);
   DebugInstCache[DebugInst] = DIS;
 
   return DIS;
