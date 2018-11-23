@@ -363,7 +363,11 @@ DINode *SPIRVToLLVMDbgTran::transTypeFunction(const SPIRVExtInst *DebugInst) {
                    : transDebugInst(BM->get<SPIRVExtInst>(Ops[ReturnTypeIdx]));
   SmallVector<llvm::Metadata *, 16> Elements{RT};
   for (size_t I = FirstParameterIdx, E = Ops.size(); I < E; ++I) {
-    MDNode *Param = transDebugInst(BM->get<SPIRVExtInst>(Ops[I]));
+    SPIRVEntry *P = BM->getEntry(Ops[I]);
+    MDNode *Param = isa<OpTypeVoid>(P)
+                        ? nullptr
+                        : transDebugInst(BM->get<SPIRVExtInst>(Ops[I]));
+
     Elements.push_back(Param);
   }
   DITypeRefArray ArgTypes = Builder.getOrCreateTypeArray(Elements);
