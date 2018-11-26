@@ -2283,16 +2283,11 @@ bool SPIRVToLLVM::transKernelMetadata() {
                                  });
     // Generate metadata for kernel_arg_name
     if (SPIRVGenKernelArgNameMD) {
-      bool ArgHasName = true;
-      BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
-        ArgHasName &= !Arg->getName().empty();
-      });
-      if (ArgHasName)
-        addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_NAME, BF, F,
-                                     [=](SPIRVFunctionParameter *Arg) {
-                                       return MDString::get(*Context,
-                                                            Arg->getName());
-                                     });
+      addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_NAME, BF, F,
+                                   [=](SPIRVFunctionParameter *Arg) {
+                                     return MDString::get(*Context,
+                                                          Arg->getName());
+                                   });
     }
     // Generate metadata for reqd_work_group_size
     if (auto EM = BF->getExecutionMode(ExecutionModeLocalSize)) {
