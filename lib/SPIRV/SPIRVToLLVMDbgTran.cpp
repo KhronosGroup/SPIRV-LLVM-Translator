@@ -541,9 +541,15 @@ DINode *SPIRVToLLVMDbgTran::transFunctionDecl(const SPIRVExtInst *DebugInst) {
   if (isa<DICompositeType>(Scope) || isa<DINamespace>(Scope))
     DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty, 0, 0,
                                nullptr, Flags, SPFlags, TParamsArray);
-  else
-    DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty, 0,
-                                 Flags, SPFlags, TParamsArray);
+  else {
+    // Since a function declaration doesn't have any retained nodes, resolve
+    // the temporary placeholder for them immediately.
+    DIS = Builder.createTempFunctionFwdDecl(Scope, Name, LinkageName, File,
+                                            LineNo, Ty, 0, Flags, SPFlags,
+                                            TParamsArray);
+    llvm::TempMDNode FwdDecl(cast<llvm::MDNode>(DIS));
+    DIS = Builder.replaceTemporary(std::move(FwdDecl), DIS);
+  }
   DebugInstCache[DebugInst] = DIS;
 
   return DIS;
