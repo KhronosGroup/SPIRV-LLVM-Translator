@@ -528,10 +528,6 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
   case OpTypeImage: {
     std::string Name;
     Name = rmap<std::string>(static_cast<SPIRVTypeImage *>(T)->getDescriptor());
-    if (SPIRVGenImgTypeAccQualPostfix) {
-      auto ST = static_cast<SPIRVTypeImage *>(T);
-      insertImageNameAccessQualifier(ST, Name);
-    }
     return Name;
   }
   default:
