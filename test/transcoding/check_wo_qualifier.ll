@@ -14,7 +14,7 @@
 ; CHECK-LLVM: declare spir_func <2 x i32> @_Z13get_image_dimPU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
 ; CHECK-LLVM: declare spir_func i64 @_Z20get_image_array_sizePU3AS125opencl.image2d_array_wo_t(%opencl.image2d_array_wo_t addrspace(1)
 ; CHECK-LLVM-DAG: [[AQ]] = !{!"write_only"}
-; CHECK-LLVM-DAG: [[TYPE]] = !{!"image2d_array_wo_t"}
+; CHECK-LLVM-DAG: [[TYPE]] = !{!"image2d_array_t"}
 
 ; ModuleID = 'out.ll'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
@@ -52,9 +52,9 @@ attributes #0 = { nounwind }
 
 !1 = !{i32 1}
 !2 = !{!"write_only"}
-!3 = !{!"image2d_array_wo_t"}
+!3 = !{!"image2d_array_t"}
 !4 = !{!""}
-!5 = !{!"image2d_array_wo_t"}
+!5 = !{!"image2d_array_t"}
 !6 = !{i32 3, i32 102000}
 !7 = !{i32 1, i32 2}
 !8 = !{}
