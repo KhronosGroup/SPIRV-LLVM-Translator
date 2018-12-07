@@ -1124,9 +1124,7 @@ void OCL20ToSPIRV::visitCallGetImageSize(CallInst *CI, StringRef MangledName,
   auto IsImg = isOCLImageType(CI->getArgOperand(0)->getType(), &TyName);
   (void)IsImg;
   assert(IsImg);
-  std::string ImageTyName = TyName.str();
-  if (hasAccessQualifiedName(TyName))
-    ImageTyName.erase(ImageTyName.size() - 5, 3);
+  std::string ImageTyName = getImageBaseTypeName(TyName);
   auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
   unsigned Dim = getImageDimension(Desc.Dim) + Desc.Arrayed;
   assert(Dim > 0 && "Invalid image dimension.");

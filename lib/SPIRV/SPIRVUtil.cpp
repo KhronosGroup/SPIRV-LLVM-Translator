@@ -1243,6 +1243,25 @@ Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
   return nullptr;
 }
 
+std::string getImageBaseTypeName(StringRef Name) {
+  std::string ImageTyName = Name;
+
+  SmallVector<StringRef, 4> SubStrs;
+  const char Delims[] = {kSPR2TypeName::Delimiter, 0};
+  Name.split(SubStrs, Delims);
+  if (Name.startswith(kSPR2TypeName::OCLPrefix)) {
+    ImageTyName = SubStrs[1].str();
+  }
+  else {
+    ImageTyName = SubStrs[0].str();
+  }
+
+  if (hasAccessQualifiedName(ImageTyName))
+    ImageTyName.erase(ImageTyName.size() - 5, 3);
+
+  return ImageTyName;
+}
+
 std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
   std::string BaseTy;
   std::string Postfixes;
@@ -1250,14 +1269,9 @@ std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
   if (!Acc.empty())
     OS << kSPIRVTypeName::PostfixDelim;
   if (Name.startswith(kSPR2TypeName::ImagePrefix)) {
-    SmallVector<StringRef, 4> SubStrs;
-    const char Delims[] = {kSPR2TypeName::Delimiter, 0};
-    Name.split(SubStrs, Delims);
-    std::string ImageTyName = SubStrs[1].str();
-    if (hasAccessQualifiedName(Name))
-      ImageTyName.erase(ImageTyName.size() - 5, 3);
+    std::string ImageTyName = getImageBaseTypeName(Name);
     auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
-    LLVM_DEBUG(dbgs() << "[trans image type] " << SubStrs[1] << " => "
+    LLVM_DEBUG(dbgs() << "[trans image type] " << Name << " => "
                       << "(" << (unsigned)Desc.Dim << ", " << Desc.Depth << ", "
                       << Desc.Arrayed << ", " << Desc.MS << ", " << Desc.Sampled
                       << ", " << Desc.Format << ")\n");
