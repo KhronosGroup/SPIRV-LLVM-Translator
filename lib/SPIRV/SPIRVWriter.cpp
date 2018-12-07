@@ -1125,6 +1125,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add
     // is required the corresponding llvm.fma.* intrinsic function should be
     // used instead.
+    BB->getParent()->setContractedFMulAddFound();
     SPIRVType *Ty = transType(II->getType());
     SPIRVValue *Mul =
         BM->addBinaryInst(OpFMul, Ty, transValue(II->getArgOperand(0), BB),
@@ -1330,7 +1331,7 @@ void LLVMToSPIRV::mutateFuncArgType(
 }
 
 void LLVMToSPIRV::transFunction(Function *I) {
-  transFunctionDecl(I);
+  SPIRVFunction *BF = transFunctionDecl(I);
   // Creating all basic blocks before creating any instruction.
   for (auto &FI : *I) {
     transValue(&FI, nullptr);
@@ -1341,6 +1342,12 @@ void LLVMToSPIRV::transFunction(Function *I) {
     for (auto &BI : FI) {
       transValue(&BI, BB, false);
     }
+  }
+
+  if (BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId()) &&
+      BF->shouldFPContractBeDisabled()) {
+    BF->addExecutionMode(BF->getModule()->add(
+        new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
   }
 }
 
