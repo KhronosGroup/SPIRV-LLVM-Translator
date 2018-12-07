@@ -698,11 +698,8 @@ void checkFpContract(BinaryOperator *B, SPIRVBasicBlock *BB) {
     if (auto *I = dyn_cast<Instruction>(Op)) {
       if (I->getOpcode() == Instruction::FMul) {
         SPIRVFunction *BF = BB->getParent();
-        if (BB->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId())) {
-          BF->addExecutionMode(BB->getModule()->add(
-              new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
-          break;
-        }
+        BF->setUncontractedFMulAddFound();
+        break;
       }
     }
   }
