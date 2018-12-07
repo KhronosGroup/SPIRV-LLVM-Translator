@@ -106,7 +106,10 @@ public:
 
   bool runOnModule(Module &Module) override {
     M = &Module;
-    lowerBlockBind();
+    if (!lowerBlockBind()) {
+      // There are no SPIR2 blocks in the module.
+      return false;
+    }
     lowerGetBlockInvoke();
     lowerGetBlockContext();
     eraseUselessGlobalVars();

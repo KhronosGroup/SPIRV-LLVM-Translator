@@ -21,10 +21,10 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-SPIRV: Name [[block_invoke:[0-9]+]] "_block_invoke"
 ; CHECK-SPIRV: TypeInt [[int:[0-9]+]] 32
+; CHECK-SPIRV: TypeInt [[int8:[0-9]+]] 8
 ; CHECK-SPIRV: Constant [[int]] [[five:[0-9]+]] 5
-; CHECK-SPIRV: TypeFunction [[block_invoke_type:[0-9]+]] [[int]] [[int]]
-;; Check that block invoke function has no block descriptor argument in SPIR-V
-; CHECK-SPIRV-NOT: TypeFunction [[block_invoke_type]] [[int]] {{[0-9]+}} [[int]]
+; CHECK-SPIRV: TypePointer [[int8Ptr:[0-9]+]] 8 [[int8]]
+; CHECK-SPIRV: TypeFunction [[block_invoke_type:[0-9]+]] [[int]] [[int8Ptr]] [[int]]
 
 ;; This variable is not needed in SPIRV
 ; CHECK-SPIRV-NOT: Name {{[0-9]+}} block_kernel.b1
@@ -39,8 +39,8 @@ entry:
   %res.addr = alloca i32 addrspace(1)*, align 8
   store i32 addrspace(1)* %res, i32 addrspace(1)** %res.addr, align 8, !tbaa !10
 
-; CHECK-SPIRV: FunctionCall [[int]] {{[0-9]+}} [[block_invoke]] [[five]]
-; CHECK-LLVM: %call = call spir_func i32 @_block_invoke(i32 5)
+; CHECK-SPIRV: FunctionCall [[int]] {{[0-9]+}} [[block_invoke]] {{[0-9]+}} [[five]]
+; CHECK-LLVM: %call = call spir_func i32 @_block_invoke(i8 addrspace(4)* {{.*}}, i32 5)
   %call = call spir_func i32 @_block_invoke(i8 addrspace(4)* addrspacecast (i8 addrspace(1)* bitcast ({ i32, i32 } addrspace(1)* @__block_literal_global to i8 addrspace(1)*) to i8 addrspace(4)*), i32 5) #2
 
   %0 = load i32 addrspace(1)*, i32 addrspace(1)** %res.addr, align 8, !tbaa !10
@@ -49,18 +49,15 @@ entry:
 }
 
 ; CHECK-SPIRV: 5 Function [[int]] [[block_invoke]] 0 [[block_invoke_type]]
+; CHECK-SPIRV-NEXT: 3 FunctionParameter [[int8Ptr]] {{[0-9]+}}
 ; CHECK-SPIRV-NEXT: 3 FunctionParameter [[int]] {{[0-9]+}}
-; CHECK-LLVM: define internal spir_func i32 @_block_invoke(i32 %i)
+; CHECK-LLVM: define internal spir_func i32 @_block_invoke(i8 addrspace(4)* {{.*}}, i32 %{{.*}})
 ; Function Attrs: convergent nounwind
 define internal spir_func i32 @_block_invoke(i8 addrspace(4)* %.block_descriptor, i32 %i) #1 {
 entry:
   %.block_descriptor.addr = alloca i8 addrspace(4)*, align 8
   %i.addr = alloca i32, align 4
   store i8 addrspace(4)* %.block_descriptor, i8 addrspace(4)** %.block_descriptor.addr, align 8
-
-;; Instruction below is useless and should be removed.
-; CHECK-SPIRV-NOT: Bitcast
-; CHECK-LLVM-NOT: bitcast
   %block = bitcast i8 addrspace(4)* %.block_descriptor to <{ i32, i32 }> addrspace(4)*
   store i32 %i, i32* %i.addr, align 4, !tbaa !14
   %0 = load i32, i32* %i.addr, align 4, !tbaa !14
