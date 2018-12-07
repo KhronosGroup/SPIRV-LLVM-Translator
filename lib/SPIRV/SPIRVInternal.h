@@ -839,6 +839,10 @@ Type *getSPIRVImageTypeFromOCL(Module *M, Type *T);
 Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
                                                  LLVMContext &Ctx);
 
+/// Return the unqualified and unsuffixed base name of an image type.
+/// E.g. opencl.image2d_ro_t.3 -> image2d_t
+std::string getImageBaseTypeName(StringRef Name);
+
 /// Map OpenCL opaque type name to SPIR-V type name.
 std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc = "");
 
