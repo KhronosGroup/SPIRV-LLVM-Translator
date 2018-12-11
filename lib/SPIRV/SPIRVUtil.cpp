@@ -1251,8 +1251,7 @@ std::string getImageBaseTypeName(StringRef Name) {
   Name.split(SubStrs, Delims);
   if (Name.startswith(kSPR2TypeName::OCLPrefix)) {
     ImageTyName = SubStrs[1].str();
-  }
-  else {
+  } else {
     ImageTyName = SubStrs[0].str();
   }
 
