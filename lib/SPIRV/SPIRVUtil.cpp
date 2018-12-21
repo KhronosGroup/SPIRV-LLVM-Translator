@@ -627,6 +627,7 @@ CallInst *mutateCallInst(
   }
   auto NewCI = addCallInst(M, NewName, CI->getType(), Args, Attrs, CI, Mangle,
                            InstName, TakeFuncName);
+  NewCI->setDebugLoc(CI->getDebugLoc());
   LLVM_DEBUG(dbgs() << " => " << *NewCI << '\n');
   CI->replaceAllUsesWith(NewCI);
   CI->eraseFromParent();
@@ -653,6 +654,7 @@ Instruction *mutateCallInst(
                            InstName + ".tmp", TakeFuncName);
   auto NewI = RetMutate(NewCI);
   NewI->takeName(CI);
+  NewI->setDebugLoc(CI->getDebugLoc());
   LLVM_DEBUG(dbgs() << " => " << *NewI << '\n');
   CI->replaceAllUsesWith(NewI);
   CI->eraseFromParent();
