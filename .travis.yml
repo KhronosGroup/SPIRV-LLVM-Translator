@@ -112,8 +112,7 @@ script:
 after_success:
   # Create tarball for deployment
   - if [[ "${BUILD_EXTERNAL}" == "1" && "${SHARED_LIBS}" == "ON" && "${repo_token}" != "" ]]; then
-      export TAG=`date +%F`;
-      export TARBALL=SPIRV-LLVM-Translator-${TAG}-${TRAVIS_OS_NAME}-${BUILD_TYPE}.zip;
+      export TARBALL=SPIRV-LLVM-Translator-$(date +%F)-${TRAVIS_OS_NAME}-${BUILD_TYPE}.zip;
       cd ../install && find . -print | zip -@ ${TARBALL};
     fi
 
@@ -122,7 +121,7 @@ before_deploy:
   # Travis CI relies on the tag name to push to the correct release.
   - git config --global user.name "Travis CI"
   - git config --global user.email "builds@travis-ci.org"
-  - git tag -f ${TAG}
+  - git tag -f latest_build
   - git push -f https://${repo_token}@github.com/${TRAVIS_REPO_SLUG} --tags
 
 deploy:
