@@ -42,7 +42,7 @@ if [ -z "${FILES_TO_CHECK}" ]; then
   exit 0
 fi
 
-TIDY_DIFF=$(git diff -U0 master -- ${FILES_TO_CHECK} | python ./utils/clang-tidy-diff.py -p1 -- "${CPP_FILES}" 2> /dev/null)
+TIDY_DIFF=$(git diff -U0 master -- ${FILES_TO_CHECK} | ./utils/clang-tidy-diff.py -p1 -- "${CPP_FILES}" 2> /dev/null)
 
 if [ "${TIDY_DIFF}" = "No relevant changes found." ]; then
   echo "${TIDY_DIFF}"
