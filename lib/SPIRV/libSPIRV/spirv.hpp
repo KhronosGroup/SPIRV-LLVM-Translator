@@ -382,6 +382,8 @@ enum Decoration {
     DecorationInputAttachmentIndex = 43,
     DecorationAlignment = 44,
     DecorationMaxByteOffset = 45,
+    DecorationNoSignedWrap = 4469,
+    DecorationNoUnsignedWrap = 4470,
     DecorationOverrideCoverageNV = 5248,
     DecorationPassthroughNV = 5250,
     DecorationViewportRelativeNV = 5252,
