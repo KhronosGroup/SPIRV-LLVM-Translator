@@ -1023,6 +1023,16 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
   if ((isa<AtomicCmpXchgInst>(V) && cast<AtomicCmpXchgInst>(V)->isVolatile()) ||
       (isa<AtomicRMWInst>(V) && cast<AtomicRMWInst>(V)->isVolatile()))
     BV->setVolatile(true);
+
+  if (auto BVO = dyn_cast_or_null<OverflowingBinaryOperator>(V)) {
+    if (BVO->hasNoSignedWrap()) {
+      BV->setNoSignedWrap(true);
+    }
+    if (BVO->hasNoUnsignedWrap()) {
+      BV->setNoUnsignedWrap(true);
+    }
+  }
+
   return true;
 }
 

@@ -132,12 +132,6 @@ bool SPIRVRegularizeLLVM::regularize() {
 
         // Remove optimization info not supported by SPIRV
         if (auto BO = dyn_cast<BinaryOperator>(II)) {
-          if (isa<OverflowingBinaryOperator>(BO)) {
-            if (BO->hasNoUnsignedWrap())
-              BO->setHasNoUnsignedWrap(false);
-            if (BO->hasNoSignedWrap())
-              BO->setHasNoSignedWrap(false);
-          }
           if (isa<PossiblyExactOperator>(BO) && BO->isExact())
             BO->setIsExact(false);
         }
