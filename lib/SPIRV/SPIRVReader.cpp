@@ -807,6 +807,20 @@ bool SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(
   return true;
 }
 
+static char getTypeSuffix(Type *T) {
+  char Suffix;
+
+  Type *ST = T->getScalarType();
+  if (ST->isHalfTy())
+    Suffix = 'h';
+  else if (ST->isFloatTy())
+    Suffix = 'f';
+  else
+    Suffix = 'i';
+
+  return Suffix;
+}
+
 // ToDo: Handle unsigned integer return type. May need spec change.
 Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
                                                   CallInst *CI,
@@ -849,7 +863,7 @@ Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
           T = VT->getElementType();
         RetTy = IsDepthImage ? T : CI->getType();
         return std::string(kOCLBuiltinName::SampledReadImage) +
-               (T->isFloatingPointTy() ? 'f' : 'i');
+               getTypeSuffix(T);
       },
       [=](CallInst *NewCI) -> Instruction * {
         if (IsDepthImage)
@@ -882,8 +896,7 @@ SPIRVToLLVM::postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
           else
             std::swap(Args[2], Args[3]);
         }
-        return std::string(kOCLBuiltinName::WriteImage) +
-               (T->isFPOrFPVectorTy() ? 'f' : 'i');
+        return std::string(kOCLBuiltinName::WriteImage) + getTypeSuffix(T);
       },
       &Attrs);
 }
@@ -2066,8 +2079,14 @@ std::string SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction *BI) {
   }
   if (T && T->isTypeVector())
     T = T->getVectorComponentType();
-  if (T)
-    Name += T->isTypeFloat() ? 'f' : 'i';
+  if (T) {
+    if (T->isTypeFloat(16))
+      Name += 'h';
+    else if (T->isTypeFloat(32))
+      Name += 'f';
+    else
+      Name += 'i';
+  }
 
   return Name;
 }
