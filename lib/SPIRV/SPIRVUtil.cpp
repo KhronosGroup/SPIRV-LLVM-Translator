@@ -1030,9 +1030,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     } else if (auto StructTy = dyn_cast<StructType>(ET)) {
       LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
-      if (TyName.startswith(kSPR2TypeName::ImagePrefix) ||
-          TyName.startswith(kSPR2TypeName::PipeRO) ||
-          TyName.startswith(kSPR2TypeName::PipeWO)) {
+      if (TyName.startswith(kSPR2TypeName::OCLPrefix)) {
         auto DelimPos = TyName.find_first_of(kSPR2TypeName::Delimiter,
                                              strlen(kSPR2TypeName::OCLPrefix));
         if (DelimPos != StringRef::npos)
