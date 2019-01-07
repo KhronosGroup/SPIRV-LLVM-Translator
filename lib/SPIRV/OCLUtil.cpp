@@ -74,6 +74,10 @@ namespace OCLUtil {
 #define SPIRV_CLK_EVENT_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
 #endif
 
+#ifndef SPIRV_SAMPLER_T_ADDR_SPACE
+#define SPIRV_SAMPLER_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+
 #ifndef SPIRV_RESERVE_ID_T_ADDR_SPACE
 #define SPIRV_RESERVE_ID_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
 #endif
@@ -326,6 +330,9 @@ SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode) {
   case OpTypeImage:
   case OpTypeSampledImage:
     return SPIRV_IMAGE_ADDR_SPACE;
+  case OpConstantSampler:
+  case OpTypeSampler:
+    return SPIRV_SAMPLER_T_ADDR_SPACE;
   default:
     assert(false && "No address space is determined for some OCL type");
     return SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE;

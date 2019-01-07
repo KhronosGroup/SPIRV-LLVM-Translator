@@ -418,8 +418,6 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
       llvm_unreachable("Unsupported image type");
     return nullptr;
   }
-  case OpTypeSampler:
-    return mapType(T, Type::getInt32Ty(*Context));
   case OpTypeSampledImage: {
     auto ST = static_cast<SPIRVTypeSampledImage *>(T);
     return mapType(
@@ -1019,11 +1017,22 @@ void SPIRVToLLVM::transGeneratorMD() {
       .done();
 }
 
-Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS) {
+Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
+                                            BasicBlock *BB) {
+  auto *SamplerT =
+      getOrCreateOpaquePtrType(M, OCLOpaqueTypeOpCodeMap::rmap(OpTypeSampler),
+                               getOCLOpaqueTypeAddrSpace(BCS->getOpCode()));
+  auto *I32Ty = IntegerType::getInt32Ty(*Context);
+  auto *FTy = FunctionType::get(SamplerT, {I32Ty}, false);
+
+  Constant *CF = M->getOrInsertFunction(SAMPLER_INIT, FTy);
+  auto *Func = cast<Function>(CF);
+  Func->setLinkage(GlobalValue::ExternalLinkage);
+
   auto Lit = (BCS->getAddrMode() << 1) | BCS->getNormalized() |
              ((BCS->getFilterMode() + 1) << 4);
-  auto Ty = IntegerType::getInt32Ty(*Context);
-  return ConstantInt::get(Ty, Lit);
+
+  return CallInst::Create(Func, {ConstantInt::get(I32Ty, Lit)}, "", BB);
 }
 
 Value *SPIRVToLLVM::oclTransConstantPipeStorage(
@@ -1159,7 +1168,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpConstantSampler: {
     auto BCS = static_cast<SPIRVConstantSampler *>(BV);
-    return mapValue(BV, oclTransConstantSampler(BCS));
+    return mapValue(BV, oclTransConstantSampler(BCS, BB));
   }
 
   case OpConstantPipeStorage: {
