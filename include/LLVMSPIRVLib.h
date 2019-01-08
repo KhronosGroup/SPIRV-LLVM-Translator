@@ -95,16 +95,16 @@ namespace llvm {
 
 /// \brief Translate LLVM module to SPIRV and write to ostream.
 /// \returns true if succeeds.
-bool writeSpirv(llvm::Module *M, llvm::raw_ostream &OS, std::string &ErrMsg);
+bool writeSpirv(Module *M, raw_ostream &OS, std::string &ErrMsg);
 
 /// \brief Load SPIRV from istream and translate to LLVM module.
 /// \returns true if succeeds.
-bool readSpirv(llvm::LLVMContext &C, std::istream &IS, llvm::Module *&M,
+bool readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
                std::string &ErrMsg);
 
 /// \brief Regularize LLVM module by removing entities not representable by
 /// SPIRV.
-bool regularizeLlvmForSpirv(llvm::Module *M, std::string &ErrMsg);
+bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg);
 
 /// \brief Mangle OpenCL builtin function function name.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
@@ -157,7 +157,7 @@ ModulePass *createTransOCLMD();
 
 /// Create and return a pass that writes the module to the specified
 /// ostream.
-ModulePass *createSPIRVWriterPass(llvm::raw_ostream &Str);
+ModulePass *createSPIRVWriterPass(raw_ostream &Str);
 
 } // namespace llvm
 
