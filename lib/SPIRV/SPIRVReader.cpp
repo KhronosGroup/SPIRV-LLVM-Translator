@@ -1689,10 +1689,6 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(
         BV, transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB));
   }
-
-    SPIRVDBG(spvdbgs() << "Cannot translate " << *BV << '\n';)
-    llvm_unreachable("Translation of SPIRV instruction not implemented");
-    return NULL;
   }
 }
 
