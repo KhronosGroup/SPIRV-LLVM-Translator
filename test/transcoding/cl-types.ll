@@ -49,19 +49,23 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-LLVM-DAG: %opencl.pipe_ro_t = type opaque
 ; CHECK-LLVM-DAG: %opencl.pipe_wo_t = type opaque
-; CHECK-LLVM-DAG: %opencl.image3d_t = type opaque
-; CHECK-LLVM-DAG: %opencl.image2d_array_t = type opaque
-; CHECK-LLVM-DAG: %opencl.image1d_buffer_t = type opaque
-; CHECK-LLVM-DAG: %opencl.image1d_t = type opaque
-; CHECK-LLVM-DAG: %opencl.image2d_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image3d_ro_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image2d_array_ro_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image1d_buffer_ro_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image1d_ro_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image1d_wo_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image2d_rw_t = type opaque
+; CHECK-LLVM-DAG: %opencl.image2d_ro_t = type opaque
 
 %opencl.pipe_ro_t = type opaque
 %opencl.pipe_wo_t = type opaque
-%opencl.image3d_t = type opaque
-%opencl.image2d_array_t = type opaque
-%opencl.image1d_buffer_t = type opaque
-%opencl.image1d_t = type opaque
-%opencl.image2d_t = type opaque
+%opencl.image3d_ro_t = type opaque
+%opencl.image2d_array_ro_t = type opaque
+%opencl.image1d_buffer_ro_t = type opaque
+%opencl.image1d_ro_t = type opaque
+%opencl.image1d_wo_t = type opaque
+%opencl.image2d_rw_t = type opaque
+%opencl.image2d_ro_t = type opaque
 %opencl.sampler_t = type opaque
 
 ; CHECK-SPIRV: 3 FunctionParameter [[PIPE_RD]] {{[0-9]+}}
@@ -78,13 +82,13 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LLVM:      define spir_kernel void @foo(
 ; CHECK-LLVM-SAME:   %opencl.pipe_ro_t addrspace(1)* nocapture %a,
 ; CHECK-LLVM-SAME:   %opencl.pipe_wo_t addrspace(1)* nocapture %b,
-; CHECK-LLVM-SAME:   %opencl.image1d_t addrspace(1)* nocapture %c1,
-; CHECK-LLVM-SAME:   %opencl.image2d_t addrspace(1)* nocapture %d1,
-; CHECK-LLVM-SAME:   %opencl.image3d_t addrspace(1)* nocapture %e1,
-; CHECK-LLVM-SAME:   %opencl.image2d_array_t addrspace(1)* nocapture %f1,
-; CHECK-LLVM-SAME:   %opencl.image1d_buffer_t addrspace(1)* nocapture %g1,
-; CHECK-LLVM-SAME:   %opencl.image1d_t addrspace(1)* nocapture %c2,
-; CHECK-LLVM-SAME:   %opencl.image2d_t addrspace(1)* nocapture %d3,
+; CHECK-LLVM-SAME:   %opencl.image1d_ro_t addrspace(1)* nocapture %c1,
+; CHECK-LLVM-SAME:   %opencl.image2d_ro_t addrspace(1)* nocapture %d1,
+; CHECK-LLVM-SAME:   %opencl.image3d_ro_t addrspace(1)* nocapture %e1,
+; CHECK-LLVM-SAME:   %opencl.image2d_array_ro_t addrspace(1)* nocapture %f1,
+; CHECK-LLVM-SAME:   %opencl.image1d_buffer_ro_t addrspace(1)* nocapture %g1,
+; CHECK-LLVM-SAME:   %opencl.image1d_wo_t addrspace(1)* nocapture %c2,
+; CHECK-LLVM-SAME:   %opencl.image2d_rw_t addrspace(1)* nocapture %d3,
 ; CHECK-LLVM-SAME:   %opencl.sampler_t* %s)
 ; CHECK-LLVM-SAME:   !kernel_arg_addr_space [[AS:![0-9]+]]
 ; CHECK-LLVM-SAME:   !kernel_arg_access_qual [[AQ:![0-9]+]]
@@ -96,30 +100,30 @@ target triple = "spir-unknown-unknown"
 define spir_kernel void @foo(
   %opencl.pipe_ro_t addrspace(1)* nocapture %a,
   %opencl.pipe_wo_t addrspace(1)* nocapture %b,
-  %opencl.image1d_t addrspace(1)* nocapture %c1,
-  %opencl.image2d_t addrspace(1)* nocapture %d1,
-  %opencl.image3d_t addrspace(1)* nocapture %e1,
-  %opencl.image2d_array_t addrspace(1)* nocapture %f1,
-  %opencl.image1d_buffer_t addrspace(1)* nocapture %g1,
-  %opencl.image1d_t addrspace(1)* nocapture %c2,
-  %opencl.image2d_t addrspace(1)* nocapture %d3,
+  %opencl.image1d_ro_t addrspace(1)* nocapture %c1,
+  %opencl.image2d_ro_t addrspace(1)* nocapture %d1,
+  %opencl.image3d_ro_t addrspace(1)* nocapture %e1,
+  %opencl.image2d_array_ro_t addrspace(1)* nocapture %f1,
+  %opencl.image1d_buffer_ro_t addrspace(1)* nocapture %g1,
+  %opencl.image1d_wo_t addrspace(1)* nocapture %c2,
+  %opencl.image2d_rw_t addrspace(1)* nocapture %d3,
   %opencl.sampler_t* %s) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
 ; CHECK-SPIRV: 5 SampledImage [[SAMPIMG]] [[SAMPIMG_VAR1:[0-9]+]] [[IMG_ARG]] [[SAMP_ARG]]
 ; CHECK-SPIRV: 7 ImageSampleExplicitLod {{[0-9]+}} {{[0-9]+}} [[SAMPIMG_VAR1]]
-; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%opencl.image2d_t addrspace(1)* %d1, %opencl.sampler_t* %s, <4 x i32> zeroinitializer, float 1.000000e+00)
-  %.tmp = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%opencl.image2d_t addrspace(1)* %d1, %opencl.sampler_t* %s, <4 x i32> zeroinitializer, float 1.000000e+00)
+; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv4_if(%opencl.image2d_ro_t addrspace(1)* %d1, %opencl.sampler_t* %s, <4 x i32> zeroinitializer, float 1.000000e+00)
+  %.tmp = call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv4_if(%opencl.image2d_ro_t addrspace(1)* %d1, %opencl.sampler_t* %s, <4 x i32> zeroinitializer, float 1.000000e+00)
 
 ; CHECK-SPIRV: 5 SampledImage [[SAMPIMG]] [[SAMPIMG_VAR2:[0-9]+]] [[IMG_ARG]] [[SAMP_CONST]]
 ; CHECK-SPIRV: 7 ImageSampleExplicitLod {{[0-9]+}} {{[0-9]+}} [[SAMPIMG_VAR2]]
 ; CHECK-LLVM: [[SAMP_VAR:%[0-9]+]] = call %opencl.sampler_t* @__translate_sampler_initializer(i32 32)
-; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%opencl.image2d_t addrspace(1)* %d1, %opencl.sampler_t* [[SAMP_VAR]], <4 x i32> zeroinitializer, float 1.000000e+00)
+; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv4_if(%opencl.image2d_ro_t addrspace(1)* %d1, %opencl.sampler_t* [[SAMP_VAR]], <4 x i32> zeroinitializer, float 1.000000e+00)
   %0 = call %opencl.sampler_t* @__translate_sampler_initializer(i32 32)
-  %.tmp2 = call spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%opencl.image2d_t addrspace(1)* %d1, %opencl.sampler_t* %0, <4 x i32> zeroinitializer, float 1.000000e+00)
+  %.tmp2 = call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv4_if(%opencl.image2d_ro_t addrspace(1)* %d1, %opencl.sampler_t* %0, <4 x i32> zeroinitializer, float 1.000000e+00)
   ret void
 }
 
-declare spir_func <4 x float> @_Z11read_imagef11ocl_image2d11ocl_samplerDv4_if(%opencl.image2d_t addrspace(1)*, %opencl.sampler_t*, <4 x i32>, float) #1
+declare spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv4_if(%opencl.image2d_ro_t addrspace(1)*, %opencl.sampler_t*, <4 x i32>, float) #1
 
 declare %opencl.sampler_t* @__translate_sampler_initializer(i32)
 
