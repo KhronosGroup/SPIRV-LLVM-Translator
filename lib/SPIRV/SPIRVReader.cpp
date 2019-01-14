@@ -98,11 +98,6 @@ cl::opt<bool> SPIRVGenKernelArgNameMD(
     cl::desc("Enable generating OpenCL kernel argument name "
              "metadata"));
 
-cl::opt<bool> SPIRVGenImgTypeAccQualPostfix(
-    "spirv-gen-image-type-acc-postfix", cl::init(false),
-    cl::desc("Enable generating access qualifier postfix"
-             " in OpenCL image type names"));
-
 // Prefix for placeholder global variable name.
 const char *KPlaceholderPrefix = "placeholder.";
 
