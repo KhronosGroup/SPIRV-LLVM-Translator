@@ -740,8 +740,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
         transType(Ty), GV->isConstant(), transLinkageType(GV),
-        (Init && !isa<UndefValue>(Init)) ? transValue(Init, nullptr) : nullptr,
-        GV->getName(),
+        Init ? transValue(Init, nullptr) : nullptr, GV->getName(),
         SPIRSPIRVAddrSpaceMap::map(
             static_cast<SPIRAddressSpace>(Ty->getAddressSpace())),
         nullptr));
