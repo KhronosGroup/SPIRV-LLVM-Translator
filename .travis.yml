@@ -21,10 +21,10 @@ addons:
       key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     - ubuntu-toolchain-r-test
     packages:
-    - llvm-8-tools
-    - llvm-8-dev
-    - clang-format-8
-    - clang-tidy-8
+    - llvm-9-tools
+    - llvm-9-dev
+    - clang-format-9
+    - clang-tidy-9
 
 compiler:
   - gcc
@@ -80,7 +80,7 @@ script:
           -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
           -DBUILD_SHARED_LIBS=${SHARED_LIBS} \
           -DLLVM_BUILD_TOOLS=ON \
-          -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-8/build/utils/lit/lit.py" \
+          -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-9/build/utils/lit/lit.py" \
           -DLLVM_INCLUDE_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=../install/ \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
@@ -99,7 +99,7 @@ script:
     fi
   - if [ $CHECK_FORMAT == "1" ]; then
       cd ..;
-      ln -s /usr/share/clang/clang-format-8/clang-format-diff.py utils/;
+      ln -s /usr/share/clang/clang-format-9/clang-format-diff.py utils/;
       ./utils/check_code_format.sh;
     elif [ $CHECK_TIDY == "1" ]; then
       cd ..;
