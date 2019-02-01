@@ -946,10 +946,8 @@ Value *SPIRVToLLVM::mapValue(SPIRVValue *BV, Value *V) {
            "A value is translated twice");
     // Replaces placeholders for PHI nodes
     LD->replaceAllUsesWith(V);
-    LD->dropAllReferences();
-    LD->removeFromParent();
-    Placeholder->dropAllReferences();
-    Placeholder->removeFromParent();
+    LD->eraseFromParent();
+    Placeholder->eraseFromParent();
   }
   ValueMap[BV] = V;
   return V;
