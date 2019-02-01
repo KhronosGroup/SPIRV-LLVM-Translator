@@ -799,15 +799,14 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
     Ops.resize(MinOperandCount);
     Ops[ScopeLineIdx] = Func->getScopeLine();
 
-    llvm::Function *F = M->getFunction(Func->getName());
-    if (!F)
-      F = M->getFunction(Func->getLinkageName());
-    if (F) {
-      SPIRVValue *SPIRVFunc = SPIRVWriter->getTranslatedValue(F);
-      assert(SPIRVFunc && "All function must be already translated");
-      Ops[FunctionIdIdx] = SPIRVFunc->getId();
-    } else {
-      Ops[FunctionIdIdx] = getDebugInfoNoneId();
+    Ops[FunctionIdIdx] = getDebugInfoNoneId();
+    for (const llvm::Function &F : M->functions()) {
+      if (Func->describes(&F)) {
+        SPIRVValue *SPIRVFunc = SPIRVWriter->getTranslatedValue(&F);
+        assert(SPIRVFunc && "All function must be already translated");
+        Ops[FunctionIdIdx] = SPIRVFunc->getId();
+        break;
+      }
     }
 
     if (DISubprogram *FuncDecl = Func->getDeclaration())
