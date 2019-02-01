@@ -1020,9 +1020,7 @@ Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
   auto *I32Ty = IntegerType::getInt32Ty(*Context);
   auto *FTy = FunctionType::get(SamplerT, {I32Ty}, false);
 
-  Constant *CF = M->getOrInsertFunction(SAMPLER_INIT, FTy);
-  auto *Func = cast<Function>(CF);
-  Func->setLinkage(GlobalValue::ExternalLinkage);
+  FunctionCallee Func = M->getOrInsertFunction(SAMPLER_INIT, FTy);
 
   auto Lit = (BCS->getAddrMode() << 1) | BCS->getNormalized() |
              ((BCS->getFilterMode() + 1) << 4);
