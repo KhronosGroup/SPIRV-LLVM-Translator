@@ -1,6 +1,6 @@
 # LLVM/SPIR-V Bi-Directional Translator
 
-[![Build Status](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator.svg?branch=master)](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator)
+[![Build Status](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator.svg?branch=llvm_release_80)](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator)
 
 This repository contains source code for the LLVM/SPIR-V Bi-Directional Translator, a library and tool for translation between LLVM IR and [SPIR-V](https://www.khronos.org/registry/spir-v/).
 
@@ -26,7 +26,7 @@ The translator can be built with the latest(nightly) package of LLVM. For Ubuntu
 ```
 sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main"
 sudo apt-get update
-sudo apt-get install llvm-7-dev
+sudo apt-get install llvm-8-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
@@ -51,7 +51,7 @@ Where `llvm_build_dir` is the LLVM build directory.
 
 The translator can be built as a regular LLVM subproject. To do that you need to clone it to `llvm/projects` or `llvm/tools` directory. 
 ```
-git clone http://llvm.org/git/llvm.git
+git clone http://llvm.org/git/llvm.git -b release_80
 cd llvm/project
 git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
 ```
