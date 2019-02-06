@@ -2249,11 +2249,27 @@ static bool transKernelArgTypeMedataFromString(LLVMContext *Ctx,
   std::string ArgTypeStr =
       (*ArgTypeStrIt)->getStr().substr(ArgTypePrefix.size());
   std::vector<Metadata *> TypeMDs;
-  std::string::size_type Start = 0, End = 0;
-  while ((Start = ArgTypeStr.find(',', End)) != std::string::npos) {
-    TypeMDs.push_back(MDString::get(*Ctx, ArgTypeStr.substr(End, Start - End)));
-    End = ++Start;
+
+  int CountBraces = 0;
+  std::string::size_type Start = 0;
+
+  for (std::string::size_type I = 0; I < ArgTypeStr.length(); I++) {
+    switch (ArgTypeStr[I]) {
+    case '<':
+      CountBraces++;
+      break;
+    case '>':
+      CountBraces--;
+      break;
+    case ',':
+      if (CountBraces == 0) {
+        TypeMDs.push_back(
+            MDString::get(*Ctx, ArgTypeStr.substr(Start, I - Start)));
+        Start = I + 1;
+      }
+    }
   }
+
   Kernel->setMetadata(SPIR_MD_KERNEL_ARG_TYPE, MDNode::get(*Ctx, TypeMDs));
   return true;
 }
