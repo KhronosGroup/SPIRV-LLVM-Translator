@@ -2189,9 +2189,101 @@ bool SPIRVToLLVM::transAddressingModel() {
   return true;
 }
 
+void generateIntelFPGAAnnotation(const SPIRVEntry *E,
+                                 llvm::SmallString<256> &AnnotStr) {
+  llvm::raw_svector_ostream Out(AnnotStr);
+  if (E->hasDecorate(DecorationRegisterINTEL))
+    Out << "{register:1}";
+
+  SPIRVWord Result = 0;
+  if (E->hasDecorate(DecorationMemoryINTEL)) {
+    Out << "{memory:" << E->getDecorationStringLiteral(DecorationMemoryINTEL)
+        << '}';
+  }
+  if (E->hasDecorate(DecorationBankwidthINTEL, 0, &Result))
+    Out << "{bankwidth:" << Result << '}';
+  if (E->hasDecorate(DecorationNumbanksINTEL, 0, &Result))
+    Out << "{numbanks:" << Result << '}';
+}
+
+void generateIntelFPGAAnnotationForStructMember(
+    const SPIRVEntry *E, SPIRVWord MemberNumber,
+    llvm::SmallString<256> &AnnotStr) {
+  llvm::raw_svector_ostream Out(AnnotStr);
+  if (E->hasMemberDecorate(DecorationRegisterINTEL, 0, MemberNumber))
+    Out << "{register:1}";
+
+  SPIRVWord Result = 0;
+  if (E->hasMemberDecorate(DecorationMemoryINTEL, 0, MemberNumber, &Result))
+    Out << "{memory:"
+        << E->getMemberDecorationStringLiteral(DecorationMemoryINTEL,
+                                               MemberNumber)
+        << '}';
+  if (E->hasMemberDecorate(DecorationBankwidthINTEL, 0, MemberNumber, &Result))
+    Out << "{bankwidth:" << Result << '}';
+  if (E->hasMemberDecorate(DecorationNumbanksINTEL, 0, MemberNumber, &Result))
+    Out << "{numbanks:" << Result << '}';
+}
+
+void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
+  if (auto AL = dyn_cast<AllocaInst>(V)) {
+    IRBuilder<> Builder(AL->getParent());
+
+    SPIRVType *ST = BV->getType()->getPointerElementType();
+
+    Type *Int8PtrTyPrivate = Type::getInt8PtrTy(*Context, SPIRAS_Private);
+    IntegerType *Int32Ty = IntegerType::get(*Context, 32);
+
+    Value *UndefInt8Ptr = UndefValue::get(Int8PtrTyPrivate);
+    Value *UndefInt32 = UndefValue::get(Int32Ty);
+
+    if (ST->isTypeStruct()) {
+      SPIRVTypeStruct *STS = static_cast<SPIRVTypeStruct *>(ST);
+
+      for (SPIRVWord I = 0; I < STS->getMemberCount(); ++I) {
+        SmallString<256> AnnotStr;
+        generateIntelFPGAAnnotationForStructMember(ST, I, AnnotStr);
+        if (!AnnotStr.empty()) {
+          auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+
+          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
+              M, Intrinsic::ptr_annotation, Int8PtrTyPrivate);
+
+          auto GEP = Builder.CreateConstInBoundsGEP2_32(AL->getAllocatedType(),
+                                                        AL, 0, I);
+
+          llvm::Value *Args[] = {
+              Builder.CreateBitCast(GEP, Int8PtrTyPrivate, GEP->getName()),
+              Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+              UndefInt32};
+          Builder.CreateCall(AnnotationFn, Args);
+        }
+      }
+    } else {
+      SmallString<256> AnnotStr;
+      generateIntelFPGAAnnotation(BV, AnnotStr);
+      if (!AnnotStr.empty()) {
+        auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+
+        auto AnnotationFn =
+            llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation);
+
+        llvm::Value *Args[] = {
+            Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()),
+            Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+            UndefInt32};
+        Builder.CreateCall(AnnotationFn, Args);
+      }
+    }
+  }
+}
+
 bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
   if (!transAlign(BV, V))
     return false;
+
+  transIntelFPGADecorations(BV, V);
+
   DbgTran->transDbgInfo(BV, V);
   return true;
 }
