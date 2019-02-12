@@ -388,6 +388,7 @@ enum Decoration {
     DecorationPassthroughNV = 5250,
     DecorationViewportRelativeNV = 5252,
     DecorationSecondaryViewportRelativeNV = 5256,
+    DecorationUserSemantic = 5635,
     DecorationMax = 0x7fffffff,
 };
 

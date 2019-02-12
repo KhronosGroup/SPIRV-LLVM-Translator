@@ -320,6 +320,76 @@ public:
   void decorateTargets() override;
 };
 
+template <Decoration D> class SPIRVDecorateStrAttrBase : public SPIRVDecorate {
+public:
+  // Complete constructor for decoration with string literal
+  SPIRVDecorateStrAttrBase(SPIRVEntry *TheTarget, const std::string &Str)
+      : SPIRVDecorate(D, TheTarget) {
+    for (auto &I : getVec(Str))
+      Literals.push_back(I);
+    WordCount += Literals.size();
+  }
+  // Incomplete constructor
+  SPIRVDecorateStrAttrBase() : SPIRVDecorate() {}
+
+  static void encodeLiterals(SPIRVEncoder &Encoder,
+                             const std::vector<SPIRVWord> &Literals) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if (SPIRVUseTextFormat) {
+      Encoder << getString(Literals.cbegin(), Literals.cend());
+    } else
+#endif
+      Encoder << Literals;
+  }
+
+  static void decodeLiterals(SPIRVDecoder &Decoder,
+                             std::vector<SPIRVWord> &Literals) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if (SPIRVUseTextFormat) {
+      std::string Str;
+      Decoder >> Str;
+      std::copy_n(getVec(Str).begin(), Literals.size(), Literals.begin());
+    } else
+#endif
+      Decoder >> Literals;
+  }
+};
+
+class SPIRVDecorateUserSemanticAttr
+    : public SPIRVDecorateStrAttrBase<DecorationUserSemantic> {
+public:
+  //  Complete constructor for UserSemantic decoration
+  SPIRVDecorateUserSemanticAttr(SPIRVEntry *TheTarget,
+                                const std::string &AnnotateString)
+      : SPIRVDecorateStrAttrBase(TheTarget, AnnotateString) {}
+};
+
+template <Decoration D>
+class SPIRVMemberDecorateStrAttrBase : public SPIRVMemberDecorate {
+public:
+  // Complete constructor for decoration with string literal
+  SPIRVMemberDecorateStrAttrBase(SPIRVEntry *TheTarget, SPIRVWord MemberNumber,
+                                 const std::string &Str)
+      : SPIRVMemberDecorate(D, MemberNumber, TheTarget) {
+    for (auto &I : getVec(Str))
+      Literals.push_back(I);
+    WordCount += Literals.size();
+  }
+  // Incomplete constructor
+  SPIRVMemberDecorateStrAttrBase() : SPIRVMemberDecorate() {}
+};
+
+class SPIRVMemberDecorateUserSemanticAttr
+    : public SPIRVMemberDecorateStrAttrBase<DecorationUserSemantic> {
+public:
+  // Complete constructor for UserSemantic decoration
+  SPIRVMemberDecorateUserSemanticAttr(SPIRVEntry *TheTarget,
+                                      SPIRVWord MemberNumber,
+                                      const std::string &AnnotateString)
+      : SPIRVMemberDecorateStrAttrBase(TheTarget, MemberNumber,
+                                       AnnotateString) {}
+};
+
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVDECORATE_H

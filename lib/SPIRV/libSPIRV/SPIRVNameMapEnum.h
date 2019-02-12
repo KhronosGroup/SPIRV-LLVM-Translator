@@ -331,6 +331,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMaxByteOffset, "MaxByteOffset");
   add(DecorationNoSignedWrap, "NoSignedWrap");
   add(DecorationNoUnsignedWrap, "NoUnsignedWrap");
+  add(DecorationUserSemantic, "UserSemantic");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 

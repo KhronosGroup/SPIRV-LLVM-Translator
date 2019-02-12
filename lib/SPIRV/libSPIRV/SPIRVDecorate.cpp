@@ -87,10 +87,16 @@ size_t SPIRVDecorateGeneric::getLiteralCount() const { return Literals.size(); }
 void SPIRVDecorate::encode(spv_ostream &O) const {
   SPIRVEncoder Encoder = getEncoder(O);
   Encoder << Target << Dec;
-  if (Dec == DecorationLinkageAttributes)
+  switch (Dec) {
+  case DecorationLinkageAttributes:
     SPIRVDecorateLinkageAttr::encodeLiterals(Encoder, Literals);
-  else
+    break;
+  case DecorationUserSemantic:
+    SPIRVDecorateUserSemanticAttr::encodeLiterals(Encoder, Literals);
+    break;
+  default:
     Encoder << Literals;
+  }
 }
 
 void SPIRVDecorate::setWordCount(SPIRVWord Count) {
@@ -101,15 +107,29 @@ void SPIRVDecorate::setWordCount(SPIRVWord Count) {
 void SPIRVDecorate::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Target >> Dec;
-  if (Dec == DecorationLinkageAttributes)
+  switch (Dec) {
+  case DecorationLinkageAttributes:
     SPIRVDecorateLinkageAttr::decodeLiterals(Decoder, Literals);
-  else
+    break;
+  case DecorationUserSemantic:
+    SPIRVDecorateUserSemanticAttr::decodeLiterals(Decoder, Literals);
+    break;
+  default:
     Decoder >> Literals;
+  }
   getOrCreateTarget()->addDecorate(this);
 }
 
 void SPIRVMemberDecorate::encode(spv_ostream &O) const {
-  getEncoder(O) << Target << MemberNumber << Dec << Literals;
+  SPIRVEncoder Encoder = getEncoder(O);
+  Encoder << Target << MemberNumber << Dec;
+  switch (Dec) {
+  case DecorationUserSemantic:
+    SPIRVDecorateUserSemanticAttr::encodeLiterals(Encoder, Literals);
+    break;
+  default:
+    Encoder << Literals;
+  }
 }
 
 void SPIRVMemberDecorate::setWordCount(SPIRVWord Count) {
@@ -118,7 +138,15 @@ void SPIRVMemberDecorate::setWordCount(SPIRVWord Count) {
 }
 
 void SPIRVMemberDecorate::decode(std::istream &I) {
-  getDecoder(I) >> Target >> MemberNumber >> Dec >> Literals;
+  SPIRVDecoder Decoder = getDecoder(I);
+  Decoder >> Target >> MemberNumber >> Dec;
+  switch (Dec) {
+  case DecorationUserSemantic:
+    SPIRVDecorateUserSemanticAttr::decodeLiterals(Decoder, Literals);
+    break;
+  default:
+    Decoder >> Literals;
+  }
   getOrCreateTarget()->addMemberDecorate(this);
 }
 
@@ -197,6 +225,12 @@ bool operator==(const SPIRVDecorateGeneric &A, const SPIRVDecorateGeneric &B) {
     return false;
   if (A.getOpCode() != B.getOpCode())
     return false;
+  if (B.isMemberDecorate()) {
+    auto &MDA = static_cast<SPIRVMemberDecorate const &>(A);
+    auto &MDB = static_cast<SPIRVMemberDecorate const &>(B);
+    if (MDA.getMemberNumber() != MDB.getMemberNumber())
+      return false;
+  }
   if (A.getDecorateKind() != B.getDecorateKind())
     return false;
   if (A.getLiteralCount() != B.getLiteralCount())
