@@ -55,7 +55,9 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SetVector.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -1199,6 +1201,45 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     return DbgTran->createDebugDeclarePlaceholder(cast<DbgDeclareInst>(II), BB);
   case Intrinsic::dbg_value:
     return DbgTran->createDebugValuePlaceholder(cast<DbgValueInst>(II), BB);
+  case Intrinsic::var_annotation: {
+    SPIRVValue *SV;
+    if (auto *BI = dyn_cast<BitCastInst>(II->getArgOperand(0))) {
+      SV = transValue(BI->getOperand(0), BB);
+    } else {
+      SV = transValue(II->getOperand(0), BB);
+    }
+    GetElementPtrInst *GEP = cast<GetElementPtrInst>(II->getArgOperand(1));
+    Constant *C = cast<Constant>(GEP->getOperand(0));
+    StringRef AnnotationString =
+        cast<ConstantDataArray>(C->getOperand(0))->getAsString();
+    SV->addDecorate(new SPIRVDecorateUserSemanticAttr(
+        SV, AnnotationString.substr(0, AnnotationString.size() - 1)));
+    return SV;
+  }
+  case Intrinsic::ptr_annotation: {
+    GetElementPtrInst *GI;
+    if (auto *BI = dyn_cast<BitCastInst>(II->getArgOperand(0))) {
+      GI = dyn_cast<GetElementPtrInst>(BI->getOperand(0));
+    } else {
+      GI = dyn_cast<GetElementPtrInst>(II->getOperand(0));
+    }
+    SPIRVType *Ty = transType(GI->getSourceElementType());
+
+    SPIRVWord MemberNumber =
+        dyn_cast<ConstantInt>(GI->getOperand(2))->getZExtValue();
+
+    GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(II->getArgOperand(1));
+    Constant *C = dyn_cast<Constant>(GEP->getOperand(0));
+    StringRef AnnotationString =
+        dyn_cast<ConstantDataArray>(C->getOperand(0))->getAsString();
+
+    Ty->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
+        Ty, MemberNumber,
+        AnnotationString.substr(0, AnnotationString.size() - 1)));
+
+    II->replaceAllUsesWith(II->getOperand(0));
+    return 0;
+  }
   default:
     // LLVM intrinsic functions shouldn't get to SPIRV, because they
     // would have no definition there.
@@ -1288,9 +1329,32 @@ SPIRVWord LLVMToSPIRV::transFunctionControlMask(Function *F) {
   return FCM;
 }
 
+void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
+  SPIRVDBG(dbgs() << "[transGlobalAnnotation] " << *V << '\n');
+
+  // @llvm.global.annotations is an array that contains structs with 4 fields.
+  // Get the array of structs with metadata
+  ConstantArray *CA = cast<ConstantArray>(V->getOperand(0));
+  for (Value *Op : CA->operands()) {
+    ConstantStruct *CS = cast<ConstantStruct>(Op);
+    // The first field of the struct contains a pointer to annotated variable
+    Value *AnnotatedVar = CS->getOperand(0)->stripPointerCasts();
+    SPIRVValue *SV = transValue(AnnotatedVar, nullptr);
+
+    // The second field contains a pointer to a global annotation string
+    GlobalVariable *GV =
+        cast<GlobalVariable>(CS->getOperand(1)->stripPointerCasts());
+    StringRef AnnotationString;
+    getConstantStringInfo(GV, AnnotationString);
+    SV->addDecorate(new SPIRVDecorateUserSemanticAttr(SV, AnnotationString));
+  }
+}
+
 bool LLVMToSPIRV::transGlobalVariables() {
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    if (!transValue(&(*I), nullptr))
+    if ((*I).getName() == "llvm.global.annotations")
+      transGlobalAnnotation(&(*I));
+    else if (!transValue(&(*I), nullptr))
       return false;
   }
   return true;

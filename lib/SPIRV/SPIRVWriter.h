@@ -108,6 +108,7 @@ public:
   SPIRVValue *transConstant(Value *V);
   SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
                          bool CreateForward = true);
+  void transGlobalAnnotation(GlobalVariable *V);
   SPIRVValue *transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                           bool CreateForward = true);
 
