@@ -799,16 +799,31 @@ bool SPIRVToLLVM::postProcessOCLBuiltinWithArrayArguments(
   return true;
 }
 
-static char getTypeSuffix(Type *T) {
-  char Suffix;
+static std::string getTypeSuffix(Type *T, SPIRVType *SPIRVT) {
+  std::string Suffix;
 
   Type *ST = T->getScalarType();
   if (ST->isHalfTy())
-    Suffix = 'h';
+    Suffix = "h";
   else if (ST->isFloatTy())
-    Suffix = 'f';
-  else
-    Suffix = 'i';
+    Suffix = "f";
+  else {
+    SPIRVTypeInt *STI = nullptr;
+    if (SPIRVT) {
+      if (SPIRVT->isTypeVectorInt()) {
+        STI = static_cast<SPIRVTypeInt *>(
+            static_cast<SPIRVTypeVector *>(SPIRVT)->getComponentType());
+      } else {
+        if (SPIRVT->isTypeInt())
+          STI = static_cast<SPIRVTypeInt *>(SPIRVT);
+      }
+    }
+
+    if (STI && STI->isSigned())
+      Suffix = "i";
+    else
+      Suffix = "ui";
+  }
 
   return Suffix;
 }
@@ -855,7 +870,7 @@ Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
           T = VT->getElementType();
         RetTy = IsDepthImage ? T : CI->getType();
         return std::string(kOCLBuiltinName::SampledReadImage) +
-               getTypeSuffix(T);
+               getTypeSuffix(T, BI->hasType() ? BI->getType() : nullptr);
       },
       [=](CallInst *NewCI) -> Instruction * {
         if (IsDepthImage)
@@ -888,7 +903,8 @@ SPIRVToLLVM::postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
           else
             std::swap(Args[2], Args[3]);
         }
-        return std::string(kOCLBuiltinName::WriteImage) + getTypeSuffix(T);
+        return std::string(kOCLBuiltinName::WriteImage) +
+               getTypeSuffix(T, BI->hasType() ? BI->getType() : nullptr);
       },
       &Attrs);
 }
