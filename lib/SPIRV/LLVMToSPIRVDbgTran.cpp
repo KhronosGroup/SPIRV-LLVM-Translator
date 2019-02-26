@@ -788,7 +788,11 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
   Ops[SourceIdx] = getSource(Func)->getId();
   Ops[LineIdx] = Func->getLine();
   Ops[ColumnIdx] = 0; // This version of DISubprogram has no column number
-  Ops[ParentIdx] = getScope(Func->getScope())->getId();
+  auto Scope = Func->getScope();
+  if (Scope && isa<DIFile>(Scope))
+    Ops[ParentIdx] = SPIRVCU->getId();
+  else
+    Ops[ParentIdx] = getScope(Scope)->getId();
   Ops[LinkageNameIdx] = BM->getString(Func->getLinkageName())->getId();
   Ops[FlagsIdx] = transDebugFlags(Func);
 
