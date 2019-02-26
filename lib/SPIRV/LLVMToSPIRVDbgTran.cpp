@@ -451,7 +451,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgBaseType(const DIBasicType *BT) {
   ConstantInt *Size = getUInt(M, BT->getSizeInBits());
   Ops[SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
   auto Encoding = static_cast<dwarf::TypeKind>(BT->getEncoding());
-  Ops[EncodingIdx] = SPIRV::DbgEncodingMap::map(Encoding);
+  SPIRVDebug::EncodingTag EncTag = SPIRVDebug::Unspecified;
+  SPIRV::DbgEncodingMap::find(Encoding, &EncTag);
+  Ops[EncodingIdx] = EncTag;
   return BM->addDebugInfo(SPIRVDebug::TypeBasic, getVoidTy(), Ops);
 }
 
