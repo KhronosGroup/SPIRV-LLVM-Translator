@@ -15,6 +15,7 @@ if(NOT BUILD_EXTERNAL)
     FileCheck
     count
     llvm-as
+    llvm-config
     llvm-dis
     not
   )
@@ -23,6 +24,7 @@ if(NOT BUILD_EXTERNAL)
       llc
       llvm-dwarfdump
       llvm-objdump
+      llvm-readelf
       llvm-readobj
     )
   endif(NOT SKIP_SPIRV_DEBUG_INFO_TESTS)
