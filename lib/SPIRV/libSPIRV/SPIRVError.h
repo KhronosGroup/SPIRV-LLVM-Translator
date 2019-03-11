@@ -67,7 +67,7 @@ enum SPIRVErrorCode {
 #undef _SPIRV_OP
 };
 
-// Defines OpErorMap which maps error code to a string describing the error.
+// Defines SPIRVErrorMap which maps error code to a string describing the error.
 template <> inline void SPIRVMap<SPIRVErrorCode, std::string>::init() {
 #define _SPIRV_OP(x, y) add(SPIRVEC_##x, std::string(#x) + ": " + (y));
 #include "SPIRVErrorEnum.h"
