@@ -113,10 +113,10 @@ inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
   if (SPIRVDbgErrorMsgIncludesSourceInfo)
     SS << " [Src: " << FileName << ":" << LineNo << " " << CondString << " ]";
   setError(ErrCode, SS.str());
-  if (SPIRVDbgAssertOnError) {
+  if (SPIRVDbgAbortOnError) {
     spvdbgs() << SS.str() << '\n';
     spvdbgs().flush();
-    assert(0);
+    abort();
   }
   return Cond;
 }
