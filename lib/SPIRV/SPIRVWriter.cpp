@@ -1289,7 +1289,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // LLVM intrinsic functions shouldn't get to SPIRV, because they
     // would have no definition there.
     BM->getErrorLog().checkError(false, SPIRVEC_InvalidFunctionCall,
-                                 II->getName().str(), "", __FILE__, __LINE__);
+                                 II->getCalledValue()->getName().str(), "",
+                                 __FILE__, __LINE__);
   }
   return nullptr;
 }
