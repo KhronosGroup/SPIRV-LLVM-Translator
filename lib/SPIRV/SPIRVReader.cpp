@@ -2226,6 +2226,8 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{bankwidth:" << Result << '}';
   if (E->hasDecorate(DecorationNumbanksINTEL, 0, &Result))
     Out << "{numbanks:" << Result << '}';
+  if (E->hasDecorate(DecorationMaxconcurrencyINTEL, 0, &Result))
+    Out << "{max_concurrency:" << Result << '}';
 }
 
 void generateIntelFPGAAnnotationForStructMember(
@@ -2245,6 +2247,9 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{bankwidth:" << Result << '}';
   if (E->hasMemberDecorate(DecorationNumbanksINTEL, 0, MemberNumber, &Result))
     Out << "{numbanks:" << Result << '}';
+  if (E->hasMemberDecorate(DecorationMaxconcurrencyINTEL, 0, MemberNumber,
+                           &Result))
+    Out << "{max_concurrency:" << Result << '}';
 }
 
 void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {

@@ -342,6 +342,8 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationMemoryINTEL, {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationNumbanksINTEL, {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationBankwidthINTEL, {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationMaxconcurrencyINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {

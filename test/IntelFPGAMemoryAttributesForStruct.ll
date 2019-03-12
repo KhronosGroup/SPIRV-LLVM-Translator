@@ -11,22 +11,25 @@
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 2 MemoryINTEL "MLAB"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 NumbanksINTEL 4
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 BankwidthINTEL 8
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 4 MaxconcurrencyINTEL 4
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
 
 %class.anon = type { i8 }
-%struct.foo = type { i32, i32, i32, i32 }
+%struct.foo = type { i32, i32, i32, i32, i32 }
 
 ; CHECK-LLVM: [[STR1:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{numbanks:4}
 ; CHECK-LLVM: [[STR2:@[a-zA-Z0-9_.]+]] = {{.*}}{register:1}
 ; CHECK-LLVM: [[STR3:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:MLAB}
 ; CHECK-LLVM: [[STR4:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{bankwidth:8}
+; CHECK-LLVM: [[STR5:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{max_concurrency:4}
 @.str = private unnamed_addr constant [29 x i8] c"{memory:DEFAULT}{numbanks:4}\00", section "llvm.metadata"
 @.str.1 = private unnamed_addr constant [16 x i8] c"test_struct.cpp\00", section "llvm.metadata"
 @.str.2 = private unnamed_addr constant [13 x i8] c"{register:1}\00", section "llvm.metadata"
 @.str.3 = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", section "llvm.metadata"
 @.str.4 = private unnamed_addr constant [30 x i8] c"{memory:DEFAULT}{bankwidth:8}\00", section "llvm.metadata"
+@.str.5 = private unnamed_addr constant [36 x i8] c"{memory:DEFAULT}{max_concurrency:4}\00", section "llvm.metadata"
 
 ; Function Attrs: nounwind
 define spir_kernel void @_ZTSZ4mainE15kernel_function() #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !4 !kernel_arg_type !4 !kernel_arg_base_type !4 !kernel_arg_type_qual !4 {
@@ -61,7 +64,7 @@ define spir_func void @_Z3barv() #3 {
 entry:
   %s1 = alloca %struct.foo, align 4
   %0 = bitcast %struct.foo* %s1 to i8*
-  call void @llvm.lifetime.start.p0i8(i64 16, i8* %0) #4
+  call void @llvm.lifetime.start.p0i8(i64 20, i8* %0) #4
   ; CHECK-LLVM: %[[FIELD1:.*]] = getelementptr inbounds %struct.foo, %struct.foo* %{{[a-zA-Z0-9]+}}, i32 0, i32 0
   ; CHECK-LLVM: %[[CAST1:.*]] = bitcast{{.*}}%[[FIELD1]]
   ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST1]]{{.*}}[[STR1]]
@@ -94,8 +97,16 @@ entry:
   %11 = call i8* @llvm.ptr.annotation.p0i8(i8* %10, i8* getelementptr inbounds ([30 x i8], [30 x i8]* @.str.4, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 5)
   %12 = bitcast i8* %11 to i32*
   store i32 0, i32* %12, align 4, !tbaa !14
-  %13 = bitcast %struct.foo* %s1 to i8*
-  call void @llvm.lifetime.end.p0i8(i64 16, i8* %13) #4
+  ; CHECK-LLVM: %[[FIELD5:.*]] = getelementptr inbounds %struct.foo, %struct.foo* %{{[a-zA-Z0-9]+}}, i32 0, i32 4
+  ; CHECK-LLVM: %[[CAST5:.*]] = bitcast{{.*}}%[[FIELD5]]
+  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST5]]{{.*}}[[STR5]]
+  %f5 = getelementptr inbounds %struct.foo, %struct.foo* %s1, i32 0, i32 4
+  %13 = bitcast i32* %f5 to i8*
+  %14 = call i8* @llvm.ptr.annotation.p0i8(i8* %13, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 6)
+  %15 = bitcast i8* %14 to i32*
+  store i32 0, i32* %15, align 4, !tbaa !15
+  %16 = bitcast %struct.foo* %s1 to i8*
+  call void @llvm.lifetime.end.p0i8(i64 20, i8* %16) #4
   ret void
 }
 
@@ -123,8 +134,9 @@ attributes #4 = { nounwind }
 !7 = !{!"omnipotent char", !8, i64 0}
 !8 = !{!"Simple C++ TBAA"}
 !9 = !{!10, !11, i64 0}
-!10 = !{!"_ZTS3foo", !11, i64 0, !11, i64 4, !11, i64 8, !11, i64 12}
+!10 = !{!"_ZTS3foo", !11, i64 0, !11, i64 4, !11, i64 8, !11, i64 12, !11, i64 16}
 !11 = !{!"int", !7, i64 0}
 !12 = !{!10, !11, i64 4}
 !13 = !{!10, !11, i64 8}
 !14 = !{!10, !11, i64 12}
+!15 = !{!10, !11, i64 16}
