@@ -401,6 +401,7 @@ inline bool isValid(spv::Decoration V) {
   case DecorationMemoryINTEL:
   case DecorationNumbanksINTEL:
   case DecorationBankwidthINTEL:
+  case DecorationMaxconcurrencyINTEL:
     return true;
   default:
     return false;

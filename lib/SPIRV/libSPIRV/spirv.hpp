@@ -392,6 +392,7 @@ enum Decoration {
     DecorationMemoryINTEL = 5826,
     DecorationNumbanksINTEL = 5827,
     DecorationBankwidthINTEL = 5828,
+    DecorationMaxconcurrencyINTEL = 5829,
     DecorationMax = 0x7fffffff,
 };
 

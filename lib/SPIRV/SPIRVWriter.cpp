@@ -1132,11 +1132,13 @@ parseAnnotations(StringRef AnnotatedCode) {
     std::pair<StringRef, StringRef> D = AnnotatedDecoration.split(':');
 
     StringRef F = D.first;
-    Decoration Dec = llvm::StringSwitch<Decoration>(F)
-                         .Case("memory", DecorationMemoryINTEL)
-                         .Case("register", DecorationRegisterINTEL)
-                         .Case("numbanks", DecorationNumbanksINTEL)
-                         .Case("bankwidth", DecorationBankwidthINTEL);
+    Decoration Dec =
+        llvm::StringSwitch<Decoration>(F)
+            .Case("memory", DecorationMemoryINTEL)
+            .Case("register", DecorationRegisterINTEL)
+            .Case("numbanks", DecorationNumbanksINTEL)
+            .Case("bankwidth", DecorationBankwidthINTEL)
+            .Case("max_concurrency", DecorationMaxconcurrencyINTEL);
 
     Decorates.push_back({Dec, D.second});
     AnnotatedCode = AnnotatedCode.drop_front(To + 1);
