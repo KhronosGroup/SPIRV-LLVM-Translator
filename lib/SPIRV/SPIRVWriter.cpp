@@ -1113,7 +1113,8 @@ parseAnnotations(StringRef AnnotatedCode) {
 
   size_t OpenBracketNum = AnnotatedCode.count('{');
   size_t CloseBracketNum = AnnotatedCode.count('}');
-  assert(OpenBracketNum == CloseBracketNum);
+  if (OpenBracketNum != CloseBracketNum)
+    return {};
 
   for (size_t I = 0; I < OpenBracketNum; ++I) {
     size_t From = AnnotatedCode.find('{');
