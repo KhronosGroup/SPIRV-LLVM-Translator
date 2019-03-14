@@ -178,8 +178,8 @@ unsigned getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
     case ParamType::FLOAT:
       Prefix = "f";
       break;
-    default:
-      llvm_unreachable("unknown mangling!");
+    case ParamType::UNKNOWN:
+      break;
     }
     Found = OCLExtOpMap::rfind(Prefix + DemangledName, &EOC);
   }
