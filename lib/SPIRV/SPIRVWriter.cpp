@@ -343,13 +343,22 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
     return mapType(T, BM->addVectorType(transType(T->getVectorElementType()),
                                         T->getVectorNumElements()));
 
-  if (T->isArrayTy())
+  if (T->isArrayTy()) {
+    // SPIR-V 1.3 s3.32.6: Length is the number of elements in the array.
+    //                     It must be at least 1.
+    if (T->getArrayNumElements() < 1) {
+      std::string Str;
+      llvm::raw_string_ostream OS(Str);
+      OS << *T;
+      SPIRVCK(T->getArrayNumElements() >= 1, InvalidArraySize, OS.str());
+    }
     return mapType(T, BM->addArrayType(
                           transType(T->getArrayElementType()),
                           static_cast<SPIRVConstant *>(transValue(
                               ConstantInt::get(getSizetType(),
                                                T->getArrayNumElements(), false),
                               nullptr))));
+  }
 
   if (T->isStructTy() && !T->isSized()) {
     auto ST = dyn_cast<StructType>(T);
