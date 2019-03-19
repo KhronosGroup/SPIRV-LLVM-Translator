@@ -273,7 +273,7 @@ void SPIRVEntry::takeDecorates(SPIRVEntry *E) {
 
 void SPIRVEntry::setLine(const std::shared_ptr<const SPIRVLine> &L) {
   Line = L;
-  SPIRVDBG(spvdbgs() << "[setLine] " << *L << '\n';)
+  SPIRVDBG(if (L) spvdbgs() << "[setLine] " << *L << '\n';)
 }
 
 void SPIRVEntry::addMemberDecorate(SPIRVMemberDecorate *Dec) {
