@@ -2913,11 +2913,15 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
 
 bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
                      std::string &ErrMsg) {
-  M = new Module("", C);
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 
   IS >> *BM;
+  if (!BM->isModuleValid()) {
+    M = nullptr;
+    return false;
+  }
 
+  M = new Module("", C);
   SPIRVToLLVM BTL(M, BM.get());
   bool Succeed = true;
   if (!BTL.translate()) {
