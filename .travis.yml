@@ -123,7 +123,7 @@ before_deploy:
   - git config --global user.name "Travis CI"
   - git config --global user.email "builds@travis-ci.org"
   - git tag -f ${TAG}
-  - git push https://${repo_token}@github.com/${TRAVIS_REPO_SLUG} --tags
+  - git push -f https://${repo_token}@github.com/${TRAVIS_REPO_SLUG} --tags
 
 deploy:
   provider: releases
@@ -132,7 +132,7 @@ deploy:
     branch: llvm_release_80
     condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
   file: ${TARBALL}
-  name: Binaries linked against LLVM 8.0.0 (qualification branch)
+  name: Binaries linked against LLVM 8.0.0
   skip_cleanup: true
-  overwrite: false
-  prerelease: true
+  overwrite: true
+  prerelease: false
