@@ -91,10 +91,6 @@ using namespace llvm;
 using namespace SPIRV;
 using namespace OCLUtil;
 
-namespace llvm {
-FunctionPass *createPromoteMemoryToRegisterPass();
-} // namespace llvm
-
 namespace SPIRV {
 
 cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(true),
