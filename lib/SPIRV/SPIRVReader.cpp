@@ -109,8 +109,6 @@ const static char *Restrict = "restrict";
 const static char *Pipe = "pipe";
 } // namespace kOCLTypeQualifierName
 
-typedef std::pair<unsigned, AttributeList> AttributeWithIndex;
-
 static bool isOpenCLKernel(SPIRVFunction *BF) {
   return BF->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId());
 }
@@ -168,13 +166,6 @@ static void addOCLKernelArgumentMetadata(
   BF->foreachArgument(
       [&](SPIRVFunctionParameter *Arg) { ValueVec.push_back(Func(Arg)); });
   Fn->setMetadata(MDName, MDNode::get(*Context, ValueVec));
-}
-
-Type *SPIRVToLLVM::getTranslatedType(SPIRVType *BV) {
-  auto Loc = TypeMap.find(BV);
-  if (Loc != TypeMap.end())
-    return Loc->second;
-  return nullptr;
 }
 
 Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
