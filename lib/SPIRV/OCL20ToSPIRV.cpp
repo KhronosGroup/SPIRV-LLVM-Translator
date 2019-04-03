@@ -1066,8 +1066,6 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
   assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   bool IsRetScalar = !CI->getType()->isVectorTy();
-  bool IsRetSigned =
-      (CI->getCalledFunction()->getName().find("ui") == StringRef::npos);
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&Ret) {
@@ -1106,7 +1104,7 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
           Ret = VectorType::get(Ret, 4);
         return getSPIRVFuncName(OpImageSampleExplicitLod,
                                 std::string(kSPIRVPostfix::ExtDivider) +
-                                    getPostfixForReturnType(Ret, IsRetSigned));
+                                    getPostfixForReturnType(Ret));
       },
       [&](CallInst *CI) -> Instruction * {
         if (IsRetScalar)
