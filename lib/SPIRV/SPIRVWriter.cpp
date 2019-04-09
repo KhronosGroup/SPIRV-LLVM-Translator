@@ -1176,8 +1176,16 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   auto GetMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
     if (SPIRVWord AlignVal = MI->getDestAlignment()) {
-      MemoryAccess[0] |= MemoryAccessAlignedMask;
-      MemoryAccess.push_back(AlignVal);
+        MemoryAccess[0] |= MemoryAccessAlignedMask;
+        if (auto MTI = dyn_cast<MemTransferInst>(MI)) {
+            SPIRVWord SourceAlignVal = MTI->getSourceAlignment();
+            assert(SourceAlignVal && "Missed Source alignment!");
+
+            // In a case when alignment of source differs from dest one
+            // least value is guaranteed anyway.
+            AlignVal = std::min(AlignVal, SourceAlignVal);
+        }
+        MemoryAccess.push_back(AlignVal);
     }
     if (MI->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
@@ -1233,9 +1241,6 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                       GetMemoryAccess(MSI), BB);
   } break;
   case Intrinsic::memcpy:
-    assert(cast<MemCpyInst>(II)->getSourceAlignment() ==
-               cast<MemCpyInst>(II)->getDestAlignment() &&
-           "Alignment mismatch!");
     return BM->addCopyMemorySizedInst(
         transValue(II->getOperand(0), BB), transValue(II->getOperand(1), BB),
         transValue(II->getOperand(2), BB),
