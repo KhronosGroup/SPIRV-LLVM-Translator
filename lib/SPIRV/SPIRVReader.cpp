@@ -1381,7 +1381,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       S = Builder.getInt64(Size);
     Value *Var = transValue(LTStart->getObject(), F, BB);
     CallInst *Start = Builder.CreateLifetimeStart(Var, S);
-    return mapValue(BV, Start->getOperand(1));
+    return mapValue(BV, Start);
   }
 
   case OpLifetimeStop: {
