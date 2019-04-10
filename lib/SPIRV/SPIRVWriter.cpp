@@ -1258,8 +1258,12 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::dbg_value:
     return DbgTran->createDebugValuePlaceholder(cast<DbgValueInst>(II), BB);
   case Intrinsic::var_annotation: {
-    BitCastInst *BI = cast<BitCastInst>(II->getArgOperand(0));
-    SPIRVValue *SV = transValue(BI->getOperand(0), BB);
+    SPIRVValue *SV;
+    if (auto *BI = dyn_cast<BitCastInst>(II->getArgOperand(0))) {
+      SV = transValue(BI->getOperand(0), BB);
+    } else {
+      SV = transValue(II->getOperand(0), BB);
+    }
 
     GetElementPtrInst *GEP = cast<GetElementPtrInst>(II->getArgOperand(1));
     Constant *C = cast<Constant>(GEP->getOperand(0));
@@ -1273,8 +1277,12 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     return SV;
   }
   case Intrinsic::ptr_annotation: {
-    BitCastInst *BI = dyn_cast<BitCastInst>(II->getArgOperand(0));
-    GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(BI->getOperand(0));
+    GetElementPtrInst *GI;
+    if (auto *BI = dyn_cast<BitCastInst>(II->getArgOperand(0))) {
+      GI = dyn_cast<GetElementPtrInst>(BI->getOperand(0));
+    } else {
+      GI = dyn_cast<GetElementPtrInst>(II->getOperand(0));
+    }
     SPIRVType *Ty = transType(GI->getSourceElementType());
 
     SPIRVWord MemberNumber =
@@ -1290,7 +1298,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
 
     addIntelFPGADecorationsForStructMember(Ty, MemberNumber, Decorations);
 
-    II->replaceAllUsesWith(BI);
+    II->replaceAllUsesWith(II->getOperand(0));
     return 0;
   }
   default:

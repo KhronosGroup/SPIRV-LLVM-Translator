@@ -17,7 +17,7 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-linux"
 
 %class.anon = type { i8 }
-%struct.foo = type { i32, i32, i32, i32, i32 }
+%struct.foo = type { i32, i32, i32, i32, i8 }
 
 ; CHECK-LLVM: [[STR1:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{numbanks:4}
 ; CHECK-LLVM: [[STR2:@[a-zA-Z0-9_.]+]] = {{.*}}{register:1}
@@ -98,15 +98,12 @@ entry:
   %12 = bitcast i8* %11 to i32*
   store i32 0, i32* %12, align 4, !tbaa !14
   ; CHECK-LLVM: %[[FIELD5:.*]] = getelementptr inbounds %struct.foo, %struct.foo* %{{[a-zA-Z0-9]+}}, i32 0, i32 4
-  ; CHECK-LLVM: %[[CAST5:.*]] = bitcast{{.*}}%[[FIELD5]]
-  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST5]]{{.*}}[[STR5]]
+  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[FIELD5]]{{.*}}[[STR5]]
   %f5 = getelementptr inbounds %struct.foo, %struct.foo* %s1, i32 0, i32 4
-  %13 = bitcast i32* %f5 to i8*
-  %14 = call i8* @llvm.ptr.annotation.p0i8(i8* %13, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 6)
-  %15 = bitcast i8* %14 to i32*
-  store i32 0, i32* %15, align 4, !tbaa !15
-  %16 = bitcast %struct.foo* %s1 to i8*
-  call void @llvm.lifetime.end.p0i8(i64 20, i8* %16) #4
+  %13 = call i8* @llvm.ptr.annotation.p0i8(i8* %f5, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 6)
+  store i8 0, i8* %13, align 4, !tbaa !15
+  %14 = bitcast %struct.foo* %s1 to i8*
+  call void @llvm.lifetime.end.p0i8(i64 20, i8* %14) #4
   ret void
 }
 
