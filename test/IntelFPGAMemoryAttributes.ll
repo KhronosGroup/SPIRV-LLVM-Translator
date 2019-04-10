@@ -64,7 +64,7 @@ entry:
   %var_two = alloca i32, align 4
   %var_three = alloca i32, align 4
   %var_four = alloca i32, align 4
-  %var_five = alloca i32, align 4
+  %var_five = alloca i8, align 1
   %0 = bitcast i32* %var_one to i8*
   call void @llvm.lifetime.start.p0i8(i64 4, i8* %0) #4
   %var_one1 = bitcast i32* %var_one to i8*
@@ -85,21 +85,18 @@ entry:
   %var_four4 = bitcast i32* %var_four to i8*
   ; CHECK-LLVM: call void @llvm.var.annotation(i8* [[VAR4:%[a-zA-Z0-9_]+]], i8* getelementptr inbounds ([30 x i8], [30 x i8]* [[STR4]], i32 0, i32 0), i8* undef, i32 undef)
   call void @llvm.var.annotation(i8* %var_four4, i8* getelementptr inbounds ([30 x i8], [30 x i8]* @.str.4, i32 0, i32 0), i8* getelementptr inbounds ([13 x i8], [13 x i8]* @.str.1, i32 0, i32 0), i32 5)
-  %4 = bitcast i32* %var_five to i8*
-  call void @llvm.lifetime.start.p0i8(i64 4, i8* %4) #4
-  %var_five5 = bitcast i32* %var_five to i8*
+  call void @llvm.lifetime.start.p0i8(i64 1, i8* %var_five) #4
   ; CHECK-LLVM: call void @llvm.var.annotation(i8* [[VAR5:%[a-zA-Z0-9_]+]], i8* getelementptr inbounds ([36 x i8], [36 x i8]* [[STR5]], i32 0, i32 0), i8* undef, i32 undef)
-  call void @llvm.var.annotation(i8* %var_five5, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([13 x i8], [13 x i8]* @.str.1, i32 0, i32 0), i32 6)
-  %5 = bitcast i32* %var_five to i8*
+  call void @llvm.var.annotation(i8* %var_five, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([13 x i8], [13 x i8]* @.str.1, i32 0, i32 0), i32 6)
+  call void @llvm.lifetime.end.p0i8(i64 1, i8* %var_five) #4
+  %4 = bitcast i32* %var_four to i8*
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %4) #4
+  %5 = bitcast i32* %var_three to i8*
   call void @llvm.lifetime.end.p0i8(i64 4, i8* %5) #4
-  %6 = bitcast i32* %var_four to i8*
+  %6 = bitcast i32* %var_two to i8*
   call void @llvm.lifetime.end.p0i8(i64 4, i8* %6) #4
-  %7 = bitcast i32* %var_three to i8*
+  %7 = bitcast i32* %var_one to i8*
   call void @llvm.lifetime.end.p0i8(i64 4, i8* %7) #4
-  %8 = bitcast i32* %var_two to i8*
-  call void @llvm.lifetime.end.p0i8(i64 4, i8* %8) #4
-  %9 = bitcast i32* %var_one to i8*
-  call void @llvm.lifetime.end.p0i8(i64 4, i8* %9) #4
   ret void
 }
 
