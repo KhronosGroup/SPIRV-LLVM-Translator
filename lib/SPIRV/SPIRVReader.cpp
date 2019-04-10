@@ -1996,8 +1996,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   setAttrByCalledFunc(Call);
   SPIRVDBG(spvdbgs() << "[transInstToBuiltinCall] " << *BI << " -> ";
            dbgs() << *Call << '\n';)
-  Instruction *Inst = Call;
-  Inst = transOCLBuiltinPostproc(BI, Call, BB, FuncName);
+  Instruction *Inst = transOCLBuiltinPostproc(BI, Call, BB, FuncName);
   return Inst;
 }
 
