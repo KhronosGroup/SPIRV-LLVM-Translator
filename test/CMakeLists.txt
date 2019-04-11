@@ -1,3 +1,4 @@
+llvm_canonicalize_cmake_booleans(SPIRV_SKIP_CLANG_BUILD)
 llvm_canonicalize_cmake_booleans(SPIRV_SKIP_DEBUG_INFO_TESTS)
 
 # required by lit.site.cfg.py.in
@@ -19,6 +20,11 @@ if(NOT BUILD_EXTERNAL)
     llvm-dis
     not
   )
+  if(NOT SPIRV_SKIP_CLANG_BUILD)
+    list(APPEND LLVM_SPIRV_TEST_DEPS
+      clang
+    )
+  endif(NOT SPIRV_SKIP_CLANG_BUILD)
   if(NOT SPIRV_SKIP_DEBUG_INFO_TESTS)
     list(APPEND LLVM_SPIRV_TEST_DEPS
       llc
