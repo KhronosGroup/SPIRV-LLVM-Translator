@@ -192,18 +192,6 @@ unsigned getExtOp(StringRef OrigName, const std::string &GivenDemangledName) {
     return ~0U;
 }
 
-std::unique_ptr<SPIRVEntry> getSPIRVInst(const OCLBuiltinTransInfo &Info) {
-  Op OC = OpNop;
-  unsigned ExtOp = ~0U;
-  SPIRVEntry *Entry = nullptr;
-  if (OCLSPIRVBuiltinMap::find(Info.UniqName, &OC))
-    Entry = SPIRVEntry::create(OC);
-  else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
-    Entry = static_cast<SPIRVEntry *>(
-        SPIRVEntry::createUnique(SPIRVEIS_OpenCL, ExtOp).get());
-  return std::unique_ptr<SPIRVEntry>(Entry);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Functions for getting module info
@@ -689,14 +677,6 @@ Instruction *mutateCallInstOCL(
     std::function<Instruction *(CallInst *)> RetMutate, AttributeList *Attrs) {
   OCLBuiltinFuncMangleInfo BtnInfo(CI->getCalledFunction());
   return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
-}
-
-void mutateFunctionOCL(
-    Function *F,
-    std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
-    AttributeList *Attrs) {
-  OCLBuiltinFuncMangleInfo BtnInfo(F);
-  return mutateFunction(F, ArgMutate, &BtnInfo, Attrs, false);
 }
 
 static std::pair<StringRef, StringRef>
