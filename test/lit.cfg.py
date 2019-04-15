@@ -21,7 +21,7 @@ config.suffixes = ['.ll', '.spt']
 # excludes: A list of directories  and fles to exclude from the testsuite.
 config.excludes = ['CMakeLists.txt']
 
-if not config.skip_spirv_debug_info_tests:
+if not config.spirv_skip_debug_info_tests:
     # Direct object generation.
     config.available_features.add('object-emission')
     
@@ -48,7 +48,7 @@ config.substitutions.append(('%PATH%', config.environment['PATH']))
 tool_dirs = [config.llvm_tools_dir, config.llvm_spirv_dir]
 
 tools = ['llvm-as', 'llvm-dis', 'llvm-spirv', 'not']
-if not config.skip_spirv_debug_info_tests:
+if not config.spirv_skip_debug_info_tests:
     tools.extend(['llc', 'llvm-dwarfdump', 'llvm-objdump', 'llvm-readelf', 'llvm-readobj'])
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)

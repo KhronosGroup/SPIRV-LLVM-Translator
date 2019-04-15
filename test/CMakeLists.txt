@@ -1,4 +1,4 @@
-llvm_canonicalize_cmake_booleans(SKIP_SPIRV_DEBUG_INFO_TESTS)
+llvm_canonicalize_cmake_booleans(SPIRV_SKIP_DEBUG_INFO_TESTS)
 
 # required by lit.site.cfg.py.in
 get_target_property(LLVM_SPIRV_DIR llvm-spirv BINARY_DIR)
@@ -19,7 +19,7 @@ if(NOT BUILD_EXTERNAL)
     llvm-dis
     not
   )
-  if(NOT SKIP_SPIRV_DEBUG_INFO_TESTS)
+  if(NOT SPIRV_SKIP_DEBUG_INFO_TESTS)
     list(APPEND LLVM_SPIRV_TEST_DEPS
       llc
       llvm-dwarfdump
@@ -27,7 +27,7 @@ if(NOT BUILD_EXTERNAL)
       llvm-readelf
       llvm-readobj
     )
-  endif(NOT SKIP_SPIRV_DEBUG_INFO_TESTS)
+  endif(NOT SPIRV_SKIP_DEBUG_INFO_TESTS)
 endif(NOT BUILD_EXTERNAL)
 
 
