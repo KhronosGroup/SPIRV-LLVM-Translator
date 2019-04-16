@@ -89,6 +89,11 @@ bool convertSpirv(std::string &Input, std::string &Out, std::string &ErrMsg,
 bool isSpirvText(std::string &Img);
 #endif
 
+/// \brief Load SPIR-V from istream as a SPIRVModule.
+/// \returns null on failure.
+std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
+                                             std::string &ErrMsg);
+
 } // End namespace SPIRV
 
 namespace llvm {
@@ -101,6 +106,11 @@ bool writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg);
 /// \returns true if succeeds.
 bool readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
                std::string &ErrMsg);
+
+/// \brief Convert a SPIRVModule into LLVM IR.
+/// \returns null on failure.
+std::unique_ptr<Module>
+convertSpirvToLLVM(LLVMContext &C, SPIRV::SPIRVModule &BM, std::string &ErrMsg);
 
 /// \brief Regularize LLVM module by removing entities not representable by
 /// SPIRV.
