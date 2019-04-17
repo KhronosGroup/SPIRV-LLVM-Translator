@@ -113,6 +113,14 @@ typedef spv::GroupOperation SPIRVGroupOperationKind;
 typedef spv::Dim SPIRVImageDimKind;
 typedef std::vector<SPIRVCapabilityKind> SPIRVCapVec;
 
+enum SPIRVExtensionKind {
+};
+
+typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
+
+template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
+};
+
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
   add(SPIRVEIS_OpenCL, "OpenCL.std");
   add(SPIRVEIS_Debug, "SPIRV.debug");
