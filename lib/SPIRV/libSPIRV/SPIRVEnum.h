@@ -114,11 +114,14 @@ typedef spv::Dim SPIRVImageDimKind;
 typedef std::vector<SPIRVCapabilityKind> SPIRVCapVec;
 
 enum SPIRVExtensionKind {
+  SPV_INTEL_device_side_avc_motion_estimation
 };
 
 typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
 
 template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
+  add(SPV_INTEL_device_side_avc_motion_estimation,
+      "SPV_INTEL_device_side_avc_motion_estimation");
 };
 
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
