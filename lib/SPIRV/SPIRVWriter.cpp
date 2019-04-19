@@ -132,6 +132,7 @@ LLVMToSPIRV::LLVMToSPIRV(SPIRVModule *SMod)
 
 bool LLVMToSPIRV::runOnModule(Module &Mod) {
   M = &Mod;
+  CG = make_unique<CallGraph>(Mod);
   Ctx = &M->getContext();
   DbgTran->setModule(M);
   assert(BM && "SPIR-V module not initialized");
@@ -1318,6 +1319,59 @@ bool LLVMToSPIRV::transGlobalVariables() {
   return true;
 }
 
+bool LLVMToSPIRV::isAnyFunctionReachableFromFunction(
+    const Function *FS,
+    const std::unordered_set<const Function *> Funcs) const {
+  std::unordered_set<const Function *> Done;
+  std::unordered_set<const Function *> ToDo;
+  ToDo.insert(FS);
+
+  while (!ToDo.empty()) {
+    auto It = ToDo.begin();
+    const Function *F = *It;
+
+    if (Funcs.find(F) != Funcs.end())
+      return true;
+
+    ToDo.erase(It);
+    Done.insert(F);
+
+    const CallGraphNode *FN = (*CG)[F];
+    for (unsigned I = 0; I < FN->size(); ++I) {
+      const CallGraphNode *NN = (*FN)[I];
+      const Function *NNF = NN->getFunction();
+      if (!NNF)
+        continue;
+      if (Done.find(NNF) == Done.end()) {
+        ToDo.insert(NNF);
+      }
+    }
+  }
+
+  return false;
+}
+
+void LLVMToSPIRV::collectInputOutputVariables(SPIRVFunction *SF, Function *F) {
+  for (auto &GV : M->globals()) {
+    const auto AS = GV.getAddressSpace();
+    if (AS != SPIRAS_Input && AS != SPIRAS_Output)
+      continue;
+
+    std::unordered_set<const Function *> Funcs;
+
+    for (const auto &U : GV.uses()) {
+      const Instruction *Inst = dyn_cast<Instruction>(U.getUser());
+      if (!Inst)
+        continue;
+      Funcs.insert(Inst->getFunction());
+    }
+
+    if (isAnyFunctionReachableFromFunction(F, Funcs)) {
+      SF->addVariable(ValueMap[&GV]);
+    }
+  }
+}
+
 void LLVMToSPIRV::mutateFuncArgType(
     const std::map<unsigned, Type *> &ChangedType, Function *F) {
   for (auto &I : ChangedType) {
@@ -1358,6 +1412,9 @@ void LLVMToSPIRV::transFunction(Function *I) {
       BF->shouldFPContractBeDisabled()) {
     BF->addExecutionMode(BF->getModule()->add(
         new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
+  }
+  if (BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId())) {
+    collectInputOutputVariables(BF, I);
   }
 }
 

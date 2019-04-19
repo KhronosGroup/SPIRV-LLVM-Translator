@@ -473,12 +473,16 @@ public:
 class SPIRVEntryPoint : public SPIRVAnnotation<OpEntryPoint> {
 public:
   SPIRVEntryPoint(SPIRVModule *TheModule, SPIRVExecutionModelKind,
-                  SPIRVId TheId, const std::string &TheName);
+                  SPIRVId TheId, const std::string &TheName,
+                  std::vector<SPIRVId> Variables);
   SPIRVEntryPoint() : ExecModel(ExecutionModelKernel) {}
   _SPIRV_DCL_ENCDEC
 protected:
   SPIRVExecutionModelKind ExecModel;
   std::string Name;
+
+private:
+  std::vector<SPIRVId> Variables;
 };
 
 class SPIRVName : public SPIRVAnnotation<OpName> {

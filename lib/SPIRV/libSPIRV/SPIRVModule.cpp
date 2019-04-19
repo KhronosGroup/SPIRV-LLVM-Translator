@@ -1435,8 +1435,8 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
 
   for (auto &I : MI.EntryPointVec)
     for (auto &II : I.second)
-      O << SPIRVEntryPoint(&M, I.first, II,
-                           M.get<SPIRVFunction>(II)->getName());
+      O << SPIRVEntryPoint(&M, I.first, II, M.get<SPIRVFunction>(II)->getName(),
+                           M.get<SPIRVFunction>(II)->getVariables());
 
   for (auto &I : MI.EntryPointVec)
     for (auto &II : I.second)
