@@ -79,7 +79,7 @@ bool isSpirvBinary(std::string &Img);
 bool convertSpirv(std::istream &IS, std::ostream &OS, std::string &ErrMsg,
                   bool FromText, bool ToText);
 
-/// \brief Convert SPIR-V between binary and internel text formats.
+/// \brief Convert SPIR-V between binary and internal text formats.
 /// This function is not thread safe and should not be used in multi-thread
 /// applications unless guarded by a critical section.
 bool convertSpirv(std::string &Input, std::string &Out, std::string &ErrMsg,

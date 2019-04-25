@@ -1111,7 +1111,7 @@ void OCL20ToSPIRV::visitCallReadImageWithSampler(
           assert(0 && "read_image* with unhandled number of args!");
         }
 
-        // SPIR-V intruction always returns 4-element vector
+        // SPIR-V instruction always returns 4-element vector
         if (IsRetScalar)
           Ret = VectorType::get(Ret, 4);
         return getSPIRVFuncName(OpImageSampleExplicitLod,
@@ -1690,7 +1690,7 @@ void OCL20ToSPIRV::visitSubgroupImageMediaBlockINTEL(
   mutateCallInstSPIRV(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
-        // Moving the last argument to the begining.
+        // Moving the last argument to the beginning.
         std::rotate(Args.begin(), Args.end() - 1, Args.end());
         return getSPIRVFuncName(OpCode, CI->getType());
       },
