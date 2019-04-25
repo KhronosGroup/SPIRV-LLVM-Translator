@@ -1554,7 +1554,7 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   Decoder >> MI.SPIRVVersion;
   if (!M.getErrorLog().checkError(MI.SPIRVVersion <= SPV_VERSION,
                                   SPIRVEC_InvalidModule,
-                                  "unsupported SPIRV version number")) {
+                                  "unsupported SPIR-V version number")) {
     M.setInvalid();
     return I;
   }
