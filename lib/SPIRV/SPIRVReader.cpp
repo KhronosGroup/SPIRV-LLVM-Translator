@@ -2904,6 +2904,7 @@ bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
 
   IS >> *BM;
   if (!BM->isModuleValid()) {
+    BM->getError(ErrMsg);
     M = nullptr;
     return false;
   }
