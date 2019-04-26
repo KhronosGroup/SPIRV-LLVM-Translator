@@ -31,6 +31,7 @@
 1 FunctionEnd
 
 ; RUN: llvm-spirv %s -to-binary -o %t1.spv
+; RUN: spirv-val %t1.spv
 ; RUN: llvm-spirv -r %t1.spv -o %t1.bc -spirv-ocl-builtins-version="CL1.2"
 ; RUN: llvm-dis < %t1.bc | FileCheck %s --check-prefix=CHECK-LLVM-12
 
@@ -43,6 +44,7 @@
 ; CHECK-LLVM-12: attributes [[attr]] = { noduplicate nounwind }
 
 ; RUN: llvm-spirv %s -to-binary -o %t2.spv
+; RUN: spirv-val %t2.spv
 ; RUN: llvm-spirv -r %t2.spv -o %t2.bc -spirv-ocl-builtins-version="CL2.0"
 ; RUN: llvm-dis < %t2.bc | FileCheck %s --check-prefix=CHECK-LLVM-20
 
