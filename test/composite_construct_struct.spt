@@ -12,8 +12,8 @@
 4 Decorate 2 FuncParamAttr 5
 11 Decorate 3 LinkageAttributes "__spirv_GlobalInvocationId" Import
 4 TypeInt 4 64 0
-4 TypeInt 8 32 1
-4 TypeInt 10 8 1
+4 TypeInt 8 32 0
+4 TypeInt 10 8 0
 5 Constant 4 15 32 0
 4 Constant 8 16 2194483696
 4 Constant 10 17 4294967168
