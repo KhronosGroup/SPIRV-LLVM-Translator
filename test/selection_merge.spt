@@ -16,7 +16,7 @@
 11 Decorate 6 LinkageAttributes "__spirv_GlobalInvocationId" Import
 5 GroupDecorate 5 2 3 4
 4 TypeInt 7 64 0
-4 TypeInt 12 32 1
+4 TypeInt 12 32 0
 5 Constant 7 13 32 0
 4 Constant 12 14 0
 4 TypeVector 8 7 3
