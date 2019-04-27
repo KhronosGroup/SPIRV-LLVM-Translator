@@ -17,7 +17,7 @@
 4 TypeInt 10 8 0
 5 Constant 4 15 32 0
 4 Constant 8 16 2194483696
-4 Constant 10 17 4294967168
+4 Constant 10 17 128
 4 Constant 8 18 2194487296
 4 Constant 8 19 2100480000
 4 TypeVector 5 4 3
@@ -48,6 +48,7 @@
 1 FunctionEnd
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
