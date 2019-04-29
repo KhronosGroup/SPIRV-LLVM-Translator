@@ -6,13 +6,13 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: Decorate {{[0-9]+}} MemoryINTEL "DEFAULT"
-; CHECK-SPIRV: Decorate {{[0-9]+}} RegisterINTEL 1
+; CHECK-SPIRV: Decorate {{[0-9]+}} RegisterINTEL
 ; CHECK-SPIRV: Decorate {{[0-9]+}} MemoryINTEL "BLOCK_RAM"
 ; CHECK-SPIRV: Decorate {{[0-9]+}} NumbanksINTEL 4
 ; CHECK-SPIRV: Decorate {{[0-9]+}} BankwidthINTEL 8
 ; CHECK-SPIRV: Decorate {{[0-9]+}} MaxconcurrencyINTEL 4
-; CHECK-SPIRV: Decorate {{[0-9]+}} SinglepumpINTEL 1
-; CHECK-SPIRV: Decorate {{[0-9]+}} DoublepumpINTEL 1
+; CHECK-SPIRV: Decorate {{[0-9]+}} SinglepumpINTEL
+; CHECK-SPIRV: Decorate {{[0-9]+}} DoublepumpINTEL
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
