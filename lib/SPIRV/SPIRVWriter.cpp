@@ -1135,11 +1135,11 @@ parseAnnotations(StringRef AnnotatedCode) {
       Dec = llvm::StringSwitch<Decoration>(S)
                 .Case("1", DecorationSinglepumpINTEL)
                 .Case("2", DecorationDoublepumpINTEL);
-      Value = "1";
+    } else if (F == "register") {
+      Dec = DecorationRegisterINTEL;
     } else {
       Dec = llvm::StringSwitch<Decoration>(F)
                 .Case("memory", DecorationMemoryINTEL)
-                .Case("register", DecorationRegisterINTEL)
                 .Case("numbanks", DecorationNumbanksINTEL)
                 .Case("bankwidth", DecorationBankwidthINTEL)
                 .Case("max_concurrency", DecorationMaxconcurrencyINTEL);
@@ -1156,12 +1156,25 @@ void addIntelFPGADecorations(
     SPIRVEntry *E,
     std::vector<std::pair<Decoration, std::string>> &Decorations) {
   for (const auto &I : Decorations) {
-    if (I.first == DecorationMemoryINTEL)
+    switch (I.first) {
+    case DecorationMemoryINTEL:
       E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second));
-    else {
+      break;
+    case DecorationRegisterINTEL:
+    case DecorationSinglepumpINTEL:
+    case DecorationDoublepumpINTEL:
+      assert(I.second.empty());
+      E->addDecorate(I.first);
+      break;
+    // The rest of IntelFPGA decorations:
+    // DecorationNumbanksINTEL
+    // DecorationBankwidthINTEL
+    // DecorationMaxconcurrencyINTEL
+    default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
       E->addDecorate(I.first, Result);
+      break;
     }
   }
 }
@@ -1170,13 +1183,26 @@ void addIntelFPGADecorationsForStructMember(
     SPIRVEntry *E, SPIRVWord MemberNumber,
     std::vector<std::pair<Decoration, std::string>> &Decorations) {
   for (const auto &I : Decorations) {
-    if (I.first == DecorationMemoryINTEL)
+    switch (I.first) {
+    case DecorationMemoryINTEL:
       E->addMemberDecorate(
           new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second));
-    else {
+      break;
+    case DecorationRegisterINTEL:
+    case DecorationSinglepumpINTEL:
+    case DecorationDoublepumpINTEL:
+      assert(I.second.empty());
+      E->addMemberDecorate(MemberNumber, I.first);
+      break;
+    // The rest of IntelFPGA decorations:
+    // DecorationNumbanksINTEL
+    // DecorationBankwidthINTEL
+    // DecorationMaxconcurrencyINTEL
+    default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
       E->addMemberDecorate(MemberNumber, I.first, Result);
+      break;
     }
   }
 }

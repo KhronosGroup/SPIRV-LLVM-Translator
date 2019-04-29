@@ -5,13 +5,15 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 1 RegisterINTEL 1
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 1 RegisterINTEL
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 MemoryINTEL "DEFAULT"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 MemoryINTEL "DEFAULT"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 2 MemoryINTEL "MLAB"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 NumbanksINTEL 4
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 BankwidthINTEL 8
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 4 MaxconcurrencyINTEL 4
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 5 SinglepumpINTEL
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 6 DoublepumpINTEL
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
