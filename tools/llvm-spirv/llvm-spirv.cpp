@@ -139,7 +139,7 @@ static int convertLLVMToSPIRV() {
   std::string Err;
   bool Success = false;
   if (OutputFile != "-") {
-    std::ofstream OutFile(OutputFile);
+    std::ofstream OutFile(OutputFile, std::ios::binary);
     Success = writeSpirv(M.get(), OutFile, Err);
   } else {
     Success = writeSpirv(M.get(), std::cout, Err);
