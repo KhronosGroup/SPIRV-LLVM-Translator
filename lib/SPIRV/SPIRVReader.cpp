@@ -2248,6 +2248,8 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{pump:1}";
   if (E->hasDecorate(DecorationDoublepumpINTEL))
     Out << "{pump:2}";
+  if (E->hasDecorate(DecorationUserSemantic))
+    Out << E->getDecorationStringLiteral(DecorationUserSemantic);
 }
 
 void generateIntelFPGAAnnotationForStructMember(
@@ -2274,6 +2276,9 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{pump:1}";
   if (E->hasMemberDecorate(DecorationDoublepumpINTEL, 0, MemberNumber))
     Out << "{pump:2}";
+  if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
+    Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
+                                               MemberNumber);
 }
 
 void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
