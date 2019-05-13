@@ -84,12 +84,9 @@ void LLVMToSPIRVDbgTran::transDebugMetadata() {
 SPIRVValue *
 LLVMToSPIRVDbgTran::createDebugDeclarePlaceholder(const DbgDeclareInst *DbgDecl,
                                                   SPIRVBasicBlock *BB) {
-  if (!DbgDecl->getAddress())
-    return nullptr; // The variable is dead.
-
   DbgDeclareIntrinsics.push_back(DbgDecl);
   using namespace SPIRVDebug::Operand::DebugDeclare;
-  SPIRVWordVec Ops(OperandCount, getDebugInfoNone()->getId());
+  SPIRVWordVec Ops(OperandCount, getDebugInfoNoneId());
   SPIRVId ExtSetId = BM->getExtInstSetId(SPIRVEIS_Debug);
   return BM->addExtInst(getVoidTy(), ExtSetId, SPIRVDebug::Declare, Ops, BB);
 }
@@ -108,7 +105,8 @@ void LLVMToSPIRVDbgTran::finalizeDebugDeclare(const DbgDeclareInst *DbgDecl) {
   using namespace SPIRVDebug::Operand::DebugDeclare;
   SPIRVWordVec Ops(OperandCount);
   Ops[DebugLocalVarIdx] = transDbgEntry(DbgDecl->getVariable())->getId();
-  Ops[VariableIdx] = SPIRVWriter->transValue(Alloca, BB)->getId();
+  Ops[VariableIdx] = Alloca ? SPIRVWriter->transValue(Alloca, BB)->getId()
+                            : getDebugInfoNoneId();
   Ops[ExpressionIdx] = transDbgEntry(DbgDecl->getExpression())->getId();
   DD->setArguments(Ops);
 }
