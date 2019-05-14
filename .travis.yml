@@ -19,7 +19,6 @@ addons:
     sources:
     - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main'
       key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-    - ubuntu-toolchain-r-test
     packages:
     - llvm-8-tools
     - llvm-8-dev
