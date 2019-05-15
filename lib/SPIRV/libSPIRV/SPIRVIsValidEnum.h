@@ -1032,6 +1032,7 @@ inline bool isValidLoopControlMask(SPIRVWord Mask) {
   SPIRVWord ValidMask = 0u;
   ValidMask |= LoopControlUnrollMask;
   ValidMask |= LoopControlDontUnrollMask;
+  ValidMask |= LoopControlPartialCountMask;
   ValidMask |= LoopControlDependencyInfiniteMask;
   ValidMask |= LoopControlDependencyLengthMask;
 
