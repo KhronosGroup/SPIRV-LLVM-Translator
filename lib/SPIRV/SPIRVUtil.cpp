@@ -77,6 +77,11 @@ cl::opt<bool, true> EnableDbgOutput("spirv-debug",
                                     cl::location(SPIRVDbgEnable));
 #endif
 
+bool isSupportedTriple(Triple T) {
+  Triple::ArchType Arch = T.getArch();
+  return Arch == Triple::spir || Arch == Triple::spir64;
+}
+
 void addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
   Call->addAttribute(AttributeList::FunctionIndex, Attr);
 }
