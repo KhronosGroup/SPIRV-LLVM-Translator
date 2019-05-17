@@ -115,12 +115,11 @@ void TransOCLMD::visit(Module *M) {
   // !spirv.MemoryModel = !{!x}
   // !{x} = !{i32 1, i32 2}
   Triple TT(M->getTargetTriple());
-  auto Arch = TT.getArch();
-  assert((Arch == Triple::spir || Arch == Triple::spir64) && "Invalid triple");
+  assert(isSupportedTriple(TT) && "Invalid triple");
   B.addNamedMD(kSPIRVMD::MemoryModel)
       .addOp()
-      .add(Arch == Triple::spir ? spv::AddressingModelPhysical32
-                                : spv::AddressingModelPhysical64)
+      .add(TT.isArch32Bit() ? spv::AddressingModelPhysical32
+                            : spv::AddressingModelPhysical64)
       .add(spv::MemoryModelOpenCL)
       .done();
 
