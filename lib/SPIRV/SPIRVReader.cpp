@@ -1881,7 +1881,8 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
   Function *F = M->getFunction(FName);
   if (!F) {
     Type *EventTy = PointerType::get(
-        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T, SPIRAS_Private),
+        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
+                                 getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
         SPIRAS_Generic);
 
     SmallVector<Type *, 8> Tys = {
