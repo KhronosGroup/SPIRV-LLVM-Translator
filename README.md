@@ -26,7 +26,7 @@ The translator can be built with the latest(nightly) package of LLVM. For Ubuntu
 ```
 sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
 sudo apt-get update
-sudo apt-get install llvm-8-dev
+sudo apt-get install llvm-8-dev llvm-8-tools libclang-8-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
