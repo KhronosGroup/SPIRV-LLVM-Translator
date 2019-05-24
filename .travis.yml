@@ -26,6 +26,7 @@ addons:
     - llvm-9-dev
     - clang-format-9
     - clang-tidy-9
+    - libclang-9-dev
     - spirv-tools
 
 compiler:
