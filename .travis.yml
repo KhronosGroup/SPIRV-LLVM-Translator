@@ -85,7 +85,7 @@ script:
   - mkdir build && cd build
   - |
     if [ $BUILD_EXTERNAL == "1" ]; then
-      if [ $CHECK_FORMAT != "1" ] && [ $CHECK_TIDY != "1" ]; then
+      if [ $CHECK_FORMAT != "1" ]; then
         cmake .. \
           -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
           -DBUILD_SHARED_LIBS=${SHARED_LIBS} \
