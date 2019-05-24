@@ -143,8 +143,7 @@ void PreprocessMetadata::visit(Module *M) {
   // The rest of metadata might come not only from OpenCL
 
   // Create metadata representing (empty so far) list
-  // of OpEntryPoint and OpExecutionMode instructions
-  auto EP = B.addNamedMD(kSPIRVMD::EntryPoint);    // !spirv.EntryPoint = {}
+  // of OpExecutionMode instructions
   auto EM = B.addNamedMD(kSPIRVMD::ExecutionMode); // !spirv.ExecutionMode = {}
 
   // Add execution modes for kernels. We take it from metadata attached to
@@ -152,16 +151,6 @@ void PreprocessMetadata::visit(Module *M) {
   for (Function &Kernel : *M) {
     if (Kernel.getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
-
-    // Add EntryPoint(which actually is adding its operands) to the list of
-    // entry points:
-    // !{i32 6, void (i32 addrspace(1)*)* @kernel, !"kernel" }
-    MDNode *EPNode;
-    EP.addOp()
-        .add(spv::ExecutionModelKernel)
-        .add(&Kernel)
-        .add(Kernel.getName())
-        .done(&EPNode);
 
     // Specifing execution modes for the Kernel and adding it to the list
     // of ExecutionMode instructions.
