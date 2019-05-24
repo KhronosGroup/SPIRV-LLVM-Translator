@@ -1910,7 +1910,7 @@ ModulePass *llvm::createLLVMToSPIRV(SPIRVModule *SMod) {
 void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   if (SPIRVMemToReg)
     PassMgr.add(createPromoteMemoryToRegisterPass());
-  PassMgr.add(createTransOCLMD());
+  PassMgr.add(createPreprocessMetadata());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerSPIRBlocks());
   PassMgr.add(createOCLTypeToSPIRV());
