@@ -60,7 +60,7 @@ void initializeSPIRVLowerMemmovePass(PassRegistry &);
 void initializeSPIRVRegularizeLLVMPass(PassRegistry &);
 void initializeSPIRVToOCL12Pass(PassRegistry &);
 void initializeSPIRVToOCL20Pass(PassRegistry &);
-void initializeTransOCLMDPass(PassRegistry &);
+void initializePreprocessMetadataPass(PassRegistry &);
 } // namespace llvm
 
 #include "llvm/IR/Module.h"
@@ -167,7 +167,7 @@ ModulePass *createSPIRVToOCL20();
 
 /// Create a pass for translating SPIR 1.2/2.0 metadata to SPIR-V friendly
 /// metadata.
-ModulePass *createTransOCLMD();
+ModulePass *createPreprocessMetadata();
 
 /// Create and return a pass that writes the module to the specified
 /// ostream.

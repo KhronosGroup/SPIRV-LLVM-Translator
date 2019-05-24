@@ -1,4 +1,4 @@
-//===- TransOCLMD.cpp - Transform OCL metadata to SPIR-V metadata - C++ -*-===//
+//===- PreprocessMetadata.cpp - Transform OCL metadata to SPIR-V metadata - C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -60,10 +60,10 @@ namespace SPIRV {
 cl::opt<bool> EraseOCLMD("spirv-erase-cl-md", cl::init(true),
                          cl::desc("Erase OpenCL metadata"));
 
-class TransOCLMD : public ModulePass {
+class PreprocessMetadata : public ModulePass {
 public:
-  TransOCLMD() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
-    initializeTransOCLMDPass(*PassRegistry::getPassRegistry());
+  PreprocessMetadata() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
+    initializePreprocessMetadataPass(*PassRegistry::getPassRegistry());
   }
 
   bool runOnModule(Module &M) override;
@@ -77,19 +77,19 @@ private:
   unsigned CLVer; /// OpenCL version as major*10+minor
 };
 
-char TransOCLMD::ID = 0;
+char PreprocessMetadata::ID = 0;
 
-bool TransOCLMD::runOnModule(Module &Module) {
+bool PreprocessMetadata::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
   CLVer = getOCLVersion(M, true);
   if (CLVer == 0)
     return false;
 
-  LLVM_DEBUG(dbgs() << "Enter TransOCLMD:\n");
+  LLVM_DEBUG(dbgs() << "Enter PreprocessMetadata:\n");
   visit(M);
 
-  LLVM_DEBUG(dbgs() << "After TransOCLMD:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
   std::string Err;
   raw_string_ostream ErrorOS(Err);
   if (verifyModule(*M, &ErrorOS)) {
@@ -98,7 +98,7 @@ bool TransOCLMD::runOnModule(Module &Module) {
   return true;
 }
 
-void TransOCLMD::visit(Module *M) {
+void PreprocessMetadata::visit(Module *M) {
   SPIRVMDBuilder B(*M);
   SPIRVMDWalker W(*M);
   // !spirv.Source = !{!x}
@@ -211,8 +211,10 @@ void TransOCLMD::visit(Module *M) {
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(TransOCLMD, "clmdtospv",
-                "Transform OCL metadata format to SPIR-V metadata format",
-                false, false)
+INITIALIZE_PASS(PreprocessMetadata, "preprocess-metadata",
+                "Transform LLVM IR metadata to SPIR-V metadata format", false,
+                false)
 
-ModulePass *llvm::createTransOCLMD() { return new TransOCLMD(); }
+ModulePass *llvm::createPreprocessMetadata() {
+  return new PreprocessMetadata();
+}
