@@ -1,4 +1,4 @@
-//===- PreprocessMetadata.cpp - Transform OCL metadata to SPIR-V metadata - C++ -*-===//
+//===- PreprocessMetadata.cpp -                                   - C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,7 +32,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements translation of OCL metadata to SPIR-V metadata.
+// This file implements preprocessing of LLVM IR metadata in order to perform
+// further translation to SPIR-V.
 //
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "clmdtospv"
@@ -62,7 +63,7 @@ cl::opt<bool> EraseOCLMD("spirv-erase-cl-md", cl::init(true),
 
 class PreprocessMetadata : public ModulePass {
 public:
-  PreprocessMetadata() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
+  PreprocessMetadata() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
     initializePreprocessMetadataPass(*PassRegistry::getPassRegistry());
   }
 
@@ -74,7 +75,6 @@ public:
 private:
   Module *M;
   LLVMContext *Ctx;
-  unsigned CLVer; /// OpenCL version as major*10+minor
 };
 
 char PreprocessMetadata::ID = 0;
@@ -82,9 +82,6 @@ char PreprocessMetadata::ID = 0;
 bool PreprocessMetadata::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
-  CLVer = getOCLVersion(M, true);
-  if (CLVer == 0)
-    return false;
 
   LLVM_DEBUG(dbgs() << "Enter PreprocessMetadata:\n");
   visit(M);
@@ -101,43 +98,49 @@ bool PreprocessMetadata::runOnModule(Module &Module) {
 void PreprocessMetadata::visit(Module *M) {
   SPIRVMDBuilder B(*M);
   SPIRVMDWalker W(*M);
-  // !spirv.Source = !{!x}
-  // !{x} = !{i32 3, i32 102000}
-  B.addNamedMD(kSPIRVMD::Source)
-      .addOp()
-      .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
-                                 : spv::SourceLanguageOpenCL_CPP)
-      .add(CLVer)
-      .done();
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::OCLVer).eraseNamedMD(kSPIR2MD::SPIRVer);
 
-  // !spirv.MemoryModel = !{!x}
-  // !{x} = !{i32 1, i32 2}
-  Triple TT(M->getTargetTriple());
-  assert(isSupportedTriple(TT) && "Invalid triple");
-  B.addNamedMD(kSPIRVMD::MemoryModel)
-      .addOp()
-      .add(TT.isArch32Bit() ? spv::AddressingModelPhysical32
-                            : spv::AddressingModelPhysical64)
-      .add(spv::MemoryModelOpenCL)
-      .done();
+  unsigned CLVer = getOCLVersion(M, true);
+  if (CLVer != 0) { // Preprocess OpenCL-specific metadata
+    // !spirv.Source = !{!x}
+    // !{x} = !{i32 3, i32 102000}
+    B.addNamedMD(kSPIRVMD::Source)
+        .addOp()
+        .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
+                                   : spv::SourceLanguageOpenCL_CPP)
+        .add(CLVer)
+        .done();
+    if (EraseOCLMD)
+      B.eraseNamedMD(kSPIR2MD::OCLVer).eraseNamedMD(kSPIR2MD::SPIRVer);
 
-  // Add source extensions
-  // !spirv.SourceExtension = !{!x, !y, ...}
-  // !x = {!"cl_khr_..."}
-  // !y = {!"cl_khr_..."}
-  auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
-  if (!Exts.empty()) {
-    auto N = B.addNamedMD(kSPIRVMD::SourceExtension);
-    for (auto &I : Exts)
-      N.addOp().add(I).done();
+    // !spirv.MemoryModel = !{!x}
+    // !{x} = !{i32 1, i32 2}
+    Triple TT(M->getTargetTriple());
+    assert(isSupportedTriple(TT) && "Invalid triple");
+    B.addNamedMD(kSPIRVMD::MemoryModel)
+        .addOp()
+        .add(TT.isArch32Bit() ? spv::AddressingModelPhysical32
+                              : spv::AddressingModelPhysical64)
+        .add(spv::MemoryModelOpenCL)
+        .done();
+
+    // Add source extensions
+    // !spirv.SourceExtension = !{!x, !y, ...}
+    // !x = {!"cl_khr_..."}
+    // !y = {!"cl_khr_..."}
+    auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
+    if (!Exts.empty()) {
+      auto N = B.addNamedMD(kSPIRVMD::SourceExtension);
+      for (auto &I : Exts)
+        N.addOp().add(I).done();
+    }
+    if (EraseOCLMD)
+      B.eraseNamedMD(kSPIR2MD::Extensions).eraseNamedMD(kSPIR2MD::OptFeatures);
+
+    if (EraseOCLMD)
+      B.eraseNamedMD(kSPIR2MD::FPContract);
   }
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::Extensions).eraseNamedMD(kSPIR2MD::OptFeatures);
 
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::FPContract);
+  // The rest of metadata might come not only from OpenCL
 
   // Create metadata representing (empty so far) list
   // of OpEntryPoint and OpExecutionMode instructions
