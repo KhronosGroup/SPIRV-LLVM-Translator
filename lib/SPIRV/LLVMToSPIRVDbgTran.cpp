@@ -162,12 +162,15 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
       unsigned LineNo = 0;
       unsigned Col = 0;
       for (const Instruction &I : BB) {
+        V = SPIRVWriter->getTranslatedValue(&I);
+        // If instruction was not translated, just skip it.
+        if (!V)
+          continue;
         const DebugLoc &DL = I.getDebugLoc();
         if (!DL.get()) {
           if (DbgScope || InlinedAt) { // Emit DebugNoScope
             DbgScope = nullptr;
             InlinedAt = nullptr;
-            V = SPIRVWriter->getTranslatedValue(&I);
             transDebugLoc(DL, SBB, static_cast<SPIRVInstruction *>(V));
           }
           continue;
@@ -176,7 +179,6 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
         if (DL.getScope() != DbgScope || DL.getInlinedAt() != InlinedAt) {
           DbgScope = DL.getScope();
           InlinedAt = DL.getInlinedAt();
-          V = SPIRVWriter->getTranslatedValue(&I);
           transDebugLoc(DL, SBB, static_cast<SPIRVInstruction *>(V));
         }
         // If any component of OpLine has changed emit another OpLine
@@ -186,7 +188,6 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
           File = DirAndFile;
           LineNo = DL.getLine();
           Col = DL.getCol();
-          V = SPIRVWriter->getTranslatedValue(&I);
           BM->addLine(V, File ? File->getId() : getDebugInfoNone()->getId(),
                       LineNo, Col);
         }
