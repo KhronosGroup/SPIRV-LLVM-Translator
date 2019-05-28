@@ -22,7 +22,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     )
   endif(LLVM_INCLUDE_TESTS)
 
-  find_package(LLVM 7.0.0 REQUIRED
+  find_package(LLVM 7.1 REQUIRED
     COMPONENTS
       Analysis
       BitReader

@@ -113,7 +113,7 @@ script:
 after_success:
   # Create tarball for deployment
   - if [[ "${BUILD_EXTERNAL}" == "1" && "${SHARED_LIBS}" == "ON" && "${repo_token}" != "" ]]; then
-      export TAG=7.0.1-1;
+      export TAG=7.1.0-1;
       export TARBALL=SPIRV-LLVM-Translator-${TAG}-${TRAVIS_OS_NAME}-${BUILD_TYPE}.zip;
       cd ../install && find . -print | zip -@ ${TARBALL};
     fi
@@ -132,6 +132,7 @@ deploy:
     branch: llvm_release_70
     condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
   file: ${TARBALL}
+  name: Binaries linked against LLVM 7.1.0
   skip_cleanup: true
   overwrite: false
   prerelease: false
