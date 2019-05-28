@@ -132,6 +132,7 @@ deploy:
     branch: llvm_release_70
     condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
   file: ${TARBALL}
+  name: Binaries linked against LLVM 7.1.0
   skip_cleanup: true
   overwrite: false
   prerelease: false
