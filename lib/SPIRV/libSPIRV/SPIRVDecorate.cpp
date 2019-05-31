@@ -148,7 +148,7 @@ void SPIRVGroupDecorate::decorateTargets() {
     auto Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isDecorate());
-      Target->addDecorate(static_cast<SPIRVDecorate *const>(Dec));
+      Target->addDecorate(static_cast<SPIRVDecorate *>(Dec));
     }
   }
 }
