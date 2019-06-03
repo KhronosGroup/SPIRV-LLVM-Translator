@@ -92,11 +92,11 @@ public:
 #else
     std::string MangledPrimitive =
         std::string(mangledPrimitiveString(T->getPrimitive()));
-    // out of all enums it makes sense to substitute only
-    // memory_scope/memory_order since only they appear several times in the
-    // builtin declaration.
-    if (MangledPrimitive == "12memory_scope" ||
-        MangledPrimitive == "12memory_order") {
+    // Builtin primitives such as int are not substitution candidates, but
+    // all other primitives are.  Even though most of these do not appear
+    // repeatedly in builtin function signatures, we need to track them in
+    // the substitution map.
+    if (T->getPrimitive() >= PRIMITIVE_STRUCT_FIRST) {
       if (!mangleSubstitution(T, mangledPrimitiveString(T->getPrimitive()))) {
         size_t Index = Stream.str().size();
         Stream << mangledPrimitiveString(T->getPrimitive());
