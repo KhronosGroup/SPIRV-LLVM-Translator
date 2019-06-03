@@ -51,7 +51,7 @@ entry:
 
   store <4 x float> %call1, <4 x float> addrspace(1)* %results, align 16
   %call2 = call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_fDv2_fDv2_f(%opencl.image2d_ro_t addrspace(1)* %image, %opencl.sampler_t* %imageSampler, <2 x float> %coord, <2 x float> %dx, <2 x float> %dy)
-; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_fS_S_(%opencl.image2d_ro_t addrspace(1)* %image, %opencl.sampler_t* %imageSampler, <2 x float> %coord, <2 x float> %dx, <2 x float> %dy)
+; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef14ocl_image2d_ro11ocl_samplerDv2_fS1_S1_(%opencl.image2d_ro_t addrspace(1)* %image, %opencl.sampler_t* %imageSampler, <2 x float> %coord, <2 x float> %dx, <2 x float> %dy)
 
   store <4 x float> %call2, <4 x float> addrspace(1)* %results, align 16
   ret void
