@@ -87,19 +87,19 @@ public:
   //
   MangleError visit(const PrimitiveType *T) override {
     MangleError Me = MANGLE_SUCCESS;
-#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
-    Stream << mangledPrimitiveString(t->getPrimitive());
-#else
     std::string MangledPrimitive =
         std::string(mangledPrimitiveString(T->getPrimitive()));
+#if defined(SPIRV_SPIR20_MANGLING_REQUIREMENTS)
+    Stream << MangledPrimitive;
+#else
     // Builtin primitives such as int are not substitution candidates, but
     // all other primitives are.  Even though most of these do not appear
     // repeatedly in builtin function signatures, we need to track them in
     // the substitution map.
     if (T->getPrimitive() >= PRIMITIVE_STRUCT_FIRST) {
-      if (!mangleSubstitution(T, mangledPrimitiveString(T->getPrimitive()))) {
+      if (!mangleSubstitution(T, MangledPrimitive)) {
         size_t Index = Stream.str().size();
-        Stream << mangledPrimitiveString(T->getPrimitive());
+        Stream << MangledPrimitive;
         recordSubstitution(Stream.str().substr(Index));
       }
     } else {
