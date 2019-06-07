@@ -142,8 +142,8 @@ define spir_func void @bar(
 
 ; CHECK-LLVM: define spir_func void @test_sampler(
 ; CHECK-LLVM:  %opencl.image2d_depth_t addrspace(1)* %srcimg.coerce,
-; CHECK-LLVM:  i32 %s.coerce)
-; CHECK-LLVM:  call spir_func float @_Z11read_imagef16ocl_image2ddepth11ocl_samplerDv4_if(%opencl.image2d_depth_t addrspace(1)* %srcimg.coerce, i32 %s.coerce, <4 x i32> zeroinitializer, float 1.000000e+00)
+; CHECK-LLVM:  %opencl.sampler_t* %s.coerce)
+; CHECK-LLVM:  call spir_func float @_Z11read_imagef16ocl_image2ddepth11ocl_samplerDv4_if(%opencl.image2d_depth_t addrspace(1)* %srcimg.coerce, %opencl.sampler_t* %s.coerce, <4 x i32> zeroinitializer, float 1.000000e+00)
 
 define spir_func void @test_sampler(%spirv.Image._float_1_1_0_0_0_0_0 addrspace(1)* %srcimg.coerce,
                                     %spirv.Sampler addrspace(1)* %s.coerce) {
