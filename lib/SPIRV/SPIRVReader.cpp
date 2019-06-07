@@ -333,8 +333,7 @@ Type *SPIRVToLLVM::transFPType(SPIRVType *T) {
 std::string SPIRVToLLVM::transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST) {
   std::string Name = std::string(kSPR2TypeName::OCLPrefix) +
                      rmap<std::string>(ST->getDescriptor());
-  if (SPIRVGenImgTypeAccQualPostfix)
-    SPIRVToLLVM::insertImageNameAccessQualifier(ST, Name);
+  SPIRVToLLVM::insertImageNameAccessQualifier(ST, Name);
   return Name;
 }
 
@@ -599,7 +598,10 @@ void SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge *LM, BranchInst *BI) {
 
 void SPIRVToLLVM::insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
                                                  std::string &Name) {
-  std::string QName = rmap<std::string>(ST->getAccessQualifier());
+  SPIRVAccessQualifierKind Acc = ST->hasAccessQualifier()
+                                     ? ST->getAccessQualifier()
+                                     : AccessQualifierReadOnly;
+  std::string QName = rmap<std::string>(Acc);
   // transform: read_only -> ro, write_only -> wo, read_write -> rw
   QName = QName.substr(0, 1) + QName.substr(QName.find("_") + 1, 1) + "_";
   assert(!Name.empty() && "image name should not be empty");
@@ -811,7 +813,7 @@ Instruction *SPIRVToLLVM::postProcessOCLReadImage(SPIRVInstruction *BI,
   if (isOCLImageType(
           (cast<CallInst>(CI->getOperand(0)))->getArgOperand(0)->getType(),
           &ImageTypeName))
-    IsDepthImage = ImageTypeName.endswith("depth_t");
+    IsDepthImage = ImageTypeName.contains("_depth_");
   return mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, llvm::Type *&RetTy) {
