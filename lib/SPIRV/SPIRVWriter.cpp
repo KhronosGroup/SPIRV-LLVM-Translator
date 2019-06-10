@@ -1142,7 +1142,7 @@ parseAnnotations(StringRef AnnotatedCode) {
                 .Case("memory", DecorationMemoryINTEL)
                 .Case("numbanks", DecorationNumbanksINTEL)
                 .Case("bankwidth", DecorationBankwidthINTEL)
-                .Case("max_concurrency", DecorationMaxconcurrencyINTEL)
+                .Case("max_private_copies", DecorationMaxPrivateCopiesINTEL)
                 .Default(DecorationUserSemantic);
       if (Dec == DecorationUserSemantic)
         Value = AnnotatedCode.substr(From, To + 1);
@@ -1176,7 +1176,7 @@ void addIntelFPGADecorations(
     // The rest of IntelFPGA decorations:
     // DecorationNumbanksINTEL
     // DecorationBankwidthINTEL
-    // DecorationMaxconcurrencyINTEL
+    // DecorationMaxPrivateCopiesINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
@@ -1208,7 +1208,7 @@ void addIntelFPGADecorationsForStructMember(
     // The rest of IntelFPGA decorations:
     // DecorationNumbanksINTEL
     // DecorationBankwidthINTEL
-    // DecorationMaxconcurrencyINTEL
+    // DecorationMaxPrivateCopiesINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
