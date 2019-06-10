@@ -69,6 +69,10 @@ namespace OCLUtil {
 #define SPIRV_EVENT_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
 #endif
 
+#ifndef SPIRV_AVC_INTEL_T_ADDR_SPACE
+#define SPIRV_AVC_INTEL_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
+#endif
+
 #ifndef SPIRV_CLK_EVENT_T_ADDR_SPACE
 #define SPIRV_CLK_EVENT_T_ADDR_SPACE SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE
 #endif
@@ -321,6 +325,8 @@ SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode) {
   case OpTypeSampler:
     return SPIRV_SAMPLER_T_ADDR_SPACE;
   default:
+    if (isSubgroupAvcINTELTypeOpCode(OpCode))
+      return SPIRV_AVC_INTEL_T_ADDR_SPACE;
     assert(false && "No address space is determined for some OCL type");
     return SPIRV_OCL_SPECIAL_TYPES_DEFAULT_ADDR_SPACE;
   }
@@ -414,6 +420,13 @@ public:
   void init(const std::string &UniqName) override {
     UnmangledName = UniqName;
     size_t Pos = std::string::npos;
+
+    auto EraseSubstring = [](std::string &Str, std::string ToErase) {
+      size_t Pos = Str.find(ToErase);
+      if (Pos != std::string::npos) {
+        Str.erase(Pos, ToErase.length());
+      }
+    };
 
     if (UnmangledName.find("async_work_group") == 0) {
       addUnsignedArg(-1);
@@ -573,11 +586,75 @@ public:
                (Pos = UnmangledName.find("umin")) != std::string::npos) {
       addUnsignedArg(-1);
       UnmangledName.erase(Pos, 1);
-    } else if (UnmangledName.find("broadcast") != std::string::npos)
+    } else if (UnmangledName.find("broadcast") != std::string::npos) {
       addUnsignedArg(-1);
-    else if (UnmangledName.find(kOCLBuiltinName::SampledReadImage) == 0) {
+    } else if (UnmangledName.find(kOCLBuiltinName::SampledReadImage) == 0) {
       UnmangledName.erase(0, strlen(kOCLBuiltinName::Sampled));
       addSamplerArg(1);
+    } else if (UnmangledName.find(kOCLSubgroupsAVCIntel::Prefix) !=
+               std::string::npos) {
+      if (UnmangledName.find("evaluate_with_single_reference") !=
+          std::string::npos)
+        addSamplerArg(2);
+      else if (UnmangledName.find("evaluate_with_multi_reference") !=
+               std::string::npos) {
+        addUnsignedArg(1);
+        std::string PostFix = "_interlaced";
+        if (UnmangledName.find(PostFix) != std::string::npos) {
+          addUnsignedArg(2);
+          addSamplerArg(3);
+          size_t Pos = UnmangledName.find(PostFix);
+          if (Pos != std::string::npos)
+            UnmangledName.erase(Pos, PostFix.length());
+        } else
+          addSamplerArg(2);
+      } else if (UnmangledName.find("evaluate_with_dual_reference") !=
+                 std::string::npos)
+        addSamplerArg(3);
+      else if (UnmangledName.find("fme_initialize") != std::string::npos)
+        addUnsignedArgs(0, 6);
+      else if (UnmangledName.find("bme_initialize") != std::string::npos)
+        addUnsignedArgs(0, 7);
+      else if (UnmangledName.find("set_inter_base_multi_reference_penalty") !=
+                   std::string::npos ||
+               UnmangledName.find("set_inter_shape_penalty") !=
+                   std::string::npos)
+        addUnsignedArg(0);
+      else if (UnmangledName.find("set_motion_vector_cost_function") !=
+               std::string::npos)
+        addUnsignedArgs(0, 2);
+      else if (UnmangledName.find(kOCLSubgroupsAVCIntel::MCEPrefix) !=
+               std::string::npos) {
+        if (UnmangledName.find("get_default") != std::string::npos)
+          addUnsignedArgs(0, 1);
+      } else if (UnmangledName.find(kOCLSubgroupsAVCIntel::IMEPrefix) !=
+                 std::string::npos) {
+        if (UnmangledName.find("initialize") != std::string::npos)
+          addUnsignedArgs(0, 2);
+        else if (UnmangledName.find("set_single_reference") !=
+                 std::string::npos)
+          addUnsignedArg(1);
+        else if (UnmangledName.find("adjust_ref_offset") != std::string::npos)
+          addUnsignedArgs(1, 3);
+        else if (UnmangledName.find("set_max_motion_vector_count") !=
+                     std::string::npos ||
+                 UnmangledName.find("get_border_reached") != std::string::npos)
+          addUnsignedArg(0);
+      } else if (UnmangledName.find(kOCLSubgroupsAVCIntel::SICPrefix) !=
+                 std::string::npos) {
+        if (UnmangledName.find("initialize") != std::string::npos)
+          addUnsignedArg(0);
+        else if (UnmangledName.find("configure_ipe") != std::string::npos) {
+          if (UnmangledName.find("_luma") != std::string::npos) {
+            addUnsignedArgs(0, 6);
+            EraseSubstring(UnmangledName, "_luma");
+          }
+          if (UnmangledName.find("_chroma") != std::string::npos) {
+            addUnsignedArgs(7, 9);
+            EraseSubstring(UnmangledName, "_chroma");
+          }
+        }
+      }
     }
   }
   // Auxiliarry information, it is expected what it is relevant at the moment
