@@ -93,10 +93,11 @@ public:
     std::string MangledPrimitive =
         std::string(mangledPrimitiveString(T->getPrimitive()));
     // out of all enums it makes sense to substitute only
-    // memory_scope/memory_order since only they appear several times in the
-    // builtin declaration.
+    // memory_scope/memory_order/ocl_image2d_ro since only they appear
+    // several times in the builtin declaration.
     if (MangledPrimitive == "12memory_scope" ||
-        MangledPrimitive == "12memory_order") {
+        MangledPrimitive == "12memory_order" ||
+        MangledPrimitive == "14ocl_image2d_ro") {
       if (!mangleSubstitution(T, mangledPrimitiveString(T->getPrimitive()))) {
         size_t Index = Stream.str().size();
         Stream << mangledPrimitiveString(T->getPrimitive());
