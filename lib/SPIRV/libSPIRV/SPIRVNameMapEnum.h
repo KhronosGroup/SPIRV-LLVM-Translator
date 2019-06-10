@@ -336,7 +336,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMemoryINTEL, "MemoryINTEL");
   add(DecorationNumbanksINTEL, "NumbanksINTEL");
   add(DecorationBankwidthINTEL, "BankwidthINTEL");
-  add(DecorationMaxconcurrencyINTEL, "MaxconcurrencyINTEL");
+  add(DecorationMaxPrivateCopiesINTEL, "MaxPrivateCopiesINTEL");
   add(DecorationSinglepumpINTEL, "SinglepumpINTEL");
   add(DecorationDoublepumpINTEL, "DoublepumpINTEL");
 }

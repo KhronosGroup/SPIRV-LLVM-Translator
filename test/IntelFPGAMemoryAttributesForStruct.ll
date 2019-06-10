@@ -11,7 +11,7 @@
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 2 MemoryINTEL "MLAB"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 NumbanksINTEL 4
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 BankwidthINTEL 8
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 4 MaxconcurrencyINTEL 4
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 4 MaxPrivateCopiesINTEL 4
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 5 SinglepumpINTEL
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 6 DoublepumpINTEL
 
@@ -25,7 +25,7 @@ target triple = "spir64-unknown-linux"
 ; CHECK-LLVM: [[STR2:@[a-zA-Z0-9_.]+]] = {{.*}}{register:1}
 ; CHECK-LLVM: [[STR3:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:MLAB}
 ; CHECK-LLVM: [[STR4:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{bankwidth:8}
-; CHECK-LLVM: [[STR5:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{max_concurrency:4}
+; CHECK-LLVM: [[STR5:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{max_private_copies:4}
 ; CHECK-LLVM: [[STR6:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{pump:1}
 ; CHECK-LLVM: [[STR7:@[a-zA-Z0-9_.]+]] = {{.*}}{memory:DEFAULT}{pump:2}
 @.str = private unnamed_addr constant [29 x i8] c"{memory:DEFAULT}{numbanks:4}\00", section "llvm.metadata"
@@ -33,7 +33,7 @@ target triple = "spir64-unknown-linux"
 @.str.2 = private unnamed_addr constant [13 x i8] c"{register:1}\00", section "llvm.metadata"
 @.str.3 = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", section "llvm.metadata"
 @.str.4 = private unnamed_addr constant [30 x i8] c"{memory:DEFAULT}{bankwidth:8}\00", section "llvm.metadata"
-@.str.5 = private unnamed_addr constant [36 x i8] c"{memory:DEFAULT}{max_concurrency:4}\00", section "llvm.metadata"
+@.str.5 = private unnamed_addr constant [39 x i8] c"{memory:DEFAULT}{max_private_copies:4}\00", section "llvm.metadata"
 @.str.6 = private unnamed_addr constant [25 x i8] c"{memory:DEFAULT}{pump:1}\00", section "llvm.metadata"
 @.str.7 = private unnamed_addr constant [25 x i8] c"{memory:DEFAULT}{pump:2}\00", section "llvm.metadata"
 
@@ -106,7 +106,7 @@ entry:
   ; CHECK-LLVM: %[[FIELD5:.*]] = getelementptr inbounds %struct.foo, %struct.foo* %{{[a-zA-Z0-9]+}}, i32 0, i32 4
   ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[FIELD5]]{{.*}}[[STR5]]
   %f5 = getelementptr inbounds %struct.foo, %struct.foo* %s1, i32 0, i32 4
-  %13 = call i8* @llvm.ptr.annotation.p0i8(i8* %f5, i8* getelementptr inbounds ([36 x i8], [36 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 6)
+  %13 = call i8* @llvm.ptr.annotation.p0i8(i8* %f5, i8* getelementptr inbounds ([39 x i8], [39 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 6)
   store i8 0, i8* %13, align 4, !tbaa !15
   ; CHECK-LLVM: %[[FIELD6:.*]] = getelementptr inbounds %struct.foo, %struct.foo* %{{[a-zA-Z0-9]+}}, i32 0, i32 5
   ; CHECK-LLVM: %[[CAST6:.*]] = bitcast{{.*}}%[[FIELD6]]

@@ -2292,8 +2292,8 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{bankwidth:" << Result << '}';
   if (E->hasDecorate(DecorationNumbanksINTEL, 0, &Result))
     Out << "{numbanks:" << Result << '}';
-  if (E->hasDecorate(DecorationMaxconcurrencyINTEL, 0, &Result))
-    Out << "{max_concurrency:" << Result << '}';
+  if (E->hasDecorate(DecorationMaxPrivateCopiesINTEL, 0, &Result))
+    Out << "{max_private_copies:" << Result << '}';
   if (E->hasDecorate(DecorationSinglepumpINTEL))
     Out << "{pump:1}";
   if (E->hasDecorate(DecorationDoublepumpINTEL))
@@ -2319,9 +2319,9 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{bankwidth:" << Result << '}';
   if (E->hasMemberDecorate(DecorationNumbanksINTEL, 0, MemberNumber, &Result))
     Out << "{numbanks:" << Result << '}';
-  if (E->hasMemberDecorate(DecorationMaxconcurrencyINTEL, 0, MemberNumber,
+  if (E->hasMemberDecorate(DecorationMaxPrivateCopiesINTEL, 0, MemberNumber,
                            &Result))
-    Out << "{max_concurrency:" << Result << '}';
+    Out << "{max_private_copies:" << Result << '}';
   if (E->hasMemberDecorate(DecorationSinglepumpINTEL, 0, MemberNumber))
     Out << "{pump:1}";
   if (E->hasMemberDecorate(DecorationDoublepumpINTEL, 0, MemberNumber))
