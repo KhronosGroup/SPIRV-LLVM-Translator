@@ -451,12 +451,18 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
         T, getOrCreateOpaquePtrType(M, transOCLPipeStorageTypeName(PST),
                                     getOCLOpaqueTypeAddrSpace(T->getOpCode())));
   }
+  // OpenCL Compiler does not use this instruction
+  case OpTypeVmeImageINTEL:
+    return nullptr;
   default: {
     auto OC = T->getOpCode();
-    if (isOpaqueGenericTypeOpCode(OC))
+    if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC)) {
+      auto Name = isSubgroupAvcINTELTypeOpCode(OC)
+                      ? OCLSubgroupINTELTypeOpCodeMap::rmap(OC)
+                      : OCLOpaqueTypeOpCodeMap::rmap(OC);
       return mapType(
-          T, getOrCreateOpaquePtrType(M, OCLOpaqueTypeOpCodeMap::rmap(OC),
-                                      getOCLOpaqueTypeAddrSpace(OC)));
+          T, getOrCreateOpaquePtrType(M, Name, getOCLOpaqueTypeAddrSpace(OC)));
+    }
     llvm_unreachable("Not implemented");
   }
   }
@@ -1387,6 +1393,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                        BV->getName(), BB));
   }
 
+  case OpVmeImageINTEL:
   case OpLine:
   case OpSelectionMerge: // OpenCL Compiler does not use this instruction
   case OpLoopMerge: // Should be translated at OpBranch or OpBranchConditional
@@ -1655,6 +1662,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction *>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
     } else if ((OCLSPIRVBuiltinMap::rfind(OC, nullptr) ||
+                isSubgroupAvcINTELInstructionOpCode(OC) ||
                 isIntelSubgroupOpCode(OC)) &&
                !isAtomicOpCode(OC) && !isGroupOpCode(OC) && !isPipeOpCode(OC)) {
       return mapValue(
@@ -1783,6 +1791,54 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
   else if (OC == OpImageRead && Args.size() > 2) {
     // Drop "Image operands" argument
     Args.erase(Args.begin() + 2);
+  } else if (isSubgroupAvcINTELEvaluateOpcode(OC)) {
+    // There are three types of AVC Intel Evaluate opcodes:
+    // 1. With multi reference images - does not use OpVmeImageINTEL opcode for
+    // reference images
+    // 2. With dual reference images - uses two OpVmeImageINTEL opcodes for
+    // reference image
+    // 3. With single reference image - uses one OpVmeImageINTEL opcode for
+    // reference image
+    int NumImages =
+        std::count_if(Args.begin(), Args.end(), [](SPIRVValue *Arg) {
+          return static_cast<SPIRVInstruction *>(Arg)->getOpCode() ==
+                 OpVmeImageINTEL;
+        });
+    if (NumImages) {
+      SPIRVInstruction *SrcImage = static_cast<SPIRVInstruction *>(Args[0]);
+      assert(SrcImage &&
+             "Src image operand not found in avc evaluate instruction");
+      if (NumImages == 1) {
+        // Multi reference opcode - remove src image OpVmeImageINTEL opcode
+        // and replace it with corresponding OpImage and OpSampler arguments
+        bool IsInterlaced = (Args.size() == 4) ? true : false;
+        size_t SamplerPos = IsInterlaced ? 3 : 2;
+        Args.erase(Args.begin(), Args.begin() + 1);
+        Args.insert(Args.begin(), SrcImage->getOperands()[0]);
+        Args.insert(Args.begin() + SamplerPos, SrcImage->getOperands()[1]);
+      } else {
+        SPIRVInstruction *FwdRefImage =
+            static_cast<SPIRVInstruction *>(Args[1]);
+        SPIRVInstruction *BwdRefImage =
+            static_cast<SPIRVInstruction *>(Args[2]);
+        assert(FwdRefImage && "invalid avc evaluate instruction");
+        // Single reference opcode - remove src and ref image OpVmeImageINTEL
+        // opcodes and replace them with src and ref OpImage opcodes and
+        // OpSampler
+        Args.erase(Args.begin(), Args.begin() + NumImages);
+        // insert source OpImage and OpSampler
+        auto SrcOps = SrcImage->getOperands();
+        Args.insert(Args.begin(), SrcOps.begin(), SrcOps.end());
+        // insert reference OpImage
+        Args.insert(Args.begin() + 1, FwdRefImage->getOperands()[0]);
+        if (NumImages == 3) {
+          // Dual reference opcode - insert second reference OpImage argument
+          assert(BwdRefImage && "invalid avc evaluate instruction");
+          Args.insert(Args.begin() + 2, BwdRefImage->getOperands()[0]);
+        }
+      }
+    } else
+      llvm_unreachable("invalid avc instruction");
   }
 }
 
@@ -2056,6 +2112,9 @@ std::string SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction *BI) {
     }
     return Name.str();
   }
+  if (isSubgroupAvcINTELInstructionOpCode(OC))
+    return OCLSPIRVSubgroupAVCIntelBuiltinMap::rmap(OC);
+
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
 
   SPIRVType *T = nullptr;

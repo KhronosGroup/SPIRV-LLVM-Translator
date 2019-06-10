@@ -408,6 +408,11 @@ public:
   virtual ~BuiltinFuncMangleInfo() {}
   const std::string &getUnmangledName() const { return UnmangledName; }
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx); }
+  void addUnsignedArgs(int StartNdx, int StopNdx) {
+    assert(StartNdx < StopNdx && "wrong parameters");
+    for (size_t I = StartNdx; I <= StopNdx; ++I)
+      addUnsignedArg(I);
+  }
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx); }
   void addSamplerArg(int Ndx) { SamplerArgs.insert(Ndx); }
   void addAtomicArg(int Ndx) { AtomicArgs.insert(Ndx); }
