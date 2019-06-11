@@ -361,6 +361,11 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationDoublepumpINTEL,
                {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationMaxReplicatesINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationSimpleDualPortINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationMergeINTEL, {CapabilityFPGAMemoryAttributesINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {

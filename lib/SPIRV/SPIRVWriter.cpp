@@ -1150,12 +1150,16 @@ parseAnnotations(StringRef AnnotatedCode) {
                 .Case("2", DecorationDoublepumpINTEL);
     } else if (F == "register") {
       Dec = DecorationRegisterINTEL;
+    } else if (F == "simple_dual_port") {
+      Dec = DecorationSimpleDualPortINTEL;
     } else {
       Dec = llvm::StringSwitch<Decoration>(F)
                 .Case("memory", DecorationMemoryINTEL)
                 .Case("numbanks", DecorationNumbanksINTEL)
                 .Case("bankwidth", DecorationBankwidthINTEL)
                 .Case("max_private_copies", DecorationMaxPrivateCopiesINTEL)
+                .Case("max_replicates", DecorationMaxReplicatesINTEL)
+                .Case("merge", DecorationMergeINTEL)
                 .Default(DecorationUserSemantic);
       if (Dec == DecorationUserSemantic)
         Value = AnnotatedCode.substr(From, To + 1);
@@ -1180,9 +1184,16 @@ void addIntelFPGADecorations(
     case DecorationUserSemantic:
       E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second));
       break;
+    case DecorationMergeINTEL: {
+      StringRef Name = StringRef(I.second).split(':').first;
+      StringRef Direction = StringRef(I.second).split(':').second;
+      E->addDecorate(
+          new SPIRVDecorateMergeINTELAttr(E, Name.str(), Direction.str()));
+    } break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
+    case DecorationSimpleDualPortINTEL:
       assert(I.second.empty());
       E->addDecorate(I.first);
       break;
@@ -1190,6 +1201,7 @@ void addIntelFPGADecorations(
     // DecorationNumbanksINTEL
     // DecorationBankwidthINTEL
     // DecorationMaxPrivateCopiesINTEL
+    // DecorationMaxReplicatesINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
@@ -1212,9 +1224,16 @@ void addIntelFPGADecorationsForStructMember(
       E->addMemberDecorate(
           new SPIRVMemberDecorateUserSemanticAttr(E, MemberNumber, I.second));
       break;
+    case DecorationMergeINTEL: {
+      StringRef Name = StringRef(I.second).split(':').first;
+      StringRef Direction = StringRef(I.second).split(':').second;
+      E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
+          E, MemberNumber, Name.str(), Direction.str()));
+    } break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
+    case DecorationSimpleDualPortINTEL:
       assert(I.second.empty());
       E->addMemberDecorate(MemberNumber, I.first);
       break;
@@ -1222,6 +1241,7 @@ void addIntelFPGADecorationsForStructMember(
     // DecorationNumbanksINTEL
     // DecorationBankwidthINTEL
     // DecorationMaxPrivateCopiesINTEL
+    // DecorationMaxReplicatesINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
