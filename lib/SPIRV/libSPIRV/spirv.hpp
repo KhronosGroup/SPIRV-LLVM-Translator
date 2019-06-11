@@ -396,6 +396,9 @@ enum Decoration {
     DecorationMaxPrivateCopiesINTEL = 5829,
     DecorationSinglepumpINTEL = 5830,
     DecorationDoublepumpINTEL = 5831,
+    DecorationMaxReplicatesINTEL = 5832,
+    DecorationSimpleDualPortINTEL = 5833,
+    DecorationMergeINTEL = 5834,
     DecorationMax = 0x7fffffff,
 };
 

@@ -2366,6 +2366,13 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{pump:1}";
   if (E->hasDecorate(DecorationDoublepumpINTEL))
     Out << "{pump:2}";
+  if (E->hasDecorate(DecorationMaxReplicatesINTEL, 0, &Result))
+    Out << "{max_replicates:" << Result << '}';
+  if (E->hasDecorate(DecorationSimpleDualPortINTEL))
+    Out << "{simple_dual_port:1}";
+  if (E->hasDecorate(DecorationMergeINTEL))
+    Out << "{merge:" << E->getDecorationStringLiteral(DecorationMergeINTEL)
+        << '}';
   if (E->hasDecorate(DecorationUserSemantic))
     Out << E->getDecorationStringLiteral(DecorationUserSemantic);
 }
@@ -2394,6 +2401,16 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{pump:1}";
   if (E->hasMemberDecorate(DecorationDoublepumpINTEL, 0, MemberNumber))
     Out << "{pump:2}";
+  if (E->hasMemberDecorate(DecorationMaxReplicatesINTEL, 0, MemberNumber,
+                           &Result))
+    Out << "{max_replicates:" << Result << '}';
+  if (E->hasMemberDecorate(DecorationSimpleDualPortINTEL, 0, MemberNumber))
+    Out << "{simple_dual_port:1}";
+  if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber))
+    Out << "{merge:"
+        << E->getMemberDecorationStringLiteral(DecorationMergeINTEL,
+                                               MemberNumber)
+        << '}';
   if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
     Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
                                                MemberNumber);
