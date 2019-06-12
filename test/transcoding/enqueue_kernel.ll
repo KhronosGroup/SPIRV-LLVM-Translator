@@ -83,10 +83,10 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: TypeFunction [[BlockTy3:[0-9]+]] [[VoidTy]] [[Int8PtrGenTy]]
 ; CHECK-SPIRV: ConstantNull [[EventPtrTy]] [[EventNull:[0-9]+]]
 
-; CHECK-LLVM: [[BlockTy1:%[0-9]+]] = type { i32, i32 }
-; CHECK-LLVM: [[BlockTy2:%[0-9]+]] = type <{ i32, i32, i32 addrspace(1)*, i32, i8 }>
-; CHECK-LLVM: [[BlockTy3:%[0-9]+]] = type <{ i32, i32, i32 addrspace(1)*, i32, i32 addrspace(1)* }>
-; CHECK-LLVM: [[BlockTy4:%[0-9]+]] = type <{ i32, i32 }>
+; CHECK-LLVM: [[BlockTy1:%[0-9a-z\.]+]] = type { i32, i32 }
+; CHECK-LLVM: [[BlockTy2:%[0-9a-z\.]+]] = type <{ i32, i32, i32 addrspace(1)*, i32, i8 }>
+; CHECK-LLVM: [[BlockTy3:%[0-9a-z\.]+]] = type <{ i32, i32, i32 addrspace(1)*, i32, i32 addrspace(1)* }>
+; CHECK-LLVM: [[BlockTy4:%[0-9a-z\.]+]] = type <{ i32, i32 }>
 
 ; CHECK-LLVM: @__block_literal_global = internal addrspace(1) constant [[BlockTy1]] { i32 8, i32 4 }, align 4
 ; CHECK-LLVM: @__block_literal_global.1 = internal addrspace(1) constant [[BlockTy1]] { i32 8, i32 4 }, align 4
