@@ -411,6 +411,8 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     if (!Name.empty()) {
       if (auto OldST = M->getTypeByName(Name))
         OldST->setName("");
+    } else {
+      Name = "structtype";
     }
     auto *StructTy = StructType::create(*Context, Name);
     mapType(ST, StructTy);
