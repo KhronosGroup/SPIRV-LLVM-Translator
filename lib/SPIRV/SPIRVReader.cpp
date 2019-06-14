@@ -266,11 +266,18 @@ bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
   std::vector<Instruction *> Deletes;
   std::vector<Instruction *> Uses;
   for (auto UI = GV->user_begin(), UE = GV->user_end(); UI != UE; ++UI) {
-    assert(isa<LoadInst>(*UI) && "Unsupported use");
-    auto LD = cast<LoadInst>(*UI);
+    LoadInst *LD = nullptr;
+    AddrSpaceCastInst *ASCast = dyn_cast<AddrSpaceCastInst>(*UI);
+    if (ASCast) {
+      LD = cast<LoadInst>(*ASCast->user_begin());
+    } else {
+      LD = cast<LoadInst>(*UI);
+    }
     if (!IsVec) {
       Uses.push_back(LD);
       Deletes.push_back(LD);
+      if (ASCast)
+        Deletes.push_back(ASCast);
       continue;
     }
     for (auto LDUI = LD->user_begin(), LDUE = LD->user_end(); LDUI != LDUE;
@@ -281,6 +288,8 @@ bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
       Deletes.push_back(EEI);
     }
     Deletes.push_back(LD);
+    if (ASCast)
+      Deletes.push_back(ASCast);
   }
   for (auto &I : Uses) {
     std::vector<Value *> Arg;
