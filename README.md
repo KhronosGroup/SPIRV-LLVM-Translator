@@ -26,7 +26,7 @@ The translator can be built with the latest(nightly) package of LLVM. For Ubuntu
 ```
 sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
 sudo apt-get update
-sudo apt-get install llvm-8-dev llvm-8-tools libclang-8-dev
+sudo apt-get install llvm-8-dev llvm-8-tools clang-8 libclang-8-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
@@ -71,7 +71,9 @@ Execute the following command inside the build directory to run translator tests
 ```
 make test
 ```
-This requires that the `-DLLVM_INCLUDE_TESTS=ON` argument was passed to CMake during the build step.
+This requires that the `-DLLVM_INCLUDE_TESTS=ON` and
+`-DLLVM_EXTERNAL_LIT="/usr/lib/llvm-8/build/utils/lit/lit.py"` arguments were
+passed to CMake during the build step.
 
 ## Run Instructions for `llvm-spirv`
 
