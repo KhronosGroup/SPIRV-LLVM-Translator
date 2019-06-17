@@ -453,10 +453,11 @@ public:
         setArgAttr(0, SPIR::ATTR_CONST);
         addVoidPtrArg(0);
       }
-    } else if (UnmangledName.find("barrier") == 0 ||
-               UnmangledName.find("work_group_barrier") == 0 ||
-               UnmangledName.find("sub_group_barrier") == 0) {
+    } else if (UnmangledName.find("barrier") != std::string::npos) {
       addUnsignedArg(0);
+      if (UnmangledName == "work_group_barrier" ||
+          UnmangledName == "sub_group_barrier")
+        setEnumArg(1, SPIR::PRIMITIVE_MEMORY_SCOPE);
     } else if (UnmangledName.find("atomic_work_item_fence") == 0) {
       addUnsignedArg(0);
       setEnumArg(1, SPIR::PRIMITIVE_MEMORY_ORDER);
