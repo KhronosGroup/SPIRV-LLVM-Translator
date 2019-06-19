@@ -382,14 +382,28 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
                                     .getFirstInsertionPt()));
           PExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
           new StoreInst(Args[1], PExpected, PInsertBefore);
-          unsigned AddrSpc = SPIRAS_Generic;
-          Type *PtrTyAS =
-              PExpected->getType()->getElementType()->getPointerTo(AddrSpc);
-          Args[1] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
-              PExpected, PtrTyAS, PExpected->getName() + ".as", PInsertBefore);
+          Args[1] = PExpected;
           std::swap(Args[3], Args[4]);
           std::swap(Args[2], Args[3]);
           RetTy = Type::getInt1Ty(*Ctx);
+        }
+        // Fix atomic functions pointers:
+        // OpenCL 1.2 allows to specify local and global address spaces for
+        // pointer arguments in atomic functions. OpenCL 2.0 uses generic
+        // address space for all of them.
+        for (size_t I = 0; I < Args.size(); ++I) {
+          Value *PtrArg = Args[I];
+          if (PtrArg->getType()->isPointerTy()) {
+            // If atomic function is translated from OpenCL 2.0 version, then
+            // address space is already correct
+            if (PtrArg->getType()->getPointerAddressSpace() != 4) {
+              Type *FixedPtr =
+                  PtrArg->getType()->getPointerElementType()->getPointerTo(
+                      SPIRAS_Generic);
+              Args[I] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
+                  PtrArg, FixedPtr, PtrArg->getName() + ".as", PInsertBefore);
+            }
+          }
         }
         return Name;
       },
