@@ -1688,13 +1688,14 @@ void OCL20ToSPIRV::visitSubgroupImageMediaBlockINTEL(
   spv::Op OpCode = DemangledName.rfind("read") != std::string::npos
                        ? spv::OpSubgroupImageMediaBlockReadINTEL
                        : spv::OpSubgroupImageMediaBlockWriteINTEL;
-  mutateCallInstSPIRV(M, CI,
-                      [=](CallInst *, std::vector<Value *> &Args) {
-                        // Moving the last argument to the begining.
-                        std::rotate(Args.begin(), Args.end() - 1, Args.end());
-                        return getSPIRVFuncName(OpCode, CI->getType());
-                      },
-                      &Attrs);
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        // Moving the last argument to the begining.
+        std::rotate(Args.begin(), Args.end() - 1, Args.end());
+        return getSPIRVFuncName(OpCode, CI->getType());
+      },
+      &Attrs);
 }
 
 static const char *getSubgroupAVCIntelOpKind(const std::string &Name) {
