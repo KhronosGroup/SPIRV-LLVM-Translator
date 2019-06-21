@@ -727,6 +727,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     llvm::Value *Init = GV->hasInitializer() && !GV->hasCommonLinkage()
                             ? GV->getInitializer()
                             : nullptr;
+    SPIRVValue *BVarInit = nullptr;
     StructType *ST = Init ? dyn_cast<StructType>(Init->getType()) : nullptr;
     if (ST && ST->hasName() && isSPIRVConstantName(ST->getName())) {
       auto BV = transConstant(Init);
@@ -739,10 +740,22 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
         Ty = static_cast<PointerType *>(Init->getType());
       }
       Inst->dropAllReferences();
+      BVarInit = transValue(Init, nullptr);
+    } else if (ST && isa<UndefValue>(Init)) {
+      // Undef initializer for LLVM structure be can translated to
+      // OpConstantComposite with OpUndef constituents.
+      auto I = ValueMap.find(Init);
+      if (ValueMap.find(Init) == ValueMap.end()) {
+        std::vector<SPIRVValue *> Elements;
+        for (Type *E : ST->elements())
+          Elements.push_back(transValue(UndefValue::get(E), nullptr));
+        BVarInit = BM->addCompositeConstant(transType(ST), Elements);
+        ValueMap[Init] = BVarInit;
+      } else
+        BVarInit = I->second;
+    } else if (Init && !isa<UndefValue>(Init)) {
+      BVarInit = transValue(Init, nullptr);
     }
-    // Translate initializer first.
-    SPIRVValue *BVarInit =
-        (Init && !isa<UndefValue>(Init)) ? transValue(Init, nullptr) : nullptr;
 
     auto BVar = static_cast<SPIRVVariable *>(BM->addVariable(
         transType(Ty), GV->isConstant(), transLinkageType(GV), BVarInit,
