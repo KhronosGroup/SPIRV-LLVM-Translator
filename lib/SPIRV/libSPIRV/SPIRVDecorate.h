@@ -141,6 +141,17 @@ public:
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
       return getSet(SPV_KHR_no_integer_wrap_decoration);
+    case DecorationRegisterINTEL:
+    case DecorationMemoryINTEL:
+    case DecorationNumbanksINTEL:
+    case DecorationBankwidthINTEL:
+    case DecorationMaxconcurrencyINTEL:
+    case DecorationSinglepumpINTEL:
+    case DecorationDoublepumpINTEL:
+    case DecorationMaxReplicatesINTEL:
+    case DecorationSimpleDualPortINTEL:
+    case DecorationMergeINTEL:
+      return getSet(SPV_INTEL_fpga_memory_attributes);
     default:
       return SPIRVExtSet();
     }
@@ -221,6 +232,24 @@ public:
   // Incomplete constructor
   SPIRVMemberDecorate()
       : SPIRVDecorateGeneric(OC), MemberNumber(SPIRVWORD_MAX) {}
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    switch (Dec) {
+    case DecorationRegisterINTEL:
+    case DecorationMemoryINTEL:
+    case DecorationNumbanksINTEL:
+    case DecorationBankwidthINTEL:
+    case DecorationMaxconcurrencyINTEL:
+    case DecorationSinglepumpINTEL:
+    case DecorationDoublepumpINTEL:
+    case DecorationMaxReplicatesINTEL:
+    case DecorationSimpleDualPortINTEL:
+    case DecorationMergeINTEL:
+      return getSet(SPV_INTEL_fpga_memory_attributes);
+    default:
+      return SPIRVExtSet();
+    }
+  }
 
   SPIRVWord getMemberNumber() const { return MemberNumber; }
   std::pair<SPIRVWord, Decoration> getPair() const {

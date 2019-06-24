@@ -5,6 +5,7 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; CHECK-SPIRV: Extension "SPV_INTEL_fpga_memory_attributes"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 1 RegisterINTEL
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 MemoryINTEL "DEFAULT"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 MemoryINTEL "DEFAULT"
