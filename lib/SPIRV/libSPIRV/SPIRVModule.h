@@ -40,6 +40,7 @@
 #ifndef SPIRV_LIBSPIRV_SPIRVMODULE_H
 #define SPIRV_LIBSPIRV_SPIRVMODULE_H
 
+#include "LLVMSPIRVOpts.h"
 #include "SPIRVEntry.h"
 
 #include <iostream>
@@ -92,6 +93,7 @@ public:
   typedef std::map<SPIRVCapabilityKind, SPIRVCapability *> SPIRVCapMap;
 
   static SPIRVModule *createSPIRVModule();
+  static SPIRVModule *createSPIRVModule(const SPIRV::TranslatorOpts &);
   SPIRVModule();
   virtual ~SPIRVModule();
 
@@ -380,6 +382,16 @@ public:
                                                 SPIRVBasicBlock *) = 0;
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const = 0;
 
+  virtual bool
+  isAllowedToUseVersion(SPIRV::VersionNumber RequestedVersion) const final {
+    return TranslationOpts.isAllowedToUseVersion(RequestedVersion);
+  }
+
+  virtual bool isAllowedToUseVersion(SPIRVWord RequestedVersion) const final {
+    return TranslationOpts.isAllowedToUseVersion(
+        static_cast<SPIRV::VersionNumber>(RequestedVersion));
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);
@@ -388,6 +400,7 @@ protected:
   bool AutoAddCapability;
   bool ValidateCapability;
   bool AutoAddExtensions = true;
+  SPIRV::TranslatorOpts TranslationOpts;
 
 private:
   bool IsValid;
