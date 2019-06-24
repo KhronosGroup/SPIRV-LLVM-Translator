@@ -2812,7 +2812,7 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
 
   IS >> *BM;
   if (!BM->isModuleValid()) {
