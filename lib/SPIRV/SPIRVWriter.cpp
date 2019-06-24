@@ -746,7 +746,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       // Undef initializer for LLVM structure be can translated to
       // OpConstantComposite with OpUndef constituents.
       auto I = ValueMap.find(Init);
-      if (ValueMap.find(Init) == ValueMap.end()) {
+      if (I == ValueMap.end()) {
         std::vector<SPIRVValue *> Elements;
         for (Type *E : ST->elements())
           Elements.push_back(transValue(UndefValue::get(E), nullptr));
