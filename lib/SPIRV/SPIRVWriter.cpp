@@ -90,10 +90,6 @@ namespace SPIRV {
 cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(false),
                             cl::desc("LLVM/SPIR-V translation enable mem2reg"));
 
-cl::opt<bool> SPIRVNoDerefAttr(
-    "spirv-no-deref-attr", cl::init(false),
-    cl::desc("Do not translate 'dereferenceable' LLVM attribute to SPIR-V"));
-
 static void foreachKernelArgMD(
     MDNode *MD, SPIRVFunction *BF,
     std::function<void(const std::string &Str, SPIRVFunctionParameter *BA)>
@@ -495,7 +491,7 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
       BA->addAttr(FunctionParameterAttributeZext);
     if (Attrs.hasAttribute(ArgNo + 1, Attribute::SExt))
       BA->addAttr(FunctionParameterAttributeSext);
-    if (!SPIRVNoDerefAttr &&
+    if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_1) &&
         Attrs.hasAttribute(ArgNo + 1, Attribute::Dereferenceable))
       BA->addDecorate(DecorationMaxByteOffset,
                       Attrs.getAttribute(ArgNo + 1, Attribute::Dereferenceable)
