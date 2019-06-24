@@ -71,6 +71,11 @@ public:
     // OpenCL memory model requires Kernel capability
     setMemoryModel(MemoryModelOpenCL);
   }
+
+  SPIRVModuleImpl(const SPIRV::TranslatorOpts &Opts) : SPIRVModuleImpl() {
+    TranslationOpts = Opts;
+  }
+
   ~SPIRVModuleImpl() override;
 
   // Object query functions
@@ -165,7 +170,10 @@ public:
   void setGeneratorVer(unsigned short Ver) override { GeneratorVer = Ver; }
   void resolveUnknownStructFields() override;
 
-  void setSPIRVVersion(SPIRVWord Ver) override { SPIRVVersion = Ver; }
+  void setSPIRVVersion(SPIRVWord Ver) override {
+    assert(this->isAllowedToUseVersion(static_cast<VersionNumber>(Ver)));
+    SPIRVVersion = Ver;
+  }
 
   // Object creation functions
   template <class T> void addTo(std::vector<T *> &V, SPIRVEntry *E);
@@ -1625,7 +1633,11 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   return I;
 }
 
-SPIRVModule *SPIRVModule::createSPIRVModule() { return new SPIRVModuleImpl; }
+SPIRVModule *SPIRVModule::createSPIRVModule() { return new SPIRVModuleImpl(); }
+
+SPIRVModule *SPIRVModule::createSPIRVModule(const SPIRV::TranslatorOpts &Opts) {
+  return new SPIRVModuleImpl(Opts);
+}
 
 SPIRVValue *SPIRVModuleImpl::getValue(SPIRVId TheId) const {
   return get<SPIRVValue>(TheId);
@@ -1706,7 +1718,8 @@ bool convertSpirv(std::istream &IS, std::ostream &OS, std::string &ErrMsg,
                   bool FromText, bool ToText) {
   auto SaveOpt = SPIRVUseTextFormat;
   SPIRVUseTextFormat = FromText;
-  SPIRVModuleImpl M;
+  SPIRV::TranslatorOpts DefaultOpts;
+  SPIRVModuleImpl M(DefaultOpts);
   IS >> M;
   if (M.getError(ErrMsg) != SPIRVEC_Success) {
     SPIRVUseTextFormat = SaveOpt;
