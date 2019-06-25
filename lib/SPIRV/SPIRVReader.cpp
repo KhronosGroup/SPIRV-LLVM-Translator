@@ -1695,7 +1695,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
     auto Call = CallInst::Create(Func, Args, "copysign", BB);
     setCallingConv(Call);
-    addFnAttr(Context, Call, Attribute::NoUnwind);
+    addFnAttr(Call, Attribute::NoUnwind);
     return mapValue(BV, Call);
   }
   case OpFNegate: {
@@ -2624,7 +2624,7 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
            dbgs() << '\n');
   CallInst *Call = CallInst::Create(F, Args, BC->getName(), BB);
   setCallingConv(Call);
-  addFnAttr(Context, Call, Attribute::NoUnwind);
+  addFnAttr(Call, Attribute::NoUnwind);
   return transOCLBuiltinPostproc(BC, Call, BB, UnmangledName);
 }
 
