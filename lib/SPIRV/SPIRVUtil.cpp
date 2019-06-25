@@ -82,12 +82,11 @@ bool isSupportedTriple(Triple T) {
   return Arch == Triple::spir || Arch == Triple::spir64;
 }
 
-void addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr) {
+void addFnAttr(CallInst *Call, Attribute::AttrKind Attr) {
   Call->addAttribute(AttributeList::FunctionIndex, Attr);
 }
 
-void removeFnAttr(LLVMContext *Context, CallInst *Call,
-                  Attribute::AttrKind Attr) {
+void removeFnAttr(CallInst *Call, Attribute::AttrKind Attr) {
   Call->removeAttribute(AttributeList::FunctionIndex, Attr);
 }
 
