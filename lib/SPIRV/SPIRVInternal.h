@@ -525,9 +525,8 @@ inline size_t findFirstPtr(const std::vector<Value *> &Args) {
 }
 
 bool isSupportedTriple(Triple T);
-void removeFnAttr(LLVMContext *Context, CallInst *Call,
-                  Attribute::AttrKind Attr);
-void addFnAttr(LLVMContext *Context, CallInst *Call, Attribute::AttrKind Attr);
+void removeFnAttr(CallInst *Call, Attribute::AttrKind Attr);
+void addFnAttr(CallInst *Call, Attribute::AttrKind Attr);
 void saveLLVMModule(Module *M, const std::string &OutputFile);
 std::string mapSPIRVTypeToOCLType(SPIRVType *Ty, bool Signed);
 std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed);
