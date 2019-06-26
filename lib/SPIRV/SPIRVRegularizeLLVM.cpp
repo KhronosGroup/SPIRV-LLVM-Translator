@@ -110,7 +110,7 @@ bool SPIRVRegularizeLLVM::regularize() {
   LLVMContext *Context = &M->getContext();
 
   eraseUselessFunctions(M);
-  lowerFuncPtr(M);
+  //lowerFuncPtr(M);
   // lowerConstantExpressions();
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
