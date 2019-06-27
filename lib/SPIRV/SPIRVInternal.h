@@ -414,7 +414,7 @@ public:
   void addUnsignedArg(int Ndx) { UnsignedArgs.insert(Ndx); }
   void addUnsignedArgs(int StartNdx, int StopNdx) {
     assert(StartNdx < StopNdx && "wrong parameters");
-    for (size_t I = StartNdx; I <= StopNdx; ++I)
+    for (int I = StartNdx; I <= StopNdx; ++I)
       addUnsignedArg(I);
   }
   void addVoidPtrArg(int Ndx) { VoidPtrArgs.insert(Ndx); }
