@@ -57,7 +57,6 @@
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/Constants.h"
-#include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
@@ -66,22 +65,18 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/PassSupport.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Transforms/Utils.h" // loop-simplify pass
 
 #include <cstdlib>
 #include <functional>
 #include <iostream>
-#include <list>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <vector>
 
 #define DEBUG_TYPE "spirv"
@@ -108,16 +103,6 @@ static void foreachKernelArgMD(
     Func(getMDOperandAsString(MD, I), BA);
   }
 }
-
-/// Information for translating OCL builtin.
-struct OCLBuiltinSPIRVTransInfo {
-  std::string UniqName;
-  /// Postprocessor of operands
-  std::function<void(std::vector<SPIRVWord> &)> PostProc;
-  OCLBuiltinSPIRVTransInfo() {
-    PostProc = [](std::vector<SPIRVWord> &) {};
-  }
-};
 
 LLVMToSPIRV::LLVMToSPIRV(SPIRVModule *SMod)
     : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod), SrcLang(0),
@@ -524,10 +509,6 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
            spvdbgs() << *BF << '\n';)
   return BF;
 }
-
-#define _SPIRV_OPL(x) OpLogical##x
-
-#define _SPIRV_OPB(x) OpBitwise##x
 
 SPIRVValue *LLVMToSPIRV::transConstant(Value *V) {
   if (auto CPNull = dyn_cast<ConstantPointerNull>(V))
@@ -1280,11 +1261,6 @@ LLVMToSPIRV::transValue(const std::vector<Value *> &Args, SPIRVBasicBlock *BB) {
   return BArgs;
 }
 
-std::vector<SPIRVValue *> LLVMToSPIRV::transArguments(CallInst *CI,
-                                                      SPIRVBasicBlock *BB) {
-  return transValue(getArguments(CI), BB);
-}
-
 std::vector<SPIRVWord> LLVMToSPIRV::transValue(const std::vector<Value *> &Args,
                                                SPIRVBasicBlock *BB,
                                                SPIRVEntry *Entry) {
@@ -1301,16 +1277,6 @@ std::vector<SPIRVWord> LLVMToSPIRV::transArguments(CallInst *CI,
                                                    SPIRVBasicBlock *BB,
                                                    SPIRVEntry *Entry) {
   return transValue(getArguments(CI), BB, Entry);
-}
-
-SPIRVWord LLVMToSPIRV::transFunctionControlMask(CallInst *CI) {
-  SPIRVWord FCM = 0;
-  SPIRSPIRVFuncCtlMaskMap::foreach (
-      [&](Attribute::AttrKind Attr, SPIRVFunctionControlMaskKind Mask) {
-        if (CI->hasFnAttr(Attr))
-          FCM |= Mask;
-      });
-  return FCM;
 }
 
 SPIRVWord LLVMToSPIRV::transFunctionControlMask(Function *F) {
@@ -1731,10 +1697,6 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   }
   return nullptr;
-}
-
-SPIRVId LLVMToSPIRV::addInt32(int I) {
-  return transValue(getInt32(M, I), nullptr, false)->getId();
 }
 
 SPIRV::SPIRVLinkageTypeKind
