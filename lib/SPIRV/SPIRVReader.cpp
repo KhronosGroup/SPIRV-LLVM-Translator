@@ -3111,8 +3111,7 @@ llvm::convertSpirvToLLVM(LLVMContext &C, SPIRVModule &BM, std::string &ErrMsg) {
   }
 
   llvm::legacy::PassManager PassMgr;
-  PassMgr.add(createSPIRVToOCL20());
-  PassMgr.add(createOCL20To12());
+  PassMgr.add(createSPIRVToOCL(*M));
   PassMgr.run(*M);
 
   return M;
