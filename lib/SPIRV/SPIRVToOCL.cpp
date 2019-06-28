@@ -51,6 +51,11 @@ static cl::opt<std::string>
                                 cl::desc("Mangled atomic type name prefix"),
                                 cl::init("U7_Atomic"));
 
+static cl::opt<std::string>
+    OCLBuiltinsVersion("spirv-ocl-builtins-version",
+                       cl::desc("Specify version of OCL builtins to translate "
+                                "to (CL1.0, CL1.1, CL1.2, CL2.0)"));
+
 char SPIRVToOCL::ID = 0;
 
 void SPIRVToOCL::visitCallInst(CallInst &CI) {
@@ -435,6 +440,23 @@ Instruction *SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
 } // namespace SPIRV
 
 ModulePass *llvm::createSPIRVToOCL(Module &M) {
+  if (OCLBuiltinsVersion.getNumOccurrences() > 0) {
+    std::string OCLVer = OCLBuiltinsVersion.getValue();
+    if (OCLVer == "CL1.0" || OCLVer == "CL1.1" || OCLVer == "CL1.2")
+      return createSPIRVToOCL12();
+    else if (OCLVer == "CL2.0")
+      return createSPIRVToOCL20();
+    else {
+      assert(0 && "Invalid spirv-ocl-builtins-version value");
+      return nullptr;
+    }
+  }
+  // Below part of code is here just temporarily (to not broke existing
+  // projects based on translator), because ocl builtins versions shouldn't has
+  // a dependency on OpSource spirv opcode. OpSource spec: "This has no semantic
+  // impact and can safely be removed from a module." After some time it can be
+  // removed, then only factor impacting version of ocl builtins will be
+  // spirv-ocl-builtins-version command option.
   unsigned OCLVersion = getOCLVersion(&M);
   if (OCLVersion <= kOCLVer::CL12)
     return createSPIRVToOCL12();
