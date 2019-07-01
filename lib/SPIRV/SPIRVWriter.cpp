@@ -1253,6 +1253,12 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   };
 
   switch (II->getIntrinsicID()) {
+  case Intrinsic::bitreverse: {
+    BM->addCapability(CapabilityShader);
+    SPIRVType *Ty = transType(II->getType());
+    SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
+    return BM->addUnaryInst(OpBitReverse, Ty, Op, BB);
+  }
   case Intrinsic::fmuladd: {
     // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add
     // is required the corresponding llvm.fma.* intrinsic function should be
