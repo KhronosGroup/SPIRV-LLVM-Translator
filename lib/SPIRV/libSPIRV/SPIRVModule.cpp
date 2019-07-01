@@ -1557,6 +1557,27 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
   UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
 }
 
+static std::string to_string(uint32_t Version) {
+  std::string Res;
+  switch (Version) {
+  case static_cast<uint32_t>(VersionNumber::SPIRV_1_0):
+    Res = "1.0";
+    break;
+  case static_cast<uint32_t>(VersionNumber::SPIRV_1_1):
+    Res = "1.1";
+    break;
+  default:
+    Res = "unknown";
+  }
+
+  Res += " (" + std::to_string(Version) + ")";
+  return Res;
+}
+
+static std::string to_string(VersionNumber Version) {
+  return to_string(static_cast<uint32_t>(Version));
+}
+
 std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   SPIRVDecoder Decoder(I, M);
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
@@ -1573,9 +1594,26 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   }
 
   Decoder >> MI.SPIRVVersion;
-  if (!M.getErrorLog().checkError(MI.SPIRVVersion <= SPV_VERSION,
-                                  SPIRVEC_InvalidModule,
-                                  "unsupported SPIR-V version number")) {
+  bool SPIRVVersionIsKnown =
+      static_cast<uint32_t>(VersionNumber::MinimumVersion) <= MI.SPIRVVersion &&
+      MI.SPIRVVersion <= static_cast<uint32_t>(VersionNumber::MaximumVersion);
+  if (!M.getErrorLog().checkError(
+          SPIRVVersionIsKnown, SPIRVEC_InvalidModule,
+          "unsupported SPIR-V version number '" + to_string(MI.SPIRVVersion) +
+              "'. Range of supported/known SPIR-V "
+              "versions is " +
+              to_string(VersionNumber::MinimumVersion) + " - " +
+              to_string(VersionNumber::MaximumVersion))) {
+    M.setInvalid();
+    return I;
+  }
+
+  bool SPIRVVersionIsAllowed = M.isAllowedToUseVersion(MI.SPIRVVersion);
+  if (!M.getErrorLog().checkError(
+          SPIRVVersionIsAllowed, SPIRVEC_InvalidModule,
+          "incorrect SPIR-V version number " + to_string(MI.SPIRVVersion) +
+              " - it conflicts with --spirv-max-version which is set to " +
+              to_string(M.getMaximumAllowedSPIRVVersion()))) {
     M.setInvalid();
     return I;
   }
