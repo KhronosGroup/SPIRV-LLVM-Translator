@@ -1659,6 +1659,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                           BV->getName(), BB));
   }
 
+  case OpBitReverse: {
+    auto *BR = static_cast<SPIRVUnary *>(BV);
+    IntegerType *Int32Ty = IntegerType::get(*Context, 32);
+    Function *intr =
+        Intrinsic::getDeclaration(M, llvm::Intrinsic::bitreverse, Int32Ty);
+    auto *Call = CallInst::Create(intr, transValue(BR->getOperand(0), F, BB),
+                                  BR->getName(), BB);
+    return mapValue(BV, Call);
+  }
+
   case OpFunctionCall: {
     SPIRVFunctionCall *BC = static_cast<SPIRVFunctionCall *>(BV);
     auto Call = CallInst::Create(transFunction(BC->getFunction()),
