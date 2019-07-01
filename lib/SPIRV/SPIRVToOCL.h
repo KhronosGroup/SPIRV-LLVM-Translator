@@ -104,7 +104,7 @@ public:
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(atomic_op, ops, ..., order(sema), map(scope))
-  Instruction *visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC);
+  virtual Instruction *visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC);
 
   /// Transform __spirv_MemoryBarrier to:
   /// - OCL2.0: atomic_work_item_fence.__spirv_MemoryBarrier(scope, sema) =>
