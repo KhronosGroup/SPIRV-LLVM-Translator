@@ -619,6 +619,7 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(signbit, SignBitSet)
   _SPIRV_OP(any, Any)
   _SPIRV_OP(all, All)
+  _SPIRV_OP(popcount, BitCount)
   _SPIRV_OP(get_fence, GenericPtrMemSemantics)
   // CL 2.0 kernel enqueue builtins
   _SPIRV_OP(enqueue_marker, EnqueueMarker)
