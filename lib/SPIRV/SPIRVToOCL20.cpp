@@ -53,6 +53,11 @@ public:
   ///   __spirv_MemoryBarrier(scope, sema) =>
   ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
   void visitCallSPIRVMemoryBarrier(CallInst *CI) override;
+
+  /// Transform __spirv_Atomic* to atomic_*.
+  ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
+  ///      atomic_*(generic atomic_op, ops, ..., order(sema), map(scope))
+  Instruction *visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) override;
 };
 
 bool SPIRVToOCL20::runOnModule(Module &Module) {
@@ -90,6 +95,29 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
                       return kOCLBuiltinName::AtomicWorkItemFence;
                     },
                     &Attrs);
+}
+
+Instruction *SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  CallInst *CiFixedAs = mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        for (size_t I = 0; I < Args.size(); ++I) {
+          Value *PtrArg = Args[I];
+          Type *PtrArgTy = PtrArg->getType();
+          if (PtrArgTy->isPointerTy()) {
+            if (PtrArgTy->getPointerAddressSpace() != SPIRAS_Generic) {
+              Type *FixedPtr = PtrArgTy->getPointerElementType()->getPointerTo(
+                  SPIRAS_Generic);
+              Args[I] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
+                  PtrArg, FixedPtr, PtrArg->getName() + ".as", CI);
+            }
+          }
+        }
+        return CI->getName();
+      },
+      &Attrs);
+  return SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CiFixedAs, OC);
 }
 
 } // namespace SPIRV
