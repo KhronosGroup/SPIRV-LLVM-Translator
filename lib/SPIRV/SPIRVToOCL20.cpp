@@ -357,14 +357,47 @@ void SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
           assert(ValueTy->isIntegerTy());
           Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
         }
-        Args[ScopeIdx] =
-            mapUInt(M, cast<ConstantInt>(Args[ScopeIdx]), [](unsigned I) {
-              return rmap<OCLScopeKind>(static_cast<Scope>(I));
+        if (auto *ScopeInt = dyn_cast_or_null<ConstantInt>(Args[ScopeIdx])) {
+          Args[ScopeIdx] = mapUInt(M, ScopeInt, [](unsigned I) {
+            return rmap<OCLScopeKind>(static_cast<Scope>(I));
+          });
+        } else {
+          CallInst *TransCall = dyn_cast<CallInst>(Args[ScopeIdx]);
+          Function *F = TransCall ? TransCall->getCalledFunction() : nullptr;
+          if (F && F->getName().equals(kSPIRVName::TranslateOCLMemScope)) {
+            // In case the SPIR-V module was created from an OpenCL program by
+            // *this* SPIR-V generator, we know that the value passed to
+            // __translate_ocl_memory_scope is what we should pass to the OpenCL
+            // builtin now.
+            Args[ScopeIdx] = TransCall->getArgOperand(0);
+          } else {
+            Args[ScopeIdx] = getOrCreateSwitchFunc(
+                kSPIRVName::TranslateSPIRVMemScope, Args[ScopeIdx],
+                OCLMemScopeMap::getRMap(), true /*IsReverse*/, None, CI, M);
+          }
+        }
+        for (size_t I = 0; I < NumOrder; ++I) {
+          if (auto OrderInt =
+                  dyn_cast_or_null<ConstantInt>(Args[OrderIdx + I])) {
+            Args[OrderIdx + I] = mapUInt(M, OrderInt, [](unsigned Ord) {
+              return mapSPIRVMemOrderToOCL(Ord);
             });
-        for (size_t I = 0; I < NumOrder; ++I)
-          Args[OrderIdx + I] =
-              mapUInt(M, cast<ConstantInt>(Args[OrderIdx + I]),
-                      [](unsigned Ord) { return mapSPIRVMemOrderToOCL(Ord); });
+          } else {
+            CallInst *TransCall = dyn_cast<CallInst>(Args[OrderIdx + I]);
+            Function *F = TransCall ? TransCall->getCalledFunction() : nullptr;
+            if (F && F->getName().equals(kSPIRVName::TranslateOCLMemOrder)) {
+              // In case the SPIR-V module was created from an OpenCL program by
+              // *this* SPIR-V generator, we know that the value passed to
+              // __translate_ocl_memory_order is what we should pass to the
+              // OpenCL builtin now.
+              Args[OrderIdx + I] = TransCall->getArgOperand(0);
+            } else {
+              Args[OrderIdx + I] = getOrCreateSwitchFunc(
+                  kSPIRVName::TranslateSPIRVMemOrder, Args[OrderIdx + I],
+                  OCLMemOrderMap::getRMap(), true /*IsReverse*/, None, CI, M);
+            }
+          }
+        }
         std::swap(Args[ScopeIdx], Args.back());
         if (OC == OpAtomicCompareExchange ||
             OC == OpAtomicCompareExchangeWeak) {

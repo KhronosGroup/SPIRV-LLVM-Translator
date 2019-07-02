@@ -333,6 +333,10 @@ const static char ImageSampleExplicitLod[] = "ImageSampleExplicitLod";
 const static char ReservedPrefix[] = "reserved_";
 const static char SampledImage[] = "SampledImage";
 const static char TempSampledImage[] = "TempSampledImage";
+const static char TranslateOCLMemOrder[] = "__translate_ocl_memory_order";
+const static char TranslateOCLMemScope[] = "__translate_ocl_memory_scope";
+const static char TranslateSPIRVMemOrder[] = "__translate_spirv_memory_order";
+const static char TranslateSPIRVMemScope[] = "__translate_spirv_memory_scope";
 } // namespace kSPIRVName
 
 namespace kSPIRVPostfix {
