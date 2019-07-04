@@ -53,6 +53,11 @@ public:
   ///   __spirv_MemoryBarrier(scope, sema) =>
   ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
   void visitCallSPIRVMemoryBarrier(CallInst *CI) override;
+
+  /// Transform __spirv_ControlBarrier to barrier.
+  ///   __spirv_ControlBarrier(execScope, memScope, sema) =>
+  ///       barrier(flag(sema))
+  void visitCallSPIRVControlBarrier(CallInst *CI) override;
 };
 
 bool SPIRVToOCL12::runOnModule(Module &Module) {
@@ -85,6 +90,23 @@ void SPIRVToOCL12::visitCallSPIRVMemoryBarrier(CallInst *CI) {
                       Args.resize(1);
                       Args[0] = getInt32(M, Sema.first);
                       return kOCLBuiltinName::MemFence;
+                    },
+                    &Attrs);
+}
+
+void SPIRVToOCL12::visitCallSPIRVControlBarrier(CallInst *CI) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  Attrs = Attrs.addAttribute(CI->getContext(), AttributeList::FunctionIndex,
+                             Attribute::NoDuplicate);
+  mutateCallInstOCL(M, CI,
+                    [=](CallInst *, std::vector<Value *> &Args) {
+                      auto GetArg = [=](unsigned I) {
+                        return cast<ConstantInt>(Args[I])->getZExtValue();
+                      };
+                      auto Sema = mapSPIRVMemSemanticToOCL(GetArg(2));
+                      Args.resize(1);
+                      Args[0] = getInt32(M, Sema.first);
+                      return kOCLBuiltinName::Barrier;
                     },
                     &Attrs);
 }

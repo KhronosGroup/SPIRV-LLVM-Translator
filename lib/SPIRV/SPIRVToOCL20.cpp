@@ -54,6 +54,15 @@ public:
   ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
   void visitCallSPIRVMemoryBarrier(CallInst *CI) override;
 
+  /// Transform __spirv_ControlBarrier to work_group_barrier/sub_group_barrier.
+  /// If execution scope is ScopeWorkgroup:
+  ///    __spirv_ControlBarrier(execScope, memScope, sema) =>
+  ///         work_group_barrier(flag(sema), map(memScope))
+  /// Otherwise:
+  ///    __spirv_ControlBarrier(execScope, memScope, sema) =>
+  ///         sub_group_barrier(flag(sema), map(memScope))
+  void visitCallSPIRVControlBarrier(CallInst *CI) override;
+
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(generic atomic_op, ops, ..., order(sema), map(scope))
@@ -93,6 +102,28 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
                       Args[1] = getInt32(M, Sema.second);
                       Args[2] = getInt32(M, rmap<OCLScopeKind>(MScope));
                       return kOCLBuiltinName::AtomicWorkItemFence;
+                    },
+                    &Attrs);
+}
+
+void SPIRVToOCL20::visitCallSPIRVControlBarrier(CallInst *CI) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  Attrs = Attrs.addAttribute(CI->getContext(), AttributeList::FunctionIndex,
+                             Attribute::NoDuplicate);
+  mutateCallInstOCL(M, CI,
+                    [=](CallInst *, std::vector<Value *> &Args) {
+                      auto GetArg = [=](unsigned I) {
+                        return cast<ConstantInt>(Args[I])->getZExtValue();
+                      };
+                      auto ExecScope = static_cast<Scope>(GetArg(0));
+                      auto MScope = static_cast<Scope>(GetArg(1));
+                      auto Sema = mapSPIRVMemSemanticToOCL(GetArg(2));
+                      Args.resize(2);
+                      Args[0] = getInt32(M, Sema.first);
+                      Args[1] = getInt32(M, rmap<OCLScopeKind>(MScope));
+                      return (ExecScope == ScopeWorkgroup)
+                                 ? kOCLBuiltinName::WorkGroupBarrier
+                                 : kOCLBuiltinName::SubGroupBarrier;
                     },
                     &Attrs);
 }
