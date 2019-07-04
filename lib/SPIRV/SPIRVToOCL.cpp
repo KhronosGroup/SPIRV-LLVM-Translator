@@ -77,6 +77,9 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
     visitCallSPIRVMemoryBarrier(&CI);
     return;
   }
+  if (OC == OpControlBarrier) {
+    visitCallSPIRVControlBarrier(&CI);
+  }
   if (isAtomicOpCode(OC)) {
     visitCallSPIRVAtomicBuiltin(&CI, OC);
     return;
