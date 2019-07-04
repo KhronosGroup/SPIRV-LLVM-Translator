@@ -608,7 +608,6 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(to_global, GenericCastToPtrExplicit)
   _SPIRV_OP(to_local, GenericCastToPtrExplicit)
   _SPIRV_OP(to_private, GenericCastToPtrExplicit)
-  _SPIRV_OP(work_group_barrier, ControlBarrier)
   // CL 2.0 pipe builtins
   _SPIRV_OP(read_pipe_2, ReadPipe)
   _SPIRV_OP(write_pipe_2, WritePipe)
