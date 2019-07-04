@@ -112,6 +112,11 @@ public:
   /// - OCL1.2: mem_fence
   virtual void visitCallSPIRVMemoryBarrier(CallInst *CI) = 0;
 
+  /// Transform __spirv_ControlBarrier to:
+  /// - OCL2.0: work_group_barrier or sub_group barrier
+  /// - OCL1.2: barrier
+  virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
+
   static char ID;
 
 protected:
