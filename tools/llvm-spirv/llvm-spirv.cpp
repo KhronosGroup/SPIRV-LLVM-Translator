@@ -67,7 +67,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
 
 #define DEBUG_TYPE "spirv"
 
@@ -101,6 +104,14 @@ static cl::opt<VersionNumber> MaxSPIRVVersion(
     cl::values(clEnumValN(VersionNumber::SPIRV_1_0, "1.0", "SPIR-V 1.0"),
                clEnumValN(VersionNumber::SPIRV_1_1, "1.1", "SPIR-V 1.1")),
     cl::init(VersionNumber::MaximumVersion));
+
+static cl::list<std::string>
+    SPVExt("spirv-ext", cl::CommaSeparated,
+           cl::desc("Specify list of allowed/disallowed extensions"),
+           cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
+           cl::ValueRequired);
+
+using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 namespace SPIRV {
@@ -268,6 +279,66 @@ static int regularizeLLVM() {
   return 0;
 }
 
+static int parseSPVExtOption(
+    SPIRV::TranslatorOpts::ExtensionsStatusMap &ExtensionsStatus) {
+  // Map name -> id for known extensions
+  std::map<std::string, ExtensionID> ExtensionNamesMap;
+#define _STRINGIFY(X) #X
+#define STRINGIFY(X) _STRINGIFY(X)
+#define EXT(X) ExtensionNamesMap[STRINGIFY(X)] = ExtensionID::X;
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+#undef STRINGIFY
+#undef _STRINGIFY
+
+  // Set the initial state:
+  //  - during SPIR-V consumption, assume that any known extension is allowed.
+  //  - during SPIR-V generation, assume that any known extension is disallowed.
+  //  - during conversion to/from SPIR-V text representation, assume that any
+  //    known extension is allowed.
+  for (const auto &It : ExtensionNamesMap)
+    ExtensionsStatus[It.second] = IsReverse;
+
+  if (SPVExt.empty())
+    return 0; // Nothing to do
+
+  for (unsigned i = 0; i < SPVExt.size(); ++i) {
+    const std::string &ExtString = SPVExt[i];
+    if ('+' != ExtString.front() && '-' != ExtString.front()) {
+      errs() << "Invalid value of --spirv-ext, expected format is:\n"
+             << "\t--spirv-ext=+EXT_NAME,-EXT_NAME\n";
+      return -1;
+    }
+
+    auto ExtName = ExtString.substr(1);
+
+    if (ExtName.empty()) {
+      errs() << "Invalid value of --spirv-ext, expected format is:\n"
+             << "\t--spirv-ext=+EXT_NAME,-EXT_NAME\n";
+      return -1;
+    }
+
+    bool ExtStatus = ('+' == ExtString.front());
+    if ("all" == ExtName) {
+      // Update status for all known extensions
+      for (const auto &It : ExtensionNamesMap)
+        ExtensionsStatus[It.second] = ExtStatus;
+    } else {
+      // Reject unknown extensions
+      const auto &It = ExtensionNamesMap.find(ExtName);
+      if (ExtensionNamesMap.end() == It) {
+        errs() << "Unknown extension '" << ExtName << "' was specified via "
+               << "--spirv-ext option\n";
+        return -1;
+      }
+
+      ExtensionsStatus[It->second] = ExtStatus;
+    }
+  }
+
+  return 0;
+}
+
 int main(int Ac, char **Av) {
   EnablePrettyStackTrace();
   sys::PrintStackTraceOnErrorSignal(Av[0]);
@@ -275,7 +346,14 @@ int main(int Ac, char **Av) {
 
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
-  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion);
+  SPIRV::TranslatorOpts::ExtensionsStatusMap ExtensionsStatus;
+  // ExtensionsStatus will be properly initialized and update according to
+  // values passed via --spirv-ext option in parseSPVExtOption function.
+  int Ret = parseSPVExtOption(ExtensionsStatus);
+  if (0 != Ret)
+    return Ret;
+
+  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, ExtensionsStatus);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
