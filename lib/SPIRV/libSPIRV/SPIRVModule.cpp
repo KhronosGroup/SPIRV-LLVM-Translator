@@ -1804,7 +1804,13 @@ bool convertSpirv(std::istream &IS, std::ostream &OS, std::string &ErrMsg,
                   bool FromText, bool ToText) {
   auto SaveOpt = SPIRVUseTextFormat;
   SPIRVUseTextFormat = FromText;
+  // Conversion from/to SPIR-V text representation is a side feature of the
+  // translator which is mostly intended for debug usage. So, this step cannot
+  // be customized to enable/disable particular extensions or restrict/allow
+  // particular SPIR-V versions: all known SPIR-V versions are allowed, all
+  // known SPIR-V extensions are enabled during this conversion
   SPIRV::TranslatorOpts DefaultOpts;
+  DefaultOpts.enableAllExtensions();
   SPIRVModuleImpl M(DefaultOpts);
   IS >> M;
   if (M.getError(ErrMsg) != SPIRVEC_Success) {

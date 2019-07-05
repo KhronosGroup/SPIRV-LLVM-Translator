@@ -2356,7 +2356,7 @@ protected:
     return getVec(CapabilitySubgroupImageMediaBlockIOINTEL);
   }
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_media_block_io);
+    return getSet(ExtensionID::SPV_INTEL_media_block_io);
   }
 };
 
