@@ -1,4 +1,5 @@
-//===- SPIRVToOCL20.cpp - Transform SPIR-V builtins to OCL20 builtins------===//
+//===- SPIRVToOCL12.cpp - Transform SPIR-V builtins to OCL 1.2
+// builtins------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,20 +33,20 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements transform SPIR-V builtins to OCL 2.0 builtins.
+// This file implements transform of SPIR-V builtins to OCL 1.2 builtins.
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "spvtocl20"
-
 #include "SPIRVToOCL.h"
 #include "llvm/IR/Verifier.h"
 
+#define DEBUG_TYPE "spvtocl12"
+
 namespace SPIRV {
 
-class SPIRVToOCL20 : public SPIRVToOCL {
+class SPIRVToOCL12 : public SPIRVToOCL {
 public:
-  SPIRVToOCL20() {
-    initializeSPIRVToOCL20Pass(*PassRegistry::getPassRegistry());
+  SPIRVToOCL12() {
+    initializeSPIRVToOCL12Pass(*PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override;
 
@@ -55,7 +56,7 @@ public:
   void visitCallSPIRVMemoryBarrier(CallInst *CI) override;
 };
 
-bool SPIRVToOCL20::runOnModule(Module &Module) {
+bool SPIRVToOCL12::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
   visit(*M);
@@ -64,7 +65,7 @@ bool SPIRVToOCL20::runOnModule(Module &Module) {
 
   eraseUselessFunctions(&Module);
 
-  LLVM_DEBUG(dbgs() << "After SPIRVToOCL20:\n" << *M);
+  LLVM_DEBUG(dbgs() << "After SPIRVToOCL12:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
@@ -74,7 +75,7 @@ bool SPIRVToOCL20::runOnModule(Module &Module) {
   return true;
 }
 
-void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
+void SPIRVToOCL12::visitCallSPIRVMemoryBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(
       M, CI,
@@ -82,20 +83,17 @@ void SPIRVToOCL20::visitCallSPIRVMemoryBarrier(CallInst *CI) {
         auto GetArg = [=](unsigned I) {
           return cast<ConstantInt>(Args[I])->getZExtValue();
         };
-        auto MScope = static_cast<Scope>(GetArg(0));
         auto Sema = mapSPIRVMemSemanticToOCL(GetArg(1));
-        Args.resize(3);
+        Args.resize(1);
         Args[0] = getInt32(M, Sema.first);
-        Args[1] = getInt32(M, Sema.second);
-        Args[2] = getInt32(M, rmap<OCLScopeKind>(MScope));
-        return kOCLBuiltinName::AtomicWorkItemFence;
+        return kOCLBuiltinName::MemFence;
       },
       &Attrs);
 }
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVToOCL20, "spvtoocl20",
-                "Translate SPIR-V builtins to OCL 2.0 builtins", false, false)
+INITIALIZE_PASS(SPIRVToOCL12, "spvtoocl12",
+                "Translate SPIR-V builtins to OCL 1.2 builtins", false, false)
 
-ModulePass *llvm::createSPIRVToOCL20() { return new SPIRVToOCL20(); }
+ModulePass *llvm::createSPIRVToOCL12() { return new SPIRVToOCL12(); }

@@ -2957,8 +2957,7 @@ bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
     Succeed = false;
   }
   llvm::legacy::PassManager PassMgr;
-  PassMgr.add(createSPIRVToOCL20());
-  PassMgr.add(createOCL20To12());
+  PassMgr.add(createSPIRVToOCL(*M));
   PassMgr.run(*M);
 
   if (DbgSaveTmpLLVM)
