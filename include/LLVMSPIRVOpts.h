@@ -33,7 +33,7 @@
 //===----------------------------------------------------------------------===//
 /// \file LLVMSPIRVOpts.h
 ///
-/// This files declares helper classes to handle SPIR-V versions.
+/// This files declares helper classes to handle SPIR-V versions and extensions.
 ///
 //===----------------------------------------------------------------------===//
 #ifndef SPIRV_LLVMSPIRVOPTS_H
@@ -41,6 +41,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <map>
 
 namespace SPIRV {
 
@@ -61,15 +62,34 @@ enum class BIsRepresentation : uint32_t { OpenCL12, OpenCL20, SPIRVFriendlyIR };
 
 enum class DebugInfoEIS : uint32_t { SPIRV_Debug, OpenCL_DebugInfo_100 };
 
+enum class ExtensionID : uint32_t {
+  First,
+#define EXT(X) X,
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+  Last,
+};
+
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
 public:
+  using ExtensionsStatusMap = std::map<ExtensionID, bool>;
+
   TranslatorOpts() = default;
 
-  TranslatorOpts(VersionNumber Max) : MaxVersion(Max) {}
+  TranslatorOpts(VersionNumber Max, const ExtensionsStatusMap &Map = {})
+      : MaxVersion(Max), ExtStatusMap(Map) {}
 
   bool isAllowedToUseVersion(VersionNumber RequestedVersion) const {
     return RequestedVersion <= MaxVersion;
+  }
+
+  bool isAllowedToUseExtension(ExtensionID Extension) const {
+    auto I = ExtStatusMap.find(Extension);
+    if (ExtStatusMap.end() == I)
+      return false;
+
+    return I->second;
   }
 
   VersionNumber getMaxVersion() const { return MaxVersion; }
@@ -123,6 +143,12 @@ public:
     ReplaceLLVMFmulAddWithOpenCLMad = Value;
   }
 
+  void enableAllExtensions() {
+#define EXT(X) ExtStatusMap[ExtensionID::X] = true;
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+  }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -148,6 +174,8 @@ private:
   // Controls whether llvm.fmuladd.* should be replaced with mad from OpenCL
   // extended instruction set or with a simple fmul + fadd
   bool ReplaceLLVMFmulAddWithOpenCLMad = true;
+
+  ExtensionsStatusMap ExtStatusMap;
 };
 
 } // namespace SPIRV
