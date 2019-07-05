@@ -33,7 +33,7 @@
 //===----------------------------------------------------------------------===//
 /// \file LLVMSPIRVOpts.h
 ///
-/// This files declares helper classes to handle SPIR-V versions.
+/// This files declares helper classes to handle SPIR-V versions and extensions.
 ///
 //===----------------------------------------------------------------------===//
 #ifndef SPIRV_LLVMSPIRVOPTS_H
@@ -41,6 +41,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <map>
 
 namespace SPIRV {
 
@@ -55,21 +56,47 @@ enum class VersionNumber : uint32_t {
   MaximumVersion = SPIRV_1_1
 };
 
+enum class ExtensionID : uint32_t {
+  First,
+#define EXT(X) X,
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+  Last,
+};
+
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
 public:
+  using ExtensionsStatusMap = std::map<ExtensionID, bool>;
+
   TranslatorOpts() = default;
 
-  TranslatorOpts(VersionNumber Max) : MaxVersion(Max) {}
+  TranslatorOpts(VersionNumber Max, const ExtensionsStatusMap &Map = {})
+      : MaxVersion(Max), ExtStatusMap(Map) {}
 
   bool isAllowedToUseVersion(VersionNumber RequestedVersion) const {
     return RequestedVersion <= MaxVersion;
   }
 
+  bool isAllowedToUseExtension(ExtensionID Extension) const {
+    auto I = ExtStatusMap.find(Extension);
+    if (ExtStatusMap.end() == I)
+      return false;
+
+    return I->second;
+  }
+
   VersionNumber getMaxVersion() const { return MaxVersion; }
+
+  void enableAllExtensions() {
+#define EXT(X) ExtStatusMap[ExtensionID::X] = true;
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+  }
 
 private:
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
+  ExtensionsStatusMap ExtStatusMap;
 };
 
 } // namespace SPIRV

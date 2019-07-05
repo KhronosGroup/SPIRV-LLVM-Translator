@@ -3053,6 +3053,9 @@ llvm::convertSpirvToLLVM(LLVMContext &C, SPIRVModule &BM, std::string &ErrMsg) {
 bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
                      std::string &ErrMsg) {
   SPIRV::TranslatorOpts DefaultOpts;
+  // As it is stated in the documentation, the translator accepts all SPIR-V
+  // extensions by default
+  DefaultOpts.enableAllExtensions();
   return llvm::readSpirv(C, DefaultOpts, IS, M, ErrMsg);
 }
 
