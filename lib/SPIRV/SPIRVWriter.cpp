@@ -1978,6 +1978,9 @@ bool isValidLLVMModule(Module *M, SPIRVErrorLog &ErrorLog) {
 
 bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
   SPIRV::TranslatorOpts DefaultOpts;
+  // To preserve old behavior of the translator, let's enable all extensions
+  // by default in this API
+  DefaultOpts.enableAllExtensions();
   return llvm::writeSpirv(M, DefaultOpts, OS, ErrMsg);
 }
 

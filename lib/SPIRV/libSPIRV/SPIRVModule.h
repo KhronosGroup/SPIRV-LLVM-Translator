@@ -402,6 +402,11 @@ public:
     return TranslationOpts.getMaxVersion();
   }
 
+  virtual bool
+  isAllowedToUseExtension(ExtensionID RequestedExtension) const final {
+    return TranslationOpts.isAllowedToUseExtension(RequestedExtension);
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);
