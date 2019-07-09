@@ -1,4 +1,5 @@
-//===- OCL20To12.cpp - Transform OCL 2.0 builtins to OCL 1.2 builtins -----===//
+//===- SPIRVToOCL12.cpp - Transform SPIR-V builtins to OCL 1.2
+// builtins------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,60 +33,38 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements transform OCL 2.0 builtins to OCL 1.2 builtins.
+// This file implements transform of SPIR-V builtins to OCL 1.2 builtins.
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "ocl20to12"
-
-#include "OCLUtil.h"
-#include "SPIRVInternal.h"
-#include "llvm/ADT/StringSwitch.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InstVisitor.h"
-#include "llvm/IR/Instructions.h"
+#include "SPIRVToOCL.h"
 #include "llvm/IR/Verifier.h"
-#include "llvm/Pass.h"
-#include "llvm/PassSupport.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/raw_ostream.h"
 
-using namespace llvm;
-using namespace SPIRV;
-using namespace OCLUtil;
+#define DEBUG_TYPE "spvtocl12"
 
 namespace SPIRV {
-class OCL20To12 : public ModulePass, public InstVisitor<OCL20To12> {
+class SPIRVToOCL12 : public SPIRVToOCL {
 public:
-  OCL20To12() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
-    initializeOCL20To12Pass(*PassRegistry::getPassRegistry());
+  SPIRVToOCL12() {
+    initializeSPIRVToOCL12Pass(*PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override;
-  virtual void visitCallInst(CallInst &CI);
 
-  /// Transform atomic_work_item_fence to mem_fence.
-  ///   atomic_work_item_fence(flag, relaxed, work_group) =>
-  ///       mem_fence(flag)
-  void visitCallAtomicWorkItemFence(CallInst *CI);
-
-  static char ID;
-
-private:
-  Module *M;
-  LLVMContext *Ctx;
+  /// Transform __spirv_MemoryBarrier to atomic_work_item_fence.
+  ///   __spirv_MemoryBarrier(scope, sema) =>
+  ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))
+  void visitCallSPIRVMemoryBarrier(CallInst *CI) override;
 };
 
-char OCL20To12::ID = 0;
-
-bool OCL20To12::runOnModule(Module &Module) {
+bool SPIRVToOCL12::runOnModule(Module &Module) {
   M = &Module;
-  if (getOCLVersion(M) >= kOCLVer::CL20)
-    return false;
-
   Ctx = &M->getContext();
   visit(*M);
 
-  LLVM_DEBUG(dbgs() << "After OCL20To12:\n" << *M);
+  translateMangledAtomicTypeName();
+
+  eraseUselessFunctions(&Module);
+
+  LLVM_DEBUG(dbgs() << "After SPIRVToOCL12:\n" << *M);
 
   std::string Err;
   raw_string_ostream ErrorOS(Err);
@@ -95,37 +74,16 @@ bool OCL20To12::runOnModule(Module &Module) {
   return true;
 }
 
-void OCL20To12::visitCallInst(CallInst &CI) {
-  LLVM_DEBUG(dbgs() << "[visistCallInst] " << CI << '\n');
-  auto F = CI.getCalledFunction();
-  if (!F)
-    return;
-
-  auto MangledName = F->getName();
-  std::string DemangledName;
-  if (!oclIsBuiltin(MangledName, &DemangledName))
-    return;
-  LLVM_DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n');
-
-  if (DemangledName == kOCLBuiltinName::AtomicWorkItemFence) {
-    visitCallAtomicWorkItemFence(&CI);
-    return;
-  }
-}
-
-void OCL20To12::visitCallAtomicWorkItemFence(CallInst *CI) {
-  auto Lit = getAtomicWorkItemFenceLiterals(CI);
-  if (std::get<1>(Lit) != OCLLegacyAtomicMemOrder ||
-      std::get<2>(Lit) != OCLLegacyAtomicMemScope)
-    report_fatal_error("OCL 2.0 builtin atomic_work_item_fence used in 1.2",
-                       false);
-
-  assert(CI->getCalledFunction() && "Unexpected indirect call");
+void SPIRVToOCL12::visitCallSPIRVMemoryBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(M, CI,
                     [=](CallInst *, std::vector<Value *> &Args) {
+                      auto GetArg = [=](unsigned I) {
+                        return cast<ConstantInt>(Args[I])->getZExtValue();
+                      };
+                      auto Sema = mapSPIRVMemSemanticToOCL(GetArg(1));
                       Args.resize(1);
-                      Args[0] = getInt32(M, std::get<0>(Lit));
+                      Args[0] = getInt32(M, Sema.first);
                       return kOCLBuiltinName::MemFence;
                     },
                     &Attrs);
@@ -133,7 +91,7 @@ void OCL20To12::visitCallAtomicWorkItemFence(CallInst *CI) {
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(OCL20To12, "ocl20to12",
-                "Translate OCL 2.0 builtins to OCL 1.2 builtins", false, false)
+INITIALIZE_PASS(SPIRVToOCL12, "spvtoocl12",
+                "Translate SPIR-V builtins to OCL 1.2 builtins", false, false)
 
-ModulePass *llvm::createOCL20To12() { return new OCL20To12(); }
+ModulePass *llvm::createSPIRVToOCL12() { return new SPIRVToOCL12(); }
