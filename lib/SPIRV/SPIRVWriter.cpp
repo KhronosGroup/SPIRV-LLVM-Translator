@@ -1108,7 +1108,7 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
 }
 
 std::vector<std::pair<Decoration, std::string>>
-parseAnnotations(StringRef AnnotatedCode) {
+tryParseIntelFPGAAnnotationString(StringRef AnnotatedCode) {
   std::vector<std::pair<Decoration, std::string>> Decorates;
 
   size_t OpenBracketNum = AnnotatedCode.count('{');
@@ -1157,13 +1157,17 @@ parseAnnotations(StringRef AnnotatedCode) {
 void addIntelFPGADecorations(
     SPIRVEntry *E,
     std::vector<std::pair<Decoration, std::string>> &Decorations) {
+  if (!E->getModule()->isAllowedToUseExtension(
+          ExtensionID::SPV_INTEL_fpga_memory_attributes))
+    return;
+
   for (const auto &I : Decorations) {
     switch (I.first) {
-    case DecorationMemoryINTEL:
-      E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second));
-      break;
     case DecorationUserSemantic:
       E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second));
+      break;
+    case DecorationMemoryINTEL:
+      E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second));
       break;
     case DecorationMergeINTEL: {
       StringRef Name = StringRef(I.second).split(':').first;
@@ -1195,15 +1199,19 @@ void addIntelFPGADecorations(
 void addIntelFPGADecorationsForStructMember(
     SPIRVEntry *E, SPIRVWord MemberNumber,
     std::vector<std::pair<Decoration, std::string>> &Decorations) {
+  if (!E->getModule()->isAllowedToUseExtension(
+          ExtensionID::SPV_INTEL_fpga_memory_attributes))
+    return;
+
   for (const auto &I : Decorations) {
     switch (I.first) {
-    case DecorationMemoryINTEL:
-      E->addMemberDecorate(
-          new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second));
-      break;
     case DecorationUserSemantic:
       E->addMemberDecorate(
           new SPIRVMemberDecorateUserSemanticAttr(E, MemberNumber, I.second));
+      break;
+    case DecorationMemoryINTEL:
+      E->addMemberDecorate(
+          new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second));
       break;
     case DecorationMergeINTEL: {
       StringRef Name = StringRef(I.second).split(':').first;
@@ -1359,8 +1367,15 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     StringRef AnnotationString =
         cast<ConstantDataArray>(C->getOperand(0))->getAsString();
 
-    std::vector<std::pair<Decoration, std::string>> Decorations =
-        parseAnnotations(AnnotationString);
+    std::vector<std::pair<Decoration, std::string>> Decorations;
+    if (BB->getModule()->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_fpga_memory_attributes))
+      // If it is allowed, let's try to parse annotation string to find
+      // IntelFPGA-specific decorations
+      Decorations = tryParseIntelFPGAAnnotationString(AnnotationString);
+
+    // If we didn't find any IntelFPGA-specific decorations, let's add the whole
+    // annotation string as UserSemantic Decoration
     if (Decorations.empty()) {
       SV->addDecorate(new SPIRVDecorateUserSemanticAttr(
           SV, AnnotationString.substr(0, AnnotationString.size() - 1)));
@@ -1388,9 +1403,15 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
       SPIRVWord MemberNumber =
           dyn_cast<ConstantInt>(GI->getOperand(2))->getZExtValue();
 
-      std::vector<std::pair<Decoration, std::string>> Decorations =
-          parseAnnotations(AnnotationString);
+      std::vector<std::pair<Decoration, std::string>> Decorations;
+      if (BB->getModule()->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_fpga_memory_attributes))
+        // If it is allowed, let's try to parse annotation string to find
+        // IntelFPGA-specific decorations
+        Decorations = tryParseIntelFPGAAnnotationString(AnnotationString);
 
+      // If we didn't find any IntelFPGA-specific decorations, let's add the
+      // whole annotation string as UserSemantic Decoration
       if (Decorations.empty()) {
         Ty->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
             Ty, MemberNumber, AnnotationString));
