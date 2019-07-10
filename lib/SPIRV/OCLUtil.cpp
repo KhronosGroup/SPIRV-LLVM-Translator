@@ -417,6 +417,8 @@ static FunctionType *getBlockInvokeTy(Function *F, unsigned BlockIdx) {
 class OCLBuiltinFuncMangleInfo : public SPIRV::BuiltinFuncMangleInfo {
 public:
   OCLBuiltinFuncMangleInfo(Function *F) : F(F) {}
+  OCLBuiltinFuncMangleInfo(ArrayRef<Type *> ArgTypes)
+      : ArgTypes(ArgTypes.vec()) {}
   void init(const std::string &UniqName) override {
     UnmangledName = UniqName;
     size_t Pos = std::string::npos;
@@ -655,11 +657,40 @@ public:
           }
         }
       }
+    } else if (UnmangledName == "intel_sub_group_shuffle_down" ||
+               UnmangledName == "intel_sub_group_shuffle_up") {
+      addUnsignedArg(2);
+    } else if (UnmangledName == "intel_sub_group_shuffle" ||
+               UnmangledName == "intel_sub_group_shuffle_xor") {
+      addUnsignedArg(1);
+    } else if (UnmangledName.find("intel_sub_group_block_write") !=
+               std::string::npos) {
+      // distinguish write to image and other data types as position
+      // of uint argument is different though name is the same.
+      assert(ArgTypes.size() && "lack of necessary information");
+      if (ArgTypes[0]->isPointerTy() &&
+          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+        addUnsignedArg(0);
+        addUnsignedArg(1);
+      } else {
+        addUnsignedArg(2);
+      }
+    } else if (UnmangledName.find("intel_sub_group_block_read") !=
+               std::string::npos) {
+      // distinguish read from image and other data types as position
+      // of uint argument is different though name is the same.
+      assert(ArgTypes.size() && "lack of necessary information");
+      if (ArgTypes[0]->isPointerTy() &&
+          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+        setArgAttr(0, SPIR::ATTR_CONST);
+        addUnsignedArg(0);
+      }
     }
   }
-  // Auxiliarry information, it is expected what it is relevant at the moment
+  // Auxiliarry information, it is expected that it is relevant at the moment
   // the init method is called.
   Function *F; // SPIRV decorated function
+  std::vector<Type *> ArgTypes; // Arguments of OCL builtin
 };
 
 CallInst *mutateCallInstOCL(
@@ -797,6 +828,6 @@ void checkFpContract(BinaryOperator *B, SPIRVBasicBlock *BB) {
 void llvm::mangleOpenClBuiltin(const std::string &UniqName,
                                ArrayRef<Type *> ArgTypes,
                                std::string &MangledName) {
-  OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo(nullptr);
+  OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo(ArgTypes);
   MangledName = SPIRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }
