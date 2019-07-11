@@ -489,6 +489,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "SubgroupAvcMotionEstimationChromaINTEL");
   add(CapabilityFPGAMemoryAttributesINTEL, "FPGAMemoryAttributesINTEL");
   add(CapabilityFPGALoopControlsINTEL, "FPGALoopControlsINTEL");
+  add(CapabilityFPGARegINTEL, "FPGARegINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
