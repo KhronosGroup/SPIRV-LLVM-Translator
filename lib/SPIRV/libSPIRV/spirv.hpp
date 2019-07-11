@@ -680,6 +680,7 @@ enum Capability {
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
   CapabilityFPGAMemoryAttributesINTEL = 5824,
   CapabilityFPGALoopControlsINTEL = 5888,
+  CapabilityFPGARegINTEL = 5948,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1124,6 +1125,7 @@ enum Op {
   OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL = 5814,
   OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL = 5815,
   OpSubgroupAvcSicGetInterRawSadsINTEL = 5816,
+  OpFPGARegINTEL = 5949,
   OpMax = 0x7fffffff,
 };
 
