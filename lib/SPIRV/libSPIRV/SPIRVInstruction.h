@@ -2116,6 +2116,24 @@ _SPIRV_OP(GroupCommitReadPipe, false, 6)
 _SPIRV_OP(GroupCommitWritePipe, false, 6)
 #undef _SPIRV_OP
 
+class SPIRVBlockingPipesIntelInst : public SPIRVInstTemplateBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityBlockingPipesINTEL);
+  }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(SPV_INTEL_blocking_pipes);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVBlockingPipesIntelInst, Op##x, __VA_ARGS__>   \
+      SPIRV##x;
+_SPIRV_OP(ReadPipeBlockingINTEL, false, 5)
+_SPIRV_OP(WritePipeBlockingINTEL, false, 5)
+#undef _SPIRV_OP
+
 class SPIRVAtomicInstBase : public SPIRVInstTemplateBase {
 public:
   SPIRVCapVec getRequiredCapability() const override {
