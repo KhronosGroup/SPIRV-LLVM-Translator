@@ -279,10 +279,9 @@ const char *getSPIRVersionAsString(SPIRversion Version) {
     return "SPIR 1.2";
   case SPIR20:
     return "SPIR 2.0";
-  default:
-    assert(false && "Unknown SPIR Version");
-    return "Unknown SPIR Version";
   }
+  assert(false && "Unknown SPIR Version");
+  return "Unknown SPIR Version";
 }
 
 } // namespace SPIR
