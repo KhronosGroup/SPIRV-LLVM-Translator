@@ -1517,6 +1517,7 @@ protected:
     case OpTypeVector:
       assert(getConstituents().size() > 1 &&
              "There must be at least two Constituent operands in vector");
+      break;
     case OpTypeArray:
     case OpTypeStruct:
       break;
