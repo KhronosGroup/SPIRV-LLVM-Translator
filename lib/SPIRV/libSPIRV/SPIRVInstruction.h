@@ -1522,7 +1522,7 @@ protected:
     case OpTypeStruct:
       break;
     default:
-      static_assert("Invalid type", "");
+      assert(false && "Invalid type");
     }
   }
   std::vector<SPIRVId> Constituents;
