@@ -362,32 +362,18 @@ std::string SPIRVToOCL::getGroupBuiltinPrefix(CallInst *CI) {
   return Prefix;
 }
 
-Instruction *SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
+CallInst *SPIRVToOCL::mutateCommonAtomicArguments(CallInst *CI, Op OC) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  Instruction *PInsertBefore = CI;
 
   return mutateCallInstOCL(
       M, CI,
-      [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy) {
+      [=](CallInst *, std::vector<Value *> &Args) {
         auto Ptr = findFirstPtr(Args);
         auto Name = OCLSPIRVBuiltinMap::rmap(OC);
         auto NumOrder = getAtomicBuiltinNumMemoryOrderArgs(Name);
         auto ScopeIdx = Ptr + 1;
         auto OrderIdx = Ptr + 2;
-        if (OC == OpAtomicIIncrement || OC == OpAtomicIDecrement) {
-          // Since OpenCL 1.2 atomic_inc and atomic_dec builtins don't have,
-          // memory scope and memory order syntax, and OpenCL 2.0 doesn't have
-          // such builtins, therefore we translate these instructions to
-          // atomic_fetch_add_explicit and atomic_fetch_sub_explicit OpenCL 2.0
-          // builtins with "operand" argument = 1.
-          Name = OCLSPIRVBuiltinMap::rmap(
-              OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
-          Type *ValueTy =
-              cast<PointerType>(Args[Ptr]->getType())->getElementType();
-          assert(ValueTy->isIntegerTy());
-          Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
-        }
         if (auto *ScopeInt = dyn_cast_or_null<ConstantInt>(Args[ScopeIdx])) {
           Args[ScopeIdx] = mapUInt(M, ScopeInt, [](unsigned I) {
             return rmap<OCLScopeKind>(static_cast<Scope>(I));
@@ -430,49 +416,93 @@ Instruction *SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
           }
         }
         std::swap(Args[ScopeIdx], Args.back());
-        if (OC == OpAtomicCompareExchange ||
-            OC == OpAtomicCompareExchangeWeak) {
-          // OpAtomicCompareExchange[Weak] semantics is different from
-          // atomic_compare_exchange_[strong|weak] semantics as well as
-          // arguments order.
-          // OCL built-ins returns boolean value and stores a new/original
-          // value by pointer passed as 2nd argument (aka expected) while SPIR-V
-          // instructions returns this new/original value as a resulting value.
-          AllocaInst *PExpected =
-              new AllocaInst(CI->getType(), 0, "expected",
-                             &(*PInsertBefore->getParent()
-                                    ->getParent()
-                                    ->getEntryBlock()
-                                    .getFirstInsertionPt()));
-          PExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
-          new StoreInst(Args[1], PExpected, PInsertBefore);
-          unsigned AddrSpc = SPIRAS_Generic;
-          Type *PtrTyAS =
-              PExpected->getType()->getElementType()->getPointerTo(AddrSpc);
-          Args[1] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
-              PExpected, PtrTyAS, PExpected->getName() + ".as", PInsertBefore);
-          std::swap(Args[3], Args[4]);
-          std::swap(Args[2], Args[3]);
-          RetTy = Type::getInt1Ty(*Ctx);
-        }
         return Name;
       },
+      &Attrs);
+}
+
+Instruction *SPIRVToOCL::visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  Instruction *PInsertBefore = CI;
+
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy) {
+        // OpAtomicCompareExchange[Weak] semantics is different from
+        // atomic_compare_exchange_[strong|weak] semantics as well as
+        // arguments order.
+        // OCL built-ins returns boolean value and stores a new/original
+        // value by pointer passed as 2nd argument (aka expected) while SPIR-V
+        // instructions returns this new/original value as a resulting value.
+        AllocaInst *PExpected = new AllocaInst(CI->getType(), 0, "expected",
+                                               &(*PInsertBefore->getParent()
+                                                      ->getParent()
+                                                      ->getEntryBlock()
+                                                      .getFirstInsertionPt()));
+        PExpected->setAlignment(CI->getType()->getScalarSizeInBits() / 8);
+        new StoreInst(Args[1], PExpected, PInsertBefore);
+        unsigned AddrSpc = SPIRAS_Generic;
+        Type *PtrTyAS =
+            PExpected->getType()->getElementType()->getPointerTo(AddrSpc);
+        Args[1] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
+            PExpected, PtrTyAS, PExpected->getName() + ".as", PInsertBefore);
+        std::swap(Args[3], Args[4]);
+        std::swap(Args[2], Args[3]);
+        RetTy = Type::getInt1Ty(*Ctx);
+        return OCLSPIRVBuiltinMap::rmap(OC);
+      },
       [=](CallInst *CI) -> Instruction * {
-        if (OC == OpAtomicCompareExchange ||
-            OC == OpAtomicCompareExchangeWeak) {
-          // OCL built-ins atomic_compare_exchange_[strong|weak] return boolean
-          // value. So, to obtain the same value as SPIR-V instruction is
-          // returning it has to be loaded from the memory where 'expected'
-          // value is stored. This memory must contain the needed value after a
-          // call to OCL built-in is completed.
-          LoadInst *POriginal =
-              new LoadInst(CI->getArgOperand(1), "original", PInsertBefore);
-          return POriginal;
-        }
-        // For other built-ins the return values match.
-        return CI;
+        // OCL built-ins atomic_compare_exchange_[strong|weak] return boolean
+        // value. So, to obtain the same value as SPIR-V instruction is
+        // returning it has to be loaded from the memory where 'expected'
+        // value is stored. This memory must contain the needed value after a
+        // call to OCL built-in is completed.
+        return new LoadInst(CI->getArgOperand(1), "original", PInsertBefore);
       },
       &Attrs);
+}
+
+Instruction *SPIRVToOCL::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        // Since OpenCL 1.2 atomic_inc and atomic_dec builtins don't have,
+        // memory scope and memory order syntax, and OpenCL 2.0 doesn't have
+        // such builtins, therefore we translate these instructions to
+        // atomic_fetch_add_explicit and atomic_fetch_sub_explicit OpenCL 2.0
+        // builtins with "operand" argument = 1.
+        auto Name = OCLSPIRVBuiltinMap::rmap(
+            OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
+        auto Ptr = findFirstPtr(Args);
+        Type *ValueTy =
+            cast<PointerType>(Args[Ptr]->getType())->getElementType();
+        assert(ValueTy->isIntegerTy());
+        Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
+        std::swap(Args[Ptr + 1], Args.back());
+        return Name;
+      },
+      &Attrs);
+}
+
+Instruction *SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
+  CallInst *CIG = mutateCommonAtomicArguments(CI, OC);
+
+  Instruction *NewCI = nullptr;
+  switch (OC) {
+  case OpAtomicIIncrement:
+  case OpAtomicIDecrement:
+    NewCI = visitCallSPIRVAtomicIncDec(CIG, OC);
+    break;
+  case OpAtomicCompareExchange:
+  case OpAtomicCompareExchangeWeak:
+    NewCI = visitCallSPIRVAtomicCmpExchg(CIG, OC);
+    break;
+  default:
+    NewCI = CIG;
+  }
+  return NewCI;
 }
 
 } // namespace SPIRV

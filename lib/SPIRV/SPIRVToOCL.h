@@ -101,6 +101,18 @@ public:
   /// workgroup/subgroup scope enums.
   std::string getGroupBuiltinPrefix(CallInst *CI);
 
+  /// Transform atomic common arguments like sema, scope to order(sema),
+  /// map(scope).
+  CallInst *mutateCommonAtomicArguments(CallInst *CI, Op OC);
+
+  /// Transform __spirv_OpAtomicCompareExchange and
+  /// __spirv_OpAtomicCompareExchangeWeak
+  Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC);
+
+  /// Transform __spirv_OpAtomicIIncrement/OpAtomicIDecrement to
+  /// atomic_fetch_add_explicit/atomic_fetch_sub_explicit
+  Instruction *visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC);
+
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(atomic_op, ops, ..., order(sema), map(scope))
