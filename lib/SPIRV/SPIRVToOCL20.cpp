@@ -67,6 +67,10 @@ public:
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(generic atomic_op, ops, ..., order(sema), map(scope))
   Instruction *visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) override;
+
+  /// Transform __spirv_OpAtomicIIncrement / OpAtomicIDecrement to
+  /// atomic_fetch_add_explicit / atomic_fetch_sub_explicit
+  Instruction *visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) override;
 };
 
 bool SPIRVToOCL20::runOnModule(Module &Module) {
@@ -149,6 +153,28 @@ Instruction *SPIRVToOCL20::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
       },
       &Attrs);
   return SPIRVToOCL::visitCallSPIRVAtomicBuiltin(CiFixedAs, OC);
+}
+
+Instruction *SPIRVToOCL20::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        // Since OpenCL 2.0 doesn't have atomic_inc and atomic_dec builtins,
+        // we translate these instructions to atomic_fetch_add_explicit and
+        // atomic_fetch_sub_explicit OpenCL 2.0 builtins with "operand" argument
+        // = 1.
+        auto Name = OCLSPIRVBuiltinMap::rmap(
+            OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
+        auto Ptr = findFirstPtr(Args);
+        Type *ValueTy =
+            cast<PointerType>(Args[Ptr]->getType())->getElementType();
+        assert(ValueTy->isIntegerTy());
+        Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
+        std::swap(Args[Ptr + 1], Args.back());
+        return Name;
+      },
+      &Attrs);
 }
 
 } // namespace SPIRV

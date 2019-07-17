@@ -59,6 +59,10 @@ public:
   ///   __spirv_ControlBarrier(execScope, memScope, sema) =>
   ///       barrier(flag(sema))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
+
+  /// Transform __spirv_OpAtomicIIncrement / OpAtomicIDecrement to
+  /// atomic_inc / atomic_dec
+  Instruction *visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) override;
 };
 
 bool SPIRVToOCL12::runOnModule(Module &Module) {
@@ -110,6 +114,17 @@ void SPIRVToOCL12::visitCallSPIRVControlBarrier(CallInst *CI) {
         Args.resize(1);
         Args[0] = getInt32(M, Sema.first);
         return kOCLBuiltinName::Barrier;
+      },
+      &Attrs);
+}
+
+Instruction *SPIRVToOCL12::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  return mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        Args.resize(1);
+        return OCLSPIRVBuiltinMap::rmap(OC);
       },
       &Attrs);
 }

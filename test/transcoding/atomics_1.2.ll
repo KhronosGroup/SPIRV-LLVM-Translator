@@ -16,10 +16,10 @@ target triple = "spir64-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   ; atomic_inc
-  %inc_ig = tail call spir_func i32 @_Z10atomic_incPVU3AS1i(i32 addrspace(1)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_add_explicitPU3AS1VU7_Atomicii12memory_order12memory_scope(i32 addrspace(1)* {{.*}}, i32 1
-  %dec_jg = tail call spir_func i32 @_Z10atomic_decPVU3AS1j(i32 addrspace(1)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_sub_explicitPU3AS1VU7_Atomicii12memory_order12memory_scope(i32 addrspace(1)* {{.*}}, i32 1
+  %inc_ig = tail call spir_func i32 @_Z10atomic_incPU3AS1Vi(i32 addrspace(1)* %dst) #0
+  ; CHECK: _Z10atomic_incPU3AS1Vi(i32 addrspace(1)* %dst) #0
+  %dec_jg = tail call spir_func i32 @_Z10atomic_decPU3AS1Vj(i32 addrspace(1)* %dst) #0
+  ; CHECK: _Z10atomic_decPU3AS1Vi(i32 addrspace(1)* %dst) #0
 
   ; atomic_max
   %max_ig = tail call spir_func i32 @_Z10atomic_maxPVU3AS1ii(i32 addrspace(1)* %dst, i32 0) #0
@@ -80,12 +80,12 @@ define spir_kernel void @test_atomic_global(i32 addrspace(1)* %dst) #0 !kernel_a
 ; Function Attrs: nounwind
 define spir_kernel void @test_atomic_local(i32 addrspace(3)* %dst) #0 !kernel_arg_addr_space !11 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {
   ; atomic_inc
-  %inc_il = tail call spir_func i32 @_Z10atomic_incPVU3AS3i(i32 addrspace(3)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_add_explicitPU3AS3VU7_Atomicii12memory_order12memory_scope(i32 addrspace(3)* {{.*}}, i32 1
+  %inc_il = tail call spir_func i32 @_Z10atomic_incPU3AS3Vi(i32 addrspace(3)* %dst) #0
+  ; CHECK: _Z10atomic_incPU3AS3Vi(i32 addrspace(3)* %dst) #0
 
   ; atomic dec
-  %dec_jl = tail call spir_func i32 @_Z10atomic_decPVU3AS3j(i32 addrspace(3)* %dst) #0
-  ; CHECK: _Z25atomic_fetch_sub_explicitPU3AS3VU7_Atomicii12memory_order12memory_scope(i32 addrspace(3)* {{.*}}, i32 1
+  %dec_jl = tail call spir_func i32 @_Z10atomic_decPU3AS3Vj(i32 addrspace(3)* %dst) #0
+  ; CHECK: _Z10atomic_decPU3AS3Vi(i32 addrspace(3)* %dst) #0
 
   ; atomic_max
   %max_il = tail call spir_func i32 @_Z10atomic_maxPVU3AS3ii(i32 addrspace(3)* %dst, i32 0) #0
@@ -145,8 +145,8 @@ define spir_kernel void @test_atomic_local(i32 addrspace(3)* %dst) #0 !kernel_ar
 }
 
 ; Function Attrs: nounwind readnone
-declare spir_func i32 @_Z10atomic_incPVU3AS1i(i32 addrspace(1)*)
-declare spir_func i32 @_Z10atomic_decPVU3AS1j(i32 addrspace(1)*)
+declare spir_func i32 @_Z10atomic_incPU3AS1Vi(i32 addrspace(1)*)
+declare spir_func i32 @_Z10atomic_decPU3AS1Vj(i32 addrspace(1)*)
 declare spir_func i32 @_Z10atomic_maxPVU3AS1ii(i32 addrspace(1)*, i32)
 declare spir_func i32 @_Z10atomic_maxPVU3AS1jj(i32 addrspace(1)*, i32)
 declare spir_func i32 @_Z10atomic_minPVU3AS1ii(i32 addrspace(1)*, i32)
@@ -166,8 +166,8 @@ declare spir_func i32 @_Z14atomic_cmpxchgPVU3AS1jjj(i32 addrspace(1)*, i32, i32)
 declare spir_func i32 @_Z11atomic_xchgPVU3AS1ii(i32 addrspace(1)*, i32)
 declare spir_func i32 @_Z11atomic_xchgPVU3AS1jj(i32 addrspace(1)*, i32)
 
-declare spir_func i32 @_Z10atomic_incPVU3AS3i(i32 addrspace(3)*)
-declare spir_func i32 @_Z10atomic_decPVU3AS3j(i32 addrspace(3)*)
+declare spir_func i32 @_Z10atomic_incPU3AS3Vi(i32 addrspace(3)*)
+declare spir_func i32 @_Z10atomic_decPU3AS3Vj(i32 addrspace(3)*)
 declare spir_func i32 @_Z10atomic_maxPVU3AS3ii(i32 addrspace(3)*, i32)
 declare spir_func i32 @_Z10atomic_maxPVU3AS3jj(i32 addrspace(3)*, i32)
 declare spir_func i32 @_Z10atomic_minPVU3AS3ii(i32 addrspace(3)*, i32)

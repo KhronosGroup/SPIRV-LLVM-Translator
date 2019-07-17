@@ -90,7 +90,7 @@ public:
 
   /// Transform __spirv_* builtins to OCL 2.0 builtins.
   /// No change with arguments.
-  void visitCallSPIRVBuiltin(CallInst *CI, Op OC);
+  Instruction *visitCallSPIRVBuiltin(CallInst *CI, Op OC);
 
   /// Translate mangled atomic type name: "atomic_" =>
   ///   MangledAtomicTypeNamePrefix
@@ -111,7 +111,7 @@ public:
 
   /// Transform __spirv_OpAtomicIIncrement/OpAtomicIDecrement to
   /// atomic_fetch_add_explicit/atomic_fetch_sub_explicit
-  Instruction *visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC);
+  virtual Instruction *visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) = 0;
 
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>

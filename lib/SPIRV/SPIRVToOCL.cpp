@@ -319,9 +319,9 @@ void SPIRVToOCL::visitCallSPIRVPipeBuiltin(CallInst *CI, Op OC) {
       &Attrs);
 }
 
-void SPIRVToOCL::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
+Instruction *SPIRVToOCL::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstOCL(
+  return mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
         return OCLSPIRVBuiltinMap::rmap(OC);
@@ -459,29 +459,6 @@ Instruction *SPIRVToOCL::visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) {
         // value is stored. This memory must contain the needed value after a
         // call to OCL built-in is completed.
         return new LoadInst(CI->getArgOperand(1), "original", PInsertBefore);
-      },
-      &Attrs);
-}
-
-Instruction *SPIRVToOCL::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
-  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  return mutateCallInstOCL(
-      M, CI,
-      [=](CallInst *, std::vector<Value *> &Args) {
-        // Since OpenCL 1.2 atomic_inc and atomic_dec builtins don't have,
-        // memory scope and memory order syntax, and OpenCL 2.0 doesn't have
-        // such builtins, therefore we translate these instructions to
-        // atomic_fetch_add_explicit and atomic_fetch_sub_explicit OpenCL 2.0
-        // builtins with "operand" argument = 1.
-        auto Name = OCLSPIRVBuiltinMap::rmap(
-            OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
-        auto Ptr = findFirstPtr(Args);
-        Type *ValueTy =
-            cast<PointerType>(Args[Ptr]->getType())->getElementType();
-        assert(ValueTy->isIntegerTy());
-        Args.push_back(llvm::ConstantInt::get(ValueTy, 1));
-        std::swap(Args[Ptr + 1], Args.back());
-        return Name;
       },
       &Attrs);
 }
