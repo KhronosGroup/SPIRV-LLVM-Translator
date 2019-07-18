@@ -107,6 +107,9 @@ typedef SPIRVMap<std::string, SPIRVFPRoundingModeKind>
 
 typedef SPIRVMap<std::string, Op, SPIRVInstruction> OCLSPIRVBuiltinMap;
 
+class OCL12Builtin;
+typedef SPIRVMap<std::string, Op, OCL12Builtin> OCL12SPIRVBuiltinMap;
+
 typedef SPIRVMap<std::string, SPIRVBuiltinVariableKind>
     SPIRSPIRVBuiltinVariableMap;
 
@@ -301,6 +304,9 @@ BarrierLiterals getBarrierLiterals(CallInst *CI);
 
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
+
+/// Get number of memory order arguments for spirv atomic builtin function.
+size_t getSPIRVAtomicBuiltinNumMemoryOrderArgs(Op OC);
 
 /// Return true for OpenCL builtins which do compute operations
 /// (like add, sub, min, max, inc, dec, ...) atomically
@@ -688,6 +694,22 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(intel_sub_group_shuffle_down, SubgroupShuffleDownINTEL)
   _SPIRV_OP(intel_sub_group_shuffle_up, SubgroupShuffleUpINTEL)
   _SPIRV_OP(intel_sub_group_shuffle_xor, SubgroupShuffleXorINTEL)
+#undef _SPIRV_OP
+}
+
+template <> inline void SPIRVMap<std::string, Op, OCL12Builtin>::init() {
+#define _SPIRV_OP(x, y) add("atomic_" #x, Op##y);
+  _SPIRV_OP(add, AtomicIAdd)
+  _SPIRV_OP(sub, AtomicISub)
+  _SPIRV_OP(xchg, AtomicExchange)
+  _SPIRV_OP(cmpxchg, AtomicCompareExchange)
+  _SPIRV_OP(inc, AtomicIIncrement)
+  _SPIRV_OP(dec, AtomicIDecrement)
+  _SPIRV_OP(min, AtomicSMin)
+  _SPIRV_OP(max, AtomicSMax)
+  _SPIRV_OP(and, AtomicAnd)
+  _SPIRV_OP(or, AtomicOr)
+  _SPIRV_OP(xor, AtomicXor)
 #undef _SPIRV_OP
 }
 
