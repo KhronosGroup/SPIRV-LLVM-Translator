@@ -28,11 +28,11 @@ addons:
     - sourceline: 'deb https://packages.lunarg.com/vulkan xenial main'
       key_url: 'http://packages.lunarg.com/lunarg-signing-key-pub.asc'
     packages:
-    - llvm-9-tools
-    - llvm-9-dev
-    - clang-format-9
-    - clang-tidy-9
-    - libclang-9-dev
+    - llvm-10-tools
+    - llvm-10-dev
+    - clang-format-10
+    - clang-tidy-10
+    - libclang-10-dev
     - spirv-tools
 
 compiler:
@@ -98,7 +98,7 @@ script:
           -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
           -DBUILD_SHARED_LIBS=${SHARED_LIBS} \
           -DLLVM_BUILD_TOOLS=ON \
-          -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-9/build/utils/lit/lit.py" \
+          -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-10/build/utils/lit/lit.py" \
           -DLLVM_INCLUDE_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=../install/ \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
@@ -119,11 +119,11 @@ script:
         -DLLVM_EXTERNAL_LLVM_SPIRV_SOURCE_DIR=${BUILDDIR}/../llvm-project/llvm-spirv \
         -DLLVM_ENABLE_PROJECTS="llvm-spirv" \
         -G "Unix Makefiles"
-      ln -s /usr/lib/llvm-9/bin/clang bin/
+      ln -s /usr/lib/llvm-10/bin/clang bin/
     fi
   - if [ $CHECK_FORMAT == "1" ]; then
       cd ..;
-      ln -s /usr/share/clang/clang-format-9/clang-format-diff.py utils/;
+      ln -s /usr/share/clang/clang-format-10/clang-format-diff.py utils/;
       ./utils/check_code_format.sh;
     elif [ $CHECK_TIDY == "1" ]; then
       cd ..;
