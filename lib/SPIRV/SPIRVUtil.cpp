@@ -654,7 +654,8 @@ Instruction *mutateCallInst(
   auto NewI = RetMutate(NewCI);
   NewI->takeName(CI);
   LLVM_DEBUG(dbgs() << " => " << *NewI << '\n');
-  CI->replaceAllUsesWith(NewI);
+  if (!CI->getType()->isVoidTy())
+    CI->replaceAllUsesWith(NewI);
   CI->eraseFromParent();
   return NewI;
 }
