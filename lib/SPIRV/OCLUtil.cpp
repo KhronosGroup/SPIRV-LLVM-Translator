@@ -115,6 +115,12 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name) {
   return 1;
 }
 
+size_t getSPIRVAtomicBuiltinNumMemoryOrderArgs(Op OC) {
+  if (OC == OpAtomicCompareExchange || OC == OpAtomicCompareExchangeWeak)
+    return 2;
+  return 1;
+}
+
 bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
   if (!DemangledName.startswith(kOCLBuiltinName::AtomicPrefix) &&
       !DemangledName.startswith(kOCLBuiltinName::AtomPrefix))
