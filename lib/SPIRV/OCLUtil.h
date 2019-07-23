@@ -66,6 +66,18 @@ enum OCLMemFenceKind {
   OCLMF_Image = 4,
 };
 
+// This enum declares extra constants for OpenCL mem_fence flag. It includes
+// combinations of local/global/image flags.
+enum OCLMemFenceExtendedKind {
+  OCLMFEx_Local = OCLMF_Local,
+  OCLMFEx_Global = OCLMF_Global,
+  OCLMFEx_Local_Global = OCLMF_Global | OCLMF_Local,
+  OCLMFEx_Image = OCLMF_Image,
+  OCLMFEx_Image_Local = OCLMF_Image | OCLMF_Local,
+  OCLMFEx_Image_Global = OCLMF_Image | OCLMF_Global,
+  OCLMFEx_Image_Local_Global = OCLMF_Image | OCLMF_Global | OCLMF_Local,
+};
+
 enum OCLScopeKind {
   OCLMS_work_item,
   OCLMS_work_group,
@@ -94,6 +106,9 @@ enum OCLMemOrderKind {
 ///////////////////////////////////////////////////////////////////////////////
 
 typedef SPIRVMap<OCLMemFenceKind, MemorySemanticsMask> OCLMemFenceMap;
+
+typedef SPIRVMap<OCLMemFenceExtendedKind, MemorySemanticsMask>
+    OCLMemFenceExtendedMap;
 
 typedef SPIRVMap<OCLMemOrderKind, unsigned, MemorySemanticsMask> OCLMemOrderMap;
 
@@ -423,6 +438,22 @@ template <> inline void SPIRVMap<OCLMemFenceKind, MemorySemanticsMask>::init() {
   add(OCLMF_Local, MemorySemanticsWorkgroupMemoryMask);
   add(OCLMF_Global, MemorySemanticsCrossWorkgroupMemoryMask);
   add(OCLMF_Image, MemorySemanticsImageMemoryMask);
+}
+
+template <>
+inline void SPIRVMap<OCLMemFenceExtendedKind, MemorySemanticsMask>::init() {
+  add(OCLMFEx_Local, MemorySemanticsWorkgroupMemoryMask);
+  add(OCLMFEx_Global, MemorySemanticsCrossWorkgroupMemoryMask);
+  add(OCLMFEx_Local_Global, MemorySemanticsWorkgroupMemoryMask |
+                                MemorySemanticsCrossWorkgroupMemoryMask);
+  add(OCLMFEx_Image, MemorySemanticsImageMemoryMask);
+  add(OCLMFEx_Image_Local,
+      MemorySemanticsWorkgroupMemoryMask | MemorySemanticsImageMemoryMask);
+  add(OCLMFEx_Image_Global,
+      MemorySemanticsCrossWorkgroupMemoryMask | MemorySemanticsImageMemoryMask);
+  add(OCLMFEx_Image_Local_Global, MemorySemanticsWorkgroupMemoryMask |
+                                      MemorySemanticsCrossWorkgroupMemoryMask |
+                                      MemorySemanticsImageMemoryMask);
 }
 
 template <>
