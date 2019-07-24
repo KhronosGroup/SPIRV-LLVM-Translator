@@ -1248,9 +1248,6 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 bool LLVMToSPIRV::transAddressingMode() {
   Triple TargetTriple(M->getTargetTriple());
 
-  SPIRVCKRT(isSupportedTriple(TargetTriple), InvalidTargetTriple,
-            "Actual target triple is " + M->getTargetTriple());
-
   if (TargetTriple.isArch32Bit())
     BM->setAddressingModel(AddressingModelPhysical32);
   else
@@ -1759,8 +1756,23 @@ void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   PassMgr.add(createSPIRVLowerMemmove());
 }
 
+bool isValidLLVMModule(Module *M, SPIRVErrorLog &ErrorLog) {
+  if (!M)
+    return false;
+
+  Triple TT(M->getTargetTriple());
+  if (!ErrorLog.checkError(isSupportedTriple(TT), SPIRVEC_InvalidTargetTriple,
+                           "Actual target triple is " + M->getTargetTriple()))
+    return false;
+
+  return true;
+}
+
 bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  if (!isValidLLVMModule(M, BM->getErrorLog()))
+    return false;
+
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
   if (hasLoopUnrollMetadata(M))
@@ -1776,6 +1788,9 @@ bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
 
 bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  if (!isValidLLVMModule(M, BM->getErrorLog()))
+    return false;
+
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr);
   PassMgr.run(*M);
