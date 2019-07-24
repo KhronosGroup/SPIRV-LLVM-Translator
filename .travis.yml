@@ -78,7 +78,7 @@ script:
       mkdir llvm-spirv
       mv * llvm-spirv
       git clone https://github.com/llvm/llvm-project --depth 1 -b release/8.x
-      mv llvm-spirv llvm-project/llvm/tools/llvm-spirv
+      mv llvm-spirv llvm-project/llvm-spirv
     fi
   - |
     if [ $TRAVIS_OS_NAME == "osx" ]; then
@@ -102,6 +102,7 @@ script:
           -G "Unix Makefiles"
       fi
     else
+      BUILDDIR=$(pwd)
       cmake ../llvm-project/llvm/ \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DBUILD_SHARED_LIBS=${SHARED_LIBS} \
@@ -111,6 +112,9 @@ script:
         -DSPIRV_SKIP_CLANG_BUILD=ON \
         -DSPIRV_SKIP_DEBUG_INFO_TESTS=ON \
         -DLLVM_LIT_ARGS="-sv --no-progress-bar" \
+        -DLLVM_EXTERNAL_PROJECTS="llvm-spirv" \
+        -DLLVM_EXTERNAL_LLVM_SPIRV_SOURCE_DIR=${BUILDDIR}/../llvm-project/llvm-spirv \
+        -DLLVM_ENABLE_PROJECTS="llvm-spirv" \
         -G "Unix Makefiles"
       ln -s /usr/lib/llvm-8/bin/clang bin/
     fi
