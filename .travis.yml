@@ -77,8 +77,8 @@ script:
     if [ $BUILD_EXTERNAL == "0" ]; then
       mkdir llvm-spirv
       mv * llvm-spirv
-      git clone https://git.llvm.org/git/llvm.git/ --depth 1 -b release_80
-      mv llvm-spirv llvm/tools/llvm-spirv
+      git clone https://github.com/llvm/llvm-project --depth 1 -b release/8.x
+      mv llvm-spirv llvm-project/llvm/tools/llvm-spirv
     fi
   - |
     if [ $TRAVIS_OS_NAME == "osx" ]; then
@@ -102,7 +102,7 @@ script:
           -G "Unix Makefiles"
       fi
     else
-      cmake ../llvm/ \
+      cmake ../llvm-project/llvm/ \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DBUILD_SHARED_LIBS=${SHARED_LIBS} \
         -DLLVM_BUILD_TOOLS=ON \
