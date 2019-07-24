@@ -491,6 +491,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGALoopControlsINTEL, "FPGALoopControlsINTEL");
   add(CapabilityFPGARegINTEL, "FPGARegINTEL");
   add(CapabilityBlockingPipesINTEL, "BlockingPipesINTEL");
+  add(CapabilityUnstructuredLoopControlsINTEL, "UnstructuredLoopControlsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

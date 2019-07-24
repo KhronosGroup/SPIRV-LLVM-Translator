@@ -331,6 +331,10 @@ public:
                    SPIRVWord LoopControl,
                    std::vector<SPIRVWord> LoopControlParameters,
                    SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *
+  addLoopControlINTELInst(SPIRVWord LoopControl,
+                          std::vector<SPIRVWord> LoopControlParameters,
+                          SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addSelectionMergeInst(SPIRVId MergeBlock,
                                           SPIRVWord SelectionControl,
                                           SPIRVBasicBlock *BB) override;
@@ -1228,6 +1232,16 @@ SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(
       new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
                          LoopControlParameters, BB),
       BB, const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addLoopControlINTELInst(
+    SPIRVWord LoopControl, std::vector<SPIRVWord> LoopControlParameters,
+    SPIRVBasicBlock *BB) {
+  addCapability(CapabilityUnstructuredLoopControlsINTEL);
+  addExtension(SPV_INTEL_unstructured_loop_controls);
+  return addInstruction(
+      new SPIRVLoopControlINTEL(LoopControl, LoopControlParameters, BB), BB,
+      const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
 }
 
 SPIRVInstruction *
