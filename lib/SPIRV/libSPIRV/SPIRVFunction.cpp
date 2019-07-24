@@ -136,6 +136,10 @@ bool SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
       break;
     }
 
+    if (Decoder.OpCode == OpNop) {
+      continue;
+    }
+
     if (Decoder.OpCode == OpLine) {
       Module->add(Decoder.getEntry());
       continue;
