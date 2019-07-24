@@ -2510,21 +2510,21 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
             Builder.CreateCall(AnnotationFn, Args);
           }
         }
-      } else {
-        SmallString<256> AnnotStr;
-        generateIntelFPGAAnnotation(BV, AnnotStr);
-        if (!AnnotStr.empty()) {
-          auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+      }
 
-          auto AnnotationFn =
-              llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation);
+      SmallString<256> AnnotStr;
+      generateIntelFPGAAnnotation(BV, AnnotStr);
+      if (!AnnotStr.empty()) {
+        auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
-          llvm::Value *Args[] = {
-              Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()),
-              Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
-              UndefInt32};
-          Builder.CreateCall(AnnotationFn, Args);
-        }
+        auto AnnotationFn =
+            llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation);
+
+        llvm::Value *Args[] = {
+            Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()),
+            Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+            UndefInt32};
+        Builder.CreateCall(AnnotationFn, Args);
       }
     }
   }
