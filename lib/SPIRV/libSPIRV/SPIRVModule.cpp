@@ -369,6 +369,8 @@ public:
                                                SPIRVBasicBlock *) override;
   SPIRVInstruction *addFPGARegINTELInst(SPIRVType *, SPIRVValue *,
                                         SPIRVBasicBlock *) override;
+  SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *, SPIRVValue *,
+                                        SPIRVBasicBlock *) override;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
 
@@ -1313,6 +1315,16 @@ SPIRVInstruction *SPIRVModuleImpl::addFPGARegINTELInst(SPIRVType *Type,
       SPIRVInstTemplateBase::create(OpFPGARegINTEL, Type, getId(),
                                     getVec(V->getId()), BB, this),
       BB);
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addSampledImageInst(SPIRVType *ResultTy,
+                                                       SPIRVValue *Image,
+                                                       SPIRVValue *Sampler,
+                                                       SPIRVBasicBlock *BB) {
+  return addInstruction(SPIRVInstTemplateBase::create(
+                            OpSampledImage, ResultTy, getId(),
+                            getVec(Image->getId(), Sampler->getId()), BB, this),
+                        BB);
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addVariable(
