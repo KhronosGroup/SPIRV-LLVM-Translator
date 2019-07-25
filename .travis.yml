@@ -12,7 +12,8 @@ git:
 
 branches:
   only:
-    - llvm_release_80
+    - master
+    - /llvm_release_\d+$/
 # From https://docs.travis-ci.com/user/customizing-the-build/#safelisting-or-blocklisting-branches
 # "Note that safelisting also prevents tagged commits from being built.
 #  If you consistently tag your builds in the format v1.3 you can safelist them
@@ -131,15 +132,39 @@ script:
     fi
 
 before_deploy:
+  # Travis CI relies on the tag name to push to the correct release.
+  # Tag the current master top of the tree as "dev-build".
+  # We must be very careful with "git push -f" and allow it ONLY
+  # for the "dev-build" tag!
+  - if [[ "${TRAVIS_BRANCH}" == "master" && -z "${TRAVIS_TAG}" ]]; then
+      export TRAVIS_TAG=dev-build;
+      git config --global user.name "Travis CI";
+      git config --global user.email "builds@travis-ci.org";
+      git tag -f ${TRAVIS_TAG};
+      git push -f https://${repo_token}@github.com/${TRAVIS_REPO_SLUG} --tags;
+    fi
+  # Create tarball for deployment
+  - echo ${TRAVIS_COMMIT} > ../install/version.txt;
   - export TARBALL=SPIRV-LLVM-Translator-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-${BUILD_TYPE}.zip;
   - cd ../install && find . -print | zip -@ ${TARBALL};
 
 deploy:
-  provider: releases
-  api_key: ${repo_token}
-  on:
-    tags: true
-    condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
-  file: ${TARBALL}
-  skip_cleanup: true
-  overwrite: false
+  - provider: releases
+    api_key: ${repo_token}
+    on:
+      tags: true
+      condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
+    file: ${TARBALL}
+    skip_cleanup: true
+    overwrite: false
+  - provider: releases
+    api_key: ${repo_token}
+    on:
+      tags: false
+      branch: master
+      condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
+    file: ${TARBALL}
+    name: Latest development build $(date -u +'%F %R %Z')
+    skip_cleanup: true
+    overwrite: true
+    prerelease: true
