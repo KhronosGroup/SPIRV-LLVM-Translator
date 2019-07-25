@@ -363,6 +363,8 @@ public:
   SPIRVInstruction *addVectorInsertDynamicInst(SPIRVValue *, SPIRVValue *,
                                                SPIRVValue *,
                                                SPIRVBasicBlock *) override;
+  SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *, SPIRVValue *,
+                                        SPIRVBasicBlock *) override;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
 
@@ -1287,6 +1289,16 @@ SPIRVInstruction *SPIRVModuleImpl::addCopyMemorySizedInst(
     const std::vector<SPIRVWord> &TheMemoryAccess, SPIRVBasicBlock *BB) {
   return addInstruction(new SPIRVCopyMemorySized(TheTarget, TheSource, TheSize,
                                                  TheMemoryAccess, BB),
+                        BB);
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addSampledImageInst(SPIRVType *ResultTy,
+                                                       SPIRVValue *Image,
+                                                       SPIRVValue *Sampler,
+                                                       SPIRVBasicBlock *BB) {
+  return addInstruction(SPIRVInstTemplateBase::create(
+                            OpSampledImage, ResultTy, getId(),
+                            getVec(Image->getId(), Sampler->getId()), BB, this),
                         BB);
 }
 
