@@ -375,6 +375,9 @@ public:
                                                        SPIRVValue *,
                                                        SPIRVValue *,
                                                        SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
+                                                SPIRVValue *,
+                                                SPIRVBasicBlock *) = 0;
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const = 0;
 
   // I/O functions
