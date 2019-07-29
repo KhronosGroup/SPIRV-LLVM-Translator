@@ -1413,6 +1413,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   // We can just ignore/drop some intrinsics, like optimizations hint.
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
+  case Intrinsic::dbg_label:
     return nullptr;
   default:
     // Other LLVM intrinsics shouldn't get to SPIRV, because they
