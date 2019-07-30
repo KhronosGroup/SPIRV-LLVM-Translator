@@ -1920,9 +1920,9 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
 
 /// LLVM convert builtin functions is translated to two instructions:
 /// y = i32 islessgreater(float x, float z) ->
-///     y = i32 ZExt(bool LessGreater(float x, float z))
+///     y = i32 ZExt(bool LessOrGreater(float x, float z))
 /// When translating back, for simplicity, a trunc instruction is inserted
-/// w = bool LessGreater(float x, float z) ->
+/// w = bool LessOrGreater(float x, float z) ->
 ///     w = bool Trunc(i32 islessgreater(float x, float z))
 /// Optimizer should be able to remove the redundant trunc/zext
 void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
@@ -1938,9 +1938,7 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
       RetTy = VectorType::get(
           IntegerType::get(
               *Context,
-              Args[0]->getType()->getVectorComponentType()->isTypeFloat(64)
-                  ? 64
-                  : 32),
+              Args[0]->getType()->getVectorComponentType()->getBitWidth()),
           BT->getVectorComponentCount());
     else
       llvm_unreachable("invalid compare instruction");
