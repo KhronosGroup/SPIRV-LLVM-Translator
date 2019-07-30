@@ -93,6 +93,15 @@ static cl::opt<bool>
     IsRegularization("s",
                      cl::desc("Regularize LLVM to be representable by SPIR-V"));
 
+using SPIRV::VersionNumber;
+
+static cl::opt<VersionNumber> MaxSPIRVVersion(
+    "spirv-max-version",
+    cl::desc("Choose maximum SPIR-V version which can be emitted"),
+    cl::values(clEnumValN(VersionNumber::SPIRV_1_0, "1.0", "SPIR-V 1.0"),
+               clEnumValN(VersionNumber::SPIRV_1_1, "1.1", "SPIR-V 1.1")),
+    cl::init(VersionNumber::MaximumVersion));
+
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 namespace SPIRV {
 // Use textual format for SPIRV.
@@ -117,7 +126,7 @@ static std::string removeExt(const std::string &FileName) {
 
 static ExitOnError ExitOnErr;
 
-static int convertLLVMToSPIRV() {
+static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
 
   std::unique_ptr<MemoryBuffer> MB =
@@ -140,9 +149,9 @@ static int convertLLVMToSPIRV() {
   bool Success = false;
   if (OutputFile != "-") {
     std::ofstream OutFile(OutputFile, std::ios::binary);
-    Success = writeSpirv(M.get(), OutFile, Err);
+    Success = writeSpirv(M.get(), Opts, OutFile, Err);
   } else {
-    Success = writeSpirv(M.get(), std::cout, Err);
+    Success = writeSpirv(M.get(), Opts, std::cout, Err);
   }
 
   if (!Success) {
@@ -152,13 +161,13 @@ static int convertLLVMToSPIRV() {
   return 0;
 }
 
-static int convertSPIRVToLLVM() {
+static int convertSPIRVToLLVM(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
   std::string Err;
 
-  if (!readSpirv(Context, IFS, M, Err)) {
+  if (!readSpirv(Context, Opts, IFS, M, Err)) {
     errs() << "Fails to load SPIR-V as LLVM Module: " << Err << '\n';
     return -1;
   }
@@ -266,6 +275,8 @@ int main(int Ac, char **Av) {
 
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
+  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion);
+
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
     errs() << "Cannot use -to-text with -to-binary, -r, -s\n";
@@ -282,14 +293,14 @@ int main(int Ac, char **Av) {
 #endif
 
   if (!IsReverse && !IsRegularization)
-    return convertLLVMToSPIRV();
+    return convertLLVMToSPIRV(Opts);
 
   if (IsReverse && IsRegularization) {
     errs() << "Cannot have both -r and -s options\n";
     return -1;
   }
   if (IsReverse)
-    return convertSPIRVToLLVM();
+    return convertSPIRVToLLVM(Opts);
 
   if (IsRegularization)
     return regularizeLLVM();
