@@ -2810,6 +2810,7 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
 }
 
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
+                                             const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 
@@ -2819,6 +2820,12 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
     return nullptr;
   }
   return BM;
+}
+
+std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
+                                             std::string &ErrMsg) {
+  SPIRV::TranslatorOpts DefaultOpts;
+  return readSpirvModule(IS, DefaultOpts, ErrMsg);
 }
 
 } // namespace SPIRV
@@ -2842,7 +2849,13 @@ llvm::convertSpirvToLLVM(LLVMContext &C, SPIRVModule &BM, std::string &ErrMsg) {
 
 bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
                      std::string &ErrMsg) {
-  std::unique_ptr<SPIRVModule> BM(readSpirvModule(IS, ErrMsg));
+  SPIRV::TranslatorOpts DefaultOpts;
+  return llvm::readSpirv(C, DefaultOpts, IS, M, ErrMsg);
+}
+
+bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
+                     std::istream &IS, Module *&M, std::string &ErrMsg) {
+  std::unique_ptr<SPIRVModule> BM(readSpirvModule(IS, Opts, ErrMsg));
 
   if (!BM)
     return false;

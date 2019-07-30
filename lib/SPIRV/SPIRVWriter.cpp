@@ -1769,6 +1769,12 @@ bool isValidLLVMModule(Module *M, SPIRVErrorLog &ErrorLog) {
 }
 
 bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
+  SPIRV::TranslatorOpts DefaultOpts;
+  return llvm::writeSpirv(M, DefaultOpts, OS, ErrMsg);
+}
+
+bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
+                      std::ostream &OS, std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   if (!isValidLLVMModule(M, BM->getErrorLog()))
     return false;
