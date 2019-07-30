@@ -883,10 +883,13 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
                                BB->getId(),                  // Continue Target
                                LoopControl, Parameters, SuccessorTrue);
         } else {
-          // For unstructured loop we add a special loop control instruction.
-          // Simple example of unstructured loop is an infinite loop, that has
-          // no terminate instruction.
-          BM->addLoopControlINTELInst(LoopControl, Parameters, SuccessorTrue);
+          if (BM->isAllowedToUseExtension(
+                  ExtensionID::SPV_INTEL_unstructured_loop_controls)) {
+            // For unstructured loop we add a special loop control instruction.
+            // Simple example of unstructured loop is an infinite loop, that has
+            // no terminate instruction.
+            BM->addLoopControlINTELInst(LoopControl, Parameters, SuccessorTrue);
+          }
         }
       }
       return mapValue(V, BM->addBranchInst(SuccessorTrue, BB));
