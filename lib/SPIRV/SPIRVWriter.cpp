@@ -1348,8 +1348,13 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     StringRef AnnotationString =
         cast<ConstantDataArray>(C->getOperand(0))->getAsCString();
 
-    if (AnnotationString == kOCLBuiltinName::FPGARegIntel)
-      return BM->addFPGARegINTELInst(Ty, transValue(II->getOperand(0), BB), BB);
+    if (AnnotationString == kOCLBuiltinName::FPGARegIntel) {
+      if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_reg))
+        return BM->addFPGARegINTELInst(Ty, transValue(II->getOperand(0), BB),
+                                       BB);
+      else
+        return transValue(II->getOperand(0), BB);
+    }
 
     return nullptr;
   }
@@ -1422,8 +1427,12 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     } else {
       auto *Ty = transType(II->getType());
       auto *BI = dyn_cast<BitCastInst>(II->getOperand(0));
-      if (AnnotationString == kOCLBuiltinName::FPGARegIntel)
-        return BM->addFPGARegINTELInst(Ty, transValue(BI, BB), BB);
+      if (AnnotationString == kOCLBuiltinName::FPGARegIntel) {
+        if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_reg))
+          return BM->addFPGARegINTELInst(Ty, transValue(BI, BB), BB);
+        else
+          return transValue(BI, BB);
+      }
     }
     return 0;
   }
