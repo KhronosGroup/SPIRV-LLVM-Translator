@@ -1717,6 +1717,10 @@ LLVMToSPIRV::transBuiltinToInst(const std::string &DemangledName,
   if (OC == OpNop)
     return nullptr;
 
+  if (OpReadPipeBlockingINTEL <= OC && OC <= OpWritePipeBlockingINTEL &&
+      !BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_blocking_pipes))
+    return nullptr;
+
   auto Inst = transBuiltinToInstWithoutDecoration(OC, CI, BB);
   addDecorations(Inst, Dec);
   return Inst;
