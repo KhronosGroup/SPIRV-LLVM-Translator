@@ -1,7 +1,8 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_blocking_pipes -spirv-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -o %t.spv
+; FIXME: add more negative test cases
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_blocking_pipes -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
