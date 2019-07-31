@@ -65,11 +65,11 @@ declare spir_func i32 @_Z5isinff(float) #1
 
 declare spir_func i32 @_Z8isnormalf(float) #1
 
+declare spir_func i32 @_Z7signbitf(float) #1
+
 declare spir_func i32 @_Z9isorderedff(float, float) #1
 
 declare spir_func i32 @_Z11isunorderedff(float, float) #1
-
-declare spir_func i32 @_Z7signbitf(float) #1
 
 ; Function Attrs: nounwind
 define spir_kernel void @test_vector(<2 x i32> addrspace(1)* nocapture %out, <2 x float> %f) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !5 {
