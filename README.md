@@ -64,7 +64,8 @@ make llvm-spirv -j`nproc`
 
 ## Test instructions
 
-All tests related to the translator are placed in the [test](test) directory. Optionally the tests can make use of spirv-val (part of SPIRV-Tools) in order to validate the generated SPIR-V against the official SPIR-V specification.
+All tests related to the translator are placed in the [test](test) directory. A number of the tests require spirv-as (part of SPIR-V Tools) to run, but the remainder of the tests can still be run without this. Optionally the tests can make use of spirv-val (part of SPIRV-Tools) in order to validate the generated SPIR-V against the official SPIR-V specification.
+
 In case tests are failing due to SPIRV-Tools not supporting certain SPIR-V features, please get an updated package. The `PKG_CONFIG_PATH` environmental variable can be used to let cmake point to a custom installation.
 
 Execute the following command inside the build directory to run translator tests:
