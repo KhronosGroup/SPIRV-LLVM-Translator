@@ -1716,7 +1716,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                        BV->getName(), BB));
   }
 
-  case OpNot: {
+  case OpNot:
+  case OpLogicalNot: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
     return mapValue(
         BV, BinaryOperator::CreateNot(transValue(BC->getOperand(0), F, BB),
