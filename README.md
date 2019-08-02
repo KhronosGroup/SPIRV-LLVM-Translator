@@ -18,7 +18,7 @@ The files/directories related to the translator:
 
 ## Build Instructions
 
-Master branch of this repo is aimed to be buildable with the latest LLVM version.
+The `master` branch of this repo is aimed to be buildable with the latest LLVM `master` or `trunk` revision.
 
 ### Build with pre-installed LLVM
 
@@ -105,4 +105,4 @@ Code on the master branch in this repository is intended to be compatible with m
 
 All new development should be done on the master branch.
 
-To have versions compatible with released versions of LLVM and Clang, corresponding branches are created in this repository. For example, to build translator with LLVM 7.0 ([release_70](https://github.com/llvm-mirror/llvm/tree/release_70)) one should use [llvm_release_70](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/tree/llvm_release_70) branch.
+To have versions compatible with released versions of LLVM and Clang, corresponding branches are available in this repository. For example, to build the translator with LLVM 7.0 ([release_70](https://github.com/llvm-mirror/llvm/tree/release_70)) one should use the [llvm_release_70](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/tree/llvm_release_70) branch. As a general rule, commits from the master branch may be backported to the release branches as long as they do not depend on features from a later LLVM/Clang release and there are no objections from the maintainer(s). There is no guarantee that older release branches are proactively kept up to date with master, but you can request certain commits on older release branches by creating a pull request or raising an issue on GitHub.
