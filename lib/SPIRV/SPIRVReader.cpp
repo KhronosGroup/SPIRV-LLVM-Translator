@@ -500,8 +500,19 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     break;
   case OpTypeArray:
     return "array";
-  case OpTypePointer:
-    return transTypeToOCLTypeName(T->getPointerElementType()) + "*";
+  case OpTypePointer: {
+    SPIRVType *ET = T->getPointerElementType();
+    if (isa<OpTypeFunction>(ET)) {
+      SPIRVTypeFunction *TF = static_cast<SPIRVTypeFunction *>(ET);
+      std::string name = transTypeToOCLTypeName(TF->getReturnType());
+      name += " (*)(";
+      for (unsigned I = 0, E = TF->getNumParameters(); I < E; ++I)
+        name += transTypeToOCLTypeName(TF->getParameterType(I)) + ',';
+      name.back() = ')'; // replace the last comma with a closing brace.
+      return name;
+    }
+    return transTypeToOCLTypeName(ET) + "*";
+  }
   case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
            T->getVectorComponentCount();
@@ -1687,6 +1698,27 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, Call);
   }
 
+  case OpFunctionPointerCallINTEL: {
+    SPIRVFunctionPointerCallINTEL *BC =
+        static_cast<SPIRVFunctionPointerCallINTEL *>(BV);
+    auto Call = CallInst::Create(transValue(BC->getCalledValue(), F, BB),
+                                 transValue(BC->getArgumentValues(), F, BB),
+                                 BC->getName(), BB);
+    // Assuming we are calling a regular device function
+    Call->setCallingConv(CallingConv::SPIR_FUNC);
+    // Don't set attributes, because at translation time we don't know which
+    // function exactly we are calling.
+    return mapValue(BV, Call);
+  }
+
+  case OpFunctionPointerINTEL: {
+    SPIRVFunctionPointerINTEL *BC =
+        static_cast<SPIRVFunctionPointerINTEL *>(BV);
+    SPIRVFunction *F = BC->getFunction();
+    BV->setName(F->getName());
+    return mapValue(BV, transFunction(F));
+  }
+
   case OpExtInst: {
     auto *ExtInst = static_cast<SPIRVExtInst *>(BV);
     switch (ExtInst->getExtSetKind()) {
@@ -1870,6 +1902,10 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   Function *F = cast<Function>(
       mapValue(BF, Function::Create(FT, Linkage, BF->getName(), M)));
   mapFunction(BF, F);
+
+  if (BF->hasDecorate(DecorationReferencedIndirectlyINTEL))
+    F->addFnAttr("referenced-indirectly");
+
   if (!F->isIntrinsic()) {
     F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL
                                : CallingConv::SPIR_FUNC);
