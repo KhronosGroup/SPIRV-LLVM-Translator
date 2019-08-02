@@ -109,6 +109,10 @@ public:
   // Error handling functions
   virtual SPIRVErrorLog &getErrorLog() = 0;
   virtual SPIRVErrorCode getError(std::string &) = 0;
+  // Check if extension is allowed, and set ErrCode and DetailedMsg if not.
+  // Returns true if no error.
+  virtual bool checkExtension(ExtensionID, SPIRVErrorCode,
+                              const std::string &) = 0;
   void setInvalid() { IsValid = false; }
   bool isModuleValid() { return IsValid; }
 
@@ -290,6 +294,12 @@ public:
   virtual SPIRVInstruction *addCallInst(SPIRVFunction *,
                                         const std::vector<SPIRVWord> &,
                                         SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addIndirectCallInst(SPIRVValue *, SPIRVType *,
+                                                const std::vector<SPIRVWord> &,
+                                                SPIRVBasicBlock *) = 0;
+  virtual SPIRVInstruction *addFunctionPointerINTELInst(SPIRVType *,
+                                                        SPIRVFunction *,
+                                                        SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *
   addCompositeConstructInst(SPIRVType *, const std::vector<SPIRVId> &,
                             SPIRVBasicBlock *) = 0;

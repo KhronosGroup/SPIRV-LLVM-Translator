@@ -12,4 +12,4 @@ EXT(SPV_INTEL_fpga_memory_attributes)
 EXT(SPV_INTEL_unstructured_loop_controls)
 EXT(SPV_INTEL_fpga_reg)
 EXT(SPV_INTEL_blocking_pipes)
-
+EXT(SPV_INTEL_function_pointers)
