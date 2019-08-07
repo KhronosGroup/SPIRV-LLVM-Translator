@@ -191,7 +191,7 @@ public:
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
   void addCapability(SPIRVCapabilityKind) override;
   void addCapabilityInternal(SPIRVCapabilityKind) override;
-  void addExtension(SPIRVExtensionKind) override;
+  void addExtension(ExtensionID) override;
   const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *) override;
   SPIRVDecorationGroup *addDecorationGroup() override;
   SPIRVDecorationGroup *
@@ -548,9 +548,9 @@ SPIRVValue *SPIRVModuleImpl::addPipeStorageConstant(SPIRVType *TheType,
       this, TheType, getId(), PacketSize, PacketAlign, Capacity));
 }
 
-void SPIRVModuleImpl::addExtension(SPIRVExtensionKind Ext) {
+void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
   std::string ExtName;
-  SPIRVMap<SPIRVExtensionKind, std::string>::find(Ext, &ExtName);
+  SPIRVMap<ExtensionID, std::string>::find(Ext, &ExtName);
   SPIRVExt.insert(ExtName);
 }
 

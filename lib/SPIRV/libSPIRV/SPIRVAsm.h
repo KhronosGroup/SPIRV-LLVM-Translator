@@ -39,7 +39,7 @@ public:
     return getVec(CapabilityAsmINTEL);
   }
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_inline_assembly);
+    return getSet(ExtensionID::SPV_INTEL_inline_assembly);
   }
   const std::string &getTarget() const { return Target; }
 
@@ -76,7 +76,7 @@ public:
     return getVec(CapabilityAsmINTEL);
   }
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_inline_assembly);
+    return getSet(ExtensionID::SPV_INTEL_inline_assembly);
   }
   const std::string &getInstructions() const { return Instructions; }
   const std::string &getConstraints() const { return Constraints; }
@@ -114,7 +114,7 @@ public:
     return getVec(CapabilityAsmINTEL);
   }
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_inline_assembly);
+    return getSet(ExtensionID::SPV_INTEL_inline_assembly);
   }
   bool isOperandLiteral(unsigned int Index) const override { return false; }
   void setWordCount(SPIRVWord TheWordCount) override {
