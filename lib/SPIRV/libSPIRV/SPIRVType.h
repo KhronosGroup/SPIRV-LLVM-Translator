@@ -777,7 +777,7 @@ public:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_vector_compute);
+    return getSet(ExtensionID::SPV_INTEL_vector_compute);
   }
 
   bool hasAccessQualifier() const { return AccessKind.hasValue(); }
@@ -827,7 +827,7 @@ public:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_device_side_avc_motion_estimation);
+    return getSet(ExtensionID::SPV_INTEL_device_side_avc_motion_estimation);
   }
 
 protected:
@@ -882,7 +882,7 @@ public:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_device_side_avc_motion_estimation);
+    return getSet(ExtensionID::SPV_INTEL_device_side_avc_motion_estimation);
   }
 
   SPIRVValue *getOperand() { return getValue(Opn); }

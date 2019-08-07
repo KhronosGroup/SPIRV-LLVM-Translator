@@ -777,6 +777,9 @@ class SPIRVExtension : public SPIRVEntryNoId<OpExtension> {
 public:
   SPIRVExtension(SPIRVModule *M, const std::string &SS);
   SPIRVExtension() {}
+
+  std::string getExtensionName() const { return S; }
+
   _SPIRV_DCL_ENCDEC
 private:
   std::string S;
@@ -816,16 +819,16 @@ public:
     case CapabilitySignedZeroInfNanPreserve:
     case CapabilityRoundingModeRTE:
     case CapabilityRoundingModeRTZ:
-      return getSet(SPV_KHR_float_controls);
+      return getSet(ExtensionID::SPV_KHR_float_controls);
     case CapabilityRoundToInfinityINTEL:
     case CapabilityFloatingPointModeINTEL:
     case CapabilityFunctionFloatControlINTEL:
-      return getSet(SPV_INTEL_float_controls2);
+      return getSet(ExtensionID::SPV_INTEL_float_controls2);
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
-      return getSet(SPV_INTEL_vector_compute);
+      return getSet(ExtensionID::SPV_INTEL_vector_compute);
     case CapabilityFastCompositeINTEL:
-      return getSet(SPV_INTEL_fast_composite);
+      return getSet(ExtensionID::SPV_INTEL_fast_composite);
     default:
       return SPIRVExtSet();
     }

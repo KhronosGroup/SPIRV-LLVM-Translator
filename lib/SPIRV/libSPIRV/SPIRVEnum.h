@@ -40,6 +40,7 @@
 #ifndef SPIRV_LIBSPIRV_SPIRVENUM_H
 #define SPIRV_LIBSPIRV_SPIRVENUM_H
 
+#include "LLVMSPIRVOpts.h"
 #include "SPIRVOpCode.h"
 #include "spirv.hpp"
 #include <cstdint>
@@ -109,30 +110,17 @@ typedef spv::GroupOperation SPIRVGroupOperationKind;
 typedef spv::Dim SPIRVImageDimKind;
 typedef std::vector<SPIRVCapabilityKind> SPIRVCapVec;
 
-enum SPIRVExtensionKind {
-  SPV_INTEL_device_side_avc_motion_estimation,
-  SPV_INTEL_media_block_io,
-  SPV_KHR_no_integer_wrap_decoration,
-  SPV_INTEL_inline_assembly,
-  SPV_KHR_float_controls,
-  SPV_INTEL_float_controls2,
-  SPV_INTEL_vector_compute,
-  SPV_INTEL_fast_composite,
-};
+typedef std::set<ExtensionID> SPIRVExtSet;
 
-typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
-
-template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
-  add(SPV_INTEL_device_side_avc_motion_estimation,
-      "SPV_INTEL_device_side_avc_motion_estimation");
-  add(SPV_INTEL_media_block_io, "SPV_INTEL_media_block_io");
-  add(SPV_KHR_no_integer_wrap_decoration, "SPV_KHR_no_integer_wrap_decoration");
-  add(SPV_INTEL_inline_assembly, "SPV_INTEL_inline_assembly");
-  add(SPV_KHR_float_controls, "SPV_KHR_float_controls");
-  add(SPV_INTEL_float_controls2, "SPV_INTEL_float_controls2");
-  add(SPV_INTEL_vector_compute, "SPV_INTEL_vector_compute");
-  add(SPV_INTEL_fast_composite, "SPV_INTEL_fast_composite");
-};
+template <> inline void SPIRVMap<ExtensionID, std::string>::init() {
+#define _STRINGIFY(X) #X
+#define STRINGIFY(X) _STRINGIFY(X)
+#define EXT(X) add(ExtensionID::X, STRINGIFY(X));
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+#undef STRINGIFY
+#undef _STRINGIFY
+}
 
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
   add(SPIRVEIS_OpenCL, "OpenCL.std");
