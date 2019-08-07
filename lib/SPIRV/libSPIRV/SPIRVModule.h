@@ -283,7 +283,7 @@ public:
     for (auto I : Caps)
       addCapability(I);
   }
-  virtual void addExtension(SPIRVExtensionKind) = 0;
+  virtual void addExtension(ExtensionID) = 0;
   /// Used by SPIRV entries to add required capability internally.
   /// Should not be used by users directly.
   virtual void addCapabilityInternal(SPIRVCapabilityKind) = 0;
