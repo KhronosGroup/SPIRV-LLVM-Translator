@@ -723,6 +723,9 @@ class SPIRVExtension : public SPIRVEntryNoId<OpExtension> {
 public:
   SPIRVExtension(SPIRVModule *M, const std::string &SS);
   SPIRVExtension() {}
+
+  std::string getExtensionName() const { return S; }
+
   _SPIRV_DCL_ENCDEC
 private:
   std::string S;
