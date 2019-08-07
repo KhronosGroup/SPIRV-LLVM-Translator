@@ -190,7 +190,7 @@ public:
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
   void addCapability(SPIRVCapabilityKind) override;
   void addCapabilityInternal(SPIRVCapabilityKind) override;
-  void addExtension(SPIRVExtensionKind) override;
+  void addExtension(ExtensionID) override;
   const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *) override;
   SPIRVDecorationGroup *addDecorationGroup() override;
   SPIRVDecorationGroup *
@@ -541,9 +541,9 @@ SPIRVValue *SPIRVModuleImpl::addPipeStorageConstant(SPIRVType *TheType,
       this, TheType, getId(), PacketSize, PacketAlign, Capacity));
 }
 
-void SPIRVModuleImpl::addExtension(SPIRVExtensionKind Ext) {
+void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
   std::string ExtName;
-  SPIRVMap<SPIRVExtensionKind, std::string>::find(Ext, &ExtName);
+  SPIRVMap<ExtensionID, std::string>::find(Ext, &ExtName);
   SPIRVExt.insert(ExtName);
 }
 
@@ -1249,7 +1249,7 @@ SPIRVInstruction *SPIRVModuleImpl::addLoopControlINTELInst(
     SPIRVWord LoopControl, std::vector<SPIRVWord> LoopControlParameters,
     SPIRVBasicBlock *BB) {
   addCapability(CapabilityUnstructuredLoopControlsINTEL);
-  addExtension(SPV_INTEL_unstructured_loop_controls);
+  addExtension(ExtensionID::SPV_INTEL_unstructured_loop_controls);
   return addInstruction(
       new SPIRVLoopControlINTEL(LoopControl, LoopControlParameters, BB), BB,
       const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));

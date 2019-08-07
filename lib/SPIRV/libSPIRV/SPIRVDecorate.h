@@ -140,7 +140,7 @@ public:
     switch (Dec) {
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
-      return getSet(SPV_KHR_no_integer_wrap_decoration);
+      return getSet(ExtensionID::SPV_KHR_no_integer_wrap_decoration);
     case DecorationRegisterINTEL:
     case DecorationMemoryINTEL:
     case DecorationNumbanksINTEL:
@@ -151,7 +151,7 @@ public:
     case DecorationMaxReplicatesINTEL:
     case DecorationSimpleDualPortINTEL:
     case DecorationMergeINTEL:
-      return getSet(SPV_INTEL_fpga_memory_attributes);
+      return getSet(ExtensionID::SPV_INTEL_fpga_memory_attributes);
     default:
       return SPIRVExtSet();
     }
@@ -245,7 +245,7 @@ public:
     case DecorationMaxReplicatesINTEL:
     case DecorationSimpleDualPortINTEL:
     case DecorationMergeINTEL:
-      return getSet(SPV_INTEL_fpga_memory_attributes);
+      return getSet(ExtensionID::SPV_INTEL_fpga_memory_attributes);
     default:
       return SPIRVExtSet();
     }

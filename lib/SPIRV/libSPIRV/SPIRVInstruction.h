@@ -880,7 +880,7 @@ public:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_fpga_reg);
+    return getSet(ExtensionID::SPV_INTEL_fpga_reg);
   }
 
 protected:
@@ -1372,7 +1372,7 @@ public:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_unstructured_loop_controls);
+    return getSet(ExtensionID::SPV_INTEL_unstructured_loop_controls);
   }
 
   void setWordCount(SPIRVWord TheWordCount) override {
@@ -2171,7 +2171,7 @@ protected:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_blocking_pipes);
+    return getSet(ExtensionID::SPV_INTEL_blocking_pipes);
   }
 };
 
@@ -2341,7 +2341,7 @@ protected:
   }
 
   SPIRVExtSet getRequiredExtensions() const override {
-    return getSet(SPV_INTEL_device_side_avc_motion_estimation);
+    return getSet(ExtensionID::SPV_INTEL_device_side_avc_motion_estimation);
   }
 };
 
