@@ -407,6 +407,16 @@ public:
     return TranslationOpts.isAllowedToUseExtension(RequestedExtension);
   }
 
+  virtual bool
+  isAllowedToUseExtensions(const SPIRVExtSet &RequestedExtensions) const final {
+    for (const auto &Ext : RequestedExtensions) {
+      if (!TranslationOpts.isAllowedToUseExtension(Ext))
+        return false;
+    }
+
+    return true;
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);
