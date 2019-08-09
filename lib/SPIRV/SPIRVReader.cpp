@@ -2465,9 +2465,15 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{max_replicates:" << Result << '}';
   if (E->hasDecorate(DecorationSimpleDualPortINTEL))
     Out << "{simple_dual_port:1}";
-  if (E->hasDecorate(DecorationMergeINTEL))
-    Out << "{merge:" << E->getDecorationStringLiteral(DecorationMergeINTEL)
-        << '}';
+  if (E->hasDecorate(DecorationMergeINTEL)) {
+    std::vector<std::string> Buf =
+        E->getDecorationStringLiterals(DecorationMergeINTEL);
+    Out << "{merge";
+    for (auto I : Buf) {
+      Out << ":" << I;
+    }
+    Out << '}';
+  }
   if (E->hasDecorate(DecorationUserSemantic))
     Out << E->getDecorationStringLiteral(DecorationUserSemantic);
 }
@@ -2501,11 +2507,16 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{max_replicates:" << Result << '}';
   if (E->hasMemberDecorate(DecorationSimpleDualPortINTEL, 0, MemberNumber))
     Out << "{simple_dual_port:1}";
-  if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber))
-    Out << "{merge:"
-        << E->getMemberDecorationStringLiteral(DecorationMergeINTEL,
-                                               MemberNumber)
-        << '}';
+  if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber)) {
+    std::vector<std::string> Buf = E->getMemberDecorationStringLiterals(
+        DecorationMergeINTEL, MemberNumber);
+    Out << "{merge";
+    for (auto I : Buf) {
+      Out << ":" << I;
+    }
+    Out << '}';
+  }
+
   if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
     Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
                                                MemberNumber);
