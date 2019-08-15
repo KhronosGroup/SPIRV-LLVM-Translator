@@ -751,7 +751,7 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
 }
 
 template <> inline void SPIRVMap<std::string, Op, OCL12Builtin>::init() {
-#define _SPIRV_OP(x, y) add("atomic_" #x, Op##y);
+#define _SPIRV_OP(x, y) add(#x, Op##y);
   _SPIRV_OP(add, AtomicIAdd)
   _SPIRV_OP(sub, AtomicISub)
   _SPIRV_OP(xchg, AtomicExchange)
