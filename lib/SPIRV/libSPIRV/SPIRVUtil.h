@@ -344,20 +344,13 @@ inline std::string getString(const std::vector<uint32_t> &V) {
 }
 
 // if vector of Literals is expected to contain more than one Literal String
-inline std::vector<std::string> getStrings(const std::vector<uint32_t> &V) {
-  std::vector<std::string> Result = {};
-  std::string Str = std::string();
-  for (auto I = V.cbegin(); I != V.cend(); ++I) {
-    uint32_t Word = *I;
-    for (unsigned J = 0u; J < 32u; J += 8u) {
-      char Char = (char)((Word >> J) & 0xff);
-      if (Char == '\0') {
-        Result.push_back(Str);
-        Str = std::string();
-        break;
-      }
-      Str += Char;
-    }
+inline std::vector<std::string> getVecString(const std::vector<uint32_t> &V) {
+  std::vector<std::string> Result;
+  std::string Str;
+  for (auto It = V.cbegin(); It < V.cend(); It += getSizeInWords(Str)) {
+    Str.clear();
+    Str = getString(It, V.cend());
+    Result.push_back(Str);
   }
   return Result;
 }

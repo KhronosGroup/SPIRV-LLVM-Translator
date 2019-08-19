@@ -2447,10 +2447,9 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{register:1}";
 
   SPIRVWord Result = 0;
-  if (E->hasDecorate(DecorationMemoryINTEL)) {
-    Out << "{memory:" << E->getDecorationStringLiteral(DecorationMemoryINTEL)
-        << '}';
-  }
+  if (E->hasDecorate(DecorationMemoryINTEL))
+    Out << "{memory:"
+        << E->getDecorationStringLiteral(DecorationMemoryINTEL).front() << '}';
   if (E->hasDecorate(DecorationBankwidthINTEL, 0, &Result))
     Out << "{bankwidth:" << Result << '}';
   if (E->hasDecorate(DecorationNumbanksINTEL, 0, &Result))
@@ -2466,16 +2465,13 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
   if (E->hasDecorate(DecorationSimpleDualPortINTEL))
     Out << "{simple_dual_port:1}";
   if (E->hasDecorate(DecorationMergeINTEL)) {
-    std::vector<std::string> Buf =
-        E->getDecorationStringLiterals(DecorationMergeINTEL);
     Out << "{merge";
-    for (auto I : Buf) {
-      Out << ":" << I;
-    }
+    for (auto Str : E->getDecorationStringLiteral(DecorationMergeINTEL))
+      Out << ":" << Str;
     Out << '}';
   }
   if (E->hasDecorate(DecorationUserSemantic))
-    Out << E->getDecorationStringLiteral(DecorationUserSemantic);
+    Out << E->getDecorationStringLiteral(DecorationUserSemantic).front();
 }
 
 void generateIntelFPGAAnnotationForStructMember(
@@ -2490,6 +2486,7 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{memory:"
         << E->getMemberDecorationStringLiteral(DecorationMemoryINTEL,
                                                MemberNumber)
+               .front()
         << '}';
   if (E->hasMemberDecorate(DecorationBankwidthINTEL, 0, MemberNumber, &Result))
     Out << "{bankwidth:" << Result << '}';
@@ -2508,18 +2505,17 @@ void generateIntelFPGAAnnotationForStructMember(
   if (E->hasMemberDecorate(DecorationSimpleDualPortINTEL, 0, MemberNumber))
     Out << "{simple_dual_port:1}";
   if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber)) {
-    std::vector<std::string> Buf = E->getMemberDecorationStringLiterals(
-        DecorationMergeINTEL, MemberNumber);
     Out << "{merge";
-    for (auto I : Buf) {
-      Out << ":" << I;
-    }
+    for (auto Str : E->getMemberDecorationStringLiteral(DecorationMergeINTEL,
+                                                        MemberNumber))
+      Out << ":" << Str;
     Out << '}';
   }
 
   if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
     Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
-                                               MemberNumber);
+                                               MemberNumber)
+               .front();
 }
 
 void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
