@@ -2085,26 +2085,45 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
   // Find or create enqueue kernel BI declaration
   auto Ops = BI->getOperands();
   bool HasVaargs = Ops.size() > 10;
+  bool HasEvents = true;
+  SPIRVValue *NumEvents = Ops[3];
+  if (NumEvents->getOpCode() == OpConstant) {
+    SPIRVConstant *NE = static_cast<SPIRVConstant *>(NumEvents);
+    HasEvents = NE->getZExtIntValue() != 0;
+  }
 
-  std::string FName = HasVaargs ? "__enqueue_kernel_events_varargs"
-                                : "__enqueue_kernel_basic_events";
+  std::string FName = "";
+  if (!HasVaargs && !HasEvents)
+    FName = "__enqueue_kernel_basic";
+  else if (!HasVaargs && HasEvents)
+    FName = "__enqueue_kernel_basic_events";
+  else if (HasVaargs && !HasEvents)
+    FName = "__enqueue_kernel_varargs";
+  else
+    FName = "__enqueue_kernel_events_varargs";
+
   Function *F = M->getFunction(FName);
   if (!F) {
-    Type *EventTy = PointerType::get(
-        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
-                                 getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
-        SPIRAS_Generic);
-
     SmallVector<Type *, 8> Tys = {
         transType(Ops[0]->getType()), // queue
         Int32Ty,                      // flags
         transType(Ops[2]->getType()), // ndrange
-        Int32Ty,
-        EventTy,
-        EventTy,                                      // events
-        Type::getInt8PtrTy(*Context, SPIRAS_Generic), // block_invoke
-        Type::getInt8PtrTy(*Context, SPIRAS_Generic)  // block_literal
     };
+    if (HasEvents) {
+      Type *EventTy =
+          PointerType::get(getOrCreateOpaquePtrType(
+                               M, SPIR_TYPE_NAME_CLK_EVENT_T,
+                               getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
+                           SPIRAS_Generic);
+
+      Tys.push_back(Int32Ty);
+      Tys.push_back(EventTy);
+      Tys.push_back(EventTy);
+    }
+
+    Tys.push_back(Type::getInt8PtrTy(*Context, SPIRAS_Generic));
+    Tys.push_back(Type::getInt8PtrTy(*Context, SPIRAS_Generic));
+
     if (HasVaargs) {
       // Number of block invoke arguments (local arguments)
       Tys.push_back(Int32Ty);
@@ -2123,12 +2142,16 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
       transValue(Ops[0], F, BB, false), // queue
       transValue(Ops[1], F, BB, false), // flags
       transValue(Ops[2], F, BB, false), // ndrange
-      transValue(Ops[3], F, BB, false), // events number
-      transDeviceEvent(Ops[4], F, BB),  // event_wait_list
-      transDeviceEvent(Ops[5], F, BB),  // event_ret
-      transBlockInvoke(Ops[6], BB),     // block_invoke
-      transValue(Ops[7], F, BB, false)  // block_literal
   };
+
+  if (HasEvents) {
+    Args.push_back(transValue(Ops[3], F, BB, false)); // events number
+    Args.push_back(transDeviceEvent(Ops[4], F, BB));  // event_wait_list
+    Args.push_back(transDeviceEvent(Ops[5], F, BB));  // event_ret
+  }
+
+  Args.push_back(transBlockInvoke(Ops[6], BB));     // block_invoke
+  Args.push_back(transValue(Ops[7], F, BB, false)); // block_literal
 
   if (HasVaargs) {
     // Number of local arguments
