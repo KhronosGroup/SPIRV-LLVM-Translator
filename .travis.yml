@@ -33,6 +33,7 @@ addons:
     - clang-format-10
     - clang-tidy-10
     - libclang-10-dev
+    - lldb-10
     - spirv-tools
 
 compiler:
