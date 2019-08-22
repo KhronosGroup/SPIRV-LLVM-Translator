@@ -416,7 +416,7 @@ bool isPipeStorageInitializer(Instruction *Inst);
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
 bool isSpecialTypeInitializer(Instruction *Inst);
 
-bool isPipeBI(const StringRef MangledName);
+bool isPipeOrAddressSpaceCastBI(const StringRef MangledName);
 bool isEnqueueKernelBI(const StringRef MangledName);
 bool isKernelQueryBI(const StringRef MangledName);
 
