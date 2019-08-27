@@ -2319,6 +2319,10 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilitySubgroupShuffleINTEL);
   }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(ExtensionID::SPV_INTEL_subgroups);
+  }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
@@ -2337,6 +2341,10 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilitySubgroupBufferBlockIOINTEL);
   }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(ExtensionID::SPV_INTEL_subgroups);
+  }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
@@ -2352,6 +2360,10 @@ class SPIRVSubgroupImageBlockIOINTELInstBase : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilitySubgroupImageBlockIOINTEL);
+  }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(ExtensionID::SPV_INTEL_subgroups);
   }
 };
 
