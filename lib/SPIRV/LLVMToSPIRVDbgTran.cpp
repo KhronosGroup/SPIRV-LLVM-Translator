@@ -191,6 +191,10 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
           LineNo = DL.getLine();
           Col = DL.getCol();
           V = SPIRVWriter->getTranslatedValue(&I);
+          // TODO: Resolve issue with OpLine being inserted between
+          // branch merge instruction and branch instruction.
+          // According to the spec, OpLine for an OpBranch/OpBranchConditional
+          // must precede the merge instruction and not the branch instruction
           BM->addLine(V, File ? File->getId() : getDebugInfoNone()->getId(),
                       LineNo, Col);
         }
