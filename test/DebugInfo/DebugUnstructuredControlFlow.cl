@@ -7,8 +7,7 @@
 
 // Test that no debug info instruction is inserted between LoopControlINTEL and
 // Branch instructions. Otherwise, debug info interferes with SPIRVToLLVM
-// translation of structured flow control. Yet Line DebugInfo instruction
-// is still presenting between LoopControlINTEL and Branch instructions.
+// translation of structured flow control
 
 kernel
 void sample() {
@@ -18,6 +17,7 @@ void sample() {
 
 // CHECK-SPIRV: 2 LoopControlINTEL 1
 // CHECK-SPIRV-NOT: ExtInst
+// TODO: Check-not for Line (can only precede LoopControl)
 // CHECK-SPIRV: {{[0-9]+}} Line {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 // CHECK-SPIRV: Branch
 // CHECK-LLVM: br label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]

@@ -10,11 +10,6 @@
 // between LoopMerge and Branch/BranchConditional instructions.
 // Otherwise, debug info interferes with SPIRVToLLVM translation
 // of structured flow control
-//
-// Currently, Line DebugInfo instructions are still present
-// between LoopMerge and Branch/BranchConditional instructions.
-// This does not affect SPIRVToLLVM translation, however
-// should be fixed separately
 
 kernel
 void sample() {
@@ -31,6 +26,7 @@ void sample() {
 
 // CHECK-SPIRV: {{[0-9]+}} LoopMerge [[MergeBlock:[0-9]+]] [[ContinueTarget:[0-9]+]] 1
 // CHECK-SPIRV-NOT: ExtInst
+// TODO: Check-not for Line (can only precede LoopMerge)
 // CHECK-SPIRV: BranchConditional
 // CHECK-SPIRV: {{[0-9]+}} LoopMerge [[MergeBlock:[0-9]+]] [[ContinueTarget:[0-9]+]] 1
 // CHECK-SPIRV-NOT: ExtInst
