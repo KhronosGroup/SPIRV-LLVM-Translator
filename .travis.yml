@@ -23,7 +23,7 @@ branches:
 addons:
   apt:
     sources:
-    - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main'
+    - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
       key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     - sourceline: 'deb https://packages.lunarg.com/vulkan xenial main'
       key_url: 'http://packages.lunarg.com/lunarg-signing-key-pub.asc'
@@ -80,7 +80,7 @@ script:
     if [ $BUILD_EXTERNAL == "0" ]; then
       mkdir llvm-spirv
       mv * llvm-spirv
-      git clone https://github.com/llvm/llvm-project --depth 1
+      git clone https://github.com/llvm/llvm-project --depth 1 -b release_90
       mv llvm-spirv llvm-project/llvm-spirv
     fi
   - |
@@ -139,7 +139,7 @@ before_deploy:
   # We must be very careful with "git push -f" and allow it ONLY
   # for the "dev-build" tag!
   - if [[ "${TRAVIS_BRANCH}" == "master" && -z "${TRAVIS_TAG}" ]]; then
-      export TRAVIS_TAG=dev-build;
+      export TRAVIS_TAG=v9.0.0-1;
       git config --global user.name "Travis CI";
       git config --global user.email "builds@travis-ci.org";
       git tag -f ${TRAVIS_TAG};
@@ -163,7 +163,7 @@ deploy:
     api_key: ${repo_token}
     on:
       tags: false
-      branch: master
+      branch: llvm_release_90
       condition: ${BUILD_EXTERNAL} == 1 && ${SHARED_LIBS} == ON && ${repo_token}
     file: ${TARBALL}
     name: Latest development build $(date -u +'%F %R %Z')

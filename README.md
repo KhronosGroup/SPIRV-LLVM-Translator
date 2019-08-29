@@ -24,13 +24,13 @@ Master branch of this repo is aimed to be buildable with the latest LLVM version
 
 The translator can be built with the latest(nightly) package of LLVM. For Ubuntu and Debian systems LLVM provides repositories with nightly builds at http://apt.llvm.org/. For example the latest package for Ubuntu 16.04 can be installed with the following commands:
 ```
-sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main"
+sudo add-apt-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main"
 sudo apt-get update
 sudo apt-get install llvm-9-dev llvm-9-tools clang-9 libclang-9-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_90
 mkdir SPIRV-LLVM-Translator/build && cd SPIRV-LLVM-Translator/build
 cmake ..
 make llvm-spirv -j`nproc`
@@ -40,7 +40,7 @@ make llvm-spirv -j`nproc`
 
 If you have a custom build(based on the latest version) of LLVM libraries you can link the translator against it. 
 ```
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_90
 mkdir SPIRV-LLVM-Translator/build && cd SPIRV-LLVM-Translator/build
 cmake .. -DLLVM_DIR=<llvm_build_dir>/lib/cmake/llvm/
 make llvm-spirv -j`nproc`
@@ -53,7 +53,7 @@ The translator can be built as a regular LLVM subproject. To do that you need to
 ```
 git clone http://llvm.org/git/llvm.git
 cd llvm/projects
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_90
 ```
 Run(re-run) cmake as usually for LLVM. After that you should have `llvm-spirv` and `check-llvm-spirv` targets available.
 ```
