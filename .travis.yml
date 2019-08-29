@@ -33,6 +33,7 @@ addons:
     - clang-format-9
     - clang-tidy-9
     - libclang-9-dev
+    - lldb-9
     - spirv-tools
 
 compiler:
