@@ -1153,22 +1153,21 @@ protected:
   std::vector<SPIRVWord> Pairs;
 };
 
-class SPIRVFMod : public SPIRVInstruction {
+class SPIRVFSMod : public SPIRVInstruction {
 public:
-  static const Op OC = OpFMod;
   static const SPIRVWord FixedWordCount = 4;
-  // Complete constructor
-  SPIRVFMod(SPIRVType *TheType, SPIRVId TheId, SPIRVId TheDividend,
-            SPIRVId TheDivisor, SPIRVBasicBlock *BB)
+  SPIRVFSMod(Op OC, SPIRVType *TheType, SPIRVId TheId, SPIRVId TheDividend,
+             SPIRVId TheDivisor, SPIRVBasicBlock *BB)
       : SPIRVInstruction(5, OC, TheType, TheId, BB), Dividend(TheDividend),
         Divisor(TheDivisor) {
     validate();
     assert(BB && "Invalid BB");
   }
   // Incomplete constructor
-  SPIRVFMod()
+  SPIRVFSMod(Op OC)
       : SPIRVInstruction(OC), Dividend(SPIRVID_INVALID),
         Divisor(SPIRVID_INVALID) {}
+
   SPIRVValue *getDividend() const { return getValue(Dividend); }
   SPIRVValue *getDivisor() const { return getValue(Divisor); }
 
@@ -1193,6 +1192,28 @@ public:
 protected:
   SPIRVId Dividend;
   SPIRVId Divisor;
+};
+
+class SPIRVFMod : public SPIRVFSMod {
+public:
+  static const Op OC = OpFMod;
+  // Complete constructor
+  SPIRVFMod(SPIRVType *TheType, SPIRVId TheId, SPIRVId TheDividend,
+            SPIRVId TheDivisor, SPIRVBasicBlock *BB)
+      : SPIRVFSMod(OC, TheType, TheId, TheDividend, TheDivisor, BB) {}
+  // Incomplete constructor
+  SPIRVFMod() : SPIRVFSMod(OC) {}
+};
+
+class SPIRVSMod : public SPIRVFSMod {
+public:
+  static const Op OC = OpSMod;
+  // Complete constructor
+  SPIRVSMod(SPIRVType *TheType, SPIRVId TheId, SPIRVId TheDividend,
+            SPIRVId TheDivisor, SPIRVBasicBlock *BB)
+      : SPIRVFSMod(OC, TheType, TheId, TheDividend, TheDivisor, BB) {}
+  // Incomplete constructor
+  SPIRVSMod() : SPIRVFSMod(OC) {}
 };
 
 class SPIRVVectorTimesScalar : public SPIRVInstruction {
