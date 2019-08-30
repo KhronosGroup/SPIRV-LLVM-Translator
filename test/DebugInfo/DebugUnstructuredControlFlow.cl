@@ -15,11 +15,12 @@ void sample() {
   for(;;);
 }
 
+// Check that all Line items are retained
+// CHECK-SPIRV: Line [[File:[0-9]+]] 15 0
+// Loop control
 // CHECK-SPIRV: 2 LoopControlINTEL 1
-// CHECK-SPIRV-NOT: ExtInst
-// TODO: Check-not for Line (can only precede LoopControl)
-// CHECK-SPIRV: {{[0-9]+}} Line {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
-// CHECK-SPIRV: Branch
+// CHECK-SPIRV-NEXT: Branch
+
 // CHECK-LLVM: br label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
 // CHECK-LLVM: ![[MD]] = distinct !{![[MD]], ![[MD_unroll:[0-9]+]]}
 // CHECK-LLVM: ![[MD_unroll]] = !{!"llvm.loop.unroll.enable"}
