@@ -2402,6 +2402,16 @@ bool SPIRVToLLVM::translate() {
     if (BV->getStorageClass() != StorageClassFunction)
       transValue(BV, nullptr, nullptr);
   }
+  if (!GlobalAnnotations.empty()) {
+    Constant *Array =
+        ConstantArray::get(ArrayType::get(GlobalAnnotations[0]->getType(),
+                                          GlobalAnnotations.size()),
+                           GlobalAnnotations);
+    auto *GV = new GlobalVariable(*M, Array->getType(), /*IsConstant*/ false,
+                                  GlobalValue::AppendingLinkage, Array,
+                                  "llvm.global.annotations");
+    GV->setSection("llvm.metadata");
+  }
   // Compile unit might be needed during translation of debug intrinsics.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     // Translate Compile Unit first.
@@ -2541,57 +2551,87 @@ void generateIntelFPGAAnnotationForStructMember(
 }
 
 void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
-  if (BV->isVariable()) {
-    if (auto AL = dyn_cast<AllocaInst>(V)) {
-      IRBuilder<> Builder(AL->getParent());
+  if (!BV->isVariable())
+    return;
 
-      SPIRVType *ST = BV->getType()->getPointerElementType();
+  if (auto AL = dyn_cast<AllocaInst>(V)) {
+    IRBuilder<> Builder(AL->getParent());
 
-      Type *Int8PtrTyPrivate = Type::getInt8PtrTy(*Context, SPIRAS_Private);
-      IntegerType *Int32Ty = IntegerType::get(*Context, 32);
+    SPIRVType *ST = BV->getType()->getPointerElementType();
 
-      Value *UndefInt8Ptr = UndefValue::get(Int8PtrTyPrivate);
-      Value *UndefInt32 = UndefValue::get(Int32Ty);
+    Type *Int8PtrTyPrivate = Type::getInt8PtrTy(*Context, SPIRAS_Private);
+    IntegerType *Int32Ty = IntegerType::get(*Context, 32);
 
-      if (ST->isTypeStruct()) {
-        SPIRVTypeStruct *STS = static_cast<SPIRVTypeStruct *>(ST);
+    Value *UndefInt8Ptr = UndefValue::get(Int8PtrTyPrivate);
+    Value *UndefInt32 = UndefValue::get(Int32Ty);
 
-        for (SPIRVWord I = 0; I < STS->getMemberCount(); ++I) {
-          SmallString<256> AnnotStr;
-          generateIntelFPGAAnnotationForStructMember(ST, I, AnnotStr);
-          if (!AnnotStr.empty()) {
-            auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+    if (ST->isTypeStruct()) {
+      SPIRVTypeStruct *STS = static_cast<SPIRVTypeStruct *>(ST);
 
-            auto AnnotationFn = llvm::Intrinsic::getDeclaration(
-                M, Intrinsic::ptr_annotation, Int8PtrTyPrivate);
+      for (SPIRVWord I = 0; I < STS->getMemberCount(); ++I) {
+        SmallString<256> AnnotStr;
+        generateIntelFPGAAnnotationForStructMember(ST, I, AnnotStr);
+        if (!AnnotStr.empty()) {
+          auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
-            auto GEP = Builder.CreateConstInBoundsGEP2_32(
-                AL->getAllocatedType(), AL, 0, I);
+          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
+              M, Intrinsic::ptr_annotation, Int8PtrTyPrivate);
 
-            llvm::Value *Args[] = {
-                Builder.CreateBitCast(GEP, Int8PtrTyPrivate, GEP->getName()),
-                Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
-                UndefInt32};
-            Builder.CreateCall(AnnotationFn, Args);
-          }
+          auto GEP = Builder.CreateConstInBoundsGEP2_32(AL->getAllocatedType(),
+                                                        AL, 0, I);
+
+          llvm::Value *Args[] = {
+              Builder.CreateBitCast(GEP, Int8PtrTyPrivate, GEP->getName()),
+              Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+              UndefInt32};
+          Builder.CreateCall(AnnotationFn, Args);
         }
       }
-
-      SmallString<256> AnnotStr;
-      generateIntelFPGAAnnotation(BV, AnnotStr);
-      if (!AnnotStr.empty()) {
-        auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
-
-        auto AnnotationFn =
-            llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation);
-
-        llvm::Value *Args[] = {
-            Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()),
-            Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
-            UndefInt32};
-        Builder.CreateCall(AnnotationFn, Args);
-      }
     }
+
+    SmallString<256> AnnotStr;
+    generateIntelFPGAAnnotation(BV, AnnotStr);
+    if (!AnnotStr.empty()) {
+      auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+
+      auto AnnotationFn =
+          llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation);
+
+      llvm::Value *Args[] = {
+          Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()),
+          Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+          UndefInt32};
+      Builder.CreateCall(AnnotationFn, Args);
+    }
+  } else if (auto *GV = dyn_cast<GlobalVariable>(V)) {
+    SmallString<256> AnnotStr;
+    generateIntelFPGAAnnotation(BV, AnnotStr);
+
+    if (AnnotStr.empty())
+      return;
+
+    Constant *StrConstant =
+        ConstantDataArray::getString(*Context, StringRef(AnnotStr));
+
+    auto *GS = new GlobalVariable(*GV->getParent(), StrConstant->getType(),
+                                  /*IsConstant*/ true,
+                                  GlobalValue::PrivateLinkage, StrConstant, "");
+
+    GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
+    GS->setSection("llvm.metadata");
+
+    Type *ResType = PointerType::getInt8PtrTy(
+        GV->getContext(), GV->getType()->getPointerAddressSpace());
+    Constant *C = ConstantExpr::getPointerBitCastOrAddrSpaceCast(GV, ResType);
+
+    Type *Int8PtrTyPrivate = Type::getInt8PtrTy(*Context, SPIRAS_Private);
+    IntegerType *Int32Ty = Type::getInt32Ty(*Context);
+
+    llvm::Constant *Fields[4] = {
+        C, ConstantExpr::getBitCast(GS, Int8PtrTyPrivate),
+        UndefValue::get(Int8PtrTyPrivate), UndefValue::get(Int32Ty)};
+
+    GlobalAnnotations.push_back(ConstantStruct::getAnon(Fields));
   }
 }
 
