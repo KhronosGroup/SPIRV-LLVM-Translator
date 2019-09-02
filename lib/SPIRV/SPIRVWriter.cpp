@@ -1606,9 +1606,44 @@ SPIRVWord LLVMToSPIRV::transFunctionControlMask(Function *F) {
   return FCM;
 }
 
+void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
+  SPIRVDBG(dbgs() << "[transGlobalAnnotation] " << *V << '\n');
+
+  // @llvm.global.annotations is an array that contains structs with 4 fields.
+  // Get the array of structs with metadata
+  ConstantArray *CA = cast<ConstantArray>(V->getOperand(0));
+  for (Value *Op : CA->operands()) {
+    ConstantStruct *CS = cast<ConstantStruct>(Op);
+    // The first field of the struct contains a pointer to annotated variable
+    Value *AnnotatedVar = CS->getOperand(0)->getOperand(0);
+    SPIRVValue *SV = transValue(AnnotatedVar, nullptr);
+
+    // The second field contains a pointer to a global annotation string
+    GlobalVariable *GV = cast<GlobalVariable>(CS->getOperand(1)->getOperand(0));
+    // TODO: Refactor to use getConstantStringInfo()
+    StringRef AnnotationString =
+        cast<ConstantDataArray>(GV->getOperand(0))->getAsCString();
+
+    std::vector<std::pair<Decoration, std::string>> Decorations;
+    if (BM->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_fpga_memory_attributes))
+      Decorations = tryParseIntelFPGAAnnotationString(AnnotationString);
+
+    // If we didn't find any IntelFPGA-specific decorations, let's
+    // add the whole annotation string as UserSemantic Decoration
+    if (Decorations.empty()) {
+      SV->addDecorate(new SPIRVDecorateUserSemanticAttr(SV, AnnotationString));
+    } else {
+      addIntelFPGADecorations(SV, Decorations);
+    }
+  }
+}
+
 bool LLVMToSPIRV::transGlobalVariables() {
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    if (!transValue(&(*I), nullptr))
+    if ((&(*I))->getName() == "llvm.global.annotations")
+      transGlobalAnnotation(&(*I));
+    else if (!transValue(&(*I), nullptr))
       return false;
   }
   return true;
