@@ -198,6 +198,7 @@ private:
   SPIRVBlockToLLVMStructMap BlockMap;
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
+  std::vector<Constant *> GlobalAnnotations;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
