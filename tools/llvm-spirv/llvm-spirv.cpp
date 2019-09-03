@@ -111,6 +111,11 @@ static cl::list<std::string>
            cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
            cl::ValueRequired);
 
+static cl::opt<bool> SPIRVGenKernelArgNameMD(
+    "spirv-gen-kernel-arg-name-md", cl::init(false),
+    cl::desc("Enable generating OpenCL kernel argument name "
+             "metadata"));
+
 using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -353,7 +358,8 @@ int main(int Ac, char **Av) {
   if (0 != Ret)
     return Ret;
 
-  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, ExtensionsStatus);
+  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, ExtensionsStatus,
+                             SPIRVGenKernelArgNameMD);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
