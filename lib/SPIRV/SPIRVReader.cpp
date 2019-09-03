@@ -90,11 +90,6 @@ cl::opt<bool> SPIRVEnableStepExpansion(
     "spirv-expand-step", cl::init(true),
     cl::desc("Enable expansion of OpenCL step and smoothstep function"));
 
-cl::opt<bool> SPIRVGenKernelArgNameMD(
-    "spirv-gen-kernel-arg-name-md", cl::init(false),
-    cl::desc("Enable generating OpenCL kernel argument name "
-             "metadata"));
-
 // Prefix for placeholder global variable name.
 const char *KPlaceholderPrefix = "placeholder.";
 
@@ -2757,7 +2752,7 @@ bool SPIRVToLLVM::transKernelMetadata() {
                                    return transOCLKernelArgTypeName(Arg);
                                  });
     // Generate metadata for kernel_arg_name
-    if (SPIRVGenKernelArgNameMD) {
+    if (BM->isGenArgNameMDEnabled()) {
       addOCLKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_NAME, BF, F,
                                    [=](SPIRVFunctionParameter *Arg) {
                                      return MDString::get(*Context,
