@@ -101,6 +101,11 @@ static cl::opt<VersionNumber> MaxSPIRVVersion(
     cl::values(clEnumValN(VersionNumber::SPIRV_1_0, "1.0", "SPIR-V 1.0"),
                clEnumValN(VersionNumber::SPIRV_1_1, "1.1", "SPIR-V 1.1")),
     cl::init(VersionNumber::MaximumVersion));
+static cl::opt<bool> SPIRVGenKernelArgNameMD(
+    "spirv-gen-kernel-arg-name-md", cl::init(false),
+    cl::desc("Enable generating OpenCL kernel argument name "
+             "metadata"));
+
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 namespace SPIRV {
@@ -275,7 +280,7 @@ int main(int Ac, char **Av) {
 
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
-  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion);
+  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, SPIRVGenKernelArgNameMD);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {

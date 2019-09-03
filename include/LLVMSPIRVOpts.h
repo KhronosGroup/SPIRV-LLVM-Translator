@@ -60,7 +60,8 @@ class TranslatorOpts {
 public:
   TranslatorOpts() = default;
 
-  TranslatorOpts(VersionNumber Max) : MaxVersion(Max) {}
+  TranslatorOpts(VersionNumber Max, bool ArgNameMD = false)
+      : MaxVersion(Max), GenKernelArgNameMD(ArgNameMD) {}
 
   bool isAllowedToUseVersion(VersionNumber RequestedVersion) const {
     return RequestedVersion <= MaxVersion;
@@ -68,8 +69,15 @@ public:
 
   VersionNumber getMaxVersion() const { return MaxVersion; }
 
+  bool isGenArgNameMDEnabled() const { return GenKernelArgNameMD; }
+
+  void enableGenArgNameMD() { GenKernelArgNameMD = true; }
+
 private:
+  // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
+  // SPIR-V to LLVM translation options
+  bool GenKernelArgNameMD;
 };
 
 } // namespace SPIRV
