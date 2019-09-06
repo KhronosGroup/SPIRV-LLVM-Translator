@@ -2403,16 +2403,8 @@ bool SPIRVToLLVM::translate() {
     if (BV->getStorageClass() != StorageClassFunction)
       transValue(BV, nullptr, nullptr);
   }
-  if (!GlobalAnnotations.empty()) {
-    Constant *Array =
-        ConstantArray::get(ArrayType::get(GlobalAnnotations[0]->getType(),
-                                          GlobalAnnotations.size()),
-                           GlobalAnnotations);
-    auto *GV = new GlobalVariable(*M, Array->getType(), /*IsConstant*/ false,
-                                  GlobalValue::AppendingLinkage, Array,
-                                  "llvm.global.annotations");
-    GV->setSection("llvm.metadata");
-  }
+  transGlobalAnnotations();
+
   // Compile unit might be needed during translation of debug intrinsics.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     // Translate Compile Unit first.
@@ -2633,6 +2625,19 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         UndefValue::get(Int8PtrTyPrivate), UndefValue::get(Int32Ty)};
 
     GlobalAnnotations.push_back(ConstantStruct::getAnon(Fields));
+  }
+}
+
+void SPIRVToLLVM::transGlobalAnnotations() {
+  if (!GlobalAnnotations.empty()) {
+    Constant *Array =
+        ConstantArray::get(ArrayType::get(GlobalAnnotations[0]->getType(),
+                                          GlobalAnnotations.size()),
+                           GlobalAnnotations);
+    auto *GV = new GlobalVariable(*M, Array->getType(), /*IsConstant*/ false,
+                                  GlobalValue::AppendingLinkage, Array,
+                                  "llvm.global.annotations");
+    GV->setSection("llvm.metadata");
   }
 }
 
