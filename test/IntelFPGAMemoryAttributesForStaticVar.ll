@@ -4,8 +4,8 @@
 ;   a_one = a_one + a;
 ; }
 
-; void bar(int b) {
-;   static int b_one [[intelfpga::memory("MLAB"), intelfpga::bankwidth(4)]];
+; void bar(char b) {
+;   static char b_one [[intelfpga::memory("MLAB")]];
 ;   b_one = b_one + b;
 ; }
 
@@ -55,11 +55,11 @@ target triple = "spir64-unknown-linux-sycldevice"
 @_ZZ3fooiE5a_one = internal addrspace(1) global i32 0, align 4
 @.str = private unnamed_addr constant [29 x i8] c"{memory:DEFAULT}{numbanks:2}\00", section "llvm.metadata"
 @.str.1 = private unnamed_addr constant [9 x i8] c"test.cpp\00", section "llvm.metadata"
-@_ZZ3bariE5b_one = internal addrspace(1) global i32 0, align 4
+@_ZZ3barcE5b_one = internal addrspace(1) global i8 0, align 1
 @.str.2 = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", section "llvm.metadata"
 @_ZZ3baziE5c_one = internal addrspace(1) global i32 0, align 4
 @.str.3 = private unnamed_addr constant [10 x i8] c"foobarbaz\00", section "llvm.metadata"
-@llvm.global.annotations = appending global [3 x { i8 addrspace(1)*, i8*, i8*, i32 }] [{ i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* bitcast (i32 addrspace(1)* @_ZZ3fooiE5a_one to i8 addrspace(1)*), i8* getelementptr inbounds ([29 x i8], [29 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 2 }, { i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* bitcast (i32 addrspace(1)* @_ZZ3bariE5b_one to i8 addrspace(1)*), i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str.2, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 7 }, { i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* bitcast (i32 addrspace(1)* @_ZZ3baziE5c_one to i8 addrspace(1)*), i8* getelementptr inbounds ([10 x i8], [10 x i8]* @.str.3, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 12 }], section "llvm.metadata"
+@llvm.global.annotations = appending global [3 x { i8 addrspace(1)*, i8*, i8*, i32 }] [{ i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* bitcast (i32 addrspace(1)* @_ZZ3fooiE5a_one to i8 addrspace(1)*), i8* getelementptr inbounds ([29 x i8], [29 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 2 }, { i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* @_ZZ3barcE5b_one, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str.2, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 7 }, { i8 addrspace(1)*, i8*, i8*, i32 } { i8 addrspace(1)* bitcast (i32 addrspace(1)* @_ZZ3baziE5c_one to i8 addrspace(1)*), i8* getelementptr inbounds ([10 x i8], [10 x i8]* @.str.3, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str.1, i32 0, i32 0), i32 12 }], section "llvm.metadata"
 
 ; Function Attrs: nounwind
 define spir_kernel void @_ZTSZ4mainE15kernel_function() #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !4 !kernel_arg_type !4 !kernel_arg_base_type !4 !kernel_arg_type_qual !4 {
@@ -84,7 +84,7 @@ entry:
   store %"class._ZTSZ4mainE3$_0.anon" addrspace(4)* %this, %"class._ZTSZ4mainE3$_0.anon" addrspace(4)** %this.addr, align 8, !tbaa !5
   %this1 = load %"class._ZTSZ4mainE3$_0.anon" addrspace(4)*, %"class._ZTSZ4mainE3$_0.anon" addrspace(4)** %this.addr, align 8
   call spir_func void @_Z3fooi(i32 128)
-  call spir_func void @_Z3bari(i32 42)
+  call spir_func void @_Z3barc(i8 signext 42)
   call spir_func void @_Z3bazi(i32 16)
   ret void
 }
@@ -105,14 +105,17 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define spir_func void @_Z3bari(i32 %b) #3 {
+define spir_func void @_Z3barc(i8 signext %b) #3 {
 entry:
-  %b.addr = alloca i32, align 4
-  store i32 %b, i32* %b.addr, align 4, !tbaa !9
-  %0 = load i32, i32 addrspace(4)* addrspacecast (i32 addrspace(1)* @_ZZ3bariE5b_one to i32 addrspace(4)*), align 4, !tbaa !9
-  %1 = load i32, i32* %b.addr, align 4, !tbaa !9
-  %add = add nsw i32 %0, %1
-  store i32 %add, i32 addrspace(4)* addrspacecast (i32 addrspace(1)* @_ZZ3bariE5b_one to i32 addrspace(4)*), align 4, !tbaa !9
+  %b.addr = alloca i8, align 1
+  store i8 %b, i8* %b.addr, align 1, !tbaa !11
+  %0 = load i8, i8 addrspace(4)* addrspacecast (i8 addrspace(1)* @_ZZ3barcE5b_one to i8 addrspace(4)*), align 1, !tbaa !11
+  %conv = sext i8 %0 to i32
+  %1 = load i8, i8* %b.addr, align 1, !tbaa !11
+  %conv1 = sext i8 %1 to i32
+  %add = add nsw i32 %conv, %conv1
+  %conv2 = trunc i32 %add to i8
+  store i8 %conv2, i8 addrspace(4)* addrspacecast (i8 addrspace(1)* @_ZZ3barcE5b_one to i8 addrspace(4)*), align 1, !tbaa !11
   ret void
 }
 
@@ -150,3 +153,4 @@ attributes #4 = { nounwind }
 !8 = !{!"Simple C++ TBAA"}
 !9 = !{!10, !10, i64 0}
 !10 = !{!"int", !7, i64 0}
+!11 = !{!7, !7, i64 0}

@@ -705,6 +705,11 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return transFunctionDecl(F);
 
   if (auto GV = dyn_cast<GlobalVariable>(V)) {
+    if (GV->getName() == "llvm.global.annotations") {
+      transGlobalAnnotation(GV);
+      return nullptr;
+    }
+
     llvm::PointerType *Ty = GV->getType();
     // Though variables with common linkage type are initialized by 0,
     // they can be represented in SPIR-V as uninitialized variables with
@@ -1615,11 +1620,12 @@ void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
   for (Value *Op : CA->operands()) {
     ConstantStruct *CS = cast<ConstantStruct>(Op);
     // The first field of the struct contains a pointer to annotated variable
-    Value *AnnotatedVar = CS->getOperand(0)->getOperand(0);
+    Value *AnnotatedVar = CS->getOperand(0)->stripPointerCasts();
     SPIRVValue *SV = transValue(AnnotatedVar, nullptr);
 
     // The second field contains a pointer to a global annotation string
-    GlobalVariable *GV = cast<GlobalVariable>(CS->getOperand(1)->getOperand(0));
+    GlobalVariable *GV =
+        cast<GlobalVariable>(CS->getOperand(1)->stripPointerCasts());
     // TODO: Refactor to use getConstantStringInfo()
     StringRef AnnotationString =
         cast<ConstantDataArray>(GV->getOperand(0))->getAsCString();
@@ -1641,9 +1647,7 @@ void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
 
 bool LLVMToSPIRV::transGlobalVariables() {
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    if ((&(*I))->getName() == "llvm.global.annotations")
-      transGlobalAnnotation(&(*I));
-    else if (!transValue(&(*I), nullptr))
+    if (!transValue(&(*I), nullptr))
       return false;
   }
   return true;
