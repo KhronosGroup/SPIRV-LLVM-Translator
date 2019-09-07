@@ -386,6 +386,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   case OpTypeVector:
     return mapType(T, VectorType::get(transType(T->getVectorComponentType()),
                                       T->getVectorComponentCount()));
+  case OpTypeMatrix:
+    return mapType(T, ArrayType::get(transType(T->getMatrixColumnType()),
+                                     T->getMatrixColumnCount()));
   case OpTypeOpaque:
     return mapType(T, StructType::create(*Context, T->getName()));
   case OpTypeFunction: {
@@ -511,6 +514,9 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
   case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
            T->getVectorComponentCount();
+  case OpTypeMatrix:
+    return transTypeToOCLTypeName(T->getMatrixColumnType()) +
+           T->getMatrixColumnCount();
   case OpTypeOpaque:
     return T->getName();
   case OpTypeFunction:
@@ -1228,6 +1234,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     switch (BV->getType()->getOpCode()) {
     case OpTypeVector:
       return mapValue(BV, ConstantVector::get(CV));
+    case OpTypeMatrix:
     case OpTypeArray:
       return mapValue(
           BV, ConstantArray::get(dyn_cast<ArrayType>(transType(BCC->getType())),
@@ -1550,6 +1557,27 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     NewVec->takeName(Scalar);
     auto Scale = Builder.CreateFMul(Vector, NewVec, "scale");
     return mapValue(BV, Scale);
+  }
+
+  case OpMatrixTimesScalar: {
+    auto MTS = static_cast<SPIRVMatrixTimesScalar *>(BV);
+    IRBuilder<> Builder(BB);
+    auto Scalar = transValue(MTS->getScalar(), F, BB);
+    auto Matrix = transValue(MTS->getMatrix(), F, BB);
+    uint64_t ColNum = Matrix->getType()->getArrayNumElements();
+    auto ColType = cast<ArrayType>(Matrix->getType())->getElementType();
+    auto VecSize = ColType->getVectorNumElements();
+    auto NewVec = Builder.CreateVectorSplat(VecSize, Scalar, Scalar->getName());
+    NewVec->takeName(Scalar);
+
+    Value *V = UndefValue::get(Matrix->getType());
+    for (uint64_t Idx = 0; Idx != ColNum; Idx++) {
+      auto Col = Builder.CreateExtractValue(Matrix, Idx);
+      auto I = Builder.CreateFMul(Col, NewVec);
+      V = Builder.CreateInsertValue(V, I, Idx);
+    }
+
+    return mapValue(BV, V);
   }
 
   case OpCopyObject: {
