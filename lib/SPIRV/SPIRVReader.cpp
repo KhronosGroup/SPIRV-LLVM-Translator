@@ -1607,6 +1607,46 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, V);
   }
 
+  case OpMatrixTimesVector: {
+    auto *MTV = static_cast<SPIRVMatrixTimesVector *>(BV);
+    IRBuilder<> Builder(BB);
+    Value *Mat = transValue(MTV->getMatrix(), F, BB);
+    Value *Vec = transValue(MTV->getVector(), F, BB);
+
+    // Result is similar to Matrix * Matrix
+    // Mat is of M columns and N rows.
+    // Mat consists of vectors: V_1, V_2, ..., V_M
+    // where each vector is of size N.
+    //
+    // Vec is of size M.
+    // The product is a vector of size N.
+    //
+    //                |------- N ----------|
+    // Result = sum ( {Vec_1, Vec_1, ..., Vec_1} * V_1,
+    //                {Vec_2, Vec_2, ..., Vec_2} * V_2,
+    //                ...
+    //                {Vec_M, Vec_M, ..., Vec_M} * V_N );
+    //
+    // where sum is defined as vector sum.
+
+    unsigned M = Mat->getType()->getArrayNumElements();
+    VectorType *VTy =
+        cast<VectorType>(cast<ArrayType>(Mat->getType())->getElementType());
+    unsigned N = VTy->getVectorNumElements();
+    auto ETy = VTy->getElementType();
+    Value *V = Builder.CreateVectorSplat(N, ConstantFP::get(ETy, 0.0));
+
+    for (unsigned Idx = 0; Idx != M; ++Idx) {
+      Value *S = Builder.CreateExtractElement(Vec, Builder.getInt32(Idx));
+      Value *Lhs = Builder.CreateVectorSplat(N, S);
+      Value *Vx = Builder.CreateExtractValue(Mat, Idx);
+      Value *Mul = Builder.CreateFMul(Lhs, Vx);
+      V = Builder.CreateFAdd(V, Mul);
+    }
+
+    return mapValue(BV, V);
+  }
+
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     AllocaInst *AI =

@@ -378,6 +378,10 @@ public:
                                                      SPIRVId TheMatrix,
                                                      SPIRVId TheScalar,
                                                      SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addMatrixTimesVectorInst(SPIRVType *TheType,
+                                                     SPIRVId TheMatrix,
+                                                     SPIRVId TheVector,
+                                                     SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
                                          SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *addVariable(SPIRVType *, bool, SPIRVLinkageTypeKind,
