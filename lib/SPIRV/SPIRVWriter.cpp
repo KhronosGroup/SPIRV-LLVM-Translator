@@ -654,10 +654,20 @@ SPIRVInstruction *LLVMToSPIRV::transBinaryInst(BinaryOperator *B,
 }
 
 SPIRVInstruction *LLVMToSPIRV::transCmpInst(CmpInst *Cmp, SPIRVBasicBlock *BB) {
-  auto Op0 = transValue(Cmp->getOperand(0), BB);
-  SPIRVInstruction *BI = BM->addCmpInst(
-      transBoolOpCode(Op0, CmpMap::map(Cmp->getPredicate())),
-      transType(Cmp->getType()), Op0, transValue(Cmp->getOperand(1), BB), BB);
+  auto *Op0 = Cmp->getOperand(0);
+  SPIRVValue *TOp0 = transValue(Op0, BB);
+  SPIRVValue *TOp1 = transValue(Cmp->getOperand(1), BB);
+  // TODO: once the translator supports SPIR-V 1.4, update the condition below:
+  // if (/* */->isPointerTy() && /* it is not allowed to use SPIR-V 1.4 */)
+  if (Op0->getType()->isPointerTy()) {
+    unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();
+    SPIRVType *Ty = transType(getSizetType(AS));
+    TOp0 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp0, BB);
+    TOp1 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp1, BB);
+  }
+  SPIRVInstruction *BI =
+      BM->addCmpInst(transBoolOpCode(TOp0, CmpMap::map(Cmp->getPredicate())),
+                     transType(Cmp->getType()), TOp0, TOp1, BB);
   return BI;
 }
 
@@ -1804,9 +1814,9 @@ bool LLVMToSPIRV::translate() {
   return true;
 }
 
-llvm::IntegerType *LLVMToSPIRV::getSizetType() {
+llvm::IntegerType *LLVMToSPIRV::getSizetType(unsigned AS) {
   return IntegerType::getIntNTy(M->getContext(),
-                                M->getDataLayout().getPointerSizeInBits());
+                                M->getDataLayout().getPointerSizeInBits(AS));
 }
 
 void LLVMToSPIRV::oclGetMutatedArgumentTypesByBuiltin(
