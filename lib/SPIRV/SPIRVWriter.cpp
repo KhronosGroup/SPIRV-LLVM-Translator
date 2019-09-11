@@ -56,6 +56,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -1405,9 +1406,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!GEP)
       return nullptr;
     Constant *C = cast<Constant>(GEP->getOperand(0));
-    // TODO: Refactor to use getConstantStringInfo()
-    StringRef AnnotationString =
-        cast<ConstantDataArray>(C->getOperand(0))->getAsCString();
+    StringRef AnnotationString;
+    getConstantStringInfo(C, AnnotationString);
 
     if (AnnotationString == kOCLBuiltinName::FPGARegIntel) {
       if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_reg))
@@ -1429,9 +1429,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
 
     GetElementPtrInst *GEP = cast<GetElementPtrInst>(II->getArgOperand(1));
     Constant *C = cast<Constant>(GEP->getOperand(0));
-    // TODO: Refactor to use getConstantStringInfo()
-    StringRef AnnotationString =
-        cast<ConstantDataArray>(C->getOperand(0))->getAsString();
+    StringRef AnnotationString;
+    getConstantStringInfo(C, AnnotationString);
 
     std::vector<std::pair<Decoration, std::string>> Decorations;
     if (BB->getModule()->isAllowedToUseExtension(
@@ -1443,8 +1442,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // If we didn't find any IntelFPGA-specific decorations, let's add the whole
     // annotation string as UserSemantic Decoration
     if (Decorations.empty()) {
-      SV->addDecorate(new SPIRVDecorateUserSemanticAttr(
-          SV, AnnotationString.substr(0, AnnotationString.size() - 1)));
+      SV->addDecorate(new SPIRVDecorateUserSemanticAttr(SV, AnnotationString));
     } else {
       addIntelFPGADecorations(SV, Decorations);
     }
@@ -1453,9 +1451,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::ptr_annotation: {
     GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(II->getArgOperand(1));
     Constant *C = dyn_cast<Constant>(GEP->getOperand(0));
-    // TODO: Refactor to use getConstantStringInfo()
-    StringRef AnnotationString =
-        dyn_cast<ConstantDataArray>(C->getOperand(0))->getAsCString();
+    StringRef AnnotationString;
+    getConstantStringInfo(C, AnnotationString);
 
     // Strip all bitcast and addrspace casts from the pointer argument:
     //   llvm annotation intrinsic only takes i8*, so the original pointer
@@ -1626,9 +1623,9 @@ void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
     // The second field contains a pointer to a global annotation string
     GlobalVariable *GV =
         cast<GlobalVariable>(CS->getOperand(1)->stripPointerCasts());
-    // TODO: Refactor to use getConstantStringInfo()
-    StringRef AnnotationString =
-        cast<ConstantDataArray>(GV->getOperand(0))->getAsCString();
+
+    StringRef AnnotationString;
+    getConstantStringInfo(GV, AnnotationString);
 
     std::vector<std::pair<Decoration, std::string>> Decorations;
     if (BM->isAllowedToUseExtension(
