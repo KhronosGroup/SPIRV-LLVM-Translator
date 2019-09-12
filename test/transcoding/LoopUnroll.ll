@@ -88,7 +88,7 @@ for.inc:                                          ; preds = %if.end, %if.then
   %inc = add nsw i32 %3, 1
   store i32 %inc, i32* %i, align 4
   br label %for.cond, !llvm.loop !5
-; CHECK-LLVM: br i1 {{.*}}, !llvm.loop ![[UNROLLDISABLE:[0-9]+]]
+; CHECK-LLVM: br label %for.cond, !llvm.loop ![[UNROLLDISABLE:[0-9]+]]
 ; CHECK-SPIRV: Branch [[HEADER]]
 
 for.end:                                          ; preds = %for.cond
@@ -126,7 +126,7 @@ while.body:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %while.body
 ; CHECK-SPIRV: Label
-; CHECK-LLVM: br i1 %cmp, label %while.body, label %while.end, !llvm.loop ![[UNROLLCOUNT:[0-9]+]]
+; CHECK-LLVM: br label %while.cond, !llvm.loop ![[UNROLLCOUNT:[0-9]+]]
   br label %while.cond, !llvm.loop !7
 
 ; loop-simplify pass will create extra basic block which is the only one in
@@ -182,7 +182,7 @@ do.cond:                                          ; preds = %if.end, %if.then
   store i32 %dec, i32* %i, align 4
   %cmp = icmp sgt i32 %2, 0
 ; CHECK-SPIRV: BranchConditional {{.*}} [[HEADER]] [[MERGEBLOCK]]
-; CHECK-LLVM: br i1 {{.*}}, !llvm.loop ![[UNROLLENABLE1:[0-9]+]]
+; CHECK-LLVM: br i1 %cmp, label %do.body, label %do.end, !llvm.loop ![[UNROLLENABLE1:[0-9]+]]
   br i1 %cmp, label %do.body, label %do.end, !llvm.loop !9
 
 do.end:                                           ; preds = %do.cond
@@ -227,7 +227,7 @@ for.cond:                                          ; preds = %if.end, %if.then
   store i32 %dec, i32* %i, align 4
   %cmp = icmp sgt i32 %2, 0
 ; CHECK-SPIRV: BranchConditional {{.*}} [[MERGEBLOCK]] [[HEADER]]
-; CHECK-LLVM: br i1 {{.*}}, !llvm.loop ![[UNROLLENABLE2:[0-9]+]]
+; CHECK-LLVM: br i1 %cmp, label %for.end, label %for.body, !llvm.loop ![[UNROLLENABLE2:[0-9]+]]
   br i1 %cmp, label %for.end, label %for.body, !llvm.loop !9
 
 for.end:                                           ; preds = %for.cond

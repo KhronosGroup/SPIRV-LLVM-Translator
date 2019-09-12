@@ -136,6 +136,9 @@ public:
   // which are supposed to be replaced by the real values later.
   typedef std::map<SPIRVValue *, LoadInst *> SPIRVToLLVMPlaceholderMap;
 
+  typedef std::map<const BasicBlock *, const SPIRVValue *>
+      SPIRVToLLVMLoopMetadataMap;
+
 private:
   Module *M;
   LLVMContext *Context;
@@ -154,6 +157,11 @@ private:
   SPIRVToLLVMMDAliasInstMap MDAliasDomainMap;
   SPIRVToLLVMMDAliasInstMap MDAliasScopeMap;
   SPIRVToLLVMMDAliasInstMap MDAliasListMap;
+
+  // Loops metadata is translated in the end of a function translation.
+  // This storage contains pairs of translated loop header basic block and loop
+  // metadata SPIR-V instruction in SPIR-V representation of this basic block.
+  SPIRVToLLVMLoopMetadataMap FuncLoopMetadataMap;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
@@ -195,7 +203,8 @@ private:
   Value *oclTransConstantPipeStorage(SPIRV::SPIRVConstantPipeStorage *BCPS);
   void setName(llvm::Value *V, SPIRVValue *BV);
   template <typename LoopInstType>
-  void setLLVMLoopMetadata(LoopInstType *LM, BranchInst *BI);
+  void setLLVMLoopMetadata(const LoopInstType *LM, Instruction *BI);
+  void transLLVMLoopMetadata(const Function *F);
   inline llvm::Metadata *getMetadataFromName(std::string Name);
   inline std::vector<llvm::Metadata *>
   getMetadataFromNameAndParameter(std::string Name, SPIRVWord Parameter);
