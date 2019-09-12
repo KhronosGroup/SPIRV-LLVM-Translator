@@ -37,6 +37,6 @@ void sample() {
 // CHECK-SPIRV: {{[0-9]+}} LoopMerge [[MergeBlock:[0-9]+]] [[ContinueTarget:[0-9]+]] 1
 // CHECK-SPIRV-NEXT: Branch
 
-// CHECK-LLVM: br i1 %{{.*}}, label %{{.*}}, label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
+// CHECK-LLVM: br label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
 // CHECK-LLVM: ![[MD]] = distinct !{![[MD]], ![[MD_unroll:[0-9]+]]}
 // CHECK-LLVM: ![[MD_unroll]] = !{!"llvm.loop.unroll.enable"}
