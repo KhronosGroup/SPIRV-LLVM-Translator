@@ -1068,8 +1068,8 @@ public:
 
   SPIRVId getMergeBlock() { return MergeBlock; }
   SPIRVId getContinueTarget() { return ContinueTarget; }
-  SPIRVWord getLoopControl() { return LoopControl; }
-  std::vector<SPIRVWord> getLoopControlParameters() {
+  SPIRVWord getLoopControl() const { return LoopControl; }
+  std::vector<SPIRVWord> getLoopControlParameters() const {
     return LoopControlParameters;
   }
 
@@ -1116,7 +1116,7 @@ public:
     setHasNoId();
     setHasNoType();
   }
-  std::vector<SPIRVValue *> getPairs() { return getValues(Pairs); }
+  std::vector<SPIRVValue *> getPairs() const { return getValues(Pairs); }
   SPIRVValue *getSelect() const { return getValue(Select); }
   SPIRVBasicBlock *getDefault() const {
     return static_cast<SPIRVBasicBlock *>(getValue(Default));
@@ -1372,9 +1372,9 @@ public:
     setHasNoType();
   }
 
-  SPIRVWord getLoopControl() { return LoopControl; }
+  SPIRVWord getLoopControl() const { return LoopControl; }
 
-  std::vector<SPIRVWord> getLoopControlParameters() {
+  std::vector<SPIRVWord> getLoopControlParameters() const {
     return LoopControlParameters;
   }
 
