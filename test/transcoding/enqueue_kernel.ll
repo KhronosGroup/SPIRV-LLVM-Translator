@@ -35,6 +35,12 @@
 ;                    return;
 ;                  },
 ;                  1, 2, 4);
+;
+;   // Emits block literal on stack and block kernel.
+;   enqueue_kernel(default_queue, flags, ndrange, 0, NULL, &clk_event,
+;                  ^(void) {
+;                    a[i] = b[i];
+;                  });
 ; }
 ;
 ; Compilation command:
@@ -61,6 +67,7 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer2:[0-9]+]] "__device_side_enqueue_block_invoke_2_kernel"
 ; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer3:[0-9]+]] "__device_side_enqueue_block_invoke_3_kernel"
 ; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer4:[0-9]+]] "__device_side_enqueue_block_invoke_4_kernel"
+; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer5:[0-9]+]] "__device_side_enqueue_block_invoke_5_kernel"
 ; CHECK-SPIRV: Name [[BlockGlb1:[0-9]+]] "__block_literal_global"
 ; CHECK-SPIRV: Name [[BlockGlb2:[0-9]+]] "__block_literal_global.1"
 
@@ -207,6 +214,17 @@ entry:
 ; CHECK-LLVM: call i32 @__enqueue_kernel_varargs(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i8 addrspace(4)* [[BlockInv1]], i8 addrspace(4)* [[Block1]], i32 3, i32* {{.*}})
 
   %20 = call i32 @__enqueue_kernel_varargs(%opencl.queue_t* %1, i32 %2, %struct.ndrange_t* %ndrange, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*, i8 addrspace(3)*, i8 addrspace(3)*, i8 addrspace(3)*)* @__device_side_enqueue_block_invoke_4_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* addrspacecast (i8 addrspace(1)* bitcast ({ i32, i32 } addrspace(1)* @__block_literal_global.1 to i8 addrspace(1)*) to i8 addrspace(4)*), i32 3, i32* %17)
+
+; CHECK-SPIRV: PtrCastToGeneric [[Int8PtrGenTy]] [[BlockLit2:[0-9]+]]
+; CHECK-SPIRV: EnqueueKernel [[Int32Ty]] {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
+;                            [[ConstInt0]] [[EventNull]] [[Event1]]
+;                            [[BlockKer5]] [[BlockLit5]] [[ConstInt20]] [[ConstInt8]]
+
+; CHECK-LLVM: [[BlockInv5:%[0-9]+]] = addrspacecast void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_5_kernel to i8 addrspace(4)*
+; CHECK-LLVM: call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* {{.*}}, i8 addrspace(4)* [[BlockInv5]], i8 addrspace(4)* [[Block3]])
+
+  %21 = call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* %1, i32 %2, %struct.ndrange_t* %ndrange, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* %7, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_5_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* %9)
+
   ret void
 }
 
@@ -319,15 +337,47 @@ entry:
 
 declare i32 @__enqueue_kernel_varargs(%opencl.queue_t*, i32, %struct.ndrange_t*, i8 addrspace(4)*, i8 addrspace(4)*, i32, i32*)
 
+; Function Attrs: convergent noinline nounwind optnone
+define internal spir_func void @__device_side_enqueue_block_invoke_5(i8 addrspace(4)* %.block_descriptor) #2 {
+entry:
+  %.block_descriptor.addr = alloca i8 addrspace(4)*, align 4
+  %block.addr = alloca <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)*, align 4
+  store i8 addrspace(4)* %.block_descriptor, i8 addrspace(4)** %.block_descriptor.addr, align 4
+  %block = bitcast i8 addrspace(4)* %.block_descriptor to <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)*
+  store <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)* %block, <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)** %block.addr, align 4
+  %block.capture.addr = getelementptr inbounds <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }>, <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)* %block, i32 0, i32 5
+  %0 = load i32 addrspace(1)*, i32 addrspace(1)* addrspace(4)* %block.capture.addr, align 4
+  %block.capture.addr1 = getelementptr inbounds <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }>, <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)* %block, i32 0, i32 4
+  %1 = load i32, i32 addrspace(4)* %block.capture.addr1, align 4
+  %arrayidx = getelementptr inbounds i32, i32 addrspace(1)* %0, i32 %1
+  %2 = load i32, i32 addrspace(1)* %arrayidx, align 4
+  %block.capture.addr2 = getelementptr inbounds <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }>, <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)* %block, i32 0, i32 3
+  %3 = load i32 addrspace(1)*, i32 addrspace(1)* addrspace(4)* %block.capture.addr2, align 4
+  %block.capture.addr3 = getelementptr inbounds <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }>, <{ i32, i32, i8 addrspace(4)*, i32 addrspace(1)*, i32, i32 addrspace(1)* }> addrspace(4)* %block, i32 0, i32 4
+  %4 = load i32, i32 addrspace(4)* %block.capture.addr3, align 4
+  %arrayidx4 = getelementptr inbounds i32, i32 addrspace(1)* %3, i32 %4
+  store i32 %2, i32 addrspace(1)* %arrayidx4, align 4
+  ret void
+}
+
+; Function Attrs: nounwind
+define internal spir_kernel void @__device_side_enqueue_block_invoke_5_kernel(i8 addrspace(4)*) #3 {
+entry:
+  call void @__device_side_enqueue_block_invoke_5(i8 addrspace(4)* %0)
+  ret void
+}
+
 ; CHECK-SPIRV-DAG: Function [[VoidTy]] [[BlockKer1]] 0 [[BlockTy1]]
 ; CHECK-SPIRV-DAG: Function [[VoidTy]] [[BlockKer2]] 0 [[BlockTy1]]
 ; CHECK-SPIRV-DAG: Function [[VoidTy]] [[BlockKer3]] 0 [[BlockTy2]]
 ; CHECK-SPIRV-DAG: Function [[VoidTy]] [[BlockKer4]] 0 [[BlockTy3]]
+; CHECK-SPIRV-DAG: Function [[VoidTy]] [[BlockKer5]] 0 [[BlockTy1]]
 
 ; CHECK-LLVM-DAG: define spir_kernel void @__device_side_enqueue_block_invoke_kernel(i8 addrspace(4)*)
 ; CHECK-LLVM-DAG: define spir_kernel void @__device_side_enqueue_block_invoke_2_kernel(i8 addrspace(4)*)
 ; CHECK-LLVM-DAG: define spir_kernel void @__device_side_enqueue_block_invoke_3_kernel(i8 addrspace(4)*, i8 addrspace(3)*)
 ; CHECK-LLVM-DAG: define spir_kernel void @__device_side_enqueue_block_invoke_4_kernel(i8 addrspace(4)*, i8 addrspace(3)*, i8 addrspace(3)*, i8 addrspace(3)*)
+; CHECK-LLVM-DAG: define spir_kernel void @__device_side_enqueue_block_invoke_5_kernel(i8 addrspace(4)*)
 
 attributes #0 = { convergent noinline nounwind optnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="false" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { argmemonly nounwind }
