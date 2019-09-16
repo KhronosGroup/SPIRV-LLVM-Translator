@@ -2086,10 +2086,14 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
   auto Ops = BI->getOperands();
   bool HasVaargs = Ops.size() > 10;
   bool HasEvents = true;
-  SPIRVValue *NumEvents = Ops[3];
-  if (NumEvents->getOpCode() == OpConstant) {
-    SPIRVConstant *NE = static_cast<SPIRVConstant *>(NumEvents);
-    HasEvents = NE->getZExtIntValue() != 0;
+  SPIRVValue *EventRet = Ops[5];
+  if (EventRet->getOpCode() == OpConstantNull) {
+    SPIRVValue *NumEvents = Ops[3];
+    if (NumEvents->getOpCode() == OpConstant) {
+      SPIRVConstant *NE = static_cast<SPIRVConstant *>(NumEvents);
+      HasEvents = NE->getZExtIntValue() != 0;
+    } else if (NumEvents->getOpCode() == OpConstantNull)
+      HasEvents = false;
   }
 
   std::string FName = "";
