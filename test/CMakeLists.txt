@@ -11,26 +11,22 @@ set(LLVM_SPIRV_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
 if(SPIRV_TOOLS_FOUND)
   find_program(SPIRV_TOOLS_SPIRV_AS NAMES spirv-as PATHS ${SPIRV_TOOLS_PREFIX}/bin)
-  if(SPIRV_TOOLS_SPIRV_AS)
-    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
-  endif()
 
   find_program(SPIRV_TOOLS_SPIRV_VAL NAMES spirv-val PATHS ${SPIRV_TOOLS_PREFIX}/bin)
-  if(SPIRV_TOOLS_SPIRV_VAL)
-    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
-  endif()
 
   set(SPIRV_TOOLS_BINDIR "${SPIRV_TOOLS_PREFIX}/bin")
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_AS)
-  message(WARNING "spirv-as not found! SPIR-V assembly tests will not be run.")
-  set(SPIRV_TOOLS_SPIRV_AS_FOUND False)
+  message(FATAL_ERROR "spirv-as not found! "
+          "Either ensure spirv-as is available, or disable the llvm-spirv "
+          "tests via `LLVM_SPIRV_INCLUDE_TESTS=OFF`.")
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_VAL)
-  message(WARNING "spirv-val not found! SPIR-V generated for test suite will not be validated.")
-  set(SPIRV_TOOLS_SPIRV_VAL_FOUND False)
+  message(FATAL_ERROR "spirv-val not found! "
+          "Either ensure spirv-val is available, or disable the llvm-spirv "
+          "tests via `LLVM_SPIRV_INCLUDE_TESTS=OFF`.")
 endif()
 
 configure_lit_site_cfg(

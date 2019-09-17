@@ -53,19 +53,7 @@ if not config.spirv_skip_debug_info_tests:
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
 
-using_spirv_tools = False
+llvm_config.add_tool_substitutions(['spirv-as', 'spirv-val'], [config.spirv_tools_bin_dir])
 
-if config.spirv_tools_have_spirv_as:
-    llvm_config.add_tool_substitutions(['spirv-as'], [config.spirv_tools_bin_dir])
-    config.available_features.add('spirv-as')
-    using_spirv_tools = True
-
-if config.spirv_tools_have_spirv_val:
-    llvm_config.add_tool_substitutions(['spirv-val'], [config.spirv_tools_bin_dir])
-    using_spirv_tools = True
-else:
-    config.substitutions.append(('spirv-val', ':'))
-
-if using_spirv_tools:
-    new_ld_library_path = os.path.pathsep.join((config.spirv_tools_lib_dir, config.environment['LD_LIBRARY_PATH']))
-    config.environment['LD_LIBRARY_PATH'] = new_ld_library_path
+new_ld_library_path = os.path.pathsep.join((config.spirv_tools_lib_dir, config.environment['LD_LIBRARY_PATH']))
+config.environment['LD_LIBRARY_PATH'] = new_ld_library_path
