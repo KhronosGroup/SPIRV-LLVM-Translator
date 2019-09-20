@@ -1289,6 +1289,9 @@ public:
     SPIRVType *MTy = getValueType(Matrix)->getScalarType();
     SPIRVType *STy = getValueType(Scalar);
 
+    (void)Ty;
+    (void)MTy;
+    (void)STy;
     assert(Ty->isTypeFloat() && "Invalid result type for OpMatrixTimesScalar");
     assert(MTy->isTypeFloat() && "Invalid Matrix type for OpMatrixTimesScalar");
     assert(STy->isTypeFloat() && "Invalid Scalar type for OpMatrixTimesScalar");
