@@ -76,6 +76,9 @@ This requires that the `-DLLVM_INCLUDE_TESTS=ON` and
 `-DLLVM_EXTERNAL_LIT="/usr/lib/llvm-10/build/utils/lit/lit.py"` arguments were
 passed to CMake during the build step.
 
+The translator test suite can be disabled by passing
+`-DLLVM_SPIRV_INCLUDE_TESTS=OFF` to cmake.
+
 ## Run Instructions for `llvm-spirv`
 
 
