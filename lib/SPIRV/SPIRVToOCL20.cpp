@@ -44,7 +44,7 @@ namespace SPIRV {
 
 class SPIRVToOCL20 : public SPIRVToOCL {
 public:
-  SPIRVToOCL20() {
+  SPIRVToOCL20() : SPIRVToOCL(ID) {
     initializeSPIRVToOCL20Pass(*PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override;
@@ -81,7 +81,11 @@ public:
   /// Transform __spirv_OpAtomicCompareExchange/Weak into
   /// compare_exchange_strong/weak_explicit
   Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) override;
+
+  static char ID;
 };
+
+char SPIRVToOCL20::ID = 0;
 
 bool SPIRVToOCL20::runOnModule(Module &Module) {
   M = &Module;
