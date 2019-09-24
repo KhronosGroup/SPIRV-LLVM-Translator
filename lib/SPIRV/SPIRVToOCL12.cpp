@@ -45,7 +45,7 @@ namespace SPIRV {
 
 class SPIRVToOCL12 : public SPIRVToOCL {
 public:
-  SPIRVToOCL12() {
+  SPIRVToOCL12() : SPIRVToOCL(ID) {
     initializeSPIRVToOCL12Pass(*PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override;
@@ -103,7 +103,11 @@ public:
   /// types or with "atom_" for 64-bit types, as specified by
   /// cl_khr_int64_base_atomics and cl_khr_int64_extended_atomics extensions.
   std::string mapAtomicName(Op OC, Type *Ty);
+
+  static char ID;
 };
+
+char SPIRVToOCL12::ID = 0;
 
 bool SPIRVToOCL12::runOnModule(Module &Module) {
   M = &Module;
