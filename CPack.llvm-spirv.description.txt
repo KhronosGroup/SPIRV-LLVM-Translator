@@ -1,0 +1,1 @@
+SPIRV-LLVM-translator is a LLVM/SPIRV bi-directional translator. This package includes a library and a tool for translation between LLVM IR and SPIR-V.
