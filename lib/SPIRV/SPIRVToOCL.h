@@ -49,7 +49,7 @@
 namespace SPIRV {
 class SPIRVToOCL : public ModulePass, public InstVisitor<SPIRVToOCL> {
 protected:
-  SPIRVToOCL(char ID) : ModulePass(ID), M(nullptr), Ctx(nullptr) {}
+  SPIRVToOCL(char &ID) : ModulePass(ID), M(nullptr), Ctx(nullptr) {}
 
 public:
   virtual bool runOnModule(Module &M) = 0;
