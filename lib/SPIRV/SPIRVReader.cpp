@@ -1513,12 +1513,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         if (isa<OpConstantNull>(Init)) {
           SPIRVType *Ty = static_cast<SPIRVConstantNull *>(Init)->getType();
           if (isa<OpTypeArray>(Ty)) {
-            SPIRVTypeArray *AT = static_cast<SPIRVTypeArray *>(Ty);
-            Type *SrcTy = transType(AT->getArrayElementType());
-            if (SrcTy->isIntegerTy(8)) {
-              llvm::Value *Src = ConstantInt::get(SrcTy, 0);
-              CI = Builder.CreateMemSet(Dst, Src, Size, Align, IsVolatile);
+            Type *Int8Ty = Type::getInt8Ty(Dst->getContext());
+            llvm::Value *Src = ConstantInt::get(Int8Ty, 0);
+            llvm::Value *NewDst = Dst;
+            if (!Dst->getType()->getPointerElementType()->isIntegerTy(8)) {
+              Type *Int8PointerTy = Type::getInt8PtrTy(
+                  Dst->getContext(), Dst->getType()->getPointerAddressSpace());
+              NewDst = llvm::BitCastInst::CreatePointerCast(Dst, Int8PointerTy,
+                                                            "", BB);
             }
+            CI = Builder.CreateMemSet(NewDst, Src, Size, Align, IsVolatile);
           }
         }
       }
