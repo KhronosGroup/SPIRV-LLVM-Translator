@@ -103,6 +103,17 @@ To translate between LLVM IR and SPIR-V:
     * `-spirv-text` - read/write SPIR-V in an internal textual format for debugging purpose. The textual format is not defined by SPIR-V spec.
     * `-help` - to see full list of options
 
+4. Multiple input files mode. Execute the following command to translate `input.bc` and `input1.bc` to `input.spv` and `input1.spv`.
+    ```
+    llvm-spirv input.bc input1.bc -o list.txt
+    ```
+    In this mode `-o` option specifies file name for list of produced files, i.e. for
+    the command above file list will be saved to `list.txt` and it will have the
+    following content:
+    ```
+    input.spv
+    input1.spv
+    ```
 Translation from LLVM IR to SPIR-V and then back to LLVM IR is not guaranteed to
 produce the original LLVM IR.  In particular, LLVM intrinsic call instructions
 may get replaced by function calls to OpenCL builtins and metadata may be

@@ -33,12 +33,14 @@
 /// \file
 ///
 ///  Common Usage:
-///  llvm-spirv          - Read LLVM bitcode from stdin, write SPIR-V to stdout
-///  llvm-spirv x.bc     - Read LLVM bitcode from the x.bc file, write SPIR-V
-///                        to x.bil file
-///  llvm-spirv -r       - Read SPIR-V from stdin, write LLVM bitcode to stdout
-///  llvm-spirv -r x.bil - Read SPIR-V from the x.bil file, write SPIR-V to
-///                        the x.bc file
+///  llvm-spirv           - Read LLVM bitcode from stdin, write SPIR-V to stdout
+///  llvm-spirv x.bc      - Read LLVM bitcode from the x.bc file, write SPIR-V
+///                         to x.bil file
+///  llvm-spirv -r        - Read SPIR-V from stdin, write LLVM bitcode to stdout
+///  llvm-spirv -r x.bil  - Read SPIR-V from the x.bil file, write SPIR-V to
+///                         the x.bc file
+///  llvm-spirv x.bc y.bc - Read LLVM bitcode from the x.bc and y.bc files,
+///                         write SPIR-V to x.spv and y.spv files
 ///
 ///  Options:
 ///      --help   - Output command line options
@@ -82,8 +84,8 @@ const char LLVMBinary[] = ".bc";
 
 using namespace llvm;
 
-static cl::opt<std::string> InputFile(cl::Positional, cl::desc("<input file>"),
-                                      cl::init("-"));
+static cl::list<std::string> InputFilenames(cl::Positional, cl::ZeroOrMore,
+                                            cl::desc("<input files>"));
 
 static cl::opt<std::string> OutputFile("o",
                                        cl::desc("Override output filename"),
@@ -142,77 +144,114 @@ static std::string removeExt(const std::string &FileName) {
 
 static ExitOnError ExitOnErr;
 
-static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
-  LLVMContext Context;
+static void error(const Twine &Msg) {
+  errs() << "llvm-spirv: " << Msg << '\n';
+  exit(1);
+}
 
-  std::unique_ptr<MemoryBuffer> MB =
-      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
-  std::unique_ptr<Module> M =
-      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
-                                           /*ShouldLazyLoadMetadata=*/true));
-  ExitOnErr(M->materializeAll());
+static void error(std::error_code EC, const Twine &Prefix) {
+  if (EC)
+    error(Prefix + ": " + EC.message());
+}
 
-  if (OutputFile.empty()) {
+static void saveListToFile(std::string Filename, std::string Content) {
+  std::error_code EC;
+  raw_fd_ostream OS{Filename, EC, sys::fs::OpenFlags::OF_None};
+  error(EC, "error opening the file '" + Filename + "'");
+  OS.write(Content.data(), Content.size());
+}
+
+static void saveLLVMModuleToFile(std::string Filename, Module *M) {
+  std::error_code EC;
+  raw_fd_ostream OS{Filename, EC, sys::fs::OpenFlags::OF_None};
+  error(EC, "error opening the file '" + Filename + "'");
+  WriteBitcodeToFile(*M, OS);
+}
+
+static std::string getResultFilename(std::string InputFile, std::string Ext) {
+  bool MultipleFilesMode = InputFilenames.size() > 1;
+  if (OutputFile.empty() || MultipleFilesMode) {
     if (InputFile == "-")
-      OutputFile = "-";
-    else
-      OutputFile =
-          removeExt(InputFile) +
-          (SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
+      return "-";
+    return removeExt(InputFile) + Ext;
   }
+  return OutputFile;
+}
 
-  std::string Err;
-  bool Success = false;
-  if (OutputFile != "-") {
-    std::ofstream OutFile(OutputFile, std::ios::binary);
-    Success = writeSpirv(M.get(), Opts, OutFile, Err);
-  } else {
-    Success = writeSpirv(M.get(), Opts, std::cout, Err);
+static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
+  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  std::string FileList;
+  for (auto &InputFile : InputFilenames) {
+    bool Success = false;
+    std::string Err;
+    LLVMContext Context;
+    std::unique_ptr<MemoryBuffer> MB =
+        ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
+    std::unique_ptr<Module> M =
+        ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
+                                             /*ShouldLazyLoadMetadata=*/true));
+    ExitOnErr(M->materializeAll());
+
+    std::string ResultFileName = getResultFilename(
+        InputFile,
+        SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
+
+    if (FileListMode) {
+      FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
+    }
+
+    if (ResultFileName == "-")
+      Success = writeSpirv(M.get(), Opts, std::cout, Err);
+    else {
+      std::ofstream OFS(ResultFileName.c_str(), std::ios::binary);
+      Success = writeSpirv(M.get(), Opts, OFS, Err);
+    }
+
+    if (!Success) {
+      errs() << "Fails to save LLVM as SPIR-V: " << Err << '\n';
+      return -1;
+    }
   }
-
-  if (!Success) {
-    errs() << "Fails to save LLVM as SPIR-V: " << Err << '\n';
-    return -1;
+  if (FileListMode) {
+    saveListToFile(OutputFile, FileList);
   }
   return 0;
 }
 
 static int convertSPIRVToLLVM(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
-  std::ifstream IFS(InputFile, std::ios::binary);
-  Module *M;
-  std::string Err;
+  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  std::string FileList;
+  for (auto &InputFile : InputFilenames) {
+    std::ifstream IFS(InputFile, std::ios::binary);
+    Module *M;
+    std::string Err;
 
-  if (!readSpirv(Context, Opts, IFS, M, Err)) {
-    errs() << "Fails to load SPIR-V as LLVM Module: " << Err << '\n';
-    return -1;
+    if (!readSpirv(Context, Opts, IFS, M, Err)) {
+      errs() << "Fails to load SPIR-V as LLVM Module: " << Err << '\n';
+      return -1;
+    }
+
+    LLVM_DEBUG(dbgs() << "Converted LLVM module:\n" << *M);
+
+    raw_string_ostream ErrorOS(Err);
+    if (verifyModule(*M, &ErrorOS)) {
+      errs() << "Fails to verify module: " << ErrorOS.str();
+      return -1;
+    }
+
+    std::string ResultFileName = getResultFilename(InputFile, kExt::LLVMBinary);
+
+    if (FileListMode) {
+      FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
+    }
+
+    saveLLVMModuleToFile(ResultFileName, M);
+    delete M;
   }
-
-  LLVM_DEBUG(dbgs() << "Converted LLVM module:\n" << *M);
-
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    errs() << "Fails to verify module: " << ErrorOS.str();
-    return -1;
+  if (FileListMode) {
+    saveListToFile(OutputFile, FileList);
   }
-
-  if (OutputFile.empty()) {
-    if (InputFile == "-")
-      OutputFile = "-";
-    else
-      OutputFile = removeExt(InputFile) + kExt::LLVMBinary;
-  }
-
-  std::error_code EC;
-  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::F_None);
-  if (EC) {
-    errs() << "Fails to open output file: " << EC.message();
-    return -1;
-  }
-
-  WriteBitcodeToFile(*M, Out.os());
-  Out.keep();
-  delete M;
   return 0;
 }
 
@@ -222,65 +261,65 @@ static int convertSPIRV() {
     errs() << "Invalid arguments\n";
     return -1;
   }
-  std::ifstream IFS(InputFile, std::ios::binary);
-
-  if (OutputFile.empty()) {
-    if (InputFile == "-")
-      OutputFile = "-";
-    else {
-      OutputFile = removeExt(InputFile) +
-                   (ToBinary ? kExt::SpirvBinary : kExt::SpirvText);
-    }
-  }
-
-  auto Action = [&](std::ostream &OFS) {
+  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  std::string FileList;
+  for (auto &InputFile : InputFilenames) {
+    bool Success = false;
     std::string Err;
-    if (!SPIRV::convertSpirv(IFS, OFS, Err, ToBinary, ToText)) {
-      errs() << "Fails to convert SPIR-V : " << Err << '\n';
+    std::ifstream IFS(InputFile, std::ios::binary);
+
+    std::string ResultFileName = getResultFilename(
+        InputFile, ToBinary ? kExt::SpirvBinary : kExt::SpirvText);
+    if (ResultFileName == "-")
+      Success = SPIRV::convertSpirv(IFS, std::cout, Err, ToBinary, ToText);
+    else if (ToBinary) {
+      std::ofstream OFS(ResultFileName.c_str(), std::ios::binary);
+      Success = SPIRV::convertSpirv(IFS, OFS, Err, ToBinary, ToText);
+    } else {
+      std::ofstream OFS(ResultFileName.c_str());
+      Success = SPIRV::convertSpirv(IFS, OFS, Err, ToBinary, ToText);
+    }
+    if (!Success) {
+      errs() << "Fails to convert SPIR-V: " << Err << '\n';
       return -1;
     }
-    return 0;
-  };
-  if (OutputFile != "-") {
-    std::ofstream OFS(OutputFile);
-    return Action(OFS);
-  } else
-    return Action(std::cout);
+  }
+  if (FileListMode) {
+    saveListToFile(OutputFile, FileList);
+  }
+  return 0;
 }
 #endif
 
 static int regularizeLLVM() {
   LLVMContext Context;
 
-  std::unique_ptr<MemoryBuffer> MB =
-      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
-  std::unique_ptr<Module> M =
-      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
-                                           /*ShouldLazyLoadMetadata=*/true));
-  ExitOnErr(M->materializeAll());
+  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  std::string FileList;
+  for (auto &InputFile : InputFilenames) {
+    std::unique_ptr<MemoryBuffer> MB =
+        ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
+    std::unique_ptr<Module> M =
+        ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
+                                             /*ShouldLazyLoadMetadata=*/true));
+    ExitOnErr(M->materializeAll());
 
-  if (OutputFile.empty()) {
-    if (InputFile == "-")
-      OutputFile = "-";
-    else
-      OutputFile = removeExt(InputFile) + ".regularized.bc";
+    std::string ResultFileName =
+        getResultFilename(InputFile, ".regularized.bc");
+    std::string Err;
+    if (!regularizeLlvmForSpirv(M.get(), Err)) {
+      errs() << "Fails to save LLVM as SPIR-V: " << Err << '\n';
+      return -1;
+    }
+    std::error_code EC;
+    if (FileListMode) {
+      FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
+    }
+    saveLLVMModuleToFile(ResultFileName, M.get());
   }
-
-  std::string Err;
-  if (!regularizeLlvmForSpirv(M.get(), Err)) {
-    errs() << "Fails to save LLVM as SPIR-V: " << Err << '\n';
-    return -1;
+  if (FileListMode) {
+    saveListToFile(OutputFile, FileList);
   }
-
-  std::error_code EC;
-  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::F_None);
-  if (EC) {
-    errs() << "Fails to open output file: " << EC.message();
-    return -1;
-  }
-
-  WriteBitcodeToFile(*M.get(), Out.os());
-  Out.keep();
   return 0;
 }
 
@@ -375,6 +414,9 @@ int main(int Ac, char **Av) {
   if (ToBinary || ToText)
     return convertSPIRV();
 #endif
+
+  if (InputFilenames.size() == 0)
+    InputFilenames.addValue("-");
 
   if (!IsReverse && !IsRegularization)
     return convertLLVMToSPIRV(Opts);
