@@ -35,9 +35,9 @@
 ///  Common Usage:
 ///  llvm-spirv           - Read LLVM bitcode from stdin, write SPIR-V to stdout
 ///  llvm-spirv x.bc      - Read LLVM bitcode from the x.bc file, write SPIR-V
-///                         to x.bil file
+///                         to x.spv file
 ///  llvm-spirv -r        - Read SPIR-V from stdin, write LLVM bitcode to stdout
-///  llvm-spirv -r x.bil  - Read SPIR-V from the x.bil file, write SPIR-V to
+///  llvm-spirv -r x.spv  - Read SPIR-V from the x.spv file, write SPIR-V to
 ///                         the x.bc file
 ///  llvm-spirv x.bc y.bc - Read LLVM bitcode from the x.bc and y.bc files,
 ///                         write SPIR-V to x.spv and y.spv files
@@ -154,21 +154,21 @@ static void error(std::error_code EC, const Twine &Prefix) {
     error(Prefix + ": " + EC.message());
 }
 
-static void saveListToFile(std::string Filename, std::string Content) {
+static void saveListToFile(std::string &Filename, std::string &Content) {
   std::error_code EC;
   raw_fd_ostream OS{Filename, EC, sys::fs::OpenFlags::OF_None};
   error(EC, "error opening the file '" + Filename + "'");
   OS.write(Content.data(), Content.size());
 }
 
-static void saveLLVMModuleToFile(std::string Filename, Module *M) {
+static void saveLLVMModuleToFile(std::string &Filename, Module *M) {
   std::error_code EC;
   raw_fd_ostream OS{Filename, EC, sys::fs::OpenFlags::OF_None};
   error(EC, "error opening the file '" + Filename + "'");
   WriteBitcodeToFile(*M, OS);
 }
 
-static std::string getResultFilename(std::string InputFile, std::string Ext) {
+static std::string getResultFilename(std::string &InputFile, std::string Ext) {
   bool MultipleFilesMode = InputFilenames.size() > 1;
   if (OutputFile.empty() || MultipleFilesMode) {
     if (InputFile == "-")
@@ -179,7 +179,7 @@ static std::string getResultFilename(std::string InputFile, std::string Ext) {
 }
 
 static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
-  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  bool OutputFileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
   std::string FileList;
   for (auto &InputFile : InputFilenames) {
     bool Success = false;
@@ -196,7 +196,7 @@ static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
         InputFile,
         SPIRV::SPIRVUseTextFormat ? kExt::SpirvText : kExt::SpirvBinary);
 
-    if (FileListMode) {
+    if (OutputFileListMode) {
       FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
     }
 
@@ -212,7 +212,7 @@ static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
       return -1;
     }
   }
-  if (FileListMode) {
+  if (OutputFileListMode) {
     saveListToFile(OutputFile, FileList);
   }
   return 0;
@@ -220,7 +220,7 @@ static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
 
 static int convertSPIRVToLLVM(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
-  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  bool OutputFileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
   std::string FileList;
   for (auto &InputFile : InputFilenames) {
     std::ifstream IFS(InputFile, std::ios::binary);
@@ -242,14 +242,14 @@ static int convertSPIRVToLLVM(const SPIRV::TranslatorOpts &Opts) {
 
     std::string ResultFileName = getResultFilename(InputFile, kExt::LLVMBinary);
 
-    if (FileListMode) {
+    if (OutputFileListMode) {
       FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
     }
 
     saveLLVMModuleToFile(ResultFileName, M);
     delete M;
   }
-  if (FileListMode) {
+  if (OutputFileListMode) {
     saveListToFile(OutputFile, FileList);
   }
   return 0;
@@ -261,7 +261,7 @@ static int convertSPIRV() {
     errs() << "Invalid arguments\n";
     return -1;
   }
-  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  bool OutputFileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
   std::string FileList;
   for (auto &InputFile : InputFilenames) {
     bool Success = false;
@@ -284,7 +284,7 @@ static int convertSPIRV() {
       return -1;
     }
   }
-  if (FileListMode) {
+  if (OutputFileListMode) {
     saveListToFile(OutputFile, FileList);
   }
   return 0;
@@ -294,7 +294,7 @@ static int convertSPIRV() {
 static int regularizeLLVM() {
   LLVMContext Context;
 
-  bool FileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
+  bool OutputFileListMode = InputFilenames.size() > 1 && !OutputFile.empty();
   std::string FileList;
   for (auto &InputFile : InputFilenames) {
     std::unique_ptr<MemoryBuffer> MB =
@@ -312,12 +312,12 @@ static int regularizeLLVM() {
       return -1;
     }
     std::error_code EC;
-    if (FileListMode) {
+    if (OutputFileListMode) {
       FileList = (Twine(FileList) + Twine(ResultFileName) + Twine("\n")).str();
     }
     saveLLVMModuleToFile(ResultFileName, M.get());
   }
-  if (FileListMode) {
+  if (OutputFileListMode) {
     saveListToFile(OutputFile, FileList);
   }
   return 0;

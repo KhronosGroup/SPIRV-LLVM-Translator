@@ -107,12 +107,21 @@ To translate between LLVM IR and SPIR-V:
     ```
     llvm-spirv input.bc input1.bc -o list.txt
     ```
-    In this mode `-o` option specifies file name for list of produced files, i.e. for
-    the command above file list will be saved to `list.txt` and it will have the
-    following content:
+    In this mode `-o` option specifies file name for list of produced files,
+    i.e. for the command above file list will be saved to `list.txt` and it will
+    have the following content:
     ```
     input.spv
     input1.spv
+    ```
+    `-o` absense will result in just `input.spv` and `input1.spv` without file
+    list generation.
+    Handling of multiple files in other traslation modes (using multiple inputs
+    and `-r`, `-to-text`, `-to-binary`, `-s` options) is same, i.e. execute the
+    following command to translate `input.spv` and `input1.spv` to `input.bc`
+    and `input1.bc`:
+    ```
+    llvm-spirv -r input.spv input1.spv
     ```
 Translation from LLVM IR to SPIR-V and then back to LLVM IR is not guaranteed to
 produce the original LLVM IR.  In particular, LLVM intrinsic call instructions

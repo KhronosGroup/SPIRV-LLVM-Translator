@@ -1,42 +1,34 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-as %s -o %t1.bc
-; RUN: llvm-spirv %t.bc %t1.bc -spirv-text
-; RUN: FileCheck < %t.spt %s
-; RUN: FileCheck < %t1.spt %s
-; RUN: llvm-spirv %t.bc %t1.bc
-; RUN: spirv-val %t.spv
+; RUN: llvm-as %S/empty.ll -o %t1.bc
+; RUN: llvm-as %S/empty.ll -o %t2.bc
+
+; ir - > -spirv-text + Filecheck
+; RUN: llvm-spirv %t1.bc %t2.bc -spirv-text
+; RUN: FileCheck %S/empty.ll < %t1.spt
+; RUN: FileCheck %S/empty.ll < %t2.spt
+
+; ir -> SPV + validator
+; RUN: llvm-spirv %t1.bc %t2.bc
 ; RUN: spirv-val %t1.spv
-; RUN: llvm-spirv -r %t.spv %t1.spv
-; RUN: llvm-spirv -s %t.bc %t1.bc
-; RUN: llvm-spirv -to-text %t.spv %t1.spv
-target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
-target triple = "spir-unknown-unknown"
+; RUN: spirv-val %t2.spv
 
-; Function Attrs: nounwind
-; CHECK: "foo"
-define spir_kernel void @foo(i32 addrspace(1)* %a) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
-entry:
-  %a.addr = alloca i32 addrspace(1)*, align 4
-  store i32 addrspace(1)* %a, i32 addrspace(1)** %a.addr, align 4
-  %0 = load i32 addrspace(1)*, i32 addrspace(1)** %a.addr, align 4
-; CHECK: 5 Store {{[0-9]+}} {{[0-9]+}} 2 4
-  store i32 0, i32 addrspace(1)* %0, align 4
-  ret void
-}
+; SPV -> ir + filecheck
+; RUN: llvm-spirv -r %t1.spv %t2.spv
+; RUN: llvm-dis < %t1.bc | FileCheck %s
+; RUN: llvm-dis < %t2.bc | FileCheck %s
+; CHECK: define spir_kernel void @foo
 
-attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+; SPV -> to-text + filecheck
+; RUN: llvm-spirv -to-text %t1.spv %t2.spv
+; RUN: FileCheck %S/empty.ll < %t1.spt
+; RUN: FileCheck %S/empty.ll < %t2.spt
 
-!opencl.enable.FP_CONTRACT = !{}
-!opencl.spir.version = !{!6}
-!opencl.ocl.version = !{!6}
-!opencl.used.extensions = !{!7}
-!opencl.used.optional.core.features = !{!7}
-!opencl.compiler.options = !{!7}
+; SPT -> to-binary + validator
+; RUN: llvm-spirv -to-binary %t1.spt %t2.spt
+; RUN: spirv-val %t1.spv
+; RUN: spirv-val %t2.spv
 
-!1 = !{i32 1}
-!2 = !{!"none"}
-!3 = !{!"int*"}
-!4 = !{!"int*"}
-!5 = !{!""}
-!6 = !{i32 1, i32 2}
-!7 = !{}
+; Check file list
+; llvm-spirv %t1.bc %t2.bc -o %t.list
+; FileCheck < %t.list %s --check-prefix=CHECK-LIST
+; CHECK-LIST: t1.spv
+; CHECK-LIST: t2.spv
