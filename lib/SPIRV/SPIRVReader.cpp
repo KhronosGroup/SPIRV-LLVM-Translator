@@ -740,10 +740,9 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
         const auto *LM = static_cast<const SPIRVLoopMerge *>(LMD);
         setLLVMLoopMetadata<SPIRVLoopMerge>(LM, BI);
       }
-    }
 
-    // Loop metadata map should be re-filled during each function translation.
-    FuncLoopMetadataMap.clear();
+      FuncLoopMetadataMap.erase(LMDItr);
+    }
   }
 }
 
