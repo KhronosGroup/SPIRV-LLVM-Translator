@@ -725,10 +725,9 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
         const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
         setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, BI);
       }
-    }
 
-    // Loop metadata map should be re-filled during each function translation.
-    FuncLoopMetadataMap.clear();
+      FuncLoopMetadataMap.erase(LMDItr);
+    }
   }
 }
 
