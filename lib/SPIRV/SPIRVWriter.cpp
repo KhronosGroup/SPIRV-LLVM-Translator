@@ -1658,7 +1658,7 @@ void LLVMToSPIRV::transGlobalAnnotation(GlobalVariable *V) {
 
 bool LLVMToSPIRV::transGlobalVariables() {
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
-    if ((&(*I))->getName() == "llvm.global.annotations")
+    if ((*I).getName() == "llvm.global.annotations")
       transGlobalAnnotation(&(*I));
     else if (!transValue(&(*I), nullptr))
       return false;
