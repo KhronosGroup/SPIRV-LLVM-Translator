@@ -35,6 +35,8 @@ addons:
     - libclang-10-dev
     - lldb-10
     - spirv-tools
+    # temporarily install the examples package due to a new upstream dependency.
+    - llvm-10-examples
 
 compiler:
   - gcc
