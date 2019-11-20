@@ -135,6 +135,12 @@ inline bool isGroupOpCode(Op OpCode) {
   return OpGroupAll <= OC && OC <= OpGroupSMax;
 }
 
+inline bool isMediaBlockINTELOpcode(Op OpCode) {
+  unsigned OC = OpCode;
+  return OC == OpSubgroupImageMediaBlockReadINTEL ||
+         OC == OpSubgroupImageMediaBlockWriteINTEL;
+}
+
 inline bool isPipeOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return (OpReadPipe <= OC && OC <= OpGroupCommitWritePipe) ||
@@ -183,6 +189,7 @@ inline bool isIntelSubgroupOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OpSubgroupShuffleINTEL <= OC && OC <= OpSubgroupImageBlockWriteINTEL;
 }
+
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVOPCODE_H
