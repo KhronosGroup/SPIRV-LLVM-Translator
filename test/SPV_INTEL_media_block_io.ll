@@ -11,18 +11,22 @@
 ;}
 
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
+; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK: Capability SubgroupImageMediaBlockIOINTEL
+; CHECK-SPIRV: Capability SubgroupImageMediaBlockIOINTEL
 
-; CHECK: TypeInt [[TypeInt:[0-9]+]] 32
-; CHECK: TypeInt [[TypeChar:[0-9]+]] 8
-; CHECK: Constant [[TypeInt]] [[One:[0-9]+]] 1
-; CHECK: Constant [[TypeInt]] [[Sixteen:[0-9]+]] 16
+; CHECK-SPIRV: TypeInt [[TypeInt:[0-9]+]] 32
+; CHECK-SPIRV: TypeInt [[TypeChar:[0-9]+]] 8
+; CHECK-SPIRV: Constant [[TypeInt]] [[One:[0-9]+]] 1
+; CHECK-SPIRV: Constant [[TypeInt]] [[Sixteen:[0-9]+]] 16
 
-; CHECK: FunctionParameter {{[0-9]+}} [[Coord:[0-9]+]]
-; CHECK-NEXT: FunctionParameter {{[0-9]+}} [[SrcImage:[0-9]+]]
-; CHECK-NEXT: FunctionParameter {{[0-9]+}} [[DstImage:[0-9]+]]
+; CHECK-SPIRV: FunctionParameter {{[0-9]+}} [[Coord:[0-9]+]]
+; CHECK-SPIRV-NEXT: FunctionParameter {{[0-9]+}} [[SrcImage:[0-9]+]]
+; CHECK-SPIRV-NEXT: FunctionParameter {{[0-9]+}} [[DstImage:[0-9]+]]
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
@@ -33,11 +37,14 @@ target triple = "spir"
 ; Function Attrs: nounwind
 define spir_kernel void @vme_kernel(<2 x i32> %edgeCoord, %opencl.image2d_ro_t addrspace(1)* %src_luma_image, %opencl.image2d_wo_t addrspace(1)* %dst_luma_image) local_unnamed_addr #0 !kernel_arg_addr_space !5 !kernel_arg_access_qual !6 !kernel_arg_type !7 !kernel_arg_base_type !8 !kernel_arg_type_qual !9 {
 entry:
-; CHECK: SubgroupImageMediaBlockReadINTEL [[TypeInt]] [[Data:[0-9]+]] [[SrcImage]] [[Coord]] [[One]] [[Sixteen]]
+; CHECK-LLVM: call spir_func i32 @_Z35intel_sub_group_media_block_read_uiDv2_iii14ocl_image2d_ro
+; CHECK-SPIRV: SubgroupImageMediaBlockReadINTEL [[TypeInt]] [[Data:[0-9]+]] [[SrcImage]] [[Coord]] [[One]] [[Sixteen]]
   %call = tail call spir_func i32 @_Z35intel_sub_group_media_block_read_uiDv2_iii14ocl_image2d_ro(<2 x i32> %edgeCoord, i32 1, i32 16, %opencl.image2d_ro_t addrspace(1)* %src_luma_image) #2
-; CHECK: SubgroupImageMediaBlockReadINTEL [[TypeChar]] {{[0-9]+}} [[SrcImage]] [[Coord]] [[One]] [[Sixteen]]
+; CHECK-LLVM: call spir_func i8 @_Z35intel_sub_group_media_block_read_ucDv2_iii14ocl_image2d_ro
+; CHECK-SPIRV: SubgroupImageMediaBlockReadINTEL [[TypeChar]] {{[0-9]+}} [[SrcImage]] [[Coord]] [[One]] [[Sixteen]]
   %call1 = tail call spir_func zeroext i8 @_Z35intel_sub_group_media_block_read_ucDv2_iii14ocl_image2d_ro(<2 x i32> %edgeCoord, i32 1, i32 16, %opencl.image2d_ro_t addrspace(1)* %src_luma_image) #2
-; CHECK: SubgroupImageMediaBlockWriteINTEL [[DstImage]] [[Coord]] [[One]] [[Sixteen]] [[Data]]
+; CHECK-LLVM: call spir_func void @_Z36intel_sub_group_media_block_write_uiDv2_iiij14ocl_image2d_wo
+; CHECK-SPIRV: SubgroupImageMediaBlockWriteINTEL [[DstImage]] [[Coord]] [[One]] [[Sixteen]] [[Data]]
   tail call spir_func void @_Z36intel_sub_group_media_block_write_uiDv2_iiij14ocl_image2d_wo(<2 x i32> %edgeCoord, i32 1, i32 16, i32 %call, %opencl.image2d_wo_t addrspace(1)* %dst_luma_image) #2
   ret void
 }

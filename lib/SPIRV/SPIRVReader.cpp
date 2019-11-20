@@ -553,6 +553,19 @@ bool SPIRVToLLVM::isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const {
   return isCmpOpCode(OC) && !(OC >= OpLessOrGreater && OC <= OpUnordered);
 }
 
+bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
+  // Not every spirv opcode which is placed in OCLSPIRVBuiltinMap is
+  // translated directly to OCL builtin. Some of them are translated
+  // to LLVM representation without any modifications (SPIRV format of
+  // instruction is represented in LLVM) and then its translated to
+  // clang-consistent format in SPIRVToOCL pass.
+  return (OCLSPIRVBuiltinMap::rfind(OpCode, nullptr) &&
+          !isAtomicOpCode(OpCode) && !isGroupOpCode(OpCode) &&
+          !isPipeOpCode(OpCode) && !isMediaBlockINTELOpcode(OpCode)) ||
+         isSubgroupAvcINTELInstructionOpCode(OpCode) ||
+         isIntelSubgroupOpCode(OpCode);
+}
+
 void SPIRVToLLVM::setName(llvm::Value *V, SPIRVValue *BV) {
   auto Name = BV->getName();
   if (!Name.empty() && (!V->hasName() || Name != V->getName()))
@@ -1746,10 +1759,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto OC = BV->getOpCode();
     if (isSPIRVCmpInstTransToLLVMInst(static_cast<SPIRVInstruction *>(BV))) {
       return mapValue(BV, transCmpInst(BV, BB, F));
-    } else if ((OCLSPIRVBuiltinMap::rfind(OC, nullptr) ||
-                isSubgroupAvcINTELInstructionOpCode(OC) ||
-                isIntelSubgroupOpCode(OC)) &&
-               !isAtomicOpCode(OC) && !isGroupOpCode(OC) && !isPipeOpCode(OC)) {
+    } else if (isDirectlyTranslatedToOCL(OC)) {
       return mapValue(
           BV, transOCLBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB));
     } else if (isBinaryShiftLogicalBitwiseOpCode(OC) || isLogicalOpCode(OC)) {

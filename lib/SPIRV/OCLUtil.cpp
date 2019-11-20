@@ -691,6 +691,9 @@ public:
         setArgAttr(0, SPIR::ATTR_CONST);
         addUnsignedArg(0);
       }
+    } else if (UnmangledName.find("intel_sub_group_media_block_write") !=
+               std::string::npos) {
+      addUnsignedArg(3);
     }
   }
   // Auxiliarry information, it is expected that it is relevant at the moment
