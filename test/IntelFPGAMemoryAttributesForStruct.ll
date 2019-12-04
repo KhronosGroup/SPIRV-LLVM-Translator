@@ -26,12 +26,14 @@
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 8 MaxReplicatesINTEL 4
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 9 SimpleDualPortINTEL
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 7 MergeINTEL "foobar" "width"
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 BankBitsINTEL 42 41 40
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
 
 %class.anon = type { i8 }
 %struct.foo = type { i32, i32, i32, i32, i8, i32, i32, i32, i32, i32 }
+%struct.s = type { i32 }
 
 %struct._ZTSZ20field_addrspace_castvE5state.state = type { [8 x i32] }
 
@@ -45,6 +47,7 @@ target triple = "spir64-unknown-linux"
 ; CHECK-LLVM: [[STR8:@[0-9_.]+]] = {{.*}}{memory:DEFAULT}{merge:foobar:width}
 ; CHECK-LLVM: [[STR9:@[0-9_.]+]] = {{.*}}{max_replicates:4}
 ; CHECK-LLVM: [[STR10:@[0-9_.]+]] = {{.*}}{memory:DEFAULT}{simple_dual_port:1}
+; CHECK-LLVM: [[STR12:@[0-9_.]+]] = {{.*}}{memory:DEFAULT}{numbanks:8}{bank_bits:42,41,40}
 ; CHECK-LLVM: [[STR11:@[0-9_.]+]] = {{.*}}{memory:DEFAULT}{numbanks:2}
 @.str = private unnamed_addr constant [29 x i8] c"{memory:DEFAULT}{numbanks:4}\00", section "llvm.metadata"
 @.str.1 = private unnamed_addr constant [16 x i8] c"test_struct.cpp\00", section "llvm.metadata"
@@ -58,6 +61,7 @@ target triple = "spir64-unknown-linux"
 @.str.9 = private unnamed_addr constant [19 x i8] c"{max_replicates:4}\00", section "llvm.metadata"
 @.str.10 = private unnamed_addr constant [37 x i8] c"{memory:DEFAULT}{simple_dual_port:1}\00", section "llvm.metadata"
 @.str.11 = private unnamed_addr constant [29 x i8] c"{memory:DEFAULT}{numbanks:2}\00", section "llvm.metadata"
+@.str.12 = private unnamed_addr constant [49 x i8] c"{memory:DEFAULT}{numbanks:8}{bank_bits:42,41,40}\00", section "llvm.metadata"
 
 ; Function Attrs: nounwind
 define spir_kernel void @_ZTSZ4mainE15kernel_function() #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !4 !kernel_arg_type !4 !kernel_arg_base_type !4 !kernel_arg_type_qual !4 {
@@ -81,6 +85,7 @@ entry:
   store %class.anon* %this, %class.anon** %this.addr, align 8, !tbaa !5
   %this1 = load %class.anon*, %class.anon** %this.addr, align 8
   call spir_func void @_Z3barv()
+  call spir_func void @_Z8bankbitsv()
   ret void
 }
 
@@ -145,6 +150,23 @@ entry:
   store i32 0, i32* %10, align 4, !tbaa !20
   %11 = bitcast %struct.foo* %s1 to i8*
   call void @llvm.lifetime.end.p0i8(i64 40, i8* %11) #4
+  ret void
+}
+
+; Function Attrs: nounwind
+define spir_func void @_Z8bankbitsv() #3 {
+entry:
+  %s2 = alloca %struct.s, align 4
+  %0 = bitcast %struct.s* %s2 to i8*
+  call void @llvm.lifetime.start.p0i8(i64 4, i8* %0) #4
+  ; CHECK-LLVM: %[[FIELD:.*]] = getelementptr inbounds %struct.s, %struct.s* %{{[a-zA-Z0-9]+}}, i32 0, i32 0
+  ; CHECK-LLVM: %[[CAST:.*]] = bitcast{{.*}}%[[FIELD]]
+  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST]]{{.*}}[[STR12]]
+  %a = getelementptr inbounds %struct.s, %struct.s* %s2, i32 0, i32 0
+  %1 = call i32* @llvm.ptr.annotation.p0i32(i32* %a, i8* getelementptr inbounds ([49 x i8], [49 x i8]* @.str.12, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 84)
+  store i32 0, i32* %1, align 4, !tbaa !22
+  %2 = bitcast %struct.s* %s2 to i8*
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %2) #4
   ret void
 }
 
@@ -222,6 +244,9 @@ declare i32* @llvm.ptr.annotation.p0i32(i32*, i8*, i8*, i32) #4
 ; Function Attrs: nounwind
 declare i8 addrspace(4)* @llvm.ptr.annotation.p4i8(i8 addrspace(4)*, i8*, i8*, i32) #4
 
+; Function Attrs: nounwind
+declare i32* @llvm.ptr.annotation.p0i32(i32*, i8*, i8*, i32) #4
+
 attributes #0 = { nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="true" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { argmemonly nounwind }
 attributes #2 = { inlinehint nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -254,4 +279,6 @@ attributes #4 = { nounwind }
 !18 = !{!10, !11, i64 28}
 !19 = !{!10, !11, i64 32}
 !20 = !{!10, !11, i64 36}
-
+!21 = !{!10, !11, i64 40}
+!22 = !{!23, !11, i64 0}
+!23 = !{!"s", !11, i64 0}

@@ -354,6 +354,25 @@ SPIRVEntry::getMemberDecorationStringLiteral(Decoration Kind,
   return getVecString(Loc->second->getVecLiteral());
 }
 
+std::vector<SPIRVWord>
+SPIRVEntry::getDecorationLiterals(Decoration Kind) const {
+  auto Loc = Decorates.find(Kind);
+  if (Loc == Decorates.end())
+    return {};
+
+  return (Loc->second->getVecLiteral());
+}
+
+std::vector<SPIRVWord>
+SPIRVEntry::getMemberDecorationLiterals(Decoration Kind,
+                                        SPIRVWord MemberNumber) const {
+  auto Loc = MemberDecorates.find({MemberNumber, Kind});
+  if (Loc == MemberDecorates.end())
+    return {};
+
+  return (Loc->second->getVecLiteral());
+}
+
 // Get literals of all decorations of Kind at Index.
 std::set<SPIRVWord> SPIRVEntry::getDecorate(Decoration Kind,
                                             size_t Index) const {

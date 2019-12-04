@@ -408,6 +408,7 @@ inline bool isValid(spv::Decoration V) {
   case DecorationMaxPrivateCopiesINTEL:
   case DecorationSinglepumpINTEL:
   case DecorationDoublepumpINTEL:
+  case DecorationBankBitsINTEL:
   case DecorationReferencedIndirectlyINTEL:
     return true;
   default:

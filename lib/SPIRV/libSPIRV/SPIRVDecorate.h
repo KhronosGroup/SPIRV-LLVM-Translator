@@ -152,6 +152,7 @@ public:
     case DecorationMaxReplicatesINTEL:
     case DecorationSimpleDualPortINTEL:
     case DecorationMergeINTEL:
+    case DecorationBankBitsINTEL:
       return getSet(ExtensionID::SPV_INTEL_fpga_memory_attributes);
     case DecorationReferencedIndirectlyINTEL:
       return getSet(ExtensionID::SPV_INTEL_function_pointers);
@@ -248,6 +249,7 @@ public:
     case DecorationMaxReplicatesINTEL:
     case DecorationSimpleDualPortINTEL:
     case DecorationMergeINTEL:
+    case DecorationBankBitsINTEL:
       return getSet(ExtensionID::SPV_INTEL_fpga_memory_attributes);
     default:
       return SPIRVExtSet();
@@ -448,6 +450,19 @@ public:
   }
 };
 
+class SPIRVDecorateBankBitsINTELAttr : public SPIRVDecorate {
+public:
+  // Complete constructor for BankBitsINTEL decoration
+  SPIRVDecorateBankBitsINTELAttr(SPIRVEntry *TheTarget,
+                                 const std::vector<SPIRVWord> &TheBits)
+      : SPIRVDecorate(DecorationBankBitsINTEL, TheTarget) {
+    for (auto &I : TheBits) {
+      Literals.push_back(I);
+    }
+    WordCount += Literals.size();
+  }
+};
+
 template <Decoration D>
 class SPIRVMemberDecorateStrAttrBase : public SPIRVMemberDecorate {
 public:
@@ -496,6 +511,20 @@ public:
       Literals.push_back(I);
     for (auto &I : getVec(Direction))
       Literals.push_back(I);
+    WordCount += Literals.size();
+  }
+};
+
+class SPIRVMemberDecorateBankBitsINTELAttr : public SPIRVMemberDecorate {
+public:
+  // Complete constructor for BankBitsINTEL decoration
+  SPIRVMemberDecorateBankBitsINTELAttr(SPIRVEntry *TheTarget,
+                                       SPIRVWord MemberNumber,
+                                       const std::vector<SPIRVWord> &TheBits)
+      : SPIRVMemberDecorate(DecorationBankBitsINTEL, MemberNumber, TheTarget) {
+    for (auto &I : TheBits) {
+      Literals.push_back(I);
+    }
     WordCount += Literals.size();
   }
 };
