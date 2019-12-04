@@ -1196,6 +1196,7 @@ tryParseIntelFPGAAnnotationString(StringRef AnnotatedCode) {
                 .Case("bankwidth", DecorationBankwidthINTEL)
                 .Case("max_private_copies", DecorationMaxPrivateCopiesINTEL)
                 .Case("max_replicates", DecorationMaxReplicatesINTEL)
+                .Case("bank_bits", DecorationBankBitsINTEL)
                 .Case("merge", DecorationMergeINTEL)
                 .Default(DecorationUserSemantic);
       if (Dec == DecorationUserSemantic)
@@ -1235,6 +1236,18 @@ void addIntelFPGADecorations(
       StringRef Direction = StringRef(I.second).split(':').second;
       E->addDecorate(
           new SPIRVDecorateMergeINTELAttr(E, Name.str(), Direction.str()));
+    } break;
+    case DecorationBankBitsINTEL: {
+      SmallVector<StringRef, 1> A;
+      StringRef(I.second).split(A, ',');
+      std::vector<SPIRVWord> Bits(A.size());
+      SPIRVWord Result;
+      for (size_t i = 0; i < A.size(); ++i) {
+        Result = 0;
+        A[i].getAsInteger(10, Result);
+        Bits[i] = Result;
+      }
+      E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(E, Bits));
     } break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
@@ -1285,6 +1298,19 @@ void addIntelFPGADecorationsForStructMember(
       StringRef Direction = StringRef(I.second).split(':').second;
       E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
           E, MemberNumber, Name.str(), Direction.str()));
+    } break;
+    case DecorationBankBitsINTEL: {
+      SmallVector<StringRef, 1> A;
+      StringRef(I.second).split(A, ',');
+      std::vector<SPIRVWord> Bits(A.size());
+      SPIRVWord Result;
+      for (size_t i = 0; i < A.size(); ++i) {
+        Result = 0;
+        A[i].getAsInteger(10, Result);
+        Bits[i] = Result;
+      }
+      E->addMemberDecorate(
+          new SPIRVMemberDecorateBankBitsINTELAttr(E, MemberNumber, Bits));
     } break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:

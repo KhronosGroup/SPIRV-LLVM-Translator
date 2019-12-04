@@ -342,6 +342,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMaxReplicatesINTEL, "MaxReplicatesINTEL");
   add(DecorationSimpleDualPortINTEL, "SimpleDualPortINTEL");
   add(DecorationMergeINTEL, "MergeINTEL");
+  add(DecorationBankBitsINTEL, "BankBitsINTEL");
   add(DecorationReferencedIndirectlyINTEL, "ReferencedIndirectlyINTEL");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)

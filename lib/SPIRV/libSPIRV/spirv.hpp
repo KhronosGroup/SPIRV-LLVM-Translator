@@ -400,6 +400,7 @@ enum Decoration {
     DecorationMaxReplicatesINTEL = 5832,
     DecorationSimpleDualPortINTEL = 5833,
     DecorationMergeINTEL = 5834,
+    DecorationBankBitsINTEL = 5835,
     DecorationMax = 0x7fffffff,
 };
 
