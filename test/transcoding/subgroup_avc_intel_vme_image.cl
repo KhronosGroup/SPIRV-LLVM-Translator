@@ -1,8 +1,8 @@
 // RUN: %clang_cc1 -O1 -triple spir-unknown-unknown -cl-std=CL2.0 %s -finclude-default-header -emit-llvm-bc -o %t.bc
-// RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
-// RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.bc -o %t.spv
-// RUN: spirv-val %t.spv
+// RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+// There is no validation for SPV_INTEL_device_side_avc_motion_estimation implemented in
+// SPIRV-Tools. TODO: spirv-val %t.spv
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
@@ -26,6 +26,10 @@ void foo(__read_only image2d_t src, __read_only image2d_t ref,
       src, ref, sampler, ime_payload, sstreamin);
   intel_sub_group_avc_ime_evaluate_with_dual_reference_streamin(
       src, ref, ref, sampler, ime_payload, dstreamin);
+  intel_sub_group_avc_ime_evaluate_with_single_reference_streaminout(
+      src, ref, sampler, ime_payload, sstreamin);
+  intel_sub_group_avc_ime_evaluate_with_dual_reference_streaminout(
+      src, ref, ref, sampler, ime_payload, dstreamin);
 
   intel_sub_group_avc_ref_evaluate_with_single_reference(src, ref, sampler,
                                                          ref_payload);
@@ -44,6 +48,7 @@ void foo(__read_only image2d_t src, __read_only image2d_t ref,
                                                         sic_payload);
   intel_sub_group_avc_sic_evaluate_with_multi_reference(src, 0, 0, sampler,
                                                         sic_payload);
+  intel_sub_group_avc_sic_evaluate_ipe(src, sampler, sic_payload);
 }
 
 // CHECK-SPIRV: Capability Groups
@@ -128,6 +133,19 @@ void foo(__read_only image2d_t src, __read_only image2d_t ref,
 // CHECK-LLVM: call spir_func %[[ImeResultTy]]* @_Z61intel_sub_group_avc_ime_evaluate_with_dual_reference_streamin14ocl_image2d_roS_S_11ocl_sampler37ocl_intel_sub_group_avc_ime_payload_t53ocl_intel_sub_group_avc_ime_dual_reference_streamin_t(%[[ImageTy]] addrspace(1)* %[[SrcImg]], %[[ImageTy]] addrspace(1)* %[[RefImg]], %[[ImageTy]] addrspace(1)* %[[RefImg]], %[[SamplerTy]] addrspace(2)* %[[Sampler]], %[[ImePayloadTy]]* %[[ImePayload]], %[[ImeDRefInTy]]* %[[ImeDRefIn]])
 
 
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg1:[0-9]+]] [[SrcImg]] [[Sampler]]
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg2:[0-9]+]] [[RefImg]] [[Sampler]]
+// CHECK-SPIRV: SubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL [[ImeSRefOutTy]] {{.*}} [[VmeImg1]] [[VmeImg2]] [[ImePayload]] [[ImeSRefIn]]
+// CHECK-LLVM: call spir_func %[[ImeSRefOutTy]]* @_Z66intel_sub_group_avc_ime_evaluate_with_single_reference_streaminout14ocl_image2d_roS_11ocl_sampler37ocl_intel_sub_group_avc_ime_payload_t55ocl_intel_sub_group_avc_ime_single_reference_streamin_t(%[[ImageTy]] addrspace(1)* %[[SrcImg]], %[[ImageTy]] addrspace(1)* %[[RefImg]], %[[SamplerTy]] addrspace(2)* %[[Sampler]], %[[ImePayloadTy]]* %[[ImePayload]], %[[ImeSRefInTy]]* %[[ImeSRefIn]])
+
+
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg1:[0-9]+]] [[SrcImg]] [[Sampler]]
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg2:[0-9]+]] [[RefImg]] [[Sampler]]
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg3:[0-9]+]] [[RefImg]] [[Sampler]]
+// CHECK-SPIRV: SubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL [[ImeDRefOutTy]] {{.*}} [[VmeImg1]] [[VmeImg2]] [[VmeImg3]] [[ImePayload]] [[ImeDRefIn]]
+// CHECK-LLVM: call spir_func %[[ImeDRefOutTy]]* @_Z64intel_sub_group_avc_ime_evaluate_with_dual_reference_streaminout14ocl_image2d_roS_S_11ocl_sampler37ocl_intel_sub_group_avc_ime_payload_t53ocl_intel_sub_group_avc_ime_dual_reference_streamin_t(%[[ImageTy]] addrspace(1)* %[[SrcImg]], %[[ImageTy]] addrspace(1)* %[[RefImg]], %[[ImageTy]] addrspace(1)* %[[RefImg]], %[[SamplerTy]] addrspace(2)* %[[Sampler]], %[[ImePayloadTy]]* %[[ImePayload]], %[[ImeDRefInTy]]* %[[ImeDRefIn]])
+
+
 // CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg15:[0-9]+]] [[SrcImg]] [[Sampler]]
 // CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg16:[0-9]+]] [[RefImg]] [[Sampler]]
 // CHECK-SPIRV: SubgroupAvcRefEvaluateWithSingleReferenceINTEL [[RefResultTy]] {{.*}} [[VmeImg15]] [[VmeImg16]] [[RefPayload]]
@@ -172,3 +190,9 @@ void foo(__read_only image2d_t src, __read_only image2d_t ref,
 // CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg29:[0-9]+]] [[SrcImg]] [[Sampler]]
 // CHECK-SPIRV: SubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL [[SicResultTy]] {{.*}} [[VmeImg29]] {{.*}} [[SicPayload]]
 // CHECK-LLVM: call spir_func %[[SicResultTy]]* @_Z53intel_sub_group_avc_sic_evaluate_with_multi_reference14ocl_image2d_rojh11ocl_sampler37ocl_intel_sub_group_avc_sic_payload_t(%[[ImageTy]] addrspace(1)* %[[SrcImg]], i32 0, i8 0, %[[SamplerTy]] addrspace(2)* %[[Sampler]], %[[SicPayloadTy]]* %[[SicPayload]])
+
+
+// CHECK-SPIRV: VmeImageINTEL [[VmeImageTy]] [[VmeImg30:[0-9]+]] [[SrcImg]] [[Sampler]]
+// CHECK-SPIRV: SubgroupAvcSicEvaluateIpeINTEL [[SicResultTy]] {{.*}} [[VmeImg30]] [[SicPayload]]
+// CHECK-LLVM: call spir_func %[[SicResultTy]]* @_Z36intel_sub_group_avc_sic_evaluate_ipe14ocl_image2d_ro11ocl_sampler37ocl_intel_sub_group_avc_sic_payload_t(%[[ImageTy]] addrspace(1)* %[[SrcImg]], %[[SamplerTy]] addrspace(2)* %[[Sampler]], %[[SicPayloadTy]]* %[[SicPayload]])
+
