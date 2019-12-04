@@ -2879,14 +2879,18 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         if (!AnnotStr.empty()) {
           auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
-          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
-              M, Intrinsic::ptr_annotation, Int8PtrTyPrivate);
-
           auto GEP = Builder.CreateConstInBoundsGEP2_32(AL->getAllocatedType(),
                                                         AL, 0, I);
 
+          Type *IntTy = GEP->getType()->getPointerElementType()->isIntegerTy()
+                            ? GEP->getType()
+                            : Int8PtrTyPrivate;
+
+          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
+              M, Intrinsic::ptr_annotation, IntTy);
+
           llvm::Value *Args[] = {
-              Builder.CreateBitCast(GEP, Int8PtrTyPrivate, GEP->getName()),
+              Builder.CreateBitCast(GEP, IntTy, GEP->getName()),
               Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
               UndefInt32};
           Builder.CreateCall(AnnotationFn, Args);
