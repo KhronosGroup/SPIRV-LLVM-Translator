@@ -2429,8 +2429,7 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
       if (NumImages == 1) {
         // Multi reference opcode - remove src image OpVmeImageINTEL opcode
         // and replace it with corresponding OpImage and OpSampler arguments
-        bool IsInterlaced = (Args.size() == 4) ? true : false;
-        size_t SamplerPos = IsInterlaced ? 3 : 2;
+        size_t SamplerPos = Args.size() - 1;
         Args.erase(Args.begin(), Args.begin() + 1);
         Args.insert(Args.begin(), SrcImage->getOperands()[0]);
         Args.insert(Args.begin() + SamplerPos, SrcImage->getOperands()[1]);
