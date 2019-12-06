@@ -9,25 +9,28 @@
 ; CHECK-SPIRV: Decorate {{[0-9]+}} UserSemantic "bar"
 ; CHECK-SPIRV: Decorate {{[0-9]+}} UserSemantic "{FOO}"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 1 UserSemantic "128"
+; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 2 UserSemantic "qux"
 ; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 UserSemantic "{baz}"
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
 
 %class.anon = type { i8 }
-%struct.bar = type { i32, i8 }
+%struct.bar = type { i32, i8, float }
 
 ; CHECK-LLVM:  [[STR:@[a-zA-Z0-9_.]+]] = {{.*}}42
 ; CHECK-LLVM: [[STR2:@[a-zA-Z0-9_.]+]] = {{.*}}{FOO}
 ; CHECK-LLVM: [[STR3:@[a-zA-Z0-9_.]+]] = {{.*}}bar
 ; CHECK-LLVM: [[STR4:@[a-zA-Z0-9_.]+]] = {{.*}}{baz}
 ; CHECK-LLVM: [[STR5:@[a-zA-Z0-9_.]+]] = {{.*}}128
+; CHECK-LLVM: [[STR6:@[a-zA-Z0-9_.]+]] = {{.*}}qux
 @.str = private unnamed_addr constant [3 x i8] c"42\00", section "llvm.metadata"
 @.str.1 = private unnamed_addr constant [23 x i8] c"annotate_attribute.cpp\00", section "llvm.metadata"
 @.str.2 = private unnamed_addr constant [6 x i8] c"{FOO}\00", section "llvm.metadata"
 @.str.3 = private unnamed_addr constant [4 x i8] c"bar\00", section "llvm.metadata"
 @.str.4 = private unnamed_addr constant [6 x i8] c"{baz}\00", section "llvm.metadata"
 @.str.5 = private unnamed_addr constant [4 x i8] c"128\00", section "llvm.metadata"
+@.str.6 = private unnamed_addr constant [4 x i8] c"qux\00", section "llvm.metadata"
 
 ; Function Attrs: nounwind
 define spir_kernel void @_ZTSZ4mainE15kernel_function() #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !4 !kernel_arg_type !4 !kernel_arg_base_type !4 !kernel_arg_type_qual !4 {
@@ -103,9 +106,17 @@ entry:
   ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[FIELD2]]{{.*}}[[STR5]]
   %f2 = getelementptr inbounds %struct.bar, %struct.bar* %s1, i32 0, i32 1
   %2 = call i8* @llvm.ptr.annotation.p0i8(i8* %f2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.5, i32 0, i32 0), i8* getelementptr inbounds ([23 x i8], [23 x i8]* @.str.1, i32 0, i32 0), i32 9)
-  store i8 0, i8* %2, align 4, !tbaa !12
-  %3 = bitcast %struct.bar* %s1 to i8*
-  call void @llvm.lifetime.end.p0i8(i64 8, i8* %3) #4
+  store i8 0, i8* %2, align 4, !tbaa !13
+  ; CHECK-LLVM: %[[FIELD3:.*]] = getelementptr inbounds %struct.bar, %struct.bar* %{{[a-zA-Z0-9]+}}, i32 0, i32 2
+  ; CHECK-LLVM: %[[CAST3:.*]] = bitcast{{.*}}%[[FIELD3]]
+  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST3]]{{.*}}[[STR6]]
+  %f3 = getelementptr inbounds %struct.bar, %struct.bar* %s1, i32 0, i32 2
+  %3 = bitcast float* %f3 to i8*
+  %4 = call i8* @llvm.ptr.annotation.p0i8(i8* %3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.6, i32 0, i32 0), i8* getelementptr inbounds ([23 x i8], [23 x i8]* @.str.1, i32 0, i32 0), i32 9)
+  %5 = bitcast i8* %4 to float*
+  store float 0.000000e+00, float* %5, align 4, !tbaa !14
+  %6 = bitcast %struct.bar* %s1 to i8*
+  call void @llvm.lifetime.end.p0i8(i64 12, i8* %6) #4
   ret void
 }
 
@@ -136,6 +147,8 @@ attributes #4 = { nounwind }
 !7 = !{!"omnipotent char", !8, i64 0}
 !8 = !{!"Simple C++ TBAA"}
 !9 = !{!10, !11, i64 0}
-!10 = !{!"_ZTS3bar", !11, i64 0, !7, i64 4}
+!10 = !{!"_ZTS3bar", !11, i64 0, !7, i64 4, !12, i64 8}
 !11 = !{!"int", !7, i64 0}
-!12 = !{!10, !7, i64 4}
+!12 = !{!"float", !7, i64 0}
+!13 = !{!10, !7, i64 4}
+!14 = !{!10, !12, i64 8}
