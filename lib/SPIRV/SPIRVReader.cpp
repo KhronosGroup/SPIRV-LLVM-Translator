@@ -1545,7 +1545,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
               NewDst = llvm::BitCastInst::CreatePointerCast(Dst, Int8PointerTy,
                                                             "", BB);
             }
-            CI = Builder.CreateMemSet(NewDst, Src, Size, Align, IsVolatile);
+            CI = Builder.CreateMemSet(NewDst, Src, Size, MaybeAlign(Align),
+                                      IsVolatile);
           }
         }
       }
