@@ -456,12 +456,15 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   switch (ExecMode) {
   case ExecutionModeLocalSize:
   case ExecutionModeLocalSizeHint:
+  case ExecutionModeMaxWorkgroupSizeINTEL:
     WordLiterals.resize(3);
     break;
   case ExecutionModeInvocations:
   case ExecutionModeOutputVertices:
   case ExecutionModeVecTypeHint:
   case ExecutionModeSubgroupSize:
+  case ExecutionModeMaxWorkDimINTEL:
+  case ExecutionModeNumSIMDWorkitemsINTEL:
     WordLiterals.resize(1);
     break;
   default:

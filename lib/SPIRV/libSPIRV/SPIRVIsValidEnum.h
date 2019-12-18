@@ -140,6 +140,9 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeFinalizer:
   case ExecutionModeSubgroupSize:
   case ExecutionModeSubgroupsPerWorkgroup:
+  case ExecutionModeMaxWorkgroupSizeINTEL:
+  case ExecutionModeMaxWorkDimINTEL:
+  case ExecutionModeNumSIMDWorkitemsINTEL:
     return true;
   default:
     return false;
@@ -561,6 +564,8 @@ inline bool isValid(spv::Capability V) {
   case CapabilityFPGALoopControlsINTEL:
   case CapabilityBlockingPipesINTEL:
   case CapabilityUnstructuredLoopControlsINTEL:
+  case CapabilityKernelAttributesINTEL:
+  case CapabilityFPGAKernelAttributesINTEL:
     return true;
   default:
     return false;

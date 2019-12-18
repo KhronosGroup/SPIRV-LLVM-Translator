@@ -119,6 +119,9 @@ template <> inline void SPIRVMap<ExecutionMode, std::string>::init() {
   add(ExecutionModeOutputTriangleStrip, "OutputTriangleStrip");
   add(ExecutionModeVecTypeHint, "VecTypeHint");
   add(ExecutionModeContractionOff, "ContractionOff");
+  add(ExecutionModeMaxWorkgroupSizeINTEL, "MaxWorkgroupSizeINTEL");
+  add(ExecutionModeMaxWorkDimINTEL, "MaxWorkDimINTEL");
+  add(ExecutionModeNumSIMDWorkitemsINTEL, "NumSIMDWorkitemsINTEL");
 }
 SPIRV_DEF_NAMEMAP(ExecutionMode, SPIRVExecutionModeNameMap)
 
@@ -495,6 +498,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityUnstructuredLoopControlsINTEL, "UnstructuredLoopControlsINTEL");
   add(CapabilityFunctionPointersINTEL, "FunctionPointersINTEL");
   add(CapabilityIndirectReferencesINTEL, "IndirectReferencesINTEL");
+  add(CapabilityKernelAttributesINTEL, "KernelAttributesINTEL");
+  add(CapabilityFPGAKernelAttributesINTEL, "FPGAKernelAttributesINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
