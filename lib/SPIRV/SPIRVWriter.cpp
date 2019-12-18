@@ -1881,6 +1881,16 @@ bool LLVMToSPIRV::transExecutionMode() {
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
       } break;
+      case spv::ExecutionModeMaxWorkgroupSizeINTEL: {
+        if (BM->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_kernel_attributes)) {
+          unsigned X, Y, Z;
+          N.get(X).get(Y).get(Z);
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
+          BM->addCapability(CapabilityKernelAttributesINTEL);
+        }
+      } break;
       case spv::ExecutionModeVecTypeHint:
       case spv::ExecutionModeSubgroupSize:
       case spv::ExecutionModeSubgroupsPerWorkgroup: {
@@ -1888,6 +1898,26 @@ bool LLVMToSPIRV::transExecutionMode() {
         N.get(X);
         BF->addExecutionMode(BM->add(
             new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X)));
+      } break;
+      case spv::ExecutionModeNumSIMDWorkitemsINTEL: {
+        if (BM->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_kernel_attributes)) {
+          unsigned X;
+          N.get(X);
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              BF, static_cast<ExecutionMode>(EMode), X)));
+          BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
+        }
+      } break;
+      case spv::ExecutionModeMaxWorkDimINTEL: {
+        if (BM->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_kernel_attributes)) {
+          unsigned X;
+          N.get(X);
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              BF, static_cast<ExecutionMode>(EMode), X)));
+          BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
+        }
       } break;
       default:
         llvm_unreachable("invalid execution mode");

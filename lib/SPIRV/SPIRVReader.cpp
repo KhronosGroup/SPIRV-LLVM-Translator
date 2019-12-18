@@ -3147,6 +3147,21 @@ bool SPIRVToLLVM::transKernelMetadata() {
       auto SizeMD = ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0]));
       F->setMetadata(kSPIR2MD::SubgroupSize, MDNode::get(*Context, SizeMD));
     }
+    // Generate metadata for max_work_group_size
+    if (auto EM = BF->getExecutionMode(ExecutionModeMaxWorkgroupSizeINTEL)) {
+      F->setMetadata(kSPIR2MD::MaxWGSize,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
+    // Generate metadata for max_global_work_dim
+    if (auto EM = BF->getExecutionMode(ExecutionModeMaxWorkDimINTEL)) {
+      F->setMetadata(kSPIR2MD::MaxWGDim,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
+    // Generate metadata for num_simd_work_items
+    if (auto EM = BF->getExecutionMode(ExecutionModeNumSIMDWorkitemsINTEL)) {
+      F->setMetadata(kSPIR2MD::NumSIMD,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
   }
   return true;
 }
