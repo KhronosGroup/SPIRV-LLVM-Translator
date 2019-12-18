@@ -1,0 +1,51 @@
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+119734787 65536 458752 21 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Float64
+2 Capability Matrix
+3 MemoryModel 2 2
+8 EntryPoint 6 20 "dot"
+3 Source 3 102000
+3 Name 12 "res"
+3 Name 13 "lhs"
+3 Name 14 "rhs"
+
+2 TypeVoid 5
+3 TypeFloat 6 32
+4 TypeVector 7 6 4              ; 7  : Vector of 4 floats
+4 TypePointer 9 7 6             ; 9  : Pointer to float
+4 TypePointer 10 7 7            ; 10 : Pointer to vec4
+6 TypeFunction 11 5 9 10 10
+
+5 Function 5 20 0 11
+3 FunctionParameter 9 12
+3 FunctionParameter 10 13
+3 FunctionParameter 10 14
+
+2 Label 15
+4 Load 7 16 13
+4 Load 7 17 14
+5 Dot 6 18 16 17
+3 Store 12 18
+1 Return
+
+1 FunctionEnd
+
+; CHECK-LLVM: %1 = load <4 x float>, <4 x float>* %lhs
+; CHECK-LLVM: %2 = load <4 x float>, <4 x float>* %rhs
+; CHECK-LLVM: %3 = fmul <4 x float> %1, %2
+; CHECK-LLVM: %4 = extractelement <4 x float> %3, i32 0
+; CHECK-LLVM: %5 = extractelement <4 x float> %3, i32 1
+; CHECK-LLVM: %6 = fadd float %4, %5
+; CHECK-LLVM: %7 = extractelement <4 x float> %3, i32 2
+; CHECK-LLVM: %8 = fadd float %6, %7
+; CHECK-LLVM: %9 = extractelement <4 x float> %3, i32 3
+; CHECK-LLVM: %10 = fadd float %8, %9
+; CHECK-LLVM: store float %10, float* %res
+; CHECK-LLVM: ret void

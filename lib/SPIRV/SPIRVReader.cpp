@@ -1853,6 +1853,23 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, V);
   }
 
+  case OpDot: {
+    SPIRVBinary *Dot = static_cast<SPIRVBinary *>(BV);
+    IRBuilder<> Builder(BB);
+    auto Lhs = transValue(Dot->getOperand(0), F, BB);
+    auto Rhs = transValue(Dot->getOperand(1), F, BB);
+    auto Mul = Builder.CreateFMul(Lhs, Rhs);
+    unsigned Count = Mul->getType()->getVectorNumElements();
+    Value *V = Builder.CreateExtractElement(Mul, Builder.getInt32(0));
+
+    for (unsigned Idx = 1; Idx < Count; ++Idx) {
+      Value *S = Builder.CreateExtractElement(Mul, Builder.getInt32(Idx));
+      V = Builder.CreateFAdd(V, S);
+    }
+
+    return mapValue(BV, V);
+  }
+
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     AllocaInst *AI =
