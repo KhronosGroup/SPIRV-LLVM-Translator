@@ -257,8 +257,17 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
   if (T->isIntegerTy(1))
     return mapType(T, BM->addBoolType());
 
-  if (T->isIntegerTy())
-    return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
+  if (T->isIntegerTy()) {
+    unsigned BitWidth = T->getIntegerBitWidth();
+    // SPIR-V 2.16.1. Universal Validation Rules: Scalar integer types can be
+    // parameterized only as 32 bit, plus any additional sizes enabled by
+    // capabilities.
+    if (BM->getErrorLog().checkError(
+            BitWidth == 8 || BitWidth == 16 || BitWidth == 32 || BitWidth == 64,
+            SPIRVEC_InvalidBitWidth, std::to_string(BitWidth))) {
+      return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
+    }
+  }
 
   if (T->isFloatingPointTy())
     return mapType(T, BM->addFloatType(T->getPrimitiveSizeInBits()));
