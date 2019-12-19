@@ -1242,10 +1242,10 @@ void addIntelFPGADecorations(
       StringRef(I.second).split(A, ',');
       std::vector<SPIRVWord> Bits(A.size());
       SPIRVWord Result;
-      for (size_t i = 0; i < A.size(); ++i) {
+      for (size_t J = 0; J < A.size(); ++J) {
         Result = 0;
-        A[i].getAsInteger(10, Result);
-        Bits[i] = Result;
+        A[J].getAsInteger(10, Result);
+        Bits[J] = Result;
       }
       E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(E, Bits));
     } break;
@@ -1304,10 +1304,10 @@ void addIntelFPGADecorationsForStructMember(
       StringRef(I.second).split(A, ',');
       std::vector<SPIRVWord> Bits(A.size());
       SPIRVWord Result;
-      for (size_t i = 0; i < A.size(); ++i) {
+      for (size_t J = 0; J < A.size(); ++J) {
         Result = 0;
-        A[i].getAsInteger(10, Result);
-        Bits[i] = Result;
+        A[J].getAsInteger(10, Result);
+        Bits[J] = Result;
       }
       E->addMemberDecorate(
           new SPIRVMemberDecorateBankBitsINTELAttr(E, MemberNumber, Bits));
