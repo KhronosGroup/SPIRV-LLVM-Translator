@@ -1211,6 +1211,18 @@ tryParseIntelFPGAAnnotationString(StringRef AnnotatedCode) {
   return Decorates;
 }
 
+std::vector<SPIRVWord> getBankBitsFromString(StringRef S) {
+  SmallVector<StringRef, 4> BitsString;
+  S.split(BitsString, ',');
+
+  std::vector<SPIRVWord> Bits(BitsString.size());
+  for (size_t J = 0; J < BitsString.size(); ++J)
+    if (BitsString[J].getAsInteger(10, Bits[J]))
+      return {};
+
+  return Bits;
+}
+
 void addIntelFPGADecorations(
     SPIRVEntry *E,
     std::vector<std::pair<Decoration, std::string>> &Decorations) {
@@ -1237,18 +1249,10 @@ void addIntelFPGADecorations(
       E->addDecorate(
           new SPIRVDecorateMergeINTELAttr(E, Name.str(), Direction.str()));
     } break;
-    case DecorationBankBitsINTEL: {
-      SmallVector<StringRef, 1> A;
-      StringRef(I.second).split(A, ',');
-      std::vector<SPIRVWord> Bits(A.size());
-      SPIRVWord Result;
-      for (size_t J = 0; J < A.size(); ++J) {
-        Result = 0;
-        A[J].getAsInteger(10, Result);
-        Bits[J] = Result;
-      }
-      E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(E, Bits));
-    } break;
+    case DecorationBankBitsINTEL:
+      E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(
+          E, getBankBitsFromString(I.second)));
+      break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
@@ -1299,19 +1303,10 @@ void addIntelFPGADecorationsForStructMember(
       E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
           E, MemberNumber, Name.str(), Direction.str()));
     } break;
-    case DecorationBankBitsINTEL: {
-      SmallVector<StringRef, 1> A;
-      StringRef(I.second).split(A, ',');
-      std::vector<SPIRVWord> Bits(A.size());
-      SPIRVWord Result;
-      for (size_t J = 0; J < A.size(); ++J) {
-        Result = 0;
-        A[J].getAsInteger(10, Result);
-        Bits[J] = Result;
-      }
-      E->addMemberDecorate(
-          new SPIRVMemberDecorateBankBitsINTELAttr(E, MemberNumber, Bits));
-    } break;
+    case DecorationBankBitsINTEL:
+      E->addMemberDecorate(new SPIRVMemberDecorateBankBitsINTELAttr(
+          E, MemberNumber, getBankBitsFromString(I.second)));
+      break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
