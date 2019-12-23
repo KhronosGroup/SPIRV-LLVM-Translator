@@ -10,6 +10,7 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 ;
 ; TODO: add a bunch of different tests for --spirv-ext option
+; TODO: rewrite test to use a separate function for each attribute
 
 ; CHECK-SPIRV: Capability FPGAMemoryAttributesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_memory_attributes"
