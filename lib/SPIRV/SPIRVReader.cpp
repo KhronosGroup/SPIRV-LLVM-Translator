@@ -2810,9 +2810,8 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
   if (E->hasDecorate(DecorationBankBitsINTEL)) {
     Out << "{bank_bits:";
     auto Literals = E->getDecorationLiterals(DecorationBankBitsINTEL);
-    for (size_t I = 0; I < Literals.size() - 1; ++I) {
+    for (size_t I = 0; I < Literals.size() - 1; ++I)
       Out << Literals[I] << ",";
-    }
     Out << Literals[Literals.size() - 1] << '}';
   }
   if (E->hasDecorate(DecorationUserSemantic))
@@ -2860,9 +2859,8 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{bank_bits:";
     auto Literals =
         E->getMemberDecorationLiterals(DecorationBankBitsINTEL, MemberNumber);
-    for (size_t I = 0; I < Literals.size() - 1; ++I) {
+    for (size_t I = 0; I < Literals.size() - 1; ++I)
       Out << Literals[I] << ",";
-    }
     Out << Literals[Literals.size() - 1] << '}';
   }
 
