@@ -160,8 +160,7 @@ entry:
   %0 = bitcast %struct.s* %s2 to i8*
   call void @llvm.lifetime.start.p0i8(i64 4, i8* %0) #4
   ; CHECK-LLVM: %[[FIELD:.*]] = getelementptr inbounds %struct.s, %struct.s* %{{[a-zA-Z0-9]+}}, i32 0, i32 0
-  ; CHECK-LLVM: %[[CAST:.*]] = bitcast{{.*}}%[[FIELD]]
-  ; CHECK-LLVM: call i8* @llvm.ptr.annotation.p0i8{{.*}}%[[CAST]]{{.*}}[[STR12]]
+  ; CHECK-LLVM: call i32* @llvm.ptr.annotation.p0i32{{.*}}%[[FIELD]]{{.*}}[[STR12]]
   %a = getelementptr inbounds %struct.s, %struct.s* %s2, i32 0, i32 0
   %1 = call i32* @llvm.ptr.annotation.p0i32(i32* %a, i8* getelementptr inbounds ([49 x i8], [49 x i8]* @.str.12, i32 0, i32 0), i8* getelementptr inbounds ([16 x i8], [16 x i8]* @.str.1, i32 0, i32 0), i32 84)
   store i32 0, i32* %1, align 4, !tbaa !22
@@ -243,9 +242,6 @@ declare i32* @llvm.ptr.annotation.p0i32(i32*, i8*, i8*, i32) #4
 
 ; Function Attrs: nounwind
 declare i8 addrspace(4)* @llvm.ptr.annotation.p4i8(i8 addrspace(4)*, i8*, i8*, i32) #4
-
-; Function Attrs: nounwind
-declare i32* @llvm.ptr.annotation.p0i32(i32*, i8*, i8*, i32) #4
 
 attributes #0 = { nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="true" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { argmemonly nounwind }
