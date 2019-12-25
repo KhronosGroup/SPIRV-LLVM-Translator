@@ -456,9 +456,7 @@ public:
   SPIRVDecorateBankBitsINTELAttr(SPIRVEntry *TheTarget,
                                  const std::vector<SPIRVWord> &TheBits)
       : SPIRVDecorate(DecorationBankBitsINTEL, TheTarget) {
-    for (auto &I : TheBits) {
-      Literals.push_back(I);
-    }
+    Literals = TheBits;
     WordCount += Literals.size();
   }
 };
@@ -522,9 +520,7 @@ public:
                                        SPIRVWord MemberNumber,
                                        const std::vector<SPIRVWord> &TheBits)
       : SPIRVMemberDecorate(DecorationBankBitsINTEL, MemberNumber, TheTarget) {
-    for (auto &I : TheBits) {
-      Literals.push_back(I);
-    }
+    Literals = TheBits;
     WordCount += Literals.size();
   }
 };
