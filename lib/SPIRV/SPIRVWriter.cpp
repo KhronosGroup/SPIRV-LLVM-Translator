@@ -705,6 +705,61 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
                           BB);
 }
 
+/// Go through the operands !llvm.loop metadata attached to the branch
+/// instruction, fill the Loop Control mask and possible parameters for its
+/// fields.
+static spv::LoopControlMask getLoopControl(const BranchInst *Branch,
+                                           std::vector<SPIRVWord> &Parameters) {
+  if (!Branch)
+    return spv::LoopControlMaskNone;
+  MDNode *LoopMD = Branch->getMetadata("llvm.loop");
+  if (!LoopMD)
+    return spv::LoopControlMaskNone;
+
+  size_t LoopControl = spv::LoopControlMaskNone;
+
+  for (const MDOperand &MDOp : LoopMD->operands()) {
+    if (MDNode *Node = dyn_cast<MDNode>(MDOp)) {
+      std::string S = getMDOperandAsString(Node, 0);
+      // Set the loop control bits. Parameters are set in the order described
+      // in 3.23 SPIR-V Spec. rev. 1.4:
+      // Bits that are set can indicate whether an additional operand follows,
+      // as described by the table. If there are multiple following operands
+      // indicated, they are ordered: Those indicated by smaller-numbered bits
+      // appear first.
+      if (S == "llvm.loop.unroll.disable")
+        LoopControl |= spv::LoopControlDontUnrollMask;
+      else if (S == "llvm.loop.unroll.full" || S == "llvm.loop.unroll.enable")
+        LoopControl |= spv::LoopControlUnrollMask;
+      // PartialCount must not be used with the DontUnroll bit
+      else if (S == "llvm.loop.unroll.count" &&
+               !(LoopControl & LoopControlDontUnrollMask)) {
+        size_t I = getMDOperandAsInt(Node, 1);
+        Parameters.push_back(I);
+        LoopControl |= spv::LoopControlPartialCountMask;
+      } else if (S == "llvm.loop.ivdep.enable")
+        LoopControl |= spv::LoopControlDependencyInfiniteMask;
+      else if (S == "llvm.loop.ivdep.safelen") {
+        size_t I = getMDOperandAsInt(Node, 1);
+        Parameters.push_back(I);
+        LoopControl |= spv::LoopControlDependencyLengthMask;
+      } else if (S == "llvm.loop.ii.count") {
+        Parameters.push_back(InitiationIntervalINTEL);
+        size_t I = getMDOperandAsInt(Node, 1);
+        Parameters.push_back(I);
+        LoopControl |= spv::LoopControlExtendedControlsMask;
+      } else if (S == "llvm.loop.max_concurrency.count") {
+        Parameters.push_back(MaxConcurrencyINTEL);
+        size_t I = getMDOperandAsInt(Node, 1);
+        Parameters.push_back(I);
+        LoopControl |= spv::LoopControlExtendedControlsMask;
+      }
+    }
+  }
+
+  return static_cast<spv::LoopControlMask>(LoopControl);
+}
+
 /// An instruction may use an instruction from another BB which has not been
 /// translated. SPIRVForward should be created as place holder for these
 /// instructions and replaced later by the real instructions.
