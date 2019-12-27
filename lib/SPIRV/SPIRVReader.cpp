@@ -628,6 +628,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
           getMetadataFromNameAndParameter("llvm.loop.ivdep.safelen",
                                           LoopControlParameters[NumParam])));
       ++NumParam;
+      // TODO: Fix the increment/assertion logic in all of the conditions
       assert(NumParam <= LoopControlParameters.size() &&
              "Missing loop control parameter!");
     }
@@ -666,117 +667,104 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     assert(NumParam <= LoopControlParameters.size() &&
            "Missing loop control parameter!");
   }
-  if (LC & LoopControlExtendedControlsMask) {
-    while (NumParam < LoopControlParameters.size()) {
-      switch (LoopControlParameters[NumParam]) {
-      case InitiationIntervalINTEL: {
-        // To generate a correct integer part of metadata we skip a parameter
-        // that encodes name of the metadata and take the next one
-        Metadata.push_back(llvm::MDNode::get(
-            *Context,
-            getMetadataFromNameAndParameter(
-                "llvm.loop.ii.count", LoopControlParameters[++NumParam])));
-        break;
+  if (LC & InitiationIntervalINTEL) {
+    Metadata.push_back(llvm::MDNode::get(
+        *Context, getMetadataFromNameAndParameter(
+                      "llvm.loop.ii.count", LoopControlParameters[NumParam])));
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & MaxConcurrencyINTEL) {
+    Metadata.push_back(llvm::MDNode::get(
+        *Context,
+        getMetadataFromNameAndParameter("llvm.loop.max_concurrency.count",
+                                        LoopControlParameters[NumParam])));
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & DependencyArrayINTEL) {
+    // Collect array variable <-> safelen information
+    std::map<Value *, unsigned> ArraySflnMap;
+    unsigned NumOperandPairs = LoopControlParameters[NumParam];
+    unsigned OperandsEndIndex = NumParam + NumOperandPairs * 2;
+    assert(OperandsEndIndex <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+    SPIRVModule *M = LM->getModule();
+    while (NumParam < OperandsEndIndex) {
+      SPIRVId ArraySPIRVId = LoopControlParameters[++NumParam];
+      Value *ArrayVar = ValueMap[M->getValue(ArraySPIRVId)];
+      unsigned Safelen = LoopControlParameters[++NumParam];
+      ArraySflnMap.emplace(ArrayVar, Safelen);
+    }
+
+    // A single run over the loop to retrieve all GetElementPtr instructions
+    // that access relevant array variables
+    std::map<Value *, std::vector<GetElementPtrInst *>> ArrayGEPMap;
+    for (auto &BB : LoopObj->blocks()) {
+      for (Instruction &I : *BB) {
+        auto *GEP = dyn_cast<GetElementPtrInst>(&I);
+        if (!GEP)
+          continue;
+
+        Value *AccessedArray = GEP->getPointerOperand();
+        auto ArraySflnIt = ArraySflnMap.find(AccessedArray);
+        if (ArraySflnIt != ArraySflnMap.end())
+          ArrayGEPMap[AccessedArray].push_back(GEP);
       }
-      case MaxConcurrencyINTEL: {
-        Metadata.push_back(llvm::MDNode::get(
-            *Context, getMetadataFromNameAndParameter(
-                          "llvm.loop.max_concurrency.count",
-                          LoopControlParameters[++NumParam])));
-        break;
-      }
-      case DependencyArrayINTEL: {
-        // Collect array variable <-> safelen information
-        std::map<Value *, unsigned> ArraySflnMap;
-        unsigned NumOperandPairs = LoopControlParameters[++NumParam];
-        unsigned OperandsEndIndex = NumParam + NumOperandPairs * 2;
-        assert(OperandsEndIndex <= LoopControlParameters.size() &&
-               "Missing loop control parameter!");
-        SPIRVModule *M = LM->getModule();
-        while (NumParam < OperandsEndIndex) {
-          SPIRVId ArraySPIRVId = LoopControlParameters[++NumParam];
-          Value *ArrayVar = ValueMap[M->getValue(ArraySPIRVId)];
-          unsigned Safelen = LoopControlParameters[++NumParam];
-          ArraySflnMap.emplace(ArrayVar, Safelen);
+    }
+
+    // Create index group metadata nodes - one per each array
+    // variables. Mark each GEP accessing a particular array variable
+    // into a corresponding index group
+    std::map<unsigned, std::vector<MDNode *>> SafelenIdxGroupMap;
+    for (auto &ArrayGEPIt : ArrayGEPMap) {
+      // Emit a distinct index group that will be referenced from
+      // llvm.loop.parallel_access_indices metadata
+      auto *CurrentDepthIdxGroup = llvm::MDNode::getDistinct(*Context, None);
+      unsigned Safelen = ArraySflnMap.find(ArrayGEPIt.first)->second;
+      SafelenIdxGroupMap[Safelen].push_back(CurrentDepthIdxGroup);
+
+      for (auto *GEP : ArrayGEPIt.second) {
+        StringRef IdxGroupMDName("llvm.index.group");
+        llvm::MDNode *PreviousIdxGroup = GEP->getMetadata(IdxGroupMDName);
+        if (!PreviousIdxGroup) {
+          GEP->setMetadata(IdxGroupMDName, CurrentDepthIdxGroup);
+          continue;
         }
 
-        // A single run over the loop to retrieve all GetElementPtr instructions
-        // that access relevant array variables
-        std::map<Value *, std::vector<GetElementPtrInst *>> ArrayGEPMap;
-        for (auto &BB : LoopObj->blocks()) {
-          for (Instruction &I : *BB) {
-            auto *GEP = dyn_cast<GetElementPtrInst>(&I);
-            if (!GEP)
-              continue;
-
-            Value *AccessedArray = GEP->getPointerOperand();
-            auto ArraySflnIt = ArraySflnMap.find(AccessedArray);
-            if (ArraySflnIt != ArraySflnMap.end())
-              ArrayGEPMap[AccessedArray].push_back(GEP);
-          }
-        }
-
-        // Create index group metadata nodes specific - one per each array
-        // variables. Mark each GEP accessing a particular array variable
-        // into a corresponding index group
-        std::map<unsigned, std::vector<MDNode *>> SafelenIdxGroupMap;
-        for (auto &ArrayGEPIt : ArrayGEPMap) {
-          // Emit a distinct index group that will be referenced from
-          // llvm.loop.parallel_access_indices metadata
-          auto *CurrentDepthIdxGroup =
-              llvm::MDNode::getDistinct(*Context, None);
-          unsigned Safelen = ArraySflnMap.find(ArrayGEPIt.first)->second;
-          SafelenIdxGroupMap[Safelen].push_back(CurrentDepthIdxGroup);
-
-          for (auto *GEP : ArrayGEPIt.second) {
-            StringRef IdxGroupMDName("llvm.index.group");
-            llvm::MDNode *PreviousIdxGroup = GEP->getMetadata(IdxGroupMDName);
-            if (!PreviousIdxGroup) {
-              GEP->setMetadata(IdxGroupMDName, CurrentDepthIdxGroup);
-              continue;
-            }
-
-            // If we're dealing with an embedded loop, it may be the case
-            // that GEP instructions for some of the arrays were already
-            // marked by the algorithm when it went over the outer level loops.
-            // In order to retain the IVDep information for each "loop
-            // dimension", we will mark such GEP's into a separate joined node
-            // that will refer to the previous levels' index groups AND to the
-            // index group specific to the current loop.
-            std::vector<llvm::Metadata *> CurrentDepthOperands;
-            for (auto &Op : PreviousIdxGroup->operands())
-              CurrentDepthOperands.push_back(Op);
-            if (CurrentDepthOperands.size() == 0)
-              CurrentDepthOperands.push_back(PreviousIdxGroup);
-            CurrentDepthOperands.push_back(CurrentDepthIdxGroup);
-            auto *JointIdxGroup =
-                llvm::MDNode::get(*Context, CurrentDepthOperands);
-            GEP->setMetadata(IdxGroupMDName, JointIdxGroup);
-          }
-        }
-
-        for (auto &SflnIdxGroupIt : SafelenIdxGroupMap) {
-          auto *Name =
-              MDString::get(*Context, "llvm.loop.parallel_access_indices");
-          unsigned SflnValue = SflnIdxGroupIt.first;
-          llvm::Metadata *SafelenMDOp =
-              SflnValue ? ConstantAsMetadata::get(ConstantInt::get(
-                              Type::getInt32Ty(*Context), SflnValue))
-                        : nullptr;
-          std::vector<llvm::Metadata *> Parameters{Name};
-          for (auto *Node : SflnIdxGroupIt.second)
-            Parameters.push_back(Node);
-          if (SafelenMDOp)
-            Parameters.push_back(SafelenMDOp);
-          Metadata.push_back(llvm::MDNode::get(*Context, Parameters));
-        }
-        break;
+        // If we're dealing with an embedded loop, it may be the case
+        // that GEP instructions for some of the arrays were already
+        // marked by the algorithm when it went over the outer level loops.
+        // In order to retain the IVDep information for each "loop
+        // dimension", we will mark such GEP's into a separate joined node
+        // that will refer to the previous levels' index groups AND to the
+        // index group specific to the current loop.
+        std::vector<llvm::Metadata *> CurrentDepthOperands;
+        for (auto &Op : PreviousIdxGroup->operands())
+          CurrentDepthOperands.push_back(Op);
+        if (CurrentDepthOperands.size() == 0)
+          CurrentDepthOperands.push_back(PreviousIdxGroup);
+        CurrentDepthOperands.push_back(CurrentDepthIdxGroup);
+        auto *JointIdxGroup = llvm::MDNode::get(*Context, CurrentDepthOperands);
+        GEP->setMetadata(IdxGroupMDName, JointIdxGroup);
       }
-      default:
-        llvm_unreachable(
-            "Unexpected token in LoopControlExtendedConstrolsMask");
-      }
-      ++NumParam;
+    }
+
+    for (auto &SflnIdxGroupIt : SafelenIdxGroupMap) {
+      auto *Name = MDString::get(*Context, "llvm.loop.parallel_access_indices");
+      unsigned SflnValue = SflnIdxGroupIt.first;
+      llvm::Metadata *SafelenMDOp =
+          SflnValue ? ConstantAsMetadata::get(ConstantInt::get(
+                          Type::getInt32Ty(*Context), SflnValue))
+                    : nullptr;
+      std::vector<llvm::Metadata *> Parameters{Name};
+      for (auto *Node : SflnIdxGroupIt.second)
+        Parameters.push_back(Node);
+      if (SafelenMDOp)
+        Parameters.push_back(SafelenMDOp);
+      Metadata.push_back(llvm::MDNode::get(*Context, Parameters));
     }
   }
   llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);

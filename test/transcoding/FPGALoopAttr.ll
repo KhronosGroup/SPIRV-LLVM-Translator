@@ -70,7 +70,7 @@ for.end9:                                         ; preds = %for.cond2
   store i32 0, i32* %i10, align 4
   br label %for.cond11
 
-; CHECK-SPIRV: 6 LoopMerge {{[0-9]+}} {{[0-9]+}} 2147483648 5889 2
+; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 65536 2
 ; CHECK-SPIRV: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 for.cond11:                                       ; preds = %for.inc16, %for.end9
   %6 = load i32, i32* %i10, align 4
@@ -94,7 +94,7 @@ for.end18:                                        ; preds = %for.cond11
   store i32 0, i32* %i19, align 4
   br label %for.cond20
 
-; CHECK-SPIRV: 6 LoopMerge {{[0-9]+}} {{[0-9]+}} 2147483648 5890 2
+; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 131072 2
 ; CHECK-SPIRV: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 for.cond20:                                       ; preds = %for.inc25, %for.end18
   %9 = load i32, i32* %i19, align 4
@@ -118,7 +118,7 @@ for.end27:                                        ; preds = %for.cond20
   store i32 0, i32* %i28, align 4
   br label %for.cond29
 
-; CHECK-SPIRV: 8 LoopMerge {{[0-9]+}} {{[0-9]+}} 2147483648 5889 2 5890 2
+; CHECK-SPIRV: 6 LoopMerge {{[0-9]+}} {{[0-9]+}} 196608 2 2
 ; CHECK-SPIRV: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 for.cond29:                                       ; preds = %for.inc34, %for.end27
   %12 = load i32, i32* %i28, align 4

@@ -126,7 +126,7 @@ if.end:                                           ; preds = %while.body
 
 while.end:                                        ; preds = %while.cond
   br label %while.cond1
-; CHECK-SPIRV: 6 LoopMerge {{[0-9]+}} {{[0-9]+}} 2147483648 5889 2
+; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 65536 2
 ; CHECK-SPIRV-NEXT: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 while.cond1:                                      ; preds = %if.end8, %if.then6, %while.end
   %6 = load i32, i32* %i, align 4, !tbaa !9
@@ -151,7 +151,7 @@ if.end8:                                          ; preds = %while.body3
 
 while.end9:                                       ; preds = %while.cond1
   br label %while.cond10
-; CHECK-SPIRV: 6 LoopMerge {{[0-9]+}} {{[0-9]+}} 2147483648 5890 4
+; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 131072 4
 ; CHECK-SPIRV-NEXT: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 while.cond10:                                     ; preds = %if.end17, %if.then15, %while.end9
   %10 = load i32, i32* %i, align 4, !tbaa !9
