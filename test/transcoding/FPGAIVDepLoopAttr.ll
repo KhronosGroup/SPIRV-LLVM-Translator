@@ -130,7 +130,7 @@ define dso_local spir_func void @_Z34ivdep_embedded_multiple_dimensionsv() #3 {
 10:                                               ; preds = %70, %0
   %11 = load i32, i32* %3, align 4, !tbaa !9
   %12 = icmp ne i32 %11, 10
-  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 2147483648 5891 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
+  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 262144 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
   ; CHECK-SPIRV-NEXT: BranchConditional {{[0-9]+}} {{[0-9]+}} [[MERGE_BLOCK]]
   br i1 %12, label %15, label %13
 
@@ -161,7 +161,7 @@ define dso_local spir_func void @_Z34ivdep_embedded_multiple_dimensionsv() #3 {
 25:                                               ; preds = %66, %15
   %26 = load i32, i32* %5, align 4, !tbaa !9
   %27 = icmp ne i32 %26, 10
-  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 2147483648 5891 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
+  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 262144 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
   ; CHECK-SPIRV-NEXT: BranchConditional {{[0-9]+}} {{[0-9]+}} [[MERGE_BLOCK]]
   br i1 %27, label %30, label %28
 
@@ -196,7 +196,7 @@ define dso_local spir_func void @_Z34ivdep_embedded_multiple_dimensionsv() #3 {
 44:                                               ; preds = %62, %30
   %45 = load i32, i32* %6, align 4, !tbaa !9
   %46 = icmp ne i32 %45, 10
-  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 2147483648 5891 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
+  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 262144 2 [[ARRAY_A]] 0 [[ARRAY_B]] 0
   ; CHECK-SPIRV-NEXT: BranchConditional {{[0-9]+}} {{[0-9]+}} [[MERGE_BLOCK]]
   br i1 %46, label %49, label %47
 
@@ -292,7 +292,7 @@ define dso_local spir_func void @_Z27ivdep_mul_arrays_and_globalv() #3 {
 11:                                               ; preds = %29, %0
   %12 = load i32, i32* %5, align 4, !tbaa !9
   %13 = icmp ne i32 %12, 10
-  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 2147483648 5891 4 [[ARRAY_A]] 5 [[ARRAY_D]] 5 [[ARRAY_B]] 6 [[ARRAY_C]] 0
+  ; CHECK-SPIRV: LoopMerge [[MERGE_BLOCK:[0-9]+]] {{[0-9]+}} 262144 4 [[ARRAY_A]] 5 [[ARRAY_D]] 5 [[ARRAY_B]] 6 [[ARRAY_C]] 0
   ; CHECK-SPIRV-NEXT: BranchConditional {{[0-9]+}} {{[0-9]+}} [[MERGE_BLOCK]]
   br i1 %13, label %16, label %14
 
