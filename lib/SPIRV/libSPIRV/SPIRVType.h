@@ -310,7 +310,6 @@ private:
   SPIRVWord CompCount; // Component Count
 };
 
-class SPIRVConstant;
 class SPIRVTypeArray : public SPIRVType {
 public:
   // Complete constructor

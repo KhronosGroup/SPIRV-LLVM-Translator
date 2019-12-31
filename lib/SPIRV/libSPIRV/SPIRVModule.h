@@ -52,8 +52,10 @@
 
 namespace SPIRV {
 
+template <Op> class SPIRVConstantBase;
+using SPIRVConstant = SPIRVConstantBase<OpConstant>;
+
 class SPIRVBasicBlock;
-class SPIRVConstant;
 class SPIRVEntry;
 class SPIRVFunction;
 class SPIRVInstruction;
@@ -429,6 +431,10 @@ public:
 
   virtual bool isGenArgNameMDEnabled() const final {
     return TranslationOpts.isGenArgNameMDEnabled();
+  }
+
+  bool getSpecializationConstant(SPIRVWord SpecId, uint64_t &ConstValue) {
+    return TranslationOpts.getSpecializationConstant(SpecId, ConstValue);
   }
 
   // I/O functions
