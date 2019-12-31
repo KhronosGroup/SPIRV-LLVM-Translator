@@ -42,6 +42,7 @@
 #include <cassert>
 #include <cstdint>
 #include <map>
+#include <unordered_map>
 
 namespace SPIRV {
 
@@ -106,6 +107,18 @@ public:
 
   void enableGenArgNameMD() { GenKernelArgNameMD = true; }
 
+  void setSpecConst(uint32_t SpecId, uint64_t SpecValue) {
+    ExternalSpecialization[SpecId] = SpecValue;
+  }
+
+  bool getSpecializationConstant(uint32_t SpecId, uint64_t &Value) const {
+    auto It = ExternalSpecialization.find(SpecId);
+    if (It == ExternalSpecialization.end())
+      return false;
+    Value = It->second;
+    return true;
+  }
+
   void setDesiredBIsRepresentation(BIsRepresentation Value) {
     DesiredRepresentationOfBIs = Value;
   }
@@ -156,6 +169,7 @@ private:
   bool SPIRVMemToReg = false;
   // SPIR-V to LLVM translation options
   bool GenKernelArgNameMD;
+  std::unordered_map<uint32_t, uint64_t> ExternalSpecialization;
 
   // Representation of built-ins, which should be used while translating from
   // SPIR-V to back to LLVM IR
