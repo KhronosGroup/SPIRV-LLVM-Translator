@@ -44,6 +44,13 @@
 ;   }
 ; }
 
+; TODO: This source code will result in different LLVM IR after
+; rev [a47242e4b2c1c9] of https://github.com/intel/llvm (the
+; [[intelfpga::ivdep]] attribute will be represented otherwise).
+; It's worth factoring out the old representation's translation:
+; (!"llvm.loop.ivdep.*" <-> LoopControlDependency*Mask)
+; into a separate test file
+
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-ext=+all -o %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o %t.spt
@@ -126,6 +133,8 @@ if.end:                                           ; preds = %while.body
 
 while.end:                                        ; preds = %while.cond
   br label %while.cond1
+; Per SPIR-V spec extension INTEL/SPV_INTEL_fpga_loop_controls,
+; InitiationIntervalINTEL = 0x10000 (65536)
 ; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 65536 2
 ; CHECK-SPIRV-NEXT: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 while.cond1:                                      ; preds = %if.end8, %if.then6, %while.end
@@ -151,6 +160,8 @@ if.end8:                                          ; preds = %while.body3
 
 while.end9:                                       ; preds = %while.cond1
   br label %while.cond10
+; Per SPIR-V spec extension INTEL/SPV_INTEL_fpga_loop_controls,
+; MaxConcurrencyINTEL = 0x20000 (131072)
 ; CHECK-SPIRV: 5 LoopMerge {{[0-9]+}} {{[0-9]+}} 131072 4
 ; CHECK-SPIRV-NEXT: 4 BranchConditional {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 while.cond10:                                     ; preds = %if.end17, %if.then15, %while.end9
