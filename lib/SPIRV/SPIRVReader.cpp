@@ -702,7 +702,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     // A single run over the loop to retrieve all GetElementPtr instructions
     // that access relevant array variables
     std::map<Value *, std::vector<GetElementPtrInst *>> ArrayGEPMap;
-    for (auto &BB : LoopObj->blocks()) {
+    for (const auto &BB : LoopObj->blocks()) {
       for (Instruction &I : *BB) {
         auto *GEP = dyn_cast<GetElementPtrInst>(&I);
         if (!GEP)
@@ -741,10 +741,9 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
         // dimension", we will mark such GEP's into a separate joined node
         // that will refer to the previous levels' index groups AND to the
         // index group specific to the current loop.
-        std::vector<llvm::Metadata *> CurrentDepthOperands;
-        for (auto &Op : PreviousIdxGroup->operands())
-          CurrentDepthOperands.push_back(Op);
-        if (CurrentDepthOperands.size() == 0)
+        std::vector<llvm::Metadata *> CurrentDepthOperands(
+            PreviousIdxGroup->op_begin(), PreviousIdxGroup->op_end());
+        if (CurrentDepthOperands.empty())
           CurrentDepthOperands.push_back(PreviousIdxGroup);
         CurrentDepthOperands.push_back(CurrentDepthIdxGroup);
         auto *JointIdxGroup = llvm::MDNode::get(*Context, CurrentDepthOperands);
