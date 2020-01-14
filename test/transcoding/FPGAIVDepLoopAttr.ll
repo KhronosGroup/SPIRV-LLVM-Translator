@@ -57,10 +57,15 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM --allow-deprecated-dag-overlap
-; Note: --allow-deprecated-dag-overlap was enabled to allow indeterminate order of
-; LLVM metadata node operands by dedicating multiple CHECK-DAG lines to the
-; containing LLVM IR line
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+
+; CHECK-LLVM is the base prefix, which includes simple checks for
+; "llvm.loop.parallel_access_indices" MD nodes with only 1 index group operand
+; CHECK-LLVM-MD-OP-<N> is the group of prefixes to check for more
+; complicated cases of "llvm.loop.parallel_access_indices" nodes, the ones
+; containing multiple index group operands that could come in indeterminate order
+; RUN: FileCheck < %t.rev.ll %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-MD-OP1
+; RUN: FileCheck < %t.rev.ll %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-MD-OP2
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown-sycldevice"
@@ -371,8 +376,8 @@ attributes #4 = { nounwind }
 ; CHECK-LLVM-DAG: ![[EMB_B_IDX_NODE_DIM_3]] = distinct !{}
 ; CHECK-LLVM-DAG: ![[EMB_MD_LOOP_DIM_3]] = distinct !{![[EMB_MD_LOOP_DIM_3]], ![[EMB_IVDEP_DIM_3:[0-9]+]]}
 ; The next directives should overlap
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_3]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_NODE_DIM_3]]{{.*}}}
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_3]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_NODE_DIM_3]]{{.*}}}
+; CHECK-LLVM-MD-OP1-DAG: ![[EMB_IVDEP_DIM_3]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_NODE_DIM_3]]{{.*}}}
+; CHECK-LLVM-MD-OP2-DAG: ![[EMB_IVDEP_DIM_3]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_NODE_DIM_3]]{{.*}}}
 ;
 ; Loop dimension 2
 ; CHECK-LLVM-DAG: ![[EMB_A_IDX_GR_DIM_2]] = !{![[EMB_A_IDX_GR_DIM_1]], ![[EMB_A_IDX_NODE_DIM_2]]}
@@ -381,15 +386,15 @@ attributes #4 = { nounwind }
 ; CHECK-LLVM-DAG: ![[EMB_B_IDX_NODE_DIM_2]] = distinct !{}
 ; CHECK-LLVM-DAG: ![[EMB_MD_LOOP_DIM_2]] = distinct !{![[EMB_MD_LOOP_DIM_2]], ![[EMB_IVDEP_DIM_2:[0-9]+]]}
 ; The next directives should overlap
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_2]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_NODE_DIM_2]]{{.*}}}
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_2]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_NODE_DIM_2]]{{.*}}}
+; CHECK-LLVM-MD-OP1-DAG: ![[EMB_IVDEP_DIM_2]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_NODE_DIM_2]]{{.*}}}
+; CHECK-LLVM-MD-OP2-DAG: ![[EMB_IVDEP_DIM_2]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_NODE_DIM_2]]{{.*}}}
 ;
 ; Loop dimension 1 (the outermost loop)
 ; CHECK-LLVM-DAG: ![[EMB_A_IDX_GR_DIM_1]] = distinct !{}
 ; CHECK-LLVM-DAG: ![[EMB_MD_LOOP_DIM_1]] = distinct !{![[EMB_MD_LOOP_DIM_1]], ![[EMB_IVDEP_DIM_1:[0-9]+]]}
 ; The next directives should overlap
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_1]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_GR_DIM_1]]{{.*}}}
-; CHECK-LLVM-DAG: ![[EMB_IVDEP_DIM_1]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_GR_DIM_1]]{{.*}}}
+; CHECK-LLVM-MD-OP1-DAG: ![[EMB_IVDEP_DIM_1]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_A_IDX_GR_DIM_1]]{{.*}}}
+; CHECK-LLVM-MD-OP2-DAG: ![[EMB_IVDEP_DIM_1]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[EMB_B_IDX_GR_DIM_1]]{{.*}}}
 !11 = distinct !{}
 !12 = distinct !{}
 !13 = !{!11, !14}
@@ -418,8 +423,8 @@ attributes #4 = { nounwind }
 ; CHECK-LLVM-DAG: ![[SIMPLE_MD_LOOP]] = distinct !{![[SIMPLE_MD_LOOP]], ![[SIMPLE_IVDEP_C:[0-9]+]], ![[SIMPLE_IVDEP_A_D:[0-9]+]], ![[SIMPLE_IVDEP_B:[0-9]+]]}
 !31 = distinct !{!31, !32, !33, !34}
 ; The next directives should overlap
-; CHECK-LLVM-DAG: ![[SIMPLE_IVDEP_A_D]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[SIMPLE_A_IDX_GR]],{{.*}} i32 5}
-; CHECK-LLVM-DAG: ![[SIMPLE_IVDEP_A_D]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[SIMPLE_D_IDX_GR]],{{.*}} i32 5}
+; CHECK-LLVM-MD-OP1-DAG: ![[SIMPLE_IVDEP_A_D]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[SIMPLE_A_IDX_GR]],{{.*}} i32 5}
+; CHECK-LLVM-MD-OP2-DAG: ![[SIMPLE_IVDEP_A_D]] = !{!"llvm.loop.parallel_access_indices",{{.*}} ![[SIMPLE_D_IDX_GR]],{{.*}} i32 5}
 !32 = !{!"llvm.loop.parallel_access_indices", !27, !30, i32 5}
 ; CHECK-LLVM-DAG: ![[SIMPLE_IVDEP_B]] = !{!"llvm.loop.parallel_access_indices", ![[SIMPLE_B_IDX_GR]], i32 6}
 !33 = !{!"llvm.loop.parallel_access_indices", !28, i32 6}
