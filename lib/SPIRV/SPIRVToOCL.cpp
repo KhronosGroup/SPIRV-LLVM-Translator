@@ -331,12 +331,12 @@ void SPIRVToOCL::visitCallSPIRVImageMediaBlockBuiltin(CallInst *CI, Op OC) {
       [=](CallInst *, std::vector<Value *> &Args) {
         // Moving the first argument to the end.
         std::rotate(Args.rbegin(), Args.rend() - 1, Args.rend());
-        Type *FuncType = CI->getType();
+        Type *RetType = CI->getType();
         if (OC == OpSubgroupImageMediaBlockWriteINTEL) {
           assert(Args.size() >= 4 && "Wrong media block write signature");
-          FuncType = Args.at(3)->getType(); // texel type
+          RetType = Args.at(3)->getType(); // texel type
         }
-        unsigned int BitWidth = FuncType->getScalarSizeInBits();
+        unsigned int BitWidth = RetType->getScalarSizeInBits();
         std::string FuncPostfix;
         if (BitWidth == 8)
           FuncPostfix = "_uc";
@@ -347,8 +347,8 @@ void SPIRVToOCL::visitCallSPIRVImageMediaBlockBuiltin(CallInst *CI, Op OC) {
         else
           assert(0 && "Unsupported texel type!");
 
-        if (FuncType->isVectorTy()) {
-          unsigned int NumEl = FuncType->getVectorNumElements();
+        if (RetType->isVectorTy()) {
+          unsigned int NumEl = RetType->getVectorNumElements();
           assert((NumEl == 2 || NumEl == 4 || NumEl == 8 || NumEl == 16) &&
                  "Wrong function type!");
           FuncPostfix += std::to_string(NumEl);
