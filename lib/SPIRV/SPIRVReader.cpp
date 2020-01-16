@@ -570,11 +570,16 @@ bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
   // to LLVM representation without any modifications (SPIRV format of
   // instruction is represented in LLVM) and then its translated to
   // clang-consistent format in SPIRVToOCL pass.
-  return (OCLSPIRVBuiltinMap::rfind(OpCode, nullptr) &&
-          !isAtomicOpCode(OpCode) && !isGroupOpCode(OpCode) &&
-          !isPipeOpCode(OpCode) && !isMediaBlockINTELOpcode(OpCode)) ||
-         isSubgroupAvcINTELInstructionOpCode(OpCode) ||
-         isIntelSubgroupOpCode(OpCode);
+  if (isSubgroupAvcINTELInstructionOpCode(OpCode) ||
+      isIntelSubgroupOpCode(OpCode))
+    return true;
+  if (OCLSPIRVBuiltinMap::rfind(OpCode, nullptr)) {
+    // everything except atomics, groups, pipes and media_block_io_intel is
+    // directly translated
+    return !(isAtomicOpCode(OpCode) || isGroupOpCode(OpCode) ||
+             isPipeOpCode(OpCode) || isMediaBlockINTELOpcode(OpCode));
+  }
+  return false;
 }
 
 void SPIRVToLLVM::setName(llvm::Value *V, SPIRVValue *BV) {
