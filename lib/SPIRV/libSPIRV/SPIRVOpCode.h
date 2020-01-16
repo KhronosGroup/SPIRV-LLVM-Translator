@@ -136,9 +136,8 @@ inline bool isGroupOpCode(Op OpCode) {
 }
 
 inline bool isMediaBlockINTELOpcode(Op OpCode) {
-  unsigned OC = OpCode;
-  return OC == OpSubgroupImageMediaBlockReadINTEL ||
-         OC == OpSubgroupImageMediaBlockWriteINTEL;
+  return OpCode == OpSubgroupImageMediaBlockReadINTEL ||
+         OpCode == OpSubgroupImageMediaBlockWriteINTEL;
 }
 
 inline bool isPipeOpCode(Op OpCode) {
