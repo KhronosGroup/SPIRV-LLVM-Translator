@@ -110,6 +110,7 @@ typedef std::vector<SPIRVCapabilityKind> SPIRVCapVec;
 
 enum SPIRVExtensionKind {
   SPV_INTEL_device_side_avc_motion_estimation,
+  SPV_INTEL_media_block_io,
   SPV_KHR_no_integer_wrap_decoration
 };
 
@@ -118,6 +119,7 @@ typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
 template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
   add(SPV_INTEL_device_side_avc_motion_estimation,
       "SPV_INTEL_device_side_avc_motion_estimation");
+  add(SPV_INTEL_media_block_io, "SPV_INTEL_media_block_io");
   add(SPV_KHR_no_integer_wrap_decoration, "SPV_KHR_no_integer_wrap_decoration");
 };
 
