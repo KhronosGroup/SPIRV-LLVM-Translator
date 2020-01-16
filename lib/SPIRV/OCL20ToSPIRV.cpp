@@ -295,19 +295,23 @@ private:
 
   /// Get vector width from OpenCL vload* function name.
   SPIRVWord getVecLoadWidth(const std::string &DemangledName) {
+    std::array<std::string, 5> legalVecSizes{"2", "3", "4", "8", "16"};
+    auto vecSize = std::find_if(
+        begin(legalVecSizes), end(legalVecSizes), [&](const std::string &s) {
+          return DemangledName.find(s) != std::string::npos;
+        });
     SPIRVWord Width = 0;
-    if (DemangledName == "vloada_half")
-      Width = 1;
-    else {
-      unsigned Loc = 5;
-      if (DemangledName.find("vload_half") == 0)
-        Loc = 10;
-      else if (DemangledName.find("vloada_half") == 0)
-        Loc = 11;
-
-      std::stringstream SS(DemangledName.substr(Loc));
-      SS >> Width;
+    if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) != std::string::npos &&
+        DemangledName != kOCLBuiltinName::VLoadHalf) {
+      // We need to check whether vector function is really loading vector, not
+      // scalar.
+      // As vector load for half type can be represented as a 1-element vector
+      // function.
+      bool isVector = (vecSize != end(legalVecSizes));
+      Width = isVector ? std::stoi(*vecSize) : 1;
     }
+    // if return value is equal to 0, it means that width parameter should
+    // not get a part of a vload function signature
     return Width;
   }
 
@@ -1358,9 +1362,7 @@ void OCL20ToSPIRV::visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
                                          const std::string &OrigDemangledName) {
   std::vector<int> PreOps;
   std::string DemangledName = OrigDemangledName;
-  if (DemangledName.find(kOCLBuiltinName::VLoadPrefix) == 0 &&
-      DemangledName != kOCLBuiltinName::VLoadHalf) {
-    SPIRVWord Width = getVecLoadWidth(DemangledName);
+  if (SPIRVWord Width = getVecLoadWidth(DemangledName)) {
     SPIRVDBG(spvdbgs() << "[visitCallVecLoadStore] DemangledName: "
                        << DemangledName << " Width: " << Width << '\n');
     PreOps.push_back(Width);
