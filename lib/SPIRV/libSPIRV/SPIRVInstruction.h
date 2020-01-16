@@ -2236,6 +2236,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilitySubgroupImageMediaBlockIOINTEL);
   }
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(SPV_INTEL_media_block_io);
+  }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
