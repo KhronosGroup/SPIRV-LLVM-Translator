@@ -1380,7 +1380,7 @@ tryParseIntelFPGAAnnotationString(StringRef AnnotatedCode) {
                 .Case("memory", DecorationMemoryINTEL)
                 .Case("numbanks", DecorationNumbanksINTEL)
                 .Case("bankwidth", DecorationBankwidthINTEL)
-                .Case("max_private_copies", DecorationMaxPrivateCopiesINTEL)
+                .Case("private_copies", DecorationMaxPrivateCopiesINTEL)
                 .Case("max_replicates", DecorationMaxReplicatesINTEL)
                 .Case("bank_bits", DecorationBankBitsINTEL)
                 .Case("merge", DecorationMergeINTEL)
