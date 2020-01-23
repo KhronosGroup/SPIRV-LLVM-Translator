@@ -185,6 +185,7 @@ private:
   SPIRVInstruction *transBuiltinToInst(const std::string &DemangledName,
                                        const std::string &MangledName,
                                        CallInst *CI, SPIRVBasicBlock *BB);
+  SPIRVValue *transBuiltinToConstant(StringRef DemangledName, CallInst *CI);
   SPIRVInstruction *transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                         SPIRVBasicBlock *BB);
   void mutateFuncArgType(const std::map<unsigned, Type *> &ChangedType,

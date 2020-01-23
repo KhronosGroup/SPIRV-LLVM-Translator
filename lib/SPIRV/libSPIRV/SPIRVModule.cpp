@@ -266,6 +266,7 @@ public:
   SPIRVValue *addConstant(SPIRVValue *) override;
   SPIRVValue *addConstant(SPIRVType *, uint64_t) override;
   SPIRVValue *addConstant(SPIRVType *, llvm::APInt) override;
+  SPIRVValue *addSpecConstant(SPIRVType *, uint64_t) override;
   SPIRVValue *addDoubleConstant(SPIRVTypeFloat *, double) override;
   SPIRVValue *addFloatConstant(SPIRVTypeFloat *, float) override;
   SPIRVValue *addIntegerConstant(SPIRVTypeInt *, uint64_t) override;
@@ -1064,6 +1065,16 @@ SPIRVValue *SPIRVModuleImpl::addConstFunctionPointerINTEL(SPIRVType *Ty,
 
 SPIRVValue *SPIRVModuleImpl::addUndef(SPIRVType *TheType) {
   return addConstant(new SPIRVUndef(this, TheType, getId()));
+}
+
+SPIRVValue *SPIRVModuleImpl::addSpecConstant(SPIRVType *Ty, uint64_t V) {
+  if (Ty->isTypeBool()) {
+    if (V)
+      return add(new SPIRVSpecConstantTrue(this, Ty, getId()));
+    else
+      return add(new SPIRVSpecConstantFalse(this, Ty, getId()));
+  }
+  return add(new SPIRVSpecConstant(this, Ty, getId(), V));
 }
 
 // Instruction creation functions
