@@ -3675,7 +3675,7 @@ bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
   return true;
 }
 
-void llvm::getSpecConstInfo(std::istream &IS,
+bool llvm::getSpecConstInfo(std::istream &IS,
                             std::vector<SpecConstInfoTy> &SpecConstInfo) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   BM->setAutoAddExtensions(false);
@@ -3684,7 +3684,7 @@ void llvm::getSpecConstInfo(std::istream &IS,
   D >> Magic;
   if (!BM->getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
                                     "invalid magic number")) {
-    return;
+    return false;
   }
   // Skip the rest of the header
   D.ignore(4);
@@ -3718,4 +3718,5 @@ void llvm::getSpecConstInfo(std::istream &IS,
       D.ignoreInstruction();
     }
   }
+  return !IS.fail();
 }
