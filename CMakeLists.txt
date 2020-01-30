@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-set(LLVM_SPIRV_VERSION 0.2.1.0)
+set(LLVM_SPIRV_VERSION 10.0.0.1)
 
 option(LLVM_SPIRV_INCLUDE_TESTS
   "Generate build targets for the llvm-spirv lit tests."
