@@ -149,6 +149,7 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeRoundingModeRTNINTEL:
   case ExecutionModeFloatingPointModeALTINTEL:
   case ExecutionModeFloatingPointModeIEEEINTEL:
+  case ExecutionModeSharedLocalMemorySizeINTEL:
     return true;
   default:
     return false;
@@ -407,6 +408,11 @@ inline bool isValid(spv::Decoration V) {
   case DecorationAlignment:
   case DecorationMaxByteOffset:
   case DecorationUserSemantic:
+  case DecorationVectorComputeFunctionINTEL:
+  case DecorationStackCallINTEL:
+  case DecorationVectorComputeVariableINTEL:
+  case DecorationGlobalVariableOffsetINTEL:
+  case DecorationFuncParamIOKind:
     return true;
   default:
     return false;
@@ -565,6 +571,8 @@ inline bool isValid(spv::Capability V) {
   case CapabilityRoundingModeRTZ:
   case CapabilityRoundToInfinityINTEL:
   case CapabilityFloatingPointModeINTEL:
+  case CapabilityVectorComputeINTEL:
+  case CapabilityVectorAnyINTEL:
     return true;
   default:
     return false;

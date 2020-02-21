@@ -289,6 +289,10 @@ public:
     // usage of 8-component or 16-component vectors.
     if (CompCount == 8 || CompCount == 16)
       V.push_back(CapabilityVector16);
+
+    if (CompCount == 1 || (CompCount > 4 && CompCount < 8) ||
+        (CompCount > 8 && CompCount < 16) || CompCount > 16)
+      V.push_back(CapabilityVectorAnyINTEL);
     return V;
   }
 
@@ -301,8 +305,6 @@ protected:
   void validate() const override {
     SPIRVEntry::validate();
     CompType->validate();
-    assert(CompCount == 2 || CompCount == 3 || CompCount == 4 ||
-           CompCount == 8 || CompCount == 16);
   }
 
 private:
