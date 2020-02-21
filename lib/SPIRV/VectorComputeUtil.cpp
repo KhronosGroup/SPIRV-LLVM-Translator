@@ -101,6 +101,23 @@ inline void SPIRVMap<VectorComputeUtil::VCFloatType,
 
 namespace VectorComputeUtil {
 
+VCRoundMode getVCRoundMode(unsigned FloatControl) noexcept {
+  return VCRoundModeControlBitMap::rmap(
+      VCFloatControl(VC_ROUND_MASK & FloatControl));
+}
+
+VCDenormMode getVCDenormPreserve(unsigned FloatControl,
+                                 VCFloatType FloatType) noexcept {
+  VCFloatControl DenormMask =
+      VCFloatTypeDenormMaskMap::map(FloatType); // 1 Bit mask
+  return (DenormMask == (DenormMask & FloatControl)) ? Preserve : FlushToZero;
+}
+
+VCFloatMode getVCFloatMode(unsigned FloatControl) noexcept {
+  return VCFloatModeControlBitMap::rmap(
+      VCFloatControl(VC_FLOAT_MASK & FloatControl));
+}
+
 unsigned getVCFloatControl(VCRoundMode RoundMode) noexcept {
   return VCRoundModeControlBitMap::map(RoundMode);
 }
