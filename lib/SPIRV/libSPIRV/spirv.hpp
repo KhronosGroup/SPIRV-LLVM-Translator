@@ -131,6 +131,7 @@ enum ExecutionMode {
     ExecutionModeSignedZeroInfNanPreserve = 4461,
     ExecutionModeRoundingModeRTE = 4462,
     ExecutionModeRoundingModeRTZ = 4463,
+    ExecutionModeSharedLocalMemorySizeINTEL = 5618,
     ExecutionModeRoundingModeRTPINTEL = 5620,
     ExecutionModeRoundingModeRTNINTEL = 5621,
     ExecutionModeFloatingPointModeALTINTEL = 5622,
@@ -396,6 +397,11 @@ enum Decoration {
   DecorationViewportRelativeNV = 5252,
   DecorationSecondaryViewportRelativeNV = 5256,
   DecorationSideEffectsINTEL = 5608,
+  DecorationVectorComputeVariableINTEL = 5624,
+  DecorationFuncParamIOKind = 5625,
+  DecorationVectorComputeFunctionINTEL = 5626,
+  DecorationStackCallINTEL = 5627,
+  DecorationGlobalVariableOffsetINTEL = 5628,
   DecorationMax = 0x7fffffff,
 };
 
@@ -667,6 +673,8 @@ enum Capability {
   CapabilitySubgroupImageBlockIOINTEL = 5570,
   CapabilitySubgroupImageMediaBlockIOINTEL = 5579,
   CapabilityAsmINTEL = 5606,
+  CapabilityVectorComputeINTEL = 5617,
+  CapabilityVectorAnyINTEL = 5619,
   CapabilitySubgroupAvcMotionEstimationINTEL = 5696,
   CapabilitySubgroupAvcMotionEstimationIntraINTEL = 5697,
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
