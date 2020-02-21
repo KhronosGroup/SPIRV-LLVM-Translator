@@ -2015,6 +2015,15 @@ bool LLVMToSPIRV::transExecutionMode() {
         BF->addExecutionMode(BM->add(
             new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X)));
       } break;
+      case spv::ExecutionModeSharedLocalMemorySizeINTEL: {
+        if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
+          break;
+        unsigned SLMSize;
+        N.get(SLMSize);
+        BF->addExecutionMode(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), SLMSize));
+      } break;
+
       case spv::ExecutionModeDenormPreserve:
       case spv::ExecutionModeDenormFlushToZero:
       case spv::ExecutionModeSignedZeroInfNanPreserve:
