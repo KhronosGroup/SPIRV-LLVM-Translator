@@ -42,12 +42,12 @@
                OpReturn
                OpFunctionEnd
 
-; CHECK: %r1 = fsub float -0.000000e+00, %a
-; CHECK: %r2 = fsub float -0.000000e+00, %a
-; CHECK: %r3 = fsub nnan float -0.000000e+00, %a
-; CHECK: %r4 = fsub ninf float -0.000000e+00, %a
-; CHECK: %r5 = fsub nsz float -0.000000e+00, %a
-; CHECK: %r6 = fsub arcp float -0.000000e+00, %a
-; CHECK: %r7 = fsub fast float -0.000000e+00, %a
-; CHECK: %r8 = fsub nnan ninf float -0.000000e+00, %a
-; CHECK: %r9 = fsub fast float -0.000000e+00, %a
+; CHECK: %r1 = fneg float %a
+; CHECK: %r2 = fneg float %a
+; CHECK: %r3 = fneg nnan float %a
+; CHECK: %r4 = fneg ninf float %a
+; CHECK: %r5 = fneg nsz float %a
+; CHECK: %r6 = fneg arcp float %a
+; CHECK: %r7 = fneg fast float %a
+; CHECK: %r8 = fneg nnan ninf float %a
+; CHECK: %r9 = fneg fast float %a
