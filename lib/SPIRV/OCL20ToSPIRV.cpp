@@ -984,27 +984,18 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
         });
   }
 
-  const bool IsElect = DemangledName == "group_elect";
-  const bool IsAllOrAny = (DemangledName.find("_all") != std::string::npos ||
-                           DemangledName.find("_any") != std::string::npos);
-  const bool IsAllEqual = DemangledName.find("_all_equal") != std::string::npos;
-  const bool IsBallot = DemangledName == "group_ballot";
-  const bool IsInverseBallot = DemangledName == "group_inverse_ballot";
-  const bool IsBallotBitExtract = DemangledName == "group_ballot_bit_extract";
-  const bool IsLogical = DemangledName.find("_logical") != std::string::npos;
-
-  const bool HasBoolReturnType = IsElect || IsAllOrAny || IsAllEqual ||
-                                 IsInverseBallot || IsBallotBitExtract ||
-                                 IsLogical;
-  const bool HasBoolArg = (IsAllOrAny && !IsAllEqual) || IsBallot || IsLogical;
+  bool IsGroupAllAny = (DemangledName.find("_all") != std::string::npos ||
+                        DemangledName.find("_any") != std::string::npos);
+  bool IsGroupAllEqual = DemangledName.find("_all_equal") != std::string::npos;
 
   auto Consts = getInt32(M, PreOps);
   OCLBuiltinTransInfo Info;
-  if (HasBoolReturnType)
+  if (IsGroupAllAny || IsGroupAllEqual)
     Info.RetTy = Type::getInt1Ty(*Ctx);
   Info.UniqName = DemangledName;
   Info.PostProc = [=](std::vector<Value *> &Ops) {
-    if (HasBoolArg) {
+    if (IsGroupAllAny && !IsGroupAllEqual) {
+>>>>>>> added cl_khr_subgroup_extended_types and cl_khr_subgroup_non_uniform_vote
       IRBuilder<> IRB(CI);
       Ops[0] =
           IRB.CreateICmpNE(Ops[0], ConstantInt::get(Type::getInt32Ty(*Ctx), 0));
