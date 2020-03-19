@@ -338,6 +338,7 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationNoContraction, {CapabilityShader});
   ADD_VEC_INIT(DecorationInputAttachmentIndex, {CapabilityInputAttachment});
   ADD_VEC_INIT(DecorationAlignment, {CapabilityKernel});
+  ADD_VEC_INIT(DecorationSideEffectsINTEL, {CapabilityAsmINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {

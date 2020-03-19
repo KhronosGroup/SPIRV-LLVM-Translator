@@ -329,6 +329,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationInputAttachmentIndex, "InputAttachmentIndex");
   add(DecorationAlignment, "Alignment");
   add(DecorationMaxByteOffset, "MaxByteOffset");
+  add(DecorationSideEffectsINTEL, "SideEffectsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 
@@ -468,6 +469,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
   add(CapabilitySubgroupImageMediaBlockIOINTEL,
       "SubgroupImageMediaBlockIOINTEL");
+  add(CapabilityAsmINTEL, "AsmINTEL");
   add(CapabilitySubgroupAvcMotionEstimationINTEL,
       "SubgroupAvcMotionEstimationINTEL");
   add(CapabilitySubgroupAvcMotionEstimationIntraINTEL,
