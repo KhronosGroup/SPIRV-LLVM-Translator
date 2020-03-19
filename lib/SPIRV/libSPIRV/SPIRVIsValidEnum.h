@@ -871,6 +871,9 @@ inline bool isValid(spv::Op V) {
   case OpSubgroupImageBlockWriteINTEL:
   case OpSubgroupImageMediaBlockReadINTEL:
   case OpSubgroupImageMediaBlockWriteINTEL:
+  case OpAsmTargetINTEL:
+  case OpAsmINTEL:
+  case OpAsmCallINTEL:
   case OpVmeImageINTEL:
   case OpTypeVmeImageINTEL:
   case OpTypeAvcImePayloadINTEL:

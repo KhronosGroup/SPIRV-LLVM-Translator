@@ -40,6 +40,7 @@
 
 #include "SPIRVWriter.h"
 #include "LLVMToSPIRVDbgTran.h"
+#include "SPIRVAsm.h"
 #include "SPIRVBasicBlock.h"
 #include "SPIRVEntry.h"
 #include "SPIRVEnum.h"
@@ -62,6 +63,7 @@
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
@@ -989,6 +991,9 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return BV ? mapValue(V, BV) : nullptr;
   }
 
+  if (InlineAsm *IA = dyn_cast<InlineAsm>(V))
+    return mapValue(V, transAsmINTEL(IA));
+
   if (CallInst *CI = dyn_cast<CallInst>(V))
     return mapValue(V, transCallInst(CI, BB));
 
@@ -1192,6 +1197,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
 }
 
 SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
+  assert(CI);
+  if (isa<InlineAsm>(CI->getCalledValue()))
+    return transAsmCallINTEL(CI, BB);
+
   SPIRVExtInstSetKind ExtSetKind = SPIRVEIS_Count;
   SPIRVWord ExtOp = SPIRVWORD_MAX;
   llvm::Function *F = CI->getCalledFunction();
@@ -1220,6 +1229,32 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
   return BM->addCallInst(
       transFunctionDecl(CI->getCalledFunction()),
       transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
+      BB);
+}
+
+SPIRVValue *LLVMToSPIRV::transAsmINTEL(InlineAsm *IA) {
+  assert(IA);
+
+  // TODO: intention here is to provide information about actual target
+  //       but in fact spir-64 is substituted as triple when translator works
+  //       eventually we need to fix it (not urgent)
+  StringRef TripleStr(M->getTargetTriple());
+  auto AsmTarget = static_cast<SPIRVAsmTargetINTEL *>(
+      BM->getOrAddAsmTargetINTEL(TripleStr.str()));
+  auto SIA = BM->addAsmINTEL(
+      static_cast<SPIRVTypeFunction *>(transType(IA->getFunctionType())),
+      AsmTarget, IA->getAsmString(), IA->getConstraintString());
+  if (IA->hasSideEffects())
+    SIA->addDecorate(DecorationSideEffectsINTEL);
+  return SIA;
+}
+
+SPIRVValue *LLVMToSPIRV::transAsmCallINTEL(CallInst *CI, SPIRVBasicBlock *BB) {
+  assert(CI);
+  auto IA = cast<InlineAsm>(CI->getCalledValue());
+  return BM->addAsmCallINTELInst(
+      static_cast<SPIRVAsmINTEL *>(transValue(IA, BB, false)),
+      transArguments(CI, BB, SPIRVEntry::createUnique(OpAsmCallINTEL).get()),
       BB);
 }
 

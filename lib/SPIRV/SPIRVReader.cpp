@@ -38,6 +38,7 @@
 //===----------------------------------------------------------------------===//
 #include "SPIRVReader.h"
 #include "OCLUtil.h"
+#include "SPIRVAsm.h"
 #include "SPIRVBasicBlock.h"
 #include "SPIRVExtInst.h"
 #include "SPIRVFunction.h"
@@ -56,6 +57,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -1226,6 +1228,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpFunction:
     return mapValue(BV, transFunction(static_cast<SPIRVFunction *>(BV)));
 
+  case OpAsmINTEL:
+    return mapValue(BV, transAsmINTEL(static_cast<SPIRVAsmINTEL *>(BV)));
+
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
 
@@ -1566,6 +1571,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, Call);
   }
 
+  case OpAsmCallINTEL:
+    return mapValue(
+        BV, transAsmCallINTEL(static_cast<SPIRVAsmCallINTEL *>(BV), F, BB));
+
   case OpExtInst: {
     auto *ExtInst = static_cast<SPIRVExtInst *>(BV);
     switch (ExtInst->getExtSetKind()) {
@@ -1754,6 +1763,23 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     }
   }
   return F;
+}
+
+Value *SPIRVToLLVM::transAsmINTEL(SPIRVAsmINTEL *BA) {
+  assert(BA);
+  bool HasSideEffect = BA->hasDecorate(DecorationSideEffectsINTEL);
+  return InlineAsm::get(
+      cast<FunctionType>(transType(BA->getFunctionType())),
+      BA->getInstructions(), BA->getConstraints(), HasSideEffect,
+      /* IsAlignStack */ false, InlineAsm::AsmDialect::AD_ATT);
+}
+
+CallInst *SPIRVToLLVM::transAsmCallINTEL(SPIRVAsmCallINTEL *BI, Function *F,
+                                         BasicBlock *BB) {
+  assert(BI);
+  auto *IA = cast<InlineAsm>(transValue(BI->getAsm(), F, BB));
+  auto Args = transValue(BM->getValues(BI->getArguments()), F, BB);
+  return CallInst::Create(IA, Args, BI->getName(), BB);
 }
 
 /// LLVM convert builtin functions is translated to two instructions:

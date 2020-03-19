@@ -83,6 +83,9 @@ class SPIRVGroupDecorate;
 class SPIRVGroupMemberDecorate;
 class SPIRVGroupDecorateGeneric;
 class SPIRVInstTemplateBase;
+class SPIRVAsmTargetINTEL;
+class SPIRVAsmINTEL;
+class SPIRVAsmCallINTEL;
 
 typedef SPIRVBasicBlock SPIRVLabel;
 struct SPIRVTypeImageDescriptor;
@@ -284,6 +287,12 @@ public:
   virtual SPIRVInstruction *addCallInst(SPIRVFunction *,
                                         const std::vector<SPIRVWord> &,
                                         SPIRVBasicBlock *) = 0;
+  virtual SPIRVEntry *getOrAddAsmTargetINTEL(const std::string &) = 0;
+  virtual SPIRVValue *addAsmINTEL(SPIRVTypeFunction *, SPIRVAsmTargetINTEL *,
+                                  const std::string &, const std::string &) = 0;
+  virtual SPIRVInstruction *addAsmCallINTELInst(SPIRVAsmINTEL *,
+                                                const std::vector<SPIRVWord> &,
+                                                SPIRVBasicBlock *) = 0;
   virtual SPIRVInstruction *
   addCompositeConstructInst(SPIRVType *, const std::vector<SPIRVId> &,
                             SPIRVBasicBlock *) = 0;
