@@ -423,6 +423,11 @@ bool isSamplerTy(Type *Ty);
 // Checks if the binary operator is an unfused fmul + fadd instruction.
 bool isUnfusedMulAdd(BinaryOperator *B);
 
+// Get data and vector size postfix for sugroup_block_{read|write} builtins
+// as specified by cl_intel_subgroups* extensions.
+// Scalar data assumed to be represented as vector of one element.
+std::string getIntelSubgroupBlockDataPostfix(unsigned ElementBitSize,
+                                             unsigned VectorNumElements);
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////
