@@ -978,8 +978,8 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           } else
             llvm_unreachable("Invalid OpenCL group builtin argument type");
 
-          DemangledName = Op.str() + ClusteredOp.str() + LogicalOp.str() +
-                          OpTyC + GroupOp.str();
+          DemangledName = Op.str() + OpTyC + GroupOp.str();
+>>>>>>> added cl_khr_subgroup_ballot
           return false; // break out of loop
         });
   }
@@ -987,6 +987,8 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
   bool IsGroupAllAny = (DemangledName.find("_all") != std::string::npos ||
                         DemangledName.find("_any") != std::string::npos);
   bool IsGroupAllEqual = DemangledName.find("_all_equal") != std::string::npos;
+
+  // TODO: Need to convert arg to sub_group_ballot to i1!
 
   auto Consts = getInt32(M, PreOps);
   OCLBuiltinTransInfo Info;
