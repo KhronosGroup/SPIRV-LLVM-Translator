@@ -978,26 +978,33 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           } else
             llvm_unreachable("Invalid OpenCL group builtin argument type");
 
-          DemangledName = Op.str() + OpTyC + GroupOp.str();
->>>>>>> added cl_khr_subgroup_ballot
+          DemangledName = Op.str() + ClusteredOp.str() + LogicalOp.str() +
+                          OpTyC + GroupOp.str();
           return false; // break out of loop
         });
   }
 
-  bool IsGroupAllAny = (DemangledName.find("_all") != std::string::npos ||
-                        DemangledName.find("_any") != std::string::npos);
-  bool IsGroupAllEqual = DemangledName.find("_all_equal") != std::string::npos;
+  const bool IsElect = DemangledName == "group_elect";
+  const bool IsAllOrAny = (DemangledName.find("_all") != std::string::npos ||
+                           DemangledName.find("_any") != std::string::npos);
+  const bool IsAllEqual = DemangledName.find("_all_equal") != std::string::npos;
+  const bool IsBallot = DemangledName == "group_ballot";
+  const bool IsInverseBallot = DemangledName == "group_inverse_ballot";
+  const bool IsBallotBitExtract = DemangledName == "group_ballot_bit_extract";
+  const bool IsLogical = DemangledName.find("_logical") != std::string::npos;
 
-  // TODO: Need to convert arg to sub_group_ballot to i1!
+  const bool HasBoolReturnType = IsElect || IsAllOrAny || IsAllEqual ||
+                                 IsInverseBallot || IsBallotBitExtract ||
+                                 IsLogical;
+  const bool HasBoolArg = (IsAllOrAny && !IsAllEqual) || IsBallot || IsLogical;
 
   auto Consts = getInt32(M, PreOps);
   OCLBuiltinTransInfo Info;
-  if (IsGroupAllAny || IsGroupAllEqual)
+  if (HasBoolReturnType)
     Info.RetTy = Type::getInt1Ty(*Ctx);
   Info.UniqName = DemangledName;
   Info.PostProc = [=](std::vector<Value *> &Ops) {
-    if (IsGroupAllAny && !IsGroupAllEqual) {
->>>>>>> added cl_khr_subgroup_extended_types and cl_khr_subgroup_non_uniform_vote
+    if (HasBoolArg) {
       IRBuilder<> IRB(CI);
       Ops[0] =
           IRB.CreateICmpNE(Ops[0], ConstantInt::get(Type::getInt32Ty(*Ctx), 0));
