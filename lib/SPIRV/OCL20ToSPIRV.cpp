@@ -973,14 +973,19 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI, StringRef MangledName,
             return true; // continue
           PreOps.push_back(G);
           StringRef Op = StringSwitch<StringRef>(FuncName)
-              .StartsWith("ballot", "group_ballot_bit_count_")
-              .StartsWith("non_uniform", kSPIRVName::GroupNonUniformPrefix)
-              .Default(kSPIRVName::GroupPrefix);
+            .StartsWith("ballot", "group_ballot_bit_count_")
+            .StartsWith("non_uniform", kSPIRVName::GroupNonUniformPrefix)
+            .Default(kSPIRVName::GroupPrefix);
+          StringRef LogicalOp =
+            FuncName.contains("logical_") ?
+            "logical_" : "";
           StringRef GroupOp = StringSwitch<StringRef>(FuncName)
-              .Case("ballot_bit_count", "add")
-              .Case("ballot_inclusive_scan", "add")
-              .Case("ballot_exclusive_scan", "add")
-              .Default(FuncName.take_back(3));   // assumes op is three characters
+            .Case("ballot_bit_count", "add")
+            .Case("ballot_inclusive_scan", "add")
+            .Case("ballot_exclusive_scan", "add")
+            .Default(FuncName.take_back(3));    // assumes op is three characters
+          if (GroupOp.startswith("_"))
+            GroupOp = GroupOp.take_back(2);     // when op is two characters
           assert(!GroupOp.empty() && "Invalid OpenCL group builtin function");
           char OpTyC = 0;
           auto NeedSign = GroupOp == "max" || GroupOp == "min";
@@ -999,7 +1004,7 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI, StringRef MangledName,
           } else
             llvm_unreachable("Invalid OpenCL group builtin argument type");
 
-          DemangledName = Op.str() + OpTyC + GroupOp.str();
+          DemangledName = Op.str() + LogicalOp.str() + OpTyC + GroupOp.str();
           return false; // break out of loop
         });
   }
