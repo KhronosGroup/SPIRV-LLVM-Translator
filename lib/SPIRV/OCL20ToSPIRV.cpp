@@ -938,6 +938,7 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           if (!FuncName.startswith(S))
             return true; // continue
           PreOps.push_back(G);
+<<<<<<< HEAD
           StringRef Op =
               StringSwitch<StringRef>(FuncName)
                   .StartsWith("ballot", "group_ballot_bit_count_")
@@ -954,6 +955,22 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
                                   .Default(FuncName.take_back(
                                       3)); // assumes op is three characters
           GroupOp.consume_front("_");      // when op is two characters
+=======
+          StringRef Op = StringSwitch<StringRef>(FuncName)
+            .StartsWith("ballot", "group_ballot_bit_count_")
+            .StartsWith("non_uniform", kSPIRVName::GroupNonUniformPrefix)
+            .Default(kSPIRVName::GroupPrefix);
+          StringRef LogicalOp =
+            FuncName.contains("logical_") ?
+            "logical_" : "";
+          StringRef GroupOp = StringSwitch<StringRef>(FuncName)
+            .Case("ballot_bit_count", "add")
+            .Case("ballot_inclusive_scan", "add")
+            .Case("ballot_exclusive_scan", "add")
+            .Default(FuncName.take_back(3));    // assumes op is three characters
+          if (GroupOp.startswith("_"))
+            GroupOp = GroupOp.take_back(2);     // when op is two characters
+>>>>>>> added cl_khr_subgroup_non_uniform_arithmetic
           assert(!GroupOp.empty() && "Invalid OpenCL group builtin function");
           char OpTyC = 0;
           auto OpTy = F->getReturnType();
@@ -978,8 +995,12 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           } else
             llvm_unreachable("Invalid OpenCL group builtin argument type");
 
+<<<<<<< HEAD
           DemangledName = Op.str() + ClusteredOp.str() + LogicalOp.str() +
                           OpTyC + GroupOp.str();
+=======
+          DemangledName = Op.str() + LogicalOp.str() + OpTyC + GroupOp.str();
+>>>>>>> added cl_khr_subgroup_non_uniform_arithmetic
           return false; // break out of loop
         });
   }
