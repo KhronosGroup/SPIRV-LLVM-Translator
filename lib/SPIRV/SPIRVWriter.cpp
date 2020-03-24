@@ -1537,6 +1537,7 @@ tryParseIntelFPGAAnnotationString(StringRef AnnotatedCode) {
                 .Case("max_replicates", DecorationMaxReplicatesINTEL)
                 .Case("bank_bits", DecorationBankBitsINTEL)
                 .Case("merge", DecorationMergeINTEL)
+                .Case("force_pow2_depth", DecorationForcePow2DepthINTEL)
                 .Default(DecorationUserSemantic);
       if (Dec == DecorationUserSemantic)
         Value = AnnotatedCode.substr(From, To + 1);
@@ -1604,6 +1605,7 @@ void addIntelFPGADecorations(
     // DecorationBankwidthINTEL
     // DecorationMaxPrivateCopiesINTEL
     // DecorationMaxReplicatesINTEL
+    // DecorationForcePow2DepthINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);
@@ -1658,6 +1660,7 @@ void addIntelFPGADecorationsForStructMember(
     // DecorationBankwidthINTEL
     // DecorationMaxPrivateCopiesINTEL
     // DecorationMaxReplicatesINTEL
+    // DecorationForcePow2DepthINTEL
     default:
       SPIRVWord Result = 0;
       StringRef(I.second).getAsInteger(10, Result);

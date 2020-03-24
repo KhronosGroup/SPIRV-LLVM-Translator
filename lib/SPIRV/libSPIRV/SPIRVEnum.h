@@ -381,6 +381,8 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationMergeINTEL, {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationBankBitsINTEL, {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationForcePow2DepthINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationReferencedIndirectlyINTEL,
                {CapabilityIndirectReferencesINTEL});
   ADD_VEC_INIT(DecorationSideEffectsINTEL, {CapabilityAsmINTEL});

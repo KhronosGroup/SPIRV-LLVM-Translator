@@ -358,6 +358,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationSimpleDualPortINTEL, "SimpleDualPortINTEL");
   add(DecorationMergeINTEL, "MergeINTEL");
   add(DecorationBankBitsINTEL, "BankBitsINTEL");
+  add(DecorationForcePow2DepthINTEL, "ForcePow2DepthINTEL");
   add(DecorationReferencedIndirectlyINTEL, "ReferencedIndirectlyINTEL");
   add(DecorationVectorComputeFunctionINTEL, "VectorComputeFunctionINTEL");
   add(DecorationStackCallINTEL, "StackCallINTEL");
