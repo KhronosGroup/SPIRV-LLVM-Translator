@@ -1011,10 +1011,12 @@ Instruction *SPIRVToLLVM::transCmpInst(SPIRVValue *BV, BasicBlock *BB,
     Inst = new ICmpInst(*BB, CmpMap::rmap(OP),
                         transValue(BC->getOperand(0), F, BB),
                         transValue(BC->getOperand(1), F, BB));
-  else if (BT->isTypeVectorOrScalarFloat())
+  else if (BT->isTypeVectorOrScalarFloat()) {
     Inst = new FCmpInst(*BB, CmpMap::rmap(OP),
                         transValue(BC->getOperand(0), F, BB),
                         transValue(BC->getOperand(1), F, BB));
+    applyFPFastMathModeDecorations(BV, Inst);
+  }
   assert(Inst && "not implemented");
   return Inst;
 }
