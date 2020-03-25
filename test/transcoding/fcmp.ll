@@ -94,7 +94,18 @@
 ; CHECK-SPIRV: 3 Name [[#r88:]] "r88"
 ; CHECK-SPIRV: 3 Name [[#r89:]] "r89"
 ; CHECK-SPIRV: 3 Name [[#r90:]] "r90"
-; CHECK-SPIRV-NOT: 4 Decorate {{.*}} FPFastMathMode
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec1:]] FPFastMathMode 1
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec2:]] FPFastMathMode 2
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec3:]] FPFastMathMode 4
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec4:]] FPFastMathMode 8
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec5:]] FPFastMathMode 16
+; CHECK-SPIRV-DAG: 4 Decorate [[#dec6:]] FPFastMathMode 3
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec1]] [[#r2]] [[#r9]] [[#r16]] [[#r23]] [[#r30]] [[#r37]] [[#r47]] [[#r54]] [[#r61]] [[#r68]] [[#r75]] [[#r82]]
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec2]] [[#r3]] [[#r10]] [[#r17]] [[#r24]] [[#r31]] [[#r38]] [[#r44]] [[#r48]] [[#r55]] [[#r62]] [[#r69]] [[#r76]] [[#r83]] [[#r89]]
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec3]] [[#r4]] [[#r11]] [[#r18]] [[#r25]] [[#r32]] [[#r39]] [[#r45]] [[#r49]] [[#r56]] [[#r63]] [[#r70]] [[#r77]] [[#r84]] [[#r90]]
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec4]] [[#r5]] [[#r12]] [[#r19]] [[#r26]] [[#r33]] [[#r40]] [[#r50]] [[#r57]] [[#r64]] [[#r71]] [[#r78]] [[#r85]]
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec5]] [[#r6]] [[#r13]] [[#r20]] [[#r27]] [[#r34]] [[#r41]] [[#r51]] [[#r58]] [[#r65]] [[#r72]] [[#r79]] [[#r86]]
+; CHECK-SPIRV-DAG: GroupDecorate [[#dec6]] [[#r7]] [[#r14]] [[#r21]] [[#r28]] [[#r35]] [[#r42]] [[#r52]] [[#r59]] [[#r66]] [[#r73]] [[#r80]] [[#r87]]
 ; CHECK-SPIRV: 2 TypeBool [[#bool:]]
 ; CHECK-SPIRV: 5 FOrdEqual [[#bool]] [[#r1]]
 ; CHECK-SPIRV: 5 FOrdEqual [[#bool]] [[#r2]]

@@ -1350,9 +1350,10 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
 
   if (auto BVF = dyn_cast_or_null<FPMathOperator>(V)) {
     auto Opcode = BVF->getOpcode();
-    if (Opcode == Instruction::FAdd || Opcode == Instruction::FSub ||
-        Opcode == Instruction::FMul || Opcode == Instruction::FDiv ||
-        Opcode == Instruction::FRem) {
+    if (Opcode == Instruction::FNeg || Opcode == Instruction::FAdd ||
+        Opcode == Instruction::FSub || Opcode == Instruction::FMul ||
+        Opcode == Instruction::FDiv || Opcode == Instruction::FRem ||
+        Opcode == Instruction::FCmp) {
       FastMathFlags FMF = BVF->getFastMathFlags();
       SPIRVWord M{0};
       if (FMF.isFast())

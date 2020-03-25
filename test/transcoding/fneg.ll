@@ -11,7 +11,13 @@
 ; CHECK-SPIRV: 3 Name [[#r5:]] "r5"
 ; CHECK-SPIRV: 3 Name [[#r6:]] "r6"
 ; CHECK-SPIRV: 3 Name [[#r7:]] "r7"
-; CHECK-SPIRV-NOT: 4 Decorate {{.*}} FPFastMathMode
+; CHECK-SPIRV-NOT: 4 Decorate [[#r1]] FPFastMathMode
+; CHECK-SPIRV-DAG: 4 Decorate [[#r2]] FPFastMathMode 1
+; CHECK-SPIRV-DAG: 4 Decorate [[#r3]] FPFastMathMode 2
+; CHECK-SPIRV-DAG: 4 Decorate [[#r4]] FPFastMathMode 4
+; CHECK-SPIRV-DAG: 4 Decorate [[#r5]] FPFastMathMode 8
+; CHECK-SPIRV-DAG: 4 Decorate [[#r6]] FPFastMathMode 16
+; CHECK-SPIRV-DAG: 4 Decorate [[#r7]] FPFastMathMode 3
 ; CHECK-SPIRV: 3 TypeFloat [[float:[0-9]+]] 32
 ; CHECK-SPIRV: 4 FNegate [[float]] [[#r1]]
 ; CHECK-SPIRV: 4 FNegate [[float]] [[#r2]]
@@ -22,12 +28,12 @@
 ; CHECK-SPIRV: 4 FNegate [[float]] [[#r7]]
 
 ; CHECK-LLVM: %r1 = fneg float %a
-; CHECK-LLVM: %r2 = fneg float %a
-; CHECK-LLVM: %r3 = fneg float %a
-; CHECK-LLVM: %r4 = fneg float %a
-; CHECK-LLVM: %r5 = fneg float %a
-; CHECK-LLVM: %r6 = fneg float %a
-; CHECK-LLVM: %r7 = fneg float %a
+; CHECK-LLVM: %r2 = fneg nnan float %a
+; CHECK-LLVM: %r3 = fneg ninf float %a
+; CHECK-LLVM: %r4 = fneg nsz float %a
+; CHECK-LLVM: %r5 = fneg arcp float %a
+; CHECK-LLVM: %r6 = fneg fast float %a
+; CHECK-LLVM: %r7 = fneg nnan ninf float %a
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
