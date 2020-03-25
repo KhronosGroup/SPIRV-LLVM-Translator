@@ -1605,6 +1605,28 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
         OC == OpSpecConstant) {
       auto SpecId = cast<ConstantInt>(CI->getArgOperand(0))->getZExtValue();
       BV->addDecorate(DecorationSpecId, SpecId);
+
+  if (auto BVF = dyn_cast_or_null<FPMathOperator>(V)) {
+    auto Opcode = BVF->getOpcode();
+    if (Opcode == Instruction::FAdd || Opcode == Instruction::FSub ||
+        Opcode == Instruction::FMul || Opcode == Instruction::FDiv ||
+        Opcode == Instruction::FRem) {
+      FastMathFlags FMF = BVF->getFastMathFlags();
+      SPIRVWord M{0};
+      if (FMF.isFast())
+        M |= FPFastMathModeFastMask;
+      else {
+        if (FMF.noNaNs())
+          M |= FPFastMathModeNotNaNMask;
+        if (FMF.noInfs())
+          M |= FPFastMathModeNotInfMask;
+        if (FMF.noSignedZeros())
+          M |= FPFastMathModeNSZMask;
+        if (FMF.allowReciprocal())
+          M |= FPFastMathModeAllowRecipMask;
+      }
+      if (M != 0)
+        BV->setFPFastMathMode(M);
     }
   }
 
