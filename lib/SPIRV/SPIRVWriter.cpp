@@ -2417,7 +2417,7 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
                               transValue(CI->getArgOperand(0), BB), BB);
-    } else if (isCmpOpCode(OC) || isRelationalOpCode(OC)) {
+    } else if (isCmpOpCode(OC) || isUnaryPredicateOpCode(OC)) {
       auto ResultTy = CI->getType();
       Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
       auto IsVector = ResultTy->isVectorTy();
