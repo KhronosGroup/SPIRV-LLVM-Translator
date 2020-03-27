@@ -2425,12 +2425,15 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
         BoolTy = VectorType::get(BoolTy, ResultTy->getVectorNumElements());
       auto BBT = transType(BoolTy);
       SPIRVInstruction *Res;
-      if (isCmpOpCode(OC))
+      if (isCmpOpCode(OC)) {
+        assert(CI && CI->getNumArgOperands() == 2 && "Invalid call inst");
         Res = BM->addCmpInst(OC, BBT, transValue(CI->getArgOperand(0), BB),
                              transValue(CI->getArgOperand(1), BB), BB);
-      else
+      } else {
+        assert(CI && CI->getNumArgOperands() == 1 && "Invalid call inst");
         Res =
             BM->addUnaryInst(OC, BBT, transValue(CI->getArgOperand(0), BB), BB);
+      }
       // OpenCL C and OpenCL C++ built-ins may have different return type
       if (ResultTy == BoolTy)
         return Res;
