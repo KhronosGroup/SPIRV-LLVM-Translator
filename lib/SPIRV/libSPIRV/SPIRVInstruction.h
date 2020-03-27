@@ -2633,26 +2633,6 @@ public:
       SPIRV##x;
 _SPIRV_OP(GroupNonUniformShuffleUp, true, 6)
 _SPIRV_OP(GroupNonUniformShuffleDown, true, 6)
-<<<<<<< HEAD
-=======
-_SPIRV_OP(GroupNonUniformIAdd, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformFAdd, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformIMul, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformFMul, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformSMin, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformUMin, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformFMin, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformSMax, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformUMax, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformFMax, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformBitwiseAnd, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformBitwiseOr, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformBitwiseXor, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformLogicalAnd, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformLogicalOr, true, 6, false, 1)
-_SPIRV_OP(GroupNonUniformLogicalXor, true, 6, false, 1)
-
->>>>>>> initial changes for cl_khr_subgroup_non_uniform_arithmetic
 #undef _SPIRV_OP
 
 class SPIRVBlockingPipesIntelInst : public SPIRVInstTemplateBase {
