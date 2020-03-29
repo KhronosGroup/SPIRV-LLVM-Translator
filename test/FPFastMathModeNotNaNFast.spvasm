@@ -1,0 +1,78 @@
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.0 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s
+               OpCapability Addresses
+               OpCapability Kernel
+               OpMemoryModel Physical32 OpenCL
+               OpEntryPoint Kernel %1 "testFPFastMathModeNotNaNFast"
+               OpName %a "a"
+               OpName %b "b"
+               OpName %r1 "r1"
+               OpName %r2 "r2"
+               OpName %r3 "r3"
+               OpName %r4 "r4"
+               OpName %r5 "r5"
+               OpName %r6 "r6"
+               OpName %r7 "r7"
+               OpName %r8 "r8"
+               OpName %r9 "r9"
+               OpName %r10 "r10"
+               OpName %r11 "r11"
+               OpName %r12 "r12"
+               OpName %r13 "r13"
+               OpName %r14 "r14"
+               OpName %r15 "r15"
+               OpName %r16 "r16"
+               OpName %r17 "r17"
+               OpName %r18 "r18"
+               OpDecorate %dec FPFastMathMode NotNaN|Fast
+        %dec = OpDecorationGroup
+               OpGroupDecorate %dec %r1 %r2 %r3 %r4 %r5 %r6 %r7 %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 %r16 %r17 %r18
+       %void = OpTypeVoid
+      %float = OpTypeFloat 32
+       %bool = OpTypeBool
+          %5 = OpTypeFunction %void %float %float
+          %1 = OpFunction %void None %5
+          %a = OpFunctionParameter %float
+          %b = OpFunctionParameter %float
+          %6 = OpLabel
+         %r1 = OpFAdd %float %a %b
+         %r2 = OpFSub %float %a %b
+         %r3 = OpFMul %float %a %b
+         %r4 = OpFDiv %float %a %b
+         %r5 = OpFRem %float %a %b
+         %r6 = OpFNegate %float %a
+         %r7 = OpFOrdEqual %bool %a %b
+         %r8 = OpFUnordEqual %bool %a %b
+         %r9 = OpFOrdNotEqual %bool %a %b
+        %r10 = OpFUnordNotEqual %bool %a %b
+        %r11 = OpFOrdLessThan %bool %a %b
+        %r12 = OpFUnordLessThan %bool %a %b
+        %r13 = OpFOrdGreaterThan %bool %a %b
+        %r14 = OpFUnordGreaterThan %bool %a %b
+        %r15 = OpFOrdLessThanEqual %bool %a %b
+        %r16 = OpFUnordLessThanEqual %bool %a %b
+        %r17 = OpFOrdGreaterThanEqual %bool %a %b
+        %r18 = OpFUnordGreaterThanEqual %bool %a %b
+               OpReturn
+               OpFunctionEnd
+
+; CHECK: %r1 = fadd fast float %a, %b
+; CHECK: %r2 = fsub fast float %a, %b
+; CHECK: %r3 = fmul fast float %a, %b
+; CHECK: %r4 = fdiv fast float %a, %b
+; CHECK: %r5 = frem fast float %a, %b
+; CHECK: %r6 = fneg fast float %a
+; CHECK: %r7 = fcmp fast oeq float %a, %b
+; CHECK: %r8 = fcmp fast ueq float %a, %b
+; CHECK: %r9 = fcmp fast one float %a, %b
+; CHECK: %r10 = fcmp fast une float %a, %b
+; CHECK: %r11 = fcmp fast olt float %a, %b
+; CHECK: %r12 = fcmp fast ult float %a, %b
+; CHECK: %r13 = fcmp fast ogt float %a, %b
+; CHECK: %r14 = fcmp fast ugt float %a, %b
+; CHECK: %r15 = fcmp fast ole float %a, %b
+; CHECK: %r16 = fcmp fast ule float %a, %b
+; CHECK: %r17 = fcmp fast oge float %a, %b
+; CHECK: %r18 = fcmp fast uge float %a, %b

@@ -1348,6 +1348,31 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
     }
   }
 
+  if (auto BVF = dyn_cast_or_null<FPMathOperator>(V)) {
+    auto Opcode = BVF->getOpcode();
+    if (Opcode == Instruction::FNeg || Opcode == Instruction::FAdd ||
+        Opcode == Instruction::FSub || Opcode == Instruction::FMul ||
+        Opcode == Instruction::FDiv || Opcode == Instruction::FRem ||
+        Opcode == Instruction::FCmp) {
+      FastMathFlags FMF = BVF->getFastMathFlags();
+      SPIRVWord M{0};
+      if (FMF.isFast())
+        M |= FPFastMathModeFastMask;
+      else {
+        if (FMF.noNaNs())
+          M |= FPFastMathModeNotNaNMask;
+        if (FMF.noInfs())
+          M |= FPFastMathModeNotInfMask;
+        if (FMF.noSignedZeros())
+          M |= FPFastMathModeNSZMask;
+        if (FMF.allowReciprocal())
+          M |= FPFastMathModeAllowRecipMask;
+      }
+      if (M != 0)
+        BV->setFPFastMathMode(M);
+    }
+  }
+
   return true;
 }
 
