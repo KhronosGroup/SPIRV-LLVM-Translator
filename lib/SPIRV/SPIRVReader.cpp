@@ -2904,9 +2904,14 @@ llvm::convertSpirvToLLVM(LLVMContext &C, SPIRVModule &BM,
     return nullptr;
   }
 
-  llvm::legacy::PassManager PassMgr;
-  PassMgr.add(createSPIRVToOCL(*M, Opts.getDesiredBIsRepresentation()));
-  PassMgr.run(*M);
+  llvm::ModulePass *LoweringPass =
+      createSPIRVBIsLoweringPass(*M, Opts.getDesiredBIsRepresentation());
+  if (LoweringPass) {
+    // nullptr means no additional lowering is required
+    llvm::legacy::PassManager PassMgr;
+    PassMgr.add(LoweringPass);
+    PassMgr.run(*M);
+  }
 
   return M;
 }

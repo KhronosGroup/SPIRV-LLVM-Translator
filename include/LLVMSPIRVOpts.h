@@ -55,12 +55,7 @@ enum class VersionNumber : uint32_t {
   MaximumVersion = SPIRV_1_1
 };
 
-enum class BIsRepresentation : uint32_t {
-  OpenCL12,
-  OpenCL20
-  // TODO: consider targeting SPIR-V friendly IR for some non-OpenCL backends,
-  // if there are any
-};
+enum class BIsRepresentation : uint32_t { OpenCL12, OpenCL20, SPIRVFriendlyIR };
 
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
@@ -103,8 +98,8 @@ private:
   // SPIR-V to LLVM translation options
   bool GenKernelArgNameMD;
 
-  // Version of OpenCL C, which should be used while translating from SPIR-V to
-  // back to LLVM IR
+  // Representation of built-ins, which should be used while translating from
+  // SPIR-V to back to LLVM IR
   BIsRepresentation DesiredRepresentationOfBIs = BIsRepresentation::OpenCL12;
 };
 
