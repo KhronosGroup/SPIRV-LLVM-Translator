@@ -1984,11 +1984,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       }
 
       case 4: {
-        for (unsigned Idx = 0; Idx < 4; ++Idx) {
+        for (int Idx = 0; Idx < 4; ++Idx) {
           Value *V1 = Builder.CreateShuffleVector(
-              MCache[0], MCache[1], ArrayRef<unsigned int>{Idx, Idx + 4});
+              MCache[0], MCache[1], ArrayRef<int>{Idx, Idx + 4});
           Value *V2 = Builder.CreateShuffleVector(
-              MCache[2], MCache[3], ArrayRef<unsigned int>{Idx, Idx + 4});
+              MCache[2], MCache[3], ArrayRef<int>{Idx, Idx + 4});
           Value *V3 =
               Builder.CreateShuffleVector(V1, V2, ArrayRef<int>{0, 1, 2, 3});
           V = Builder.CreateInsertValue(V, V3, Idx);
