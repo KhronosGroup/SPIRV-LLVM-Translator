@@ -122,6 +122,10 @@ static cl::opt<bool> ToBinary(
     cl::desc("Convert input SPIR-V in internal textual format to binary"));
 #endif
 
+static cl::opt<bool>
+    SPIRVMemToReg("spirv-mem2reg", cl::init(false),
+                  cl::desc("LLVM/SPIR-V translation enable mem2reg"));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -238,7 +242,7 @@ static int convertSPIRV() {
 }
 #endif
 
-static int regularizeLLVM() {
+static int regularizeLLVM(SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
 
   std::unique_ptr<MemoryBuffer> MB =
@@ -256,7 +260,7 @@ static int regularizeLLVM() {
   }
 
   std::string Err;
-  if (!regularizeLlvmForSpirv(M.get(), Err)) {
+  if (!regularizeLlvmForSpirv(M.get(), Err, Opts)) {
     errs() << "Fails to save LLVM as SPIR-V: " << Err << '\n';
     return -1;
   }
@@ -280,7 +284,12 @@ int main(int Ac, char **Av) {
 
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
-  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, SPIRVGenKernelArgNameMD);
+  SPIRV::TranslatorOpts Opts(MaxSPIRVVersion);
+
+  if (SPIRVMemToReg)
+    Opts.setMemToRegEnabled(SPIRVMemToReg);
+  if (SPIRVGenKernelArgNameMD)
+    Opts.setGenKernelArgNameMDEnabled(SPIRVGenKernelArgNameMD);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
@@ -308,7 +317,7 @@ int main(int Ac, char **Av) {
     return convertSPIRVToLLVM(Opts);
 
   if (IsRegularization)
-    return regularizeLLVM();
+    return regularizeLLVM(Opts);
 
   return 0;
 }
