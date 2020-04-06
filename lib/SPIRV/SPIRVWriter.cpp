@@ -90,9 +90,6 @@ using namespace OCLUtil;
 
 namespace SPIRV {
 
-cl::opt<bool> SPIRVMemToReg("spirv-mem2reg", cl::init(false),
-                            cl::desc("LLVM/SPIR-V translation enable mem2reg"));
-
 static void foreachKernelArgMD(
     MDNode *MD, SPIRVFunction *BF,
     std::function<void(const std::string &Str, SPIRVFunctionParameter *BA)>
@@ -2382,8 +2379,9 @@ ModulePass *llvm::createLLVMToSPIRV(SPIRVModule *SMod) {
   return new LLVMToSPIRV(SMod);
 }
 
-void addPassesForSPIRV(legacy::PassManager &PassMgr) {
-  if (SPIRVMemToReg)
+void addPassesForSPIRV(legacy::PassManager &PassMgr,
+                       const SPIRV::TranslatorOpts &Opts) {
+  if (Opts.isSPIRVMemToRegEnabled())
     PassMgr.add(createPromoteMemoryToRegisterPass());
   PassMgr.add(createPreprocessMetadata());
   PassMgr.add(createOCL21ToSPIRV());
@@ -2424,7 +2422,7 @@ bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
     return false;
 
   legacy::PassManager PassMgr;
-  addPassesForSPIRV(PassMgr);
+  addPassesForSPIRV(PassMgr, Opts);
   // Run loop simplify pass in order to avoid duplicate OpLoopMerge
   // instruction. It can happen in case of continue operand in the loop.
   if (hasLoopMetadata(M))
@@ -2439,12 +2437,21 @@ bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
 }
 
 bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg) {
+  SPIRV::TranslatorOpts DefaultOpts;
+  // To preserve old behavior of the translator, let's enable all extensions
+  // by default in this API
+  DefaultOpts.enableAllExtensions();
+  return llvm::regularizeLlvmForSpirv(M, ErrMsg, DefaultOpts);
+}
+
+bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
+                                  const SPIRV::TranslatorOpts &Opts) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
   if (!isValidLLVMModule(M, BM->getErrorLog()))
     return false;
 
   legacy::PassManager PassMgr;
-  addPassesForSPIRV(PassMgr);
+  addPassesForSPIRV(PassMgr, Opts);
   PassMgr.run(*M);
   return true;
 }
