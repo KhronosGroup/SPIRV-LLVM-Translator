@@ -139,6 +139,9 @@ convertSpirvToLLVM(LLVMContext &C, SPIRV::SPIRVModule &BM, std::string &ErrMsg);
 /// SPIRV.
 bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg);
 
+bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
+                            const SPIRV::TranslatorOpts &Opts);
+
 /// \brief Mangle OpenCL builtin function function name.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
                          ArrayRef<Type *> ArgTypes, std::string &MangledName);
