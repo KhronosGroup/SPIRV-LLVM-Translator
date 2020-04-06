@@ -966,11 +966,20 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
             else {
               // clustered reduce args are (type, uint)
               // other operation args are (type)
+<<<<<<< HEAD
               auto MangledName = F->getName();
               auto MangledTyC = ClusteredOp.empty()
                                     ? MangledName.back()
                                     : MangledName.take_back(2).front();
               if (isMangledTypeSigned(MangledTyC))
+=======
+              auto mangledName = F->getName();
+              auto mangledTyC =
+                ClusteredOp.empty() ?
+                mangledName.back() :
+                mangledName.take_back(2).front();
+              if (isMangledTypeSigned(mangledTyC))
+>>>>>>> distinguish between signed and unsigned clustered min and max
                 OpTyC = 's';
               else
                 OpTyC = 'u';
@@ -994,8 +1003,12 @@ void OCL20ToSPIRV::visitCallGroupBuiltin(CallInst *CI,
   const bool IsLogical = DemangledName.find("_logical") != std::string::npos;
 
   const bool HasBoolReturnType = IsElect || IsAllOrAny || IsAllEqual ||
+<<<<<<< HEAD
                                  IsInverseBallot || IsBallotBitExtract ||
                                  IsLogical;
+=======
+      IsInverseBallot || IsBallotBitExtract || IsLogical;
+>>>>>>> distinguish between signed and unsigned clustered min and max
   const bool HasBoolArg = (IsAllOrAny && !IsAllEqual) || IsBallot || IsLogical;
 
   auto Consts = getInt32(M, PreOps);
