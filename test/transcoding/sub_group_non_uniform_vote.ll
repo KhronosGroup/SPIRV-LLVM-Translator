@@ -76,16 +76,22 @@ target triple = "spir64"
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 779db69... Add two-way translation test for sub_group_non_uniform_vote.
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniform
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformVote
 
 =======
 >>>>>>> Add two-way translation test for sub_group_non_uniform_vote.
+<<<<<<< HEAD
 =======
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniform
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformVote
 
 >>>>>>> Handle capabilities related to cl_khr_subgroup_extensions.
+=======
+>>>>>>> 779db69... Add two-way translation test for sub_group_non_uniform_vote.
 ; CHECK-SPIRV-DAG: TypeBool  [[bool:[0-9]+]]
 ; CHECK-SPIRV-DAG: TypeInt   [[char:[0-9]+]]   8  0
 ; CHECK-SPIRV-DAG: TypeInt   [[short:[0-9]+]]  16 0
