@@ -89,14 +89,20 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c57c99e... Add two-way translation test for sub_group_shuffle.
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformShuffle
 
 =======
 >>>>>>> Add two-way translation test for sub_group_shuffle.
+<<<<<<< HEAD
 =======
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformShuffle
 
 >>>>>>> Handle capabilities related to cl_khr_subgroup_extensions.
+=======
+>>>>>>> c57c99e... Add two-way translation test for sub_group_shuffle.
 ; CHECK-SPIRV-DAG: TypeInt   [[char:[0-9]+]]   8  0
 ; CHECK-SPIRV-DAG: TypeInt   [[short:[0-9]+]]  16 0
 ; CHECK-SPIRV-DAG: TypeInt   [[int:[0-9]+]]    32 0
