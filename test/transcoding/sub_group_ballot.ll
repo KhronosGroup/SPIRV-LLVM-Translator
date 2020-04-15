@@ -170,14 +170,20 @@ target triple = "spir64"
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 96b1804... Add two-way translation test for sub_group_ballot.
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformBallot
 
 =======
 >>>>>>> Add two-way translation test for sub_group_ballot.
+<<<<<<< HEAD
 =======
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformBallot
 
 >>>>>>> Handle capabilities related to cl_khr_subgroup_extensions.
+=======
+>>>>>>> 96b1804... Add two-way translation test for sub_group_ballot.
 ; CHECK-SPIRV-DAG: Decorate [[eqMask:[0-9]+]] BuiltIn 4416
 ; CHECK-SPIRV-DAG: Decorate [[geMask:[0-9]+]] BuiltIn 4417
 ; CHECK-SPIRV-DAG: Decorate [[gtMask:[0-9]+]] BuiltIn 4418
