@@ -277,8 +277,8 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
 
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
-  if (T->isPointerTy()) {
-    auto ET = T->getPointerElementType();
+  if (auto *PtrTy = dyn_cast<PointerType>(T)) {
+    auto ET = PtrTy->getPointerElementType();
     if (ET->isFunctionTy() &&
         !BM->checkExtension(ExtensionID::SPV_INTEL_function_pointers,
                             SPIRVEC_FunctionPointers, toString(T)))
@@ -421,7 +421,7 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
 }
 
 SPIRVType *LLVMToSPIRV::transSPIRVOpaqueType(Type *T) {
-  auto ET = T->getPointerElementType();
+  auto ET = cast<PointerType>(T)->getPointerElementType();
   auto ST = cast<StructType>(ET);
   auto STName = ST->getStructName();
   assert(STName.startswith(kSPIRVTypeName::PrefixAndDelim) &&
@@ -2520,7 +2520,8 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       if (!RetTy->isVoidTy()) {
         SPRetTy = transType(RetTy);
       } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
-        SPRetTy = transType(F->arg_begin()->getType()->getPointerElementType());
+        SPRetTy = transType(cast<PointerType>(F->arg_begin()->getType())
+                                ->getPointerElementType());
         Args.erase(Args.begin());
       }
       auto SPI = BM->addInstTemplate(OC, BB, SPRetTy);

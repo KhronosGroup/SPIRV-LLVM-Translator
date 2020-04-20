@@ -229,7 +229,8 @@ void OCLTypeToSPIRV::adaptFunctionArguments(Function *F) {
   for (unsigned I = 0; I < F->arg_size(); ++I, ++PI, ++Arg) {
     auto NewTy = *PI;
     if (isPointerToOpaqueStructType(NewTy)) {
-      auto STName = NewTy->getPointerElementType()->getStructName();
+      auto STName =
+          cast<PointerType>(NewTy)->getPointerElementType()->getStructName();
       if (!hasAccessQualifiedName(STName))
         continue;
       if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
@@ -263,7 +264,8 @@ void OCLTypeToSPIRV::adaptArgumentsByMetadata(Function *F) {
       addAdaptedType(&(*Arg), getSamplerType(M));
       Changed = true;
     } else if (isPointerToOpaqueStructType(NewTy)) {
-      auto STName = NewTy->getPointerElementType()->getStructName();
+      auto STName =
+          cast<PointerType>(NewTy)->getPointerElementType()->getStructName();
       if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
         auto Ty = STName.str();
         auto AccMD = F->getMetadata(SPIR_MD_KERNEL_ARG_ACCESS_QUAL);

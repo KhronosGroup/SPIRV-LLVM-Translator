@@ -618,10 +618,13 @@ CallInst *OCL20ToSPIRV::visitCallAtomicCmpXchg(CallInst *CI) {
       M, CI,
       [&](CallInst *CI, std::vector<Value *> &Args, Type *&RetTy) {
         Expected = Args[1]; // temporary save second argument.
-        Args[1] = new LoadInst(Args[1]->getType()->getPointerElementType(),
-                               Args[1], "exp", false, CI);
+        Args[1] = new LoadInst(
+            cast<PointerType>(Args[1]->getType())->getPointerElementType(),
+            Args[1], "exp", false, CI);
         RetTy = Args[2]->getType();
-        assert(Args[0]->getType()->getPointerElementType()->isIntegerTy() &&
+        assert(cast<PointerType>(Args[0]->getType())
+                   ->getPointerElementType()
+                   ->isIntegerTy() &&
                Args[1]->getType()->isIntegerTy() &&
                Args[2]->getType()->isIntegerTy() &&
                "In SPIR-V 1.0 arguments of OpAtomicCompareExchange must be "

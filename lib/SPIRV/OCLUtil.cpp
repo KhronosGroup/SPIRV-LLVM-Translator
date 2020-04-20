@@ -742,8 +742,9 @@ public:
       // distinguish write to image and other data types as position
       // of uint argument is different though name is the same.
       assert(ArgTypes.size() && "lack of necessary information");
-      if (ArgTypes[0]->isPointerTy() &&
-          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+      if (ArgTypes[0]->isPointerTy() && cast<PointerType>(ArgTypes[0])
+                                            ->getPointerElementType()
+                                            ->isIntegerTy()) {
         addUnsignedArg(0);
         addUnsignedArg(1);
       } else {
@@ -754,8 +755,9 @@ public:
       // distinguish read from image and other data types as position
       // of uint argument is different though name is the same.
       assert(ArgTypes.size() && "lack of necessary information");
-      if (ArgTypes[0]->isPointerTy() &&
-          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+      if (ArgTypes[0]->isPointerTy() && cast<PointerType>(ArgTypes[0])
+                                            ->getPointerElementType()
+                                            ->isIntegerTy()) {
         setArgAttr(0, SPIR::ATTR_CONST);
         addUnsignedArg(0);
       }
@@ -794,10 +796,10 @@ getSrcAndDstElememntTypeName(BitCastInst *BIC) {
 
   Type *SrcTy = BIC->getSrcTy();
   Type *DstTy = BIC->getDestTy();
-  if (SrcTy->isPointerTy())
-    SrcTy = SrcTy->getPointerElementType();
-  if (DstTy->isPointerTy())
-    DstTy = DstTy->getPointerElementType();
+  if (auto *SrcPtrTy = dyn_cast<PointerType>(SrcTy))
+    SrcTy = SrcPtrTy->getPointerElementType();
+  if (auto *DstPtrTy = dyn_cast<PointerType>(DstTy))
+    DstTy = DstPtrTy->getPointerElementType();
   auto SrcST = dyn_cast<StructType>(SrcTy);
   auto DstST = dyn_cast<StructType>(DstTy);
   if (!DstST || !DstST->hasName() || !SrcST || !SrcST->hasName())

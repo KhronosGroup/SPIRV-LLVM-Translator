@@ -579,10 +579,10 @@ bool containsUnsignedAtomicType(StringRef Name) {
 }
 
 bool isFunctionPointerType(Type *T) {
-  if (isa<PointerType>(T) && isa<FunctionType>(T->getPointerElementType())) {
-    return true;
-  }
-  return false;
+  auto *PtrTy = dyn_cast<PointerType>(T);
+  if (!T)
+    return false;
+  return isa<FunctionType>(PtrTy->getPointerElementType());
 }
 
 bool hasFunctionPointerArg(Function *F, Function::arg_iterator &AI) {
