@@ -510,6 +510,14 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "SubgroupAvcMotionEstimationIntraINTEL");
   add(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
       "SubgroupAvcMotionEstimationChromaINTEL");
+  add(CapabilityGroupNonUniform, "GroupNonUniform");
+  add(CapabilityGroupNonUniformVote, "GroupNonUniformVote");
+  add(CapabilityGroupNonUniformArithmetic, "GroupNonUniformArithmetic");
+  add(CapabilityGroupNonUniformBallot, "GroupNonUniformBallot");
+  add(CapabilityGroupNonUniformShuffle, "GroupNonUniformShuffle");
+  add(CapabilityGroupNonUniformShuffleRelative,
+      "GroupNonUniformShuffleRelative");
+  add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
