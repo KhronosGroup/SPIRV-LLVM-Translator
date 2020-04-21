@@ -508,6 +508,14 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityIndirectReferencesINTEL, "IndirectReferencesINTEL");
   add(CapabilityKernelAttributesINTEL, "KernelAttributesINTEL");
   add(CapabilityFPGAKernelAttributesINTEL, "FPGAKernelAttributesINTEL");
+  add(CapabilityGroupNonUniform, "GroupNonUniform");
+  add(CapabilityGroupNonUniformVote, "GroupNonUniformVote");
+  add(CapabilityGroupNonUniformArithmetic, "GroupNonUniformArithmetic");
+  add(CapabilityGroupNonUniformBallot, "GroupNonUniformBallot");
+  add(CapabilityGroupNonUniformShuffle, "GroupNonUniformShuffle");
+  add(CapabilityGroupNonUniformShuffleRelative,
+      "GroupNonUniformShuffleRelative");
+  add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
