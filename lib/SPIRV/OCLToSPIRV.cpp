@@ -940,7 +940,6 @@ void OCLToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           if (!FuncName.startswith(S))
             return true; // continue
           PreOps.push_back(G);
-<<<<<<< HEAD
           StringRef Op =
               StringSwitch<StringRef>(FuncName)
                   .StartsWith("ballot", "group_ballot_bit_count_")
@@ -950,18 +949,6 @@ void OCLToSPIRV::visitCallGroupBuiltin(CallInst *CI,
           StringRef ClusteredOp =
               FuncName.contains("clustered_") ? "non_uniform_" : "";
           StringRef LogicalOp = FuncName.contains("logical_") ? "logical_" : "";
-=======
-          StringRef Op = StringSwitch<StringRef>(FuncName)
-            .StartsWith("ballot", "group_ballot_bit_count_")
-            .StartsWith("non_uniform", kSPIRVName::GroupNonUniformPrefix)
-            .Default(kSPIRVName::GroupPrefix);
-          // clustered functions are handled with non uniform group opcodes
-          StringRef ClusteredOp =
-              FuncName.contains("clustered_") ? "non_uniform_" : "";
-          StringRef LogicalOp =
-            FuncName.contains("logical_") ?
-            "logical_" : "";
->>>>>>> Remove duplicated values from OCLSPIRVBuiltinMap.
           StringRef GroupOp = StringSwitch<StringRef>(FuncName)
                                   .Case("ballot_bit_count", "add")
                                   .Case("ballot_inclusive_scan", "add")
@@ -981,20 +968,11 @@ void OCLToSPIRV::visitCallGroupBuiltin(CallInst *CI,
             else {
               // clustered reduce args are (type, uint)
               // other operation args are (type)
-<<<<<<< HEAD
               auto MangledName = F->getName();
               auto MangledTyC = ClusteredOp.empty()
                                     ? MangledName.back()
                                     : MangledName.take_back(2).front();
               if (isMangledTypeSigned(MangledTyC))
-=======
-              auto mangledName = F->getName();
-              auto mangledTyC =
-                ClusteredOp.empty() ?
-                mangledName.back() :
-                mangledName.take_back(2).front();
-              if (isMangledTypeSigned(mangledTyC))
->>>>>>> distinguish between signed and unsigned clustered min and max
                 OpTyC = 's';
               else
                 OpTyC = 'u';
@@ -1018,12 +996,8 @@ void OCLToSPIRV::visitCallGroupBuiltin(CallInst *CI,
   const bool IsLogical = DemangledName.find("_logical") != std::string::npos;
 
   const bool HasBoolReturnType = IsElect || IsAllOrAny || IsAllEqual ||
-<<<<<<< HEAD
                                  IsInverseBallot || IsBallotBitExtract ||
                                  IsLogical;
-=======
-      IsInverseBallot || IsBallotBitExtract || IsLogical;
->>>>>>> distinguish between signed and unsigned clustered min and max
   const bool HasBoolArg = (IsAllOrAny && !IsAllEqual) || IsBallot || IsLogical;
 
   auto Consts = getInt32(M, PreOps);
