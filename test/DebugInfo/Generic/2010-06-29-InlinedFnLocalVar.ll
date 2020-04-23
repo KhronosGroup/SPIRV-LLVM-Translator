@@ -10,6 +10,8 @@
 ; CHECK-NEXT:	DW_AT_name
 
 source_filename = "test/DebugInfo/Generic/2010-06-29-InlinedFnLocalVar.ll"
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 @i = common global i32 0, !dbg !0
 
@@ -66,5 +68,3 @@ attributes #1 = { nounwind ssp }
 !27 = !DILocation(line: 11, scope: !19, inlinedAt: !11)
 !28 = !DILocation(line: 16, scope: !12)
 
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

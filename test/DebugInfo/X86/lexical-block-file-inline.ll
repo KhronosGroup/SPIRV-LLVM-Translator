@@ -67,6 +67,8 @@
 ; CHECK-NOT: {{DW_TAG|NULL}}
 ; CHECK:          DW_TAG_imported_module
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 ; Function Attrs: alwaysinline nounwind
 define i32 @_Z3barv() #0 !dbg !4 {
@@ -163,5 +165,3 @@ attributes #2 = { nounwind }
 !33 = !DILocation(line: 3, scope: !12, inlinedAt: !30)
 !34 = !DILocation(line: 5, scope: !28, inlinedAt: !30)
 !35 = !DILocation(line: 7, scope: !8)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

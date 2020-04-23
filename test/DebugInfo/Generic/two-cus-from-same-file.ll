@@ -14,6 +14,9 @@
 
 ; ModuleID = 'test.bc'
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 @str = private unnamed_addr constant [4 x i8] c"FOO\00"
 @str1 = private unnamed_addr constant [6 x i8] c"Main!\00"
 
@@ -72,5 +75,3 @@ declare void @llvm.dbg.value(metadata, metadata, metadata) nounwind readnone
 ; CHECK: {{foo\.c}}
 
 !33 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

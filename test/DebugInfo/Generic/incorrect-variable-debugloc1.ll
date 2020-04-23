@@ -34,6 +34,9 @@
 ; DWARF23: DW_OP_lit13{{$}}
 ; DWARF4: DW_OP_lit13, DW_OP_stack_value{{$}}
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: uwtable
 define i32 @main() #0 !dbg !4 {
 entry:
@@ -82,6 +85,3 @@ attributes #2 = { nounwind readnone }
 !19 = !DILocation(line: 6, column: 7, scope: !4)
 !20 = !DILocation(line: 7, column: 3, scope: !4)
 !21 = !DIExpression(DW_OP_deref)
-
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

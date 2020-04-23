@@ -40,6 +40,9 @@
 ; CHECK-NOT: DW_TAG
 ; CHECK:     DW_AT_abstract_origin
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: uwtable
 define i32 @main() #0 !dbg !4 {
 entry:
@@ -131,5 +134,3 @@ attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "n
 !30 = !DILocation(line: 4, scope: !26, inlinedAt: !28)
 !31 = !DILocation(line: 5, scope: !26, inlinedAt: !28)
 !32 = !DILocation(line: 10, scope: !4)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

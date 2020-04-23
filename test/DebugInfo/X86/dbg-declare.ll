@@ -17,6 +17,9 @@
 
 ; FIXME: There is no debug info to describe "a".
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 define i32 @foo(i32* %x) nounwind uwtable ssp !dbg !5 {
 entry:
   %x.addr = alloca i32*, align 8
@@ -69,5 +72,3 @@ declare void @llvm_stackrestore(i8*) nounwind
 !25 = !DILocation(line: 8, column: 3, scope: !17)
 !26 = !DIFile(filename: "20020104-2.c", directory: "/Volumes/Sandbox/llvm")
 !27 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

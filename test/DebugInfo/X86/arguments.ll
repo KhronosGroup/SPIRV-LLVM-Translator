@@ -30,6 +30,9 @@
 ; CHECK-NOT: DW_TAG
 ; CHECK: DW_AT_name{{.*}}"g"
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 %struct.foo = type { i32 }
 
 ; Function Attrs: nounwind uwtable
@@ -76,5 +79,3 @@ attributes #1 = { nounwind readnone }
 !22 = !DILocation(line: 7, scope: !4)
 !23 = !DILocation(line: 8, scope: !4)
 !24 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

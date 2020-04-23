@@ -33,6 +33,9 @@
 ;   We should only have one entry inside the function.
 ; CHECK-NOT: :
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 declare i32 @foobar(i32, i32, i32, i32, i32)
 
 define i32 @foo(i32 %a, i32 %b, i32 %c, i32 %d, i32 %e) !dbg !25 {
@@ -83,5 +86,3 @@ declare void @llvm.dbg.value(metadata, i64, metadata, metadata)
 !66 = !DILocation(line: 4, column: 10, scope: !7, inlinedAt: !61)
 !67 = !DILocation(line: 10, column: 23, scope: !25)
 !68 = !DILocation(line: 8, column: 3, scope: !25)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

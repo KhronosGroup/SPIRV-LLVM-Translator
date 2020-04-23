@@ -25,6 +25,9 @@
 ;     return;
 ; }
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: nounwind uwtable
 define void @_Z1bv() #0 !dbg !4 {
 entry:
@@ -68,5 +71,3 @@ attributes #1 = { nounwind readnone }
 !14 = !DILocation(line: 2, scope: !12)
 !15 = !DILocation(line: 3, scope: !12)
 !16 = !DILocation(line: 4, scope: !4)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

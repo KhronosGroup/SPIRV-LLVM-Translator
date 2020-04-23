@@ -24,6 +24,9 @@
 ; CHECK-V3: DW_AT_high_pc [DW_FORM_addr]
 ; CHECK-V4: DW_AT_high_pc [DW_FORM_data4]
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: nounwind uwtable
 define void @z() #0 !dbg !4 {
 entry:
@@ -47,5 +50,3 @@ attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointe
 !9 = !{i32 1, !"Debug Info Version", i32 3}
 !10 = !{!"clang version 3.5.0 (trunk 204164) (llvm/trunk 204183)"}
 !11 = !DILocation(line: 1, scope: !4)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

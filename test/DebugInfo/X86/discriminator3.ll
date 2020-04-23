@@ -15,6 +15,9 @@
 ; The intent is to test discriminator 1 generated for all instructions in
 ; the taken branch.
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: uwtable
 define void @_Z3bazi(i32) #0 !dbg !6 {
   %2 = alloca i32, align 4
@@ -76,5 +79,3 @@ attributes #2 = { "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-
 ; CHECK: {{.*}}      3     15      1   0             1 
 ; CHECK: {{.*}}      3     16      1   0             1 
 ; CHECK: {{.*}}      3     11      1   0             1 
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

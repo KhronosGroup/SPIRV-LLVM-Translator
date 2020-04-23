@@ -19,6 +19,9 @@
 ; CHECK-NEXT: DW_AT_type [DW_FORM_ref4]
 ; CHECK-NOT: DW_AT_byte_size
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 define i32 @foo() !dbg !4 {
 entry:
   ret i32 0, !dbg !13
@@ -48,5 +51,3 @@ entry:
 !14 = !{!10}
 !15 = !DISubroutineType(types: !14)
 !16 = !DILocation(line: 7, scope: !5)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

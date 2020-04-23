@@ -19,6 +19,9 @@
 ; CHECK-NOT: {{DW_AT_location.*DW_FORM_block1.*0x.*91}}
 ; CHECK: NULL
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 define void @_Z3runv() nounwind uwtable !dbg !5 {
 entry:
   %x = alloca i32, align 32
@@ -44,5 +47,3 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) nounwind readnone
 !13 = !DILocation(line: 3, column: 1, scope: !10)
 !14 = !DIFile(filename: "test.cc", directory: "/home/samsonov/debuginfo")
 !15 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

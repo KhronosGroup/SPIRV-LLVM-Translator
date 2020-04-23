@@ -43,6 +43,8 @@
 ; NOLINKAGE-NOT: .asciz   "_ZN4test3barEv"
 
 source_filename = "test/DebugInfo/X86/dwarf-linkage-names.ll"
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 @_ZN4test10global_varE = global i32 0, align 4, !dbg !0
 
@@ -76,5 +78,3 @@ attributes #0 = { nounwind uwtable "disable-tail-calls"="false" "less-precise-fp
 !14 = !DILocation(line: 3, column: 21, scope: !11)
 !15 = !DILocation(line: 3, column: 14, scope: !11)
 
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

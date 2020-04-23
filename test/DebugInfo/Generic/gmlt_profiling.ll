@@ -14,6 +14,9 @@
 ; CHECK-NEXT: DW_AT_decl_file
 ; CHECK-NEXT: DW_AT_decl_line
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: nounwind uwtable
 define void @_Z2f1v() !dbg !4 {
 entry:
@@ -34,5 +37,3 @@ entry:
 !11 = !{i32 2, !"Debug Info Version", i32 3}
 !12 = !{!"clang version 3.6.0 "}
 !13 = !DILocation(line: 1, column: 12, scope: !4)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

@@ -23,6 +23,9 @@
 ; We need to ensure that the discriminators for the last two instructions
 ; are both 1.
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 ; Function Attrs: uwtable
 define void @_Z3bazv() #0 !dbg !6 {
   %1 = call i32 @_Z3barv(), !dbg !9
@@ -63,5 +66,3 @@ attributes #1 = { "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-
 ; CHECK: ------------------ ------ ------ ------ --- ------------- -------------
 ; CHECK: {{.*}}      4      3      1   0             1  {{.*}}
 ; CHECK: {{.*}}      5     21      1   0             1  {{.*}}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

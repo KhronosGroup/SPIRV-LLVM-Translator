@@ -25,6 +25,7 @@
 ; CHECK: .debug_info.dwo contents:
 
 target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 declare void @_Z2f1v()
 
@@ -58,4 +59,3 @@ entry:
 !16 = !{null}
 !17 = distinct !DILocation(line: 3, column: 3, scope: !9)
 !18 = !DILocation(line: 4, column: 1, scope: !9)
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

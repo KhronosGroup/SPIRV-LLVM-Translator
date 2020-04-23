@@ -9,6 +9,9 @@
 ; Check that the prologue ends with is_stmt here.
 ; CHECK: 0x0000000000000000 {{.*}} is_stmt
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 define i32 @main() nounwind uwtable !dbg !5 {
 entry:
   %retval = alloca i32, align 4
@@ -30,5 +33,3 @@ entry:
 !11 = distinct !DILexicalBlock(line: 1, column: 12, file: !12, scope: !5)
 !12 = !DIFile(filename: "PR13303.c", directory: "/home/probinson")
 !13 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

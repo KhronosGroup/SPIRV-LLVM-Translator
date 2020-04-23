@@ -12,6 +12,9 @@
 ; CHECK: DW_TAG
 ; CHECK: .debug_info contents
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 %struct.A = type { i32 }
 
 define i32 @_Z3fooP1A(%struct.A* %a) nounwind uwtable ssp !dbg !5 {
@@ -47,5 +50,3 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) nounwind readnone
 !19 = distinct !DILexicalBlock(line: 3, column: 16, file: !20, scope: !5)
 !20 = !DIFile(filename: "foo.cpp", directory: "/Users/echristo")
 !21 = !{i32 1, !"Debug Info Version", i32 3}
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

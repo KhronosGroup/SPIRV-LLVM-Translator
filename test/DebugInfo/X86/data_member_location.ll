@@ -31,6 +31,8 @@
 ; DWARF2: DW_AT_data_member_location {{.*}} (DW_OP_plus_uconst 0x4)
 
 source_filename = "test/DebugInfo/X86/data_member_location.ll"
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 %struct.foo = type { i8, i32 }
 
@@ -57,5 +59,3 @@ source_filename = "test/DebugInfo/X86/data_member_location.ll"
 !14 = !{i32 1, !"Debug Info Version", i32 3}
 !15 = !{!"clang version 3.4 "}
 
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

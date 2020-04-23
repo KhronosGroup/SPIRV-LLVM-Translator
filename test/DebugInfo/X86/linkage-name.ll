@@ -10,6 +10,8 @@
 ; CHECK: DW_AT_specification
 
 source_filename = "test/DebugInfo/X86/linkage-name.ll"
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 %class.A = type { i8 }
 
@@ -63,5 +65,3 @@ attributes #1 = { nounwind readnone }
 !21 = !DILocation(line: 6, column: 4, scope: !22)
 !22 = distinct !DILexicalBlock(scope: !14, file: !2, line: 5, column: 17)
 
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

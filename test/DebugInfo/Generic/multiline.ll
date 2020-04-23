@@ -43,6 +43,8 @@
 ; INT-NEXT: 4 15 1 0 0 {{$}}
 ; INT-NEXT: 5 1 1 0 0 is_stmt{{$}}
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 ; Function Attrs: nounwind uwtable
 define void @f2() #0 !dbg !4 {
@@ -82,5 +84,3 @@ attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "n
 !15 = !DILocation(line: 4, column: 9, scope: !4)
 !16 = !DILocation(line: 4, column: 15, scope: !4)
 !17 = !DILocation(line: 5, column: 1, scope: !4)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

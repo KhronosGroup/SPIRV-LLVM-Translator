@@ -7,6 +7,9 @@
 
 ; CHECK-NOT: .debug_
 
+target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+
 !llvm.dbg.cu = !{!0, !5}
 !llvm.module.flags = !{!3, !4}
 
@@ -22,5 +25,3 @@
 !9 = !DISubroutineType(types: !10)
 !10 = !{null}
 !11 = !DINamespace(name: "ns", scope: null)
-target triple = "spir64-unknown-unknown"
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

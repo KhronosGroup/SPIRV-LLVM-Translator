@@ -13,6 +13,7 @@
 ; CHECK: .debug_info.dwo contents:
 
 target triple = "spir64-unknown-unknown"
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 
 ; Function Attrs: noinline nounwind uwtable
 define void @_Z1av() #0 !dbg !9 {
@@ -47,4 +48,3 @@ attributes #0 = { noinline nounwind uwtable "correctly-rounded-divide-sqrt-fp-ma
 !12 = !DILocation(line: 2, column: 1, scope: !9)
 !13 = distinct !DISubprogram(name: "b", linkageName: "_Z1bv", scope: !4, file: !4, line: 1, type: !10, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !3, retainedNodes: !2)
 !14 = !DILocation(line: 2, column: 1, scope: !13)
-target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
