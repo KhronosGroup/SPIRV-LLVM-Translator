@@ -552,6 +552,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
+  add(CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
