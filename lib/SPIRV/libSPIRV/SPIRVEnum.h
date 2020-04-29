@@ -113,7 +113,8 @@ enum SPIRVExtensionKind {
   SPV_INTEL_media_block_io,
   SPV_KHR_no_integer_wrap_decoration,
   SPV_INTEL_inline_assembly,
-  SPV_KHR_float_controls
+  SPV_KHR_float_controls,
+  SPV_INTEL_float_controls2
 };
 
 typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
@@ -125,6 +126,7 @@ template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
   add(SPV_KHR_no_integer_wrap_decoration, "SPV_KHR_no_integer_wrap_decoration");
   add(SPV_INTEL_inline_assembly, "SPV_INTEL_inline_assembly");
   add(SPV_KHR_float_controls, "SPV_KHR_float_controls");
+  add(SPV_INTEL_float_controls2, "SPV_INTEL_float_controls2");
 };
 
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
@@ -249,6 +251,14 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilitySignedZeroInfNanPreserve});
   ADD_VEC_INIT(ExecutionModeRoundingModeRTE, {CapabilityRoundingModeRTE});
   ADD_VEC_INIT(ExecutionModeRoundingModeRTZ, {CapabilityRoundingModeRTZ});
+  ADD_VEC_INIT(ExecutionModeRoundingModeRTPINTEL,
+               {CapabilityRoundToInfinityINTEL});
+  ADD_VEC_INIT(ExecutionModeRoundingModeRTNINTEL,
+               {CapabilityRoundToInfinityINTEL});
+  ADD_VEC_INIT(ExecutionModeFloatingPointModeALTINTEL,
+               {CapabilityFloatingPointModeINTEL});
+  ADD_VEC_INIT(ExecutionModeFloatingPointModeIEEEINTEL,
+               {CapabilityFloatingPointModeINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
