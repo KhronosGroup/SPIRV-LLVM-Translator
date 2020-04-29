@@ -884,23 +884,36 @@ bool isKernelQueryBI(const StringRef MangledName) {
 // // #pragma OPENCL FP_CONTRACT OFF. Otherwise the current version of clang
 // would generate:
 // %0 = call float @llvm.fmuladd.f32(float %a, float %b, float %c)
-// TODO We need a more reliable mechanism to expres the FP_CONTRACT pragma
-// in LLVM IR. Fox example adding the 'contract' attribute to fp operations
-// by default (according the OpenCL spec fp contraction is enabled by default).
-void checkFpContract(BinaryOperator *B, SPIRVBasicBlock *BB) {
+bool isUnfusedMulAdd(BinaryOperator *B) {
   if (B->getOpcode() != Instruction::FAdd &&
       B->getOpcode() != Instruction::FSub)
-    return;
-  // Ok, this is fadd or fsub. Now check its operands.
-  for (auto *Op : B->operand_values()) {
-    if (auto *I = dyn_cast<Instruction>(Op)) {
-      if (I->getOpcode() == Instruction::FMul) {
-        SPIRVFunction *BF = BB->getParent();
-        BF->setUncontractedFMulAddFound();
-        break;
-      }
-    }
+    return false;
+
+  if (B->hasAllowContract()) {
+    // If this fadd or fsub itself has a contract flag, the operation can be
+    // contracted regardless of the operands.
+    return false;
   }
+
+  // Otherwise, we cannot easily tell if the operation can be a candidate for
+  // contraction or not. Consider the following cases:
+  //
+  //   %mul = alloca float
+  //   %t1 = fmul float %a, %b
+  //   store float* %mul, float %t
+  //   %t2 = load %mul
+  //   %r = fadd float %t2, %c
+  //
+  // LLVM IR does not allow %r to be contracted. However, after an optimization
+  // it becomes a candidate for contraction if ContractionOFF is not set in
+  // SPIR-V:
+  //
+  //   %t1 = fmul float %a, %b
+  //   %r = fadd float %t1, %c
+  //
+  // To be on a safe side, we disallow everything that is even remotely similar
+  // to fmul + fadd.
+  return true;
 }
 
 std::string getIntelSubgroupBlockDataPostfix(unsigned ElementBitSize,
