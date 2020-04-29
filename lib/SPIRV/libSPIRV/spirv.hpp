@@ -131,6 +131,10 @@ enum ExecutionMode {
     ExecutionModeSignedZeroInfNanPreserve = 4461,
     ExecutionModeRoundingModeRTE = 4462,
     ExecutionModeRoundingModeRTZ = 4463,
+    ExecutionModeRoundingModeRTPINTEL = 5620,
+    ExecutionModeRoundingModeRTNINTEL = 5621,
+    ExecutionModeFloatingPointModeALTINTEL = 5622,
+    ExecutionModeFloatingPointModeIEEEINTEL = 5623,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -666,6 +670,8 @@ enum Capability {
   CapabilitySubgroupAvcMotionEstimationINTEL = 5696,
   CapabilitySubgroupAvcMotionEstimationIntraINTEL = 5697,
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
+  CapabilityRoundToInfinityINTEL = 5582,
+  CapabilityFloatingPointModeINTEL = 5583,
   CapabilityMax = 0x7fffffff,
 };
 
