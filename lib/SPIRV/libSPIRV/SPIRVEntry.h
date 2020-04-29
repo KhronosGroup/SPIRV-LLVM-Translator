@@ -670,7 +670,7 @@ class SPIRVComponentExecutionModes {
 public:
   void addExecutionMode(SPIRVExecutionMode *ExecMode) {
     // There should not be more than 1 execution mode kind except the ones
-    // mentioned in SPV_KHR_float_controls.
+    // mentioned in SPV_KHR_float_controls and SPV_INTEL_float_controls2.
 #ifndef NDEBUG
     auto IsDenorm = [](ExecutionMode EMK) {
       return EMK == ExecutionModeDenormPreserve ||
@@ -678,13 +678,20 @@ public:
     };
     auto IsRoundingMode = [](ExecutionMode EMK) {
       return EMK == ExecutionModeRoundingModeRTE ||
-             EMK == ExecutionModeRoundingModeRTZ;
+             EMK == ExecutionModeRoundingModeRTZ ||
+             EMK == ExecutionModeRoundingModeRTPINTEL ||
+             EMK == ExecutionModeRoundingModeRTNINTEL;
+    };
+    auto IsFPMode = [](ExecutionMode EMK) {
+      return EMK == ExecutionModeFloatingPointModeALTINTEL ||
+             EMK == ExecutionModeFloatingPointModeIEEEINTEL;
     };
     auto IsOtherFP = [](ExecutionMode EMK) {
       return EMK == ExecutionModeSignedZeroInfNanPreserve;
     };
     auto IsFloatControl = [&](ExecutionMode EMK) {
-      return IsDenorm(EMK) || IsRoundingMode(EMK) || IsOtherFP(EMK);
+      return IsDenorm(EMK) || IsRoundingMode(EMK) || IsFPMode(EMK) ||
+             IsOtherFP(EMK);
     };
     auto IsCompatible = [&](SPIRVExecutionMode *EM0, SPIRVExecutionMode *EM1) {
       if (EM0->getTargetId() != EM1->getTargetId())
@@ -698,7 +705,8 @@ public:
       if (TW0 != TW1)
         return true;
       return !(IsDenorm(EMK0) && IsDenorm(EMK1)) &&
-             !(IsRoundingMode(EMK0) && IsRoundingMode(EMK1));
+             !(IsRoundingMode(EMK0) && IsRoundingMode(EMK1)) &&
+             !(IsFPMode(EMK0) && IsFPMode(EMK1));
     };
     for (auto I = ExecModes.begin(); I != ExecModes.end(); ++I) {
       assert(IsCompatible(ExecMode, (*I).second) &&
@@ -798,6 +806,9 @@ public:
     case CapabilityRoundingModeRTE:
     case CapabilityRoundingModeRTZ:
       return getSet(SPV_KHR_float_controls);
+    case CapabilityRoundToInfinityINTEL:
+    case CapabilityFloatingPointModeINTEL:
+      return getSet(SPV_INTEL_float_controls2);
     default:
       return SPIRVExtSet();
     }
