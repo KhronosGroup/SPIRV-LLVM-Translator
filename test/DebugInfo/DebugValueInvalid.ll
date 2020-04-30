@@ -54,12 +54,6 @@ entry:
   %call = call spir_func %opencl.queue_t* @_Z17get_default_queuev() #6, !dbg !54
 ; CHECK: InBoundsPtrAccessChain
 ; CHECK: Store
-; SPIRVLowerOCLBlocks pass has removed bitcast and addrspacecast, because their operands are function pointers.
-; CHECK-NOT: BitCast
-; CHECK-NOT: PtrCastToGeneric
-; The result of these casts was used by llvm.dbg.value. This intrinsic becomes invalid,
-; so we do not translate it and its debug location
-; CHECK-NOT: DebugValue
 ; CHECK: GetDefaultQueue
 
   %3 = bitcast %struct.ndrange_t* %tmp to i8*, !dbg !55
