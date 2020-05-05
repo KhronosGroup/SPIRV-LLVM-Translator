@@ -99,7 +99,9 @@ static cl::opt<VersionNumber> MaxSPIRVVersion(
     "spirv-max-version",
     cl::desc("Choose maximum SPIR-V version which can be emitted"),
     cl::values(clEnumValN(VersionNumber::SPIRV_1_0, "1.0", "SPIR-V 1.0"),
-               clEnumValN(VersionNumber::SPIRV_1_1, "1.1", "SPIR-V 1.1")),
+               clEnumValN(VersionNumber::SPIRV_1_1, "1.1", "SPIR-V 1.1"),
+               clEnumValN(VersionNumber::SPIRV_1_2, "1.2", "SPIR-V 1.2"),
+               clEnumValN(VersionNumber::SPIRV_1_3, "1.3", "SPIR-V 1.3")),
     cl::init(VersionNumber::MaximumVersion));
 static cl::opt<bool> SPIRVGenKernelArgNameMD(
     "spirv-gen-kernel-arg-name-md", cl::init(false),
