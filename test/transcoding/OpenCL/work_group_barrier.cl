@@ -1,15 +1,20 @@
 // RUN: %clang_cc1 %s -triple spir -cl-std=CL2.0 -emit-llvm-bc -o %t.bc
-//
 // RUN: llvm-spirv %t.bc -o %t.spv
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.spv -r --spirv-target-env=CL2.0 -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+// This test checks that the translator is capable to correctly translate
+// sub_group_barrier built-in function [1] from cl_khr_subgroups extension into
+// corresponding SPIR-V instruction and vice-versa.
+//
 // Forward declarations and defines below are based on the following sources:
-// - llvm/llvm-project [1]:
+// - llvm/llvm-project [2]:
 //   - clang/lib/Headers/opencl-c-base.h
 //   - clang/lib/Headers/opencl-c.h
-// - OpenCL C 2.0 reference pages [2]
+// - OpenCL C 2.0 reference pages [1]
+// TODO: remove these and switch to using -fdeclare-opencl-builtins once
+// work_group_barrier is supported by this flag
 
 typedef unsigned int cl_mem_fence_flags;
 
@@ -57,8 +62,8 @@ __kernel void test_barrier_non_const_flags(cl_mem_fence_flags flags, memory_scop
 // CHECK-SPIRV: EntryPoint {{[0-9]+}} [[TEST_CONST_FLAGS:[0-9]+]] "test_barrier_const_flags"
 // CHECK-SPIRV: TypeInt [[UINT:[0-9]+]] 32 0
 //
-// In SPIR-V, barrier is represented as OpControlBarrier and OpenCL
-// cl_mem_fence_flags are represented as part of Memory Semantics [3], which
+// In SPIR-V, barrier is represented as OpControlBarrier [3] and OpenCL
+// cl_mem_fence_flags are represented as part of Memory Semantics [4], which
 // also includes memory order constraints. The translator applies some default
 // memory order for OpControlBarrier and therefore, constants below include a
 // bit more information than original source
@@ -116,7 +121,7 @@ __kernel void test_barrier_non_const_flags(cl_mem_fence_flags flags, memory_scop
 // CHECK-LLVM: call spir_func void @_Z18work_group_barrierj12memory_scope(i32 2, i32 1)
 
 // References:
-// [1]: https://github.com/llvm/llvm-project
-// [2]: https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/man/xhtml/work_group_barrier.html
-// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_a_id_memory_semantics__id_a_memory_semantics_lt_id_gt
-// [4]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Scope_-id-
+// [1]: https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/man/xhtml/work_group_barrier.html
+// [2]: https://github.com/llvm/llvm-project
+// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpControlBarrier
+// [4]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_a_id_memory_semantics__id_a_memory_semantics_lt_id_gt

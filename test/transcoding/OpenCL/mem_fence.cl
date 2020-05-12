@@ -4,11 +4,17 @@
 // RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.spv -r --spirv-target-env=CL1.2 -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+// This test checks that the translator is capable to correctly translate
+// mem_fence OpenCL C 1.2 built-in function [1] into corresponding SPIR-V
+// instruction and vice-versa.
+//
 // Forward declarations and defines below are based on the following sources:
-// - llvm/llvm-project [1]:
+// - llvm/llvm-project [2]:
 //   - clang/lib/Headers/opencl-c-base.h
 //   - clang/lib/Headers/opencl-c.h
-// - OpenCL C 1.2 reference pages [2]
+// - OpenCL C 1.2 reference pages [1]
+// TODO: remove these and switch to using -fdeclare-opencl-builtins once
+// mem_fence is supported by this flag
 
 typedef unsigned int cl_mem_fence_flags;
 
@@ -37,8 +43,8 @@ __kernel void test_mem_fence_non_const_flags(cl_mem_fence_flags flags) {
 // CHECK-SPIRV: EntryPoint {{[0-9]+}} [[TEST_CONST_FLAGS:[0-9]+]] "test_mem_fence_const_flags"
 // CHECK-SPIRV: TypeInt [[UINT:[0-9]+]] 32 0
 //
-// In SPIR-V, mem_fence is represented as OpMemoryBarrier and OpenCL
-// cl_mem_fence_flags are represented as part of Memory Semantics [3], which
+// In SPIR-V, mem_fence is represented as OpMemoryBarrier [3] and OpenCL
+// cl_mem_fence_flags are represented as part of Memory Semantics [4], which
 // also includes memory order constraints. The translator applies some default
 // memory order for OpMemoryBarrier and therefore, constants below include a
 // bit more information than original source
@@ -76,7 +82,7 @@ __kernel void test_mem_fence_non_const_flags(cl_mem_fence_flags flags) {
 // CHECK-LLVM: call spir_func void @_Z9mem_fencej(i32 7)
 
 // References:
-// [1]: https://github.com/llvm/llvm-project
-// [2]: https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/mem_fence.html
-// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_a_id_memory_semantics__id_a_memory_semantics_lt_id_gt
-
+// [1]: https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/mem_fence.html
+// [2]: https://github.com/llvm/llvm-project
+// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpMemoryBarrier
+// [4]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_a_id_memory_semantics__id_a_memory_semantics_lt_id_gt

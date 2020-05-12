@@ -5,11 +5,17 @@
 // RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.spv -r --spirv-target-env=CL2.0 -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+// This test checks that the translator is capable to correctly translate
+// atomic_work_item_fence OpenCL C 2.0 built-in function [1] into corresponding
+// SPIR-V instruction [3] and vice-versa.
+//
 // Forward declarations and defines below are based on the following sources:
 // - llvm/llvm-project [1]:
 //   - clang/lib/Headers/opencl-c-base.h
 //   - clang/lib/Headers/opencl-c.h
 // - OpenCL C 2.0 reference pages [2]
+// TODO: remove these and switch to using -fdeclare-opencl-builtins once
+// atomic_work_item_fence is supported by this flag
 
 typedef unsigned int cl_mem_fence_flags;
 
@@ -95,7 +101,6 @@ __kernel void test_mem_fence_non_const_flags(cl_mem_fence_flags flags, memory_or
 // CHECK-LLVM: call spir_func void @_Z22atomic_work_item_fencej12memory_order12memory_scope(i32 5, i32 2, i32 4)
 
 // References:
-// [1]: https://github.com/llvm/llvm-project
-// [2]: https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/man/xhtml/atomic_work_item_fence.html
-// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_a_id_memory_semantics__id_a_memory_semantics_lt_id_gt
-// [4]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Scope_-id-
+// [1]: https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/man/xhtml/atomic_work_item_fence.html
+// [2]: https://github.com/llvm/llvm-project
+// [3]: https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpMemoryBarrier
