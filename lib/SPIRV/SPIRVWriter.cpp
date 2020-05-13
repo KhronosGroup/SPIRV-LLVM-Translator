@@ -94,23 +94,6 @@ cl::opt<bool> SPIRVAllowUnknownIntrinsics(
     cl::desc("Unknown LLVM intrinsics will be translated as external function "
              "calls in SPIR-V"));
 
-enum FPContract {
-  FPContractOn,
-  FPContractOff,
-  FPContractFast,
-};
-
-cl::opt<FPContract> FPContractMode(
-    "ffp-contract", cl::desc("Fused FP operations:"), cl::init(FPContractOn),
-    cl::values(
-        clEnumValN(FPContractOn, "on",
-                   "choose a mode according to presence of fused LLVM "
-                   "intrinsics"),
-        clEnumValN(FPContractOff, "off", "disable for all entry points"),
-        clEnumValN(
-            FPContractFast, "fast",
-            "allow all operations to be contracted for all entry points")));
-
 static void foreachKernelArgMD(
     MDNode *MD, SPIRVFunction *BF,
     std::function<void(const std::string &Str, SPIRVFunctionParameter *BA)>
@@ -2167,14 +2150,14 @@ void LLVMToSPIRV::transFunction(Function *I) {
   bool IsKernelEntryPoint =
       BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
   bool DisableContraction = false;
-  switch (FPContractMode) {
-  case FPContractFast:
+  switch (BM->getFPContractMode()) {
+  case FPContractMode::Fast:
     DisableContraction = false;
     break;
-  case FPContractOn:
+  case FPContractMode::On:
     DisableContraction = IsKernelEntryPoint && BF->shouldFPContractBeDisabled();
     break;
-  case FPContractOff:
+  case FPContractMode::Off:
     DisableContraction = IsKernelEntryPoint;
     break;
   }
