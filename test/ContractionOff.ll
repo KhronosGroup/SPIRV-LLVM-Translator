@@ -18,27 +18,23 @@
 ; opt -mem2reg 1.ll -S -o 1.o.ll
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.default
-; RUN: FileCheck < %t.default %s --check-prefixes CHECK,CHECK-ON
 ; RUN: llvm-spirv %t.bc -o %t.spv.default
+; RUN: llvm-spirv %t.spv.default -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-ON
 ; RUN: spirv-val %t.spv.default
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.off -ffp-contract=off
-; RUN: FileCheck < %t.off %s --check-prefixes CHECK,CHECK-OFF
 ; RUN: llvm-spirv %t.bc -o %t.spv.off -ffp-contract=off
+; RUN: llvm-spirv %t.spv.off -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-OFF
 ; RUN: spirv-val %t.spv.off
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.fast -ffp-contract=fast
-; RUN: FileCheck < %t.fast %s --check-prefixes CHECK,CHECK-FAST
 ; RUN: llvm-spirv %t.bc -o %t.spv.fast -ffp-contract=fast
+; RUN: llvm-spirv %t.spv.fast -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-FAST
 ; RUN: spirv-val %t.spv.fast
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.on -ffp-contract=on
-; RUN: FileCheck < %t.on %s --check-prefixes CHECK,CHECK-ON
 ; RUN: llvm-spirv %t.bc -o %t.spv.on -ffp-contract=on
+; RUN: llvm-spirv %t.spv.on -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-ON
 ; RUN: spirv-val %t.spv.on
 
 ; CHECK: EntryPoint 6 [[K1:[0-9]+]] "k1"
