@@ -2166,7 +2166,7 @@ void LLVMToSPIRV::transFunction(Function *I) {
     BF->addExecutionMode(BF->getModule()->add(
         new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
   }
-  if (BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId())) {
+  if (IsKernelEntryPoint) {
     collectInputOutputVariables(BF, I);
   }
 }
