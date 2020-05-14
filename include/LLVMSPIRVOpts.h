@@ -131,13 +131,9 @@ public:
     return DesiredRepresentationOfBIs;
   }
 
-  void setFPContractMode(FPContractMode Mode) {
-    FPCMode = Mode;
-  }
+  void setFPContractMode(FPContractMode Mode) { FPCMode = Mode; }
 
-  FPContractMode getFPContractMode() {
-    return FPCMode;
-  }
+  FPContractMode getFPContractMode() { return FPCMode; }
 
 private:
   // Common translation options
