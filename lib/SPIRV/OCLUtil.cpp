@@ -876,14 +876,26 @@ bool isKernelQueryBI(const StringRef MangledName) {
          MangledName == "__get_kernel_preferred_work_group_size_multiple_impl";
 }
 
-// Checks if we have the following (most common for fp contranction) pattern
-// in LLVM IR:
-// %mul = fmul float %a, %b
-// %add = fadd float %mul, %c
+// isUnfusedMulAdd checks if we have the following (most common for fp
+// contranction) pattern in LLVM IR:
+//
+//   %mul = fmul float %a, %b
+//   %add = fadd float %mul, %c
+//
 // This pattern indicates that fp contraction could have been disabled by
-// // #pragma OPENCL FP_CONTRACT OFF. Otherwise the current version of clang
-// would generate:
-// %0 = call float @llvm.fmuladd.f32(float %a, float %b, float %c)
+// #pragma OPENCL FP_CONTRACT OFF. When contraction is enabled (by a pragma or
+// by clang's -ffp-contract=fast), clang would generate:
+//
+//   %0 = call float @llvm.fmuladd.f32(float %a, float %b, float %c)
+//
+// or
+//
+//   %mul = fmul contract float %a, %b
+//   %add = fadd contract float %mul, %c
+//
+// Note that optimizations that may form an unfused fmuladd, so this check is
+// quite restrictive (see the comment below).
+//
 bool isUnfusedMulAdd(BinaryOperator *B) {
   if (B->getOpcode() != Instruction::FAdd &&
       B->getOpcode() != Instruction::FSub)
