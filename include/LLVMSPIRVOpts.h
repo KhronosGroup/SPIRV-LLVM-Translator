@@ -133,7 +133,7 @@ public:
 
   void setFPContractMode(FPContractMode Mode) { FPCMode = Mode; }
 
-  FPContractMode getFPContractMode() { return FPCMode; }
+  FPContractMode getFPContractMode() const { return FPCMode; }
 
 private:
   // Common translation options

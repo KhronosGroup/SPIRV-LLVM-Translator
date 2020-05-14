@@ -465,7 +465,7 @@ public:
     return TranslationOpts.getSpecializationConstant(SpecId, ConstValue);
   }
 
-  FPContractMode getFPContractMode() {
+  FPContractMode getFPContractMode() const {
     return TranslationOpts.getFPContractMode();
   }
 
