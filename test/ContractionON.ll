@@ -1,7 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t -ffp-contract=on
-; RUN: FileCheck < %t %s
 ; RUN: llvm-spirv %t.bc -o %t.spv -ffp-contract=on
+; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s
 ; RUN: spirv-val %t.spv
 
 ; CHECK: EntryPoint 6 [[K1:[0-9]+]] "kernel_off_1"
