@@ -893,8 +893,8 @@ bool isKernelQueryBI(const StringRef MangledName) {
 //   %mul = fmul contract float %a, %b
 //   %add = fadd contract float %mul, %c
 //
-// Note that optimizations that may form an unfused fmuladd, so this check is
-// quite restrictive (see the comment below).
+// Note that optimizations may form an unfused fmuladd from fadd+load or
+// fadd+call, so this check is quite restrictive (see the comment below).
 //
 bool isUnfusedMulAdd(BinaryOperator *B) {
   if (B->getOpcode() != Instruction::FAdd &&
