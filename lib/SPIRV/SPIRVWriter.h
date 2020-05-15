@@ -101,6 +101,8 @@ public:
   SPIRVValue *transCallInst(CallInst *Call, SPIRVBasicBlock *BB);
   SPIRVValue *transAsmINTEL(InlineAsm *Asm);
   SPIRVValue *transAsmCallINTEL(CallInst *Call, SPIRVBasicBlock *BB);
+  SPIRVValue *transDirectCallInst(CallInst *Call, SPIRVBasicBlock *BB);
+  SPIRVValue *transIndirectCallInst(CallInst *Call, SPIRVBasicBlock *BB);
   bool transDecoration(Value *V, SPIRVValue *BV);
   SPIRVWord transFunctionControlMask(CallInst *);
   SPIRVWord transFunctionControlMask(Function *);

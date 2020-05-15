@@ -10,5 +10,6 @@ _SPIRV_OP(InvalidMemoryModel, "Expects 0-3.")
 _SPIRV_OP(InvalidFunctionControlMask, "")
 _SPIRV_OP(InvalidBuiltinSetName, "Expects OpenCL.std.")
 _SPIRV_OP(InvalidFunctionCall, "Unexpected llvm intrinsic:")
+_SPIRV_OP(FunctionPointers, "Can't translate function pointer:\n")
 
 #endif
