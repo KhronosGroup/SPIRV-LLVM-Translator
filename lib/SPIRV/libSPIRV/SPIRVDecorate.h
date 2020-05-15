@@ -141,6 +141,8 @@ public:
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
       return getSet(SPV_KHR_no_integer_wrap_decoration);
+    case DecorationReferencedIndirectlyINTEL:
+      return getSet(SPV_INTEL_function_pointers);
     default:
       return SPIRVExtSet();
     }

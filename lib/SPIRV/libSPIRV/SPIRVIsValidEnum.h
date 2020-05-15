@@ -398,6 +398,7 @@ inline bool isValid(spv::Decoration V) {
   case DecorationAlignment:
   case DecorationMaxByteOffset:
   case DecorationUserSemantic:
+  case DecorationReferencedIndirectlyINTEL:
     return true;
   default:
     return false;
