@@ -23,17 +23,17 @@
 ; RUN: spirv-val %t.spv.default
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv.off -ffp-contract=off
+; RUN: llvm-spirv %t.bc -o %t.spv.off --spirv-fp-contract=off
 ; RUN: llvm-spirv %t.spv.off -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-OFF
 ; RUN: spirv-val %t.spv.off
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv.fast -ffp-contract=fast
+; RUN: llvm-spirv %t.bc -o %t.spv.fast --spirv-fp-contract=fast
 ; RUN: llvm-spirv %t.spv.fast -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-FAST
 ; RUN: spirv-val %t.spv.fast
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv.on -ffp-contract=on
+; RUN: llvm-spirv %t.bc -o %t.spv.on --spirv-fp-contract=on
 ; RUN: llvm-spirv %t.spv.on -to-text -o - | FileCheck %s --check-prefixes CHECK,CHECK-ON
 ; RUN: spirv-val %t.spv.on
 

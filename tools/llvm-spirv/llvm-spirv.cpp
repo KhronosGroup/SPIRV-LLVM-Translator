@@ -164,14 +164,14 @@ static cl::opt<bool> SpecConstInfo(
              "size in bytes"));
 
 static cl::opt<SPIRV::FPContractMode> FPCMode(
-    "ffp-contract", cl::desc("Fused FP operations:"),
+    "spirv-fp-contract", cl::desc("Set FP Contraction mode:"),
     cl::init(SPIRV::FPContractMode::On),
     cl::values(
         clEnumValN(SPIRV::FPContractMode::On, "on",
-                   "choose a mode according to presence of fused LLVM "
-                   "intrinsics"),
+                   "choose a mode according to presence of llvm.fmuladd "
+                   "intrinsic or `contract' flag on fp operations"),
         clEnumValN(SPIRV::FPContractMode::Off, "off",
-                   "disable for all entry points"),
+                   "disable FP contraction for all entry points"),
         clEnumValN(
             SPIRV::FPContractMode::Fast, "fast",
             "allow all operations to be contracted for all entry points")));
