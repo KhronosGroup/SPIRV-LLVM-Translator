@@ -346,7 +346,7 @@ private:
           [&](Function &F) -> AssumptionCache & {
         return ACT->getAssumptionCache(F);
       };
-      InlineFunctionInfo IFI(CG, &GetAssumptionCache);
+      InlineFunctionInfo IFI(CG, GetAssumptionCache);
       InlineFunction(*cast<CallBase>(CI), IFI);
       Inlined = true;
     }
