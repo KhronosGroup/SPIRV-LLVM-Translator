@@ -69,6 +69,7 @@ public:
 
   bool runOnModule(Module &M) override;
   void visit(Module *M);
+  void preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B, SPIRVMDWalker *W);
 
   static char ID;
 
@@ -102,44 +103,8 @@ bool TransOCLMD::runOnModule(Module &Module) {
 void TransOCLMD::visit(Module *M) {
   SPIRVMDBuilder B(*M);
   SPIRVMDWalker W(*M);
-  // !spirv.Source = !{!x}
-  // !{x} = !{i32 3, i32 102000}
-  B.addNamedMD(kSPIRVMD::Source)
-      .addOp()
-      .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
-                                 : spv::SourceLanguageOpenCL_CPP)
-      .add(CLVer)
-      .done();
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::OCLVer).eraseNamedMD(kSPIR2MD::SPIRVer);
 
-  // !spirv.MemoryModel = !{!x}
-  // !{x} = !{i32 1, i32 2}
-  Triple TT(M->getTargetTriple());
-  auto Arch = TT.getArch();
-  assert((Arch == Triple::spir || Arch == Triple::spir64) && "Invalid triple");
-  B.addNamedMD(kSPIRVMD::MemoryModel)
-      .addOp()
-      .add(Arch == Triple::spir ? spv::AddressingModelPhysical32
-                                : spv::AddressingModelPhysical64)
-      .add(spv::MemoryModelOpenCL)
-      .done();
-
-  // Add source extensions
-  // !spirv.SourceExtension = !{!x, !y, ...}
-  // !x = {!"cl_khr_..."}
-  // !y = {!"cl_khr_..."}
-  auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
-  if (!Exts.empty()) {
-    auto N = B.addNamedMD(kSPIRVMD::SourceExtension);
-    for (auto &I : Exts)
-      N.addOp().add(I).done();
-  }
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::Extensions).eraseNamedMD(kSPIR2MD::OptFeatures);
-
-  if (EraseOCLMD)
-    B.eraseNamedMD(kSPIR2MD::FPContract);
+  preprocessOCLMetadata(M, &B, &W);
 
   // Create metadata representing (empty so far) list
   // of OpEntryPoint and OpExecutionMode instructions
@@ -209,6 +174,48 @@ void TransOCLMD::visit(Module *M) {
           .done();
     }
   }
+}
+
+void TransOCLMD::preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B,
+                                       SPIRVMDWalker *W) {
+  // !spirv.Source = !{!x}
+  // !{x} = !{i32 3, i32 102000}
+  B->addNamedMD(kSPIRVMD::Source)
+      .addOp()
+      .add(CLVer < kOCLVer::CL21 ? spv::SourceLanguageOpenCL_C
+                                 : spv::SourceLanguageOpenCL_CPP)
+      .add(CLVer)
+      .done();
+  if (EraseOCLMD)
+    B->eraseNamedMD(kSPIR2MD::OCLVer).eraseNamedMD(kSPIR2MD::SPIRVer);
+
+  // !spirv.MemoryModel = !{!x}
+  // !{x} = !{i32 1, i32 2}
+  Triple TT(M->getTargetTriple());
+  auto Arch = TT.getArch();
+  assert((Arch == Triple::spir || Arch == Triple::spir64) && "Invalid triple");
+  B->addNamedMD(kSPIRVMD::MemoryModel)
+      .addOp()
+      .add(Arch == Triple::spir ? spv::AddressingModelPhysical32
+                                : spv::AddressingModelPhysical64)
+      .add(spv::MemoryModelOpenCL)
+      .done();
+
+  // Add source extensions
+  // !spirv.SourceExtension = !{!x, !y, ...}
+  // !x = {!"cl_khr_..."}
+  // !y = {!"cl_khr_..."}
+  auto Exts = getNamedMDAsStringSet(M, kSPIR2MD::Extensions);
+  if (!Exts.empty()) {
+    auto N = B->addNamedMD(kSPIRVMD::SourceExtension);
+    for (auto &I : Exts)
+      N.addOp().add(I).done();
+  }
+  if (EraseOCLMD)
+    B->eraseNamedMD(kSPIR2MD::Extensions).eraseNamedMD(kSPIR2MD::OptFeatures);
+
+  if (EraseOCLMD)
+    B->eraseNamedMD(kSPIR2MD::FPContract);
 }
 
 } // namespace SPIRV
