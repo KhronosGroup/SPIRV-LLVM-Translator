@@ -65,6 +65,8 @@ enum class ExtensionID : uint32_t {
   Last,
 };
 
+enum class FPContractMode : uint32_t { On, Off, Fast };
+
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
 public:
@@ -119,6 +121,10 @@ public:
     return true;
   }
 
+  void setFPContractMode(FPContractMode Mode) { FPCMode = Mode; }
+
+  FPContractMode getFPContractMode() const { return FPCMode; }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -128,6 +134,16 @@ private:
   // SPIR-V to LLVM translation options
   bool GenKernelArgNameMD;
   std::unordered_map<uint32_t, uint64_t> ExternalSpecialization;
+  // Controls floating point contraction.
+  //
+  // - FPContractMode::On allows to choose a mode according to
+  //   presence of fused LLVM intrinsics
+  //
+  // - FPContractMode::Off disables contratction for all entry points
+  //
+  // - FPContractMode::Fast allows *all* operations to be contracted
+  //   for all entry points
+  FPContractMode FPCMode = FPContractMode::On;
 };
 
 } // namespace SPIRV
