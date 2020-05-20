@@ -76,7 +76,7 @@ public:
   SPIRVLowerOCLBlocks() : ModulePass(ID) {}
 
   StringRef getPassName() const override {
-    return "Lower OCL Blocks For SPIRV";
+    return "Lower OpenCL Blocks For SPIR-V";
   }
 
   bool runOnModule(Module &M) {
