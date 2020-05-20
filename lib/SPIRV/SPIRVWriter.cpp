@@ -81,6 +81,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -669,7 +670,14 @@ SPIRVInstruction *LLVMToSPIRV::transBinaryInst(BinaryOperator *B,
   SPIRVInstruction *BI = BM->addBinaryInst(
       transBoolOpCode(Op0, OpCodeMap::map(LLVMOC)), transType(B->getType()),
       Op0, transValue(B->getOperand(1), BB), BB);
-  checkFpContract(B, BB);
+
+  if (isUnfusedMulAdd(B)) {
+    Function *F = B->getFunction();
+    SPIRVDBG(dbgs() << "[fp-contract] disabled for " << F->getName()
+                    << ": possible fma candidate " << *B << '\n');
+    joinFPContract(F, FPContract::DISABLED);
+  }
+
   return BI;
 }
 
@@ -1143,7 +1151,6 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add
     // is required the corresponding llvm.fma.* intrinsic function should be
     // used instead.
-    BB->getParent()->setContractedFMulAddFound();
     SPIRVType *Ty = transType(II->getType());
     SPIRVValue *Mul =
         BM->addBinaryInst(OpFMul, Ty, transValue(II->getArgOperand(0), BB),
@@ -1244,8 +1251,23 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
             BB),
         Dec);
 
+  Function *Callee = CI->getCalledFunction();
+  if (!Callee || Callee->isDeclaration()) {
+    SPIRVDBG(dbgs() << "[fp-contract] disabled for " << F->getName().str()
+                    << ": call to an undefined function " << *CI << '\n');
+    joinFPContract(CI->getFunction(), FPContract::DISABLED);
+  } else {
+    FPContract CalleeFPC = getFPContract(Callee);
+    joinFPContract(CI->getFunction(), CalleeFPC);
+    if (CalleeFPC == FPContract::DISABLED) {
+      SPIRVDBG(dbgs() << "[fp-contract] disabled for " << F->getName().str()
+                      << ": call to a function with disabled contraction: "
+                      << *CI << '\n');
+    }
+  }
+
   return BM->addCallInst(
-      transFunctionDecl(CI->getCalledFunction()),
+      transFunctionDecl(Callee),
       transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
       BB);
 }
@@ -1399,6 +1421,67 @@ void LLVMToSPIRV::mutateFuncArgType(
   }
 }
 
+// Propagate contraction requirement of F up the call graph.
+void LLVMToSPIRV::fpContractUpdateRecursive(Function *F, FPContract FPC) {
+  std::queue<User *> Users;
+  for (User *FU : F->users()) {
+    Users.push(FU);
+  }
+
+  bool EnableLogger = FPC == FPContract::DISABLED && !Users.empty();
+  if (EnableLogger) {
+    SPIRVDBG(dbgs() << "[fp-contract] disabled for users of " << F->getName()
+                    << '\n');
+  }
+
+  while (!Users.empty()) {
+    User *U = Users.front();
+    Users.pop();
+
+    if (EnableLogger) {
+      SPIRVDBG(dbgs() << "[fp-contract]   user: " << *U << '\n');
+    }
+
+    // Move from an Instruction to its Function
+    if (Instruction *I = dyn_cast<Instruction>(U)) {
+      Users.push(I->getFunction());
+      continue;
+    }
+
+    if (Function *F = dyn_cast<Function>(U)) {
+      if (!joinFPContract(F, FPC)) {
+        // FP contract was not updated - no need to propagate
+        // This also terminates a recursion (if any).
+        if (EnableLogger) {
+          SPIRVDBG(dbgs() << "[fp-contract] already disabled " << F->getName()
+                          << '\n');
+        }
+        continue;
+      }
+      if (EnableLogger) {
+        SPIRVDBG(dbgs() << "[fp-contract] disabled for " << F->getName()
+                        << '\n');
+      }
+      for (User *FU : F->users()) {
+        Users.push(FU);
+      }
+      continue;
+    }
+
+    // Unwrap a constant until we reach an Instruction.
+    // This is checked after the Function, because a Function is also a
+    // Constant.
+    if (Constant *C = dyn_cast<Constant>(U)) {
+      for (User *CU : C->users()) {
+        Users.push(CU);
+      }
+      continue;
+    }
+
+    llvm_unreachable("Unexpected use.");
+  }
+}
+
 void LLVMToSPIRV::transFunction(Function *I) {
   SPIRVFunction *BF = transFunctionDecl(I);
   // Creating all basic blocks before creating any instruction.
@@ -1412,12 +1495,10 @@ void LLVMToSPIRV::transFunction(Function *I) {
       transValue(&BI, BB, false);
     }
   }
+  // Enable FP contraction unless proven otherwise
+  joinFPContract(I, FPContract::ENABLED);
+  fpContractUpdateRecursive(I, getFPContract(I));
 
-  if (BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId()) &&
-      BF->shouldFPContractBeDisabled()) {
-    BF->addExecutionMode(BF->getModule()->add(
-        new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
-  }
   if (BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId())) {
     collectInputOutputVariables(BF, I);
   }
@@ -1548,7 +1629,33 @@ bool LLVMToSPIRV::transExecutionMode() {
       }
     }
   }
+
+  transFPContract();
+
   return true;
+}
+
+void LLVMToSPIRV::transFPContract() {
+  for (Function &F : *M) {
+    SPIRVValue *TranslatedF = getTranslatedValue(&F);
+    if (!TranslatedF) {
+      continue;
+    }
+    SPIRVFunction *BF = static_cast<SPIRVFunction *>(TranslatedF);
+
+    bool IsKernelEntryPoint =
+        BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
+    if (!IsKernelEntryPoint)
+      continue;
+
+    FPContract FPC = getFPContract(&F);
+    assert(FPC != FPContract::UNDEF);
+
+    if (FPC == FPContract::DISABLED) {
+      BF->addExecutionMode(BF->getModule()->add(
+          new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
+    }
+  }
 }
 
 bool LLVMToSPIRV::transOCLKernelMetadata() {
@@ -1737,6 +1844,34 @@ LLVMToSPIRV::transLinkageType(const GlobalValue *GV) {
   if (GV->hasInternalLinkage() || GV->hasPrivateLinkage())
     return SPIRVLinkageTypeKind::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
+}
+
+LLVMToSPIRV::FPContract LLVMToSPIRV::getFPContract(Function *F) {
+  auto It = FPContractMap.find(F);
+  if (It == FPContractMap.end()) {
+    return FPContract::UNDEF;
+  }
+  return It->second;
+}
+
+bool LLVMToSPIRV::joinFPContract(Function *F, FPContract C) {
+  FPContract &Existing = FPContractMap[F];
+  switch (Existing) {
+  case FPContract::UNDEF:
+    if (C != FPContract::UNDEF) {
+      Existing = C;
+      return true;
+    }
+    return false;
+  case FPContract::ENABLED:
+    if (C == FPContract::DISABLED) {
+      Existing = C;
+      return true;
+    }
+    return false;
+  case FPContract::DISABLED:
+    return false;
+  }
 }
 
 } // namespace SPIRV
