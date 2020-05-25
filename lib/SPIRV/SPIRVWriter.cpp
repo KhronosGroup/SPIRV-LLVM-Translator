@@ -1872,6 +1872,7 @@ bool LLVMToSPIRV::joinFPContract(Function *F, FPContract C) {
   case FPContract::DISABLED:
     return false;
   }
+  llvm_unreachable("Unhandled FPContract value.");
 }
 
 } // namespace SPIRV
