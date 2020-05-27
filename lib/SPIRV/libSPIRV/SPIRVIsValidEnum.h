@@ -143,6 +143,11 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeMaxWorkgroupSizeINTEL:
   case ExecutionModeMaxWorkDimINTEL:
   case ExecutionModeNumSIMDWorkitemsINTEL:
+  case ExecutionModeDenormPreserve:
+  case ExecutionModeDenormFlushToZero:
+  case ExecutionModeSignedZeroInfNanPreserve:
+  case ExecutionModeRoundingModeRTE:
+  case ExecutionModeRoundingModeRTZ:
     return true;
   default:
     return false;
