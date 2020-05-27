@@ -112,7 +112,8 @@ enum SPIRVExtensionKind {
   SPV_INTEL_device_side_avc_motion_estimation,
   SPV_INTEL_media_block_io,
   SPV_KHR_no_integer_wrap_decoration,
-  SPV_INTEL_inline_assembly
+  SPV_INTEL_inline_assembly,
+  SPV_KHR_float_controls
 };
 
 typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
@@ -123,6 +124,7 @@ template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
   add(SPV_INTEL_media_block_io, "SPV_INTEL_media_block_io");
   add(SPV_KHR_no_integer_wrap_decoration, "SPV_KHR_no_integer_wrap_decoration");
   add(SPV_INTEL_inline_assembly, "SPV_INTEL_inline_assembly");
+  add(SPV_KHR_float_controls, "SPV_KHR_float_controls");
 };
 
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
@@ -240,6 +242,12 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
   ADD_VEC_INIT(ExecutionModeOutputTriangleStrip, {CapabilityGeometry});
   ADD_VEC_INIT(ExecutionModeVecTypeHint, {CapabilityKernel});
   ADD_VEC_INIT(ExecutionModeContractionOff, {CapabilityKernel});
+  ADD_VEC_INIT(ExecutionModeDenormPreserve, {CapabilityDenormPreserve});
+  ADD_VEC_INIT(ExecutionModeDenormFlushToZero, {CapabilityDenormFlushToZero});
+  ADD_VEC_INIT(ExecutionModeSignedZeroInfNanPreserve,
+               {CapabilitySignedZeroInfNanPreserve});
+  ADD_VEC_INIT(ExecutionModeRoundingModeRTE, {CapabilityRoundingModeRTE});
+  ADD_VEC_INIT(ExecutionModeRoundingModeRTZ, {CapabilityRoundingModeRTZ});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {

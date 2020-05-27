@@ -126,6 +126,11 @@ enum ExecutionMode {
     ExecutionModeFinalizer = 34,
     ExecutionModeSubgroupSize = 35,
     ExecutionModeSubgroupsPerWorkgroup = 36,
+    ExecutionModeDenormPreserve = 4459,
+    ExecutionModeDenormFlushToZero = 4460,
+    ExecutionModeSignedZeroInfNanPreserve = 4461,
+    ExecutionModeRoundingModeRTE = 4462,
+    ExecutionModeRoundingModeRTZ = 4463,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -651,6 +656,11 @@ enum Capability {
   CapabilityMultiView = 4439,
   CapabilityVariablePointersStorageBuffer = 4441,
   CapabilityVariablePointers = 4442,
+  CapabilityDenormPreserve = 4464,
+  CapabilityDenormFlushToZero = 4465,
+  CapabilitySignedZeroInfNanPreserve = 4466,
+  CapabilityRoundingModeRTE = 4467,
+  CapabilityRoundingModeRTZ = 4468,
   CapabilitySampleMaskOverrideCoverageNV = 5249,
   CapabilityGeometryShaderPassthroughNV = 5251,
   CapabilityShaderViewportIndexLayerNV = 5254,
