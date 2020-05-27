@@ -120,6 +120,11 @@ template <> inline void SPIRVMap<ExecutionMode, std::string>::init() {
   add(ExecutionModeVecTypeHint, "VecTypeHint");
   add(ExecutionModeContractionOff, "ContractionOff");
   add(ExecutionModeSubgroupSize, "SubgroupSize");
+  add(ExecutionModeDenormPreserve, "DenormPreserve");
+  add(ExecutionModeDenormFlushToZero, "DenormFlushToZero");
+  add(ExecutionModeSignedZeroInfNanPreserve, "SignedZeroInfNanPreserve");
+  add(ExecutionModeRoundingModeRTE, "RoundingModeRTE");
+  add(ExecutionModeRoundingModeRTZ, "RoundingModeRTZ");
 }
 SPIRV_DEF_NAMEMAP(ExecutionMode, SPIRVExecutionModeNameMap)
 
