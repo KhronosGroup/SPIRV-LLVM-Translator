@@ -2015,6 +2015,18 @@ bool LLVMToSPIRV::transExecutionMode() {
         BF->addExecutionMode(BM->add(
             new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X)));
       } break;
+      case spv::ExecutionModeDenormPreserve:
+      case spv::ExecutionModeDenormFlushToZero:
+      case spv::ExecutionModeSignedZeroInfNanPreserve:
+      case spv::ExecutionModeRoundingModeRTE:
+      case spv::ExecutionModeRoundingModeRTZ: {
+        if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls))
+          break;
+        unsigned TargetWidth;
+        N.get(TargetWidth);
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
+      } break;
       default:
         llvm_unreachable("invalid execution mode");
       }
