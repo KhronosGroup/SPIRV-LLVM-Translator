@@ -140,6 +140,11 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeFinalizer:
   case ExecutionModeSubgroupSize:
   case ExecutionModeSubgroupsPerWorkgroup:
+  case ExecutionModeDenormPreserve:
+  case ExecutionModeDenormFlushToZero:
+  case ExecutionModeSignedZeroInfNanPreserve:
+  case ExecutionModeRoundingModeRTE:
+  case ExecutionModeRoundingModeRTZ:
     return true;
   default:
     return false;
