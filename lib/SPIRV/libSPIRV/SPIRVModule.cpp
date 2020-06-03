@@ -106,6 +106,27 @@ public:
   SPIRVAddressingModelKind getAddressingModel() override { return AddrModel; }
   SPIRVExtInstSetKind getBuiltinSet(SPIRVId SetId) const override;
   const SPIRVCapMap &getCapability() const override { return CapMap; }
+  void chooseBestCapability(SPIRVCapVec &V) const override {
+    // SPIRV specification declares that:
+    // When an instruction, enumerant, or other feature specifies multiple
+    // enabling capabilities, only one such capability needs to be declared to
+    // use the feature. This declaration does not itself imply anything about
+    // the presence of the other enabling capabilities: The execution
+    // environment needs to support only the declared capability.
+    //
+    // But the translator always emits all listed capabilities. This method is a
+    // workaround for choosing only actually needed capabilities for specific
+    // cases.
+
+    if (V.size() <= 1)
+      return;
+
+    if (isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute)) {
+      auto I = std::find(V.begin(), V.end(), CapabilityVectorComputeINTEL);
+      if (I != V.end())
+        V = {CapabilityVectorComputeINTEL};
+    }
+  }
   bool hasCapability(SPIRVCapabilityKind Cap) const override {
     return CapMap.find(Cap) != CapMap.end();
   }
@@ -595,7 +616,9 @@ void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
 }
 
 void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
-  addCapabilities(SPIRV::getCapability(Cap));
+  auto Caps = getAllEnablingCapabilities(Cap);
+  chooseBestCapability(Caps);
+  addCapabilities(Caps);
   SPIRVDBG(spvdbgs() << "addCapability: " << Cap << '\n');
   if (hasCapability(Cap))
     return;
@@ -997,7 +1020,9 @@ void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
   EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointVec[ExecModel].push_back(EntryPoint);
-  addCapabilities(SPIRV::getCapability(ExecModel));
+  auto Caps = getAllEnablingCapabilities(ExecModel);
+  chooseBestCapability(Caps);
+  addCapabilities(Caps);
 }
 
 SPIRVForward *SPIRVModuleImpl::addForward(SPIRVType *Ty) {

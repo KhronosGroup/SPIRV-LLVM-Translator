@@ -123,7 +123,7 @@ template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
 }
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
 
-template <typename K> SPIRVCapVec getCapability(K Key) {
+template <typename K> SPIRVCapVec getAllEnablingCapabilities(K Key) {
   SPIRVCapVec V;
   SPIRVMap<K, SPIRVCapVec>::find(Key, &V);
   return V;

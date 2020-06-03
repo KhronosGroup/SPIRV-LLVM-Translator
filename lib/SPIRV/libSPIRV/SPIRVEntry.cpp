@@ -507,6 +507,12 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   getOrCreateTarget()->addExecutionMode(Module->add(this));
 }
 
+SPIRVCapVec SPIRVExecutionMode::getRequiredCapability() const {
+  auto Caps = getAllEnablingCapabilities(ExecMode);
+  getModule()->chooseBestCapability(Caps);
+  return Caps;
+}
+
 SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
   SPIRVEntry *Entry = nullptr;
   bool Found = Module->exist(Target, &Entry);
