@@ -473,6 +473,11 @@ public:
       return std::vector<SPIRVEntry *>(1, V);
     return std::vector<SPIRVEntry *>();
   }
+  SPIRVCapVec getRequiredCapability() const override {
+    auto Caps = getAllEnablingCapabilities(StorageClass);
+    getModule()->chooseBestCapability(Caps);
+    return Caps;
+  }
 
 protected:
   void validate() const override {

@@ -234,7 +234,8 @@ public:
     auto Cap = getVec(CapabilityAddresses);
     if (getElementType()->isTypeFloat(16))
       Cap.push_back(CapabilityFloat16Buffer);
-    auto C = getCapability(ElemStorageClass);
+    auto C = getAllEnablingCapabilities(ElemStorageClass);
+    Module->chooseBestCapability(C);
     Cap.insert(Cap.end(), C.begin(), C.end());
     return Cap;
   }
@@ -262,6 +263,12 @@ public:
 
   SPIRVTypeForwardPointer()
       : Pointer(nullptr), SC(StorageClassUniformConstant) {}
+
+  SPIRVCapVec getRequiredCapability() const override {
+    auto Caps = getAllEnablingCapabilities(SC);
+    getModule()->chooseBestCapability(Caps);
+    return Caps;
+  }
 
   SPIRVTypePointer *getPointer() const { return Pointer; }
   _SPIRV_DCL_ENCDEC
