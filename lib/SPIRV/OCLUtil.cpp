@@ -248,30 +248,31 @@ void decodeMDNode(MDNode *N, unsigned &X, unsigned &Y, unsigned &Z) {
 
 /// Encode LLVM type by SPIR-V execution mode VecTypeHint
 unsigned encodeVecTypeHint(Type *Ty) {
+  unsigned Size = 1;
   if (Ty->isHalfTy())
-    return 4;
+    return 4 | (Size << 16);
   if (Ty->isFloatTy())
-    return 5;
+    return 5 | (Size << 16);
   if (Ty->isDoubleTy())
-    return 6;
+    return 6 | (Size << 16);
   if (IntegerType *IntTy = dyn_cast<IntegerType>(Ty)) {
     switch (IntTy->getIntegerBitWidth()) {
     case 8:
-      return 0;
+      return 0 | (Size << 16);
     case 16:
-      return 1;
+      return 1 | (Size << 16);
     case 32:
-      return 2;
+      return 2 | (Size << 16);
     case 64:
-      return 3;
+      return 3 | (Size << 16);
     default:
       llvm_unreachable("invalid integer type");
     }
   }
   if (VectorType *VecTy = dyn_cast<VectorType>(Ty)) {
     Type *EleTy = VecTy->getElementType();
-    unsigned Size = VecTy->getNumElements();
-    return Size << 16 | encodeVecTypeHint(EleTy);
+    Size = VecTy->getNumElements();
+    return Size << 16 | (encodeVecTypeHint(EleTy) & 0xFF);
   }
   llvm_unreachable("invalid type");
   return ~0U;
@@ -301,7 +302,7 @@ Type *decodeVecTypeHint(LLVMContext &C, unsigned Code) {
     llvm_unreachable("Invalid vec type hint");
     return nullptr;
   }
-  if (VecWidth < 1)
+  if (VecWidth == 1)
     return ST;
   return VectorType::get(ST, VecWidth);
 }
