@@ -2387,6 +2387,7 @@ void LLVMToSPIRV::fpContractUpdateRecursive(Function *F, FPContract FPC) {
 
 void LLVMToSPIRV::transFunction(Function *I) {
   SPIRVFunction *BF = transFunctionDecl(I);
+  assert(BF && "The SPIRVFunction pointer shouldn't be nullptr");
   // Creating all basic blocks before creating any instruction.
   for (auto &FI : *I) {
     transValue(&FI, nullptr);
@@ -2918,6 +2919,7 @@ bool LLVMToSPIRV::joinFPContract(Function *F, FPContract C) {
     return false;
   }
   llvm_unreachable("Unhandled FPContract value.");
+  return false;
 }
 
 } // namespace SPIRV
