@@ -138,6 +138,10 @@ getVCGlobalVarStorageClass(SPIRAddressSpace AddressSpace) noexcept {
     return StorageClassPrivate;
   case SPIRAS_Local:
     return StorageClassWorkgroup;
+  case SPIRAS_Global:
+    return StorageClassCrossWorkgroup;
+  case SPIRAS_Constant:
+    return StorageClassUniformConstant;
   default:
     assert(false && "Unexpected address space");
     return StorageClassPrivate;
@@ -151,6 +155,10 @@ getVCGlobalVarAddressSpace(SPIRVStorageClassKind StorageClass) noexcept {
     return SPIRAS_Private;
   case StorageClassWorkgroup:
     return SPIRAS_Local;
+  case StorageClassCrossWorkgroup:
+    return SPIRAS_Global;
+  case StorageClassUniformConstant:
+    return SPIRAS_Constant;
   default:
     assert(false && "Unexpected storage class");
     return SPIRAS_Private;
