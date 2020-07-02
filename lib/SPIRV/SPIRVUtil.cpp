@@ -645,8 +645,8 @@ Instruction *mutateCallInst(
   Type *RetTy = CI->getType();
   auto NewName = ArgMutate(CI, Args, RetTy);
   StringRef InstName = CI->getName();
-  auto NewCI = addCallInst(M, NewName, RetTy, Args, Attrs, CI, Mangle,
-                           InstName, TakeFuncName);
+  auto NewCI = addCallInst(M, NewName, RetTy, Args, Attrs, CI, Mangle, InstName,
+                           TakeFuncName);
   auto NewI = RetMutate(NewCI);
   NewI->takeName(CI);
   NewI->setDebugLoc(CI->getDebugLoc());
