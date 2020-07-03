@@ -461,7 +461,8 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
   if (auto BF = getTranslatedValue(F))
     return static_cast<SPIRVFunction *>(BF);
 
-  if (F->isIntrinsic() && !SPIRVAllowUnknownIntrinsics) {
+  if (F->isIntrinsic() &&
+      (!SPIRVAllowUnknownIntrinsics || isKnownIntrinsic(F->getIntrinsicID()))) {
     // We should not translate LLVM intrinsics as a function
     assert(none_of(F->user_begin(), F->user_end(),
                    [this](User *U) { return getTranslatedValue(U); }) &&
@@ -1168,6 +1169,27 @@ SPIRVValue *LLVMToSPIRV::oclTransSpvcCastSampler(CallInst *CI,
   return BV;
 }
 
+bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
+  // Known intrinsics usually do not need translation of their declaration
+  switch (Id) {
+  case Intrinsic::bitreverse:
+  case Intrinsic::fmuladd:
+  case Intrinsic::memset:
+  case Intrinsic::memcpy:
+  case Intrinsic::lifetime_start:
+  case Intrinsic::lifetime_end:
+  case Intrinsic::dbg_declare:
+  case Intrinsic::dbg_value:
+  case Intrinsic::annotation:
+  case Intrinsic::var_annotation:
+  case Intrinsic::ptr_annotation:
+    return true;
+  default:
+    // Unknown intrinsics' declarations should always be translated
+    return false;
+  }
+}
+
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                             SPIRVBasicBlock *BB) {
   auto GetMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
@@ -1189,6 +1211,9 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     return MemoryAccess;
   };
 
+  // LLVM intrinsics with known translation to SPIR-V are handled here. They
+  // also must be registered at isKnownIntrinsic function in order to make
+  // -spirv-allow-unknown-intrinsics work correctly.
   switch (II->getIntrinsicID()) {
   case Intrinsic::bitreverse: {
     BM->addCapability(CapabilityShader);
