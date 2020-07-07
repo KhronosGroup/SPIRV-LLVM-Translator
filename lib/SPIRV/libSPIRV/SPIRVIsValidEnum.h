@@ -609,6 +609,7 @@ inline bool isValid(spv::Capability V) {
   case CapabilityUnstructuredLoopControlsINTEL:
   case CapabilityKernelAttributesINTEL:
   case CapabilityFPGAKernelAttributesINTEL:
+  case CapabilityArbitraryPrecisionFixedPointINTEL:
     return true;
   default:
     return false;
@@ -870,6 +871,17 @@ inline bool isValid(spv::Op V) {
   case OpGroupSMax:
   case OpReadPipe:
   case OpWritePipe:
+  case OpFixedSqrtINTEL:
+  case OpFixedRecipINTEL:
+  case OpFixedRsqrtINTEL:
+  case OpFixedSinINTEL:
+  case OpFixedCosINTEL:
+  case OpFixedSinCosINTEL:
+  case OpFixedSinPiINTEL:
+  case OpFixedCosPiINTEL:
+  case OpFixedSinCosPiINTEL:
+  case OpFixedLogINTEL:
+  case OpFixedExpINTEL:
   case OpReadPipeBlockingINTEL:
   case OpWritePipeBlockingINTEL:
   case OpReservedReadPipe:
