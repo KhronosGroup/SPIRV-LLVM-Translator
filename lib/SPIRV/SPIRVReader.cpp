@@ -2424,26 +2424,31 @@ CallInst *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI,
   // Literal S Literal I Literal rI Literal Q Literal O
 
   Type *RetTy = transType(BI->getType());
+
   auto Inst = static_cast<SPIRVFixedPointIntelInst *>(BI);
+  Type *InTy = transType(Inst->getOperand(1)->getType());
 
   IntegerType *Int32Ty = IntegerType::get(*Context, 32);
   IntegerType *Int1Ty = IntegerType::get(*Context, 1);
 
-  SmallVector<Type *, 7> ArgTys = {transType(Inst->getOperand(1)->getType()),
-                                   Int1Ty,
-                                   Int32Ty,
-                                   Int32Ty,
-                                   Int32Ty,
-                                   Int32Ty};
-
+  SmallVector<Type *, 7> ArgTys = {InTy,    Int1Ty,  Int32Ty,
+                                   Int32Ty, Int32Ty, Int32Ty};
   FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
 
+  std::stringstream Suffix;
+  Suffix << ".i" << RetTy->getIntegerBitWidth() << ".i"
+         << InTy->getIntegerBitWidth();
+
   Op OpCode = Inst->getOpCode();
-  Function *Func = Function::Create(FT, GlobalValue::ExternalLinkage,
-                                    SPIRVFixedPointIntelMap::rmap(OpCode), M);
-  Func->setCallingConv(CallingConv::SPIR_FUNC);
-  if (isFuncNoUnwind())
-    Func->addFnAttr(Attribute::NoUnwind);
+  std::string FuncName = SPIRVFixedPointIntelMap::rmap(OpCode) + Suffix.str();
+
+  FunctionCallee FCallee = M->getOrInsertFunction(FuncName, FT);
+
+  if (Function *Fn = dyn_cast<Function>(FCallee.getCallee())) {
+    Fn->setCallingConv(CallingConv::SPIR_FUNC);
+    if (isFuncNoUnwind())
+      Fn->addFnAttr(Attribute::NoUnwind);
+  }
 
   // Words contain:
   // <id>InTy In<id> Literal S Literal I Literal rI Literal Q Literal O
@@ -2458,7 +2463,7 @@ CallInst *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI,
       ConstantInt::get(Int32Ty, Words[5]) /* Quantization mode */,
       ConstantInt::get(Int32Ty, Words[6]) /* Overflow mode */};
 
-  return CallInst::Create(Func, Args, "", BB);
+  return CallInst::Create(FCallee, Args, "", BB);
 }
 
 template <class SourceTy, class FuncTy>

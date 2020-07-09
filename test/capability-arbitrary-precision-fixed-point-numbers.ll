@@ -3,6 +3,10 @@
 ; void sqrt() {
 ;   ap_int<W> a;
 ;   auto ap_fixed_Sqrt = __spirv_FixedSqrtINTEL<W,rW>(a, S, I, rI);
+;   ap_int<rW> b;
+;   auto ap_fixed_Sqrt_b = __spirv_FixedSqrtINTEL<rW, W>(b, S, I, rI);
+;   ap_int<rW> c;
+;   auto ap_fixed_Sqrt_c = __spirv_FixedSqrtINTEL<rW, W>(c, S, I, rI);
 ; }
 
 ; template <int W, int rW, bool S, int I, int rI>
@@ -124,6 +128,12 @@
 ; CHECK-SPIRV: 6 Load [[Ty_13]] [[Sqrt_InId:[0-9]+]]
 ; CHECK-SPIRV-NEXT: 10 FixedSqrtINTEL [[Ty_5]] [[#]] [[Ty_13]] [[Sqrt_InId]] 0 2 2 0 0
 ; CHECK-SPIRV-NEGATIVE-NOT: 10 FixedSqrtINTEL
+; CHECK-SPIRV: 6 Load [[Ty_5]] [[Sqrt_InId_B:[0-9]+]]
+; CHECK-SPIRV-NEXT: 10 FixedSqrtINTEL [[Ty_13]] [[#]] [[Ty_5]] [[Sqrt_InId_B]] 0 2 2 0 0
+; CHECK-SPIRV-NEGATIVE-NOT: 10 FixedSqrtINTEL
+; CHECK-SPIRV: 6 Load [[Ty_5]] [[Sqrt_InId_C:[0-9]+]]
+; CHECK-SPIRV-NEXT: 10 FixedSqrtINTEL [[Ty_13]] [[#]] [[Ty_5]] [[Sqrt_InId_C]] 0 2 2 0 0
+; CHECK-SPIRV-NEGATIVE-NOT: 10 FixedSqrtINTEL
 
 ; CHECK-SPIRV: 6 Load [[Ty_3]] [[Recip_InId:[0-9]+]]
 ; CHECK-SPIRV-NEXT: 10 FixedRecipINTEL [[Ty_8]] [[#]] [[Ty_3]] [[Recip_InId]] 1 4 4 0 0
@@ -165,17 +175,19 @@
 ; CHECK-SPIRV-NEXT: 10 FixedExpINTEL [[Ty_34]] [[#]] [[Ty_44]] [[Exp_InId]] 0 20 20 0 0
 ; CHECK-SPIRV-NEGATIVE-NOT: 10 FixedExpINTEL
 
-; CHECK-LLVM: call i5 @intel_arbitrary_fixed_sqrt(i13 %2, i1 false, i32 2, i32 2, i32 0, i32 0)
-; CHECK-LLVM: call i8 @intel_arbitrary_fixed_recip(i3 %1, i1 true, i32 4, i32 4, i32 0, i32 0)
-; CHECK-LLVM: call i10 @intel_arbitrary_fixed_rsqrt(i11 %2, i1 false, i32 8, i32 6, i32 0, i32 0)
-; CHECK-LLVM: call i11 @intel_arbitrary_fixed_sin(i17 %2, i1 true, i32 7, i32 5, i32 0, i32 0)
-; CHECK-LLVM: call i28 @intel_arbitrary_fixed_cos(i35 %2, i1 false, i32 9, i32 3, i32 0, i32 0)
-; CHECK-LLVM: call i40 @intel_arbitrary_fixed_sincos(i31 %2, i1 true, i32 10, i32 12, i32 0, i32 0)
-; CHECK-LLVM: call i5 @intel_arbitrary_fixed_sinpi(i60 %2, i1 false, i32 2, i32 2, i32 0, i32 0)
-; CHECK-LLVM: call i16 @intel_arbitrary_fixed_cospi(i28 %2, i1 false, i32 8, i32 5, i32 0, i32 0)
-; CHECK-LLVM: call i10 @intel_arbitrary_fixed_sincospi(i13 %2, i1 false, i32 2, i32 2, i32 0, i32 0)
-; CHECK-LLVM: call i44 @intel_arbitrary_fixed_log(i64 %2, i1 true, i32 24, i32 22, i32 0, i32 0)
-; CHECK-LLVM: call i34 @intel_arbitrary_fixed_exp(i44 %2, i1 false, i32 20, i32 20, i32 0, i32 0)
+; CHECK-LLVM: call i5 @intel_arbitrary_fixed_sqrt.i5.i13(i13 %[[#]], i1 false, i32 2, i32 2, i32 0, i32 0)
+; CHECK-LLVM: call i13 @intel_arbitrary_fixed_sqrt.i13.i5(i5 %[[#]], i1 false, i32 2, i32 2, i32 0, i32 0)
+; CHECK-LLVM: call i13 @intel_arbitrary_fixed_sqrt.i13.i5(i5 %[[#]], i1 false, i32 2, i32 2, i32 0, i32 0)
+; CHECK-LLVM: call i8 @intel_arbitrary_fixed_recip.i8.i3(i3 %[[#]], i1 true, i32 4, i32 4, i32 0, i32 0)
+; CHECK-LLVM: call i10 @intel_arbitrary_fixed_rsqrt.i10.i11(i11 %[[#]], i1 false, i32 8, i32 6, i32 0, i32 0)
+; CHECK-LLVM: call i11 @intel_arbitrary_fixed_sin.i11.i17(i17 %[[#]], i1 true, i32 7, i32 5, i32 0, i32 0)
+; CHECK-LLVM: call i28 @intel_arbitrary_fixed_cos.i28.i35(i35 %[[#]], i1 false, i32 9, i32 3, i32 0, i32 0)
+; CHECK-LLVM: call i40 @intel_arbitrary_fixed_sincos.i40.i31(i31 %[[#]], i1 true, i32 10, i32 12, i32 0, i32 0)
+; CHECK-LLVM: call i5 @intel_arbitrary_fixed_sinpi.i5.i60(i60 %[[#]], i1 false, i32 2, i32 2, i32 0, i32 0)
+; CHECK-LLVM: call i16 @intel_arbitrary_fixed_cospi.i16.i28(i28 %[[#]], i1 false, i32 8, i32 5, i32 0, i32 0)
+; CHECK-LLVM: call i10 @intel_arbitrary_fixed_sincospi.i10.i13(i13 %[[#]], i1 false, i32 2, i32 2, i32 0, i32 0)
+; CHECK-LLVM: call i44 @intel_arbitrary_fixed_log.i44.i64(i64 %[[#]], i1 true, i32 24, i32 22, i32 0, i32 0)
+; CHECK-LLVM: call i34 @intel_arbitrary_fixed_exp.i34.i44(i44 %[[#]], i1 false, i32 20, i32 20, i32 0, i32 0)
 
 ; ModuleID = 'ap_fixed.cpp'
 source_filename = "ap_fixed.cpp"
@@ -249,6 +261,10 @@ define linkonce_odr dso_local spir_func void @_Z4sqrtILi13ELi5ELb0ELi2ELi2EEvv()
 entry:
   %a = alloca i13, align 2
   %ap_fixed_Sqrt = alloca i5, align 1
+  %b = alloca i5, align 1
+  %ap_fixed_Sqrt_b = alloca i13, align 2
+  %c = alloca i5, align 1
+  %ap_fixed_Sqrt_c = alloca i13, align 2
   %0 = bitcast i13* %a to i8*
   call void @llvm.lifetime.start.p0i8(i64 2, i8* %0) #5
   %1 = bitcast i5* %ap_fixed_Sqrt to i8*
@@ -256,10 +272,32 @@ entry:
   %2 = load i13, i13* %a, align 2, !tbaa !9
   %call = call spir_func signext i5 @_Z22__spirv_FixedSqrtINTELILi13ELi5EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i13 signext %2, i1 zeroext false, i32 2, i32 2, i32 0, i32 0) #5
   store i5 %call, i5* %ap_fixed_Sqrt, align 1, !tbaa !11
-  %3 = bitcast i5* %ap_fixed_Sqrt to i8*
-  call void @llvm.lifetime.end.p0i8(i64 1, i8* %3) #5
-  %4 = bitcast i13* %a to i8*
-  call void @llvm.lifetime.end.p0i8(i64 2, i8* %4) #5
+  %3 = bitcast i5* %b to i8*
+  call void @llvm.lifetime.start.p0i8(i64 1, i8* %3) #5
+  %4 = bitcast i13* %ap_fixed_Sqrt_b to i8*
+  call void @llvm.lifetime.start.p0i8(i64 2, i8* %4) #5
+  %5 = load i5, i5* %b, align 1, !tbaa !11
+  %call1 = call spir_func signext i13 @_Z22__spirv_FixedSqrtINTELILi5ELi13EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i5 signext %5, i1 zeroext false, i32 2, i32 2, i32 0, i32 0) #5
+  store i13 %call1, i13* %ap_fixed_Sqrt_b, align 2, !tbaa !9
+  %6 = bitcast i5* %c to i8*
+  call void @llvm.lifetime.start.p0i8(i64 1, i8* %6) #5
+  %7 = bitcast i13* %ap_fixed_Sqrt_c to i8*
+  call void @llvm.lifetime.start.p0i8(i64 2, i8* %7) #5
+  %8 = load i5, i5* %c, align 1, !tbaa !11
+  %call2 = call spir_func signext i13 @_Z22__spirv_FixedSqrtINTELILi5ELi13EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i5 signext %8, i1 zeroext false, i32 2, i32 2, i32 0, i32 0) #5
+  store i13 %call2, i13* %ap_fixed_Sqrt_c, align 2, !tbaa !9
+  %9 = bitcast i13* %ap_fixed_Sqrt_c to i8*
+  call void @llvm.lifetime.end.p0i8(i64 2, i8* %9) #5
+  %10 = bitcast i5* %c to i8*
+  call void @llvm.lifetime.end.p0i8(i64 1, i8* %10) #5
+  %11 = bitcast i13* %ap_fixed_Sqrt_b to i8*
+  call void @llvm.lifetime.end.p0i8(i64 2, i8* %11) #5
+  %12 = bitcast i5* %b to i8*
+  call void @llvm.lifetime.end.p0i8(i64 1, i8* %12) #5
+  %13 = bitcast i5* %ap_fixed_Sqrt to i8*
+  call void @llvm.lifetime.end.p0i8(i64 1, i8* %13) #5
+  %14 = bitcast i13* %a to i8*
+  call void @llvm.lifetime.end.p0i8(i64 2, i8* %14) #5
   ret void
 }
 
@@ -453,6 +491,9 @@ entry:
 
 ; Function Attrs: nounwind
 declare dso_local spir_func signext i5 @_Z22__spirv_FixedSqrtINTELILi13ELi5EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i13 signext, i1 zeroext, i32, i32, i32, i32) #4
+
+; Function Attrs: nounwind
+declare dso_local spir_func signext i13 @_Z22__spirv_FixedSqrtINTELILi5ELi13EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i5 signext, i1 zeroext, i32, i32, i32, i32) #4
 
 ; Function Attrs: nounwind
 declare dso_local spir_func signext i8 @_Z23__spirv_FixedRecipINTELILi3ELi8EEU7_ExtIntIXT0_EEiU7_ExtIntIXT_EEibiiii(i3 signext, i1 zeroext, i32, i32, i32, i32) #4
