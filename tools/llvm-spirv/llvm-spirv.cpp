@@ -138,6 +138,11 @@ static cl::opt<bool>
     SPIRVMemToReg("spirv-mem2reg", cl::init(false),
                   cl::desc("LLVM/SPIR-V translation enable mem2reg"));
 
+cl::opt<bool> SPIRVAllowUnknownIntrinsics(
+    "spirv-allow-unknown-intrinsics", cl::init(false),
+    cl::desc("Unknown LLVM intrinsics will be translated as external function "
+             "calls in SPIR-V"));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -310,6 +315,16 @@ int main(int Ac, char **Av) {
     Opts.setMemToRegEnabled(SPIRVMemToReg);
   if (SPIRVGenKernelArgNameMD)
     Opts.setGenKernelArgNameMDEnabled(SPIRVGenKernelArgNameMD);
+
+  if (SPIRVAllowUnknownIntrinsics.getNumOccurrences() != 0) {
+    if (IsReverse) {
+      errs()
+          << "Note: --spirv-allow-unknown-intrinsics option ignored as it only "
+             "affects translation from LLVM IR to SPIR-V";
+    } else {
+      Opts.setSPIRVAllowUnknownIntrinsicsEnabled(SPIRVAllowUnknownIntrinsics);
+    }
+  }
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
