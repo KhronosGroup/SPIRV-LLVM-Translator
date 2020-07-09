@@ -442,6 +442,7 @@ enum Decoration {
   DecorationViewportRelativeNV = 5252,
   DecorationSecondaryViewportRelativeNV = 5256,
   DecorationNonUniform = 5300,
+  DecorationSIMTCallINTEL = 5599,
   DecorationSideEffectsINTEL = 5608,
   DecorationVectorComputeVariableINTEL = 5624,
   DecorationFuncParamIOKind = 5625,
