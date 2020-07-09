@@ -1607,14 +1607,10 @@ void addIntelFPGADecorationsForStructMember(
 bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   // Known intrinsics usually do not need translation of their declaration
   switch (Id) {
-  case Intrinsic::assume:
   case Intrinsic::bitreverse:
   case Intrinsic::sqrt:
-  case Intrinsic::fabs:
-  case Intrinsic::ceil:
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
-  case Intrinsic::expect:
   case Intrinsic::fmuladd:
   case Intrinsic::memset:
   case Intrinsic::memcpy:
@@ -1628,7 +1624,6 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
-  case Intrinsic::trap:
     return true;
   default:
     // Unknown intrinsics' declarations should always be translated
