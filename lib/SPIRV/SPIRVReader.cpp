@@ -2435,6 +2435,10 @@ CallInst *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI,
                                    Int32Ty, Int32Ty, Int32Ty};
   FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
 
+  // Add meaningful suffix at the end of the function name to avoid ascending
+  // numerical suffixes. It is useful in situations, where the same function is
+  // called twice or more in one basic block. So, the function name is formed in
+  // the following way: [FuncName].[ReturnTy].[InputTy]
   std::stringstream Suffix;
   Suffix << ".i" << RetTy->getIntegerBitWidth() << ".i"
          << InTy->getIntegerBitWidth();
