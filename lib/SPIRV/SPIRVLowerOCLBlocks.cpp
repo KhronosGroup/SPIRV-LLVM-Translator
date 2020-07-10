@@ -248,6 +248,10 @@ class SPIRVLowerOCLBlocks : public ModulePass {
 public:
   SPIRVLowerOCLBlocks() : ModulePass(ID) {}
 
+  StringRef getPassName() const override {
+    return "Lower OpenCL Blocks For SPIRV-V";
+  }
+
   bool runOnModule(Module &M) {
     bool Changed = false;
 
