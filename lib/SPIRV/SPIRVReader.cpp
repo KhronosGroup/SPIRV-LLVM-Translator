@@ -3798,6 +3798,13 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     F->addAttribute(AttributeList::FunctionIndex, Attr);
   }
 
+  if (auto *EM = BF->getExecutionMode(ExecutionModeNamedBarrierCountINTEL)) {
+    unsigned int NBarrierCnt = EM->getLiterals()[0];
+    Attribute Attr = Attribute::get(*Context, kVCMetadata::VCNamedBarrierCount,
+                                    std::to_string(NBarrierCnt));
+    F->addAttribute(AttributeList::FunctionIndex, Attr);
+  }
+
   return true;
 }
 
