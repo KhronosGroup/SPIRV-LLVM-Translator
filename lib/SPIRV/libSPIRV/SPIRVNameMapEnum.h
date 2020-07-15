@@ -130,6 +130,7 @@ template <> inline void SPIRVMap<ExecutionMode, std::string>::init() {
   add(ExecutionModeFloatingPointModeALTINTEL, "FloatingPointModeALTINTEL");
   add(ExecutionModeFloatingPointModeIEEEINTEL, "FloatingPointModeIEEEINTEL");
   add(ExecutionModeSharedLocalMemorySizeINTEL, "SharedLocalMemorySizeINTEL");
+  add(ExecutionModeNamedBarrierCountINTEL, "NamedBarrierCountINTEL");
 }
 SPIRV_DEF_NAMEMAP(ExecutionMode, SPIRVExecutionModeNameMap)
 
