@@ -582,6 +582,7 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   case ExecutionModeFloatingPointModeALTINTEL:
   case ExecutionModeFloatingPointModeIEEEINTEL:
   case ExecutionModeSharedLocalMemorySizeINTEL:
+  case ExecutionModeNamedBarrierCountINTEL:
   case ExecutionModeSubgroupSize:
   case ExecutionModeMaxWorkDimINTEL:
   case ExecutionModeNumSIMDWorkitemsINTEL:
