@@ -153,6 +153,7 @@ enum ExecutionMode {
     ExecutionModeFloatingPointModeALTINTEL = 5622,
     ExecutionModeFloatingPointModeIEEEINTEL = 5623,
     ExecutionModeFastCompositeKernelINTEL = 6088,
+    ExecutionModeNamedBarrierCountINTEL = 6417,
     ExecutionModeMax = 0x7fffffff,
 };
 
