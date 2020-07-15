@@ -151,6 +151,7 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeFloatingPointModeALTINTEL:
   case ExecutionModeFloatingPointModeIEEEINTEL:
   case ExecutionModeSharedLocalMemorySizeINTEL:
+  case ExecutionModeNamedBarrierCountINTEL:
     return true;
   default:
     return false;
