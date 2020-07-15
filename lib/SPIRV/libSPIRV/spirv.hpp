@@ -180,6 +180,7 @@ enum ExecutionMode {
     ExecutionModeNumSIMDWorkitemsINTEL = 5896,
     ExecutionModeSchedulerTargetFmaxMhzINTEL = 5903,
     ExecutionModeFastCompositeKernelINTEL = 6088,
+    ExecutionModeNamedBarrierCountINTEL = 6417,
     ExecutionModeMax = 0x7fffffff,
 };
 
