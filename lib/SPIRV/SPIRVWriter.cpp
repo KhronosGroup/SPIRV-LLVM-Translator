@@ -4560,6 +4560,16 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
       } break;
+      case spv::internal::ExecutionModeNamedBarrierCountINTEL: {
+        if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
+          break;
+        unsigned NBarrierCnt = 0;
+        N.get(NBarrierCnt);
+        BF->addExecutionMode(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt));
+        BM->addExtension(ExtensionID::SPV_INTEL_vector_compute);
+        BM->addCapability(CapabilityVectorComputeINTEL);
+      } break;
 
       case spv::ExecutionModeDenormPreserve:
       case spv::ExecutionModeDenormFlushToZero:
