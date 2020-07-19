@@ -66,7 +66,7 @@ public:
       if (!Q)
         assert(I < E && "out of bound");
       return MDWrapper<NamedMDWrapper>(
-          (NMD && I < E) ? NMD->getOperand(I++) : nullptr, *this, W);
+          (NMD && I < E) ? NMD->getOperand(I) : nullptr, *this, W, I);
     }
 
     NamedMDWrapper &setQuiet(bool Quiet) {
@@ -82,8 +82,8 @@ public:
   };
 
   template <typename ParentT> struct MDWrapper {
-    MDWrapper(MDNode *Node, ParentT &Parent, SPIRVMDWalker &Walker)
-        : M(Node), P(Parent), W(Walker), I(0), Q(false) {
+    MDWrapper(MDNode *Node, ParentT &Parent, SPIRVMDWalker &Walker, unsigned Pos)
+        : M(Node), P(Parent), W(Walker), I(Pos), Q(false) {
       E = Node ? Node->getNumOperands() : 0;
     }
 
@@ -139,11 +139,14 @@ public:
       if (!Q)
         assert(I < E && "out of bound");
       return MDWrapper<MDWrapper>(
-          (M && I < E) ? dyn_cast<MDNode>(M->getOperand(I++)) : nullptr, *this,
-          W);
+          (M && I < E) ? dyn_cast<MDNode>(M->getOperand(I)) : nullptr, *this,
+          W, I);
     }
 
-    ParentT &done() { return P; }
+    ParentT &done() {
+      P.I = I;
+      return P;
+    }
 
     MDWrapper &setQuiet(bool Quiet) {
       Q = Quiet;
