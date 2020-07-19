@@ -41,7 +41,10 @@
 #define SPIRV_LIBSPIRV_SPIRVMODULE_H
 
 #include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVTypes.h"
 #include "SPIRVEntry.h"
+
+#include "llvm/Support/CBindingWrapping.h"
 
 #include <iostream>
 #include <set>
@@ -510,5 +513,11 @@ bool ConvertSPIRV(std::string &Input, std::string &Out, std::string &ErrMsg,
                   bool ToText);
 #endif
 } // namespace SPIRV
+
+namespace llvm {
+
+DEFINE_SIMPLE_CONVERSION_FUNCTIONS(SPIRV::SPIRVModule, SPIRVModuleRef)
+
+} // namespace llvm
 
 #endif // SPIRV_LIBSPIRV_SPIRVMODULE_H

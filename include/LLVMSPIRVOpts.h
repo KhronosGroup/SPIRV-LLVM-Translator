@@ -39,10 +39,15 @@
 #ifndef SPIRV_LLVMSPIRVOPTS_H
 #define SPIRV_LLVMSPIRVOPTS_H
 
+#include "LLVMSPIRVTypes.h"
+
 #include <cassert>
 #include <cstdint>
 #include <map>
 #include <unordered_map>
+
+#include "llvm/Support/CBindingWrapping.h"
+#include "llvm/Support/ErrorHandling.h"
 
 namespace SPIRV {
 
@@ -175,5 +180,77 @@ private:
 };
 
 } // namespace SPIRV
+
+namespace llvm {
+
+DEFINE_SIMPLE_CONVERSION_FUNCTIONS(SPIRV::TranslatorOpts, SPIRVTranslatorOptsRef)
+
+SPIRVBIsRepresentation wrap(SPIRV::BIsRepresentation BIsRepresentation) {
+  switch (BIsRepresentation) {
+  case SPIRV::BIsRepresentation::OpenCL12:
+    return SPIRVBIsRepresentationOpenCL12;
+    break;
+  case SPIRV::BIsRepresentation::OpenCL20:
+    return SPIRVBIsRepresentationOpenCL20;
+    break;
+  case SPIRV::BIsRepresentation::SPIRVFriendlyIR:
+    return SPIRVBIsRepresentationSPIRVFriendlyIR;
+    break;
+  default:
+    llvm_unreachable("bad SPIRVBIsRepresentation");
+  }
+}
+
+SPIRV::BIsRepresentation unwrap(SPIRVBIsRepresentation BIsRepresentation) {
+  switch (BIsRepresentation) {
+  case SPIRVBIsRepresentationOpenCL12:
+    return SPIRV::BIsRepresentation::OpenCL12;
+    break;
+  case SPIRVBIsRepresentationOpenCL20:
+    return SPIRV::BIsRepresentation::OpenCL20;
+    break;
+  case SPIRVBIsRepresentationSPIRVFriendlyIR:
+    return SPIRV::BIsRepresentation::SPIRVFriendlyIR;
+    break;
+  default:
+    llvm_unreachable("bad SPIRVBIsRepresentation");
+  }
+}
+
+SPIRVVersionNumber wrap(SPIRV::VersionNumber Version) {
+  switch (Version) {
+  case SPIRV::VersionNumber::SPIRV_1_0:
+    return SPIRVVersion1_0;
+  case SPIRV::VersionNumber::SPIRV_1_1:
+    return SPIRVVersion1_1;
+  default:
+    llvm_unreachable("bad VersionNumber");
+  }
+}
+
+SPIRV::VersionNumber unwrap(SPIRVVersionNumber Version) {
+  switch (Version) {
+  case SPIRVVersion1_0:
+    return SPIRV::VersionNumber::SPIRV_1_0;
+  case SPIRVVersion1_1:
+    return SPIRV::VersionNumber::SPIRV_1_1;
+  default:
+    llvm_unreachable("bad SPIRVVersionNumber");
+  }
+}
+
+SPIRV::ExtensionID unwrap(SPIRVExtensionID Extension) {
+  switch (Extension) {
+#define EXT(X)                                                                 \
+  case SPIRVExtension##X:                                                      \
+    return SPIRV::ExtensionID::X;
+#include "LLVMSPIRVExtensions.inc"
+#undef EXT
+  default:
+    llvm_unreachable("bad SPIRVExtensionID");
+  }
+}
+
+} // namespace llvm
 
 #endif // SPIRV_LLVMSPIRVOPTS_H
