@@ -2726,6 +2726,7 @@ bool LLVMToSPIRV::transExecutionMode() {
       default:
         llvm_unreachable("invalid execution mode");
       }
+      N.done();
     }
   }
 
