@@ -487,7 +487,7 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     case 64:
       return Prefix + "long";
     default:
-      llvm_unreachable("invalid integer size");
+      // Arbitrary precision integer
       return Prefix + std::string("int") + T->getIntegerBitWidth() + "_t";
     }
   } break;
