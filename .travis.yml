@@ -25,7 +25,7 @@ before_install:
       curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
       curl -L "http://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
       curl -L "https://apt.kitware.com/keys/kitware-archive-latest.asc" | sudo apt-key add -
-      echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
+      echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${LLVM_VERSION} main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       echo "deb https://apt.kitware.com/ubuntu/ bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       sudo apt-get update
@@ -81,7 +81,7 @@ script:
     if [ $BUILD_EXTERNAL == "0" ]; then
       mkdir llvm-spirv
       mv * llvm-spirv
-      git clone https://github.com/llvm/llvm-project --depth 1
+      git clone https://github.com/llvm/llvm-project --depth 1 -b release/11.x
       mv llvm-spirv llvm-project/llvm-spirv
     fi
   - |
