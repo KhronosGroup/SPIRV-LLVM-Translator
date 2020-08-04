@@ -1,6 +1,6 @@
 # LLVM/SPIR-V Bi-Directional Translator
 
-[![Build Status](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator.svg?branch=master)](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator)
+[![Build Status](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator.svg?branch=llvm_release_110)](https://travis-ci.org/KhronosGroup/SPIRV-LLVM-Translator)
 
 This repository contains source code for the LLVM/SPIR-V Bi-Directional Translator, a library and tool for translation between LLVM IR and [SPIR-V](https://www.khronos.org/registry/spir-v/).
 
@@ -32,7 +32,7 @@ sudo apt-get install llvm-11-dev llvm-11-tools clang-11 libclang-11-dev
 ```
 The installed version of LLVM will be used by default for out-of-tree build of the translator.
 ```
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_110
 mkdir SPIRV-LLVM-Translator/build && cd SPIRV-LLVM-Translator/build
 cmake ..
 make llvm-spirv -j`nproc`
@@ -44,7 +44,7 @@ If you have a custom build (based on the latest version) of LLVM libraries you
 can link the translator against it.
 
 ```
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_110
 mkdir SPIRV-LLVM-Translator/build && cd SPIRV-LLVM-Translator/build
 cmake .. -DLLVM_DIR=<llvm_build_dir>/lib/cmake/llvm/
 make llvm-spirv -j`nproc`
@@ -63,9 +63,9 @@ Where `llvm_build_dir` is the LLVM build directory.
 
 The translator can be built as a regular LLVM subproject. To do that you need to clone it into the `llvm/projects` or `llvm/tools` directory.
 ```
-git clone https://github.com/llvm/llvm-project.git
+git clone https://github.com/llvm/llvm-project.git -b release/11.x
 cd llvm-project/llvm/projects
-git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git -b llvm_release_110
 ```
 Run (or re-run) cmake as usual for LLVM. After that you should have `llvm-spirv` and `check-llvm-spirv` targets available.
 ```
