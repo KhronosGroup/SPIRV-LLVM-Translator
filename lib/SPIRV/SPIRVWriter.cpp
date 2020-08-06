@@ -2023,6 +2023,19 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     return BM->addBinaryInst(OpFAdd, Ty, Mul,
                              transValue(II->getArgOperand(2), BB), BB);
   }
+  case Intrinsic::usub_sat: {
+    // usub.sat(a, b) -> (a > b) ? a - b : 0
+    SPIRVType *Ty = transType(II->getType());
+    Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+    SPIRVValue *Sub =
+        BM->addBinaryInst(OpISub, Ty, transValue(II->getArgOperand(0), BB),
+                          transValue(II->getArgOperand(1), BB), BB);
+    SPIRVValue *Cmp = BM->addCmpInst(
+        OpUGreaterThan, transType(BoolTy), transValue(II->getArgOperand(0), BB),
+        transValue(II->getArgOperand(1), BB), BB);
+    auto Zero = transValue(Constant::getNullValue(II->getType()), BB);
+    return BM->addSelectInst(Cmp, Sub, Zero, BB);
+  }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
     // out that memset is emitted by Clang for initialization in default
