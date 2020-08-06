@@ -21,6 +21,7 @@ entry:
 ; CHECK: ISub {{[0-9]+}} [[sub_res:[0-9]+]] [[three]] [[x]]
 ; CHECK: UGreaterThan {{[0-9]+}} [[cmp_res:[0-9]+]] [[three]] [[x]]
 ; CHECK: Select {{[0-9]+}} [[sel_res:[0-9]+]] [[cmp_res]] [[sub_res]] [[zero]]
+; CHECK: ReturnValue [[sel_res]]
 
 ; Function Attrs: nounwind readnone speculatable willreturn
 declare i32 @llvm.usub.sat.i32(i32, i32) #1

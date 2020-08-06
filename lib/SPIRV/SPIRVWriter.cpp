@@ -2027,13 +2027,14 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // usub.sat(a, b) -> (a > b) ? a - b : 0
     SPIRVType *Ty = transType(II->getType());
     Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+    SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
+
     SPIRVValue *Sub =
-        BM->addBinaryInst(OpISub, Ty, transValue(II->getArgOperand(0), BB),
-                          transValue(II->getArgOperand(1), BB), BB);
-    SPIRVValue *Cmp = BM->addCmpInst(
-        OpUGreaterThan, transType(BoolTy), transValue(II->getArgOperand(0), BB),
-        transValue(II->getArgOperand(1), BB), BB);
-    auto Zero = transValue(Constant::getNullValue(II->getType()), BB);
+        BM->addBinaryInst(OpISub, Ty, FirstArgVal, SecondArgVal, BB);
+    SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, transType(BoolTy),
+                                     FirstArgVal, SecondArgVal, BB);
+    SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
     return BM->addSelectInst(Cmp, Sub, Zero, BB);
   }
   case Intrinsic::memset: {
