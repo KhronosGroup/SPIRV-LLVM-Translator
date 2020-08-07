@@ -1760,6 +1760,15 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
           Src = II;
       }
     }
+    // A pointer annotation may have been generated for the destination variable.
+    if (Use *SingleUse = Dst->getSingleUndroppableUse()) {
+      if (auto *II = dyn_cast<IntrinsicInst>(SingleUse->getUser())) {
+        if (II->getIntrinsicID() == Intrinsic::ptr_annotation &&
+            II->getType() == Dst->getType())
+          // Overwrite the future store operand with the intrinsic call result.
+          Dst = II;
+      }
+    }
     bool isVolatile = BS->SPIRVMemoryAccess::isVolatile();
     uint64_t AlignValue = BS->SPIRVMemoryAccess::getAlignment();
     if (0 == AlignValue)
@@ -1774,6 +1783,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpLoad: {
     SPIRVLoad *BL = static_cast<SPIRVLoad *>(BV);
     auto *V = transValue(BL->getSrc(), F, BB);
+    // A pointer annotation may have been generated for the source variable.
+    if (Use *SingleUse = V->getSingleUndroppableUse()) {
+      if (auto *II = dyn_cast<IntrinsicInst>(SingleUse->getUser())) {
+        if (II->getIntrinsicID() == Intrinsic::ptr_annotation &&
+            II->getType() == V->getType())
+          // Overwrite the future load operand with the intrinsic call result.
+          V = II;
+      }
+    }
+
     Type *Ty = V->getType()->getPointerElementType();
     LoadInst *LI = nullptr;
     uint64_t AlignValue = BL->SPIRVMemoryAccess::getAlignment();
