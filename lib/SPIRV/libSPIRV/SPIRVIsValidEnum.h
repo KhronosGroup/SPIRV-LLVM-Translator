@@ -614,6 +614,7 @@ inline bool isValid(spv::Capability V) {
   case CapabilityFPGAMemoryAttributesINTEL:
   case CapabilityFPGAMemoryAccessesINTEL:
   case CapabilityArbitraryPrecisionIntegersINTEL:
+  case CapabilityArbitraryPrecisionFixedPointINTEL:
   case CapabilityArbitraryPrecisionFloatingPointINTEL:
   case CapabilityFPGALoopControlsINTEL:
   case CapabilityBlockingPipesINTEL:
@@ -1071,6 +1072,17 @@ inline bool isValid(spv::Op V) {
   case OpSubgroupAvcSicGetInterRawSadsINTEL:
   case OpFPGARegINTEL:
   case OpLoopControlINTEL:
+  case OpFixedSqrtINTEL:
+  case OpFixedRecipINTEL:
+  case OpFixedRsqrtINTEL:
+  case OpFixedSinINTEL:
+  case OpFixedCosINTEL:
+  case OpFixedSinCosINTEL:
+  case OpFixedSinPiINTEL:
+  case OpFixedCosPiINTEL:
+  case OpFixedSinCosPiINTEL:
+  case OpFixedLogINTEL:
+  case OpFixedExpINTEL:
   case OpArbitraryFloatCastINTEL:
   case OpArbitraryFloatCastFromIntINTEL:
   case OpArbitraryFloatCastToIntINTEL:
