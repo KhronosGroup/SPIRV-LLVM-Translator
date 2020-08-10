@@ -1536,7 +1536,8 @@ public:
   void setExtSetKindById() {
     assert(Module && "Invalid module");
     ExtSetKind = Module->getBuiltinSet(ExtSetId);
-    assert((ExtSetKind == SPIRVEIS_OpenCL || ExtSetKind == SPIRVEIS_Debug) &&
+    assert((ExtSetKind == SPIRVEIS_OpenCL || ExtSetKind == SPIRVEIS_Debug ||
+            ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100) &&
            "not supported");
   }
   void encode(spv_ostream &O) const override {
@@ -1546,6 +1547,7 @@ public:
       getEncoder(O) << ExtOpOCL;
       break;
     case SPIRVEIS_Debug:
+    case SPIRVEIS_OpenCL_DebugInfo_100:
       getEncoder(O) << ExtOpDebug;
       break;
     default:
@@ -1562,6 +1564,7 @@ public:
       getDecoder(I) >> ExtOpOCL;
       break;
     case SPIRVEIS_Debug:
+    case SPIRVEIS_OpenCL_DebugInfo_100:
       getDecoder(I) >> ExtOpDebug;
       break;
     default:
