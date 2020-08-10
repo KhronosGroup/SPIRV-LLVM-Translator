@@ -78,7 +78,8 @@ SPIRVExtInst *SPIRVToLLVMDbgTran::getDbgInst(const SPIRVId Id) {
   SPIRVEntry *E = BM->getEntry(Id);
   if (isa<OpExtInst>(E)) {
     SPIRVExtInst *EI = static_cast<SPIRVExtInst *>(E);
-    if (EI->getExtSetKind() == SPIRV::SPIRVEIS_Debug)
+    if (EI->getExtSetKind() == SPIRV::SPIRVEIS_Debug ||
+        EI->getExtSetKind() == SPIRV::SPIRVEIS_OpenCL_DebugInfo_100)
       return EI;
   }
   return nullptr;
