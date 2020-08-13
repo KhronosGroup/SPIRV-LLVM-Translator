@@ -212,6 +212,7 @@ private:
   Instruction *transAllAny(SPIRVInstruction *BI, BasicBlock *BB);
   Instruction *transRelational(SPIRVInstruction *BI, BasicBlock *BB);
 
+  void transUserSemantic(SPIRV::SPIRVFunction *Fun);
   void transGlobalAnnotations();
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
   void transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V);
