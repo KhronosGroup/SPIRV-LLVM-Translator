@@ -321,6 +321,16 @@ enum FPRoundingMode {
     FPRoundingModeMax = 0x7fffffff,
 };
 
+enum FPDenormMode {
+  FPDenormModePreserve = 0,
+  FPDenormModeFlushToZero = 1,
+};
+
+enum FPOperationMode {
+  FPOperationModeIEEE = 0,
+  FPOperationModeALT = 1,
+};
+
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
@@ -403,6 +413,9 @@ enum Decoration {
   DecorationVectorComputeFunctionINTEL = 5626,
   DecorationStackCallINTEL = 5627,
   DecorationGlobalVariableOffsetINTEL = 5628,
+  DecorationFunctionRoundingModeINTEL = 5822,
+  DecorationFunctionDenormModeINTEL = 5823,
+  DecorationFunctionFloatingPointModeINTEL = 6080,
   DecorationMax = 0x7fffffff,
 };
 
@@ -681,6 +694,7 @@ enum Capability {
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
   CapabilityRoundToInfinityINTEL = 5582,
   CapabilityFloatingPointModeINTEL = 5583,
+  CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityMax = 0x7fffffff,
 };
 
