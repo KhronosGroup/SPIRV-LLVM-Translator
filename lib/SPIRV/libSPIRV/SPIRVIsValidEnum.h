@@ -414,6 +414,9 @@ inline bool isValid(spv::Decoration V) {
   case DecorationGlobalVariableOffsetINTEL:
   case DecorationFuncParamIOKind:
   case DecorationSIMTCallINTEL:
+  case DecorationFunctionRoundingModeINTEL:
+  case DecorationFunctionDenormModeINTEL:
+  case DecorationFunctionFloatingPointModeINTEL:
     return true;
   default:
     return false;
@@ -587,6 +590,7 @@ inline bool isValid(spv::Capability V) {
   case CapabilityGroupNonUniformShuffleRelative:
   case CapabilityGroupNonUniformClustered:
   case CapabilityGroupNonUniformQuad:
+  case CapabilityFunctionFloatControlINTEL:
     return true;
   default:
     return false;

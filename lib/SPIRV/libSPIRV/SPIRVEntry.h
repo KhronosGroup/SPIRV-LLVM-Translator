@@ -819,6 +819,7 @@ public:
       return getSet(SPV_KHR_float_controls);
     case CapabilityRoundToInfinityINTEL:
     case CapabilityFloatingPointModeINTEL:
+    case CapabilityFunctionFloatControlINTEL:
       return getSet(SPV_INTEL_float_controls2);
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
