@@ -162,6 +162,10 @@ public:
       return getSet(ExtensionID::SPV_INTEL_fpga_memory_attributes);
     case DecorationReferencedIndirectlyINTEL:
       return getSet(ExtensionID::SPV_INTEL_function_pointers);
+    case DecorationFunctionFloatingPointModeINTEL:
+    case DecorationFunctionRoundingModeINTEL:
+    case DecorationFunctionDenormModeINTEL:
+      return getSet(ExtensionID::SPV_INTEL_float_controls2);
     default:
       return SPIRVExtSet();
     }
@@ -505,6 +509,51 @@ public:
       Literals.push_back(I);
     WordCount += Literals.size();
   }
+};
+
+class SPIRVDecorateFunctionRoundingModeINTEL : public SPIRVDecorate {
+public:
+  // Complete constructor for SPIRVDecorateFunctionRoundingModeINTEL
+  SPIRVDecorateFunctionRoundingModeINTEL(SPIRVEntry *TheTarget,
+                                         SPIRVWord TargetWidth,
+                                         spv::FPRoundingMode FloatControl)
+      : SPIRVDecorate(spv::DecorationFunctionRoundingModeINTEL, TheTarget,
+                      TargetWidth, static_cast<SPIRVWord>(FloatControl)){};
+
+  SPIRVWord getTargetWidth() const { return Literals.at(0); };
+  spv::FPRoundingMode getRoundingMode() const {
+    return static_cast<spv::FPRoundingMode>(Literals.at(1));
+  };
+};
+
+class SPIRVDecorateFunctionDenormModeINTEL : public SPIRVDecorate {
+public:
+  // Complete constructor for SPIRVDecorateFunctionDenormModeINTEL
+  SPIRVDecorateFunctionDenormModeINTEL(SPIRVEntry *TheTarget,
+                                       SPIRVWord TargetWidth,
+                                       spv::FPDenormMode FloatControl)
+      : SPIRVDecorate(spv::DecorationFunctionDenormModeINTEL, TheTarget,
+                      TargetWidth, static_cast<SPIRVWord>(FloatControl)){};
+
+  SPIRVWord getTargetWidth() const { return Literals.at(0); };
+  spv::FPDenormMode getDenormMode() const {
+    return static_cast<spv::FPDenormMode>(Literals.at(1));
+  };
+};
+
+class SPIRVDecorateFunctionFloatingPointModeINTEL : public SPIRVDecorate {
+public:
+  // Complete constructor for SPIRVDecorateFunctionOperationModeINTEL
+  SPIRVDecorateFunctionFloatingPointModeINTEL(SPIRVEntry *TheTarget,
+                                              SPIRVWord TargetWidth,
+                                              spv::FPOperationMode FloatControl)
+      : SPIRVDecorate(spv::DecorationFunctionFloatingPointModeINTEL, TheTarget,
+                      TargetWidth, static_cast<SPIRVWord>(FloatControl)){};
+
+  SPIRVWord getTargetWidth() const { return Literals.at(0); };
+  spv::FPOperationMode getOperationMode() const {
+    return static_cast<spv::FPOperationMode>(Literals.at(1));
+  };
 };
 
 } // namespace SPIRV
