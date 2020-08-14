@@ -384,6 +384,16 @@ enum FPRoundingMode {
     FPRoundingModeMax = 0x7fffffff,
 };
 
+enum FPDenormMode {
+  FPDenormModePreserve = 0,
+  FPDenormModeFlushToZero = 1,
+};
+
+enum FPOperationMode {
+  FPOperationModeIEEE = 0,
+  FPOperationModeALT = 1,
+};
+
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
@@ -488,6 +498,8 @@ enum Decoration {
   DecorationHlslSemanticGOOGLE = 5635,
   DecorationUserSemantic = 5635,
   DecorationUserTypeGOOGLE = 5636,
+  DecorationFunctionRoundingModeINTEL = 5822,
+  DecorationFunctionDenormModeINTEL = 5823,
   DecorationRegisterINTEL = 5825,
   DecorationMemoryINTEL = 5826,
   DecorationNumbanksINTEL = 5827,
@@ -501,6 +513,7 @@ enum Decoration {
   DecorationBankBitsINTEL = 5835,
   DecorationForcePow2DepthINTEL = 5836,
   DecorationIOPipeStorageINTEL = 5944,
+  DecorationFunctionFloatingPointModeINTEL = 6080,
   DecorationMax = 0x7fffffff,
 };
 
@@ -941,6 +954,7 @@ enum Capability {
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
   CapabilityRoundToInfinityINTEL = 5582,
   CapabilityFloatingPointModeINTEL = 5583,
+  CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityFPGAMemoryAttributesINTEL = 5824,
   CapabilityUnstructuredLoopControlsINTEL = 5886,
   CapabilityFPGALoopControlsINTEL = 5888,

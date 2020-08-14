@@ -365,6 +365,10 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationGlobalVariableOffsetINTEL, "GlobalVariableOffsetINTEL");
   add(DecorationFuncParamIOKind, "FuncParamIOKind");
   add(DecorationSIMTCallINTEL, "SIMTCallINTEL");
+  add(DecorationFunctionRoundingModeINTEL, "FunctionRoundingModeINTEL");
+  add(DecorationFunctionDenormModeINTEL, "FunctionDenormModeINTEL");
+  add(DecorationFunctionFloatingPointModeINTEL,
+      "FunctionFloatingPointModeINTEL");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 
@@ -543,6 +547,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGroupNonUniformShuffleRelative,
       "GroupNonUniformShuffleRelative");
   add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
+  add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
