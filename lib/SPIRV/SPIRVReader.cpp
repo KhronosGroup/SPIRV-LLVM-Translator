@@ -1412,8 +1412,10 @@ Value *SPIRVToLLVM::oclTransConstantPipeStorage(
                             GlobalValue::NotThreadLocal, SPIRAS_Global);
 }
 
-static void replaceOperandWithIntrinsicCallResult(Value *&V) {
-  // A pointer annotation may have been generated for the operand.
+// A pointer annotation may have been generated for the operand. If the operand
+// is used further in IR, it should be replaced with the intrinsic call result.
+// Otherwise, the generated pointer annotation call is left unused.
+static void replaceOperandWithAnnotationIntrinsicCallResult(Value *&V) {
   if (Use *SingleUse = V->getSingleUndroppableUse()) {
     if (auto *II = dyn_cast<IntrinsicInst>(SingleUse->getUser())) {
       if (II->getIntrinsicID() == Intrinsic::ptr_annotation &&
@@ -1764,9 +1766,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *Src = transValue(BS->getSrc(), F, BB);
     auto *Dst = transValue(BS->getDst(), F, BB);
     // A ptr.annotation may have been generated for the source variable.
-    replaceOperandWithIntrinsicCallResult(Src);
+    replaceOperandWithAnnotationIntrinsicCallResult(Src);
     // A ptr.annotation may have been generated for the destination variable.
-    replaceOperandWithIntrinsicCallResult(Dst);
+    replaceOperandWithAnnotationIntrinsicCallResult(Dst);
 
     bool isVolatile = BS->SPIRVMemoryAccess::isVolatile();
     uint64_t AlignValue = BS->SPIRVMemoryAccess::getAlignment();
@@ -1783,7 +1785,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVLoad *BL = static_cast<SPIRVLoad *>(BV);
     auto *V = transValue(BL->getSrc(), F, BB);
     // A ptr.annotation may have been generated for the source variable.
-    replaceOperandWithIntrinsicCallResult(V);
+    replaceOperandWithAnnotationIntrinsicCallResult(V);
 
     Type *Ty = V->getType()->getPointerElementType();
     LoadInst *LI = nullptr;
