@@ -105,7 +105,8 @@ enum ExpressionOpCode {
   Xderef     = 6,
   StackValue = 7,
   Constu     = 8,
-  Fragment   = 9
+  Fragment   = 9,
+  Convert    = 10,
 };
 
 enum ImportedEntityTag {
@@ -441,7 +442,8 @@ static std::map<ExpressionOpCode, unsigned> OpCountMap {
   { Xderef,     1 },
   { StackValue, 1 },
   { Constu,     2 },
-  { Fragment,   3 }
+  { Fragment,   3 },
+  { Convert,    7 }
 };
 }
 
@@ -508,6 +510,7 @@ inline void DbgExpressionOpCodeMap::init() {
   add(dwarf::DW_OP_stack_value,   SPIRVDebug::StackValue);
   add(dwarf::DW_OP_constu,        SPIRVDebug::Constu);
   add(dwarf::DW_OP_LLVM_fragment, SPIRVDebug::Fragment);
+  add(dwarf::DW_OP_LLVM_convert,  SPIRVDebug::Convert);
 }
 
 typedef SPIRVMap<dwarf::Tag, SPIRVDebug::ImportedEntityTag>
