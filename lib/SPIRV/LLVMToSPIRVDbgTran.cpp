@@ -87,18 +87,16 @@ LLVMToSPIRVDbgTran::createDebugDeclarePlaceholder(const DbgDeclareInst *DbgDecl,
   DbgDeclareIntrinsics.push_back(DbgDecl);
   using namespace SPIRVDebug::Operand::DebugDeclare;
   SPIRVWordVec Ops(OperandCount, getDebugInfoNoneId());
-  SPIRVId ExtSetId = BM->getExtInstSetId(SPIRVEIS_OpenCL_DebugInfo_100);
+  SPIRVId ExtSetId = BM->getExtInstSetId(BM->getDebugInfoEIS());
   return BM->addExtInst(getVoidTy(), ExtSetId, SPIRVDebug::Declare, Ops, BB);
 }
 
 void LLVMToSPIRVDbgTran::finalizeDebugDeclare(const DbgDeclareInst *DbgDecl) {
   SPIRVValue *V = SPIRVWriter->getTranslatedValue(DbgDecl);
   assert(V && "llvm.dbg.declare intrinsic isn't mapped to a SPIRV instruction");
-  assert(
-      V->isExtInst(SPIRV::SPIRVEIS_OpenCL_DebugInfo_100, SPIRVDebug::Declare) &&
-      "llvm.dbg.declare intrinsic has been translated wrong!");
-  if (!V ||
-      !V->isExtInst(SPIRV::SPIRVEIS_OpenCL_DebugInfo_100, SPIRVDebug::Declare))
+  assert(V->isExtInst(BM->getDebugInfoEIS(), SPIRVDebug::Declare) &&
+         "llvm.dbg.declare intrinsic has been translated wrong!");
+  if (!V || !V->isExtInst(BM->getDebugInfoEIS(), SPIRVDebug::Declare))
     return;
   SPIRVExtInst *DD = static_cast<SPIRVExtInst *>(V);
   SPIRVBasicBlock *BB = DD->getBasicBlock();
@@ -124,18 +122,16 @@ LLVMToSPIRVDbgTran::createDebugValuePlaceholder(const DbgValueInst *DbgValue,
   DbgValueIntrinsics.push_back(DbgValue);
   using namespace SPIRVDebug::Operand::DebugValue;
   SPIRVWordVec Ops(MinOperandCount, getDebugInfoNone()->getId());
-  SPIRVId ExtSetId = BM->getExtInstSetId(SPIRVEIS_OpenCL_DebugInfo_100);
+  SPIRVId ExtSetId = BM->getExtInstSetId(BM->getDebugInfoEIS());
   return BM->addExtInst(getVoidTy(), ExtSetId, SPIRVDebug::Value, Ops, BB);
 }
 
 void LLVMToSPIRVDbgTran::finalizeDebugValue(const DbgValueInst *DbgValue) {
   SPIRVValue *V = SPIRVWriter->getTranslatedValue(DbgValue);
   assert(V && "llvm.dbg.value intrinsic isn't mapped to a SPIRV instruction");
-  assert(
-      V->isExtInst(SPIRV::SPIRVEIS_OpenCL_DebugInfo_100, SPIRVDebug::Value) &&
-      "llvm.dbg.value intrinsic has been translated wrong!");
-  if (!V ||
-      !V->isExtInst(SPIRV::SPIRVEIS_OpenCL_DebugInfo_100, SPIRVDebug::Value))
+  assert(V->isExtInst(BM->getDebugInfoEIS(), SPIRVDebug::Value) &&
+         "llvm.dbg.value intrinsic has been translated wrong!");
+  if (!V || !V->isExtInst(BM->getDebugInfoEIS(), SPIRVDebug::Value))
     return;
   SPIRVExtInst *DV = static_cast<SPIRVExtInst *>(V);
   SPIRVBasicBlock *BB = DV->getBasicBlock();
@@ -880,7 +876,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgScope(const DIScope *S) {
 SPIRVEntry *LLVMToSPIRVDbgTran::transDebugLoc(const DebugLoc &Loc,
                                               SPIRVBasicBlock *BB,
                                               SPIRVInstruction *InsertBefore) {
-  SPIRVId ExtSetId = BM->getExtInstSetId(SPIRVEIS_OpenCL_DebugInfo_100);
+  SPIRVId ExtSetId = BM->getExtInstSetId(BM->getDebugInfoEIS());
   if (!Loc.get())
     return BM->addExtInst(getVoidTy(), ExtSetId, SPIRVDebug::NoScope,
                           std::vector<SPIRVWord>(), BB, InsertBefore);
