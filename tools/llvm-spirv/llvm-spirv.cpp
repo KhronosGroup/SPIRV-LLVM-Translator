@@ -183,6 +183,16 @@ cl::opt<bool> SPIRVAllowUnknownIntrinsics(
     cl::desc("Unknown LLVM intrinsics will be translated as external function "
              "calls in SPIR-V"));
 
+static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
+    "debug-info-eis", cl::desc("Set debug info EIS:"),
+    cl::init(SPIRV::DebugInfoEIS::SPIRV_Debug),
+    cl::values(clEnumValN(SPIRV::DebugInfoEIS::SPIRV_Debug, "legacy",
+                          "SPIRV.debug EIS as legacy option for compatibility "
+                          "with older versions of translator"),
+               clEnumValN(SPIRV::DebugInfoEIS::OpenCL_DebugInfo_100, "ocl-100",
+                          "OpenCL.DebugInfo.100 EIS. It is required for "
+                          "SPIRV-Tools compatibility")));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -547,6 +557,15 @@ int main(int Ac, char **Av) {
              "affects translation from LLVM IR to SPIR-V";
     } else {
       Opts.setSPIRVAllowUnknownIntrinsicsEnabled(SPIRVAllowUnknownIntrinsics);
+    }
+  }
+
+  if (DebugEIS.getNumOccurrences() != 0) {
+    if (IsReverse) {
+      errs() << "Note: --debug-info-eis option ignored as it only "
+                "affects translation from LLVM IR to SPIR-V";
+    } else {
+      Opts.setDebugInfoEIS(DebugEIS);
     }
   }
 
