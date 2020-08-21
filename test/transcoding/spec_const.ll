@@ -15,6 +15,8 @@
 ; CHECK-SPIRV-DAG: Decorate [[SC1:[0-9]+]] SpecId 1
 ; CHECK-SPIRV-DAG: Decorate [[SC2:[0-9]+]] SpecId 2
 ; CHECK-SPIRV-DAG: Decorate [[SC3:[0-9]+]] SpecId 3
+; CHECK-SPIRV-DAG: DecorationGroup [[SC3]]
+; CHECK-SPIRV-DAG: GroupDecorate [[SC3]] [[SC31:[0-9]+]] [[SC32:[0-9]+]]
 ; CHECK-SPIRV-DAG: Decorate [[SC4:[0-9]+]] SpecId 4
 ; CHECK-SPIRV-DAG: Decorate [[SC5:[0-9]+]] SpecId 5
 ; CHECK-SPIRV-DAG: Decorate [[SC6:[0-9]+]] SpecId 6
@@ -23,7 +25,8 @@
 ; CHECK-SPIRV-DAG: SpecConstantFalse {{[0-9]+}} [[SC0]]
 ; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC1]] 100
 ; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC2]] 1
-; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC3]] 2
+; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC31]] 2
+; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC32]] 2
 ; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC4]] 3 0
 ; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC5]] 14336
 ; CHECK-SPIRV-DAG: SpecConstant {{[0-9]+}} [[SC6]] 1067450368
@@ -32,7 +35,15 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
 ; Function Attrs: nofree norecurse nounwind writeonly
- define spir_kernel void @foo(i8 addrspace(1)* nocapture %b, i8 addrspace(1)* nocapture %c, i16 addrspace(1)* nocapture %s, i32 addrspace(1)* nocapture %i, i64 addrspace(1)* nocapture %l, half addrspace(1)* nocapture %h, float addrspace(1)* nocapture %f, double addrspace(1)* nocapture %d) local_unnamed_addr #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !4 !kernel_arg_type !5 !kernel_arg_base_type !5 !kernel_arg_type_qual !6 {
+ define spir_kernel void @foo(i8 addrspace(1)* nocapture %b,
+                              i8 addrspace(1)* nocapture %c,
+                              i16 addrspace(1)* nocapture %s,
+                              i32 addrspace(1)* nocapture %i,
+                              i64 addrspace(1)* nocapture %l,
+                              half addrspace(1)* nocapture %h,
+                              float addrspace(1)* nocapture %f,
+                              double addrspace(1)* nocapture %d,
+                              i32 addrspace(1)* nocapture %i2) local_unnamed_addr #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !4 !kernel_arg_type !5 !kernel_arg_base_type !5 !kernel_arg_type_qual !6 {
 entry:
   ; CHECK-LLVM: %conv = select i1 false, i8 1, i8 0
   ; CHECK-LLVM: store i8 %conv, i8 addrspace(1)* %b, align 1
@@ -76,6 +87,12 @@ entry:
   ; CHECK-LLVM-SPEC: store double 7.700000e+00, double addrspace(1)* %d, align 8
   %7 = call double @_Z20__spirv_SpecConstantid(i32 7, double 2.125000e+00)
   store double %7, double addrspace(1)* %d, align 8
+
+  ; CHECK-LLVM: store i32 2, i32 addrspace(1)* %i2, align 4
+  ; CHECK-LLVM-SPEC: store i32 33, i32 addrspace(1)* %i2, align 4
+  %8 = call i32 @_Z20__spirv_SpecConstantii(i32 3, i32 2)
+  store i32 %8, i32 addrspace(1)* %i2, align 4
+
   ret void
 }
 
@@ -99,8 +116,8 @@ attributes #0 = { nofree norecurse nounwind writeonly "correctly-rounded-divide-
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 2, i32 0}
 !2 = !{!"clang version 11.0.0 (https://github.com/llvm/llvm-project.git f11016b41a94d2bad8824d5e2833d141fda24502)"}
-!3 = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
-!4 = !{!"none", !"none", !"none", !"none", !"none", !"none", !"none", !"none"}
-!5 = !{!"bool*", !"char*", !"short*", !"int*", !"long*", !"half*", !"float*", !"double*"}
-!6 = !{!"", !"", !"", !"", !"", !"", !"", !""}
+!3 = !{i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1}
+!4 = !{!"none", !"none", !"none", !"none", !"none", !"none", !"none", !"none", !"none"}
+!5 = !{!"bool*", !"char*", !"short*", !"int*", !"long*", !"half*", !"float*", !"double*", !"int*"}
+!6 = !{!"", !"", !"", !"", !"", !"", !"", !"", !""}
 !7 = !{!"cl_khr_fp16"}

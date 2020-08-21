@@ -4365,6 +4365,8 @@ bool llvm::getSpecConstInfo(std::istream &IS,
   // all constant instructions must appear before function declarations.
   while (D.OpCode != OpFunction && D.getWordCountAndOpCode()) {
     switch (D.OpCode) {
+    case OpDecorationGroup:
+    case OpGroupDecorate:
     case OpDecorate:
       // The decoration is added to the module in scope of SPIRVDecorate::decode
       D.getEntry();
