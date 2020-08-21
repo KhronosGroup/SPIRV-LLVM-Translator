@@ -59,6 +59,8 @@ enum class VersionNumber : uint32_t {
 
 enum class BIsRepresentation : uint32_t { OpenCL12, OpenCL20, SPIRVFriendlyIR };
 
+enum class DebugInfoEIS : uint32_t { SPIRV_Debug, OpenCL_DebugInfo_100 };
+
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
 public:
@@ -101,6 +103,10 @@ public:
     SPIRVAllowUnknownIntrinsics = AllowUnknownIntrinsics;
   }
 
+  DebugInfoEIS getDebugInfoEIS() const { return DebugInfoVersion; }
+
+  void setDebugInfoEIS(DebugInfoEIS EIS) { DebugInfoVersion = EIS; }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -116,6 +122,8 @@ private:
   // Unknown LLVM intrinsics will be translated as external function calls in
   // SPIR-V
   bool SPIRVAllowUnknownIntrinsics = false;
+
+  DebugInfoEIS DebugInfoVersion = DebugInfoEIS::SPIRV_Debug;
 };
 
 } // namespace SPIRV
