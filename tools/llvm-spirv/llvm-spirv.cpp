@@ -184,14 +184,17 @@ cl::opt<bool> SPIRVAllowUnknownIntrinsics(
              "calls in SPIR-V"));
 
 static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
-    "debug-info-eis", cl::desc("Set debug info EIS:"),
+    "spirv-debug-info-version", cl::desc("Set SPIR-V debug info version:"),
     cl::init(SPIRV::DebugInfoEIS::SPIRV_Debug),
-    cl::values(clEnumValN(SPIRV::DebugInfoEIS::SPIRV_Debug, "legacy",
-                          "SPIRV.debug EIS as legacy option for compatibility "
-                          "with older versions of translator"),
-               clEnumValN(SPIRV::DebugInfoEIS::OpenCL_DebugInfo_100, "ocl-100",
-                          "OpenCL.DebugInfo.100 EIS. It is required for "
-                          "SPIRV-Tools compatibility")));
+    cl::values(
+        clEnumValN(SPIRV::DebugInfoEIS::SPIRV_Debug, "legacy",
+                   "Emit debug info compliant with the SPIRV.debug extended "
+                   "instruction set. This option is used for compatibility "
+                   "with older versions of the translator"),
+        clEnumValN(SPIRV::DebugInfoEIS::OpenCL_DebugInfo_100, "ocl-100",
+                   "Emit debug info compliant with the OpenCL.DebugInfo.100 "
+                   "extended instruction set. This version of SPIR-V debug "
+                   "info format is compatible with the SPIRV-Tools")));
 
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
@@ -580,7 +583,7 @@ int main(int Ac, char **Av) {
 
   if (DebugEIS.getNumOccurrences() != 0) {
     if (IsReverse) {
-      errs() << "Note: --debug-info-eis option ignored as it only "
+      errs() << "Note: --spirv-debug-info-version option ignored as it only "
                 "affects translation from LLVM IR to SPIR-V";
     } else {
       Opts.setDebugInfoEIS(DebugEIS);
