@@ -443,7 +443,7 @@ static std::map<ExpressionOpCode, unsigned> OpCountMap {
   { StackValue, 1 },
   { Constu,     2 },
   { Fragment,   3 },
-  { Convert,    7 }
+  { Convert,    3 }
 };
 }
 
