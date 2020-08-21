@@ -1504,6 +1504,12 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     return mapValue(V, transCallInst(CI, BB));
   }
+  
+  if (dyn_cast<InvokeInst>(V)) {
+    BM->getErrorLog().checkError(
+        false, SPIRVEC_UnsupportedInviteInstruction,
+        "Exception handling isn't supported by SPIRV\n");
+  }
 
   llvm_unreachable("Not implemented");
   return nullptr;
