@@ -36,7 +36,7 @@ Coding Standards]. Compliance of your code is checked automatically using
 Travis CI. See [clang-format] and [clang-tidy] configs for more details about
 coding standards.
 
-### Condition to merge a PR
+### Conditions to merge a PR
 
 In order to get your PR merged, the following conditions must be met:
 - If you are a first-time contributor, you have to sign the
