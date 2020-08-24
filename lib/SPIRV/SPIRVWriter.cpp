@@ -1505,28 +1505,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return mapValue(V, transCallInst(CI, BB));
   }
 
-#define UnvalidInstructionErrorLog(InstType)                                   \
-  if (InstType *Inst = dyn_cast<InstType>(V)) {                                \
-    BM->getErrorLog().checkError(false, SPIRVEC_InvalidInstruction,            \
-                                 toString(Inst) + "\n");                       \
-  }
-  UnvalidInstructionErrorLog(InvokeInst);
-  UnvalidInstructionErrorLog(FenceInst);
-  UnvalidInstructionErrorLog(VAArgInst);
-  UnvalidInstructionErrorLog(LandingPadInst);
-  UnvalidInstructionErrorLog(IndirectBrInst);
-  UnvalidInstructionErrorLog(CallBrInst);
-  UnvalidInstructionErrorLog(ResumeInst);
-  UnvalidInstructionErrorLog(CatchSwitchInst);
-  UnvalidInstructionErrorLog(CleanupPadInst);
-  UnvalidInstructionErrorLog(CatchPadInst);
-  UnvalidInstructionErrorLog(CatchReturnInst);
-  UnvalidInstructionErrorLog(CleanupReturnInst);
-  UnvalidInstructionErrorLog(IntToPtrInst);
-  UnvalidInstructionErrorLog(PtrToIntInst);
-  UnvalidInstructionErrorLog(FreezeInst);
+ Instruction *Inst = dyn_cast<Instruction>(V);
+    BM->getErrorLog().checkError(false, SPIRVEC_InvalidInstruction,
+                                 toString(Inst) + "\n", nullptr, __FILE__, __LINE__);
 
-  llvm_unreachable("Not implemented");
   return nullptr;
 }
 
