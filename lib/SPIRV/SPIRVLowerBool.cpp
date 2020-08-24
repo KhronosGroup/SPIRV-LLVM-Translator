@@ -52,7 +52,8 @@ using namespace SPIRV;
 namespace SPIRV {
 cl::opt<bool> SPIRVLowerBoolValidate(
     "spvbool-validate",
-    cl::desc("Validate module after lowering boolean instructions for SPIR-V"));
+    cl::desc("Validate module after lowering boolean instructions for SPIR-V"),
+    cl::init(_SPIRVDBG));
 
 class SPIRVLowerBool : public ModulePass, public InstVisitor<SPIRVLowerBool> {
 public:

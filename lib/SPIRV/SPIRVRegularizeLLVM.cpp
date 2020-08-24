@@ -45,6 +45,7 @@
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 
 #include <set>
@@ -55,6 +56,10 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
+
+cl::opt<bool> SPIRVRegularizeValidate(
+    "spvregular-validate", cl::init(_SPIRVDBG),
+    cl::desc("Validate module after regularizing LLVM IR "));
 
 static bool SPIRVDbgSaveRegularizedModule = false;
 static std::string RegularizedModuleTmpFile = "regularized.bc";
@@ -91,12 +96,15 @@ bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
   LLVM_DEBUG(dbgs() << "Enter SPIRVRegularizeLLVM:\n");
   regularize();
 
-  LLVM_DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+  if (SPIRVRegularizeValidate) {
+    LLVM_DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
+    std::string Err;
+    raw_string_ostream ErrorOS(Err);
+    if (verifyModule(*M, &ErrorOS)) {
+      LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    }
   }
+
   return true;
 }
 
@@ -196,13 +204,6 @@ bool SPIRVRegularizeLLVM::regularize() {
       assert(V->user_empty());
       V->eraseFromParent();
     }
-  }
-
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    SPIRVDBG(errs() << "Fails to verify module: " << ErrorOS.str();)
-    return false;
   }
 
   if (SPIRVDbgSaveRegularizedModule)

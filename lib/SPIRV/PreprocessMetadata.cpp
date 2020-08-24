@@ -61,6 +61,10 @@ namespace SPIRV {
 cl::opt<bool> EraseOCLMD("spirv-erase-cl-md", cl::init(true),
                          cl::desc("Erase OpenCL metadata"));
 
+cl::opt<bool> SPIRVPreprocessMetadataValidate(
+    "clmdtospv-validate", cl::init(_SPIRVDBG),
+    cl::desc("Validate module after metadata preprocessing"));
+
 class PreprocessMetadata : public ModulePass {
 public:
   PreprocessMetadata() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
@@ -89,12 +93,15 @@ bool PreprocessMetadata::runOnModule(Module &Module) {
   LLVM_DEBUG(dbgs() << "Enter PreprocessMetadata:\n");
   visit(M);
 
-  LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+  if (SPIRVPreprocessMetadataValidate) {
+    LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
+    std::string Err;
+    raw_string_ostream ErrorOS(Err);
+    if (verifyModule(*M, &ErrorOS)) {
+      LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    }
   }
+
   return true;
 }
 

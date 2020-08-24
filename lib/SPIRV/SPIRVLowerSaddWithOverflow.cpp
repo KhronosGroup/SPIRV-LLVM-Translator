@@ -57,7 +57,7 @@ using namespace SPIRV;
 
 namespace SPIRV {
 cl::opt<bool> SPIRVLowerSaddWithOverflowValidate(
-    "spv-lower-saddwithoverflow-validate",
+    "spv-lower-saddwithoverflow-validate", cl::init(_SPIRVDBG),
     cl::desc("Validate module after lowering llvm.sadd.with.overflow.*"
              "intrinsics"));
 

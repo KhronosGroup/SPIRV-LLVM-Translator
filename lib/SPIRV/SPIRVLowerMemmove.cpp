@@ -52,7 +52,7 @@ using namespace SPIRV;
 
 namespace SPIRV {
 cl::opt<bool> SPIRVLowerMemmoveValidate(
-    "spvmemmove-validate",
+    "spvmemmove-validate", cl::init(_SPIRVDBG),
     cl::desc("Validate module after lowering llvm.memmove instructions into "
              "llvm.memcpy"));
 

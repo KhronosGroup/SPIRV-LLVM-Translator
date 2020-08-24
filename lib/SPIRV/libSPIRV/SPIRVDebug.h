@@ -45,23 +45,30 @@
 
 namespace SPIRV {
 
-#define _SPIRVDBG
-#ifdef _SPIRVDBG
-
-#define SPIRVDBG(x)                                                            \
-  if (SPIRVDbgEnable) {                                                        \
-    x;                                                                         \
-  }
-
-// Enable debug output.
-extern bool SPIRVDbgEnable;
-
 // Include source file and line number in error message.
 extern bool SPIRVDbgErrorMsgIncludesSourceInfo;
 
 // Enable assert or exit on error
 enum class SPIRVDbgErrorHandlingKinds { Abort, Exit, Ignore };
 extern SPIRVDbgErrorHandlingKinds SPIRVDbgError;
+
+// Enable debug output.
+extern bool SPIRVDbgEnable;
+
+#ifndef _SPIRVDBG
+#if !defined(NDEBUG) || defined (_DEBUG)
+#define _SPIRVDBG true
+#else
+#define _SPIRVDBG false
+#endif
+#endif
+
+#if _SPIRVDBG
+
+#define SPIRVDBG(x)                                                            \
+  if (SPIRVDbgEnable) {                                                        \
+    x;                                                                         \
+  }
 
 // Output stream for SPIRV debug information.
 inline spv_ostream &spvdbgs() {
@@ -71,6 +78,29 @@ inline spv_ostream &spvdbgs() {
 #else
 
 #define SPIRVDBG(x)
+
+// Minimal std::basic_ostream mock that ignores everything being printed via
+// operator<<
+class dev_null_stream {
+public:
+  void flush() {}
+};
+
+template <typename T>
+dev_null_stream &operator<<(dev_null_stream &Out, const T &) {
+  return Out;
+}
+
+template <typename T>
+const dev_null_stream &&operator<<(dev_null_stream &&Out, const T &) {
+  return Out;
+}
+
+// Output stream for SPIRV debug information.
+inline dev_null_stream &spvdbgs() {
+  static dev_null_stream Out;
+  return Out;
+}
 
 #endif
 

@@ -49,6 +49,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 
 #include <algorithm>
@@ -59,6 +60,12 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
+
+cl::opt<bool> SPIRVOCL20ToSPIRVValidate(
+    "cl20tospv-validate", cl::init(_SPIRVDBG),
+    cl::desc("Validate module after lowering OpenCL-specific into SPIR-V "
+             "friendly IR"));
+
 static size_t getOCLCpp11AtomicMaxNumOps(StringRef Name) {
   return StringSwitch<size_t>(Name)
       .Cases("load", "flag_test_and_set", "flag_clear", 3)
@@ -349,11 +356,14 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
   eraseUselessFunctions(M); // remove unused functions declarations
   LLVM_DEBUG(dbgs() << "After OCL20ToSPIRV:\n" << *M);
 
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+  if (SPIRVOCL20ToSPIRVValidate) {
+    std::string Err;
+    raw_string_ostream ErrorOS(Err);
+    if (verifyModule(*M, &ErrorOS)) {
+      LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
+    }
   }
+
   return true;
 }
 
