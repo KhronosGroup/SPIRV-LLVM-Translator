@@ -2742,7 +2742,7 @@ SPIRVInstruction *LLVMToSPIRV::transBuiltinToInst(StringRef DemangledName,
         SPIRVEC_InvalidInstruction,
         CI->getCalledOperand()->getName().str() +
             "\nFixed point instructions can't be translated correctly without "
-            "enabled extension!\n");
+            "enabled SPV_INTEL_arbitrary_precision_fixed_point extension!\n");
 
   if ((OpArbitraryFloatSinCosPiINTEL <= OC &&
        OC <= OpArbitraryFloatCastToIntINTEL) ||
@@ -2753,7 +2753,8 @@ SPIRVInstruction *LLVMToSPIRV::transBuiltinToInst(StringRef DemangledName,
         SPIRVEC_InvalidInstruction,
         CI->getCalledOperand()->getName().str() +
             "\nFloating point instructions can't be translated correctly "
-            "without enabled extension!\n");
+            "without enabled SPV_INTEL_arbitrary_precision_floating_point "
+            "extension!\n");
 
   auto Inst = transBuiltinToInstWithoutDecoration(OC, CI, BB);
   addDecorations(Inst, Dec);
