@@ -107,7 +107,7 @@ public:
   virtual void visitUIToFPInst(UIToFPInst &I) {
     auto Op = I.getOperand(0);
     if (isBoolType(Op->getType())) {
-      auto Ty = Type::getInt16Ty(*Context);
+      auto Ty = Type::getInt32Ty(*Context);
       auto Zero = getScalarOrVectorConstantInt(Ty, 0, false);
       auto One = getScalarOrVectorConstantInt(Ty, 1, false);
       assert(Zero && One && "Couldn't create constant int");

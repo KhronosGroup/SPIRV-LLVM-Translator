@@ -11,8 +11,7 @@
 ; Command line:
 ; clang -x cl -cl-std=CL2.0 -target spir64 -emit-llvm -S -c test.cl
 
-; CHECK: TypeInt [[int_16:[0-9]+]] 16 0
-; CHECK: Constant  {{[0-9]+}} [[zero_to_cmp:[0-9]+]] 0
+; CHECK: TypeInt [[int_32:[0-9]+]] 32 0
 ; CHECK: Constant  {{[0-9]+}} [[zero:[0-9]+]] 0
 ; CHECK: Constant  {{[0-9]+}} [[one:[0-9]+]] 1
 ; CHECK: TypeBool [[bool:[0-9]+]]
@@ -20,8 +19,8 @@
 ; CHECK: Function
 ; CHECK: FunctionParameter {{[0-9]+}} [[A:[0-9]+]]
 ; CHECK: FunctionParameter {{[0-9]+}} [[B:[0-9]+]]
-; CHECK: SGreaterThan [[bool]] [[cmp_res:[0-9]+]] [[B]] [[zero_to_cmp]]
-; CHECK: Select [[int_16]] [[select_res:[0-9]+]] [[cmp_res]] [[one]] [[zero]]
+; CHECK: SGreaterThan [[bool]] [[cmp_res:[0-9]+]] [[B]] [[zero]]
+; CHECK: Select [[int_32]] [[select_res:[0-9]+]] [[cmp_res]] [[one]] [[zero]]
 ; CHECK: ConvertUToF {{[0-9]+}} [[utof_res:[0-9]+]] [[select_res]]
 ; CHECK: Store [[A]] [[utof_res]]
 
