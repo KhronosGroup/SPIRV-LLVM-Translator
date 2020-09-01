@@ -165,4 +165,13 @@ getVCGlobalVarAddressSpace(SPIRVStorageClassKind StorageClass) noexcept {
   }
 }
 
+std::string getVCBufferSurfaceName() {
+  return std::string(kVCType::VCBufferSurface) + kAccessQualPostfix::Type;
+}
+
+std::string getVCBufferSurfaceName(SPIRVAccessQualifierKind Access) {
+  return std::string(kVCType::VCBufferSurface) +
+         getAccessQualifierPostfix(Access).str() + kAccessQualPostfix::Type;
+}
+
 } // namespace VectorComputeUtil

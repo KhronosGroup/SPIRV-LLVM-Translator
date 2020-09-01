@@ -304,6 +304,11 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
           return mapType(T, BM->addQueueType());
         }
       }
+      if (STName.startswith(kVCType::VCBufferSurface)) {
+        // VCBufferSurface always have Access Qualifier
+        auto Access = getAccessQualifier(STName);
+        return mapType(T, BM->addBufferSurfaceINTELType(Access));
+      }
 
       if (isPointerToOpaqueStructType(T)) {
         return mapType(
