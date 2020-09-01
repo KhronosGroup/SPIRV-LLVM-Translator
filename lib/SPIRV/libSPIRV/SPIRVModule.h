@@ -87,6 +87,7 @@ class SPIRVInstTemplateBase;
 class SPIRVAsmTargetINTEL;
 class SPIRVAsmINTEL;
 class SPIRVAsmCallINTEL;
+class SPIRVTypeBufferSurfaceINTEL;
 
 typedef SPIRVBasicBlock SPIRVLabel;
 struct SPIRVTypeImageDescriptor;
@@ -237,6 +238,8 @@ public:
   virtual SPIRVTypePipe *addPipeType() = 0;
   virtual SPIRVType *addSubgroupAvcINTELType(Op) = 0;
   virtual SPIRVTypeVmeImageINTEL *addVmeImageINTELType(SPIRVTypeImage *) = 0;
+  virtual SPIRVTypeBufferSurfaceINTEL *
+  addBufferSurfaceINTELType(SPIRVAccessQualifierKind Access) = 0;
   virtual void createForwardPointers() = 0;
 
   // Constants creation functions
