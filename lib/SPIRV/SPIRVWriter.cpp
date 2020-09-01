@@ -2747,7 +2747,6 @@ bool LLVMToSPIRV::translate() {
   if (!transExecutionMode())
     return false;
 
-  BM->optimizeDecorates();
   BM->resolveUnknownStructFields();
   BM->createForwardPointers();
   DbgTran->transDebugMetadata();
