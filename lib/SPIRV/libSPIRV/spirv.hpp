@@ -1499,6 +1499,7 @@ enum Op {
   OpReadPipeBlockingINTEL = 5946,
   OpWritePipeBlockingINTEL = 5947,
   OpFPGARegINTEL = 5949,
+  OpTypeBufferSurfaceINTEL = 6086,
   OpMax = 0x7fffffff,
 };
 
@@ -2030,6 +2031,10 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetInterRawSadsINTEL: *hasResult = true; *hasResultType = true; break;
+    case OpTypeBufferSurfaceINTEL:
+      *hasResult = true;
+      *hasResultType = false;
+      break;
     }
 }
 #endif /* SPV_ENABLE_UTILITY_CODE */
