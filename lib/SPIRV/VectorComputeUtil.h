@@ -87,6 +87,9 @@ getVCGlobalVarStorageClass(SPIRAddressSpace AddressSpace) noexcept;
 SPIRAddressSpace
 getVCGlobalVarAddressSpace(SPIRVStorageClassKind StorageClass) noexcept;
 
+std::string getVCBufferSurfaceName();
+std::string getVCBufferSurfaceName(SPIRVAccessQualifierKind Access);
+
 } // namespace VectorComputeUtil
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -106,6 +109,10 @@ const static char VCVolatile[] = "VCVolatile";
 const static char VCByteOffset[] = "VCByteOffset";
 const static char VCSIMTCall[] = "VCSIMTCall";
 } // namespace kVCMetadata
+
+namespace kVCType {
+const static char VCBufferSurface[] = "intel.buffer";
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //

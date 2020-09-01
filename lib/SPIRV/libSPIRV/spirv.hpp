@@ -1142,6 +1142,7 @@ enum Op {
   OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL = 5814,
   OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL = 5815,
   OpSubgroupAvcSicGetInterRawSadsINTEL = 5816,
+  OpTypeBufferSurfaceINTEL = 6086,
   OpMax = 0x7fffffff,
 };
 
