@@ -366,6 +366,12 @@ SPIRVToLLVM::transOCLPipeStorageTypeName(SPIRV::SPIRVTypePipeStorage *PST) {
          kSPIRVTypeName::PipeStorage;
 }
 
+std::string SPIRVToLLVM::transVCTypeName(SPIRVTypeBufferSurfaceINTEL *PST) {
+  if (PST->hasAccessQualifier())
+    return VectorComputeUtil::getVCBufferSurfaceName(PST->getAccessQualifier());
+  return VectorComputeUtil::getVCBufferSurfaceName();
+}
+
 Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   auto Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
@@ -453,6 +459,14 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   // OpenCL Compiler does not use this instruction
   case OpTypeVmeImageINTEL:
     return nullptr;
+
+  case OpTypeBufferSurfaceINTEL: {
+    auto PST = static_cast<SPIRVTypeBufferSurfaceINTEL *>(T);
+    return mapType(T,
+                   getOrCreateOpaquePtrType(M, transVCTypeName(PST),
+                                            SPIRAddressSpace::SPIRAS_Global));
+  }
+
   default: {
     auto OC = T->getOpCode();
     if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC)) {
@@ -3263,7 +3277,10 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
   if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
     return true;
 
-  // Generate metadata for kernel_arg_address_spaces
+  if (BF->hasDecorate(DecorationVectorComputeFunctionINTEL))
+    return true;
+
+  // Generate metadata for kernel_arg_addr_space
   addOCLKernelArgumentMetadata(
       Context, SPIR_MD_KERNEL_ARG_ADDR_SPACE, BF, F,
       [=](SPIRVFunctionParameter *Arg) {
