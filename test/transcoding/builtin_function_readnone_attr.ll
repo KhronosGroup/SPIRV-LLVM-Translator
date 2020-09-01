@@ -7,15 +7,9 @@
 
 ; CHECK-SPIRV: Name [[#A:]] "a"
 ; CHECK-SPIRV: Name [[#B:]] "b"
-; CHECK-SPIRV: Decorate [[#GRP5:]] FuncParamAttr 5
-; CHECK-SPIRV: DecorationGroup [[#GRP5]]
-; CHECK-SPIRV: Decorate [[#GRP6:]] FuncParamAttr 6
-; CHECK-SPIRV: DecorationGroup [[#GRP6]]
-; CHECK-SPIRV: Decorate [[#GRP7:]] FuncParamAttr 7
-; CHECK-SPIRV: DecorationGroup [[#GRP7]]
-; CHECK-SPIRV: GroupDecorate [[#GRP5]] {{.*}}[[#A]] [[#B]]
-; CHECK-SPIRV: GroupDecorate [[#GRP6]] {{.*}}[[#A]]
-; CHECK-SPIRV: GroupDecorate [[#GRP7]] {{.*}}[[#B]]
+; CHECK-SPIRV: Decorate [[#A]] FuncParamAttr 5
+; CHECK-SPIRV: Decorate [[#A]] FuncParamAttr 6
+; CHECK-SPIRV: Decorate [[#B]] FuncParamAttr 7
 
 ; CHECK-LLVM: {{.*}}void @test_builtin_readnone(double* nocapture readonly %{{.*}}, double* nocapture readnone %{{.*}})
 
