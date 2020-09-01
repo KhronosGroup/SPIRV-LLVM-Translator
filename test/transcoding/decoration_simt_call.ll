@@ -15,8 +15,7 @@ target triple = "spir"
 ; LLVM-DAG: attributes #[[K_RTE]]{{.*"VCSIMTCall"="5" }}
 ; SPV-DAG: EntryPoint 6 [[K_RTE:[0-9]+]] "k_rte"
 ; SPV-DAG: Name [[FUNC_ID:[0-9]+]] "k_rte"
-; SPV-DAG: Decorate [[DEC_ID:[0-9]+]] SIMTCallINTEL 5
-; SPV-DAG: GroupDecorate [[DEC_ID]] [[FUNC_ID]] 
+; SPV-DAG: Decorate [[K_RTE]] SIMTCallINTEL 5
 
 @in = internal global <256 x i8> undef, align 256 #0
 declare <256 x i8> @llvm.genx.vload(<256 x i8>* nonnull %aaa)

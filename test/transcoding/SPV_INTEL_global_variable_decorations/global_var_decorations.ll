@@ -23,18 +23,16 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability GlobalVariableDecorationsINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_decorations"
-
-; CHECK-SPIRV: Decorate [[#GROUP0:]] InitModeINTEL 0
-; CHECK-SPIRV: DecorationGroup [[#GROUP0]]
-; CHECK-SPIRV: Decorate [[#GROUP1:]] ImplementInCSRINTEL 1
-; CHECK-SPIRV: DecorationGroup [[#GROUP1]]
-
 ; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] HostAccessINTEL 1 "IntVarName"
 ; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID:]] HostAccessINTEL 3 "BoolVarName"
+
+; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] InitModeINTEL 0
+; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] InitModeINTEL 0
 ; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID:]] InitModeINTEL 1
+
 ; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] ImplementInCSRINTEL 0
-; CHECK-SPIRV: GroupDecorate [[#GROUP0]] [[#INT_VAR_ID]] [[#BOOL_VAR_ID]]
-; CHECK-SPIRV: GroupDecorate [[#GROUP1]] [[#INT_VAR_ID]] [[#FLOAT_VAR_ID]]
+; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] ImplementInCSRINTEL 1
+; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID]] ImplementInCSRINTEL 1
 
 ; 5 is a global storage
 ; CHECK-SPIRV: Variable [[#IGNORE0:]] [[#INT_VAR_ID]] 5

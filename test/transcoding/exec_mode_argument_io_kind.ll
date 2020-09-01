@@ -14,10 +14,8 @@ target triple = "spir"
 ; LLVM: @k_rte(i32 "VCArgumentIOKind"="0" %ibuf, i32 "VCArgumentIOKind"="1" %obuf)
 ; SPV: Name [[IBUF:[0-9]+]] "ibuf"
 ; SPV: Name [[OBUF:[0-9]+]] "obuf"
-; SPV: Decorate [[IBUF_DEC:[0-9]+]] FuncParamIOKind 0
-; SPV: Decorate [[OBUF_DEC:[0-9]+]] FuncParamIOKind 1
-; SPV: GroupDecorate [[IBUF_DEC]] [[IBUF]]
-; SPV: GroupDecorate [[OBUF_DEC]] [[OBUF]]
+; SPV: Decorate [[IBUF]] FuncParamIOKind 0
+; SPV: Decorate [[OBUF]] FuncParamIOKind 1
 ; Function Attrs: noinline norecurse nounwind readnone
 define dso_local dllexport spir_kernel void @k_rte(i32 "VCArgumentIOKind"="0" %ibuf, i32 "VCArgumentIOKind"="1" %obuf) local_unnamed_addr #1 {
 entry:

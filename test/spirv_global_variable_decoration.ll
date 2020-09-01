@@ -12,10 +12,9 @@ target triple = "spir"
 @v1 = addrspace(1) global i32 42, !spirv.Decorations !2
 @v2 = addrspace(1) global float 1.0, !spirv.Decorations !4
 
-; CHECK-SPIRV: Decorate [[GroupID:[0-9]+]] Constant
-; CHECK-SPIRV: DecorationGroup [[GroupID]]
-; CHECK-SPIRV: Decorate [[PId2:[0-9]+]] Binding 1
-; CHECK-SPIRV: GroupDecorate [[GroupID]] [[PId1:[0-9]+]] [[PId2]]
+; CHECK-SPIRV: Decorate [[PId1:[0-9]+]] Constant
+; CHECK-SPIRV: Decorate [[PId2:[0-9]+]] Constant
+; CHECK-SPIRV: Decorate [[PId2]] Binding 1
 ; CHECK-SPIRV: Variable {{[0-9]+}} [[PId1]]
 ; CHECK-SPIRV: Variable {{[0-9]+}} [[PId2]]
 
