@@ -3439,6 +3439,12 @@ bool isValidLLVMModule(Module *M, SPIRVErrorLog &ErrorLog) {
   return true;
 }
 
+bool isEmptyLLVMModule(Module *M) {
+  return M->empty() &&              // No functions
+         M->global_empty() &&       // No global variables
+         M->named_metadata_empty(); // No metadata
+}
+
 bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
   SPIRV::TranslatorOpts DefaultOpts;
   // To preserve old behavior of the translator, let's enable all extensions
@@ -3449,6 +3455,9 @@ bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
 
 bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
                       std::ostream &OS, std::string &ErrMsg) {
+  // For empty LLVM module we return empty SPIR-V module
+  if (isEmptyLLVMModule(M))
+    return true;
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
   if (!isValidLLVMModule(M, BM->getErrorLog()))
     return false;
