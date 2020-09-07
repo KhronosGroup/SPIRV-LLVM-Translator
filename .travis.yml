@@ -33,7 +33,6 @@ addons:
     - clang-format-8
     - clang-tidy-8
     - libclang-8-dev
-    - spirv-tools
 
 compiler:
   - gcc
