@@ -1,0 +1,63 @@
+name: Check in-tree build
+
+on:
+  # FIXME: incorporate release branches as well
+  push:
+    branches:
+      - master
+    paths-ignore: # no need to check build for documentation changes
+      - 'docs/**'
+      - '**.md'
+      - '**.txt'
+  pull_request:
+    branches:
+      - master
+    paths-ignore: # no need to check build for documentation changes
+      - 'docs/**'
+      - '**.md'
+      - '**.txt'
+  # TODO: enable nightly build as well
+
+env:
+  LLVM_VERSION=12
+
+jobs:
+  release_with_shared_libs:
+    name: Release build with shared libs
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout LLVM sources
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          ref: master
+          path: llvm-project
+      - name:  Checkout the translator sources
+        uses: actions/checkout@v2
+        with:
+          path: llvm-project/projects/SPIRV-LLVM-Translator
+      - name: Configure
+        run: |
+          mkdir build && cd build
+          cmake ${{ github.workspace }}/llvm-project/llvm \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DLLVM_BUILD_TOOLS=ON \
+            -DLLVM_BUILD_TESTS=ON \
+            -DLLVM_INCLUDE_TESTS=ON \
+            -DLLVM_TARGETS_TO_BUILD="X86" \
+            -DSPIRV_SKIP_CLANG_BUILD=ON \ # FIXME: why?
+            -DSPIRV_SKIP_DEBUG_INFO_TESTS=ON \ # FIXME: why?
+            -DLLVM_LIT_ARGS="-sv --no-progress-bar" \
+            -G "Unix Makefiles"
+      - name: Build
+        run: |
+          cd build
+          make llvm-spirv -j2
+      - name: Build tests & test
+        run: |
+          cd build
+          make check-llvm-spirv -j2
+
+
+
