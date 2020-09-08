@@ -23,6 +23,7 @@ branches:
 before_install:
   - |
     if [ $TRAVIS_OS_NAME == "linux" ]; then
+      sudo apt purge libpython2*
       sudo apt-get update
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
         python2.7
