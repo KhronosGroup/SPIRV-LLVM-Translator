@@ -32,6 +32,7 @@ before_install:
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
         python2.7 \
         llvm-${LLVM_VERSION}-dev \
+        llvm-${LLVM_VERSION}-tools \
         clang-${LLVM_VERSION} \
         clang-format-${LLVM_VERSION} \
         clang-tidy-${LLVM_VERSION} \
