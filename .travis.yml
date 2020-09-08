@@ -23,26 +23,20 @@ branches:
 before_install:
   - |
     if [ $TRAVIS_OS_NAME == "linux" ]; then
+      curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
+      curl -L "http://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
+      echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
+      echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       sudo apt purge libpython2*
       sudo apt-get update
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
-        python2.7
+        python2.7 \
+        llvm-${LLVM_VERSION}-dev \
+        clang-${LLVM_VERSION} \
+        clang-format-${LLVM_VERSION} \
+        clang-tidy-${LLVM_VERSION} \
+        spirv-tools
     fi
-
-addons:
-  apt:
-    sources:
-    - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main'
-      key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-    - sourceline: 'deb https://packages.lunarg.com/vulkan bionic main'
-      key_url: 'https://packages.lunarg.com/lunarg-signing-key-pub.asc'
-    packages:
-    - llvm-8-tools
-    - llvm-8-dev
-    - clang-format-8
-    - clang-tidy-8
-    - libclang-8-dev
-    - spirv-tools
 
 compiler:
   - gcc
@@ -53,6 +47,7 @@ env:
     - MAKEFLAGS="-j2"
     - CHECK_FORMAT=0
     - CHECK_TIDY=0
+    - LLVM_VERSION=8
   matrix:
     - BUILD_TYPE=Release BUILD_EXTERNAL=1 SHARED_LIBS=ON  MAKE_TARGETS=""           MAKE_TEST_TARGET="test"
     - BUILD_TYPE=Debug   BUILD_EXTERNAL=1 SHARED_LIBS=ON  MAKE_TARGETS=""           MAKE_TEST_TARGET="test"
