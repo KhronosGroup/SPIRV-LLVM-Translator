@@ -56,7 +56,6 @@ env:
     - BUILD_TYPE=Debug   BUILD_EXTERNAL=1 SHARED_LIBS=OFF MAKE_TARGETS=""           MAKE_TEST_TARGET="test"
     - BUILD_TYPE=Release BUILD_EXTERNAL=0 SHARED_LIBS=OFF MAKE_TARGETS="llvm-spirv" MAKE_TEST_TARGET="check-llvm-spirv"
     - BUILD_TYPE=Debug   BUILD_EXTERNAL=0 SHARED_LIBS=OFF MAKE_TARGETS="llvm-spirv" MAKE_TEST_TARGET="check-llvm-spirv"
-  # some bug inside clang-5.0.0, works with 5.0.1
 
 matrix:
   include:
