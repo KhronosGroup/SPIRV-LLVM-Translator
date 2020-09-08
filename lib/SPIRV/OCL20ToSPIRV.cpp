@@ -1555,7 +1555,7 @@ void OCL20ToSPIRV::visitCallEnqueueKernel(CallInst *CI,
     auto *LocalSizeArray =
         cast<GetElementPtrInst>(CI->getArgOperand(LocalSizeArrayIdx));
     auto *LocalSizeArrayTy =
-        cast<FixedVectorType>(LocalSizeArray->getSourceElementType());
+        cast<ArrayType>(LocalSizeArray->getSourceElementType());
     const uint64_t LocalSizeNum = LocalSizeArrayTy->getNumElements();
     for (unsigned I = 0; I < LocalSizeNum; ++I)
       Args.push_back(GetElementPtrInst::Create(
