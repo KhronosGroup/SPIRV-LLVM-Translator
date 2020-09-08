@@ -28,6 +28,7 @@ addons:
     - sourceline: 'deb https://packages.lunarg.com/vulkan bionic main'
       key_url: 'https://packages.lunarg.com/lunarg-signing-key-pub.asc'
     packages:
+    - python2.7
     - llvm-8-tools
     - llvm-8-dev
     - clang-format-8
