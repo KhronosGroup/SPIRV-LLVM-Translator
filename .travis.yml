@@ -3,8 +3,8 @@ language: cpp
 os:
   - linux
 
-# Use Ubuntu 16.04 LTS (Xenial) as the Linux testing environment.
-dist: xenial
+# Use Ubuntu 18.04 LTS (Bionic) as the Linux testing environment.
+dist: bionic
 sudo: false
 
 git:
@@ -23,10 +23,10 @@ branches:
 addons:
   apt:
     sources:
-    - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main'
+    - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main'
       key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-    - sourceline: 'deb https://packages.lunarg.com/vulkan xenial main'
-      key_url: 'http://packages.lunarg.com/lunarg-signing-key-pub.asc'
+    - sourceline: 'deb https://packages.lunarg.com/vulkan bionic main'
+      key_url: 'https://packages.lunarg.com/lunarg-signing-key-pub.asc'
     packages:
     - llvm-8-tools
     - llvm-8-dev
