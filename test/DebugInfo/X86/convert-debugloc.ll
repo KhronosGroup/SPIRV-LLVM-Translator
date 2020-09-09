@@ -1,10 +1,51 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.ll
-; FileCheck %s --implicit-check-not=DW_OP_convert --input-file=%t.ll
 
-; RUN: llc -mtriple=%triple -dwarf-version=5 -filetype=obj -O0 < %t.ll
-; RUN: llc -mtriple=%triple -dwarf-version=4 -filetype=obj -O0 < %t.ll
+; RUN: llc -mtriple=%triple -dwarf-version=5 -filetype=obj -O0 < %t.ll | llvm-dwarfdump - \
+; RUN:   | FileCheck %s --check-prefix=DW5 "--implicit-check-not={{DW_TAG|NULL}}"
+; RUN: llc -mtriple=%triple -dwarf-version=4 -filetype=obj -O0 < %t.ll | llvm-dwarfdump - \
+; RUN:   | FileCheck %s --check-prefix=DW4 "--implicit-check-not={{DW_TAG|NULL}}"
+
+; DW5: .debug_info contents:
+; DW5: DW_TAG_compile_unit
+; DW5:[[SIG8:.*]]:   DW_TAG_base_type
+; DW5-NEXT:DW_AT_name ("DW_ATE_signed_8")
+; DW5-NEXT:DW_AT_encoding (DW_ATE_signed)
+; DW5-NEXT:DW_AT_byte_size (0x01)
+; DW5-NOT: DW_AT
+; DW5:[[SIG32:.*]]:   DW_TAG_base_type
+; DW5-NEXT:DW_AT_name ("DW_ATE_signed_32")
+; DW5-NEXT:DW_AT_encoding (DW_ATE_signed)
+; DW5-NEXT:DW_AT_byte_size (0x04)
+; DW5-NOT: DW_AT
+; DW5:   DW_TAG_subprogram
+; DW5:     DW_TAG_formal_parameter
+; DW5:     DW_TAG_variable
+; DW5:       DW_AT_location (
+; DW5:         {{.*}}, DW_OP_convert ([[SIG8]]) "DW_ATE_signed_8", DW_OP_convert ([[SIG32]]) "DW_ATE_signed_32", DW_OP_stack_value)
+; DW5:       DW_AT_name ("y")
+; DW5:     NULL
+; DW5:   DW_TAG_base_type
+; DW5:     DW_AT_name ("signed char")
+; DW5:   DW_TAG_base_type
+; DW5:     DW_AT_name ("int")
+; DW5:   NULL
+
+; DW4: .debug_info contents:
+; DW4: DW_TAG_compile_unit
+; DW4:   DW_TAG_subprogram
+; DW4:     DW_TAG_formal_parameter
+; DW4:     DW_TAG_variable
+; DW4:       DW_AT_location (
+; DW4:         {{.*}}, DW_OP_dup, DW_OP_constu 0x7, DW_OP_shr, DW_OP_lit0, DW_OP_not, DW_OP_mul, DW_OP_constu 0x8, DW_OP_shl, DW_OP_or, DW_OP_stack_value)
+; DW4:       DW_AT_name ("y")
+; DW4:     NULL
+; DW4:   DW_TAG_base_type
+; DW4:     DW_AT_name ("signed char")
+; DW4:   DW_TAG_base_type
+; DW4:     DW_AT_name ("int")
+; DW4:   NULL
 
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "spir64-unknown-unknown"

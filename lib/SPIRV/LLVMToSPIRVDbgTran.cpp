@@ -958,11 +958,6 @@ LLVMToSPIRVDbgTran::transDbgLocalVariable(const DILocalVariable *Var) {
 
 // DWARF Operations and expressions
 
-/// Some expressions are not supported by the SPIR-V DebugInfo specification.
-static bool isUnsupportedDIE(SPIRVDebug::ExpressionOpCode OC) {
-  return OC == SPIRVDebug::Convert;
-}
-
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
   SPIRVWordVec Operations;
   for (unsigned I = 0, N = Expr->getNumElements(); I < N; ++I) {
@@ -973,11 +968,6 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
     assert(OpCountMap.find(OC) != OpCountMap.end() &&
            "unhandled opcode found in DIExpression");
     unsigned OpCount = OpCountMap[OC];
-    if (isUnsupportedDIE(OC)) {
-      assert(OpCount >= 1);
-      I += OpCount - 1;
-      continue;
-    }
     SPIRVWordVec Op(OpCount);
     Op[OpCodeIdx] = OC;
     for (unsigned J = 1; J < OpCount; ++J)
