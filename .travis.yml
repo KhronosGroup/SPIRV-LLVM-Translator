@@ -31,6 +31,8 @@ before_install:
       sudo apt-get update
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
         python2.7 \
+        python2 \
+        python-pigments \
         llvm-${LLVM_VERSION}-dev \
         llvm-${LLVM_VERSION}-tools \
         clang-${LLVM_VERSION} \
