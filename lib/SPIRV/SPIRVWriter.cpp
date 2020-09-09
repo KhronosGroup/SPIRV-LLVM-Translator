@@ -1554,7 +1554,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
 
   if (Instruction *Inst = dyn_cast<Instruction>(V)) {
     BM->getErrorLog().checkError(false, SPIRVEC_InvalidInstruction,
-                                 toString(Inst) + "\n", nullptr, __FILE__,
+                                 toString(Inst) + "\n", "", __FILE__,
                                  __LINE__);
   }
 
