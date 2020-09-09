@@ -27,7 +27,7 @@ before_install:
       curl -L "http://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
       echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
-      sudo apt purge libpython2*
+      sudo apt purge libpython2* python2*
       sudo apt-get update
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
         python2.7 \
