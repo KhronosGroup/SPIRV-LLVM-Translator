@@ -372,7 +372,7 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
     }
   }
 
-  if (auto *VecTy = dyn_cast<VectorType>(T))
+  if (auto *VecTy = dyn_cast<FixedVectorType>(T))
     return mapType(T, BM->addVectorType(transType(VecTy->getElementType()),
                                         VecTy->getNumElements()));
 
@@ -3450,7 +3450,7 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       auto IsVector = ResultTy->isVectorTy();
       if (IsVector)
         BoolTy = FixedVectorType::get(
-            BoolTy, cast<VectorType>(ResultTy)->getNumElements());
+            BoolTy, cast<FixedVectorType>(ResultTy)->getNumElements());
       auto BBT = transType(BoolTy);
       SPIRVInstruction *Res;
       if (isCmpOpCode(OC)) {
