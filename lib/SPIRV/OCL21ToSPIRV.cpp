@@ -39,14 +39,14 @@
 
 #include "OCLUtil.h"
 #include "SPIRVInternal.h"
+#include "libSPIRV/SPIRVDebug.h"
+
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 
 #include <set>
 
@@ -55,12 +55,6 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
-
-cl::opt<bool>
-    SPIRVOCL21ToSPIRVValidate("cl21tospv-validate", cl::init(_SPIRVDBG),
-                              cl::desc("Validate module after lowering OpenCL "
-                                       "2.1 specific into SPIR-V friendly IR"));
-
 class OCL21ToSPIRV : public ModulePass, public InstVisitor<OCL21ToSPIRV> {
 public:
   OCL21ToSPIRV() : ModulePass(ID), M(nullptr), Ctx(nullptr), CLVer(0) {
@@ -128,13 +122,7 @@ bool OCL21ToSPIRV::runOnModule(Module &Module) {
       GV->eraseFromParent();
 
   LLVM_DEBUG(dbgs() << "After OCL21ToSPIRV:\n" << *M);
-  if (SPIRVOCL21ToSPIRVValidate) {
-    std::string Err;
-    raw_string_ostream ErrorOS(Err);
-    if (verifyModule(*M, &ErrorOS)) {
-      LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
-    }
-  }
+  VERIFY_REGULARIZATION_PASS(*M, "OCL21ToSPIRV")
 
   return true;
 }

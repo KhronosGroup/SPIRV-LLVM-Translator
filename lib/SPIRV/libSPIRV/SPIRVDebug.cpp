@@ -45,3 +45,8 @@ bool SPIRV::SPIRVDbgEnable = false;
 SPIRV::SPIRVDbgErrorHandlingKinds SPIRV::SPIRVDbgError =
     SPIRVDbgErrorHandlingKinds::Exit;
 bool SPIRV::SPIRVDbgErrorMsgIncludesSourceInfo = true;
+
+llvm::cl::opt<bool> SPIRV::VerifyRegularizationPasses(
+    "spirv-verify-regularize-passes", llvm::cl::init(_SPIRVDBG),
+    llvm::cl::desc(
+        "Validate module after each pass in LLVM regularization phase"));

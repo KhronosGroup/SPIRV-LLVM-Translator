@@ -41,9 +41,14 @@
 #define SPIRV_LIBSPIRV_SPIRVDEBUG_H
 
 #include "SPIRVUtil.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
+
 #include <iostream>
 
 namespace SPIRV {
+
+extern llvm::cl::opt<bool> VerifyRegularizationPasses;
 
 // Include source file and line number in error message.
 extern bool SPIRVDbgErrorMsgIncludesSourceInfo;
@@ -103,6 +108,19 @@ inline dev_null_stream &spvdbgs() {
 }
 
 #endif
+
+#define VERIFY_REGULARIZATION_PASS(Module, PassName)                           \
+  {                                                                            \
+    if (VerifyRegularizationPasses) {                                          \
+      std::string Err;                                                         \
+      raw_string_ostream ErrorOS(Err);                                         \
+      if (verifyModule(Module, &ErrorOS)) {                                    \
+        LLVM_DEBUG(errs() << "Failed to verify module after pass: "            \
+                          << PassName << "\n"                                  \
+                          << ErrorOS.str());                                   \
+      }                                                                        \
+    }                                                                          \
+  }
 
 } // namespace SPIRV
 #endif // SPIRV_LIBSPIRV_SPIRVDEBUG_H

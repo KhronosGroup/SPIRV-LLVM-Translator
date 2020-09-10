@@ -41,6 +41,7 @@
 #include "SPIRVInternal.h"
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
+#include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/ADT/Triple.h"
@@ -49,8 +50,6 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 
 #include <list>
 #include <set>
@@ -64,10 +63,6 @@ namespace SPIRV {
 cl::opt<bool> SPIRVLowerConst(
     "spirv-lower-const-expr", cl::init(true),
     cl::desc("LLVM/SPIR-V translation enable lowering constant expression"));
-
-cl::opt<bool> SPIRVLowerConstExprValidate(
-    "spirv-lower-const-expr-validate", cl::init(_SPIRVDBG),
-    cl::desc("Validate module after lowering constant expressions"));
 
 class SPIRVLowerConstExpr : public ModulePass {
 public:
@@ -97,14 +92,7 @@ bool SPIRVLowerConstExpr::runOnModule(Module &Module) {
   LLVM_DEBUG(dbgs() << "Enter SPIRVLowerConstExpr:\n");
   visit(M);
 
-  if (SPIRVLowerConstExprValidate) {
-    LLVM_DEBUG(dbgs() << "After SPIRVLowerConstExpr:\n" << *M);
-    std::string Err;
-    raw_string_ostream ErrorOS(Err);
-    if (verifyModule(*M, &ErrorOS)) {
-      LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
-    }
-  }
+  VERIFY_REGULARIZATION_PASS(*M, "SPIRVLowerConstExpr")
 
   return true;
 }
