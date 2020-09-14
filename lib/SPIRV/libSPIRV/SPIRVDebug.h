@@ -61,7 +61,7 @@ extern SPIRVDbgErrorHandlingKinds SPIRVDbgError;
 extern bool SPIRVDbgEnable;
 
 #ifndef _SPIRVDBG
-#if !defined(NDEBUG) || defined (_DEBUG)
+#if !defined(NDEBUG) || defined(_DEBUG)
 #define _SPIRVDBG true
 #else
 #define _SPIRVDBG false
@@ -92,12 +92,12 @@ public:
 };
 
 template <typename T>
-dev_null_stream &operator<<(dev_null_stream &Out, const T &) {
+const dev_null_stream &operator<<(const dev_null_stream &Out, const T &) {
   return Out;
 }
 
 template <typename T>
-const dev_null_stream &&operator<<(dev_null_stream &&Out, const T &) {
+const dev_null_stream &&operator<<(const dev_null_stream &&Out, const T &) {
   return Out;
 }
 

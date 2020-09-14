@@ -41,8 +41,8 @@
 
 #include "SPIRVDebug.h"
 #include "SPIRVUtil.h"
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 namespace SPIRV {
