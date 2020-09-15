@@ -1,9 +1,10 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll
 
-; RUN: llc -mtriple=%triple -dwarf-version=5 -filetype=obj -O0 < %t.ll
-; RUN: llc -mtriple=%triple -dwarf-version=4 -filetype=obj -O0 < %t.ll
+; RUN: llc -mtriple=%triple -dwarf-version=5 -filetype=obj -O0 < %t.rev.ll
+; RUN: llc -mtriple=%triple -dwarf-version=4 -filetype=obj -O0 < %t.rev.ll
 
 ; CHECK: DW_OP_constu, 42
 ; CHECK: DW_OP_plus_uconst, 42
@@ -24,7 +25,7 @@
 ; CHECK: DW_OP_lit0
 ; CHECK: DW_OP_not
 ; CHECK: DW_OP_dup
-; CHECK: DW_OP_regx 1,
+; CHECK: DW_OP_regx, 1
 ; CHECK: DW_OP_bregx, 1, 4
 ; CHECK: DW_OP_push_object_address
 ; CHECK: DW_OP_swap
