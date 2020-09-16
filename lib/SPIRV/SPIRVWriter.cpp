@@ -552,8 +552,7 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
     }
   }
 
-  if (!isKernel(F) &&
-      Attrs.hasFnAttribute(kVCMetadata::VCFloatControl)) {
+  if (!isKernel(F) && Attrs.hasFnAttribute(kVCMetadata::VCFloatControl)) {
 
     SPIRVWord Mode = 0;
     Attrs
