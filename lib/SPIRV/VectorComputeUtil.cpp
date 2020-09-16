@@ -66,28 +66,26 @@ enum VCFloatControlMask {
 
 namespace SPIRV {
 
-typedef SPIRVMap<VectorComputeUtil::VCRoundMode,
-                 VectorComputeUtil::VCFloatControl>
-    VCRoundModeControlBitMap;
-typedef SPIRVMap<VectorComputeUtil::VCFloatMode,
-                 VectorComputeUtil::VCFloatControl>
-    VCFloatModeControlBitMap;
+typedef SPIRVMap<FPRoundingMode, VectorComputeUtil::VCFloatControl>
+    FPRoundingModeControlBitMap;
+typedef SPIRVMap<FPOperationMode, VectorComputeUtil::VCFloatControl>
+    FPOperationModeControlBitMap;
 typedef SPIRVMap<VectorComputeUtil::VCFloatType,
                  VectorComputeUtil::VCFloatControl>
     VCFloatTypeDenormMaskMap;
 template <>
-inline void SPIRVMap<VectorComputeUtil::VCRoundMode,
-                     VectorComputeUtil::VCFloatControl>::init() {
-  add(VectorComputeUtil::RTE, VectorComputeUtil::VC_RTE);
-  add(VectorComputeUtil::RTP, VectorComputeUtil::VC_RTP);
-  add(VectorComputeUtil::RTN, VectorComputeUtil::VC_RTN);
-  add(VectorComputeUtil::RTZ, VectorComputeUtil::VC_RTZ);
+inline void
+SPIRVMap<FPRoundingMode, VectorComputeUtil::VCFloatControl>::init() {
+  add(spv::FPRoundingModeRTE, VectorComputeUtil::VC_RTE);
+  add(spv::FPRoundingModeRTP, VectorComputeUtil::VC_RTP);
+  add(spv::FPRoundingModeRTN, VectorComputeUtil::VC_RTN);
+  add(spv::FPRoundingModeRTZ, VectorComputeUtil::VC_RTZ);
 }
 template <>
-inline void SPIRVMap<VectorComputeUtil::VCFloatMode,
-                     VectorComputeUtil::VCFloatControl>::init() {
-  add(VectorComputeUtil::IEEE, VectorComputeUtil::VC_FLOAT_MODE_IEEE);
-  add(VectorComputeUtil::ALT, VectorComputeUtil::VC_FLOAT_MODE_ALT);
+inline void
+SPIRVMap<FPOperationMode, VectorComputeUtil::VCFloatControl>::init() {
+  add(spv::FPOperationModeIEEE, VectorComputeUtil::VC_FLOAT_MODE_IEEE);
+  add(spv::FPOperationModeALT, VectorComputeUtil::VC_FLOAT_MODE_ALT);
 }
 template <>
 inline void SPIRVMap<VectorComputeUtil::VCFloatType,
@@ -101,32 +99,34 @@ inline void SPIRVMap<VectorComputeUtil::VCFloatType,
 
 namespace VectorComputeUtil {
 
-VCRoundMode getVCRoundMode(unsigned FloatControl) noexcept {
-  return VCRoundModeControlBitMap::rmap(
+FPRoundingMode getFPRoundingMode(unsigned FloatControl) noexcept {
+  return FPRoundingModeControlBitMap::rmap(
       VCFloatControl(VC_ROUND_MASK & FloatControl));
 }
 
-VCDenormMode getVCDenormPreserve(unsigned FloatControl,
-                                 VCFloatType FloatType) noexcept {
+FPDenormMode getFPDenormMode(unsigned FloatControl,
+                             VCFloatType FloatType) noexcept {
   VCFloatControl DenormMask =
       VCFloatTypeDenormMaskMap::map(FloatType); // 1 Bit mask
-  return (DenormMask == (DenormMask & FloatControl)) ? Preserve : FlushToZero;
+  return (DenormMask == (DenormMask & FloatControl))
+             ? spv::FPDenormModePreserve
+             : spv::FPDenormModeFlushToZero;
 }
 
-VCFloatMode getVCFloatMode(unsigned FloatControl) noexcept {
-  return VCFloatModeControlBitMap::rmap(
+FPOperationMode getFPOperationMode(unsigned FloatControl) noexcept {
+  return FPOperationModeControlBitMap::rmap(
       VCFloatControl(VC_FLOAT_MASK & FloatControl));
 }
 
-unsigned getVCFloatControl(VCRoundMode RoundMode) noexcept {
-  return VCRoundModeControlBitMap::map(RoundMode);
+unsigned getVCFloatControl(FPRoundingMode RoundMode) noexcept {
+  return FPRoundingModeControlBitMap::map(RoundMode);
 }
-unsigned getVCFloatControl(VCFloatMode FloatMode) noexcept {
-  return VCFloatModeControlBitMap::map(FloatMode);
+unsigned getVCFloatControl(FPOperationMode FloatMode) noexcept {
+  return FPOperationModeControlBitMap::map(FloatMode);
 }
-unsigned getVCFloatControl(VCDenormMode DenormMode,
+unsigned getVCFloatControl(FPDenormMode DenormMode,
                            VCFloatType FloatType) noexcept {
-  if (DenormMode == Preserve)
+  if (DenormMode == spv::FPDenormModePreserve)
     return VCFloatTypeDenormMaskMap::map(FloatType);
   return VC_DENORM_FTZ;
 }
