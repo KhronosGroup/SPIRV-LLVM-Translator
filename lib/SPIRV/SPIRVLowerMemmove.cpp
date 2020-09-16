@@ -44,7 +44,6 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 using namespace llvm;
@@ -114,7 +113,7 @@ public:
     Mod = &M;
     visit(M);
 
-    VERIFY_REGULARIZATION_PASS(M, "SPIRVLowerMemmove")
+    verifyRegularizationPass(M, "SPIRVLowerMemmove");
     return true;
   }
 

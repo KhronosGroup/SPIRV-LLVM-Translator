@@ -43,7 +43,6 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 using namespace llvm;
@@ -115,7 +114,7 @@ public:
     Context = &M.getContext();
     visit(M);
 
-    VERIFY_REGULARIZATION_PASS(M, "SPIRVLowerBool")
+    verifyRegularizationPass(M, "SPIRVLowerBool");
     return true;
   }
 

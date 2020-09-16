@@ -48,7 +48,6 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 #include <algorithm>
@@ -349,7 +348,7 @@ bool OCL20ToSPIRV::runOnModule(Module &Module) {
   eraseUselessFunctions(M); // remove unused functions declarations
   LLVM_DEBUG(dbgs() << "After OCL20ToSPIRV:\n" << *M);
 
-  VERIFY_REGULARIZATION_PASS(*M, "OCL20ToSPIRV")
+  verifyRegularizationPass(*M, "OCL20ToSPIRV");
 
   return true;
 }

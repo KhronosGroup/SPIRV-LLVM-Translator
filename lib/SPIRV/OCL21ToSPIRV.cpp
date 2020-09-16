@@ -45,7 +45,6 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 #include <set>
@@ -122,7 +121,7 @@ bool OCL21ToSPIRV::runOnModule(Module &Module) {
       GV->eraseFromParent();
 
   LLVM_DEBUG(dbgs() << "After OCL21ToSPIRV:\n" << *M);
-  VERIFY_REGULARIZATION_PASS(*M, "OCL21ToSPIRV")
+  verifyRegularizationPass(*M, "OCL21ToSPIRV");
 
   return true;
 }

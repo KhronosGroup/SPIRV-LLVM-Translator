@@ -41,10 +41,12 @@
 #define SPIRV_LIBSPIRV_SPIRVDEBUG_H
 
 #include "SPIRVUtil.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 
 #include <iostream>
+#include <string>
 
 namespace SPIRV {
 
@@ -59,6 +61,8 @@ extern SPIRVDbgErrorHandlingKinds SPIRVDbgError;
 
 // Enable debug output.
 extern bool SPIRVDbgEnable;
+
+void verifyRegularizationPass(llvm::Module &, const std::string &);
 
 #ifndef _SPIRVDBG
 #if !defined(NDEBUG) || defined(_DEBUG)
@@ -98,7 +102,7 @@ const dev_null_stream &operator<<(const dev_null_stream &Out, const T &) {
 
 template <typename T>
 const dev_null_stream &&operator<<(const dev_null_stream &&Out, const T &) {
-  return Out;
+  return std::move(Out);
 }
 
 // Output stream for SPIRV debug information.
@@ -108,19 +112,6 @@ inline dev_null_stream &spvdbgs() {
 }
 
 #endif
-
-#define VERIFY_REGULARIZATION_PASS(Module, PassName)                           \
-  {                                                                            \
-    if (VerifyRegularizationPasses) {                                          \
-      std::string Err;                                                         \
-      raw_string_ostream ErrorOS(Err);                                         \
-      if (verifyModule(Module, &ErrorOS)) {                                    \
-        LLVM_DEBUG(errs() << "Failed to verify module after pass: "            \
-                          << PassName << "\n"                                  \
-                          << ErrorOS.str());                                   \
-      }                                                                        \
-    }                                                                          \
-  }
 
 } // namespace SPIRV
 #endif // SPIRV_LIBSPIRV_SPIRVDEBUG_H

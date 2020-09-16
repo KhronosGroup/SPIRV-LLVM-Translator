@@ -48,7 +48,6 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Linker/Linker.h"
 #include "llvm/Pass.h"
@@ -121,7 +120,7 @@ public:
     Mod = &M;
     visit(M);
 
-    VERIFY_REGULARIZATION_PASS(M, "SPIRVLowerSaddWithOverflow")
+    verifyRegularizationPass(M, "SPIRVLowerSaddWithOverflow");
     return TheModuleIsModified;
   }
 

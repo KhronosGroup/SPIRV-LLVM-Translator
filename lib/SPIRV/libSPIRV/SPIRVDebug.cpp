@@ -39,6 +39,11 @@
 
 #include "SPIRVDebug.h"
 
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_ostream.h"
+
+#define DEBUG_TYPE "spirv-regularization"
+
 using namespace SPIRV;
 
 bool SPIRV::SPIRVDbgEnable = false;
@@ -49,4 +54,18 @@ bool SPIRV::SPIRVDbgErrorMsgIncludesSourceInfo = true;
 llvm::cl::opt<bool> SPIRV::VerifyRegularizationPasses(
     "spirv-verify-regularize-passes", llvm::cl::init(_SPIRVDBG),
     llvm::cl::desc(
-        "Validate module after each pass in LLVM regularization phase"));
+        "Verify module after each pass in LLVM regularization phase"));
+
+namespace SPIRV {
+void verifyRegularizationPass(llvm::Module &M, const std::string &PassName) {
+  if (VerifyRegularizationPasses) {
+    std::string Err;
+    llvm::raw_string_ostream ErrorOS(Err);
+    if (llvm::verifyModule(M, &ErrorOS)) {
+      LLVM_DEBUG(llvm::errs()
+                 << "Failed to verify module after pass: " << PassName << "\n"
+                 << ErrorOS.str());
+    }
+  }
+}
+} // namespace SPIRV

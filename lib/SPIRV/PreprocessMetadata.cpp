@@ -48,7 +48,6 @@
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 using namespace llvm;
@@ -89,7 +88,7 @@ bool PreprocessMetadata::runOnModule(Module &Module) {
   visit(M);
   LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
 
-  VERIFY_REGULARIZATION_PASS(*M, "PreprocessMetadata")
+  verifyRegularizationPass(*M, "PreprocessMetadata");
 
   return true;
 }

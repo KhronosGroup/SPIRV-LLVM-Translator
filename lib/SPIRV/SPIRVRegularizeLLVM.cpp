@@ -44,7 +44,6 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 
 #include <set>
@@ -92,7 +91,7 @@ bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
   regularize();
   LLVM_DEBUG(dbgs() << "After SPIRVRegularizeLLVM:\n" << *M);
 
-  VERIFY_REGULARIZATION_PASS(*M, "SPIRVRegularizeLLVM")
+  verifyRegularizationPass(*M, "SPIRVRegularizeLLVM");
 
   return true;
 }
