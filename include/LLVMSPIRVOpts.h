@@ -150,8 +150,7 @@ public:
     return AllowExtraDIExpressions;
   }
 
-  void
-  setAllowExtraDIExpressionsEnabled(bool Allow) noexcept {
+  void setAllowExtraDIExpressionsEnabled(bool Allow) noexcept {
     AllowExtraDIExpressions = Allow;
   }
 
