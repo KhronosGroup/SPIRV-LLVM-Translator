@@ -48,6 +48,9 @@
 #include "SPIRVType.h"
 #include "SPIRVValue.h"
 
+#include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/DenseSet.h>
+
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -452,9 +455,9 @@ private:
   SPIRVAddressingModelKind AddrModel;
   SPIRVMemoryModelKind MemoryModel;
 
-  typedef std::map<SPIRVId, SPIRVEntry *> SPIRVIdToEntryMap;
+  typedef llvm::DenseMap<SPIRVId, SPIRVEntry *> SPIRVIdToEntryMap;
   typedef std::set<SPIRVEntry *> SPIRVEntrySet;
-  typedef std::set<SPIRVId> SPIRVIdSet;
+  typedef llvm::DenseSet<SPIRVId> SPIRVIdSet;
   typedef std::vector<SPIRVId> SPIRVIdVec;
   typedef std::vector<SPIRVFunction *> SPIRVFunctionVector;
   typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
