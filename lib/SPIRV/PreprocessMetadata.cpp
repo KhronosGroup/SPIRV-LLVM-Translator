@@ -43,14 +43,12 @@
 #include "SPIRVMDBuilder.h"
 #include "SPIRVMDWalker.h"
 #include "VectorComputeUtil.h"
+#include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 
 using namespace llvm;
 using namespace SPIRV;
@@ -88,13 +86,10 @@ bool PreprocessMetadata::runOnModule(Module &Module) {
 
   LLVM_DEBUG(dbgs() << "Enter PreprocessMetadata:\n");
   visit(M);
-
   LLVM_DEBUG(dbgs() << "After PreprocessMetadata:\n" << *M);
-  std::string Err;
-  raw_string_ostream ErrorOS(Err);
-  if (verifyModule(*M, &ErrorOS)) {
-    LLVM_DEBUG(errs() << "Fails to verify module: " << ErrorOS.str());
-  }
+
+  verifyRegularizationPass(*M, "PreprocessMetadata");
+
   return true;
 }
 
@@ -255,6 +250,9 @@ void PreprocessMetadata::preprocessVectorComputeMetadata(Module *M,
   auto EM = B->addNamedMD(kSPIRVMD::ExecutionMode);
 
   for (auto &F : *M) {
+    if (F.getCallingConv() != CallingConv::SPIR_KERNEL)
+      continue;
+
     // Add VC float control execution modes
     // RoundMode and FloatMode are always same for all types in VC
     // While Denorm could be different for double, float and half
@@ -267,17 +265,17 @@ void PreprocessMetadata::preprocessVectorComputeMetadata(Module *M,
           .getValueAsString()
           .getAsInteger(0, Mode);
       spv::ExecutionMode ExecRoundMode =
-          VCRoundModeExecModeMap::map(getVCRoundMode(Mode));
+          FPRoundingModeExecModeMap::map(getFPRoundingMode(Mode));
       spv::ExecutionMode ExecFloatMode =
-          VCFloatModeExecModeMap::map(getVCFloatMode(Mode));
+          FPOperationModeExecModeMap::map(getFPOperationMode(Mode));
       VCFloatTypeSizeMap::foreach (
           [&](VCFloatType FloatType, unsigned TargetWidth) {
             EM.addOp().add(&F).add(ExecRoundMode).add(TargetWidth).done();
             EM.addOp().add(&F).add(ExecFloatMode).add(TargetWidth).done();
             EM.addOp()
                 .add(&F)
-                .add(VCDenormModeExecModeMap::map(
-                    getVCDenormPreserve(Mode, FloatType)))
+                .add(FPDenormModeExecModeMap::map(
+                    getFPDenormMode(Mode, FloatType)))
                 .add(TargetWidth)
                 .done();
           });

@@ -386,10 +386,20 @@ enum FPRoundingMode {
     FPRoundingModeMax = 0x7fffffff,
 };
 
+enum FPDenormMode {
+  FPDenormModePreserve = 0,
+  FPDenormModeFlushToZero = 1,
+};
+
+enum FPOperationMode {
+  FPOperationModeIEEE = 0,
+  FPOperationModeALT = 1,
+};
+
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
-    LinkageTypeInternal, /* internal use only */
+    LinkageTypeInternal = 2, /* internal use only */
     LinkageTypeMax = 0x7fffffff,
 };
 
@@ -490,6 +500,8 @@ enum Decoration {
   DecorationHlslSemanticGOOGLE = 5635,
   DecorationUserSemantic = 5635,
   DecorationUserTypeGOOGLE = 5636,
+  DecorationFunctionRoundingModeINTEL = 5822,
+  DecorationFunctionDenormModeINTEL = 5823,
   DecorationRegisterINTEL = 5825,
   DecorationMemoryINTEL = 5826,
   DecorationNumbanksINTEL = 5827,
@@ -508,6 +520,7 @@ enum Decoration {
   DecorationPrefetchINTEL = 5902,
   DecorationBufferLocationINTEL = 5921,
   DecorationIOPipeStorageINTEL = 5944,
+  DecorationFunctionFloatingPointModeINTEL = 6080,
   DecorationMax = 0x7fffffff,
 };
 
@@ -941,6 +954,8 @@ enum Capability {
   CapabilitySubgroupBufferBlockIOINTEL = 5569,
   CapabilitySubgroupImageBlockIOINTEL = 5570,
   CapabilitySubgroupImageMediaBlockIOINTEL = 5579,
+  CapabilityRoundToInfinityINTEL = 5582,
+  CapabilityFloatingPointModeINTEL = 5583,
   CapabilityIntegerFunctions2INTEL = 5584,
   CapabilityFunctionPointersINTEL = 5603,
   CapabilityIndirectReferencesINTEL = 5604,
@@ -951,8 +966,8 @@ enum Capability {
   CapabilitySubgroupAvcMotionEstimationINTEL = 5696,
   CapabilitySubgroupAvcMotionEstimationIntraINTEL = 5697,
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
-  CapabilityRoundToInfinityINTEL = 5582,
-  CapabilityFloatingPointModeINTEL = 5583,
+  CapabilityVariableLengthArrayINTEL = 5817,
+  CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityFPGAMemoryAttributesINTEL = 5824,
   CapabilityArbitraryPrecisionIntegersINTEL = 5844,
   CapabilityArbitraryPrecisionFloatingPointINTEL = 5845,
@@ -1505,6 +1520,9 @@ enum Op {
   OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL = 5814,
   OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL = 5815,
   OpSubgroupAvcSicGetInterRawSadsINTEL = 5816,
+  OpVariableLengthArrayINTEL = 5818,
+  OpSaveMemoryINTEL = 5819,
+  OpRestoreMemoryINTEL = 5820,
   OpArbitraryFloatSinCosPiINTEL = 5840,
   OpArbitraryFloatCastINTEL = 5841,
   OpArbitraryFloatCastFromIntINTEL = 5842,
@@ -1563,6 +1581,7 @@ enum Op {
   OpReadPipeBlockingINTEL = 5946,
   OpWritePipeBlockingINTEL = 5947,
   OpFPGARegINTEL = 5949,
+  OpTypeBufferSurfaceINTEL = 6086,
   OpMax = 0x7fffffff,
 };
 
@@ -2094,6 +2113,10 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetInterRawSadsINTEL: *hasResult = true; *hasResultType = true; break;
+    case OpTypeBufferSurfaceINTEL:
+      *hasResult = true;
+      *hasResultType = false;
+      break;
     }
 }
 #endif /* SPV_ENABLE_UTILITY_CODE */

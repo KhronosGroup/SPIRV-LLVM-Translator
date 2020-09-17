@@ -141,7 +141,7 @@ std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed) {
     }
     return SignPrefix + Stem;
   }
-  if (auto VecTy = dyn_cast<VectorType>(Ty)) {
+  if (auto VecTy = dyn_cast<FixedVectorType>(Ty)) {
     Type *EleTy = VecTy->getElementType();
     unsigned Size = VecTy->getNumElements();
     std::stringstream Ss;
@@ -738,7 +738,7 @@ void makeVector(Instruction *InsPos, std::vector<Value *> &Ops,
 void expandVector(Instruction *InsPos, std::vector<Value *> &Ops,
                   size_t VecPos) {
   auto Vec = Ops[VecPos];
-  auto *VT = dyn_cast<VectorType>(Vec->getType());
+  auto *VT = dyn_cast<FixedVectorType>(Vec->getType());
   if (!VT)
     return;
   size_t N = VT->getNumElements();
@@ -1045,7 +1045,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_FLOAT));
   if (Ty->isDoubleTy())
     return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_DOUBLE));
-  if (auto *VecTy = dyn_cast<VectorType>(Ty)) {
+  if (auto *VecTy = dyn_cast<FixedVectorType>(Ty)) {
     return SPIR::RefParamType(new SPIR::VectorType(
         transTypeDesc(VecTy->getElementType(), Info), VecTy->getNumElements()));
   }
@@ -1159,7 +1159,7 @@ Value *getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
 Constant *getScalarOrVectorConstantInt(Type *T, uint64_t V, bool IsSigned) {
   if (auto IT = dyn_cast<IntegerType>(T))
     return ConstantInt::get(IT, V);
-  if (auto VT = dyn_cast<VectorType>(T)) {
+  if (auto VT = dyn_cast<FixedVectorType>(T)) {
     std::vector<Constant *> EV(
         VT->getNumElements(),
         getScalarOrVectorConstantInt(VT->getElementType(), V, IsSigned));
@@ -1453,22 +1453,44 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
 
 /// Check if access qualifier is encoded in the type Name.
 bool hasAccessQualifiedName(StringRef TyName) {
-  if (TyName.endswith("_ro_t") || TyName.endswith("_wo_t") ||
-      TyName.endswith("_rw_t"))
-    return true;
-  return false;
+  if (TyName.size() < 5)
+    return false;
+  auto Acc = TyName.substr(TyName.size() - 5, 3);
+  return llvm::StringSwitch<bool>(Acc)
+      .Case(kAccessQualPostfix::ReadOnly, true)
+      .Case(kAccessQualPostfix::WriteOnly, true)
+      .Case(kAccessQualPostfix::ReadWrite, true)
+      .Default(false);
+}
+
+SPIRVAccessQualifierKind getAccessQualifier(StringRef TyName) {
+  return SPIRSPIRVAccessQualifierMap::map(
+      getAccessQualifierFullName(TyName).str());
+}
+
+StringRef getAccessQualifierPostfix(SPIRVAccessQualifierKind Access) {
+  switch (Access) {
+  case AccessQualifierReadOnly:
+    return kAccessQualPostfix::ReadOnly;
+  case AccessQualifierWriteOnly:
+    return kAccessQualPostfix::WriteOnly;
+  case AccessQualifierReadWrite:
+    return kAccessQualPostfix::ReadWrite;
+  default:
+    assert(false && "Unrecognized access qualifier!");
+    return kAccessQualPostfix::ReadWrite;
+  }
 }
 
 /// Get access qualifier from the type Name.
-StringRef getAccessQualifier(StringRef TyName) {
+StringRef getAccessQualifierFullName(StringRef TyName) {
   assert(hasAccessQualifiedName(TyName) &&
          "Type is not qualified with access.");
-  auto Acc = TyName.substr(TyName.size() - 4, 2);
+  auto Acc = TyName.substr(TyName.size() - 5, 3);
   return llvm::StringSwitch<StringRef>(Acc)
-      .Case("ro", "read_only")
-      .Case("wo", "write_only")
-      .Case("rw", "read_write")
-      .Default("");
+      .Case(kAccessQualPostfix::ReadOnly, kAccessQualName::ReadOnly)
+      .Case(kAccessQualPostfix::WriteOnly, kAccessQualName::WriteOnly)
+      .Case(kAccessQualPostfix::ReadWrite, kAccessQualName::ReadWrite);
 }
 
 /// Translates OpenCL image type names to SPIR-V.
@@ -1477,7 +1499,7 @@ Type *getSPIRVImageTypeFromOCL(Module *M, Type *ImageTy) {
   auto ImageTypeName = ImageTy->getPointerElementType()->getStructName();
   StringRef Acc = kAccessQualName::ReadOnly;
   if (hasAccessQualifiedName(ImageTypeName))
-    Acc = getAccessQualifier(ImageTypeName);
+    Acc = getAccessQualifierFullName(ImageTypeName);
   return getOrCreateOpaquePtrType(M, mapOCLTypeNameToSPIRV(ImageTypeName, Acc));
 }
 
@@ -1508,12 +1530,13 @@ bool hasLoopMetadata(const Module *M) {
 bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
   switch (II->getIntrinsicID()) {
   case Intrinsic::fabs:
-  case Intrinsic::ceil: {
+  case Intrinsic::ceil:
+  case Intrinsic::maxnum: {
     Type *Ty = II->getType();
     if (II->getArgOperand(0)->getType() != Ty)
       return false;
     int NumElems = 1;
-    if (auto *VecTy = dyn_cast<VectorType>(Ty)) {
+    if (auto *VecTy = dyn_cast<FixedVectorType>(Ty)) {
       NumElems = VecTy->getNumElements();
       Ty = VecTy->getElementType();
     }
