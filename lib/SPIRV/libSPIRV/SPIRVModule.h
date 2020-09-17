@@ -487,6 +487,10 @@ public:
     return TranslationOpts.isSPIRVAllowUnknownIntrinsicsEnabled();
   }
 
+  bool allowExtraDIExpressions() const noexcept {
+    return TranslationOpts.allowExtraDIExpressions();
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);

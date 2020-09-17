@@ -1,5 +1,5 @@
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-allow-extra-diexpressions
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll
 

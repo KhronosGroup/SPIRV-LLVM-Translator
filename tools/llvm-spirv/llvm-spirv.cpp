@@ -183,6 +183,11 @@ cl::opt<bool> SPIRVAllowUnknownIntrinsics(
     cl::desc("Unknown LLVM intrinsics will be translated as external function "
              "calls in SPIR-V"));
 
+cl::opt<bool> SPIRVAllowExtraDIExpressions(
+    "spirv-allow-extra-diexpressions", cl::init(false),
+    cl::desc("Allow DIExpression operations not listed in the SPIR-V DebugInfo "
+             "specification (experimental)"));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -566,6 +571,10 @@ int main(int Ac, char **Av) {
     } else {
       Opts.setSPIRVAllowUnknownIntrinsicsEnabled(SPIRVAllowUnknownIntrinsics);
     }
+  }
+
+  if (SPIRVAllowExtraDIExpressions.getNumOccurrences() != 0) {
+    Opts.setAllowExtraDIExpressionsEnabled(SPIRVAllowExtraDIExpressions);
   }
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
