@@ -2844,8 +2844,16 @@ void LLVMToSPIRV::transFunction(Function *I) {
   }
 }
 
+bool isEmptyLLVMModule(Module *M) {
+  return M->empty() &&      // No functions
+         M->global_empty(); // No global variables
+}
+
 bool LLVMToSPIRV::translate() {
   BM->setGeneratorVer(KTranslatorVer);
+
+  if (isEmptyLLVMModule(M))
+    BM->addCapability(CapabilityLinkage);
 
   if (!transSourceLanguage())
     return false;
@@ -3581,6 +3589,9 @@ void addPassesForSPIRV(legacy::PassManager &PassMgr,
 bool isValidLLVMModule(Module *M, SPIRVErrorLog &ErrorLog) {
   if (!M)
     return false;
+
+  if (isEmptyLLVMModule(M))
+    return true;
 
   Triple TT(M->getTargetTriple());
   if (!ErrorLog.checkError(isSupportedTriple(TT), SPIRVEC_InvalidTargetTriple,
