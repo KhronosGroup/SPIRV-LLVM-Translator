@@ -625,7 +625,7 @@ static std::map<ExpressionOpCode, unsigned> OpCountMap {
   { Shr,                1 },
   { Shra,               1 },
   { Xor,                1 },
-  { Bra,                2 },
+  // { Bra,                2 }, /* not implemented */
   { Eq,                 1 },
   { Ge,                 1 },
   { Gt,                 1 },
