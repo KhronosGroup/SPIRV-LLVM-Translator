@@ -185,8 +185,9 @@ cl::opt<bool> SPIRVAllowUnknownIntrinsics(
 
 static cl::opt<bool> SPIRVAllowExtraDIExpressions(
     "spirv-allow-extra-diexpressions", cl::init(false),
-    cl::desc("Allow DIExpression operations not listed in the SPIR-V DebugInfo "
-             "specification (experimental)"));
+    cl::desc("Allow DWARF operations not listed in the OpenCL.DebugInfo.100 "
+             "specification (experimental, may produce incompatible SPIR-V "
+             "module)"));
 
 static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
     "spirv-debug-info-version", cl::desc("Set SPIR-V debug info version:"),
