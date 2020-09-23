@@ -187,7 +187,7 @@ protected:
            (BitWidth <= 64 ||
             (Module->isAllowedToUseExtension(
                  ExtensionID::SPV_INTEL_arbitrary_precision_integers) &&
-             BitWidth <= 1024)) &&
+             BitWidth <= 2048)) &&
            "Invalid bit width");
   }
 
