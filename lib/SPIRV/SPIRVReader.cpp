@@ -2722,7 +2722,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   FunctionType *FT = dyn_cast<FunctionType>(transType(BF->getFunctionType()));
   std::string FuncName = BF->getName();
   StringRef FuncNameRef(FuncName);
-  // Transform "@spirv.llvm.memset.p0i8.i32.volatile" to @llvm.memset.p0i8.i32
+  // Transform "@spirv.llvm_memset_p0i8_i32.volatile" to @llvm.memset.p0i8.i32
   // assuming llvm.memset is supported by the device compiler. If this
   // assumption is not safe, we should have a command line option to control
   // this behavior.
