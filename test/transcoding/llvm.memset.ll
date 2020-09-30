@@ -80,7 +80,7 @@ define spir_func void @_Z5foo11v(%struct.S1 addrspace(4)* noalias nocapture sret
   tail call void @llvm.memset.p0i8.i32(i8*  align 4 %x.bc, i8 %v, i32 %s1, i1 false)
 ; CHECK-LLVM: call void @llvm.memset.p0i8.i32(i8* %x.bc, i8 %v, i32 %s1, i1 false)
 
-  ; Address spaces
+  ; Address spaces, non-const value and size
   %a = addrspacecast i8 addrspace(4)* %1 to i8 addrspace(3)*
   tail call void @llvm.memset.p3i8.i32(i8 addrspace(3)* align 4 %a, i8 %v, i32 %s1, i1 false)
 ; CHECK-LLVM: call void @llvm.memset.p3i8.i32(i8 addrspace(3)* %a, i8 %v, i32 %s1, i1 false)
