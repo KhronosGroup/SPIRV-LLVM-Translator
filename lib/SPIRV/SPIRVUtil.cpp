@@ -1567,20 +1567,34 @@ public:
 
   void init(StringRef) override {
     switch (ExtOpId) {
-    case OpenCLLIB::UAbs: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UAbs_diff: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UAdd_sat: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UHadd: LLVM_FALLTHROUGH;
-    case OpenCLLIB::URhadd: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UClamp: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMad_hi: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMad_sat: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMax: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMin: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMul_hi: LLVM_FALLTHROUGH;
-    case OpenCLLIB::USub_sat: LLVM_FALLTHROUGH;
-    case OpenCLLIB::U_Upsample: LLVM_FALLTHROUGH;
-    case OpenCLLIB::UMad24: LLVM_FALLTHROUGH;
+    case OpenCLLIB::UAbs:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UAbs_diff:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UAdd_sat:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UHadd:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::URhadd:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UClamp:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMad_hi:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMad_sat:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMax:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMin:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMul_hi:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::USub_sat:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::U_Upsample:
+      LLVM_FALLTHROUGH;
+    case OpenCLLIB::UMad24:
+      LLVM_FALLTHROUGH;
     case OpenCLLIB::UMul24:
       // Treat all arguments as unsigned
       addUnsignedArg(-1);
@@ -1588,7 +1602,7 @@ public:
     case OpenCLLIB::S_Upsample:
       addUnsignedArg(1);
       break;
-    default: ;
+    default:;
       // No special handling is needed
     }
   }
