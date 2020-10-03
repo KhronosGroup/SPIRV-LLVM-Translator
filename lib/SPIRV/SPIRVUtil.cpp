@@ -1555,7 +1555,6 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
         if (auto *VecTy = dyn_cast<FixedVectorType>(Ty)) {
             NumElems = VecTy->getNumElements();
             Ty = VecTy->getElementType();
-          
     }
         if ((!Ty->isIntegerTy()) ||
         ((NumElems > 4) &&
