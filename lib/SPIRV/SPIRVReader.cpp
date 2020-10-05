@@ -4115,6 +4115,8 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
     F->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
+    if (isFuncReadNone(UnmangledName))
+      F->addFnAttr(Attribute::ReadNone);
   }
   auto Args = transValue(BC->getValues(BArgs), F, BB);
   SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F
