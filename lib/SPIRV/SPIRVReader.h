@@ -222,7 +222,7 @@ private:
   bool isFuncNoUnwind() const { return true; }
 
   bool isFuncReadNone(const std::string& name) const {
-    if (BuiltInFunc.find(name) != BuiltInFunc.end())
+    if (BuiltInConstFunc.find(name) != BuiltInFunc.end())
       return true;
     else
       return false;
