@@ -44,9 +44,8 @@
 #include "SPIRVModule.h"
 
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
-#include "llvm/IR/Metadata.h"    // llvm::Metadata
 #include "llvm/ADT/StringSet.h"
+#include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
 
 namespace llvm {
 class Module;
@@ -223,7 +222,7 @@ private:
   // Change this if it is no longer true.
   bool isFuncNoUnwind() const { return true; }
 
-  bool isFuncReadNone(const std::string& name) const {
+  bool isFuncReadNone(const std::string &name) const {
     return BuiltInConstFunc.count(name);
   }
 
