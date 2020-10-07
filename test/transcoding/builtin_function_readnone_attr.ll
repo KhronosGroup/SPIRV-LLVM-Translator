@@ -19,11 +19,11 @@ entry:
 }
 
 ; Function Attrs: convergent nounwind readnone
-; CHECK-LLVM: @_Z3expd{{.*}}#[[#Attrs:]]
+; CHECK-LLVM: declare{{.*}}@_Z3expd{{.*}}#[[#Attrs:]]
 declare dso_local double @_Z3expd(double) local_unnamed_addr #1
 
 ; Function Attrs: convergent nounwind readnone
-; CHECK-LLVM: @_Z3cosd{{.*}} [[#Attrs]]
+; CHECK-LLVM: declare{{.*}}@_Z3cosd{{.*}}#[[#Attrs]]
 declare dso_local double @_Z3cosd(double) local_unnamed_addr #1
 
 attributes #0 = { convergent nofree norecurse nounwind uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="all" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" "uniform-work-group-size"="false" "unsafe-fp-math"="false" "use-soft-float"="false" }
