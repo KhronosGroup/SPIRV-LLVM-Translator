@@ -40,21 +40,8 @@ jobs:
     - name: Gather list of changes
       id: gather-list-of-changes
       run: |
-        # GitHub Actions marks step as failed even if one single command has
-        # returned non-zero exit code. This might happen, for example, it we
-        # pipeline git diff --name-only and subsequent grep for files with
-        # particular extensions: if user didn't modify any .cpp files, grep
-        # won't find any matches and return non-zero exit code.
-        # TODO: consider offloading files extension filter to clang-format-diff
-        # and cland-tidy-diff scripts as they have such functionality already
-        git diff --name-only ${{ github.sha }}^ | (grep -E ".*\.(cpp|cc|c\+\+|cxx|c|h|hpp)$" || true) > modified-files.list
-        # FIXME: why do we avoid checking Mangler/ and runtime/ directories?
-        # TODO: we can avoid adding filter for OpenCL.std.h and spirv.hpp by
-        # putting special comments into those files to disable clang-format in
-        # there
-        cat modified-files.list | (grep -vE "Mangler/*|runtime/*|libSPIRV/(OpenCL.std.h|spirv.hpp)$" || true) > files-to-check.list
-        if [ -s files-to-check.list ]; then
-          git diff -U0 --no-color ${{ github.sha }}^ -- $(cat files-to-check.list) > diff-to-inspect.txt
+        git diff -U0 --no-color ${{ github.sha }}^ > diff-to-inspect.txt
+        if [ -s diff-to-inspect.txt ]; then
           # Here we set an output of our step, which is used later to either
           # perform or skip further steps, i.e. there is no sense to install
           # clang-format if PR hasn't changed .cpp files at all
