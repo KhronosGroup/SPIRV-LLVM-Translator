@@ -1950,6 +1950,7 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::sqrt:
   case Intrinsic::fabs:
   case Intrinsic::ceil:
+  case Intrinsic::ctpop:
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::expect:
@@ -2071,6 +2072,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     std::vector<SPIRVValue *> Ops(1, transValue(II->getArgOperand(0), BB));
     return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
                           BB);
+  }
+  case Intrinsic::ctpop: {
+    return BM->addUnaryInst(OpBitCount, transType(II->getType()),
+                            transValue(II->getArgOperand(0), BB), BB);
   }
   case Intrinsic::ctlz:
   case Intrinsic::cttz: {
