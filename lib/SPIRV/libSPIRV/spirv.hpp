@@ -514,6 +514,7 @@ enum Decoration {
   DecorationForcePow2DepthINTEL = 5836,
   DecorationIOPipeStorageINTEL = 5944,
   DecorationFunctionFloatingPointModeINTEL = 6080,
+  DecorationVectorComputeCallableFunctionINTEL = 6087,
   DecorationMax = 0x7fffffff,
 };
 
