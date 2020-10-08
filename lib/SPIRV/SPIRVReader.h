@@ -222,8 +222,8 @@ private:
   // Change this if it is no longer true.
   bool isFuncNoUnwind() const { return true; }
 
-  bool isFuncReadNone(const std::string &name) const {
-    return BuiltInConstFunc.count(name);
+  bool isFuncReadNone(const std::string &Name) const {
+    return BuiltInConstFunc.count(Name);
   }
 
   bool isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const;

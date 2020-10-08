@@ -4429,6 +4429,7 @@ bool llvm::getSpecConstInfo(std::istream &IS,
   return !IS.fail();
 }
 
+// clang-format off
 const StringSet<> SPIRVToLLVM::BuiltInConstFunc {
   "convert", "get_work_dim", "get_global_size", "sub_group_ballot_bit_count",
   "get_global_id", "get_local_size", "get_local_id", "get_num_groups",
@@ -4456,4 +4457,5 @@ const StringSet<> SPIRVToLLVM::BuiltInConstFunc {
   "get_image_height", "get_image_depth", "get_image_channel_data_type",
   "get_image_channel_order", "get_image_dim", "get_image_array_size",
   "get_image_array_size", "sub_group_inverse_ballot", "sub_group_ballot_bit_extract",
-  };
+};
+// clang-format on
