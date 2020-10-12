@@ -74,7 +74,7 @@ cmake ../llvm -DLLVM_ENABLE_PROJECTS="clang"
 make llvm-spirv -j`nproc`
 ```
 
-Note one enabling `clang` project: there are tests in the translator that depend
+Note on enabling the `clang` project: there are tests in the translator that depend
 on `clang` binary, which makes clang a required dependency (search for
 `LLVM_SPIRV_TEST_DEPS` in [test/CMakeLists.txt](test/CMakeLists.txt)) for
 `check-llvm-spirv` target.
