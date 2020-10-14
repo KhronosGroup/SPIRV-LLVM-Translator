@@ -1971,6 +1971,7 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::experimental_constrained_fcmps:
   case Intrinsic::experimental_constrained_fmuladd:
   case Intrinsic::fmuladd:
+  case Intrinsic::minnum:
   case Intrinsic::memset:
   case Intrinsic::memcpy:
   case Intrinsic::nearbyint:
@@ -2226,6 +2227,16 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
       break;
     SPIRVWord ExtOp = OpenCLLIB::Fmax;
+    SPIRVType *STy = transType(II->getType());
+    std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                  transValue(II->getArgOperand(1), BB)};
+    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
+                          BB);
+  }
+  case Intrinsic::minnum: {
+    if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
+      break;
+    SPIRVWord ExtOp = OpenCLLIB::Fmin;
     SPIRVType *STy = transType(II->getType());
     std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
                                   transValue(II->getArgOperand(1), BB)};
