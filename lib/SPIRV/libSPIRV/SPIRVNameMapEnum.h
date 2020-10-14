@@ -466,6 +466,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
   add(CapabilitySubgroupImageMediaBlockIOINTEL,
       "SubgroupImageMediaBlockIOINTEL");
+  add(CapabilityRoundToInfinityINTEL, "RoundToInfinityINTEL");
+  add(CapabilityFloatingPointModeINTEL, "FloatingPointModeINTEL");
   add(CapabilityIntegerFunctions2INTEL, "IntegerFunctions2INTEL");
   add(CapabilityFunctionPointersINTEL, "FunctionPointersINTEL");
   add(CapabilityIndirectReferencesINTEL, "IndirectReferencesINTEL");
@@ -480,8 +482,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
       "SubgroupAvcMotionEstimationChromaINTEL");
   add(CapabilityVariableLengthArrayINTEL, "VariableLengthArrayINTEL");
-  add(CapabilityRoundToInfinityINTEL, "RoundToInfinityINTEL");
-  add(CapabilityFloatingPointModeINTEL, "FloatingPointModeINTEL");
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
   add(CapabilityFPGAMemoryAttributesINTEL, "FPGAMemoryAttributesINTEL");
   add(CapabilityArbitraryPrecisionIntegersINTEL,
