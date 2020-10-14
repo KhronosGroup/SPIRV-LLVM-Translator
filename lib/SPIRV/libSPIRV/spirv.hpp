@@ -1,3 +1,4 @@
+// clang-format off
 // Copyright (c) 2014-2019 The Khronos Group Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2136,3 +2137,4 @@ inline KernelProfilingInfoMask operator|(KernelProfilingInfoMask a, KernelProfil
 }  // end namespace spv
 
 #endif  // #ifndef spirv_HPP
+// clang-format on
