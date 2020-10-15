@@ -1971,6 +1971,7 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::experimental_constrained_fcmps:
   case Intrinsic::experimental_constrained_fmuladd:
   case Intrinsic::fmuladd:
+  case Intrinsic::maxnum:
   case Intrinsic::minnum:
   case Intrinsic::memset:
   case Intrinsic::memcpy:
