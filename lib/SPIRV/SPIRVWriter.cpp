@@ -2231,12 +2231,14 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add
     // is required the corresponding llvm.fma.* intrinsic function should be
     // used instead.
-    SPIRVType *Ty = transType(II->getType());
-    SPIRVValue *Mul =
-        BM->addBinaryInst(OpFMul, Ty, transValue(II->getArgOperand(0), BB),
-                          transValue(II->getArgOperand(1), BB), BB);
-    return BM->addBinaryInst(OpFAdd, Ty, Mul,
-                             transValue(II->getArgOperand(2), BB), BB);
+    if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
+      break;
+    std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                  transValue(II->getArgOperand(1), BB),
+                                  transValue(II->getArgOperand(1), BB)};
+    return BM->addExtInst(transType(II->getType()),
+                          BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Fma,
+                          Ops, BB);
   }
   case Intrinsic::maxnum: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
