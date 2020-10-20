@@ -2237,7 +2237,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                   transValue(II->getArgOperand(1), BB),
                                   transValue(II->getArgOperand(1), BB)};
     return BM->addExtInst(transType(II->getType()),
-                          BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Fma,
+                          BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Mad,
                           Ops, BB);
   }
   case Intrinsic::maxnum: {
