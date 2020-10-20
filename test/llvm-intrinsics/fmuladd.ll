@@ -15,11 +15,9 @@ target triple = "spir64"
 define spir_func void @foo(float %a, float %b, float %c, double %x, double %y, double %z) #0 {
 entry:
   %0 = call float @llvm.fmuladd.f32(float %a, float %b, float %c)
-; CHECK: FMul [[f32]] [[mul32:[0-9]+]] {{[0-9]+}} {{[0-9]+}}
-; CHECK-NEXT: FAdd [[f32]] {{[0-9]+}} [[mul32]] {{[0-9]+}}
+; CHECK: ExtInst [[f32]] {{[0-9]+}} {{[0-9]+}} mad
   %1 = call double @llvm.fmuladd.f64(double %x, double %y, double %z)
-; CHECK: FMul [[f64]] [[mul64:[0-9]+]] {{[0-9]+}} {{[0-9]+}}
-; CHECK-NEXT: FAdd [[f64]] {{[0-9]+}} [[mul64]] {{[0-9]+}}
+; CHECK: ExtInst [[f64]] {{[0-9]+}} {{[0-9]+}} mad
 ret void
 }
 
