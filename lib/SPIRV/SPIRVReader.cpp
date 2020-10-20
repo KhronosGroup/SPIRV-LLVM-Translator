@@ -2516,6 +2516,10 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
   if (BF->hasDecorate(DecorationSIMTCallINTEL, 0, &SIMTMode))
     F->addFnAttr(kVCMetadata::VCSIMTCall, std::to_string(SIMTMode));
 
+  auto SEVAttr = Attribute::get(*Context, kVCMetadata::VCSingleElementVector);
+  if (BF->hasDecorate(DecorationSingleElementVectorINTEL))
+    F->addAttribute(AttributeList::ReturnIndex, SEVAttr);
+
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
     auto ArgNo = I->getArgNo();
@@ -2526,6 +2530,8 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
                                       std::to_string(Kind));
       F->addAttribute(ArgNo + 1, Attr);
     }
+    if (BA->hasDecorate(DecorationSingleElementVectorINTEL))
+      F->addAttribute(ArgNo + 1, SEVAttr);
   }
 
   // Do not add float control if there is no any
