@@ -354,6 +354,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationFunctionDenormModeINTEL, "FunctionDenormModeINTEL");
   add(DecorationFunctionFloatingPointModeINTEL,
       "FunctionFloatingPointModeINTEL");
+  add(DecorationSingleElementVectorINTEL, "SingleElementVectorINTEL");
   add(DecorationVectorComputeCallableFunctionINTEL,
       "VectorComputeCallableFunctionINTEL");
 }

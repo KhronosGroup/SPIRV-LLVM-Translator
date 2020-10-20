@@ -463,6 +463,7 @@ enum Decoration {
   DecorationFunctionRoundingModeINTEL = 5822,
   DecorationFunctionDenormModeINTEL = 5823,
   DecorationFunctionFloatingPointModeINTEL = 6080,
+  DecorationSingleElementVectorINTEL = 6085,
   DecorationVectorComputeCallableFunctionINTEL = 6087,
   DecorationMax = 0x7fffffff,
 };
