@@ -416,6 +416,10 @@ public:
     return TranslationOpts.isSPIRVAllowUnknownIntrinsicsEnabled();
   }
 
+  bool allowExtraDIExpressions() const noexcept {
+    return TranslationOpts.allowExtraDIExpressions();
+  }
+
   SPIRVExtInstSetKind getDebugInfoEIS() const {
     switch (TranslationOpts.getDebugInfoEIS()) {
     case DebugInfoEIS::SPIRV_Debug:
