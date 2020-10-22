@@ -416,6 +416,10 @@ public:
     return TranslationOpts.isSPIRVAllowUnknownIntrinsicsEnabled();
   }
 
+  bool allowExtraDIExpressions() const noexcept {
+    return TranslationOpts.allowExtraDIExpressions();
+  }
+
   bool shouldReplaceLLVMFmulAddWithOpenCLMad() const noexcept {
     return TranslationOpts.shouldReplaceLLVMFmulAddWithOpenCLMad();
   }
