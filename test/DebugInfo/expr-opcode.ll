@@ -27,7 +27,6 @@
 ; CHECK: DW_OP_dup
 ; CHECK: DW_OP_regx, 1
 ; CHECK: DW_OP_bregx, 1, 4
-; CHECK: DW_OP_push_object_address
 ; CHECK: DW_OP_swap
 ; CHECK: DW_OP_LLVM_convert, 8, DW_ATE_signed
 ; CHECK: DW_OP_stack_value
@@ -39,7 +38,7 @@ target triple = "spir64-unknown-unknown"
 define dso_local signext i8 @foo(i8 signext %x) !dbg !7 {
 entry:
   call void @llvm.dbg.value(metadata i8 %x, metadata !11, metadata !DIExpression()), !dbg !12
-  call void @llvm.dbg.value(metadata i8 32, metadata !13, metadata !DIExpression(DW_OP_constu, 42, DW_OP_plus_uconst, 42, DW_OP_plus, DW_OP_minus, DW_OP_mul, DW_OP_div, DW_OP_mod, DW_OP_or, DW_OP_and, DW_OP_xor, DW_OP_shl, DW_OP_shr, DW_OP_shra, DW_OP_deref, DW_OP_deref_size, 4, DW_OP_xderef, DW_OP_lit0, DW_OP_not, DW_OP_dup, DW_OP_regx, 1, DW_OP_bregx, 1, 4, DW_OP_push_object_address, DW_OP_swap, DW_OP_LLVM_convert, 8, DW_ATE_signed, DW_OP_stack_value)), !dbg !15
+  call void @llvm.dbg.value(metadata i8 32, metadata !13, metadata !DIExpression(DW_OP_constu, 42, DW_OP_plus_uconst, 42, DW_OP_plus, DW_OP_minus, DW_OP_mul, DW_OP_div, DW_OP_mod, DW_OP_or, DW_OP_and, DW_OP_xor, DW_OP_shl, DW_OP_shr, DW_OP_shra, DW_OP_deref, DW_OP_deref_size, 4, DW_OP_xderef, DW_OP_lit0, DW_OP_not, DW_OP_dup, DW_OP_regx, 1, DW_OP_bregx, 1, 4, DW_OP_swap, DW_OP_LLVM_convert, 8, DW_ATE_signed, DW_OP_stack_value)), !dbg !15
   ret i8 %x, !dbg !16
 }
 
