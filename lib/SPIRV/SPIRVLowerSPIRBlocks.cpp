@@ -226,7 +226,7 @@ private:
             assert(CI->getArgOperand(0) == CallBlkBind);
             Changed |= lowerGetBlockInvoke(CI, cast<Function>(InvF));
           } else if (Name == SPIR_INTRINSIC_GET_BLOCK_CONTEXT) {
-            assert(CI->getArgOperand(0) == CallBlkBind);
+            assert(Ctx && CI->getArgOperand(0) == CallBlkBind);
             // Handle context_ptr = spir_get_block_context(block)
             lowerGetBlockContext(CI, Ctx);
             Changed = true;
@@ -247,6 +247,7 @@ private:
     if (!Ctx)
       getBlockInvokeFuncAndContext(CallGetBlkCtx->getArgOperand(0), nullptr,
                                    &Ctx);
+    assert(Ctx && "Invalid block");
     CallGetBlkCtx->replaceAllUsesWith(Ctx);
     LLVM_DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => "
                       << *Ctx << "\n\n");
