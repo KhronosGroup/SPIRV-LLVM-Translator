@@ -1534,10 +1534,8 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
   case Intrinsic::maxnum:
   case Intrinsic::nearbyint: {
     Type *Ty = II->getType();
-    for (int Index = 0; Index < II->getNumArgOperands(); ++Index) {
-      if (II->getArgOperand(Index)->getType() != Ty)
-        return false;
-    }
+    if (II->getArgOperand(0)->getType() != Ty)
+      return false;
     int NumElems = 1;
     if (auto *VecTy = dyn_cast<FixedVectorType>(Ty)) {
       NumElems = VecTy->getNumElements();
