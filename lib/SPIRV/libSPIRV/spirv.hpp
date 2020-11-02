@@ -1332,7 +1332,6 @@ enum Op {
   OpPtrEqual = 401,
   OpPtrNotEqual = 402,
   OpPtrDiff = 403,
-  OpForward = 1024, /* internal use only */
   OpSubgroupBallotKHR = 4421,
   OpSubgroupFirstInvocationKHR = 4422,
   OpSubgroupAllKHR = 4428,

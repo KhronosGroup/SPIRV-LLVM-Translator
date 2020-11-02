@@ -653,7 +653,7 @@ SPIRVEntry *SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
     assert(Entry->getId() != SPIRVID_INVALID && "Invalid id");
     SPIRVEntry *Mapped = nullptr;
     if (exist(Id, &Mapped)) {
-      if (Mapped->getOpCode() == OpForward) {
+      if (Mapped->getOpCode() == Op(internal::OpForward)) {
         replaceForward(static_cast<SPIRVForward *>(Mapped), Entry);
       } else {
         assert(Mapped == Entry && "Id used twice");

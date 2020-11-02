@@ -42,6 +42,7 @@
 
 #include "SPIRVUtil.h"
 #include "spirv.hpp"
+#include "spirv_internal.hpp"
 #include <string>
 
 using namespace spv;
@@ -49,7 +50,11 @@ namespace SPIRV {
 
 template <> inline void SPIRVMap<Op, std::string>::init() {
 #define _SPIRV_OP(x, ...) add(Op##x, #x);
+#define _SPIRV_OP_INTERNAL(x, ...) add(Op(internal::Op##x), #x);
 #include "SPIRVOpCodeEnum.h"
+  // Value for OpForward is set as OpMax - 2
+  _SPIRV_OP_INTERNAL(Forward, 2147483646)
+#undef _SPIRV_OP_INTERNAL
 #undef _SPIRV_OP
 }
 SPIRV_DEF_NAMEMAP(Op, OpCodeNameMap)

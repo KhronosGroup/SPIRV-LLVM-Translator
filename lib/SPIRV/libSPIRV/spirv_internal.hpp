@@ -34,7 +34,12 @@ enum LinkageTypeInternal {
   LinkageTypeInternal
 };
 
+enum OpInternal {
+  OPPrev = OpMax - 2,
+  OpForward
+};
+
 } // namespace internal
 } // namespace spv
 
-#endif  // #ifndef spirv_internal_HPP
+#endif // #ifndef spirv_internal_HPP
