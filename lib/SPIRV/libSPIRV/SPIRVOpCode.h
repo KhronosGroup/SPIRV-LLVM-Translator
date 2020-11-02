@@ -50,9 +50,9 @@ namespace SPIRV {
 
 template <> inline void SPIRVMap<Op, std::string>::init() {
 #define _SPIRV_OP(x, ...) add(Op##x, #x);
-#define _SPIRV_OP_INTERNAL(x, ...) add(Op(internal::Op##x), #x);
+#define _SPIRV_OP_INTERNAL(x, ...) add(internal::Op##x, #x);
 #include "SPIRVOpCodeEnum.h"
-  _SPIRV_OP_INTERNAL(Forward, OpMax - 2)
+  _SPIRV_OP_INTERNAL(Forward, internal::OpForward)
 #undef _SPIRV_OP_INTERNAL
 #undef _SPIRV_OP
 }
