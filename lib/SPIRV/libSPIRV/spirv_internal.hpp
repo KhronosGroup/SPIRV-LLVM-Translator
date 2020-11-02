@@ -29,15 +29,20 @@
 namespace spv {
 namespace internal {
 
-enum LinkageTypeInternal {
-  LTPrev = LinkageTypeMax - 2,
-  LinkageTypeInternal
+enum InternalLinkageType {
+  ILTPrev = LinkageTypeMax - 2,
+  ILTInternal
 };
 
-enum OpInternal {
-  OPPrev = OpMax - 2,
-  OpForward
+enum InternalOp {
+  IOpPrev = OpMax - 2,
+  IOpForward
 };
+
+constexpr LinkageType LinkageTypeInternal =
+    static_cast<LinkageType>(ILTInternal);
+
+constexpr Op OpForward = static_cast<Op>(IOpForward);
 
 } // namespace internal
 } // namespace spv

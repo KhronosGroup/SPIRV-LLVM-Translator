@@ -653,7 +653,7 @@ SPIRVEntry *SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
     assert(Entry->getId() != SPIRVID_INVALID && "Invalid id");
     SPIRVEntry *Mapped = nullptr;
     if (exist(Id, &Mapped)) {
-      if (Mapped->getOpCode() == Op(internal::OpForward)) {
+      if (Mapped->getOpCode() == internal::OpForward) {
         replaceForward(static_cast<SPIRVForward *>(Mapped), Entry);
       } else {
         assert(Mapped == Entry && "Id used twice");
@@ -1532,7 +1532,7 @@ SPIRVInstruction *SPIRVModuleImpl::addVariable(
     return addInstruction(Variable, BB);
 
   add(Variable);
-  if (LinkageTy != LinkageType(internal::LinkageTypeInternal))
+  if (LinkageTy != internal::LinkageTypeInternal)
     Variable->setLinkageType(LinkageTy);
   Variable->setIsConstant(IsConstant);
   return Variable;
