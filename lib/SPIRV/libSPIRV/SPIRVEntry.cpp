@@ -432,7 +432,7 @@ SPIRVLinkageTypeKind SPIRVEntry::getLinkageType() const {
   DecorateMapType::const_iterator Loc =
       Decorates.find(DecorationLinkageAttributes);
   if (Loc == Decorates.end())
-    return LinkageTypeInternal;
+    return LinkageType(internal::LinkageTypeInternal);
   return static_cast<const SPIRVDecorateLinkageAttr *>(Loc->second)
       ->getLinkageType();
 }

@@ -1339,9 +1339,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
                                              transType(Alc->getType())));
     }
     return mapValue(
-        V, BM->addVariable(transType(Alc->getType()), false,
-                           SPIRVLinkageTypeKind::LinkageTypeInternal, nullptr,
-                           Alc->getName().str(), StorageClassFunction, BB));
+        V, BM->addVariable(
+               transType(Alc->getType()), false,
+               SPIRVLinkageTypeKind(spv::internal::LinkageTypeInternal),
+               nullptr, Alc->getName().str(), StorageClassFunction, BB));
   }
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
@@ -2296,7 +2297,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     }
     SPIRVType *VarTy = transType(PointerType::get(AT, SPIRV::SPIRAS_Constant));
     SPIRVValue *Var =
-        BM->addVariable(VarTy, /*isConstant*/ true, spv::LinkageTypeInternal,
+        BM->addVariable(VarTy, /*isConstant*/ true,
+                        spv::LinkageType(spv::internal::LinkageTypeInternal),
                         Init, "", StorageClassUniformConstant, nullptr);
     SPIRVType *SourceTy =
         transType(PointerType::get(Val->getType(), SPIRV::SPIRAS_Constant));
@@ -3593,7 +3595,7 @@ LLVMToSPIRV::transLinkageType(const GlobalValue *GV) {
   if (GV->isDeclarationForLinker())
     return SPIRVLinkageTypeKind::LinkageTypeImport;
   if (GV->hasInternalLinkage() || GV->hasPrivateLinkage())
-    return SPIRVLinkageTypeKind::LinkageTypeInternal;
+    return SPIRVLinkageTypeKind(spv::internal::LinkageTypeInternal);
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
 
