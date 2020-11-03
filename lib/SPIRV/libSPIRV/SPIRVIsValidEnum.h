@@ -48,6 +48,7 @@
 
 #include "SPIRVEnum.h"
 #include "spirv.hpp"
+#include "spirv_internal.hpp"
 
 using namespace spv;
 
@@ -327,10 +328,11 @@ inline bool isValid(spv::FPRoundingMode V) {
 }
 
 inline bool isValid(spv::LinkageType V) {
-  switch (V) {
+  int LT = V;
+  switch (LT) {
   case LinkageTypeExport:
   case LinkageTypeImport:
-  case LinkageTypeInternal:
+  case internal::LinkageTypeInternal:
     return true;
   default:
     return false;
@@ -925,7 +927,6 @@ inline bool isValid(spv::Op V) {
   case OpNamedBarrierInitialize:
   case OpMemoryNamedBarrier:
   case OpModuleProcessed:
-  case OpForward:
   case OpSubgroupShuffleINTEL:
   case OpSubgroupShuffleDownINTEL:
   case OpSubgroupShuffleUpINTEL:
