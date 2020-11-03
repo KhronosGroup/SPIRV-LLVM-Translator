@@ -411,7 +411,7 @@ SPIRVLinkageTypeKind SPIRVEntry::getLinkageType() const {
   DecorateMapType::const_iterator Loc =
       Decorates.find(DecorationLinkageAttributes);
   if (Loc == Decorates.end())
-    return LinkageTypeInternal;
+    return internal::LinkageTypeInternal;
   return static_cast<const SPIRVDecorateLinkageAttr *>(Loc->second)
       ->getLinkageType();
 }
@@ -497,7 +497,7 @@ void SPIRVExecutionMode::decode(std::istream &I) {
 SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
   SPIRVEntry *Entry = nullptr;
   bool Found = Module->exist(Target, &Entry);
-  assert((!Found || Entry->getOpCode() == OpForward) &&
+  assert((!Found || Entry->getOpCode() == internal::OpForward) &&
          "Annotations only allowed on forward");
   if (!Found)
     Entry = Module->addForward(Target, nullptr);
