@@ -1198,10 +1198,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
                                              {Length->getId()}, BB,
                                              transType(Alc->getType())));
     }
-    return mapValue(
-        V, BM->addVariable(transType(Alc->getType()), false,
-                           SPIRVLinkageTypeKind::LinkageTypeInternal, nullptr,
-                           Alc->getName(), StorageClassFunction, BB));
+    return mapValue(V, BM->addVariable(transType(Alc->getType()), false,
+                                       spv::internal::LinkageTypeInternal,
+                                       nullptr, Alc->getName().str(),
+                                       StorageClassFunction, BB));
   }
 
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
@@ -1988,9 +1988,9 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     SPIRVTypeArray *CompositeTy = static_cast<SPIRVTypeArray *>(transType(AT));
     SPIRVValue *Init = BM->addNullConstant(CompositeTy);
     SPIRVType *VarTy = transType(PointerType::get(AT, SPIRV::SPIRAS_Constant));
-    SPIRVValue *Var =
-        BM->addVariable(VarTy, /*isConstant*/ true, spv::LinkageTypeInternal,
-                        Init, "", StorageClassUniformConstant, nullptr);
+    SPIRVValue *Var = BM->addVariable(VarTy, /*isConstant*/ true,
+                                      spv::internal::LinkageTypeInternal, Init,
+                                      "", StorageClassUniformConstant, nullptr);
     SPIRVType *SourceTy =
         transType(PointerType::get(Val->getType(), SPIRV::SPIRAS_Constant));
     SPIRVValue *Source = BM->addUnaryInst(OpBitcast, SourceTy, Var, BB);
@@ -3007,7 +3007,7 @@ LLVMToSPIRV::transLinkageType(const GlobalValue *GV) {
   if (GV->isDeclarationForLinker())
     return SPIRVLinkageTypeKind::LinkageTypeImport;
   if (GV->hasInternalLinkage() || GV->hasPrivateLinkage())
-    return SPIRVLinkageTypeKind::LinkageTypeInternal;
+    return spv::internal::LinkageTypeInternal;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
 
