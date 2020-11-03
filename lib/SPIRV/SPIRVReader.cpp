@@ -4361,7 +4361,7 @@ std::string SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction *BI) {
 
 llvm::GlobalValue::LinkageTypes
 SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
-  if (V->getLinkageType() == LinkageTypeInternal) {
+  if (V->getLinkageType() == internal::LinkageTypeInternal) {
     return GlobalValue::InternalLinkage;
   } else if (V->getLinkageType() == LinkageTypeImport) {
     // Function declaration
