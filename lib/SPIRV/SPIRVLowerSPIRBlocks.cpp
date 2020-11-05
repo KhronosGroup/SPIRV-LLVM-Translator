@@ -209,7 +209,7 @@ private:
       Value *CtxAlign = nullptr;
       getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx, &CtxLen,
                                    &CtxAlign);
-      assert (Ctx && "Invalid context");
+      assert(Ctx && "Invalid context");
       for (auto II = CallBlkBind->user_begin(), EE = CallBlkBind->user_end();
            II != EE;) {
         auto BlkUser = *II++;
