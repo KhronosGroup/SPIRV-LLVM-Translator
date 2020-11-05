@@ -209,6 +209,7 @@ private:
       Value *CtxAlign = nullptr;
       getBlockInvokeFuncAndContext(CallBlkBind, &InvF, &Ctx, &CtxLen,
                                    &CtxAlign);
+      assert (Ctx && "Invalid context");
       for (auto II = CallBlkBind->user_begin(), EE = CallBlkBind->user_end();
            II != EE;) {
         auto BlkUser = *II++;
@@ -226,7 +227,7 @@ private:
             assert(CI->getArgOperand(0) == CallBlkBind);
             Changed |= lowerGetBlockInvoke(CI, cast<Function>(InvF));
           } else if (Name == SPIR_INTRINSIC_GET_BLOCK_CONTEXT) {
-            assert(Ctx && CI->getArgOperand(0) == CallBlkBind);
+            assert(CI->getArgOperand(0) == CallBlkBind);
             // Handle context_ptr = spir_get_block_context(block)
             lowerGetBlockContext(CI, Ctx);
             Changed = true;
@@ -247,7 +248,7 @@ private:
     if (!Ctx)
       getBlockInvokeFuncAndContext(CallGetBlkCtx->getArgOperand(0), nullptr,
                                    &Ctx);
-    assert(Ctx && "Invalid block");
+    assert(Ctx && "Invalid context");
     CallGetBlkCtx->replaceAllUsesWith(Ctx);
     LLVM_DEBUG(dbgs() << "  [lowerGetBlockContext] " << *CallGetBlkCtx << " => "
                       << *Ctx << "\n\n");
