@@ -45,6 +45,12 @@ enum InternalCapability {
   ICapOptimizationHintsINTEL = 5629
 };
 
+enum InternalDecoration {
+  IDecPreFuncParamKindINTEL = 9623,
+  IDecFuncParamKindINTEL = 9624,
+  IDecFuncParamDescINTEL = 9625,
+};
+
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
@@ -54,6 +60,11 @@ constexpr Op OpExpectINTEL = static_cast<Op>(IOpExpectINTEL);
 
 constexpr Capability CapabilityOptimizationHintsINTEL =
     static_cast<Capability>(ICapOptimizationHintsINTEL);
+
+constexpr Decoration DecorationFuncParamKindINTEL =
+    static_cast<Decoration>(IDecFuncParamKindINTEL);
+constexpr Decoration DecorationFuncParamDescINTEL =
+    static_cast<Decoration>(IDecFuncParamDescINTEL);
 
 } // namespace internal
 } // namespace spv
