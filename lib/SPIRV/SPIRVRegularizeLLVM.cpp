@@ -114,7 +114,8 @@ char SPIRVRegularizeLLVM::ID = 0;
 
 std::string SPIRVRegularizeLLVM::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   Function *IntrinsicFunc = II->getCalledFunction();
-  assert(IntrinsicFunc && "Missing function");
+  if (!IntrinsicFunc)
+    return "";
   std::string FuncName = IntrinsicFunc->getName().str();
   std::replace(FuncName.begin(), FuncName.end(), '.', '_');
   FuncName = "spirv." + FuncName;
