@@ -611,6 +611,12 @@ void SPIRVName::validate() const {
 
 _SPIRV_IMP_ENCDEC2(SPIRVString, Id, Str)
 _SPIRV_IMP_ENCDEC3(SPIRVMemberName, Target, MemberNumber, Str)
+_SPIRV_IMP_ENCDEC1(SPIRVModuleProcessed, Process)
+
+void SPIRVModuleProcessed::validate() const {
+  assert(WordCount == getSizeInWords(Process) + FixedWC &&
+         "Incorrect word count");
+}
 
 void SPIRVLine::encode(spv_ostream &O) const {
   getEncoder(O) << FileName << Line << Column;

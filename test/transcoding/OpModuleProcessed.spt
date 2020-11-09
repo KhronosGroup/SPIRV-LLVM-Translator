@@ -1,0 +1,10 @@
+119734787 65536 393230 9 0
+; RUN: llvm-spirv %s -o %t.spv -to-binary
+; RUN: llvm-spirv %t.spv -o %t.spt -to-text
+; RUN: FileCheck %s --input-file %t.spt -check-prefix=SPV
+
+2 Capability Kernel
+3 MemoryModel 2 2
+3 Source 3 102000
+; SPV: 9 ModuleProcessed "Linked_by_SPIR-V_Tools_Linker"
+9 ModuleProcessed "Linked_by_SPIR-V_Tools_Linker"

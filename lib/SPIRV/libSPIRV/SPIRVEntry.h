@@ -572,6 +572,23 @@ protected:
   std::string Str;
 };
 
+class SPIRVModuleProcessed : public SPIRVEntryNoId<OpModuleProcessed> {
+  static const SPIRVWord FixedWC = 1;
+
+public:
+  SPIRVModuleProcessed(SPIRVModule *M, const std::string &TheProcess)
+      : SPIRVEntryNoId(M, FixedWC + getSizeInWords(TheProcess)),
+        Process(TheProcess) {
+    validate();
+  }
+  SPIRVModuleProcessed() {}
+
+protected:
+  _SPIRV_DCL_ENCDEC
+  void validate() const override;
+  std::string Process;
+};
+
 class SPIRVString : public SPIRVEntry {
   static const Op OC = OpString;
   static const SPIRVWord FixedWC = 2;

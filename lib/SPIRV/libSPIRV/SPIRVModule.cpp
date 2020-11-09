@@ -487,6 +487,7 @@ private:
   typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
   typedef std::vector<SPIRVString *> SPIRVStringVec;
   typedef std::vector<SPIRVMemberName *> SPIRVMemberNameVec;
+  typedef std::vector<SPIRVModuleProcessed *> SPIRVModuleProcessedVec;
   typedef std::vector<SPIRVDecorationGroup *> SPIRVDecGroupVec;
   typedef std::vector<SPIRVGroupDecorateGeneric *> SPIRVGroupDecVec;
   typedef std::vector<SPIRVAsmTargetINTEL *> SPIRVAsmTargetVector;
@@ -514,6 +515,7 @@ private:
   SPIRVIdSet NamedId;
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
+  SPIRVModuleProcessedVec ModuleProcessedVec;
   std::shared_ptr<const SPIRVLine> CurrentLine;
   SPIRVDecorateSet DecorateSet;
   SPIRVDecGroupVec DecGroupVec;
@@ -635,6 +637,9 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
     break;
   case OpMemberName:
     addTo(MemberNameVec, E);
+    break;
+  case OpModuleProcessed:
+    addTo(ModuleProcessedVec, E);
     break;
   case OpVariable: {
     auto BV = static_cast<SPIRVVariable *>(E);
