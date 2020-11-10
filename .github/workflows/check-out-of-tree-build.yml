@@ -56,16 +56,26 @@ jobs:
           # Linux systems in GitHub Actions already have older versions of clang
           # pre-installed. Make sure to override these with the relevant version.
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ env.LLVM_VERSION }} 1000
+      - name:  Checkout SPIR-V Headers
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: master
+          path: SPIRV-Headers
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
+        with:
+          path: SPIRV-LLVM-Translator
       - name: Configure
         run: |
           mkdir build && cd build
-          cmake ${{ github.workspace }} \
+          cmake ${{ github.workspace }}/SPIRV-LLVM-Translator \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_CXX_FLAGS="-Werror" \
             -DLLVM_INCLUDE_TESTS=ON \
             -DLLVM_EXTERNAL_LIT="/usr/lib/llvm-${{ env.LLVM_VERSION }}/build/utils/lit/lit.py" \
+            -DLLVM_EXTERNAL_PROJECTS="SPIRV-Headers" \
+            -DLLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR=${{ github.workspace }}/SPIRV-Headers \
             -G "Unix Makefiles"
       - name: Build
         run: |

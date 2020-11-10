@@ -66,6 +66,12 @@ jobs:
           repository: llvm/llvm-project
           ref: main
           path: llvm-project
+      - name:  Checkout SPIR-V Headers
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: master
+          path: llvm-project/llvm/projects/SPIRV-Headers
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
         with:
