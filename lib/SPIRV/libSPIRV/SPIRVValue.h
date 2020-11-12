@@ -297,13 +297,12 @@ public:
   // Complete constructor for composite constant
   SPIRVConstantCompositeBase(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId,
                              const std::vector<SPIRVValue *> TheElements)
-      : SPIRVValue(M, TheElements.size() + 3, OpConstantComposite, TheType,
-                   TheId) {
+      : SPIRVValue(M, TheElements.size() + 3, OC, TheType, TheId) {
     Elements = getIds(TheElements);
     validate();
   }
   // Incomplete constructor
-  SPIRVConstantCompositeBase() : SPIRVValue(OpConstantComposite) {}
+  SPIRVConstantCompositeBase() : SPIRVValue(OC) {}
   std::vector<SPIRVValue *> getElements() const { return getValues(Elements); }
 
   // TODO: Should we attach operands of continued instructions as well?
