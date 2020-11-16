@@ -3928,6 +3928,12 @@ bool SPIRVToLLVM::transMetadata() {
       F->setMetadata(kSPIR2MD::NumSIMD,
                      getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
+    // Generate metadata for scheduler_target_fmax_mhz
+    if (auto EM =
+            BF->getExecutionMode(ExecutionModeSchedulerTargetFmaxMhzINTEL)) {
+      F->setMetadata(kSPIR2MD::FmaxMhz,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
   }
   NamedMDNode *MemoryModelMD =
       M->getOrInsertNamedMetadata(kSPIRVMD::MemoryModel);
