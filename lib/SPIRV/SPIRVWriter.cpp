@@ -1116,6 +1116,47 @@ LLVMToSPIRV::getLoopControl(const BranchInst *Branch,
   return static_cast<spv::LoopControlMask>(LoopControl);
 }
 
+static int transAtomicOrdering(llvm::AtomicOrdering Ordering) {
+  switch (Ordering) {
+  case AtomicOrdering::Monotonic: /* aka "relaxed" */
+    return MemorySemanticsMaskNone;
+  case AtomicOrdering::Acquire:
+    return MemorySemanticsAcquireMask;
+  case AtomicOrdering::Release:
+    return MemorySemanticsReleaseMask;
+  case AtomicOrdering::AcquireRelease:
+    return MemorySemanticsAcquireReleaseMask;
+  case AtomicOrdering::SequentiallyConsistent:
+    return MemorySemanticsSequentiallyConsistentMask;
+  default:
+    llvm_unreachable("Unsupported atomic ordering.");
+  }
+  return -1;
+}
+
+SPIRVValue *LLVMToSPIRV::transAtomicStore(StoreInst *ST, SPIRVBasicBlock *BB) {
+  std::vector<Value *> Ops;
+  Ops.push_back(ST->getPointerOperand());
+  Ops.push_back(getUInt32(M, spv::ScopeDevice));
+  Ops.push_back(getUInt32(M, transAtomicOrdering(ST->getOrdering())));
+  Ops.push_back(ST->getValueOperand());
+  std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
+
+  return mapValue(ST, BM->addInstTemplate(OpAtomicStore, BM->getIds(SPIRVOps),
+                                          BB, transType(ST->getType())));
+}
+
+SPIRVValue *LLVMToSPIRV::transAtomicLoad(LoadInst *LD, SPIRVBasicBlock *BB) {
+  std::vector<Value *> Ops;
+  Ops.push_back(LD->getPointerOperand());
+  Ops.push_back(getUInt32(M, spv::ScopeDevice));
+  Ops.push_back(getUInt32(M, transAtomicOrdering(LD->getOrdering())));
+  std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
+
+  return mapValue(LD, BM->addInstTemplate(OpAtomicLoad, BM->getIds(SPIRVOps),
+                                          BB, transType(LD->getType())));
+}
+
 /// An instruction may use an instruction from another BB which has not been
 /// translated. SPIRVForward should be created as place holder for these
 /// instructions and replaced later by the real instructions.
@@ -1260,6 +1301,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return mapValue(V, BM->addForward(transType(V->getType())));
 
   if (StoreInst *ST = dyn_cast<StoreInst>(V)) {
+    if (ST->isAtomic()) {
+      return transAtomicStore(ST, BB);
+    }
+
     std::vector<SPIRVWord> MemoryAccess(1, 0);
     if (ST->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
@@ -1280,6 +1325,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
   }
 
   if (LoadInst *LD = dyn_cast<LoadInst>(V)) {
+    if (LD->isAtomic()) {
+      return transAtomicLoad(LD, BB);
+    }
+
     std::vector<SPIRVWord> MemoryAccess(1, 0);
     if (LD->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
