@@ -1117,21 +1117,8 @@ LLVMToSPIRV::getLoopControl(const BranchInst *Branch,
 }
 
 static int transAtomicOrdering(llvm::AtomicOrdering Ordering) {
-  switch (Ordering) {
-  case AtomicOrdering::Monotonic: /* aka "relaxed" */
-    return MemorySemanticsMaskNone;
-  case AtomicOrdering::Acquire:
-    return MemorySemanticsAcquireMask;
-  case AtomicOrdering::Release:
-    return MemorySemanticsReleaseMask;
-  case AtomicOrdering::AcquireRelease:
-    return MemorySemanticsAcquireReleaseMask;
-  case AtomicOrdering::SequentiallyConsistent:
-    return MemorySemanticsSequentiallyConsistentMask;
-  default:
-    llvm_unreachable("Unsupported atomic ordering.");
-  }
-  return -1;
+  return OCLMemOrderMap::map(
+      static_cast<OCLMemOrderKind>(llvm::toCABI(Ordering)));
 }
 
 SPIRVValue *LLVMToSPIRV::transAtomicStore(StoreInst *ST, SPIRVBasicBlock *BB) {
