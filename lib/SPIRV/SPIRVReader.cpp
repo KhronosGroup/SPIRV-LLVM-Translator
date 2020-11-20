@@ -959,6 +959,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     assert(NumParam <= LoopControlParameters.size() &&
            "Missing loop control parameter!");
   }
+  if (LC & LoopControlNoFusionINTELMask)
+    Metadata.push_back(getMetadataFromName("llvm.loop.fusion.disable"));
   llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);
 
   // Set the first operand to refer itself
