@@ -3875,6 +3875,7 @@ bool SPIRVToLLVM::transMetadata() {
 
     transOCLMetadata(BF);
     transVectorComputeMetadata(BF);
+    transFPGAFunctionMetadata(BF, F);
 
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
@@ -4179,6 +4180,15 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     F->addAttribute(AttributeList::FunctionIndex, Attr);
   }
 
+  return true;
+}
+
+bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
+  if (BF->hasDecorate(DecorationStallEnableINTEL)) {
+    std::vector<Metadata *> MetadataVec;
+    MetadataVec.push_back(ConstantAsMetadata::get(getInt32(M, 1)));
+    F->setMetadata(kSPIR2MD::StallEnable, MDNode::get(*Context, MetadataVec));
+  }
   return true;
 }
 
