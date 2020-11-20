@@ -44,6 +44,7 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
@@ -60,14 +61,11 @@ namespace SPIRV {
 static bool SPIRVDbgSaveRegularizedModule = false;
 static std::string RegularizedModuleTmpFile = "regularized.bc";
 
-class SPIRVRegularizeLLVM : public ModulePass {
+class SPIRVRegularizeLLVMBase {
 public:
-  SPIRVRegularizeLLVM() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
-    initializeSPIRVRegularizeLLVMPass(*PassRegistry::getPassRegistry());
-  }
+  SPIRVRegularizeLLVMBase() : M(nullptr), Ctx(nullptr) {}
 
-  bool runOnModule(Module &M) override;
-
+  bool runRegularizeLLVM(Module &M);
   // Lower functions
   bool regularize();
 
@@ -113,9 +111,36 @@ private:
   LLVMContext *Ctx;
 };
 
-char SPIRVRegularizeLLVM::ID = 0;
+class SPIRVRegularizeLLVMPass
+    : public llvm::PassInfoMixin<SPIRVRegularizeLLVMPass>,
+      public SPIRVRegularizeLLVMBase {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &M,
+                              llvm::ModuleAnalysisManager &MAM) {
+    return runRegularizeLLVM(M) ? llvm::PreservedAnalyses::none()
+                                : llvm::PreservedAnalyses::all();
+  }
+};
 
-std::string SPIRVRegularizeLLVM::lowerLLVMIntrinsicName(IntrinsicInst *II) {
+class SPIRVRegularizeLLVMLegacy : public ModulePass,
+                                  public SPIRVRegularizeLLVMBase {
+public:
+  SPIRVRegularizeLLVMLegacy() : ModulePass(ID) {
+    initializeSPIRVRegularizeLLVMLegacyPass(*PassRegistry::getPassRegistry());
+  }
+
+  bool runOnModule(Module &M) override;
+
+  static char ID;
+};
+
+char SPIRVRegularizeLLVMLegacy::ID = 0;
+
+bool SPIRVRegularizeLLVMLegacy::runOnModule(Module &Module) {
+  return runRegularizeLLVM(Module);
+}
+
+std::string SPIRVRegularizeLLVMBase::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   Function *IntrinsicFunc = II->getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   std::string FuncName = IntrinsicFunc->getName().str();
@@ -124,7 +149,7 @@ std::string SPIRVRegularizeLLVM::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   return FuncName;
 }
 
-void SPIRVRegularizeLLVM::lowerMemset(MemSetInst *MSI) {
+void SPIRVRegularizeLLVMBase::lowerMemset(MemSetInst *MSI) {
   if (isa<Constant>(MSI->getValue()) && isa<ConstantInt>(MSI->getLength()))
     return; // To be handled in LLVMToSPIRV::transIntrinsicInst
 
@@ -163,7 +188,7 @@ void SPIRVRegularizeLLVM::lowerMemset(MemSetInst *MSI) {
   return;
 }
 
-void SPIRVRegularizeLLVM::buildFunnelShiftLeftFunc(Function *FSHLFunc) {
+void SPIRVRegularizeLLVMBase::buildFunnelShiftLeftFunc(Function *FSHLFunc) {
   if (!FSHLFunc->empty())
     return;
 
@@ -197,7 +222,8 @@ void SPIRVRegularizeLLVM::buildFunnelShiftLeftFunc(Function *FSHLFunc) {
   Builder.CreateRet(FunnelShiftRes);
 }
 
-void SPIRVRegularizeLLVM::lowerFunnelShiftLeft(IntrinsicInst *FSHLIntrinsic) {
+void SPIRVRegularizeLLVMBase::lowerFunnelShiftLeft(
+    IntrinsicInst *FSHLIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
   // current one. Then simply replace the intrinsic uses with a call to the new
   // function.
@@ -210,7 +236,7 @@ void SPIRVRegularizeLLVM::lowerFunnelShiftLeft(IntrinsicInst *FSHLIntrinsic) {
   FSHLIntrinsic->setCalledFunction(FSHLFunc);
 }
 
-void SPIRVRegularizeLLVM::buildUMulWithOverflowFunc(Function *UMulFunc) {
+void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
   if (!UMulFunc->empty())
     return;
 
@@ -236,7 +262,8 @@ void SPIRVRegularizeLLVM::buildUMulWithOverflowFunc(Function *UMulFunc) {
   Builder.CreateRet(Res);
 }
 
-void SPIRVRegularizeLLVM::lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic) {
+void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
+    IntrinsicInst *UMulIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
   // current one. Then simply replace the intrinsic uses with a call to the new
   // function.
@@ -249,7 +276,7 @@ void SPIRVRegularizeLLVM::lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic) {
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
-bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
+bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
@@ -263,7 +290,7 @@ bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
 }
 
 /// Remove entities not representable by SPIR-V
-bool SPIRVRegularizeLLVM::regularize() {
+bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
   lowerFuncPtr(M);
 
@@ -375,7 +402,7 @@ bool SPIRVRegularizeLLVM::regularize() {
 
 // Assume F is a SPIR-V builtin function with a function pointer argument which
 // is a bitcast instruction casting a function to a void(void) function pointer.
-void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
+void SPIRVRegularizeLLVMBase::lowerFuncPtr(Function *F, Op OC) {
   LLVM_DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
   auto Name = decorateSPIRVFunction(getName(OC));
   std::set<Value *> InvokeFuncPtrs;
@@ -396,7 +423,7 @@ void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
     eraseIfNoUse(I);
 }
 
-void SPIRVRegularizeLLVM::lowerFuncPtr(Module *M) {
+void SPIRVRegularizeLLVMBase::lowerFuncPtr(Module *M) {
   std::vector<std::pair<Function *, Op>> Work;
   for (auto &F : *M) {
     auto AI = F.arg_begin();
@@ -412,9 +439,9 @@ void SPIRVRegularizeLLVM::lowerFuncPtr(Module *M) {
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVRegularizeLLVM, "spvregular", "Regularize LLVM for SPIR-V",
-                false, false)
+INITIALIZE_PASS(SPIRVRegularizeLLVMLegacy, "spvregular",
+                "Regularize LLVM for SPIR-V", false, false)
 
-ModulePass *llvm::createSPIRVRegularizeLLVM() {
-  return new SPIRVRegularizeLLVM();
+ModulePass *llvm::createSPIRVRegularizeLLVMLegacy() {
+  return new SPIRVRegularizeLLVMLegacy();
 }
