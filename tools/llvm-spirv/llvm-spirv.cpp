@@ -203,9 +203,9 @@ static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
                    "info format is compatible with the SPIRV-Tools")));
 
 static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
-    "spirv-replace-fmuladd-with-ocl-mad", cl::desc(
-        "Allow replacement of llvm.fmuladd.* intrinsic with OpenCL mad "
-        "instruction from OpenCL extended instruction set"),
+    "spirv-replace-fmuladd-with-ocl-mad",
+    cl::desc("Allow replacement of llvm.fmuladd.* intrinsic with OpenCL mad "
+             "instruction from OpenCL extended instruction set"),
     cl::init(true));
 
 static std::string removeExt(const std::string &FileName) {
