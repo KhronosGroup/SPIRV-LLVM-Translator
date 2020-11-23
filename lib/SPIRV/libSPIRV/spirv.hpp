@@ -151,6 +151,7 @@ enum ExecutionMode {
     ExecutionModeRoundingModeRTNINTEL = 5621,
     ExecutionModeFloatingPointModeALTINTEL = 5622,
     ExecutionModeFloatingPointModeIEEEINTEL = 5623,
+    ExecutionModeVectorComputeFastCompositeKernelINTEL = 6088,
     ExecutionModeMax = 0x7fffffff,
 };
 

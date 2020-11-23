@@ -2654,6 +2654,9 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     F->addFnAttr(kVCMetadata::VCSIMTCall, std::to_string(SIMTMode));
   if (BF->hasDecorate(DecorationVectorComputeCallableFunctionINTEL))
     F->addFnAttr(kVCMetadata::VCCallable);
+  if (isKernel(BF) &&
+      BF->getExecutionMode(ExecutionModeVectorComputeFastCompositeKernelINTEL))
+    F->addFnAttr(kVCMetadata::VCFCEntry);
 
   auto SEVAttr = Attribute::get(*Context, kVCMetadata::VCSingleElementVector);
   if (BF->hasDecorate(DecorationSingleElementVectorINTEL))
