@@ -2309,8 +2309,8 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                     transValue(II->getArgOperand(1), BB),
                                     transValue(II->getArgOperand(2), BB)};
       return BM->addExtInst(transType(II->getType()),
-                            BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Mad,
-                            Ops, BB);
+                            BM->getExtInstSetId(SPIRVEIS_OpenCL),
+                            OpenCLLIB::Mad, Ops, BB);
     }
 
     // Otherwise, just break llvm.fmuladd.* into a pair of fmul + fadd
