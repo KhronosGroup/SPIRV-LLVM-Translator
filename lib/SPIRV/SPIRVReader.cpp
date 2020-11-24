@@ -2885,7 +2885,10 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
         AttrTy = cast<PointerType>(I->getType())->getElementType();
       else if (LLVMKind == Attribute::AttrKind::StructRet)
         AttrTy = I->getType();
-      I->addAttr(Attribute::get(*Context, LLVMKind, AttrTy));
+      // Make sure to use a correct constructor for a typed/typeless attribute
+      auto A = AttrTy ? Attribute::get(*Context, LLVMKind, AttrTy)
+                      : Attribute::get(*Context, LLVMKind);
+      I->addAttr(A);
     });
 
     SPIRVWord MaxOffset = 0;
