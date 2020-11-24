@@ -2879,7 +2879,13 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
       if (Kind == FunctionParameterAttributeNoWrite)
         return;
-      F->addAttribute(I->getArgNo() + 1, SPIRSPIRVFuncParamAttrMap::rmap(Kind));
+      Attribute::AttrKind LLVMKind = SPIRSPIRVFuncParamAttrMap::rmap(Kind);
+      Type *AttrTy = nullptr;
+      if (LLVMKind == Attribute::AttrKind::ByVal)
+        AttrTy = cast<PointerType>(I->getType())->getElementType();
+      else if (LLVMKind == Attribute::AttrKind::StructRet)
+        AttrTy = I->getType();
+      I->addAttr(Attribute::get(*Context, LLVMKind, AttrTy));
     });
 
     SPIRVWord MaxOffset = 0;
