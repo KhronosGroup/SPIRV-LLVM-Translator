@@ -818,7 +818,7 @@ inline void DbgExpressionOpCodeMap::init() {
   add(dwarf::DW_OP_stack_value,         SPIRVDebug::StackValue);
   add(dwarf::DW_OP_constu,              SPIRVDebug::Constu);
   add(dwarf::DW_OP_LLVM_fragment,       SPIRVDebug::Fragment);
-  add(dwarf::DW_OP_LLVM_convert,        SPIRVDebug::Convert);
+  add(dwarf::DW_OP_convert,        SPIRVDebug::Convert);
   add(dwarf::DW_OP_consts,              SPIRVDebug::Consts);
   add(dwarf::DW_OP_dup,                 SPIRVDebug::Dup);
   add(dwarf::DW_OP_drop,                SPIRVDebug::Drop);
