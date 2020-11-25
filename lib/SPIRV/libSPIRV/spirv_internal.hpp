@@ -35,6 +35,9 @@ enum InternalLinkageType {
 };
 
 enum InternalOp {
+  IOPAssumePrev = 5629,
+  IOpAssumeTrueINTEL = 5630,
+  IOpExpectINTEL = 5631,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -43,6 +46,8 @@ constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
+constexpr Op OpAssumeTrueINTEL = static_cast<Op>(IOpAssumeTrueINTEL);
+constexpr Op OpExpectINTEL = static_cast<Op>(IOpExpectINTEL);
 
 } // namespace internal
 } // namespace spv

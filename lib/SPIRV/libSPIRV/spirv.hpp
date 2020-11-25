@@ -1396,8 +1396,6 @@ enum Op {
   OpAsmTargetINTEL = 5609,
   OpAsmINTEL = 5610,
   OpAsmCallINTEL = 5611,
-  OpAssumeTrueINTEL = 5630,
-  OpExpectINTEL = 5631,
   OpDecorateString = 5632,
   OpDecorateStringGOOGLE = 5632,
   OpMemberDecorateString = 5633,
