@@ -2,7 +2,11 @@
 ; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+
+; On LLVM level, we'll check that the intrinsics were generated again in reverse
+; translation, replacing the SPIR-V level implementations.
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM \
+; RUN:   "--implicit-check-not=declare {{.*}} @spirv.llvm_umul_with_overflow_{{.*}}"
 
 ; CHECK-SPIRV: Name [[NAME_UMUL_FUNC_8:[0-9]+]] "spirv.llvm_umul_with_overflow_i8"
 ; CHECK-SPIRV: Name [[NAME_UMUL_FUNC_32:[0-9]+]] "spirv.llvm_umul_with_overflow_i32"
@@ -14,10 +18,6 @@ target triple = "spir"
 ; CHECK-LLVM: [[UMUL_8_TY:%structtype]] = type { i8, i1 }
 ; CHECK-LLVM: [[UMUL_32_TY:%structtype.[0-9]+]] = type { i32, i1 }
 ; CHECK-LLVM: [[UMUL_VEC64_TY:%structtype.[0-9]+]] = type { <2 x i64>, <2 x i1> }
-
-; On LLVM level, we'll check that the intrinsics were generated again in reverse translation,
-; replacing the SPIR-V level implementations.
-; CHECK-LLVM-NOT: declare {{.*}} @spirv.llvm_umul_with_overflow_{{.*}}
 
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @_Z4foo8hhPh(i8 zeroext %a, i8 zeroext %b, i8* nocapture %c) local_unnamed_addr #0 {
