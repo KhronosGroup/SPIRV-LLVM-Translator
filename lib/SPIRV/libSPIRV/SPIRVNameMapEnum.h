@@ -485,6 +485,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityVariableLengthArrayINTEL, "VariableLengthArrayINTEL");
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
   add(CapabilityFPGAMemoryAttributesINTEL, "FPGAMemoryAttributesINTEL");
+  add(CapabilityFPFastMathModeINTEL, "FPFastMathModeINTEL");
   add(CapabilityArbitraryPrecisionIntegersINTEL,
       "ArbitraryPrecisionIntegersINTEL");
   add(CapabilityArbitraryPrecisionFloatingPointINTEL,
