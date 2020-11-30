@@ -35,11 +35,14 @@ enum InternalLinkageType {
 };
 
 enum InternalOp {
-  IOPAssumePrev = 5629,
   IOpAssumeTrueINTEL = 5630,
   IOpExpectINTEL = 5631,
   IOpPrev = OpMax - 2,
   IOpForward
+};
+
+enum InternalCapability {
+  ICapOptimizationHintsINTEL = 5629
 };
 
 constexpr LinkageType LinkageTypeInternal =
@@ -48,6 +51,9 @@ constexpr LinkageType LinkageTypeInternal =
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpAssumeTrueINTEL = static_cast<Op>(IOpAssumeTrueINTEL);
 constexpr Op OpExpectINTEL = static_cast<Op>(IOpExpectINTEL);
+
+constexpr Capability CapabilityOptimizationHintsINTEL =
+    static_cast<Capability>(ICapOptimizationHintsINTEL);
 
 } // namespace internal
 } // namespace spv

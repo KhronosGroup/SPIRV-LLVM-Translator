@@ -964,7 +964,6 @@ enum Capability {
   CapabilityAsmINTEL = 5606,
   CapabilityVectorComputeINTEL = 5617,
   CapabilityVectorAnyINTEL = 5619,
-  CapabilityOptimizationHintsINTEL = 5629,
   CapabilitySubgroupAvcMotionEstimationINTEL = 5696,
   CapabilitySubgroupAvcMotionEstimationIntraINTEL = 5697,
   CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
