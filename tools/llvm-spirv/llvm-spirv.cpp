@@ -596,8 +596,7 @@ int main(int Ac, char **Av) {
   if (SPIRVReplaceLLVMFmulAddWithOpenCLMad.getNumOccurrences() != 0) {
     if (IsReverse) {
       errs() << "Note: --spirv-replace-fmuladd-with-ocl-mad option ignored as "
-                "it only "
-                "affects translation from LLVM IR to SPIR-V";
+                "it only affects translation from LLVM IR to SPIR-V";
     } else {
       Opts.setReplaceLLVMFmulAddWithOpenCLMad(
           SPIRVReplaceLLVMFmulAddWithOpenCLMad);

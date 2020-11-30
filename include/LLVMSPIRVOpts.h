@@ -201,7 +201,7 @@ private:
 
   DebugInfoEIS DebugInfoVersion = DebugInfoEIS::OpenCL_DebugInfo_100;
 
-  // Controls whether llvm.fmuladd.* should be replace with mad from OpenCL
+  // Controls whether llvm.fmuladd.* should be replaced with mad from OpenCL
   // extended instruction set or with a simple fmul + fadd
   bool ReplaceLLVMFmulAddWithOpenCLMad = true;
 };
