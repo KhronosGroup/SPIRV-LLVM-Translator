@@ -551,7 +551,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "GroupNonUniformShuffleRelative");
   add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
-  add(CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
+  add(internal::CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(CapabilityArbitraryPrecisionIntegersINTEL,
