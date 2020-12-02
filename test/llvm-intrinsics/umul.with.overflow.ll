@@ -47,6 +47,7 @@ entry:
 define dso_local spir_func void @_Z5foo32jjPj(i32 %a, i32 %b, i32* nocapture %c) local_unnamed_addr #0 {
 entry:
   ; CHECK-LLVM: call [[UMUL_32_TY]] @llvm.umul.with.overflow.i32
+  ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[NAME_UMUL_FUNC_32]]
   %umul = tail call { i32, i1 } @llvm.umul.with.overflow.i32(i32 %b, i32 %a)
   %umul.val = extractvalue { i32, i1 } %umul, 0
   %umul.ov = extractvalue { i32, i1 } %umul, 1
@@ -58,6 +59,7 @@ entry:
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @umulo_v2i64(<2 x i64> %a, <2 x i64> %b, <2 x i64>* %p) nounwind {
   ; CHECK-LLVM: call [[UMUL_VEC64_TY]] @llvm.umul.with.overflow.v2i64
+  ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[NAME_UMUL_FUNC_VEC_I64]]
   %umul = call {<2 x i64>, <2 x i1>} @llvm.umul.with.overflow.v2i64(<2 x i64> %a, <2 x i64> %b)
   %umul.val = extractvalue {<2 x i64>, <2 x i1>} %umul, 0
   %umul.ov = extractvalue {<2 x i64>, <2 x i1>} %umul, 1
