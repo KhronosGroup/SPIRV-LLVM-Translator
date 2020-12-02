@@ -226,17 +226,11 @@ void SPIRVRegularizeLLVM::buildUMulWithOverflowFunc(Function *UMulFunc) {
   // If so, then overflow has happened.
   auto *Mul = Builder.CreateNUWMul(FirstArg, SecondArg);
   auto *Div = Builder.CreateUDiv(Mul, FirstArg);
-  auto *Cmp = Builder.CreateICmpNE(FirstArg, Div);
-
-  Type *BoolTy = UMulFunc->getReturnType()->getContainedType(1);
-  auto *TrueVal = Constant::getAllOnesValue(BoolTy);
-  auto *FalseVal = Constant::getNullValue(BoolTy);
-
-  auto *Overflow = Builder.CreateSelect(Cmp, TrueVal, FalseVal);
+  auto *Overflow = Builder.CreateICmpNE(FirstArg, Div);
 
   // umul.with.overflow intrinsic return a structure, where the first element
   // is the multiplication result, and the second is an overflow bit.
-  auto *StructTy = StructType::create({FirstArg->getType(), BoolTy});
+  auto *StructTy = UMulFunc->getReturnType();
   auto *Agg = Builder.CreateInsertValue(UndefValue::get(StructTy), Mul, {0});
   auto *Res = Builder.CreateInsertValue(Agg, Overflow, {1});
   Builder.CreateRet(Res);

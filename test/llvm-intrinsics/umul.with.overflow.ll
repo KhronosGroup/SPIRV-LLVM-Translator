@@ -38,9 +38,8 @@ entry:
 ; CHECK-SPIRV: IMul [[#]] [[MUL_RES:[0-9]+]] [[VAR_A]] [[VAR_B]]
 ; CHECK-SPIRV: UDiv [[#]] [[DIV_RES:[0-9]+]] [[MUL_RES]] [[VAR_A]]
 ; CHECK-SPIRV: INotEqual [[#]] [[CMP_RES:[0-9]+]] [[VAR_A]] [[DIV_RES]]
-; CHECK-SPIRV: Select [[#]] [[SELECT_RES:[0-9]+]] [[CMP_RES]]
 ; CHECK-SPIRV: CompositeInsert [[#]] [[INSERT_RES:[0-9]+]] [[MUL_RES]]
-; CHECK-SPIRV: CompositeInsert [[#]] [[INSERT_RES_1:[0-9]+]] [[SELECT_RES]] [[INSERT_RES]]
+; CHECK-SPIRV: CompositeInsert [[#]] [[INSERT_RES_1:[0-9]+]] [[CMP_RES]] [[INSERT_RES]]
 ; CHECK-SPIRV: ReturnValue [[INSERT_RES_1]]
 
 ; Function Attrs: nofree nounwind writeonly
