@@ -287,6 +287,7 @@ protected:
 
 template <spv::Op OC> class SPIRVConstantCompositeBase : public SPIRVValue {
 public:
+  using ContinuedInstType = typename InstToContinued<OC>::Type;
   // Complete constructor for composite constant
   SPIRVConstantCompositeBase(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId,
                              const std::vector<SPIRVValue *> TheElements)
@@ -297,9 +298,26 @@ public:
   // Incomplete constructor
   SPIRVConstantCompositeBase() : SPIRVValue(OC) {}
   std::vector<SPIRVValue *> getElements() const { return getValues(Elements); }
+
+  // TODO: Should we attach operands of continued instructions as well?
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVValue *> Elements = getElements();
     return std::vector<SPIRVEntry *>(Elements.begin(), Elements.end());
+  }
+
+  // TODO: return a reference here?
+  std::vector<ContinuedInstType> getContinuedInstructions() {
+    return ContinuedInstructions;
+  }
+
+  void addContinuedInstruction(ContinuedInstType Inst) {
+    ContinuedInstructions.push_back(Inst);
+  }
+
+  void encodeChildren(spv_ostream &O) const override {
+    O << SPIRVNL();
+    for (auto &I : ContinuedInstructions)
+      O << *I;
   }
 
 protected:
@@ -308,13 +326,38 @@ protected:
     for (auto &I : Elements)
       getValue(I)->validate();
   }
+
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVEntry::setWordCount(WordCount);
     Elements.resize(WordCount - 3);
   }
-  _SPIRV_DEF_ENCDEC3(Type, Id, Elements)
+
+  void encode(spv_ostream &O) const override {
+    getEncoder(O) << Type << Id << Elements;
+  }
+
+  void decode(std::istream &I) override {
+    SPIRVDecoder Decoder = getDecoder(I);
+    Decoder >> Type >> Id >> Elements;
+
+    Decoder.getWordCountAndOpCode();
+    while (!I.eof()) {
+      SPIRVEntry *Entry = Decoder.getEntry();
+      if (Entry != nullptr)
+        Module->add(Entry);
+      if (Entry && Decoder.OpCode == ContinuedOpCode) {
+        auto ContinuedInst = static_cast<ContinuedInstType>(Entry);
+        addContinuedInstruction(ContinuedInst);
+        Decoder.getWordCountAndOpCode();
+      } else {
+        break;
+      }
+    }
+  }
 
   std::vector<SPIRVId> Elements;
+  std::vector<ContinuedInstType> ContinuedInstructions;
+  const spv::Op ContinuedOpCode = InstToContinued<OC>::OpCode;
 };
 
 using SPIRVConstantComposite = SPIRVConstantCompositeBase<OpConstantComposite>;

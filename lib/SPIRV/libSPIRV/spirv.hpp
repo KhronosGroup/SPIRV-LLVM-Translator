@@ -993,6 +993,7 @@ enum Capability {
   CapabilityIOPipeINTEL = 5943,
   CapabilityAtomicFloat32AddEXT = 6033,
   CapabilityAtomicFloat64AddEXT = 6034,
+  CapabilityLongConstantCompositeINTEL = 6089,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1591,6 +1592,9 @@ enum Op {
   OpFPGARegINTEL = 5949,
   OpAtomicFAddEXT = 6035,
   OpTypeBufferSurfaceINTEL = 6086,
+  OpTypeStructContinuedINTEL = 6090,
+  OpConstantCompositeContinuedINTEL = 6091,
+  OpSpecConstantCompositeContinuedINTEL = 6092,
   OpMax = 0x7fffffff,
 };
 
@@ -1627,6 +1631,7 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpTypeArray: *hasResult = true; *hasResultType = false; break;
     case OpTypeRuntimeArray: *hasResult = true; *hasResultType = false; break;
     case OpTypeStruct: *hasResult = true; *hasResultType = false; break;
+    case OpTypeStructContinuedINTEL: *hasResult = false; *hasResultType = false; break;
     case OpTypeOpaque: *hasResult = true; *hasResultType = false; break;
     case OpTypePointer: *hasResult = true; *hasResultType = false; break;
     case OpTypeFunction: *hasResult = true; *hasResultType = false; break;
@@ -1640,6 +1645,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpConstantFalse: *hasResult = true; *hasResultType = true; break;
     case OpConstant: *hasResult = true; *hasResultType = true; break;
     case OpConstantComposite: *hasResult = true; *hasResultType = true; break;
+    case OpConstantCompositeContinuedINTEL: *hasResult = false; *hasResultType = false; break;
+    case OpSpecConstantCompositeContinuedINTEL: *hasResult = false; *hasResultType = false; break;
     case OpConstantSampler: *hasResult = true; *hasResultType = true; break;
     case OpConstantNull: *hasResult = true; *hasResultType = true; break;
     case OpSpecConstantTrue: *hasResult = true; *hasResultType = true; break;

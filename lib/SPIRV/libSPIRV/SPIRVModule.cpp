@@ -239,6 +239,7 @@ public:
   SPIRVTypePipeStorage *addPipeStorageType() override;
   SPIRVTypeSampledImage *addSampledImageType(SPIRVTypeImage *T) override;
   SPIRVTypeStruct *openStructType(unsigned, const std::string &) override;
+  SPIRVEntry *addTypeStructContinuedINTEL(unsigned NumMembers) override;
   void closeStructType(SPIRVTypeStruct *T, bool) override;
   SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord) override;
   SPIRVType *addOpaqueGenericType(Op) override;
@@ -259,9 +260,13 @@ public:
                                              SPIRVBasicBlock *) override;
   SPIRVValue *addCompositeConstant(SPIRVType *,
                                    const std::vector<SPIRVValue *> &) override;
+  SPIRVEntry *addCompositeConstantContinuedINTEL(
+      const std::vector<SPIRVValue *> &) override;
   SPIRVValue *
   addSpecConstantComposite(SPIRVType *Ty,
                            const std::vector<SPIRVValue *> &Elements) override;
+  SPIRVEntry *addSpecConstantCompositeContinuedINTEL(
+      const std::vector<SPIRVValue *> &) override;
   SPIRVValue *addConstFunctionPointerINTEL(SPIRVType *Ty,
                                            SPIRVFunction *F) override;
   SPIRVValue *addConstant(SPIRVValue *) override;
@@ -846,6 +851,10 @@ SPIRVTypeStruct *SPIRVModuleImpl::openStructType(unsigned NumMembers,
   return T;
 }
 
+SPIRVEntry *SPIRVModuleImpl::addTypeStructContinuedINTEL(unsigned NumMembers) {
+  return add(new SPIRVTypeStructContinuedINTEL(this, NumMembers));
+}
+
 void SPIRVModuleImpl::closeStructType(SPIRVTypeStruct *T, bool Packed) {
   addType(T);
   T->setPacked(Packed);
@@ -1069,13 +1078,67 @@ SPIRVValue *SPIRVModuleImpl::addNullConstant(SPIRVType *Ty) {
 
 SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
+  SPIRVConstantComposite *Res;
+  const size_t MaxNumElements = 65535 - 3;
+  const size_t NumElements = Elements.size();
+  if (NumElements > MaxNumElements &&
+      isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
+    for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
+      auto Start = Elements.begin() + J;
+      auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()
+                                                      : Start + MaxNumElements;
+      std::vector<SPIRVValue *> Slice(Start, End);
+      if (J == 0) {
+        Res = static_cast<SPIRVConstantComposite *>(
+            addCompositeConstant(Ty, Slice));
+      } else {
+        SPIRVConstantComposite::ContinuedInstType Continued =
+            static_cast<SPIRVConstantComposite::ContinuedInstType>(
+                addCompositeConstantContinuedINTEL(Slice));
+        Res->addContinuedInstruction(Continued);
+      }
+    }
+    return Res;
+  }
   return addConstant(new SPIRVConstantComposite(this, Ty, getId(), Elements));
+}
+
+SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
+    const std::vector<SPIRVValue *> &Elements) {
+  return add(new SPIRVConstantCompositeContinuedINTEL(this, Elements));
 }
 
 SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
+  SPIRVSpecConstantComposite *Res;
+  const size_t MaxNumElements = 65535 - 3;
+  const size_t NumElements = Elements.size();
+  if (NumElements > MaxNumElements &&
+      isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
+    for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
+      auto Start = Elements.begin() + J;
+      auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()
+                                                      : Start + MaxNumElements;
+      std::vector<SPIRVValue *> Slice(Start, End);
+      if (J == 0) {
+        Res = static_cast<SPIRVSpecConstantComposite *>(
+            addSpecConstantComposite(Ty, Slice));
+      } else {
+        SPIRVSpecConstantComposite::ContinuedInstType Continued =
+            static_cast<SPIRVSpecConstantComposite::ContinuedInstType>(
+                addSpecConstantCompositeContinuedINTEL(Slice));
+        Res->addContinuedInstruction(Continued);
+      }
+    }
+    return Res;
+  }
   return addConstant(
       new SPIRVSpecConstantComposite(this, Ty, getId(), Elements));
+}
+
+SPIRVEntry *SPIRVModuleImpl::addSpecConstantCompositeContinuedINTEL(
+    const std::vector<SPIRVValue *> &Elements) {
+  return add(new SPIRVSpecConstantCompositeContinuedINTEL(this, Elements));
 }
 
 SPIRVValue *SPIRVModuleImpl::addConstFunctionPointerINTEL(SPIRVType *Ty,
