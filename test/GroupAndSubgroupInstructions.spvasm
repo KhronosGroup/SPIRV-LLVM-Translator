@@ -30,6 +30,7 @@
 ; llvm-spirv tmp.bc --spirv-ext=+all -o tmp.spv
 ; spirv-dis tmp.spv -o llvm-spirv/test/GroupAndSubgroupInstructions.spvasm
 
+; REQUIRES: spirv-as
 ; RUN: spirv-as < %s --target-env spv1.0 -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=CL1.2 -o %t.bc
