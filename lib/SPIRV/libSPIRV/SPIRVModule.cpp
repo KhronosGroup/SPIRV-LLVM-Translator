@@ -1078,29 +1078,32 @@ SPIRVValue *SPIRVModuleImpl::addNullConstant(SPIRVType *Ty) {
 
 SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  const size_t MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
-  const size_t NumElements = Elements.size();
-  if (NumElements > MaxNumElements &&
-      isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
-    SPIRVConstantComposite *Res;
-    for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
-      auto Start = Elements.begin() + J;
-      auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()
-                                                      : Start + MaxNumElements;
-      std::vector<SPIRVValue *> Slice(Start, End);
-      if (J == 0) {
-        Res = static_cast<SPIRVConstantComposite *>(
-            addCompositeConstant(Ty, Slice));
-      } else {
-        SPIRVConstantComposite::ContinuedInstType Continued =
-            static_cast<SPIRVConstantComposite::ContinuedInstType>(
-                addCompositeConstantContinuedINTEL(Slice));
-        Res->addContinuedInstruction(Continued);
-      }
-    }
-    return Res;
+  const int MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
+  const int NumElements = Elements.size();
+
+  // In case number of elements is greater than maximum WordCount and
+  // SPV_INTEL_long_constant_composite is not enabled, the error will be emitted
+  // by validate functionality of SPIRVCompositeConstant class.
+  if (NumElements <= MaxNumElements ||
+      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite))
+    return addConstant(new SPIRVConstantComposite(this, Ty, getId(), Elements));
+
+  auto Start = Elements.begin();
+  auto End = Start + MaxNumElements;
+  std::vector<SPIRVValue *> Slice(Start, End);
+  auto *Res =
+      static_cast<SPIRVConstantComposite *>(addCompositeConstant(Ty, Slice));
+  for (; End != Elements.end();) {
+    Start = End;
+    End = ((Elements.end() - End) > MaxNumElements) ? End + MaxNumElements
+                                                    : Elements.end();
+    Slice.assign(Start, End);
+    SPIRVConstantComposite::ContinuedInstType Continued =
+        static_cast<SPIRVConstantComposite::ContinuedInstType>(
+            addCompositeConstantContinuedINTEL(Slice));
+    Res->addContinuedInstruction(Continued);
   }
-  return addConstant(new SPIRVConstantComposite(this, Ty, getId(), Elements));
+  return Res;
 }
 
 SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
@@ -1110,31 +1113,34 @@ SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
 
 SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  const size_t MaxNumElements =
+  const int MaxNumElements =
       MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
-  const size_t NumElements = Elements.size();
-  if (NumElements > MaxNumElements &&
-      isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
-    SPIRVSpecConstantComposite *Res;
-    for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
-      auto Start = Elements.begin() + J;
-      auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()
-                                                      : Start + MaxNumElements;
-      std::vector<SPIRVValue *> Slice(Start, End);
-      if (J == 0) {
-        Res = static_cast<SPIRVSpecConstantComposite *>(
-            addSpecConstantComposite(Ty, Slice));
-      } else {
-        SPIRVSpecConstantComposite::ContinuedInstType Continued =
-            static_cast<SPIRVSpecConstantComposite::ContinuedInstType>(
-                addSpecConstantCompositeContinuedINTEL(Slice));
-        Res->addContinuedInstruction(Continued);
-      }
-    }
-    return Res;
+  const int NumElements = Elements.size();
+
+  // In case number of elements is greater than maximum WordCount and
+  // SPV_INTEL_long_constant_composite is not enabled, the error will be emitted
+  // by validate functionality of SPIRVSpecConstantComposite class.
+  if (NumElements <= MaxNumElements ||
+      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite))
+    return addConstant(
+        new SPIRVSpecConstantComposite(this, Ty, getId(), Elements));
+
+  auto Start = Elements.begin();
+  auto End = Start + MaxNumElements;
+  std::vector<SPIRVValue *> Slice(Start, End);
+  auto *Res = static_cast<SPIRVSpecConstantComposite *>(
+      addSpecConstantComposite(Ty, Slice));
+  for (; End != Elements.end();) {
+    Start = End;
+    End = ((Elements.end() - End) > MaxNumElements) ? End + MaxNumElements
+                                                    : Elements.end();
+    Slice.assign(Start, End);
+    SPIRVSpecConstantComposite::ContinuedInstType Continued =
+        static_cast<SPIRVSpecConstantComposite::ContinuedInstType>(
+            addSpecConstantCompositeContinuedINTEL(Slice));
+    Res->addContinuedInstruction(Continued);
   }
-  return addConstant(
-      new SPIRVSpecConstantComposite(this, Ty, getId(), Elements));
+  return Res;
 }
 
 SPIRVEntry *SPIRVModuleImpl::addSpecConstantCompositeContinuedINTEL(

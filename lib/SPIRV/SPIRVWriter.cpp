@@ -417,6 +417,9 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
     const size_t MaxNumElements = MaxWordCount - SPIRVTypeStruct::FixedWC;
     const size_t NumElements = ST->getNumElements();
     size_t SPIRVStructNumElements = NumElements;
+    // In case number of elements is greater than maximum WordCount and
+    // SPV_INTEL_long_constant_composite is not enabled, the error will be
+    // emitted by validate functionality of SPIRVTypeStruct class.
     if (NumElements > MaxNumElements &&
         BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_long_constant_composite)) {
