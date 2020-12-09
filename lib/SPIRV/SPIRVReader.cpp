@@ -3268,6 +3268,9 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
+    auto OC = BI->getOpCode();
+    if (isGroupOpCode(OC) || isIntelSubgroupOpCode(OC))
+      Func->addFnAttr(Attribute::Convergent);
   }
   auto Call =
       CallInst::Create(Func, transValue(Ops, BB->getParent(), BB), "", BB);
@@ -4201,6 +4204,14 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
     std::vector<Metadata *> MetadataVec;
     MetadataVec.push_back(ConstantAsMetadata::get(getInt32(M, 1)));
     F->setMetadata(kSPIR2MD::StallEnable, MDNode::get(*Context, MetadataVec));
+  }
+  if (BF->hasDecorate(DecorationFuseLoopsInFunctionINTEL)) {
+    std::vector<Metadata *> MetadataVec;
+    auto Literals =
+        BF->getDecorationLiterals(DecorationFuseLoopsInFunctionINTEL);
+    MetadataVec.push_back(ConstantAsMetadata::get(getUInt32(M, Literals[0])));
+    MetadataVec.push_back(ConstantAsMetadata::get(getUInt32(M, Literals[1])));
+    F->setMetadata(kSPIR2MD::LoopFuse, MDNode::get(*Context, MetadataVec));
   }
   return true;
 }

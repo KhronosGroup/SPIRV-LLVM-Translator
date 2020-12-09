@@ -613,9 +613,7 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
     transVectorComputeMetadata(F);
 
-  if (BM->isAllowedToUseExtension(
-          ExtensionID::SPV_INTEL_fpga_cluster_attributes))
-    transFPGAFunctionMetadata(BF, F);
+  transFPGAFunctionMetadata(BF, F);
 
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
            spvdbgs() << *BF << '\n';)
@@ -702,9 +700,21 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
 
 void LLVMToSPIRV::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
   if (MDNode *StallEnable = F->getMetadata(kSPIR2MD::StallEnable)) {
-    if (getMDOperandAsInt(StallEnable, 0)) {
-      BM->addCapability(CapabilityFPGAClusterAttributesINTEL);
-      BF->addDecorate(new SPIRVDecorateStallEnableINTEL(BF));
+    if (BM->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_fpga_cluster_attributes)) {
+      if (getMDOperandAsInt(StallEnable, 0)) {
+        BM->addCapability(CapabilityFPGAClusterAttributesINTEL);
+        BF->addDecorate(new SPIRVDecorateStallEnableINTEL(BF));
+      }
+    }
+  }
+  if (MDNode *LoopFuse = F->getMetadata(kSPIR2MD::LoopFuse)) {
+    if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_loop_fuse)) {
+      size_t Depth = getMDOperandAsInt(LoopFuse, 0);
+      size_t Independent = getMDOperandAsInt(LoopFuse, 1);
+      BM->addCapability(CapabilityLoopFuseINTEL);
+      BF->addDecorate(
+          new SPIRVDecorateFuseLoopsInFunctionINTEL(BF, Depth, Independent));
     }
   }
 }
@@ -895,18 +905,22 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
     const auto SrcAddrSpace = Cast->getSrcTy()->getPointerAddressSpace();
     const auto DestAddrSpace = Cast->getDestTy()->getPointerAddressSpace();
     if (DestAddrSpace == SPIRAS_Generic) {
-      assert(SrcAddrSpace != SPIRAS_Constant &&
-             "Casts from constant address space to generic are illegal");
+      getErrorLog().checkError(
+          SrcAddrSpace != SPIRAS_Constant, SPIRVEC_InvalidModule,
+          "Casts from constant address space to generic are illegal\n" +
+              toString(U));
       BOC = OpPtrCastToGeneric;
       // In SPIR-V only casts to/from generic are allowed. But with
       // SPV_INTEL_usm_storage_classes we can also have casts from global_device
       // and global_host to global addr space and vice versa.
     } else if (SrcAddrSpace == SPIRAS_GlobalDevice ||
                SrcAddrSpace == SPIRAS_GlobalHost) {
-      assert(
-          (DestAddrSpace == SPIRAS_Global || DestAddrSpace == SPIRAS_Generic) &&
-          "Casts from global_device/global_host only allowed to \
-             global/generic");
+      getErrorLog().checkError(DestAddrSpace == SPIRAS_Global ||
+                                   DestAddrSpace == SPIRAS_Generic,
+                               SPIRVEC_InvalidModule,
+                               "Casts from global_device/global_host only "
+                               "allowed to global/generic\n" +
+                                   toString(U));
       if (!BM->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_usm_storage_classes)) {
         if (DestAddrSpace == SPIRAS_Global)
@@ -917,10 +931,12 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
       }
     } else if (DestAddrSpace == SPIRAS_GlobalDevice ||
                DestAddrSpace == SPIRAS_GlobalHost) {
-      assert(
-          (SrcAddrSpace == SPIRAS_Global || SrcAddrSpace == SPIRAS_Generic) &&
-          "Casts to global_device/global_host only allowed from \
-             global/generic");
+      getErrorLog().checkError(SrcAddrSpace == SPIRAS_Global ||
+                                   SrcAddrSpace == SPIRAS_Generic,
+                               SPIRVEC_InvalidModule,
+                               "Casts to global_device/global_host only "
+                               "allowed from global/generic\n" +
+                                   toString(U));
       if (!BM->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_usm_storage_classes)) {
         if (SrcAddrSpace == SPIRAS_Global)
@@ -930,9 +946,15 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
         BOC = OpCrossWorkgroupCastToPtrINTEL;
       }
     } else {
-      assert(DestAddrSpace != SPIRAS_Constant &&
-             "Casts from generic address space to constant are illegal");
-      assert(SrcAddrSpace == SPIRAS_Generic);
+      getErrorLog().checkError(
+          SrcAddrSpace == SPIRAS_Generic, SPIRVEC_InvalidModule,
+          "Casts from private/local/global address space are allowed only to "
+          "generic\n" +
+              toString(U));
+      getErrorLog().checkError(
+          DestAddrSpace != SPIRAS_Constant, SPIRVEC_InvalidModule,
+          "Casts from generic address space to constant are illegal\n" +
+              toString(U));
       BOC = OpGenericCastToPtr;
     }
   } else {
@@ -2598,7 +2620,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::dbg_label:
   case Intrinsic::trap:
     // llvm.trap intrinsic is not implemented. But for now don't crash. This
-    // change is pending the trap/abort intrisinc implementation.
+    // change is pending the trap/abort intrinsic implementation.
     return nullptr;
   default:
     if (BM->isSPIRVAllowUnknownIntrinsicsEnabled())
