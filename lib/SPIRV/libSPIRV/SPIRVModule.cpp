@@ -1078,11 +1078,11 @@ SPIRVValue *SPIRVModuleImpl::addNullConstant(SPIRVType *Ty) {
 
 SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  SPIRVConstantComposite *Res;
-  const size_t MaxNumElements = 65535 - 3;
+  const size_t MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
   const size_t NumElements = Elements.size();
   if (NumElements > MaxNumElements &&
       isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
+    SPIRVConstantComposite *Res;
     for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
       auto Start = Elements.begin() + J;
       auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()
@@ -1110,11 +1110,12 @@ SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
 
 SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  SPIRVSpecConstantComposite *Res;
-  const size_t MaxNumElements = 65535 - 3;
+  const size_t MaxNumElements =
+      MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
   const size_t NumElements = Elements.size();
   if (NumElements > MaxNumElements &&
       isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite)) {
+    SPIRVSpecConstantComposite *Res;
     for (uint64_t J = 0; J < NumElements; J += MaxNumElements) {
       auto Start = Elements.begin() + J;
       auto End = ((J + MaxNumElements) > NumElements) ? Elements.end()

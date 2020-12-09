@@ -287,11 +287,16 @@ protected:
 
 template <spv::Op OC> class SPIRVConstantCompositeBase : public SPIRVValue {
 public:
+  // There are always 3 words in this instruction except constituents:
+  // 1) WordCount + OpCode
+  // 2) Result type
+  // 3) Result Id
+  const static SPIRVWord FixedWC = 3;
   using ContinuedInstType = typename InstToContinued<OC>::Type;
   // Complete constructor for composite constant
   SPIRVConstantCompositeBase(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId,
                              const std::vector<SPIRVValue *> TheElements)
-      : SPIRVValue(M, TheElements.size() + 3, OC, TheType, TheId) {
+      : SPIRVValue(M, TheElements.size() + FixedWC, OC, TheType, TheId) {
     Elements = getIds(TheElements);
     validate();
   }
@@ -305,7 +310,6 @@ public:
     return std::vector<SPIRVEntry *>(Elements.begin(), Elements.end());
   }
 
-  // TODO: return a reference here?
   std::vector<ContinuedInstType> getContinuedInstructions() {
     return ContinuedInstructions;
   }
@@ -329,7 +333,7 @@ protected:
 
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVEntry::setWordCount(WordCount);
-    Elements.resize(WordCount - 3);
+    Elements.resize(WordCount - FixedWC);
   }
 
   void encode(spv_ostream &O) const override {

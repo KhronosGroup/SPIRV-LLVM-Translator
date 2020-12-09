@@ -414,8 +414,8 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
     if (Name == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage))
       return transType(getPipeStorageType(M));
 
-    const size_t MaxNumElements = 65535 - 2;
-    const size_t NumElements = T->getStructNumElements();
+    const size_t MaxNumElements = MaxWordCount - SPIRVTypeStruct::FixedWC;
+    const size_t NumElements = ST->getNumElements();
     size_t SPIRVStructNumElements = NumElements;
     if (NumElements > MaxNumElements &&
         BM->isAllowedToUseExtension(
@@ -1254,14 +1254,15 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
           // First 3 words of OpConstantComposite encode: 1) word count &
           // opcode, 2) Result Type and 3) Result Id. Max length of SPIRV
           // instruction = 65535 words.
-          const int MaxNumElements = 65535 - 3;
+          const int MaxNumElements =
+              MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
           if (ArrTy->getNumElements() > MaxNumElements &&
               !isa<ConstantAggregateZero>(Init)) {
             std::stringstream SS;
             SS << "Global variable has a constant array initializer with a "
-                  "number"
-               << " of elements greater than OpConstantComposite can have "
-               << "(65532). Should the array be split?\n Original LLVM value:\n"
+               << "number of elements greater than OpConstantComposite can "
+               << "have (" << MaxNumElements << "). Should the array be "
+               << "split?\n Original LLVM value:\n"
                << toString(GV);
             getErrorLog().checkError(false, SPIRVEC_InvalidWordCount, SS.str());
           }

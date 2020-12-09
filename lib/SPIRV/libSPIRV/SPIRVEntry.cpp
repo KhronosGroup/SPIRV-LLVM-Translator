@@ -662,8 +662,7 @@ void SPIRVCapability::decode(std::istream &I) {
   Module->addCapability(Kind);
 }
 
-template <spv::Op OC>
-void SPIRVContinuedInstINTELBase<OC>::validate() const {
+template <spv::Op OC> void SPIRVContinuedInstINTELBase<OC>::validate() const {
   SPIRVEntry::validate();
 }
 

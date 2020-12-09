@@ -871,7 +871,7 @@ public:
                                 T>;
   // Complete constructor
   SPIRVContinuedInstINTELBase(SPIRVModule *M,
-                              const std::vector<SPIRVValue *> TheElements)
+                              const std::vector<SPIRVValue *> &TheElements)
       : SPIRVEntryNoId<OC>(M, TheElements.size() + 1) {
 
     Elements = SPIRVEntry::getIds(TheElements);
@@ -880,7 +880,7 @@ public:
 
   SPIRVContinuedInstINTELBase(SPIRVModule *M, unsigned NumOfElements)
       : SPIRVEntryNoId<OC>(M, NumOfElements + 1) {
-    Elements.resize(NumOfElements);
+    Elements.resize(NumOfElements, SPIRVID_INVALID);
     validate();
   }
 

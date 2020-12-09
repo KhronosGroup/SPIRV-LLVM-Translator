@@ -620,12 +620,16 @@ protected:
 class SPIRVTypeStruct : public SPIRVType {
 public:
   const static Op OC = OpTypeStruct;
+  // There are always 2 words in this instruction except member types:
+  // 1) WordCount + OpCode
+  // 2) Result Id
+  const static SPIRVWord FixedWC = 2;
   using ContinuedInstType = typename InstToContinued<OC>::Type;
   // Complete constructor
   SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId,
                   const std::vector<SPIRVType *> &TheMemberTypes,
                   const std::string &TheName)
-      : SPIRVType(M, 2 + TheMemberTypes.size(), OC, TheId) {
+      : SPIRVType(M, FixedWC + TheMemberTypes.size(), OC, TheId) {
     MemberTypeIdVec.resize(TheMemberTypes.size());
     for (auto &T : TheMemberTypes)
       MemberTypeIdVec.push_back(T->getId());
@@ -634,7 +638,7 @@ public:
   }
   SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId, unsigned NumMembers,
                   const std::string &TheName)
-      : SPIRVType(M, 2 + NumMembers, OC, TheId) {
+      : SPIRVType(M, FixedWC + NumMembers, OC, TheId) {
     Name = TheName;
     validate();
     MemberTypeIdVec.resize(NumMembers);
@@ -648,7 +652,7 @@ public:
   }
   void setMemberType(size_t I, SPIRVType *Ty) {
     if (I >= MemberTypeIdVec.size() && !ContinuedInstructions.empty()) {
-      const size_t MaxNumElements = 65535 - 2;
+      const size_t MaxNumElements = MaxWordCount - FixedWC;
       I -= MaxNumElements; // Remove operands that included into OpTypeStruct
       ContinuedInstructions[I / MaxNumElements]->setElementId(
           I % MaxNumElements, Ty->getId());
@@ -662,7 +666,7 @@ public:
 
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVType::setWordCount(WordCount);
-    MemberTypeIdVec.resize(WordCount - 2);
+    MemberTypeIdVec.resize(WordCount - FixedWC);
   }
 
   // TODO: Should we attach operands of continued instructions as well?
@@ -682,7 +686,6 @@ public:
       O << *I;
   }
 
-  // TODO: return a reference here?
   std::vector<ContinuedInstType> getContinuedInstructions() {
     return ContinuedInstructions;
   }
