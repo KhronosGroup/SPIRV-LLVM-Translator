@@ -235,6 +235,7 @@ public:
   virtual SPIRVTypePointer *addPointerType(SPIRVStorageClassKind,
                                            SPIRVType *) = 0;
   virtual SPIRVTypeStruct *openStructType(unsigned, const std::string &) = 0;
+  virtual SPIRVEntry *addTypeStructContinuedINTEL(unsigned NumMembers) = 0;
   virtual void closeStructType(SPIRVTypeStruct *, bool) = 0;
   virtual SPIRVTypeVector *addVectorType(SPIRVType *, SPIRVWord) = 0;
   virtual SPIRVTypeVoid *addVoidType() = 0;
@@ -253,6 +254,8 @@ public:
   addCompositeConstant(SPIRVType *, const std::vector<SPIRVValue *> &) = 0;
   virtual SPIRVValue *addConstFunctionPointerINTEL(SPIRVType *Ty,
                                                    SPIRVFunction *F) = 0;
+  virtual SPIRVEntry *
+  addCompositeConstantContinuedINTEL(const std::vector<SPIRVValue *> &) = 0;
   virtual SPIRVValue *addConstant(SPIRVValue *) = 0;
   virtual SPIRVValue *addConstant(SPIRVType *, uint64_t) = 0;
   virtual SPIRVValue *addDoubleConstant(SPIRVTypeFloat *, double) = 0;
