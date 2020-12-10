@@ -291,7 +291,7 @@ public:
   // 1) WordCount + OpCode
   // 2) Result type
   // 3) Result Id
-  const static SPIRVWord FixedWC = 3;
+  constexpr static SPIRVWord FixedWC = 3;
   using ContinuedInstType = typename InstToContinued<OC>::Type;
   // Complete constructor for composite constant
   SPIRVConstantCompositeBase(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId,

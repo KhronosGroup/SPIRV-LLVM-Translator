@@ -450,7 +450,9 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
 
     for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
       auto *ElemTy = ST->getElementType(I);
-      if (recursiveType(ST, ElemTy))
+      if ((isa<StructType>(ElemTy) || isa<ArrayType>(ElemTy) ||
+           isa<VectorType>(ElemTy) || isa<PointerType>(ElemTy)) &&
+          recursiveType(ST, ElemTy))
         ForwardRefs.push_back(I);
       else
         Struct->setMemberType(I, transType(ST->getElementType(I)));
@@ -1279,7 +1281,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
           // First 3 words of OpConstantComposite encode: 1) word count &
           // opcode, 2) Result Type and 3) Result Id. Max length of SPIRV
           // instruction = 65535 words.
-          const int MaxNumElements =
+          constexpr int MaxNumElements =
               MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
           if (ArrTy->getNumElements() > MaxNumElements &&
               !isa<ConstantAggregateZero>(Init)) {

@@ -484,7 +484,7 @@ inline bool operator<(const SPIRVTypeImageDescriptor &A,
 class SPIRVTypeImage : public SPIRVType {
 public:
   const static Op OC = OpTypeImage;
-  const static SPIRVWord FixedWC = 9;
+  constexpr static SPIRVWord FixedWC = 9;
   SPIRVTypeImage(SPIRVModule *M, SPIRVId TheId, SPIRVId TheSampledType,
                  const SPIRVTypeImageDescriptor &TheDesc)
       : SPIRVType(M, FixedWC, OC, TheId), SampledType(TheSampledType),

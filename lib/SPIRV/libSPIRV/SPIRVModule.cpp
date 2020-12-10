@@ -1078,7 +1078,7 @@ SPIRVValue *SPIRVModuleImpl::addNullConstant(SPIRVType *Ty) {
 
 SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  const int MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
+  constexpr int MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
   const int NumElements = Elements.size();
 
   // In case number of elements is greater than maximum WordCount and
@@ -1098,9 +1098,8 @@ SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     End = ((Elements.end() - End) > MaxNumElements) ? End + MaxNumElements
                                                     : Elements.end();
     Slice.assign(Start, End);
-    SPIRVConstantComposite::ContinuedInstType Continued =
-        static_cast<SPIRVConstantComposite::ContinuedInstType>(
-            addCompositeConstantContinuedINTEL(Slice));
+    auto Continued = static_cast<SPIRVConstantComposite::ContinuedInstType>(
+        addCompositeConstantContinuedINTEL(Slice));
     Res->addContinuedInstruction(Continued);
   }
   return Res;
@@ -1113,8 +1112,7 @@ SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
 
 SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  const int MaxNumElements =
-      MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
+  const int MaxNumElements = MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
   const int NumElements = Elements.size();
 
   // In case number of elements is greater than maximum WordCount and
@@ -1135,9 +1133,8 @@ SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     End = ((Elements.end() - End) > MaxNumElements) ? End + MaxNumElements
                                                     : Elements.end();
     Slice.assign(Start, End);
-    SPIRVSpecConstantComposite::ContinuedInstType Continued =
-        static_cast<SPIRVSpecConstantComposite::ContinuedInstType>(
-            addSpecConstantCompositeContinuedINTEL(Slice));
+    auto Continued = static_cast<SPIRVSpecConstantComposite::ContinuedInstType>(
+        addSpecConstantCompositeContinuedINTEL(Slice));
     Res->addContinuedInstruction(Continued);
   }
   return Res;
