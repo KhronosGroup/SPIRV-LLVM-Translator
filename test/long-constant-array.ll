@@ -1,6 +1,24 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 
+; Check that everything is fine if SPV_INTEL_long_constant_composite is enabled
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_long_constant_composite %t.bc -o %t.spv
+; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; TODO: run validator once it supports the extension
+; RUNx: spirv-val %t.spv
+
+; CHECK-SPIRV: Capability LongConstantCompositeINTEL 
+; CHECK-SPIRV: Extension "SPV_INTEL_long_constant_composite"
+; CHECK-SPIRV: TypeInt [[TInt:[0-9]+]] 8
+; CHECK-SPIRV: Constant {{[0-9]+}} [[ArrSize:[0-9]+]] 78000
+; CHECK-SPIRV: TypeArray [[TArr:[0-9]+]] [[TInt]] [[ArrSize]]
+; CHECK-SPIRV: 65535 ConstantComposite [[TArr]]
+; CHECK-SPIRV-NEXT: 12469 ConstantCompositeContinuedINTEL
+
+; CHECK-LLVM: @big_array = unnamed_addr addrspace(2) constant [78000 x i8] c"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+
 ; CHECK-ERROR: InvalidWordCount: Can't encode instruction with word count greater than 65535:
 ; CHECK-ERROR-NEXT: Global variable has a constant array initializer with a number of elements greater than OpConstantComposite can have (65532). Should the array be split?
 ; CHECK-ERROR-NEXT: Original LLVM value:
