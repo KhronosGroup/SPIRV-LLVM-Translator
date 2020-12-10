@@ -414,7 +414,7 @@ SPIRVType *LLVMToSPIRV::transType(Type *T) {
     if (Name == getSPIRVTypeName(kSPIRVTypeName::ConstantPipeStorage))
       return transType(getPipeStorageType(M));
 
-    const size_t MaxNumElements = MaxWordCount - SPIRVTypeStruct::FixedWC;
+    constexpr size_t MaxNumElements = MaxWordCount - SPIRVTypeStruct::FixedWC;
     const size_t NumElements = ST->getNumElements();
     size_t SPIRVStructNumElements = NumElements;
     // In case number of elements is greater than maximum WordCount and

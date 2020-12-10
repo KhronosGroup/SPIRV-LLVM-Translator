@@ -1112,7 +1112,8 @@ SPIRVEntry *SPIRVModuleImpl::addCompositeConstantContinuedINTEL(
 
 SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
-  const int MaxNumElements = MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
+  constexpr int MaxNumElements =
+      MaxWordCount - SPIRVSpecConstantComposite::FixedWC;
   const int NumElements = Elements.size();
 
   // In case number of elements is greater than maximum WordCount and
