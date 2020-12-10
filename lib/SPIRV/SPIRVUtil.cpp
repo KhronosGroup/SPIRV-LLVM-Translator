@@ -1587,6 +1587,58 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
   }
   return static_cast<spv::LoopControlMask>(LoopControl);
 }
+// Returns true if type(s) and number of elements (if vector) is valid
+bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
+  switch (II->getIntrinsicID()) {
+  case Intrinsic::ceil:
+  case Intrinsic::copysign:
+  case Intrinsic::cos:
+  case Intrinsic::exp:
+  case Intrinsic::exp2:
+  case Intrinsic::fabs:
+  case Intrinsic::floor:
+  case Intrinsic::fma:
+  case Intrinsic::log:
+  case Intrinsic::log10:
+  case Intrinsic::log2:
+  case Intrinsic::maximum:
+  case Intrinsic::maxnum:
+  case Intrinsic::minimum:
+  case Intrinsic::minnum:
+  case Intrinsic::nearbyint:
+  case Intrinsic::pow:
+  case Intrinsic::powi:
+  case Intrinsic::rint:
+  case Intrinsic::round:
+  case Intrinsic::sin:
+  case Intrinsic::sqrt:
+  case Intrinsic::trunc: {
+    // Although some of the intrinsics above take multiple arguments, it is
+    // sufficient to check arg 0 because the LLVM Verifier will have checked
+    // that all floating point operands have the same type and the second
+    // argument of powi is i32.
+    Type *Ty = II->getType();
+    if (II->getArgOperand(0)->getType() != Ty)
+      return false;
+    int NumElems = 1;
+    if (auto *VecTy = dyn_cast<VectorType>(Ty)) {
+      NumElems = VecTy->getNumElements();
+      Ty = VecTy->getElementType();
+    }
+    if ((!Ty->isFloatTy() && !Ty->isDoubleTy() && !Ty->isHalfTy()) ||
+        ((NumElems > 4) && (NumElems != 8) && (NumElems != 16))) {
+      BM->getErrorLog().checkError(false, SPIRVEC_InvalidFunctionCall,
+                                   II->getCalledOperand()->getName().str(), "",
+                                   __FILE__, __LINE__);
+      return false;
+    }
+    break;
+  }
+  default:
+    break;
+  }
+  return true;
+}
 
 } // namespace SPIRV
 
