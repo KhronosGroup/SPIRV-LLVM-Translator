@@ -623,7 +623,7 @@ public:
   // There are always 2 words in this instruction except member types:
   // 1) WordCount + OpCode
   // 2) Result Id
-  const static SPIRVWord FixedWC = 2;
+  constexpr static SPIRVWord FixedWC = 2;
   using ContinuedInstType = typename InstToContinued<OC>::Type;
   // Complete constructor
   SPIRVTypeStruct(SPIRVModule *M, SPIRVId TheId,
