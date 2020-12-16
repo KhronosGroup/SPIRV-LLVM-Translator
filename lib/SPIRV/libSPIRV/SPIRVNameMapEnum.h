@@ -131,7 +131,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationReferencedIndirectlyINTEL, "ReferencedIndirectlyINTEL");
   add(DecorationSideEffectsINTEL, "SideEffectsINTEL");
   add(DecorationVectorComputeVariableINTEL, "VectorComputeVariableINTEL");
-  add(DecorationFuncParamIOKind, "FuncParamIOKind");
+  add(DecorationFuncParamIOKindINTEL, "FuncParamIOKind");
   add(DecorationVectorComputeFunctionINTEL, "VectorComputeFunctionINTEL");
   add(DecorationStackCallINTEL, "StackCallINTEL");
   add(DecorationGlobalVariableOffsetINTEL, "GlobalVariableOffsetINTEL");
@@ -503,7 +503,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "ArbitraryPrecisionFixedPointINTEL");
   add(CapabilityUSMStorageClassesINTEL, "USMStorageClassesINTEL");
   add(CapabilityFPGAMemoryAccessesINTEL, "FPGAMemoryAccessesINTEL");
-  add(CapabilityIOPipeINTEL, "IOPipeINTEL");
+  add(CapabilityIOPipesINTEL, "IOPipeINTEL");
+  add(CapabilityFPGAClusterAttributesINTEL, "FPGAClusterAttributesINTEL");
+  add(CapabilityLoopFuseINTEL, "LoopFuseINTEL");
   add(CapabilityMax, "Max");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
 }
