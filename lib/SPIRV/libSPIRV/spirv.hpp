@@ -171,7 +171,7 @@ enum ExecutionMode {
     ExecutionModeMaxWorkDimINTEL = 5894,
     ExecutionModeNoGlobalOffsetINTEL = 5895,
     ExecutionModeNumSIMDWorkitemsINTEL = 5896,
-    ExecutionModeVectorComputeFastCompositeKernelINTEL = 6088,
+    ExecutionModeFastCompositeKernelINTEL = 6088,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -522,7 +522,7 @@ enum Decoration {
   DecorationIOPipeStorageINTEL = 5944,
   DecorationFunctionFloatingPointModeINTEL = 6080,
   DecorationSingleElementVectorINTEL = 6085,
-  DecorationVectorComputeCallableFunctionINTEL = 6087,
+  DecorationCallableFunctionINTEL = 6087,
   DecorationMax = 0x7fffffff,
 };
 
@@ -984,6 +984,7 @@ enum Capability {
   CapabilityUSMStorageClassesINTEL = 5935,
   CapabilityFPGAMemoryAccessesINTEL = 5898,
   CapabilityIOPipeINTEL = 5943,
+  CapabilityFastCompositeINTEL = 6093,
   CapabilityMax = 0x7fffffff,
 };
 
