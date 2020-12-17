@@ -116,7 +116,8 @@ enum SPIRVExtensionKind {
   SPV_INTEL_inline_assembly,
   SPV_KHR_float_controls,
   SPV_INTEL_float_controls2,
-  SPV_INTEL_vector_compute
+  SPV_INTEL_vector_compute,
+  SPV_INTEL_fast_composite,
 };
 
 typedef std::set<SPIRVExtensionKind> SPIRVExtSet;
@@ -130,6 +131,7 @@ template <> inline void SPIRVMap<SPIRVExtensionKind, std::string>::init() {
   add(SPV_KHR_float_controls, "SPV_KHR_float_controls");
   add(SPV_INTEL_float_controls2, "SPV_INTEL_float_controls2");
   add(SPV_INTEL_vector_compute, "SPV_INTEL_vector_compute");
+  add(SPV_INTEL_fast_composite, "SPV_INTEL_fast_composite");
 };
 
 template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
@@ -265,6 +267,8 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilityFloatingPointModeINTEL});
   ADD_VEC_INIT(ExecutionModeSharedLocalMemorySizeINTEL,
                {CapabilityVectorComputeINTEL});
+  ADD_VEC_INIT(ExecutionModeFastCompositeKernelINTEL,
+               {CapabilityFastCompositeINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
@@ -394,8 +398,7 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFunctionFloatControlINTEL});
   ADD_VEC_INIT(DecorationSingleElementVectorINTEL,
                {CapabilityVectorComputeINTEL});
-  ADD_VEC_INIT(DecorationVectorComputeCallableFunctionINTEL,
-               {CapabilityVectorComputeINTEL});
+  ADD_VEC_INIT(DecorationCallableFunctionINTEL, {CapabilityFastCompositeINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {

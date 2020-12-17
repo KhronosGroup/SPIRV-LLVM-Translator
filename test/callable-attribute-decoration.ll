@@ -12,7 +12,7 @@ define dso_local <4 x i32> @foo(<4 x i32> %a, <4 x i32> %b) #0 {
 entry:
   ret <4 x i32> %a
 }
-; CHECK-SPIRV: 3 Decorate {{[0-9]+}} VectorComputeCallableFunctionINTEL
+; CHECK-SPIRV: 3 Decorate {{[0-9]+}} CallableFunctionINTEL
 ; CHECK-LLVM: attributes
 ; CHECK-LLVM-SAME: "VCCallable"
 

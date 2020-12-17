@@ -151,6 +151,7 @@ enum ExecutionMode {
     ExecutionModeRoundingModeRTNINTEL = 5621,
     ExecutionModeFloatingPointModeALTINTEL = 5622,
     ExecutionModeFloatingPointModeIEEEINTEL = 5623,
+    ExecutionModeFastCompositeKernelINTEL = 6088,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -464,7 +465,7 @@ enum Decoration {
   DecorationFunctionDenormModeINTEL = 5823,
   DecorationFunctionFloatingPointModeINTEL = 6080,
   DecorationSingleElementVectorINTEL = 6085,
-  DecorationVectorComputeCallableFunctionINTEL = 6087,
+  DecorationCallableFunctionINTEL = 6087,
   DecorationMax = 0x7fffffff,
 };
 
@@ -890,6 +891,7 @@ enum Capability {
   CapabilityRoundToInfinityINTEL = 5582,
   CapabilityFloatingPointModeINTEL = 5583,
   CapabilityFunctionFloatControlINTEL = 5821,
+  CapabilityFastCompositeINTEL = 6093,
   CapabilityMax = 0x7fffffff,
 };
 

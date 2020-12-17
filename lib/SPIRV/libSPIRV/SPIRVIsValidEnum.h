@@ -417,7 +417,7 @@ inline bool isValid(spv::Decoration V) {
   case DecorationFunctionRoundingModeINTEL:
   case DecorationFunctionDenormModeINTEL:
   case DecorationFunctionFloatingPointModeINTEL:
-  case DecorationVectorComputeCallableFunctionINTEL:
+  case DecorationCallableFunctionINTEL:
     return true;
   default:
     return false;

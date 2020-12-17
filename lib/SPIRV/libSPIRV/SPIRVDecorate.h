@@ -148,6 +148,8 @@ public:
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
       return getSet(SPV_KHR_no_integer_wrap_decoration);
+    case DecorationCallableFunctionINTEL:
+      return getSet(SPV_INTEL_fast_composite);
     default:
       return SPIRVExtSet();
     }
