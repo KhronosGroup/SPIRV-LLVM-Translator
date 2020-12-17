@@ -416,7 +416,6 @@ public:
     return TranslationOpts.isSPIRVAllowUnknownIntrinsicsEnabled();
   }
 
-
   bool shouldReplaceLLVMFmulAddWithOpenCLMad() const noexcept {
     return TranslationOpts.shouldReplaceLLVMFmulAddWithOpenCLMad();
   }
