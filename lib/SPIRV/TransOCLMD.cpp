@@ -271,6 +271,9 @@ void TransOCLMD::preprocessVectorComputeMetadata(Module *M, SPIRVMDBuilder *B,
           .add(SLMSize)
           .done();
     }
+    if (Attrs.hasFnAttribute(kVCMetadata::VCFCEntry)) {
+      EM.addOp().add(&F).add(spv::ExecutionModeFastCompositeKernelINTEL).done();
+    }
   }
 }
 
