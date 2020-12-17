@@ -166,6 +166,8 @@ public:
     case DecorationFunctionRoundingModeINTEL:
     case DecorationFunctionDenormModeINTEL:
       return getSet(ExtensionID::SPV_INTEL_float_controls2);
+    case DecorationCallableFunctionINTEL:
+      return getSet(ExtensionID::SPV_INTEL_fast_composite);
     default:
       return SPIRVExtSet();
     }
