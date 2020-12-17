@@ -2887,6 +2887,12 @@ bool SPIRVToLLVM::transMetadata() {
     transOCLMetadata(BF);
     transVectorComputeMetadata(BF);
 
+    if (BF->hasDecorate(DecorationCallableFunctionINTEL))
+      F->addFnAttr(kVCMetadata::VCCallable);
+    if (isKernel(BF) &&
+        BF->getExecutionMode(ExecutionModeFastCompositeKernelINTEL))
+      F->addFnAttr(kVCMetadata::VCFCEntry);
+
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
 
@@ -3021,11 +3027,6 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
   SPIRVWord SIMTMode = 0;
   if (BF->hasDecorate(DecorationSIMTCallINTEL, 0, &SIMTMode))
     F->addFnAttr(kVCMetadata::VCSIMTCall, std::to_string(SIMTMode));
-  if (BF->hasDecorate(DecorationVectorComputeCallableFunctionINTEL))
-    F->addFnAttr(kVCMetadata::VCCallable);
-  if (isKernel(BF) &&
-      BF->getExecutionMode(ExecutionModeVectorComputeFastCompositeKernelINTEL))
-    F->addFnAttr(kVCMetadata::VCFCEntry);
 
   auto SEVAttr = Attribute::get(*Context, kVCMetadata::VCSingleElementVector);
   if (BF->hasDecorate(DecorationSingleElementVectorINTEL))
