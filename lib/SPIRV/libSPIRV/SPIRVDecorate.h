@@ -177,6 +177,8 @@ public:
     case DecorationFunctionRoundingModeINTEL:
     case DecorationFunctionDenormModeINTEL:
       return ExtensionID::SPV_INTEL_float_controls2;
+    case DecorationCallableFunctionINTEL:
+      return ExtensionID::SPV_INTEL_fast_composite;
     default:
       return {};
     }
