@@ -924,7 +924,6 @@ public:
   void setElementId(size_t I, SPIRVId Id) { Elements[I] = Id; }
 
   SPIRVType *getMemberType(size_t I) const;
-
 };
 
 using SPIRVConstantCompositeContinuedINTEL =
