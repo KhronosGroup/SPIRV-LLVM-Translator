@@ -371,8 +371,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationFunctionFloatingPointModeINTEL,
       "FunctionFloatingPointModeINTEL");
   add(DecorationSingleElementVectorINTEL, "SingleElementVectorINTEL");
-  add(DecorationVectorComputeCallableFunctionINTEL,
-      "VectorComputeCallableFunctionINTEL");
+  add(DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 
@@ -554,6 +553,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
+  add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
