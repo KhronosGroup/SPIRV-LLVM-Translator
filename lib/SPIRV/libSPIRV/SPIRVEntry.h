@@ -824,6 +824,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return getSet(SPV_INTEL_vector_compute);
+    case CapabilityFastCompositeINTEL:
+      return getSet(SPV_INTEL_fast_composite);
     default:
       return SPIRVExtSet();
     }

@@ -511,6 +511,9 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
   if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::SExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
 
+  if (Attrs.hasFnAttribute(kVCMetadata::VCCallable))
+    BF->addDecorate(DecorationCallableFunctionINTEL);
+
   transVectorComputeMetadata(F);
 
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
@@ -537,10 +540,6 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
         .getValueAsString()
         .getAsInteger(0, SIMTMode);
     BF->addDecorate(DecorationSIMTCallINTEL, SIMTMode);
-  }
-
-  if (Attrs.hasFnAttribute(kVCMetadata::VCCallable)) {
-    BF->addDecorate(DecorationVectorComputeCallableFunctionINTEL);
   }
 
   if (Attrs.hasAttribute(AttributeList::ReturnIndex,
@@ -1871,6 +1870,10 @@ bool LLVMToSPIRV::transExecutionMode() {
         N.get(TargetWidth);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
+      } break;
+      case spv::ExecutionModeFastCompositeKernelINTEL: {
+        BF->addExecutionMode(BM->add(
+            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
       } break;
       default:
         llvm_unreachable("invalid execution mode");

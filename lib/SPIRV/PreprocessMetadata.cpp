@@ -259,6 +259,9 @@ void PreprocessMetadata::preprocessVectorComputeMetadata(Module *M,
           .add(SLMSize)
           .done();
     }
+    if (Attrs.hasFnAttribute(kVCMetadata::VCFCEntry)) {
+      EM.addOp().add(&F).add(spv::ExecutionModeFastCompositeKernelINTEL).done();
+    }
   }
 }
 
