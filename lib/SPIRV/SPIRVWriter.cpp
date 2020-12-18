@@ -1421,14 +1421,24 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return mapValue(V, BI);
   }
 
-  if (SelectInst *Sel = dyn_cast<SelectInst>(V))
-    return mapValue(
-        V,
-        BM->addSelectInst(
-            transValue(Sel->getCondition(), BB),
-            transValue(Sel->getTrueValue(), BB, true, FuncTransMode::Pointer),
-            transValue(Sel->getFalseValue(), BB, true, FuncTransMode::Pointer),
-            BB));
+  if (SelectInst *Sel = dyn_cast<SelectInst>(V)) {
+    auto CV = transValue(Sel->getCondition(), BB);
+    auto TV = transValue(Sel->getTrueValue(), BB, true, FuncTransMode::Pointer);
+    auto FV = transValue(Sel->getFalseValue(), BB, true, FuncTransMode::Pointer);
+
+    // LLVM can generate vector selects with a bool selector operand,
+    // This isn't supported until SPIRV 1.4. For now translate them
+    // into vector selects and hope the backend can undo this.
+    if (!CV->getType()->isTypeVector() && TV->getType()->isTypeVector()) {
+      Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+      auto VT = transType(FixedVectorType::get(
+          BoolTy, TV->getType()->getVectorComponentCount()));
+      std::vector<SPIRVId> IdVec(TV->getType()->getVectorComponentCount(),
+                                 CV->getId());
+      CV = BM->addCompositeConstructInst(VT, IdVec, BB);
+    }
+    return mapValue(V, BM->addSelectInst(CV, TV, FV, BB));
+  }
 
   if (AllocaInst *Alc = dyn_cast<AllocaInst>(V)) {
     if (Alc->isArrayAllocation()) {

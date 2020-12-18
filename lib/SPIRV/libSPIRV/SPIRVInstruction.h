@@ -1917,7 +1917,7 @@ protected:
   _SPIRV_DEF_ENCDEC3(Type, Id, Constituents)
   void validate() const override {
     SPIRVInstruction::validate();
-    switch (getValueType(this->getId())->getOpCode()) {
+    switch (this->getType()->getOpCode()) {
     case OpTypeVector:
       assert(getConstituents().size() > 1 &&
              "There must be at least two Constituent operands in vector");
