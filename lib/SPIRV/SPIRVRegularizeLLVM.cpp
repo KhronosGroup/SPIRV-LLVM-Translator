@@ -366,7 +366,7 @@ bool SPIRVRegularizeLLVM::regularize() {
                   UndefValue::get(Cmpxchg->getType()), Res, 0, "agg0", Store);
               auto *AggStruct =
                   InsertValueInst::Create(Agg, Cmp, 1, "agg1", Store);
-              Store->getOperand(0)->replaceAllUsesWith(AggStruct);
+              Store->getValueOperand()->replaceAllUsesWith(AggStruct);
             }
           }
           if (Cmpxchg->user_empty())
