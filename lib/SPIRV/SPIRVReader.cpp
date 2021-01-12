@@ -2193,6 +2193,13 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                           BV->getName(), BB));
   }
 
+  case OpImageQuerySize:
+  case OpImageQuerySizeLod: {
+    return mapValue(
+        BV, transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB,
+                                      /*AddRetTypePostfix=*/true));
+  }
+
   case OpBitReverse: {
     auto *BR = static_cast<SPIRVUnary *>(BV);
     auto Ty = transType(BV->getType());
@@ -2923,9 +2930,7 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromInst(SPIRVInstruction *BI,
   return transBuiltinFromInst(FuncName, BI, BB);
 }
 
-Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
-                                                    BasicBlock *BB) {
-  assert(BB && "Invalid BB");
+std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
   string Suffix = "";
   if (BI->getOpCode() == OpCreatePipeFromPipeStorage) {
     auto CPFPS = static_cast<SPIRVCreatePipeFromPipeStorage *>(BI);
@@ -2945,9 +2950,22 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
       break;
     }
   }
+  return Suffix;
+}
 
-  return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), Suffix), BI,
-                              BB);
+Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
+                                                    BasicBlock *BB,
+                                                    bool AddRetTypePostfix) {
+  assert(BB && "Invalid BB");
+  if (AddRetTypePostfix) {
+    const Type *RetTy =
+        BI->hasType() ? transType(BI->getType()) : Type::getVoidTy(*Context);
+    return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), RetTy) +
+                                    getSPIRVFuncSuffix(BI),
+                                BI, BB);
+  }
+  return transBuiltinFromInst(
+      getSPIRVFuncName(BI->getOpCode(), getSPIRVFuncSuffix(BI)), BI, BB);
 }
 
 bool SPIRVToLLVM::translate() {
@@ -3842,13 +3860,13 @@ Instruction *SPIRVToLLVM::transOCLAllAny(SPIRVInstruction *I, BasicBlock *BB) {
                    CastInst::CreateSExtOrBitCast(OldArg, NewArgTy, "", CI);
                Args[0] = NewArg;
                RetTy = Int32Ty;
-               return CI->getCalledFunction()->getName();
+               return getSPIRVFuncName(I->getOpCode(), getSPIRVFuncSuffix(I));
              },
              [=](CallInst *NewCI) -> Instruction * {
                return CastInst::CreateTruncOrBitCast(
                    NewCI, Type::getInt1Ty(*Context), "", NewCI->getNextNode());
              },
-             &Attrs)));
+             &Attrs, /*TakeFuncName=*/true)));
 }
 
 Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
@@ -3874,7 +3892,7 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
                  RetTy = VectorType::get(IntTy,
                                          CI->getType()->getVectorNumElements());
                }
-               return CI->getCalledFunction()->getName();
+               return getSPIRVFuncName(I->getOpCode(), getSPIRVFuncSuffix(I));
              },
              [=](CallInst *NewCI) -> Instruction * {
                Type *RetTy = Type::getInt1Ty(*Context);
@@ -3885,7 +3903,7 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
                return CastInst::CreateTruncOrBitCast(NewCI, RetTy, "",
                                                      NewCI->getNextNode());
              },
-             &Attrs)));
+             &Attrs, /*TakeFuncName=*/true)));
 }
 
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
