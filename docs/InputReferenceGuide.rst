@@ -140,7 +140,7 @@ Following
 are naturally represented as LLVM IR address spaces with following mapping:
 
 SPIR-V storage class    LLVM IR address space
-Function                No address space
+Function                No address space or addrspace(0)
 CrossWorkgroup          addrspace(1)
 UniformConstant         addrspace(2)
 Workgroup               addrspace(3)
