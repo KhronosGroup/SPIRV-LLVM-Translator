@@ -296,11 +296,10 @@ spv_ostream &operator<<(spv_ostream &O, const SPIRVNL &E) {
   return O;
 }
 
-
 // Read the next word from the stream and if OpCode matches the argument,
-// decode the whole instruction. Multiple such instructions are possible.
-// If OpCode doesn't match the argument, set position of the next character to
-// be extracted from the stream to the begining of the non-matching instruction.
+// decode the whole instruction. Multiple such instructions are possible. If
+// OpCode doesn't match the argument, set position of the next character to be
+// extracted from the stream to the beginning of the non-matching instruction.
 // Returns vector of extracted instructions.
 // Used to decode SPIRVTypeStructContinuedINTEL,
 // SPIRVConstantCompositeContinuedINTEL and
