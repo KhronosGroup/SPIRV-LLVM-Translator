@@ -32,7 +32,7 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
     )
   endif(LLVM_SPIRV_INCLUDE_TESTS)
 
-  find_package(LLVM ${BASE_LLVM_VERSION} REQUIRED
+  find_package(LLVM REQUIRED
     COMPONENTS
       Analysis
       BitReader
@@ -42,6 +42,11 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
       TransformUtils
       ${LLVM_TEST_COMPONENTS}
   )
+  # FIXME: W/O for https://bugs.llvm.org/show_bug.cgi?id=48815
+  if(NOT "11" VERSION_EQUAL "${LLVM_VERSION_MAJOR}")
+    message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 11")
+  endif()
+
   set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
     ${LLVM_CMAKE_DIR}
