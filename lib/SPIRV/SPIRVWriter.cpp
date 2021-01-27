@@ -1637,6 +1637,10 @@ bool LLVMToSPIRV::transExecutionMode() {
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
       } break;
+      case spv::ExecutionModeVectorComputeFastCompositeKernelINTEL: {
+          BF->addExecutionMode(BM->add(
+              new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
+      } break;
       default:
         llvm_unreachable("invalid execution mode");
       }
