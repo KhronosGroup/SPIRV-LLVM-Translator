@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-set (BASE_LLVM_VERSION 11.0.1)
+set (BASE_LLVM_VERSION 11.1.0)
 set(LLVM_SPIRV_VERSION ${BASE_LLVM_VERSION}.0)
 
 option(LLVM_SPIRV_INCLUDE_TESTS
@@ -32,7 +32,7 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
     )
   endif(LLVM_SPIRV_INCLUDE_TESTS)
 
-  find_package(LLVM 11 REQUIRED
+  find_package(LLVM ${BASE_LLVM_VERSION} REQUIRED
     COMPONENTS
       Analysis
       BitReader
@@ -42,7 +42,6 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
       TransformUtils
       ${LLVM_TEST_COMPONENTS}
   )
-
   set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
     ${LLVM_CMAKE_DIR}
