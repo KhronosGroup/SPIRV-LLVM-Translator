@@ -625,6 +625,7 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
   if (Attrs.hasAttribute(AttributeList::ReturnIndex,
                          kVCMetadata::VCSingleElementVector)) {
     auto *RT = BF->getType();
+    (void)RT;
     assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
             RT->isTypePointer()) &&
            "This decoration is valid only for Scalar or Pointer types");
@@ -644,6 +645,7 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
     }
     if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)) {
       auto *AT = BA->getType();
+      (void)AT;
       assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
               AT->isTypePointer()) &&
              "This decoration is valid only for Scalar or Pointer types");
