@@ -379,7 +379,7 @@ std::string getSPIRVFuncName(Op OC, StringRef PostFix) {
 
 std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned) {
   return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider +
-                         getPostfixForReturnType(PRetTy, false));
+                         getPostfixForReturnType(PRetTy, IsSigned));
 }
 
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
@@ -1597,6 +1597,31 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
 } // namespace SPIRV
 
 namespace {
+class SPIRVFriendlyIRMangleInfo : public BuiltinFuncMangleInfo {
+public:
+  SPIRVFriendlyIRMangleInfo(spv::Op OC, ArrayRef<Type *> ArgTys)
+      : OC(OC), ArgTys(ArgTys) {}
+
+  void init(StringRef UniqUnmangledName) override {
+    UnmangledName = UniqUnmangledName.str();
+    switch (OC) {
+    case OpConvertUToF:
+      LLVM_FALLTHROUGH;
+    case OpUConvert:
+      LLVM_FALLTHROUGH;
+    case OpSatConvertUToS:
+      // Treat all arguments as unsigned
+      addUnsignedArg(-1);
+      break;
+    default:;
+      // No special handling is needed
+    }
+  }
+
+private:
+  spv::Op OC;
+  ArrayRef<Type *> ArgTys;
+};
 class OpenCLStdToSPIRVFriendlyIRMangleInfo : public BuiltinFuncMangleInfo {
 public:
   OpenCLStdToSPIRVFriendlyIRMangleInfo(OCLExtOpKind ExtOpId,
@@ -1658,6 +1683,13 @@ std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
                                            ArrayRef<Type *> ArgTys) {
   OpenCLStdToSPIRVFriendlyIRMangleInfo MangleInfo(ExtOpId, ArgTys);
   return mangleBuiltin(MangleInfo.getUnmangledName(), ArgTys, &MangleInfo);
+}
+
+std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
+                                           spv::Op OC,
+                                           ArrayRef<Type *> ArgTys) {
+  SPIRVFriendlyIRMangleInfo MangleInfo(OC, ArgTys);
+  return mangleBuiltin(UniqName, ArgTys, &MangleInfo);
 }
 
 } // namespace SPIRV

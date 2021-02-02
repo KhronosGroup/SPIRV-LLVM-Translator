@@ -2670,7 +2670,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       auto BI = static_cast<SPIRVInstruction *>(BV);
       Value *Inst = nullptr;
       if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
-        Inst = transOCLBuiltinFromInst(BI, BB);
+        Inst = transSPIRVBuiltinFromInst(BI, BB, /*AddRetTypePostfix=*/true);
       else
         Inst = transConvertInst(BV, F, BB);
       return mapValue(BV, Inst);
@@ -3252,10 +3252,16 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
       HasFuncPtrArg = true;
     }
   }
-  if (!HasFuncPtrArg)
-    mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
-  else
+  if (!HasFuncPtrArg) {
+    if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
+      mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
+    else
+      MangledName =
+          getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(), ArgTys);
+
+  } else {
     MangledName = decorateSPIRVFunction(FuncName);
+  }
   Function *Func = M->getFunction(MangledName);
   FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
   // ToDo: Some intermediate functions have duplicate names with
@@ -3399,6 +3405,15 @@ std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
       break;
     }
   }
+  if (BI->hasDecorate(DecorationSaturatedConversion)) {
+    Suffix += kSPIRVPostfix::Divider;
+    Suffix += kSPIRVPostfix::Sat;
+  }
+  SPIRVFPRoundingModeKind Kind;
+  if (BI->hasFPRoundingMode(&Kind)) {
+    Suffix += kSPIRVPostfix::Divider;
+    Suffix += SPIRSPIRVFPRoundingModeMap::rmap(Kind);
+  }
   return Suffix;
 }
 
@@ -3407,11 +3422,15 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
                                                     bool AddRetTypePostfix) {
   assert(BB && "Invalid BB");
   if (AddRetTypePostfix) {
+    bool IsSigned = false;
+    if (isCvtFromUnsignedOpCode(BI->getOpCode()))
+      IsSigned = true;
     const Type *RetTy =
         BI->hasType() ? transType(BI->getType()) : Type::getVoidTy(*Context);
-    return transBuiltinFromInst(getSPIRVFuncName(BI->getOpCode(), RetTy) +
-                                    getSPIRVFuncSuffix(BI),
-                                BI, BB);
+    return transBuiltinFromInst(
+        getSPIRVFuncName(BI->getOpCode(), RetTy, IsSigned) +
+            getSPIRVFuncSuffix(BI),
+        BI, BB);
   }
   return transBuiltinFromInst(
       getSPIRVFuncName(BI->getOpCode(), getSPIRVFuncSuffix(BI)), BI, BB);

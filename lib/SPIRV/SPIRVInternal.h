@@ -943,6 +943,10 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
 std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
                                            ArrayRef<Type *> ArgTys);
 
+/// Mangle a function in SPIR-V friendly IR manner
+std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
+                                           spv::Op OC, ArrayRef<Type *> ArgTys);
+
 /// Remove cast from a value.
 Value *removeCast(Value *V);
 
