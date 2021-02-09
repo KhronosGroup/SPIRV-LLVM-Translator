@@ -168,8 +168,16 @@ source_filename = "subgroup_ballot.cl"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64"
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 ; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformBallot
 
+=======
+>>>>>>> Add two-way translation test for sub_group_ballot.
+=======
+; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformBallot
+
+>>>>>>> Handle capabilities related to cl_khr_subgroup_extensions.
 ; CHECK-SPIRV-DAG: Decorate [[eqMask:[0-9]+]] BuiltIn 4416
 ; CHECK-SPIRV-DAG: Decorate [[geMask:[0-9]+]] BuiltIn 4417
 ; CHECK-SPIRV-DAG: Decorate [[gtMask:[0-9]+]] BuiltIn 4418
