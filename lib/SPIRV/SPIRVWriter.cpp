@@ -1690,8 +1690,32 @@ void addIntelFPGADecorationsForStructMember(
 bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   // Known intrinsics usually do not need translation of their declaration
   switch (Id) {
+  case Intrinsic::assume:
   case Intrinsic::bitreverse:
+  case Intrinsic::ceil:
+  case Intrinsic::copysign:
+  case Intrinsic::cos:
+  case Intrinsic::exp:
+  case Intrinsic::exp2:
+  case Intrinsic::fabs:
+  case Intrinsic::floor:
+  case Intrinsic::fma:
+  case Intrinsic::log:
+  case Intrinsic::log10:
+  case Intrinsic::log2:
+  case Intrinsic::maximum:
+  case Intrinsic::maxnum:
+  case Intrinsic::minimum:
+  case Intrinsic::minnum:
+  case Intrinsic::nearbyint:
+  case Intrinsic::pow:
+  case Intrinsic::powi:
+  case Intrinsic::rint:
+  case Intrinsic::round:
+  case Intrinsic::sin:
   case Intrinsic::sqrt:
+  case Intrinsic::trunc:
+  case Intrinsic::ctpop:
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::fmuladd:
@@ -1711,6 +1735,67 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   default:
     // Unknown intrinsics' declarations should always be translated
     return false;
+  }
+}
+
+static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
+  switch (IID) {
+  // Note: In some cases the semantics of the OpenCL builtin are not identical
+  //       to the semantics of the corresponding LLVM IR intrinsic. The LLVM
+  //       intrinsics handled here assume the default floating point environment
+  //       (no unmasked exceptions, round-to-nearest-ties-even rounding mode)
+  //       and assume that the operations have no side effects (FP status flags
+  //       aren't maintained), so the OpenCL builtin behavior should be
+  //       acceptable.
+  case Intrinsic::ceil:
+    return OpenCLLIB::Ceil;
+  case Intrinsic::copysign:
+    return OpenCLLIB::Copysign;
+  case Intrinsic::cos:
+    return OpenCLLIB::Cos;
+  case Intrinsic::exp:
+    return OpenCLLIB::Exp;
+  case Intrinsic::exp2:
+    return OpenCLLIB::Exp2;
+  case Intrinsic::fabs:
+    return OpenCLLIB::Fabs;
+  case Intrinsic::floor:
+    return OpenCLLIB::Floor;
+  case Intrinsic::fma:
+    return OpenCLLIB::Fma;
+  case Intrinsic::log:
+    return OpenCLLIB::Log;
+  case Intrinsic::log10:
+    return OpenCLLIB::Log10;
+  case Intrinsic::log2:
+    return OpenCLLIB::Log2;
+  case Intrinsic::maximum:
+    return OpenCLLIB::Fmax;
+  case Intrinsic::maxnum:
+    return OpenCLLIB::Fmax;
+  case Intrinsic::minimum:
+    return OpenCLLIB::Fmin;
+  case Intrinsic::minnum:
+    return OpenCLLIB::Fmin;
+  case Intrinsic::nearbyint:
+    return OpenCLLIB::Rint;
+  case Intrinsic::pow:
+    return OpenCLLIB::Pow;
+  case Intrinsic::powi:
+    return OpenCLLIB::Pown;
+  case Intrinsic::rint:
+    return OpenCLLIB::Rint;
+  case Intrinsic::round:
+    return OpenCLLIB::Round;
+  case Intrinsic::sin:
+    return OpenCLLIB::Sin;
+  case Intrinsic::sqrt:
+    return OpenCLLIB::Sqrt;
+  case Intrinsic::trunc:
+    return OpenCLLIB::Trunc;
+  default:
+    assert(false && "Builtin ID requested for Unhandled intrinsic!");
+    return 0;
   }
 }
 
@@ -1755,6 +1840,57 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     SPIRVType *Ty = transType(II->getType());
     SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
     return BM->addUnaryInst(OpBitReverse, Ty, Op, BB);
+  }
+
+  // Unary FP intrinsic
+  case Intrinsic::ceil:
+  case Intrinsic::cos:
+  case Intrinsic::exp:
+  case Intrinsic::exp2:
+  case Intrinsic::fabs:
+  case Intrinsic::floor:
+  case Intrinsic::log:
+  case Intrinsic::log10:
+  case Intrinsic::log2:
+  case Intrinsic::nearbyint:
+  case Intrinsic::rint:
+  case Intrinsic::round:
+  case Intrinsic::sin:
+  case Intrinsic::sqrt:
+  case Intrinsic::trunc: {
+    SPIRVWord ExtOp = getBuiltinIdForIntrinsic(II->getIntrinsicID());
+    SPIRVType *STy = transType(II->getType());
+    std::vector<SPIRVValue *> Ops(1, transValue(II->getArgOperand(0), BB));
+    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
+                          BB);
+  }
+  // Binary FP intrinsics
+  case Intrinsic::copysign:
+  case Intrinsic::pow:
+  case Intrinsic::powi:
+  case Intrinsic::maximum:
+  case Intrinsic::maxnum:
+  case Intrinsic::minimum:
+  case Intrinsic::minnum: {
+    SPIRVWord ExtOp = getBuiltinIdForIntrinsic(II->getIntrinsicID());
+    SPIRVType *STy = transType(II->getType());
+    std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                  transValue(II->getArgOperand(1), BB)};
+    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
+                          BB);
+  }
+  case Intrinsic::fma: {
+    SPIRVWord ExtOp = OpenCLLIB::Fma;
+    SPIRVType *STy = transType(II->getType());
+    std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                  transValue(II->getArgOperand(1), BB),
+                                  transValue(II->getArgOperand(2), BB)};
+    return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
+                          BB);
+  }
+  case Intrinsic::ctpop: {
+    return BM->addUnaryInst(OpBitCount, transType(II->getType()),
+                            transValue(II->getArgOperand(0), BB), BB);
   }
   case Intrinsic::ctlz:
   case Intrinsic::cttz: {
@@ -1801,6 +1937,20 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                           transValue(II->getArgOperand(1), BB), BB);
     return BM->addBinaryInst(OpFAdd, Ty, Mul,
                              transValue(II->getArgOperand(2), BB), BB);
+  }
+  case Intrinsic::usub_sat: {
+    // usub.sat(a, b) -> (a > b) ? a - b : 0
+    SPIRVType *Ty = transType(II->getType());
+    Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+    SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
+
+    SPIRVValue *Sub =
+        BM->addBinaryInst(OpISub, Ty, FirstArgVal, SecondArgVal, BB);
+    SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, transType(BoolTy),
+                                     FirstArgVal, SecondArgVal, BB);
+    SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
+    return BM->addSelectInst(Cmp, Sub, Zero, BB);
   }
   case Intrinsic::memset: {
     // Generally memset can't be translated with current version of SPIRV spec.
