@@ -615,6 +615,11 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
     BF->addDecorate(DecorationReferencedIndirectlyINTEL);
   }
 
+  if (Attrs.hasFnAttribute(kVCMetadata::VCCallable) &&
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite)) {
+    BF->addDecorate(DecorationCallableFunctionINTEL);
+  }
+
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
     transVectorComputeMetadata(F);
 
@@ -648,13 +653,10 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
     BF->addDecorate(DecorationSIMTCallINTEL, SIMTMode);
   }
 
-  if (Attrs.hasFnAttribute(kVCMetadata::VCCallable)) {
-    BF->addDecorate(DecorationVectorComputeCallableFunctionINTEL);
-  }
-
   if (Attrs.hasAttribute(AttributeList::ReturnIndex,
                          kVCMetadata::VCSingleElementVector)) {
     auto *RT = BF->getType();
+    (void)RT;
     assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
             RT->isTypePointer()) &&
            "This decoration is valid only for Scalar or Pointer types");
@@ -674,6 +676,7 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
     }
     if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)) {
       auto *AT = BA->getType();
+      (void)AT;
       assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
               AT->isTypePointer()) &&
              "This decoration is valid only for Scalar or Pointer types");
@@ -3386,8 +3389,8 @@ bool LLVMToSPIRV::transExecutionMode() {
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
       } break;
-      case spv::ExecutionModeVectorComputeFastCompositeKernelINTEL: {
-        if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
+      case spv::ExecutionModeFastCompositeKernelINTEL: {
+        if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite))
           BF->addExecutionMode(BM->add(
               new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
       } break;
