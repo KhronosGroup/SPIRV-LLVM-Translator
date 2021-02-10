@@ -39,6 +39,11 @@
 #ifndef SPIRV_LLVMSPIRVOPTS_H
 #define SPIRV_LLVMSPIRVOPTS_H
 
+#include <llvm/ADT/Optional.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/IR/IntrinsicInst.h>
+
 #include <cassert>
 #include <cstdint>
 #include <map>
@@ -77,6 +82,7 @@ enum class DebugInfoEIS : uint32_t { SPIRV_Debug, OpenCL_DebugInfo_100 };
 class TranslatorOpts {
 public:
   using ExtensionsStatusMap = std::map<ExtensionID, bool>;
+  using ArgList = llvm::SmallVector<llvm::StringRef, 4>;
 
   TranslatorOpts() = default;
 
@@ -139,13 +145,24 @@ public:
 
   FPContractMode getFPContractMode() const { return FPCMode; }
 
-  bool isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept {
-    return SPIRVAllowUnknownIntrinsics;
+  bool isUnknownIntrinsicAllowed(llvm::IntrinsicInst *II) const noexcept {
+    if (!SPIRVAllowUnknownIntrinsics.hasValue())
+      return false;
+    const auto &IntrinsicPrefixList = SPIRVAllowUnknownIntrinsics.getValue();
+    llvm::StringRef IntrinsicName = II->getCalledOperand()->getName();
+    for (const auto Prefix : IntrinsicPrefixList) {
+      if (IntrinsicName.startswith(Prefix)) // Also true if `Prefix` is empty
+        return true;
+    }
+    return false;
   }
 
-  void
-  setSPIRVAllowUnknownIntrinsicsEnabled(bool AllowUnknownIntrinsics) noexcept {
-    SPIRVAllowUnknownIntrinsics = AllowUnknownIntrinsics;
+  bool isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept {
+    return SPIRVAllowUnknownIntrinsics.hasValue();
+  }
+
+  void setSPIRVAllowUnknownIntrinsics(ArgList IntrinsicPrefixList) noexcept {
+    SPIRVAllowUnknownIntrinsics = IntrinsicPrefixList;
   }
 
   bool allowExtraDIExpressions() const noexcept {
@@ -193,7 +210,7 @@ private:
 
   // Unknown LLVM intrinsics will be translated as external function calls in
   // SPIR-V
-  bool SPIRVAllowUnknownIntrinsics = false;
+  llvm::Optional<ArgList> SPIRVAllowUnknownIntrinsics{};
 
   // Enable support for extra DIExpression opcodes not listed in the SPIR-V
   // DebugInfo specification.
