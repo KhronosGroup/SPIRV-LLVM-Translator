@@ -115,14 +115,11 @@ static cl::list<std::string>
 
 static cl::list<std::string> SPIRVAllowUnknownIntrinsics(
     "spirv-allow-unknown-intrinsics", cl::CommaSeparated,
-    cl::desc(
-        "Unknown intrinsics that begin with any prefix from the "
-        "comma-separated "
-        "input list will be translated as external function calls in SPIR-V.\n"
-        "Leaving any prefix unspecified (default) would naturally allow "
-        "all unknown intrinsics"),
-    cl::value_desc("intrinsic_prefix_1,intrinsic_prefix_2>"),
-    cl::ValueOptional);
+    cl::desc("Unknown intrinsics that begin with any prefix from the "
+             "comma-separated input list will be translated as external "
+             "function calls in SPIR-V.\nLeaving any prefix unspecified "
+             "(default) would naturally allow all unknown intrinsics"),
+    cl::value_desc("intrinsic_prefix_1,intrinsic_prefix_2"), cl::ValueOptional);
 
 static cl::opt<bool> SPIRVGenKernelArgNameMD(
     "spirv-gen-kernel-arg-name-md", cl::init(false),
