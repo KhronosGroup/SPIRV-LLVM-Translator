@@ -1,5 +1,5 @@
 ; The test checks command-line option for the translator which allows to represent
-; unknown llvm intrinsics (or any custom intrinsics) as external function calls in SPIR-V.
+; unknown intrinsics as external function calls in SPIR-V.
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv -spirv-allow-unknown-intrinsics %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
