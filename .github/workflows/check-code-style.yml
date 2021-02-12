@@ -24,7 +24,7 @@ env:
   # We need compile command database in order to perform clang-tidy check. So,
   # in order to perform configure step we need to setup llvm-dev package. This
   # env variable used to specify desired version of it
-  LLVM_VERSION: 13
+  LLVM_VERSION: 12
 
 jobs:
   clang-format-and-tidy:
@@ -59,9 +59,13 @@ jobs:
         # launched, so, we need to setup llvm package to perform cmake
         # configuration step to generate that database
         curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-        echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic main" | sudo tee -a /etc/apt/sources.list
+        echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-12 main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
-        sudo apt-get install -yqq clang-format-9 clang-tidy-9 llvm-${{ env.LLVM_VERSION }}-dev libomp-${{ env.LLVM_VERSION }}-dev
+        sudo apt-get install -yqq \
+          clang-format-${{ env.LLVM_VERSION }} \
+          clang-tidy-${{ env.LLVM_VERSION }} \
+          llvm-${{ env.LLVM_VERSION }}-dev \
+          libomp-${{ env.LLVM_VERSION }}-dev
 
     - name: Generate compile command database
       if: ${{ steps.gather-list-of-changes.outputs.HAS_CHANGES }}
@@ -73,7 +77,7 @@ jobs:
       if: ${{ steps.gather-list-of-changes.outputs.HAS_CHANGES }}
       id: run-clang-format
       run: |
-        cat diff-to-inspect.txt | /usr/share/clang/clang-format-9/clang-format-diff.py -p1 > clang-format.patch
+        cat diff-to-inspect.txt | /usr/share/clang/clang-format-${{ env.LLVM_VERSION }}/clang-format-diff.py -p1 > clang-format.patch
         if [ -s clang-format.patch ]; then
           echo "clang-format found incorrectly formatted code:"
           cat clang-format.patch;

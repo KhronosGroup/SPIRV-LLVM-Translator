@@ -29,7 +29,7 @@ on:
     - cron: 0 0 * * *
 
 env:
-  LLVM_VERSION: 13
+  LLVM_VERSION: 12
 
 jobs:
   build_and_test:
@@ -44,7 +44,7 @@ jobs:
         run: |
           curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
           curl -L "https://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
-          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic main" | sudo tee -a /etc/apt/sources.list
+          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-12 main" | sudo tee -a /etc/apt/sources.list
           echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           # Linux systems in GitHub Actions already have a pre-installed clang
