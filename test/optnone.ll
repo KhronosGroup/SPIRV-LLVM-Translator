@@ -5,6 +5,13 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Check that optnone is correctly ignored when extension is not enabled
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NO-EXT
+
+; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-NO-EXT
+
 ; CHECK-SPIRV: Capability OptNoneINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_optnone"
 
@@ -13,9 +20,13 @@
 ; Per SPIR-V spec extension SPV_INTEL_optnone:
 ; FunctionControlOptNoneINTELMask = 0x10000 (65536)
 ; CHECK-SPIRV: Function {{[0-9]+}} {{[0-9]+}} 65538
+; CHECK-SPIRV-NO-EXT: Function {{[0-9]+}} {{[0-9]+}} 2
 
 ; CHECK-LLVM: define spir_func void @_Z3foov() #[[ATTR:[0-9]+]]
 ; CHECK-LLVM: #[[ATTR]] = { {{.*}}noinline{{.*}}optnone{{.*}} }
+
+; CHECK-LLVM-NO-EXT: define spir_func void @_Z3foov() #[[ATTR:[0-9]+]]
+; CHECK-LLVM-NO-EXT-NOT: #[[ATTR]] = { {{.*}}noinline{{.*}}optnone{{.*}} }
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
