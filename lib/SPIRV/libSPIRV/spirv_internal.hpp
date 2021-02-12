@@ -46,9 +46,7 @@ enum InternalCapability {
   ICapOptNoneINTEL = 6094
 };
 
-enum InternalFunctionControlMask {
-  IFunctionControlOptNoneINTELMask = 0x10000
-};
+enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
