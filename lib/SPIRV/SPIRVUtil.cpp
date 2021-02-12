@@ -1631,6 +1631,7 @@ public:
       addUnsignedArg(2);
       break;
     case OpSubgroupBlockReadINTEL:
+      setArgAttr(0, SPIR::ATTR_CONST);
       addUnsignedArg(0);
       break;
     default:;
