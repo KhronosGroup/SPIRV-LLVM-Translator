@@ -1613,6 +1613,26 @@ public:
       // Treat all arguments as unsigned
       addUnsignedArg(-1);
       break;
+    case OpSubgroupShuffleINTEL:
+      LLVM_FALLTHROUGH;
+    case OpSubgroupShuffleXorINTEL:
+      addUnsignedArg(1);
+      break;
+    case OpSubgroupShuffleDownINTEL:
+      LLVM_FALLTHROUGH;
+    case OpSubgroupShuffleUpINTEL:
+      addUnsignedArg(2);
+      break;
+    case OpSubgroupBlockWriteINTEL:
+      addUnsignedArg(0);
+      addUnsignedArg(1);
+      break;
+    case OpSubgroupImageBlockWriteINTEL:
+      addUnsignedArg(2);
+      break;
+    case OpSubgroupBlockReadINTEL:
+      addUnsignedArg(0);
+      break;
     default:;
       // No special handling is needed
     }
