@@ -503,6 +503,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityIOPipeINTEL, "IOPipeINTEL");
   add(CapabilityMax, "Max");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
+  add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

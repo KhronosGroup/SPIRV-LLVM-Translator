@@ -39,10 +39,22 @@ enum InternalOp {
   IOpForward
 };
 
+enum InternalCapability {
+  ICapOptNoneINTEL = 6094
+};
+
+enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
+
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
+
+constexpr Capability CapabilityOptNoneINTEL =
+    static_cast<Capability>(ICapOptNoneINTEL);
+
+constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
+    static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
 
 } // namespace internal
 } // namespace spv
