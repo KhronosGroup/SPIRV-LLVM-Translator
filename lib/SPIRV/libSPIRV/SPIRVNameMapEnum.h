@@ -554,6 +554,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
+  add(CapabilityOptNoneINTEL, "OptNoneINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
