@@ -2270,6 +2270,7 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::expect:
+  case Intrinsic::experimental_noalias_scope_decl:
   case Intrinsic::experimental_constrained_fadd:
   case Intrinsic::experimental_constrained_fsub:
   case Intrinsic::experimental_constrained_fmul:
@@ -2885,6 +2886,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     break;
   }
   // We can just ignore/drop some intrinsics, like optimizations hint.
+  case Intrinsic::experimental_noalias_scope_decl:
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
