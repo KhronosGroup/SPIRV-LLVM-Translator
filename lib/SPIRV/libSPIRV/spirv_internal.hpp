@@ -35,8 +35,6 @@ enum InternalLinkageType {
 };
 
 enum InternalOp {
-  IOpAtomicFMinEXT = 5614,
-  IOpAtomicFMaxEXT = 5615,
   IOpAssumeTrueINTEL = 5630,
   IOpExpectINTEL = 5631,
   IOpPrev = OpMax - 2,
@@ -44,9 +42,6 @@ enum InternalOp {
 };
 
 enum InternalCapability {
-  ICapAtomicFloat32MinMaxEXT = 5612,
-  ICapAtomicFloat64MinMaxEXT = 5613,
-  ICapAtomicFloat16MinMaxEXT = 5616,
   ICapOptimizationHintsINTEL = 5629
 };
 
@@ -54,17 +49,9 @@ constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
-constexpr Op OpAtomicFMinEXT = static_cast<Op>(IOpAtomicFMinEXT);
-constexpr Op OpAtomicFMaxEXT = static_cast<Op>(IOpAtomicFMaxEXT);
 constexpr Op OpAssumeTrueINTEL = static_cast<Op>(IOpAssumeTrueINTEL);
 constexpr Op OpExpectINTEL = static_cast<Op>(IOpExpectINTEL);
 
-constexpr Capability CapabilityAtomicFloat32MinMaxEXT =
-    static_cast<Capability>(ICapAtomicFloat32MinMaxEXT);
-constexpr Capability CapabilityAtomicFloat64MinMaxEXT =
-    static_cast<Capability>(ICapAtomicFloat64MinMaxEXT);
-constexpr Capability CapabilityAtomicFloat16MinMaxEXT =
-    static_cast<Capability>(ICapAtomicFloat16MinMaxEXT);
 constexpr Capability CapabilityOptimizationHintsINTEL =
     static_cast<Capability>(ICapOptimizationHintsINTEL);
 

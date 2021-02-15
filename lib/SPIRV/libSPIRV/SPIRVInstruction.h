@@ -2782,11 +2782,11 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
     if (getType()->isTypeFloat(16))
-      return {internal::CapabilityAtomicFloat16MinMaxEXT};
+      return {CapabilityAtomicFloat16MinMaxEXT};
     if (getType()->isTypeFloat(32))
-      return {internal::CapabilityAtomicFloat32MinMaxEXT};
+      return {CapabilityAtomicFloat32MinMaxEXT};
     if (getType()->isTypeFloat(64))
-      return {internal::CapabilityAtomicFloat64MinMaxEXT};
+      return {CapabilityAtomicFloat64MinMaxEXT};
     llvm_unreachable(
         "AtomicF(Min|Max)EXT can only be generated for f16, f32, f64 types");
   }
@@ -2819,14 +2819,8 @@ _SPIRV_OP(MemoryBarrier, false, 3)
 // Specialized atomic builtins
 _SPIRV_OP(AtomicStore, AtomicStoreInst, false, 5)
 _SPIRV_OP(AtomicFAddEXT, AtomicFAddEXTInst, true, 7)
-#undef _SPIRV_OP
-#define _SPIRV_OP(x, BaseClass, ...)                                           \
-  typedef SPIRVInstTemplate<SPIRV##BaseClass##Base, internal::Op##x,           \
-                            __VA_ARGS__>                                       \
-      SPIRV##x;
-// TODO: After SPIR-V Headers update, switch to using a non-internal _SPIRV_OP
-_SPIRV_OP(AtomicFMinEXT, AtomicFMinMaxEXT, true, 7)
-_SPIRV_OP(AtomicFMaxEXT, AtomicFMinMaxEXT, true, 7)
+_SPIRV_OP(AtomicFMinEXT, AtomicFMinMaxEXTBase, true, 7)
+_SPIRV_OP(AtomicFMaxEXT, AtomicFMinMaxEXTBase, true, 7)
 #undef _SPIRV_OP
 
 class SPIRVImageInstBase : public SPIRVInstTemplateBase {
