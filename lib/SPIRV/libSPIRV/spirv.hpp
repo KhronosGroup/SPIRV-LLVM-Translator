@@ -684,6 +684,7 @@ enum FunctionControlMask {
     FunctionControlDontInlineMask = 0x00000002,
     FunctionControlPureMask = 0x00000004,
     FunctionControlConstMask = 0x00000008,
+    FunctionControlOptNoneINTELMask = 0x10000,
 };
 
 enum MemorySemanticsShift {
@@ -968,6 +969,7 @@ enum Capability {
   CapabilityBlockingPipesINTEL = 5945,
   CapabilityFPGARegINTEL = 5948,
   CapabilityFastCompositeINTEL = 6093,
+  CapabilityOptNoneINTEL = 6094,
   CapabilityMax = 0x7fffffff,
 };
 
