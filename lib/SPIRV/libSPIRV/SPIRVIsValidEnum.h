@@ -1092,6 +1092,7 @@ inline bool isValidFunctionControlMask(SPIRVWord Mask) {
   ValidMask |= FunctionControlDontInlineMask;
   ValidMask |= FunctionControlPureMask;
   ValidMask |= FunctionControlConstMask;
+  ValidMask |= FunctionControlOptNoneINTELMask;
 
   return (Mask & ~ValidMask) == 0;
 }
