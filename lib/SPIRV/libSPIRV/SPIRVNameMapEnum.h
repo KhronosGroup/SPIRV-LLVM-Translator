@@ -514,6 +514,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityRoundingModeRTZ, "RoundingModeRTZ");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
+  add(CapabilityAtomicFloat32MinMaxEXT, "AtomicFloat32MinMaxEXT");
+  add(CapabilityAtomicFloat64MinMaxEXT, "AtomicFloat64MinMaxEXT");
+  add(CapabilityAtomicFloat16MinMaxEXT, "AtomicFloat16MinMaxEXT");
   add(CapabilitySubgroupShuffleINTEL, "SubgroupShuffleINTEL");
   add(CapabilitySubgroupBufferBlockIOINTEL, "SubgroupBufferBlockIOINTEL");
   add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
