@@ -517,10 +517,10 @@ void SPIRVToOCL::visitCallSPIRVCvtBuiltin(CallInst *CI, Op OC,
             mapLLVMTypeToOCLType(DstTy, !isCvtToUnsignedOpCode(OC));
         if (DemangledName.find("_sat") != StringRef::npos || isSatCvtOpCode(OC))
           CastBuiltInName += "_sat";
-        auto Loc = DemangledName.find("_rt");
         Value *Src = Call->getOperand(0);
         assert(Src && "Invalid SPIRV convert builtin call");
         Type *SrcTy = Src->getType();
+        auto Loc = DemangledName.find("_rt");
         if (Loc != StringRef::npos &&
             !(isa<IntegerType>(SrcTy) && isa<IntegerType>(DstTy)))
           CastBuiltInName += DemangledName.substr(Loc, 4).str();
