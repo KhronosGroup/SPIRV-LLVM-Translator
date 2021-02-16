@@ -58,7 +58,7 @@ kernel void testFToUSat(global float2 *a, global uint2 *res) {
 // CHECK-LLVM: call spir_func i32 @_Z16convert_uint_sath
 
 // CHECK-SPV-IR-LABEL: @testUToUSat
-// CHECK-SPV-IR: call spir_func i32 @_Z25__spirv_UConvert_Rint_sath
+// CHECK-SPV-IR: call spir_func i32 @_Z26__spirv_UConvert_Ruint_sath
 kernel void testUToUSat(global uchar *a, global uint *res) {
   res[0] = convert_uint_sat(*a);
 }
@@ -69,7 +69,7 @@ kernel void testUToUSat(global uchar *a, global uint *res) {
 // CHECK-LLVM: call spir_func i8 @_Z17convert_uchar_satj
 
 // CHECK-SPV-IR-LABEL: @testUToUSat1
-// CHECK-SPV-IR: call spir_func i8 @_Z26__spirv_UConvert_Rchar_satj
+// CHECK-SPV-IR: call spir_func i8 @_Z27__spirv_UConvert_Ruchar_satj
 kernel void testUToUSat1(global uint *a, global uchar *res) {
   res[0] = convert_uchar_sat(*a);
 }

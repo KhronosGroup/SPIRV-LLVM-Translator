@@ -2385,13 +2385,6 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                           BV->getName(), BB));
   }
 
-  case OpImageQuerySize:
-  case OpImageQuerySizeLod: {
-    return mapValue(
-        BV, transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB,
-                                      /*AddRetTypePostfix=*/true));
-  }
-
   case OpBitReverse: {
     auto *BR = static_cast<SPIRVUnary *>(BV);
     auto Ty = transType(BV->getType());
@@ -2670,7 +2663,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       auto BI = static_cast<SPIRVInstruction *>(BV);
       Value *Inst = nullptr;
       if (BI->hasFPRoundingMode() || BI->isSaturatedConversion())
-        Inst = transSPIRVBuiltinFromInst(BI, BB, /*AddRetTypePostfix=*/true);
+        Inst = transSPIRVBuiltinFromInst(BI, BB);
       else
         Inst = transConvertInst(BV, F, BB);
       return mapValue(BV, Inst);
@@ -3418,22 +3411,29 @@ std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
 }
 
 Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
-                                                    BasicBlock *BB,
-                                                    bool AddRetTypePostfix) {
+                                                    BasicBlock *BB) {
   assert(BB && "Invalid BB");
+  const auto OC = BI->getOpCode();
+  bool AddRetTypePostfix = false;
+  if (OC == OpImageQuerySizeLod || OC == OpImageQuerySize)
+    AddRetTypePostfix = true;
+
+  bool IsRetSigned = false;
+  if (isCvtOpCode(OC)) {
+    AddRetTypePostfix = true;
+    if (OC == OpConvertUToF || OC == OpSatConvertUToS)
+      IsRetSigned = true;
+  }
+
   if (AddRetTypePostfix) {
-    bool IsSigned = false;
-    if (isCvtFromUnsignedOpCode(BI->getOpCode()))
-      IsSigned = true;
     const Type *RetTy =
         BI->hasType() ? transType(BI->getType()) : Type::getVoidTy(*Context);
-    return transBuiltinFromInst(
-        getSPIRVFuncName(BI->getOpCode(), RetTy, IsSigned) +
-            getSPIRVFuncSuffix(BI),
-        BI, BB);
+    return transBuiltinFromInst(getSPIRVFuncName(OC, RetTy, IsRetSigned) +
+                                    getSPIRVFuncSuffix(BI),
+                                BI, BB);
   }
-  return transBuiltinFromInst(
-      getSPIRVFuncName(BI->getOpCode(), getSPIRVFuncSuffix(BI)), BI, BB);
+  return transBuiltinFromInst(getSPIRVFuncName(OC, getSPIRVFuncSuffix(BI)), BI,
+                              BB);
 }
 
 bool SPIRVToLLVM::translate() {
