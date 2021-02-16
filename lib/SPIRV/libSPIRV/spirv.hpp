@@ -954,6 +954,9 @@ enum Capability {
   CapabilityFunctionPointersINTEL = 5603,
   CapabilityIndirectReferencesINTEL = 5604,
   CapabilityAsmINTEL = 5606,
+  CapabilityAtomicFloat32MinMaxEXT = 5612,
+  CapabilityAtomicFloat64MinMaxEXT = 5613,
+  CapabilityAtomicFloat16MinMaxEXT = 5616,
   CapabilityVectorComputeINTEL = 5617,
   CapabilityVectorAnyINTEL = 5619,
   CapabilityOptimizationHintsINTEL = 5629,
@@ -1385,6 +1388,8 @@ enum Op {
   OpAsmTargetINTEL = 5609,
   OpAsmINTEL = 5610,
   OpAsmCallINTEL = 5611,
+  OpAtomicFMinEXT = 5614,
+  OpAtomicFMaxEXT = 5615,
   OpAssumeTrueINTEL = 5630,
   OpExpectINTEL = 5631,
   OpVmeImageINTEL = 5699,
@@ -1924,6 +1929,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpUSubSatINTEL: *hasResult = true; *hasResultType = true; break;
     case OpIMul32x16INTEL: *hasResult = true; *hasResultType = true; break;
     case OpUMul32x16INTEL: *hasResult = true; *hasResultType = true; break;
+    case OpAtomicFMinEXT: *hasResult = true; *hasResultType = true; break;
+    case OpAtomicFMaxEXT: *hasResult = true; *hasResultType = true; break;
     case OpDecorateString: *hasResult = false; *hasResultType = false; break;
     case OpMemberDecorateString: *hasResult = false; *hasResultType = false; break;
     case OpVmeImageINTEL: *hasResult = true; *hasResultType = true; break;
