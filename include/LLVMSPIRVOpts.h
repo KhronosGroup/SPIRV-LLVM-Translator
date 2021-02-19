@@ -39,15 +39,18 @@
 #ifndef SPIRV_LLVMSPIRVOPTS_H
 #define SPIRV_LLVMSPIRVOPTS_H
 
-#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/IR/IntrinsicInst.h>
 
 #include <cassert>
 #include <cstdint>
 #include <map>
 #include <unordered_map>
+
+namespace llvm {
+template <typename T> class Optional;
+class IntrinsicInst;
+} // namespace llvm
 
 namespace SPIRV {
 
@@ -145,25 +148,9 @@ public:
 
   FPContractMode getFPContractMode() const { return FPCMode; }
 
-  bool isUnknownIntrinsicAllowed(llvm::IntrinsicInst *II) const noexcept {
-    if (!SPIRVAllowUnknownIntrinsics.hasValue())
-      return false;
-    const auto &IntrinsicPrefixList = SPIRVAllowUnknownIntrinsics.getValue();
-    llvm::StringRef IntrinsicName = II->getCalledOperand()->getName();
-    for (const auto Prefix : IntrinsicPrefixList) {
-      if (IntrinsicName.startswith(Prefix)) // Also true if `Prefix` is empty
-        return true;
-    }
-    return false;
-  }
-
-  bool isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept {
-    return SPIRVAllowUnknownIntrinsics.hasValue();
-  }
-
-  void setSPIRVAllowUnknownIntrinsics(ArgList IntrinsicPrefixList) noexcept {
-    SPIRVAllowUnknownIntrinsics = IntrinsicPrefixList;
-  }
+  bool isUnknownIntrinsicAllowed(llvm::IntrinsicInst *II) const noexcept;
+  bool isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept;
+  void setSPIRVAllowUnknownIntrinsics(ArgList IntrinsicPrefixList) noexcept;
 
   bool allowExtraDIExpressions() const noexcept {
     return AllowExtraDIExpressions;
