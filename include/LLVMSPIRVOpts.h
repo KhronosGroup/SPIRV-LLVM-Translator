@@ -39,6 +39,7 @@
 #ifndef SPIRV_LLVMSPIRVOPTS_H
 #define SPIRV_LLVMSPIRVOPTS_H
 
+#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 
@@ -48,7 +49,6 @@
 #include <unordered_map>
 
 namespace llvm {
-template <typename T> class Optional;
 class IntrinsicInst;
 } // namespace llvm
 
