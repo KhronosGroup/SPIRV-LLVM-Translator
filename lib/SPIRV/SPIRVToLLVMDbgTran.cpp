@@ -1000,4 +1000,13 @@ SPIRVToLLVMDbgTran::SplitFileName::SplitFileName(const string &FileName) {
   }
 }
 
+std::string SPIRVToLLVMDbgTran::findModuleProducer() {
+  for (const auto& I : BM->getModuleProcessedVec()) {
+    if (I->getProcessStr().find(SPIRVDebug::ProducerPrefix) != std::string::npos) {
+      return I->getProcessStr().substr(SPIRVDebug::ProducerPrefix.size());
+    }
+  }
+  return "spirv";
+}
+
 } // namespace SPIRV
