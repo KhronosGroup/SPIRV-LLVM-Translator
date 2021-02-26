@@ -479,7 +479,7 @@ public:
     return TranslationOpts.isGenArgNameMDEnabled();
   }
 
-  virtual std::vector<SPIRVModuleProcessed*> getModuleProcessedVec() = 0;
+  virtual std::vector<SPIRVModuleProcessed *> getModuleProcessedVec() = 0;
 
   bool getSpecializationConstant(SPIRVWord SpecId, uint64_t &ConstValue) {
     return TranslationOpts.getSpecializationConstant(SpecId, ConstValue);

@@ -680,7 +680,8 @@ SPIRVType *SPIRVTypeStructContinuedINTEL::getMemberType(size_t I) const {
 }
 
 void SPIRVModuleProcessed::validate() const {
-  assert(WordCount == FixedWC + getSizeInWords(ProcessStr));
+  assert(WordCount == FixedWC + getSizeInWords(ProcessStr) &&
+         "Incorrect word count in opModuleProcessed");
 }
 
 void SPIRVModuleProcessed::encode(spv_ostream &O) const {

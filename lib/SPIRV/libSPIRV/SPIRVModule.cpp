@@ -305,7 +305,7 @@ public:
   SPIRVEntry *addDebugInfo(SPIRVWord, SPIRVType *TheType,
                            const std::vector<SPIRVWord> &) override;
   SPIRVEntry *addModuleProcessed(const std::string &) override;
-  std::vector<SPIRVModuleProcessed*> getModuleProcessedVec() override;
+  std::vector<SPIRVModuleProcessed *> getModuleProcessedVec() override;
   SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
                                   SPIRVBasicBlock *) override;
   SPIRVInstruction *addCallInst(SPIRVFunction *, const std::vector<SPIRVWord> &,
@@ -1306,7 +1306,7 @@ SPIRVEntry *SPIRVModuleImpl::addModuleProcessed(const std::string &Process) {
   return ModuleProcessedVec.back();
 }
 
-std::vector<SPIRVModuleProcessed*> SPIRVModuleImpl::getModuleProcessedVec() {
+std::vector<SPIRVModuleProcessed *> SPIRVModuleImpl::getModuleProcessedVec() {
   return ModuleProcessedVec;
 }
 
@@ -1786,7 +1786,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
       M.getEntry(I)->encodeName(O);
   }
 
-    O << MI.MemberNameVec << MI.ModuleProcessedVec << MI.DecGroupVec
+  O << MI.MemberNameVec << MI.ModuleProcessedVec << MI.DecGroupVec
     << MI.DecorateSet << MI.GroupDecVec << MI.ForwardPointerVec
     << TopologicalSort(MI.TypeVec, MI.ConstVec, MI.VariableVec,
                        MI.ForwardPointerVec);
