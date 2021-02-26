@@ -957,9 +957,7 @@ public:
         ProcessStr(Process) {
     updateModuleVersion();
   }
-  SPIRVModuleProcessed() {
-    updateModuleVersion();
-  }
+  SPIRVModuleProcessed() { updateModuleVersion(); }
   _SPIRV_DCL_ENCDEC
   void validate() const override;
   SPIRVWord getRequiredSPIRVVersion() const override {
