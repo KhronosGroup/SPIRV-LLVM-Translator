@@ -48,6 +48,7 @@ char SPIRVToOCL20::ID = 0;
 bool SPIRVToOCL20::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
+  transOCLBuiltinsFromVariables(M);
   visit(*M);
 
   eraseUselessFunctions(&Module);
