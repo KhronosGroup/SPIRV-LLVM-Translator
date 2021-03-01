@@ -119,7 +119,7 @@ SPIRVToLLVMDbgTran::transCompileUnit(const SPIRVExtInst *DebugInst) {
   SPIRVId FileId = Source->getArguments()[SPIRVDebug::Operand::Source::FileIdx];
   std::string File = getString(FileId);
   unsigned SourceLang = Ops[LanguageIdx];
-  auto Producer = findModuleProcessed();
+  auto Producer = findModuleProducer();
   CU = Builder.createCompileUnit(SourceLang, getDIFile(File), Producer, false,
                                  "", 0);
   return CU;
