@@ -298,6 +298,8 @@ public:
                                SPIRVInstruction * = nullptr) override;
   SPIRVEntry *addDebugInfo(SPIRVWord, SPIRVType *TheType,
                            const std::vector<SPIRVWord> &) override;
+  SPIRVEntry *addModuleProcessed(const std::string &) override;
+  std::vector<SPIRVModuleProcessed *> getModuleProcessedVec() override;
   SPIRVInstruction *addBinaryInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
                                   SPIRVBasicBlock *) override;
   SPIRVInstruction *addCallInst(SPIRVFunction *, const std::vector<SPIRVWord> &,
@@ -505,6 +507,7 @@ private:
   std::map<unsigned, SPIRVTypeInt *> IntTypeMap;
   std::map<unsigned, SPIRVConstant *> LiteralMap;
   std::vector<SPIRVExtInst *> DebugInstVec;
+  std::vector<SPIRVModuleProcessed *> ModuleProcessedVec;
 
   void layoutEntry(SPIRVEntry *Entry);
 };
@@ -1176,6 +1179,15 @@ SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
   return addEntry(
       new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_OpenCL_DebugInfo_100,
                        ExtInstSetIds[getDebugInfoEIS()], InstId, Args));
+}
+
+SPIRVEntry *SPIRVModuleImpl::addModuleProcessed(const std::string &Process) {
+  ModuleProcessedVec.push_back(new SPIRVModuleProcessed(this, Process));
+  return ModuleProcessedVec.back();
+}
+
+std::vector<SPIRVModuleProcessed *> SPIRVModuleImpl::getModuleProcessedVec() {
+  return ModuleProcessedVec;
 }
 
 SPIRVInstruction *
