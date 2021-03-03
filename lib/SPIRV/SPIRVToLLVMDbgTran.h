@@ -173,6 +173,7 @@ private:
     return nullptr;
   }
   StringRef getString(const SPIRVId Id);
+  std::string findModuleProducer();
 };
 } // namespace SPIRV
 
