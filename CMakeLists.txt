@@ -19,6 +19,7 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
       ${LLVM_SPIRV_VERSION}
     LANGUAGES
       CXX
+      C
   )
 
   set(CMAKE_CXX_STANDARD 14)
@@ -46,6 +47,7 @@ if(LLVM_SPIRV_BUILD_EXTERNAL)
     ${LLVM_CMAKE_DIR}
   )
   include(AddLLVM)
+  include(HandleLLVMOptions)
 
   message(STATUS "Found LLVM: ${LLVM_VERSION}")
 
