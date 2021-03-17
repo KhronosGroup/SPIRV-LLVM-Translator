@@ -1017,20 +1017,18 @@ std::string SPIRVToLLVMDbgTran::findModuleProducer() {
 
 Optional<DIFile::ChecksumInfo<StringRef>>
 SPIRVToLLVMDbgTran::ParseChecksum(StringRef Text) {
-  // Example of checksum string:
-  // "//__CSK_MD5:7bb56387968a9caa6e9e35fff94eaf7b"
+  // Example of "Text" variable:
+  // "SomeInfo//__CSK_MD5:7bb56387968a9caa6e9e35fff94eaf7b:OtherInfo"
   Optional<DIFile::ChecksumInfo<StringRef>> CS;
   auto KindPos = Text.find(SPIRVDebug::ChecksumKindPrefx);
   if (KindPos != StringRef::npos) {
     auto ColonPos = Text.find(":", KindPos);
     KindPos += string("//__").size();
     auto KindStr = Text.substr(KindPos, ColonPos - KindPos);
+    auto Checksum = Text.substr(ColonPos).ltrim(':');
     if (auto Kind = DIFile::getChecksumKind(KindStr)) {
-      size_t ChecksumBeginPos = ColonPos + 1,
-             ChecksumEndPos = Text.find_if_not(llvm::isHexDigit, ColonPos + 1);
-      CS.emplace(
-          Kind.getValue(),
-          Text.substr(ChecksumBeginPos, ChecksumEndPos - ChecksumBeginPos));
+      size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
+      CS.emplace(Kind.getValue(), Checksum.substr(0, ChecksumEndPos));
     }
   }
   return CS;
