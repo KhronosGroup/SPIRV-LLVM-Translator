@@ -66,7 +66,8 @@ namespace SPIRV {
 #ifdef NDEBUG
 #define SPIRVCKRT(Condition, ErrCode, ErrMsg)                                  \
   if (!getErrorLog().checkError(Condition, SPIRVEC_##ErrCode,                  \
-                                std::string() + (ErrMsg), #Condition)
+                                std::string() + (ErrMsg), #Condition))         \
+    return false;
 #else
 #define SPIRVCKRT(Condition, ErrCode, ErrMsg)                                  \
   if (!getErrorLog().checkError(Condition, SPIRVEC_##ErrCode,                  \
