@@ -568,7 +568,7 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
     auto ArgNo = I->getArgNo();
     SPIRVFunctionParameter *BA = BF->getArgument(ArgNo);
     if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCArgumentIOKind)) {
-      SPIRVWord Kind;
+      SPIRVWord Kind = {};
       Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCArgumentIOKind)
           .getValueAsString()
           .getAsInteger(0, Kind);
@@ -873,7 +873,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     if (IsVectorCompute) {
       BVar->addDecorate(DecorationVectorComputeVariableINTEL);
       if (GV->hasAttribute(kVCMetadata::VCByteOffset)) {
-        SPIRVWord Offset;
+        SPIRVWord Offset = {};
         GV->getAttribute(kVCMetadata::VCByteOffset)
             .getValueAsString()
             .getAsInteger(0, Offset);
