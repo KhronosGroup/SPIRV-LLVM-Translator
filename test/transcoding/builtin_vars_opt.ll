@@ -7,6 +7,9 @@
 ; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-SPV
 
+; Check that produced spirv-ir is recognized by the translator:
+; RUN: llvm-spirv %t.rev.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+
 ; The IR was generated from the following source:
 ; #include <CL/sycl.hpp>
 ;
@@ -39,17 +42,17 @@
 ; CHECK-SPIRV: Decorate [[#SG_MaxSize_BI:]] BuiltIn 37
 ; CHECK-SPIRV: Decorate [[#SG_MaxSize_BI:]] Constant
 ; CHECK-SPIRV: Decorate [[#SG_MaxSize_BI:]] LinkageAttributes "__spirv_BuiltInSubgroupMaxSize" Import
-;
+
+; CHECK-LLVM-SPV: @__spirv_BuiltInSubgroupMaxSize = external addrspace(1) constant i32
+
 ; CHECK-LLVM-OCL-NOT: @__spirv_BuiltInSubgroupMaxSize
-; CHECK-LLVM-NOT: addrspacecast i32 addrspace(1)* @__spirv_BuiltInSubgroupMaxSize to i32 addrspace(4)*
+; CHECK-LLVM-SPV: %[[MaxSizeCast:[0-9]+]] = addrspacecast i32 addrspace(1)* @__spirv_BuiltInSubgroupMaxSize to i32 addrspace(4)*
 ; CHECK-LLVM-LABEL: if.then.i
-; CHECK-LLVM-NOT: load
+; CHECK-LLVM-SPV: %{{[0-9]+}} = load i32, i32 addrspace(4)* %[[MaxSizeCast]], align 4
 ; CHECK-LLVM-OCL: call spir_func i32 @_Z22get_max_sub_group_sizev()
-; CHECK-LLVM-SPV: call spir_func i32 @_Z30__spirv_BuiltInSubgroupMaxSizev()
 ; CHECK-LLVM-LABEL: cond.false.i:
-; CHECK-LLVM-NOT: load
+; CHECK-LLVM-SPV: %{{[0-9]+}} = load i32, i32 addrspace(4)* %[[MaxSizeCast]], align 4
 ; CHECK-LLVM-OCL: call spir_func i32 @_Z22get_max_sub_group_sizev()
-; CHECK-LLVM-SPV: call spir_func i32 @_Z30__spirv_BuiltInSubgroupMaxSizev()
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-linux-sycldevice"

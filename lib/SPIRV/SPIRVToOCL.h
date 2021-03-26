@@ -51,7 +51,16 @@ protected:
   SPIRVToOCL(char &ID) : ModulePass(ID), M(nullptr), Ctx(nullptr) {}
 
 public:
-  virtual bool runOnModule(Module &M) override = 0;
+  bool runOnModule(Module &M) override;
+
+  void setAttrByCalledFunc(CallInst *Call);
+  bool isSPIRVBuiltinVariable(GlobalVariable *GV,
+                              SPIRVBuiltinVariableKind *Kind);
+  // Transform variable like GlobalInvolcationId[x] into get_global_id(x) call.
+  // Transform variable like WorkDim into get_work_dim() call.
+  void transOCLBuiltinFromVariable(GlobalVariable *GV,
+                                   SPIRVBuiltinVariableKind Kind);
+  void transOCLBuiltinsFromVariables(Module *M);
 
   void visitCallInst(CallInst &CI);
 
