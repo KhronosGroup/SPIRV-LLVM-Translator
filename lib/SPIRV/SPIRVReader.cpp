@@ -4262,6 +4262,20 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
     MetadataVec.push_back(ConstantAsMetadata::get(getUInt32(M, Literals[1])));
     F->setMetadata(kSPIR2MD::LoopFuse, MDNode::get(*Context, MetadataVec));
   }
+  if (BF->hasDecorate(internal::DecorationMathOpDSPModeINTEL)) {
+    std::vector<Metadata *> MDVecDSPPref;
+    auto Literals =
+        BF->getDecorationLiterals(internal::DecorationMathOpDSPModeINTEL);
+    MDVecDSPPref.push_back(ConstantAsMetadata::get(getUInt32(M, Literals[0])));
+    F->setMetadata(kSPIR2MD::PreferDSP, MDNode::get(*Context, MDVecDSPPref));
+
+    if (auto Propagate = Literals[1]) {
+      std::vector<Metadata *> MDVecDSPProp;
+      MDVecDSPProp.push_back(ConstantAsMetadata::get(getUInt32(M, Propagate)));
+      F->setMetadata(kSPIR2MD::PropDSPPref,
+                     MDNode::get(*Context, MDVecDSPProp));
+    }
+  }
   return true;
 }
 

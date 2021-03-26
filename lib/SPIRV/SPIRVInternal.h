@@ -402,6 +402,8 @@ const static char NumSIMD[] = "num_simd_work_items";
 const static char StallEnable[] = "stall_enable";
 const static char FmaxMhz[] = "scheduler_target_fmax_mhz";
 const static char LoopFuse[] = "loop_fuse";
+const static char PreferDSP[] = "prefer_dsp";
+const static char PropDSPPref[] = "propagate_dsp_preference";
 } // namespace kSPIR2MD
 
 enum Spir2SamplerKind {

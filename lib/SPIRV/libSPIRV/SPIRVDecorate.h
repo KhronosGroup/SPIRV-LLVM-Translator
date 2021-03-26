@@ -154,7 +154,7 @@ public:
   SPIRVDecorate() : SPIRVDecorateGeneric(OC) {}
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    switch (Dec) {
+    switch (static_cast<int>(Dec)) {
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
       return ExtensionID::SPV_KHR_no_integer_wrap_decoration;
@@ -192,6 +192,8 @@ public:
       return ExtensionID::SPV_INTEL_loop_fuse;
     case DecorationCallableFunctionINTEL:
       return ExtensionID::SPV_INTEL_fast_composite;
+    case internal::DecorationMathOpDSPModeINTEL:
+      return ExtensionID::SPV_INTEL_fpga_dsp_control;
     default:
       return {};
     }
@@ -630,6 +632,15 @@ public:
                                         SPIRVWord Independent)
       : SPIRVDecorate(spv::DecorationFuseLoopsInFunctionINTEL, TheTarget, Depth,
                       Independent){};
+};
+
+class SPIRVDecorateMathOpDSPModeINTEL : public SPIRVDecorate {
+public:
+  // Complete constructor for SPIRVDecorateMathOpDSPModeINTEL
+  SPIRVDecorateMathOpDSPModeINTEL(SPIRVEntry *TheTarget, SPIRVWord Mode,
+                                  SPIRVWord Propagate)
+      : SPIRVDecorate(spv::internal::DecorationMathOpDSPModeINTEL, TheTarget,
+                      Mode, Propagate){};
 };
 
 } // namespace SPIRV

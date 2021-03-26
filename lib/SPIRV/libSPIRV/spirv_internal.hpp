@@ -41,8 +41,13 @@ enum InternalOp {
   IOpForward
 };
 
+enum InternalDecoration {
+  IDecMathOpDSPModeINTEL = 5909
+};
+
 enum InternalCapability {
   ICapOptimizationHintsINTEL = 5629,
+  ICapFPGADSPControlINTEL = 5908,
   ICapOptNoneINTEL = 6094
 };
 
@@ -59,9 +64,14 @@ constexpr Capability CapabilityOptimizationHintsINTEL =
     static_cast<Capability>(ICapOptimizationHintsINTEL);
 constexpr Capability CapabilityOptNoneINTEL =
     static_cast<Capability>(ICapOptNoneINTEL);
+constexpr Capability CapabilityFPGADSPControlINTEL =
+    static_cast<Capability>(ICapFPGADSPControlINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
+
+constexpr Decoration DecorationMathOpDSPModeINTEL =
+    static_cast<Decoration>(IDecMathOpDSPModeINTEL);
 
 } // namespace internal
 } // namespace spv
