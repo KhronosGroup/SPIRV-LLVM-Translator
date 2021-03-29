@@ -23,6 +23,13 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; RUN: llvm-spirv %t.bc -o %t.negative.spv
+; RUN: llvm-spirv %t.negative.spv --to-text -o %t.negative.spt
+; RUN: FileCheck < %t.negative.spt %s --check-prefix=CHECK-SPIRV-NEG
+
+; RUN: llvm-spirv -r %t.negative.spv -o %t.negative.rev.bc
+; RUN: llvm-dis < %t.negative.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-NEG
+
 ; CHECK-SPIRV: Capability MathOpDSPModeINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_dsp_control"
 ; CHECK-SPIRV: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
@@ -31,6 +38,14 @@
 ; CHECK-LLVM: !prefer_dsp ![[#REG2:]]
 ; CHECK-LLVM-SAME: !propagate_dsp_preference ![[#REG2]]
 ; CHECK-LLVM: ![[#REG2]] = !{i32 1}
+
+; CHECK-SPIRV-NEG-NOT: Capability MathOpDSPModeINTEL
+; CHECK-SPIRV-NEG-NOT: Extension "SPV_INTEL_fpga_dsp_control"
+; CHECK-SPIRV-NEG: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
+; CHECK-SPIRV-NEG-NOT: Decorate [[#REG1]] MathOpDSPModeINTEL
+
+; CHECK-LLVM-NEG-NOT: !prefer_dsp
+; CHECK-LLVM-NEG-NOT: !propagate_dsp_preference
 
 ; ModuleID = 'prefer_dsp_propagate.cpp'
 source_filename = "prefer_dsp_propagate.cpp"
