@@ -731,7 +731,6 @@ void LLVMToSPIRV::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
       size_t Mode = getMDOperandAsInt(PreferDSP, 0);
       MDNode *PropDSPPref = F->getMetadata(kSPIR2MD::PropDSPPref);
       size_t Propagate = PropDSPPref ? getMDOperandAsInt(PropDSPPref, 0) : 0;
-      BM->addCapability(internal::CapabilityFPGADSPControlINTEL);
       BF->addDecorate(new SPIRVDecorateMathOpDSPModeINTEL(BF, Mode, Propagate));
     }
   }

@@ -4264,8 +4264,10 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
   }
   if (BF->hasDecorate(internal::DecorationMathOpDSPModeINTEL)) {
     std::vector<Metadata *> MDVecDSPPref;
-    auto Literals =
+    std::vector<SPIRVWord> Literals =
         BF->getDecorationLiterals(internal::DecorationMathOpDSPModeINTEL);
+    assert(Literals.size() == 2 &&
+           "MathOpDSPModeINTEL decoration shell have 2 literals");
     MDVecDSPPref.push_back(ConstantAsMetadata::get(getUInt32(M, Literals[0])));
     F->setMetadata(kSPIR2MD::PreferDSP, MDNode::get(*Context, MDVecDSPPref));
 

@@ -23,14 +23,14 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: 2 Capability MathOpDSPModeINTEL
-; CHECK-SPIRV: 8 Extension "SPV_INTEL_fpga_dsp_control"
-; CHECK-SPIRV: 5 Decorate 15 MathOpDSPModeINTEL 1 1
+; CHECK-SPIRV: Capability MathOpDSPModeINTEL
+; CHECK-SPIRV: Extension "SPV_INTEL_fpga_dsp_control"
+; CHECK-SPIRV: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
+; CHECK-SPIRV: Decorate [[#REG1]] MathOpDSPModeINTEL 1 1
 
-; CHECK-LLVM: !prefer_dsp ![[#REG1:]]
-; CHECK-LLVM-SAME: !propagate_dsp_preference ![[#REG1]]
-
-; CHECK-LLVM: ![[#REG1]] = !{i32 1}
+; CHECK-LLVM: !prefer_dsp ![[#REG2:]]
+; CHECK-LLVM-SAME: !propagate_dsp_preference ![[#REG2]]
+; CHECK-LLVM: ![[#REG2]] = !{i32 1}
 
 ; ModuleID = 'prefer_dsp_propagate.cpp'
 source_filename = "prefer_dsp_propagate.cpp"
@@ -82,5 +82,5 @@ attributes #2 = { noinline nounwind optnone mustprogress "disable-tail-calls"="f
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{}
-!2 = !{!"Intel(R) oneAPI DPC++/C++ Compiler 2021.2.0 (2021.x.0.YYYYMMDD)"}
+!2 = !{!"clang version 13.0.0 (https://github.com/llvm/llvm-project.git 7d09e1d7cf27ce781e83f9d388a7a3e1e6487ead)"}
 !3 = !{i32 1}

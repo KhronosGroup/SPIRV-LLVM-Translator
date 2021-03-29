@@ -1,5 +1,6 @@
 ; template<typename Function>
 ; [[intel::prefer_dsp]]
+; [[intel::propagate_dsp_preference]]
 ; void math_prefer_dsp_propagate(Function f)
 ; {
 ;   f();
@@ -15,23 +16,23 @@
 ; }
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_fpga_dsp_control -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: Capability MathOpDSPModeINTEL
-; CHECK-SPIRV: Extension "SPV_INTEL_fpga_dsp_control"
+; CHECK-SPIRV-NOT: Capability MathOpDSPModeINTEL
+; CHECK-SPIRV-NOT: Extension "SPV_INTEL_fpga_dsp_control"
 ; CHECK-SPIRV: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
-; CHECK-SPIRV: Decorate [[#REG1]] MathOpDSPModeINTEL 1 0
+; CHECK-SPIRV-NOT: Decorate [[#REG1]] MathOpDSPModeINTEL
 
-; CHECK-LLVM: !prefer_dsp ![[#REG2:]]
-; CHECK-LLVM: ![[#REG2]] = !{i32 1}
+; CHECK-LLVM-NOT: !prefer_dsp
+; CHECK-LLVM-NOT: !propagate_dsp_preference
 
-; ModuleID = 'prefer_dsp.cpp'
-source_filename = "prefer_dsp.cpp"
+; ModuleID = 'prefer_dsp_propagate.cpp'
+source_filename = "prefer_dsp_propagate.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
@@ -48,7 +49,7 @@ entry:
 }
 
 ; Function Attrs: noinline optnone mustprogress
-define internal spir_func void @"_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"(%class.anon* byval(%class.anon) align 1 %f) #1 !prefer_dsp !3 {
+define internal spir_func void @"_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"(%class.anon* byval(%class.anon) align 1 %f) #1 !prefer_dsp !3 !propagate_dsp_preference !3 {
 entry:
   call spir_func void @"_ZZ4mainENK3$_0clEv"(%class.anon* nonnull dereferenceable(1) %f)
   ret void
