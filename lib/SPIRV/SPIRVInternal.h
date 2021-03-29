@@ -941,7 +941,8 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
 /// Mangle a function from OpenCL extended instruction set in SPIR-V friendly IR
 /// manner
 std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
-                                           ArrayRef<Type *> ArgTys);
+                                           ArrayRef<Type *> ArgTys,
+                                           Type *RetTy = nullptr);
 
 /// Remove cast from a value.
 Value *removeCast(Value *V);
