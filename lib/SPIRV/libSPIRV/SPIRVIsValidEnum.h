@@ -329,6 +329,7 @@ inline bool isValid(spv::LinkageType V) {
   switch (LT) {
   case LinkageTypeExport:
   case LinkageTypeImport:
+  case LinkageTypeLinkOnceODR:
   case internal::LinkageTypeInternal:
     return true;
   default:

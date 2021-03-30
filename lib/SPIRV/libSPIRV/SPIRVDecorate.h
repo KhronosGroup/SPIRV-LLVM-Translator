@@ -256,6 +256,12 @@ public:
 #endif
       Decoder >> Literals;
   }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    if (getLinkageType() == SPIRVLinkageTypeKind::LinkageTypeLinkOnceODR)
+      return getSet(ExtensionID::SPV_KHR_linkonce_odr);
+    return {};
+  }
 };
 
 class SPIRVMemberDecorate : public SPIRVDecorateGeneric {
