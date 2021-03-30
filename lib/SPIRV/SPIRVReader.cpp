@@ -3635,9 +3635,11 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
   std::string ValueName = V->getName();
   if (ValueName == "llvm.used" || ValueName == "llvm.compiler.used")
     return GlobalValue::AppendingLinkage;
-  if (V->getLinkageType() == internal::LinkageTypeInternal) {
+  int LT = V->getLinkageType();
+  switch (LT) {
+  case internal::LinkageTypeInternal:
     return GlobalValue::InternalLinkage;
-  } else if (V->getLinkageType() == LinkageTypeImport) {
+  case LinkageTypeImport:
     // Function declaration
     if (V->getOpCode() == OpFunction) {
       if (static_cast<const SPIRVFunction *>(V)->getNumBasicBlock() == 0)
@@ -3650,13 +3652,17 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
     }
     // Definition
     return GlobalValue::AvailableExternallyLinkage;
-  } else { // LinkageTypeExport
+  case LinkageTypeExport:
     if (V->getOpCode() == OpVariable) {
       if (static_cast<const SPIRVVariable *>(V)->getInitializer() == 0)
         // Tentative definition
         return GlobalValue::CommonLinkage;
     }
     return GlobalValue::ExternalLinkage;
+  case LinkageTypeLinkOnceODR:
+    return GlobalValue::LinkOnceODRLinkage;
+  default:
+    llvm_unreachable("Invalid linkage type");
   }
 }
 
