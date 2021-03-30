@@ -274,6 +274,7 @@ SPIRV_DEF_NAMEMAP(FPRoundingMode, SPIRVFPRoundingModeNameMap)
 template <> inline void SPIRVMap<LinkageType, std::string>::init() {
   add(LinkageTypeExport, "Export");
   add(LinkageTypeImport, "Import");
+  add(LinkageTypeLinkOnceODR, "LinkOnceODR");
   add(internal::LinkageTypeInternal, "Internal");
 }
 SPIRV_DEF_NAMEMAP(LinkageType, SPIRVLinkageTypeNameMap)
