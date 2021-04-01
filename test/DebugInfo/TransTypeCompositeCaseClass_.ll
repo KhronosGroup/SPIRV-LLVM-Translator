@@ -4,8 +4,8 @@
 
 ; int main() {
 ;   A a;
-;    B b;
-;    return 0;
+;   B b;
+;   return 0;
 ; }
 
 ; RUN: llvm-as %s -o %t.bc
