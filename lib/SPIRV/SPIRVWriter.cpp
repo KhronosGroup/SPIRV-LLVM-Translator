@@ -2103,8 +2103,12 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::log2:
   case Intrinsic::maximum:
   case Intrinsic::maxnum:
+  case Intrinsic::smax:
+  case Intrinsic::umax:
   case Intrinsic::minimum:
   case Intrinsic::minnum:
+  case Intrinsic::smin:
+  case Intrinsic::umin:
   case Intrinsic::nearbyint:
   case Intrinsic::pow:
   case Intrinsic::powi:
@@ -2320,6 +2324,38 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                   transValue(II->getArgOperand(1), BB)};
     return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
                           BB);
+  }
+    // trata
+  case Intrinsic::umin:
+  case Intrinsic::umax:
+  case Intrinsic::smin:
+  case Intrinsic::smax: {
+    Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+    SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
+
+    Op OC;
+    switch (II->getIntrinsicID()) {
+    case (Intrinsic::smin):
+      OC = OpSLessThan;
+      break;
+    case (Intrinsic::smax):
+      OC = OpSGreaterThan;
+      break;
+    case (Intrinsic::umin):
+      OC = OpULessThan;
+      break;
+    default:
+      OC = OpUGreaterThan;
+      break;
+    }
+
+    if (auto *VecTy = dyn_cast<VectorType>(II->getArgOperand(0)->getType())) {
+      BoolTy = VectorType::get(BoolTy, VecTy->getElementCount());
+    }
+    SPIRVValue *Cmp =
+        BM->addCmpInst(OC, transType(BoolTy), FirstArgVal, SecondArgVal, BB);
+    return BM->addSelectInst(Cmp, FirstArgVal, SecondArgVal, BB);
   }
   case Intrinsic::fma: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
