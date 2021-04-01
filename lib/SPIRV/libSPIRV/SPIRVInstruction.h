@@ -298,9 +298,6 @@ public:
                                : getValue(Ops[I]);
   }
 
-  // Get operands which are values.
-  // Drop execution scope and group operation literals.
-  // Return other literals as uint32 constants.
   std::vector<SPIRVValue *> getOperands() override {
     std::vector<SPIRVValue *> VOps;
     for (size_t I = 0, E = Ops.size(); I != E; ++I)
