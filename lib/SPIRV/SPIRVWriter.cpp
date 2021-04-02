@@ -1219,7 +1219,7 @@ SPIRVValue *LLVMToSPIRV::transAtomicLoad(LoadInst *LD, SPIRVBasicBlock *BB) {
 
 // Aliasing list MD contains several scope MD nodes whithin it. Each scope MD
 // has a selfreference and an extra MD node for aliasing domain and also it
-// can contain and optional string operand. Domain MD contains a self-reference
+// can contain an optional string operand. Domain MD contains a self-reference
 // with an optional string operand. Here we unfold the list, creating SPIR-V
 // aliasing instructions.
 // TODO: add support for an optional string operand.
