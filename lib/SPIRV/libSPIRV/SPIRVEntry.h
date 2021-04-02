@@ -343,10 +343,9 @@ public:
   virtual bool isImplemented() const { return true; }
 
   void addDecorate(SPIRVDecorate *);
+  void addDecorate(SPIRVDecorateId *);
   void addDecorate(Decoration Kind);
   void addDecorate(Decoration Kind, SPIRVWord Literal);
-  void addDecorateId(SPIRVDecorateId *);
-  void addDecorateId(Decoration Kind, SPIRVId Id);
   void eraseDecorate(Decoration);
   void eraseDecorateId(Decoration);
   void addMemberDecorate(SPIRVMemberDecorate *);

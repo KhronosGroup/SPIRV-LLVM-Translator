@@ -1410,11 +1410,8 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       return transAtomicStore(ST, BB);
 
     // Keep this vector to store MemoryAccess operands for both Alignment and
-    // Aliasing information. It's quite incorrect, since the first is of a
-    // SPIRVWord type, while the second one is of SPIRVId type, but creation
-    // of the second vector would make fulfilling '3.26 Memory Operands'
-    // requirements about operands order a bit tricky.
-    std::vector<uint32_t> MemoryAccess(1, 0);
+    // Aliasing information.
+    std::vector<SPIRVWord> MemoryAccess(1, 0);
     if (ST->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
     if (ST->getAlignment()) {
@@ -1877,13 +1874,13 @@ void LLVMToSPIRV::transMemAliasingINTELDecorations(Value *V, SPIRVValue *BV) {
           Inst->getMetadata(LLVMContext::MD_alias_scope)) {
     auto *MemAliasList =
         addMemAliasingINTELInstructions(BM, AliasingListMD);
-    BV->addDecorateId(new SPIRVDecorateId(
+    BV->addDecorate(new SPIRVDecorateId(
           internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
   } else if (MDNode *AliasingListMD =
                  Inst->getMetadata(LLVMContext::MD_noalias)) {
     auto *MemAliasList =
         addMemAliasingINTELInstructions(BM, AliasingListMD);
-    BV->addDecorateId(new SPIRVDecorateId(
+    BV->addDecorate(new SPIRVDecorateId(
           internal::DecorationNoAliasINTEL, BV, MemAliasList->getId()));
   }
 }

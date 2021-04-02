@@ -154,7 +154,7 @@ public:
   SPIRVDecorate() : SPIRVDecorateGeneric(OC) {}
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    switch (static_cast<int>(Dec)) {
+    switch (Dec) {
     case DecorationNoSignedWrap:
     case DecorationNoUnsignedWrap:
       return ExtensionID::SPV_KHR_no_integer_wrap_decoration;

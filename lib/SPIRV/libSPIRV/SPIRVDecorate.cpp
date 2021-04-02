@@ -159,7 +159,7 @@ void SPIRVDecorateId::setWordCount(SPIRVWord Count) {
 void SPIRVDecorateId::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Target >> Dec >> Literals;
-  getOrCreateTarget()->addDecorateId(this);
+  getOrCreateTarget()->addDecorate(this);
 }
 
 void SPIRVMemberDecorate::encode(spv_ostream &O) const {

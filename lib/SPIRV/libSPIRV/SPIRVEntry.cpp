@@ -254,7 +254,7 @@ void SPIRVEntry::validateBuiltin(SPIRVWord TheSet, SPIRVWord Index) const {
 
 void SPIRVEntry::addDecorate(SPIRVDecorate *Dec) {
   auto Kind = Dec->getDecorateKind();
-  Decorates.insert(std::make_pair(Dec->getDecorateKind(), Dec));
+  Decorates.insert(std::make_pair(Kind, Dec));
   Module->addDecorate(Dec);
   if (Kind == spv::DecorationLinkageAttributes) {
     auto *LinkageAttr = static_cast<const SPIRVDecorateLinkageAttr *>(Dec);
@@ -263,22 +263,25 @@ void SPIRVEntry::addDecorate(SPIRVDecorate *Dec) {
   SPIRVDBG(spvdbgs() << "[addDecorate] " << *Dec << '\n';)
 }
 
-void SPIRVEntry::addDecorate(Decoration Kind) {
-  addDecorate(new SPIRVDecorate(Kind, this));
-}
-
-void SPIRVEntry::addDecorate(Decoration Kind, SPIRVWord Literal) {
-  addDecorate(new SPIRVDecorate(Kind, this, Literal));
-}
-
-void SPIRVEntry::addDecorateId(SPIRVDecorateId *Dec) {
+void SPIRVEntry::addDecorate(SPIRVDecorateId *Dec) {
   DecorateIds.insert(std::make_pair(Dec->getDecorateKind(), Dec));
   Module->addDecorate(Dec);
   SPIRVDBG(spvdbgs() << "[addDecorateId] " << *Dec << '\n';)
 }
 
-void SPIRVEntry::addDecorateId(Decoration Kind, SPIRVId Id) {
-  addDecorateId(new SPIRVDecorateId(Kind, this, Id));
+void SPIRVEntry::addDecorate(Decoration Kind) {
+  addDecorate(new SPIRVDecorate(Kind, this));
+}
+
+void SPIRVEntry::addDecorate(Decoration Kind, SPIRVWord Literal) {
+  switch (static_cast<int>(Kind)) {
+  case internal::DecorationAliasScopeINTEL:
+  case internal::DecorationNoAliasINTEL:
+    addDecorate(new SPIRVDecorateId(Kind, this, Literal));
+    return;
+  default:
+    addDecorate(new SPIRVDecorate(Kind, this, Literal));
+  }
 }
 
 void SPIRVEntry::eraseDecorate(Decoration Dec) { Decorates.erase(Dec); }
