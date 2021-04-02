@@ -1427,7 +1427,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
                              internal::MemoryAccessAliasScopeINTELMask);
     else if (MDNode *AliasingListMD =
-        ST->getMetadata(LLVMContext::MD_noalias))
+                 ST->getMetadata(LLVMContext::MD_noalias))
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
                              internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
@@ -1458,24 +1458,13 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     if (LD->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
-    if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_alias_scope)) {
-      if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_memory_access_aliasing)) {
-        MemoryAccess[0] |= internal::MemoryAccessAliasScopeINTELMask;
-        auto *MemAliasList =
-            addMemAliasingINTELInstructions(BM, AliasingListMD);
-        MemoryAccess.push_back(MemAliasList->getId());
-      }
-    } else if (MDNode *AliasingListMD =
-                   LD->getMetadata(LLVMContext::MD_noalias)) {
-      if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_memory_access_aliasing)) {
-        MemoryAccess[0] |= internal::MemoryAccessNoAliasINTELMask;
-        auto *MemAliasList =
-            addMemAliasingINTELInstructions(BM, AliasingListMD);
-        MemoryAccess.push_back(MemAliasList->getId());
-      }
-    }
+    if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_alias_scope))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                            internal::MemoryAccessAliasScopeINTELMask);
+    else if (MDNode *AliasingListMD =
+                 LD->getMetadata(LLVMContext::MD_noalias))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
       MemoryAccess.clear();
     return mapValue(V, BM->addLoadInst(transValue(LD->getPointerOperand(), BB),
