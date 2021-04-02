@@ -645,6 +645,8 @@ bool SPIRVToLLVM::isSPIRVCmpInstTransToLLVMInst(SPIRVInstruction *BI) const {
   return isCmpOpCode(OC) && !(OC >= OpLessOrGreater && OC <= OpUnordered);
 }
 
+// TODO: Instead of direct translation to OCL we should always produce SPIR-V
+// friendly IR and apply lowering later if needed
 bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
   if (isSubgroupAvcINTELInstructionOpCode(OpCode) ||
       isIntelSubgroupOpCode(OpCode))
@@ -657,7 +659,8 @@ bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
     // clang-consistent format in SPIRVToOCL pass.
     return !(isAtomicOpCode(OpCode) || isGroupOpCode(OpCode) ||
              isGroupNonUniformOpcode(OpCode) || isPipeOpCode(OpCode) ||
-             isMediaBlockINTELOpcode(OpCode));
+             isMediaBlockINTELOpcode(OpCode) || OpCode == OpGroupAsyncCopy ||
+             OpCode == OpGroupWaitEvents);
   }
   return false;
 }
