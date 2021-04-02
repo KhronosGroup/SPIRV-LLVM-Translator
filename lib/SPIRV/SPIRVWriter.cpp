@@ -1219,7 +1219,7 @@ SPIRVValue *LLVMToSPIRV::transAtomicLoad(LoadInst *LD, SPIRVBasicBlock *BB) {
 
 // Aliasing list MD contains several scope MD nodes whithin it. Each scope MD
 // has a selfreference and an extra MD node for aliasing domain and also it
-// can contatin and optional string operand. Domain MD contains a self-reference
+// can contain and optional string operand. Domain MD contains a self-reference
 // with an optional string operand. Here we unfold the list, creating SPIR-V
 // aliasing instructions.
 // TODO: add support for an optional string operand.
@@ -1241,6 +1241,20 @@ SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
     }
   }
   return M->getOrAddAliasScopeListDeclINTELInst(ListId, AliasingListMD);
+}
+
+
+// Translate alias.scope/noalias metadata attached to store and load
+// instructions.
+void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
+                            std::vector<uint32_t> &MemoryAccess,
+                            SPIRVWord MemAccessMask) {
+  if (!BM->isAllowedToUseExtension(
+        ExtensionID::SPV_INTEL_memory_access_aliasing))
+    return;
+  MemoryAccess[0] |= MemAccessMask;
+  auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
+  MemoryAccess.push_back(MemAliasList->getId());
 }
 
 /// An instruction may use an instruction from another BB which has not been
@@ -1409,24 +1423,13 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     if (ST->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
-    if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_alias_scope)) {
-      if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_memory_access_aliasing)) {
-        MemoryAccess[0] |= internal::MemoryAccessAliasScopeINTELMask;
-        auto *MemAliasList =
-            addMemAliasingINTELInstructions(BM, AliasingListMD);
-        MemoryAccess.push_back(MemAliasList->getId());
-      }
-    } else if (MDNode *AliasingListMD =
-                   ST->getMetadata(LLVMContext::MD_noalias)) {
-      if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_memory_access_aliasing)) {
-        MemoryAccess[0] |= internal::MemoryAccessNoAliasINTELMask;
-        auto *MemAliasList =
-            addMemAliasingINTELInstructions(BM, AliasingListMD);
-        MemoryAccess.push_back(MemAliasList->getId());
-      }
-    }
+    if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_alias_scope))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessAliasScopeINTELMask);
+    else if (MDNode *AliasingListMD =
+        ST->getMetadata(LLVMContext::MD_noalias))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
       MemoryAccess.clear();
 

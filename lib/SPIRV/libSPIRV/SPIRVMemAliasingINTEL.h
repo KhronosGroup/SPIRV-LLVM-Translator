@@ -66,7 +66,7 @@ protected:
 
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVMemAliasingINTELGeneric<internal::Op##x, __VA_ARGS__> SPIRV##x;
-// Intel Mem Alasing Instructions
+// Intel Memory Alasing Instructions
 _SPIRV_OP(AliasDomainDeclINTEL, 2)
 _SPIRV_OP(AliasScopeDeclINTEL, 2)
 _SPIRV_OP(AliasScopeListDeclINTEL, 2)
