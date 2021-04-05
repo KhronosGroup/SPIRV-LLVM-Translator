@@ -688,9 +688,9 @@ void OCLToSPIRV::visitCallAtomicWorkItemFence(CallInst *CI) {
 
 void OCLToSPIRV::visitCallMemFence(CallInst *CI, StringRef DemangledName) {
   OCLMemOrderKind MO = StringSwitch<OCLMemOrderKind>(DemangledName)
-      .Case(kOCLBuiltinName::ReadMemFence, OCLMO_acquire)
-      .Case(kOCLBuiltinName::WriteMemFence, OCLMO_release)
-      .Default(OCLMO_acq_rel);  // kOCLBuiltinName::MemFence
+                           .Case(kOCLBuiltinName::ReadMemFence, OCLMO_acquire)
+                           .Case(kOCLBuiltinName::WriteMemFence, OCLMO_release)
+                           .Default(OCLMO_acq_rel); // kOCLBuiltinName::MemFence
   transMemoryBarrier(
       CI,
       std::make_tuple(cast<ConstantInt>(CI->getArgOperand(0))->getZExtValue(),
