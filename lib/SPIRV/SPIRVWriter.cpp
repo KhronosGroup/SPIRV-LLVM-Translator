@@ -2326,28 +2326,20 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                           BB);
   }
   case Intrinsic::umin:
-  case Intrinsic::umax: {
-    Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
-    SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
-    SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
-
-    Op OC = (II->getIntrinsicID() == Intrinsic::umin) ? OpULessThan
-                                                      : OpUGreaterThan;
-    if (auto *VecTy = dyn_cast<VectorType>(II->getArgOperand(0)->getType()))
-      BoolTy = VectorType::get(BoolTy, VecTy->getElementCount());
-
-    SPIRVValue *Cmp =
-        BM->addCmpInst(OC, transType(BoolTy), FirstArgVal, SecondArgVal, BB);
-    return BM->addSelectInst(Cmp, FirstArgVal, SecondArgVal, BB);
-  }
+  case Intrinsic::umax:
   case Intrinsic::smin:
   case Intrinsic::smax: {
     Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
     SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
     SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
 
-    Op OC = (II->getIntrinsicID() == Intrinsic::smin) ? OpSLessThan
-                                                      : OpSGreaterThan;
+    Op OC = (II->getIntrinsicID() == Intrinsic::smin)
+                ? OpSLessThan
+                : ((II->getIntrinsicID() == Intrinsic::smax)
+                       ? OpSGreaterThan
+                       : ((II->getIntrinsicID() == Intrinsic::umin)
+                              ? OpULessThan
+                              : OpUGreaterThan));
     if (auto *VecTy = dyn_cast<VectorType>(II->getArgOperand(0)->getType()))
       BoolTy = VectorType::get(BoolTy, VecTy->getElementCount());
     SPIRVValue *Cmp =
