@@ -19,8 +19,8 @@ __kernel void test_legacy_atomics(__global int *p, int val) {
 //
 // In SPIR-V, atomic_add is represented as OpAtomicIAdd [2], which also includes
 // memory scope and memory semantic arguments. The translator applies a default
-// memory scope and memory order memory order for it and therefore, constants
-// below include a bit more information than original source
+// memory scope and memory order for it and therefore, constants below include
+// a bit more information than original source
 //
 // 0x2 Workgroup
 // CHECK-SPIRV-DAG: Constant [[UINT]] [[WORKGROUP_SCOPE:[0-9]+]] 2
