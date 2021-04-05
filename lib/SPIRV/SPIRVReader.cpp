@@ -3692,8 +3692,25 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       Value *BaseInst =
           AL ? Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()) : Inst;
 
+      // Try to find alloca instruction for statically allocated variables.
+      // Alloca might be hidden by a couple of casts.
+      bool isStaticMemoryAttribute = AL ? true : false;
+      if (!isStaticMemoryAttribute) {
+        do {
+          if (!isa<BitCastInst>(Inst) && !isa<AddrSpaceCastInst>(Inst))
+            break;
+          Inst = dyn_cast<Instruction>(Inst->getOperand(0));
+          if (!Inst)
+            break;
+          if (isa<AllocaInst>(Inst)) {
+            isStaticMemoryAttribute = true;
+            break;
+          }
+        } while (Inst);
+      }
+
       auto AnnotationFn =
-          AL // Static memory attributes if true
+          isStaticMemoryAttribute
               ? llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation)
               : llvm::Intrinsic::getDeclaration(M, Intrinsic::ptr_annotation,
                                                 AllocatedTy);
