@@ -1547,18 +1547,17 @@ void SPIRVToLLVM::addMemAliasMetadata(Instruction *I, SPIRVId AliasListId,
            "AliasScopeDeclINTEL must have exactly one argument");
     SPIRVId AliasDomainId = AliasDomainIds[0];
     // Create and store unique domain and scope metadata
-    MDAliasDomainMap.emplace(std::pair<SPIRVId, MDNode *>(
-        AliasDomainId, MDB.createAnonymousAliasScopeDomain()));
-    MDAliasScopeMap.emplace(std::pair<SPIRVId, MDNode *>(
-        ScopeId,
-        MDB.createAnonymousAliasScope(MDAliasDomainMap[AliasDomainId])));
+    MDAliasDomainMap.emplace(AliasDomainId,
+                             MDB.createAnonymousAliasScopeDomain());
+    MDAliasScopeMap.emplace(ScopeId, MDB.createAnonymousAliasScope(
+                                         MDAliasDomainMap[AliasDomainId]));
     MDScopes.emplace_back(MDAliasScopeMap[ScopeId]);
   }
   // Create and store unique alias.scope/noalias metadata
-  MDAliasListMap.emplace(std::pair<SPIRVId, MDNode *>(
+  MDAliasListMap.emplace(
       AliasListId,
       MDNode::concatenate(I->getMetadata(LLVMContext::MD_alias_scope),
-                          MDNode::get(*Context, MDScopes))));
+                          MDNode::get(*Context, MDScopes)));
   I->setMetadata(AliasMDKind, MDAliasListMap[AliasListId]);
 }
 
