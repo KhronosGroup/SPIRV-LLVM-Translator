@@ -3620,10 +3620,6 @@ bool LLVMToSPIRVBase::transOCLMetadata() {
               BA->addDecorate(
                   new SPIRVDecorate(DecorationFuncParamAttr, BA,
                                     FunctionParameterAttributeNoAlias));
-            if (Str.find("const") != std::string::npos)
-              BA->addDecorate(
-                  new SPIRVDecorate(DecorationFuncParamAttr, BA,
-                                    FunctionParameterAttributeNoWrite));
           });
     }
     if (auto *KernelArgName = F.getMetadata(SPIR_MD_KERNEL_ARG_NAME)) {
