@@ -533,6 +533,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityVectorAnyINTEL, "VectorAnyINTEL");
   add(CapabilityRoundToInfinityINTEL, "RoundToInfinityINTEL");
   add(CapabilityFloatingPointModeINTEL, "FloatingPointModeINTEL");
+  add(CapabilityExpectAssumeKHR, "ExpectAssumeKHR");
   add(CapabilitySubgroupAvcMotionEstimationINTEL,
       "SubgroupAvcMotionEstimationINTEL");
   add(CapabilitySubgroupAvcMotionEstimationIntraINTEL,
@@ -559,7 +560,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGroupNonUniformClustered, "GroupNonUniformClustered");
   add(CapabilityFunctionFloatControlINTEL, "FunctionFloatControlINTEL");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
-  add(internal::CapabilityOptimizationHintsINTEL, "OptimizationHintsINTEL");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(CapabilityArbitraryPrecisionIntegersINTEL,
