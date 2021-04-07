@@ -581,6 +581,7 @@ static char getTypeSuffix(Type *T) {
   return Suffix;
 }
 
+// TODO: Handle unsigned integer return type. May need spec change.
 void SPIRVToOCL::visitCallSPIRVImageSampleExplicitLodBuiltIn(CallInst *CI,
                                                              Op OC) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
