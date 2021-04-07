@@ -58,14 +58,7 @@ public:
 
   SPIRVMemAliasingINTELGeneric() : SPIRVEntry(TheOpCode) {}
 
-  void setArguments(const std::vector<SPIRVId> &A) {
-    Args = A;
-    setWordCount(Args.size() + TheFixedWordCount);
-  }
-
   const std::vector<SPIRVId> &getArguments() const { return Args; }
-
-  std::vector<SPIRVValue *> getArgumentValues() { return getValues(Args); }
 
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);

@@ -22,8 +22,8 @@
 ;; with:
 ;; clang++ -fsycl -fsycl-is-device %s -o -
 ;; using https://github.com/intel/llvm.git bb5a2fece7c3315d7c72d8495c34a8a6eabc92d8
-;; where generated loads and stores where replaced with calls to @maskedload
-;; and @maskedstore functions
+;; where generated loads and stores where replaced with calls to @wrappedload
+;; and @wrappedstore functions
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_memory_access_aliasing -o %t.spv
@@ -76,13 +76,13 @@ entry:
   %0 = addrspacecast i32 addrspace(1)* %_arg_ to i32 addrspace(4)*
   %1 = addrspacecast i32 addrspace(1)* %_arg_1 to i32 addrspace(4)*
   %2 = addrspacecast i32 addrspace(1)* %_arg_3 to i32 addrspace(4)*
-; CHECK-LLVM: call spir_func i32 @maskedload{{.*}} !alias.scope ![[LISTMD1:[0-9]+]]
-; CHECK-LLVM: call spir_func i32 @maskedload{{.*}} !alias.scope ![[LISTMD1]]
-  %3 = call i32 @maskedload(i32 addrspace(4)* %0), !tbaa !5, !alias.scope !9
-  %4 = call i32 @maskedload(i32 addrspace(4)* %1), !tbaa !5, !alias.scope !9
+; CHECK-LLVM: call spir_func i32 @wrappedload{{.*}} !alias.scope ![[LISTMD1:[0-9]+]]
+; CHECK-LLVM: call spir_func i32 @wrappedload{{.*}} !alias.scope ![[LISTMD1]]
+  %3 = call i32 @wrappedload(i32 addrspace(4)* %0), !tbaa !5, !alias.scope !9
+  %4 = call i32 @wrappedload(i32 addrspace(4)* %1), !tbaa !5, !alias.scope !9
   %add.i = add nsw i32 %4, %3
-; CHECK-LLVM: call spir_func void @maskedstore{{.*}} !noalias ![[LISTMD1]]
-  call void @maskedstore(i32 %add.i, i32 addrspace(4)* %2),!tbaa !5, !noalias !9
+; CHECK-LLVM: call spir_func void @wrappedstore{{.*}} !noalias ![[LISTMD1]]
+  call void @wrappedstore(i32 %add.i, i32 addrspace(4)* %2),!tbaa !5, !noalias !9
   ret void
 }
 
@@ -92,26 +92,26 @@ entry:
   %0 = addrspacecast i32 addrspace(1)* %_arg_ to i32 addrspace(4)*
   %1 = addrspacecast i32 addrspace(1)* %_arg_1 to i32 addrspace(4)*
   %2 = addrspacecast i32 addrspace(1)* %_arg_3 to i32 addrspace(4)*
-; CHECK-LLVM: call spir_func i32 @maskedload{{.*}} !alias.scope ![[LISTMD2:[0-9]+]]
-; CHECK-LLVM: call spir_func i32 @maskedload{{.*}} !alias.scope ![[LISTMD2]]
-  %3 = call i32 @maskedload(i32 addrspace(4)* %0), !tbaa !5, !alias.scope !13
-  %4 = call i32 @maskedload(i32 addrspace(4)* %1), !tbaa !5, !alias.scope !13
+; CHECK-LLVM: call spir_func i32 @wrappedload{{.*}} !alias.scope ![[LISTMD2:[0-9]+]]
+; CHECK-LLVM: call spir_func i32 @wrappedload{{.*}} !alias.scope ![[LISTMD2]]
+  %3 = call i32 @wrappedload(i32 addrspace(4)* %0), !tbaa !5, !alias.scope !13
+  %4 = call i32 @wrappedload(i32 addrspace(4)* %1), !tbaa !5, !alias.scope !13
   %add.i = add i32 %3, %_arg_5
   %add3.i = add i32 %add.i, %4
-; CHECK-LLVM: call spir_func void @maskedstore{{.*}} !noalias ![[LISTMD2]]
-  call void @maskedstore(i32 %add3.i, i32 addrspace(4)* %2),!tbaa !5, !noalias !13
+; CHECK-LLVM: call spir_func void @wrappedstore{{.*}} !noalias ![[LISTMD2]]
+  call void @wrappedstore(i32 %add3.i, i32 addrspace(4)* %2),!tbaa !5, !noalias !13
   ret void
 }
 
 ; Function Attrs: norecurse nounwind readnone
-define dso_local spir_func i32 @maskedload(i32 addrspace(4)* %0) local_unnamed_addr #2 {
+define dso_local spir_func i32 @wrappedload(i32 addrspace(4)* %0) local_unnamed_addr #2 {
 entry:
   %1 = load i32, i32 addrspace(4)* %0, align 4
   ret i32 %1
 }
 
 ; Function Attrs: norecurse nounwind readnone
-define dso_local spir_func void @maskedstore(i32 %0, i32 addrspace(4)* %1) local_unnamed_addr #2 {
+define dso_local spir_func void @wrappedstore(i32 %0, i32 addrspace(4)* %1) local_unnamed_addr #2 {
 entry:
   store i32 %0, i32 addrspace(4)* %1, align 4
   ret void

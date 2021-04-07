@@ -1442,10 +1442,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       return transAtomicLoad(LD, BB);
 
     // Keep this vector to store MemoryAccess operands for both Alignment and
-    // Aliasing information. It's quite incorrect, since the first is of a
-    // SPIRVWord type, while the second one is of SPIRWId type, but creation
-    // of the second vector would make fulfilling '3.26 Memory Operands'
-    // requirements about operands order a bit tricky.
+    // Aliasing information.
     std::vector<uint32_t> MemoryAccess(1, 0);
     if (LD->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;

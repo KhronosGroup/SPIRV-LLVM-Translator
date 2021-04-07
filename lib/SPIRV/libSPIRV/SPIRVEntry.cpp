@@ -286,8 +286,6 @@ void SPIRVEntry::addDecorate(Decoration Kind, SPIRVWord Literal) {
 
 void SPIRVEntry::eraseDecorate(Decoration Dec) { Decorates.erase(Dec); }
 
-void SPIRVEntry::eraseDecorateId(Decoration Dec) { DecorateIds.erase(Dec); }
-
 void SPIRVEntry::takeDecorates(SPIRVEntry *E) {
   Decorates = std::move(E->Decorates);
   SPIRVDBG(spvdbgs() << "[takeDecorates] " << Id << '\n';)
