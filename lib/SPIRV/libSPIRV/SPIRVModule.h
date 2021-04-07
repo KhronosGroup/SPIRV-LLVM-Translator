@@ -419,12 +419,12 @@ public:
   virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVValue *,
                                                 SPIRVBasicBlock *) = 0;
-  virtual SPIRVInstruction *addAssumeTrueINTELInst(SPIRVValue *Condition,
-                                                   SPIRVBasicBlock *BB) = 0;
-  virtual SPIRVInstruction *addExpectINTELInst(SPIRVType *ResultTy,
-                                               SPIRVValue *Value,
-                                               SPIRVValue *ExpectedValue,
-                                               SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
+                                                 SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy,
+                                             SPIRVValue *Value,
+                                             SPIRVValue *ExpectedValue,
+                                             SPIRVBasicBlock *BB) = 0;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const = 0;
 
