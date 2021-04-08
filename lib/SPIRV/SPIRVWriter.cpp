@@ -49,6 +49,7 @@
 #include "SPIRVInstruction.h"
 #include "SPIRVInternal.h"
 #include "SPIRVMDWalker.h"
+#include "SPIRVMemAliasingINTEL.h"
 #include "SPIRVModule.h"
 #include "SPIRVType.h"
 #include "SPIRVUtil.h"
@@ -785,6 +786,46 @@ SPIRV::SPIRVInstruction *LLVMToSPIRV::transUnaryInst(UnaryInstruction *U,
                           BB);
 }
 
+// Aliasing list MD contains several scope MD nodes whithin it. Each scope MD
+// has a selfreference and an extra MD node for aliasing domain and also it
+// can contain an optional string operand. Domain MD contains a self-reference
+// with an optional string operand. Here we unfold the list, creating SPIR-V
+// aliasing instructions.
+// TODO: add support for an optional string operand.
+SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
+                                            MDNode *AliasingListMD) {
+  assert(AliasingListMD->getNumOperands() > 0 &&
+         "Aliasing list MD must have at least one operand");
+  std::vector<SPIRVId> ListId;
+  for (const MDOperand &MDListOp : AliasingListMD->operands()) {
+    if (MDNode *ScopeMD = dyn_cast<MDNode>(MDListOp)) {
+      assert(ScopeMD->getNumOperands() > 1 &&
+             "Aliasing scope MD must have at least two operands");
+      MDNode *DomainMD = cast<MDNode>(ScopeMD->getOperand(1));
+      auto *Domain =
+          M->getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId>(), DomainMD);
+      auto *Scope =
+          M->getOrAddAliasScopeDeclINTELInst({Domain->getId()}, ScopeMD);
+      ListId.push_back(Scope->getId());
+    }
+  }
+  return M->getOrAddAliasScopeListDeclINTELInst(ListId, AliasingListMD);
+}
+
+
+// Translate alias.scope/noalias metadata attached to store and load
+// instructions.
+void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
+                            std::vector<uint32_t> &MemoryAccess,
+                            SPIRVWord MemAccessMask) {
+  if (!BM->isAllowedToUseExtension(
+        ExtensionID::SPV_INTEL_memory_access_aliasing))
+    return;
+  MemoryAccess[0] |= MemAccessMask;
+  auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
+  MemoryAccess.push_back(MemAliasList->getId());
+}
+
 /// An instruction may use an instruction from another BB which has not been
 /// translated. SPIRVForward should be created as place holder for these
 /// instructions and replaced later by the real instructions.
@@ -904,6 +945,9 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     return mapValue(V, BM->addForward(transType(V->getType())));
 
   if (StoreInst *ST = dyn_cast<StoreInst>(V)) {
+
+    // Keep this vector to store MemoryAccess operands for both Alignment and
+    // Aliasing information.
     std::vector<SPIRVWord> MemoryAccess(1, 0);
     if (ST->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
@@ -913,6 +957,13 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     if (ST->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
+    if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_alias_scope))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessAliasScopeINTELMask);
+    else if (MDNode *AliasingListMD =
+                 ST->getMetadata(LLVMContext::MD_noalias))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
       MemoryAccess.clear();
 
@@ -924,7 +975,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
   }
 
   if (LoadInst *LD = dyn_cast<LoadInst>(V)) {
-    std::vector<SPIRVWord> MemoryAccess(1, 0);
+
+    // Keep this vector to store MemoryAccess operands for both Alignment and
+    // Aliasing information.
+    std::vector<uint32_t> MemoryAccess(1, 0);
     if (LD->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
     if (LD->getAlignment()) {
@@ -933,6 +987,13 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     }
     if (LD->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
+    if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_alias_scope))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                            internal::MemoryAccessAliasScopeINTELMask);
+    else if (MDNode *AliasingListMD =
+                 LD->getMetadata(LLVMContext::MD_noalias))
+      transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
+                             internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
       MemoryAccess.clear();
     return mapValue(V, BM->addLoadInst(transValue(LD->getPointerOperand(), BB),
@@ -1203,6 +1264,8 @@ bool LLVMToSPIRV::transDecoration(Value *V, SPIRVValue *BV) {
     }
   }
 
+  transMemAliasingINTELDecorations(V, BV);
+
   if (auto *CI = dyn_cast<CallInst>(V)) {
     auto OC = BV->getOpCode();
     if (OC == OpSpecConstantTrue || OC == OpSpecConstantFalse ||
@@ -1225,6 +1288,35 @@ bool LLVMToSPIRV::transAlign(Value *V, SPIRVValue *BV) {
     return true;
   }
   return true;
+}
+
+// Apply aliasing decorations to instructions annotated with aliasing metadata.
+// Do it for any instruction but loads and stores.
+void LLVMToSPIRV::transMemAliasingINTELDecorations(Value *V, SPIRVValue *BV) {
+  if (!BM->isAllowedToUseExtension(
+         ExtensionID::SPV_INTEL_memory_access_aliasing))
+    return;
+  // Loads and Stores are handled during memory access mask addition
+  if (isa<StoreInst>(V) || isa<LoadInst>(V))
+    return;
+
+  Instruction *Inst = dyn_cast<Instruction>(V);
+  if (!Inst)
+    return;
+
+  if (MDNode *AliasingListMD =
+          Inst->getMetadata(LLVMContext::MD_alias_scope)) {
+    auto *MemAliasList =
+        addMemAliasingINTELInstructions(BM, AliasingListMD);
+    BV->addDecorate(new SPIRVDecorateId(
+          internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
+  } else if (MDNode *AliasingListMD =
+                 Inst->getMetadata(LLVMContext::MD_noalias)) {
+    auto *MemAliasList =
+        addMemAliasingINTELInstructions(BM, AliasingListMD);
+    BV->addDecorate(new SPIRVDecorateId(
+          internal::DecorationNoAliasINTEL, BV, MemAliasList->getId()));
+  }
 }
 
 /// Do this after source language is set.

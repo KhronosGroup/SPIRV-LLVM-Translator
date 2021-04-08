@@ -43,6 +43,7 @@
 #include "LLVMSPIRVOpts.h"
 #include "SPIRVOpCode.h"
 #include "spirv.hpp"
+#include "spirv_internal.hpp"
 #include <cstdint>
 using namespace spv;
 
@@ -408,6 +409,10 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationSingleElementVectorINTEL,
                {CapabilityVectorComputeINTEL});
   ADD_VEC_INIT(DecorationCallableFunctionINTEL, {CapabilityFastCompositeINTEL});
+  ADD_VEC_INIT(internal::DecorationAliasScopeINTEL,
+               {internal::CapabilityMemoryAccessAliasingINTEL});
+  ADD_VEC_INIT(internal::DecorationNoAliasINTEL,
+               {internal::CapabilityMemoryAccessAliasingINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
