@@ -35,11 +35,20 @@ enum InternalLinkageType {
 };
 
 enum InternalOp {
+  IOpAliasDomainDeclINTEL = 5911,
+  IOpAliasScopeDeclINTEL = 5912,
+  IOpAliasScopeListDeclINTEL = 5913,
   IOpPrev = OpMax - 2,
   IOpForward
 };
 
+enum InternalDecoration {
+  IDecAliasScopeINTEL = 5914,
+  IDecNoAliasINTEL = 5915
+};
+
 enum InternalCapability {
+  ICapMemoryAccessAliasingINTEL = 5910,
   ICapOptNoneINTEL = 6094
 };
 
@@ -47,19 +56,39 @@ enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
 
+enum InternalMemoryAccessMask {
+  IMemAccessAliasScopeINTELMask = 0x10000,
+  IMemAccessNoAliasINTELMask = 0x20000
+};
+
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
+constexpr Op OpAliasDomainDeclINTEL = static_cast<Op>(IOpAliasDomainDeclINTEL);
+constexpr Op OpAliasScopeDeclINTEL = static_cast<Op>(IOpAliasScopeDeclINTEL);
+constexpr Op OpAliasScopeListDeclINTEL =
+    static_cast<Op>(IOpAliasScopeListDeclINTEL);
+
+constexpr Decoration DecorationAliasScopeINTEL =
+    static_cast<Decoration>(IDecAliasScopeINTEL );
+constexpr Decoration DecorationNoAliasINTEL =
+    static_cast<Decoration>(IDecNoAliasINTEL);
 
 constexpr Capability CapabilityOptNoneINTEL =
     static_cast<Capability>(ICapOptNoneINTEL);
+constexpr Capability CapabilityMemoryAccessAliasingINTEL =
+    static_cast<Capability>(ICapMemoryAccessAliasingINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
 
 constexpr LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
+constexpr MemoryAccessMask MemoryAccessAliasScopeINTELMask =
+    static_cast<MemoryAccessMask>(IMemAccessAliasScopeINTELMask);
+constexpr MemoryAccessMask MemoryAccessNoAliasINTELMask =
+    static_cast<MemoryAccessMask>(IMemAccessNoAliasINTELMask);
 
 } // namespace internal
 } // namespace spv

@@ -113,6 +113,10 @@ public:
                               bool IsBinaryInst = false);
   bool transNonTemporalMetadata(Instruction *I);
   void transSourceLanguage();
+  template <typename SPIRVInstType>
+  void transAliasingMemAccess(SPIRVInstType *BI, Instruction *I);
+  void addMemAliasMetadata(Instruction *I, SPIRVId AliasListId,
+                           uint32_t AliasMDKind);
   bool transSourceExtension();
   void transGeneratorMD();
   Value *transConvertInst(SPIRVValue *BV, Function *F, BasicBlock *BB);
@@ -134,6 +138,7 @@ public:
   typedef DenseMap<SPIRVValue *, Value *> SPIRVBlockToLLVMStructMap;
   typedef DenseMap<SPIRVFunction *, Function *> SPIRVToLLVMFunctionMap;
   typedef DenseMap<GlobalVariable *, SPIRVBuiltinVariableKind> BuiltinVarMap;
+  typedef std::unordered_map<SPIRVId, MDNode *> SPIRVToLLVMMDAliasInstMap;
 
   // A SPIRV value may be translated to a load instruction of a placeholder
   // global variable. This map records load instruction of these placeholders
@@ -159,6 +164,12 @@ private:
   // This storage contains pairs of translated loop header basic block and loop
   // metadata SPIR-V instruction in SPIR-V representation of this basic block.
   SPIRVToLLVMLoopMetadataMap FuncLoopMetadataMap;
+
+  // These storages are used to prevent duplication of alias.scope/noalias
+  // metadata
+  SPIRVToLLVMMDAliasInstMap MDAliasDomainMap;
+  SPIRVToLLVMMDAliasInstMap MDAliasScopeMap;
+  SPIRVToLLVMMDAliasInstMap MDAliasListMap;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
@@ -226,6 +237,7 @@ private:
   void createCXXStructor(const char *ListName,
                          SmallVectorImpl<Function *> &Funcs);
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
+  void transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V);
 }; // class SPIRVToLLVM
 
 } // namespace SPIRV
