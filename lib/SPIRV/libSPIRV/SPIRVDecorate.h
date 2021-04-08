@@ -183,6 +183,34 @@ public:
   }
 };
 
+class SPIRVDecorateId : public SPIRVDecorateGeneric {
+public:
+  static const Op OC = OpDecorateId;
+  static const SPIRVWord FixedWC = 3;
+  // Complete constructor for decorations with one id operand
+  SPIRVDecorateId(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVId V)
+      : SPIRVDecorateGeneric(OC, 4, TheDec, TheTarget, V) {}
+  // Incomplete constructor
+  SPIRVDecorateId() : SPIRVDecorateGeneric(OC) {}
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    switch (static_cast<int>(Dec)) {
+    case internal::DecorationAliasScopeINTEL:
+    case internal::DecorationNoAliasINTEL:
+      return getSet(ExtensionID::SPV_INTEL_memory_access_aliasing);
+    default:
+      return {};
+    }
+  }
+
+  _SPIRV_DCL_ENCDEC
+  void setWordCount(SPIRVWord) override;
+  void validate() const override {
+    SPIRVDecorateGeneric::validate();
+    assert(WordCount == Literals.size() + FixedWC);
+  }
+};
+
 class SPIRVDecorateLinkageAttr : public SPIRVDecorate {
 public:
   // Complete constructor for LinkageAttributes decorations
@@ -583,6 +611,22 @@ public:
   spv::FPOperationMode getOperationMode() const {
     return static_cast<spv::FPOperationMode>(Literals.at(1));
   };
+};
+
+class SPIRVDecorateAliasScopeINTEL : public SPIRVDecorateId {
+public:
+  // Complete constructor for SPIRVDecorateAliasScopeINTEL
+  SPIRVDecorateAliasScopeINTEL(SPIRVEntry *TheTarget, SPIRVId AliasList)
+      : SPIRVDecorateId(spv::internal::DecorationAliasScopeINTEL, TheTarget,
+                        AliasList){};
+};
+
+class SPIRVDecorateNoAliasINTEL : public SPIRVDecorateId {
+public:
+  // Complete constructor for SPIRVDecorateNoAliasINTEL
+  SPIRVDecorateNoAliasINTEL(SPIRVEntry *TheTarget, SPIRVId AliasList)
+      : SPIRVDecorateId(spv::internal::DecorationNoAliasINTEL, TheTarget,
+                        AliasList){};
 };
 
 } // namespace SPIRV
