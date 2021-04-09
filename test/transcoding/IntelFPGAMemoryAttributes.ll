@@ -168,7 +168,7 @@
 ;   } s;
 ;   s.field = 0;
 ; }
-; void static_memory_attribute() {
+; void memory_attribute_on_array() {
 ;   [[intelfpga::register]] int register_var[32];
 ; }
 ;
@@ -197,7 +197,7 @@
 ;     templ_bank_bits_attr<4, 5>();
 ;     force_pow2_depth_attr();
 ;     templ_force_pow2_depth_attr<1>();
-;     static_memory_attribute();
+;     memory_attribute_on_array();
 ;   });
 ;   return 0;
 ; }
@@ -376,7 +376,7 @@ entry:
   call spir_func void @_Z20templ_bank_bits_attrILi4ELi5EEvv()
   call spir_func void @_Z21force_pow2_depth_attrv()
   call spir_func void @_Z27templ_force_pow2_depth_attrILi1EEvv()
-  call spir_func void @_Z23static_memory_attributev()
+  call spir_func void @_Z25memory_attribute_on_arrayv()
   ret void
 }
 
@@ -821,7 +821,7 @@ entry:
 }
 
 ; Function Attrs: convergent noinline norecurse nounwind optnone mustprogress
-define dso_local spir_func void @_Z23static_memory_attributev() #2 {
+define dso_local spir_func void @_Z25memory_attribute_on_arrayv() #2 {
 entry:
   %register_var = alloca [32 x i32], align 4
   %register_var.ascast = addrspacecast [32 x i32]* %register_var to [32 x i32] addrspace(4)*
