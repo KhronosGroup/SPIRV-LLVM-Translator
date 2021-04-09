@@ -3695,20 +3695,11 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       // Try to find alloca instruction for statically allocated variables.
       // Alloca might be hidden by a couple of casts.
       bool isStaticMemoryAttribute = AL ? true : false;
-      if (!isStaticMemoryAttribute) {
-        do {
-          if (!isa<BitCastInst>(Inst) && !isa<AddrSpaceCastInst>(Inst))
-            break;
-          Inst = dyn_cast<Instruction>(Inst->getOperand(0));
-          if (!Inst)
-            break;
-          if (isa<AllocaInst>(Inst)) {
-            isStaticMemoryAttribute = true;
-            break;
-          }
-        } while (Inst);
+      while (!isStaticMemoryAttribute && Inst &&
+             (isa<BitCastInst>(Inst) || isa<AddrSpaceCastInst>(Inst))) {
+        Inst = dyn_cast<Instruction>(Inst->getOperand(0));
+        isStaticMemoryAttribute = (Inst && isa<AllocaInst>(Inst));
       }
-
       auto AnnotationFn =
           isStaticMemoryAttribute
               ? llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation)
