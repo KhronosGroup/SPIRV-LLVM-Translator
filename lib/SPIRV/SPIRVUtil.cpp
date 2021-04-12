@@ -1241,9 +1241,9 @@ std::string getSPIRVImageTypePostfixes(StringRef SampledType,
                                        SPIRVAccessQualifierKind Acc) {
   std::string S;
   raw_string_ostream OS(S);
-  OS << SampledType << kSPIRVTypeName::PostfixDelim << Desc.Dim
-     << kSPIRVTypeName::PostfixDelim << Desc.Depth
-     << kSPIRVTypeName::PostfixDelim << Desc.Arrayed
+  OS << kSPIRVTypeName::PostfixDelim << SampledType
+     << kSPIRVTypeName::PostfixDelim << Desc.Dim << kSPIRVTypeName::PostfixDelim
+     << Desc.Depth << kSPIRVTypeName::PostfixDelim << Desc.Arrayed
      << kSPIRVTypeName::PostfixDelim << Desc.MS << kSPIRVTypeName::PostfixDelim
      << Desc.Sampled << kSPIRVTypeName::PostfixDelim << Desc.Format
      << kSPIRVTypeName::PostfixDelim << Acc;
@@ -1318,8 +1318,6 @@ std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc) {
   std::string BaseTy;
   std::string Postfixes;
   raw_string_ostream OS(Postfixes);
-  if (!Acc.empty())
-    OS << kSPIRVTypeName::PostfixDelim;
   if (Name.startswith(kSPR2TypeName::ImagePrefix)) {
     std::string ImageTyName = getImageBaseTypeName(Name);
     auto Desc = map<SPIRVTypeImageDescriptor>(ImageTyName);
