@@ -1015,14 +1015,16 @@ getLoopControl(const BranchInst *Branch, std::vector<SPIRVWord> &Parameters,
 // TODO: add support for an optional string operand.
 SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
                                             MDNode *AliasingListMD) {
-  assert(AliasingListMD->getNumOperands() > 0 &&
-         "Aliasing list MD must have at least one operand");
+  if (AliasingListMD->getNumOperands() == 0)
+    return nullptr;
   std::vector<SPIRVId> ListId;
   for (const MDOperand &MDListOp : AliasingListMD->operands()) {
     if (MDNode *ScopeMD = dyn_cast<MDNode>(MDListOp)) {
-      assert(ScopeMD->getNumOperands() > 1 &&
-             "Aliasing scope MD must have at least two operands");
-      MDNode *DomainMD = cast<MDNode>(ScopeMD->getOperand(1));
+      if (ScopeMD->getNumOperands() < 2)
+        return nullptr;
+      MDNode *DomainMD = dyn_cast<MDNode>(ScopeMD->getOperand(1));
+      if (!DomainMD)
+        return nullptr;
       auto *Domain =
           M->getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId>(), DomainMD);
       auto *Scope =
@@ -1044,6 +1046,8 @@ void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
     return;
   MemoryAccess[0] |= MemAccessMask;
   auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
+  if (!MemAliasList)
+    return;
   MemoryAccess.push_back(MemAliasList->getId());
 }
 
@@ -1576,12 +1580,16 @@ void LLVMToSPIRV::transMemAliasingINTELDecorations(Value *V, SPIRVValue *BV) {
           Inst->getMetadata(LLVMContext::MD_alias_scope)) {
     auto *MemAliasList =
         addMemAliasingINTELInstructions(BM, AliasingListMD);
+    if (!MemAliasList)
+      return;
     BV->addDecorate(new SPIRVDecorateId(
           internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
   } else if (MDNode *AliasingListMD =
                  Inst->getMetadata(LLVMContext::MD_noalias)) {
     auto *MemAliasList =
         addMemAliasingINTELInstructions(BM, AliasingListMD);
+    if (!MemAliasList)
+      return;
     BV->addDecorate(new SPIRVDecorateId(
           internal::DecorationNoAliasINTEL, BV, MemAliasList->getId()));
   }
