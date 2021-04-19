@@ -1709,7 +1709,6 @@ public:
 private:
   OCLExtOpKind ExtOpId;
   ArrayRef<Type *> ArgTys;
-  Type *RetTy;
 };
 } // namespace
 
