@@ -968,6 +968,11 @@ bool hasLoopUnrollMetadata(const Module *M);
 // and find Loop Control mask and possible parameters.
 spv::LoopControlMask getLoopControl(const BranchInst *Branch,
                                     std::vector<SPIRVWord> &Parameters);
+
+// Check if CI is a call to instruction from OpenCL Extended Instruction Set.
+// If so, return it's extended opcode in ExtOp.
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H
