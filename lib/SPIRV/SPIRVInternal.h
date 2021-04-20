@@ -971,6 +971,10 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
 // Check if the module contains llvm.loop.* metadata
 bool hasLoopMetadata(const Module *M);
 
+// Check if CI is a call to instruction from OpenCL Extended Instruction Set.
+// If so, return it's extended opcode in ExtOp.
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H
