@@ -439,7 +439,9 @@ public:
     if (UnmangledName.find("async_work_group") == 0) {
       addUnsignedArg(-1);
       setArgAttr(1, SPIR::ATTR_CONST);
-    } else if (UnmangledName.find("write_imageui") == 0)
+    } else if (UnmangledName.find("printf") == 0)
+      setVarArg(1);
+    else if (UnmangledName.find("write_imageui") == 0)
       addUnsignedArg(2);
     else if (UnmangledName == "prefetch") {
       addUnsignedArg(1);

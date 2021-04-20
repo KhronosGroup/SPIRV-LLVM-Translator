@@ -968,6 +968,10 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
 // check LLVM Intrinsics type(s) for validity
 bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM);
 
+// Check if CI is a call to instruction from OpenCL Extended Instruction Set.
+// If so, return it's extended opcode in ExtOp.
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+
 // Copy attributes from function to call site.
 void setAttrByCalledFunc(CallInst *Call);
 bool isSPIRVBuiltinVariable(GlobalVariable *GV, SPIRVBuiltinVariableKind *Kind);

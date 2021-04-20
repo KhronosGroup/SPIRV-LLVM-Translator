@@ -109,6 +109,19 @@ public:
   /// _Z33__spirv_BuiltInGlobalInvocationIdi(x) -> get_global_id(x)
   void visitCallSPIRVBuiltin(CallInst *CI, SPIRVBuiltinVariableKind Kind);
 
+  /// Transform __spirv_ocl* instructions (OpenCL Extended Instruction Set)
+  /// to OpenCL builtins.
+  void visitCallSPIRVOCLExt(CallInst *CI, OCLExtOpKind Kind);
+
+  /// Transform __spirv_ocl_vstore* to corresponding vstore OpenCL instruction
+  void visitCallSPIRVVStore(CallInst *CI, OCLExtOpKind Kind);
+
+  /// Transform __spirv_ocl_vloadn to OpenCL vload[2|4|8|16]
+  void visitCallSPIRVVLoadn(CallInst *CI, OCLExtOpKind Kind);
+
+  /// Transform __spirv_ocl_printf to (i8 addrspace(2)*, ...) @printf
+  void visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind);
+
   /// Get prefix work_/sub_ for OCL group builtin functions.
   /// Assuming the first argument of \param CI is a constant integer for
   /// workgroup/subgroup scope enums.
