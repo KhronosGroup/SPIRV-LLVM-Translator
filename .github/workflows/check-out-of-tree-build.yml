@@ -9,27 +9,26 @@ name: Out-of-tree build & tests
 on:
   push:
     branches:
-      - master
       - llvm_release_*
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-in-tree-build.xml' # check-in-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-in-tree-build.yml' # check-in-tree-build workflow
   pull_request:
     branches:
-      - master
       - llvm_release_*
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-in-tree-build.xml' # check-in-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-in-tree-build.yml' # check-in-tree-build workflow
   schedule:
-    - cron: 0 0 * * *
+    # Weekly build on Mondays
+    - cron: 0 0 * * 0
 
 env:
-  LLVM_VERSION: 13
+  LLVM_VERSION: 10
 
 jobs:
   build_and_test:
@@ -44,7 +43,7 @@ jobs:
         run: |
           curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
           curl -L "https://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
-          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic main" | sudo tee -a /etc/apt/sources.list
+          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-${{ env.LLVM_VERSION }} main" | sudo tee -a /etc/apt/sources.list
           echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           # Linux systems in GitHub Actions already have a pre-installed clang
