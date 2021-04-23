@@ -106,7 +106,6 @@ static bool DbgSaveTmpLLVM = false;
 static const char *DbgTmpLLVMFileName = "_tmp_llvmbil.ll";
 
 namespace kOCLTypeQualifierName {
-const static char *Const = "const";
 const static char *Volatile = "volatile";
 const static char *Restrict = "restrict";
 const static char *Pipe = "pipe";
@@ -321,6 +320,7 @@ bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     Func->addFnAttr(Attribute::NoUnwind);
     Func->addFnAttr(Attribute::ReadNone);
+    Func->addFnAttr(Attribute::WillReturn);
   }
 
   // Collect instructions in these containers to remove them later.
@@ -2432,16 +2432,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, Call);
   }
 
-  case internal::OpAssumeTrueINTEL: {
+  case OpAssumeTrueKHR: {
     IRBuilder<> Builder(BB);
-    SPIRVAssumeTrueINTEL *BC = static_cast<SPIRVAssumeTrueINTEL *>(BV);
+    SPIRVAssumeTrueKHR *BC = static_cast<SPIRVAssumeTrueKHR *>(BV);
     Value *Condition = transValue(BC->getCondition(), F, BB);
     return mapValue(BV, Builder.CreateAssumption(Condition));
   }
 
-  case internal::OpExpectINTEL: {
+  case OpExpectKHR: {
     IRBuilder<> Builder(BB);
-    SPIRVExpectINTELInstBase *BC = static_cast<SPIRVExpectINTELInstBase *>(BV);
+    SPIRVExpectKHRInstBase *BC = static_cast<SPIRVExpectKHRInstBase *>(BV);
     Type *RetTy = transType(BC->getType());
     Value *Val = transValue(BC->getOperand(0), F, BB);
     Value *ExpVal = transValue(BC->getOperand(1), F, BB);
@@ -2913,14 +2913,19 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     mapValue(BA, &(*I));
     setName(&(*I), BA);
     BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
-      if (Kind == FunctionParameterAttributeNoWrite)
-        return;
       Attribute::AttrKind LLVMKind = SPIRSPIRVFuncParamAttrMap::rmap(Kind);
       Type *AttrTy = nullptr;
-      if (LLVMKind == Attribute::AttrKind::ByVal)
+      switch (LLVMKind) {
+      case Attribute::AttrKind::ByVal:
         AttrTy = cast<PointerType>(I->getType())->getElementType();
-      else if (LLVMKind == Attribute::AttrKind::StructRet)
+        break;
+      case Attribute::AttrKind::StructRet:
+      case Attribute::AttrKind::ReadOnly:
         AttrTy = I->getType();
+        break;
+      default:
+        break; // do nothing
+      }
       // Make sure to use a correct constructor for a typed/typeless attribute
       auto A = AttrTy ? Attribute::get(*Context, LLVMKind, AttrTy)
                       : Attribute::get(*Context, LLVMKind);
@@ -4103,17 +4108,8 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
           Qual = kOCLTypeQualifierName::Volatile;
         Arg->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
           Qual += Qual.empty() ? "" : " ";
-          switch (Kind) {
-          case FunctionParameterAttributeNoAlias:
+          if (Kind == FunctionParameterAttributeNoAlias)
             Qual += kOCLTypeQualifierName::Restrict;
-            break;
-          case FunctionParameterAttributeNoWrite:
-            Qual += kOCLTypeQualifierName::Const;
-            break;
-          default:
-            // do nothing.
-            break;
-          }
         });
         if (Arg->getType()->isTypePipe()) {
           Qual += Qual.empty() ? "" : " ";
