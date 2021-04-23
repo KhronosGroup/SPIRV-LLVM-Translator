@@ -3369,13 +3369,13 @@ SPIRVValue *LLVMToSPIRVBase::transBuiltinToConstant(StringRef DemangledName,
   Value *V = CI->getArgOperand(1);
   Type *Ty = CI->getType();
   assert(((Ty == V->getType()) ||
-         // If bool is stored into memory, then clang will emit it as i8,
-         // however for other usages of bool (like return type of a function),
-         // it is emitted as i1.
-         // Therefore, situation when we encounter
-         // i1 _Z20__spirv_SpecConstant(i32, i8) is valid
-         (Ty->isIntegerTy(1) && V->getType()->isIntegerTy(8))) &&
-             "Type mismatch!");
+          // If bool is stored into memory, then clang will emit it as i8,
+          // however for other usages of bool (like return type of a function),
+          // it is emitted as i1.
+          // Therefore, situation when we encounter
+          // i1 _Z20__spirv_SpecConstant(i32, i8) is valid
+          (Ty->isIntegerTy(1) && V->getType()->isIntegerTy(8))) &&
+         "Type mismatch!");
   uint64_t Val = 0;
   if (Ty->isIntegerTy())
     Val = cast<ConstantInt>(V)->getZExtValue();
