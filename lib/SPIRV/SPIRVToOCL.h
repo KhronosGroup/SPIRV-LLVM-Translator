@@ -182,7 +182,7 @@ protected:
   SPIRVToOCLLegacy(char &ID) : ModulePass(ID) {}
 
 public:
-  virtual bool runOnModule(Module &M) override = 0;
+  bool runOnModule(Module &M) override = 0;
 };
 
 } // namespace SPIRV
