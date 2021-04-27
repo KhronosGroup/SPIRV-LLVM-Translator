@@ -77,7 +77,6 @@ public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
 
   std::string getOCLBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
   std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
