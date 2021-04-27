@@ -519,13 +519,16 @@ void SPIRVToOCLBase::visitCallSPIRVImageMediaBlockBuiltin(CallInst *CI, Op OC) {
       &Attrs);
 }
 
-void SPIRVToOCLBase::visitCallGenericCastToPtrExplicitBuiltIn(CallInst *CI, Op OC) {
+void SPIRVToOCLBase::visitCallGenericCastToPtrExplicitBuiltIn(CallInst *CI,
+                                                              Op OC) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *Call, std::vector<Value *> &Args) {
         auto AddrSpace = static_cast<SPIRAddressSpace>(
             CI->getType()->getPointerAddressSpace());
+        // The instruction has two arguments, whereas ocl built-in has only one
+        // argument.
         Args.pop_back();
         switch (AddrSpace) {
         case SPIRAS_Global:
