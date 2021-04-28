@@ -223,6 +223,10 @@ inline bool isIntelSubgroupOpCode(Op OpCode) {
   return OpSubgroupShuffleINTEL <= OC && OC <= OpSubgroupImageBlockWriteINTEL;
 }
 
+inline bool isEventOpCode(Op OpCode) {
+  return OpRetainEvent <= OpCode && OpCode <= OpCaptureEventProfilingInfo;
+}
+
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVOPCODE_H
