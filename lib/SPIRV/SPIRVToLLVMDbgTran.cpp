@@ -1037,15 +1037,18 @@ SPIRVToLLVMDbgTran::ParseChecksum(StringRef Text) {
   // Example of "Text" variable:
   // "SomeInfo//__CSK_MD5:7bb56387968a9caa6e9e35fff94eaf7b:OtherInfo"
   Optional<DIFile::ChecksumInfo<StringRef>> CS;
-  auto KindPos = Text.find(SPIRVDebug::ChecksumKindPrefx);
-  if (KindPos != StringRef::npos) {
-    auto ColonPos = Text.find(":", KindPos);
-    KindPos += string("//__").size();
-    auto KindStr = Text.substr(KindPos, ColonPos - KindPos);
-    auto Checksum = Text.substr(ColonPos).ltrim(':');
-    if (auto Kind = DIFile::getChecksumKind(KindStr)) {
-      size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
-      CS.emplace(Kind.getValue(), Checksum.substr(0, ChecksumEndPos));
+  if (Text.size() > SPIRVDebug::ChecksumKindPrefx.size() &&
+      Text.front() != '\0') {
+    auto KindPos = Text.find(SPIRVDebug::ChecksumKindPrefx);
+    if (KindPos != StringRef::npos) {
+      auto ColonPos = Text.find(":", KindPos);
+      KindPos += string("//__").size();
+      auto KindStr = Text.substr(KindPos, ColonPos - KindPos);
+      auto Checksum = Text.substr(ColonPos).ltrim(':');
+      if (auto Kind = DIFile::getChecksumKind(KindStr)) {
+        size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
+        CS.emplace(Kind.getValue(), Checksum.substr(0, ChecksumEndPos));
+      }
     }
   }
   return CS;
