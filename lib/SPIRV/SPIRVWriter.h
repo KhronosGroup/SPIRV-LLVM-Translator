@@ -135,6 +135,7 @@ public:
     OCLTypeToSPIRVPtr = OCLTypeToSPIRV;
   }
   OCLTypeToSPIRVBase *getOCLTypeToSPIRV() { return OCLTypeToSPIRVPtr; }
+  ~LLVMToSPIRVBase();
 
 private:
   Module *M;
@@ -148,6 +149,7 @@ private:
   std::unique_ptr<LLVMToSPIRVDbgTran> DbgTran;
   std::unique_ptr<CallGraph> CG;
   OCLTypeToSPIRVBase *OCLTypeToSPIRVPtr;
+  std::vector<llvm::Instruction *> UnboundInst;
 
   enum class FPContract { UNDEF, DISABLED, ENABLED };
   DenseMap<Function *, FPContract> FPContractMap;
