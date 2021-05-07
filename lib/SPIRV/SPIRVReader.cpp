@@ -4649,7 +4649,7 @@ bool llvm::getSpecConstInfo(std::istream &IS,
       D.ignoreInstruction();
     }
   }
-  return !IS.fail();
+  return !IS.bad();
 }
 
 // clang-format off
