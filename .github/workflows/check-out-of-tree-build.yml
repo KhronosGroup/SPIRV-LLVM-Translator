@@ -14,8 +14,9 @@ on:
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-in-tree-build.xml' # check-in-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-in-tree-build.yml' # check-in-tree-build workflow
+      - '**/check-out-of-tree-build.yml'
   pull_request:
     branches:
       - master
@@ -23,10 +24,12 @@ on:
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-in-tree-build.xml' # check-in-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-in-tree-build.yml' # check-in-tree-build workflow
+      - '**/check-out-of-tree-build.yml'
   schedule:
-    - cron: 0 0 * * *
+    # For release branches run tests weekly: every Monday ay 00:00
+    - cron: 0 0 * * 1
 
 env:
   LLVM_VERSION: 12

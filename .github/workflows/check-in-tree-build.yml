@@ -14,8 +14,8 @@ on:
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-out-of-tree-build.xml' # check-out-of-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-out-of-tree-build.yml' # check-out-of-tree-build workflow
   pull_request:
     branches:
       - master
@@ -23,13 +23,11 @@ on:
     paths-ignore: # no need to check build for:
       - 'docs/**' # documentation
       - '**.md'   # README
-      - '**/check-code-style.xml' # check-code-style workflow
-      - '**/check-out-of-tree-build.xml' # check-out-of-tree-build workflow
+      - '**/check-code-style.yml' # check-code-style workflow
+      - '**/check-out-of-tree-build.yml' # check-out-of-tree-build workflow
   schedule:
-    # Ideally, we might want to simplify our regular nightly build as we
-    # probably don't need every configuration to be built every day: most of
-    # them are only necessary in pre-commits to avoid breakages
-    - cron: 0 0 * * *
+    # For release branches run tests weekly: every Monday ay 00:00
+    - cron: 0 0 * * 1
 
 env:
   LLVM_VERSION: 12
@@ -51,7 +49,7 @@ jobs:
         run: |
           curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
           curl -L "https://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
-          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-12 main" | sudo tee -a /etc/apt/sources.list
+          echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-${{ env.LLVM_VERSION }} main" | sudo tee -a /etc/apt/sources.list
           echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           # Linux systems in GitHub Actions already have a pre-installed clang
@@ -65,7 +63,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: llvm/llvm-project
-          ref: main
+          ref: release/${{ env.LLVM_VERSION }}.x
           path: llvm-project
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
@@ -110,7 +108,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: llvm/llvm-project
-          ref: main
+          ref: release/${{ env.LLVM_VERSION }}.x
           path: llvm-project
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
@@ -152,7 +150,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: llvm/llvm-project
-          ref: main
+          ref: release/${{ env.LLVM_VERSION }}.x
           path: llvm-project
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
