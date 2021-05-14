@@ -53,6 +53,32 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   if (!F)
     return;
 
+  OCLExtOpKind ExtOp;
+  if (isSPIRVOCLExtInst(&CI, &ExtOp)) {
+    switch (ExtOp) {
+    case OpenCLLIB::Vloadn:
+    case OpenCLLIB::Vloada_halfn:
+    case OpenCLLIB::Vload_halfn:
+      visitCallSPIRVVLoadn(&CI, ExtOp);
+      break;
+    case OpenCLLIB::Vstoren:
+    case OpenCLLIB::Vstore_halfn:
+    case OpenCLLIB::Vstorea_halfn:
+    case OpenCLLIB::Vstore_half_r:
+    case OpenCLLIB::Vstore_halfn_r:
+    case OpenCLLIB::Vstorea_halfn_r:
+      visitCallSPIRVVStore(&CI, ExtOp);
+      break;
+    case OpenCLLIB::Printf:
+      visitCallSPIRVPrintf(&CI, ExtOp);
+      break;
+    default:
+      visitCallSPIRVOCLExt(&CI, ExtOp);
+      break;
+    }
+    return;
+  }
+
   auto MangledName = F->getName();
   StringRef DemangledName;
   Op OC = OpNop;
@@ -87,6 +113,10 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   }
   if (isMediaBlockINTELOpcode(OC)) {
     visitCallSPIRVImageMediaBlockBuiltin(&CI, OC);
+    return;
+  }
+  if (OC == OpGenericCastToPtrExplicit) {
+    visitCallGenericCastToPtrExplicitBuiltIn(&CI, OC);
     return;
   }
   if (isCvtOpCode(OC)) {
@@ -519,6 +549,32 @@ void SPIRVToOCLBase::visitCallSPIRVImageMediaBlockBuiltin(CallInst *CI, Op OC) {
       &Attrs);
 }
 
+void SPIRVToOCLBase::visitCallGenericCastToPtrExplicitBuiltIn(CallInst *CI,
+                                                              Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *Call, std::vector<Value *> &Args) {
+        auto AddrSpace = static_cast<SPIRAddressSpace>(
+            CI->getType()->getPointerAddressSpace());
+        // The instruction has two arguments, whereas ocl built-in has only one
+        // argument.
+        Args.pop_back();
+        switch (AddrSpace) {
+        case SPIRAS_Global:
+          return std::string(kOCLBuiltinName::ToGlobal);
+        case SPIRAS_Local:
+          return std::string(kOCLBuiltinName::ToLocal);
+        case SPIRAS_Private:
+          return std::string(kOCLBuiltinName::ToPrivate);
+        default:
+          llvm_unreachable("Invalid address space");
+          return std::string();
+        }
+      },
+      &Attrs);
+}
+
 void SPIRVToOCLBase::visitCallSPIRVCvtBuiltin(CallInst *CI, Op OC,
                                               StringRef DemangledName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
@@ -675,6 +731,89 @@ void SPIRVToOCLBase::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
         return OCLSPIRVBuiltinMap::rmap(OC);
       },
       &Attrs);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVOCLExt(CallInst *CI, OCLExtOpKind Kind) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return OCLExtOpMap::map(Kind);
+      },
+      &Attrs);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVVLoadn(CallInst *CI, OCLExtOpKind Kind) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        std::string Name = OCLExtOpMap::map(Kind);
+        if (ConstantInt *C = dyn_cast<ConstantInt>(Args.back())) {
+          uint64_t NumComponents = C->getZExtValue();
+          std::stringstream SS;
+          SS << NumComponents;
+          Name.replace(Name.find("n"), 1, SS.str());
+        }
+        Args.pop_back();
+        return Name;
+      },
+      &Attrs);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVVStore(CallInst *CI, OCLExtOpKind Kind) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        std::string Name = OCLExtOpMap::map(Kind);
+        if (Kind == OpenCLLIB::Vstore_half_r ||
+            Kind == OpenCLLIB::Vstore_halfn_r ||
+            Kind == OpenCLLIB::Vstorea_halfn_r) {
+          auto C = cast<ConstantInt>(Args.back());
+          auto RoundingMode =
+              static_cast<SPIRVFPRoundingModeKind>(C->getZExtValue());
+          Name.replace(Name.find("_r"), 2,
+                       std::string("_") +
+                           SPIRSPIRVFPRoundingModeMap::rmap(RoundingMode));
+          Args.pop_back();
+        }
+
+        if (Kind == OpenCLLIB::Vstore_halfn ||
+            Kind == OpenCLLIB::Vstore_halfn_r ||
+            Kind == OpenCLLIB::Vstorea_halfn ||
+            Kind == OpenCLLIB::Vstorea_halfn_r || Kind == OpenCLLIB::Vstoren) {
+          if (auto DataType = dyn_cast<VectorType>(Args[0]->getType())) {
+            uint64_t NumElements = DataType->getElementCount().getValue();
+            assert((NumElements == 2 || NumElements == 3 || NumElements == 4 ||
+                    NumElements == 8 || NumElements == 16) &&
+                   "Unsupported vector size for vstore instruction!");
+            std::stringstream SS;
+            SS << NumElements;
+            Name.replace(Name.find("n"), 1, SS.str());
+          }
+        }
+
+        return Name;
+      },
+      &Attrs);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  CallInst *NewCI = mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return OCLExtOpMap::map(OpenCLLIB::Printf);
+      },
+      &Attrs);
+
+  // Clang represents printf function without mangling
+  std::string TargetName = "printf";
+  if (Function *F = M->getFunction(TargetName))
+    NewCI->setCalledFunction(F);
+  else
+    NewCI->getCalledFunction()->setName(TargetName);
 }
 
 std::string SPIRVToOCLBase::getGroupBuiltinPrefix(CallInst *CI) {
