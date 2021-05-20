@@ -525,6 +525,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "MemoryAccessAliasingINTEL");
   add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
+  add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
