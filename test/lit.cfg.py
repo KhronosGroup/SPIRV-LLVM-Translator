@@ -41,7 +41,7 @@ config.test_exec_root = os.path.join(config.test_run_dir, 'test_output')
 
 llvm_config.use_default_substitutions()
 
-llvm_config.use_clang()
+llvm_config.use_clang(use_installed=True)
 
 config.substitutions.append(('%PATH%', config.environment['PATH']))
 
