@@ -71,6 +71,8 @@ jobs:
           make llvm-spirv -j2
       - name: Build tests & test
         run: |
+          # Linux systems in GitHub Actions already have older versions of clang
+          # pre-installed. Explicitly rely on the latest version.
           export CLANG=/usr/bin/clang-${{ env.LLVM_VERSION }}
           cd build
           make check-llvm-spirv -j2
