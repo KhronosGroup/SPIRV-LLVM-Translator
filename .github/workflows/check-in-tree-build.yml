@@ -60,6 +60,7 @@ jobs:
           # Linux systems in GitHub Actions already have older versions of clang
           # pre-installed. Make sure to override these with the relevant version.
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ env.LLVM_VERSION }} 1000
+          sudo update-alternatives --set clang /usr/bin/clang-${{ env.LLVM_VERSION }}
       - name: Checkout LLVM sources
         uses: actions/checkout@v2
         with:
