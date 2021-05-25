@@ -429,6 +429,12 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {internal::CapabilityMemoryAccessAliasingINTEL});
   ADD_VEC_INIT(internal::DecorationNoAliasINTEL,
                {internal::CapabilityMemoryAccessAliasingINTEL});
+  ADD_VEC_INIT(internal::DecorationInitiationIntervalINTEL,
+               {internal::CapabilityFPGAInvocationPipeliningAttributesINTEL});
+  ADD_VEC_INIT(internal::DecorationMaxConcurrencyINTEL,
+               {internal::CapabilityFPGAInvocationPipeliningAttributesINTEL});
+  ADD_VEC_INIT(internal::DecorationPipelineEnableINTEL,
+               {internal::CapabilityFPGAInvocationPipeliningAttributesINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
