@@ -1008,9 +1008,9 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
   SPIRVWordVec SourceArgs = Source->getArguments();
   assert(SourceArgs.size() == OperandCount && "Invalid number of operands");
   std::string ChecksumStr =
-      !getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
-          ? getString(SourceArgs[TextIdx])
-          : "";
+      getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
+          ? ""
+          : getString(SourceArgs[TextIdx]);
   StringRef Checksum(ChecksumStr);
   return getDIFile(getString(SourceArgs[FileIdx]), ParseChecksum(Checksum));
 }
