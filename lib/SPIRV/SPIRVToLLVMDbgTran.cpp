@@ -1007,7 +1007,7 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
          "DebugSource instruction is expected");
   SPIRVWordVec SourceArgs = Source->getArguments();
   assert(SourceArgs.size() == OperandCount && "Invalid number of operands");
-  string ChecksumStr =
+  std::string ChecksumStr =
       !getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
           ? getString(SourceArgs[TextIdx])
           : "";
