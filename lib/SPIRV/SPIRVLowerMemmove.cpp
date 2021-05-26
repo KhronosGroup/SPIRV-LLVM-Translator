@@ -62,7 +62,7 @@ public:
     auto *Dest = I.getRawDest();
     auto *Src = I.getRawSource();
     if (isa<PHINode>(Src))
-      report_fatal_error("llvm.memmove with PHINode as source not supported",
+      report_fatal_error("llvm.memmove of PHI instruction result not supported",
                          false);
     auto *SrcTy = Src->getType();
     if (!isa<ConstantInt>(I.getLength()))
