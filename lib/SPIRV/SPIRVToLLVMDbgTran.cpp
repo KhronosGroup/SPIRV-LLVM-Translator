@@ -1011,8 +1011,7 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
       getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
           ? ""
           : getString(SourceArgs[TextIdx]);
-  StringRef Checksum(ChecksumStr);
-  return getDIFile(getString(SourceArgs[FileIdx]), ParseChecksum(Checksum));
+  return getDIFile(getString(SourceArgs[FileIdx]), ParseChecksum(ChecksumStr));
 }
 
 SPIRVToLLVMDbgTran::SplitFileName::SplitFileName(const string &FileName) {
