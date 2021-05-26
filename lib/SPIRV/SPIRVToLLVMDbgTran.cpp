@@ -1007,7 +1007,11 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
          "DebugSource instruction is expected");
   SPIRVWordVec SourceArgs = Source->getArguments();
   assert(SourceArgs.size() == OperandCount && "Invalid number of operands");
-  StringRef Checksum(getString(SourceArgs[TextIdx]));
+  auto ChecksumStr =
+	  !getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
+                         ? getString(SourceArgs[TextIdx])
+                         : "";
+  StringRef Checksum(ChecksumStr);
   return getDIFile(getString(SourceArgs[FileIdx]), ParseChecksum(Checksum));
 }
 
@@ -1037,18 +1041,15 @@ SPIRVToLLVMDbgTran::ParseChecksum(StringRef Text) {
   // Example of "Text" variable:
   // "SomeInfo//__CSK_MD5:7bb56387968a9caa6e9e35fff94eaf7b:OtherInfo"
   Optional<DIFile::ChecksumInfo<StringRef>> CS;
-  if (Text.size() > SPIRVDebug::ChecksumKindPrefx.size() &&
-      Text.front() != '\0') {
-    auto KindPos = Text.find(SPIRVDebug::ChecksumKindPrefx);
-    if (KindPos != StringRef::npos) {
-      auto ColonPos = Text.find(":", KindPos);
-      KindPos += string("//__").size();
-      auto KindStr = Text.substr(KindPos, ColonPos - KindPos);
-      auto Checksum = Text.substr(ColonPos).ltrim(':');
-      if (auto Kind = DIFile::getChecksumKind(KindStr)) {
-        size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
-        CS.emplace(Kind.getValue(), Checksum.substr(0, ChecksumEndPos));
-      }
+  auto KindPos = Text.find(SPIRVDebug::ChecksumKindPrefx);
+  if (KindPos != StringRef::npos) {
+    auto ColonPos = Text.find(":", KindPos);
+    KindPos += string("//__").size();
+    auto KindStr = Text.substr(KindPos, ColonPos - KindPos);
+    auto Checksum = Text.substr(ColonPos).ltrim(':');
+    if (auto Kind = DIFile::getChecksumKind(KindStr)) {
+      size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
+      CS.emplace(Kind.getValue(), Checksum.substr(0, ChecksumEndPos));
     }
   }
   return CS;
