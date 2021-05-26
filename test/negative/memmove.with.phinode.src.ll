@@ -3,7 +3,7 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
 
-; CHECK: llvm.memmove with PHINode as source not supported
+; CHECK: llvm.memmove of PHI instruction result not supported
 
 ; ModuleID = 'test.bc'
 source_filename = "llvm-link"
