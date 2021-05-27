@@ -408,6 +408,9 @@ const static char FmaxMhz[] = "scheduler_target_fmax_mhz";
 const static char LoopFuse[] = "loop_fuse";
 const static char PreferDSP[] = "prefer_dsp";
 const static char PropDSPPref[] = "propagate_dsp_preference";
+const static char InitiationInterval[] = "initiation_interval";
+const static char MaxConcurrency[] = "max_concurrency";
+const static char DisableLoopPipelining[] = "disable_loop_pipelining";
 } // namespace kSPIR2MD
 
 enum Spir2SamplerKind {
