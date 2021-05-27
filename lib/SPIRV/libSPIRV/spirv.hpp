@@ -422,6 +422,7 @@ enum FPOperationMode {
 enum LinkageType {
     LinkageTypeExport = 0,
     LinkageTypeImport = 1,
+    LinkageTypeLinkOnceODR = 2,
     LinkageTypeMax = 0x7fffffff,
 };
 
@@ -1025,6 +1026,7 @@ enum Capability {
     CapabilityAtomicFloat16MinMaxEXT = 5616,
     CapabilityVectorComputeINTEL = 5617,
     CapabilityVectorAnyINTEL = 5619,
+    CapabilityExpectAssumeKHR = 5629,
     CapabilitySubgroupAvcMotionEstimationINTEL = 5696,
     CapabilitySubgroupAvcMotionEstimationIntraINTEL = 5697,
     CapabilitySubgroupAvcMotionEstimationChromaINTEL = 5698,
@@ -1543,6 +1545,8 @@ enum Op {
     OpAsmCallINTEL = 5611,
     OpAtomicFMinEXT = 5614,
     OpAtomicFMaxEXT = 5615,
+    OpAssumeTrueKHR = 5630,
+    OpExpectKHR = 5631,
     OpDecorateString = 5632,
     OpDecorateStringGOOGLE = 5632,
     OpMemberDecorateString = 5633,

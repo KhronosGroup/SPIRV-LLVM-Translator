@@ -44,6 +44,7 @@
 #include "SPIRVExtInst.h"
 #include "SPIRVFunction.h"
 #include "SPIRVInstruction.h"
+#include "SPIRVMemAliasingINTEL.h"
 #include "SPIRVNameMapEnum.h"
 #include "SPIRVStream.h"
 #include "SPIRVType.h"
@@ -248,7 +249,6 @@ public:
   SPIRVTypeQueue *addQueueType() override;
   SPIRVTypePipe *addPipeType() override;
   SPIRVTypeVoid *addVoidType() override;
-  void createForwardPointers() override;
   SPIRVType *addSubgroupAvcINTELType(Op) override;
   SPIRVTypeVmeImageINTEL *addVmeImageINTELType(SPIRVTypeImage *T) override;
   SPIRVTypeBufferSurfaceINTEL *
@@ -440,11 +440,20 @@ public:
                                         SPIRVBasicBlock *) override;
   SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *, SPIRVValue *,
                                         SPIRVBasicBlock *) override;
-  SPIRVInstruction *addAssumeTrueINTELInst(SPIRVValue *Condition,
-                                           SPIRVBasicBlock *BB) override;
-  SPIRVInstruction *addExpectINTELInst(SPIRVType *ResultTy, SPIRVValue *Value,
-                                       SPIRVValue *ExpectedValue,
-                                       SPIRVBasicBlock *BB) override;
+  template <typename AliasingInstType>
+  SPIRVEntry *getOrAddMemAliasingINTELInst(std::vector<SPIRVId> Args,
+                                           llvm::MDNode *MD);
+  SPIRVEntry *getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                               llvm::MDNode *MD) override;
+  SPIRVEntry *getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                              llvm::MDNode *MD) override;
+  SPIRVEntry *getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                                  llvm::MDNode *MD) override;
+  SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
+                                         SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy, SPIRVValue *Value,
+                                     SPIRVValue *ExpectedValue,
+                                     SPIRVBasicBlock *BB) override;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
 
@@ -489,6 +498,8 @@ private:
   typedef std::unordered_map<std::string, SPIRVString *> SPIRVStringMap;
   typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
       SPIRVUnknownStructFieldMap;
+  typedef std::vector<SPIRVEntry *> SPIRVAliasInstMDVec;
+  typedef std::unordered_map<llvm::MDNode *, SPIRVEntry *> SPIRVAliasInstMDMap;
 
   SPIRVForwardPointerVec ForwardPointerVec;
   SPIRVTypeVec TypeVec;
@@ -517,6 +528,8 @@ private:
   std::map<unsigned, SPIRVConstant *> LiteralMap;
   std::vector<SPIRVExtInst *> DebugInstVec;
   std::vector<SPIRVModuleProcessed *> ModuleProcessedVec;
+  SPIRVAliasInstMDVec AliasInstMDVec;
+  SPIRVAliasInstMDMap AliasInstMDMap;
 
   void layoutEntry(SPIRVEntry *Entry);
 };
@@ -614,7 +627,8 @@ SPIRVConstant *SPIRVModuleImpl::getLiteralAsConstant(unsigned Literal) {
 
 void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
   auto OC = E->getOpCode();
-  switch (OC) {
+  int IntOC = static_cast<int>(OC);
+  switch (IntOC) {
   case OpString:
     addTo(StringVec, E);
     break;
@@ -640,6 +654,12 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
   }
   case OpAsmTargetINTEL: {
     addTo(AsmTargetVec, E);
+    break;
+  }
+  case internal::OpAliasDomainDeclINTEL:
+  case internal::OpAliasScopeDeclINTEL:
+  case internal::OpAliasScopeListDeclINTEL: {
+    addTo(AliasInstMDVec, E);
     break;
   }
   case OpAsmINTEL: {
@@ -910,32 +930,6 @@ SPIRVTypePipeStorage *SPIRVModuleImpl::addPipeStorageType() {
 
 SPIRVTypeSampledImage *SPIRVModuleImpl::addSampledImageType(SPIRVTypeImage *T) {
   return addType(new SPIRVTypeSampledImage(this, getId(), T));
-}
-
-void SPIRVModuleImpl::createForwardPointers() {
-  std::unordered_set<SPIRVId> Seen;
-
-  for (auto *T : TypeVec) {
-    if (T->hasId())
-      Seen.insert(T->getId());
-
-    if (!T->isTypeStruct())
-      continue;
-
-    auto ST = static_cast<SPIRVTypeStruct *>(T);
-
-    for (unsigned I = 0; I < ST->getStructMemberCount(); ++I) {
-      auto MemberTy = ST->getStructMemberType(I);
-      if (!MemberTy->isTypePointer())
-        continue;
-      auto Ptr = static_cast<SPIRVTypePointer *>(MemberTy);
-
-      if (Seen.find(Ptr->getId()) == Seen.end()) {
-        ForwardPointerVec.push_back(new SPIRVTypeForwardPointer(
-            this, Ptr, Ptr->getPointerStorageClass()));
-      }
-    }
-  }
 }
 
 SPIRVTypeVmeImageINTEL *
@@ -1582,20 +1576,52 @@ SPIRVInstruction *SPIRVModuleImpl::addSampledImageInst(SPIRVType *ResultTy,
                         BB);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addAssumeTrueINTELInst(SPIRVValue *Condition,
-                                                          SPIRVBasicBlock *BB) {
-  return addInstruction(new SPIRVAssumeTrueINTEL(Condition->getId(), BB), BB);
+SPIRVInstruction *SPIRVModuleImpl::addAssumeTrueKHRInst(SPIRVValue *Condition,
+                                                        SPIRVBasicBlock *BB) {
+  return addInstruction(new SPIRVAssumeTrueKHR(Condition->getId(), BB), BB);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addExpectINTELInst(SPIRVType *ResultTy,
-                                                      SPIRVValue *Value,
-                                                      SPIRVValue *ExpectedValue,
-                                                      SPIRVBasicBlock *BB) {
+SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
+                                                    SPIRVValue *Value,
+                                                    SPIRVValue *ExpectedValue,
+                                                    SPIRVBasicBlock *BB) {
   return addInstruction(SPIRVInstTemplateBase::create(
-                            internal::OpExpectINTEL, ResultTy, getId(),
+                            OpExpectKHR, ResultTy, getId(),
                             getVec(Value->getId(), ExpectedValue->getId()), BB,
                             this),
                         BB);
+}
+
+// Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
+// instructions
+template <typename AliasingInstType>
+SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+  assert(MD && "noalias/alias.scope metadata can't be null");
+  // Don't duplicate aliasing instruction. For that use a map with a MDNode key
+  if (AliasInstMDMap.find(MD) != AliasInstMDMap.end())
+    return AliasInstMDMap[MD];
+  SPIRVEntry *AliasInst = add(new AliasingInstType(this, getId(), Args));
+  AliasInstMDMap.emplace(std::make_pair(MD, AliasInst));
+  return AliasInst;
+}
+
+// Create AliasDomainDeclINTEL instruction
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+  return getOrAddMemAliasingINTELInst<SPIRVAliasDomainDeclINTEL>(Args, MD);
+}
+
+// Create AliasScopeDeclINTEL instruction
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+  return getOrAddMemAliasingINTELInst<SPIRVAliasScopeDeclINTEL>(Args, MD);
+}
+
+// Create AliasScopeListDeclINTEL instruction
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+  return getOrAddMemAliasingINTELInst<SPIRVAliasScopeListDeclINTEL>(Args, MD);
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addVariable(
@@ -1639,14 +1665,22 @@ class TopologicalSort {
   typedef std::vector<SPIRVVariable *> SPIRVVariableVec;
   typedef std::vector<SPIRVEntry *> SPIRVConstAndVarVec;
   typedef std::vector<SPIRVTypeForwardPointer *> SPIRVForwardPointerVec;
-  typedef std::function<bool(SPIRVEntry *, SPIRVEntry *)> IdComp;
-  typedef std::map<SPIRVEntry *, DFSState, IdComp> EntryStateMapTy;
+  typedef std::function<bool(SPIRVEntry *, SPIRVEntry *)> Comp;
+  typedef std::map<SPIRVEntry *, DFSState, Comp> EntryStateMapTy;
+  typedef std::function<bool(const SPIRVTypeForwardPointer *,
+                             const SPIRVTypeForwardPointer *)>
+      Equal;
+  typedef std::function<size_t(const SPIRVTypeForwardPointer *)> Hash;
+  // We may create forward pointers as we go through the types. We use
+  // unordered set to avoid duplicates.
+  typedef std::unordered_set<SPIRVTypeForwardPointer *, Hash, Equal>
+      SPIRVForwardPointerSet;
 
   SPIRVTypeVec TypeIntVec;
   SPIRVConstantVector ConstIntVec;
   SPIRVTypeVec TypeVec;
   SPIRVConstAndVarVec ConstAndVarVec;
-  const SPIRVForwardPointerVec &ForwardPointerVec;
+  SPIRVForwardPointerSet ForwardPointerSet;
   EntryStateMapTy EntryStateMap;
 
   friend spv_ostream &operator<<(spv_ostream &O, const TopologicalSort &S);
@@ -1658,19 +1692,23 @@ class TopologicalSort {
   // the entry itslef.
   void visit(SPIRVEntry *E) {
     DFSState &State = EntryStateMap[E];
+    if (E->getOpCode() == OpTypePointer) {
+      SPIRVTypePointer *Ptr = static_cast<SPIRVTypePointer *>(E);
+      if (EntryStateMap[Ptr->getElementType()] == Discovered) {
+        // We've found a recursive data type, e.g. a structure having a member
+        // which is a pointer to the same structure. In this, case we can break
+        // such cyclic dependency by inserting a forward declaration of that
+        // pointer.
+        ForwardPointerSet.insert(new SPIRVTypeForwardPointer(
+            E->getModule(), Ptr, Ptr->getPointerStorageClass()));
+        return;
+      }
+    }
     assert(State != Discovered && "Cyclic dependency detected");
     if (State == Visited)
       return;
     State = Discovered;
     for (SPIRVEntry *Op : E->getNonLiteralOperands()) {
-      auto Comp = [&Op](SPIRVTypeForwardPointer *FwdPtr) {
-        return FwdPtr->getPointer() == Op;
-      };
-      // Skip forward referenced pointers
-      if (Op->getOpCode() == OpTypePointer &&
-          find_if(ForwardPointerVec.begin(), ForwardPointerVec.end(), Comp) !=
-              ForwardPointerVec.end())
-        continue;
       visit(Op);
     }
     State = Visited;
@@ -1693,8 +1731,16 @@ public:
   TopologicalSort(const SPIRVTypeVec &TypeVec,
                   const SPIRVConstantVector &ConstVec,
                   const SPIRVVariableVec &VariableVec,
-                  const SPIRVForwardPointerVec &ForwardPointerVec)
-      : ForwardPointerVec(ForwardPointerVec),
+                  SPIRVForwardPointerVec &ForwardPointerVec)
+      : ForwardPointerSet(
+            16, // bucket count
+            [](const SPIRVTypeForwardPointer *Ptr) {
+              return std::hash<SPIRVId>()(Ptr->getPointer()->getId());
+            },
+            [](const SPIRVTypeForwardPointer *Ptr1,
+               const SPIRVTypeForwardPointer *Ptr2) {
+              return Ptr1->getPointer()->getId() == Ptr2->getPointer()->getId();
+            }),
         EntryStateMap([](SPIRVEntry *A, SPIRVEntry *B) -> bool {
           return A->getId() < B->getId();
         }) {
@@ -1708,6 +1754,9 @@ public:
     // Run topoligical sort
     for (auto ES : EntryStateMap)
       visit(ES.first);
+    // Append forward pointers vector
+    ForwardPointerVec.insert(ForwardPointerVec.end(), ForwardPointerSet.begin(),
+                             ForwardPointerSet.end());
   }
 };
 
@@ -1771,10 +1820,16 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
       M.getEntry(I)->encodeName(O);
   }
 
+  if (M.isAllowedToUseExtension(
+        ExtensionID::SPV_INTEL_memory_access_aliasing)) {
+    O << SPIRVNL() << MI.AliasInstMDVec;
+  }
+
+  TopologicalSort TS(MI.TypeVec, MI.ConstVec, MI.VariableVec,
+                     MI.ForwardPointerVec);
+
   O << MI.MemberNameVec << MI.ModuleProcessedVec << MI.DecGroupVec
-    << MI.DecorateSet << MI.GroupDecVec << MI.ForwardPointerVec
-    << TopologicalSort(MI.TypeVec, MI.ConstVec, MI.VariableVec,
-                       MI.ForwardPointerVec);
+    << MI.DecorateSet << MI.GroupDecVec << MI.ForwardPointerVec << TS;
 
   if (M.isAllowedToUseExtension(ExtensionID::SPV_INTEL_inline_assembly)) {
     O << SPIRVNL() << MI.AsmTargetVec << MI.AsmVec;
@@ -1939,7 +1994,6 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   }
 
   MI.resolveUnknownStructFields();
-  MI.createForwardPointers();
   return I;
 }
 

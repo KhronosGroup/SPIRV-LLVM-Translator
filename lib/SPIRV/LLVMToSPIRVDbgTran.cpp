@@ -61,15 +61,28 @@ void LLVMToSPIRVDbgTran::transDebugMetadata() {
   for (const DIType *T : DIF.types())
     transDbgEntry(T);
 
+  // When translating a debug lexical block, we expect the translation of its
+  // parent scope (say it's a subprogram) already been created in MDMap.
+  // Otherwise, we have to dive into the details of subprogram translation
+  // first. During this process, we will try to resolve all retainedNodes
+  // (aka, variables) owned by this subprogram.
+  // And local variable's scope could be the original lexical block that we
+  // haven't finish translating yet. In other words, the block hasn't been
+  // inserted into MDMap cache yet.
+  // So we try to invoke transDbgEntryImpl on the same lexical block again,
+  // then we get a duplicated lexical block messing up the debug info.
+  //
+  // Scheduling the translation of subprograms ahead of scopes (lexical blocks)
+  // solves this dependency cycle issue.
+  for (const DISubprogram *F : DIF.subprograms())
+    transDbgEntry(F);
+
   for (const DIScope *S : DIF.scopes())
     transDbgEntry(S);
 
   for (const DIGlobalVariableExpression *G : DIF.global_variables()) {
     transDbgEntry(G->getVariable());
   }
-
-  for (const DISubprogram *F : DIF.subprograms())
-    transDbgEntry(F);
 
   for (const DbgVariableIntrinsic *DDI : DbgDeclareIntrinsics)
     finalizeDebugDeclare(DDI);
@@ -544,8 +557,12 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
       Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
-    SPIRVValue *C = SPIRVWriter->transValue(Count, nullptr);
-    Ops[ComponentCountIdx + I] = C->getId();
+    if (Count) {
+      Ops[ComponentCountIdx + I] =
+          SPIRVWriter->transValue(Count, nullptr)->getId();
+    } else {
+      Ops[ComponentCountIdx + I] = getDebugInfoNoneId();
+    }
   }
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
 }
@@ -939,7 +956,15 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
   using namespace SPIRVDebug::Operand::Source;
   SPIRVWordVec Ops(OperandCount);
   Ops[FileIdx] = BM->getString(FileName)->getId();
-  Ops[TextIdx] = getDebugInfoNone()->getId();
+  DIFile *F = DIEntry ? DIEntry->getFile() : nullptr;
+  if (F && F->getRawChecksum()) {
+    auto CheckSum = F->getChecksum().getValue();
+    Ops[TextIdx] = BM->getString("//__" + CheckSum.getKindAsString().str() +
+                                 ":" + CheckSum.Value.str())
+                       ->getId();
+  } else {
+    Ops[TextIdx] = getDebugInfoNone()->getId();
+  }
   SPIRVExtInst *Source = static_cast<SPIRVExtInst *>(
       BM->addDebugInfo(SPIRVDebug::Source, getVoidTy(), Ops));
   FileMap[FileName] = Source;

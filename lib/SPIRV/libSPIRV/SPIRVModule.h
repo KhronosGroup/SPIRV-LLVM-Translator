@@ -43,6 +43,8 @@
 #include "LLVMSPIRVOpts.h"
 #include "SPIRVEntry.h"
 
+#include "llvm/IR/Metadata.h"
+
 #include <iostream>
 #include <set>
 #include <string>
@@ -248,7 +250,6 @@ public:
   virtual SPIRVTypeVmeImageINTEL *addVmeImageINTELType(SPIRVTypeImage *) = 0;
   virtual SPIRVTypeBufferSurfaceINTEL *
   addBufferSurfaceINTELType(SPIRVAccessQualifierKind Access) = 0;
-  virtual void createForwardPointers() = 0;
 
   // Constants creation functions
   virtual SPIRVValue *
@@ -447,12 +448,18 @@ public:
   virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVValue *,
                                                 SPIRVBasicBlock *) = 0;
-  virtual SPIRVInstruction *addAssumeTrueINTELInst(SPIRVValue *Condition,
-                                                   SPIRVBasicBlock *BB) = 0;
-  virtual SPIRVInstruction *addExpectINTELInst(SPIRVType *ResultTy,
-                                               SPIRVValue *Value,
-                                               SPIRVValue *ExpectedValue,
-                                               SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVEntry *getOrAddAliasDomainDeclINTELInst(
+      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(
+      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *getOrAddAliasScopeListDeclINTELInst(
+      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
+                                                 SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy,
+                                             SPIRVValue *Value,
+                                             SPIRVValue *ExpectedValue,
+                                             SPIRVBasicBlock *BB) = 0;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const = 0;
 

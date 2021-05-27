@@ -44,6 +44,7 @@
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
@@ -60,14 +61,11 @@ namespace SPIRV {
 static bool SPIRVDbgSaveRegularizedModule = false;
 static std::string RegularizedModuleTmpFile = "regularized.bc";
 
-class SPIRVRegularizeLLVM : public ModulePass {
+class SPIRVRegularizeLLVMBase {
 public:
-  SPIRVRegularizeLLVM() : ModulePass(ID), M(nullptr), Ctx(nullptr) {
-    initializeSPIRVRegularizeLLVMPass(*PassRegistry::getPassRegistry());
-  }
+  SPIRVRegularizeLLVMBase() : M(nullptr), Ctx(nullptr) {}
 
-  bool runOnModule(Module &M) override;
-
+  bool runRegularizeLLVM(Module &M);
   // Lower functions
   bool regularize();
 
@@ -85,21 +83,22 @@ public:
   /// @spirv.llvm_memset_* and replace it with @llvm.memset.
   void lowerMemset(MemSetInst *MSI);
 
-  /// No SPIR-V counterpart for @llvm.fshl.* intrinsic. It will be lowered
-  /// to a newly generated @spirv.llvm_fshl_* function.
+  /// No SPIR-V counterpart for @llvm.fshl.*(@llvm.fshr.*) intrinsic. It will be
+  /// lowered to a newly generated @spirv.llvm_fshl_*(@spirv.llvm_fshr_*)
+  /// function.
   ///
-  /// Conceptually, FSHL:
+  /// Conceptually, FSHL (FSHR):
   /// 1. concatenates the ints, the first one being the more significant;
-  /// 2. performs a left shift-rotate on the resulting doubled-sized int;
-  /// 3. returns the most significant bits of the shift-rotate result,
+  /// 2. performs a left (right) shift-rotate on the resulting doubled-sized
+  /// int;
+  /// 3. returns the most (least) significant bits of the shift-rotate result,
   ///    the number of bits being equal to the size of the original integers.
-  /// If FSHL operates on a vector type instead, the same operations are
+  /// If FSHL (FSHR) operates on a vector type instead, the same operations are
   /// performed for each set of corresponding vector elements.
   ///
   /// The actual implementation algorithm will be slightly different for
   /// simplification purposes.
-  void lowerFunnelShiftLeft(IntrinsicInst *FSHLIntrinsic);
-  void buildFunnelShiftLeftFunc(Function *FSHLFunc);
+  void lowerFunnelShift(IntrinsicInst *FSHIntrinsic);
 
   void lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic);
   void buildUMulWithOverflowFunc(Function *UMulFunc);
@@ -113,9 +112,36 @@ private:
   LLVMContext *Ctx;
 };
 
-char SPIRVRegularizeLLVM::ID = 0;
+class SPIRVRegularizeLLVMPass
+    : public llvm::PassInfoMixin<SPIRVRegularizeLLVMPass>,
+      public SPIRVRegularizeLLVMBase {
+public:
+  llvm::PreservedAnalyses run(llvm::Module &M,
+                              llvm::ModuleAnalysisManager &MAM) {
+    return runRegularizeLLVM(M) ? llvm::PreservedAnalyses::none()
+                                : llvm::PreservedAnalyses::all();
+  }
+};
 
-std::string SPIRVRegularizeLLVM::lowerLLVMIntrinsicName(IntrinsicInst *II) {
+class SPIRVRegularizeLLVMLegacy : public ModulePass,
+                                  public SPIRVRegularizeLLVMBase {
+public:
+  SPIRVRegularizeLLVMLegacy() : ModulePass(ID) {
+    initializeSPIRVRegularizeLLVMLegacyPass(*PassRegistry::getPassRegistry());
+  }
+
+  bool runOnModule(Module &M) override;
+
+  static char ID;
+};
+
+char SPIRVRegularizeLLVMLegacy::ID = 0;
+
+bool SPIRVRegularizeLLVMLegacy::runOnModule(Module &Module) {
+  return runRegularizeLLVM(Module);
+}
+
+std::string SPIRVRegularizeLLVMBase::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   Function *IntrinsicFunc = II->getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   std::string FuncName = IntrinsicFunc->getName().str();
@@ -124,7 +150,7 @@ std::string SPIRVRegularizeLLVM::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   return FuncName;
 }
 
-void SPIRVRegularizeLLVM::lowerMemset(MemSetInst *MSI) {
+void SPIRVRegularizeLLVMBase::lowerMemset(MemSetInst *MSI) {
   if (isa<Constant>(MSI->getValue()) && isa<ConstantInt>(MSI->getLength()))
     return; // To be handled in LLVMToSPIRV::transIntrinsicInst
 
@@ -163,13 +189,25 @@ void SPIRVRegularizeLLVM::lowerMemset(MemSetInst *MSI) {
   return;
 }
 
-void SPIRVRegularizeLLVM::buildFunnelShiftLeftFunc(Function *FSHLFunc) {
-  if (!FSHLFunc->empty())
-    return;
+void SPIRVRegularizeLLVMBase::lowerFunnelShift(IntrinsicInst *FSHIntrinsic) {
+  // Get a separate function - otherwise, we'd have to rework the CFG of the
+  // current one. Then simply replace the intrinsic uses with a call to the new
+  // function.
+  // Expected LLVM IR for the function: i* @spirv.llvm_fsh?_i* (i* %a, i* %b, i*
+  // %c)
+  FunctionType *FSHFuncTy = FSHIntrinsic->getFunctionType();
+  Type *FSHRetTy = FSHFuncTy->getReturnType();
+  const std::string FuncName = lowerLLVMIntrinsicName(FSHIntrinsic);
+  Function *FSHFunc =
+      getOrCreateFunction(M, FSHRetTy, FSHFuncTy->params(), FuncName);
 
-  auto *RotateBB = BasicBlock::Create(M->getContext(), "rotate", FSHLFunc);
+  if (!FSHFunc->empty()) {
+    FSHIntrinsic->setCalledFunction(FSHFunc);
+    return;
+  }
+  auto *RotateBB = BasicBlock::Create(M->getContext(), "rotate", FSHFunc);
   IRBuilder<> Builder(RotateBB);
-  Type *Ty = FSHLFunc->getReturnType();
+  Type *Ty = FSHFunc->getReturnType();
   // Build the actual funnel shift rotate logic.
   // In the comments, "int" is used interchangeably with "vector of int
   // elements".
@@ -182,35 +220,38 @@ void SPIRVRegularizeLLVM::buildFunnelShiftLeftFunc(Function *FSHLFunc) {
                                            BitWidthConstant)
                : BitWidthConstant;
   auto *RotateModVal =
-      Builder.CreateURem(/*Rotate*/ FSHLFunc->getArg(2), BitWidthForInsts);
-  // Shift the more significant number left, the "rotate" number of bits
-  // will be 0-filled on the right as a result of this regular shift.
-  auto *ShiftLeft = Builder.CreateShl(FSHLFunc->getArg(0), RotateModVal);
-  // We want the "rotate" number of the second int's MSBs to occupy the
-  // rightmost "0 space" left by the previous operation. Therefore,
-  // subtract the "rotate" number from the integer bitsize...
+      Builder.CreateURem(/*Rotate*/ FSHFunc->getArg(2), BitWidthForInsts);
+  Value *FirstShift = nullptr, *SecShift = nullptr;
+  if (FSHIntrinsic->getIntrinsicID() == Intrinsic::fshr)
+    // Shift the less significant number right, the "rotate" number of bits
+    // will be 0-filled on the left as a result of this regular shift.
+    FirstShift = Builder.CreateLShr(FSHFunc->getArg(1), RotateModVal);
+  else
+    // Shift the more significant number left, the "rotate" number of bits
+    // will be 0-filled on the right as a result of this regular shift.
+    FirstShift = Builder.CreateShl(FSHFunc->getArg(0), RotateModVal);
+
+  // We want the "rotate" number of the more significant int's LSBs (MSBs) to
+  // occupy the leftmost (rightmost) "0 space" left by the previous operation.
+  // Therefore, subtract the "rotate" number from the integer bitsize...
   auto *SubRotateVal = Builder.CreateSub(BitWidthForInsts, RotateModVal);
-  // ...and right-shift the second int by this number, zero-filling the MSBs.
-  auto *ShiftRight = Builder.CreateLShr(FSHLFunc->getArg(1), SubRotateVal);
+  if (FSHIntrinsic->getIntrinsicID() == Intrinsic::fshr)
+    // ...and left-shift the more significant int by this number, zero-filling
+    // the LSBs.
+    SecShift = Builder.CreateShl(FSHFunc->getArg(0), SubRotateVal);
+  else
+    // ...and right-shift the less significant int by this number, zero-filling
+    // the MSBs.
+    SecShift = Builder.CreateLShr(FSHFunc->getArg(1), SubRotateVal);
+
   // A simple binary addition of the shifted ints yields the final result.
-  auto *FunnelShiftRes = Builder.CreateOr(ShiftLeft, ShiftRight);
+  auto *FunnelShiftRes = Builder.CreateOr(FirstShift, SecShift);
   Builder.CreateRet(FunnelShiftRes);
+
+  FSHIntrinsic->setCalledFunction(FSHFunc);
 }
 
-void SPIRVRegularizeLLVM::lowerFunnelShiftLeft(IntrinsicInst *FSHLIntrinsic) {
-  // Get a separate function - otherwise, we'd have to rework the CFG of the
-  // current one. Then simply replace the intrinsic uses with a call to the new
-  // function.
-  FunctionType *FSHLFuncTy = FSHLIntrinsic->getFunctionType();
-  Type *FSHLRetTy = FSHLFuncTy->getReturnType();
-  const std::string FuncName = lowerLLVMIntrinsicName(FSHLIntrinsic);
-  Function *FSHLFunc =
-      getOrCreateFunction(M, FSHLRetTy, FSHLFuncTy->params(), FuncName);
-  buildFunnelShiftLeftFunc(FSHLFunc);
-  FSHLIntrinsic->setCalledFunction(FSHLFunc);
-}
-
-void SPIRVRegularizeLLVM::buildUMulWithOverflowFunc(Function *UMulFunc) {
+void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
   if (!UMulFunc->empty())
     return;
 
@@ -236,7 +277,8 @@ void SPIRVRegularizeLLVM::buildUMulWithOverflowFunc(Function *UMulFunc) {
   Builder.CreateRet(Res);
 }
 
-void SPIRVRegularizeLLVM::lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic) {
+void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
+    IntrinsicInst *UMulIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
   // current one. Then simply replace the intrinsic uses with a call to the new
   // function.
@@ -249,7 +291,7 @@ void SPIRVRegularizeLLVM::lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic) {
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
-bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
+bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
@@ -263,7 +305,7 @@ bool SPIRVRegularizeLLVM::runOnModule(Module &Module) {
 }
 
 /// Remove entities not representable by SPIR-V
-bool SPIRVRegularizeLLVM::regularize() {
+bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
   lowerFuncPtr(M);
 
@@ -285,8 +327,9 @@ bool SPIRVRegularizeLLVM::regularize() {
             auto *II = cast<IntrinsicInst>(Call);
             if (auto *MSI = dyn_cast<MemSetInst>(II))
               lowerMemset(MSI);
-            else if (II->getIntrinsicID() == Intrinsic::fshl)
-              lowerFunnelShiftLeft(II);
+            else if (II->getIntrinsicID() == Intrinsic::fshl ||
+                     II->getIntrinsicID() == Intrinsic::fshr)
+              lowerFunnelShift(II);
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
           }
@@ -375,7 +418,7 @@ bool SPIRVRegularizeLLVM::regularize() {
 
 // Assume F is a SPIR-V builtin function with a function pointer argument which
 // is a bitcast instruction casting a function to a void(void) function pointer.
-void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
+void SPIRVRegularizeLLVMBase::lowerFuncPtr(Function *F, Op OC) {
   LLVM_DEBUG(dbgs() << "[lowerFuncPtr] " << *F << '\n');
   auto Name = decorateSPIRVFunction(getName(OC));
   std::set<Value *> InvokeFuncPtrs;
@@ -396,7 +439,7 @@ void SPIRVRegularizeLLVM::lowerFuncPtr(Function *F, Op OC) {
     eraseIfNoUse(I);
 }
 
-void SPIRVRegularizeLLVM::lowerFuncPtr(Module *M) {
+void SPIRVRegularizeLLVMBase::lowerFuncPtr(Module *M) {
   std::vector<std::pair<Function *, Op>> Work;
   for (auto &F : *M) {
     auto AI = F.arg_begin();
@@ -412,9 +455,9 @@ void SPIRVRegularizeLLVM::lowerFuncPtr(Module *M) {
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVRegularizeLLVM, "spvregular", "Regularize LLVM for SPIR-V",
-                false, false)
+INITIALIZE_PASS(SPIRVRegularizeLLVMLegacy, "spvregular",
+                "Regularize LLVM for SPIR-V", false, false)
 
-ModulePass *llvm::createSPIRVRegularizeLLVM() {
-  return new SPIRVRegularizeLLVM();
+ModulePass *llvm::createSPIRVRegularizeLLVMLegacy() {
+  return new SPIRVRegularizeLLVMLegacy();
 }
