@@ -512,8 +512,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityIOPipesINTEL, "IOPipeINTEL");
   add(CapabilityFPGAClusterAttributesINTEL, "FPGAClusterAttributesINTEL");
   add(CapabilityLoopFuseINTEL, "LoopFuseINTEL");
-  add(internal::CapabilityFPGADSPControlINTEL, "MathOpDSPModeINTEL");
   add(CapabilityMax, "Max");
+  add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");

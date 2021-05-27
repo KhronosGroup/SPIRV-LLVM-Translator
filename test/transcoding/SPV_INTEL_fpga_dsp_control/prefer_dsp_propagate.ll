@@ -30,7 +30,7 @@
 ; RUN: llvm-spirv -r %t.negative.spv -o %t.negative.rev.bc
 ; RUN: llvm-dis < %t.negative.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-NEG
 
-; CHECK-SPIRV: Capability MathOpDSPModeINTEL
+; CHECK-SPIRV: Capability FPGADSPControlINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_dsp_control"
 ; CHECK-SPIRV: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
 ; CHECK-SPIRV: Decorate [[#REG1]] MathOpDSPModeINTEL 1 1
@@ -39,7 +39,7 @@
 ; CHECK-LLVM-SAME: !propagate_dsp_preference ![[#REG2]]
 ; CHECK-LLVM: ![[#REG2]] = !{i32 1}
 
-; CHECK-SPIRV-NEG-NOT: Capability MathOpDSPModeINTEL
+; CHECK-SPIRV-NEG-NOT: Capability FPGADSPControlINTEL
 ; CHECK-SPIRV-NEG-NOT: Extension "SPV_INTEL_fpga_dsp_control"
 ; CHECK-SPIRV-NEG: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
 ; CHECK-SPIRV-NEG-NOT: Decorate [[#REG1]] MathOpDSPModeINTEL
