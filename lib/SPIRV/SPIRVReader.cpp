@@ -4284,6 +4284,8 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
       std::vector<Metadata *> MDDSPProp = {
           ConstantAsMetadata::get(getUInt32(M, Literals[1])) };
       F->setMetadata(kSPIR2MD::PropDSPPref, MDNode::get(*Context, MDDSPProp));
+    }
+  }
   if (BF->hasDecorate(internal::DecorationInitiationIntervalINTEL)) {
     std::vector<Metadata *> MetadataVec;
     auto Literals =
