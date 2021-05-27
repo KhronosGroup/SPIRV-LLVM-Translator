@@ -4278,11 +4278,11 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
     assert(Literals.size() == 2 &&
            "MathOpDSPModeINTEL decoration shall have 2 literals");
     std::vector<Metadata *> MDDSPPref = {
-        ConstantAsMetadata::get(getUInt32(M, Literals[0])) };
+        ConstantAsMetadata::get(getUInt32(M, Literals[0]))};
     F->setMetadata(kSPIR2MD::PreferDSP, MDNode::get(*Context, MDDSPPref));
     if (Literals[1] != 0) {
       std::vector<Metadata *> MDDSPProp = {
-          ConstantAsMetadata::get(getUInt32(M, Literals[1])) };
+          ConstantAsMetadata::get(getUInt32(M, Literals[1]))};
       F->setMetadata(kSPIR2MD::PropDSPPref, MDNode::get(*Context, MDDSPProp));
     }
   }
