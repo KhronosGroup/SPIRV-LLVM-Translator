@@ -681,6 +681,7 @@ public:
                                   SPIRVWord Propagate)
       : SPIRVDecorate(spv::internal::DecorationMathOpDSPModeINTEL, TheTarget,
                       Mode, Propagate){};
+};
 
 class SPIRVDecorateAliasScopeINTEL : public SPIRVDecorateId {
 public:
