@@ -51,9 +51,6 @@ enum InternalDecoration {
 enum InternalCapability {
   ICapOptimizationHintsINTEL = 5629,
   ICapFPGADSPControlINTEL = 5908,
-};
-
-enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
   ICapOptNoneINTEL = 6094
 };
