@@ -31,16 +31,16 @@
 
 ; CHECK-SPIRV: Capability FPGADSPControlINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_dsp_control"
-; CHECK-SPIRV: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
-; CHECK-SPIRV: Decorate [[#REG1]] MathOpDSPModeINTEL 1 0
+; CHECK-SPIRV: Name [[#FuncNameId:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
+; CHECK-SPIRV: Decorate [[#FuncNameId]] MathOpDSPModeINTEL 1 0
 
-; CHECK-LLVM: !prefer_dsp ![[#REG2:]]
-; CHECK-LLVM: ![[#REG2]] = !{i32 1}
+; CHECK-LLVM: !prefer_dsp ![[#pref_dsp_MD:]]
+; CHECK-LLVM: ![[#pref_dsp_MD]] = !{i32 1}
 
 ; CHECK-SPIRV-NEG-NOT: Capability FPGADSPControlINTEL
 ; CHECK-SPIRV-NEG-NOT: Extension "SPV_INTEL_fpga_dsp_control"
-; CHECK-SPIRV-NEG: Name [[#REG1:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
-; CHECK-SPIRV-NEG-NOT: Decorate [[#REG1]] MathOpDSPModeINTEL
+; CHECK-SPIRV-NEG: Name [[#FuncNameId:]] "_Z25math_prefer_dsp_propagateIZ4mainE3$_0EvT_"
+; CHECK-SPIRV-NEG-NOT: Decorate [[#FuncNameId]] MathOpDSPModeINTEL
 
 ; CHECK-LLVM-NEG-NOT: !prefer_dsp
 ; CHECK-LLVM-NEG-NOT: !propagate_dsp_preference
