@@ -205,6 +205,7 @@ bool isSpecConstantOpAllowedOp(Op OC) {
       OpLogicalNotEqual,
       OpSelect,
       OpIEqual,
+      OpINotEqual,
       OpULessThan,
       OpSLessThan,
       OpUGreaterThan,
