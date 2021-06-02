@@ -1817,7 +1817,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 }
 
 SPIRVType *LLVMToSPIRVBase::mapType(Type *T, SPIRVType *BT) {
-  TypeMap[T] = BT;
+  auto EmplaceStatus = TypeMap.try_emplace(T, BT);
+  // TODO: Uncomment the assertion, once the type mapping issue is resolved
+  // assert(EmplaceStatus.second && "The type was already added to the map");
+  (void)EmplaceStatus;
   SPIRVDBG(dbgs() << "[mapType] " << *T << " => "; spvdbgs() << *BT << '\n');
   return BT;
 }
