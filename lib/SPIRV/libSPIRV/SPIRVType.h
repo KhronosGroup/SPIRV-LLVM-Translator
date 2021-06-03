@@ -156,16 +156,34 @@ public:
       CV.push_back(CapabilityInt64);
       break;
     default:
-      break;
+      if (Module->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_arbitrary_precision_integers))
+        CV.push_back(CapabilityArbitraryPrecisionIntegersINTEL);
     }
     return CV;
+  }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    switch (BitWidth) {
+    case 8:
+    case 16:
+    case 32:
+    case 64:
+      return SPIRVExtSet();
+    default:
+      return getSet(ExtensionID::SPV_INTEL_arbitrary_precision_integers);
+    }
   }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, BitWidth, IsSigned)
   void validate() const override {
     SPIRVEntry::validate();
-    assert(BitWidth > 1 && BitWidth <= 64 && "Invalid bit width");
+    assert((BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
+            BitWidth == 64 ||
+            Module->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_arbitrary_precision_integers)) &&
+           "Invalid bit width");
   }
 
 private:

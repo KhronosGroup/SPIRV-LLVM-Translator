@@ -52,6 +52,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "llvm/ADT/APInt.h"
+
 namespace SPIRV {
 
 SPIRVModule::SPIRVModule()
@@ -262,6 +264,7 @@ public:
                                            SPIRVFunction *F) override;
   SPIRVValue *addConstant(SPIRVValue *) override;
   SPIRVValue *addConstant(SPIRVType *, uint64_t) override;
+  SPIRVValue *addConstant(SPIRVType *, llvm::APInt) override;
   SPIRVValue *addDoubleConstant(SPIRVTypeFloat *, double) override;
   SPIRVValue *addFloatConstant(SPIRVTypeFloat *, float) override;
   SPIRVValue *addIntegerConstant(SPIRVTypeInt *, uint64_t) override;
@@ -1041,6 +1044,10 @@ SPIRVValue *SPIRVModuleImpl::addConstant(SPIRVType *Ty, uint64_t V) {
   }
   if (Ty->isTypeInt())
     return addIntegerConstant(static_cast<SPIRVTypeInt *>(Ty), V);
+  return addConstant(new SPIRVConstant(this, Ty, getId(), V));
+}
+
+SPIRVValue *SPIRVModuleImpl::addConstant(SPIRVType *Ty, llvm::APInt V) {
   return addConstant(new SPIRVConstant(this, Ty, getId(), V));
 }
 
