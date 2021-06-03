@@ -967,6 +967,7 @@ enum Capability {
   CapabilityFloatingPointModeINTEL = 5583,
   CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityFPGAMemoryAttributesINTEL = 5824,
+  CapabilityArbitraryPrecisionIntegersINTEL = 5844,
   CapabilityUnstructuredLoopControlsINTEL = 5886,
   CapabilityFPGALoopControlsINTEL = 5888,
   CapabilityBlockingPipesINTEL = 5945,
