@@ -46,17 +46,17 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
+#include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 
 using namespace llvm;
 using namespace SPIRV;
 
 namespace SPIRV {
 
-class SPIRVLowerMemmoveBase : public InstVisitor<SPIRVLowerMemmoveBase> {
+class SPIRVLowerMemmoveBase {
 public:
-  SPIRVLowerMemmoveBase() : Context(nullptr) {}
-  virtual ~SPIRVLowerMemmoveBase() {}
-  virtual void visitMemMoveInst(MemMoveInst &I) {
+  SPIRVLowerMemmoveBase() : Context(nullptr), Mod(nullptr) {}
+  void LowerMemMoveInst(MemMoveInst &I) {
     IRBuilder<> Builder(I.getParent());
     Builder.SetInsertPoint(&I);
     auto *Dest = I.getRawDest();
@@ -65,11 +65,6 @@ public:
       report_fatal_error("llvm.memmove of PHI instruction result not supported",
                          false);
     auto *SrcTy = Src->getType();
-    if (!isa<ConstantInt>(I.getLength()))
-      // ToDo: for non-constant length, could use a loop to copy a
-      // fixed length chunk at a time. For now simply fail
-      report_fatal_error("llvm.memmove of non-constant length not supported",
-                         false);
     auto *Length = cast<ConstantInt>(I.getLength());
     auto *S = Src;
     // The source could be bit-cast or addrspacecast from another type,
@@ -111,13 +106,38 @@ public:
     I.dropAllReferences();
     I.eraseFromParent();
   }
+  bool expandMemIntrinsicUses(Function &F) {
+    bool Changed = false;
+
+    for (auto I = F.user_begin(), E = F.user_end(); I != E;) {
+      MemMoveInst *Inst = cast<MemMoveInst>(*I);
+      ++I;
+      if (!isa<ConstantInt>(Inst->getLength())) {
+        expandMemMoveAsLoop(Inst);
+        Inst->eraseFromParent();
+      } else {
+        LowerMemMoveInst(*Inst);
+      }
+      Changed = true;
+    }
+    return Changed;
+  }
   bool runLowerMemmove(Module &M) {
     Context = &M.getContext();
     Mod = &M;
-    visit(M);
+    bool Changed = false;
+
+    for (Function &F : M) {
+      if (!F.isDeclaration())
+        continue;
+
+      if (F.getIntrinsicID() == Intrinsic::memmove)
+        if (expandMemIntrinsicUses(F))
+          Changed = true;
+    }
 
     verifyRegularizationPass(M, "SPIRVLowerMemmove");
-    return true;
+    return Changed;
   }
 
 private:
