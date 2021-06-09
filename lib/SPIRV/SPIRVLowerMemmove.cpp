@@ -130,8 +130,7 @@ public:
         continue;
 
       if (F.getIntrinsicID() == Intrinsic::memmove)
-        if (expandMemMoveIntrinsicUses(F))
-          Changed = true;
+        Changed |= expandMemMoveIntrinsicUses(F);
     }
 
     verifyRegularizationPass(M, "SPIRVLowerMemmove");
