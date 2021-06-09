@@ -108,7 +108,7 @@ public:
   bool expandMemMoveIntrinsicUses(Function &F) {
     bool Changed = false;
 
-    for (User *U : F.users()) {
+    for (User *U : make_early_inc_range(F.users())) {
       MemMoveInst *Inst = cast<MemMoveInst>(U);
       if (!isa<ConstantInt>(Inst->getLength())) {
         expandMemMoveAsLoop(Inst);
