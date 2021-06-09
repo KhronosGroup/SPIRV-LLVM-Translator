@@ -16,7 +16,7 @@ define spir_kernel void @lifetime_simple()
 {
   %1 = alloca i32
   %2 = bitcast i32* %1 to i8*
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* %2), !noalias !10
+  call void @llvm.lifetime.start.p0i8(i64 -1, i8* %2), !noalias !1
   ret void
 }
 
@@ -24,25 +24,7 @@ define spir_kernel void @lifetime_simple()
 declare void @llvm.lifetime.start.p0i8(i64 immarg, i8* nocapture) #0
 
 attributes #0 = { nounwind }
-attributes #1 = { nounwind readnone }
 
-!opencl.enable.FP_CONTRACT = !{}
-!spirv.Source = !{!6}
-!opencl.spir.version = !{!7}
-!opencl.ocl.version = !{!7}
-!opencl.used.extensions = !{!8}
-!opencl.used.optional.core.features = !{!8}
-!spirv.Generator = !{!9}
-
-!1 = !{i32 1, i32 1, i32 1}
-!2 = !{!"none", !"none", !"none"}
-!3 = !{!"int*", !"int*", !"int*"}
-!4 = !{!"", !"", !""}
-!5 = !{!"int*", !"int*", !"int*"}
-!6 = !{i32 3, i32 102000}
-!7 = !{i32 1, i32 2}
-!8 = !{}
-!9 = !{i16 7, i16 0}
-!10 = !{!11}
-!11 = distinct !{!11, !12}
-!12 = distinct !{!12}
+!1 = !{!2}
+!2 = distinct !{!2, !3}
+!3 = distinct !{!3}
