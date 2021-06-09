@@ -41,7 +41,6 @@
 #include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
@@ -106,12 +105,11 @@ public:
     I.dropAllReferences();
     I.eraseFromParent();
   }
-  bool expandMemIntrinsicUses(Function &F) {
+  bool expandMemMoveIntrinsicUses(Function &F) {
     bool Changed = false;
 
-    for (auto I = F.user_begin(), E = F.user_end(); I != E;) {
-      MemMoveInst *Inst = cast<MemMoveInst>(*I);
-      ++I;
+    for (User *U : F.users()) {
+      MemMoveInst *Inst = cast<MemMoveInst>(U);
       if (!isa<ConstantInt>(Inst->getLength())) {
         expandMemMoveAsLoop(Inst);
         Inst->eraseFromParent();
@@ -132,7 +130,7 @@ public:
         continue;
 
       if (F.getIntrinsicID() == Intrinsic::memmove)
-        if (expandMemIntrinsicUses(F))
+        if (expandMemMoveIntrinsicUses(F))
           Changed = true;
     }
 
