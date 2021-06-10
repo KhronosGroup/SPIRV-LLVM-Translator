@@ -996,8 +996,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   if (LC & LoopControlNoFusionINTELMask)
     Metadata.push_back(getMetadataFromName("llvm.loop.fusion.disable"));
   if (LC & spv::internal::LoopControlLoopCountINTELMask) {
-  // LoopCountINTELMask parameters are int64 and each parameter is stored
-  // as 2 SPIRVWords (int32)
+    // LoopCountINTELMask parameters are int64 and each parameter is stored
+    // as 2 SPIRVWords (int32)
     uint64_t LoopCountMin =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
     LoopCountMin =
@@ -1009,7 +1009,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
           getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_min",
                                           static_cast<int64_t>(LoopCountMin))));
     }
- 
+
     uint64_t LoopCountMax =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
     LoopCountMax =
