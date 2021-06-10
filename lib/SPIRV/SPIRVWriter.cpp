@@ -1236,6 +1236,8 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
     }
   }
   if (LoopControl & spv::internal::LoopControlLoopCountINTELMask) {
+    // LoopCountINTELMask have int64 literal parameters and we need to store
+    // int64 into 2 SPIRVWords
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
                                   static_cast<SPIRVWord>(LoopCountMin));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
