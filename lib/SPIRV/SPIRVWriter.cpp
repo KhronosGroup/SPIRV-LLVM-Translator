@@ -1115,7 +1115,7 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
   // metadata is not defined for one or two of these parameters and in this
   // case we need to store "-1" value
   struct LoopCountInfo {
-      int64_t Min = -1, Max = -1, Avg = -1;
+    int64_t Min = -1, Max = -1, Avg = -1;
   } LoopCount;
 
   // Unlike with most of the cases, some loop metadata specifications
