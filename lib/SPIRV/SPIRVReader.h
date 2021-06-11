@@ -77,8 +77,6 @@ public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
 
   std::string getOCLBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
@@ -135,14 +133,6 @@ public:
   bool
   postProcessOCLBuiltinWithArrayArguments(Function *F,
                                           const std::string &DemangledName);
-
-  /// \brief Post-process OpImageWrite.
-  ///   return write_image(image, coord, color, image_operands, ...);
-  /// =>
-  ///   write_image(image, coord, ..., color)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
-                                     const std::string &DemangledName);
 
   /// \brief Post-process OpBuildNDRange.
   ///   OpBuildNDRange GlobalWorkSize, LocalWorkSize, GlobalWorkOffset

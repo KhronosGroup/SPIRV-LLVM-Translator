@@ -115,6 +115,10 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
     visitCallSPIRVImageMediaBlockBuiltin(&CI, OC);
     return;
   }
+  if (OC == OpGenericCastToPtrExplicit) {
+    visitCallGenericCastToPtrExplicitBuiltIn(&CI, OC);
+    return;
+  }
   if (isCvtOpCode(OC)) {
     visitCallSPIRVCvtBuiltin(&CI, OC, DemangledName);
     return;
@@ -129,6 +133,10 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
   }
   if (OC == OpImageSampleExplicitLod) {
     visitCallSPIRVImageSampleExplicitLodBuiltIn(&CI, OC);
+    return;
+  }
+  if (OC == OpImageWrite) {
+    visitCallSPIRVImageWriteBuiltIn(&CI, OC);
     return;
   }
   if (OCLSPIRVBuiltinMap::rfind(OC))
@@ -541,6 +549,32 @@ void SPIRVToOCL::visitCallSPIRVImageMediaBlockBuiltin(CallInst *CI, Op OC) {
       &Attrs);
 }
 
+void SPIRVToOCL::visitCallGenericCastToPtrExplicitBuiltIn(CallInst *CI,
+                                                          Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *Call, std::vector<Value *> &Args) {
+        auto AddrSpace = static_cast<SPIRAddressSpace>(
+            CI->getType()->getPointerAddressSpace());
+        // The instruction has two arguments, whereas ocl built-in has only one
+        // argument.
+        Args.pop_back();
+        switch (AddrSpace) {
+        case SPIRAS_Global:
+          return std::string(kOCLBuiltinName::ToGlobal);
+        case SPIRAS_Local:
+          return std::string(kOCLBuiltinName::ToLocal);
+        case SPIRAS_Private:
+          return std::string(kOCLBuiltinName::ToPrivate);
+        default:
+          llvm_unreachable("Invalid address space");
+          return std::string();
+        }
+      },
+      &Attrs);
+}
+
 void SPIRVToOCL::visitCallSPIRVCvtBuiltin(CallInst *CI, Op OC,
                                           StringRef DemangledName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
@@ -663,6 +697,30 @@ void SPIRVToOCL::visitCallSPIRVImageSampleExplicitLodBuiltIn(CallInst *CI,
   };
 
   mutateCallInstOCL(M, CI, ModifyArguments, ModifyRetTy, &Attrs);
+}
+
+void SPIRVToOCL::visitCallSPIRVImageWriteBuiltIn(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        llvm::Type *T = Args[2]->getType();
+        if (Args.size() > 4) {
+          ConstantInt *ImOp = dyn_cast<ConstantInt>(Args[3]);
+          ConstantFP *LodVal = dyn_cast<ConstantFP>(Args[4]);
+          // Drop "Image Operands" argument.
+          Args.erase(Args.begin() + 3, Args.begin() + 4);
+          // If the image operand is LOD and its value is zero, drop it too.
+          if (ImOp && LodVal && LodVal->isNullValue() &&
+              ImOp->getZExtValue() == ImageOperandsMask::ImageOperandsLodMask)
+            Args.erase(Args.begin() + 3, Args.end());
+          else
+            std::swap(Args[2], Args[3]);
+        }
+        return std::string(kOCLBuiltinName::WriteImage) + getTypeSuffix(T);
+      },
+      &Attrs);
 }
 
 void SPIRVToOCL::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
