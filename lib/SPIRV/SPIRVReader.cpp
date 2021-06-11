@@ -1000,38 +1000,41 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     // as 2 SPIRVWords (int32)
     uint64_t LoopCountMin =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
-    LoopCountMin =
-        LoopCountMin | static_cast<uint64_t>(LoopControlParameters[NumParam++])
-                           << 32;
-    if (static_cast<int64_t>(LoopCountMin) > -1) {
+    LoopCountMin |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
+                    << 32;
+    if (static_cast<int64_t>(LoopCountMin) >= 0) {
       Metadata.push_back(llvm::MDNode::get(
           *Context,
           getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_min",
                                           static_cast<int64_t>(LoopCountMin))));
+      assert(NumParam <= LoopControlParameters.size() &&
+             "Missing loop control parameter!");
     }
 
     uint64_t LoopCountMax =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
-    LoopCountMax =
-        LoopCountMax | static_cast<uint64_t>(LoopControlParameters[NumParam++])
-                           << 32;
-    if (static_cast<int64_t>(LoopCountMax) > -1) {
+    LoopCountMax |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
+                    << 32;
+    if (static_cast<int64_t>(LoopCountMax) >= 0) {
       Metadata.push_back(llvm::MDNode::get(
           *Context,
           getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_max",
                                           static_cast<int64_t>(LoopCountMax))));
+      assert(NumParam <= LoopControlParameters.size() &&
+             "Missing loop control parameter!");
     }
 
     uint64_t LoopCountAvg =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
-    LoopCountAvg =
-        LoopCountAvg | static_cast<uint64_t>(LoopControlParameters[NumParam++])
-                           << 32;
-    if (static_cast<int64_t>(LoopCountAvg) > -1) {
+    LoopCountAvg |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
+                    << 32;
+    if (static_cast<int64_t>(LoopCountAvg) >= 0) {
       Metadata.push_back(llvm::MDNode::get(
           *Context,
           getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_avg",
                                           static_cast<int64_t>(LoopCountAvg))));
+      assert(NumParam <= LoopControlParameters.size() &&
+             "Missing loop control parameter!");
     }
   }
   llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);

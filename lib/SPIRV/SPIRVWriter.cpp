@@ -1114,9 +1114,9 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
   // We need to create these variables here because it might be the case when
   // metadata is not defined for one or two of these parameters and in this
   // case we need to store "-1" value
-  int64_t LoopCountMin = -1;
-  int64_t LoopCountMax = -1;
-  int64_t LoopCountAvg = -1;
+  struct LoopCountInfo {
+      int64_t Min = -1, Max = -1, Avg = -1;
+  } LoopCount;
 
   // Unlike with most of the cases, some loop metadata specifications
   // can occur multiple times - for these, all correspondent tokens
@@ -1219,17 +1219,17 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
         } else if (S == "llvm.loop.intel.loopcount_min") {
           BM->addExtension(ExtensionID::SPV_INTEL_fpga_loop_controls);
           BM->addCapability(CapabilityFPGALoopControlsINTEL);
-          LoopCountMin = getMDOperandAsInt(Node, 1);
+          LoopCount.Min = getMDOperandAsInt(Node, 1);
           LoopControl |= spv::internal::LoopControlLoopCountINTELMask;
         } else if (S == "llvm.loop.intel.loopcount_max") {
           BM->addExtension(ExtensionID::SPV_INTEL_fpga_loop_controls);
           BM->addCapability(CapabilityFPGALoopControlsINTEL);
-          LoopCountMax = getMDOperandAsInt(Node, 1);
+          LoopCount.Max = getMDOperandAsInt(Node, 1);
           LoopControl |= spv::internal::LoopControlLoopCountINTELMask;
         } else if (S == "llvm.loop.intel.loopcount_avg") {
           BM->addExtension(ExtensionID::SPV_INTEL_fpga_loop_controls);
           BM->addCapability(CapabilityFPGALoopControlsINTEL);
-          LoopCountAvg = getMDOperandAsInt(Node, 1);
+          LoopCount.Avg = getMDOperandAsInt(Node, 1);
           LoopControl |= spv::internal::LoopControlLoopCountINTELMask;
         }
       }
@@ -1239,17 +1239,17 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
     // LoopCountINTELMask have int64 literal parameters and we need to store
     // int64 into 2 SPIRVWords
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountMin));
+                                  static_cast<SPIRVWord>(LoopCount.Min));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountMin >> 32));
+                                  static_cast<SPIRVWord>(LoopCount.Min >> 32));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountMax));
+                                  static_cast<SPIRVWord>(LoopCount.Max));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountMax >> 32));
+                                  static_cast<SPIRVWord>(LoopCount.Max >> 32));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountAvg));
+                                  static_cast<SPIRVWord>(LoopCount.Avg));
     ParametersToSort.emplace_back(spv::internal::LoopControlLoopCountINTELMask,
-                                  static_cast<SPIRVWord>(LoopCountAvg >> 32));
+                                  static_cast<SPIRVWord>(LoopCount.Avg >> 32));
   }
   // If any loop control parameters were held back until fully collected,
   // now is the time to move the information to the main parameters collection

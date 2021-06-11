@@ -281,6 +281,7 @@ attributes #0 = { convergent noinline nounwind optnone "correctly-rounded-divide
 !14 = !{!"llvm.loop.intel.loopcount_avg", i64 12}
 !15 = distinct !{!15, !13, !16, !17, !18}
 !16 = !{!"llvm.loop.intel.loopcount_min", i64 4}
+;4294967396 = 2^32 + 100
 !17 = !{!"llvm.loop.intel.loopcount_max", i64 4294967396}
 !18 = !{!"llvm.loop.intel.loopcount_avg", i64 21}
 
