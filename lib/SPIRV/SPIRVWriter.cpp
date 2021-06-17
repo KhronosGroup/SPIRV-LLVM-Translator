@@ -1269,11 +1269,11 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
     LoopControl |= spv::LoopControlDependencyArrayINTELMask;
   }
 
-  std::sort(ParametersToSort.begin(), ParametersToSort.end(),
-            [](const std::pair<SPIRVWord, SPIRVWord> &CompareLeft,
-               const std::pair<SPIRVWord, SPIRVWord> &CompareRight) {
-              return CompareLeft.first < CompareRight.first;
-            });
+  std::stable_sort(ParametersToSort.begin(), ParametersToSort.end(),
+                   [](const std::pair<SPIRVWord, SPIRVWord> &CompareLeft,
+                      const std::pair<SPIRVWord, SPIRVWord> &CompareRight) {
+                     return CompareLeft.first < CompareRight.first;
+                   });
   for (auto Param : ParametersToSort)
     Parameters.push_back(Param.second);
 

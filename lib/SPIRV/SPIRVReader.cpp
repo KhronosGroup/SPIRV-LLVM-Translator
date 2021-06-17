@@ -739,12 +739,13 @@ SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
               ConstantInt::get(Type::getInt32Ty(*Context), Parameter))};
 }
 
-inline std::vector<llvm::Metadata *>
-SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
-                                             int64_t Parameter) {
-  return {MDString::get(*Context, Name),
-          ConstantAsMetadata::get(
-              ConstantInt::get(Type::getInt64Ty(*Context), Parameter))};
+inline llvm::MDNode *SPIRVToLLVM::getMetadataFromNameAndParameter(
+    std::string Name, int64_t Parameter) {
+  std::vector<llvm::Metadata *> Metadata = {
+      MDString::get(*Context, Name),
+      ConstantAsMetadata::get(
+          ConstantInt::get(Type::getInt64Ty(*Context), Parameter))};
+  return llvm::MDNode::get(*Context, Metadata);
 }
 
 template <typename LoopInstType>
@@ -998,17 +999,16 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   if (LC & spv::internal::LoopControlLoopCountINTELMask) {
     // LoopCountINTELMask parameters are int64 and each parameter is stored
     // as 2 SPIRVWords (int32)
+    assert(NumParam + 6 <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+
     uint64_t LoopCountMin =
         static_cast<uint64_t>(LoopControlParameters[NumParam++]);
     LoopCountMin |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
                     << 32;
     if (static_cast<int64_t>(LoopCountMin) >= 0) {
-      Metadata.push_back(llvm::MDNode::get(
-          *Context,
-          getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_min",
-                                          static_cast<int64_t>(LoopCountMin))));
-      assert(NumParam <= LoopControlParameters.size() &&
-             "Missing loop control parameter!");
+      Metadata.push_back(getMetadataFromNameAndParameter(
+          "llvm.loop.intel.loopcount_min", static_cast<int64_t>(LoopCountMin)));
     }
 
     uint64_t LoopCountMax =
@@ -1016,12 +1016,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     LoopCountMax |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
                     << 32;
     if (static_cast<int64_t>(LoopCountMax) >= 0) {
-      Metadata.push_back(llvm::MDNode::get(
-          *Context,
-          getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_max",
-                                          static_cast<int64_t>(LoopCountMax))));
-      assert(NumParam <= LoopControlParameters.size() &&
-             "Missing loop control parameter!");
+      Metadata.push_back(getMetadataFromNameAndParameter(
+          "llvm.loop.intel.loopcount_max", static_cast<int64_t>(LoopCountMax)));
     }
 
     uint64_t LoopCountAvg =
@@ -1029,12 +1025,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     LoopCountAvg |= static_cast<uint64_t>(LoopControlParameters[NumParam++])
                     << 32;
     if (static_cast<int64_t>(LoopCountAvg) >= 0) {
-      Metadata.push_back(llvm::MDNode::get(
-          *Context,
-          getMetadataFromNameAndParameter("llvm.loop.intel.loopcount_avg",
-                                          static_cast<int64_t>(LoopCountAvg))));
-      assert(NumParam <= LoopControlParameters.size() &&
-             "Missing loop control parameter!");
+      Metadata.push_back(getMetadataFromNameAndParameter(
+          "llvm.loop.intel.loopcount_avg", static_cast<int64_t>(LoopCountAvg)));
     }
   }
   llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);
