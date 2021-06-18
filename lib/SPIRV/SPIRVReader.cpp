@@ -739,8 +739,9 @@ SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
               ConstantInt::get(Type::getInt32Ty(*Context), Parameter))};
 }
 
-inline llvm::MDNode *SPIRVToLLVM::getMetadataFromNameAndParameter(
-    std::string Name, int64_t Parameter) {
+inline llvm::MDNode *
+SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
+                                             int64_t Parameter) {
   std::vector<llvm::Metadata *> Metadata = {
       MDString::get(*Context, Name),
       ConstantAsMetadata::get(
