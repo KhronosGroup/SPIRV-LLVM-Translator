@@ -1111,9 +1111,9 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
 
   size_t LoopControl = spv::LoopControlMaskNone;
   std::vector<std::pair<SPIRVWord, SPIRVWord>> ParametersToSort;
-  // We need to create these variables here because it might be the case when
-  // metadata is not defined for one or two of these parameters and in this
-  // case we need to store "-1" value
+  // If only a subset of loop count parameters is defined in metadata
+  // then undefined ones should have a default value -1 in SPIR-V.
+  // Preset all loop count parameters with the default value.
   struct LoopCountInfo {
     int64_t Min = -1, Max = -1, Avg = -1;
   } LoopCount;
