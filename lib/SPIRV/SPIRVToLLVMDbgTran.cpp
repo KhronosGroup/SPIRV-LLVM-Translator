@@ -229,7 +229,7 @@ SPIRVToLLVMDbgTran::transTypeVector(const SPIRVExtInst *DebugInst) {
   // Once the specification is updated to reflect the whole memory block's
   // size in SPIR-V, the calculations below must be replaced with a simple
   // translation of the known size.
-  unsigned SizeCount = (Count == 3) ? 4 : Count;
+  SPIRVWord SizeCount = (Count == 3) ? 4 : Count;
   uint64_t Size = getDerivedSizeInBits(BaseTy) * SizeCount;
 
   SmallVector<llvm::Metadata *, 8> Subscripts;
