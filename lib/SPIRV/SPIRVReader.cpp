@@ -751,14 +751,14 @@ SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
 
 class IVDepMetadataEmitter {
 public:
-  using PointerSflnMapTy = std::map<Value *, unsigned>;
+  using PointerSafeLenMapTy = std::map<Value *, unsigned>;
   static void emit(LLVMContext *Context, const Loop *LoopObj,
-                   const PointerSflnMapTy &PointerSflnMap,
+                   const PointerSafeLenMapTy &PointerSafeLenMap,
                    std::vector<llvm::Metadata *> &Metadata) {
     if (LoopsEmitted.contains(LoopObj))
       return;
-    const auto ArrayGEPMap = mapArrayToGEPs(LoopObj, PointerSflnMap);
-    emitMetadata(Context, ArrayGEPMap, PointerSflnMap, Metadata);
+    const auto ArrayGEPMap = mapArrayToGEPs(LoopObj, PointerSafeLenMap);
+    emitMetadata(Context, ArrayGEPMap, PointerSafeLenMap, Metadata);
     LoopsEmitted.insert(LoopObj);
   }
 
@@ -768,8 +768,9 @@ private:
   using ArrayGEPMapTy = std::map<Value *, std::vector<GetElementPtrInst *>>;
   // A single run over the loop to retrieve all GetElementPtr instructions
   // that access relevant array variables
-  static ArrayGEPMapTy mapArrayToGEPs(const Loop *LoopObj,
-                                      const PointerSflnMapTy &PointerSflnMap) {
+  static ArrayGEPMapTy
+  mapArrayToGEPs(const Loop *LoopObj,
+                 const PointerSafeLenMapTy &PointerSafeLenMap) {
     ArrayGEPMapTy ArrayGEPMap;
     for (const auto &BB : LoopObj->blocks()) {
       for (Instruction &I : *BB) {
@@ -780,8 +781,8 @@ private:
         Value *AccessedPointer = GEP->getPointerOperand();
         if (auto *LI = dyn_cast<LoadInst>(AccessedPointer))
           AccessedPointer = LI->getPointerOperand();
-        auto PointerSflnIt = PointerSflnMap.find(AccessedPointer);
-        if (PointerSflnIt != PointerSflnMap.end()) {
+        auto PointerSafeLenIt = PointerSafeLenMap.find(AccessedPointer);
+        if (PointerSafeLenIt != PointerSafeLenMap.end()) {
           ArrayGEPMap[AccessedPointer].push_back(GEP);
         }
       }
@@ -794,10 +795,10 @@ private:
   // into a corresponding index group
   static void emitMetadata(LLVMContext *Context,
                            const ArrayGEPMapTy &ArrayGEPMap,
-                           const PointerSflnMapTy &PointerSflnMap,
+                           const PointerSafeLenMapTy &PointerSafeLenMap,
                            std::vector<llvm::Metadata *> &Metadata) {
-    using SflnIdxGroupMapTy = std::map<unsigned, SmallSet<MDNode *, 4>>;
-    SflnIdxGroupMapTy SafelenIdxGroupMap;
+    using SafeLenIdxGroupMapTy = std::map<unsigned, SmallSet<MDNode *, 4>>;
+    SafeLenIdxGroupMapTy SafeLenIdxGroupMap;
     // Whenever a kernel closure field access is pointed to instead of
     // an array/pointer variable, ensure that all GEPs to that memory
     // share the same index group by hashing the newly added index groups.
@@ -832,8 +833,8 @@ private:
         CurrentDepthIdxGroup = llvm::MDNode::getDistinct(*Context, None);
       }
 
-      unsigned Safelen = PointerSflnMap.find(ArrayGEPIt.first)->second;
-      SafelenIdxGroupMap[Safelen].insert(CurrentDepthIdxGroup);
+      unsigned SafeLen = PointerSafeLenMap.find(ArrayGEPIt.first)->second;
+      SafeLenIdxGroupMap[SafeLen].insert(CurrentDepthIdxGroup);
       for (auto *GEP : ArrayGEPIt.second) {
         StringRef IdxGroupMDName("llvm.index.group");
         llvm::MDNode *PreviousIdxGroup = GEP->getMetadata(IdxGroupMDName);
@@ -859,18 +860,18 @@ private:
       }
     }
 
-    for (auto &SflnIdxGroupIt : SafelenIdxGroupMap) {
+    for (auto &SafeLenIdxGroupIt : SafeLenIdxGroupMap) {
       auto *Name = MDString::get(*Context, "llvm.loop.parallel_access_indices");
-      unsigned SflnValue = SflnIdxGroupIt.first;
-      llvm::Metadata *SafelenMDOp =
-          SflnValue ? ConstantAsMetadata::get(ConstantInt::get(
-                          Type::getInt32Ty(*Context), SflnValue))
-                    : nullptr;
+      unsigned SafeLenValue = SafeLenIdxGroupIt.first;
+      llvm::Metadata *SafeLenMDOp =
+          SafeLenValue ? ConstantAsMetadata::get(ConstantInt::get(
+                             Type::getInt32Ty(*Context), SafeLenValue))
+                       : nullptr;
       std::vector<llvm::Metadata *> Parameters{Name};
-      for (auto *Node : SflnIdxGroupIt.second)
+      for (auto *Node : SafeLenIdxGroupIt.second)
         Parameters.push_back(Node);
-      if (SafelenMDOp)
-        Parameters.push_back(SafelenMDOp);
+      if (SafeLenMDOp)
+        Parameters.push_back(SafeLenMDOp);
       Metadata.push_back(llvm::MDNode::get(*Context, Parameters));
     }
   }
@@ -971,7 +972,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   }
   if (LC & LoopControlDependencyArrayINTELMask) {
     // Collect pointer variable <-> safelen information
-    IVDepMetadataEmitter::PointerSflnMapTy PointerSflnMap;
+    IVDepMetadataEmitter::PointerSafeLenMapTy PointerSafeLenMap;
     unsigned NumOperandPairs = LoopControlParameters[NumParam];
     unsigned OperandsEndIndex = NumParam + NumOperandPairs * 2;
     assert(OperandsEndIndex <= LoopControlParameters.size() &&
@@ -980,10 +981,10 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
     while (NumParam < OperandsEndIndex) {
       SPIRVId ArraySPIRVId = LoopControlParameters[++NumParam];
       Value *PointerVar = ValueMap[M->getValue(ArraySPIRVId)];
-      unsigned Safelen = LoopControlParameters[++NumParam];
-      PointerSflnMap.emplace(PointerVar, Safelen);
+      unsigned SafeLen = LoopControlParameters[++NumParam];
+      PointerSafeLenMap.emplace(PointerVar, SafeLen);
     }
-    IVDepMetadataEmitter::emit(Context, LoopObj, PointerSflnMap, Metadata);
+    IVDepMetadataEmitter::emit(Context, LoopObj, PointerSafeLenMap, Metadata);
     ++NumParam;
     assert(NumParam <= LoopControlParameters.size() &&
            "Missing loop control parameter!");
