@@ -1488,7 +1488,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     SPIRVLabel *SuccessorFalse =
         static_cast<SPIRVLabel *>(transValue(Branch->getSuccessor(1), BB));
     if (LoopControl != spv::LoopControlMaskNone) {
-      Function *Fun = Branch->getParent()->getParent();
+      Function *Fun = Branch->getFunction();
       DominatorTree DomTree(*Fun);
       LoopInfo LI(DomTree);
       for (const auto *LoopObj : LI.getLoopsInPreorder()) {
