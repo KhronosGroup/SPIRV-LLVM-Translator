@@ -45,6 +45,8 @@ enum InternalCapability {
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
+enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
+
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
@@ -55,6 +57,9 @@ constexpr Capability CapabilityOptNoneINTEL =
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
+
+constexpr LoopControlMask LoopControlLoopCountINTELMask =
+    static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
 
 } // namespace internal
 } // namespace spv

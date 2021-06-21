@@ -58,6 +58,7 @@ class Loop;
 class Function;
 class GlobalVariable;
 class LLVMContext;
+class MDNode;
 class MDString;
 class IntrinsicInst;
 class LoadInst;
@@ -246,6 +247,8 @@ private:
   inline llvm::Metadata *getMetadataFromName(std::string Name);
   inline std::vector<llvm::Metadata *>
   getMetadataFromNameAndParameter(std::string Name, SPIRVWord Parameter);
+  inline MDNode *getMetadataFromNameAndParameter(std::string Name,
+                                                 int64_t Parameter);
   void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
                                       std::string &Name);
   template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
