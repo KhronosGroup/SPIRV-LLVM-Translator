@@ -1774,7 +1774,7 @@ public:
   }
 
   ~TopologicalSort() {
-    for (auto F : ForwardPointerSet)
+    for (auto *F : ForwardPointerSet)
       delete F;
   }
 };
