@@ -1772,6 +1772,11 @@ public:
     ForwardPointerVec.insert(ForwardPointerVec.end(), ForwardPointerSet.begin(),
                              ForwardPointerSet.end());
   }
+
+  ~TopologicalSort() {
+    for (auto F : ForwardPointerSet)
+      delete F;
+  }
 };
 
 spv_ostream &operator<<(spv_ostream &O, const TopologicalSort &S) {
