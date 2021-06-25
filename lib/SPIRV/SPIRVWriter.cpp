@@ -133,8 +133,8 @@ static bool shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
   CallInst *CI = dyn_cast<CallInst>(Inst);
   if (!CI)
     return true;
-  // Calls to intrinsics are skipped with an exception of lifetime start/end
-  // which are handled separately
+  // Calls to intrinsics are skipped. At some point lifetime start/end will be
+  // handled separately, but specification isn't ready.
   if (Function *Fun = CI->getCalledFunction())
     if (Fun->isIntrinsic())
       return false;
