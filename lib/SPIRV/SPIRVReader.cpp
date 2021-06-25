@@ -390,8 +390,8 @@ bool SPIRVToLLVM::transOCLBuiltinFromVariable(GlobalVariable *GV,
         auto *GEP = dyn_cast<GetElementPtrInst>(Ptr);
         assert(GEP && "Unexpected pattern!");
         assert(GEP->getNumIndices() == 2 && "Unexpected pattern!");
-        Value *Idx = (Value *)GEP->getOperand(2);
-        Value *Vec = (Value *)Vectors.back();
+        Value *Idx = GEP->getOperand(2);
+        Value *Vec = Vectors.back();
         auto *NewExtract = ExtractElementInst::Create(Vec, Idx);
         NewExtract->insertAfter(cast<Instruction>(Vec));
         LD->replaceAllUsesWith(NewExtract);
