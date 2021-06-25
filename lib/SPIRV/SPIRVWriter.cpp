@@ -1200,8 +1200,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_alias_scope))
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
                              internal::MemoryAccessAliasScopeINTELMask);
-    else if (MDNode *AliasingListMD =
-                 ST->getMetadata(LLVMContext::MD_noalias))
+    if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_noalias))
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
                              internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
@@ -1229,9 +1228,8 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
     if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_alias_scope))
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
-                            internal::MemoryAccessAliasScopeINTELMask);
-    else if (MDNode *AliasingListMD =
-                 LD->getMetadata(LLVMContext::MD_noalias))
+                             internal::MemoryAccessAliasScopeINTELMask);
+    if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_noalias))
       transAliasingMemAccess(BM, AliasingListMD, MemoryAccess,
                              internal::MemoryAccessNoAliasINTELMask);
     if (MemoryAccess.front() == 0)
@@ -1574,8 +1572,8 @@ void LLVMToSPIRV::transMemAliasingINTELDecorations(Instruction *Inst,
       return;
     BV->addDecorate(new SPIRVDecorateId(
           internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
-  } else if (MDNode *AliasingListMD =
-                 Inst->getMetadata(LLVMContext::MD_noalias)) {
+  }
+  if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_noalias)) {
     auto *MemAliasList =
         addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
