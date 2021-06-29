@@ -815,7 +815,7 @@ DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
   bool IsDecl = Ops[IsDeclIdx];
 
   return Builder.createModule(Scope, Name, ConfigMacros, IncludePath, ApiNotes,
-          File, Line, IsDecl);
+                              File, Line, IsDecl);
 }
 
 MDNode *SPIRVToLLVMDbgTran::transExpression(const SPIRVExtInst *DebugInst) {

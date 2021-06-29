@@ -1044,18 +1044,18 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
 }
 
-SPIRVEntry *
-LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
   using namespace SPIRVDebug::Operand::ModuleINTEL;
   SPIRVWordVec Ops(OperandCount);
   Ops[NameIdx] = BM->getString(Module->getName().str())->getId();
   Ops[SourceIdx] = getSource(Module->getFile())->getId();
   Ops[LineIdx] = Module->getLineNo();
   Ops[ParentIdx] = getScope(Module->getScope())->getId();
-  Ops[ConfigMacrosIdx] = BM->getString(Module->getConfigurationMacros().str())->getId();
+  Ops[ConfigMacrosIdx] =
+      BM->getString(Module->getConfigurationMacros().str())->getId();
   Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
-  Ops[ApiNotesIdx] =  BM->getString(Module->getAPINotesFile().str())->getId();
-  Ops[IsDeclIdx] =  Module->getIsDecl();
+  Ops[ApiNotesIdx] = BM->getString(Module->getAPINotesFile().str())->getId();
+  Ops[IsDeclIdx] = Module->getIsDecl();
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
   BM->addCapability(spv::internal::CapabilityDebugInfoModuleINTEL);
   return BM->addDebugInfo(SPIRVDebug::ModuleINTEL, getVoidTy(), Ops);

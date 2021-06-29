@@ -773,15 +773,15 @@ enum {
 
 namespace ModuleINTEL {
 enum {
-  NameIdx      = 0,
-  SourceIdx    = 1,
-  LineIdx      = 2,
-  ParentIdx    = 3,
+  NameIdx         = 0,
+  SourceIdx       = 1,
+  LineIdx         = 2,
+  ParentIdx       = 3,
   ConfigMacrosIdx = 4,
-  IncludePathIdx = 5,
-  ApiNotesIdx = 6,
-  IsDeclIdx = 7,
-  OperandCount = 8
+  IncludePathIdx  = 5,
+  ApiNotesIdx     = 6,
+  IsDeclIdx       = 7,
+  OperandCount    = 8
 };
 }
 
