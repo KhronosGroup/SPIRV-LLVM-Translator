@@ -48,7 +48,8 @@ enum Instruction {
   MacroUndef                    = 33,
   ImportedEntity                = 34,
   Source                        = 35,
-  InstCount                     = 36
+  ModuleINTEL                   = 36,
+  InstCount                     = 37
 };
 
 enum Flag {
@@ -767,6 +768,20 @@ enum {
   ColumnIdx    = 6,
   ParentIdx    = 7,
   OperandCount = 8
+};
+}
+
+namespace ModuleINTEL {
+enum {
+  NameIdx         = 0,
+  SourceIdx       = 1,
+  LineIdx         = 2,
+  ParentIdx       = 3,
+  ConfigMacrosIdx = 4,
+  IncludePathIdx  = 5,
+  ApiNotesIdx     = 6,
+  IsDeclIdx       = 7,
+  OperandCount    = 8
 };
 }
 
