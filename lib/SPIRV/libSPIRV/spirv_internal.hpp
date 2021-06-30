@@ -60,7 +60,6 @@ enum InternalCapability {
   ICapFastCompositeINTEL = 6093,
   ICapOptNoneINTEL = 6094,
   ICapTokenTypeINTEL = 6112,
-  ICapDebugInfoModuleINTEL = 6114
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -109,8 +108,6 @@ constexpr Capability CapabilityFPGAInvocationPipeliningAttributesINTEL =
     static_cast<Capability>(ICapFPGAInvocationPipeliningAttributesINTEL);
 constexpr Capability CapabilityTokenTypeINTEL =
     static_cast<Capability>(ICapTokenTypeINTEL);
-constexpr Capability CapabilityDebugInfoModuleINTEL =
-    static_cast<Capability>(ICapDebugInfoModuleINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);

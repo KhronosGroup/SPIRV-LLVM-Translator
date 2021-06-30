@@ -557,10 +557,12 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDotProductInput4x8BitPackedKHR,
       "DotProductInput4x8BitPackedKHR");
   add(CapabilityDotProductKHR, "DotProductKHR");
+  add(CapabilityBitInstructions, "BitInstructions");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
+  add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
 
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
@@ -572,7 +574,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "FPGAInvocationPipeliningAttributesINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
   add(CapabilityMax, "Max");
-  add(internal::CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
