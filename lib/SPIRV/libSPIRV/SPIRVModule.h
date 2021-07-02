@@ -487,6 +487,9 @@ public:
 
   virtual std::vector<SPIRVModuleProcessed *> getModuleProcessedVec() = 0;
 
+  virtual SPIRVInstruction *addArithmeticFenceINTELInst(SPIRVValue *,
+                                                        SPIRVBasicBlock *) = 0;
+
   bool getSpecializationConstant(SPIRVWord SpecId, uint64_t &ConstValue) {
     return TranslationOpts.getSpecializationConstant(SpecId, ConstValue);
   }

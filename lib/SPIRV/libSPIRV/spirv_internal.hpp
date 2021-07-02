@@ -62,6 +62,7 @@ enum InternalCapability {
   ICapFastCompositeINTEL = 6093,
   ICapOptNoneINTEL = 6094,
   ICapTokenTypeINTEL = 6112,
+  ICapFPArithmeticFenceINTEL = 6144
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -112,8 +113,13 @@ constexpr Capability CapabilityFPGAInvocationPipeliningAttributesINTEL =
     static_cast<Capability>(ICapFPGAInvocationPipeliningAttributesINTEL);
 constexpr Capability CapabilityTokenTypeINTEL =
     static_cast<Capability>(ICapTokenTypeINTEL);
+<<<<<<< HEAD
 constexpr Capability CapabilityRuntimeAlignedAttributeINTEL =
     static_cast<Capability>(ICapRuntimeAlignedAttributeINTEL);
+=======
+constexpr Capability CapabilityFPArithmeticFenceINTEL =
+    static_cast<Capability>(ICapFPArithmeticFenceINTEL);
+>>>>>>> Implement SPV_INTEL_arithmetic_fence
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
