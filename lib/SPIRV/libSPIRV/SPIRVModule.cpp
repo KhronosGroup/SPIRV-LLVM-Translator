@@ -566,7 +566,11 @@ SPIRVValue *SPIRVModuleImpl::addPipeStorageConstant(SPIRVType *TheType,
 void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
   std::string ExtName;
   SPIRVMap<ExtensionID, std::string>::find(Ext, &ExtName);
-  assert(isAllowedToUseExtension(Ext));
+  if (!getErrorLog().checkError(isAllowedToUseExtension(Ext),
+                                SPIRVEC_RequiresExtension, ExtName)) {
+    setInvalid();
+    return;
+  }
   SPIRVExt.insert(ExtName);
 }
 
