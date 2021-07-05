@@ -1566,6 +1566,7 @@ _SPIRV_OP(Any)
 _SPIRV_OP(All)
 _SPIRV_OP(BitCount)
 _SPIRV_OP(BitReverse)
+_SPIRV_OP(ArithmeticFenceINTEL)
 #undef _SPIRV_OP
 
 class SPIRVAccessChainBase : public SPIRVInstTemplateBase {
@@ -3126,21 +3127,6 @@ protected:
 _SPIRV_OP(VariableLengthArray, true, 4)
 _SPIRV_OP(SaveMemory, true, 3)
 _SPIRV_OP(RestoreMemory, false, 2)
-#undef _SPIRV_OP
-
-class SPIRVArithmeticFenceINTELInst : public SPIRVInstTemplateBase {
-protected:
-  SPIRVCapVec getRequiredCapability() const override {
-    return getVec(CapabilityFPArithmeticFenceINTEL);
-  }
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_INTEL_arithmetic_fence;
-  }
-};
-#define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVArithmeticFenceINTELInst, Op##x, __VA_ARGS__> \
-      SPIRV##x;
-_SPIRV_OP(ArithmeticFenceINTEL, true, 4)
 #undef _SPIRV_OP
 } // namespace SPIRV
 

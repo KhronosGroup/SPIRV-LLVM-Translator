@@ -2807,8 +2807,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpArithmeticFenceINTEL: {
     IRBuilder<> Builder(BB);
-    SPIRVArithmeticFenceINTELInst *BC =
-        static_cast<SPIRVArithmeticFenceINTELInst *>(BV);
+    auto *BC = static_cast<SPIRVUnary *>(BV);
     Type *RetTy = transType(BC->getType());
     Value *Val = transValue(BC->getOperand(0), F, BB);
     return mapValue(

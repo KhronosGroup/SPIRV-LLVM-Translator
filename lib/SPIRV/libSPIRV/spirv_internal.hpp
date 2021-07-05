@@ -113,13 +113,10 @@ constexpr Capability CapabilityFPGAInvocationPipeliningAttributesINTEL =
     static_cast<Capability>(ICapFPGAInvocationPipeliningAttributesINTEL);
 constexpr Capability CapabilityTokenTypeINTEL =
     static_cast<Capability>(ICapTokenTypeINTEL);
-<<<<<<< HEAD
 constexpr Capability CapabilityRuntimeAlignedAttributeINTEL =
     static_cast<Capability>(ICapRuntimeAlignedAttributeINTEL);
-=======
 constexpr Capability CapabilityFPArithmeticFenceINTEL =
     static_cast<Capability>(ICapFPArithmeticFenceINTEL);
->>>>>>> Implement SPV_INTEL_arithmetic_fence
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);

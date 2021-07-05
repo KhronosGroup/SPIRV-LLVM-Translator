@@ -452,8 +452,6 @@ public:
   SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy, SPIRVValue *Value,
                                      SPIRVValue *ExpectedValue,
                                      SPIRVBasicBlock *BB) override;
-  SPIRVInstruction *addArithmeticFenceINTELInst(SPIRVValue *,
-                                                SPIRVBasicBlock *) override;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
 
@@ -1597,15 +1595,6 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
                             getVec(Value->getId(), ExpectedValue->getId()), BB,
                             this),
                         BB);
-}
-
-SPIRVInstruction *
-SPIRVModuleImpl::addArithmeticFenceINTELInst(SPIRVValue *Value,
-                                             SPIRVBasicBlock *BB) {
-  return addInstruction(
-      SPIRVInstTemplateBase::create(OpArithmeticFenceINTEL, Value->getType(),
-                                    getId(), getVec(Value->getId()), BB, this),
-      BB);
 }
 
 // Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
