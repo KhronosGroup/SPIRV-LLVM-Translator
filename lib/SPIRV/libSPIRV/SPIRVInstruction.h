@@ -3138,8 +3138,7 @@ protected:
   }
 };
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVArithmeticFenceINTELInst, Op##x,              \
-                            __VA_ARGS__>                                       \
+  typedef SPIRVInstTemplate<SPIRVArithmeticFenceINTELInst, Op##x, __VA_ARGS__> \
       SPIRV##x;
 _SPIRV_OP(ArithmeticFenceINTEL, true, 4)
 #undef _SPIRV_OP

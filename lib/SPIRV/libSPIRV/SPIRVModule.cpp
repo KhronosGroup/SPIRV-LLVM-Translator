@@ -1599,14 +1599,13 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
                         BB);
 }
 
-SPIRVInstruction
-*SPIRVModuleImpl::addArithmeticFenceINTELInst(SPIRVValue *Value,
-                                              SPIRVBasicBlock *BB) {
-  return addInstruction(SPIRVInstTemplateBase::create(OpArithmeticFenceINTEL,
-                                                      Value->getType(), getId(),
-                                                      getVec(Value->getId()),
-                                                      BB, this),
-                        BB);
+SPIRVInstruction *
+SPIRVModuleImpl::addArithmeticFenceINTELInst(SPIRVValue *Value,
+                                             SPIRVBasicBlock *BB) {
+  return addInstruction(
+      SPIRVInstTemplateBase::create(OpArithmeticFenceINTEL, Value->getType(),
+                                    getId(), getVec(Value->getId()), BB, this),
+      BB);
 }
 
 // Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
