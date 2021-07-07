@@ -104,6 +104,7 @@ static bool DbgSaveTmpLLVM = false;
 static const char *DbgTmpLLVMFileName = "_tmp_llvmbil.ll";
 
 namespace kOCLTypeQualifierName {
+const static char *Const = "const";
 const static char *Volatile = "volatile";
 const static char *Restrict = "restrict";
 const static char *Pipe = "pipe";
@@ -4007,8 +4008,17 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
           Qual = kOCLTypeQualifierName::Volatile;
         Arg->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
           Qual += Qual.empty() ? "" : " ";
-          if (Kind == FunctionParameterAttributeNoAlias)
+          switch (Kind) {
+          case FunctionParameterAttributeNoAlias:
             Qual += kOCLTypeQualifierName::Restrict;
+            break;
+          case FunctionParameterAttributeNoWrite:
+            Qual += kOCLTypeQualifierName::Const;
+            break;
+          default:
+            // do nothing.
+            break;
+          }
         });
         if (Arg->getType()->isTypePipe()) {
           Qual += Qual.empty() ? "" : " ";
