@@ -39,6 +39,7 @@ enum InternalOp {
   IOpAliasScopeDeclINTEL = 5912,
   IOpAliasScopeListDeclINTEL = 5913,
   IOpTypeTokenINTEL = 6113,
+  IOpArithmeticFenceINTEL = 6145,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -85,6 +86,7 @@ constexpr Op OpAliasScopeDeclINTEL = static_cast<Op>(IOpAliasScopeDeclINTEL);
 constexpr Op OpAliasScopeListDeclINTEL =
     static_cast<Op>(IOpAliasScopeListDeclINTEL);
 constexpr Op OpTypeTokenINTEL = static_cast<Op>(IOpTypeTokenINTEL);
+constexpr Op OpArithmeticFenceINTEL = static_cast<Op>(IOpArithmeticFenceINTEL);
 
 constexpr Decoration DecorationAliasScopeINTEL =
     static_cast<Decoration>(IDecAliasScopeINTEL );
