@@ -175,6 +175,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(Y)
           .add(Z)
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::WGSize, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 18, i32 X, i32 Y, i32 Z}
@@ -188,6 +190,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(Y)
           .add(Z)
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::WGSizeHint, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 30, i32 hint}
@@ -197,6 +201,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(spv::ExecutionModeVecTypeHint)
           .add(transVecTypeHint(VecTypeHint))
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::VecTyHint, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 35, i32 size}
@@ -206,6 +212,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(spv::ExecutionModeSubgroupSize)
           .add(getMDOperandAsInt(ReqdSubgroupSize, 0))
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::SubgroupSize, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 max_work_group_size, i32 X,
@@ -221,11 +229,15 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(Y)
           .add(Z)
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::MaxWGSize, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 no_global_work_offset}
     if (Kernel.getMetadata(kSPIR2MD::NoGlobalOffset)) {
       EM.addOp().add(&Kernel).add(spv::ExecutionModeNoGlobalOffsetINTEL).done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::NoGlobalOffset, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 max_global_work_dim, i32 dim}
@@ -235,6 +247,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(spv::ExecutionModeMaxWorkDimINTEL)
           .add(getMDOperandAsInt(MaxWorkDimINTEL, 0))
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::MaxWGDim, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 num_simd_work_items, i32 num}
@@ -244,6 +258,8 @@ void PreprocessMetadataBase::visit(Module *M) {
           .add(spv::ExecutionModeNumSIMDWorkitemsINTEL)
           .add(getMDOperandAsInt(NumSIMDWorkitemsINTEL, 0))
           .done();
+      if (EraseOCLMD)
+        Kernel.setMetadata(kSPIR2MD::NumSIMD, NULL);
     }
 
     // !{void (i32 addrspace(1)*)* @kernel, i32 scheduler_target_fmax_mhz,
