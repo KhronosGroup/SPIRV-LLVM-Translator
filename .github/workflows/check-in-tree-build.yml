@@ -66,16 +66,21 @@ jobs:
           repository: llvm/llvm-project
           ref: main
           path: llvm-project
-      - name:  Checkout SPIR-V Headers
-        uses: actions/checkout@v2
-        with:
-          repository: KhronosGroup/SPIRV-Headers
-          ref: master
-          path: llvm-project/llvm/projects/SPIRV-Headers
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
         with:
           path: llvm-project/llvm/projects/SPIRV-LLVM-Translator
+      - name:  Get tag for SPIR-V Headers
+        uses: juliangruber/read-file-action@v1
+        id: spirv-headers-tag
+        with:
+          path: llvm-project/llvm/projects/SPIRV-LLVM-Translator/spirv-headers-tag.conf
+      - name:  Checkout SPIR-V Headers
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: ${{ steps.spirv-headers-tag.outputs.content }}
+          path: llvm-project/llvm/projects/SPIRV-Headers
       - name: Configure
         run: |
           mkdir build && cd build

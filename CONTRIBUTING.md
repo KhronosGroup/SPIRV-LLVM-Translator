@@ -46,7 +46,7 @@ to [json grammar file], rebuild the header following the
 [instructions] in [SPIR-V Headers repository] and push your changes
 for review, i.e. make a PR. Once the PR is merged, a new spirv.hpp
 will have to be downloaded during build of the translator; make sure
-to update the hash for SPIRV-Headers in the top-level [CMakeLists.txt]
+to update the hash for SPIRV-Headers in [spirv-headers-tag.conf]
 so that tokens from your extension can be visible to the translator
 build.
 

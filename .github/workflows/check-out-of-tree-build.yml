@@ -56,16 +56,21 @@ jobs:
           # Linux systems in GitHub Actions already have older versions of clang
           # pre-installed. Make sure to override these with the relevant version.
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ env.LLVM_VERSION }} 1000
-      - name:  Checkout SPIR-V Headers
-        uses: actions/checkout@v2
-        with:
-          repository: KhronosGroup/SPIRV-Headers
-          ref: master
-          path: SPIRV-Headers
       - name:  Checkout the translator sources
         uses: actions/checkout@v2
         with:
           path: SPIRV-LLVM-Translator
+      - name:  Get tag for SPIR-V Headers
+        uses: juliangruber/read-file-action@v1
+        id: spirv-headers-tag
+        with:
+          path: SPIRV-LLVM-Translator/spirv-headers-tag.conf
+      - name:  Checkout SPIR-V Headers
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: ${{ steps.spirv-headers-tag.outputs.content }}
+          path: SPIRV-Headers
       - name: Configure
         run: |
           mkdir build && cd build

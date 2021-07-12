@@ -26,16 +26,15 @@ if(NOT DEFINED LLVM_TOOL_SPIRV_HEADERS_BUILD AND
   message(STATUS "SPIR-V Headers location is not specified. Will try to download
           spirv.hpp from https://github.com/KhronosGroup/SPIRV-Headers into
           ${LLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR}")
+  file(READ spirv-headers-tag.conf SPIRV_HEADERS_TAG)
+  # Strip the potential trailing newline from tag
+  string(STRIP "${SPIRV_HEADERS_TAG}" SPIRV_HEADERS_TAG)
   FetchContent_Declare(spirv-headers
     GIT_REPOSITORY    https://github.com/KhronosGroup/SPIRV-Headers.git
-    GIT_TAG           ddf3230c14c71e81fc0eae9b781cc4bcc2d1f0f5
+    GIT_TAG           ${SPIRV_HEADERS_TAG}
     SOURCE_DIR ${LLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR}
   )
-  FetchContent_GetProperties(spirv-headers)
-  # Don't download if done already
-  if(NOT spirv-headers_POPULATED)
-    FetchContent_Populate(spirv-headers)
-  endif()
+  FetchContent_MakeAvailable(spirv-headers)
 else()
   if(NOT DEFINED LLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR)
     # This means LLVM_TOOL_SPIRV_HEADERS_BUILD is defined, therefore
