@@ -3043,7 +3043,6 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
         AttrTy = cast<PointerType>(I->getType())->getElementType();
         break;
       case Attribute::AttrKind::StructRet:
-      case Attribute::AttrKind::ReadOnly:
         AttrTy = I->getType();
         break;
       default:
