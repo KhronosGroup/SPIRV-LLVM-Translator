@@ -417,7 +417,7 @@ bool isPipeStorageInitializer(Instruction *Inst);
 /// Check (isSamplerInitializer || isPipeStorageInitializer)
 bool isSpecialTypeInitializer(Instruction *Inst);
 
-bool isPipeBI(const StringRef MangledName);
+bool isPipeOrAddressSpaceCastBI(const StringRef MangledName);
 bool isEnqueueKernelBI(const StringRef MangledName);
 bool isKernelQueryBI(const StringRef MangledName);
 
@@ -440,6 +440,9 @@ template <typename T> std::string toString(const T *Object) {
 // Scalar data assumed to be represented as vector of one element.
 std::string getIntelSubgroupBlockDataPostfix(unsigned ElementBitSize,
                                              unsigned VectorNumElements);
+
+void insertImageNameAccessQualifier(SPIRVAccessQualifierKind Acc,
+                                    std::string &Name);
 } // namespace OCLUtil
 
 ///////////////////////////////////////////////////////////////////////////////

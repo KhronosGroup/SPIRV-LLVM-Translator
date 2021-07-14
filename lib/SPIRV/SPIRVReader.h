@@ -77,8 +77,6 @@ public:
   SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule);
 
   std::string getOCLBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLConvertBuiltinName(SPIRVInstruction *BI);
-  std::string getOCLGenericCastToPtrName(SPIRVInstruction *BI);
 
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
@@ -135,14 +133,6 @@ public:
   bool
   postProcessOCLBuiltinWithArrayArguments(Function *F,
                                           const std::string &DemangledName);
-
-  /// \brief Post-process OpImageWrite.
-  ///   return write_image(image, coord, color, image_operands, ...);
-  /// =>
-  ///   write_image(image, coord, ..., color)
-  /// \return transformed call instruction.
-  CallInst *postProcessOCLWriteImage(SPIRVInstruction *BI, CallInst *CI,
-                                     const std::string &DemangledName);
 
   /// \brief Post-process OpBuildNDRange.
   ///   OpBuildNDRange GlobalWorkSize, LocalWorkSize, GlobalWorkOffset
@@ -221,6 +211,7 @@ private:
                                        const std::string &DemangledName);
   std::string transOCLImageTypeName(SPIRV::SPIRVTypeImage *ST);
   std::string transOCLSampledImageTypeName(SPIRV::SPIRVTypeSampledImage *ST);
+  std::string transVMEImageTypeName(SPIRV::SPIRVTypeVmeImageINTEL* VT);
   std::string transOCLPipeTypeName(
       SPIRV::SPIRVTypePipe *ST, bool UseSPIRVFriendlyFormat = false,
       SPIRVAccessQualifierKind PipeAccess = AccessQualifierReadOnly);
@@ -238,8 +229,6 @@ private:
   inline llvm::Metadata *getMetadataFromName(std::string Name);
   inline std::vector<llvm::Metadata *>
   getMetadataFromNameAndParameter(std::string Name, SPIRVWord Parameter);
-  void insertImageNameAccessQualifier(SPIRV::SPIRVTypeImage *ST,
-                                      std::string &Name);
   template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue *V);
   Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);

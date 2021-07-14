@@ -351,6 +351,9 @@ const static char TranslateSPIRVMemFence[] = "__translate_spirv_memory_fence";
 } // namespace kSPIRVName
 
 namespace kSPIRVPostfix {
+const static char ToGlobal[] = "ToGlobal";
+const static char ToLocal[] = "ToLocal";
+const static char ToPrivate[] = "ToPrivate";
 const static char Sat[] = "sat";
 const static char Rtz[] = "rtz";
 const static char Rte[] = "rte";
@@ -951,14 +954,29 @@ PointerType *getInt8PtrTy(PointerType *T);
 Value *castToInt8Ptr(Value *V, Instruction *Pos);
 
 template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
-  add(kSPIRVTypeName::DeviceEvent, OpTypeDeviceEvent);
-  add(kSPIRVTypeName::Event, OpTypeEvent);
-  add(kSPIRVTypeName::Image, OpTypeImage);
-  add(kSPIRVTypeName::Pipe, OpTypePipe);
-  add(kSPIRVTypeName::Queue, OpTypeQueue);
-  add(kSPIRVTypeName::ReserveId, OpTypeReserveId);
-  add(kSPIRVTypeName::Sampler, OpTypeSampler);
-  add(kSPIRVTypeName::SampledImg, OpTypeSampledImage);
+#define _SPIRV_OP(x) add(#x, OpType##x);
+  _SPIRV_OP(DeviceEvent)
+  _SPIRV_OP(Event)
+  _SPIRV_OP(Image)
+  _SPIRV_OP(Pipe)
+  _SPIRV_OP(Queue)
+  _SPIRV_OP(ReserveId)
+  _SPIRV_OP(Sampler)
+  _SPIRV_OP(SampledImage)
+  // SPV_INTEL_device_side_avc_motion_estimation types
+  _SPIRV_OP(AvcMcePayloadINTEL)
+  _SPIRV_OP(AvcImePayloadINTEL)
+  _SPIRV_OP(AvcRefPayloadINTEL)
+  _SPIRV_OP(AvcSicPayloadINTEL)
+  _SPIRV_OP(AvcMceResultINTEL)
+  _SPIRV_OP(AvcImeResultINTEL)
+  _SPIRV_OP(AvcImeResultSingleReferenceStreamoutINTEL)
+  _SPIRV_OP(AvcImeResultDualReferenceStreamoutINTEL)
+  _SPIRV_OP(AvcImeSingleReferenceStreaminINTEL)
+  _SPIRV_OP(AvcImeDualReferenceStreaminINTEL)
+  _SPIRV_OP(AvcRefResultINTEL)
+  _SPIRV_OP(AvcSicResultINTEL)
+#undef _SPIRV_OP
 }
 
 // Check if the module contains llvm.loop.unroll.* metadata
@@ -972,6 +990,14 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
 // Check if CI is a call to instruction from OpenCL Extended Instruction Set.
 // If so, return it's extended opcode in ExtOp.
 bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+
+
+/// Decode SPIR-V type name in the format spirv.{TypeName}._{Postfixes}
+/// where Postfixes are strings separated by underscores.
+/// \return TypeName.
+/// \param Ops contains the integers decoded from postfixes.
+std::string decodeSPIRVTypeName(StringRef Name,
+                                SmallVectorImpl<std::string> &Strs);
 
 } // namespace SPIRV
 

@@ -425,6 +425,7 @@ public:
   OCLBuiltinFuncMangleInfo(Function *F) : F(F) {}
   OCLBuiltinFuncMangleInfo(ArrayRef<Type *> ArgTypes)
       : ArgTypes(ArgTypes.vec()) {}
+  Type* getArgTy(unsigned i) { return F->getFunctionType()->getParamType(i); }
   void init(const std::string &UniqName) override {
     UnmangledName = UniqName;
     size_t Pos = std::string::npos;
@@ -735,9 +736,9 @@ public:
                std::string::npos) {
       // distinguish write to image and other data types as position
       // of uint argument is different though name is the same.
-      assert(ArgTypes.size() && "lack of necessary information");
-      if (ArgTypes[0]->isPointerTy() &&
-          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+      auto firstArgTy = getArgTy(0);
+      if (firstArgTy->isPointerTy() &&
+          firstArgTy->getPointerElementType()->isIntegerTy()) {
         addUnsignedArg(0);
         addUnsignedArg(1);
       } else {
@@ -747,9 +748,9 @@ public:
                std::string::npos) {
       // distinguish read from image and other data types as position
       // of uint argument is different though name is the same.
-      assert(ArgTypes.size() && "lack of necessary information");
-      if (ArgTypes[0]->isPointerTy() &&
-          ArgTypes[0]->getPointerElementType()->isIntegerTy()) {
+      auto firstArgTy = getArgTy(0);
+      if (firstArgTy->isPointerTy() &&
+          firstArgTy->getPointerElementType()->isIntegerTy()) {
         setArgAttr(0, SPIR::ATTR_CONST);
         addUnsignedArg(0);
       }
@@ -777,6 +778,8 @@ public:
   // Auxiliarry information, it is expected that it is relevant at the moment
   // the init method is called.
   Function *F;                  // SPIRV decorated function
+  // TODO: ArgTypes argument should get removed once all SPV-IR related issues
+  // are resolved
   std::vector<Type *> ArgTypes; // Arguments of OCL builtin
 };
 
@@ -851,7 +854,7 @@ bool isSamplerTy(Type *Ty) {
   return STy && STy->hasName() && STy->getName() == kSPR2TypeName::Sampler;
 }
 
-bool isPipeBI(const StringRef MangledName) {
+bool isPipeOrAddressSpaceCastBI(const StringRef MangledName) {
   return MangledName == "write_pipe_2" || MangledName == "read_pipe_2" ||
          MangledName == "write_pipe_2_bl" || MangledName == "read_pipe_2_bl" ||
          MangledName == "write_pipe_4" || MangledName == "read_pipe_4" ||
@@ -870,7 +873,9 @@ bool isPipeBI(const StringRef MangledName) {
          MangledName == "sub_group_reserve_write_pipe" ||
          MangledName == "sub_group_reserve_read_pipe" ||
          MangledName == "sub_group_commit_write_pipe" ||
-         MangledName == "sub_group_commit_read_pipe";
+         MangledName == "sub_group_commit_read_pipe" ||
+         MangledName == "to_global" || MangledName == "to_local" ||
+         MangledName == "to_private";
 }
 
 bool isEnqueueKernelBI(const StringRef MangledName) {
@@ -977,6 +982,15 @@ std::string getIntelSubgroupBlockDataPostfix(unsigned ElementBitSize,
         "Incorrect vector length for intel_subgroup_block builtins");
   }
   return OSS.str();
+}
+
+void insertImageNameAccessQualifier(SPIRVAccessQualifierKind Acc,
+                                    std::string &Name) {
+  std::string QName = rmap<std::string>(Acc);
+  // transform: read_only -> ro, write_only -> wo, read_write -> rw
+  QName = QName.substr(0, 1) + QName.substr(QName.find("_") + 1, 1) + "_";
+  assert(!Name.empty() && "image name should not be empty");
+  Name.insert(Name.size() - 1, QName);
 }
 } // namespace OCLUtil
 
