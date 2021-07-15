@@ -73,7 +73,6 @@ if config.spirv_tools_have_spirv_val:
 else:
     config.substitutions.append(('spirv-val', ':'))
 
-env = config.environment
-if using_spirv_tools and ('LD_LIBRARY_PATH' in env):
-    new_ld_library_path = os.path.pathsep.join((config.spirv_tools_lib_dir, config.environment['LD_LIBRARY_PATH']))
-    config.environment['LD_LIBRARY_PATH'] = new_ld_library_path
+if using_spirv_tools:
+    llvm_config.with_system_environment('LD_LIBRARY_PATH')
+    llvm_config.with_environment('LD_LIBRARY_PATH', config.spirv_tools_lib_dir, append_path=True)
