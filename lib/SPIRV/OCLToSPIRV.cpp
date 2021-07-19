@@ -918,24 +918,17 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
         }
         auto AtomicBuiltinsReturnType =
             CI->getCalledFunction()->getReturnType();
-        // Translate FP-typed atomic builtins.
-        auto SPIRVFunctionName =
-            getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
         auto IsFPType = [](llvm::Type *ReturnType) {
           return ReturnType->isHalfTy() || ReturnType->isFloatTy() ||
                  ReturnType->isDoubleTy();
         };
-        if (IsFPType(AtomicBuiltinsReturnType)) {
-          if (SPIRVFunctionName == "__spirv_AtomicIAdd") {
-            SPIRVFunctionName = "__spirv_AtomicFAddEXT";
-          } else if (SPIRVFunctionName == "__spirv_AtomicSMin") {
-            SPIRVFunctionName = "__spirv_AtomicFMinEXT";
-          } else if (SPIRVFunctionName == "__spirv_AtomicSMax") {
-            SPIRVFunctionName = "__spirv_AtomicFMaxEXT";
-          }
-        }
-        return SPIRVFunctionName;
-
+        if (!IsFPType(AtomicBuiltinsReturnType))
+          return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
+        // Translate FP-typed atomic builtins.
+        return llvm::StringSwitch<std::string>(SPIRVFunctionName)
+            .Case("__spirv_AtomicIAdd", "__spirv_AtomicFAddEXT")
+            .Case("__spirv_AtomicSMax", "__spirv_AtomicFMaxEXT")
+            .Case("__spirv_AtomicSMin", "__spirv_AtomicFMinEXT");
       },
       &Attrs);
 }
