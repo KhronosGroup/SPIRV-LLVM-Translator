@@ -250,7 +250,7 @@ following format:
 | OpExtension        | .. code-block:: llvm                                    |
 |                    |                                                         |
 |                    |    !spirv.Extension = !{!0}                             |
-|                    |    !0 = !{!"cl_khr_fp16"}                               |
+|                    |    !0 = !{!"SPV_KHR_expect_assume"}                               |
 +--------------------+---------------------------------------------------------+
 | OpCapability       | .. code-block:: llvm                                    |
 |                    |                                                         |
@@ -260,14 +260,9 @@ following format:
 | OpExecutionMode    | .. code-block:: llvm                                    |
 |                    |                                                         |
 |                    |    !spirv.ExecutionMode = !{!0}                         |
-|                    |    !6 = !{void ()* @worker, i32 30, i32 262149}         |
+|                    |    !0 = !{void ()* @worker, i32 30, i32 262149}         |
 |                    |    ; Set execution mode with id 30 (VecTypeHint) and    |
 |                    |    ; literal `262149` operand.                          |
-+--------------------+---------------------------------------------------------+
-| OpCapability       | .. code-block:: llvm                                    |
-|                    |                                                         |
-|                    |    !spirv.Capability = !{!0}                            |
-|                    |    !0 = !{i32 10} ; Float64 - program uses doubles      |
 +--------------------+---------------------------------------------------------+
 | Generator's magic  | .. code-block:: llvm                                    |
 | number - word # 2  |                                                         |
