@@ -1157,6 +1157,10 @@ Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
   if (Loc != ValueMap.end() && (!PlaceholderMap.count(BV) || CreatePlaceHolder))
     return Loc->second;
 
+  SPIRVToLLVMPHINodeArgsMap::iterator ItMap = PHINodeArgsMap.find(BV);
+  if (ItMap != PHINodeArgsMap.end())
+    return nullptr;
+
   SPIRVDBG(spvdbgs() << "[transValue] " << *BV << " -> ";)
   BV->validate();
 
@@ -1933,9 +1937,25 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                             Phi->getPairs().size() / 2, Phi->getName(), BB)));
     Phi->foreachPair([&](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB,
                          size_t Index) {
+      if (IncomingV->getOpCode() != OpConstant) {
+        SPIRVToLLVMPHINodeArgsMap::iterator ItMap = PHINodeArgsMap.find(IncomingV);
+        std::tuple<PHINode *, SPIRVBasicBlock *, Function *, BasicBlock *>
+            *Tuple = new std::tuple<PHINode *, SPIRVBasicBlock *, Function *,
+            BasicBlock *> (LPhi, IncomingBB, F, BB);
+        if (ItMap != PHINodeArgsMap.end()) {
+          ItMap->second->push_back(Tuple);
+        } else {
+          SPIRVToLLVMNodeArgsVec *Vec = new SPIRVToLLVMNodeArgsVec();
+          Vec->push_back(Tuple);
+          PHINodeArgsMap.insert(std::make_pair(IncomingV, Vec));
+        }
+      }
       auto Translated = transValue(IncomingV, F, BB);
-      LPhi->addIncoming(Translated,
-                        dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
+      if (Translated) {
+        PHINodeArgsMap.erase(IncomingV);
+        LPhi->addIncoming(Translated,
+                          dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
+      }
     });
     return LPhi;
   }
@@ -3081,6 +3101,24 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     for (size_t BI = 0, BE = BBB->getNumInst(); BI != BE; ++BI) {
       SPIRVInstruction *BInst = BBB->getInst(BI);
       transValue(BInst, F, BB, false);
+    }
+  }
+
+  if (!PHINodeArgsMap.empty()) {
+    auto I = PHINodeArgsMap.begin();
+    while (I != PHINodeArgsMap.end()) {
+      SPIRVValue *IncomingV = I->first;
+      SPIRVToLLVMNodeArgsVec *Vec = I->second;
+      PHINodeArgsMap.erase(I);
+      I = PHINodeArgsMap.begin();
+      for (auto &Tuple: *Vec) {
+        PHINode *Phi = std::get<0>(*Tuple);
+        SPIRVBasicBlock *IncomingBB = std::get<1>(*Tuple);
+        Function* F = std::get<2>(*Tuple);
+        BasicBlock *BB = std::get<3>(*Tuple);
+        Value *V = transValue(IncomingV, F, BB);
+        Phi->addIncoming(V, dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
+      }
     }
   }
 

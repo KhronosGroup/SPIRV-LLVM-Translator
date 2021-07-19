@@ -46,6 +46,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
+#include "llvm/IR/Instructions.h"
 
 namespace llvm {
 class Metadata;
@@ -166,6 +167,10 @@ public:
   typedef DenseMap<SPIRVFunction *, Function *> SPIRVToLLVMFunctionMap;
   typedef DenseMap<GlobalVariable *, SPIRVBuiltinVariableKind> BuiltinVarMap;
   typedef std::unordered_map<SPIRVId, MDNode *> SPIRVToLLVMMDAliasInstMap;
+  typedef DenseMap<SPIRVValue *, std::vector<std::tuple<PHINode *, SPIRVBasicBlock *,
+  Function *, BasicBlock *> *> *> SPIRVToLLVMPHINodeArgsMap;
+  typedef std::vector<std::tuple<PHINode *, SPIRVBasicBlock *, Function *,
+  BasicBlock *> *> SPIRVToLLVMNodeArgsVec;
 
   // A SPIRV value may be translated to a load instruction of a placeholder
   // global variable. This map records load instruction of these placeholders
@@ -187,6 +192,8 @@ private:
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
   std::vector<Constant *> GlobalAnnotations;
+  SPIRVToLLVMPHINodeArgsMap PHINodeArgsMap;
+  // SPIRVToLLVMPHINodeArgsSet PHINodeArgsSet;
 
   // Loops metadata is translated in the end of a function translation.
   // This storage contains pairs of translated loop header basic block and loop
