@@ -15,25 +15,9 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-SPIRV: Capability AtomicFloat32MinMaxEXT
 ; CHECK-SPIRV: Capability AtomicFloat64MinMaxEXT
-; CHECK-SPIRV: Capability AtomicFloat16MinMaxEXT
 ; CHECK-SPIRV: Extension "SPV_EXT_shader_atomic_float_min_max"
-; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_16:[0-9]+]] 16
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_32:[0-9]+]] 32
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_64:[0-9]+]] 64
-
-; Function Attrs: convergent norecurse nounwind
-define dso_local spir_func void @test_half(half addrspace(1)* %a) local_unnamed_addr #0 {
-entry:
-  ; CHECK-SPIRV: 7 AtomicFMinEXT [[TYPE_FLOAT_16]]
-  ; CHECK-LLVM-CL20: call spir_func half @[[HALF_FUNC_NAME:_Z25atomic_fetch_min_explicit[[:alnum:]]+_AtomicDhDh[a-zA-Z0-9_]+]]({{.*}})
-  ; CHECK-LLVM-SPV: call spir_func half @[[HALF_FUNC_NAME:_Z21__spirv_AtomicFMinEXT[[:alnum:]]+DhiiDh]]({{.*}})
-  %call = tail call spir_func half @_Z25atomic_fetch_min_explicitPU3AS1VU7_AtomicDhDh12memory_order(half addrspace(1)* %a, half 0xH0000, i32 0) #2
-  ret void
-}
-
-; Function Attrs: convergent
-declare spir_func half @_Z25atomic_fetch_min_explicitPU3AS1VU7_AtomicDhDh12memory_order(half addrspace(1)*, half, i32) local_unnamed_addr #1
-; CHECK-LLVM-SPV: declare {{.*}}spir_func half @[[HALF_FUNC_NAME]](half
 
 ; Function Attrs: convergent norecurse nounwind
 define dso_local spir_func void @test_float(float addrspace(1)* %a) local_unnamed_addr #0 {
@@ -63,7 +47,6 @@ entry:
 declare spir_func double @_Z25atomic_fetch_min_explicitPU3AS1VU7_Atomicdd12memory_order(double addrspace(1)*, double, i32) local_unnamed_addr #1
 ; CHECK-LLVM-SPV: declare {{.*}}spir_func double @[[DOUBLE_FUNC_NAME]](double
 
-; CHECK-LLVM-CL: declare {{.*}}spir_func half @[[HALF_FUNC_NAME]](half
 ; CHECK-LLVM-CL: declare {{.*}}spir_func float @[[FLOAT_FUNC_NAME]](float
 ; CHECK-LLVM-CL: declare {{.*}}spir_func double @[[DOUBLE_FUNC_NAME]](double
 

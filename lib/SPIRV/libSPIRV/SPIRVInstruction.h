@@ -2672,12 +2672,10 @@ public:
 
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
-    if (getType()->isTypeFloat(16))
-      return {CapabilityAtomicFloat16AddEXT};
     if (getType()->isTypeFloat(32))
       return {CapabilityAtomicFloat32AddEXT};
     assert(getType()->isTypeFloat(64) &&
-           "AtomicFAddEXT can only be generated for f16, f32 or f64 types");
+           "AtomicFAddEXT can only be generated for f32 or f64 types");
     return {CapabilityAtomicFloat64AddEXT};
   }
 };
