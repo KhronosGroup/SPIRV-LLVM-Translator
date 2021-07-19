@@ -1,7 +1,9 @@
 // Check that translator doesn't generate atomic instructions for atomic builtins
 // which are not defined in the spec.
 
-// RUN: %clang_cc1 -triple spir -O1 -cl-std=cl2.0 -fdeclare-opencl-builtins -finclude-default-header %s -emit-llvm-bc -o %t.bc
+// To drop `fdeclare-opencl-builtins` option, since FP-typed atomic function
+// TableGen definitions have not been introduced.
+// RUN: %clang_cc1 -triple spir -O1 -cl-std=cl2.0 -finclude-default-header %s -emit-llvm-bc -o %t.bc
 // RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
 // RUN: llvm-spirv %t.bc -o %t.spv
 // RUN: spirv-val %t.spv
@@ -41,13 +43,9 @@ float __attribute__((overloadable)) atomic_fetch_xor(volatile generic atomic_flo
 double __attribute__((overloadable)) atomic_fetch_and(volatile generic atomic_double *object, double operand, memory_order order);
 double __attribute__((overloadable)) atomic_fetch_max(volatile generic atomic_double *object, double operand, memory_order order);
 double __attribute__((overloadable)) atomic_fetch_min(volatile generic atomic_double *object, double operand, memory_order order);
-float __attribute__((overloadable)) atomic_fetch_add_explicit(volatile generic atomic_float *object, float operand, memory_order order);
-float __attribute__((overloadable)) atomic_fetch_sub_explicit(volatile generic atomic_float *object, float operand, memory_order order);
 float __attribute__((overloadable)) atomic_fetch_or_explicit(volatile generic atomic_float *object, float operand, memory_order order);
 float __attribute__((overloadable)) atomic_fetch_xor_explicit(volatile generic atomic_float *object, float operand, memory_order order);
 double __attribute__((overloadable)) atomic_fetch_and_explicit(volatile generic atomic_double *object, double operand, memory_order order);
-double __attribute__((overloadable)) atomic_fetch_max_explicit(volatile generic atomic_double *object, double operand, memory_order order);
-double __attribute__((overloadable)) atomic_fetch_min_explicit(volatile generic atomic_double *object, double operand, memory_order order);
 
 __kernel void test_atomic_fn(volatile __global float *p,
                              volatile __global double *pp,
@@ -86,11 +84,7 @@ __kernel void test_atomic_fn(volatile __global float *p,
     d = atomic_fetch_and(pp, val, order);
     d = atomic_fetch_min(pp, val, order);
     d = atomic_fetch_max(pp, val, order);
-    f = atomic_fetch_add_explicit(p, val, order);
-    f = atomic_fetch_sub_explicit(p, val, order);
     f = atomic_fetch_or_explicit(p, val, order);
     f = atomic_fetch_xor_explicit(p, val, order);
     d = atomic_fetch_and_explicit(pp, val, order);
-    d = atomic_fetch_min_explicit(pp, val, order);
-    d = atomic_fetch_max_explicit(pp, val, order);
 }

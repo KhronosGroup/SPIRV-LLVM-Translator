@@ -416,10 +416,63 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
   if (DemangledName.find(kOCLBuiltinName::AtomicPrefix) == 0 ||
       DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0) {
 
-    // Compute atomic builtins do not support floating types.
-    if (CI.getType()->isFloatingPointTy() &&
-        isComputeAtomicOCLBuiltin(DemangledName))
-      return;
+    // Compute "atom" prefixed builtins do not support floating types.
+    if (CI.getType()->isFloatingPointTy()) {
+      if (DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0)
+        return;
+      // handle functions which are "atomic_" prefixed.
+      StringRef Stem = DemangledName;
+      Stem = Stem.drop_front(strlen("atomic_"));
+      // FP-typed atomic_{add, sub, inc, dec, exchange, min, max, or, and, xor,
+      // fetch_or, fetch_xor, fetch_and, fetch_or_explicit, fetch_xor_explicit,
+      // fetch_and_explicit} should be identified as function call
+      bool IsFunctionCall = llvm::StringSwitch<bool>(Stem)
+                                .Case("add", true)
+                                .Case("sub", true)
+                                .Case("inc", true)
+                                .Case("dec", true)
+                                .Case("cmpxchg", true)
+                                .Case("min", true)
+                                .Case("max", true)
+                                .Case("or", true)
+                                .Case("xor", true)
+                                .Case("and", true)
+                                .Case("fetch_or", true)
+                                .Case("fetch_and", true)
+                                .Case("fetch_xor", true)
+                                .Case("fetch_or_explicit", true)
+                                .Case("fetch_xor_explicit", true)
+                                .Case("fetch_and_explicit", true)
+                                .Default(false);
+      if (IsFunctionCall)
+        return;
+      if (F->arg_size() != 2) {
+        IsFunctionCall = llvm::StringSwitch<bool>(Stem)
+                             .Case("exchange", true)
+                             .Case("fetch_add", true)
+                             .Case("fetch_sub", true)
+                             .Case("fetch_min", true)
+                             .Case("fetch_max", true)
+                             .Case("load", true)
+                             .Case("store", true)
+                             .Default(false);
+        if (IsFunctionCall)
+          return;
+      }
+      if (F->arg_size() != 3 && F->arg_size() != 4) {
+        IsFunctionCall = llvm::StringSwitch<bool>(Stem)
+                             .Case("exchange_explicit", true)
+                             .Case("fetch_add_explicit", true)
+                             .Case("fetch_sub_explicit", true)
+                             .Case("fetch_min_explicit", true)
+                             .Case("fetch_max_explicit", true)
+                             .Case("load_explicit", true)
+                             .Case("store_explicit", true)
+                             .Default(false);
+        if (IsFunctionCall)
+          return;
+      }
+    }
 
     auto PCI = &CI;
     if (DemangledName == kOCLBuiltinName::AtomicInit) {
@@ -863,7 +916,26 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
           std::rotate(Args.begin() + 2, Args.begin() + OrderIdx,
                       Args.end() - Offset);
         }
-        return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
+        auto AtomicBuiltinsReturnType =
+            CI->getCalledFunction()->getReturnType();
+        // Translate FP-typed atomic builtins.
+        auto SPIRVFunctionName =
+            getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
+        auto IsFPType = [](llvm::Type *ReturnType) {
+          return ReturnType->isHalfTy() || ReturnType->isFloatTy() ||
+                 ReturnType->isDoubleTy();
+        };
+        if (IsFPType(AtomicBuiltinsReturnType)) {
+          if (SPIRVFunctionName == "__spirv_AtomicIAdd") {
+            SPIRVFunctionName = "__spirv_AtomicFAddEXT";
+          } else if (SPIRVFunctionName == "__spirv_AtomicSMin") {
+            SPIRVFunctionName = "__spirv_AtomicFMinEXT";
+          } else if (SPIRVFunctionName == "__spirv_AtomicSMax") {
+            SPIRVFunctionName = "__spirv_AtomicFMaxEXT";
+          }
+        }
+        return SPIRVFunctionName;
+
       },
       &Attrs);
 }
