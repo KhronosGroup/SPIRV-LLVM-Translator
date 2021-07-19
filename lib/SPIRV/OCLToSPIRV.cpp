@@ -416,7 +416,7 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
   if (DemangledName.find(kOCLBuiltinName::AtomicPrefix) == 0 ||
       DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0) {
 
-    // Compute "atom" prefixed builtins do not support floating types.
+    // Compute "atom" prefixed builtins that do not support floating types.
     if (CI.getType()->isFloatingPointTy()) {
       if (DemangledName.find(kOCLBuiltinName::AtomPrefix) == 0)
         return;
