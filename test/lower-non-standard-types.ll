@@ -1,8 +1,14 @@
-; It is assumed that the test will not fail
-
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
+
+; CHECK: %0 = addrspacecast <3 x i64> addrspace(1)* @__spirv_BuiltInGlobalInvocationId to <3 x i64> addrspace(4)*
+; CHECK: %1 = load <3 x i64>, <3 x i64> addrspace(4)* %0, align 1
+; CHECK: %2 = extractelement <3 x i64> %1, i64 2
+; CHECK: %3 = trunc i64 %2 to i32
+; CHECK: %conv1 = sitofp i32 %3 to float
+
+; CHECK-NOT: %0 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @__spirv_BuiltInGlobalInvocationId to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
+; CHECK-NOT: %conv = extractelement <6 x i32> %0, i32 4
 
 ; ModuleID = 'lower-non-standard-types'
 source_filename = "lower-non-standard-types.cpp"
