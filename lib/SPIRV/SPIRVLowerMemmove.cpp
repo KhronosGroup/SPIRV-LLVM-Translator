@@ -57,6 +57,19 @@ public:
   SPIRVLowerMemmoveBase() : Context(nullptr) {}
 
   void LowerMemMoveInst(MemMoveInst &I) {
+    // There is no direct equivalent of @llvm.memmove in SPIR-V and the closest
+    // instructions are 'OpMemoryCopy' and 'OpMemoryCopySized'.
+    //
+    // 'OpMemoryCopy' does not accept amount of bytes to copy and infers that
+    // from type which is being copied; also it only allows to copy value of a
+    // particular type to pointer pointing to the same type.
+    //
+    // 'OpMemoryCopySized' is closer to @llvm.memmove, because it actually
+    // copies bytes, but unlike memove it doesn't support overlapping source
+    // and destination. Therefore, we replace memmove with two
+    // 'OpMemoryCopySized' instructions: the first one copies bytes from source
+    // to a temporary location, the second one copies bytes from that temporary
+    // location to the destination.
     IRBuilder<> Builder(I.getParent());
     Builder.SetInsertPoint(&I);
 
@@ -65,6 +78,8 @@ public:
                                     Length->getZExtValue());
     MaybeAlign SrcAlign = I.getSourceAlign();
 
+    // FIXME: What if @llvm.memmove located within a loop? Wouldn't this be a
+    // huge memory eater?
     auto *Alloca = Builder.CreateAlloca(AllocaTy);
     if (SrcAlign.hasValue())
       Alloca->setAlignment(SrcAlign.getValue());
