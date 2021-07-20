@@ -63,7 +63,7 @@ public:
   bool runLowerBitCastToNonStandardType(Module &Module) {
     // This pass doesn't cover all possible uses of non-standard types, only
     // known
-    auto M = &Module;
+    auto *M = &Module;
     bool Changed = false;
 
     std::vector<std::pair<Instruction *, VectorType *>> BCastsToNonStdVec;
@@ -154,14 +154,14 @@ public:
         }
       }
     }
-    auto ExtractElement = ExtractElementInst::Create(
+    auto *ExtractElement = ExtractElementInst::Create(
         Load, ConstantInt::get(Type::getInt64Ty(I->getContext()), ElemIdx));
     InstsToInsert.push_back(ExtractElement);
     auto *Trunc = new TruncInst(ExtractElement, DestVecTy->getElementType());
     InstsToInsert.push_back(Trunc);
     InstsToInsert[0]->insertBefore(I);
-    for (unsigned long i = 1; i < InstsToInsert.size(); i++)
-      InstsToInsert[i]->insertAfter(InstsToInsert[i - 1]);
+    for (size_t It = 1; It < InstsToInsert.size(); It++)
+      InstsToInsert[It]->insertAfter(InstsToInsert[It - 1]);
     IIII->replaceAllUsesWith(Trunc);
     if (InstsToInsert.size())
       Changed = true;
