@@ -54,47 +54,28 @@ namespace SPIRV {
 
 class SPIRVLowerMemmoveBase {
 public:
-  SPIRVLowerMemmoveBase() : Context(nullptr), Mod(nullptr) {}
+  SPIRVLowerMemmoveBase() : Context(nullptr) {}
+
   void LowerMemMoveInst(MemMoveInst &I) {
     IRBuilder<> Builder(I.getParent());
     Builder.SetInsertPoint(&I);
-    auto *Dest = I.getRawDest();
-    auto *Src = I.getRawSource();
-    if (isa<PHINode>(Src))
-      report_fatal_error("llvm.memmove of PHI instruction result not supported",
-                         false);
-    // The source could be bit-cast or addrspacecast from another type,
-    // need the original type for the allocation of the temporary variable
-    auto *SrcTy = Src->stripPointerCasts()->getType();
+
     auto *Length = cast<ConstantInt>(I.getLength());
-    MaybeAlign Align = I.getSourceAlign();
-    auto Volatile = I.isVolatile();
-    Value *NumElements = nullptr;
-    uint64_t ElementsCount = 1;
-    if (SrcTy->isArrayTy()) {
-      ElementsCount = SrcTy->getArrayNumElements();
-      NumElements = Builder.getInt32(ElementsCount);
-    }
-    // Get number of bits to move and allocate memory appropriately:
-    // if lenght is bigger than a pointer base type size, then create an
-    // alloca of an array type with the same base type.
-    const uint64_t LenBits = Length->getZExtValue();
-    const uint64_t LayoutTypeBites =
-        Mod->getDataLayout().getTypeSizeInBits(SrcTy->getPointerElementType()) *
-        ElementsCount;
-    auto *AllocaTy = SrcTy->getPointerElementType();
-    if (LenBits > LayoutTypeBites) {
-      const uint64_t ArraySize = LenBits / LayoutTypeBites;
-      AllocaTy = ArrayType::get(SrcTy->getPointerElementType(), ArraySize);
-    }
-    auto *Alloca = Builder.CreateAlloca(AllocaTy, NumElements);
-    if (Align.hasValue()) {
-      Alloca->setAlignment(Align.getValue());
-    }
+    auto *AllocaTy = ArrayType::get(IntegerType::getInt8Ty(*Context),
+                                    Length->getZExtValue());
+    MaybeAlign SrcAlign = I.getSourceAlign();
+
+    auto *Alloca = Builder.CreateAlloca(AllocaTy);
+    if (SrcAlign.hasValue())
+      Alloca->setAlignment(SrcAlign.getValue());
+
     Builder.CreateLifetimeStart(Alloca);
-    Builder.CreateMemCpy(Alloca, Align, Src, Align, Length, Volatile);
-    auto *SecondCpy = Builder.CreateMemCpy(Dest, I.getDestAlign(), Alloca,
-                                           Align, Length, Volatile);
+    Builder.CreateMemCpy(Alloca, SrcAlign, I.getRawSource(), SrcAlign, Length,
+                         I.isVolatile());
+
+    auto *SecondCpy =
+        Builder.CreateMemCpy(I.getRawDest(), I.getDestAlign(), Alloca, SrcAlign,
+                             Length, I.isVolatile());
     Builder.CreateLifetimeEnd(Alloca);
 
     SecondCpy->takeName(&I);
@@ -102,6 +83,7 @@ public:
     I.dropAllReferences();
     I.eraseFromParent();
   }
+
   bool expandMemMoveIntrinsicUses(Function &F) {
     bool Changed = false;
 
@@ -119,7 +101,6 @@ public:
   }
   bool runLowerMemmove(Module &M) {
     Context = &M.getContext();
-    Mod = &M;
     bool Changed = false;
 
     for (Function &F : M) {
@@ -136,7 +117,6 @@ public:
 
 private:
   LLVMContext *Context;
-  Module *Mod;
 };
 
 class SPIRVLowerMemmovePass : public llvm::PassInfoMixin<SPIRVLowerMemmovePass>,
