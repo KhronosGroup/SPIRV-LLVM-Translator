@@ -887,7 +887,7 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,
-      [=](CallInst *CI, std::vector<Value *> &Args) {
+      [=](CallInst *CI, std::vector<Value *> &Args) -> std::string {
         Info.PostProc(Args);
         // Order of args in OCL20:
         // object, 0-2 other args, 1-2 order, scope
@@ -916,14 +916,16 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
           std::rotate(Args.begin() + 2, Args.begin() + OrderIdx,
                       Args.end() - Offset);
         }
-        auto AtomicBuiltinsReturnType =
+        llvm::Type* AtomicBuiltinsReturnType =
             CI->getCalledFunction()->getReturnType();
         auto IsFPType = [](llvm::Type *ReturnType) {
           return ReturnType->isHalfTy() || ReturnType->isFloatTy() ||
                  ReturnType->isDoubleTy();
         };
+        auto SPIRVFunctionName =
+            getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
         if (!IsFPType(AtomicBuiltinsReturnType))
-          return getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
+          return SPIRVFunctionName;
         // Translate FP-typed atomic builtins.
         return llvm::StringSwitch<std::string>(SPIRVFunctionName)
             .Case("__spirv_AtomicIAdd", "__spirv_AtomicFAddEXT")
