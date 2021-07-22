@@ -1452,10 +1452,6 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(
         BV, new AllocaInst(Ty, SPIRAS_Private, ArrSize, BV->getName(), BB));
   }
-  case OpSaveMemoryINTEL: {
-    Function *StackSave = Intrinsic::getDeclaration(M, Intrinsic::stacksave);
-    return mapValue(BV, CallInst::Create(StackSave, "", BB));
-  }
   case OpRestoreMemoryINTEL: {
     auto *Restore = static_cast<SPIRVRestoreMemoryINTEL *>(BV);
     llvm::Value *Ptr = transValue(Restore->getOperand(0), F, BB, false);
@@ -1513,6 +1509,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   // Translation of instructions
   int OpCode = BV->getOpCode();
   switch (OpCode) {
+  case OpSaveMemoryINTEL: {
+    Function *StackSave = Intrinsic::getDeclaration(M, Intrinsic::stacksave);
+    return mapValue(BV, CallInst::Create(StackSave, "", BB));
+  }
   case OpBranch: {
     auto *BR = static_cast<SPIRVBranch *>(BV);
     auto *BI = BranchInst::Create(
