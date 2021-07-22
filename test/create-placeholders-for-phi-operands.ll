@@ -4,15 +4,13 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LLVM
 
-; CHECK-LLVM: BB.1:
-; CHECK-LLVM-NOT: %savedstack = call i8* @llvm.stacksave()
-; CHECK-LLVM-NOT: %savedstack.us = call i8* @llvm.stacksave()
+; CHECK-LLVM: phi i8* [ [[savedstack:%.*]], {{.*}} ], [ [[savedstack_us:%.*]], {{.*}} ]
 
-; CHECK-LLVM: BB.5
-; CHECK-LLVM: %savedstack = call i8* @llvm.stacksave()
+; CHECK-LLVM: BB.{{[0-9]+}}:
+; CHECK-LLVM: [[savedstack]] = call i8* @llvm.stacksave()
 
-; CHECK-LLVM: BB.6
-; CHECK-LLVM: %savedstack.us = call i8* @llvm.stacksave()
+; CHECK-LLVM: BB.{{[0-9]+}}:
+; CHECK-LLVM: [[savedstack_us]] = call i8* @llvm.stacksave()
 
 ; ModuleID = 's.bc'
 source_filename = "llvm-link"
