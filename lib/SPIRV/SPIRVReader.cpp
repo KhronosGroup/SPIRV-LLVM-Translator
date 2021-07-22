@@ -764,7 +764,7 @@ bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
     return true;
   if (OpCode == OpImageSampleExplicitLod || OpCode == OpSampledImage)
     return false;
-  if (OpCode == OpImageWrite)
+  if (OpCode == OpImageWrite || OpCode == OpImageRead)
     return false;
   if (OpCode == OpGenericCastToPtrExplicit)
     return false;
@@ -3131,9 +3131,6 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
           BT->getVectorComponentCount());
     else
       llvm_unreachable("invalid compare instruction");
-  } else if (OC == OpImageRead && Args.size() > 2) {
-    // Drop "Image operands" argument
-    Args.erase(Args.begin() + 2);
   } else if (isSubgroupAvcINTELEvaluateOpcode(OC)) {
     // There are three types of AVC Intel Evaluate opcodes:
     // 1. With multi reference images - does not use OpVmeImageINTEL opcode for
@@ -3481,26 +3478,6 @@ std::string SPIRVToLLVM::getOCLBuiltinName(SPIRVInstruction *BI) {
     return OCLSPIRVSubgroupAVCIntelBuiltinMap::rmap(OC);
 
   auto Name = OCLSPIRVBuiltinMap::rmap(OC);
-
-  SPIRVType *T = nullptr;
-  switch (OC) {
-  case OpImageRead:
-    T = BI->getType();
-    break;
-  default:
-    // do nothing
-    break;
-  }
-  if (T && T->isTypeVector())
-    T = T->getVectorComponentType();
-  if (T) {
-    if (T->isTypeFloat(16))
-      Name += 'h';
-    else if (T->isTypeFloat(32))
-      Name += 'f';
-    else
-      Name += 'i';
-  }
 
   return Name;
 }

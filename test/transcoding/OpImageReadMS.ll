@@ -2,10 +2,11 @@
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
 ; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
+; RUN: llvm-spirv -r %t.spv --spirv-target-env=CL2.0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-CL20-IR
 
-; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef19ocl_image2d_msaa_roDv2_ii(%opencl.image2d_msaa_ro_t
+; CHECK-SPV-IR: call spir_func <4 x float> @_Z17__spirv_ImageRead19ocl_image2d_msaa_roDv2_iii(%opencl.image2d_msaa_ro_t
+; CHECK-CL20-IR: call spir_func <4 x float> @_Z11read_imagef19ocl_image2d_msaa_roDv2_ii(%opencl.image2d_msaa_ro_t
 
 ; CHECK-SPIRV: 7 ImageRead {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 64 {{[0-9]+}}
 

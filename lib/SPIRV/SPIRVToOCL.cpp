@@ -139,6 +139,10 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVImageWriteBuiltIn(&CI, OC);
     return;
   }
+  if (OC == OpImageRead) {
+    visitCallSPIRVImageReadBuiltIn(&CI, OC);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 }
@@ -719,6 +723,22 @@ void SPIRVToOCLBase::visitCallSPIRVImageWriteBuiltIn(CallInst *CI, Op OC) {
             std::swap(Args[2], Args[3]);
         }
         return std::string(kOCLBuiltinName::WriteImage) + getTypeSuffix(T);
+      },
+      &Attrs);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVImageReadBuiltIn(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        // Drop "Image operands" argument
+        if (Args.size() > 2)
+          Args.erase(Args.begin() + 2);
+        // Get return type
+        llvm::Type *T = CI->getType();
+        return std::string(kOCLBuiltinName::ReadImage) + getTypeSuffix(T);
       },
       &Attrs);
 }
