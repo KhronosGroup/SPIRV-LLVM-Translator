@@ -42,6 +42,7 @@
 #define SPIRV_H
 
 #include "LLVMSPIRVOpts.h"
+#include "llvm/Pass.h"
 
 #include <iostream>
 #include <string>
@@ -218,7 +219,7 @@ ModulePass *createSPIRVWriterPass(std::ostream &Str,
 
 /// Create a pass for removing bitcast instructions to non-standard SPIR-V
 /// types
-ModulePass *createSPIRVLowerBitCastToNonStandardTypeLegacy();
+FunctionPass *createSPIRVLowerBitCastToNonStandardTypeLegacy();
 
 } // namespace llvm
 

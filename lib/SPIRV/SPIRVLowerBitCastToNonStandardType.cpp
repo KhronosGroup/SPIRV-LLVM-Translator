@@ -44,46 +44,43 @@
 
 #include "SPIRVInternal.h"
 
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
 
 #include <stack>
 #include <utility>
 
 using namespace llvm;
 
-namespace {
+namespace SPIRV {
 
-class SPIRVLowerBitCastToNonStandardTypeBase {
+class SPIRVLowerBitCastToNonStandardTypePass {
 public:
-  SPIRVLowerBitCastToNonStandardTypeBase() {}
+  SPIRVLowerBitCastToNonStandardTypePass() {}
 
-  bool runLowerBitCastToNonStandardType(Module &Module) {
+  PreservedAnalyses
+  runLowerBitCastToNonStandardType(Function &F, FunctionAnalysisManager &FAM) {
     // This pass doesn't cover all possible uses of non-standard types, only
-    // known
-    auto *M = &Module;
+    // known. We assume that bad type won't be passed to a function as
+    // parameter, since it added by an optimization.
     bool Changed = false;
 
     std::vector<std::pair<Instruction *, VectorType *>> BCastsToNonStdVec;
     std::stack<Instruction *> InstsToErase;
-    for (auto &F : M->functions())
-      for (auto &BB : F)
-        for (auto &I : BB)
-          if (BitCastInst *BC = dyn_cast<BitCastInst>(&I)) {
-            auto *DestTy = BC->getDestTy();
-            if (auto *ElemTy = dyn_cast<PointerType>(DestTy))
-              DestTy = ElemTy->getElementType();
-            if (auto *DestVecTy = dyn_cast<VectorType>(DestTy)) {
-              uint64_t NumElemsInDestVec =
-                  DestVecTy->getElementCount().getValue();
-              if (NumElemsInDestVec != 2 && NumElemsInDestVec != 3 &&
-                  NumElemsInDestVec != 4 && NumElemsInDestVec != 8 &&
-                  NumElemsInDestVec != 16)
-                BCastsToNonStdVec.push_back(std::make_pair(&I, DestVecTy));
-            }
+    for (auto &BB : F)
+      for (auto &I : BB)
+        if (auto *BC = dyn_cast<BitCastInst>(&I)) {
+          auto *DestTy = BC->getDestTy();
+          if (auto *ElemTy = dyn_cast<PointerType>(DestTy))
+            DestTy = ElemTy->getElementType();
+          if (auto *DestVecTy = dyn_cast<VectorType>(DestTy)) {
+            uint64_t NumElemsInDestVec =
+                DestVecTy->getElementCount().getValue();
+            if (NumElemsInDestVec != 2 && NumElemsInDestVec != 3 &&
+                NumElemsInDestVec != 4 && NumElemsInDestVec != 8 &&
+                NumElemsInDestVec != 16)
+              BCastsToNonStdVec.push_back(std::make_pair(&I, DestVecTy));
           }
+        }
 
     for (auto &I : BCastsToNonStdVec)
       Changed |= lowerBitCastToNonStdVec(I, InstsToErase);
@@ -93,8 +90,7 @@ public:
       InstsToErase.pop();
     }
 
-    verifyRegularizationPass(*M, "SPIRVLowerBitCastToNonStandardType");
-    return Changed;
+    return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   }
 
   bool lowerBitCastToNonStdVec(std::pair<Instruction *, VectorType *> &Inst,
@@ -105,51 +101,51 @@ public:
     VectorType *DestVecTy = Inst.second;
     uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
     InstsToErase.push(I);
-    AddrSpaceCastInst *Src{nullptr};
-    auto *II = I;
-    while ((II = II->getNextNode())) {
-      if (auto *ASCI = dyn_cast<AddrSpaceCastInst>(II)) {
-        unsigned DestAddrSpace = ASCI->getDestAddressSpace();
+    AddrSpaceCastInst *Src = nullptr;
+    auto *ASCastInstIter = I;
+    while ((ASCastInstIter = ASCastInstIter->getNextNode())) {
+      if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(ASCastInstIter)) {
+        unsigned DestAddrSpace = ASCastInst->getDestAddressSpace();
         auto *SrcPointer = cast<CastInst>(I)->getSrcTy();
         auto *SrcTy = cast<PointerType>(SrcPointer)->getElementType();
         SrcPointer = SrcTy->getPointerTo(DestAddrSpace);
-        if (ASCI->getOperand(0) == cast<Value>(I)) {
+        if (ASCastInst->getOperand(0) == cast<Value>(I)) {
           Src = new AddrSpaceCastInst(I->getOperand(0), SrcPointer);
           InstsToInsert.push_back(Src);
-          InstsToErase.push(II);
+          InstsToErase.push(ASCastInstIter);
           break;
         }
       }
     }
-    if (!II)
-      II = I;
+    if (!ASCastInstIter)
+      ASCastInstIter = I;
     auto *SrcTy =
         cast<PointerType>(cast<Value>(Src)->getType())->getElementType();
-    LoadInst *Load =
+    auto *Load =
         Src ? new LoadInst(SrcTy, Src, "", false, Align())
             : new LoadInst(SrcTy, I->getOperand(0), "", false, Align());
     InstsToInsert.push_back(Load);
-    auto *III = II;
-    while ((III = III->getNextNode())) {
-      if (LoadInst *LI = dyn_cast<LoadInst>(III))
-        if (LI->getOperand(0) == II) {
-          InstsToErase.push(III);
+    auto *LoadInstIter = ASCastInstIter;
+    while ((LoadInstIter = LoadInstIter->getNextNode())) {
+      if (auto *LI = dyn_cast<LoadInst>(LoadInstIter))
+        if (LI->getOperand(0) == ASCastInstIter) {
+          InstsToErase.push(LoadInstIter);
           break;
         }
     }
-    if (!III)
-      III = II;
+    if (!LoadInstIter)
+      LoadInstIter = ASCastInstIter;
     uint64_t NumElemsInSrcVec =
         cast<VectorType>(SrcTy)->getElementCount().getValue();
     int ElemIdx = 0;
-    Instruction *IIII{nullptr};
-    while ((II = II->getNextNode())) {
-      if (auto *EEI = dyn_cast<ExtractElementInst>(II)) {
-        if (EEI->getOperand(0) == cast<Value>(III)) {
+    Instruction *ExtrElInstIter = LoadInstIter;
+    while ((ASCastInstIter = ASCastInstIter->getNextNode())) {
+      if (auto *EEI = dyn_cast<ExtractElementInst>(ASCastInstIter)) {
+        if (EEI->getOperand(0) == cast<Value>(LoadInstIter)) {
           ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
                     (NumElemsInDestVec / NumElemsInSrcVec);
-          IIII = II;
-          InstsToErase.push(IIII);
+          ExtrElInstIter = ASCastInstIter;
+          InstsToErase.push(ExtrElInstIter);
           break;
         }
       }
@@ -162,47 +158,45 @@ public:
     InstsToInsert[0]->insertBefore(I);
     for (size_t It = 1; It < InstsToInsert.size(); It++)
       InstsToInsert[It]->insertAfter(InstsToInsert[It - 1]);
-    IIII->replaceAllUsesWith(Trunc);
+    ExtrElInstIter->replaceAllUsesWith(Trunc);
     if (InstsToInsert.size())
       Changed = true;
     return Changed;
   }
 };
 
-class SPIRVLowerBitCastToNonStandardTypePass
-    : public llvm::PassInfoMixin<SPIRVLowerBitCastToNonStandardTypePass>,
-      public SPIRVLowerBitCastToNonStandardTypeBase {
-public:
-  llvm::PreservedAnalyses run(llvm::Module &M,
-                              llvm::ModuleAnalysisManager &MAM) {
-    return runLowerBitCastToNonStandardType(M) ? llvm::PreservedAnalyses::none()
-                                               : llvm::PreservedAnalyses::all();
-  }
-};
-
 class SPIRVLowerBitCastToNonStandardTypeLegacy
-    : public ModulePass,
-      public SPIRVLowerBitCastToNonStandardTypeBase {
+    : public FunctionPass,
+      public SPIRVLowerBitCastToNonStandardTypePass {
 public:
-  SPIRVLowerBitCastToNonStandardTypeLegacy() : ModulePass(ID) {}
+  static char ID;
+  SPIRVLowerBitCastToNonStandardTypeLegacy() : FunctionPass(ID) {}
 
-  bool runOnModule(Module &M) override {
-    return runLowerBitCastToNonStandardType(M);
+  bool runOnFunction(Function &F) override {
+    FunctionAnalysisManager FAM;
+    auto PA = Impl.runLowerBitCastToNonStandardType(F, FAM);
+    return !PA.areAllPreserved();
+  }
+
+  bool doFinalization(Module &M) override {
+    verifyRegularizationPass(M, "SPIRVLowerBitCastToNonStandardType");
+    return false;
   }
 
   StringRef getPassName() const override { return "Lower nonstandard type"; }
 
-  static char ID;
+private:
+  SPIRVLowerBitCastToNonStandardTypePass Impl;
 };
 
 char SPIRVLowerBitCastToNonStandardTypeLegacy::ID = 0;
 
-} // namespace
+} // namespace SPIRV
 
 INITIALIZE_PASS(SPIRVLowerBitCastToNonStandardTypeLegacy,
                 "spv-lower-bitcast-to-nonstandard-type",
                 "Remove bitcast to nonstandard types", false, false)
 
-llvm::ModulePass *llvm::createSPIRVLowerBitCastToNonStandardTypeLegacy() {
+llvm::FunctionPass *llvm::createSPIRVLowerBitCastToNonStandardTypeLegacy() {
   return new SPIRVLowerBitCastToNonStandardTypeLegacy();
 }
