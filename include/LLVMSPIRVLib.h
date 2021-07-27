@@ -42,7 +42,6 @@
 #define SPIRV_H
 
 #include "LLVMSPIRVOpts.h"
-#include "llvm/Pass.h"
 
 #include <iostream>
 #include <string>
@@ -67,6 +66,7 @@ void initializePreprocessMetadataLegacyPass(PassRegistry &);
 void initializeSPIRVLowerBitCastToNonStandardTypeLegacyPass(PassRegistry &);
 
 class ModulePass;
+class FunctionPass;
 } // namespace llvm
 
 #include "llvm/IR/Module.h"

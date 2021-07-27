@@ -76,9 +76,7 @@ public:
           DestTy = ElemTy->getElementType();
         if (auto *DestVecTy = dyn_cast<VectorType>(DestTy)) {
           uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
-          if (NumElemsInDestVec != 2 && NumElemsInDestVec != 3 &&
-              NumElemsInDestVec != 4 && NumElemsInDestVec != 8 &&
-              NumElemsInDestVec != 16)
+          if (!isValidVectorSize(NumElemsInDestVec))
             BCastsToNonStdVec.push_back(std::make_pair(&I, DestVecTy));
         }
       }
@@ -100,13 +98,12 @@ public:
     uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
     InstsToErase.push_back(I);
     auto *ASCastInstIter = I;
-    IRBuilder<> Builder(I->getParent());
-    Builder.SetInsertPoint(I);
+    IRBuilder<> Builder(I);
     Value *Src = nullptr;
     // It is assumed that the function can contain addrspacecast after handled
     // bitcast instruction, so addrspacecast should also be handled
-    while ((ASCastInstIter = ASCastInstIter->getNextNode())) {
-      if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(ASCastInstIter)) {
+    for (auto *U: I->users()) {
+      if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
         unsigned DestAddrSpace = ASCastInst->getDestAddressSpace();
         auto *SrcPointer = cast<CastInst>(I)->getSrcTy();
         auto *SrcTy = cast<PointerType>(SrcPointer)->getElementType();
@@ -114,38 +111,36 @@ public:
         if (ASCastInst->getOperand(0) == cast<Value>(I)) {
           Src = new AddrSpaceCastInst(I->getOperand(0), SrcPointer);
           Builder.Insert(Src);
+          ASCastInstIter = cast<Instruction>(U);
           InstsToErase.push_back(ASCastInstIter);
           break;
         }
       }
     }
-    if (!ASCastInstIter)
-      ASCastInstIter = I;
     auto *SrcTy = cast<PointerType>((Src)->getType())->getElementType();
     auto *Load = Src ? Builder.CreateLoad(SrcTy, Src)
                      : Builder.CreateLoad(SrcTy, I->getOperand(0));
     // In the already known pattern, the bitcast is followed by load instruction
     auto *LoadInstIter = ASCastInstIter;
-    while ((LoadInstIter = LoadInstIter->getNextNode())) {
-      if (auto *LI = dyn_cast<LoadInst>(LoadInstIter))
+    for (auto *U: ASCastInstIter->users()) {
+      if (auto *LI = dyn_cast<LoadInst>(U))
         if (LI->getOperand(0) == ASCastInstIter) {
+          LoadInstIter = cast<Instruction>(U);
           InstsToErase.push_back(LoadInstIter);
           break;
         }
     }
-    if (!LoadInstIter)
-      LoadInstIter = ASCastInstIter;
     // The bitcast is followed by extractelement instruction
     uint64_t NumElemsInSrcVec =
         cast<VectorType>(SrcTy)->getElementCount().getValue();
     int ElemIdx = 0;
     Instruction *ExtrElInstIter = LoadInstIter;
-    while ((ASCastInstIter = ASCastInstIter->getNextNode())) {
-      if (auto *EEI = dyn_cast<ExtractElementInst>(ASCastInstIter)) {
+    for (auto *U: LoadInstIter->users()) {
+      if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
         if (EEI->getOperand(0) == cast<Value>(LoadInstIter)) {
           ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
                     (NumElemsInDestVec / NumElemsInSrcVec);
-          ExtrElInstIter = ASCastInstIter;
+          ExtrElInstIter = cast<Instruction>(U);
           InstsToErase.push_back(ExtrElInstIter);
           break;
         }
