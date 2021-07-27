@@ -102,7 +102,7 @@ public:
     Value *Src = nullptr;
     // It is assumed that the function can contain addrspacecast after handled
     // bitcast instruction, so addrspacecast should also be handled
-    for (auto *U: I->users()) {
+    for (auto *U : I->users()) {
       if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
         unsigned DestAddrSpace = ASCastInst->getDestAddressSpace();
         auto *SrcPointer = cast<CastInst>(I)->getSrcTy();
@@ -122,7 +122,7 @@ public:
                      : Builder.CreateLoad(SrcTy, I->getOperand(0));
     // In the already known pattern, the bitcast is followed by load instruction
     auto *LoadInstIter = ASCastInstIter;
-    for (auto *U: ASCastInstIter->users()) {
+    for (auto *U : ASCastInstIter->users()) {
       if (auto *LI = dyn_cast<LoadInst>(U))
         if (LI->getOperand(0) == ASCastInstIter) {
           LoadInstIter = cast<Instruction>(U);
@@ -135,7 +135,7 @@ public:
         cast<VectorType>(SrcTy)->getElementCount().getValue();
     int ElemIdx = 0;
     Instruction *ExtrElInstIter = LoadInstIter;
-    for (auto *U: LoadInstIter->users()) {
+    for (auto *U : LoadInstIter->users()) {
       if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
         if (EEI->getOperand(0) == cast<Value>(LoadInstIter)) {
           ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
