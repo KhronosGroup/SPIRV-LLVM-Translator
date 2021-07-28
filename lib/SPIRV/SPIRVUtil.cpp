@@ -1699,6 +1699,12 @@ bool isSPIRVBuiltinVariable(GlobalVariable *GV,
 // %6 = extractelement <3 x i64> %5, i32 0
 bool lowerBuiltinVariableToCall(GlobalVariable *GV,
                                 SPIRVBuiltinVariableKind Kind) {
+  // There might be dead constant users of GV (for example, SPIRVLowerConstExpr
+  // replaces ConstExpr uses but those ConstExprs are not deleted, since LLVM
+  // constants are created on demand as needed and never deleted).
+  // Remove them first!
+  GV->removeDeadConstantUsers();
+
   Module *M = GV->getParent();
   LLVMContext &C = M->getContext();
   std::string FuncName = GV->getName().str();
@@ -1732,7 +1738,7 @@ bool lowerBuiltinVariableToCall(GlobalVariable *GV,
   std::vector<Instruction *> GEPs;
 
   auto Replace = [&](std::vector<Value *> Arg, Instruction *I) {
-    auto Call = CallInst::Create(Func, Arg, "", I);
+    auto *Call = CallInst::Create(Func, Arg, "", I);
     Call->takeName(I);
     setAttrByCalledFunc(Call);
     SPIRVDBG(dbgs() << "[lowerBuiltinVariableToCall] " << *I << " -> " << *Call
@@ -1847,7 +1853,8 @@ bool lowerBuiltinVariablesToCalls(Module *M) {
   return true;
 }
 
-/// Translates OCL/SPR-IR work-item builtin functions to SPIRV builtin variables.
+/// Translates OCL/SPR-IR work-item builtin functions to SPIRV builtin
+/// variables.
 /// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
 /// Function like get_work_dim() -> load WorkDim
 void transWorkItemBuiltinsToVariables(Module *M) {
@@ -1869,17 +1876,17 @@ void transWorkItemBuiltinsToVariables(Module *M) {
         continue;
     }
     BuiltinVarName =
-      std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
+        std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
     LLVM_DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
     bool IsVec = I.getFunctionType()->getNumParams() > 0;
     Type *GVType =
         IsVec ? FixedVectorType::get(I.getReturnType(), 3) : I.getReturnType();
-    auto BV = new GlobalVariable(*M, GVType, true, GlobalValue::ExternalLinkage,
-                                 nullptr, BuiltinVarName, 0,
-                                 GlobalVariable::NotThreadLocal, SPIRAS_Input);
+    auto *BV = new GlobalVariable(
+        *M, GVType, true, GlobalValue::ExternalLinkage, nullptr, BuiltinVarName,
+        0, GlobalVariable::NotThreadLocal, SPIRAS_Input);
     std::vector<Instruction *> InstList;
     for (auto UI = I.user_begin(), UE = I.user_end(); UI != UE; ++UI) {
-      auto CI = dyn_cast<CallInst>(*UI);
+      auto *CI = dyn_cast<CallInst>(*UI);
       assert(CI && "invalid instruction");
       const DebugLoc &DLoc = CI->getDebugLoc();
       Instruction *NewValue = new LoadInst(GVType, BV, "", CI);
