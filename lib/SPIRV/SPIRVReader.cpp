@@ -651,13 +651,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     auto OC = T->getOpCode();
     SPIRAddressSpace AS = getOCLOpaqueTypeAddrSpace(OC);
     std::string Name;
-    if (isOpaqueGenericTypeOpCode(OC)) {
-      // TODO: Generic opaque type opcodes shouldn't be translated directly to
-      // OCL representation
-      //       SPIRVOpaqueTypeOpCodeMap should be used. The same as for AVC
-      //       INTEL opcodes.
-      Name = OCLOpaqueTypeOpCodeMap::rmap(OC);
-    } else if (isSubgroupAvcINTELTypeOpCode(OC)) {
+    if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC)) {
       Name =
           kSPIRVTypeName::PrefixAndDelim + SPIRVOpaqueTypeOpCodeMap::rmap(OC);
     } else {
@@ -796,6 +790,8 @@ bool SPIRVToLLVM::isDirectlyTranslatedToOCL(Op OpCode) const {
   if (isEventOpCode(OpCode))
     return false;
   if (OpBitFieldInsert <= OpCode && OpCode <= OpBitReverse)
+    return false;
+  if (OpCode == OpEnqueueMarker || OpCode == OpGetDefaultQueue)
     return false;
   if (OCLSPIRVBuiltinMap::rfind(OpCode, nullptr)) {
     // Not every spirv opcode which is placed in OCLSPIRVBuiltinMap is
@@ -1511,9 +1507,10 @@ void SPIRVToLLVM::transGeneratorMD() {
 
 Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
                                             BasicBlock *BB) {
-  auto *SamplerT =
-      getOrCreateOpaquePtrType(M, OCLOpaqueTypeOpCodeMap::rmap(OpTypeSampler),
-                               getOCLOpaqueTypeAddrSpace(BCS->getOpCode()));
+  std::string Name = kSPIRVTypeName::PrefixAndDelim +
+                     SPIRVOpaqueTypeOpCodeMap::rmap(OpTypeSampler);
+  auto *SamplerT = getOrCreateOpaquePtrType(
+      M, Name, getOCLOpaqueTypeAddrSpace(BCS->getOpCode()));
   auto *I32Ty = IntegerType::getInt32Ty(*Context);
   auto *FTy = FunctionType::get(SamplerT, {I32Ty}, false);
 
@@ -3212,11 +3209,12 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
         transType(Ops[2]->getType()), // ndrange
     };
     if (HasEvents) {
-      Type *EventTy =
-          PointerType::get(getOrCreateOpaquePtrType(
-                               M, SPIR_TYPE_NAME_CLK_EVENT_T,
-                               getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
-                           SPIRAS_Generic);
+      std::string Name = kSPIRVTypeName::PrefixAndDelim +
+                         SPIRVOpaqueTypeOpCodeMap::rmap(OpTypeDeviceEvent);
+      Type *EventTy = PointerType::get(
+          getOrCreateOpaquePtrType(
+              M, Name, getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
+          SPIRAS_Generic);
 
       Tys.push_back(Int32Ty);
       Tys.push_back(EventTy);
