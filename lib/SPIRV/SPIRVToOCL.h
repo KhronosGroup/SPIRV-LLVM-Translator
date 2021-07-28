@@ -214,6 +214,9 @@ public:
 
   void translateOpaqueTypes();
 
+  // Transform FP atomic opcode to corresponding OpenCL function name
+  virtual std::string mapFPAtomicName(Op OC) = 0;
+
 private:
   /// Transform uniform group opcode to corresponding OpenCL function name,
   /// example: GroupIAdd(Reduce) => group_iadd => work_group_reduce_add |
