@@ -1019,6 +1019,21 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM);
 /// \param Strs contains the integers decoded from postfixes.
 std::string decodeSPIRVTypeName(StringRef Name,
                                 SmallVectorImpl<std::string> &Strs);
+
+// Copy attributes from function to call site.
+void setAttrByCalledFunc(CallInst *Call);
+bool isSPIRVBuiltinVariable(GlobalVariable *GV, SPIRVBuiltinVariableKind *Kind);
+// Transform builtin variable from GlobalVariable to builtin call.
+// e.g.
+// - GlobalInvolcationId[x] -> _Z33__spirv_BuiltInGlobalInvocationIdi(x)
+// - WorkDim -> _Z22__spirv_BuiltInWorkDimv()
+bool lowerBuiltinVariableToCall(GlobalVariable *GV,
+                                SPIRVBuiltinVariableKind Kind);
+// Transform all builtin variables into calls
+bool lowerBuiltinVariablesToCalls(Module *M);
+
+void transWorkItemBuiltinsToVariables(Module *M);
+
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H

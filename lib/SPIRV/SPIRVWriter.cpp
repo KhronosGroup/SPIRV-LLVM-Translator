@@ -3443,6 +3443,9 @@ bool LLVMToSPIRVBase::translate() {
   if (isEmptyLLVMModule(M))
     BM->addCapability(CapabilityLinkage);
 
+  // Transform SPV-IR builtin calls to builtin variables.
+  transWorkItemBuiltinsToVariables(M);
+
   if (!transSourceLanguage())
     return false;
   if (!transExtension())
