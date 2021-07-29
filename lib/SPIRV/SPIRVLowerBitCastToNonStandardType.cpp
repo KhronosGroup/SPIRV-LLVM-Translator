@@ -92,58 +92,49 @@ public:
 
   bool lowerBitCastToNonStdVec(std::pair<Instruction *, VectorType *> &Inst,
                                std::vector<Instruction *> &InstsToErase) {
-    bool Changed = false;
     Instruction *I = Inst.first;
-    VectorType *DestVecTy = Inst.second;
-    uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
     InstsToErase.push_back(I);
-    auto *ASCastInstIter = I;
+    auto *InstIter = I;
     IRBuilder<> Builder(I);
-    Value *Src = nullptr;
+    Value *NewSrc = I->getOperand(0);
     // It is assumed that the function can contain addrspacecast after handled
     // bitcast instruction, so addrspacecast should also be handled
     for (auto *U : I->users()) {
       if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
         unsigned DestAddrSpace = ASCastInst->getDestAddressSpace();
-        auto *SrcPointer = cast<CastInst>(I)->getSrcTy();
-        auto *SrcTy = cast<PointerType>(SrcPointer)->getElementType();
-        SrcPointer = SrcTy->getPointerTo(DestAddrSpace);
-        if (ASCastInst->getOperand(0) == cast<Value>(I)) {
-          Src = new AddrSpaceCastInst(I->getOperand(0), SrcPointer);
-          Builder.Insert(Src);
-          ASCastInstIter = cast<Instruction>(U);
-          InstsToErase.push_back(ASCastInstIter);
-          break;
-        }
+        auto *SrcTy = cast<PointerType>(NewSrc->getType())->getElementType();
+        auto *NewDestPtrTy = SrcTy->getPointerTo(DestAddrSpace);
+        NewSrc = new AddrSpaceCastInst(NewSrc, NewDestPtrTy);
+        Builder.Insert(NewSrc);
+        InstIter = ASCastInst;
+        InstsToErase.push_back(InstIter);
+        break;
       }
     }
-    auto *SrcTy = cast<PointerType>((Src)->getType())->getElementType();
-    auto *Load = Src ? Builder.CreateLoad(SrcTy, Src)
-                     : Builder.CreateLoad(SrcTy, I->getOperand(0));
+    auto *SrcTy = cast<PointerType>((NewSrc)->getType())->getElementType();
+    auto *Load = Builder.CreateLoad(SrcTy, NewSrc);
     // In the already known pattern, the bitcast is followed by load instruction
-    auto *LoadInstIter = ASCastInstIter;
-    for (auto *U : ASCastInstIter->users()) {
-      if (auto *LI = dyn_cast<LoadInst>(U))
-        if (LI->getOperand(0) == ASCastInstIter) {
-          LoadInstIter = cast<Instruction>(U);
-          InstsToErase.push_back(LoadInstIter);
-          break;
-        }
+    for (auto *U : InstIter->users()) {
+      if (auto *LI = dyn_cast<LoadInst>(U)) {
+        InstIter = LI;
+        InstsToErase.push_back(InstIter);
+        break;
+      }
     }
     // The bitcast is followed by extractelement instruction
+    VectorType *DestVecTy = Inst.second;
+    uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
     uint64_t NumElemsInSrcVec =
         cast<VectorType>(SrcTy)->getElementCount().getValue();
     int ElemIdx = 0;
-    Instruction *ExtrElInstIter = LoadInstIter;
-    for (auto *U : LoadInstIter->users()) {
+    Instruction *ExtrElInstIter = InstIter;
+    for (auto *U : InstIter->users()) {
       if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
-        if (EEI->getOperand(0) == cast<Value>(LoadInstIter)) {
-          ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
-                    (NumElemsInDestVec / NumElemsInSrcVec);
-          ExtrElInstIter = cast<Instruction>(U);
-          InstsToErase.push_back(ExtrElInstIter);
-          break;
-        }
+        ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
+                  (NumElemsInDestVec / NumElemsInSrcVec);
+        ExtrElInstIter = cast<Instruction>(U);
+        InstsToErase.push_back(ExtrElInstIter);
+        break;
       }
     }
     auto *ExtractElement = Builder.CreateExtractElement(
@@ -151,9 +142,7 @@ public:
     auto *Trunc =
         Builder.CreateTrunc(ExtractElement, DestVecTy->getElementType());
     ExtrElInstIter->replaceAllUsesWith(Trunc);
-    if (InstsToErase.size())
-      Changed = true;
-    return Changed;
+    return true;
   }
 };
 
