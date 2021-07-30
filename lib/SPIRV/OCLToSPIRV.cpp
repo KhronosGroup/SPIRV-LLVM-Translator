@@ -364,8 +364,6 @@ bool OCLToSPIRVBase::runOCLToSPIRV(Module &Module) {
 
   LLVM_DEBUG(dbgs() << "Enter OCLToSPIRV:\n");
 
-  transWorkItemBuiltinsToVariables(M);
-
   visit(*M);
 
   for (auto &I : ValuesToDelete)
@@ -1058,6 +1056,7 @@ void OCLToSPIRVBase::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
   unsigned ExtOp = ~0U;
+  SPIRVBuiltinVariableKind BVKind = BuiltInMax;
   if (StringRef(Info.UniqName).startswith(kSPIRVName::Prefix))
     return;
   if (OCLSPIRVBuiltinMap::find(Info.UniqName, &OC)) {
@@ -1078,7 +1077,11 @@ void OCLToSPIRVBase::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
     }
   } else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
     Info.UniqName = getSPIRVExtFuncName(SPIRVEIS_OpenCL, ExtOp);
-  else
+  else if (SPIRSPIRVBuiltinVariableMap::find(Info.UniqName, &BVKind)) {
+    // Map OCL work item builtins to SPV-IR work item builtins.
+    // e.g. get_global_id() --> __spirv_BuiltinGlobalInvocationId()
+    Info.UniqName = getSPIRVFuncName(BVKind);
+  } else
     return;
   if (!Info.RetTy)
     mutateCallInstSPIRV(

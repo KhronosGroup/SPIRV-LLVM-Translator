@@ -2043,6 +2043,73 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
   return true;
 }
 
+/// Transforms SPR-IR work-item builtin calls to SPIRV builtin variables.
+/// e.g.
+///  SPR-IR: @_Z33__spirv_BuiltInGlobalInvocationIdi(i)
+///    is transformed as:
+///  x = load GlobalInvocationId; extract x, i
+/// e.g.
+///  SPR-IR: @_Z22__spirv_BuiltInWorkDimi()
+///    is transformed as:
+///  load WorkDim
+bool LLVMToSPIRVBase::transWorkItemBuiltinCallsToVariables() {
+  LLVM_DEBUG(dbgs() << "Enter transWorkItemBuiltinCallsToVariables\n");
+  // Store instructions and functions need to be removed.
+  SmallVector<Value *, 16> ToRemove;
+  for (auto &F : *M) {
+    // Builtins should be declaration only.
+    if (!F.isDeclaration())
+      continue;
+    StringRef DemangledName;
+    if (!oclIsBuiltin(F.getName(), DemangledName))
+      continue;
+    LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
+    SPIRVBuiltinVariableKind BVKind;
+    SmallVector<StringRef, 2> Postfix;
+    // Deprefix "__spirv_"
+    StringRef Name = dePrefixSPIRVName(DemangledName, Postfix);
+    // Lookup SPIRV Builtin Variable Kind.
+    if (!SPIRVBuiltInNameMap::rfind(Name.str(), &BVKind))
+      continue;
+    std::string BuiltinVarName =
+        std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
+    LLVM_DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
+    bool IsVec = F.getFunctionType()->getNumParams() > 0;
+    Type *GVType =
+        IsVec ? FixedVectorType::get(F.getReturnType(), 3) : F.getReturnType();
+    auto *BV = new GlobalVariable(
+        *M, GVType, true, GlobalValue::ExternalLinkage, nullptr, BuiltinVarName,
+        0, GlobalVariable::NotThreadLocal, SPIRAS_Input);
+    for (auto UI = F.user_begin(), UE = F.user_end(); UI != UE; ++UI) {
+      auto *CI = dyn_cast<CallInst>(*UI);
+      assert(CI && "invalid instruction");
+      const DebugLoc &DLoc = CI->getDebugLoc();
+      Instruction *NewValue = new LoadInst(GVType, BV, "", CI);
+      if (DLoc)
+        NewValue->setDebugLoc(DLoc);
+      LLVM_DEBUG(dbgs() << "Transform: " << *CI << " => " << *NewValue << '\n');
+      if (IsVec) {
+        NewValue =
+            ExtractElementInst::Create(NewValue, CI->getArgOperand(0), "", CI);
+        if (DLoc)
+          NewValue->setDebugLoc(DLoc);
+        LLVM_DEBUG(dbgs() << *NewValue << '\n');
+      }
+      NewValue->takeName(CI);
+      CI->replaceAllUsesWith(NewValue);
+      ToRemove.push_back(CI);
+    }
+    ToRemove.push_back(&F);
+  }
+  for (auto *V : ToRemove) {
+    if (auto *I = dyn_cast<Instruction>(V))
+      I->eraseFromParent();
+    else if (auto *F = dyn_cast<Function>(V))
+      F->eraseFromParent();
+  }
+  return true;
+}
+
 /// Translate sampler* spcv.cast(i32 arg) or
 /// sampler* __translate_sampler_initializer(i32 arg)
 /// Three cases are possible:
@@ -3444,7 +3511,8 @@ bool LLVMToSPIRVBase::translate() {
     BM->addCapability(CapabilityLinkage);
 
   // Transform SPV-IR builtin calls to builtin variables.
-  transWorkItemBuiltinsToVariables(M);
+  if (!transWorkItemBuiltinCallsToVariables())
+    return false;
 
   if (!transSourceLanguage())
     return false;

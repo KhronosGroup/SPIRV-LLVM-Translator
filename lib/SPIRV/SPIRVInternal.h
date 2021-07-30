@@ -641,10 +641,14 @@ StringRef undecorateSPIRVFunction(StringRef S);
 /// and get the original name.
 bool isDecoratedSPIRVFunc(const Function *F, StringRef &UndecName);
 
+StringRef dePrefixSPIRVName(StringRef R, SmallVectorImpl<StringRef> &Postfix);
+
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPIRVFuncName(Op OC, StringRef PostFix = "");
 
 std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned = false);
+
+std::string getSPIRVFuncName(SPIRVBuiltinVariableKind BVKind);
 
 /// Get a canonical function name for a SPIR-V extended instruction
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
@@ -1031,8 +1035,6 @@ bool lowerBuiltinVariableToCall(GlobalVariable *GV,
                                 SPIRVBuiltinVariableKind Kind);
 // Transform all builtin variables into calls
 bool lowerBuiltinVariablesToCalls(Module *M);
-
-void transWorkItemBuiltinsToVariables(Module *M);
 
 } // namespace SPIRV
 
