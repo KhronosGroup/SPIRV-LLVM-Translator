@@ -649,15 +649,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
 
   default: {
     auto OC = T->getOpCode();
-    SPIRAddressSpace AS = getOCLOpaqueTypeAddrSpace(OC);
-    std::string Name;
-    if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC)) {
-      Name =
-          kSPIRVTypeName::PrefixAndDelim + SPIRVOpaqueTypeOpCodeMap::rmap(OC);
-    } else {
-      llvm_unreachable("Not implemented");
-    }
-    return mapType(T, getOrCreateOpaquePtrType(M, Name, AS));
+    if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC))
+      return mapType(T,getSPIRVOpaquePtrType(M, OC));
+    llvm_unreachable("Not implemented!");
   }
   }
   return 0;
@@ -1507,10 +1501,7 @@ void SPIRVToLLVM::transGeneratorMD() {
 
 Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
                                             BasicBlock *BB) {
-  std::string Name = kSPIRVTypeName::PrefixAndDelim +
-                     SPIRVOpaqueTypeOpCodeMap::rmap(OpTypeSampler);
-  auto *SamplerT = getOrCreateOpaquePtrType(
-      M, Name, getOCLOpaqueTypeAddrSpace(BCS->getOpCode()));
+  auto *SamplerT = getSPIRVOpaquePtrType(M, OpTypeSampler);
   auto *I32Ty = IntegerType::getInt32Ty(*Context);
   auto *FTy = FunctionType::get(SamplerT, {I32Ty}, false);
 
@@ -3209,12 +3200,8 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
         transType(Ops[2]->getType()), // ndrange
     };
     if (HasEvents) {
-      std::string Name = kSPIRVTypeName::PrefixAndDelim +
-                         SPIRVOpaqueTypeOpCodeMap::rmap(OpTypeDeviceEvent);
       Type *EventTy = PointerType::get(
-          getOrCreateOpaquePtrType(
-              M, Name, getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
-          SPIRAS_Generic);
+          getSPIRVOpaquePtrType(M, OpTypeDeviceEvent), SPIRAS_Generic);
 
       Tys.push_back(Int32Ty);
       Tys.push_back(EventTy);
