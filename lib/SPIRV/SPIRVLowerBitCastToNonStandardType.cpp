@@ -53,6 +53,72 @@ using namespace llvm;
 
 namespace SPIRV {
 
+static VectorType *getVectorType(Type *Ty) {
+  if (!Ty)
+    return nullptr;
+  if (auto *ElemTy = dyn_cast<PointerType>(Ty))
+    Ty = ElemTy->getElementType();
+  return dyn_cast<VectorType>(Ty);
+}
+
+/// Since SPIR-V does not support non-standard vector types, instructions using
+/// these types should be replaced in a special way to avoid using of
+/// unsupported types.
+/// lowerBitCastToNonStdVec function is designed to avoid using of bitcast to
+/// unsupported vector types instructions and should be called if similar
+/// instructions have been encountered in input LLVM IR.
+bool lowerBitCastToNonStdVec(Instruction *Inst,
+                             std::vector<Instruction *> &InstsToErase) {
+  Instruction *OldInstIter(Inst);
+  IRBuilder<> Builder(OldInstIter);
+  Value *NewValue = OldInstIter->getOperand(0);
+  VectorType *NewVecTy = getVectorType(NewValue->getType());
+  InstsToErase.push_back(OldInstIter);
+  // Handle addrspacecast instruction after bitcast if present
+  for (auto *U : OldInstIter->users()) {
+    if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
+      unsigned DestAS = ASCastInst->getDestAddressSpace();
+      auto *NewVecPtrTy = NewVecTy->getPointerTo(DestAS);
+      // AddrSpaceCast is created explicitly instead of using method
+      // IRBuilder<>.CreateAddrSpaceCast because IRBuilder doesn't create
+      // separate instruction for constant values. Whereas SPIR-V translator
+      // doesn't like several nested instructions in one.
+      NewValue = new AddrSpaceCastInst(NewValue, NewVecPtrTy);
+      Builder.Insert(NewValue);
+      OldInstIter = ASCastInst;
+      InstsToErase.push_back(OldInstIter);
+      break;
+    }
+  }
+  // Handle load instruction which is following the bitcast in the pattern
+  for (auto *U : OldInstIter->users()) {
+    if (auto *LI = dyn_cast<LoadInst>(U)) {
+      NewValue = Builder.CreateLoad(NewVecTy, NewValue);
+      OldInstIter = LI;
+      InstsToErase.push_back(OldInstIter);
+      break;
+    }
+  }
+  // Handle extractelement instruction which is following the load
+  for (auto *U : OldInstIter->users()) {
+    if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
+      VectorType *OldVecTy = getVectorType(Inst->getType());
+      uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
+      uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
+      uint64_t ElemIdx =
+          cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
+          (NumElemsInOldVec / NumElemsInNewVec);
+      NewValue = Builder.CreateExtractElement(NewValue, ElemIdx);
+      NewValue = Builder.CreateTrunc(NewValue, OldVecTy->getElementType());
+      OldInstIter = EEI;
+      InstsToErase.push_back(OldInstIter);
+      break;
+    }
+  }
+  OldInstIter->replaceAllUsesWith(NewValue);
+  return true;
+}
+
 class SPIRVLowerBitCastToNonStandardTypePass {
 public:
   SPIRVLowerBitCastToNonStandardTypePass() {}
@@ -64,20 +130,31 @@ public:
     // parameter, since it added by an optimization.
     bool Changed = false;
 
-    std::vector<std::pair<Instruction *, VectorType *>> BCastsToNonStdVec;
+    std::vector<Instruction *> BCastsToNonStdVec;
     std::vector<Instruction *> InstsToErase;
     for (auto &BB : F)
       for (auto &I : BB) {
         auto *BC = dyn_cast<BitCastInst>(&I);
         if (!BC)
           continue;
-        auto *DestTy = BC->getDestTy();
-        if (auto *ElemTy = dyn_cast<PointerType>(DestTy))
-          DestTy = ElemTy->getElementType();
-        if (auto *DestVecTy = dyn_cast<VectorType>(DestTy)) {
+        auto *SrcTy = BC->getSrcTy();
+        if (auto *SrcElemTy = dyn_cast<PointerType>(SrcTy))
+          SrcTy = SrcElemTy->getElementType();
+        if (auto *SrcVecTy = dyn_cast<VectorType>(SrcTy)) {
+          uint64_t NumElemsInSrcVec = SrcVecTy->getElementCount().getValue();
+          // assert(isValidVectorSize(NumElemsInSrcVec) &&
+          //  ("Unsupported vector type with the size of: " +
+          //   NumElemsInSrcVec));
+          if (!isValidVectorSize(NumElemsInSrcVec))
+            report_fatal_error("Unsupported vector type with the size of: " +
+                                  NumElemsInSrcVec,
+                              false);
+        }
+        VectorType *DestVecTy = getVectorType(BC->getDestTy());
+        if (DestVecTy) {
           uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
           if (!isValidVectorSize(NumElemsInDestVec))
-            BCastsToNonStdVec.push_back(std::make_pair(&I, DestVecTy));
+            BCastsToNonStdVec.push_back(&I);
         }
       }
 
@@ -88,61 +165,6 @@ public:
       InstsToErase[I]->eraseFromParent();
 
     return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
-  }
-
-  bool lowerBitCastToNonStdVec(std::pair<Instruction *, VectorType *> &Inst,
-                               std::vector<Instruction *> &InstsToErase) {
-    Instruction *I = Inst.first;
-    InstsToErase.push_back(I);
-    auto *InstIter = I;
-    IRBuilder<> Builder(I);
-    Value *NewSrc = I->getOperand(0);
-    // It is assumed that the function can contain addrspacecast after handled
-    // bitcast instruction, so addrspacecast should also be handled
-    for (auto *U : I->users()) {
-      if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
-        unsigned DestAddrSpace = ASCastInst->getDestAddressSpace();
-        auto *SrcTy = cast<PointerType>(NewSrc->getType())->getElementType();
-        auto *NewDestPtrTy = SrcTy->getPointerTo(DestAddrSpace);
-        NewSrc = new AddrSpaceCastInst(NewSrc, NewDestPtrTy);
-        Builder.Insert(NewSrc);
-        InstIter = ASCastInst;
-        InstsToErase.push_back(InstIter);
-        break;
-      }
-    }
-    auto *SrcTy = cast<PointerType>((NewSrc)->getType())->getElementType();
-    auto *Load = Builder.CreateLoad(SrcTy, NewSrc);
-    // In the already known pattern, the bitcast is followed by load instruction
-    for (auto *U : InstIter->users()) {
-      if (auto *LI = dyn_cast<LoadInst>(U)) {
-        InstIter = LI;
-        InstsToErase.push_back(InstIter);
-        break;
-      }
-    }
-    // The bitcast is followed by extractelement instruction
-    VectorType *DestVecTy = Inst.second;
-    uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
-    uint64_t NumElemsInSrcVec =
-        cast<VectorType>(SrcTy)->getElementCount().getValue();
-    int ElemIdx = 0;
-    Instruction *ExtrElInstIter = InstIter;
-    for (auto *U : InstIter->users()) {
-      if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
-        ElemIdx = cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
-                  (NumElemsInDestVec / NumElemsInSrcVec);
-        ExtrElInstIter = cast<Instruction>(U);
-        InstsToErase.push_back(ExtrElInstIter);
-        break;
-      }
-    }
-    auto *ExtractElement = Builder.CreateExtractElement(
-        Load, ConstantInt::get(Type::getInt64Ty(I->getContext()), ElemIdx));
-    auto *Trunc =
-        Builder.CreateTrunc(ExtractElement, DestVecTy->getElementType());
-    ExtrElInstIter->replaceAllUsesWith(Trunc);
-    return true;
   }
 };
 
