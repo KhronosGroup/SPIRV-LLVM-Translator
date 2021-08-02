@@ -650,7 +650,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   default: {
     auto OC = T->getOpCode();
     if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC))
-      return mapType(T,getSPIRVOpaquePtrType(M, OC));
+      return mapType(T, getSPIRVOpaquePtrType(M, OC));
     llvm_unreachable("Not implemented!");
   }
   }
