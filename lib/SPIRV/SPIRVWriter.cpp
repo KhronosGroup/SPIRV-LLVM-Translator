@@ -209,6 +209,16 @@ bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
   OCLExtOpKind EOC;
   if (!OCLExtOpMap::rfind(Splited.first.str(), &EOC))
     return false;
+  if (EOC == OpenCLLIB::Vloada_halfn) {
+    auto *VecTy = dyn_cast<VectorType>(F->getReturnType());
+    if (!VecTy)
+      BM->getErrorLog().checkError(
+          false, SPIRVEC_InvalidModule,
+          "vloada_half should be of float vector type");
+    auto *Ty = VecTy->getElementType();
+    BM->getErrorLog().checkError(Ty->isFloatTy(), SPIRVEC_InvalidModule,
+                                 "vloada_half should be of float vector type");
+  }
 
   if (ExtSet)
     *ExtSet = Set;
