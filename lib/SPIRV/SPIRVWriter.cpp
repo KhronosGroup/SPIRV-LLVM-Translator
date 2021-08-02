@@ -2043,18 +2043,18 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
   return true;
 }
 
-/// Transforms SPR-IR work-item builtin calls to SPIRV builtin variables.
+/// Transforms SPV-IR work-item builtin calls to SPIRV builtin variables.
 /// e.g.
-///  SPR-IR: @_Z33__spirv_BuiltInGlobalInvocationIdi(i)
+///  SPV-IR: @_Z33__spirv_BuiltInGlobalInvocationIdi(i)
 ///    is transformed as:
 ///  x = load GlobalInvocationId; extract x, i
 /// e.g.
-///  SPR-IR: @_Z22__spirv_BuiltInWorkDimi()
+///  SPV-IR: @_Z22__spirv_BuiltInWorkDim()
 ///    is transformed as:
 ///  load WorkDim
 bool LLVMToSPIRVBase::transWorkItemBuiltinCallsToVariables() {
   LLVM_DEBUG(dbgs() << "Enter transWorkItemBuiltinCallsToVariables\n");
-  // Store instructions and functions need to be removed.
+  // Store instructions and functions that need to be removed.
   SmallVector<Value *, 16> ToRemove;
   for (auto &F : *M) {
     // Builtins should be declaration only.
@@ -2064,24 +2064,22 @@ bool LLVMToSPIRVBase::transWorkItemBuiltinCallsToVariables() {
     if (!oclIsBuiltin(F.getName(), DemangledName))
       continue;
     LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
-    SPIRVBuiltinVariableKind BVKind;
     SmallVector<StringRef, 2> Postfix;
     // Deprefix "__spirv_"
     StringRef Name = dePrefixSPIRVName(DemangledName, Postfix);
-    // Lookup SPIRV Builtin Variable Kind.
-    if (!SPIRVBuiltInNameMap::rfind(Name.str(), &BVKind))
+    // Lookup SPIRV Builtin map.
+    if (!SPIRVBuiltInNameMap::rfind(Name.str(), nullptr))
       continue;
-    std::string BuiltinVarName =
-        std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
+    std::string BuiltinVarName = DemangledName.str();
     LLVM_DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
     bool IsVec = F.getFunctionType()->getNumParams() > 0;
     Type *GVType =
         IsVec ? FixedVectorType::get(F.getReturnType(), 3) : F.getReturnType();
     auto *BV = new GlobalVariable(
-        *M, GVType, true, GlobalValue::ExternalLinkage, nullptr, BuiltinVarName,
-        0, GlobalVariable::NotThreadLocal, SPIRAS_Input);
-    for (auto UI = F.user_begin(), UE = F.user_end(); UI != UE; ++UI) {
-      auto *CI = dyn_cast<CallInst>(*UI);
+        *M, GVType, /*isConstant=*/true, GlobalValue::ExternalLinkage, nullptr,
+        BuiltinVarName, 0, GlobalVariable::NotThreadLocal, SPIRAS_Input);
+    for (auto *U : F.users()) {
+      auto *CI = dyn_cast<CallInst>(U);
       assert(CI && "invalid instruction");
       const DebugLoc &DLoc = CI->getDebugLoc();
       Instruction *NewValue = new LoadInst(GVType, BV, "", CI);
@@ -2106,6 +2104,8 @@ bool LLVMToSPIRVBase::transWorkItemBuiltinCallsToVariables() {
       I->eraseFromParent();
     else if (auto *F = dyn_cast<Function>(V))
       F->eraseFromParent();
+    else
+      llvm_unreachable("Unexpected value to remove!");
   }
   return true;
 }
