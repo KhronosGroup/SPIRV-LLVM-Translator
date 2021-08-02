@@ -137,18 +137,13 @@ public:
         auto *BC = dyn_cast<BitCastInst>(&I);
         if (!BC)
           continue;
-        auto *SrcTy = BC->getSrcTy();
-        if (auto *SrcElemTy = dyn_cast<PointerType>(SrcTy))
-          SrcTy = SrcElemTy->getElementType();
-        if (auto *SrcVecTy = dyn_cast<VectorType>(SrcTy)) {
+        VectorType *SrcVecTy = getVectorType(BC->getSrcTy());
+        if (SrcVecTy) {
           uint64_t NumElemsInSrcVec = SrcVecTy->getElementCount().getValue();
-          // assert(isValidVectorSize(NumElemsInSrcVec) &&
-          //  ("Unsupported vector type with the size of: " +
-          //   NumElemsInSrcVec));
           if (!isValidVectorSize(NumElemsInSrcVec))
             report_fatal_error("Unsupported vector type with the size of: " +
-                                  NumElemsInSrcVec,
-                              false);
+                                   std::to_string(NumElemsInSrcVec),
+                               false);
         }
         VectorType *DestVecTy = getVectorType(BC->getDestTy());
         if (DestVecTy) {
@@ -161,8 +156,8 @@ public:
     for (auto &I : BCastsToNonStdVec)
       Changed |= lowerBitCastToNonStdVec(I, InstsToErase);
 
-    for (int I = InstsToErase.size() - 1; I >= 0; I--)
-      InstsToErase[I]->eraseFromParent();
+    for (auto I = InstsToErase.rbegin(); I != InstsToErase.rend(); ++I)
+      (*I)->eraseFromParent();
 
     return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   }
