@@ -112,9 +112,6 @@ public:
   /// Transform OCL builtin function to SPIR-V builtin function.
   void transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info);
 
-  /// Transform OCL work item builtin functions to SPIR-V builtin variables.
-  void transWorkItemBuiltinsToVariables();
-
   /// Transform atomic_work_item_fence/mem_fence to __spirv_MemoryBarrier.
   /// func(flag, order, scope) =>
   ///   __spirv_MemoryBarrier(map(scope), map(flag)|map(order))
@@ -337,8 +334,6 @@ bool OCLToSPIRV::runOnModule(Module &Module) {
   CLVer = std::get<1>(Src);
 
   LLVM_DEBUG(dbgs() << "Enter OCLToSPIRV:\n");
-
-  transWorkItemBuiltinsToVariables();
 
   visit(*M);
 
@@ -1025,6 +1020,7 @@ void OCLToSPIRV::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Op OC = OpNop;
   unsigned ExtOp = ~0U;
+  SPIRVBuiltinVariableKind BVKind = BuiltInMax;
   if (StringRef(Info.UniqName).startswith(kSPIRVName::Prefix))
     return;
   if (OCLSPIRVBuiltinMap::find(Info.UniqName, &OC)) {
@@ -1045,7 +1041,11 @@ void OCLToSPIRV::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
     }
   } else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
     Info.UniqName = getSPIRVExtFuncName(SPIRVEIS_OpenCL, ExtOp);
-  else
+  else if (SPIRSPIRVBuiltinVariableMap::find(Info.UniqName, &BVKind)) {
+    // Map OCL work item builtins to SPV-IR work item builtins.
+    // e.g. get_global_id() --> __spirv_BuiltinGlobalInvocationId()
+    Info.UniqName = getSPIRVFuncName(BVKind);
+  } else
     return;
   if (!Info.RetTy)
     mutateCallInstSPIRV(
@@ -1233,60 +1233,6 @@ void OCLToSPIRV::visitCallBuiltinSimple(CallInst *CI, StringRef MangledName,
   Info.MangledName = MangledName.str();
   Info.UniqName = DemangledName.str();
   transBuiltin(CI, Info);
-}
-
-/// Translates OCL work-item builtin functions to SPIRV builtin variables.
-/// Function like get_global_id(i) -> x = load GlobalInvocationId; extract x, i
-/// Function like get_work_dim() -> load WorkDim
-void OCLToSPIRV::transWorkItemBuiltinsToVariables() {
-  LLVM_DEBUG(dbgs() << "Enter transWorkItemBuiltinsToVariables\n");
-  std::vector<Function *> WorkList;
-  for (auto &I : *M) {
-    StringRef DemangledName;
-    if (!oclIsBuiltin(I.getName(), DemangledName))
-      continue;
-    LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
-    std::string BuiltinVarName;
-    SPIRVBuiltinVariableKind BVKind;
-    if (!SPIRSPIRVBuiltinVariableMap::find(DemangledName.str(), &BVKind))
-      continue;
-    BuiltinVarName =
-        std::string(kSPIRVName::Prefix) + SPIRVBuiltInNameMap::map(BVKind);
-    LLVM_DEBUG(dbgs() << "builtin variable name: " << BuiltinVarName << '\n');
-    bool IsVec = I.getFunctionType()->getNumParams() > 0;
-    Type *GVType =
-        IsVec ? FixedVectorType::get(I.getReturnType(), 3) : I.getReturnType();
-    auto BV = new GlobalVariable(*M, GVType, true, GlobalValue::ExternalLinkage,
-                                 nullptr, BuiltinVarName, 0,
-                                 GlobalVariable::NotThreadLocal, SPIRAS_Input);
-    std::vector<Instruction *> InstList;
-    for (auto UI = I.user_begin(), UE = I.user_end(); UI != UE; ++UI) {
-      auto CI = dyn_cast<CallInst>(*UI);
-      assert(CI && "invalid instruction");
-      const DebugLoc &DLoc = CI->getDebugLoc();
-      Instruction *NewValue = new LoadInst(GVType, BV, "", CI);
-      if (DLoc)
-        NewValue->setDebugLoc(DLoc);
-      LLVM_DEBUG(dbgs() << "Transform: " << *CI << " => " << *NewValue << '\n');
-      if (IsVec) {
-        NewValue =
-            ExtractElementInst::Create(NewValue, CI->getArgOperand(0), "", CI);
-        if (DLoc)
-          NewValue->setDebugLoc(DLoc);
-        LLVM_DEBUG(dbgs() << *NewValue << '\n');
-      }
-      NewValue->takeName(CI);
-      CI->replaceAllUsesWith(NewValue);
-      InstList.push_back(CI);
-    }
-    for (auto &Inst : InstList) {
-      Inst->eraseFromParent();
-    }
-    WorkList.push_back(&I);
-  }
-  for (auto &I : WorkList) {
-    I->eraseFromParent();
-  }
 }
 
 void OCLToSPIRV::visitCallReadWriteImage(CallInst *CI,
