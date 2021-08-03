@@ -585,21 +585,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
 
   default: {
     auto OC = T->getOpCode();
-    SPIRAddressSpace AS = getOCLOpaqueTypeAddrSpace(OC);
-    std::string Name;
-    if (isOpaqueGenericTypeOpCode(OC)) {
-      // TODO: Generic opaque type opcodes shouldn't be translated directly to
-      // OCL representation
-      //       SPIRVOpaqueTypeOpCodeMap should be used. The same as for AVC
-      //       INTEL opcodes.
-      Name = OCLOpaqueTypeOpCodeMap::rmap(OC);
-    } else if (isSubgroupAvcINTELTypeOpCode(OC)) {
-      Name =
-          kSPIRVTypeName::PrefixAndDelim + SPIRVOpaqueTypeOpCodeMap::rmap(OC);
-    } else {
-      llvm_unreachable("Not implemented");
-    }
-    return mapType(T, getOrCreateOpaquePtrType(M, Name, AS));
+    if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC))
+      return mapType(T, getSPIRVOpaquePtrType(M, OC));
+    llvm_unreachable("Not implemented!");
   }
   }
   return 0;
@@ -1189,9 +1177,7 @@ void SPIRVToLLVM::transGeneratorMD() {
 
 Value *SPIRVToLLVM::oclTransConstantSampler(SPIRV::SPIRVConstantSampler *BCS,
                                             BasicBlock *BB) {
-  auto *SamplerT =
-      getOrCreateOpaquePtrType(M, OCLOpaqueTypeOpCodeMap::rmap(OpTypeSampler),
-                               getOCLOpaqueTypeAddrSpace(BCS->getOpCode()));
+  auto *SamplerT = getSPIRVOpaquePtrType(M, OpTypeSampler);
   auto *I32Ty = IntegerType::getInt32Ty(*Context);
   auto *FTy = FunctionType::get(SamplerT, {I32Ty}, false);
 
@@ -2572,11 +2558,8 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
         transType(Ops[2]->getType()), // ndrange
     };
     if (HasEvents) {
-      Type *EventTy =
-          PointerType::get(getOrCreateOpaquePtrType(
-                               M, SPIR_TYPE_NAME_CLK_EVENT_T,
-                               getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
-                           SPIRAS_Generic);
+      Type *EventTy = PointerType::get(
+          getSPIRVOpaquePtrType(M, OpTypeDeviceEvent), SPIRAS_Generic);
 
       Tys.push_back(Int32Ty);
       Tys.push_back(EventTy);
