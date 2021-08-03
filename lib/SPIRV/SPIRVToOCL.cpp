@@ -81,11 +81,19 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
   auto MangledName = F->getName();
   std::string DemangledName;
   Op OC = OpNop;
+  SPIRVBuiltinVariableKind BuiltinKind = SPIRVBuiltinVariableKind::BuiltInMax;
   if (!oclIsBuiltin(MangledName, &DemangledName) ||
-      (OC = getSPIRVFuncOC(DemangledName)) == OpNop)
+      ((OC = getSPIRVFuncOC(DemangledName)) == OpNop &&
+       !getSPIRVBuiltin(DemangledName.c_str(), BuiltinKind)))
     return;
   LLVM_DEBUG(dbgs() << "DemangledName = " << DemangledName.c_str() << '\n'
-                    << "OpCode = " << OC << '\n');
+                    << "OpCode = " << OC << '\n'
+                    << "BuiltinKind = " << BuiltinKind << '\n');
+
+  if (BuiltinKind != SPIRVBuiltinVariableKind::BuiltInMax) {
+    visitCallSPIRVBuiltin(&CI, BuiltinKind);
+    return;
+  }
 
   if (OC == OpImageQuerySize || OC == OpImageQuerySizeLod) {
     visitCallSPRIVImageQuerySize(&CI);
@@ -930,6 +938,17 @@ void SPIRVToOCL::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
         return OCLSPIRVBuiltinMap::rmap(OC);
+      },
+      &Attrs);
+}
+
+void SPIRVToOCL::visitCallSPIRVBuiltin(CallInst *CI,
+                                       SPIRVBuiltinVariableKind Kind) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return SPIRSPIRVBuiltinVariableMap::rmap(Kind);
       },
       &Attrs);
 }
