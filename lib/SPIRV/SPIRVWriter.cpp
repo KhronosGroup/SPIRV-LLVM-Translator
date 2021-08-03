@@ -214,10 +214,10 @@ bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
     if (!VecTy)
       BM->getErrorLog().checkError(
           false, SPIRVEC_InvalidModule,
-          "vloada_half should be of float vector type");
+          "vloada_half should be of a half vector type");
     auto *Ty = VecTy->getElementType();
-    BM->getErrorLog().checkError(Ty->isFloatTy(), SPIRVEC_InvalidModule,
-                                 "vloada_half should be of float vector type");
+    BM->getErrorLog().checkError(Ty->isHalfTy(), SPIRVEC_InvalidModule,
+                                 "vloada_half should be of a half vector type");
   }
 
   if (ExtSet)
