@@ -617,10 +617,14 @@ std::string undecorateSPIRVFunction(const std::string &S);
 /// and get the original name.
 bool isDecoratedSPIRVFunc(const Function *F, std::string *UndecName = nullptr);
 
+StringRef dePrefixSPIRVName(StringRef R, SmallVectorImpl<StringRef> &Postfix);
+
 /// Get a canonical function name for a SPIR-V op code.
 std::string getSPIRVFuncName(Op OC, StringRef PostFix = "");
 
 std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned = false);
+
+std::string getSPIRVFuncName(SPIRVBuiltinVariableKind BVKind);
 
 /// Get a canonical function name for a SPIR-V extended instruction
 std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
@@ -957,6 +961,18 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
 
 // check LLVM Intrinsics type(s) for validity
 bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM);
+
+// Copy attributes from function to call site.
+void setAttrByCalledFunc(CallInst *Call);
+bool isSPIRVBuiltinVariable(GlobalVariable *GV, SPIRVBuiltinVariableKind *Kind);
+// Transform builtin variable from GlobalVariable to builtin call.
+// e.g.
+// - GlobalInvolcationId[x] -> _Z33__spirv_BuiltInGlobalInvocationIdi(x)
+// - WorkDim -> _Z22__spirv_BuiltInWorkDimv()
+bool lowerBuiltinVariableToCall(GlobalVariable *GV,
+                                SPIRVBuiltinVariableKind Kind);
+// Transform all builtin variables into calls
+bool lowerBuiltinVariablesToCalls(Module *M);
 
 } // namespace SPIRV
 
