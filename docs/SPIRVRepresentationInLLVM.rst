@@ -344,9 +344,9 @@ For example:
 - !kernel_arg_base_type !4
 - !kernel_arg_type_qual !5
 
-**TODO**: Are all these metadata optional? Access qualifiers are translated for
-image types, but they should be encoded in LLVM IR type name rather than
-function metadata.
+**NOTE**: All metadata from the example above are optional. Access qualifiers
+are translated for image types, but they should be encoded in LLVM IR type name
+rather than function metadata.
 
 Debug information extension
 ===========================
