@@ -54,8 +54,7 @@ using namespace llvm;
 namespace SPIRV {
 
 static VectorType *getVectorType(Type *Ty) {
-  if (!Ty)
-    return nullptr;
+  assert(Ty != nullptr && "Expected non-null type");
   if (auto *ElemTy = dyn_cast<PointerType>(Ty))
     Ty = ElemTy->getElementType();
   return dyn_cast<VectorType>(Ty);
@@ -119,7 +118,8 @@ bool lowerBitCastToNonStdVec(Instruction *Inst,
   return true;
 }
 
-class SPIRVLowerBitCastToNonStandardTypePass {
+class SPIRVLowerBitCastToNonStandardTypePass
+    : public llvm::PassInfoMixin<SPIRVLowerBitCastToNonStandardTypePass> {
 public:
   SPIRVLowerBitCastToNonStandardTypePass() {}
 
@@ -164,8 +164,7 @@ public:
 };
 
 class SPIRVLowerBitCastToNonStandardTypeLegacy
-    : public FunctionPass,
-      public SPIRVLowerBitCastToNonStandardTypePass {
+    : public FunctionPass {
 public:
   static char ID;
   SPIRVLowerBitCastToNonStandardTypeLegacy() : FunctionPass(ID) {}
