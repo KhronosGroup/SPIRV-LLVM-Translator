@@ -74,6 +74,8 @@ bool lowerBitCastToNonStdVec(Instruction *Inst,
   VectorType *NewVecTy = getVectorType(NewValue->getType());
   InstsToErase.push_back(OldInstIter);
   // Handle addrspacecast instruction after bitcast if present
+  // TODO: There are can be many addrspacecast instructions using this bitcast,
+  // so that it is necessary to handle all these instructions in the same way
   for (auto *U : OldInstIter->users()) {
     if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
       unsigned DestAS = ASCastInst->getDestAddressSpace();
