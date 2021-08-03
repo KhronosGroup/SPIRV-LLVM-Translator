@@ -1077,6 +1077,8 @@ void SPIRVToOCL::translateOpaqueTypes() {
       OCLOpaqueName = getOCLImageOpaqueType(Postfixes);
     else if (isSubgroupAvcINTELTypeOpCode(OP))
       OCLOpaqueName = OCLSubgroupINTELTypeOpCodeMap::rmap(OP);
+    else if (isOpaqueGenericTypeOpCode(OP))
+      OCLOpaqueName = OCLOpaqueTypeOpCodeMap::rmap(OP);
     else
       continue;
 
