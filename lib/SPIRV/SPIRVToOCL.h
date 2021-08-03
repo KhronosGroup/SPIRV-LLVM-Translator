@@ -102,6 +102,13 @@ public:
   ///   MangledAtomicTypeNamePrefix
   void translateMangledAtomicTypeName();
 
+  /// Transform __spirv_* builtins (originates from builtin variables) to OCL
+  /// builtins.
+  /// No change with arguments.
+  /// e.g.
+  /// _Z33__spirv_BuiltInGlobalInvocationIdi(x) -> get_global_id(x)
+  void visitCallSPIRVBuiltin(CallInst *CI, SPIRVBuiltinVariableKind Kind);
+
   /// Get prefix work_/sub_ for OCL group builtin functions.
   /// Assuming the first argument of \param CI is a constant integer for
   /// workgroup/subgroup scope enums.
