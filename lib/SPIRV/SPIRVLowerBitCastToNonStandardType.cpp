@@ -163,8 +163,7 @@ public:
   }
 };
 
-class SPIRVLowerBitCastToNonStandardTypeLegacy
-    : public FunctionPass {
+class SPIRVLowerBitCastToNonStandardTypeLegacy : public FunctionPass {
 public:
   static char ID;
   SPIRVLowerBitCastToNonStandardTypeLegacy() : FunctionPass(ID) {}
