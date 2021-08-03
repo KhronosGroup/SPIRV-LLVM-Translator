@@ -253,7 +253,7 @@ following format:
 | OpExtension        | .. code-block:: llvm                                    |
 |                    |                                                         |
 |                    |    !spirv.Extension = !{!0}                             |
-|                    |    !0 = !{!"SPV_KHR_expect_assume"}                               |
+|                    |    !0 = !{!"SPV_KHR_expect_assume"}                     |
 +--------------------+---------------------------------------------------------+
 | OpCapability       | .. code-block:: llvm                                    |
 |                    |                                                         |
