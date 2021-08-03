@@ -78,9 +78,9 @@ mangled as __spirv_Event.
 Address spaces
 --------------
 
-Following
+The following
 `SPIR-V storage classes <https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Storage_Class>`_
-are naturally represented as LLVM IR address spaces with following mapping:
+are naturally represented as LLVM IR address spaces with the following mapping:
 
 SPIR-V storage class    LLVM IR address space
 Function                No address space or addrspace(0)
@@ -329,7 +329,7 @@ Calling convention
 
 OpEntryPoint information is represented in LLVM IR in calling convention.
 A function with `spir_kernel` calling convention will be translated as an entry
-point to SPIR-V module.
+point of the SPIR-V module.
 
 Function metadata
 -----------------
