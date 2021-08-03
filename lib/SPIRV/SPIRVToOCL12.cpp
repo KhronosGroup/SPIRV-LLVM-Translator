@@ -113,6 +113,8 @@ bool SPIRVToOCL12::runOnModule(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
+  // Lower builtin variables to builtin calls first.
+  lowerBuiltinVariablesToCalls(M);
   translateOpaqueTypes();
 
   visit(*M);
