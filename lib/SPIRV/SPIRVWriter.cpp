@@ -4329,5 +4329,6 @@ bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
   legacy::PassManager PassMgr;
   addPassesForSPIRV(PassMgr, Opts);
   PassMgr.run(*M);
+
   return true;
 }
