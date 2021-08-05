@@ -51,6 +51,8 @@
 
 using namespace llvm;
 
+typedef std::vector<std::pair<Instruction *, Value *>> InstructionValueVec;
+
 namespace SPIRV {
 
 static VectorType *getVectorType(Type *Ty) {
@@ -68,15 +70,13 @@ static VectorType *getVectorType(Type *Ty) {
 /// instructions have been encountered in input LLVM IR.
 bool lowerBitCastToNonStdVec(Instruction *Inst,
                              std::vector<Instruction *> &InstsToErase) {
-  Instruction *OldInstIter(Inst);
-  IRBuilder<> Builder(OldInstIter);
-  Value *NewValue = OldInstIter->getOperand(0);
+  IRBuilder<> Builder(Inst);
+  Value *NewValue = Inst->getOperand(0);
   VectorType *NewVecTy = getVectorType(NewValue->getType());
-  InstsToErase.push_back(OldInstIter);
+  InstsToErase.push_back(Inst);
   // Handle addrspacecast instruction after bitcast if present
-  // TODO: There are can be many addrspacecast instructions using this bitcast,
-  // so that it is necessary to handle all these instructions in the same way
-  for (auto *U : OldInstIter->users()) {
+  InstructionValueVec ASCastInsts;
+  for (auto *U : Inst->users()) {
     if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
       unsigned DestAS = ASCastInst->getDestAddressSpace();
       auto *NewVecPtrTy = NewVecTy->getPointerTo(DestAS);
@@ -86,37 +86,47 @@ bool lowerBitCastToNonStdVec(Instruction *Inst,
       // doesn't like several nested instructions in one.
       NewValue = new AddrSpaceCastInst(NewValue, NewVecPtrTy);
       Builder.Insert(NewValue);
-      OldInstIter = ASCastInst;
-      InstsToErase.push_back(OldInstIter);
-      break;
+      ASCastInsts.push_back(std::make_pair(ASCastInst, NewValue));
+      InstsToErase.push_back(ASCastInst);
     }
   }
   // Handle load instruction which is following the bitcast in the pattern
-  for (auto *U : OldInstIter->users()) {
-    if (auto *LI = dyn_cast<LoadInst>(U)) {
-      NewValue = Builder.CreateLoad(NewVecTy, NewValue);
-      OldInstIter = LI;
-      InstsToErase.push_back(OldInstIter);
-      break;
+  InstructionValueVec LoadInsts;
+  for (auto &It : ASCastInsts) {
+    auto *ASCastInst = It.first;
+    for (auto *U : ASCastInst->users()) {
+      if (auto *LI = dyn_cast<LoadInst>(U)) {
+        NewValue = It.second;
+        NewValue = Builder.CreateLoad(NewVecTy, NewValue);
+        LoadInsts.push_back(std::make_pair(LI, NewValue));
+        InstsToErase.push_back(LI);
+      }
     }
   }
   // Handle extractelement instruction which is following the load
-  for (auto *U : OldInstIter->users()) {
-    if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
-      VectorType *OldVecTy = getVectorType(Inst->getType());
-      uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
-      uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
-      uint64_t ElemIdx =
-          cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
-          (NumElemsInOldVec / NumElemsInNewVec);
-      NewValue = Builder.CreateExtractElement(NewValue, ElemIdx);
-      NewValue = Builder.CreateTrunc(NewValue, OldVecTy->getElementType());
-      OldInstIter = EEI;
-      InstsToErase.push_back(OldInstIter);
-      break;
+  InstructionValueVec ExtractElementInsts;
+  for (auto &It : LoadInsts) {
+    auto *LI = It.first;
+    for (auto *U : LI->users()) {
+      if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
+        VectorType *OldVecTy = getVectorType(Inst->getType());
+        uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
+        uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
+        uint64_t ElemIdx =
+            cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
+            (NumElemsInOldVec / NumElemsInNewVec);
+        NewValue = Builder.CreateExtractElement(It.second, ElemIdx);
+        NewValue = Builder.CreateTrunc(NewValue, OldVecTy->getElementType());
+        ExtractElementInsts.push_back(std::make_pair(EEI, NewValue));
+        InstsToErase.push_back(EEI);
+      }
     }
   }
-  OldInstIter->replaceAllUsesWith(NewValue);
+  for (auto &It : ExtractElementInsts) {
+    auto *EEI = It.first;
+    NewValue = It.second;
+    EEI->replaceAllUsesWith(NewValue);
+  }
   return true;
 }
 

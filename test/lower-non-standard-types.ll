@@ -3,11 +3,18 @@
 
 ; CHECK: %0 = addrspacecast <3 x i64> addrspace(1)* @Id to <3 x i64> addrspace(4)*
 ; CHECK: %1 = load <3 x i64>, <3 x i64> addrspace(4)* %0, align 32
-; CHECK: %2 = extractelement <3 x i64> %1, i64 2
-; CHECK: %3 = trunc i64 %2 to i32
-; CHECK: %conv1 = sitofp i32 %3 to float
+; CHECK: %2 = load <3 x i64>, <3 x i64> addrspace(4)* %0, align 32
+; CHECK: %3 = extractelement <3 x i64> %1, i64 0
+; CHECK: %4 = trunc i64 %3 to i32
+; CHECK: %5 = extractelement <3 x i64> %2, i64 2
+; CHECK: %6 = trunc i64 %5 to i32
+; CHECK: %conv1 = sitofp i32 %4 to float
+; CHECK: %conv2 = sitofp i32 %6 to float
 
 ; CHECK-NOT: %0 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
+; CHECK-NOT: %1 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
+; CHECK-NOT: %2 = extractelement <6 x i32> %0, i32 0
+; CHECK-NOT: %3 = extractelement <6 x i32> %1, i32 4
 ; CHECK-NOT: %conv = extractelement <6 x i32> %0, i32 4
 
 ; ModuleID = 'lower-non-standard-types'
@@ -21,8 +28,11 @@ target triple = "spir64-unknown-unknown-sycldevice"
 define dso_local spir_func void @vmult2() local_unnamed_addr #0 !sycl_explicit_simd !4 !intel_reqd_sub_group_size !6 {
 entry:
   %0 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
-  %conv = extractelement <6 x i32> %0, i32 4
-  %conv1 = sitofp i32 %conv to float
+  %1 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
+  %2 = extractelement <6 x i32> %0, i32 0
+  %3 = extractelement <6 x i32> %1, i32 4
+  %conv1 = sitofp i32 %2 to float
+  %conv2 = sitofp i32 %3 to float
   ret void
 }
 
