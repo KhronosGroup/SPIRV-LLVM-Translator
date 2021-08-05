@@ -1870,7 +1870,7 @@ bool postProcessBuiltinReturningStruct(Function *F) {
   F->setName(Name + ".old");
   for (auto *U : F->users()) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
-      auto ST = dyn_cast<StoreInst>(*(CI->user_begin()));
+      auto *ST = dyn_cast<StoreInst>(*(CI->user_begin()));
       assert(ST);
       std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
