@@ -1905,8 +1905,7 @@ bool postProcessBuiltinWithArrayArguments(Function *F,
   mutateFunction(
       F,
       [=](CallInst *CI, std::vector<Value *> &Args) {
-        auto FBegin =
-            CI->getFunction()->begin()->getFirstInsertionPt();
+        auto FBegin = CI->getFunction()->begin()->getFirstInsertionPt();
         for (auto &I : Args) {
           auto *T = I->getType();
           if (!T->isArrayTy())
