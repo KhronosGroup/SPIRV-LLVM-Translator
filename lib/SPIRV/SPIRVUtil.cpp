@@ -1870,8 +1870,7 @@ bool postProcessBuiltinReturningStruct(Function *F) {
   F->setName(Name + ".old");
   for (auto *U : F->users()) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
-      auto *ST = dyn_cast<StoreInst>(*(CI->user_begin()));
-      assert(ST);
+      auto *ST = cast<StoreInst>(*(CI->user_begin()));
       std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(),
@@ -1886,10 +1885,13 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       Args.insert(Args.begin(), ST->getPointerOperand());
       auto *NewCI = CallInst::Create(NewF, Args, CI->getName(), CI);
       NewCI->setCallingConv(CI->getCallingConv());
+      ST->dropAllReferences();
       ST->eraseFromParent();
+      CI->dropAllReferences();
       CI->eraseFromParent();
     }
   }
+  F->dropAllReferences();
   F->eraseFromParent();
   return true;
 }
@@ -1904,7 +1906,7 @@ bool postProcessBuiltinWithArrayArguments(Function *F,
       F,
       [=](CallInst *CI, std::vector<Value *> &Args) {
         auto FBegin =
-            CI->getParent()->getParent()->begin()->getFirstInsertionPt();
+            CI->getFunction()->begin()->getFirstInsertionPt();
         for (auto &I : Args) {
           auto *T = I->getType();
           if (!T->isArrayTy())

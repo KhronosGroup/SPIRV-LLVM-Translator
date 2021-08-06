@@ -586,12 +586,14 @@ void SPIRVToOCLBase::visitCallBuildNDRangeBuiltIn(CallInst *CI, Op OC,
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *Call, std::vector<Value *> &Args) {
-        auto *GWS = Args[0];
-        auto *LWS = Args[1];
-        auto *GWO = Args[2];
-        Args[0] = GWO;
-        Args[1] = GWS;
-        Args[2] = LWS;
+        assert(Args.size() == 3);
+        // OpenCL built-in has another order of parameters.
+        auto *GlobalWorkSize = Args[0];
+        auto *LocalWorkSize = Args[1];
+        auto *GlobalWorkOffset = Args[2];
+        Args[0] = GlobalWorkOffset;
+        Args[1] = GlobalWorkSize;
+        Args[2] = LocalWorkSize;
         // __spirv_BuildNDRange_nD, drop __spirv_
         StringRef S = DemangledName;
         S = S.drop_front(strlen(kSPIRVName::Prefix));
@@ -600,7 +602,7 @@ void SPIRVToOCLBase::visitCallBuildNDRangeBuiltIn(CallInst *CI, Op OC,
         S.split(Split, kSPIRVPostfix::Divider,
                 /*MaxSplit=*/-1, /*KeepEmpty=*/false);
         assert(Split.size() >= 2 && "Invalid SPIRV function name");
-        // Cut _nD and add it to function name
+        // Cut _nD and add it to function name.
         return std::string(kOCLBuiltinName::NDRangePrefix) +
                Split[1].substr(0, 3).str();
       },
