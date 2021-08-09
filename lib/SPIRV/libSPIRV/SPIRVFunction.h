@@ -86,7 +86,8 @@ public:
   // Complete constructor. It does not construct basic blocks.
   SPIRVFunction(SPIRVModule *M, SPIRVTypeFunction *FunctionType, SPIRVId TheId)
       : SPIRVValue(M, 5, OpFunction, FunctionType->getReturnType(), TheId),
-        FuncType(FunctionType), FCtrlMask(FunctionControlMaskNone) {
+        FuncType(FunctionType), FCtrlMask(FunctionControlMaskNone),
+        EntryPointWrapperFunc(nullptr) {
     addAllArguments(TheId + 1);
     validate();
   }
@@ -128,6 +129,14 @@ public:
     ExecModes = std::move(Forward->ExecModes);
   }
 
+  void setEntryPointWrapper(SPIRVFunction *Wrap) {
+    EntryPointWrapperFunc = Wrap;
+  }
+
+  SPIRVFunction *getEntryPointWrapper(void) {
+    return EntryPointWrapperFunc;
+  }
+
   // Assume BB contains valid Id.
   SPIRVBasicBlock *addBasicBlock(SPIRVBasicBlock *BB) {
     Module->add(BB);
@@ -167,6 +176,8 @@ private:
   std::vector<const SPIRVValue *> Variables;
   typedef std::vector<SPIRVBasicBlock *> SPIRVLBasicBlockVector;
   SPIRVLBasicBlockVector BBVec;
+
+  SPIRVFunction *EntryPointWrapperFunc;
 };
 
 typedef SPIRVEntryOpCodeOnly<OpFunctionEnd> SPIRVFunctionEnd;

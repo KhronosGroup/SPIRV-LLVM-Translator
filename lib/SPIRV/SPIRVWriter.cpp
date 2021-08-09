@@ -576,9 +576,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   BF->setFunctionControlMask(transFunctionControlMask(F));
   if (F->hasName())
     BM->setName(BF, F->getName().str());
-  if (isKernel(F))
-    BM->addEntryPoint(ExecutionModelKernel, BF->getId());
-  else if (F->getLinkage() != GlobalValue::InternalLinkage)
+  if (F->getLinkage() != GlobalValue::InternalLinkage)
     BF->setLinkageType(transLinkageType(F));
 
   // Translate OpenCL/SYCL buffer_location metadata if it's attached to the
@@ -3495,7 +3493,27 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
   bool IsKernelEntryPoint = isKernel(I);
 
   if (IsKernelEntryPoint) {
-    collectInputOutputVariables(BF, I);
+    /* emit a wrapper for the function here */
+    SPIRVTypeFunction *BFT = static_cast<SPIRVTypeFunction *>(
+      transType(OCLTypeToSPIRVPtr->getAdaptedType(I)));
+    SPIRVFunction *BF_wrap = static_cast<SPIRVFunction *>(BM->addFunction(BFT));
+
+    BF_wrap->setModule(BM);
+    SPIRVBasicBlock *BB = BM->addBasicBlock(BF_wrap);
+    std::vector<SPIRVWord> args;
+    for (Function::arg_iterator AI = I->arg_begin(), E = I->arg_end(); AI != E;
+         ++AI) {
+      auto ArgNo = AI->getArgNo();
+      SPIRVFunctionParameter *BA = BF_wrap->getArgument(ArgNo);
+      args.push_back(BA->getId());
+    }
+    BM->addCallInst(BF, args, BB);
+    BM->addReturnInst(BB);
+    if (I->hasName())
+      BM->setName(BF_wrap, I->getName().str());
+    BF->setEntryPointWrapper(BF_wrap);
+    BM->addEntryPoint(ExecutionModelKernel, BF_wrap->getId());
+    collectInputOutputVariables(BF_wrap, I);
   }
 }
 
@@ -3660,6 +3678,11 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       if (!BF)
         return false;
 
+      /* execution mode needs to be applied to the kernel entry point wrapper. */
+      SPIRVFunction *EBF = BF->getEntryPointWrapper();
+      if (EBF)
+        BF = EBF;
+
       switch (EMode) {
       case spv::ExecutionModeContractionOff:
         BF->addExecutionMode(BM->add(
@@ -3780,13 +3803,17 @@ void LLVMToSPIRVBase::transFPContract() {
     }
     SPIRVFunction *BF = static_cast<SPIRVFunction *>(TranslatedF);
 
+    /* FP contract needs to be applied to the kernel entry point wrapper. */
+    SPIRVFunction *EBF = BF->getEntryPointWrapper();
+    if (EBF)
+      BF = EBF;
+
     bool IsKernelEntryPoint =
         BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
     if (!IsKernelEntryPoint)
       continue;
 
     FPContract FPC = getFPContract(&F);
-    assert(FPC != FPContract::UNDEF);
 
     bool DisableContraction = false;
     switch (Mode) {
@@ -3836,6 +3863,11 @@ bool LLVMToSPIRVBase::transOCLMetadata() {
 
     SPIRVFunction *BF = static_cast<SPIRVFunction *>(getTranslatedValue(&F));
     assert(BF && "Kernel function should be translated first");
+
+    /* execution mode needs to be applied to the kernel entry point wrapper. */
+    SPIRVFunction *EBF = BF->getEntryPointWrapper();
+    if (EBF)
+      BF = EBF;
 
     // Create 'OpString' as a workaround to store information about
     // *orignal* (typedef'ed, unsigned integers) type names of kernel arguments.
