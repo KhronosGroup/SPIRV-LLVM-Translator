@@ -323,8 +323,20 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     return;
   }
   if (DemangledName == kOCLBuiltinName::Dot &&
-      !(CI.getOperand(0)->getType()->isVectorTy())) {
+      (CI.getOperand(0)->getType()->isFloatTy() ||
+       CI.getOperand(1)->getType()->isDoubleTy())) {
     visitCallDot(&CI);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::Dot || DemangledName == kOCLBuiltinName::Dot_Acc_Sat) {
+    if (CI.getOperand(0)->getType()->isVectorTy()) {
+      auto *VT = dyn_cast<VectorType>(CI.getOperand(0)->getType());
+      if (!isa<llvm::IntegerType>(VT->getElementType())) {
+        visitCallBuiltinSimple(&CI, MangledName, DemangledName);
+        return;
+      }
+    }
+    visitCallDot(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::FMin ||
@@ -1302,6 +1314,91 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI) {
   IRBuilder<> Builder(CI);
   Value *FMulVal = Builder.CreateFMul(CI->getOperand(0), CI->getOperand(1));
   CI->replaceAllUsesWith(FMulVal);
+  CI->eraseFromParent();
+}
+
+void OCLToSPIRVBase::visitCallDot(CallInst* CI, StringRef MangledName,
+                                    StringRef DemangledName) {
+  // translation for dot function calls,
+  // to differentiate between integer dot products
+
+  SmallVector<Value *, 3> Args;
+  Args.push_back(CI->getOperand(0));
+  Args.push_back(CI->getOperand(1));
+  bool IsFirstSigned, IsSecondSigned;
+  bool IsDot = DemangledName == kOCLBuiltinName::Dot;
+  std::string funName = (IsDot) ? "DotKHR" : "DotAccSatKHR";
+  if (CI->getNumArgOperands() > 2) {
+    Args.push_back(CI->getOperand(2));
+  }
+  if (CI->getNumArgOperands() > 3) {
+    Args.push_back(CI->getOperand(3));
+  }
+  if (CI->getOperand(0)->getType()->isVectorTy()) {
+    if (IsDot) {
+      // dot(char4, char4) @_Z3dotDv4_cS_
+      // dot(char4, uchar4) @_Z3dotDv4_cDv4_h
+      // dot(uchar4, char4) @_Z3dotDv4_hDv4_c
+      // dot(uchar4, uchar4) @_Z3dotDv4_hS_
+      // or
+      // dot(short2, short2) @_Z3dotDv2_sS_
+      // dot(short2, ushort2) @_Z3dotDv2_sDv2_t
+      // dot(ushort2, short2) @_Z3dotDv2_tDv2_s
+      // dot(ushort2, ushort2) @_Z3dotDv2_tS_
+      if (MangledName[MangledName.size() - 1] == '_') {
+        IsFirstSigned = ((MangledName[MangledName.size() - 3] == 'c') || 
+                        (MangledName[MangledName.size() - 3] == 's'));
+        IsSecondSigned = IsFirstSigned;
+      } else {
+        IsFirstSigned = ((MangledName[MangledName.size() - 6] == 'c') ||
+                        (MangledName[MangledName.size() - 6] == 's'));
+        IsSecondSigned = ((MangledName[MangledName.size() - 1] == 'c') ||
+                         (MangledName[MangledName.size() - 1] == 's'));
+      }
+    } else {
+      // dot_acc_sat(char4, char4, int) @_Z11dot_acc_satDv4_cS_i
+      // dot_acc_sat(char4, uchar4, int) @_Z11dot_acc_satDv4_cDv4_hi
+      // dot_acc_sat(uchar4, char4, int) @_Z11dot_acc_satDv4_hDv4_ci
+      // dot_acc_sat(uchar4, uchar4, uint) @_Z11dot_acc_satDv4_hS_j
+      // or
+      // dot_acc_sat(short2, short2, int) @_Z11dot_acc_satDv4_sS_i
+      // dot_acc_sat(short2, ushort2, int) @_Z11dot_acc_satDv4_sDv4_ti
+      // dot_acc_sat(ushort2, short2, int) @_Z11dot_acc_satDv4_tDv4_si
+      // dot_acc_sat(ushort2, ushort2, uint) @_Z11dot_acc_satDv4_tS_j
+      IsFirstSigned = ((MangledName[19] == 'c') || (MangledName[19] == 's'));
+      IsSecondSigned = (MangledName[20] == 'S'
+                            ? IsFirstSigned
+                            : ((MangledName[MangledName.size() - 2] == 'c') ||
+                               (MangledName[MangledName.size() - 2] == 's')));
+    }
+  } else {
+      // for packed format
+      // dot(int, int, int) @_Z3dotiii
+      // dot(int, uint, int) @_Z3dotiji
+      // dot(uint, int, int) @_Z3dotjii
+      // dot(uint, uint, int) @_Z3dotjji
+      // or
+      // dot_acc_sat(int, int, int, int) @_Z11dot_acc_satiii
+      // dot_acc_sat(int, uint, int, int) @_Z11dot_acc_satiji
+      // dot_acc_sat(uint, int, int, int) @_Z11dot_acc_satjii
+      // dot_acc_sat(uint, uint, int, int) @_Z11dot_acc_satjji 
+      IsFirstSigned = (IsDot) ? (MangledName[MangledName.size() - 3] == 'i')
+                              : (MangledName[MangledName.size() - 4] == 'i');
+      IsSecondSigned = (IsDot) ? (MangledName[MangledName.size() - 2] == 'i')
+                               : (MangledName[MangledName.size() - 3] == 'i');
+  }
+  std::string NamePref =
+      (IsFirstSigned != IsSecondSigned ? "SU" : ((IsFirstSigned) ? "S" : "U"));
+  std::string finName = "_Z" +
+                        std::to_string(NamePref.size() + funName.size() +
+                                       strlen(kSPIRVName::Prefix)) +
+                        kSPIRVName::Prefix + NamePref + funName;
+  StringRef opName = finName;
+  FunctionType *FT = FunctionType::get(CI->getType(), getTypes(Args), false);
+  FunctionCallee NewF =
+      CI->getFunction()->getParent()->getOrInsertFunction(opName, FT);
+  CallInst *NewCall = CallInst::Create(NewF, Args, "", CI);
+  CI->replaceAllUsesWith(NewCall);
   CI->eraseFromParent();
 }
 
