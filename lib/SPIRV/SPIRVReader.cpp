@@ -1510,6 +1510,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         LVar->addAttribute(kVCMetadata::VCByteOffset, utostr(Offset));
       if (BVar->hasDecorate(DecorationVolatile))
         LVar->addAttribute(kVCMetadata::VCVolatile);
+      SPIRVWord StarsOnElement;
+      if (BVar->hasDecorate(DecorationSingleElementVectorINTEL, 0,
+                            &StarsOnElement))
+        LVar->addAttribute(kVCMetadata::VCSingleElementVector,
+                           std::to_string(StarsOnElement));
     }
 
     return Res;
@@ -3885,9 +3890,12 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
   if (BF->hasDecorate(DecorationSIMTCallINTEL, 0, &SIMTMode))
     F->addFnAttr(kVCMetadata::VCSIMTCall, std::to_string(SIMTMode));
 
-  auto SEVAttr = Attribute::get(*Context, kVCMetadata::VCSingleElementVector);
-  if (BF->hasDecorate(DecorationSingleElementVectorINTEL))
-    F->addAttributeAtIndex(AttributeList::ReturnIndex, SEVAttr);
+  SPIRVWord StarsOnElement = 0;
+  if (BF->hasDecorate(DecorationSingleElementVectorINTEL, 0, &StarsOnElement))
+    F->addAttributeAtIndex(AttributeList::ReturnIndex,
+                    Attribute::get(F->getContext(),
+                                   kVCMetadata::VCSingleElementVector,
+                                   std::to_string(StarsOnElement)));
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
@@ -3899,8 +3907,11 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
                                       std::to_string(Kind));
       F->addParamAttr(ArgNo, Attr);
     }
-    if (BA->hasDecorate(DecorationSingleElementVectorINTEL))
-      F->addParamAttr(ArgNo, SEVAttr);
+    if (BA->hasDecorate(DecorationSingleElementVectorINTEL, 0, &StarsOnElement))
+      F->addParamAttr(ArgNo,
+                      Attribute::get(F->getContext(),
+                                     kVCMetadata::VCSingleElementVector,
+                                     std::to_string(StarsOnElement)));
   }
 
   // Do not add float control if there is no any

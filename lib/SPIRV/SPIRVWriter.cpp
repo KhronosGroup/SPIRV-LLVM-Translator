@@ -721,12 +721,18 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
   }
 
   if (Attrs.hasRetAttr(kVCMetadata::VCSingleElementVector)) {
+    SPIRVWord StarsOnElement = 0;
+    Attrs
+        .getAttribute(AttributeList::ReturnIndex,
+                      kVCMetadata::VCSingleElementVector)
+        .getValueAsString()
+        .getAsInteger(0, StarsOnElement);
     auto *RT = BF->getType();
     (void)RT;
     assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
             RT->isTypePointer()) &&
            "This decoration is valid only for Scalar or Pointer types");
-    BF->addDecorate(DecorationSingleElementVectorINTEL);
+    BF->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
   }
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
@@ -741,12 +747,16 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
       BA->addDecorate(DecorationFuncParamIOKindINTEL, Kind);
     }
     if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCSingleElementVector)) {
+      SPIRVWord StarsOnElement = 0;
+      Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)
+          .getValueAsString()
+          .getAsInteger(0, StarsOnElement);
       auto *AT = BA->getType();
       (void)AT;
       assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
               AT->isTypePointer()) &&
              "This decoration is valid only for Scalar or Pointer types");
-      BA->addDecorate(DecorationSingleElementVectorINTEL);
+      BA->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
     }
   }
   if (!isKernel(F) &&
@@ -1519,6 +1529,19 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       }
       if (GV->hasAttribute(kVCMetadata::VCVolatile))
         BVar->addDecorate(DecorationVolatile);
+
+      if (GV->hasAttribute(kVCMetadata::VCSingleElementVector)) {
+        SPIRVWord StarsOnElement = 0;
+        GV->getAttribute(kVCMetadata::VCSingleElementVector)
+            .getValueAsString()
+            .getAsInteger(0, StarsOnElement);
+        auto *RT = GV->getType()->getElementType();
+        (void)RT;
+        assert((RT->isFloatingPointTy() || RT->isIntegerTy() ||
+                RT->isPointerTy()) &&
+               "This decoration is valid only for Scalar or Pointer types");
+        BVar->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+      }
     }
 
     mapValue(V, BVar);
