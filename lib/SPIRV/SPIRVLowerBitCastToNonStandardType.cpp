@@ -90,16 +90,15 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
         // doesn't like several nested instructions in one.
         Value *LocalValue = new AddrSpaceCastInst(NewInst, NewVecPtrTy);
         Builder.Insert(LocalValue);
-        Changed |= lowerBitCastToNonStdVec(ASCastInst, LocalValue, OldVecTy,
-                                           InstsToErase, Builder,
-                                           RecursionDepth);
+        Changed |=
+            lowerBitCastToNonStdVec(ASCastInst, LocalValue, OldVecTy,
+                                    InstsToErase, Builder, RecursionDepth);
       }
       // Handle load instruction which is following the bitcast in the pattern
       else if (auto *LI = dyn_cast<LoadInst>(U)) {
         Value *LocalValue = Builder.CreateLoad(NewVecTy, NewInst);
-        Changed |= lowerBitCastToNonStdVec(LI, LocalValue, OldVecTy,
-                                           InstsToErase, Builder,
-                                           RecursionDepth);
+        Changed |= lowerBitCastToNonStdVec(
+            LI, LocalValue, OldVecTy, InstsToErase, Builder, RecursionDepth);
       }
       // Handle extractelement instruction which is following the load
       else if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
@@ -111,9 +110,8 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
         Value *LocalValue = Builder.CreateExtractElement(NewInst, ElemIdx);
         LocalValue =
             Builder.CreateTrunc(LocalValue, OldVecTy->getElementType());
-        Changed |= lowerBitCastToNonStdVec(EEI, LocalValue, OldVecTy,
-                                           InstsToErase, Builder,
-                                           RecursionDepth);
+        Changed |= lowerBitCastToNonStdVec(
+            EEI, LocalValue, OldVecTy, InstsToErase, Builder, RecursionDepth);
       }
     }
   }
@@ -161,8 +159,8 @@ public:
     for (auto &I : BCastsToNonStdVec) {
       Value *NewValue = I->getOperand(0);
       VectorType *OldVecTy = getVectorType(I->getType());
-      Changed |= lowerBitCastToNonStdVec(I, NewValue, OldVecTy, InstsToErase,
-                                         Builder);
+      Changed |=
+          lowerBitCastToNonStdVec(I, NewValue, OldVecTy, InstsToErase, Builder);
     }
 
     for (auto *I : InstsToErase)
