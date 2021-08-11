@@ -1,17 +1,17 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
 
-; CHECK: %0 = addrspacecast <3 x i64> addrspace(1)* @Id to <3 x i64> addrspace(4)*
-; CHECK: %1 = load <3 x i64>, <3 x i64> addrspace(4)* %0, align 32
-; CHECK: %2 = extractelement <3 x i64> %1, i64 0
-; CHECK: %3 = trunc i64 %2 to i32
-; CHECK: %4 = load <3 x i64>, <3 x i64> addrspace(4)* %0, align 32
-; CHECK: %5 = extractelement <3 x i64> %4, i64 2
-; CHECK: %6 = trunc i64 %5 to i32
-; CHECK: %conv1 = sitofp i32 %3 to float
-; CHECK: %conv2 = sitofp i32 %6 to float
+; CHECK: [[ASCastInst:%.*]] = addrspacecast <3 x i64> addrspace(1)* @Id to <3 x i64> addrspace(4)*
+; CHECK: [[LoadInst1:%.*]] = load <3 x i64>, <3 x i64> addrspace(4)* [[ASCastInst]], align 32
+; CHECK: [[ExtrElInst1:%.*]] = extractelement <3 x i64> [[LoadInst1]], i64 0
+; CHECK: [[TruncInst1:%.*]] = trunc i64 [[ExtrElInst1]] to i32
+; CHECK: [[LoadInst2:%.*]] = load <3 x i64>, <3 x i64> addrspace(4)* [[ASCastInst]], align 32
+; CHECK: [[ExtrElInst2:%.*]] = extractelement <3 x i64> [[LoadInst2]], i64 2
+; CHECK: [[TruncInst2:%.*]] = trunc i64 [[ExtrElInst2]] to i32
+; CHECK: %conv1 = sitofp i32 [[TruncInst1]] to float
+; CHECK: %conv2 = sitofp i32 [[TruncInst2]] to float
 
-; CHECK-NOT: <3 x i64>
+; CHECK-NOT: <6 x i32>
 
 ; ModuleID = 'lower-non-standard-types'
 source_filename = "lower-non-standard-types.cpp"

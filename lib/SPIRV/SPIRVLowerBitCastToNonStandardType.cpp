@@ -53,8 +53,6 @@ using namespace llvm;
 
 namespace SPIRV {
 
-constexpr unsigned MaxRecursionDepth = 16;
-
 static VectorType *getVectorType(Type *Ty) {
   assert(Ty != nullptr && "Expected non-null type");
   if (auto *ElemTy = dyn_cast<PointerType>(Ty))
@@ -71,11 +69,12 @@ static VectorType *getVectorType(Type *Ty) {
 bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
                              const VectorType *OldVecTy,
                              std::vector<Instruction *> &InstsToErase,
-                             IRBuilder<> &Builder, unsigned RecursionDepth) {
-  if (RecursionDepth > MaxRecursionDepth)
+                             IRBuilder<> &Builder,
+                             unsigned RecursionDepth = 0) {
+  static constexpr unsigned MaxRecursionDepth = 16;
+  if (RecursionDepth++ > MaxRecursionDepth)
     report_fatal_error(
         "The depth of recursion exceeds the maximum possible depth", false);
-  RecursionDepth++;
   bool Changed = false;
   VectorType *NewVecTy = getVectorType(NewInst->getType());
   if (NewVecTy) {
@@ -162,9 +161,8 @@ public:
     for (auto &I : BCastsToNonStdVec) {
       Value *NewValue = I->getOperand(0);
       VectorType *OldVecTy = getVectorType(I->getType());
-      unsigned RecursionDepth = 0;
       Changed |= lowerBitCastToNonStdVec(I, NewValue, OldVecTy, InstsToErase,
-                                         Builder, RecursionDepth);
+                                         Builder);
     }
 
     for (auto *I : InstsToErase)
