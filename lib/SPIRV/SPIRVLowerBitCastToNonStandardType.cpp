@@ -75,6 +75,7 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
   if (RecursionDepth++ > MaxRecursionDepth)
     report_fatal_error(
         "The depth of recursion exceeds the maximum possible depth", false);
+
   bool Changed = false;
   VectorType *NewVecTy = getVectorType(NewInst->getType());
   if (NewVecTy) {

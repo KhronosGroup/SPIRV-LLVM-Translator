@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
+; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s --implicit-check-not="<6 x i32>"
 
 ; CHECK: [[ASCastInst:%.*]] = addrspacecast <3 x i64> addrspace(1)* @Id to <3 x i64> addrspace(4)*
 ; CHECK: [[LoadInst1:%.*]] = load <3 x i64>, <3 x i64> addrspace(4)* [[ASCastInst]], align 32
@@ -10,8 +10,6 @@
 ; CHECK: [[TruncInst2:%.*]] = trunc i64 [[ExtrElInst2]] to i32
 ; CHECK: %conv1 = sitofp i32 [[TruncInst1]] to float
 ; CHECK: %conv2 = sitofp i32 [[TruncInst2]] to float
-
-; CHECK-NOT: <6 x i32>
 
 ; ModuleID = 'lower-non-standard-types'
 source_filename = "lower-non-standard-types.cpp"
