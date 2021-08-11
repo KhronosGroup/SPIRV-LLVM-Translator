@@ -66,47 +66,52 @@ static VectorType *getVectorType(Type *Ty) {
 /// lowerBitCastToNonStdVec function is designed to avoid using of bitcast to
 /// unsupported vector types instructions and should be called if similar
 /// instructions have been encountered in input LLVM IR.
-bool lowerBitCastToNonStdVec(Instruction *Inst, Value *NewValue,
-                             VectorType *OldVecTy, VectorType *NewVecTy,
-                             std::vector<Instruction *> &InstsToErase) {
+bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
+                             VectorType *OldVecTy,
+                             std::vector<Instruction *> &InstsToErase,
+                             IRBuilder<> *Builder) {
   bool Changed = false;
-  IRBuilder<> Builder(Inst);
-  for (auto *U : Inst->users()) {
-    // Handle addrspacecast instruction after bitcast if present
-    if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
-      unsigned DestAS = ASCastInst->getDestAddressSpace();
-      auto *NewVecPtrTy = NewVecTy->getPointerTo(DestAS);
-      // AddrSpaceCast is created explicitly instead of using method
-      // IRBuilder<>.CreateAddrSpaceCast because IRBuilder doesn't create
-      // separate instruction for constant values. Whereas SPIR-V translator
-      // doesn't like several nested instructions in one.
-      Value *LocalValue = new AddrSpaceCastInst(NewValue, NewVecPtrTy);
-      Builder.Insert(LocalValue);
-      InstsToErase.push_back(ASCastInst);
-      Changed |= lowerBitCastToNonStdVec(ASCastInst, LocalValue, OldVecTy,
-                                         NewVecTy, InstsToErase);
-    }
-    // Handle load instruction which is following the bitcast in the pattern
-    if (auto *LI = dyn_cast<LoadInst>(U)) {
-      Value *LocalValue = Builder.CreateLoad(NewVecTy, NewValue);
-      InstsToErase.push_back(LI);
-      Changed |= lowerBitCastToNonStdVec(LI, LocalValue, OldVecTy, NewVecTy,
-                                         InstsToErase);
-    }
-    // Handle extractelement instruction which is following the load
-    if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
-      uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
-      uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
-      uint64_t ElemIdx =
-          cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
-          (NumElemsInOldVec / NumElemsInNewVec);
-      Value *LocalValue = Builder.CreateExtractElement(NewValue, ElemIdx);
-      LocalValue = Builder.CreateTrunc(LocalValue, OldVecTy->getElementType());
-      InstsToErase.push_back(EEI);
-      EEI->replaceAllUsesWith(LocalValue);
+  VectorType *NewVecTy = getVectorType(NewInst->getType());
+  if (NewVecTy) {
+    for (auto *U : OldInst->users()) {
+      // Handle addrspacecast instruction after bitcast if present
+      if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
+        unsigned DestAS = ASCastInst->getDestAddressSpace();
+        auto *NewVecPtrTy = NewVecTy->getPointerTo(DestAS);
+        // AddrSpaceCast is created explicitly instead of using method
+        // IRBuilder<>.CreateAddrSpaceCast because IRBuilder doesn't create
+        // separate instruction for constant values. Whereas SPIR-V translator
+        // doesn't like several nested instructions in one.
+        Value *LocalValue = new AddrSpaceCastInst(NewInst, NewVecPtrTy);
+        Builder->Insert(LocalValue);
+        Changed |= lowerBitCastToNonStdVec(ASCastInst, LocalValue, OldVecTy,
+                                           InstsToErase, Builder);
+      }
+      // Handle load instruction which is following the bitcast in the pattern
+      else if (auto *LI = dyn_cast<LoadInst>(U)) {
+        Value *LocalValue = Builder->CreateLoad(NewVecTy, NewInst);
+        Changed |= lowerBitCastToNonStdVec(LI, LocalValue, OldVecTy,
+                                           InstsToErase, Builder);
+      }
+      // Handle extractelement instruction which is following the load
+      else if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
+        uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
+        uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
+        uint64_t ElemIdx =
+            cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
+            (NumElemsInOldVec / NumElemsInNewVec);
+        Value *LocalValue = Builder->CreateExtractElement(NewInst, ElemIdx);
+        LocalValue =
+            Builder->CreateTrunc(LocalValue, OldVecTy->getElementType());
+        Changed |= lowerBitCastToNonStdVec(EEI, LocalValue, OldVecTy,
+                                           InstsToErase, Builder);
+      }
     }
   }
-  return Changed;
+  InstsToErase.push_back(OldInst);
+  if (!Changed)
+    OldInst->replaceAllUsesWith(NewInst);
+  return true;
 }
 
 class SPIRVLowerBitCastToNonStandardTypePass
@@ -143,17 +148,17 @@ public:
             BCastsToNonStdVec.push_back(&I);
         }
       }
+    IRBuilder<> Builder(F.getContext());
     for (auto &I : BCastsToNonStdVec) {
       Value *NewValue = I->getOperand(0);
       VectorType *OldVecTy = getVectorType(I->getType());
-      VectorType *NewVecTy = getVectorType(NewValue->getType());
-      InstsToErase.push_back(I);
-      Changed |= lowerBitCastToNonStdVec(I, NewValue, OldVecTy, NewVecTy,
-                                         InstsToErase);
+      Builder.SetInsertPoint(I);
+      Changed |= lowerBitCastToNonStdVec(I, NewValue, OldVecTy, InstsToErase,
+                                         &Builder);
     }
 
-    for (auto I = InstsToErase.rbegin(); I != InstsToErase.rend(); ++I)
-      (*I)->eraseFromParent();
+    for (auto *I : InstsToErase)
+      I->eraseFromParent();
 
     return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   }
