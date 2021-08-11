@@ -53,6 +53,8 @@ using namespace llvm;
 
 namespace SPIRV {
 
+constexpr unsigned MaxRecursionDepth = 16;
+
 static VectorType *getVectorType(Type *Ty) {
   assert(Ty != nullptr && "Expected non-null type");
   if (auto *ElemTy = dyn_cast<PointerType>(Ty))
@@ -67,12 +69,17 @@ static VectorType *getVectorType(Type *Ty) {
 /// unsupported vector types instructions and should be called if similar
 /// instructions have been encountered in input LLVM IR.
 bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
-                             VectorType *OldVecTy,
+                             const VectorType *OldVecTy,
                              std::vector<Instruction *> &InstsToErase,
-                             IRBuilder<> *Builder) {
+                             IRBuilder<> &Builder, unsigned RecursionDepth) {
+  if (RecursionDepth > MaxRecursionDepth)
+    report_fatal_error(
+        "The depth of recursion exceeds the maximum possible depth", false);
+  RecursionDepth++;
   bool Changed = false;
   VectorType *NewVecTy = getVectorType(NewInst->getType());
   if (NewVecTy) {
+    Builder.SetInsertPoint(OldInst);
     for (auto *U : OldInst->users()) {
       // Handle addrspacecast instruction after bitcast if present
       if (auto *ASCastInst = dyn_cast<AddrSpaceCastInst>(U)) {
@@ -83,15 +90,17 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
         // separate instruction for constant values. Whereas SPIR-V translator
         // doesn't like several nested instructions in one.
         Value *LocalValue = new AddrSpaceCastInst(NewInst, NewVecPtrTy);
-        Builder->Insert(LocalValue);
+        Builder.Insert(LocalValue);
         Changed |= lowerBitCastToNonStdVec(ASCastInst, LocalValue, OldVecTy,
-                                           InstsToErase, Builder);
+                                           InstsToErase, Builder,
+                                           RecursionDepth);
       }
       // Handle load instruction which is following the bitcast in the pattern
       else if (auto *LI = dyn_cast<LoadInst>(U)) {
-        Value *LocalValue = Builder->CreateLoad(NewVecTy, NewInst);
+        Value *LocalValue = Builder.CreateLoad(NewVecTy, NewInst);
         Changed |= lowerBitCastToNonStdVec(LI, LocalValue, OldVecTy,
-                                           InstsToErase, Builder);
+                                           InstsToErase, Builder,
+                                           RecursionDepth);
       }
       // Handle extractelement instruction which is following the load
       else if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
@@ -100,11 +109,12 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
         uint64_t ElemIdx =
             cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
             (NumElemsInOldVec / NumElemsInNewVec);
-        Value *LocalValue = Builder->CreateExtractElement(NewInst, ElemIdx);
+        Value *LocalValue = Builder.CreateExtractElement(NewInst, ElemIdx);
         LocalValue =
-            Builder->CreateTrunc(LocalValue, OldVecTy->getElementType());
+            Builder.CreateTrunc(LocalValue, OldVecTy->getElementType());
         Changed |= lowerBitCastToNonStdVec(EEI, LocalValue, OldVecTy,
-                                           InstsToErase, Builder);
+                                           InstsToErase, Builder,
+                                           RecursionDepth);
       }
     }
   }
@@ -152,9 +162,9 @@ public:
     for (auto &I : BCastsToNonStdVec) {
       Value *NewValue = I->getOperand(0);
       VectorType *OldVecTy = getVectorType(I->getType());
-      Builder.SetInsertPoint(I);
+      unsigned RecursionDepth = 0;
       Changed |= lowerBitCastToNonStdVec(I, NewValue, OldVecTy, InstsToErase,
-                                         &Builder);
+                                         Builder, RecursionDepth);
     }
 
     for (auto *I : InstsToErase)

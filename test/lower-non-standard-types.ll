@@ -11,14 +11,7 @@
 ; CHECK: %conv1 = sitofp i32 %3 to float
 ; CHECK: %conv2 = sitofp i32 %6 to float
 
-; CHECK-NOT: %0 = bitcast <3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*
-; CHECK-NOT: %1 = addrspacecast <6 x i32> addrspace(1)* %0 to <6 x i32> addrspace(4)*
-; CHECK-NOT: %2 = load <6 x i32>, <6 x i32> addrspace(4)* %1, align 32
-; CHECK-NOT: %3 = load <6 x i32>, <6 x i32> addrspace(4)* %1, align 32
-; CHECK-NOT: %4 = extractelement <6 x i32> %2, i32 0
-; CHECK-NOT: %5 = extractelement <6 x i32> %3, i32 4
-; CHECK-NOT: %conv1 = sitofp i32 %4 to float
-; CHECK-NOT: %conv2 = sitofp i32 %5 to float
+; CHECK-NOT: <3 x i64>
 
 ; ModuleID = 'lower-non-standard-types'
 source_filename = "lower-non-standard-types.cpp"
