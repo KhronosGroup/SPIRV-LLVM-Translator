@@ -4143,6 +4143,9 @@ bool SPIRVToLLVM::transSourceExtension() {
 
 llvm::GlobalValue::LinkageTypes
 SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
+  std::string ValueName = V->getName();
+  if (ValueName == "llvm.used" || ValueName == "llvm.compiler.used")
+    return GlobalValue::AppendingLinkage;
   int LT = V->getLinkageType();
   switch (LT) {
   case internal::LinkageTypeInternal:
