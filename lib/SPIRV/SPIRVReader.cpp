@@ -3012,6 +3012,9 @@ std::string SPIRVToLLVM::getOCLGenericCastToPtrName(SPIRVInstruction *BI) {
 
 llvm::GlobalValue::LinkageTypes
 SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
+  std::string ValueName = V->getName();
+  if (ValueName == "llvm.used" || ValueName == "llvm.compiler.used")
+    return GlobalValue::AppendingLinkage;
   if (V->getLinkageType() == LinkageTypeInternal) {
     return GlobalValue::InternalLinkage;
   } else if (V->getLinkageType() == LinkageTypeImport) {
