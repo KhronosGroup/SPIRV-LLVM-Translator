@@ -238,7 +238,7 @@ following format:
 | OpSource           | .. code-block:: llvm                                    |
 |                    |                                                         |
 |                    |    !spirv.Source = !{!0}                                |
-|                    |    !0 = !{i32 3, i32 102000, !1}                        |
+|                    |    !0 = !{i32 3, i32 66048, !1}                        |
 |                    |    ; 3 - OpenCL_C                                       |
 |                    |    ; 102000 - OpenCL version 1.2                        |
 |                    |    ; !1 - optional file id.                             |
