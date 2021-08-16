@@ -7,7 +7,8 @@
 ; CHECK: [[TruncInst1:%.*]] = trunc i64 [[ExtrElInst1]] to i32
 ; CHECK: [[LoadInst2:%.*]] = load <3 x i64>, <3 x i64> addrspace(4)* [[ASCastInst]], align 32
 ; CHECK: [[ExtrElInst2:%.*]] = extractelement <3 x i64> [[LoadInst2]], i64 2
-; CHECK: [[TruncInst2:%.*]] = trunc i64 [[ExtrElInst2]] to i32
+; CHECK: [[LShrInst:%.*]] = lshr i64 [[ExtrElInst2]], 32
+; CHECK: [[TruncInst2:%.*]] = trunc i64 [[LShrInst]] to i32
 ; CHECK: %conv1 = sitofp i32 [[TruncInst1]] to float
 ; CHECK: %conv2 = sitofp i32 [[TruncInst2]] to float
 
@@ -23,7 +24,7 @@ define dso_local spir_func void @vmult2() local_unnamed_addr #0 !sycl_explicit_s
 entry:
   %0 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
   %1 = load <6 x i32>, <6 x i32> addrspace(4)* addrspacecast (<6 x i32> addrspace(1)* bitcast (<3 x i64> addrspace(1)* @Id to <6 x i32> addrspace(1)*) to <6 x i32> addrspace(4)*), align 32
-  %2 = extractelement <6 x i32> %0, i32 0
+  %2 = extractelement <6 x i32> %0, i32 1
   %3 = extractelement <6 x i32> %1, i32 4
   %conv1 = sitofp i32 %2 to float
   %conv2 = sitofp i32 %3 to float

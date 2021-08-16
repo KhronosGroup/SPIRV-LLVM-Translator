@@ -105,10 +105,23 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
       else if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
         uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
         uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
-        uint64_t ElemIdx =
-            cast<ConstantInt>(EEI->getIndexOperand())->getSExtValue() /
-            (NumElemsInOldVec / NumElemsInNewVec);
-        Value *LocalValue = Builder.CreateExtractElement(NewInst, ElemIdx);
+        uint64_t OldElemIdx =
+            cast<ConstantInt>(EEI->getIndexOperand())->getZExtValue();
+        uint64_t NewElemIdx =
+            OldElemIdx / (NumElemsInOldVec / NumElemsInNewVec);
+        Value *LocalValue = Builder.CreateExtractElement(NewInst, NewElemIdx);
+        // The trunc instruction truncates the high order bits in value, so it
+        // may be necessary to shift right high order bits, if required bits are
+        // not at the end of extracted value
+        unsigned OldVecElemBitWidth =
+            cast<IntegerType>(OldVecTy->getElementType())->getBitWidth();
+        unsigned NewVecElemBitWidth =
+            cast<IntegerType>(NewVecTy->getElementType())->getBitWidth();
+        unsigned Ratio = NewVecElemBitWidth / OldVecElemBitWidth;
+        if (auto RequiredBitsIdx = OldElemIdx % Ratio != Ratio - 1) {
+          uint64_t Shift = OldVecElemBitWidth * (Ratio - RequiredBitsIdx);
+          LocalValue = Builder.CreateLShr(LocalValue, Shift);
+        }
         LocalValue =
             Builder.CreateTrunc(LocalValue, OldVecTy->getElementType());
         Changed |= lowerBitCastToNonStdVec(
