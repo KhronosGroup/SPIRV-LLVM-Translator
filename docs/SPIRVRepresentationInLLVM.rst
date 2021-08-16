@@ -213,7 +213,7 @@ function call. The unmangled names of these functions follow the convention:
 
   __spirv_BuiltIn{VariableName}
 
-In case SPIR-V builtin variable has vector type, the corresponding
+In case if SPIR-V builtin variable has vector type, the corresponding
 LLVM function will have an integer argument, so each access of the variable's
 scalar component is mapped to a function call with index argument, i.e.:
 
@@ -224,7 +224,7 @@ scalar component is mapped to a function call with index argument, i.e.:
   OpDecorate %__spirv_BuiltInGlobalInvocationId BuiltIn GlobalInvocationId
   %13 = OpLoad %uint %__spirv_BuiltInGlobalLinearId Aligned 4
 
-  ; Will be transformed to the following LLVM IR:
+  ; Will be transformed into the following LLVM IR:
   %0 = call spir_func i32 @_Z29__spirv_BuiltInGlobalLinearIdv()
 
   ; For vector variables
@@ -233,7 +233,7 @@ scalar component is mapped to a function call with index argument, i.e.:
   %14 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
   %15 = OpCompositeExtract %ulong %14 1
 
-  ; Can be transformed to the following LLVM IR:
+  ; Can be transformed into the following LLVM IR:
   %0 = call spir_func i64 @_Z33__spirv_BuiltInGlobalInvocationIdi(i32 1)
 
   ; However SPIRV-LLVM translator will transform it to the following pattern:
