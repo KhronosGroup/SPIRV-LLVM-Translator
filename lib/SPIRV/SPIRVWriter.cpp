@@ -2746,8 +2746,8 @@ bool LLVMToSPIRV::transExecutionMode() {
           break;
         unsigned SLMSize;
         N.get(SLMSize);
-        BF->addExecutionMode(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), SLMSize));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), SLMSize)));
       } break;
 
       case spv::ExecutionModeDenormPreserve:
