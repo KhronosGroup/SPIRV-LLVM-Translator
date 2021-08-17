@@ -117,9 +117,11 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
             cast<IntegerType>(OldVecTy->getElementType())->getBitWidth();
         unsigned NewVecElemBitWidth =
             cast<IntegerType>(NewVecTy->getElementType())->getBitWidth();
-        unsigned Ratio = NewVecElemBitWidth / OldVecElemBitWidth;
-        if (auto RequiredBitsIdx = OldElemIdx % Ratio != Ratio - 1) {
-          uint64_t Shift = OldVecElemBitWidth * (Ratio - RequiredBitsIdx);
+        unsigned BitWidthRatio = NewVecElemBitWidth / OldVecElemBitWidth;
+        if (auto RequiredBitsIdx =
+                OldElemIdx % BitWidthRatio != BitWidthRatio - 1) {
+          uint64_t Shift =
+              OldVecElemBitWidth * (BitWidthRatio - RequiredBitsIdx);
           LocalValue = Builder.CreateLShr(LocalValue, Shift);
         }
         LocalValue =
