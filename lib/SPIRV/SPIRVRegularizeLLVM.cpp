@@ -351,6 +351,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             II.setMetadata(MDName, nullptr);
           }
         }
+        // Add an additional bitcast in case address space cast also changes
+        // pointer element type.
         if (auto *ASCast = dyn_cast<AddrSpaceCastInst>(&II)) {
           Type *DestTy = ASCast->getDestTy();
           Type *SrcTy = ASCast->getSrcTy();
