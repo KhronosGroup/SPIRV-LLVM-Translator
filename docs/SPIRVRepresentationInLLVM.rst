@@ -240,7 +240,7 @@ following format:
 |                    |    !spirv.Source = !{!0}                                |
 |                    |    !0 = !{i32 3, i32 66048, !1}                        |
 |                    |    ; 3 - OpenCL_C                                       |
-|                    |    ; 102000 - OpenCL version 1.2                        |
+|                    |    ; 66048 = 0x10200 - OpenCL version 1.2               |
 |                    |    ; !1 - optional file id.                             |
 |                    |    !1 = !{!"/tmp/opencl/program.cl"}                    |
 +--------------------+---------------------------------------------------------+
@@ -327,8 +327,8 @@ SPIR-V instruction.
 Calling convention
 ------------------
 
-OpEntryPoint information is represented in LLVM IR in calling convention.
-A function with `spir_kernel` calling convention will be translated as an entry
+``OpEntryPoint`` information is represented in LLVM IR in calling convention.
+A function with ``spir_kernel`` calling convention will be translated as an entry
 point of the SPIR-V module.
 
 Function metadata
