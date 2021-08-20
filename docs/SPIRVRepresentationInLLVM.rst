@@ -82,12 +82,15 @@ The following
 `SPIR-V storage classes <https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Storage_Class>`_
 are naturally represented as LLVM IR address spaces with the following mapping:
 
+====================    ====================================
 SPIR-V storage class    LLVM IR address space
-Function                No address space or addrspace(0)
-CrossWorkgroup          addrspace(1)
-UniformConstant         addrspace(2)
-Workgroup               addrspace(3)
-Generic                 addrspace(4)
+====================    ====================================
+Function                No address space or ``addrspace(0)``
+CrossWorkgroup          ``addrspace(1)``
+UniformConstant         ``addrspace(2)``
+Workgroup               ``addrspace(3)``
+Generic                 ``addrspace(4)``
+====================    ====================================
 
 SPIR-V extensions are allowed to add new storage classes. For example,
 SPV_INTEL_usm_storage_classes extension adds DeviceOnlyINTEL and HostOnlyINTEL
@@ -238,7 +241,7 @@ following format:
 | OpSource           | .. code-block:: llvm                                    |
 |                    |                                                         |
 |                    |    !spirv.Source = !{!0}                                |
-|                    |    !0 = !{i32 3, i32 66048, !1}                        |
+|                    |    !0 = !{i32 3, i32 66048, !1}                         |
 |                    |    ; 3 - OpenCL_C                                       |
 |                    |    ; 66048 = 0x10200 - OpenCL version 1.2               |
 |                    |    ; !1 - optional file id.                             |
@@ -312,6 +315,7 @@ environment specification requirements for data type sizes and alignments (e.g.
 3-element vector must have 4-element vector alignment). For example:
 
 .. code-block:: llvm
+
    target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
    target triple = "spir-unknown-unknown"
 
@@ -338,11 +342,13 @@ Some kernel parameter information is stored in LLVM IR as a function metadata.
 
 For example:
 
-- !kernel_arg_addr_space !1
-- !kernel_arg_access_qual !2
-- !kernel_arg_type !3
-- !kernel_arg_base_type !4
-- !kernel_arg_type_qual !5
+.. code-block:: llvm
+
+  !kernel_arg_addr_space !1
+  !kernel_arg_access_qual !2
+  !kernel_arg_type !3
+  !kernel_arg_base_type !4
+  !kernel_arg_type_qual !5
 
 **NOTE**: All metadata from the example above are optional. Access qualifiers
 are translated for image types, but they should be encoded in LLVM IR type name
