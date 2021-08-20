@@ -93,8 +93,9 @@ SPIR-V storage class    LLVM IR address space
 ====================    ====================================
 
 SPIR-V extensions are allowed to add new storage classes. For example,
-SPV_INTEL_usm_storage_classes extension adds DeviceOnlyINTEL and HostOnlyINTEL
-storage classes which are mapped to addrspace(5) and addrspace(6) respectively.
+SPV_INTEL_usm_storage_classes extension adds ``DeviceOnlyINTEL`` and
+``HostOnlyINTEL`` storage classes which are mapped to ``addrspace(5)`` and
+``addrspace(6)`` respectively.
 
 SPIR-V Instructions Mapped to LLVM Function Calls
 =================================================
