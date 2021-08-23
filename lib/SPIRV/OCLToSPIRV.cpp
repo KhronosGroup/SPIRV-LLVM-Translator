@@ -330,7 +330,7 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
   }
   if (DemangledName == kOCLBuiltinName::Dot || DemangledName == kOCLBuiltinName::Dot_Acc_Sat) {
     if (CI.getOperand(0)->getType()->isVectorTy()) {
-      auto *VT = dyn_cast<VectorType>(CI.getOperand(0)->getType());
+      auto *VT = (VectorType *)(CI.getOperand(0)->getType());
       if (!isa<llvm::IntegerType>(VT->getElementType())) {
         visitCallBuiltinSimple(&CI, MangledName, DemangledName);
         return;
@@ -1378,10 +1378,10 @@ void OCLToSPIRVBase::visitCallDot(CallInst* CI, StringRef MangledName,
       // dot(uint, int, int) @_Z3dotjii
       // dot(uint, uint, int) @_Z3dotjji
       // or
-      // dot_acc_sat(int, int, int, int) @_Z11dot_acc_satiii
-      // dot_acc_sat(int, uint, int, int) @_Z11dot_acc_satiji
-      // dot_acc_sat(uint, int, int, int) @_Z11dot_acc_satjii
-      // dot_acc_sat(uint, uint, int, int) @_Z11dot_acc_satjji 
+      // dot_acc_sat(int, int, int, int) @_Z11dot_acc_satiiii
+      // dot_acc_sat(int, uint, int, int) @_Z11dot_acc_satijii
+      // dot_acc_sat(uint, int, int, int) @_Z11dot_acc_satjiii
+      // dot_acc_sat(uint, uint, int, int) @_Z11dot_acc_satjjii 
       IsFirstSigned = (IsDot) ? (MangledName[MangledName.size() - 3] == 'i')
                               : (MangledName[MangledName.size() - 4] == 'i');
       IsSecondSigned = (IsDot) ? (MangledName[MangledName.size() - 2] == 'i')

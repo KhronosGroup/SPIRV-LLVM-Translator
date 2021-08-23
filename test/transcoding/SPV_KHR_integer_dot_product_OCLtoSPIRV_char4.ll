@@ -1,27 +1,27 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
-; RUN: llvm-dis %t.regularized.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_KHR_integer_dot_product -o - | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-dis %t.regularized.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_KHR_integer_dot_product -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
-;CHECK-SPIRV: call i32 @_Z15__spirv_SDotKHR
-;CHECK-SPIRV: call i32 @_Z16__spirv_SUDotKHR
-;CHECK-SPIRV: call i32 @_Z16__spirv_SUDotKHR
-;CHECK-SPIRV: call i32 @_Z15__spirv_UDotKHR
+;CHECK-LLVM: call i32 @_Z15__spirv_SDotKHR
+;CHECK-LLVM: call i32 @_Z16__spirv_SUDotKHR
+;CHECK-LLVM: call i32 @_Z16__spirv_SUDotKHR
+;CHECK-LLVM: call i32 @_Z15__spirv_UDotKHR
 
-;CHECK-SPIRV: call i32 @_Z21__spirv_SDotAccSatKHR
-;CHECK-SPIRV: call i32 @_Z22__spirv_SUDotAccSatKHR
-;CHECK-SPIRV: call i32 @_Z22__spirv_SUDotAccSatKHR
-;CHECK-SPIRV: call i32 @_Z21__spirv_UDotAccSatKHR
+;CHECK-LLVM: call i32 @_Z21__spirv_SDotAccSatKHR
+;CHECK-LLVM: call i32 @_Z22__spirv_SUDotAccSatKHR
+;CHECK-LLVM: call i32 @_Z22__spirv_SUDotAccSatKHR
+;CHECK-LLVM: call i32 @_Z21__spirv_UDotAccSatKHR
 
-;CHECK-LLVM: SDotKHR
-;CHECK-LLVM: SUDotKHR
-;CHECK-LLVM: SUDotKHR
-;CHECK-LLVM: UDotKHR
+;CHECK-SPIRV: SDotKHR
+;CHECK-SPIRV: SUDotKHR
+;CHECK-SPIRV: SUDotKHR
+;CHECK-SPIRV: UDotKHR
 
-;CHECK-LLVM: SDotAccSatKHR
-;CHECK-LLVM: SUDotAccSatKHR
-;CHECK-LLVM: SUDotAccSatKHR
-;CHECK-LLVM: UDotAccSatKHR
+;CHECK-SPIRV: SDotAccSatKHR
+;CHECK-SPIRV: SUDotAccSatKHR
+;CHECK-SPIRV: SUDotAccSatKHR
+;CHECK-SPIRV: UDotAccSatKHR
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir"
