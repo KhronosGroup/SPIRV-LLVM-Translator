@@ -1327,7 +1327,7 @@ void OCLToSPIRVBase::visitCallDot(CallInst* CI, StringRef MangledName,
   Args.push_back(CI->getOperand(1));
   bool IsFirstSigned, IsSecondSigned;
   bool IsDot = DemangledName == kOCLBuiltinName::Dot;
-  std::string funName = (IsDot) ? "DotKHR" : "DotAccSatKHR";
+  std::string FunName = (IsDot) ? "DotKHR" : "DotAccSatKHR";
   if (CI->getNumArgOperands() > 2) {
     Args.push_back(CI->getOperand(2));
   }
@@ -1389,14 +1389,28 @@ void OCLToSPIRVBase::visitCallDot(CallInst* CI, StringRef MangledName,
   }
   std::string NamePref =
       (IsFirstSigned != IsSecondSigned ? "SU" : ((IsFirstSigned) ? "S" : "U"));
-  std::string finName = "_Z" +
-                        std::to_string(NamePref.size() + funName.size() +
+  std::string FinName = "_Z" +
+                        std::to_string(NamePref.size() + FunName.size() +
                                        strlen(kSPIRVName::Prefix)) +
-                        kSPIRVName::Prefix + NamePref + funName;
-  StringRef opName = finName;
+                        kSPIRVName::Prefix + NamePref + FunName;
+  StringRef OpName = FinName;
+  // If arguments are in order unsigned -> signed, then the translator should
+  // swap them, so that the OpSUDotKHR can be used properly
+  if (IsFirstSigned == false && IsSecondSigned == true)
+  {
+    Args.clear();
+    Args.push_back(CI->getOperand(1));
+    Args.push_back(CI->getOperand(0));
+    if (CI->getNumArgOperands() > 2) {
+      Args.push_back(CI->getOperand(2));
+    }
+    if (CI->getNumArgOperands() > 3) {
+      Args.push_back(CI->getOperand(3));
+    }
+  }
   FunctionType *FT = FunctionType::get(CI->getType(), getTypes(Args), false);
   FunctionCallee NewF =
-      CI->getFunction()->getParent()->getOrInsertFunction(opName, FT);
+      CI->getFunction()->getParent()->getOrInsertFunction(OpName, FT);
   CallInst *NewCall = CallInst::Create(NewF, Args, "", CI);
   CI->replaceAllUsesWith(NewCall);
   CI->eraseFromParent();
