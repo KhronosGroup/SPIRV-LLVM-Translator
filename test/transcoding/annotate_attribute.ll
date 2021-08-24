@@ -5,6 +5,9 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Check SPIR-V versions in a format magic number + version
+; CHECK-SPIRV: 119734787 66560
+
 ; CHECK-SPIRV: Decorate {{[0-9]+}} UserSemantic "42"
 ; CHECK-SPIRV: Decorate {{[0-9]+}} UserSemantic "bar"
 ; CHECK-SPIRV: Decorate {{[0-9]+}} UserSemantic "{FOO}"

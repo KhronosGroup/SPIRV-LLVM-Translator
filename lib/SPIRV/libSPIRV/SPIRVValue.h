@@ -98,8 +98,34 @@ public:
 
   void setAlignment(SPIRVWord);
   void setVolatile(bool IsVolatile);
-  void setNoSignedWrap(bool HasNoSignedWrap);
-  void setNoUnsignedWrap(bool HasNoUnsignedWrap);
+
+  template <spv::Decoration NoIntegerWrapDecoration>
+  void setNoIntegerDecorationWrap(bool HasNoIntegerWrap) {
+    if (!HasNoIntegerWrap) {
+      eraseDecorate(NoIntegerWrapDecoration);
+      return;
+    }
+    // NoSignedWrap and NoUnsignedWrap decorations are available only if it is
+    // allowed to use SPIR-V 1.4 or if SPV_KHR_no_integer_wrap_decoration
+    // extension is enabled
+    const std::string InstStr =
+        NoIntegerWrapDecoration == DecorationNoSignedWrap ? "nsw" : "nuw";
+    if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
+      Module->setMinSPIRVVersion(
+          static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+      addDecorate(new SPIRVDecorate(NoIntegerWrapDecoration, this));
+      SPIRVDBG(spvdbgs() << "Set " << InstStr << " for obj " << Id << "\n")
+    } else if (Module->isAllowedToUseExtension(
+                   ExtensionID::SPV_KHR_no_integer_wrap_decoration)) {
+      Module->addExtension(ExtensionID::SPV_KHR_no_integer_wrap_decoration);
+      addDecorate(new SPIRVDecorate(NoIntegerWrapDecoration, this));
+      SPIRVDBG(spvdbgs() << "Set " << InstStr << " for obj " << Id << "\n")
+    } else {
+      SPIRVDBG(spvdbgs() << "Skip setting " << InstStr << " for obj " << Id
+                         << "\n")
+    }
+  }
+
   void setFPFastMathMode(SPIRVWord FPFastMathMode);
 
   void validate() const override {
