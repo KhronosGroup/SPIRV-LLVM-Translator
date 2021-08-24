@@ -200,7 +200,7 @@ void SPIRVLowerConstExprBase::visit(Module *M) {
       };
 
       for (unsigned OI = 0, OE = II->getNumOperands(); OI != OE; ++OI) {
-        auto Op = II->getOperand(OI);
+        auto *Op = II->getOperand(OI);
         if (auto *Vec = dyn_cast<ConstantVector>(Op)) {
           Value *ReplInst = LowerConstantVec(Vec, OI);
           if (ReplInst)
@@ -214,7 +214,7 @@ void SPIRVLowerConstExprBase::visit(Module *M) {
             Value *ReplInst = nullptr;
             if (auto *Vec = dyn_cast<ConstantVector>(C))
               ReplInst = LowerConstantVec(Vec, OI);
-            if (auto CE = dyn_cast<ConstantExpr>(C))
+            if (auto *CE = dyn_cast<ConstantExpr>(C))
               ReplInst = LowerOp(CE);
             if (ReplInst) {
               Metadata *RepMD = ValueAsMetadata::get(ReplInst);
