@@ -220,6 +220,31 @@ Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   return nullptr;
 }
 
+static llvm::Optional<llvm::Attribute> translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext& Context) {
+  
+  llvm::Optional<llvm::Attribute> RetAttr;
+
+  if (!BV->hasDecorate(DecorationSingleElementVectorINTEL))
+    return RetAttr;
+
+  SPIRVWord StarsOnElement = 0;
+
+  auto VecDecorateSEV = BV->getDecorations(DecorationSingleElementVectorINTEL);
+  assert(VecDecorateSEV.size() == 1 &&
+         "Entry must have no more than one SingleElementVectorINTEL "
+         "decoration");
+  auto *DecorateSEV = VecDecorateSEV.back();
+  auto LiteralCount = DecorateSEV->getLiteralCount();
+  assert(LiteralCount <= 1 && "SingleElementVectorINTEL decoration must "
+                              "have no more than one literal");
+
+  if (LiteralCount == 1)
+    StarsOnElement = DecorateSEV->getLiteral(0);
+
+  RetAttr = Attribute::get(Context, kVCMetadata::VCSingleElementVector, std::to_string(StarsOnElement));
+  return RetAttr;
+}
+
 IntrinsicInst *SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
   auto II = dyn_cast<IntrinsicInst>(I);
   if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
@@ -1510,11 +1535,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         LVar->addAttribute(kVCMetadata::VCByteOffset, utostr(Offset));
       if (BVar->hasDecorate(DecorationVolatile))
         LVar->addAttribute(kVCMetadata::VCVolatile);
-      SPIRVWord StarsOnElement;
-      if (BVar->hasDecorate(DecorationSingleElementVectorINTEL, 0,
-                            &StarsOnElement))
-        LVar->addAttribute(kVCMetadata::VCSingleElementVector,
-                           std::to_string(StarsOnElement));
+      auto SEVAttr = translateSEVMetadata(BVar, LVar->getContext());
+      if(SEVAttr)
+        LVar->addAttribute(SEVAttr.getValue().getKindAsString(), SEVAttr.getValue().getValueAsString());
     }
 
     return Res;
@@ -3890,12 +3913,10 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
   if (BF->hasDecorate(DecorationSIMTCallINTEL, 0, &SIMTMode))
     F->addFnAttr(kVCMetadata::VCSIMTCall, std::to_string(SIMTMode));
 
-  SPIRVWord StarsOnElement = 0;
-  if (BF->hasDecorate(DecorationSingleElementVectorINTEL, 0, &StarsOnElement))
-    F->addAttributeAtIndex(AttributeList::ReturnIndex,
-                    Attribute::get(F->getContext(),
-                                   kVCMetadata::VCSingleElementVector,
-                                   std::to_string(StarsOnElement)));
+  auto SEVAttr = translateSEVMetadata(BF, F->getContext());
+
+  if(SEVAttr)
+    F->addAttribiuteAtIndex(AttributeList::ReturnIndex, SEVAttr.getValue());
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
@@ -3907,11 +3928,9 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
                                       std::to_string(Kind));
       F->addParamAttr(ArgNo, Attr);
     }
-    if (BA->hasDecorate(DecorationSingleElementVectorINTEL, 0, &StarsOnElement))
-      F->addParamAttr(ArgNo,
-                      Attribute::get(F->getContext(),
-                                     kVCMetadata::VCSingleElementVector,
-                                     std::to_string(StarsOnElement)));
+    SEVAttr = translateSEVMetadata(BA, F->getContext());
+    if(SEVAttr)
+      F->addParamAttr(ArgNo, SEVAttr.getValue());
   }
 
   // Do not add float control if there is no any

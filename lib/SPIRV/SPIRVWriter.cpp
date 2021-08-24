@@ -732,7 +732,10 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
     assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
             RT->isTypePointer()) &&
            "This decoration is valid only for Scalar or Pointer types");
-    BF->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+    if (RT->isTypePointer())
+      BF->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+    else
+      BF->addDecorate(DecorationSingleElementVectorINTEL);
   }
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
@@ -756,7 +759,10 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
       assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
               AT->isTypePointer()) &&
              "This decoration is valid only for Scalar or Pointer types");
-      BA->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+      if (AT->isTypePointer())
+        BA->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+      else
+        BA->addDecorate(DecorationSingleElementVectorINTEL);
     }
   }
   if (!isKernel(F) &&
@@ -1540,7 +1546,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         assert((RT->isFloatingPointTy() || RT->isIntegerTy() ||
                 RT->isPointerTy()) &&
                "This decoration is valid only for Scalar or Pointer types");
-        BVar->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+        if (RT->isPointerTy())
+          BVar->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
+        else
+          BVar->addDecorate(DecorationSingleElementVectorINTEL);
       }
     }
 

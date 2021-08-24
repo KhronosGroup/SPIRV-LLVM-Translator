@@ -18,9 +18,9 @@ target triple = "spir64"
 ; SPV-DAG: Name [[a:[0-9]+]] "a"
 ; SPV-DAG: Name [[b:[0-9]+]] "b"
 ; SPV-DAG: Name [[glob:[0-9]+]] "global_var"
-; SPV-DAG: Decorate [[def]] SingleElementVectorINTEL 0
-; SPV-DAG: Decorate [[a]] SingleElementVectorINTEL 0
-; SPV-DAG: Decorate [[b]] SingleElementVectorINTEL 0
+; SPV-DAG: Decorate [[def]] SingleElementVectorINTEL
+; SPV-DAG: Decorate [[a]] SingleElementVectorINTEL
+; SPV-DAG: Decorate [[b]] SingleElementVectorINTEL
 ; SPV-DAG: Decorate [[glob]] SingleElementVectorINTEL 2
 
 ; LLVM-DAG: "VCSingleElementVector"="0" i8 @_Z24__cm_intrinsic_impl_sdivu2CMvb1_cS_(i8 "VCSingleElementVector"="0" %a, i8 "VCSingleElementVector"="0" %b)
