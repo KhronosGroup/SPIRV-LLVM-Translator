@@ -310,25 +310,36 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
     StringRef Name(DemangledName);
     Name = Name.slice(Name.find('<') + 1, Name.rfind('>'));
     std::stringstream SPVName;
-    SPVName << kSPIRVTypeName::PrefixAndDelim
-            << kSPIRVTypeName::JointMatrixINTEL << kSPIRVTypeName::Delimiter;
+    // Name = signed char, 2ul, 2ul, (spv::MatrixLayout)0, (spv::Scope)3
     auto P = Name.split(", ");
+    // P.first = "signed char
+    // P.second = "2ul, 2ul, (spv::MatrixLayout)0, (spv::Scope)3"
     StringRef ElemType = P.first;
+    // remove possile qualifiers, like "const" or "signed"
+    ElemType.consume_back(" const");
     if (size_t Space = ElemType.rfind(' '))
       ElemType = ElemType.substr(Space + 1);
-    SPVName << kSPIRVTypeName::PostfixDelim << ElemType.str();
     P = P.second.split(", ");
+    // P.first = "2ul"
+    // P.second = "2ul, (spv::MatrixLayout)0, (spv::Scope)3"
     StringRef Rows = P.first.take_while(llvm::isDigit);
-    SPVName << kSPIRVTypeName::PostfixDelim << Rows.str();
     P = P.second.split(", ");
+    // P.first = "2ul"
+    // P.second = "(spv::MatrixLayout)0, (spv::Scope)3"
     StringRef Cols = P.first.take_while(llvm::isDigit);
-    SPVName << kSPIRVTypeName::PostfixDelim << Cols.str();
     P = P.second.split(", ");
+    // P.first = "(spv::MatrixLayout)0"
+    // P.second = "(spv::Scope)3"
     StringRef Layout = P.first.substr(P.first.rfind(')') + 1);
-    SPVName << kSPIRVTypeName::PostfixDelim << Layout.str();
-    P = P.second.split(", ");
-    StringRef Scope = P.first.substr(P.first.rfind(')') + 1);
-    SPVName << kSPIRVTypeName::PostfixDelim << Scope.str();
+    StringRef Scope = P.second.substr(P.second.rfind(')') + 1);
+
+    SPVName << kSPIRVTypeName::PrefixAndDelim
+            << kSPIRVTypeName::JointMatrixINTEL << kSPIRVTypeName::Delimiter
+            << kSPIRVTypeName::PostfixDelim << ElemType.str()
+            << kSPIRVTypeName::PostfixDelim << Rows.str()
+            << kSPIRVTypeName::PostfixDelim << Cols.str()
+            << kSPIRVTypeName::PostfixDelim << Layout.str()
+            << kSPIRVTypeName::PostfixDelim << Scope.str();
     ST->setName(SPVName.str());
   }
 }
