@@ -444,7 +444,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   }
 
   case internal::OpTypeJointMatrixINTEL: {
-    auto MT = static_cast<SPIRVTypeJointMatrixINTEL *>(T);
+    auto *MT = static_cast<SPIRVTypeJointMatrixINTEL *>(T);
     auto R = static_cast<SPIRVConstant *>(MT->getRows())->getZExtIntValue();
     auto C = static_cast<SPIRVConstant *>(MT->getColumns())->getZExtIntValue();
     std::stringstream SS;
