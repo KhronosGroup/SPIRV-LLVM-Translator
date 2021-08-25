@@ -9,10 +9,8 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-SPV
 
 ; CHECK-SPIRV: IsNan
-; CHECK-LLVM-OCL: %[[#CALL:]] call spir_func i32 @_Z5isnanf(float 1.200000e+01)
-; CHECK-LLVM-OCL: trunc i32 %[[#CALL]] to i1
-; CHECK-LLVM-SPV: %[[#CALL:]]call spir_func i32 @_Z13__spirv_IsNanf(float 1.200000e+01)
-; CHECK-LLVM-SPV: trunc i32 %[[#CALL]] to i1
+; CHECK-LLVM-OCL: call spir_func i32 @_Z5isnanf(float 1.200000e+01)
+; CHECK-LLVM-SPV: call spir_func i32 @_Z13__spirv_IsNanf(float 1.200000e+01)
 
 ; ModuleID = 'test.bc'
 source_filename = "test.cpp"
