@@ -317,7 +317,8 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
     StringRef ElemType = P.first;
     // remove possile qualifiers, like "const" or "signed"
     ElemType.consume_back(" const");
-    if (size_t Space = ElemType.rfind(' '))
+    size_t Space = ElemType.rfind(' ');
+    if (Space != StringRef::npos)
       ElemType = ElemType.substr(Space + 1);
     P = P.second.split(", ");
     // P.first = "2ul"
