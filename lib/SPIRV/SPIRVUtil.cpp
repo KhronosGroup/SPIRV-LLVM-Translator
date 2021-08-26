@@ -150,7 +150,7 @@ std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed) {
     return Ss.str();
   }
   // It is expected that `Ty` can be mapped to `ReturnType` from "Optional
-  // Postfixes for SPIR-V Builtin Function Names"section of
+  // Postfixes for SPIR-V Builtin Function Names" section of
   // SPIRVRepresentationInLLVM.rst document (aka SPIRV-friendly IR).
   // If `Ty` is not a scalar or vector type mentioned in the document (return
   // value of some SPIR-V instructions may be represented as pointer to a struct
