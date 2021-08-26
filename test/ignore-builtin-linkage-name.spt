@@ -1,0 +1,59 @@
+119734787 65536 458752 26 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Int64
+3 MemoryModel 2 2
+8 EntryPoint 6 1 "decorate_aliased"
+3 Source 3 102000
+9 Name 2 "__spirv_GlobalInvocationId"
+3 Name 3 "res"
+3 Name 4 "lhs"
+3 Name 5 "rhs"
+4 Name 6 "entry"
+
+3 Decorate 7 Aliased
+2 DecorationGroup 7
+4 Decorate 2 BuiltIn 28
+3 Decorate 2 Constant
+11 Decorate 2 LinkageAttributes "__spirv_GlobalInvocationId" Import
+5 GroupDecorate 7 3 4 5
+4 TypeInt 8 64 0
+4 TypeInt 12 32 0
+5 Constant 8 15 32 0
+4 TypeVector 9 8 3
+4 TypePointer 10 1 9
+2 TypeVoid 11
+4 TypePointer 13 5 12
+6 TypeFunction 14 11 13 13 13
+4 Variable 10 2 1
+
+
+
+5 Function 11 1 0 14
+3 FunctionParameter 13 3
+3 FunctionParameter 13 4
+3 FunctionParameter 13 5
+
+2 Label 6
+6 Load 9 16 2 2 0
+5 CompositeExtract 8 17 16 0
+5 ShiftLeftLogical 8 18 17 15
+5 ShiftRightArithmetic 8 19 18 15
+5 InBoundsPtrAccessChain 13 20 4 19
+6 Load 12 21 20 2 4
+5 InBoundsPtrAccessChain 13 22 5 19
+6 Load 12 23 22 2 4
+5 IAdd 12 24 21 23
+5 InBoundsPtrAccessChain 13 25 3 19
+5 Store 25 24 2 4
+1 Return
+
+1 FunctionEnd
+
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s -check-prefix=CHECK-LLVM
+
+; CHECK-LLVM-NOT: __spirv_GlobalInvocationId
+; CHECK-LLVM: __spirv_BuiltInGlobalInvocationId

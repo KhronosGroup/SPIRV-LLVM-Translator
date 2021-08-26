@@ -930,6 +930,14 @@ Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
     return nullptr;
   }
   setName(V, BV);
+  // Force SPIRV BuiltIn variable's name to be __spirv_BuiltInXXXX.
+  // No matter what BV's linkage name is.
+  if (BV->getOpCode() == spv::OpVariable) {
+    SPIRVBuiltinVariableKind BVKind;
+    auto *BVar = static_cast<SPIRVVariable *>(BV);
+    if (BVar->isBuiltin(&BVKind))
+      V->setName(prefixSPIRVName(SPIRVBuiltInNameMap::map(BVKind)));
+  }
   if (!transDecoration(BV, V)) {
     assert(0 && "trans decoration fail");
     return nullptr;
