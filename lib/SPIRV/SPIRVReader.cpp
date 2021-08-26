@@ -4380,33 +4380,26 @@ bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
   }
 
   D >> Buffer;
-  Result.Version = Buffer;
+  Result.Version = static_cast<VersionNumber>(Buffer);
+  // Skip the rest of the header
   D.ignore(3);
   while (D.getWordCountAndOpCode()) {
-    Success = 0;
-    switch (D.OpCode) {
-    case spv::OpMemoryModel:
-      D.ignore(1);
-      Success = D.getNextSPIRVWord(Buffer);
-      if (Success)
-        Result.MemoryModel = Buffer;
-      break;
-    case spv::OpCapability:
+    Success = false;
+    if (D.OpCode == OpCapability) {
       Success = D.getNextSPIRVWord(Buffer);
       if (Success)
         Result.Capabilities.push_back(Buffer);
-      break;
-    default:
-      if (spv::OpSource == D.OpCode || spv::OpName == D.OpCode ||
-          spv::OpMemberName == D.OpCode || spv::OpDecorate == D.OpCode ||
-          spv::OpMemberDecorate == D.OpCode || spv::OpFunction == D.OpCode) {
+    } else if (D.OpCode == OpMemoryModel) {
+      D.ignore(1);
+      Success = D.getNextSPIRVWord(Buffer);
+      if (Success) {
+        Result.MemoryModel = Buffer;
         return true;
-      } else {
-        D.ignoreInstruction();
       }
     }
   }
-  return true;
+  ErrMsg = "Memory model not specified";
+  return false;
 }
 
 // clang-format off
