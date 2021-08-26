@@ -41,6 +41,10 @@ enum InternalOp {
   IOpTypeTokenINTEL = 6113,
   IOpConvertFToBF16INTEL = 6116,
   IOpConvertBF16ToFINTEL = 6117,
+  IOpTypeJointMatrixINTEL = 6119,
+  IOpJointMatrixLoadINTEL = 6120,
+  IOpJointMatrixStoreINTEL = 6121,
+  IOpJointMatrixMadINTEL = 6122,
   IOpArithmeticFenceINTEL = 6145,
   IOpPrev = OpMax - 2,
   IOpForward
@@ -66,6 +70,7 @@ enum InternalCapability {
   ICapOptNoneINTEL = 6094,
   ICapTokenTypeINTEL = 6112,
   ICapBfloat16ConversionINTEL = 6115,
+  ICapabilityJointMatrixINTEL = 6118,
   ICapFPArithmeticFenceINTEL = 6144
 };
 
@@ -82,6 +87,16 @@ enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
 
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
+
+enum InternalJointMatrixLayout { RowMajor, ColumnMajor, PackedA, PackedB };
+
+#define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
+_SPIRV_OP(Capability, JointMatrixINTEL)
+_SPIRV_OP(Op, TypeJointMatrixINTEL)
+_SPIRV_OP(Op, JointMatrixLoadINTEL)
+_SPIRV_OP(Op, JointMatrixStoreINTEL)
+_SPIRV_OP(Op, JointMatrixMadINTEL)
+#undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpAliasDomainDeclINTEL = static_cast<Op>(IOpAliasDomainDeclINTEL);
