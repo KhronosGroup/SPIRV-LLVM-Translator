@@ -3078,6 +3078,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
 
     std::string AnnotationString;
+    // Process main annotation with the attached optional integer parameters
     if (GetElementPtrInst *GEP =
             dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
       if (Constant *C = dyn_cast<Constant>(GEP->getOperand(0))) {
@@ -3456,11 +3457,10 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
                      Return = true;
                      break;
                    default:
-                     Return = false;
-                     break;
+                     return false;
                    }
                  } else
-                   Return = false;
+                   return false;
                }
                return Return;
              }())
