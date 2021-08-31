@@ -394,6 +394,10 @@ size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);
 /// Get number of memory order arguments for spirv atomic builtin function.
 size_t getSPIRVAtomicBuiltinNumMemoryOrderArgs(Op OC);
 
+/// Return true for OpenCL builtins which do compute operations
+/// (like add, sub, min, max, inc, dec, ...) atomically
+bool isComputeAtomicOCLBuiltin(StringRef DemangledName);
+
 /// Get OCL version from metadata opencl.ocl.version.
 /// \param AllowMulti Allows multiple operands if true.
 /// \return OCL version encoded as Major*10^5+Minor*10^3+Rev,

@@ -662,6 +662,35 @@ size_t getSPIRVAtomicBuiltinNumMemoryOrderArgs(Op OC) {
   return 1;
 }
 
+// atomic_fetch_[add, sub, min, max] and atomic_fetch_[add, sub, min,
+// max]_explicit functions are defined on OpenCL headers, they are not
+// translated to function call
+bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
+  if (!DemangledName.startswith(kOCLBuiltinName::AtomicPrefix) &&
+      !DemangledName.startswith(kOCLBuiltinName::AtomPrefix))
+    return false;
+
+  return llvm::StringSwitch<bool>(DemangledName)
+      .EndsWith("atomic_add", true)
+      .EndsWith("atomic_sub", true)
+      .EndsWith("atomic_min", true)
+      .EndsWith("atomic_max", true)
+      .EndsWith("atom_add", true)
+      .EndsWith("atom_sub", true)
+      .EndsWith("atom_min", true)
+      .EndsWith("atom_max", true)
+      .EndsWith("inc", true)
+      .EndsWith("dec", true)
+      .EndsWith("cmpxchg", true)
+      .EndsWith("and", true)
+      .EndsWith("or", true)
+      .EndsWith("xor", true)
+      .EndsWith("or_explicit", true)
+      .EndsWith("xor_explicit", true)
+      .EndsWith("and_explicit", true)
+      .Default(false);
+}
+
 BarrierLiterals getBarrierLiterals(CallInst *CI) {
   auto N = CI->arg_size();
   assert(N == 1 || N == 2);
