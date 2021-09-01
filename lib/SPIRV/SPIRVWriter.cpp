@@ -2242,15 +2242,15 @@ struct IntelLSUControlsInfo {
   llvm::Optional<unsigned> PrefetchInfo;
 };
 
+// Handle optional var/ptr/global annotation parameter. It can be for example
+// { %struct.S, i8*, void ()* } { %struct.S undef, i8* null,
+//                                void ()* @_Z4blahv }
+// Now we will just handle integer constants (wrapped in a constant
+// struct, that is being bitcasted to i8*), converting them to string.
+// TODO: remove this workaround when/if an extension spec that allows or adds
+// variadic-arguments UserSemantic decoration
 void processOptionalAnnotationInfo(Constant *Const,
                                    std::string &AnnotationString) {
-  // Handle optional parameter. It can be for example
-  // { %struct.S, i8*, void ()* } { %struct.S undef, i8* null,
-  //                                void ()* @_Z4blahv }
-  // Now we will just handle integer constants (wrapped in a constant
-  // struct, that is being bitcasted to i8*), converting them to string.
-  // TODO: remove this workaround when/if an extension spec that allows or adds
-  // variadic-arguments UserSemantic decoration
   if (!Const->getNumOperands())
     return;
   if (auto *CStruct = dyn_cast_or_null<ConstantStruct>(Const->getOperand(0))) {
@@ -2261,13 +2261,29 @@ void processOptionalAnnotationInfo(Constant *Const,
       AnnotationString += ": ";
       AnnotationString += std::to_string(CInt->getSExtValue());
     }
-    for (uint32_t I = 1; I != CStruct->getNumOperands(); ++I) {
+    for (uint32_t I = 1; I != NumOperands; ++I) {
       if (auto *CInt = dyn_cast<ConstantInt>(CStruct->getOperand(I))) {
         AnnotationString += ", ";
         AnnotationString += std::to_string(CInt->getSExtValue());
       }
     }
   }
+}
+
+// Process main var/ptr/global annotation string with the attached optional
+// integer parameters
+void processAnnotationString(IntrinsicInst *II, std::string &AnnotationString) {
+  if (GetElementPtrInst *GEP =
+          dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
+    if (Constant *C = dyn_cast<Constant>(GEP->getOperand(0))) {
+      StringRef StrRef;
+      getConstantStringInfo(C, StrRef);
+      AnnotationString += StrRef.str();
+    }
+  }
+  if (BitCastInst *Cast = dyn_cast<BitCastInst>(II->getArgOperand(4)))
+    if (Constant *C = dyn_cast_or_null<Constant>(Cast->getOperand(0)))
+      processOptionalAnnotationInfo(C, AnnotationString);
 }
 
 AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
@@ -3035,18 +3051,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
 
     std::string AnnotationString;
-    if (GetElementPtrInst *GEP =
-            dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
-      if (Constant *C = dyn_cast<Constant>(GEP->getOperand(0))) {
-        StringRef StrRef;
-        getConstantStringInfo(C, StrRef);
-        AnnotationString += StrRef.str();
-      }
-    }
-    if (BitCastInst *Cast = dyn_cast<BitCastInst>(II->getArgOperand(4)))
-      if (Constant *C = dyn_cast_or_null<Constant>(Cast->getOperand(0)))
-        processOptionalAnnotationInfo(C, AnnotationString);
-
+    processAnnotationString(II, AnnotationString);
     DecorationsInfoVec Decorations =
         tryParseAnnotationString(BM, AnnotationString).MemoryAttributesVec;
 
@@ -3078,18 +3083,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
 
     std::string AnnotationString;
-    // Process main annotation with the attached optional integer parameters
-    if (GetElementPtrInst *GEP =
-            dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
-      if (Constant *C = dyn_cast<Constant>(GEP->getOperand(0))) {
-        StringRef StrRef;
-        getConstantStringInfo(C, StrRef);
-        AnnotationString += StrRef.str();
-      }
-    }
-    if (BitCastInst *Cast = dyn_cast<BitCastInst>(II->getArgOperand(4)))
-      if (Constant *C = dyn_cast_or_null<Constant>(Cast->getOperand(0)))
-        processOptionalAnnotationInfo(C, AnnotationString);
+    processAnnotationString(II, AnnotationString);
     AnnotationDecorations Decorations =
         tryParseAnnotationString(BM, AnnotationString);
 
