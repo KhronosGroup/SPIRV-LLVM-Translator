@@ -2253,7 +2253,7 @@ void processOptionalAnnotationInfo(Constant *Const,
                                    std::string &AnnotationString) {
   if (!Const->getNumOperands())
     return;
-  if (auto *CStruct = dyn_cast_or_null<ConstantStruct>(Const->getOperand(0))) {
+  if (auto *CStruct = dyn_cast<ConstantStruct>(Const->getOperand(0))) {
     uint32_t NumOperands = CStruct->getNumOperands();
     if (!NumOperands)
       return;
@@ -2273,16 +2273,15 @@ void processOptionalAnnotationInfo(Constant *Const,
 // Process main var/ptr/global annotation string with the attached optional
 // integer parameters
 void processAnnotationString(IntrinsicInst *II, std::string &AnnotationString) {
-  if (GetElementPtrInst *GEP =
-          dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
-    if (Constant *C = dyn_cast<Constant>(GEP->getOperand(0))) {
+  if (auto *GEP = dyn_cast<GetElementPtrInst>(II->getArgOperand(1))) {
+    if (auto *C = dyn_cast<Constant>(GEP->getOperand(0))) {
       StringRef StrRef;
       getConstantStringInfo(C, StrRef);
       AnnotationString += StrRef.str();
     }
   }
-  if (BitCastInst *Cast = dyn_cast<BitCastInst>(II->getArgOperand(4)))
-    if (Constant *C = dyn_cast_or_null<Constant>(Cast->getOperand(0)))
+  if (auto *Cast = dyn_cast<BitCastInst>(II->getArgOperand(4)))
+    if (auto *C = dyn_cast_or_null<Constant>(Cast->getOperand(0)))
       processOptionalAnnotationInfo(C, AnnotationString);
 }
 
@@ -2293,7 +2292,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_memory_accesses);
   const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
       ExtensionID::SPV_INTEL_fpga_memory_attributes);
-  if (!(AllowFPGAMemAccesses || AllowFPGAMemAttr)) {
+  if (!AllowFPGAMemAccesses && !AllowFPGAMemAttr) {
     Decorates.MemoryAttributesVec.emplace_back(DecorationUserSemantic,
                                                AnnotatedCode.str());
     return Decorates;
@@ -3438,9 +3437,12 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
     else if ([&]() -> bool {
                // Check if the GV is used only in var/ptr instructions. If yes -
                // skip processing of this since it's only an annotation GV.
-               bool Return = false;
+               if (I->user_empty())
+                 return false;
                for (auto *U : I->users()) {
-                 auto *V = U->stripPointerCasts();
+                 Value *V = U;
+                 while (isa<BitCastInst>(V) || isa<AddrSpaceCastInst>(V))
+                   V = cast<CastInst>(V)->getOperand(0);
                  if (GetElementPtrInst *GEP =
                          dyn_cast_or_null<GetElementPtrInst>(V))
                    V = GEP;
@@ -3448,15 +3450,14 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
                    switch (II->getIntrinsicID()) {
                    case Intrinsic::var_annotation:
                    case Intrinsic::ptr_annotation:
-                     Return = true;
-                     break;
+                     continue;
                    default:
                      return false;
                    }
                  } else
                    return false;
                }
-               return Return;
+               return true;
              }())
       continue;
     else if ((I->getName() == "llvm.global_ctors" ||
