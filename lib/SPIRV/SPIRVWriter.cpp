@@ -2498,7 +2498,6 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::dbg_label:
   case Intrinsic::trap:
   case Intrinsic::arithmetic_fence:
-  case Intrinsic::isnan:
     return true;
   default:
     // Unknown intrinsics' declarations should always be translated
@@ -3130,11 +3129,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return BM->addUnaryInst(internal::OpArithmeticFenceINTEL, Ty, Op, BB);
     }
     return Op;
-  }
-  case Intrinsic::isnan: {
-    SPIRVType *Ty = transType(II->getType());
-    SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
-    return BM->addUnaryInst(OpIsNan, Ty, Op, BB);
   }
   default:
     if (BM->isUnknownIntrinsicAllowed(II))
