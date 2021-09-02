@@ -3434,7 +3434,7 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
   for (auto I = M->global_begin(), E = M->global_end(); I != E; ++I) {
     if ((*I).getName() == "llvm.global.annotations")
       transGlobalAnnotation(&(*I));
-    else if ([&]() -> bool {
+    else if ([I]() -> bool {
                // Check if the GV is used only in var/ptr instructions. If yes -
                // skip processing of this since it's only an annotation GV.
                if (I->user_empty())
@@ -3443,10 +3443,13 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
                  Value *V = U;
                  while (isa<BitCastInst>(V) || isa<AddrSpaceCastInst>(V))
                    V = cast<CastInst>(V)->getOperand(0);
-                 if (GetElementPtrInst *GEP =
-                         dyn_cast_or_null<GetElementPtrInst>(V))
-                   V = GEP;
-                 if (IntrinsicInst *II = dyn_cast_or_null<IntrinsicInst>(V)) {
+                 auto *GEP = dyn_cast_or_null<GetElementPtrInst>(V);
+                 if (!GEP)
+                   return false;
+                 for (auto *GEPU : GEP->users()) {
+                   auto *II = dyn_cast<IntrinsicInst>(GEPU);
+                   if (!II)
+                     return false;
                    switch (II->getIntrinsicID()) {
                    case Intrinsic::var_annotation:
                    case Intrinsic::ptr_annotation:
@@ -3454,8 +3457,7 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
                    default:
                      return false;
                    }
-                 } else
-                   return false;
+                 }
                }
                return true;
              }())
