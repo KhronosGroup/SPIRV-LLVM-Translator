@@ -1,7 +1,7 @@
 // Check that translator doesn't generate atomic instructions for atomic builtins
 // which are not defined in the spec.
 
-// To drop `fdeclare-opencl-builtins` option, since FP-typed atomic function
+// `fdeclare-opencl-builtins` option is dropped, since FP-typed atomic function
 // TableGen definitions have not been introduced.
 // RUN: %clang_cc1 -triple spir -O1 -cl-std=cl2.0 -finclude-default-header %s -emit-llvm-bc -o %t.bc
 // RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
