@@ -139,11 +139,12 @@ bool getSpecConstInfo(std::istream &IS,
 
 struct SPIRVHeaderData {
   std::uint32_t MemoryModel = 0x7fffffff; // MemoryModelMax
+  std::uint32_t AddressingModel = 0x7fffffff;
   SPIRV::VersionNumber Version;
   std::vector<std::uint32_t> Capabilities;
 };
-/// \Brief Partially load SPIR-V from the stream and decode memory model,
-/// version and capabilities.
+/// \brief Partially load SPIR-V from the stream and decode memory model,
+/// addressing model, version and capabilities.
 /// \return true if succeeds.
 bool readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
                      std::string &ErrMsg);

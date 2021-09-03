@@ -4371,7 +4371,6 @@ bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
   SPIRVDecoder D(IS, *BM);
   SPIRVWord Magic;
   SPIRVWord Buffer;
-  bool Success;
   D >> Magic;
   if (!BM->getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
                                     "invalid magic number")) {
@@ -4384,18 +4383,18 @@ bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
   // Skip the rest of the header
   D.ignore(3);
   while (D.getWordCountAndOpCode()) {
-    Success = false;
     if (D.OpCode == OpCapability) {
-      Success = D.getNextSPIRVWord(Buffer);
-      if (Success)
+      if (D.getNextSPIRVWord(Buffer))
         Result.Capabilities.push_back(Buffer);
     } else if (D.OpCode == OpMemoryModel) {
-      D.ignore(1);
-      Success = D.getNextSPIRVWord(Buffer);
-      if (Success) {
+      if (D.getNextSPIRVWord(Buffer)) {
+        Result.AddressingModel = Buffer;
+        D.getNextSPIRVWord(Buffer);
         Result.MemoryModel = Buffer;
         return true;
       }
+    } else if (D.OpCode != OpExtInstImport && D.OpCode != OpExtension) {
+      break;
     }
   }
   ErrMsg = "Memory model not specified";

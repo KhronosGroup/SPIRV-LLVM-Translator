@@ -230,17 +230,6 @@ bool SPIRVDecoder::getNextSPIRVWord(SPIRVWord &Word) {
     return false;
   }
   *this >> Word;
-#ifdef _SPIRV_SUPPORT_TEXT_FMT
-  if (SPIRVUseTextFormat) {
-    assert(!IS.bad() && "SPIRV stream is bad");
-    if (IS.fail()) {
-      Word = -1;
-      SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getNextSPIRVWord FAIL " << Word
-                         << '\n');
-      return false;
-    }
-  }
-#endif
   assert(!IS.bad() && "SPIRV stream is bad");
   if (IS.fail()) {
     Word = -1;
@@ -248,8 +237,7 @@ bool SPIRVDecoder::getNextSPIRVWord(SPIRVWord &Word) {
                        << '\n');
     return false;
   }
-  SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getWordCountAndOpCode " << Word
-                     << '\n');
+  SPIRVDBG(spvdbgs() << "[SPIRVDecoder] getNextSPIRVWord " << Word << '\n');
   return true;
 }
 
