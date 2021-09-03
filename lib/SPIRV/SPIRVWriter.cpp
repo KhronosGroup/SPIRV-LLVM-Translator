@@ -773,8 +773,7 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
       Attrs.hasFnAttr(kVCMetadata::VCFloatControl)) {
 
     SPIRVWord Mode = 0;
-    Attrs
-        .getFnAttr(kVCMetadata::VCFloatControl)
+    Attrs.getFnAttr(kVCMetadata::VCFloatControl)
         .getValueAsString()
         .getAsInteger(0, Mode);
     VCFloatTypeSizeMap::foreach (
