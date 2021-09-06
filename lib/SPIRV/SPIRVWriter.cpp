@@ -652,22 +652,21 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
       BA->addAttr(FunctionParameterAttributeSret);
     if (I->onlyReadsMemory())
       BA->addAttr(FunctionParameterAttributeNoWrite);
-    if (Attrs.hasAttribute(ArgNo + 1, Attribute::ZExt))
+    if (Attrs.hasParamAttr(ArgNo, Attribute::ZExt))
       BA->addAttr(FunctionParameterAttributeZext);
-    if (Attrs.hasAttribute(ArgNo + 1, Attribute::SExt))
+    if (Attrs.hasParamAttr(ArgNo, Attribute::SExt))
       BA->addAttr(FunctionParameterAttributeSext);
-    if (Attrs.hasAttribute(ArgNo + 1, Attribute::Alignment)) {
-      SPIRVWord AlignmentBytes =
-          Attrs.getAttribute(ArgNo + 1, Attribute::Alignment)
-              .getAlignment()
-              .valueOrOne()
-              .value();
+    if (Attrs.hasParamAttr(ArgNo, Attribute::Alignment)) {
+      SPIRVWord AlignmentBytes = Attrs.getParamAttr(ArgNo, Attribute::Alignment)
+                                     .getAlignment()
+                                     .valueOrOne()
+                                     .value();
       BA->setAlignment(AlignmentBytes);
     }
     if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_1) &&
-        Attrs.hasAttribute(ArgNo + 1, Attribute::Dereferenceable))
+        Attrs.hasParamAttr(ArgNo, Attribute::Dereferenceable))
       BA->addDecorate(DecorationMaxByteOffset,
-                      Attrs.getAttribute(ArgNo + 1, Attribute::Dereferenceable)
+                      Attrs.getParamAttr(ArgNo, Attribute::Dereferenceable)
                           .getDereferenceableBytes());
     if (BufferLocation && I->getType()->isPointerTy()) {
       // Order of integer numbers in MD node follows the order of function
@@ -692,9 +691,9 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
         BA->addDecorate(internal::DecorationRuntimeAlignedINTEL, LocID);
     }
   }
-  if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::ZExt))
+  if (Attrs.hasRetAttr(Attribute::ZExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeZext);
-  if (Attrs.hasAttribute(AttributeList::ReturnIndex, Attribute::SExt))
+  if (Attrs.hasRetAttr(Attribute::SExt))
     BF->addDecorate(DecorationFuncParamAttr, FunctionParameterAttributeSext);
   if (Attrs.hasFnAttr("referenced-indirectly")) {
     assert(!isKernel(F) &&
@@ -734,14 +733,13 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
 
   if (Attrs.hasFnAttr(kVCMetadata::VCSIMTCall)) {
     SPIRVWord SIMTMode = 0;
-    Attrs.getAttribute(AttributeList::FunctionIndex, kVCMetadata::VCSIMTCall)
+    Attrs.getFnAttr(kVCMetadata::VCSIMTCall)
         .getValueAsString()
         .getAsInteger(0, SIMTMode);
     BF->addDecorate(DecorationSIMTCallINTEL, SIMTMode);
   }
 
-  if (Attrs.hasAttribute(AttributeList::ReturnIndex,
-                         kVCMetadata::VCSingleElementVector)) {
+  if (Attrs.hasRetAttr(kVCMetadata::VCSingleElementVector)) {
     auto *RT = BF->getType();
     (void)RT;
     assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
@@ -754,14 +752,14 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
        ++I) {
     auto ArgNo = I->getArgNo();
     SPIRVFunctionParameter *BA = BF->getArgument(ArgNo);
-    if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCArgumentIOKind)) {
+    if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCArgumentIOKind)) {
       SPIRVWord Kind = {};
-      Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCArgumentIOKind)
+      Attrs.getParamAttr(ArgNo, kVCMetadata::VCArgumentIOKind)
           .getValueAsString()
           .getAsInteger(0, Kind);
       BA->addDecorate(DecorationFuncParamIOKindINTEL, Kind);
     }
-    if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)) {
+    if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCSingleElementVector)) {
       auto *AT = BA->getType();
       (void)AT;
       assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
@@ -775,8 +773,7 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
       Attrs.hasFnAttr(kVCMetadata::VCFloatControl)) {
 
     SPIRVWord Mode = 0;
-    Attrs
-        .getAttribute(AttributeList::FunctionIndex, kVCMetadata::VCFloatControl)
+    Attrs.getFnAttr(kVCMetadata::VCFloatControl)
         .getValueAsString()
         .getAsInteger(0, Mode);
     VCFloatTypeSizeMap::foreach (
@@ -1398,7 +1395,6 @@ SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
   }
   return M->getOrAddAliasScopeListDeclINTELInst(ListId, AliasingListMD);
 }
-
 
 // Translate alias.scope/noalias metadata attached to store and load
 // instructions.

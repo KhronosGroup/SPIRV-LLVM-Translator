@@ -321,9 +321,7 @@ void PreprocessMetadataBase::preprocessVectorComputeMetadata(Module *M,
     auto Attrs = F.getAttributes();
     if (Attrs.hasFnAttr(kVCMetadata::VCFloatControl)) {
       SPIRVWord Mode = 0;
-      Attrs
-          .getAttribute(AttributeList::FunctionIndex,
-                        kVCMetadata::VCFloatControl)
+      Attrs.getFnAttr(kVCMetadata::VCFloatControl)
           .getValueAsString()
           .getAsInteger(0, Mode);
       spv::ExecutionMode ExecRoundMode =
@@ -344,7 +342,7 @@ void PreprocessMetadataBase::preprocessVectorComputeMetadata(Module *M,
     }
     if (Attrs.hasFnAttr(kVCMetadata::VCSLMSize)) {
       SPIRVWord SLMSize = 0;
-      Attrs.getAttribute(AttributeList::FunctionIndex, kVCMetadata::VCSLMSize)
+      Attrs.getFnAttr(kVCMetadata::VCSLMSize)
           .getValueAsString()
           .getAsInteger(0, SLMSize);
       EM.addOp()
