@@ -3272,6 +3272,9 @@ class SPIRVJointMatrixINTELInst : public SPIRVJointMatrixINTELInstBase {
 _SPIRV_OP(JointMatrixLoad, true, 6, true)
 _SPIRV_OP(JointMatrixStore, false, 5, true)
 _SPIRV_OP(JointMatrixMad, true, 7)
+_SPIRV_OP(JointMatrixSUMad, true, 7)
+_SPIRV_OP(JointMatrixUSMad, true, 7)
+_SPIRV_OP(JointMatrixUUMad, true, 7)
 #undef _SPIRV_OP
 } // namespace SPIRV
 

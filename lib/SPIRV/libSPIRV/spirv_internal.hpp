@@ -45,6 +45,9 @@ enum InternalOp {
   IOpJointMatrixLoadINTEL = 6120,
   IOpJointMatrixStoreINTEL = 6121,
   IOpJointMatrixMadINTEL = 6122,
+  IOpJointMatrixSUMadINTEL = 6128,
+  IOpJointMatrixUSMadINTEL = 6129,
+  IOpJointMatrixUUMadINTEL = 6130,
   IOpArithmeticFenceINTEL = 6145,
   IOpPrev = OpMax - 2,
   IOpForward
@@ -96,6 +99,9 @@ _SPIRV_OP(Op, TypeJointMatrixINTEL)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
 _SPIRV_OP(Op, JointMatrixMadINTEL)
+_SPIRV_OP(Op, JointMatrixSUMadINTEL)
+_SPIRV_OP(Op, JointMatrixUSMadINTEL)
+_SPIRV_OP(Op, JointMatrixUUMadINTEL)
 #undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
