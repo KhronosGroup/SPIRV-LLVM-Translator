@@ -159,6 +159,10 @@ private:
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
   std::vector<Constant *> GlobalAnnotations;
+  // This map is used to store global annotation strings by their annotations
+  // to avoid duplication of these global strings in LLVM-IR after reverse
+  // translation that can be caused by multiple translation of UserSemantic
+  // decorations with the same annotation.
   std::unordered_map<std::string, Constant *> AnnotationsMap;
 
   // Loops metadata is translated in the end of a function translation.
