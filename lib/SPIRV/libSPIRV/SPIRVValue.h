@@ -108,8 +108,10 @@ public:
     // NoSignedWrap and NoUnsignedWrap decorations are available only if it is
     // allowed to use SPIR-V 1.4 or if SPV_KHR_no_integer_wrap_decoration
     // extension is enabled
+#ifdef _SPIRVDBG
     const std::string InstStr =
         NoIntegerWrapDecoration == DecorationNoSignedWrap ? "nsw" : "nuw";
+#endif // _SPIRVDBG
     if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
       Module->setMinSPIRVVersion(
           static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));

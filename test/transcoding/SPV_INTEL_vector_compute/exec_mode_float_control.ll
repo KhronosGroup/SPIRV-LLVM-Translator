@@ -1,12 +1,12 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv  --spirv-max-version=1.1 --spirv-ext=+SPV_INTEL_vector_compute,+SPV_KHR_float_controls,+SPV_INTEL_float_controls2
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-max-version=1.1 --spirv-ext=+SPV_INTEL_vector_compute,+SPV_KHR_float_controls,+SPV_INTEL_float_controls2
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis %t.bc -o %t.ll
 ; RUN: FileCheck %s --input-file %t.spt -check-prefixes=SPV,SPVEXT
 ; RUN: FileCheck %s --input-file %t.ll  -check-prefix=LLVM
 
-; RUN: llvm-spirv %t.bc -o %t.spv  --spirv-max-version=1.4 --spirv-ext=+SPV_INTEL_vector_compute,+SPV_INTEL_float_controls2
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-max-version=1.4 --spirv-ext=+SPV_INTEL_vector_compute,+SPV_INTEL_float_controls2
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck %s --input-file %t.spt -check-prefixes=SPV,SPV14
 
