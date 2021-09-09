@@ -3400,7 +3400,15 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     SmallString<256> AnnotStr;
     generateIntelFPGAAnnotation(BV, AnnotStr);
     if (!AnnotStr.empty()) {
-      auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+      Constant* GS = nullptr;
+      std::string StringAnnotStr = AnnotStr.c_str();
+      static unordered_map<std::string, Constant*> Annotations;
+      if (Annotations.find(StringAnnotStr) != Annotations.end())
+        GS = Annotations[StringAnnotStr];
+      else {
+        GS = Builder.CreateGlobalStringPtr(AnnotStr);
+        Annotations.insert(std::make_pair(StringAnnotStr, GS));
+      }
 
       Value *BaseInst =
           AL ? Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()) : Inst;
