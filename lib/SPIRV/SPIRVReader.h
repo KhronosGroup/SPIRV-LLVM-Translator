@@ -159,6 +159,7 @@ private:
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
   std::vector<Constant *> GlobalAnnotations;
+  std::unordered_map<std::string, Constant *> AnnotationsMap;
 
   // Loops metadata is translated in the end of a function translation.
   // This storage contains pairs of translated loop header basic block and loop
