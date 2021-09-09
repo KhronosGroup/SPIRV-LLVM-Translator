@@ -3402,11 +3402,12 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     if (!AnnotStr.empty()) {
       Constant *GS = nullptr;
       std::string StringAnnotStr = AnnotStr.c_str();
-      if (AnnotationsMap.find(StringAnnotStr) != AnnotationsMap.end()) {
-        GS = AnnotationsMap[StringAnnotStr];
+      auto AnnotItr = AnnotationsMap.find(StringAnnotStr);
+      if (AnnotItr != AnnotationsMap.end()) {
+        GS = AnnotItr->second();
       } else {
         GS = Builder.CreateGlobalStringPtr(AnnotStr);
-        AnnotationsMap.insert(std::make_pair(StringAnnotStr, GS));
+        AnnotationsMap.emplace(std::move(StringAnnotStr), GS);
       }
 
       Value *BaseInst =
