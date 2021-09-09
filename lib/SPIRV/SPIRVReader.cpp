@@ -3400,9 +3400,9 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     SmallString<256> AnnotStr;
     generateIntelFPGAAnnotation(BV, AnnotStr);
     if (!AnnotStr.empty()) {
-      Constant* GS = nullptr;
+      Constant *GS = nullptr;
       std::string StringAnnotStr = AnnotStr.c_str();
-      static unordered_map<std::string, Constant*> Annotations;
+      static unordered_map<std::string, Constant *> Annotations;
       if (Annotations.find(StringAnnotStr) != Annotations.end())
         GS = Annotations[StringAnnotStr];
       else {
