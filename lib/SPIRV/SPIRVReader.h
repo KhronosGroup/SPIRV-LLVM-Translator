@@ -162,14 +162,11 @@ private:
   // for global variables and functions.
   // They are used in translation of llvm.global.annotations instruction.
   std::vector<Constant *> GlobalAnnotations;
-  // There is also GlobalAnnotations vector which is used to store arrays of
-  // arguments for llvm.global.annotations instructions. But SPIR-V may also
-  // contain annotations for llvm.ptr.annotation.
-  // During reverse translation we need to check if a similar annotation with
-  // the same string has already been translated to avoid duplication of these
-  // global strings in LLVM-IR, which can be caused by multiple translation of
-  // UserSemantic decorations with the same literal. This map is used to store
-  // global strings by their annotations.
+  // AnnotationsMap helps to translate annotation strings for local variables.
+  // Map values are pointers on global strings in LLVM-IR.
+  // It is used to avoid duplication of these annotation strings in LLVM-IR,
+  // which can be caused by multiple translation of
+  // UserSemantic decorations with the same literal.
   std::unordered_map<std::string, Constant *> AnnotationsMap;
 
   // Loops metadata is translated in the end of a function translation.
