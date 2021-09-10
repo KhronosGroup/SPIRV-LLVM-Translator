@@ -158,6 +158,9 @@ private:
   SPIRVBlockToLLVMStructMap BlockMap;
   SPIRVToLLVMPlaceholderMap PlaceholderMap;
   std::unique_ptr<SPIRVToLLVMDbgTran> DbgTran;
+  // GlobalAnnotations collects array of annotation entries
+  // for global variables and functions.
+  // They are used in translation of llvm.global.annotations instruction.
   std::vector<Constant *> GlobalAnnotations;
   // There is also GlobalAnnotations vector which is used to store arrays of
   // arguments for llvm.global.annotations instructions. But SPIR-V may also
