@@ -89,6 +89,40 @@ void SPIRVValue::setFPFastMathMode(SPIRVWord M) {
                      << "\n")
 }
 
+template <spv::Decoration NoIntegerWrapDecoration>
+void SPIRVValue::setNoIntegerDecorationWrap(bool HasNoIntegerWrap) {
+  if (!HasNoIntegerWrap) {
+    eraseDecorate(NoIntegerWrapDecoration);
+    return;
+  }
+  // NoSignedWrap and NoUnsignedWrap decorations are available only if it is
+  // allowed to use SPIR-V 1.4 or if SPV_KHR_no_integer_wrap_decoration
+  // extension is enabled
+#ifdef _SPIRVDBG
+  const std::string InstStr =
+      NoIntegerWrapDecoration == DecorationNoSignedWrap ? "nsw" : "nuw";
+#endif // _SPIRVDBG
+  if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
+    Module->setMinSPIRVVersion(
+        static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+    addDecorate(new SPIRVDecorate(NoIntegerWrapDecoration, this));
+    SPIRVDBG(spvdbgs() << "Set " << InstStr << " for obj " << Id << "\n")
+  } else if (Module->isAllowedToUseExtension(
+                 ExtensionID::SPV_KHR_no_integer_wrap_decoration)) {
+    Module->addExtension(ExtensionID::SPV_KHR_no_integer_wrap_decoration);
+    addDecorate(new SPIRVDecorate(NoIntegerWrapDecoration, this));
+    SPIRVDBG(spvdbgs() << "Set " << InstStr << " for obj " << Id << "\n")
+  } else {
+    SPIRVDBG(spvdbgs() << "Skip setting " << InstStr << " for obj " << Id
+                       << "\n")
+  }
+}
+
+template void
+SPIRVValue::setNoIntegerDecorationWrap<DecorationNoSignedWrap>(bool);
+template void
+SPIRVValue::setNoIntegerDecorationWrap<DecorationNoUnsignedWrap>(bool);
+
 template <spv::Op OC>
 void SPIRVConstantBase<OC>::setWords(const uint64_t *TheValue) {
   assert(TheValue && "Nullptr value");
