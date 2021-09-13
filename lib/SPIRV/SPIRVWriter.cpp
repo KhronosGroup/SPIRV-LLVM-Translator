@@ -2313,6 +2313,11 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   RegexIterT DecorationsIt(AnnotatedCode.begin(), AnnotatedCode.end(),
                            DecorationRegex);
   RegexIterT DecorationsEnd;
+  // If we didn't find any FPGA specific annotations then add a UserSemantic
+  // decoration
+  if (DecorationsIt == DecorationsEnd)
+    Decorates.MemoryAttributesVec.emplace_back(DecorationUserSemantic,
+                                               AnnotatedCode.str());
   for (; DecorationsIt != DecorationsEnd; ++DecorationsIt) {
     // Drop the braces surrounding the actual decoration
     const StringRef AnnotatedDecoration = AnnotatedCode.substr(
@@ -2360,7 +2365,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                   .Case("force_pow2_depth", DecorationForcePow2DepthINTEL)
                   .Default(DecorationUserSemantic);
         if (Dec == DecorationUserSemantic)
-          Annotation = AnnotatedDecoration;
+          Annotation = AnnotatedCode;
         else
           Annotation = ValueStr;
       }
