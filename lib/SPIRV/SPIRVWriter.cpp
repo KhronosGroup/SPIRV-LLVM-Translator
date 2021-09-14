@@ -122,6 +122,24 @@ static SPIRVMemoryModelKind getMemoryModel(Module &M) {
   return SPIRVMemoryModelKind::MemoryModelMax;
 }
 
+static void translateSEVDecoration(Attribute Sev, SPIRVValue *Val) {
+  assert(Sev.isStringAttribute() &&
+         Sev.getKindAsString() == kVCMetadata::VCSingleElementVector);
+
+  auto *Ty = Val->getType();
+  assert((Ty->isTypeBool() || Ty->isTypeFloat() || Ty->isTypeInt() ||
+          Ty->isTypePointer()) &&
+         "This decoration is valid only for Scalar or Pointer types");
+
+  if (Ty->isTypePointer()) {
+    SPIRVWord IndirectLevelsOnElement = 0;
+    Sev.getValueAsString().getAsInteger(0, IndirectLevelsOnElement);
+    Val->addDecorate(DecorationSingleElementVectorINTEL,
+                     IndirectLevelsOnElement);
+  } else
+    Val->addDecorate(DecorationSingleElementVectorINTEL);
+}
+
 LLVMToSPIRVBase::LLVMToSPIRVBase(SPIRVModule *SMod)
     : M(nullptr), Ctx(nullptr), BM(SMod), SrcLang(0), SrcLangVer(0) {
   DbgTran = std::make_unique<LLVMToSPIRVDbgTran>(nullptr, SMod, this);
@@ -720,23 +738,11 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
     BF->addDecorate(DecorationSIMTCallINTEL, SIMTMode);
   }
 
-  if (Attrs.hasRetAttr(kVCMetadata::VCSingleElementVector)) {
-    SPIRVWord StarsOnElement = 0;
-    Attrs
-        .getAttribute(AttributeList::ReturnIndex,
-                      kVCMetadata::VCSingleElementVector)
-        .getValueAsString()
-        .getAsInteger(0, StarsOnElement);
-    auto *RT = BF->getType();
-    (void)RT;
-    assert((RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
-            RT->isTypePointer()) &&
-           "This decoration is valid only for Scalar or Pointer types");
-    if (RT->isTypePointer())
-      BF->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
-    else
-      BF->addDecorate(DecorationSingleElementVectorINTEL);
-  }
+  if (Attrs.hasRetAttr(kVCMetadata::VCSingleElementVector))
+    translateSEVDecoration(
+        Attrs.getAttributeAtIndex(AttributeList::ReturnIndex,
+                                  kVCMetadata::VCSingleElementVector),
+        BF);
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
@@ -749,21 +755,9 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
           .getAsInteger(0, Kind);
       BA->addDecorate(DecorationFuncParamIOKindINTEL, Kind);
     }
-    if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCSingleElementVector)) {
-      SPIRVWord StarsOnElement = 0;
-      Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)
-          .getValueAsString()
-          .getAsInteger(0, StarsOnElement);
-      auto *AT = BA->getType();
-      (void)AT;
-      assert((AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
-              AT->isTypePointer()) &&
-             "This decoration is valid only for Scalar or Pointer types");
-      if (AT->isTypePointer())
-        BA->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
-      else
-        BA->addDecorate(DecorationSingleElementVectorINTEL);
-    }
+    if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCSingleElementVector))
+      translateSEVDecoration(
+          Attrs.getParamAttr(ArgNo, kVCMetadata::VCSingleElementVector), BA);
   }
   if (!isKernel(F) &&
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_float_controls2) &&
@@ -1536,21 +1530,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       if (GV->hasAttribute(kVCMetadata::VCVolatile))
         BVar->addDecorate(DecorationVolatile);
 
-      if (GV->hasAttribute(kVCMetadata::VCSingleElementVector)) {
-        SPIRVWord StarsOnElement = 0;
-        GV->getAttribute(kVCMetadata::VCSingleElementVector)
-            .getValueAsString()
-            .getAsInteger(0, StarsOnElement);
-        auto *RT = GV->getType()->getElementType();
-        (void)RT;
-        assert((RT->isFloatingPointTy() || RT->isIntegerTy() ||
-                RT->isPointerTy()) &&
-               "This decoration is valid only for Scalar or Pointer types");
-        if (RT->isPointerTy())
-          BVar->addDecorate(DecorationSingleElementVectorINTEL, StarsOnElement);
-        else
-          BVar->addDecorate(DecorationSingleElementVectorINTEL);
-      }
+      if (GV->hasAttribute(kVCMetadata::VCSingleElementVector))
+        translateSEVDecoration(
+            GV->getAttribute(kVCMetadata::VCSingleElementVector), BVar);
     }
 
     mapValue(V, BVar);

@@ -220,14 +220,12 @@ Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   return nullptr;
 }
 
-static llvm::Optional<llvm::Attribute> translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext& Context) {
-  
+static llvm::Optional<llvm::Attribute>
+translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext &Context) {
   llvm::Optional<llvm::Attribute> RetAttr;
 
   if (!BV->hasDecorate(DecorationSingleElementVectorINTEL))
     return RetAttr;
-
-  SPIRVWord StarsOnElement = 0;
 
   auto VecDecorateSEV = BV->getDecorations(DecorationSingleElementVectorINTEL);
   assert(VecDecorateSEV.size() == 1 &&
@@ -238,10 +236,11 @@ static llvm::Optional<llvm::Attribute> translateSEVMetadata(SPIRVValue *BV, llvm
   assert(LiteralCount <= 1 && "SingleElementVectorINTEL decoration must "
                               "have no more than one literal");
 
-  if (LiteralCount == 1)
-    StarsOnElement = DecorateSEV->getLiteral(0);
+  SPIRVWord IndirectLevelsOnElement =
+      (LiteralCount == 1) ? DecorateSEV->getLiteral(0) : 0;
 
-  RetAttr = Attribute::get(Context, kVCMetadata::VCSingleElementVector, std::to_string(StarsOnElement));
+  RetAttr = Attribute::get(Context, kVCMetadata::VCSingleElementVector,
+                           std::to_string(IndirectLevelsOnElement));
   return RetAttr;
 }
 
@@ -1536,8 +1535,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       if (BVar->hasDecorate(DecorationVolatile))
         LVar->addAttribute(kVCMetadata::VCVolatile);
       auto SEVAttr = translateSEVMetadata(BVar, LVar->getContext());
-      if(SEVAttr)
-        LVar->addAttribute(SEVAttr.getValue().getKindAsString(), SEVAttr.getValue().getValueAsString());
+      if (SEVAttr)
+        LVar->addAttribute(SEVAttr.getValue().getKindAsString(),
+                           SEVAttr.getValue().getValueAsString());
     }
 
     return Res;
@@ -3915,8 +3915,8 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
 
   auto SEVAttr = translateSEVMetadata(BF, F->getContext());
 
-  if(SEVAttr)
-    F->addAttribiuteAtIndex(AttributeList::ReturnIndex, SEVAttr.getValue());
+  if (SEVAttr)
+    F->addAttributeAtIndex(AttributeList::ReturnIndex, SEVAttr.getValue());
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
@@ -3929,7 +3929,7 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
       F->addParamAttr(ArgNo, Attr);
     }
     SEVAttr = translateSEVMetadata(BA, F->getContext());
-    if(SEVAttr)
+    if (SEVAttr)
       F->addParamAttr(ArgNo, SEVAttr.getValue());
   }
 
