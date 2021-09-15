@@ -12,6 +12,7 @@ target datalayout = "e-p:64:64-i64:64-n8:16:32"
 target triple = "spir64"
 
 
+@global_var = external global i32** #2
 
 ; SPV-DAG: Name [[def:[0-9]+]] "_Z24__cm_intrinsic_impl_sdivu2CMvb1_cS_"
 ; SPV-DAG: Name [[intr:[0-9]+]] "some.unknown.intrinsic"
@@ -19,11 +20,13 @@ target triple = "spir64"
 ; SPV-DAG: Name [[a:[0-9]+]] "a"
 ; SPV-DAG: Name [[b:[0-9]+]] "b"
 ; SPV-DAG: FunctionParameter [[intrId]] [[ip:[0-9]+]]
+; SPV-DAG: Name [[glob:[0-9]+]] "global_var"
 ; SPV-DAG: Decorate [[group:[0-9]+]] SingleElementVectorINTEL
+; SPV-DAG: Decorate [[glob]] SingleElementVectorINTEL 2
 ; SPV-DAG: GroupDecorate [[group]] [[ip]] [[def]] [[a]] [[b]]
 
-; LLVM-DAG: "VCSingleElementVector" i8 @_Z24__cm_intrinsic_impl_sdivu2CMvb1_cS_(i8 "VCSingleElementVector" %a, i8 "VCSingleElementVector" %b)
-; LLVM-DAG: i8 @some.unknown.intrinsic(i8 "VCSingleElementVector", i8)
+; LLVM-DAG: "VCSingleElementVector"="0" i8 @_Z24__cm_intrinsic_impl_sdivu2CMvb1_cS_(i8 "VCSingleElementVector"="0" %a, i8 "VCSingleElementVector"="0" %b)
+; LLVM-DAG: i8 @some.unknown.intrinsic(i8 "VCSingleElementVector"="0", i8)
 ; Function Attrs: noinline norecurse nounwind readnone
 define dso_local "VCSingleElementVector" i8 @_Z24__cm_intrinsic_impl_sdivu2CMvb1_cS_(i8 "VCSingleElementVector" %a, i8 "VCSingleElementVector" %b) local_unnamed_addr #1 {
 entry:
@@ -49,4 +52,8 @@ entry:
 ; Function Attrs: nounwind readnone
 declare i8 @some.unknown.intrinsic(i8 "VCSingleElementVector", i8) #1
 
+; LLVM: "VCGlobalVariable"
+; LLVM-SAME: "VCSingleElementVector"="2"
+
 attributes #1 = { noinline norecurse nounwind readnone "VCFunction"}
+attributes #2 = { "VCGlobalVariable" "VCSingleElementVector"="2" }

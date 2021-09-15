@@ -121,6 +121,24 @@ static bool shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
   return true;
 }
 
+static void translateSEVDecoration(Attribute Sev, SPIRVValue *Val) {
+  assert(Sev.isStringAttribute() &&
+         Sev.getKindAsString() == kVCMetadata::VCSingleElementVector);
+
+  auto *Ty = Val->getType();
+  assert((Ty->isTypeBool() || Ty->isTypeFloat() || Ty->isTypeInt() ||
+          Ty->isTypePointer()) &&
+         "This decoration is valid only for Scalar or Pointer types");
+
+  if (Ty->isTypePointer()) {
+    SPIRVWord IndirectLevelsOnElement = 0;
+    Sev.getValueAsString().getAsInteger(0, IndirectLevelsOnElement);
+    Val->addDecorate(DecorationSingleElementVectorINTEL,
+                     IndirectLevelsOnElement);
+  } else
+    Val->addDecorate(DecorationSingleElementVectorINTEL);
+}
+
 LLVMToSPIRV::LLVMToSPIRV(SPIRVModule *SMod)
     : ModulePass(ID), M(nullptr), Ctx(nullptr), BM(SMod), SrcLang(0),
       SrcLangVer(0) {
@@ -562,13 +580,11 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
   }
 
   if (Attrs.hasAttribute(AttributeList::ReturnIndex,
-                         kVCMetadata::VCSingleElementVector)) {
-    auto *RT = BF->getType();
-    assert(RT->isTypeBool() || RT->isTypeFloat() || RT->isTypeInt() ||
-           RT->isTypePointer() &&
-               "This decoration is valid only for Scalar or Pointer types");
-    BF->addDecorate(DecorationSingleElementVectorINTEL);
-  }
+                         kVCMetadata::VCSingleElementVector))
+    translateSEVDecoration(
+        Attrs.getAttribute(AttributeList::ReturnIndex,
+                           kVCMetadata::VCSingleElementVector),
+        BF);
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
@@ -581,13 +597,10 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
           .getAsInteger(0, Kind);
       BA->addDecorate(DecorationFuncParamIOKind, Kind);
     }
-    if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector)) {
-      auto *AT = BA->getType();
-      assert(AT->isTypeBool() || AT->isTypeFloat() || AT->isTypeInt() ||
-             AT->isTypePointer() &&
-                 "This decoration is valid only for Scalar or Pointer types");
-      BA->addDecorate(DecorationSingleElementVectorINTEL);
-    }
+    if (Attrs.hasAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector))
+      translateSEVDecoration(
+          Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector),
+          BA);
   }
   if (!isKernel(F) &&
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_float_controls2) &&
@@ -941,6 +954,10 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
       }
       if (GV->hasAttribute(kVCMetadata::VCVolatile))
         BVar->addDecorate(DecorationVolatile);
+
+      if (GV->hasAttribute(kVCMetadata::VCSingleElementVector))
+        translateSEVDecoration(
+            GV->getAttribute(kVCMetadata::VCSingleElementVector), BVar);
     }
 
     mapValue(V, BVar);
