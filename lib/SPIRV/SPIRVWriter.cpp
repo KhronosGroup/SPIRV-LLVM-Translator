@@ -4127,15 +4127,38 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // Literal S Literal I Literal rI Literal Q Literal O
 
     Type *ResTy = CI->getType();
-    SPIRVValue *Input =
-        transValue(CI->getOperand(0) /* A - integer input of any width */, BB);
+    SPIRVValue *Input;
+    std::vector<Value *> Operands(5);
 
-    std::vector<Value *> Operands = {
-        CI->getOperand(1) /* S - bool value, indicator of signedness */,
-        CI->getOperand(2) /* I - location of the fixed-point of the input */,
-        CI->getOperand(3) /* rI - location of the fixed-point of the result*/,
-        CI->getOperand(4) /* Quantization mode */,
-        CI->getOperand(5) /* Overflow mode */};
+    // If return type of intrinsic is greater than 64 then FE moves return
+    // variable into arguments list
+    if (CI->hasStructRetAttr()) {
+      assert(ResTy->isVoidTy() && "Return type is not void");
+      ResTy = cast<PointerType>(CI->getOperand(0)->getType())->getElementType();
+      Input = transValue(CI->getOperand(1) /* A - integer input of any width */,
+                         BB);
+
+      Operands[0] =
+          CI->getOperand(2); /* S - bool value, indicator of signedness */
+      Operands[1] =
+          CI->getOperand(3); /* I - location of the fixed-point of the input */
+      Operands[2] =
+          CI->getOperand(4); /* rI - location of the fixed-point of the result*/
+      Operands[3] = CI->getOperand(5); /* Quantization mode */
+      Operands[4] = CI->getOperand(6); /* Overflow mode */
+    } else {
+      Input = transValue(CI->getOperand(0) /* A - integer input of any width */,
+                         BB);
+
+      Operands[0] =
+          CI->getOperand(1); /* S - bool value, indicator of signedness */
+      Operands[1] =
+          CI->getOperand(2); /* I - location of the fixed-point of the input */
+      Operands[2] =
+          CI->getOperand(3); /* rI - location of the fixed-point of the result*/
+      Operands[3] = CI->getOperand(4); /* Quantization mode */
+      Operands[4] = CI->getOperand(5); /* Overflow mode */
+    }
     std::vector<SPIRVWord> Literals;
     for (auto *O : Operands) {
       Literals.push_back(cast<llvm::ConstantInt>(O)->getZExtValue());
