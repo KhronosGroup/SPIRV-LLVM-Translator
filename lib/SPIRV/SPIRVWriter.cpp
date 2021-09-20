@@ -4131,11 +4131,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     auto OpItr = CI->value_op_begin();
     auto OpEnd = OpItr + CI->getNumArgOperands();
 
-    // If return type of intrinsic is greater than 64 then FE moves return
-    // variable into arguments list
+    // If the return type of an instruction is wider than 64-bit, then this
+    // instruction will return via 'sret' argument added into the arguments
+    // list. Here we reverse this, removing 'sret' argument and restoring
+    // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(CI->getOperand(0)->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
       OpItr++;
     }
 
@@ -4213,11 +4215,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     auto OpItr = CI->value_op_begin();
     auto OpEnd = OpItr + CI->getNumArgOperands();
 
-    // If return type of intrinsic is greater than 64 then FE moves return
-    // variable into arguments list
+    // If the return type of an instruction is wider than 64-bit, then this
+    // instruction will return via 'sret' argument added into the arguments
+    // list. Here we reverse this, removing 'sret' argument and restoring
+    // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(CI->getOperand(0)->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
       OpItr++;
     }
 
@@ -4279,11 +4283,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     auto OpItr = CI->value_op_begin();
     auto OpEnd = OpItr + CI->getNumArgOperands();
 
-    // If return type of intrinsic is greater than 64 then FE moves return
-    // variable into arguments list
+    // If the return type of an instruction is wider than 64-bit, then this
+    // instruction will return via 'sret' argument added into the arguments
+    // list. Here we reverse this, removing 'sret' argument and restoring
+    // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(CI->getOperand(0)->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
       OpItr++;
     }
 
