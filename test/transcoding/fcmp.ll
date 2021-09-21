@@ -229,9 +229,9 @@
 ; CHECK-LLVM: %r40 = fcmp oge float %a, %b
 ; CHECK-LLVM: %r41 = fcmp oge float %a, %b
 ; CHECK-LLVM: %r42 = fcmp oge float %a, %b
-; CHECK-LLVM: %r43 = call spir_func i32 @_Z9isorderedff(float %a, float %b)
-; CHECK-LLVM: %r44 = call spir_func i32 @_Z9isorderedff(float %a, float %b)
-; CHECK-LLVM: %r45 = call spir_func i32 @_Z9isorderedff(float %a, float %b)
+; CHECK-LLVM: %r43 = fcmp ord float %a, %b
+; CHECK-LLVM: %r44 = fcmp ord float %a, %b
+; CHECK-LLVM: %r45 = fcmp ord float %a, %b
 ; CHECK-LLVM: %r46 = fcmp ueq float %a, %b
 ; CHECK-LLVM: %r47 = fcmp ueq float %a, %b
 ; CHECK-LLVM: %r48 = fcmp ueq float %a, %b
@@ -274,9 +274,9 @@
 ; CHECK-LLVM: %r85 = fcmp uge float %a, %b
 ; CHECK-LLVM: %r86 = fcmp uge float %a, %b
 ; CHECK-LLVM: %r87 = fcmp uge float %a, %b
-; CHECK-LLVM: %r88 = call spir_func i32 @_Z11isunorderedff(float %a, float %b)
-; CHECK-LLVM: %r89 = call spir_func i32 @_Z11isunorderedff(float %a, float %b)
-; CHECK-LLVM: %r90 = call spir_func i32 @_Z11isunorderedff(float %a, float %b)
+; CHECK-LLVM: %r88 = fcmp uno float %a, %b
+; CHECK-LLVM: %r89 = fcmp uno float %a, %b
+; CHECK-LLVM: %r90 = fcmp uno float %a, %b
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
