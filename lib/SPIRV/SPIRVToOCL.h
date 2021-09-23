@@ -199,7 +199,7 @@ public:
 
   /// Transform __spirv_OpAtomicCompareExchange and
   /// __spirv_OpAtomicCompareExchangeWeak
-  virtual Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) = 0;
+  virtual Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI) = 0;
 
   /// Transform __spirv_OpAtomicIIncrement/OpAtomicIDecrement to:
   /// - OCL2.0: atomic_fetch_add_explicit/atomic_fetch_sub_explicit
@@ -317,10 +317,10 @@ public:
   /// (bool)atomic_xchg(*ptr, 1)
   Instruction *visitCallSPIRVAtomicFlagTestAndSet(CallInst *CI);
 
-  /// Transform __spirv_OpAtomicCompareExchange and
-  /// __spirv_OpAtomicCompareExchangeWeak into atomic_cmpxchg. There is no
-  /// weak version of function in OpenCL 1.2
-  Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) override;
+  /// Transform __spirv_OpAtomicCompareExchange/Weak into atomic_cmpxchg
+  /// OpAtomicCompareExchangeWeak is not "weak" at all, but instead has
+  /// the same semantics as OpAtomicCompareExchange.
+  Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI) override;
 
   /// Trigger assert, since OpenCL 1.2 doesn't support enqueue_kernel
   void visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) override;
@@ -401,8 +401,10 @@ public:
   std::string mapFPAtomicName(Op OC) override;
 
   /// Transform __spirv_OpAtomicCompareExchange/Weak into
-  /// compare_exchange_strong/weak_explicit
-  Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) override;
+  /// atomic_compare_exchange_strong_explicit
+  /// OpAtomicCompareExchangeWeak is not "weak" at all, but instead has
+  /// the same semantics as OpAtomicCompareExchange.
+  Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI) override;
 };
 
 class SPIRVToOCL20Pass : public llvm::PassInfoMixin<SPIRVToOCL20Pass>,
