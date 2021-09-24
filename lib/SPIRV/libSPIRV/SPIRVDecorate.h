@@ -102,6 +102,17 @@ public:
     }
   }
 
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    switch (static_cast<size_t>(Dec)) {
+    case internal::BuiltInSubDeviceIDINTEL:
+    case internal::BuiltInHWThreadIDINTEL:
+    case internal::BuiltInMaxHWThreadIDPerSubDeviceINTEL:
+      return ExtensionID::SPV_INTEL_hw_thread_queries;
+    default:
+      return {};
+    }
+  }
+
 protected:
   Decoration Dec;
   std::vector<SPIRVWord> Literals;
