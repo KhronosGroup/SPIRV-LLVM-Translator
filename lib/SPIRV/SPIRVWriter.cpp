@@ -3438,6 +3438,7 @@ bool isEmptyLLVMModule(Module *M) {
 }
 
 bool LLVMToSPIRVBase::translate() {
+  BM->setGeneratorId(kTranslatorId);
   BM->setGeneratorVer(KTranslatorVer);
 
   if (isEmptyLLVMModule(M))

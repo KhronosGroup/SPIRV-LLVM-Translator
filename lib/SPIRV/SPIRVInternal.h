@@ -63,6 +63,9 @@ class IntrinsicInst;
 
 namespace SPIRV {
 
+// The LLVM/SPIR-V translator identifier (see vendor section of spir-v.xml)
+const static unsigned short kTranslatorId = 6;
+
 /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
 /// generator's magic number in the generated SPIR-V module.
 /// This number should be bumped up whenever the generated SPIR-V changes.
