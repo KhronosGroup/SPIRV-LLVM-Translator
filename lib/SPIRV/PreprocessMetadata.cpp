@@ -271,19 +271,18 @@ void PreprocessMetadataBase::visit(Module *M) {
       // 'stall free' mode (to be mapped on '1' literal)
       // !ip_interface !N
       // !N = !{!"streaming", !"stall_free_return"}
-      int32_t InterfaceMode = -1;
       for (size_t I = 0; I != Interface->getNumOperands(); ++I)
         InterfaceStrSet.insert(getMDOperandAsString(Interface, I));
-      if (InterfaceStrSet.find("stall_free_return") != InterfaceStrSet.end())
-        InterfaceMode = 1;
-      else if (InterfaceStrSet.find("streaming") != InterfaceStrSet.end())
-        InterfaceMode = 0;
-      if (InterfaceMode >= 0)
+      if (InterfaceStrSet.find("streaming") != InterfaceStrSet.end()) {
+        int32_t InterfaceMode = 0;
+        if (InterfaceStrSet.find("stall_free_return") != InterfaceStrSet.end())
+          InterfaceMode = 1;
         EM.addOp()
             .add(&Kernel)
             .add(spv::internal::ExecutionModeStreamingInterfaceINTEL)
             .add(InterfaceMode)
             .done();
+      }
     }
   }
 }
