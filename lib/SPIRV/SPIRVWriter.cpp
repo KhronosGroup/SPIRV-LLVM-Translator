@@ -1466,7 +1466,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     bool IsVectorCompute =
         BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute) &&
         GV->hasAttribute(kVCMetadata::VCGlobalVariable);
-    if (IsVectorCompute)
+    if (AddressSpace == SPIRAS_Global &&
+        AddressSpace == GV->isConstant()) {
+      AddressSpace = SPIRAS_Constant;
+      StorageClass = SPIRSPIRVAddrSpaceMap::map(AddressSpace);
+    } else if (IsVectorCompute)
       StorageClass =
           VectorComputeUtil::getVCGlobalVarStorageClass(AddressSpace);
     else {
