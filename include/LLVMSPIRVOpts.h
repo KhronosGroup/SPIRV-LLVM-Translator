@@ -181,6 +181,10 @@ public:
     PreserveOCLKernelArgTypeMetadataThroughString = Value;
   }
 
+  void setIRPassThrough(bool Value) noexcept { IRPassThrough = Value; }
+
+  bool shoudIRPassThrough() const noexcept { return IRPassThrough; }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -221,6 +225,11 @@ private:
   // Add a workaround to preserve OpenCL kernel_arg_type and
   // kernel_arg_type_qual metadata through OpString
   bool PreserveOCLKernelArgTypeMetadataThroughString = false;
+
+  // Checks if during reverse translation the input file is already LLVM-IR
+  // and copy the input file to the designated output file. If the input is
+  // SPIR-V the conversion to LLVM-IR will take place as normal
+  bool IRPassThrough = false;
 };
 
 } // namespace SPIRV

@@ -156,6 +156,9 @@ bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg);
 bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
                             const SPIRV::TranslatorOpts &Opts);
 
+/// \brief Check if input LLVM is valid.
+bool checkInputFileIsValidLLVM(Module *M);
+
 /// \brief Mangle OpenCL builtin function function name.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
                          ArrayRef<Type *> ArgTypes, std::string &MangledName);

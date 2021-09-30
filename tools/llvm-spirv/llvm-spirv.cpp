@@ -218,6 +218,13 @@ static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
              "instruction from OpenCL extended instruction set"),
     cl::init(true));
 
+static cl::opt<bool> IRPassThrough("ir-passthrough",
+    cl::desc("During reverse translation translator will recognize that the "
+             "input file is already LLVM-IR and copy the input file to the "
+             "designated output file. If the input is SPIR-V the conversion to "
+             "LLVM-IR will take place as normal"),
+    cl::init(true));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -380,6 +387,57 @@ static int regularizeLLVM(SPIRV::TranslatorOpts &Opts) {
   WriteBitcodeToFile(*M.get(), Out.os());
   Out.keep();
   return 0;
+}
+
+static int copyInputLLVMToOutput() {
+  LLVMContext Context;
+
+  std::unique_ptr<MemoryBuffer> MB =
+      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
+  std::unique_ptr<Module> M =
+      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
+                                          /*ShouldLazyLoadMetadata=*/true));
+  ExitOnErr(M->materializeAll());
+
+  if (OutputFile.empty()) {
+    if (InputFile == "-")
+      OutputFile = "-";
+    else
+      OutputFile = removeExt(InputFile) + kExt::LLVMBinary;
+  }
+
+  checkInputFileIsValidLLVM(M.get());
+
+  std::error_code EC;
+  ToolOutputFile Out(OutputFile.c_str(), EC, sys::fs::OF_None);
+  if (EC) {
+    errs() << "Fails to open output file: " << EC.message();
+    return -1;
+  }
+
+  WriteBitcodeToFile(*M.get(), Out.os());
+  Out.keep();
+  return 0;
+}
+
+static int checkInputFileIsAlreadyLLVM(SPIRV::TranslatorOpts &Opts) {
+  if (InputFile == "-")
+    return SPIRV::isSpirvBinary(InputFile) ? convertSPIRVToLLVM(Opts)
+                                           : copyInputLLVMToOutput();
+
+  std::string LLVMBinaryStr = std::string(kExt::LLVMBinary);
+  if (std::equal(LLVMBinaryStr.rbegin(), LLVMBinaryStr.rend(),
+    InputFile.rbegin())) {
+    return copyInputLLVMToOutput();
+  }
+
+  std::string SpirvBinaryStr(kExt::SpirvBinary);
+  if (std::equal(SpirvBinaryStr.rbegin(), SpirvBinaryStr.rend(),
+     InputFile.rbegin()))
+      return convertSPIRVToLLVM(Opts);
+
+  errs() << "Fails to determine input file content";
+  return -1;
 }
 
 static int parseSPVExtOption(
@@ -625,6 +683,15 @@ int main(int Ac, char **Av) {
     Opts.setAllowExtraDIExpressionsEnabled(SPIRVAllowExtraDIExpressions);
   }
 
+  if (IRPassThrough.getNumOccurrences() != 0) {
+    if (IsReverse) {
+      Opts.setIRPassThrough(IRPassThrough);
+    } else {
+      errs() << "Note: --ir-passthrough option ignored as "
+                "it only affects translation from SPIR-V to LLVM IR";
+    }
+  }
+
   if (DebugEIS.getNumOccurrences() != 0) {
     if (IsReverse) {
       errs() << "Note: --spirv-debug-info-version option ignored as it only "
@@ -660,7 +727,8 @@ int main(int Ac, char **Av) {
     return -1;
   }
   if (IsReverse)
-    return convertSPIRVToLLVM(Opts);
+    return Opts.shoudIRPassThrough() ? checkInputFileIsAlreadyLLVM(Opts)
+                                     : convertSPIRVToLLVM(Opts);
 
   if (IsRegularization)
     return regularizeLLVM(Opts);

@@ -4527,3 +4527,8 @@ bool llvm::regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
   PassMgr.run(*M);
   return true;
 }
+
+bool llvm::checkInputFileIsValidLLVM(Module *M) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  return isValidLLVMModule(M, BM->getErrorLog()) ? true : false;
+}
