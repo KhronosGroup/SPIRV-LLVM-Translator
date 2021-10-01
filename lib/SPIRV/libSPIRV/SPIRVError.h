@@ -41,6 +41,7 @@
 
 #include "SPIRVDebug.h"
 #include "SPIRVUtil.h"
+#include "llvm/IR/Instruction.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -109,11 +110,32 @@ public:
                   const std::string &DetailedMsg = "",
                   const char *CondString = nullptr,
                   const char *FileName = nullptr, unsigned LineNumber = 0);
+  // Check if Condition is satisfied and set ErrCode and DetailedMsg with Inst
+  // text representation if not. Returns true if no error.
+  bool checkError(bool Condition, SPIRVErrorCode ErrCode,
+                  llvm::Instruction *Inst, const std::string &DetailedMsg = "",
+                  const char *CondString = nullptr,
+                  const char *FileName = nullptr, unsigned LineNumber = 0);
 
 protected:
   SPIRVErrorCode ErrorCode;
   std::string ErrorMsg;
 };
+
+inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
+                                      llvm::Instruction *Inst,
+                                      const std::string &Msg,
+                                      const char *CondString,
+                                      const char *FileName, unsigned LineNo) {
+  if (Cond)
+    return Cond;
+  // Do not overwrite previous failure.
+  if (ErrorCode != SPIRVEC_Success)
+    return Cond;
+  std::string InstName = toString(Inst);
+  return checkError(Cond, ErrCode, Msg + InstName, CondString, FileName,
+                    LineNo);
+}
 
 inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
                                       const std::string &Msg,

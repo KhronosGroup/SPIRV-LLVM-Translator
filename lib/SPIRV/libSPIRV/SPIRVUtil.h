@@ -43,6 +43,8 @@
 #include <ostream>
 #define spv_ostream std::ostream
 
+#include "llvm/Support/raw_ostream.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -420,6 +422,14 @@ getOrInsert(MapTy &Map, typename MapTy::key_type Key, FuncTy Func) {
   typename MapTy::mapped_type NF = Func();
   Map[Key] = NF;
   return NF;
+}
+
+template <typename T> std::string toString(const T *Object) {
+  std::string S;
+  llvm::raw_string_ostream RSOS(S);
+  Object->print(RSOS);
+  RSOS.flush();
+  return S;
 }
 
 } // namespace SPIRV
