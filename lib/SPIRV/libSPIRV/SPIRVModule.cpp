@@ -993,7 +993,7 @@ SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
   (void)Found;
   assert(Found && "Decorate target does not exist");
   if (!Dec->getOwner())
-    DecorateSet.insert(Dec);
+    auto Res = DecorateSet.insert(Dec);
   addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
@@ -1678,8 +1678,8 @@ spv_ostream &operator<<(spv_ostream &O, const std::vector<T *> &V) {
   return O;
 }
 
-template <class T, class B>
-spv_ostream &operator<<(spv_ostream &O, const std::multiset<T *, B> &V) {
+template <class T, class B = std::less<T>>
+spv_ostream &operator<<(spv_ostream &O, const std::unordered_set<T *, B> &V) {
   for (auto &I : V)
     O << *I;
   return O;
