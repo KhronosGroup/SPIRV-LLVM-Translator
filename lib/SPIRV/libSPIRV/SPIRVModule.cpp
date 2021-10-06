@@ -993,7 +993,7 @@ SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
   (void)Found;
   assert(Found && "Decorate target does not exist");
   if (!Dec->getOwner())
-    auto Res = DecorateSet.insert(Dec);
+    DecorateSet.insert(Dec);
   addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
