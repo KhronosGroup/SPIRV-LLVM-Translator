@@ -110,10 +110,10 @@ public:
                   const std::string &DetailedMsg = "",
                   const char *CondString = nullptr,
                   const char *FileName = nullptr, unsigned LineNumber = 0);
-  // Check if Condition is satisfied and set ErrCode and DetailedMsg with Inst
+  // Check if Condition is satisfied and set ErrCode and DetailedMsg with Value
   // text representation if not. Returns true if no error.
-  bool checkError(bool Condition, SPIRVErrorCode ErrCode,
-                  llvm::Instruction *Inst, const std::string &DetailedMsg = "",
+  bool checkError(bool Condition, SPIRVErrorCode ErrCode, llvm::Value *Value,
+                  const std::string &DetailedMsg = "",
                   const char *CondString = nullptr,
                   const char *FileName = nullptr, unsigned LineNumber = 0);
 
@@ -123,7 +123,7 @@ protected:
 };
 
 inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
-                                      llvm::Instruction *Inst,
+                                      llvm::Value *Value,
                                       const std::string &Msg,
                                       const char *CondString,
                                       const char *FileName, unsigned LineNo) {
@@ -132,8 +132,8 @@ inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
   // Do not overwrite previous failure.
   if (ErrorCode != SPIRVEC_Success)
     return Cond;
-  std::string InstName = toString(Inst);
-  return checkError(Cond, ErrCode, Msg + InstName, CondString, FileName,
+  std::string ValueIR = toString(Value);
+  return checkError(Cond, ErrCode, Msg + "\n" + ValueIR, CondString, FileName,
                     LineNo);
 }
 

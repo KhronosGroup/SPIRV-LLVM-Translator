@@ -1871,9 +1871,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     AtomicRMWInst::BinOp Op = ARMW->getOperation();
     if (!BM->getErrorLog().checkError(
             !AtomicRMWInst::isFPOperation(Op) && Op != AtomicRMWInst::Nand,
-            SPIRVEC_InvalidInstruction,
-            toString(V) + "\nAtomic " +
-                AtomicRMWInst::getOperationName(Op).str() +
+            SPIRVEC_InvalidInstruction, V,
+            "Atomic " + AtomicRMWInst::getOperationName(Op).str() +
                 " is not supported in SPIR-V!\n"))
       return nullptr;
 
@@ -3158,10 +3157,10 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return BM->addInstTemplate(OpSaveMemoryINTEL, BB, Ty);
     }
     BM->getErrorLog().checkError(
-        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall,
-        toString(II) + "\nTranslation of llvm.stacksave intrinsic requires "
-                       "SPV_INTEL_variable_length_array extension or "
-                       "-spirv-allow-unknown-intrinsics option.");
+        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
+        "Translation of llvm.stacksave intrinsic requires "
+        "SPV_INTEL_variable_length_array extension or "
+        "-spirv-allow-unknown-intrinsics option.");
     break;
   }
   case Intrinsic::stackrestore: {
@@ -3172,10 +3171,10 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                                  nullptr);
     }
     BM->getErrorLog().checkError(
-        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall,
-        toString(II) + "\nTranslation of llvm.restore intrinsic requires "
-                       "SPV_INTEL_variable_length_array extension or "
-                       "-spirv-allow-unknown-intrinsics option.");
+        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
+        "Translation of llvm.restore intrinsic requires "
+        "SPV_INTEL_variable_length_array extension or "
+        "-spirv-allow-unknown-intrinsics option.");
     break;
   }
   // We can just ignore/drop some intrinsics, like optimizations hint.
