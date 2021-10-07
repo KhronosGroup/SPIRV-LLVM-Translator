@@ -3295,14 +3295,15 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
 
 SPIRVValue *LLVMToSPIRVBase::transIndirectCallInst(CallInst *CI,
                                                    SPIRVBasicBlock *BB) {
-  if (!BM->checkExtension(ExtensionID::SPV_INTEL_function_pointers,
-                          SPIRVEC_FunctionPointers, toString(CI)))
-    return nullptr;
-
-  return BM->addIndirectCallInst(
-      transValue(CI->getCalledOperand(), BB), transType(CI->getType()),
-      transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
-      BB);
+  if (BM->getErrorLog().checkError(
+          BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_function_pointers),
+          SPIRVEC_FunctionPointers, CI)) {
+    return BM->addIndirectCallInst(
+        transValue(CI->getCalledOperand(), BB), transType(CI->getType()),
+        transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
+        BB);
+  }
+  return nullptr;
 }
 
 SPIRVValue *LLVMToSPIRVBase::transAsmINTEL(InlineAsm *IA) {
