@@ -54,12 +54,12 @@
 ; CHECK-SPIRV-DAG: DecorateId [[TARGET4:[0-9]+]] AliasScopeINTEL [[LIST3]]
 ; CHECK-SPIRV-DAG: DecorateId [[TARGET5:[0-9]+]] NoAliasINTEL [[LIST1]]
 ; CHECK-SPIRV-DAG: DecorateId [[TARGET6:[0-9]+]] NoAliasINTEL [[LIST3]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET1]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET2]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET5]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET3]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET4]]
-; CHECK-SPIRV: FunctionCall {{.*}} [[TARGET6]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET1]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET2]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET5]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET3]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET4]]
+; CHECK-SPIRV-DAG: FunctionCall {{.*}} [[TARGET6]]
 
 ; CHECK-SPIRV-NEGATIVE-NOT: Capability MemoryAccessAliasingINTEL
 ; CHECK-SPIRV-NEGATIVE-NOT: Extension "SPV_INTEL_memory_access_aliasing"
