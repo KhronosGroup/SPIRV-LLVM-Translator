@@ -406,6 +406,8 @@ static int copyInputLLVMToOutput() {
       OutputFile = removeExt(InputFile) + kExt::LLVMBinary;
   }
 
+  LLVM_DEBUG(dbgs() << "Input LLVM module:\n" << *M);
+
   checkInputFileIsValidLLVM(M.get());
 
   std::error_code EC;

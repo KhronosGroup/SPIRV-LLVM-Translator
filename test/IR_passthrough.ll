@@ -3,31 +3,33 @@
 ; RUN: llvm-dis %t.ir-passthrough.bc -o %t.ir-passthrough.ll
 ; RUN: FileCheck %s --input-file %t.ir-passthrough.ll --check-prefix CHECK-LLVM-COPY
 
-; ModuleID = 'souce.cpp'
 ; CHECK-LLVM-COPY: source_filename = "souce.cpp"
-; CHECK-LLVM-COPY: target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
-; CHECK-LLVM-COPY: target triple = "spir64"
+; CHECK-LLVM-COPY-NEXT: target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+; CHECK-LLVM-COPY-NEXT: target triple = "spir64"
+
+; ModuleID = 'souce.cpp'
 source_filename = "souce.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64"
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone
 ; CHECK-LLVM-COPY: define dso_local i32 @main() #0 {
-; CHECK-LLVM-COPY: entry:
-; CHECK-LLVM-COPY: %retval = alloca i32, align 4
-; CHECK-LLVM-COPY: %pi = alloca double, align 8
-; CHECK-LLVM-COPY: %r = alloca double, align 8
-; CHECK-LLVM-COPY: %c = alloca double, align 8
-; CHECK-LLVM-COPY: store i32 0, i32* %retval, align 4
-; CHECK-LLVM-COPY: store double 3.140000e+00, double* %pi, align 8
-; CHECK-LLVM-COPY: store double 2.000000e+00, double* %r, align 8
-; CHECK-LLVM-COPY: %0 = load double, double* %pi, align 8
-; CHECK-LLVM-COPY: %1 = load double, double* %r, align 8
-; CHECK-LLVM-COPY: %mul = fmul double %0, %1
-; CHECK-LLVM-COPY: %2 = load double, double* %r, align 8
-; CHECK-LLVM-COPY: %mul1 = fmul double %mul, %2
-; CHECK-LLVM-COPY: store double %mul1, double* %c, align 8
-; CHECK-LLVM-COPY: ret i32 0
+; CHECK-LLVM-COPY-NEXT: entry:
+; CHECK-LLVM-COPY-NEXT: %retval = alloca i32, align 4
+; CHECK-LLVM-COPY-NEXT: %pi = alloca double, align 8
+; CHECK-LLVM-COPY-NEXT: %r = alloca double, align 8
+; CHECK-LLVM-COPY-NEXT: %c = alloca double, align 8
+; CHECK-LLVM-COPY-NEXT: store i32 0, i32* %retval, align 4
+; CHECK-LLVM-COPY-NEXT: store double 3.140000e+00, double* %pi, align 8
+; CHECK-LLVM-COPY-NEXT: store double 2.000000e+00, double* %r, align 8
+; CHECK-LLVM-COPY-NEXT: %0 = load double, double* %pi, align 8
+; CHECK-LLVM-COPY-NEXT: %1 = load double, double* %r, align 8
+; CHECK-LLVM-COPY-NEXT: %mul = fmul double %0, %1
+; CHECK-LLVM-COPY-NEXT: %2 = load double, double* %r, align 8
+; CHECK-LLVM-COPY-NEXT: %mul1 = fmul double %mul, %2
+; CHECK-LLVM-COPY-NEXT: store double %mul1, double* %c, align 8
+; CHECK-LLVM-COPY-NEXT: ret i32 0
+
+; Function Attrs: mustprogress noinline norecurse nounwind optnone
 define dso_local i32 @main() #0 {
 entry:
   %retval = alloca i32, align 4
