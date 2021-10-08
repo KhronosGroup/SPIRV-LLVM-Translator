@@ -108,7 +108,7 @@ protected:
   SPIRVDecorationGroup *Owner; // Owning decorate group
 };
 
-typedef std::unordered_set<SPIRVDecorateGeneric *> SPIRVDecorateSet;
+typedef std::vector<SPIRVDecorateGeneric *> SPIRVDecorateVec;
 
 class SPIRVDecorate : public SPIRVDecorateGeneric {
 public:
@@ -350,17 +350,17 @@ public:
   void encodeAll(spv_ostream &O) const override;
   _SPIRV_DCL_ENCDEC
   // Move the given decorates to the decoration group
-  void takeDecorates(SPIRVDecorateSet &Decs) {
+  void takeDecorates(SPIRVDecorateVec &Decs) {
     Decorations = std::move(Decs);
     for (auto &I : Decorations)
       const_cast<SPIRVDecorateGeneric *>(I)->setOwner(this);
     Decs.clear();
   }
 
-  SPIRVDecorateSet &getDecorations() { return Decorations; }
+  SPIRVDecorateVec &getDecorations() { return Decorations; }
 
 protected:
-  SPIRVDecorateSet Decorations;
+  SPIRVDecorateVec Decorations;
   void validate() const override {
     assert(OpCode == OC);
     assert(WordCount == WC);

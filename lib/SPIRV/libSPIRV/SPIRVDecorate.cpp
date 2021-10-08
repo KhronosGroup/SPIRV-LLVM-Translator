@@ -43,8 +43,8 @@
 #include "SPIRVValue.h"
 
 namespace SPIRV {
-template <class T, class B = std::less<T>>
-spv_ostream &operator<<(spv_ostream &O, const std::unordered_set<T *, B> &V) {
+template <class T>
+spv_ostream &operator<<(spv_ostream &O, const std::vector<T *> &V) {
   for (auto &I : V)
     O << *I;
   return O;
