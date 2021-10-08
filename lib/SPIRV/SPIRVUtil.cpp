@@ -2001,6 +2001,9 @@ public:
       addUnsignedArg(2);
       addUnsignedArg(3);
       break;
+    case OpEnqueueMarker:
+      addUnsignedArg(1);
+      break;
     default:;
       // No special handling is needed
     }
