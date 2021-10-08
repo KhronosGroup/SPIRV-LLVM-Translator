@@ -127,8 +127,8 @@ inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
                                       const std::string &Msg,
                                       const char *CondString,
                                       const char *FileName, unsigned LineNo) {
-  // Postpone expensive toString() function call till the moment when it is
-  // actually needed to speed up translator's execution.
+  // Do early exit to avoid expensive toString() function call unless it is
+  // actually needed. That speeds up translator's execution.
   if (Cond)
     return Cond;
   // Do not overwrite previous failure.
