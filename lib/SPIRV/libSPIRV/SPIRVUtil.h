@@ -425,7 +425,8 @@ getOrInsert(MapTy &Map, typename MapTy::key_type Key, FuncTy Func) {
 }
 
 template <typename T> std::string toString(const T *Object) {
-  assert(Object != nullptr && "Expected non-null object");
+  if (Object == nullptr)
+    return "";
   std::string S;
   llvm::raw_string_ostream RSOS(S);
   Object->print(RSOS);
