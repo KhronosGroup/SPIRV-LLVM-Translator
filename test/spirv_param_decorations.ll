@@ -15,9 +15,9 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: Decorate [[PId1:[0-9]+]] Restrict
-; CHECK-SPIRV: Decorate [[PId2:[0-9]+]] Volatile
-; CHECK-SPIRV: Decorate [[PId1]] FPRoundingMode 2
+; CHECK-SPIRV-DAG: Decorate [[PId1:[0-9]+]] Restrict
+; CHECK-SPIRV-DAG: Decorate [[PId2:[0-9]+]] Volatile
+; CHECK-SPIRV-DAG: Decorate [[PId1]] FPRoundingMode 2
 ; CHECK-SPIRV: FunctionParameter {{[0-9]+}} [[PId1]]
 ; CHECK-SPIRV: FunctionParameter {{[0-9]+}} [[PId2]]
 

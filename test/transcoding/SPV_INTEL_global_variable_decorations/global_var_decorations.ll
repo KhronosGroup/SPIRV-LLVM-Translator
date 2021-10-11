@@ -23,16 +23,16 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability GlobalVariableDecorationsINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_decorations"
-; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] HostAccessINTEL 1 "IntVarName"
-; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID:]] HostAccessINTEL 3 "BoolVarName"
+; CHECK-SPIRV-DAG: Decorate [[#INT_VAR_ID:]] HostAccessINTEL 1 "IntVarName"
+; CHECK-SPIRV-DAG: Decorate [[#BOOL_VAR_ID:]] HostAccessINTEL 3 "BoolVarName"
 
-; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] InitModeINTEL 0
-; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] InitModeINTEL 0
-; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID:]] InitModeINTEL 1
+; CHECK-SPIRV-DAG: Decorate [[#INT_VAR_ID]] InitModeINTEL 0
+; CHECK-SPIRV-DAG: Decorate [[#BOOL_VAR_ID]] InitModeINTEL 0
+; CHECK-SPIRV-DAG: Decorate [[#FLOAT_VAR_ID:]] InitModeINTEL 1
 
-; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] ImplementInCSRINTEL 0
-; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] ImplementInCSRINTEL 1
-; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID]] ImplementInCSRINTEL 1
+; CHECK-SPIRV-DAG: Decorate [[#BOOL_VAR_ID]] ImplementInCSRINTEL 0
+; CHECK-SPIRV-DAG: Decorate [[#INT_VAR_ID]] ImplementInCSRINTEL 1
+; CHECK-SPIRV-DAG: Decorate [[#FLOAT_VAR_ID]] ImplementInCSRINTEL 1
 
 ; 5 is a global storage
 ; CHECK-SPIRV: Variable [[#IGNORE0:]] [[#INT_VAR_ID]] 5

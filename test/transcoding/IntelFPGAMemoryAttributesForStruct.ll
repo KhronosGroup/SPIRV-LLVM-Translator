@@ -13,18 +13,18 @@
 
 ; CHECK-SPIRV: Capability FPGAMemoryAttributesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_memory_attributes"
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 1 RegisterINTEL
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 MemoryINTEL "DEFAULT"
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 MemoryINTEL "DEFAULT"
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 2 MemoryINTEL "MLAB"
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 0 NumbanksINTEL 4
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 3 BankwidthINTEL 8
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 4 MaxPrivateCopiesINTEL 4
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 5 SinglepumpINTEL
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 6 DoublepumpINTEL
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 8 MaxReplicatesINTEL 4
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 9 SimpleDualPortINTEL
-; CHECK-SPIRV: MemberDecorate {{[0-9]+}} 7 MergeINTEL "foobar" "width"
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 1 RegisterINTEL
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 0 MemoryINTEL "DEFAULT"
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 3 MemoryINTEL "DEFAULT"
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 2 MemoryINTEL "MLAB"
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 0 NumbanksINTEL 4
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 3 BankwidthINTEL 8
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 4 MaxPrivateCopiesINTEL 4
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 5 SinglepumpINTEL
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 6 DoublepumpINTEL
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 8 MaxReplicatesINTEL 4
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 9 SimpleDualPortINTEL
+; CHECK-SPIRV-DAG: MemberDecorate {{[0-9]+}} 7 MergeINTEL "foobar" "width"
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-linux"
