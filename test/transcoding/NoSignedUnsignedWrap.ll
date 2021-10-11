@@ -43,8 +43,8 @@
 ; CHECK-SPIRV-EXT: 119734787 65536
 ; CHECK-SPIRV-EXT: Extension "SPV_KHR_no_integer_wrap_decoration"
 ; CHECK-SPIRV-NOEXT: 119734787 66560
-; CHECK-SPIRV: Decorate {{[0-9]+}} NoSignedWrap
-; CHECK-SPIRV: Decorate {{[0-9]+}} NoUnsignedWrap
+; CHECK-SPIRV-DAG: Decorate {{[0-9]+}} NoSignedWrap
+; CHECK-SPIRV-DAG: Decorate {{[0-9]+}} NoUnsignedWrap
 ;
 ; CHECK-SPIRV-NEGATIVE-NOT: Extension "SPV_KHR_no_integer_wrap_decoration"
 ; CHECK-SPIRV-NEGATIVE-NOT: Decorate {{[0-9]+}} NoSignedWrap
