@@ -4152,7 +4152,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    // A - integer input of any width or 'byval' pointer to this integer
+    // Input - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *Input = transValue(*OpItr, BB);
     if (OpItr->getType()->isPointerTy())
       Input = BM->addLoadInst(Input, {}, BB);
@@ -4243,10 +4243,10 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    // A - integer input of any width or 'byval' pointer to this integer
-    SPIRVValue *InA = transValue(*OpItr, BB);
+    // Input - integer input of any width or 'byval' pointer to this integer
+    SPIRVValue *Input = transValue(*OpItr, BB);
     if (OpItr->getType()->isPointerTy())
-      InA = BM->addLoadInst(InA, {}, BB);
+      Input = BM->addLoadInst(Input, {}, BB);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -4254,7 +4254,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       return cast<llvm::ConstantInt>(O)->getZExtValue();
     });
 
-    auto *APIntInst = BM->addArbFloatPointIntelInst(OC, transType(ResTy), InA,
+    auto *APIntInst = BM->addArbFloatPointIntelInst(OC, transType(ResTy), Input,
                                                     nullptr, Literals, BB);
     if (!CI->hasStructRetAttr())
       return APIntInst;
@@ -4319,7 +4319,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    // A - integer input of any width or 'byval' pointer to this integer
+    // InA - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InA = transValue(*OpItr, BB);
     if (OpItr->getType()->isPointerTy())
       InA = BM->addLoadInst(InA, {}, BB);
@@ -4328,7 +4328,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     std::vector<SPIRVWord> Literals;
     Literals.push_back(cast<llvm::ConstantInt>(*OpItr++)->getZExtValue());
 
-    // B - integer input of any width or 'byval' pointer to this integer
+    // InB - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InB = transValue(*OpItr, BB);
     if (OpItr->getType()->isPointerTy()) {
       std::vector<SPIRVWord> Mem;
