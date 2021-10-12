@@ -4154,10 +4154,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // A - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *Input = transValue(*OpItr, BB);
-    if (OpItr->getType()->isPointerTy()) {
-      std::vector<SPIRVWord> Mem;
-      Input = BM->addLoadInst(Input, Mem, BB);
-    }
+    if (OpItr->getType()->isPointerTy())
+      Input = BM->addLoadInst(Input, {}, BB);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -4247,10 +4245,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // A - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InA = transValue(*OpItr, BB);
-    if (OpItr->getType()->isPointerTy()) {
-      std::vector<SPIRVWord> Mem;
-      InA = BM->addLoadInst(InA, Mem, BB);
-    }
+    if (OpItr->getType()->isPointerTy())
+      InA = BM->addLoadInst(InA, {}, BB);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -4325,10 +4321,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // A - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InA = transValue(*OpItr, BB);
-    if (OpItr->getType()->isPointerTy()) {
-      std::vector<SPIRVWord> Mem;
-      InA = BM->addLoadInst(InA, Mem, BB);
-    }
+    if (OpItr->getType()->isPointerTy())
+      InA = BM->addLoadInst(InA, {}, BB);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
