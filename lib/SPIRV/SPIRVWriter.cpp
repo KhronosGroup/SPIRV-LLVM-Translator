@@ -4152,8 +4152,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    SPIRVValue *Input =
-        transValue(*OpItr++ /* A - integer input of any width */, BB);
+    // A - integer input of any width or 'byval' pointer to this integer
+    SPIRVValue *Input = transValue(*OpItr, BB);
+    if (OpItr->getType()->isPointerTy()) {
+      std::vector<SPIRVWord> Mem;
+      Input = BM->addLoadInst(Input, Mem, BB);
+    }
+    OpItr++;
 
     std::vector<SPIRVWord> Literals;
     std::transform(OpItr, OpEnd, std::back_inserter(Literals), [](auto *O) {
@@ -4240,7 +4245,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    SPIRVValue *InA = transValue(*OpItr++ /* A - input */, BB);
+    // A - integer input of any width or 'byval' pointer to this integer
+    SPIRVValue *InA = transValue(*OpItr, BB);
+    if (OpItr->getType()->isPointerTy()) {
+      std::vector<SPIRVWord> Mem;
+      InA = BM->addLoadInst(InA, Mem, BB);
+    }
+    OpItr++;
 
     std::vector<SPIRVWord> Literals;
     std::transform(OpItr, OpEnd, std::back_inserter(Literals), [](auto *O) {
@@ -4312,12 +4323,24 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       OpItr++;
     }
 
-    SPIRVValue *InA = transValue(*OpItr++ /* A - input */, BB);
+    // A - integer input of any width or 'byval' pointer to this integer
+    SPIRVValue *InA = transValue(*OpItr, BB);
+    if (OpItr->getType()->isPointerTy()) {
+      std::vector<SPIRVWord> Mem;
+      InA = BM->addLoadInst(InA, Mem, BB);
+    }
+    OpItr++;
 
     std::vector<SPIRVWord> Literals;
     Literals.push_back(cast<llvm::ConstantInt>(*OpItr++)->getZExtValue());
 
-    SPIRVValue *InB = transValue(*OpItr++ /* B - input */, BB);
+    // B - integer input of any width or 'byval' pointer to this integer
+    SPIRVValue *InB = transValue(*OpItr, BB);
+    if (OpItr->getType()->isPointerTy()) {
+      std::vector<SPIRVWord> Mem;
+      InB = BM->addLoadInst(InB, Mem, BB);
+    }
+    OpItr++;
 
     std::transform(OpItr, OpEnd, std::back_inserter(Literals), [](auto *O) {
       return cast<llvm::ConstantInt>(O)->getZExtValue();
