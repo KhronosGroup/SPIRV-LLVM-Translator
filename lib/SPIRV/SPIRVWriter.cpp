@@ -4164,9 +4164,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
         BM->addFixedPointIntelInst(OC, transType(ResTy), Input, Literals, BB);
     if (!CI->hasStructRetAttr())
       return APIntInst;
-    std::vector<SPIRVWord> Mem;
-    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst,
-                            Mem, BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst, {},
+                            BB);
   }
   case OpArbitraryFloatCastINTEL:
   case OpArbitraryFloatCastFromIntINTEL:
@@ -4252,9 +4251,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                     nullptr, Literals, BB);
     if (!CI->hasStructRetAttr())
       return APIntInst;
-    std::vector<SPIRVWord> Mem;
-    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst,
-                            Mem, BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst, {},
+                            BB);
   }
   case OpArbitraryFloatAddINTEL:
   case OpArbitraryFloatSubINTEL:
@@ -4329,9 +4327,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                     InB, Literals, BB);
     if (!CI->hasStructRetAttr())
       return APIntInst;
-    std::vector<SPIRVWord> Mem;
-    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst,
-                            Mem, BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst, {},
+                            BB);
   }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
