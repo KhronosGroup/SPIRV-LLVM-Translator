@@ -1529,11 +1529,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
             internal::BuiltInMaxHWThreadIDPerSubDeviceINTEL) {
       if (!BM->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_hw_thread_queries)) {
-        std::stringstream SS;
-        SS << "Intel HW thread queries must be enabled by "
-           << "SPV_INTEL_hw_thread_queries extension.\n"
-           << "LLVM value that is being translated:\n";
-        getErrorLog().checkError(false, SPIRVEC_InvalidModule, V, SS.str());
+        std::string ErrorStr = "Intel HW thread queries must be enabled by "
+                               "SPV_INTEL_hw_thread_queries extension.\n"
+                               "LLVM value that is being translated:\n";
+        getErrorLog().checkError(false, SPIRVEC_InvalidModule, V, ErrorStr);
       }
       BM->addExtension(ExtensionID::SPV_INTEL_hw_thread_queries);
     }
