@@ -575,6 +575,9 @@ enum BuiltIn {
     BuiltInSMCountNV = 5375,
     BuiltInWarpIDNV = 5376,
     BuiltInSMIDNV = 5377,
+    BuiltInSubDeviceIDINTEL = 6135,
+    BuiltInHWThreadIDINTEL = 6136,
+    BuiltInMaxHWThreadIDPerSubDeviceINTEL = 6137,
     BuiltInMax = 0x7fffffff,
 };
 
@@ -898,6 +901,7 @@ enum Capability {
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
   CapabilityBfloat16ConversionINTEL = 6115,
+  CapabilityHWThreadQueryINTEL = 6134,
   CapabilityTensorFloat32ConversionINTEL = 6425,
   CapabilityMaskedGatherScatterINTEL = 6427,
   CapabilityMax = 0x7fffffff,

@@ -426,7 +426,7 @@ inline bool isValid(spv::Decoration V) {
 }
 
 inline bool isValid(spv::BuiltIn V) {
-  switch (V) {
+  switch (static_cast<uint32_t>(V)) {
   case BuiltInPosition:
   case BuiltInPointSize:
   case BuiltInClipDistance:
@@ -473,6 +473,9 @@ inline bool isValid(spv::BuiltIn V) {
   case BuiltInSubgroupLtMask:
   case BuiltInVertexIndex:
   case BuiltInInstanceIndex:
+  case BuiltInSubDeviceIDINTEL:
+  case BuiltInHWThreadIDINTEL:
+  case BuiltInMaxHWThreadIDPerSubDeviceINTEL:
     return true;
   default:
     return false;
