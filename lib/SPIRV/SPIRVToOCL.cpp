@@ -163,6 +163,10 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
     visitCallSPIRVImageQueryBuiltIn(&CI, OC);
     return;
   }
+  if (OC == OpEnqueueKernel) {
+    visitCallSPIRVEnqueueKernel(&CI, OC);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 }
