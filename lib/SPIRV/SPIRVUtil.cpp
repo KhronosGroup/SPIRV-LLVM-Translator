@@ -233,9 +233,7 @@ void getFunctionTypeParameterTypes(llvm::FunctionType *FT,
   }
 }
 
-bool isVoidFuncTy(FunctionType *FT) {
-  return FT->getReturnType()->isVoidTy() && FT->getNumParams() == 0;
-}
+bool isVoidFuncTy(FunctionType *FT) { return FT->getReturnType()->isVoidTy(); }
 
 bool isPointerToOpaqueStructType(llvm::Type *Ty) {
   if (auto PT = dyn_cast<PointerType>(Ty))
@@ -1412,6 +1410,8 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
   if (!BtnInfo)
     return std::string(UniqName);
   BtnInfo->init(UniqName);
+  if (BtnInfo->avoidMangling())
+    return std::string(UniqName);
   std::string MangledName;
   LLVM_DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   SPIR::FunctionDescriptor FD;
