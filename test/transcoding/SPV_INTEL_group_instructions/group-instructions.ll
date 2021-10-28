@@ -33,7 +33,7 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: convergent norecurse
-define dso_local spir_func void @_Z10test_groupN2cl4sycl5groupILi1EEE(q) local_unnamed_addr #0 {
+define dso_local spir_func void @_Z10test_groupN2cl4sycl5groupILi1EEE() local_unnamed_addr #0 {
 entry:
   %call1 = tail call spir_func i32 @_Z28__spirv_GroupBitwiseAndINTELjji(i32 2, i32 0, i32 0) #2
   %call2 = tail call spir_func i32 @_Z27__spirv_GroupBitwiseOrINTELjji(i32 2, i32 0, i32 0) #2
