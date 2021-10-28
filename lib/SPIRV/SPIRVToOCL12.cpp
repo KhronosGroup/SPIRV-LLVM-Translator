@@ -92,6 +92,9 @@ public:
   /// weak version of function in OpenCL 1.2
   Instruction *visitCallSPIRVAtomicCmpExchg(CallInst *CI, Op OC) override;
 
+  /// Trigger assert, since OpenCL 1.2 doesn't support enqueue_kernel
+  void visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) override;
+
   /// Conduct generic mutations for all atomic builtins
   CallInst *mutateCommonAtomicArguments(CallInst *CI, Op OC) override;
 
@@ -342,6 +345,10 @@ Instruction *SPIRVToOCL12::visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) {
   }
 
   return NewCI;
+}
+
+void SPIRVToOCL12::visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) {
+  assert(0 && "OpenCL 1.2 doesn't support enqueue_kernel!");
 }
 
 Instruction *SPIRVToOCL12::mutateAtomicName(CallInst *CI, Op OC) {
