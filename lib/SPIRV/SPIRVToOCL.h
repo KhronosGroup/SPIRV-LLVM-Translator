@@ -205,6 +205,9 @@ public:
   /// - OCL1.2: barrier
   virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
 
+  /// Transform __spirv_EnqueueKernel to __enqueue_kernel
+  virtual void visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) = 0;
+
   /// Conduct generic mutations for all atomic builtins
   virtual CallInst *mutateCommonAtomicArguments(CallInst *CI, Op OC) = 0;
 
