@@ -1,6 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-ext=+SPV_INTEL_uniform_group_instructions -o %t.spv
-; RUN: llvm-spirv %t.spv -to-text -o %t.spt
+; RUN: llvm-spirv %t.bc -o %t.spv -spirv-ext=+SPV_INTEL_uniform_group_instructions
+; RUN: llvm-spirv %t.spv -o %t.spt -to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; CHECK-SPIRV: Name [[#Res1:]] "call1"
@@ -32,13 +32,8 @@ source_filename = "group_operations.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-%"group" = type { %"range", %"range", %"range", %"id" }
-%"range" = type { %"array" }
-%"array" = type { [1 x i64] }
-%"id" = type { %"array" }
-
 ; Function Attrs: convergent norecurse
-define dso_local spir_func void @_Z10test_groupN2cl4sycl5groupILi1EEE(%"group"* nocapture readonly byval(%"group") align 8 %g) local_unnamed_addr #0 {
+define dso_local spir_func void @_Z10test_groupN2cl4sycl5groupILi1EEE(q) local_unnamed_addr #0 {
 entry:
   %call1 = tail call spir_func i32 @_Z28__spirv_GroupBitwiseAndINTELjji(i32 2, i32 0, i32 0) #2
   %call2 = tail call spir_func i32 @_Z27__spirv_GroupBitwiseOrINTELjji(i32 2, i32 0, i32 0) #2
