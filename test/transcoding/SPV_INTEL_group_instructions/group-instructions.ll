@@ -2,30 +2,33 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv -spirv-ext=+SPV_INTEL_uniform_group_instructions
 ; RUN: llvm-spirv %t.spv -o %t.spt -to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-
-; CHECK-SPIRV: Name [[#Res1:]] "call1"
-; CHECK-SPIRV: Name [[#Res2:]] "call2"
-; CHECK-SPIRV: Name [[#Res3:]] "call3"
-; CHECK-SPIRV: Name [[#Res4:]] "call4"
-; CHECK-SPIRV: Name [[#Res5:]] "call5"
-; CHECK-SPIRV: Name [[#Res6:]] "call6"
-; CHECK-SPIRV: Name [[#Res7:]] "call7"
-; CHECK-SPIRV: Name [[#Res8:]] "call8"
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: TypeInt [[#TypeInt:]] 32
-; CHECK-SPIRV: Constant [[#TypeInt]] [[#Scope:]]
-; CHECK-SPIRV: Constant [[#TypeInt]] [[#Val1:]]
+; CHECK-SPIRV: Constant [[#TypeInt]] [[#Scope:]] 2
+; CHECK-SPIRV: Constant [[#TypeInt]] [[#Val1:]] 0
 ; CHECK-SPIRV: TypeFloat [[#TypeFloat:]] 16
 ; CHECK-SPIRV: Constant [[#TypeFloat]] [[#Val2:]]
 
-; CHECK-SPIRV: GroupBitwiseAndINTEL [[#TypeInt]] [[#Res1]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupBitwiseOrINTEL [[#TypeInt]] [[#Res2]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupBitwiseXorINTEL [[#TypeInt]] [[#Res3]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupLogicalAndINTEL [[#TypeInt]] [[#Res4]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupLogicalOrINTEL [[#TypeInt]] [[#Res5]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupLogicalXorINTEL [[#TypeInt]] [[#Res6]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupIMulINTEL [[#TypeInt]] [[#Res7]] [[#Scope]] 0 [[#Val1]]
-; CHECK-SPIRV: GroupFMulINTEL [[#TypeFloat]] [[#Res8]] [[#Scope]] 0 [[#Val2]]
+; CHECK-SPIRV: GroupBitwiseAndINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupBitwiseOrINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupBitwiseXorINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupLogicalAndINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupLogicalOrINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupLogicalXorINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupIMulINTEL [[#TypeInt]] [[#]] [[#Scope]] 0 [[#Val1]]
+; CHECK-SPIRV: GroupFMulINTEL [[#TypeFloat]] [[#]] [[#Scope]] 0 [[#Val2]]
+
+; CHECK-LLVM: %call1 = call spir_func i32 @_Z28__spirv_GroupBitwiseAndINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call2 = call spir_func i32 @_Z27__spirv_GroupBitwiseOrINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call3 = call spir_func i32 @_Z28__spirv_GroupBitwiseXorINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call4 = call spir_func i32 @_Z28__spirv_GroupLogicalAndINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call5 = call spir_func i32 @_Z27__spirv_GroupLogicalOrINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call6 = call spir_func i32 @_Z28__spirv_GroupLogicalXorINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call7 = call spir_func i32 @_Z22__spirv_GroupIMulINTEL{{.*}}(i32 2, i32 0, i32 0)
+; CHECK-LLVM: %call8 = call spir_func half @_Z22__spirv_GroupFMulINTEL{{.*}}(i32 2, i32 0, half 0xH0000)
 
 ; ModuleID = 'source.edit.bc'
 source_filename = "group_operations.cpp"
