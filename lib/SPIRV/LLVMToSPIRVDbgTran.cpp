@@ -1010,9 +1010,16 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
   for (unsigned I = 0, N = Expr->getNumElements(); I < N; ++I) {
     using namespace SPIRVDebug::Operand::Operation;
     auto DWARFOpCode = static_cast<dwarf::LocationAtom>(Expr->getElement(I));
+    SPIRVDebug::ExpressionOpCode OC = {};
 
-    SPIRVDebug::ExpressionOpCode OC =
-        SPIRV::DbgExpressionOpCodeMap::map(DWARFOpCode);
+    // Skip handling of debug intrinsics with unsupported metadata.
+    // TODO: replace this check to ::map call when more DWARF operations are
+    // supported.
+    if (!SPIRV::DbgExpressionOpCodeMap::find(DWARFOpCode, &OC)) {
+      Operations.clear();
+      break;
+    }
+
     if (OpCountMap.find(OC) == OpCountMap.end())
       report_fatal_error(llvm::Twine("unknown opcode found in DIExpression"));
     if (OC > SPIRVDebug::Fragment && !BM->allowExtraDIExpressions())
