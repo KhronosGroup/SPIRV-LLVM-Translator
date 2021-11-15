@@ -9,8 +9,12 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: DebugInfoNone
-; CHECK-LLVM-NOT: DW_OP_LLVM_arg
+; CHECK-SPIRV: [[#DEBUG_NONE:]] [[#]] DebugInfoNone
+; CHECK-SPIRV: [[#DEBUG_TYPE_FUNC:]] [[#]] DebugTypeFunction [[#]] [[#DEBUG_NONE]]
+; CHECK-SPIRV: [[#DEBUG_FUNC:]] [[#]] DebugFunction [[#]] [[#DEBUG_TYPE_FUNC]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#DEBUG_NONE]]
+; CHECK-SPIRV: [[#DEBUG_LOC_VAR:]] [[#]] DebugLocalVariable [[#]] [[#]] [[#]] [[#]] [[#]] [[#DEBUG_FUNC]]
+; CHECK-SPIRV: [[#EXPRESSION:]] [[#]] DebugExpression
+; CHECK-SPIRV: DebugValue [[#DEBUG_LOC_VAR]] [[#]] [[#EXPRESSION]]
 
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "spir64-unknown-unknown"
@@ -20,6 +24,9 @@ declare void @llvm.dbg.value(metadata, metadata, metadata) nounwind readnone spe
 define void @DbgIntrinsics() sanitize_memtag {
 entry:
   %x = alloca i32, align 4
+; CHECK-LLVM-NOT: DW_OP_LLVM_arg
+; CHECK-LLVM: call void @llvm.dbg.value(metadata i32* %x, metadata ![[#]], metadata !DIExpression())
+; CHECK-LLVM-NOT: DW_OP_LLVM_arg
   call void @llvm.dbg.value(metadata !DIArgList(i32* %x, i32* %x), metadata !6, metadata !DIExpression(DW_OP_LLVM_arg, 0, DW_OP_LLVM_arg, 1, DW_OP_plus)), !dbg !10
   store i32 42, i32* %x, align 4
   ret void
