@@ -1984,11 +1984,12 @@ bool LLVMToSPIRVBase::shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
   return true;
 }
 
-void addFuncPointerCallArgumentAttributes(CallInst *CI, SPIRVValue *FuncPtrCall) {
+void addFuncPointerCallArgumentAttributes(CallInst *CI,
+                                          SPIRVValue *FuncPtrCall) {
   auto AddDecorArgAttr{[&](int ArgNo, spv::FunctionParameterAttribute Attr) {
-    FuncPtrCall->addDecorate(new SPIRVDecorate(
-        spv::internal::DecorationArgumentAttributeINTEL, FuncPtrCall, ArgNo,
-        Attr));
+    FuncPtrCall->addDecorate(
+        new SPIRVDecorate(spv::internal::DecorationArgumentAttributeINTEL,
+                          FuncPtrCall, ArgNo, Attr));
   }};
 
   for (unsigned ArgNo = 0; ArgNo < CI->arg_size(); ++ArgNo) {
