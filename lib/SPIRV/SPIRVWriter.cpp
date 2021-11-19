@@ -1984,6 +1984,32 @@ bool LLVMToSPIRVBase::shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
   return true;
 }
 
+void AddFuncPointerCallArgumentAttributes(CallInst *CI, SPIRVValue *FuncPtrCall) {
+  auto AddDecorArgAttr{[&](int ArgNo, spv::FunctionParameterAttribute Attr) {
+    FuncPtrCall->addDecorate(new SPIRVDecorate(
+        spv::internal::DecorationArgumentAttributeINTEL, FuncPtrCall, ArgNo,
+        Attr));
+  }};
+
+  for (unsigned ArgNo = 0; ArgNo < CI->arg_size(); ++ArgNo) {
+    if (CI->paramHasAttr(ArgNo, Attribute::ByVal))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeByVal);
+    if (CI->paramHasAttr(ArgNo, Attribute::NoAlias))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoAlias);
+    if (CI->paramHasAttr(ArgNo, Attribute::NoCapture))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoCapture);
+    if (CI->paramHasAttr(ArgNo, Attribute::StructRet))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeSret);
+    if (CI->paramHasAttr(ArgNo, Attribute::ReadOnly))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoWrite);
+    if (CI->paramHasAttr(ArgNo, Attribute::ZExt))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeZext);
+    if (CI->paramHasAttr(ArgNo, Attribute::SExt))
+      AddDecorArgAttr(ArgNo, FunctionParameterAttributeSext);
+    }
+  }
+}
+
 bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
   if (!transAlign(V, BV))
     return false;
@@ -2045,6 +2071,8 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       auto SpecId = cast<ConstantInt>(CI->getArgOperand(0))->getZExtValue();
       BV->addDecorate(DecorationSpecId, SpecId);
     }
+    if (OC == OpFunctionPointerCallINTEL)
+      AddFuncPointerCallArgumentAttributes(CI, BV);
   }
 
   return true;

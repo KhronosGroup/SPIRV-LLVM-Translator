@@ -1282,6 +1282,41 @@ void SPIRVToLLVM::addMemAliasMetadata(Instruction *I, SPIRVId AliasListId,
   I->setMetadata(AliasMDKind, MDAliasListMap[AliasListId]);
 }
 
+void transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI) {
+  std::vector<SPIRVDecorate const *> ArgumentAttributes =
+      BV->getDecorations(internal::DecorationArgumentAttributeINTEL);
+
+  for (const auto *Dec : ArgumentAttributes) {
+    std::vector<SPIRVWord> Literals = Dec->getVecLiteral();
+    SPIRVWord ArgNo = Literals[0];
+    SPIRVWord Attr = Literals[1];
+
+    AttrBuilder Builder;
+    if (Attr == FunctionParameterAttributeByVal)
+      Builder.addByValAttr(
+          dyn_cast<PointerType>(CI->getOperand(ArgNo)->getType())
+              ->getElementType());
+    if (Attr == FunctionParameterAttributeNoAlias)
+      Builder.addAttribute(Attribute::NoAlias);
+    if (Attr == FunctionParameterAttributeNoCapture)
+      Builder.addAttribute(Attribute::NoCapture);
+    if (Attr == FunctionParameterAttributeSret)
+      Builder.addStructRetAttr(
+          dyn_cast<PointerType>(CI->getOperand(ArgNo)->getType())
+              ->getElementType());
+    if (Attr == FunctionParameterAttributeNoWrite)
+      Builder.addAttribute(Attribute::ReadOnly);
+    if (Attr == FunctionParameterAttributeZext)
+      Builder.addAttribute(Attribute::ZExt);
+    if (Attr == FunctionParameterAttributeSext)
+      Builder.addAttribute(Attribute::SExt);
+
+    AttributeList Attrs = CI->getAttributes();
+    Attrs = Attrs.addParamAttributes(CI->getContext(), ArgNo, Builder);
+    CI->setAttributes(Attrs);
+  }
+}
+
 /// For instructions, this function assumes they are created in order
 /// and appended to the given basic block. An instruction may use a
 /// instruction from another BB which has not been translated. Such
@@ -2218,6 +2253,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto Call = CallInst::Create(
         cast<FunctionType>(V->getType()->getPointerElementType()), V,
         transValue(BC->getArgumentValues(), F, BB), BC->getName(), BB);
+    transFunctionPointerCallArgumentAttributes(BV, Call);
     // Assuming we are calling a regular device function
     Call->setCallingConv(CallingConv::SPIR_FUNC);
     // Don't set attributes, because at translation time we don't know which
