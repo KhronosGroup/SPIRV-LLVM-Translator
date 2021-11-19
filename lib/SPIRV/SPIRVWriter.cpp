@@ -1984,7 +1984,7 @@ bool LLVMToSPIRVBase::shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
   return true;
 }
 
-void AddFuncPointerCallArgumentAttributes(CallInst *CI, SPIRVValue *FuncPtrCall) {
+void addFuncPointerCallArgumentAttributes(CallInst *CI, SPIRVValue *FuncPtrCall) {
   auto AddDecorArgAttr{[&](int ArgNo, spv::FunctionParameterAttribute Attr) {
     FuncPtrCall->addDecorate(new SPIRVDecorate(
         spv::internal::DecorationArgumentAttributeINTEL, FuncPtrCall, ArgNo,
@@ -2006,7 +2006,6 @@ void AddFuncPointerCallArgumentAttributes(CallInst *CI, SPIRVValue *FuncPtrCall)
       AddDecorArgAttr(ArgNo, FunctionParameterAttributeZext);
     if (CI->paramHasAttr(ArgNo, Attribute::SExt))
       AddDecorArgAttr(ArgNo, FunctionParameterAttributeSext);
-    }
   }
 }
 
@@ -2072,7 +2071,7 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       BV->addDecorate(DecorationSpecId, SpecId);
     }
     if (OC == OpFunctionPointerCallINTEL)
-      AddFuncPointerCallArgumentAttributes(CI, BV);
+      addFuncPointerCallArgumentAttributes(CI, BV);
   }
 
   return true;
