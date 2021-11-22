@@ -62,6 +62,6 @@ attributes #1 = { convergent }
 !2 = !{i32 1, i32 2}
 !3 = !{i32 4, i32 100000}
 !4 = !{}
-!5 = !{!"Cpmpiler"}
+!5 = !{!"Compiler"}
 !6 = !{i32 -1, i32 -1, i32 -1, i32 -1}
 !7 = !{void (%"multi_ptr"*)* @inc_function}
