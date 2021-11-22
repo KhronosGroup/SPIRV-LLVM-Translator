@@ -1291,29 +1291,37 @@ void transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI) {
     SPIRVWord ArgNo = Literals[0];
     SPIRVWord Attr = Literals[1];
 
-    AttrBuilder Builder;
-    if (Attr == FunctionParameterAttributeByVal)
-      Builder.addByValAttr(
-          dyn_cast<PointerType>(CI->getOperand(ArgNo)->getType())
-              ->getElementType());
-    if (Attr == FunctionParameterAttributeNoAlias)
-      Builder.addAttribute(Attribute::NoAlias);
-    if (Attr == FunctionParameterAttributeNoCapture)
-      Builder.addAttribute(Attribute::NoCapture);
-    if (Attr == FunctionParameterAttributeSret)
-      Builder.addStructRetAttr(
-          dyn_cast<PointerType>(CI->getOperand(ArgNo)->getType())
-              ->getElementType());
-    if (Attr == FunctionParameterAttributeNoWrite)
-      Builder.addAttribute(Attribute::ReadOnly);
-    if (Attr == FunctionParameterAttributeZext)
-      Builder.addAttribute(Attribute::ZExt);
-    if (Attr == FunctionParameterAttributeSext)
-      Builder.addAttribute(Attribute::SExt);
-
-    AttributeList Attrs = CI->getAttributes();
-    Attrs = Attrs.addParamAttributes(CI->getContext(), ArgNo, Builder);
-    CI->setAttributes(Attrs);
+    switch (Attr) {
+    case FunctionParameterAttributeByVal: {
+      Attribute Attr = Attribute::getWithByValType(
+          CI->getContext(),
+          CI->getOperand(ArgNo)->getType()->getPointerElementType());
+      CI->addParamAttr(ArgNo, Attr);
+      break;
+    }
+    case FunctionParameterAttributeNoAlias:
+      CI->addParamAttr(ArgNo, Attribute::AttrKind::NoAlias);
+      break;
+    case FunctionParameterAttributeNoCapture:
+      CI->addParamAttr(ArgNo, Attribute::AttrKind::NoCapture);
+      break;
+    case FunctionParameterAttributeSret: {
+      Attribute Attr = Attribute::getWithStructRetType(
+          CI->getContext(),
+          CI->getOperand(ArgNo)->getType()->getPointerElementType());
+      CI->addParamAttr(ArgNo, Attr);
+      break;
+    }
+    case FunctionParameterAttributeNoWrite:
+      CI->addParamAttr(ArgNo, Attribute::AttrKind::ReadOnly);
+      break;
+    case FunctionParameterAttributeZext:
+      CI->addParamAttr(ArgNo, Attribute::AttrKind::ZExt);
+      break;
+    case FunctionParameterAttributeSext:
+      CI->addParamAttr(ArgNo, Attribute::AttrKind::SExt);
+      break;
+    }
   }
 }
 
