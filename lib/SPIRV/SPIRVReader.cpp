@@ -4373,8 +4373,8 @@ bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
   SPIRVWord Buffer;
   D >> Magic;
   if (!BM->getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
-                                    "invalid magic number")) {
-    ErrMsg = "invalid magic number";
+                                    "Invalid magic number")) {
+    ErrMsg = "Invalid magic number";
     return false;
   }
 
@@ -4393,7 +4393,10 @@ bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
         Result.MemoryModel = Buffer;
         return true;
       }
-    } else if (D.OpCode != OpExtInstImport && D.OpCode != OpExtension) {
+    } else if (D.OpCode == OpExtension || D.OpCode == OpExtInstImport) {
+      // There could be extra SPIR-V words in OpExtension or OpExtInstImport
+      D.ignoreInstruction();
+    } else {
       break;
     }
   }
