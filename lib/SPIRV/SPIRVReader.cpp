@@ -3661,6 +3661,12 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     SEVAttr = translateSEVMetadata(BA, F->getContext());
     if (SEVAttr)
       F->addAttribute(ArgNo + 1, SEVAttr.getValue());
+    if (BA->hasDecorate(DecorationMediaBlockIOINTEL)) {
+      assert(BA->getType()->isTypeImage() &&
+             "MediaBlockIOINTEL decoration is valid only on image parameters");
+      F->addParamAttr(ArgNo,
+                      Attribute::get(*Context, kVCMetadata::VCMediaBlockIO));
+    }
   }
 
   // Do not add float control if there is no any
