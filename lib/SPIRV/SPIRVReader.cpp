@@ -1289,39 +1289,16 @@ void transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI) {
   for (const auto *Dec : ArgumentAttributes) {
     std::vector<SPIRVWord> Literals = Dec->getVecLiteral();
     SPIRVWord ArgNo = Literals[0];
-    SPIRVWord Attr = Literals[1];
-
-    switch (Attr) {
-    case FunctionParameterAttributeByVal: {
-      Attribute Attr = Attribute::getWithByValType(
-          CI->getContext(),
-          CI->getOperand(ArgNo)->getType()->getPointerElementType());
-      CI->addParamAttr(ArgNo, Attr);
-      break;
-    }
-    case FunctionParameterAttributeNoAlias:
-      CI->addParamAttr(ArgNo, Attribute::AttrKind::NoAlias);
-      break;
-    case FunctionParameterAttributeNoCapture:
-      CI->addParamAttr(ArgNo, Attribute::AttrKind::NoCapture);
-      break;
-    case FunctionParameterAttributeSret: {
-      Attribute Attr = Attribute::getWithStructRetType(
-          CI->getContext(),
-          CI->getOperand(ArgNo)->getType()->getPointerElementType());
-      CI->addParamAttr(ArgNo, Attr);
-      break;
-    }
-    case FunctionParameterAttributeNoWrite:
-      CI->addParamAttr(ArgNo, Attribute::AttrKind::ReadOnly);
-      break;
-    case FunctionParameterAttributeZext:
-      CI->addParamAttr(ArgNo, Attribute::AttrKind::ZExt);
-      break;
-    case FunctionParameterAttributeSext:
-      CI->addParamAttr(ArgNo, Attribute::AttrKind::SExt);
-      break;
-    }
+    SPIRVWord SpirAttr = Literals[1];
+    Attribute::AttrKind LlvmAttrKind = SPIRSPIRVFuncParamAttrMap::rmap(
+        static_cast<SPIRVFuncParamAttrKind>(SpirAttr));
+    auto LlvmAttr =
+        Attribute::isTypeAttrKind(LlvmAttrKind)
+            ? Attribute::get(CI->getContext(), LlvmAttrKind,
+                             cast<PointerType>(CI->getOperand(ArgNo)->getType())
+                                 ->getElementType())
+            : Attribute::get(CI->getContext(), LlvmAttrKind);
+    CI->addParamAttr(ArgNo, LlvmAttr);
   }
 }
 

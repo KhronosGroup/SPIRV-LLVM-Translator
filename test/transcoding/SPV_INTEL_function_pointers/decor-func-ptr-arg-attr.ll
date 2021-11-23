@@ -10,9 +10,9 @@
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 
-; CHECK-SPIRV: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 2
-; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
+; CHECK-SPIRV: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 4
 ; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 5
+; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV: FunctionPointerCallINTEL
 ; CHECK-SPIRV-SAME: [[#TargetId]]
 

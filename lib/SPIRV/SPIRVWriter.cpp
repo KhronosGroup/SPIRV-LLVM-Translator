@@ -1986,27 +1986,15 @@ bool LLVMToSPIRVBase::shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
 
 void addFuncPointerCallArgumentAttributes(CallInst *CI,
                                           SPIRVValue *FuncPtrCall) {
-  auto AddDecorArgAttr{[&](int ArgNo, spv::FunctionParameterAttribute Attr) {
-    FuncPtrCall->addDecorate(
-        new SPIRVDecorate(spv::internal::DecorationArgumentAttributeINTEL,
-                          FuncPtrCall, ArgNo, Attr));
-  }};
-
   for (unsigned ArgNo = 0; ArgNo < CI->arg_size(); ++ArgNo) {
-    if (CI->paramHasAttr(ArgNo, Attribute::ByVal))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeByVal);
-    if (CI->paramHasAttr(ArgNo, Attribute::NoAlias))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoAlias);
-    if (CI->paramHasAttr(ArgNo, Attribute::NoCapture))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoCapture);
-    if (CI->paramHasAttr(ArgNo, Attribute::StructRet))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeSret);
-    if (CI->paramHasAttr(ArgNo, Attribute::ReadOnly))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeNoWrite);
-    if (CI->paramHasAttr(ArgNo, Attribute::ZExt))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeZext);
-    if (CI->paramHasAttr(ArgNo, Attribute::SExt))
-      AddDecorArgAttr(ArgNo, FunctionParameterAttributeSext);
+    for (const auto &I : CI->getAttributes().getParamAttrs(ArgNo)) {
+      spv::FunctionParameterAttribute Attr = spv::FunctionParameterAttributeMax;
+      SPIRSPIRVFuncParamAttrMap::find(I.getKindAsEnum(), &Attr);
+      if (Attr != spv::FunctionParameterAttributeMax)
+        FuncPtrCall->addDecorate(
+            new SPIRVDecorate(spv::internal::DecorationArgumentAttributeINTEL,
+                              FuncPtrCall, ArgNo, Attr));
+    }
   }
 }
 
