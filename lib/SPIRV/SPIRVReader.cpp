@@ -1289,9 +1289,9 @@ void transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI) {
   for (const auto *Dec : ArgumentAttributes) {
     std::vector<SPIRVWord> Literals = Dec->getVecLiteral();
     SPIRVWord ArgNo = Literals[0];
-    SPIRVWord SpirAttr = Literals[1];
+    SPIRVWord SpirvAttr = Literals[1];
     Attribute::AttrKind LlvmAttrKind = SPIRSPIRVFuncParamAttrMap::rmap(
-        static_cast<SPIRVFuncParamAttrKind>(SpirAttr));
+        static_cast<SPIRVFuncParamAttrKind>(SpirvAttr));
     auto LlvmAttr =
         Attribute::isTypeAttrKind(LlvmAttrKind)
             ? Attribute::get(CI->getContext(), LlvmAttrKind,
