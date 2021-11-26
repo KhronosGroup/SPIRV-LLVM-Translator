@@ -242,39 +242,49 @@ SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
   assert(isSpecConstantOpAllowedOp(OC) &&
          "Op code not allowed for OpSpecConstantOp");
   Ops.erase(Ops.begin(), Ops.begin() + 1);
+  auto *BM = Inst->getModule();
+  SPIRVInstruction *RetInst = nullptr;
   switch (OC) {
   case OpVectorShuffle: {
     std::vector<SPIRVWord> Comp;
     for (auto I = Ops.begin() + 2, E = Ops.end(); I != E; ++I) {
       Comp.push_back(*I);
     }
-    return new SPIRVVectorShuffle(Inst->getId(), Inst->getType(), Ops[0],
+    RetInst = new SPIRVVectorShuffle(Inst->getId(), Inst->getType(), Ops[0],
                                   Ops[1], Comp, nullptr, Inst->getModule());
+    break;
   }
   case OpCompositeExtract: {
     std::vector<SPIRVWord> Indices;
     for (auto I = Ops.begin() + 1, E = Ops.end(); I != E; ++I) {
       Indices.push_back(*I);
     }
-    return new SPIRVCompositeExtract(Inst->getType(), Inst->getId(), Ops[0],
+    RetInst = new SPIRVCompositeExtract(Inst->getType(), Inst->getId(), Ops[0],
                                      Indices, nullptr, Inst->getModule());
+    break;
   }
   case OpCompositeInsert: {
     std::vector<SPIRVWord> Indices;
     for (auto I = Ops.begin() + 2, E = Ops.end(); I != E; ++I) {
       Indices.push_back(*I);
     }
-    return new SPIRVCompositeInsert(Inst->getType(), Inst->getId(), Ops[0],
+    RetInst = new SPIRVCompositeInsert(Inst->getType(), Inst->getId(), Ops[0],
                                     Ops[1], Indices, nullptr,
                                     Inst->getModule());
+    break;
   }
   case OpSelect:
-    return new SPIRVSelect(Inst->getId(), Inst->getType(), Ops[0], Ops[1],
+    RetInst = new SPIRVSelect(Inst->getId(), Inst->getType(), Ops[0], Ops[1],
                            Ops[2], nullptr, Inst->getModule());
+    break;
   default:
-    return SPIRVInstTemplateBase::create(OC, Inst->getType(), Inst->getId(),
+    RetInst = SPIRVInstTemplateBase::create(OC, Inst->getType(), Inst->getId(),
                                          Ops, nullptr, Inst->getModule());
+    break;
   }
+  // Instruction that creates from OpSpecConstantOp has the same Id
+  BM->insertEntryNoId(RetInst);
+  return RetInst;
 }
 
 } // namespace SPIRV
