@@ -1894,8 +1894,8 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
                                     StringRef DemangledName) {
   auto Args = getArguments(CI);
   if (Args.size() == 2) {
-    Type* Type0 = Args[0]->getType();
-    Type* Type1 = Args[1]->getType();
+    Type *Type0 = Args[0]->getType();
+    Type *Type1 = Args[1]->getType();
     // For OpenCL built-in math functions 'floatn ldexp(floatn x, int k)' and
     // 'doublen ldexp(doublen x, int k)', do the scalar to vector conversion to
     // keep consistency with SPIRV spec. Regarding to SPIRV OpenCL Extended
