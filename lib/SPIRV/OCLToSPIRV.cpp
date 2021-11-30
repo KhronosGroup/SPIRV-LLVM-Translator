@@ -1897,8 +1897,8 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
     Type *Type0 = Args[0]->getType();
     Type *Type1 = Args[1]->getType();
     // For OpenCL built-in math functions 'floatn ldexp(floatn x, int k)' and
-    // 'doublen ldexp(doublen x, int k)', do the scalar to vector conversion to
-    // keep consistency with SPIRV spec. Regarding to SPIRV OpenCL Extended
+    // 'doublen ldexp(doublen x, int k)', convert scalar arg to vector to keep
+    // consistency with SPIRV spec. Regarding to SPIRV OpenCL Extended
     // Instruction set, k operand must have the same component count as Result
     // Type and x operands
     if (auto *FixedVecType0 = dyn_cast<FixedVectorType>(Type0)) {
