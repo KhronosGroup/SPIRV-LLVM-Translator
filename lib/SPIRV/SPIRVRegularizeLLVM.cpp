@@ -42,6 +42,7 @@
 #include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/ADT/StringExtras.h" // llvm::isDigit
+#include "llvm/CodeGen/IntrinsicLowering.h"
 #include "llvm/Demangle/Demangle.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
@@ -104,6 +105,8 @@ public:
 
   void lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic);
   void buildUMulWithOverflowFunc(Function *UMulFunc);
+
+  void lowerBSwap(CallInst *BSwapIntrinsic);
 
   static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
   void adaptStructTypes(StructType *ST);
@@ -293,6 +296,12 @@ void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
+void SPIRVRegularizeLLVMBase::lowerBSwap(CallInst *BSwapIntrinsic) {
+  DataLayout DL(BSwapIntrinsic->getModule());
+  IntrinsicLowering IL(DL);
+  IL.LowerIntrinsicCall(BSwapIntrinsic);
+}
+
 void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   if (!ST->hasName())
     return;
@@ -381,6 +390,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     }
 
     std::vector<Instruction *> ToErase;
+    std::vector<CallInst *> BSwapInsts;
     for (BasicBlock &BB : *F) {
       for (Instruction &II : BB) {
         if (auto Call = dyn_cast<CallInst>(&II)) {
@@ -396,6 +406,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               lowerFunnelShift(II);
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
+            else if (II->getIntrinsicID() == Intrinsic::bswap)
+              BSwapInsts.push_back(Call);
           }
         }
 
@@ -492,6 +504,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
       assert(V->user_empty());
       V->eraseFromParent();
     }
+
+    for (auto *I : BSwapInsts)
+      lowerBSwap(I);
   }
 
   for (StructType *ST : M->getIdentifiedStructTypes())
