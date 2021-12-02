@@ -106,7 +106,8 @@ public:
   void lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic);
   void buildUMulWithOverflowFunc(Function *UMulFunc);
 
-  void lowerBSwap(CallInst *BSwapIntrinsic);
+  void lowerWithIntrinsicLowering(
+      std::vector<CallInst *> &ToLowerWithIntrinsicLowering);
 
   static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
   void adaptStructTypes(StructType *ST);
@@ -296,9 +297,11 @@ void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
-void SPIRVRegularizeLLVMBase::lowerBSwap(CallInst *BSwapIntrinsic) {
+void SPIRVRegularizeLLVMBase::lowerWithIntrinsicLowering(
+    std::vector<CallInst *> &ToLowerWithIntrinsicLowering) {
   IntrinsicLowering IL(M->getDataLayout());
-  IL.LowerIntrinsicCall(BSwapIntrinsic);
+  for (auto *I : ToLowerWithIntrinsicLowering)
+    IL.LowerIntrinsicCall(I);
 }
 
 void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
@@ -389,7 +392,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     }
 
     std::vector<Instruction *> ToErase;
-    std::vector<CallInst *> BSwapInsts;
+    std::vector<CallInst *> ToLowerWithIntrinsicLowering;
     for (BasicBlock &BB : *F) {
       for (Instruction &II : BB) {
         if (auto Call = dyn_cast<CallInst>(&II)) {
@@ -406,7 +409,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
             else if (II->getIntrinsicID() == Intrinsic::bswap)
-              BSwapInsts.push_back(Call);
+              ToLowerWithIntrinsicLowering.push_back(Call);
           }
         }
 
@@ -504,8 +507,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
       V->eraseFromParent();
     }
 
-    for (auto *I : BSwapInsts)
-      lowerBSwap(I);
+    lowerWithIntrinsicLowering(ToLowerWithIntrinsicLowering);
   }
 
   for (StructType *ST : M->getIdentifiedStructTypes())
