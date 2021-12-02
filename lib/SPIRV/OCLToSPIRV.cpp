@@ -1896,15 +1896,16 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
   if (Args.size() == 2) {
     Type *Type0 = Args[0]->getType();
     Type *Type1 = Args[1]->getType();
-    // For OpenCL built-in math functions 'floatn ldexp(floatn x, int k)' and
-    // 'doublen ldexp(doublen x, int k)', convert scalar arg to vector to keep
-    // consistency with SPIRV spec. Regarding to SPIRV OpenCL Extended
-    // Instruction set, k operand must have the same component count as Result
-    // Type and x operands
+    // For OpenCL built-in math functions 'halfn ldexp(halfn x, int k)',
+    // 'floatn ldexp(floatn x, int k)' and 'doublen ldexp (doublen x, int k)',
+    // convert scalar arg to vector to keep consistency with SPIRV spec.
+    // Regarding to SPIRV OpenCL Extended Instruction set, k operand must have
+    // the same component count as Result Type and x operands
     if (auto *FixedVecType0 = dyn_cast<FixedVectorType>(Type0)) {
       auto ScalarTypeID = Type0->getScalarType()->getTypeID();
       if ((ScalarTypeID == llvm::Type::FloatTyID ||
-           ScalarTypeID == llvm::Type::DoubleTyID) &&
+           ScalarTypeID == llvm::Type::DoubleTyID ||
+           ScalarTypeID == llvm::Type::HalfTyID) &&
           Type1->isIntegerTy()) {
         IRBuilder<> IRB(CI);
         unsigned Width = FixedVecType0->getNumElements();

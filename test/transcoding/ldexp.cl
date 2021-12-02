@@ -7,9 +7,26 @@
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM-CL20
 
-__kernel void test_kernel(float3 x, int k, __global float3* ret) {
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
+__kernel void test_kernel_half(half3 x, int k, __global half3* ret) {
+   *ret = ldexp(x, k);
+}
+
+// CHECK-SPIRV: {{.*}} ldexp
+// CHECK-LLVM-CL20: %call = call spir_func <3 x half> @_Z5ldexpDv3_DhDv3_i(
+
+__kernel void test_kernel_float(float3 x, int k, __global float3* ret) {
    *ret = ldexp(x, k);
 }
 
 // CHECK-SPIRV: {{.*}} ldexp
 // CHECK-LLVM-CL20: %call = call spir_func <3 x float> @_Z5ldexpDv3_fDv3_i(
+
+__kernel void test_kernel_double(double3 x, int k, __global double3* ret) {
+   *ret = ldexp(x, k);
+}
+
+// CHECK-SPIRV: {{.*}} ldexp
+// CHECK-LLVM-CL20: %call = call spir_func <3 x double> @_Z5ldexpDv3_dDv3_i(
