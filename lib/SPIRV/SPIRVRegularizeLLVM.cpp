@@ -297,8 +297,6 @@ void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
 }
 
 void SPIRVRegularizeLLVMBase::lowerBSwap(CallInst *BSwapIntrinsic) {
-  // DataLayout DL(BSwapIntrinsic->getModule());
-  // IntrinsicLowering IL(DL);
   IntrinsicLowering IL(M->getDataLayout());
   IL.LowerIntrinsicCall(BSwapIntrinsic);
 }
