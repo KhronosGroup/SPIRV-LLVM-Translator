@@ -46,41 +46,9 @@
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
 
-; CHECK-LLVM: %bswap.2 = shl i16 %0, 8
-; CHECK-LLVM: %bswap.1 = lshr i16 %0, 8
-; CHECK-LLVM: %bswap.i16 = or i16 %bswap.2, %bswap.1
-
-; CHECK-LLVM: %bswap.4 = shl i32 %1, 24
-; CHECK-LLVM: %bswap.3 = shl i32 %1, 8
-; CHECK-LLVM: %bswap.21 = lshr i32 %1, 8
-; CHECK-LLVM: %bswap.12 = lshr i32 %1, 24
-; CHECK-LLVM: %bswap.and3 = and i32 %bswap.3, 16711680
-; CHECK-LLVM: %bswap.and2 = and i32 %bswap.21, 65280
-; CHECK-LLVM: %bswap.or1 = or i32 %bswap.4, %bswap.and3
-; CHECK-LLVM: %bswap.or2 = or i32 %bswap.and2, %bswap.12
-; CHECK-LLVM: %bswap.i32 = or i32 %bswap.or1, %bswap.or2
-
-; CHECK-LLVM: %bswap.8 = shl i64 %2, 56
-; CHECK-LLVM: %bswap.7 = shl i64 %2, 40
-; CHECK-LLVM: %bswap.6 = shl i64 %2, 24
-; CHECK-LLVM: %bswap.5 = shl i64 %2, 8
-; CHECK-LLVM: %bswap.43 = lshr i64 %2, 8
-; CHECK-LLVM: %bswap.34 = lshr i64 %2, 24
-; CHECK-LLVM: %bswap.25 = lshr i64 %2, 40
-; CHECK-LLVM: %bswap.16 = lshr i64 %2, 56
-; CHECK-LLVM: %bswap.and7 = and i64 %bswap.7, 71776119061217280
-; CHECK-LLVM: %bswap.and6 = and i64 %bswap.6, 280375465082880
-; CHECK-LLVM: %bswap.and5 = and i64 %bswap.5, 1095216660480
-; CHECK-LLVM: %bswap.and4 = and i64 %bswap.43, 4278190080
-; CHECK-LLVM: %bswap.and37 = and i64 %bswap.34, 16711680
-; CHECK-LLVM: %bswap.and28 = and i64 %bswap.25, 65280
-; CHECK-LLVM: %bswap.or19 = or i64 %bswap.8, %bswap.and7
-; CHECK-LLVM: %bswap.or210 = or i64 %bswap.and6, %bswap.and5
-; CHECK-LLVM: %bswap.or3 = or i64 %bswap.and4, %bswap.and37
-; CHECK-LLVM: %bswap.or4 = or i64 %bswap.and28, %bswap.16
-; CHECK-LLVM: %bswap.or5 = or i64 %bswap.or19, %bswap.or210
-; CHECK-LLVM: %bswap.or6 = or i64 %bswap.or3, %bswap.or4
-; CHECK-LLVM: %bswap.i64 = or i64 %bswap.or5, %bswap.or6
+; CHECK-LLVM: %bswap.i16 = call i16 @llvm.bswap.i16(i16 %0)
+; CHECK-LLVM: %bswap.i32 = call i32 @llvm.bswap.i32(i32 %1)
+; CHECK-LLVM: %bswap.i64 = call i64 @llvm.bswap.i64(i64 %2)
 
 ; ModuleID = 'source.cpp'
 source_filename = "source.cpp"

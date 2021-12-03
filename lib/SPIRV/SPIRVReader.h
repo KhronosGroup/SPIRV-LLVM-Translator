@@ -177,6 +177,12 @@ private:
   SPIRVToLLVMMDAliasInstMap MDAliasScopeMap;
   SPIRVToLLVMMDAliasInstMap MDAliasListMap;
 
+  // llvm.bswap intrinsic is not supported by SPIR-V and is lowered to set of
+  // logical instructions by regularization pass. BSwapOperandMap helps to
+  // collect arguments of llvm.bswap intrinsics and replace this set by
+  // llvm.bswap back during reverse translation.
+  std::unordered_map<std::string, Value *> BSwapOperandMap;
+
   Type *mapType(SPIRVType *BT, Type *T);
 
   // If a value is mapped twice, the existing mapped value is a placeholder,
