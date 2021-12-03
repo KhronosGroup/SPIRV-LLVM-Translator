@@ -1944,7 +1944,7 @@ void OCL20ToSPIRV::visitSubgroupAVCBuiltinCallWithSampler(
 }
 
 void OCL20ToSPIRV::visitCallLdexp(CallInst *CI, StringRef MangledName,
-                                    StringRef DemangledName) {
+                                  StringRef DemangledName) {
   auto Args = getArguments(CI);
   if (Args.size() == 2) {
     Type *Type0 = Args[0]->getType();
