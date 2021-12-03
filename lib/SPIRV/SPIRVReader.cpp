@@ -2510,11 +2510,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       std::string VarName = BV->getName();
       if (VarName.find("bswap.") != std::string::npos) {
         if ((VarName.find("bswap.2") != std::string::npos &&
-            static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 16) ||
+             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 16) ||
             (VarName.find("bswap.4") != std::string::npos &&
-            static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 32) ||
+             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 32) ||
             (VarName.find("bswap.8") != std::string::npos &&
-            static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64))
+             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64))
           BSwapOperandMap.emplace(
               VarName,
               transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB));
