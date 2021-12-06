@@ -2514,27 +2514,27 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
             (VarName.find("bswap.4") != std::string::npos &&
              static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 32) ||
             (VarName.find("bswap.8") != std::string::npos &&
-             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64))
-          BSwapOperandMap.emplace(
-              VarName,
-              transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB));
+             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64)) {
+          auto BitWidth =  static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth();
+          BSwapOperandMap[BitWidth] = transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB);
+        }
         if (VarName.find("bswap.i16") != std::string::npos) {
           IRBuilder<> Builder(BB);
           return mapValue(BV, Builder.CreateIntrinsic(
                                   Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap["bswap.2"]));
+                                  BSwapOperandMap[16]));
         }
         if (VarName.find("bswap.i32") != std::string::npos) {
           IRBuilder<> Builder(BB);
           return mapValue(BV, Builder.CreateIntrinsic(
                                   Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap["bswap.4"]));
+                                  BSwapOperandMap[32]));
         }
         if (VarName.find("bswap.i64") != std::string::npos) {
           IRBuilder<> Builder(BB);
           return mapValue(BV, Builder.CreateIntrinsic(
                                   Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap["bswap.8"]));
+                                  BSwapOperandMap[64]));
         }
         return nullptr;
       }

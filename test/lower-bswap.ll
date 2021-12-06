@@ -47,8 +47,9 @@
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
 
 ; CHECK-LLVM: %bswap.i16 = call i16 @llvm.bswap.i16(i16 %0)
-; CHECK-LLVM: %bswap.i32 = call i32 @llvm.bswap.i32(i32 %1)
-; CHECK-LLVM: %bswap.i64 = call i64 @llvm.bswap.i64(i64 %2)
+; CHECK-LLVM: %bswap.i16{{.*}} = call i16 @llvm.bswap.i16(i16 %1)
+; CHECK-LLVM: %bswap.i32 = call i32 @llvm.bswap.i32(i32 %2)
+; CHECK-LLVM: %bswap.i64 = call i64 @llvm.bswap.i64(i64 %3)
 
 ; ModuleID = 'source.cpp'
 source_filename = "source.cpp"
@@ -61,6 +62,8 @@ entry:
   %retval = alloca i32, align 4
   %a = alloca i16, align 2
   %b = alloca i16, align 2
+  %h = alloca i16, align 2
+  %i = alloca i16, align 2
   %c = alloca i32, align 4
   %d = alloca i32, align 4
   %e = alloca i64, align 8
@@ -70,14 +73,18 @@ entry:
   %0 = load i16, i16* %a, align 2
   %1 = call i16 @llvm.bswap.i16(i16 %0)
   store i16 %1, i16* %b, align 2
+  store i16 234, i16* %h, align 2
+  %2 = load i16, i16* %h, align 2
+  %3 = call i16 @llvm.bswap.i16(i16 %2)
+  store i16 %3, i16* %i, align 2
   store i32 566, i32* %c, align 4
-  %2 = load i32, i32* %c, align 4
-  %3 = call i32 @llvm.bswap.i32(i32 %2)
-  store i32 %3, i32* %d, align 4
+  %4 = load i32, i32* %c, align 4
+  %5 = call i32 @llvm.bswap.i32(i32 %4)
+  store i32 %5, i32* %d, align 4
   store i64 12587, i64* %e, align 8
-  %4 = load i64, i64* %e, align 8
-  %5 = call i64 @llvm.bswap.i64(i64 %4)
-  store i64 %5, i64* %f, align 8
+  %6 = load i64, i64* %e, align 8
+  %7 = call i64 @llvm.bswap.i64(i64 %6)
+  store i64 %7, i64* %f, align 8
   ret i32 0
 }
 

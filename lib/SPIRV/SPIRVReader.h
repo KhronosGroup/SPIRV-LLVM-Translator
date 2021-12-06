@@ -181,7 +181,7 @@ private:
   // logical instructions by regularization pass. BSwapOperandMap helps to
   // collect arguments of llvm.bswap intrinsics and replace this set by
   // llvm.bswap back during reverse translation.
-  std::unordered_map<std::string, Value *> BSwapOperandMap;
+  std::unordered_map<unsigned, Value *> BSwapOperandMap;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
