@@ -438,25 +438,28 @@ function the metadata is tied to.
 
 .. code-block:: llvm
 
-  !spirv.Decorations !1
+  @v = global i32 0,!spirv.Decorations !1
   ...
-  !1 = !{!2}
-  !2 = !{i32 22}
+  !1 = !{!2, !3}               ; decoration-list with two decoration nodes
+  !2 = !{i32 22}               ; decoration-node with no extra operands
+  !3 = !{i32 41, !"v", i32 0}  ; decoration-node with 2 extra operands
 
-decorates a global variable with ``Constant`` in SPIR-V.
+decorates a global variable ``v`` with ``Constant`` and ``LinkageAttributes``
+with extra operands ``"v"`` and ``Export`` in SPIR-V.
 
 ``spirv.ParameterDecorations`` example:
 
 .. code-block:: llvm
 
-  !spirv.ParameterDecorations !1
+  define spir_kernel void @k(float %a, float %b) #0 !spirv.ParameterDecorations !1
   ...
-  !1 = !{!2, !3}
-  !2 = !{}
-  !2 = !{i32 19}
+  !1 = !{!2, !3} ; metadata node with 2 decoration-lists
+  !2 = !{}       ; empty decoration-list
+  !3 = !{!4}     ; decoration-list
+  !4 = !{i32 19} ; decoration-node
 
-decorates the second argument of the corresponding function with ``Restrict``
-in SPIR-V while not adding any decoration to the first argument.
+decorates the argument ``a`` of ``k`` with ``Restrict`` in SPIR-V while not
+adding any decoration to argument ``b``.
 
 Debug information extension
 ===========================
