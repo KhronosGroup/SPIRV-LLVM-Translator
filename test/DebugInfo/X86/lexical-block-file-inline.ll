@@ -51,7 +51,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-NOT: {{DW_TAG|NULL}}
 ; CHECK:        DW_TAG_variable
 ; CHECK-NOT: {{DW_TAG|NULL}}
-; CHECK:          DW_TAG_imported_module
+; CHECK:        DW_TAG_imported_module
 
 ; CHECK:    DW_TAG_subprogram
 ; CHECK-NOT: {{DW_TAG|NULL}}
