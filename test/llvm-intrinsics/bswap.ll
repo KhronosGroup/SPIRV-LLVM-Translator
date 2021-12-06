@@ -6,32 +6,46 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
+; CHECK-SPIRV: Name [[#FuncNameInt16:]] "spirv.llvm_bswap_i16"
+; CHECK-SPIRV: Name [[#FuncNameInt32:]] "spirv.llvm_bswap_i32"
+; CHECK-SPIRV: Name [[#FuncNameInt64:]] "spirv.llvm_bswap_i64"
+
 ; CHECK-SPIRV: TypeInt [[#TypeInt32:]] 32 0
 ; CHECK-SPIRV: TypeInt [[#TypeInt16:]] 16 0
 ; CHECK-SPIRV: TypeInt [[#TypeInt64:]] 64 0
 
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt16]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt16]]
-; CHECK-SPIRV: BitwiseOr [[#TypeInt16]]
+; CHECK-SPIRV: Function [[#TypeInt16]] [[#FuncNameInt16]]
+; CHECK-SPIRV: FunctionParameter [[#TypeInt16]] [[#FuncParameter:]]
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt16]] [[#]] [[#FuncParameter]]
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt16]] [[#]] [[#FuncParameter]]
+; CHECK-SPIRV: BitwiseOr [[#TypeInt16]] [[#RetVal:]]
+; CHECK-SPIRV: ReturnValue [[#RetVal]]
+; CHECK-SPIRV: FunctionEnd 
 
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt32]]
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt32]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt32]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt32]]
+; CHECK-SPIRV: Function [[#TypeInt32]] [[#FuncNameInt32]]
+; CHECK-SPIRV: FunctionParameter [[#TypeInt32]] [[#FuncParameter:]]
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt32]] [[#]] [[#FuncParameter]]
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt32]] [[#]] [[#FuncParameter]]
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt32]] [[#]] [[#FuncParameter]]
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt32]] [[#]] [[#FuncParameter]]
 ; CHECK-SPIRV: BitwiseAnd [[#TypeInt32]]
 ; CHECK-SPIRV: BitwiseAnd [[#TypeInt32]]
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt32]]
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt32]]
-; CHECK-SPIRV: BitwiseOr [[#TypeInt32]]
+; CHECK-SPIRV: BitwiseOr [[#TypeInt32]] [[#RetVal:]]
+; CHECK-SPIRV: ReturnValue [[#RetVal:]]
+; CHECK-SPIRV: FunctionEnd
 
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]]
-; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]]
+; CHECK-SPIRV: Function [[#TypeInt64]] [[#FuncNameInt64]] 
+; CHECK-SPIRV: FunctionParameter [[#TypeInt64]] [[#FuncParameter:]] 
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]] 63 [[#FuncParameter]] 62 
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]] 65 [[#FuncParameter]] 64 
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]] 67 [[#FuncParameter]] 66 
+; CHECK-SPIRV: ShiftLeftLogical [[#TypeInt64]] 69 [[#FuncParameter]] 68 
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]] 70 [[#FuncParameter]] 68 
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]] 71 [[#FuncParameter]] 66 
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]] 72 [[#FuncParameter]] 64 
+; CHECK-SPIRV: ShiftRightLogical [[#TypeInt64]] 73 [[#FuncParameter]] 62 
 ; CHECK-SPIRV: BitwiseAnd [[#TypeInt64]]
 ; CHECK-SPIRV: BitwiseAnd [[#TypeInt64]]
 ; CHECK-SPIRV: BitwiseAnd [[#TypeInt64]]
@@ -44,12 +58,14 @@
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
 ; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
-; CHECK-SPIRV: BitwiseOr [[#TypeInt64]]
+; CHECK-SPIRV: BitwiseOr [[#TypeInt64]] [[#RetVal:]]
+; CHECK-SPIRV: ReturnValue [[#RetVal]]
+; CHECK-SPIRV: FunctionEnd 
 
-; CHECK-LLVM: %bswap.i16 = call i16 @llvm.bswap.i16(i16 %0)
-; CHECK-LLVM: %bswap.i16{{.*}} = call i16 @llvm.bswap.i16(i16 %1)
-; CHECK-LLVM: %bswap.i32 = call i32 @llvm.bswap.i32(i32 %2)
-; CHECK-LLVM: %bswap.i64 = call i64 @llvm.bswap.i64(i64 %3)
+; CHECK-LLVM: %1 = call i16 @llvm.bswap.i16(i16 %0)
+; CHECK-LLVM: %3 = call i16 @llvm.bswap.i16(i16 %2)
+; CHECK-LLVM: %5 = call i32 @llvm.bswap.i32(i32 %4)
+; CHECK-LLVM: %7 = call i64 @llvm.bswap.i64(i64 %6)
 
 ; ModuleID = 'source.cpp'
 source_filename = "source.cpp"

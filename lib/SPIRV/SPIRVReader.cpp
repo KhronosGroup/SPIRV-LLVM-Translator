@@ -2500,48 +2500,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       return mapValue(BV, transSPIRVBuiltinFromInst(
                               static_cast<SPIRVInstruction *>(BV), BB));
 
-    if (isBinaryShiftLogicalBitwiseOpCode(OC) || isLogicalOpCode(OC)) {
-      // llvm.bswap intrinsic is not supported by SPIR-V and is lowered to
-      // set of logical shift, "or" and "and" instructions by regularization
-      // pass. We need to check if such set of instructions can be present in
-      // current SPIR-V module and replace it by llvm.bswap intrinsic call
-      // during reverse translation.
-      // See: llvm/lib/CodeGen/IntrinsicLowering.cpp:LowerBSWAP
-      std::string VarName = BV->getName();
-      if (VarName.find("bswap.") != std::string::npos) {
-        if ((VarName.find("bswap.2") != std::string::npos &&
-             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 16) ||
-            (VarName.find("bswap.4") != std::string::npos &&
-             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 32) ||
-            (VarName.find("bswap.8") != std::string::npos &&
-             static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64)) {
-          auto BitWidth =
-              static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth();
-          BSwapOperandMap[BitWidth] =
-              transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB);
-        }
-        if (VarName.find("bswap.i16") != std::string::npos) {
-          IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
-                                                      transType(BV->getType()),
-                                                      BSwapOperandMap[16]));
-        }
-        if (VarName.find("bswap.i32") != std::string::npos) {
-          IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
-                                                      transType(BV->getType()),
-                                                      BSwapOperandMap[32]));
-        }
-        if (VarName.find("bswap.i64") != std::string::npos) {
-          IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
-                                                      transType(BV->getType()),
-                                                      BSwapOperandMap[64]));
-        }
-        return nullptr;
-      }
+    if (isBinaryShiftLogicalBitwiseOpCode(OC) || isLogicalOpCode(OC))
       return mapValue(BV, transShiftLogicalBitwiseInst(BV, BB, F));
-    }
 
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       auto BI = static_cast<SPIRVInstruction *>(BV);
