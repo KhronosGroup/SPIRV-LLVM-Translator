@@ -4390,7 +4390,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   case OpStore: {
     std::vector<SPIRVWord> MemoryAccess;
-    assert(CI->arg_size() > 1 && "Expected at least 2 operand for OpLoad call");
+    assert(CI->arg_size() > 1 &&
+           "Expected at least 2 operands for OpStore call");
     for (size_t I = 2; I < CI->arg_size(); ++I)
       MemoryAccess.push_back(
           cast<ConstantInt>(CI->getArgOperand(I))->getZExtValue());
