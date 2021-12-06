@@ -2515,26 +2515,28 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
              static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 32) ||
             (VarName.find("bswap.8") != std::string::npos &&
              static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth() == 64)) {
-          auto BitWidth =  static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth();
-          BSwapOperandMap[BitWidth] = transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB);
+          auto BitWidth =
+              static_cast<SPIRVTypeInt *>(BV->getType())->getBitWidth();
+          BSwapOperandMap[BitWidth] =
+              transValue(static_cast<SPIRVBinary *>(BV)->getOperand(0), F, BB);
         }
         if (VarName.find("bswap.i16") != std::string::npos) {
           IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(
-                                  Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap[16]));
+          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
+                                                      transType(BV->getType()),
+                                                      BSwapOperandMap[16]));
         }
         if (VarName.find("bswap.i32") != std::string::npos) {
           IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(
-                                  Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap[32]));
+          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
+                                                      transType(BV->getType()),
+                                                      BSwapOperandMap[32]));
         }
         if (VarName.find("bswap.i64") != std::string::npos) {
           IRBuilder<> Builder(BB);
-          return mapValue(BV, Builder.CreateIntrinsic(
-                                  Intrinsic::bswap, transType(BV->getType()),
-                                  BSwapOperandMap[64]));
+          return mapValue(BV, Builder.CreateIntrinsic(Intrinsic::bswap,
+                                                      transType(BV->getType()),
+                                                      BSwapOperandMap[64]));
         }
         return nullptr;
       }
