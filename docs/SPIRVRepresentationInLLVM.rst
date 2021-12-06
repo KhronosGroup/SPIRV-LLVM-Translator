@@ -411,6 +411,53 @@ For example:
 are translated for image types, but they should be encoded in LLVM IR type name
 rather than function metadata.
 
+Function parameter and global variable decoration through metadata
+------------------------------------------------------------------
+
+Both function parameters and global variables can be decorated using LLVM
+metadata through the metadata names ``spirv.ParameterDecorations`` and
+``spirv.Decorations`` respectively. ``spirv.ParameterDecorations`` must be tied
+to the kernel function while ``spirv.Decorations`` is tied directly to the
+global variable.
+
+A "decoration-node" is a metadata node consisting of one or more operands. The
+first operand is an integer literal representing the SPIR-V decoration
+identifier. The other operands are either an integer or string literal
+representing the remaining extra operands of the corresponding SPIR-V
+decoration.
+
+A "decoration-list" is a metadata node consisting of references to zero or more
+decoration-nodes.
+
+``spirv.Decorations`` must refer to a decoration-list while
+``spirv.ParameterDecorations`` must refer to a metadata node that contains N
+references to decoration-lists, where N is the number of arguments of the
+function the metadata is tied to.
+
+``spirv.Decorations`` example:
+
+.. code-block:: llvm
+
+  !spirv.Decorations !1
+  ...
+  !1 = !{!2}
+  !2 = !{i32 22}
+
+decorates a global variable with ``Constant`` in SPIR-V.
+
+``spirv.ParameterDecorations`` example:
+
+.. code-block:: llvm
+
+  !spirv.ParameterDecorations !1
+  ...
+  !1 = !{!2, !3}
+  !2 = !{}
+  !2 = !{i32 19}
+
+decorates the second argument of the corresponding function with ``Restrict``
+in SPIR-V while not adding any decoration to the first argument.
+
 Debug information extension
 ===========================
 
