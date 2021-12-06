@@ -150,14 +150,15 @@ std::string SPIRVRegularizeLLVMBase::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   return FuncName;
 }
 
-void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(IntrinsicInst *Intrinsic) {
+void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(
+    IntrinsicInst *Intrinsic) {
   // For @llvm.memset.* intrinsic cases with constant value and length arguments
   // are emulated via "storing" a constant array to the destination. For other
   // cases we wrap the intrinsic in @spirv.llvm_memset_* function and expand the
   // intrinsic to a loop via expandMemSetAsLoop() from
   // llvm/Transforms/Utils/LowerMemIntrinsics.h
   if (auto *MSI = dyn_cast<MemSetInst>(Intrinsic))
-    if(isa<Constant>(MSI->getValue()) && isa<ConstantInt>(MSI->getLength()))
+    if (isa<Constant>(MSI->getValue()) && isa<ConstantInt>(MSI->getLength()))
       return; // To be handled in LLVMToSPIRV::transIntrinsicInst
 
   std::string FuncName = lowerLLVMIntrinsicName(Intrinsic);
@@ -193,8 +194,8 @@ void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(IntrinsicInst *Intrinsic)
     IsVolatile->addAttr(Attribute::ImmArg);
     BasicBlock *EntryBB = BasicBlock::Create(M->getContext(), "entry", F);
     IRBuilder<> IRB(EntryBB);
-    auto *MemSet =
-        IRB.CreateMemSet(Dest, Val, Len, MSI->getDestAlign(), MSI->isVolatile());
+    auto *MemSet = IRB.CreateMemSet(Dest, Val, Len, MSI->getDestAlign(),
+                                    MSI->isVolatile());
     IRB.CreateRetVoid();
     expandMemSetAsLoop(cast<MemSetInst>(MemSet));
     MemSet->eraseFromParent();
