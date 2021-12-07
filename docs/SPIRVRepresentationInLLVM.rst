@@ -458,8 +458,8 @@ with extra operands ``"v"`` and ``Export`` in SPIR-V.
   !3 = !{!4}     ; decoration-list with one decoration node
   !4 = !{i32 19} ; decoration-node with no extra operands
 
-decorates the argument ``a`` of ``k`` with ``Restrict`` in SPIR-V while not
-adding any decoration to argument ``b``.
+decorates the argument ``b`` of ``k`` with ``Restrict`` in SPIR-V while not
+adding any decoration to argument ``a``.
 
 Debug information extension
 ===========================
