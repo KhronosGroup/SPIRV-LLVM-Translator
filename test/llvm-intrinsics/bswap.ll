@@ -4,7 +4,7 @@
 ; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM "--implicit-check-not={{(shl|lshr|or|and) i(16|32|64)}}"
 
 ; CHECK-SPIRV: Name [[#FuncNameInt16:]] "spirv.llvm_bswap_i16"
 ; CHECK-SPIRV: Name [[#FuncNameInt32:]] "spirv.llvm_bswap_i32"
@@ -46,8 +46,11 @@
 ; CHECK-LLVM: call i32 @llvm.bswap.i32(i32
 ; CHECK-LLVM: call i64 @llvm.bswap.i64(i64
 
+<<<<<<< HEAD
 ; CHECK-LLVM-NOT: {{(shl|lshr|or|and) i(16|32|64)}}
 
+=======
+>>>>>>> af5e6f2f (Add implicit-check-not)
 ; ModuleID = 'source.cpp'
 source_filename = "source.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
