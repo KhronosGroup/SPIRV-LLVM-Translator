@@ -46,17 +46,7 @@
 ; CHECK-LLVM: call i32 @llvm.bswap.i32(i32
 ; CHECK-LLVM: call i64 @llvm.bswap.i64(i64
 
-; CHECK-LLVM-NOT: shl i16
-; CHECK-LLVM-NOT: lshr i16
-; CHECK-LLVM-NOT: or i16
-; CHECK-LLVM-NOT: shl i32
-; CHECK-LLVM-NOT: lshr i32
-; CHECK-LLVM-NOT: and i32
-; CHECK-LLVM-NOT: or i32
-; CHECK-LLVM-NOT: shl i64
-; CHECK-LLVM-NOT: lshr i64
-; CHECK-LLVM-NOT: and i64
-; CHECK-LLVM-NOT: or i64
+; CHECK-LLVM-NOT: {{(shl|lshr|or|and) i(16|32|64)}}
 
 ; ModuleID = 'source.cpp'
 source_filename = "source.cpp"
