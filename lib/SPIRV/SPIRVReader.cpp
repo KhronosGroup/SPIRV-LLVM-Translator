@@ -1443,15 +1443,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     bool IsConst = BVar->isConstant();
     llvm::GlobalValue::LinkageTypes LinkageTy = transLinkageType(BVar);
     Constant *Initializer = nullptr;
+    SPIRVStorageClassKind BS = BVar->getStorageClass();
     SPIRVValue *Init = BVar->getInitializer();
 
-    if (isSPIRVSamplerType(Ty)) {
+    if (isSPIRVSamplerType(Ty) && BS == StorageClassUniformConstant) {
       // Skip generating llvm code during translation of a variable definition,
       // generate code only for its uses
       if (!BB)
         return nullptr;
 
-      assert(Init && "OpVariable with sampler type must have an initializer!");
+      assert(Init && "UniformConstant OpVariable with sampler type must have "
+                     "an initializer!");
       return transValue(Init, F, BB);
     }
 
@@ -1464,7 +1466,6 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
              SPIRVStorageClassKind::StorageClassWorkgroup)
       Initializer = dyn_cast<Constant>(UndefValue::get(Ty));
 
-    SPIRVStorageClassKind BS = BVar->getStorageClass();
     if (BS == StorageClassFunction && !Init) {
       assert(BB && "Invalid BB");
       return mapValue(BV, new AllocaInst(Ty, 0, BV->getName(), BB));
