@@ -1376,13 +1376,14 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Constant *Initializer = nullptr;
     SPIRVValue *Init = BVar->getInitializer();
 
-    if (isSPIRVSamplerType(Ty)) {
+    if (isSPIRVSamplerType(Ty) && BS == StorageClassUniformConstant) {
       // Skip generating llvm code during translation of a variable definition,
       // generate code only for its uses
       if (!BB)
         return nullptr;
 
-      assert(Init && "OpVariable with sampler type must have an initializer!");
+      assert(Init && "UniformConstant OpVariable with sampler type must have "
+                     "an initializer!");
       return transValue(Init, F, BB);
     }
 
