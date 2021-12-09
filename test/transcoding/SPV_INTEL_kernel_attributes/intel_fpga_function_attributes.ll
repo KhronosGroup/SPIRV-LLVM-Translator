@@ -43,6 +43,7 @@
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_cluster_attributes"
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_invocation_pipelining_attributes"
 ; CHECK-SPIRV: Extension "SPV_INTEL_loop_fuse"
+; CHECK-SPIRV: EntryPoint 6 [[FUNCENTRY2:[0-9]+]] "_ZTSZ3barvE11kernel_name3"
 ; CHECK-SPIRV: ExecutionMode [[FUNCENTRY:[0-9]+]] 5893 1 1 1
 ; CHECK-SPIRV: ExecutionMode [[FUNCENTRY]] 5894 1
 ; CHECK-SPIRV: ExecutionMode [[FUNCENTRY]] 5895
@@ -53,8 +54,9 @@
 ; CHECK-SPIRV-DAG: Decorate [[FUNCENTRY]] InitiationIntervalINTEL 10
 ; CHECK-SPIRV-DAG: Decorate [[FUNCENTRY]] MaxConcurrencyINTEL 12
 ; CHECK-SPIRV-DAG: Decorate [[FUNCENTRY]] PipelineEnableINTEL 0
-; CHECK-SPIRV: Decorate [[FUNCENTRY2:[0-9]+]] PipelineEnableINTEL 1
+; CHECK-SPIRV: Decorate [[FUNCENTRY2]] PipelineEnableINTEL 1
 ; CHECK-SPIRV: Function {{.*}} [[FUNCENTRY]] {{.*}}
+; CHECK-SPIRV: Function {{.*}} [[FUNCENTRY2]] {{.*}}
 
 ; CHECK-LLVM: define spir_kernel void {{.*}}kernel_name()
 ; CHECK-LLVM-SAME: !stall_enable ![[ONEMD:[0-9]+]] !loop_fuse ![[FUSE:[0-9]+]]
