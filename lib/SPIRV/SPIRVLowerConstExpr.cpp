@@ -139,7 +139,7 @@ void SPIRVLowerConstExprBase::visit(Module *M) {
       auto II = WorkList.front();
 
       auto LowerOp = [&II, &FBegin, &I](Value *V) -> Value * {
-        if (isa<Function>(V))
+        if (isa<Function>(V) || !isa<ConstantExpr>(V))
           return V;
         auto *CE = cast<ConstantExpr>(V);
         SPIRVDBG(dbgs() << "[lowerConstantExpressions] " << *CE;)
@@ -170,7 +170,7 @@ void SPIRVLowerConstExprBase::visit(Module *M) {
       auto LowerConstantVec = [&II, &LowerOp, &WorkList,
                                &M](ConstantVector *Vec,
                                    unsigned NumOfOp) -> Value * {
-        if (std::all_of(Vec->op_begin(), Vec->op_end(), [](Value *V) {
+        if (std::any_of(Vec->op_begin(), Vec->op_end(), [](Value *V) {
               return isa<ConstantExpr>(V) || isa<Function>(V);
             })) {
           // Expand a vector of constexprs and construct it back with
