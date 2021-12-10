@@ -1,0 +1,81 @@
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.0 -o %t.spv %s
+; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; Check whether seperate initilizer has been generated for each use
+
+; CHECK-LLVM: %[[cond:.*]] = icmp ne i64 %{{.*}}, 0
+; CHECK-LLVM: br i1 %[[cond]], label %[[br0:.*]], label %[[br1:.*]]
+
+; CHECK-LLVM: [[br0]]:
+; CHECK-LLVM: %[[s0:.*]] = call %spirv.Sampler addrspace(2)* @__translate_sampler_initializer(i32 23)
+; CHECK-LLVM: call spir_func %spirv.SampledImage._void_1_0_0_0_0_0_0 addrspace(1)* @_Z20__spirv_SampledImagePU3AS133__spirv_Image__void_1_0_0_0_0_0_0PU3AS215__spirv_Sampler(%spirv.Image._void_1_0_0_0_0_0_0 addrspace(1)* %{{.*}}, %spirv.Sampler addrspace(2)* %[[s0]])
+
+; CHECK-LLVM: [[br1]]:
+; CHECK-LLVM: %[[s1:.*]] = call %spirv.Sampler addrspace(2)* @__translate_sampler_initializer(i32 23)
+; CHECK-LLVM: call spir_func %spirv.SampledImage._void_1_0_0_0_0_0_0 addrspace(1)* @_Z20__spirv_SampledImagePU3AS133__spirv_Image__void_1_0_0_0_0_0_0PU3AS215__spirv_Sampler(%spirv.Image._void_1_0_0_0_0_0_0 addrspace(1)* %{{.*}}, %spirv.Sampler addrspace(2)* %[[s1]])
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpCapability Int64
+               OpCapability ImageBasic
+               OpCapability LiteralSampler
+          %1 = OpExtInstImport "OpenCL.std"
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %11 "test"
+         %45 = OpString "kernel_arg_type.test.image2d_t,int*,"
+               OpSource OpenCL_C 102000
+               OpDecorate %__spirv_BuiltInGlobalInvocationId BuiltIn GlobalInvocationId
+               OpDecorate %__spirv_BuiltInGlobalInvocationId Constant
+               OpDecorate %__spirv_BuiltInGlobalInvocationId LinkageAttributes "__spirv_BuiltInGlobalInvocationId" Import
+      %ulong = OpTypeInt 64 0
+       %uint = OpTypeInt 32 0
+    %ulong_2 = OpConstant %ulong 2
+    %ulong_0 = OpConstant %ulong 0
+     %uint_1 = OpConstant %uint 1
+    %v3ulong = OpTypeVector %ulong 3
+%_ptr_Input_v3ulong = OpTypePointer Input %v3ulong
+       %void = OpTypeVoid
+          %7 = OpTypeImage %void 2D 0 0 0 0 Unknown ReadOnly
+%_ptr_CrossWorkgroup_uint = OpTypePointer CrossWorkgroup %uint
+         %10 = OpTypeFunction %void %7 %_ptr_CrossWorkgroup_uint
+         %20 = OpTypeSampler
+       %bool = OpTypeBool
+         %27 = OpTypeSampledImage %7
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %v2uint = OpTypeVector %uint 2
+     %v4uint = OpTypeVector %uint 4
+%__spirv_BuiltInGlobalInvocationId = OpVariable %_ptr_Input_v3ulong Input
+         %21 = OpConstantSampler %20 Repeat 1 Nearest
+         %33 = OpConstantNull %v2uint
+    %float_0 = OpConstant %float 0
+         %42 = OpConstantComposite %v2uint %uint_1 %uint_1
+         %11 = OpFunction %void None %10
+      %image = OpFunctionParameter %7
+        %out = OpFunctionParameter %_ptr_CrossWorkgroup_uint
+      %entry = OpLabel
+         %18 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId
+       %call = OpCompositeExtract %ulong %18 0
+        %rem = OpUMod %ulong %call %ulong_2
+     %tobool = OpINotEqual %bool %rem %ulong_0
+               OpBranchConditional %tobool %if_then %if_else
+    %if_then = OpLabel
+%TempSampledImage = OpSampledImage %27 %image %21
+      %call1 = OpImageSampleExplicitLod %v4float %TempSampledImage %33 Lod %float_0
+         %35 = OpCompositeExtract %float %call1 0
+       %conv = OpConvertFToS %uint %35
+   %arrayidx = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_uint %out %ulong_0
+               OpStore %arrayidx %conv Aligned 4
+               OpBranch %if_end
+    %if_else = OpLabel
+%TempSampledImage2 = OpSampledImage %27 %image %21
+      %call4 = OpImageSampleExplicitLod %v4uint %TempSampledImage2 %42 Lod %float_0
+         %43 = OpCompositeExtract %uint %call4 0
+  %arrayidx5 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_uint %out %ulong_0
+               OpStore %arrayidx5 %43 Aligned 4
+               OpBranch %if_end
+     %if_end = OpLabel
+               OpReturn
+               OpFunctionEnd
