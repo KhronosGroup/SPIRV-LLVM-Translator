@@ -216,7 +216,7 @@ private:
   bool isAnyFunctionReachableFromFunction(
       const Function *FS,
       const std::unordered_set<const Function *> Funcs) const;
-  void collectInputOutputVariables(SPIRVFunction *SF, Function *F);
+  void collectEntryPointInterfaces(SPIRVFunction *SF, Function *F);
 };
 
 class LLVMToSPIRVPass : public PassInfoMixin<LLVMToSPIRVPass>,

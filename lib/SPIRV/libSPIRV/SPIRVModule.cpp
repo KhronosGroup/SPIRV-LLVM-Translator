@@ -217,6 +217,7 @@ public:
                          const std::vector<SPIRVEntry *> &Targets) override;
   void addEntryPoint(SPIRVExecutionModelKind ExecModel,
                      SPIRVId EntryPoint) override;
+  void addEntryPointInterfaces(SPIRVId, const std::vector<SPIRVId> &) override;
   SPIRVForward *addForward(SPIRVType *Ty) override;
   SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) override;
   SPIRVFunction *addFunction(SPIRVFunction *) override;
@@ -526,6 +527,7 @@ private:
   SPIRVAsmVector AsmVec;
   SPIRVExecModelIdSetMap EntryPointSet;
   SPIRVExecModelIdVecMap EntryPointVec;
+  std::map<SPIRVId, std::vector<SPIRVId>> EntryPointInterfaces;
   SPIRVStringMap StrMap;
   SPIRVCapMap CapMap;
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
@@ -1006,6 +1008,11 @@ void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
   EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointVec[ExecModel].push_back(EntryPoint);
   addCapabilities(SPIRV::getCapability(ExecModel));
+}
+
+void SPIRVModuleImpl::addEntryPointInterfaces(
+    SPIRVId Target, const std::vector<SPIRVId> &Interfaces) {
+  EntryPointInterfaces[Target] = Interfaces;
 }
 
 SPIRVForward *SPIRVModuleImpl::addForward(SPIRVType *Ty) {
@@ -1834,9 +1841,19 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   O << SPIRVMemoryModel(&M);
 
   for (auto &I : MI.EntryPointVec)
-    for (auto &II : I.second)
+    for (auto &II : I.second) {
+      // getVariables() will return a non-empty vector only when translating
+      // LLVM-IR -> SPIRV text, because the entry points was translated as
+      // SPIRVFunction and their interfaces are saved as variables by
+      // collectEntryPointInterfaces function. When translating SPIRV bitcode ->
+      // SPIRV text the entry points are decoded from the bitcode and the
+      // interfaces are stored to EntryPointInterfaces map to not to be lost.
+      std::vector<SPIRVId> Interfaces = M.get<SPIRVFunction>(II)->getVariables();
+      if (Interfaces.empty())
+        Interfaces = MI.EntryPointInterfaces[II];
       O << SPIRVEntryPoint(&M, I.first, II, M.get<SPIRVFunction>(II)->getName(),
-                           M.get<SPIRVFunction>(II)->getVariables());
+                           Interfaces);
+    }
 
   for (auto &I : MI.EntryPointVec)
     for (auto &II : I.second)

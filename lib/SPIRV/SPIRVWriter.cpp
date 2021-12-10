@@ -3567,13 +3567,9 @@ bool LLVMToSPIRVBase::isAnyFunctionReachableFromFunction(
   return false;
 }
 
-void LLVMToSPIRVBase::collectInputOutputVariables(SPIRVFunction *SF,
+void LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF,
                                                   Function *F) {
   for (auto &GV : M->globals()) {
-    const auto AS = GV.getAddressSpace();
-    if (AS != SPIRAS_Input && AS != SPIRAS_Output)
-      continue;
-
     std::unordered_set<const Function *> Funcs;
 
     for (const auto &U : GV.uses()) {
@@ -3692,7 +3688,7 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
   bool IsKernelEntryPoint = isKernel(I);
 
   if (IsKernelEntryPoint) {
-    collectInputOutputVariables(BF, I);
+    collectEntryPointInterfaces(BF, I);
   }
 }
 
