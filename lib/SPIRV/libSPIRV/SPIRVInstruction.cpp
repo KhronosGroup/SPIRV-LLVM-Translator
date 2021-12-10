@@ -230,7 +230,24 @@ SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst) {
   auto OC = Inst->getOpCode();
   assert(isSpecConstantOpAllowedOp(OC) &&
          "Op code not allowed for OpSpecConstantOp");
-  auto Ops = Inst->getIds(Inst->getOperands());
+  std::vector<SPIRVId> Ops;
+  SPIRVModule *Module = Inst->getModule();
+
+  // CompositeExtract/Insert operations use zero-based numbering for their
+  // indexes (containted in instruction operands). SpecConstantOp expects the
+  // operands to be the id-s of other constant instructions, or OpUndef.
+  if (OC == OpCompositeExtract || OC == OpCompositeInsert) {
+    auto *SPIRVInst = static_cast<SPIRVInstTemplateBase *>(Inst);
+    Ops = SPIRVInst->getOpWords();
+    // Change Indices of the composite operations to the Constants' Ids.
+    for (unsigned I = 1; I < Ops.size(); I++) {
+      SPIRVConstant *Const = Module->getLiteralAsConstant(Ops[I]);
+      Ops[I] = Const->getId();
+    }
+  } else {
+    Ops = Inst->getIds(Inst->getOperands());
+  }
+
   Ops.insert(Ops.begin(), OC);
   return static_cast<SPIRVSpecConstantOp *>(SPIRVSpecConstantOp::create(
       OpSpecConstantOp, Inst->getType(), Inst->getId(), Ops, nullptr,
@@ -245,6 +262,19 @@ SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
          "Op code not allowed for OpSpecConstantOp");
   Ops.erase(Ops.begin(), Ops.begin() + 1);
   auto *BM = Inst->getModule();
+
+  // SpecConstantOp uses the id-s of other constant instructions as its
+  // operands. CompositeExtract/Insert operations expects zero-based numbering
+  // for their indexes (containted in instruction operands).
+  if (OC == OpCompositeExtract || OC == OpCompositeInsert) {
+    // Change the Constants' Ids to their values (indices for
+    // CompositeExtract/Insert).
+    for (unsigned I = 1; I < Ops.size(); I++) {
+      SPIRVConstant *Const = BM->get<SPIRVConstant>(Ops[I]);
+      Ops[I] = Const->getZExtIntValue();
+    }
+  }
+
   auto *RetInst = SPIRVInstTemplateBase::create(
       OC, Inst->getType(), Inst->getId(), Ops, nullptr, BM);
   // Instruction that creates from OpSpecConstantOp has the same Id
