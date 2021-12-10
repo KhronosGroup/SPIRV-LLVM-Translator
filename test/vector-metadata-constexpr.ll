@@ -1,6 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -s --spirv-ext=+SPV_INTEL_arbitrary_precision_integers,+SPV_INTEL_vector_compute %t.bc -o - | llvm-dis -o - | FileCheck %s
-; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_arbitrary_precision_integers,+SPV_INTEL_vector_compute %t.bc
+; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
+; RUN: llvm-spirv %t.bc
 
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "spir64-unknown-unknown"
@@ -42,29 +42,29 @@ entry:
   call void @llvm.dbg.value(
     metadata <4 x half> <
     half fadd (
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 65971704314880> to <4 x half>), i32 0),
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 70369817935872> to <4 x half>), i32 0)),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 65793, i32 65793> to <4 x half>), i32 0),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 131586, i32 131586> to <4 x half>), i32 0)),
     half fadd (
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 65971704314880> to <4 x half>), i32 1),
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 70369817935872> to <4 x half>), i32 1)),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 65793, i32 65793> to <4 x half>), i32 1),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 131586, i32 131586> to <4 x half>), i32 1)),
     half fadd (
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 65971704314880> to <4 x half>), i32 2),
-      half extractelement (<4 x half> bitcast (<1 x i64> <i64 70369817935872> to <4 x half>), i32 2)),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 65793, i32 65793> to <4 x half>), i32 2),
+      half extractelement (<4 x half> bitcast (<2 x i32> <i32 131586, i32 131586> to <4 x half>), i32 2)),
     half undef>,
     metadata !23, metadata !DIExpression()), !dbg !20
-; CHECK: %18 = bitcast <1 x i64> <i64 65971704314880> to <4 x half>
+; CHECK: %18 = bitcast <2 x i32> <i32 65793, i32 65793> to <4 x half>
 ; CHECK: %19 = extractelement <4 x half> %18, i32 0
-; CHECK: %20 = bitcast <1 x i64> <i64 70369817935872> to <4 x half>
+; CHECK: %20 = bitcast <2 x i32> <i32 131586, i32 131586> to <4 x half>
 ; CHECK: %21 = extractelement <4 x half> %20, i32 0
 ; CHECK: %22 = fadd half %19, %21
-; CHECK: %23 = bitcast <1 x i64> <i64 65971704314880> to <4 x half>
+; CHECK: %23 = bitcast <2 x i32> <i32 65793, i32 65793> to <4 x half>
 ; CHECK: %24 = extractelement <4 x half> %23, i32 1
-; CHECK: %25 = bitcast <1 x i64> <i64 70369817935872> to <4 x half>
+; CHECK: %25 = bitcast <2 x i32> <i32 131586, i32 131586> to <4 x half>
 ; CHECK: %26 = extractelement <4 x half> %25, i32 1
 ; CHECK: %27 = fadd half %24, %26
-; CHECK: %28 = bitcast <1 x i64> <i64 65971704314880> to <4 x half>
+; CHECK: %28 = bitcast <2 x i32> <i32 65793, i32 65793> to <4 x half>
 ; CHECK: %29 = extractelement <4 x half> %28, i32 2
-; CHECK: %30 = bitcast <1 x i64> <i64 70369817935872> to <4 x half>
+; CHECK: %30 = bitcast <2 x i32> <i32 131586, i32 131586> to <4 x half>
 ; CHECK: %31 = extractelement <4 x half> %30, i32 2
 ; CHECK: %32 = fadd half %29, %31
 ; CHECK: %33 = insertelement <4 x half> undef, half %22, i32 0
