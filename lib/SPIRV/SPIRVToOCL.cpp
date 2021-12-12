@@ -73,10 +73,8 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
                     << "BuiltinKind = " << BuiltinKind << '\n');
 
   if (BuiltinKind != SPIRVBuiltinVariableKind::BuiltInMax) {
-    if (static_cast<uint32_t>(BuiltinKind) >=
-            BuiltInSubDeviceIDINTEL &&
-        static_cast<uint32_t>(BuiltinKind) <=
-            BuiltInMaxHWThreadIDPerSubDeviceINTEL)
+    if (static_cast<uint32_t>(BuiltinKind) >= BuiltInSubDeviceIDINTEL &&
+        static_cast<uint32_t>(BuiltinKind) <= BuiltInGlobalHWThreadIDINTEL)
       return;
 
     visitCallSPIRVBuiltin(&CI, BuiltinKind);
