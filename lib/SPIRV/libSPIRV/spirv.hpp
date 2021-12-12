@@ -576,7 +576,7 @@ enum BuiltIn {
     BuiltInWarpIDNV = 5376,
     BuiltInSMIDNV = 5377,
     BuiltInSubDeviceIDINTEL = 6135,
-    BuiltInHWThreadIDINTEL = 6136,
+    BuiltInGlobalHWThreadIDINTEL = 6136,
     BuiltInMaxHWThreadIDPerSubDeviceINTEL = 6137,
     BuiltInMax = 0x7fffffff,
 };

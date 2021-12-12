@@ -899,8 +899,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
     if (!GV->hasName() || !getSPIRVBuiltin(GV->getName().str(), Builtin))
       return BVar;
     if (static_cast<uint32_t>(Builtin) >= BuiltInSubDeviceIDINTEL &&
-        static_cast<uint32_t>(Builtin) <=
-            BuiltInMaxHWThreadIDPerSubDeviceINTEL) {
+        static_cast<uint32_t>(Builtin) <= BuiltInGlobalHWThreadIDINTEL) {
       if (!BM->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_hw_thread_queries)) {
         std::string ErrorStr = "Intel HW thread queries must be enabled by "
