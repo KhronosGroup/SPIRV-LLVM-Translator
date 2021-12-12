@@ -307,9 +307,7 @@ template <> inline void SPIRVMap<BuiltIn, std::string>::init() {
   add(BuiltInSMIDNV, "BuiltInSMIDNV");
   add(BuiltInMax, "BuiltInMax");
   add(internal::BuiltInSubDeviceIDINTEL, "BuiltInSubDeviceIDINTEL");
-  add(internal::BuiltInHWThreadIDINTEL, "BuiltInHWThreadIDINTEL");
-  add(internal::BuiltInMaxHWThreadIDPerSubDeviceINTEL,
-      "BuiltInMaxHWThreadIDPerSubDeviceINTEL");
+  add(internal::BuiltInGlobalHWThreadIDINTEL, "BuiltInGlobalHWThreadIDINTEL");
 }
 SPIRV_DEF_NAMEMAP(BuiltIn, SPIRVBuiltInNameMap)
 
