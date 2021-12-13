@@ -1848,7 +1848,8 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
       // collectEntryPointInterfaces function. When translating SPIRV bitcode ->
       // SPIRV text the entry points are decoded from the bitcode and the
       // interfaces are stored to EntryPointInterfaces map to not to be lost.
-      std::vector<SPIRVId> Interfaces = M.get<SPIRVFunction>(II)->getVariables();
+      std::vector<SPIRVId> Interfaces =
+          M.get<SPIRVFunction>(II)->getVariables();
       if (Interfaces.empty())
         Interfaces = MI.EntryPointInterfaces[II];
       O << SPIRVEntryPoint(&M, I.first, II, M.get<SPIRVFunction>(II)->getName(),
