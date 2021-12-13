@@ -3570,6 +3570,12 @@ bool LLVMToSPIRVBase::isAnyFunctionReachableFromFunction(
 void LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF,
                                                   Function *F) {
   for (auto &GV : M->globals()) {
+    if (SF->getModule()->getSPIRVVersion() <
+        static_cast<uint32_t>(VersionNumber::SPIRV_1_4)) {
+      const auto AS = GV.getAddressSpace();
+      if (AS != SPIRAS_Input && AS != SPIRAS_Output)
+        continue;
+    }
     std::unordered_set<const Function *> Funcs;
 
     for (const auto &U : GV.uses()) {
