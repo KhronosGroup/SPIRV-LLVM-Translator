@@ -526,7 +526,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgPointerType(const DIDerivedType *PT) {
   SPIRVWordVec Ops(OperandCount);
   SPIRVEntry *Base = transDbgEntry(PT->getBaseType());
   Ops[BaseTypeIdx] = Base->getId();
-  Ops[StorageClassIdx] = ~0U; // all ones denote no address space
+  Ops[StorageClassIdx] = spv::StorageClassFunction;
   Optional<unsigned> AS = PT->getDWARFAddressSpace();
   if (AS.hasValue()) {
     SPIRAddressSpace SPIRAS = static_cast<SPIRAddressSpace>(AS.getValue());
