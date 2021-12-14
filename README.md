@@ -93,6 +93,34 @@ Building clang from sources takes time and resources and it can be avoided:
   moment, see [KhronosGroup/SPIRV-LLVM-Translator#477](https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/477)
   to track progress, discuss and contribute.
 
+### Build with SPIRV-Tools
+
+The translator can use SPIRV-Tools to generate assembly with conformant syntax.
+If SPIRV-Tools have been installed prior to the build it will be detected and
+used automatically. However it is also possible to enable use of SPIRV-Tools
+from a custom location using the following instructions:
+
+1. Checkout, build and install SPIRV-Tools using
+   [the following instructions](https://github.com/KhronosGroup/SPIRV-Tools#build).
+   Example using cmake:
+```
+cmake -G Ninja .. -DCMAKE_INSTALL_PREFIX=<location to installation>
+ninja install
+```
+2. Using pkg-config when building the translator by setting
+   `PKG_CONFIG_PATH=<location to installation>/lib/pkgconfig/` variable
+   before the cmake line invocation.
+   Example:
+```
+PKG_CONFIG_PATH=<location to installation>/lib/pkgconfig/ cmake ...
+```
+
+To test the correctness of translator build run the following line
+```
+llvm-spirv --spirv-tools-dis input.bc -o -
+```
+The output should be printed in the standard assembly syntax.
+
 ## Configuring SPIR-V Headers
 
 The translator build is dependent on the official Khronos header file
@@ -153,6 +181,7 @@ To translate between LLVM IR and SPIR-V:
     * `-o file_name` - to specify output name
     * `-spirv-debug` - output debugging information
     * `-spirv-text` - read/write SPIR-V in an internal textual format for debugging purpose. The textual format is not defined by SPIR-V spec.
+    * `--spirv-tools-dis` - print SPIR-V assembly in standard format. Only available on [builds with SPIR-V](#build-with-spirv-tools).
     * `-help` - to see full list of options
 
 Translation from LLVM IR to SPIR-V and then back to LLVM IR is not guaranteed to
