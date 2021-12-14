@@ -170,13 +170,13 @@ void SPIRVLowerConstExprBase::visit(Module *M) {
 
       for (unsigned OI = 0, OE = II->getNumOperands(); OI != OE; ++OI) {
         auto *Op = II->getOperand(OI);
-        if (auto CE = dyn_cast<ConstantExpr>(Op)) {
+        if (auto *CE = dyn_cast<ConstantExpr>(Op)) {
           WorkList.push_front(cast<Instruction>(LowerOp(CE)));
         } else if (auto MDAsVal = dyn_cast<MetadataAsValue>(Op)) {
           Metadata *MD = MDAsVal->getMetadata();
           if (auto ConstMD = dyn_cast<ConstantAsMetadata>(MD)) {
             Constant *C = ConstMD->getValue();
-            Value *ReplInst = nullptr;;
+            Value *ReplInst = nullptr;
             if (auto *CE = dyn_cast<ConstantExpr>(C))
               ReplInst = LowerOp(CE);
             if (ReplInst) {
