@@ -1007,8 +1007,8 @@ void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
                                     const std::vector<SPIRVId> &Variables) {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
-  auto *EP = add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name,
-                                    Variables));
+  auto *EP =
+      add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name, Variables));
   EntryPointVec.push_back(EP);
   EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointMapVec[ExecModel].push_back(EntryPoint);
@@ -1843,7 +1843,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   O << MI.EntryPointVec;
 
   for (auto &I : MI.EntryPointVec)
-      MI.get<SPIRVFunction>(I->getTargetId())->encodeExecutionModes(O);
+    MI.get<SPIRVFunction>(I->getTargetId())->encodeExecutionModes(O);
 
   O << MI.StringVec;
 
