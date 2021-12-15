@@ -3569,8 +3569,7 @@ std::vector<SPIRVId>
 LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
   std::vector<SPIRVId> Interface;
   for (auto &GV : M->globals()) {
-    if (SF->getModule()->getSPIRVVersion() <
-        static_cast<uint32_t>(VersionNumber::SPIRV_1_4)) {
+    if (!SF->getModule()->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
       const auto AS = GV.getAddressSpace();
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
