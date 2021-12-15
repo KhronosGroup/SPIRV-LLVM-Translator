@@ -526,10 +526,9 @@ private:
   SPIRVGroupDecVec GroupDecVec;
   SPIRVAsmTargetVector AsmTargetVec;
   SPIRVAsmVector AsmVec;
-  SPIRVExecModelIdSetMap EntryPointMapSet;
+  SPIRVExecModelIdSetMap EntryPointSet;
   SPIRVExecModelIdVecMap EntryPointMapVec;
   SPIRVEntryPointVec EntryPointVec;
-  std::map<SPIRVId, std::vector<SPIRVId>> EntryPointInterfaces;
   SPIRVStringMap StrMap;
   SPIRVCapMap CapMap;
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
@@ -780,8 +779,8 @@ bool SPIRVModuleImpl::isEntryPoint(SPIRVExecutionModelKind ExecModel,
                                    SPIRVId EP) const {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EP != SPIRVID_INVALID && "Invalid function id");
-  auto Loc = EntryPointMapSet.find(ExecModel);
-  if (Loc == EntryPointMapSet.end())
+  auto Loc = EntryPointSet.find(ExecModel);
+  if (Loc == EntryPointSet.end())
     return false;
   return Loc->second.count(EP);
 }
@@ -1008,10 +1007,10 @@ void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
                                     const std::vector<SPIRVId> &Variables) {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
-  auto EP = add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name,
+  auto *EP = add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name,
                                     Variables));
   EntryPointVec.push_back(EP);
-  EntryPointMapSet[ExecModel].insert(EntryPoint);
+  EntryPointSet[ExecModel].insert(EntryPoint);
   EntryPointMapVec[ExecModel].push_back(EntryPoint);
   addCapabilities(SPIRV::getCapability(ExecModel));
 }
@@ -1858,7 +1857,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   for (auto &I : MI.NamedId) {
     // Don't output name for entry point since it is redundant
     bool IsEntryPoint = false;
-    for (auto &EPS : MI.EntryPointMapSet)
+    for (auto &EPS : MI.EntryPointSet)
       if (EPS.second.count(I)) {
         IsEntryPoint = true;
         break;
