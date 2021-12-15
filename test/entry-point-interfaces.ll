@@ -1,7 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
 
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: spirv-val %t.spv
+; RUN: spirv-val --target-env spv1.4 %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o %t.from.spv.spt
 ; RUN: FileCheck < %t.from.spv.spt %s --check-prefix=CHECK-SPIRV
 
