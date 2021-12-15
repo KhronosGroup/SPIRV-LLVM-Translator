@@ -20,34 +20,26 @@
 ; 117 is OpConvertPtrToU opcode
 ; 81 is OpCompositeExtract opcode
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#FIRST_ARG:]] 117 [[#F1Ptr:]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_0:]] 0
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_0:]] 81 [[#FIRST_COMPOSITE:]] [[#CONST_ID_0]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_1:]] 1
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_1:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_1]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_2:]] 2
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_2:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_2]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_3:]] 3
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_3:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_3]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_4:]] 4
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_4:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_4]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_5:]] 5
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_5:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_5]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_6:]] 6
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_6:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_6]]
-; CHECK-SPIRV: Constant [[#]] [[#CONST_ID_7:]] 7
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_7:]] 81 [[#FIRST_COMPOSITE]] [[#CONST_ID_7]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_0:]] 81 [[#FIRST_COMPOSITE:]] 0
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_1:]] 81 [[#FIRST_COMPOSITE]] 1
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_2:]] 81 [[#FIRST_COMPOSITE]] 2
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_3:]] 81 [[#FIRST_COMPOSITE]] 3
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_4:]] 81 [[#FIRST_COMPOSITE]] 4
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_5:]] 81 [[#FIRST_COMPOSITE]] 5
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_6:]] 81 [[#FIRST_COMPOSITE]] 6
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_7:]] 81 [[#FIRST_COMPOSITE]] 7
 
 ; 117 is OpConvertPtrToU opcode
 ; 81 is OpCompositeExtract opcode
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#SECOND_ARG:]] 117 [[#F2Ptr:]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_8:]] 81 [[#SECOND_COMPOSITE:]] [[#CONST_ID_0]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_9:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_1]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_10:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_2]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_11:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_3]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_12:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_4]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_13:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_5]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_14:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_6]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_15:]] 81 [[#SECOND_COMPOSITE]] [[#CONST_ID_7]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_8:]] 81 [[#SECOND_COMPOSITE:]] 0
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_9:]] 81 [[#SECOND_COMPOSITE]] 1
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_10:]] 81 [[#SECOND_COMPOSITE]] 2
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_11:]] 81 [[#SECOND_COMPOSITE]] 3
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_12:]] 81 [[#SECOND_COMPOSITE]] 4
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_13:]] 81 [[#SECOND_COMPOSITE]] 5
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_14:]] 81 [[#SECOND_COMPOSITE]] 6
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#VEC_15:]] 81 [[#SECOND_COMPOSITE]] 7
 
 ; CHECK-SPIRV-DAG: 4 TypeVector [[#TypeVec16:]] [[TypeInt8]] 16
 ; CHECK-SPIRV-DAG: 4 TypeVector [[#TypeVec8:]] [[TypeInt8]] 8

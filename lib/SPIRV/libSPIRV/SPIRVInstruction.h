@@ -2757,10 +2757,27 @@ _SPIRV_OP(ImageQuerySamples, true, 4)
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> SPIRV##x;
 // Other instructions
-_SPIRV_OP(SpecConstantOp, true, 4, true, 0)
 _SPIRV_OP(GenericPtrMemSemantics, true, 4, false)
 _SPIRV_OP(GenericCastToPtrExplicit, true, 5, false, 1)
 #undef _SPIRV_OP
+
+class SPIRVSpecConstantOpBase : public SPIRVInstTemplateBase {
+public:
+  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+    // If SpecConstant results from CompositeExtract/Insert operation, then all
+    // operands are expected to be literals.
+    SPIRVWord LiteralOpcode = Ops[0];
+    if (LiteralOpcode == OpCompositeExtract ||
+        LiteralOpcode == OpCompositeInsert)
+      return {};
+
+    return SPIRVInstTemplateBase::getNonLiteralOperands();
+  }
+};
+
+typedef SPIRVInstTemplate<SPIRVSpecConstantOpBase, OpSpecConstantOp, true, 4,
+                          true, 0>
+    SPIRVSpecConstantOp;
 
 class SPIRVAssumeTrueKHR : public SPIRVInstruction {
 public:

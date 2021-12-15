@@ -1,7 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
-; RUN: spirv-val %t.spv
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
@@ -14,29 +13,26 @@ define linkonce_odr hidden spir_func void @foo() {
 entry:
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#CONSTANT1:]] 65793
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#CONSTANT2:]] 131586
-; CHECK-SPIRV-DAG: Constant [[#]] [[#CONST_ID_0:]] 0
-; CHECK-SPIRV-DAG: Constant [[#]] [[#CONST_ID_1:]] 1
-; CHECK-SPIRV-DAG: Constant [[#]] [[#CONST_ID_2:]] 2
 
 ; CHECK-SPIRV: ConstantComposite [[#]] [[#COMPOS0:]] [[#CONSTANT1]]
 ; 124 is OpBitcast opcode
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES0:]] 124 [[#COMPOS0]]
 
 ; 81 is OpCompositeExtract opcode
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES0:]] 81 [[#BITCAST_RES0]] [[#CONST_ID_0]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES0:]] 81 [[#BITCAST_RES0]] 0
 ; CHECK-SPIRV: ConstantComposite [[#]] [[#COMPOS1:]] [[#CONSTANT2]]
 
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES1:]] 124 [[#COMPOS1]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES1:]] 81 [[#BITCAST_RES1]] [[#CONST_ID_0]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES1:]] 81 [[#BITCAST_RES1]] 0
 ; 129 is OpFAdd opcode
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#MEMBER_1:]] 129 [[#EXTRACT_RES0:]] [[#EXTRACT_RES1]]
 
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES2:]] 81 [[#BITCAST_RES0]] [[#CONST_ID_1]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES3:]] 81 [[#BITCAST_RES1]] [[#CONST_ID_1]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES2:]] 81 [[#BITCAST_RES0]] 1
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#EXTRACT_RES3:]] 81 [[#BITCAST_RES1]] 1
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#MEMBER_2:]] 129 [[#EXTRACT_RES2]] [[#EXTRACT_RES3]]
 
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES2:]] 81 [[#BITCAST_RES0]] [[#CONST_ID_2]]
-; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES2:]] 81 [[#BITCAST_RES1]] [[#CONST_ID_2]]
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES2:]] 81 [[#BITCAST_RES0]] 2
+; CHECK-SPIRV: SpecConstantOp [[#]] [[#BITCAST_RES2:]] 81 [[#BITCAST_RES1]] 2
 ; CHECK-SPIRV: SpecConstantOp [[#]] [[#MEMBER_3:]] 129 [[#]] [[#BITCAST_RES2]]
 
 ; CHECK-SPIRV: Undef [[#]] [[#MEMBER_4:]]
