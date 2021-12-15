@@ -3569,10 +3569,13 @@ std::vector<SPIRVId>
 LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
   std::vector<SPIRVId> Interface;
   for (auto &GV : M->globals()) {
-    if (!SF->getModule()->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
+    SPIRVModule *BM = SF->getModule();
+    if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
       const auto AS = GV.getAddressSpace();
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
+    } else {
+      BM->setSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
     }
     std::unordered_set<const Function *> Funcs;
 
