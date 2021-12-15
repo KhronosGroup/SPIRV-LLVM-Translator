@@ -213,9 +213,9 @@ public:
                          const std::vector<SPIRVEntry *> &Targets) = 0;
   virtual SPIRVGroupDecorateGeneric *
   addGroupDecorateGeneric(SPIRVGroupDecorateGeneric *GDec) = 0;
-  virtual void addEntryPoint(SPIRVExecutionModelKind, SPIRVId) = 0;
-  virtual void addEntryPointInterfaces(SPIRVId,
-                                       const std::vector<SPIRVId> &) = 0;
+  virtual void addEntryPoint(SPIRVExecutionModelKind, SPIRVId,
+                             const std::string &,
+                             const std::vector<SPIRVId> &) = 0;
   virtual SPIRVForward *addForward(SPIRVType *Ty) = 0;
   virtual SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) = 0;
   virtual SPIRVFunction *addFunction(SPIRVFunction *) = 0;

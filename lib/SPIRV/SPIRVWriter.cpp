@@ -606,9 +606,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   BF->setFunctionControlMask(transFunctionControlMask(F));
   if (F->hasName())
     BM->setName(BF, F->getName().str());
-  if (isKernel(F))
-    BM->addEntryPoint(ExecutionModelKernel, BF->getId());
-  else if (F->getLinkage() != GlobalValue::InternalLinkage)
+  if (!isKernel(F) && F->getLinkage() != GlobalValue::InternalLinkage)
     BF->setLinkageType(transLinkageType(F));
 
   // Translate OpenCL/SYCL buffer_location metadata if it's attached to the
@@ -3567,8 +3565,9 @@ bool LLVMToSPIRVBase::isAnyFunctionReachableFromFunction(
   return false;
 }
 
-void LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF,
-                                                  Function *F) {
+std::vector<SPIRVId>
+LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
+  std::vector<SPIRVId> Interface;
   for (auto &GV : M->globals()) {
     if (SF->getModule()->getSPIRVVersion() <
         static_cast<uint32_t>(VersionNumber::SPIRV_1_4)) {
@@ -3586,9 +3585,10 @@ void LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF,
     }
 
     if (isAnyFunctionReachableFromFunction(F, Funcs)) {
-      SF->addVariable(ValueMap[&GV]);
+      Interface.push_back(ValueMap[&GV]->getId());
     }
   }
+  return Interface;
 }
 
 void LLVMToSPIRVBase::mutateFuncArgType(
@@ -3691,10 +3691,10 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
   joinFPContract(I, FPContract::ENABLED);
   fpContractUpdateRecursive(I, getFPContract(I));
 
-  bool IsKernelEntryPoint = isKernel(I);
-
-  if (IsKernelEntryPoint) {
-    collectEntryPointInterfaces(BF, I);
+  if (isKernel(I)) {
+    auto Interface = collectEntryPointInterfaces(BF, I);
+    BM->addEntryPoint(ExecutionModelKernel, BF->getId(), I->getName().str(),
+                      Interface);
   }
 }
 

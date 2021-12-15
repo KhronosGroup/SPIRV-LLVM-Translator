@@ -129,15 +129,15 @@ public:
   SPIRVMemoryModelKind getMemoryModel() const override { return MemoryModel; }
   SPIRVConstant *getLiteralAsConstant(unsigned Literal) override;
   unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const override {
-    auto Loc = EntryPointVec.find(EM);
-    if (Loc == EntryPointVec.end())
+    auto Loc = EntryPointMapVec.find(EM);
+    if (Loc == EntryPointMapVec.end())
       return 0;
     return Loc->second.size();
   }
   SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind EM,
                                unsigned I) const override {
-    auto Loc = EntryPointVec.find(EM);
-    if (Loc == EntryPointVec.end())
+    auto Loc = EntryPointMapVec.find(EM);
+    if (Loc == EntryPointMapVec.end())
       return nullptr;
     assert(I < Loc->second.size());
     return get<SPIRVFunction>(Loc->second[I]);
@@ -215,9 +215,9 @@ public:
   SPIRVGroupMemberDecorate *
   addGroupMemberDecorate(SPIRVDecorationGroup *Group,
                          const std::vector<SPIRVEntry *> &Targets) override;
-  void addEntryPoint(SPIRVExecutionModelKind ExecModel,
-                     SPIRVId EntryPoint) override;
-  void addEntryPointInterfaces(SPIRVId, const std::vector<SPIRVId> &) override;
+  void addEntryPoint(SPIRVExecutionModelKind ExecModel, SPIRVId EntryPoint,
+                     const std::string &Name,
+                     const std::vector<SPIRVId> &Variables) override;
   SPIRVForward *addForward(SPIRVType *Ty) override;
   SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) override;
   SPIRVFunction *addFunction(SPIRVFunction *) override;
@@ -496,6 +496,7 @@ private:
   typedef std::vector<SPIRVGroupDecorateGeneric *> SPIRVGroupDecVec;
   typedef std::vector<SPIRVAsmTargetINTEL *> SPIRVAsmTargetVector;
   typedef std::vector<SPIRVAsmINTEL *> SPIRVAsmVector;
+  typedef std::vector<SPIRVEntryPoint *> SPIRVEntryPointVec;
   typedef std::map<SPIRVId, SPIRVExtInstSetKind> SPIRVIdToInstructionSetMap;
   std::map<SPIRVExtInstSetKind, SPIRVId> ExtInstSetIds;
   typedef std::map<SPIRVId, SPIRVExtInstSetKind> SPIRVIdToBuiltinSetMap;
@@ -525,8 +526,9 @@ private:
   SPIRVGroupDecVec GroupDecVec;
   SPIRVAsmTargetVector AsmTargetVec;
   SPIRVAsmVector AsmVec;
-  SPIRVExecModelIdSetMap EntryPointSet;
-  SPIRVExecModelIdVecMap EntryPointVec;
+  SPIRVExecModelIdSetMap EntryPointMapSet;
+  SPIRVExecModelIdVecMap EntryPointMapVec;
+  SPIRVEntryPointVec EntryPointVec;
   std::map<SPIRVId, std::vector<SPIRVId>> EntryPointInterfaces;
   SPIRVStringMap StrMap;
   SPIRVCapMap CapMap;
@@ -778,8 +780,8 @@ bool SPIRVModuleImpl::isEntryPoint(SPIRVExecutionModelKind ExecModel,
                                    SPIRVId EP) const {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EP != SPIRVID_INVALID && "Invalid function id");
-  auto Loc = EntryPointSet.find(ExecModel);
-  if (Loc == EntryPointSet.end())
+  auto Loc = EntryPointMapSet.find(ExecModel);
+  if (Loc == EntryPointMapSet.end())
     return false;
   return Loc->second.count(EP);
 }
@@ -1002,17 +1004,16 @@ SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
 }
 
 void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
-                                    SPIRVId EntryPoint) {
+                                    SPIRVId EntryPoint, const std::string &Name,
+                                    const std::vector<SPIRVId> &Variables) {
   assert(isValid(ExecModel) && "Invalid execution model");
   assert(EntryPoint != SPIRVID_INVALID && "Invalid entry point");
-  EntryPointSet[ExecModel].insert(EntryPoint);
-  EntryPointVec[ExecModel].push_back(EntryPoint);
+  auto EP = add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name,
+                                    Variables));
+  EntryPointVec.push_back(EP);
+  EntryPointMapSet[ExecModel].insert(EntryPoint);
+  EntryPointMapVec[ExecModel].push_back(EntryPoint);
   addCapabilities(SPIRV::getCapability(ExecModel));
-}
-
-void SPIRVModuleImpl::addEntryPointInterfaces(
-    SPIRVId Target, const std::vector<SPIRVId> &Interfaces) {
-  EntryPointInterfaces[Target] = Interfaces;
 }
 
 SPIRVForward *SPIRVModuleImpl::addForward(SPIRVType *Ty) {
@@ -1840,25 +1841,10 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
 
   O << SPIRVMemoryModel(&M);
 
-  for (auto &I : MI.EntryPointVec)
-    for (auto &II : I.second) {
-      // getVariables() will return a non-empty vector only when translating
-      // LLVM-IR -> SPIRV text, because the entry points was translated as
-      // SPIRVFunction and their interfaces are saved as variables by
-      // collectEntryPointInterfaces function. When translating SPIRV bitcode ->
-      // SPIRV text the entry points are decoded from the bitcode and the
-      // interfaces are stored to EntryPointInterfaces map to not to be lost.
-      std::vector<SPIRVId> Interfaces =
-          M.get<SPIRVFunction>(II)->getVariables();
-      if (Interfaces.empty())
-        Interfaces = MI.EntryPointInterfaces[II];
-      O << SPIRVEntryPoint(&M, I.first, II, M.get<SPIRVFunction>(II)->getName(),
-                           Interfaces);
-    }
+  O << MI.EntryPointVec;
 
   for (auto &I : MI.EntryPointVec)
-    for (auto &II : I.second)
-      MI.get<SPIRVFunction>(II)->encodeExecutionModes(O);
+      MI.get<SPIRVFunction>(I->getTargetId())->encodeExecutionModes(O);
 
   O << MI.StringVec;
 
@@ -1872,7 +1858,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   for (auto &I : MI.NamedId) {
     // Don't output name for entry point since it is redundant
     bool IsEntryPoint = false;
-    for (auto &EPS : MI.EntryPointSet)
+    for (auto &EPS : MI.EntryPointMapSet)
       if (EPS.second.count(I)) {
         IsEntryPoint = true;
         break;
