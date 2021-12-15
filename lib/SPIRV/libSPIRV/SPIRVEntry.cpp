@@ -542,9 +542,6 @@ void SPIRVEntryPoint::encode(spv_ostream &O) const {
 
 void SPIRVEntryPoint::decode(std::istream &I) {
   getDecoder(I) >> ExecModel >> Target >> Name;
-  // One fixed word is the name of the entry point. When we subtract FixedWC
-  // and getSizeInWords, we must take into account that the entry point's name
-  // has been subtracted twice, so we must add 1.
   Variables.resize(WordCount - FixedWC - getSizeInWords(Name) + 1);
   getDecoder(I) >> Variables;
   Module->setName(getOrCreateTarget(), Name);

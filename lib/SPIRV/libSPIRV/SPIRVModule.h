@@ -133,14 +133,11 @@ public:
   virtual const SPIRVCapMap &getCapability() const = 0;
   virtual bool hasCapability(SPIRVCapabilityKind) const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
-  virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind,
-                                       unsigned) const = 0;
   virtual std::set<std::string> &getExtension() = 0;
   virtual SPIRVFunction *getFunction(unsigned) const = 0;
   virtual SPIRVVariable *getVariable(unsigned) const = 0;
   virtual SPIRVMemoryModelKind getMemoryModel() const = 0;
   virtual unsigned getNumFunctions() const = 0;
-  virtual unsigned getNumEntryPoints(SPIRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
   virtual SourceLanguage getSourceLanguage(SPIRVWord *) const = 0;
   virtual std::set<std::string> &getSourceExtension() = 0;

@@ -128,20 +128,6 @@ public:
   getValueTypes(const std::vector<SPIRVId> &) const override;
   SPIRVMemoryModelKind getMemoryModel() const override { return MemoryModel; }
   SPIRVConstant *getLiteralAsConstant(unsigned Literal) override;
-  unsigned getNumEntryPoints(SPIRVExecutionModelKind EM) const override {
-    auto Loc = EntryPointMapVec.find(EM);
-    if (Loc == EntryPointMapVec.end())
-      return 0;
-    return Loc->second.size();
-  }
-  SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind EM,
-                               unsigned I) const override {
-    auto Loc = EntryPointMapVec.find(EM);
-    if (Loc == EntryPointMapVec.end())
-      return nullptr;
-    assert(I < Loc->second.size());
-    return get<SPIRVFunction>(Loc->second[I]);
-  }
   unsigned getNumFunctions() const override { return FuncVec.size(); }
   unsigned getNumVariables() const override { return VariableVec.size(); }
   SourceLanguage getSourceLanguage(SPIRVWord *Ver = nullptr) const override {
@@ -501,7 +487,6 @@ private:
   std::map<SPIRVExtInstSetKind, SPIRVId> ExtInstSetIds;
   typedef std::map<SPIRVId, SPIRVExtInstSetKind> SPIRVIdToBuiltinSetMap;
   typedef std::map<SPIRVExecutionModelKind, SPIRVIdSet> SPIRVExecModelIdSetMap;
-  typedef std::map<SPIRVExecutionModelKind, SPIRVIdVec> SPIRVExecModelIdVecMap;
   typedef std::unordered_map<std::string, SPIRVString *> SPIRVStringMap;
   typedef std::map<SPIRVTypeStruct *, std::vector<std::pair<unsigned, SPIRVId>>>
       SPIRVUnknownStructFieldMap;
@@ -527,7 +512,6 @@ private:
   SPIRVAsmTargetVector AsmTargetVec;
   SPIRVAsmVector AsmVec;
   SPIRVExecModelIdSetMap EntryPointSet;
-  SPIRVExecModelIdVecMap EntryPointMapVec;
   SPIRVEntryPointVec EntryPointVec;
   SPIRVStringMap StrMap;
   SPIRVCapMap CapMap;
@@ -1011,7 +995,6 @@ void SPIRVModuleImpl::addEntryPoint(SPIRVExecutionModelKind ExecModel,
       add(new SPIRVEntryPoint(this, ExecModel, EntryPoint, Name, Variables));
   EntryPointVec.push_back(EP);
   EntryPointSet[ExecModel].insert(EntryPoint);
-  EntryPointMapVec[ExecModel].push_back(EntryPoint);
   addCapabilities(SPIRV::getCapability(ExecModel));
 }
 
