@@ -3575,7 +3575,7 @@ LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
     } else {
-      BM->setSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+      BM->setMinSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
     }
     std::unordered_set<const Function *> Funcs;
 
