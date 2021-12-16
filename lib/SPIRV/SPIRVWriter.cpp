@@ -3575,19 +3575,21 @@ LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
     } else {
-      BM->setMinSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
-    }
-    std::unordered_set<const Function *> Funcs;
+      std::unordered_set<const Function *> Funcs;
 
-    for (const auto &U : GV.uses()) {
-      const Instruction *Inst = dyn_cast<Instruction>(U.getUser());
-      if (!Inst)
-        continue;
-      Funcs.insert(Inst->getFunction());
-    }
+      for (const auto &U : GV.uses()) {
+        const Instruction *Inst = dyn_cast<Instruction>(U.getUser());
+        if (!Inst)
+          continue;
+        Funcs.insert(Inst->getFunction());
+      }
 
-    if (isAnyFunctionReachableFromFunction(F, Funcs)) {
-      Interface.push_back(ValueMap[&GV]->getId());
+      if (isAnyFunctionReachableFromFunction(F, Funcs)) {
+        if (static_cast<SPIRVWord>(BM->getSPIRVVersion()) <
+            static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
+          BM->setMinSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+        Interface.push_back(ValueMap[&GV]->getId());
+      }
     }
   }
   return Interface;
