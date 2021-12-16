@@ -129,12 +129,11 @@ bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
     return false;
 
   return llvm::StringSwitch<bool>(DemangledName)
+      .EndsWith("sub", true)
       .EndsWith("atomic_add", true)
-      .EndsWith("atomic_sub", true)
       .EndsWith("atomic_min", true)
       .EndsWith("atomic_max", true)
       .EndsWith("atom_add", true)
-      .EndsWith("atom_sub", true)
       .EndsWith("atom_min", true)
       .EndsWith("atom_max", true)
       .EndsWith("inc", true)
@@ -143,6 +142,7 @@ bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
       .EndsWith("and", true)
       .EndsWith("or", true)
       .EndsWith("xor", true)
+      .EndsWith("sub_explicit", true)
       .EndsWith("or_explicit", true)
       .EndsWith("xor_explicit", true)
       .EndsWith("and_explicit", true)
