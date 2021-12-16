@@ -206,7 +206,7 @@ SPIRVToLLVMDbgTran::transTypeArray(const SPIRVExtInst *DebugInst) {
     }
     if (auto *LocalVar = getDbgInst<SPIRVDebug::LocalVariable>(Ops[I])) {
       if (auto *UpperBound = transDebugInst<DILocalVariable>(LocalVar)) {
-        auto LowerBound = ConstantAsMetadata::get(
+        auto *LowerBound = ConstantAsMetadata::get(
             ConstantInt::get(M->getContext(), APInt(32, 1)));
         Subscripts.push_back(Builder.getOrCreateSubrange(nullptr, LowerBound,
                                                          UpperBound, nullptr));
