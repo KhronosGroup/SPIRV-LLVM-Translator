@@ -3569,27 +3569,28 @@ std::vector<SPIRVId>
 LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
   std::vector<SPIRVId> Interface;
   for (auto &GV : M->globals()) {
+    const auto AS = GV.getAddressSpace();
     SPIRVModule *BM = SF->getModule();
-    if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
-      const auto AS = GV.getAddressSpace();
+    if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4))
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
-    } else {
-      std::unordered_set<const Function *> Funcs;
 
-      for (const auto &U : GV.uses()) {
-        const Instruction *Inst = dyn_cast<Instruction>(U.getUser());
-        if (!Inst)
-          continue;
-        Funcs.insert(Inst->getFunction());
-      }
+    std::unordered_set<const Function *> Funcs;
 
-      if (isAnyFunctionReachableFromFunction(F, Funcs)) {
-        if (static_cast<SPIRVWord>(BM->getSPIRVVersion()) <
-            static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
-          BM->setMinSPIRVVersion(static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
-        Interface.push_back(ValueMap[&GV]->getId());
-      }
+    for (const auto &U : GV.uses()) {
+      const Instruction *Inst = dyn_cast<Instruction>(U.getUser());
+      if (!Inst)
+        continue;
+      Funcs.insert(Inst->getFunction());
+    }
+
+    if (isAnyFunctionReachableFromFunction(F, Funcs)) {
+      SPIRVWord ModuleVersion = static_cast<SPIRVWord>(BM->getSPIRVVersion());
+      if (AS != SPIRAS_Input && AS != SPIRAS_Output &&
+           ModuleVersion < static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
+        BM->setMinSPIRVVersion(
+            static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+      Interface.push_back(ValueMap[&GV]->getId());
     }
   }
   return Interface;
