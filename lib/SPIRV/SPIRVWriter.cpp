@@ -3587,7 +3587,7 @@ LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
     if (isAnyFunctionReachableFromFunction(F, Funcs)) {
       SPIRVWord ModuleVersion = static_cast<SPIRVWord>(BM->getSPIRVVersion());
       if (AS != SPIRAS_Input && AS != SPIRAS_Output &&
-           ModuleVersion < static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
+          ModuleVersion < static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
         BM->setMinSPIRVVersion(
             static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
       Interface.push_back(ValueMap[&GV]->getId());
