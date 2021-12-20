@@ -3560,18 +3560,18 @@ transDecorationsToMetadataList(llvm::LLVMContext *Context,
                                std::vector<SPIRVDecorate const *> Decorates) {
   SmallVector<Metadata *, 4> MDs;
   MDs.reserve(Decorates.size());
-  for (auto Deco : Decorates) {
+  for (const auto *Deco : Decorates) {
     std::vector<Metadata *> OPs;
-    auto KindMD = ConstantAsMetadata::get(
+    auto *KindMD = ConstantAsMetadata::get(
         ConstantInt::get(Type::getInt32Ty(*Context), Deco->getDecorateKind()));
     OPs.push_back(KindMD);
     switch (static_cast<size_t>(Deco->getDecorateKind())) {
     case DecorationLinkageAttributes: {
-      const auto LinkAttrDeco =
+      const auto *const LinkAttrDeco =
           static_cast<const SPIRVDecorateLinkageAttr *>(Deco);
-      const auto LinkNameMD =
+      auto *const LinkNameMD =
           MDString::get(*Context, LinkAttrDeco->getLinkageName());
-      const auto LinkTypeMD = ConstantAsMetadata::get(ConstantInt::get(
+      auto *const LinkTypeMD = ConstantAsMetadata::get(ConstantInt::get(
           Type::getInt32Ty(*Context), LinkAttrDeco->getLinkageType()));
       OPs.push_back(LinkNameMD);
       OPs.push_back(LinkTypeMD);
@@ -3588,16 +3588,15 @@ transDecorationsToMetadataList(llvm::LLVMContext *Context,
       break;
     }
     case DecorationMemoryINTEL:
-    case DecorationUserSemantic:
-    case internal::DecorationFuncParamDescINTEL: {
-      const auto StrMD =
+    case DecorationUserSemantic: {
+      auto *const StrMD =
           MDString::get(*Context, getString(Deco->getVecLiteral()));
       OPs.push_back(StrMD);
       break;
     }
     default: {
       for (const SPIRVWord Lit : Deco->getVecLiteral()) {
-        const auto LitMD = ConstantAsMetadata::get(
+        auto *const LitMD = ConstantAsMetadata::get(
             ConstantInt::get(Type::getInt32Ty(*Context), Lit));
         OPs.push_back(LitMD);
       }
@@ -3910,12 +3909,12 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
   addKernelArgumentMetadata(Context, SPIR_MD_KERNEL_ARG_ACCESS_QUAL, BF, F,
                             [=](SPIRVFunctionParameter *Arg) {
                               std::string Qual;
-                              auto T = Arg->getType();
+                              auto *T = Arg->getType();
                               if (T->isTypeOCLImage()) {
-                                auto ST = static_cast<SPIRVTypeImage *>(T);
+                                auto *ST = static_cast<SPIRVTypeImage *>(T);
                                 Qual = transOCLImageTypeAccessQualifier(ST);
                               } else if (T->isTypePipe()) {
-                                auto PT = static_cast<SPIRVTypePipe *>(T);
+                                auto *PT = static_cast<SPIRVTypePipe *>(T);
                                 Qual = transOCLPipeTypeAccessQualifier(PT);
                               } else
                                 Qual = "none";

@@ -2049,14 +2049,14 @@ void addFuncPointerCallArgumentAttributes(CallInst *CI,
   }
 
 static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
-  auto ArgDecoMD = dyn_cast<MDNode>(MD);
+  auto *ArgDecoMD = dyn_cast<MDNode>(MD);
   assert(ArgDecoMD && "Decoration list must be a metadata node");
   for (unsigned I = 0, E = ArgDecoMD->getNumOperands(); I != E; ++I) {
-    auto DecoMD = dyn_cast<MDNode>(ArgDecoMD->getOperand(I));
+    auto *DecoMD = dyn_cast<MDNode>(ArgDecoMD->getOperand(I));
     assert(DecoMD && "Decoration does not name metadata");
     assert(DecoMD->getNumOperands() > 0 &&
            "Decoration metadata must have at least one operand");
-    auto DecoKindConst =
+    auto *DecoKindConst =
         mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(0));
     assert(DecoKindConst && "First operand of decoration must be the kind");
     auto DecoKind = static_cast<Decoration>(DecoKindConst->getZExtValue());
@@ -2080,16 +2080,6 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
                               SPIRVWord);
       TWO_INT_DECORATION_CASE(MathOpDSPModeINTEL, spv::internal, SPIRVWord,
                               SPIRVWord);
-    case internal::DecorationFuncParamDescINTEL: {
-      assert(NumOperands == 2 &&
-             "FuncParamDescINTEL requires exactly 1 extra operand");
-      auto *StrDecoEO = dyn_cast<MDString>(DecoMD->getOperand(1));
-      assert(StrDecoEO &&
-             "FuncParamDescINTEL requires extra operand to be a string");
-      Target->addDecorate(new SPIRVDecorateFuncParamDescAttr(
-          Target, StrDecoEO->getString().str()));
-      break;
-    }
     case DecorationStallEnableINTEL: {
       Target->addDecorate(new SPIRVDecorateStallEnableINTEL(Target));
       break;
