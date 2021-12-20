@@ -2763,15 +2763,16 @@ _SPIRV_OP(GenericCastToPtrExplicit, true, 5, false, 1)
 
 class SPIRVSpecConstantOpBase : public SPIRVInstTemplateBase {
 public:
-  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+  bool isOperandLiteral(unsigned I) const override {
     // If SpecConstant results from CompositeExtract/Insert operation, then all
     // operands are expected to be literals.
-    SPIRVWord LiteralOpcode = Ops[0];
-    if (LiteralOpcode == OpCompositeExtract ||
-        LiteralOpcode == OpCompositeInsert)
-      return {};
-
-    return SPIRVInstTemplateBase::getNonLiteralOperands();
+    switch (Ops[0]) { // Opcode of underlying SpecConstant operation
+    case OpCompositeExtract:
+    case OpCompositeInsert:
+      return true;
+    default:
+      return SPIRVInstTemplateBase::isOperandLiteral(I);
+    }
   }
 };
 
