@@ -944,6 +944,11 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   return nullptr;
 }
 
+inline bool isAllowedForSpecConstOp(Instruction *V) {
+  return isa<CastInst>(V) || isa<GetElementPtrInst>(V) ||
+         isa<BinaryOperator>(V);
+}
+
 SPIRVValue *LLVMToSPIRVBase::transValue(Value *V, SPIRVBasicBlock *BB,
                                         bool CreateForward,
                                         FuncTransMode FuncTrans) {
@@ -955,8 +960,8 @@ SPIRVValue *LLVMToSPIRVBase::transValue(Value *V, SPIRVBasicBlock *BB,
     return Loc->second;
 
   SPIRVDBG(dbgs() << "[transValue] " << *V << '\n');
-  assert((!isa<Instruction>(V) || isa<GetElementPtrInst>(V) ||
-          isa<CastInst>(V) || BB) &&
+  assert((!isa<Instruction>(V) || BB ||
+          isAllowedForSpecConstOp(dyn_cast<Instruction>(V))) &&
          "Invalid SPIRV BB");
 
   auto BV = transValueWithoutDecoration(V, BB, CreateForward, FuncTrans);
