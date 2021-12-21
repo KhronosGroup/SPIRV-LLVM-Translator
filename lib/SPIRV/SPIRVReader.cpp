@@ -3036,6 +3036,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpImageQuerySize:
   case OpImageRead:
   case OpSubgroupImageBlockReadINTEL:
+  case OpSubgroupImageMediaBlockReadINTEL:
   case OpSubgroupBlockReadINTEL:
   case OpImageSampleExplicitLod:
   case OpSDotKHR:
