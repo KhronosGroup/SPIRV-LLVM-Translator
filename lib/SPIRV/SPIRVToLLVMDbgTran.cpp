@@ -212,6 +212,15 @@ SPIRVToLLVMDbgTran::transTypeArray(const SPIRVExtInst *DebugInst) {
                                                          UpperBound, nullptr));
         continue;
       }
+    } else {
+      if (auto *Expr = getDbgInst<SPIRVDebug::Expression>(Ops[I]))
+        if (auto *UpperBound = transDebugInst<DIExpression>(Expr)) {
+          auto *LowerBound = ConstantAsMetadata::get(
+              ConstantInt::get(M->getContext(), APInt(32, 1)));
+          Subscripts.push_back(Builder.getOrCreateSubrange(
+              nullptr, LowerBound, UpperBound, nullptr));
+          continue;
+        }
     }
     SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
     int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
