@@ -1078,6 +1078,16 @@ SPIRVToOCL::getOCLImageOpaqueType(SmallVector<std::string, 8> &Postfixes) {
   return OCLStructName;
 }
 
+std::string
+SPIRVToOCL::getOCLPipeOpaqueType(SmallVector<std::string, 8> &Postfixes) {
+  assert(Postfixes.size() == 1);
+  unsigned PipeAccess = atoi(Postfixes[0].c_str());
+  assert((PipeAccess == AccessQualifierReadOnly ||
+          PipeAccess == AccessQualifierWriteOnly) &&
+         "Invalid access qualifier");
+  return PipeAccess ? kSPR2TypeName::PipeWO : kSPR2TypeName::PipeRO;
+}
+
 void SPIRVToOCL::translateOpaqueTypes() {
   for (auto *S : M->getIdentifiedStructTypes()) {
     StringRef STName = S->getStructName();
@@ -1097,6 +1107,8 @@ void SPIRVToOCL::translateOpaqueTypes() {
     std::string OCLOpaqueName;
     if (OP == OpTypeImage)
       OCLOpaqueName = getOCLImageOpaqueType(Postfixes);
+    else if (OP == OpTypePipe)
+      OCLOpaqueName = getOCLPipeOpaqueType(Postfixes);
     else if (isSubgroupAvcINTELTypeOpCode(OP))
       OCLOpaqueName = OCLSubgroupINTELTypeOpCodeMap::rmap(OP);
     else if (isOpaqueGenericTypeOpCode(OP))
