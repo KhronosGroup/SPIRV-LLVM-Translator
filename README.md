@@ -95,27 +95,27 @@ Building clang from sources takes time and resources and it can be avoided:
 
 ### Build with SPIRV-Tools
 
-The translator can use SPIRV-Tools to generate assembly with conformant syntax.
+The translator can use [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) to generate assembly with conformant syntax.
 If SPIRV-Tools have been installed prior to the build it will be detected and
 used automatically. However it is also possible to enable use of SPIRV-Tools
 from a custom location using the following instructions:
 
 1. Checkout, build and install SPIRV-Tools using
    [the following instructions](https://github.com/KhronosGroup/SPIRV-Tools#build).
-   Example using cmake:
+   Example using CMake with Ninja:
 ```
-cmake -G Ninja .. -DCMAKE_INSTALL_PREFIX=<location to installation>
+cmake -G Ninja <SPIRV-Tools source location> -DCMAKE_INSTALL_PREFIX=<SPIRV-Tools installation location>
 ninja install
 ```
-2. Using pkg-config when building the translator by setting
+2. Point pkg-config to the SPIR-V tools installation when configuring the translator by setting
    `PKG_CONFIG_PATH=<location to installation>/lib/pkgconfig/` variable
    before the cmake line invocation.
    Example:
 ```
-PKG_CONFIG_PATH=<location to installation>/lib/pkgconfig/ cmake ...
+PKG_CONFIG_PATH=<SPIRV-Tools installation location>/lib/pkgconfig/ cmake <other options>
 ```
 
-To test the correctness of translator build run the following line
+To verify the SPIR-V Tools integration in the translator build, run the following line
 ```
 llvm-spirv --spirv-tools-dis input.bc -o -
 ```
@@ -181,7 +181,7 @@ To translate between LLVM IR and SPIR-V:
     * `-o file_name` - to specify output name
     * `-spirv-debug` - output debugging information
     * `-spirv-text` - read/write SPIR-V in an internal textual format for debugging purpose. The textual format is not defined by SPIR-V spec.
-    * `--spirv-tools-dis` - print SPIR-V assembly in standard format. Only available on [builds with SPIR-V](#build-with-spirv-tools).
+    * `--spirv-tools-dis` - print SPIR-V assembly in SPIRV-Tools format. Only available on [builds with SPIRV-Tools](#build-with-spirv-tools).
     * `-help` - to see full list of options
 
 Translation from LLVM IR to SPIR-V and then back to LLVM IR is not guaranteed to
