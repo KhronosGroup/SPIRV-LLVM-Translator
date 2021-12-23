@@ -170,6 +170,8 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
 
   // From spirv_internal.hpp
   add(DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
+  add(DecorationMediaBlockIOINTEL, "MediaBlockIOINTEL");
+
   add(internal::DecorationAliasScopeINTEL, "AliasScopeINTEL");
   add(internal::DecorationNoAliasINTEL, "NoAliasINTEL");
 
