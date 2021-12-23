@@ -356,6 +356,7 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
       "FunctionFloatingPointModeINTEL");
   add(DecorationSingleElementVectorINTEL, "SingleElementVectorINTEL");
   add(DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
+  add(DecorationMediaBlockIOINTEL, "MediaBlockIOINTEL");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
 

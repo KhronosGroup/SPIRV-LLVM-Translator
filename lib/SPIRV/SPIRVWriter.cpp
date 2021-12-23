@@ -580,6 +580,11 @@ void LLVMToSPIRV::transVectorComputeMetadata(Function *F) {
       translateSEVDecoration(
           Attrs.getAttribute(ArgNo + 1, kVCMetadata::VCSingleElementVector),
           BA);
+    if (Attrs.hasParamAttr(ArgNo, kVCMetadata::VCMediaBlockIO)) {
+      assert(BA->getType()->isTypeImage() &&
+             "VCMediaBlockIO attribute valid only on image parameters");
+      BA->addDecorate(DecorationMediaBlockIOINTEL);
+    }
   }
 
   if (!isKernel(F) && Attrs.hasFnAttribute(kVCMetadata::VCFloatControl)) {

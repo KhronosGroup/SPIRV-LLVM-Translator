@@ -387,6 +387,7 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationSingleElementVectorINTEL,
                {CapabilityVectorComputeINTEL});
   ADD_VEC_INIT(DecorationCallableFunctionINTEL, {CapabilityFastCompositeINTEL});
+  ADD_VEC_INIT(DecorationMediaBlockIOINTEL, {CapabilityVectorComputeINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
