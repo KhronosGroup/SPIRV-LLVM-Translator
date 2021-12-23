@@ -108,7 +108,7 @@ cmake -G Ninja <SPIRV-Tools source location> -DCMAKE_INSTALL_PREFIX=<SPIRV-Tools
 ninja install
 ```
 2. Point pkg-config to the SPIR-V tools installation when configuring the translator by setting
-   `PKG_CONFIG_PATH=<location to installation>/lib/pkgconfig/` variable
+   `PKG_CONFIG_PATH=<SPIRV-Tools installation location>/lib/pkgconfig/` variable
    before the cmake line invocation.
    Example:
 ```
