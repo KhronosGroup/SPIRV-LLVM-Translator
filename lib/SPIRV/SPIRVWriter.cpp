@@ -1968,6 +1968,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return BV ? mapValue(V, BV) : nullptr;
   }
 
+  if (FenceInst *FI = dyn_cast<FenceInst>(V)) {
+    SPIRVValue *BV = transFenceInst(FI, BB);
+    return BV ? mapValue(V, BV) : nullptr;
+  }
+
   if (InlineAsm *IA = dyn_cast<InlineAsm>(V))
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_inline_assembly))
       return mapValue(V, transAsmINTEL(IA));
@@ -3458,6 +3463,37 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           false, InvalidFunctionCall, II->getCalledOperand()->getName().str());
   }
   return nullptr;
+}
+
+SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
+                                            SPIRVBasicBlock *BB) {
+  SPIRVWord MemorySemantics = static_cast<SPIRVWord>(FI->getOrdering());
+  // Fence ordering may only be Acquire, Release, AcquireRelease, or
+  // SequentiallyConsistent
+  switch (MemorySemantics) {
+  case 4:
+    MemorySemantics = 0x2;
+    break;
+  case 5:
+    MemorySemantics = 0x4;
+    break;
+  case 6:
+    MemorySemantics = 0x8;
+    break;
+  case 7:
+    MemorySemantics = 0x10;
+    break;
+  default:
+    assert(false && "Unexpected fence ordering");
+    MemorySemantics = SPIRVWORD_MAX;
+    break;
+  }
+
+  Module *M = FI->getParent()->getModule();
+  SPIRVValue *RetScope = transConstant(getUInt32(M, 0));
+  SPIRVValue *Val = transConstant(getUInt32(M, MemorySemantics));
+  return BM->addMemoryBarrierInst(static_cast<Scope>(RetScope->getId()),
+                                  Val->getId(), BB);
 }
 
 SPIRVValue *LLVMToSPIRVBase::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
