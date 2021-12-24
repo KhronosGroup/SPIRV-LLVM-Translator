@@ -95,7 +95,7 @@ Building clang from sources takes time and resources and it can be avoided:
 
 ### Build with SPIRV-Tools
 
-The translator can use [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) to generate assembly with conformant syntax.
+The translator can use [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) to generate assembly with widely adopted syntax.
 If SPIRV-Tools have been installed prior to the build it will be detected and
 used automatically. However it is also possible to enable use of SPIRV-Tools
 from a custom location using the following instructions:
