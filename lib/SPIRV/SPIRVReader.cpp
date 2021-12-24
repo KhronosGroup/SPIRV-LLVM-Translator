@@ -2539,6 +2539,12 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpSubgroupImageBlockReadINTEL:
   case OpSubgroupBlockReadINTEL:
   case OpImageSampleExplicitLod:
+  case OpSDotKHR:
+  case OpUDotKHR:
+  case OpSUDotKHR:
+  case OpSDotAccSatKHR:
+  case OpUDotAccSatKHR:
+  case OpSUDotAccSatKHR:
     AddRetTypePostfix = true;
     break;
   default: {
@@ -2553,6 +2559,8 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpConvertFToU:
   case OpSatConvertSToU:
   case OpUConvert:
+  case OpUDotKHR:
+  case OpUDotAccSatKHR:
     IsRetSigned = false;
     break;
   default:

@@ -549,6 +549,11 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGAMemoryAttributesINTEL, "FPGAMemoryAttributesINTEL");
   add(CapabilityFPGALoopControlsINTEL, "FPGALoopControlsINTEL");
   add(CapabilityFPGARegINTEL, "FPGARegINTEL");
+  add(CapabilityDotProductInputAllKHR, "DotProductInputAllKHR");
+  add(CapabilityDotProductInput4x8BitKHR, "DotProductInput4x8BitKHR");
+  add(CapabilityDotProductInput4x8BitPackedKHR,
+      "DotProductInput4x8BitPackedKHR");
+  add(CapabilityDotProductKHR, "DotProductKHR");
   add(CapabilityBlockingPipesINTEL, "BlockingPipesINTEL");
   add(CapabilityUnstructuredLoopControlsINTEL, "UnstructuredLoopControlsINTEL");
   add(CapabilityFunctionPointersINTEL, "FunctionPointersINTEL");

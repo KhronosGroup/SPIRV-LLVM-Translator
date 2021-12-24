@@ -975,11 +975,20 @@ enum Capability {
   CapabilityKernelAttributesINTEL = 5892,
   CapabilityFPGAKernelAttributesINTEL = 5897,
   CapabilityLongConstantCompositeINTEL = 6089,
+  CapabilityDotProductInputAllKHR = 6016,
+  CapabilityDotProductInput4x8BitKHR = 6017,
+  CapabilityDotProductInput4x8BitPackedKHR = 6018,
+  CapabilityDotProductKHR = 6019,
   CapabilityAtomicFloat32AddEXT = 6033,
   CapabilityAtomicFloat64AddEXT = 6034,
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
   CapabilityMax = 0x7fffffff,
+};
+
+enum PackedVectorFormat {
+  PackedVectorFormatPackedVectorFormat4x8BitKHR = 0,
+  PackedVectorFormatMax = 0x7fffffff,
 };
 
 enum Op {
@@ -1333,6 +1342,12 @@ enum Op {
   OpSubgroupAnyKHR = 4429,
   OpSubgroupAllEqualKHR = 4430,
   OpSubgroupReadInvocationKHR = 4432,
+  OpSDotKHR = 4450,
+  OpUDotKHR = 4451,
+  OpSUDotKHR = 4452,
+  OpSDotAccSatKHR = 4453,
+  OpUDotAccSatKHR = 4454,
+  OpSUDotAccSatKHR = 4455,
   OpGroupIAddNonUniformAMD = 5000,
   OpGroupFAddNonUniformAMD = 5001,
   OpGroupFMinNonUniformAMD = 5002,
