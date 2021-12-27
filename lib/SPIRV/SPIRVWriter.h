@@ -81,6 +81,8 @@ public:
 
   SPIRVType *transType(Type *T);
   SPIRVType *transSPIRVOpaqueType(Type *T);
+  SPIRVType *transSPIRVJointMatrixINTELType(
+      Type *T, SmallVector<std::string, 8> Postfixes);
 
   SPIRVValue *getTranslatedValue(const Value *) const;
 
