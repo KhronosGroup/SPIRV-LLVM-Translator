@@ -531,36 +531,36 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
 // simply not true.
 SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     Type *T, SmallVector<std::string, 8> Postfixes) {
-   Type *ElemTy = nullptr;
-   StringRef Ty{Postfixes[0]};
-   auto NumBits = llvm::StringSwitch<unsigned>(Ty)
-                      .Case("char", 8)
-                      .Case("short", 16)
-                      .Case("int", 32)
-                      .Case("long", 64)
-                      .Default(0);
-   if (NumBits)
-     ElemTy = IntegerType::get(M->getContext(), NumBits);
-   else if (Ty == "half")
-     ElemTy = Type::getHalfTy(M->getContext());
-   else if (Ty == "float")
-     ElemTy = Type::getFloatTy(M->getContext());
-   else if (Ty == "double")
-     ElemTy = Type::getDoubleTy(M->getContext());
-   else
-     llvm_unreachable("Unexpected type for matrix!");
+  Type *ElemTy = nullptr;
+  StringRef Ty{Postfixes[0]};
+  auto NumBits = llvm::StringSwitch<unsigned>(Ty)
+                     .Case("char", 8)
+                     .Case("short", 16)
+                     .Case("int", 32)
+                     .Case("long", 64)
+                     .Default(0);
+  if (NumBits)
+    ElemTy = IntegerType::get(M->getContext(), NumBits);
+  else if (Ty == "half")
+    ElemTy = Type::getHalfTy(M->getContext());
+  else if (Ty == "float")
+    ElemTy = Type::getFloatTy(M->getContext());
+  else if (Ty == "double")
+    ElemTy = Type::getDoubleTy(M->getContext());
+  else
+    llvm_unreachable("Unexpected type for matrix!");
 
-   auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
-     unsigned long long N = 0;
-     consumeUnsignedInteger(Postfix, 10, N);
-     return getUInt32(M, N);
-   };
-   SPIRVValue *Rows = transConstant(ParseInteger(Postfixes[1]));
-   SPIRVValue *Columns = transConstant(ParseInteger(Postfixes[2]));
-   SPIRVValue *Layout = transConstant(ParseInteger(Postfixes[3]));
-   SPIRVValue *Scope = transConstant(ParseInteger(Postfixes[4]));
-   return mapType(T, BM->addJointMatrixINTELType(transType(ElemTy), Rows,
-                                                 Columns, Layout, Scope));
+  auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
+    unsigned long long N = 0;
+    consumeUnsignedInteger(Postfix, 10, N);
+    return getUInt32(M, N);
+  };
+  SPIRVValue *Rows = transConstant(ParseInteger(Postfixes[1]));
+  SPIRVValue *Columns = transConstant(ParseInteger(Postfixes[2]));
+  SPIRVValue *Layout = transConstant(ParseInteger(Postfixes[3]));
+  SPIRVValue *Scope = transConstant(ParseInteger(Postfixes[4]));
+  return mapType(T, BM->addJointMatrixINTELType(transType(ElemTy), Rows,
+                                                Columns, Layout, Scope));
 }
 
 SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(Type *T) {
