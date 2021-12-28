@@ -3318,7 +3318,27 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
 
   SmallVector<std::string, 2> Dec;
   if (isBuiltinTransToExtInst(CI->getCalledFunction(), &ExtSetKind, &ExtOp,
-                              &Dec))
+                              &Dec)) {
+    if (DemangledName.find("__spirv_ocl_printf") != StringRef::npos) {
+      auto *FormatStringPtr =
+          static_cast<PointerType *>(CI->getArgOperand(0)->getType());
+      if (FormatStringPtr->getAddressSpace() !=
+              SPIR::TypeAttributeEnum::ATTR_CONST) {
+        if (!BM->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_non_constant_addrspace_printf)) {
+          std::string ErrorStr =
+              "The SPV_INTEL_non_constant_addrspace_printf extension should be "
+              "allowed to translate this module, because this LLVM module "
+              "contains the printf function with format string, whose address "
+              "space is not equal to 2 (constant).";
+          getErrorLog().checkError(false, SPIRVEC_RequiresExtension, CI,
+                                   ErrorStr);
+        }
+        BM->addExtension(ExtensionID::SPV_INTEL_non_constant_addrspace_printf);
+        BM->addCapability(internal::CapabilityNonConstantAddrspacePrintfINTEL);
+      }
+    }
+
     return addDecorations(
         BM->addExtInst(
             transType(CI->getType()), BM->getExtInstSetId(ExtSetKind), ExtOp,
@@ -3326,6 +3346,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
                            SPIRVEntry::createUnique(ExtSetKind, ExtOp).get()),
             BB),
         Dec);
+  }
 
   Function *Callee = CI->getCalledFunction();
   if (Callee->isDeclaration()) {
