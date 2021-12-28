@@ -4446,9 +4446,9 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   case OpCompositeConstruct: {
     std::vector<SPIRVId> Operands = {
-        transValue(CI->getArgOperand(0), BB)->getId() };
-    return BM->addCompositeConstructInst(
-                transType(CI->getType()), Operands, BB);
+        transValue(CI->getArgOperand(0), BB)->getId()};
+    return BM->addCompositeConstructInst(transType(CI->getType()), Operands,
+                                         BB);
   }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
