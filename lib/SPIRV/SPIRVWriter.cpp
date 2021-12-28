@@ -3323,7 +3323,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       auto *FormatStringPtr =
           static_cast<PointerType *>(CI->getArgOperand(0)->getType());
       if (FormatStringPtr->getAddressSpace() !=
-              SPIR::TypeAttributeEnum::ATTR_CONST) {
+          SPIR::TypeAttributeEnum::ATTR_CONST) {
         if (!BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_non_constant_addrspace_printf)) {
           std::string ErrorStr =
