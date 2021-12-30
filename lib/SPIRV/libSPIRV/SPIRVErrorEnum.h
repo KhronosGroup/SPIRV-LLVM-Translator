@@ -13,3 +13,5 @@ _SPIRV_OP(InvalidModule, "Invalid SPIR-V module:")
 _SPIRV_OP(UnimplementedOpCode, "Unimplemented opcode")
 _SPIRV_OP(FunctionPointers, "Can't translate function pointer:\n")
 _SPIRV_OP(InvalidInstruction, "Can't translate llvm instruction:\n")
+_SPIRV_OP(RequiresExtension,
+          "Feature requires the following SPIR-V extension:\n")
