@@ -1,7 +1,9 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
@@ -40,11 +42,14 @@ entry:
 !13 = !{!10}
 !14 = !{!11, !12, !13}
 
-; CHECK-LLVM: define spir_kernel void @k(float %a, float %b, float %c) {{.*}} !spirv.ParameterDecorations ![[ParamDecoListId:[0-9]+]] {
-; CHECK-LLVM-DAG: ![[ParamDecoListId]] = !{![[Param1DecoId:[0-9]+]], ![[Param2DecoId:[0-9]+]], ![[Param3DecoId:[0-9]+]]}
-; CHECK-LLVM-DAG: ![[Param1DecoId]] = !{![[Deco1Id:[0-9]+]], ![[Deco2Id:[0-9]+]]}
-; CHECK-LLVM-DAG: ![[Param2DecoId]] = !{}
-; CHECK-LLVM-DAG: ![[Param3DecoId]] = !{![[Deco3Id:[0-9]+]]}
-; CHECK-LLVM-DAG: ![[Deco1Id]] = !{i32 19}
-; CHECK-LLVM-DAG: ![[Deco2Id]] = !{i32 39, i32 2}
-; CHECK-LLVM-DAG: ![[Deco3Id]] = !{i32 21}
+; CHECK-SPV-IR: define spir_kernel void @k(float %a, float %b, float %c) {{.*}} !spirv.ParameterDecorations ![[ParamDecoListId:[0-9]+]] {
+; CHECK-SPV-IR-DAG: ![[ParamDecoListId]] = !{![[Param1DecoId:[0-9]+]], ![[Param2DecoId:[0-9]+]], ![[Param3DecoId:[0-9]+]]}
+; CHECK-SPV-IR-DAG: ![[Param1DecoId]] = !{![[Deco1Id:[0-9]+]], ![[Deco2Id:[0-9]+]]}
+; CHECK-SPV-IR-DAG: ![[Param2DecoId]] = !{}
+; CHECK-SPV-IR-DAG: ![[Param3DecoId]] = !{![[Deco3Id:[0-9]+]]}
+; CHECK-SPV-IR-DAG: ![[Deco1Id]] = !{i32 19}
+; CHECK-SPV-IR-DAG: ![[Deco2Id]] = !{i32 39, i32 2}
+; CHECK-SPV-IR-DAG: ![[Deco3Id]] = !{i32 21}
+
+; CHECK-LLVM-NOT: define spir_kernel void @k(float %a, float %b, float %c) {{.*}} !spirv.ParameterDecorations ![[ParamDecoListId:[0-9]+]] {
+; CHECK-LLVM: define spir_kernel void @k(float %a, float %b, float %c) {{.*}} {
