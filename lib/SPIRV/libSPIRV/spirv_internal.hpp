@@ -74,7 +74,7 @@ enum InternalCapability {
   ICapabilityJointMatrixINTEL = 6118,
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapFPArithmeticFenceINTEL = 6144,
-  ICapabilityNonConstantAddrspacePrintfINTEL = 9999
+  ICapabilityNonConstantAddrspacePrintfINTEL = 6411
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
