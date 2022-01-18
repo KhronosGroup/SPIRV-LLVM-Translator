@@ -488,6 +488,14 @@ public:
     return TranslationOpts.isAllowedToUseExtension(RequestedExtension);
   }
 
+  bool hasProgramAddressSpace() const {
+    return TranslationOpts.hasProgramAddressSpace();
+  }
+
+  unsigned getProgramAddressSpace() const {
+    return TranslationOpts.getProgramAddressSpace();
+  }
+
   virtual bool isGenArgNameMDEnabled() const final {
     return TranslationOpts.isGenArgNameMDEnabled();
   }

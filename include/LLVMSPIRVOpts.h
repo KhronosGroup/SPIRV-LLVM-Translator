@@ -181,6 +181,14 @@ public:
     PreserveOCLKernelArgTypeMetadataThroughString = Value;
   }
 
+  void setProgramAddressSpace(unsigned Value) { ProgramAddressSpace = Value; }
+
+  bool hasProgramAddressSpace() const { return ProgramAddressSpace.hasValue(); }
+
+  unsigned getProgramAddressSpace() const {
+    return ProgramAddressSpace.getValue();
+  }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -207,6 +215,9 @@ private:
   // Unknown LLVM intrinsics will be translated as external function calls in
   // SPIR-V
   llvm::Optional<ArgList> SPIRVAllowUnknownIntrinsics{};
+
+  // Override program address space in module data layout
+  llvm::Optional<unsigned> ProgramAddressSpace;
 
   // Enable support for extra DIExpression opcodes not listed in the SPIR-V
   // DebugInfo specification.

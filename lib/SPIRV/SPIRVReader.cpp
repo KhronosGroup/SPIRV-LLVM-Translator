@@ -355,6 +355,18 @@ std::string SPIRVToLLVM::transVCTypeName(SPIRVTypeBufferSurfaceINTEL *PST) {
   return VectorComputeUtil::getVCBufferSurfaceName();
 }
 
+static unsigned transPointerStorageClass(SPIRVTypePointer const *PtrType) {
+  assert(PtrType && "Must be valid pointer type.");
+
+  if (PtrType->getPointerElementType()->getOpCode() == OpTypeFunction) {
+    auto *M = PtrType->getModule();
+    if (M->hasProgramAddressSpace())
+      return M->getProgramAddressSpace();
+  }
+
+  return SPIRSPIRVAddrSpaceMap::rmap(PtrType->getPointerStorageClass());
+}
+
 Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
   auto Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
@@ -385,7 +397,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     return mapType(
         T, PointerType::get(
                transType(T->getPointerElementType(), IsClassMember),
-               SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass())));
+               transPointerStorageClass(static_cast<SPIRVTypePointer *>(T))));
   case OpTypeVector:
     return mapType(T,
                    FixedVectorType::get(transType(T->getVectorComponentType()),
@@ -3244,15 +3256,23 @@ bool SPIRVToLLVM::translate() {
   return true;
 }
 
+static std::string transDataLayout(SPIRVModule *M,
+                                   std::string const &GeneralLayout) {
+  return M->hasProgramAddressSpace()
+             ? GeneralLayout + "-P" +
+                   std::to_string(M->getProgramAddressSpace())
+             : GeneralLayout;
+}
+
 bool SPIRVToLLVM::transAddressingModel() {
   switch (BM->getAddressingModel()) {
   case AddressingModelPhysical64:
     M->setTargetTriple(SPIR_TARGETTRIPLE64);
-    M->setDataLayout(SPIR_DATALAYOUT64);
+    M->setDataLayout(transDataLayout(BM, SPIR_DATALAYOUT64));
     break;
   case AddressingModelPhysical32:
     M->setTargetTriple(SPIR_TARGETTRIPLE32);
-    M->setDataLayout(SPIR_DATALAYOUT32);
+    M->setDataLayout(transDataLayout(BM, SPIR_DATALAYOUT32));
     break;
   case AddressingModelLogical:
     // Do not set target triple and data layout

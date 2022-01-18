@@ -152,6 +152,9 @@ static cl::opt<bool>
     SPIRVToolsDis("spirv-tools-dis", cl::init(false),
                   cl::desc("Emit textual assembly using SPIRV-Tools"));
 
+static cl::opt<unsigned> SPIRVProgramAddressSpace(
+    "override-program-address-space", cl::init(0),
+    cl::desc("Override program address space when reading from SPIRV"));
 using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -706,6 +709,10 @@ int main(int Ac, char **Av) {
     } else {
       Opts.setDebugInfoEIS(DebugEIS);
     }
+  }
+
+  if (SPIRVProgramAddressSpace.getNumOccurrences() != 0) {
+    Opts.setProgramAddressSpace(SPIRVProgramAddressSpace);
   }
 
   if (PreserveOCLKernelArgTypeMetadataThroughString.getNumOccurrences() != 0)
