@@ -15,7 +15,6 @@
 #ifndef SPIRV_LOWERCONSTEXPR_H
 #define SPIRV_LOWERCONSTEXPR_H
 
-#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/PassManager.h"
 
 namespace SPIRV {
