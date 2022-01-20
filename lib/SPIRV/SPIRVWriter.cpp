@@ -3320,9 +3320,8 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
   if (isBuiltinTransToExtInst(CI->getCalledFunction(), &ExtSetKind, &ExtOp,
                               &Dec)) {
     if (DemangledName.find("__spirv_ocl_printf") != StringRef::npos) {
-      auto *FormatStringPtr =
-          static_cast<PointerType *>(CI->getArgOperand(0)->getType());
-      if (FormatStringPtr->getAddressSpace() !=
+      auto *FormatStrPtr = cast<PointerType>(CI->getArgOperand(0)->getType());
+      if (FormatStrPtr->getAddressSpace() !=
           SPIR::TypeAttributeEnum::ATTR_CONST) {
         if (!BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_non_constant_addrspace_printf)) {
