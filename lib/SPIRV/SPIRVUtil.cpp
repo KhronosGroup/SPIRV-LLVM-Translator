@@ -2077,6 +2077,8 @@ public:
     case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL:
     case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL:
     case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL:
+    case OpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL:
+    case OpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL:
     case OpSubgroupAvcRefEvaluateWithMultiReferenceINTEL:
     case OpSubgroupAvcSicEvaluateWithMultiReferenceINTEL:
       addUnsignedArgs(1, 2);
