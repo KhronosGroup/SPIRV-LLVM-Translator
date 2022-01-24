@@ -265,6 +265,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
     case dwarf::DW_TAG_unspecified_type:
       return transDbgBaseType(cast<DIBasicType>(DIEntry));
 
+    case dwarf::DW_TAG_string_type:
+      return transDbgBaseType(cast<DIStringType>(DIEntry));
+
     case dwarf::DW_TAG_reference_type:
     case dwarf::DW_TAG_rvalue_reference_type:
     case dwarf::DW_TAG_pointer_type:
@@ -508,15 +511,23 @@ LLVMToSPIRVDbgTran::transDbgCompilationUnit(const DICompileUnit *CU) {
 
 // Types
 
-SPIRVEntry *LLVMToSPIRVDbgTran::transDbgBaseType(const DIBasicType *BT) {
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgBaseType(const DIType *BT) {
   using namespace SPIRVDebug::Operand::TypeBasic;
   SPIRVWordVec Ops(OperandCount);
   Ops[NameIdx] = BM->getString(BT->getName().str())->getId();
   ConstantInt *Size = getUInt(M, BT->getSizeInBits());
   Ops[SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
-  auto Encoding = static_cast<dwarf::TypeKind>(BT->getEncoding());
   SPIRVDebug::EncodingTag EncTag = SPIRVDebug::Unspecified;
-  SPIRV::DbgEncodingMap::find(Encoding, &EncTag);
+
+  if (dyn_cast_or_null<DIStringType>(BT))
+    SPIRV::DbgEncodingMap::find(static_cast<dwarf::TypeKind>(BT->getTag()),
+                                &EncTag);
+  else {
+    auto Encoding =
+        static_cast<dwarf::TypeKind>(cast<DIBasicType>(BT)->getEncoding());
+    SPIRV::DbgEncodingMap::find(Encoding, &EncTag);
+  }
+
   Ops[EncodingIdx] = EncTag;
   return BM->addDebugInfo(SPIRVDebug::TypeBasic, getVoidTy(), Ops);
 }

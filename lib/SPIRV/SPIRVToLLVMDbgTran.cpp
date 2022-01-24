@@ -133,7 +133,7 @@ SPIRVToLLVMDbgTran::transCompileUnit(const SPIRVExtInst *DebugInst) {
   return CU;
 }
 
-DIBasicType *SPIRVToLLVMDbgTran::transTypeBasic(const SPIRVExtInst *DebugInst) {
+DIType *SPIRVToLLVMDbgTran::transTypeBasic(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::TypeBasic;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() == OperandCount && "Invalid number of operands");
@@ -143,6 +143,8 @@ DIBasicType *SPIRVToLLVMDbgTran::transTypeBasic(const SPIRVExtInst *DebugInst) {
   if (Encoding == 0)
     return Builder.createUnspecifiedType(Name);
   uint64_t Size = BM->get<SPIRVConstant>(Ops[SizeIdx])->getZExtIntValue();
+  if (Encoding == dwarf::DW_TAG_string_type)
+    return Builder.createStringType(Name, Size);
   return Builder.createBasicType(Name, Size, Encoding);
 }
 

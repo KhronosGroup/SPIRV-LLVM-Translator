@@ -100,7 +100,7 @@ private:
 
   DICompileUnit *transCompileUnit(const SPIRVExtInst *DebugInst);
 
-  DIBasicType *transTypeBasic(const SPIRVExtInst *DebugInst);
+  DIType *transTypeBasic(const SPIRVExtInst *DebugInst);
 
   DIDerivedType *transTypeQualifier(const SPIRVExtInst *DebugInst);
 

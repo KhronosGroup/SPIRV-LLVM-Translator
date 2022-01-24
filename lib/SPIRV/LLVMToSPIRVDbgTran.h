@@ -101,7 +101,7 @@ private:
   /// of debug instrtuctions described in the spec.
 
   // Types
-  SPIRVEntry *transDbgBaseType(const DIBasicType *BT);
+  SPIRVEntry *transDbgBaseType(const DIType *BT);
   SPIRVEntry *transDbgPointerType(const DIDerivedType *PT);
   SPIRVEntry *transDbgQualifiedType(const DIDerivedType *QT);
   SPIRVEntry *transDbgArrayType(const DICompositeType *AT);
