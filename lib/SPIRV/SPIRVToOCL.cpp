@@ -178,6 +178,21 @@ void SPIRVToOCL::visitCallInst(CallInst &CI) {
     visitCallSPIRVGenericPtrMemSemantics(&CI);
     return;
   }
+  // Check if OC is OpenCL relational builtin except bitselect and select.
+  auto IsOclRelationalOp = [](Op OC) {
+    return isUnaryPredicateOpCode(OC) || OC == OpOrdered || OC == OpUnordered ||
+           OC == OpFOrdEqual || OC == OpFUnordNotEqual ||
+           OC == OpFOrdGreaterThan || OC == OpFOrdGreaterThanEqual ||
+           OC == OpFOrdLessThan || OC == OpFOrdLessThanEqual ||
+           OC == OpFOrdNotEqual;
+  };
+  if (IsOclRelationalOp(OC)) {
+    if (OC == OpAny || OC == OpAll)
+      visitCallSPIRVAnyAll(&CI, OC);
+    else
+      visitCallSPIRVRelational(&CI, OC);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 }
@@ -1063,6 +1078,55 @@ void SPIRVToOCL::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
     NewCI->setCalledFunction(F);
   else
     NewCI->getCalledFunction()->setName(TargetName);
+}
+
+void SPIRVToOCL::visitCallSPIRVAnyAll(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy) {
+        Type *Int8Ty = Type::getInt8Ty(*Ctx);
+        auto *OldArg = CI->getOperand(0);
+        auto *OldArgTy = OldArg->getType();
+        if (Int8Ty != OldArgTy->getVectorElementType()) {
+          auto *NewArgTy =
+              VectorType::get(Int8Ty, OldArgTy->getVectorNumElements());
+          auto *NewArg =
+              CastInst::CreateSExtOrBitCast(OldArg, NewArgTy, "", CI);
+          Args[0] = NewArg;
+        }
+        RetTy = Type::getInt32Ty(*Ctx);
+        return OCLSPIRVBuiltinMap::rmap(OC);
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        return CastInst::CreateTruncOrBitCast(NewCI, CI->getType(), "",
+                                              NewCI->getNextNode());
+      },
+      &Attrs);
+}
+
+void SPIRVToOCL::visitCallSPIRVRelational(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> & /*Args*/, Type *&RetTy) {
+        Type *IntTy = Type::getInt32Ty(*Ctx);
+        RetTy = IntTy;
+        if (CI->getType()->isVectorTy()) {
+          auto *OpElemTy = CI->getOperand(0)->getType()->getVectorElementType();
+          if (OpElemTy->isDoubleTy())
+            IntTy = Type::getInt64Ty(*Ctx);
+          if (OpElemTy->isHalfTy())
+            IntTy = Type::getInt16Ty(*Ctx);
+          RetTy = VectorType::get(IntTy, CI->getType()->getVectorNumElements());
+        }
+        return OCLSPIRVBuiltinMap::rmap(OC);
+      },
+      [=](CallInst *NewCI) -> Instruction * {
+        return CastInst::CreateTruncOrBitCast(NewCI, CI->getType(), "",
+                                              NewCI->getNextNode());
+      },
+      &Attrs);
 }
 
 std::string SPIRVToOCL::getGroupBuiltinPrefix(CallInst *CI) {
