@@ -542,11 +542,18 @@ SPIRVFunction *LLVMToSPIRV::transFunctionDecl(Function *F) {
   SPIRVFunction *BF =
       static_cast<SPIRVFunction *>(mapValue(F, BM->addFunction(BFT)));
   BF->setFunctionControlMask(transFunctionControlMask(F));
-  if (F->hasName())
-    BM->setName(BF, F->getName());
+  if (F->hasName()) {
+    if (isKernel(F)) {
+      /* strip the prefix as the runtime will be looking for this name */
+      std::string Prefix = kSPIRVName::EntrypointPrefix;
+      std::string Name = F->getName().str();
+      BM->setName(BF, Name.substr(Prefix.size()));
+    } else
+      BM->setName(BF, F->getName().str());
+  }
   if (isKernel(F))
     BM->addEntryPoint(ExecutionModelKernel, BF->getId());
-  else if (F->getLinkage() != GlobalValue::InternalLinkage)
+  if (!isKernel(F) && F->getLinkage() != GlobalValue::InternalLinkage)
     BF->setLinkageType(transLinkageType(F));
   auto Attrs = F->getAttributes();
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
@@ -3006,6 +3013,17 @@ void LLVMToSPIRV::transFPContract() {
   }
 }
 
+// Work around to translate kernel_arg_type and kernel_arg_type_qual metadata
+static void transKernelArgTypeMD(SPIRVModule *BM, Function *F, MDNode *MD,
+                                 std::string MDName) {
+  std::string Prefix = kSPIRVName::EntrypointPrefix;
+  std::string Name = F->getName().str().substr(Prefix.size());
+  std::string KernelArgTypesMDStr = std::string(MDName) + "." + Name + ".";
+  for (const auto &TyOp : MD->operands())
+    KernelArgTypesMDStr += cast<MDString>(TyOp)->getString().str() + ",";
+  BM->getString(KernelArgTypesMDStr);
+}
+
 bool LLVMToSPIRV::transOCLKernelMetadata() {
   for (auto &F : *M) {
     if (F.getCallingConv() != CallingConv::SPIR_KERNEL)
@@ -3018,11 +3036,7 @@ bool LLVMToSPIRV::transOCLKernelMetadata() {
     // *orignal* (typedef'ed, unsigned integers) type names of kernel arguments.
     // OpString "kernel_arg_type.%kernel_name%.typename0,typename1,..."
     if (auto *KernelArgType = F.getMetadata(SPIR_MD_KERNEL_ARG_TYPE)) {
-      std::string KernelArgTypesStr =
-          std::string(SPIR_MD_KERNEL_ARG_TYPE) + "." + F.getName().str() + ".";
-      for (const auto &TyOp : KernelArgType->operands())
-        KernelArgTypesStr += cast<MDString>(TyOp)->getString().str() + ",";
-      BM->getString(KernelArgTypesStr);
+      transKernelArgTypeMD(BM, &F, KernelArgType, SPIR_MD_KERNEL_ARG_TYPE);
     }
 
     if (auto *KernelArgTypeQual = F.getMetadata(SPIR_MD_KERNEL_ARG_TYPE_QUAL)) {
@@ -3040,6 +3054,12 @@ bool LLVMToSPIRV::transOCLKernelMetadata() {
                   new SPIRVDecorate(DecorationFuncParamAttr, BA,
                                     FunctionParameterAttributeNoWrite));
           });
+      // Create 'OpString' as a workaround to store information about
+      // constant qualifiers of pointer kernel arguments. Store empty string
+      // for a non constant parameter.
+      // OpString "kernel_arg_type_qual.%kernel_name%.qual0,qual1,..."
+      transKernelArgTypeMD(BM, &F, KernelArgTypeQual,
+                           SPIR_MD_KERNEL_ARG_TYPE_QUAL);
     }
     if (auto *KernelArgName = F.getMetadata(SPIR_MD_KERNEL_ARG_NAME)) {
       foreachKernelArgMD(

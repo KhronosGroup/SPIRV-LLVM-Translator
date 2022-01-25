@@ -7,10 +7,10 @@
 
 ; CHECK-SPIRV: 2 Capability UnstructuredLoopControlsINTEL
 ; CHECK-SPIRV: 11 Extension "SPV_INTEL_unstructured_loop_controls"
-; CHECK-SPIRV: 4 EntryPoint 6 [[FOO:[0-9]+]] "foo"
-; CHECK-SPIRV: 4 EntryPoint 6 [[BOO:[0-9]+]] "boo"
+; CHECK-SPIRV: 3 Name [[FOO:[0-9]+]] "foo"
 ; CHECK-SPIRV: 4 Name [[ENTRY_1:[0-9]+]] "entry"
 ; CHECK-SPIRV: 5 Name [[FOR:[0-9]+]] "for.cond"
+; CHECK-SPIRV: 3 Name [[BOO:[0-9]+]] "boo"
 ; CHECK-SPIRV: 4 Name [[ENTRY_2:[0-9]+]] "entry"
 ; CHECK-SPIRV: 5 Name [[WHILE:[0-9]+]] "while.body"
 
