@@ -20,10 +20,7 @@ target triple = "spir"
 ; SPV-DAG: 4 Name [[IM2D:[0-9]+]] "im2d"
 ; SPV-DAG: 4 Name [[IM3D:[0-9]+]] "im3d"
 ; SPV-DAG: 3 Decorate [[DEC_GROUP:[0-9]+]] MediaBlockIOINTEL
-; SPV: 4 GroupDecorate [[DEC_GROUP]]
-; SPV-DAG: [[IM2D]]
-; SPV-DAG: [[IM3D]]
-; SPV-NEXT: {{[0-9]+}}
+; SPV: 6 GroupDecorate [[DEC_GROUP]] [[IM2D]] [[IM3D]]
 
 ; LLVM: @test
 ; LLVM-SAME: %opencl.image2d_rw_t

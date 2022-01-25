@@ -7,6 +7,7 @@
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: EntryPoint 6 [[KERNEL_ID:[0-9]+]] "_ZTS6kernel"
+; CHECK-SPIRV-DAG: Name [[FUNC_ID:[0-9]+]] "_ZTS6kernel"
 ; CHECK-SPIRV-DAG: Name [[BAR:[0-9]+]] "_Z3barii"
 ; CHECK-SPIRV-DAG: Name [[BAZ:[0-9]+]] "_Z3bazii"
 ; CHECK-SPIRV: TypeInt [[INT32:[0-9]+]] 32
@@ -15,7 +16,7 @@
 ; CHECK-SPIRV: TypePointer [[FUNC_PTR_ALLOCA_TYPE:[0-9]+]] {{[0-9]+}} [[FUNC_PTR_TYPE]]
 ; CHECK-SPIRV-DAG: ConstFunctionPointerINTEL [[FUNC_PTR_TYPE]] [[BARPTR:[0-9]+]] [[BAR]]
 ; CHECK-SPIRV-DAG: ConstFunctionPointerINTEL [[FUNC_PTR_TYPE]] [[BAZPTR:[0-9]+]] [[BAZ]]
-; CHECK-SPIRV: Function {{[0-9]+}} [[KERNEL_ID]]
+; CHECK-SPIRV: Function {{[0-9]+}} [[FUNC_ID]]
 ; CHECK-SPIRV: Variable [[FUNC_PTR_ALLOCA_TYPE]] [[FPTR:[0-9]+]]
 ; CHECK-SPIRV: Select [[FUNC_PTR_TYPE]] [[SELECT:[0-9]+]] {{[0-9]+}} [[BARPTR]] [[BAZPTR]]
 ; CHECK-SPIRV: Store [[FPTR]] [[SELECT]]
