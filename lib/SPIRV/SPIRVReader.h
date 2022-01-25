@@ -209,8 +209,8 @@ private:
   getMetadataFromNameAndParameter(std::string Name, SPIRVWord Parameter);
   template <class Source, class Func> bool foreachFuncCtlMask(Source, Func);
   llvm::GlobalValue::LinkageTypes transLinkageType(const SPIRVValue *V);
-  Instruction *transOCLAllAny(SPIRVInstruction *BI, BasicBlock *BB);
-  Instruction *transOCLRelational(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transAllAny(SPIRVInstruction *BI, BasicBlock *BB);
+  Instruction *transRelational(SPIRVInstruction *BI, BasicBlock *BB);
 
   void transGlobalAnnotations();
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
