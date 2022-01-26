@@ -4232,7 +4232,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
       OpItr++;
     }
 
@@ -4323,7 +4323,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
       OpItr++;
     }
 
@@ -4400,7 +4400,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getElementType();
+      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
       OpItr++;
     }
 
