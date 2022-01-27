@@ -2112,6 +2112,8 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
       ONE_INT_DECORATION_CASE(InitiationIntervalINTEL, spv::internal, SPIRVWord)
       ONE_INT_DECORATION_CASE(MaxConcurrencyINTEL, spv::internal, SPIRVWord)
       ONE_INT_DECORATION_CASE(PipelineEnableINTEL, spv::internal, SPIRVWord)
+      ONE_INT_DECORATION_CASE(InitModeINTEL, spv::internal, SPIRVWord)
+      ONE_INT_DECORATION_CASE(ImplementInCSRINTEL, spv::internal, SPIRVWord)
       TWO_INT_DECORATION_CASE(FunctionRoundingModeINTEL, spv, SPIRVWord,
                               FPRoundingMode);
       TWO_INT_DECORATION_CASE(FunctionDenormModeINTEL, spv, SPIRVWord,
@@ -2149,6 +2151,20 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
       auto TypeKind = static_cast<SPIRVLinkageTypeKind>(Type->getZExtValue());
       Target->addDecorate(new SPIRVDecorateLinkageAttr(
           Target, Name->getString().str(), TypeKind));
+      break;
+    }
+    case spv::internal::DecorationHostAccessINTEL: {
+      assert(NumOperands == 3 &&
+             "HostAccessINTEL requires exactly 3 extra operand");
+      auto *AccessMode =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      assert(AccessMode &&
+             "HostAccessINTEL requires first extra operand to be an int");
+      auto *Name = dyn_cast<MDString>(DecoMD->getOperand(2));
+      assert(Name &&
+             "HostAccessINTEL requires second extra operand to be a string");
+      Target->addDecorate(new SPIRVDecorateHostAccessINTEL(
+          Target, AccessMode->getZExtValue(), Name->getString().str()));
       break;
     }
     default: {
