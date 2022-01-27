@@ -46,7 +46,7 @@ enum InternalOp {
   IOpJointMatrixStoreINTEL = 6121,
   IOpJointMatrixMadINTEL = 6122,
   IOpArithmeticFenceINTEL = 6145,
-  IOpJointMatrixWorkItemLengthINTEL = 6410, // TODO Confirm the token value.
+  IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpPrev = OpMax - 2,
   IOpForward
 };
