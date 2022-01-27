@@ -350,7 +350,7 @@ void SPIRVRegularizeLLVMBase::expandVEDWithSYCLHalfSRetArg(Function *F) {
       [=, &OldCall](CallInst *CI, std::vector<Value *> &Args, Type *&RetTy) {
         Args.erase(Args.begin());
         auto *SRetPtrTy = cast<PointerType>(CI->getOperand(0)->getType());
-        auto *ET = SRetPtrTy->getElementType();
+        auto *ET = SRetPtrTy->getPointerElementType();
         RetTy = cast<StructType>(ET)->getElementType(0);
         OldCall = CI;
         return Name;
@@ -358,7 +358,7 @@ void SPIRVRegularizeLLVMBase::expandVEDWithSYCLHalfSRetArg(Function *F) {
       [=, &OldCall](CallInst *NewCI) {
         IRBuilder<> Builder(OldCall);
         auto *SRetPtrTy = cast<PointerType>(OldCall->getOperand(0)->getType());
-        auto *ET = SRetPtrTy->getElementType();
+        auto *ET = SRetPtrTy->getPointerElementType();
         Value *Target = Builder.CreateStructGEP(ET, OldCall->getOperand(0), 0);
         return Builder.CreateStore(NewCI, Target);
       },
@@ -371,7 +371,7 @@ void SPIRVRegularizeLLVMBase::expandVIDWithSYCLHalfByValComp(Function *F) {
   std::string Name = F->getName().str();
   mutateFunction(F, [=](CallInst *CI, std::vector<Value *> &Args) {
     auto *CompPtrTy = cast<PointerType>(CI->getOperand(1)->getType());
-    auto *ET = CompPtrTy->getElementType();
+    auto *ET = CompPtrTy->getPointerElementType();
     Type *HalfTy = cast<StructType>(ET)->getElementType(0);
     IRBuilder<> Builder(CI);
     auto *Target = Builder.CreateStructGEP(ET, CI->getOperand(1), 0);
@@ -388,7 +388,7 @@ void SPIRVRegularizeLLVMBase::expandSYCLHalfUsing(Module *M) {
     if (F.getName().startswith("_Z28__spirv_VectorExtractDynamic") &&
         F.hasStructRetAttr()) {
       auto *SRetPtrTy = cast<PointerType>(F.getArg(0)->getType());
-      if (isSYCLHalfType(SRetPtrTy->getElementType()))
+      if (isSYCLHalfType(SRetPtrTy->getPointerElementType()))
         ToExpandVEDWithSYCLHalfSRetArg.push_back(&F);
       else
         llvm_unreachable("The return type of the VectorExtractDynamic "
@@ -398,7 +398,7 @@ void SPIRVRegularizeLLVMBase::expandSYCLHalfUsing(Module *M) {
     if (F.getName().startswith("_Z27__spirv_VectorInsertDynamic") &&
         F.getArg(1)->getType()->isPointerTy()) {
       auto *CompPtrTy = cast<PointerType>(F.getArg(1)->getType());
-      auto *ET = CompPtrTy->getElementType();
+      auto *ET = CompPtrTy->getPointerElementType();
       if (isSYCLHalfType(ET))
         ToExpandVIDWithSYCLHalfByValComp.push_back(&F);
       else

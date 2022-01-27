@@ -311,7 +311,7 @@ bool isSPIRVType(llvm::Type *Ty, StringRef BaseTyName, StringRef *Postfix) {
 }
 
 bool isSYCLHalfType(llvm::Type *Ty) {
-  if (auto ST = dyn_cast<StructType>(Ty)) {
+  if (auto *ST = dyn_cast<StructType>(Ty)) {
     if (!ST->hasName())
       return false;
     StringRef Name = ST->getName();
@@ -725,9 +725,9 @@ void mutateFunction(
                                            Type *&RetTy)> ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeName) {
-  auto M = F->getParent();
+  auto *M = F->getParent();
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
-    if (auto CI = dyn_cast<CallInst>(*I++))
+    if (auto *CI = dyn_cast<CallInst>(*I++))
       mutateCallInst(M, CI, ArgMutate, RetMutate, Mangle, Attrs, TakeName);
   }
   if (F->use_empty())
