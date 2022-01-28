@@ -721,8 +721,9 @@ void mutateFunction(
 }
 
 void mutateFunction(
-    Function *F, std::function<std::string(CallInst *, std::vector<Value *> &,
-                                           Type *&RetTy)> ArgMutate,
+    Function *F,
+    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
+        ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeName) {
   auto *M = F->getParent();

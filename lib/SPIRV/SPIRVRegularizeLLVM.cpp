@@ -369,14 +369,16 @@ void SPIRVRegularizeLLVMBase::expandVIDWithSYCLHalfByValComp(Function *F) {
   auto Attrs = F->getAttributes();
   Attrs = Attrs.removeParamAttribute(F->getContext(), 1, Attribute::ByVal);
   std::string Name = F->getName().str();
-  mutateFunction(F, [=](CallInst *CI, std::vector<Value *> &Args) {
-    auto *CompPtrTy = cast<PointerType>(CI->getOperand(1)->getType());
-    auto *ET = CompPtrTy->getPointerElementType();
-    Type *HalfTy = cast<StructType>(ET)->getElementType(0);
-    IRBuilder<> Builder(CI);
-    auto *Target = Builder.CreateStructGEP(ET, CI->getOperand(1), 0);
-    Args[1] = Builder.CreateLoad(HalfTy, Target);
-    return Name;
+  mutateFunction(
+    F,
+    [=](CallInst *CI, std::vector<Value *> &Args) {
+      auto *CompPtrTy = cast<PointerType>(CI->getOperand(1)->getType());
+      auto *ET = CompPtrTy->getPointerElementType();
+      Type *HalfTy = cast<StructType>(ET)->getElementType(0);
+      IRBuilder<> Builder(CI);
+      auto *Target = Builder.CreateStructGEP(ET, CI->getOperand(1), 0);
+      Args[1] = Builder.CreateLoad(HalfTy, Target);
+      return Name;
   }, nullptr, &Attrs, true);
 }
 

@@ -774,8 +774,9 @@ void mutateFunction(
 /// \param TakeName Take the original function's name if a new function with
 ///   different type needs to be created.
 void mutateFunction(
-    Function *F, std::function<std::string(CallInst *, std::vector<Value *> &,
-                                           Type *&RetTy)> ArgMutate,
+    Function *F,
+    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
+        ArgMutate,
     std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle = nullptr, AttributeList *Attrs = nullptr,
     bool TakeName = true);
