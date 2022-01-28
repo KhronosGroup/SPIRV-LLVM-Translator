@@ -101,7 +101,7 @@ size_t SPIRVDecorateGeneric::getLiteralCount() const { return Literals.size(); }
 void SPIRVDecorate::encode(spv_ostream &O) const {
   SPIRVEncoder Encoder = getEncoder(O);
   Encoder << Target << Dec;
-  switch (Dec) {
+  switch (static_cast<size_t>(Dec)) {
   case DecorationLinkageAttributes:
     SPIRVDecorateLinkageAttr::encodeLiterals(Encoder, Literals);
     break;
@@ -130,7 +130,7 @@ void SPIRVDecorate::setWordCount(SPIRVWord Count) {
 void SPIRVDecorate::decode(std::istream &I) {
   SPIRVDecoder Decoder = getDecoder(I);
   Decoder >> Target >> Dec;
-  switch (Dec) {
+  switch (static_cast<size_t>(Dec)) {
   case DecorationLinkageAttributes:
     SPIRVDecorateLinkageAttr::decodeLiterals(Decoder, Literals);
     break;
