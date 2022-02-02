@@ -17,49 +17,61 @@
 ; CHECK-SPIRV: ExtInstImport [[#ExtInstSetId:]] "OpenCL.std"
 ; CHECK-SPIRV: TypeInt [[#TypeInt8Id:]] 8 0
 ; CHECK-SPIRV: TypeInt [[#TypeInt32Id:]] 32 0
-; CHECK-SPIRV: Constant [[#TypeInt32Id]] [[#]] 10
-; CHECK-SPIRV: Constant [[#TypeInt32Id]] [[#PrintfAdditionalArg:]] 1
-; CHECK-SPIRV: TypeArray [[#TypeArray1Id:]] [[#TypeInt8Id]] 10
-; CHECK-SPIRV: TypePointer [[#Ptr1:]] 5 [[#TypeArray1Id]]
-; CHECK-SPIRV: TypeArray [[#TypeArray2Id:]] 2 19
-; CHECK-SPIRV: TypePointer [[#Ptr2:]] 5 [[#TypeArray2Id]]
-; CHECK-SPIRV: TypePointer [[#Ptr3:]] 5 [[#TypeInt8Id]]
-; CHECK-SPIRV: Variable [[#Ptr1]] [[#Var1:]] 5 12
-; CHECK-SPIRV: Variable [[#Ptr2]] [[#Var2:]] 5 21
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#Ptr3]] [[#PrintfFormat1:]] [[#Var1]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId]] printf [[#PrintfFormat1]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#Ptr3]] [[#PrintfFormat2:]] [[#Var2]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId]] printf [[#PrintfFormat2]] [[#PrintfAdditionalArg]]
+; CHECK-SPIRV: TypePointer [[#FunctionStorClassPtrTy:]] 7 [[#TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[#WGStorClassPtrTy:]] 5 [[#TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[#CrossWFStorClassPtrTy:]] 4 [[#TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[#GenericStorCalssPtrTy:]] 8 [[#TypeInt8Id]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#FunctionStorClassPtrTy]] [[#GEP1:]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP1]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#WGStorClassPtrTy]] [[#GEP2:]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP2]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#CrossWFStorClassPtrTy:]] [[#GEP3:]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP3]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#GenericStorCalssPtrTy:]] [[#GEP4:]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP4]]
 
-; CHECK-LLVM: internal unnamed_addr addrspace(1) constant [6 x i8] c"Test\0A\00", align 1
-; CHECK-LLVM: internal unnamed_addr addrspace(1) constant [10 x i8] c"Test: %d\0A\00", align 1
-; CHECK-LLVM: getelementptr inbounds [6 x i8], [6 x i8] addrspace(1)* @0, i32 0, i32 0
-; CHECK-LLVM: call spir_func i32 (i8 addrspace(1)*, ...) @printf(i8 addrspace(1)* %1)
-; CHECK-LLVM: getelementptr inbounds [10 x i8], [10 x i8] addrspace(1)* @1, i32 0, i32 0
-; CHECK-LLVM: call spir_func i32 (i8 addrspace(1)*, ...) @printf(i8 addrspace(1)* %3, i32 1)
-; CHECK-LLVM: declare spir_func i32 @printf(i8 addrspace(1)*, ...)
+; CHECK-LLVM: call spir_func i32 (i8*, ...) @printf(i8*{{.*}})
+; CHECK-LLVM: call spir_func i32 (i8 addrspace(1)*, ...) @printf.1(i8 addrspace(1)*{{.*}})
+; CHECK-LLVM: call spir_func i32 (i8 addrspace(3)*, ...) @printf.2(i8 addrspace(3)*{{.*}})
+; CHECK-LLVM: call spir_func i32 (i8 addrspace(4)*, ...) @printf.3(i8 addrspace(4)*{{.*}})
+; CHECK-LLVM: declare spir_func i32 @printf(i8*, ...)
+; CHECK-LLVM: declare spir_func i32 @printf.1(i8 addrspace(1)*, ...)
+; CHECK-LLVM: declare spir_func i32 @printf.2(i8 addrspace(3)*, ...)
+; CHECK-LLVM: declare spir_func i32 @printf.3(i8 addrspace(4)*, ...)
 
 ; ModuleID = 'non-constant-printf'
 target datalayout = "e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024"
 target triple = "spir-unknown-unknown"
 
-@0 = internal unnamed_addr addrspace(5) constant [6 x i8] c"Test\0A\00", align 1
-@1 = internal unnamed_addr addrspace(5) constant [10 x i8] c"Test: %d\0A\00", align 1
+@0 = internal unnamed_addr addrspace(0) constant [6 x i8] c"Test\0A\00", align 1
+@1 = internal unnamed_addr addrspace(1) constant [6 x i8] c"Test\0A\00", align 1
+@2 = internal unnamed_addr addrspace(3) constant [6 x i8] c"Test\0A\00", align 1
+@3 = internal unnamed_addr addrspace(4) constant [6 x i8] c"Test\0A\00", align 1
 
 ; Function Attrs: nounwind
 define spir_kernel void @test() #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !3 !kernel_arg_type !3 !kernel_arg_type_qual !3 !kernel_arg_base_type !3 {
-  %1 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(5)* @0, i32 0, i32 0
-  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(5)* %1) #0
-  %3 = getelementptr inbounds [10 x i8], [10 x i8] addrspace(5)* @1, i32 0, i32 0
-  %4 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2ci(i8 addrspace(5)* %3, i32 1) #0
+  %1 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(0)* @0, i32 0, i32 0
+  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(0)* %1) #0
+  %3 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(1)* @1, i32 0, i32 0
+  %4 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.1(i8 addrspace(1)* %3) #0
+  %5 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(3)* @2, i32 0, i32 0
+  %6 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.2(i8 addrspace(3)* %5) #0
+  %7 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(4)* @3, i32 0, i32 0
+  %8 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.3(i8 addrspace(4)* %7) #0
   ret void
 }
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(5)*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(0)*) #0
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2ci(i8 addrspace(5)*, i32) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.1(i8 addrspace(1)*) #0
+
+; Function Attrs: nounwind
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.2(i8 addrspace(3)*) #0
+
+; Function Attrs: nounwind
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.3(i8 addrspace(4)*) #0
 
 attributes #0 = { nounwind }
 

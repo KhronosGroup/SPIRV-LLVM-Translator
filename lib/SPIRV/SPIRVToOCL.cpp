@@ -1070,10 +1070,32 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
 
   // Clang represents printf function without mangling
   std::string TargetName = "printf";
-  if (Function *F = M->getFunction(TargetName))
-    NewCI->setCalledFunction(F);
-  else
-    NewCI->getCalledFunction()->setName(TargetName);
+  // If there are several printf declarations with the different arguments
+  // types, they will be mapped as printf(), printf.1(), printf.2(), ...,
+  // printf.n()
+  if (Function *F = M->getFunction(TargetName)) {
+    if (F->getFunctionType() == CI->getCalledFunction()->getFunctionType()) {
+      NewCI->setCalledFunction(F);
+      return;
+    } else {
+      unsigned PostFix = 1;
+      TargetName += "." + std::to_string(PostFix);
+      F = M->getFunction(TargetName);
+      while (F) {
+        if (F->getFunctionType() ==
+            CI->getCalledFunction()->getFunctionType()) {
+          NewCI->setCalledFunction(F);
+          return;
+        }
+        PostFix++;
+        auto DelimPos = TargetName.find(".");
+        TargetName =
+            TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
+        F = M->getFunction(TargetName);
+      }
+    }
+  }
+  NewCI->getCalledFunction()->setName(TargetName);
 }
 
 std::string SPIRVToOCLBase::getGroupBuiltinPrefix(CallInst *CI) {
