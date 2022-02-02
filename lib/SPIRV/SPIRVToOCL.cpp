@@ -1077,22 +1077,21 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
     if (F->getFunctionType() == CI->getCalledFunction()->getFunctionType()) {
       NewCI->setCalledFunction(F);
       return;
-    } else {
-      unsigned PostFix = 1;
-      TargetName += "." + std::to_string(PostFix);
-      F = M->getFunction(TargetName);
-      while (F) {
-        if (F->getFunctionType() ==
-            CI->getCalledFunction()->getFunctionType()) {
-          NewCI->setCalledFunction(F);
-          return;
-        }
-        PostFix++;
-        auto DelimPos = TargetName.find(".");
-        TargetName =
-            TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
-        F = M->getFunction(TargetName);
+    }
+    unsigned PostFix = 1;
+    TargetName += "." + std::to_string(PostFix);
+    F = M->getFunction(TargetName);
+    while (F) {
+      if (F->getFunctionType() ==
+          CI->getCalledFunction()->getFunctionType()) {
+        NewCI->setCalledFunction(F);
+        return;
       }
+      PostFix++;
+      auto DelimPos = TargetName.find(".");
+      TargetName =
+          TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
+      F = M->getFunction(TargetName);
     }
   }
   NewCI->getCalledFunction()->setName(TargetName);
