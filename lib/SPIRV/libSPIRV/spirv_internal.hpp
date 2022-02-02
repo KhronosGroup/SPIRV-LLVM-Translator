@@ -112,7 +112,7 @@ _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
 _SPIRV_OP(BuiltIn, GlobalHWThreadIDINTEL)
 
-_SPIRV_OP(Capability, NonConstantAddrspacePrintfINTEL);
+_SPIRV_OP(Capability, NonConstantAddrspacePrintfINTEL)
 #undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
