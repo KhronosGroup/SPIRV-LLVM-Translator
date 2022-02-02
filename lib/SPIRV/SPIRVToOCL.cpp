@@ -1074,7 +1074,8 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
   // types, they will be mapped as printf(), printf.1(), printf.2(), ...,
   // printf.n()
   if (Function *F = M->getFunction(TargetName)) {
-    if (F->getFunctionType() == CI->getCalledFunction()->getFunctionType()) {
+    if (F->getArg(0)->getType() ==
+        CI->getCalledFunction()->getArg(0)->getType()) {
       NewCI->setCalledFunction(F);
       return;
     }
@@ -1082,15 +1083,13 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
     TargetName += "." + std::to_string(PostFix);
     F = M->getFunction(TargetName);
     while (F) {
-      if (F->getFunctionType() ==
-          CI->getCalledFunction()->getFunctionType()) {
+      if (F->getFunctionType() == CI->getCalledFunction()->getFunctionType()) {
         NewCI->setCalledFunction(F);
         return;
       }
       PostFix++;
       auto DelimPos = TargetName.find(".");
-      TargetName =
-          TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
+      TargetName = TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
       F = M->getFunction(TargetName);
     }
   }
