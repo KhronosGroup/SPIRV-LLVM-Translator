@@ -174,6 +174,9 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
 
   add(internal::DecorationAliasScopeINTEL, "AliasScopeINTEL");
   add(internal::DecorationNoAliasINTEL, "NoAliasINTEL");
+  add(internal::DecorationHostAccessINTEL, "HostAccessINTEL");
+  add(internal::DecorationInitModeINTEL, "InitModeINTEL");
+  add(internal::DecorationImplementInCSRINTEL, "ImplementInCSRINTEL");
 
   add(DecorationMax, "Max");
 }
@@ -578,6 +581,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityTensorFloat32ConversionINTEL,
       "TensorFloat32ConversionINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
+  add(internal::CapabilityGlobalVariableDecorationsINTEL,
+      "GlobalVariableDecorationsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
