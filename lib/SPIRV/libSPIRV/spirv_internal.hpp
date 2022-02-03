@@ -49,7 +49,10 @@ enum InternalOp {
 
 enum InternalDecoration {
   IDecAliasScopeINTEL = 5914,
-  IDecNoAliasINTEL = 5915
+  IDecNoAliasINTEL = 5915,
+  IDecHostAccessINTEL = 6147,
+  IDecInitModeINTEL = 6148,
+  IDecImplementInCSRINTEL = 6149,
 };
 
 enum InternalCapability {
@@ -59,6 +62,7 @@ enum InternalCapability {
   ICapabilityTensorFloat32ConversionINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityHWThreadQueryINTEL = 6134,
+  ICapGlobalVariableDecorationsINTEL = 6146
 };
 
 enum InternalMemoryAccessMask {
@@ -100,6 +104,15 @@ constexpr Decoration DecorationAliasScopeINTEL =
     static_cast<Decoration>(IDecAliasScopeINTEL );
 constexpr Decoration DecorationNoAliasINTEL =
     static_cast<Decoration>(IDecNoAliasINTEL);
+constexpr Decoration DecorationHostAccessINTEL =
+    static_cast<Decoration>(IDecHostAccessINTEL);
+constexpr Decoration DecorationInitModeINTEL =
+    static_cast<Decoration>(IDecInitModeINTEL);
+constexpr Decoration DecorationImplementInCSRINTEL =
+    static_cast<Decoration>(IDecImplementInCSRINTEL);
+
+constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
+    static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
 
 constexpr Capability CapabilityMemoryAccessAliasingINTEL =
     static_cast<Capability>(ICapMemoryAccessAliasingINTEL);
