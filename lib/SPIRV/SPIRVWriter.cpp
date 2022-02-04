@@ -3467,21 +3467,21 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
 
 SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
                                             SPIRVBasicBlock *BB) {
-  SPIRVWord MemorySemantics = static_cast<SPIRVWord>(FI->getOrdering());
+  SPIRVWord MemorySemantics;
   // Fence ordering may only be Acquire, Release, AcquireRelease, or
   // SequentiallyConsistent
-  switch (MemorySemantics) {
-  case 4:
-    MemorySemantics = 0x2;
+  switch (FI->getOrdering()) {
+  case llvm::AtomicOrdering::Acquire:
+    MemorySemantics = MemorySemanticsAcquireMask;
     break;
-  case 5:
-    MemorySemantics = 0x4;
+  case llvm::AtomicOrdering::Release:
+    MemorySemantics = MemorySemanticsReleaseMask;
     break;
-  case 6:
-    MemorySemantics = 0x8;
+  case llvm::AtomicOrdering::AcquireRelease:
+    MemorySemantics = MemorySemanticsAcquireReleaseMask;
     break;
-  case 7:
-    MemorySemantics = 0x10;
+  case llvm::AtomicOrdering::SequentiallyConsistent:
+    MemorySemantics = MemorySemanticsSequentiallyConsistentMask;
     break;
   default:
     assert(false && "Unexpected fence ordering");
