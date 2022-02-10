@@ -2472,9 +2472,9 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 // attach some information on function and propagate that through SPIR-V and
 // ect.)
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
-  auto TransFun = transFunction(Fun);
+  auto *TransFun = transFunction(Fun);
   for (auto UsSem : Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
-    auto V = cast<Value>(TransFun);
+    auto *V = cast<Value>(TransFun);
     Constant *StrConstant =
         ConstantDataArray::getString(*Context, StringRef(UsSem));
     auto *GS = new GlobalVariable(
