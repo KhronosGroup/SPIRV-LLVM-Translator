@@ -1008,7 +1008,8 @@ void SPIRVToOCLBase::visitCallSPIRVBFloat16Conversions(CallInst *CI, Op OC) {
           break; // do nothing
         }
         return Name;
-      }, &Attrs);
+      },
+      &Attrs);
 }
 
 void SPIRVToOCLBase::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
