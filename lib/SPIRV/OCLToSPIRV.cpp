@@ -1943,18 +1943,24 @@ void OCLToSPIRVBase::visitConvertBFloat16AsUshort(CallInst *CI,
                                                   StringRef DemangledName) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
-    return getSPIRVFuncName(internal::OpConvertFToBF16INTEL);
-  }, &Attrs);
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return getSPIRVFuncName(internal::OpConvertFToBF16INTEL);
+      },
+      &Attrs);
 }
 
 void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
                                                      StringRef DemangledName) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
-    return getSPIRVFuncName(internal::OpConvertBF16ToFINTEL);
-  }, &Attrs);
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        return getSPIRVFuncName(internal::OpConvertBF16ToFINTEL);
+      },
+      &Attrs);
 }
 
 } // namespace SPIRV

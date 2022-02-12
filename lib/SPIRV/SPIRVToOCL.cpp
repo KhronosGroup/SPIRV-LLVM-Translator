@@ -988,25 +988,27 @@ void SPIRVToOCLBase::visitCallSPIRVGenericPtrMemSemantics(CallInst *CI) {
 
 void SPIRVToOCLBase::visitCallSPIRVBFloat16Conversions(CallInst *CI, Op OC) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  mutateCallInstOCL(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
-    std::string Name;
-    std::string N = CI->getOperand(0)->getType()->isVectorTy()
-                        ? std::to_string(dyn_cast<FixedVectorType>(
-                                             CI->getOperand(0)->getType())
-                                             ->getNumElements())
-                        : "";
-    switch (static_cast<uint32_t>(OC)) {
-    case internal::OpConvertFToBF16INTEL:
-      Name = "intel_convert_bfloat16" + N + "_as_ushort" + N;
-      break;
-    case internal::OpConvertBF16ToFINTEL:
-      Name = "intel_convert_as_bfloat16" + N + "_float" + N;
-      break;
-    default:
-      break; // do nothing
-    }
-    return Name;
-  }, &Attrs);
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        std::string Name;
+        std::string N = CI->getOperand(0)->getType()->isVectorTy()
+                            ? std::to_string(dyn_cast<FixedVectorType>(
+                                                 CI->getOperand(0)->getType())
+                                                 ->getNumElements())
+                            : "";
+        switch (static_cast<uint32_t>(OC)) {
+        case internal::OpConvertFToBF16INTEL:
+          Name = "intel_convert_bfloat16" + N + "_as_ushort" + N;
+          break;
+        case internal::OpConvertBF16ToFINTEL:
+          Name = "intel_convert_as_bfloat16" + N + "_float" + N;
+          break;
+        default:
+          break; // do nothing
+        }
+        return Name;
+      }, &Attrs);
 }
 
 void SPIRVToOCLBase::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
