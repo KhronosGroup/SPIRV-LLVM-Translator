@@ -263,6 +263,11 @@ public:
   void visitCallLdexp(CallInst *CI, StringRef MangledName,
                       StringRef DemangledName);
 
+  /// For cl_intel_convert_bfloat16_as_ushort
+  void visitConvertBFloat16AsUshort(CallInst *CI, StringRef DemangledName);
+  /// For cl_intel_convert_as_bfloat16_float
+  void visitCallConvertAsBFloat16Float(CallInst *CI, StringRef DemangledName);
+
   void setOCLTypeToSPIRV(OCLTypeToSPIRVBase *OCLTypeToSPIRV) {
     OCLTypeToSPIRVPtr = OCLTypeToSPIRV;
   }
@@ -572,6 +577,24 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
   }
   if (DemangledName.find(kOCLBuiltinName::LDEXP) == 0) {
     visitCallLdexp(&CI, MangledName, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort ||
+      DemangledName == kOCLBuiltinName::ConvertBFloat162AsUShort2 ||
+      DemangledName == kOCLBuiltinName::ConvertBFloat163AsUShort3 ||
+      DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4 ||
+      DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8 ||
+      DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16) {
+    visitConvertBFloat16AsUshort(&CI, DemangledName);
+    return;
+  }
+  if (DemangledName == kOCLBuiltinName::ConvertAsBFloat16Float ||
+      DemangledName == kOCLBuiltinName::ConvertAsBFloat162Float2 ||
+      DemangledName == kOCLBuiltinName::ConvertAsBFloat163Float3 ||
+      DemangledName == kOCLBuiltinName::ConvertAsBFloat164Float4 ||
+      DemangledName == kOCLBuiltinName::ConvertAsBFloat168Float8 ||
+      DemangledName == kOCLBuiltinName::ConvertAsBFloat1616Float16) {
+    visitCallConvertAsBFloat16Float(&CI, DemangledName);
     return;
   }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
@@ -1914,6 +1937,24 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
     }
   }
   visitCallBuiltinSimple(CI, MangledName, DemangledName);
+}
+
+void OCLToSPIRVBase::visitConvertBFloat16AsUshort(CallInst *CI,
+                                                  StringRef DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
+    return getSPIRVFuncName(internal::OpConvertFToBF16INTEL);
+  }, &Attrs);
+}
+
+void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
+                                                     StringRef DemangledName) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
+    return getSPIRVFuncName(internal::OpConvertBF16ToFINTEL);
+  }, &Attrs);
 }
 
 } // namespace SPIRV

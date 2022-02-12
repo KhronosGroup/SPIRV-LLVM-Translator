@@ -1,0 +1,140 @@
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv --spirv-text %t.bc -o %t.spt --spirv-ext=+SPV_INTEL_bfloat16_conversion
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+
+; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
+
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=CL2.0
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM-CL20
+
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM-SPV
+
+; CHECK-SPIRV: TypeInt [[#Int16Ty:]] 16 0
+; CHECK-SPIRV: TypeFloat [[#FloatTy:]] 32
+; CHECK-SPIRV: TypeVector [[#VecFloat2:]] [[#FloatTy]] 2
+; CHECK-SPIRV: TypeVector [[#VecInt162:]] [[#Int16Ty]] 2
+; CHECK-SPIRV: TypeVector [[#VecFloat3:]] [[#FloatTy]] 3
+; CHECK-SPIRV: TypeVector [[#VecInt163:]] [[#Int16Ty]] 3
+; CHECK-SPIRV: TypeVector [[#VecFloat4:]] [[#FloatTy]] 4
+; CHECK-SPIRV: TypeVector [[#VecInt164:]] [[#Int16Ty]] 4
+; CHECK-SPIRV: TypeVector [[#VecFloat8:]] [[#FloatTy]] 8
+; CHECK-SPIRV: TypeVector [[#VecInt168:]] [[#Int16Ty]] 8
+; CHECK-SPIRV: TypeVector [[#VecFloat16:]] [[#FloatTy]] 16
+; CHECK-SPIRV: TypeVector [[#VecInt1616:]] [[#Int16Ty]] 16
+
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#Int16Ty]]
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#VecInt162]]
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#VecInt163]]
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#VecInt164]]
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#VecInt168]]
+; CHECK-SPIRV: ConvertFToBF16INTEL [[#VecInt1616]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#FloatTy]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#VecFloat2]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#VecFloat3]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#VecFloat4]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#VecFloat8]]
+; CHECK-SPIRV: ConvertBF16ToFINTEL [[#VecFloat16]]
+
+; CHECK-LLVM-SPV: call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float 0.000000e+00)
+; CHECK-LLVM-SPV: call spir_func <2 x i16> @_Z27__spirv_ConvertFToBF16INTELDv2_f(<2 x float> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <3 x i16> @_Z27__spirv_ConvertFToBF16INTELDv3_f(<3 x float> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <4 x i16> @_Z27__spirv_ConvertFToBF16INTELDv4_f(<4 x float> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <8 x i16> @_Z27__spirv_ConvertFToBF16INTELDv8_f(<8 x float> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <16 x i16> @_Z27__spirv_ConvertFToBF16INTELDv16_f(<16 x float> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 0)
+; CHECK-LLVM-SPV: call spir_func <2 x float> @_Z27__spirv_ConvertBF16ToFINTELDv2_s(<2 x i16> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <3 x float> @_Z27__spirv_ConvertBF16ToFINTELDv3_s(<3 x i16> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <4 x float> @_Z27__spirv_ConvertBF16ToFINTELDv4_s(<4 x i16> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <8 x float> @_Z27__spirv_ConvertBF16ToFINTELDv8_s(<8 x i16> zeroinitializer)
+; CHECK-LLVM-SPV: call spir_func <16 x float> @_Z27__spirv_ConvertBF16ToFINTELDv16_s(<16 x i16> zeroinitializer)
+
+; CHECK-LLVM-CL20: call spir_func i16 @_Z32intel_convert_bfloat16_as_ushortf(float 0.000000e+00)
+; CHECK-LLVM-CL20: call spir_func <2 x i16> @_Z34intel_convert_bfloat162_as_ushort2Dv2_f(<2 x float> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <3 x i16> @_Z34intel_convert_bfloat163_as_ushort3Dv3_f(<3 x float> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <4 x i16> @_Z34intel_convert_bfloat164_as_ushort4Dv4_f(<4 x float> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <8 x i16> @_Z34intel_convert_bfloat168_as_ushort8Dv8_f(<8 x float> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <16 x i16> @_Z36intel_convert_bfloat1616_as_ushort16Dv16_f(<16 x float> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func float @_Z31intel_convert_as_bfloat16_floats(i16 0)
+; CHECK-LLVM-CL20: call spir_func <2 x float> @_Z33intel_convert_as_bfloat162_float2Dv2_s(<2 x i16> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <3 x float> @_Z33intel_convert_as_bfloat163_float3Dv3_s(<3 x i16> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <4 x float> @_Z33intel_convert_as_bfloat164_float4Dv4_s(<4 x i16> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <8 x float> @_Z33intel_convert_as_bfloat168_float8Dv8_s(<8 x i16> zeroinitializer)
+; CHECK-LLVM-CL20: call spir_func <16 x float> @_Z35intel_convert_as_bfloat1616_float16Dv16_s(<16 x i16> zeroinitializer)
+
+; ModuleID = 'kernel.cl'
+source_filename = "kernel.cl"
+target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
+target triple = "spir"
+
+; Function Attrs: convergent noinline norecurse nounwind optnone
+define dso_local spir_kernel void @f() #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !1 !kernel_arg_type !1 !kernel_arg_base_type !1 !kernel_arg_type_qual !1 !kernel_arg_host_accessible !1 !kernel_arg_pipe_depth !1 !kernel_arg_pipe_io !1 !kernel_arg_buffer_location !1 {
+entry:
+  %call = call spir_func zeroext i16 @_Z32intel_convert_bfloat16_as_ushortf(float 0.000000e+00) #2
+  %call1 = call spir_func <2 x i16> @_Z34intel_convert_bfloat162_as_ushort2Dv2_f(<2 x float> zeroinitializer) #2
+  %call2 = call spir_func <3 x i16> @_Z34intel_convert_bfloat163_as_ushort3Dv3_f(<3 x float> zeroinitializer) #2
+  %call3 = call spir_func <4 x i16> @_Z34intel_convert_bfloat164_as_ushort4Dv4_f(<4 x float> zeroinitializer) #2
+  %call4 = call spir_func <8 x i16> @_Z34intel_convert_bfloat168_as_ushort8Dv8_f(<8 x float> zeroinitializer) #2
+  %call5 = call spir_func <16 x i16> @_Z36intel_convert_bfloat1616_as_ushort16Dv16_f(<16 x float> zeroinitializer) #2
+  %call6 = call spir_func float @_Z31intel_convert_as_bfloat16_floatt(i16 zeroext 0) #2
+  %call7 = call spir_func <2 x float> @_Z33intel_convert_as_bfloat162_float2Dv2_t(<2 x i16> zeroinitializer) #2
+  %call8 = call spir_func <3 x float> @_Z33intel_convert_as_bfloat163_float3Dv3_t(<3 x i16> zeroinitializer) #2
+  %call9 = call spir_func <4 x float> @_Z33intel_convert_as_bfloat164_float4Dv4_t(<4 x i16> zeroinitializer) #2
+  %call10 = call spir_func <8 x float> @_Z33intel_convert_as_bfloat168_float8Dv8_t(<8 x i16> zeroinitializer) #2
+  %call11 = call spir_func <16 x float> @_Z35intel_convert_as_bfloat1616_float16Dv16_t(<16 x i16> zeroinitializer) #2
+  ret void
+}
+
+; Function Attrs: convergent
+declare spir_func zeroext i16 @_Z32intel_convert_bfloat16_as_ushortf(float) #1
+
+; Function Attrs: convergent
+declare spir_func <2 x i16> @_Z34intel_convert_bfloat162_as_ushort2Dv2_f(<2 x float>) #1
+
+; Function Attrs: convergent
+declare spir_func <3 x i16> @_Z34intel_convert_bfloat163_as_ushort3Dv3_f(<3 x float>) #1
+
+; Function Attrs: convergent
+declare spir_func <4 x i16> @_Z34intel_convert_bfloat164_as_ushort4Dv4_f(<4 x float>) #1
+
+; Function Attrs: convergent
+declare spir_func <8 x i16> @_Z34intel_convert_bfloat168_as_ushort8Dv8_f(<8 x float>) #1
+
+; Function Attrs: convergent
+declare spir_func <16 x i16> @_Z36intel_convert_bfloat1616_as_ushort16Dv16_f(<16 x float>) #1
+
+; Function Attrs: convergent
+declare spir_func float @_Z31intel_convert_as_bfloat16_floatt(i16 zeroext) #1
+
+; Function Attrs: convergent
+declare spir_func <2 x float> @_Z33intel_convert_as_bfloat162_float2Dv2_t(<2 x i16>) #1
+
+; Function Attrs: convergent
+declare spir_func <3 x float> @_Z33intel_convert_as_bfloat163_float3Dv3_t(<3 x i16>) #1
+
+; Function Attrs: convergent
+declare spir_func <4 x float> @_Z33intel_convert_as_bfloat164_float4Dv4_t(<4 x i16>) #1
+
+; Function Attrs: convergent
+declare spir_func <8 x float> @_Z33intel_convert_as_bfloat168_float8Dv8_t(<8 x i16>) #1
+
+; Function Attrs: convergent
+declare spir_func <16 x float> @_Z35intel_convert_as_bfloat1616_float16Dv16_t(<16 x i16>) #1
+
+attributes #0 = { convergent noinline norecurse nounwind optnone "frame-pointer"="none" "min-legal-vector-width"="512" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "uniform-work-group-size"="false" }
+attributes #1 = { convergent "frame-pointer"="none" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #2 = { convergent }
+
+!opencl.enable.FP_CONTRACT = !{}
+!opencl.ocl.version = !{!0}
+!opencl.spir.version = !{!0}
+!opencl.used.extensions = !{!1}
+!opencl.used.optional.core.features = !{!1}
+!opencl.compiler.options = !{!1}
+!llvm.ident = !{!2}
+
+!0 = !{i32 2, i32 0}
+!1 = !{}
+!2 = !{!"Compiler"}
