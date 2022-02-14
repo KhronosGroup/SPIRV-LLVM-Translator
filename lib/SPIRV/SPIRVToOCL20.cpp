@@ -97,8 +97,10 @@ void SPIRVToOCL20Base::visitCallSPIRVMemoryBarrier(CallInst *CI) {
 
 void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
-  SmallVector<AttributeSet, 2> ArgAttrs = {Attrs.getParamAttrs(1), Attrs.getParamAttrs(2)};
-  AttributeList NewAttrs = AttributeList::get(*Ctx, Attrs.getFnAttrs(), Attrs.getRetAttrs(), ArgAttrs);
+  SmallVector<AttributeSet, 2> ArgAttrs = {Attrs.getParamAttrs(1),
+                                           Attrs.getParamAttrs(2)};
+  AttributeList NewAttrs = AttributeList::get(*Ctx, Attrs.getFnAttrs(),
+                                              Attrs.getRetAttrs(), ArgAttrs);
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
