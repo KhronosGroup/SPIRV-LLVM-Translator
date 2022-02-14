@@ -2777,7 +2777,7 @@ void SPIRVToLLVM::transFunctionAttrs(SPIRVFunction *BF, Function *F) {
 
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end(); I != E;
        ++I) {
-    auto BA = BF->getArgument(I->getArgNo());
+    auto *BA = BF->getArgument(I->getArgNo());
     mapValue(BA, &(*I));
     setName(&(*I), BA);
     BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
