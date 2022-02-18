@@ -30,14 +30,15 @@
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#GenericStorCalssPtrTy:]] [[#GEP4:]]
 ; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP4]]
 
-; CHECK-LLVM: call spir_func i32 (i8*, ...) @printf(i8*{{.*}})
-; CHECK-LLVM: call spir_func i32 (i8 addrspace(1)*, ...) @printf.1(i8 addrspace(1)*{{.*}})
-; CHECK-LLVM: call spir_func i32 (i8 addrspace(3)*, ...) @printf.2(i8 addrspace(3)*{{.*}})
-; CHECK-LLVM: call spir_func i32 (i8 addrspace(4)*, ...) @printf.3(i8 addrspace(4)*{{.*}})
-; CHECK-LLVM: declare spir_func i32 @printf(i8*, ...)
-; CHECK-LLVM: declare spir_func i32 @printf.1(i8 addrspace(1)*, ...)
-; CHECK-LLVM: declare spir_func i32 @printf.2(i8 addrspace(3)*, ...)
-; CHECK-LLVM: declare spir_func i32 @printf.3(i8 addrspace(4)*, ...)
+; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8* {{.*}}
+; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* {{.*}}
+; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)* {{.*}}
+; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)* {{.*}}
+
+; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8*)
+; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)*)
+; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)*)
+; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)*)
 
 ; ModuleID = 'non-constant-printf'
 target datalayout = "e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024"
@@ -50,28 +51,28 @@ target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
 define spir_kernel void @test() #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !3 !kernel_arg_type !3 !kernel_arg_type_qual !3 !kernel_arg_base_type !3 {
-  %1 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(0)* @0, i32 0, i32 0
-  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(0)* %1) #0
+  %1 = getelementptr inbounds [6 x i8], [6 x i8]* @0, i32 0, i32 0
+  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8* %1) #0
   %3 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(1)* @1, i32 0, i32 0
-  %4 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.1(i8 addrspace(1)* %3) #0
+  %4 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* %3) #0
   %5 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(3)* @2, i32 0, i32 0
-  %6 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.2(i8 addrspace(3)* %5) #0
+  %6 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)* %5) #0
   %7 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(4)* @3, i32 0, i32 0
-  %8 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.3(i8 addrspace(4)* %7) #0
+  %8 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)* %7) #0
   ret void
 }
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c(i8 addrspace(0)*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8*) #0
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.1(i8 addrspace(1)*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)*) #0
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.2(i8 addrspace(3)*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)*) #0
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS2c.3(i8 addrspace(4)*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)*) #0
 
 attributes #0 = { nounwind }
 

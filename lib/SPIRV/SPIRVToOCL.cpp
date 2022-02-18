@@ -69,9 +69,14 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     case OpenCLLIB::Vstorea_halfn_r:
       visitCallSPIRVVStore(&CI, ExtOp);
       break;
-    case OpenCLLIB::Printf:
-      visitCallSPIRVPrintf(&CI, ExtOp);
+    case OpenCLLIB::Printf: {
+      // TODO: Lower the printf instruction with the non-constant address space
+      // format string to suitable for OpenCL representation
+      if (dyn_cast<PointerType>(CI.getOperand(0)->getType())
+              ->getAddressSpace() == SPIR::TypeAttributeEnum::ATTR_CONST)
+        visitCallSPIRVPrintf(&CI, ExtOp);
       break;
+    }
     default:
       visitCallSPIRVOCLExt(&CI, ExtOp);
       break;
@@ -1097,30 +1102,10 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
 
   // Clang represents printf function without mangling
   std::string TargetName = "printf";
-  // If there are several printf declarations with the different arguments
-  // types, they will be mapped as printf(), printf.1(), printf.2(), ...,
-  // printf.n()
-  if (Function *F = M->getFunction(TargetName)) {
-    if (F->getArg(0)->getType() ==
-        CI->getCalledFunction()->getArg(0)->getType()) {
-      NewCI->setCalledFunction(F);
-      return;
-    }
-    unsigned PostFix = 1;
-    TargetName += "." + std::to_string(PostFix);
-    F = M->getFunction(TargetName);
-    while (F) {
-      if (F->getFunctionType() == CI->getCalledFunction()->getFunctionType()) {
-        NewCI->setCalledFunction(F);
-        return;
-      }
-      PostFix++;
-      auto DelimPos = TargetName.find(".");
-      TargetName = TargetName.substr(0, DelimPos + 1) + std::to_string(PostFix);
-      F = M->getFunction(TargetName);
-    }
-  }
-  NewCI->getCalledFunction()->setName(TargetName);
+  if (Function *F = M->getFunction(TargetName))
+    NewCI->setCalledFunction(F);
+  else
+    NewCI->getCalledFunction()->setName(TargetName);
 }
 
 void SPIRVToOCLBase::visitCallSPIRVAnyAll(CallInst *CI, Op OC) {
