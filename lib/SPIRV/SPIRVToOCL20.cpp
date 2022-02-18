@@ -97,6 +97,10 @@ void SPIRVToOCL20Base::visitCallSPIRVMemoryBarrier(CallInst *CI) {
 
 void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  SmallVector<AttributeSet, 2> ArgAttrs = {Attrs.getParamAttributes(1),
+                                           Attrs.getParamAttributes(2)};
+  AttributeList NewAttrs = AttributeList::get(
+      *Ctx, Attrs.getFnAttributes(), Attrs.getRetAttributes(), ArgAttrs);
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
@@ -116,7 +120,7 @@ void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
         return (ExecScope == ScopeWorkgroup) ? kOCLBuiltinName::WorkGroupBarrier
                                              : kOCLBuiltinName::SubGroupBarrier;
       },
-      &Attrs);
+      &NewAttrs);
 }
 
 std::string SPIRVToOCL20Base::mapFPAtomicName(Op OC) {
