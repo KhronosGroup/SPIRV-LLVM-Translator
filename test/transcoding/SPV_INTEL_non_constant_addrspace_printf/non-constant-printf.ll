@@ -30,12 +30,12 @@
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#GenericStorCalssPtrTy:]] [[#GEP4:]]
 ; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP4]]
 
-; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8* {{.*}}
+; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPc(i8* {{.*}}
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* {{.*}}
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)* {{.*}}
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)* {{.*}}
 
-; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8*)
+; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPc(i8*)
 ; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)*)
 ; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS3c(i8 addrspace(3)*)
 ; CHECK-LLVM: declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS4c(i8 addrspace(4)*)
@@ -52,7 +52,7 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_kernel void @test() #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !3 !kernel_arg_type !3 !kernel_arg_type_qual !3 !kernel_arg_base_type !3 {
   %1 = getelementptr inbounds [6 x i8], [6 x i8]* @0, i32 0, i32 0
-  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8* %1) #0
+  %2 = call spir_func i32 @_Z18__spirv_ocl_printfPc(i8* %1) #0
   %3 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(1)* @1, i32 0, i32 0
   %4 = call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* %3) #0
   %5 = getelementptr inbounds [6 x i8], [6 x i8] addrspace(3)* @2, i32 0, i32 0
@@ -63,7 +63,7 @@ define spir_kernel void @test() #0 !kernel_arg_addr_space !3 !kernel_arg_access_
 }
 
 ; Function Attrs: nounwind
-declare spir_func i32 @_Z18__spirv_ocl_printfPU3c(i8*) #0
+declare spir_func i32 @_Z18__spirv_ocl_printfPc(i8*) #0
 
 ; Function Attrs: nounwind
 declare spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)*) #0
