@@ -3336,24 +3336,10 @@ protected:
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_split_barrier;
   }
-
-  // TODO: check - anything needed here?
-  //void validate() const override {
-  //  SPIRVInstruction::validate();
-  //  SPIRVId Vec1 = Ops[0];
-  //  SPIRVId Vec2 = Ops[1];
-  //  (void)Vec1;
-  //  (void)Vec2;
-  //
-  //  assert(getValueType(Vec1) == getValueType(Vec2) &&
-  //         "Input vectors must have the same type");
-  //  assert(getType()->isTypeInt() && "Result type must be an integer type");
-  //  assert(!getType()->isTypeVector() && "Result type must be scalar");
-  //}
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVSplitBarrierINTELBase, Op##x, __VA_ARGS__>      \
+  typedef SPIRVInstTemplate<SPIRVSplitBarrierINTELBase, Op##x, __VA_ARGS__>    \
       SPIRV##x;
 _SPIRV_OP(ControlBarrierArriveINTEL, false, 4)
 _SPIRV_OP(ControlBarrierWaitINTEL, false, 4)

@@ -1875,8 +1875,7 @@ void OCLToSPIRVBase::visitSubgroupAVCBuiltinCallWithSampler(
 }
 
 void OCLToSPIRVBase::visitCallSplitBarrierINTEL(CallInst *CI,
-                                                StringRef DemangledName)
-{
+                                                StringRef DemangledName) {
   auto Lit = getBarrierLiterals(CI);
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Op OpCode =

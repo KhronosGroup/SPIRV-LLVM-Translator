@@ -27,22 +27,16 @@ endif()
 if(NOT SPIRV_TOOLS_SPIRV_AS)
   message(WARNING "spirv-as not found! SPIR-V assembly tests will not be run.")
   set(SPIRV_TOOLS_SPIRV_AS_FOUND False)
-else()
-  message(STATUS "spirv-as found: ${SPIRV_TOOLS_SPIRV_AS}")
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_LINK)
   message(WARNING "spirv-link not found! SPIR-V test involving the linker will not be run.")
   set(SPIRV_TOOLS_SPIRV_LINK_FOUND False)
-else()
-  message(STATUS "spirv-link found: ${SPIRV_TOOLS_SPIRV_LINK}")
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_VAL)
   message(WARNING "spirv-val not found! SPIR-V generated for test suite will not be validated.")
   set(SPIRV_TOOLS_SPIRV_VAL_FOUND False)
-  else()
-  message(STATUS "spirv-val found: ${SPIRV_TOOLS_SPIRV_VAL}")
 endif()
 
 configure_lit_site_cfg(
