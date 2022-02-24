@@ -36,21 +36,27 @@ target triple = "spir64"
 ; CHECK-SPIRV-DAG: Constant [[UINT]] [[SCOPE_WORK_GROUP:[0-9]+]] 2
 ;
 ; Memory Semantics:
-; 0x10 SequentiallyConsistent + 0x100 WorkgroupMemory
-; CHECK-SPIRV-DAG: Constant [[UINT]] [[LOCAL:[0-9]+]] 272
-; 0x10 SequentiallyConsistent + 0x200 CrossWorkgroupMemory
-; CHECK-SPIRV-DAG: Constant [[UINT]] [[GLOBAL:[0-9]+]] 528
-; 0x10 SequentiallyConsistent + 0x100 WorkgroupMemory + 0x200 CrossWorkgroupMemory
-; CHECK-SPIRV-DAG: Constant [[UINT]] [[LOCAL_GLOBAL:[0-9]+]] 784
+; 0x2 Acquire + 0x100 WorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[ACQUIRE_LOCAL:[0-9]+]] 258
+; 0x4 Release + 0x100 WorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[RELEASE_LOCAL:[0-9]+]] 260
+; 0x2 Acquire + 0x200 CrossWorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[ACQUIRE_GLOBAL:[0-9]+]] 514
+; 0x4 Release + 0x200 CrossWorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[RELEASE_GLOBAL:[0-9]+]] 516
+; 0x2 Acquire + 0x100 WorkgroupMemory + 0x200 CrossWorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[ACQUIRE_LOCAL_GLOBAL:[0-9]+]] 770
+; 0x4 Release + 0x100 WorkgroupMemory + 0x200 CrossWorkgroupMemory
+; CHECK-SPIRV-DAG: Constant [[UINT]] [[RELEASE_LOCAL_GLOBAL:[0-9]+]] 772
 ;
 ; CHECK-SPIRV: Function {{[0-9]+}} [[TEST_FUNC]]
-; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[LOCAL]]
-; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[LOCAL]]
-; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[GLOBAL]]
-; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[GLOBAL]]
+; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[RELEASE_LOCAL]]
+; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[ACQUIRE_LOCAL]]
+; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[RELEASE_GLOBAL]]
+; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[ACQUIRE_GLOBAL]]
 ;
-; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[LOCAL_GLOBAL]]
-; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[LOCAL_GLOBAL]]
+; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[RELEASE_LOCAL_GLOBAL]]
+; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[ACQUIRE_LOCAL_GLOBAL]]
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test
 ; Function Attrs: convergent norecurse nounwind

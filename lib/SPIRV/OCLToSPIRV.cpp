@@ -1892,13 +1892,14 @@ void OCLToSPIRVBase::visitCallSplitBarrierINTEL(CallInst *CI,
         Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
         // Memory scope
         Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
-        // Use sequential consistent memory order by default.
-        // But if the flags argument is set to 0, we use
-        // None(Relaxed) memory order.
+        // Memory semantics
+        // OpControlBarrierArriveINTEL -> Release,
+        // OpControlBarrierWaitINTEL -> Acquire
         unsigned MemFenceFlag = std::get<0>(Lit);
-        OCLMemOrderKind MemOrder = MemFenceFlag ? OCLMO_seq_cst : OCLMO_relaxed;
-        Args[2] = addInt32(mapOCLMemSemanticToSPIRV(
-            MemFenceFlag, MemOrder)); // Memory semantics
+        OCLMemOrderKind MemOrder = OpCode == OpControlBarrierArriveINTEL
+                                       ? OCLMO_release
+                                       : OCLMO_acquire;
+        Args[2] = addInt32(mapOCLMemSemanticToSPIRV(MemFenceFlag, MemOrder));
         return getSPIRVFuncName(OpCode);
       },
       &Attrs);
