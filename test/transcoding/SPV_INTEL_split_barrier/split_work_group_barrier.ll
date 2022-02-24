@@ -24,6 +24,7 @@
 ;;     intel_work_group_barrier_wait(CLK_LOCAL_MEM_FENCE, memory_scope_sub_group);
 ;;}
 
+; Test for SPV_INTEL_split_barrier (OpenCL C LLVM IR)
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_split_barrier
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
@@ -90,49 +91,48 @@ target triple = "spir64"
 ; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_SUBGROUP]] [[LOCAL]]
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 2, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 2, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 4, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 4, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 3, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 3, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 7, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 7, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 0)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 0)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 1)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 1)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 2)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 2)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 3)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 3)
-; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 4)
-; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 4)
-
 ; Function Attrs: convergent norecurse nounwind
 define dso_local spir_kernel void @test(i32 addrspace(1)* nocapture noundef readnone align 4 %0) local_unnamed_addr #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !5 !kernel_arg_type !6 !kernel_arg_base_type !6 !kernel_arg_type_qual !7 {
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej(i32 noundef 1) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj(i32 noundef 1) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej(i32 noundef 2) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 2, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj(i32 noundef 2) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 2, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej(i32 noundef 4) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 4, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj(i32 noundef 4) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 4, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej(i32 noundef 3) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 3, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj(i32 noundef 3) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 3, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej(i32 noundef 7) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 7, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj(i32 noundef 7) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 7, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 noundef 1, i32 noundef 0) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 0)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 noundef 1, i32 noundef 0) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 0)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 noundef 1, i32 noundef 1) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 1)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 noundef 1, i32 noundef 1) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 1)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 noundef 1, i32 noundef 2) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 2)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 noundef 1, i32 noundef 2) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 2)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 noundef 1, i32 noundef 3) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 3)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 noundef 1, i32 noundef 3) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 3)
   tail call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 noundef 1, i32 noundef 4) #2
+    ; CHECK-LLVM: call spir_func void @_Z31intel_work_group_barrier_arrivej12memory_scope(i32 1, i32 4)
   tail call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 noundef 1, i32 noundef 4) #2
+    ; CHECK-LLVM: call spir_func void @_Z29intel_work_group_barrier_waitj12memory_scope(i32 1, i32 4)
   ret void
 }
 
