@@ -119,6 +119,10 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   if (OC == OpControlBarrier) {
     visitCallSPIRVControlBarrier(&CI);
   }
+  if (isSplitBarrierINTELOpCode(OC)) {
+    visitCallSPIRVSplitBarrierINTEL(&CI, OC);
+    return;
+  }
   if (isAtomicOpCode(OC)) {
     visitCallSPIRVAtomicBuiltin(&CI, OC);
     return;
@@ -1183,6 +1187,28 @@ void SPIRVToOCLBase::visitCallSPIRVPrintf(CallInst *CI, OCLExtOpKind Kind) {
     NewCI->setCalledFunction(F);
   else
     NewCI->getCalledFunction()->setName(TargetName);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        auto GetArg = [=](unsigned I) {
+          return cast<ConstantInt>(Args[I])->getZExtValue();
+        };
+        Value *MemScope =
+            getInt32(M, rmap<OCLScopeKind>(static_cast<Scope>(GetArg(1))));
+        Value *MemFenceFlags =
+            SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(Args[2], CI);
+
+        Args.resize(2);
+        Args[0] = MemFenceFlags;
+        Args[1] = MemScope;
+
+        return OCLSPIRVBuiltinMap::rmap(OC);
+      },
+      &Attrs);
 }
 
 void SPIRVToOCLBase::visitCallSPIRVAnyAll(CallInst *CI, Op OC) {

@@ -111,11 +111,17 @@ endif()
 
 set(LLVM_SPIRV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
-if(NOT SPIRV_TOOLS_FOUND)
-  message(STATUS "SPIRV-Tools not found; project will be built without "
-          "--spirv-tools-dis support.")
-endif(NOT SPIRV_TOOLS_FOUND)
+#pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
+#if(NOT SPIRV_TOOLS_FOUND)
+#  message(STATUS "SPIRV-Tools not found; project will be built without "
+#          "--spirv-tools-dis support.")
+#endif(NOT SPIRV_TOOLS_FOUND)
+
+set(SPIRV_TOOLS_FOUND True)
+set(SPIRV_TOOLS_PREFIX "D:/GIT/SPIRV-Tools/install")
+set(SPIRV_TOOLS_INCLUDE_DIRS "D:/GIT/SPIRV-Tools/install/include")
+set(SPIRV_TOOLS_LDFLAGS "D:/GIT/SPIRV-Tools/install/lib/SPIRV-Tools.lib")
+
 
 add_subdirectory(lib/SPIRV)
 add_subdirectory(tools/llvm-spirv)

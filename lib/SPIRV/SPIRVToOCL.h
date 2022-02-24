@@ -222,6 +222,9 @@ public:
   /// - OCL1.2: barrier
   virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
 
+  /// TODO description
+  void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC);
+
   /// Transform __spirv_EnqueueKernel to __enqueue_kernel
   virtual void visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) = 0;
 
