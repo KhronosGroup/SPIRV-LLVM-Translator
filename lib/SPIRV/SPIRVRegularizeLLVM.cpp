@@ -391,7 +391,8 @@ void SPIRVRegularizeLLVMBase::expandSYCLHalfUsing(Module *M) {
     if (F.getName().startswith("_Z28__spirv_VectorExtractDynamic") &&
         F.hasStructRetAttr()) {
       auto *SRetPtrTy = cast<PointerType>(F.getArg(0)->getType());
-      if (isSYCLHalfType(SRetPtrTy->getPointerElementType()))
+      if (isSYCLHalfType(SRetPtrTy->getPointerElementType()) ||
+          isSYCLBfloat16Type(SRetPtrTy->getPointerElementType()))
         ToExpandVEDWithSYCLHalfSRetArg.push_back(&F);
       else
         llvm_unreachable("The return type of the VectorExtractDynamic "
@@ -402,7 +403,7 @@ void SPIRVRegularizeLLVMBase::expandSYCLHalfUsing(Module *M) {
         F.getArg(1)->getType()->isPointerTy()) {
       auto *CompPtrTy = cast<PointerType>(F.getArg(1)->getType());
       auto *ET = CompPtrTy->getPointerElementType();
-      if (isSYCLHalfType(ET))
+      if (isSYCLHalfType(ET) || isSYCLBfloat16Type(ET))
         ToExpandVIDWithSYCLHalfByValComp.push_back(&F);
       else
         llvm_unreachable("The component argument type of an "
@@ -498,6 +499,10 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
            STElemTyName.startswith("__sycl_internal::")) &&
           STElemTyName.endswith("::half"))
         ElemTyStr = "half";
+      if ((STElemTyName.startswith("cl::sycl::") ||
+           STElemTyName.startswith("__sycl_internal::")) &&
+          STElemTyName.endswith("::bfloat16"))
+        ElemTyStr = "bfloat16";
       if (ElemTyStr.size() == 0)
         llvm_unreachable("Unexpected type for matrix!");
     }
