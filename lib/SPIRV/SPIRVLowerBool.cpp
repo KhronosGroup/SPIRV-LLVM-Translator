@@ -56,6 +56,7 @@ public:
   }
   void replace(Instruction *I, Instruction *NewI) {
     NewI->takeName(I);
+    NewI->setDebugLoc(I->getDebugLoc());
     I->replaceAllUsesWith(NewI);
     I->dropAllReferences();
     I->eraseFromParent();
@@ -72,6 +73,7 @@ public:
       auto Op = I.getOperand(0);
       auto And = BinaryOperator::CreateAnd(
           Op, getScalarOrVectorConstantInt(Op->getType(), 1, false), "", &I);
+      And->setDebugLoc(I.getDebugLoc());
       auto Zero = getScalarOrVectorConstantInt(Op->getType(), 0, false);
       auto Cmp = new ICmpInst(&I, CmpInst::ICMP_NE, And, Zero);
       replace(&I, Cmp);
@@ -101,6 +103,7 @@ public:
       auto One = getScalarOrVectorConstantInt(Ty, 1, false);
       assert(Zero && One && "Couldn't create constant int");
       auto Sel = SelectInst::Create(Op, One, Zero, "", &I);
+      Sel->setDebugLoc(I.getDebugLoc());
       I.setOperand(0, Sel);
     }
   }
