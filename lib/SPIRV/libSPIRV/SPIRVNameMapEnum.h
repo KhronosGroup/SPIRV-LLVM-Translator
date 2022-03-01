@@ -572,6 +572,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");
+  add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
   add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
