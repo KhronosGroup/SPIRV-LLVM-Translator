@@ -1975,6 +1975,8 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
       assert(RetTy->getNumElements() == 16 && ArgTy->getNumElements() == 16 &&
              "ConvertBFloat1616AsUShort16 must be of <16 x i16> and take <16 x "
              "float>");
+    (void)RetTy;
+    (void)ArgTy;
   }
 
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
@@ -2021,6 +2023,8 @@ void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
       assert(RetTy->getNumElements() == 16 && ArgTy->getNumElements() == 16 &&
              "ConvertAsBFloat1616Float16 must be of <16 x float> and take <16 "
              "x i16>");
+    (void)RetTy;
+    (void)ArgTy;
   }
 
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
