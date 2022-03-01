@@ -1,5 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
 
+; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-WO-EXT
+
 ; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
 ; RUN: llvm-dis %t.regularized.bc -o %t.regularized.ll
 ; RUN: FileCheck < %t.regularized.ll %s --check-prefix=CHECK-REGULARIZED
@@ -16,6 +18,9 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM-SPV
+
+; CHECK-WO-EXT: RequiresExtension: Feature requires the following SPIR-V extension:
+; CHECK-WO-EXT-NEXT: SPV_INTEL_bfloat16_conversion
 
 ; CHECK-REGULARIZED: call spir_func zeroext i16 @_Z27__spirv_ConvertFToBF16INTELf(float 0.000000e+00)
 ; CHECK-REGULARIZED: call spir_func <2 x i16> @_Z27__spirv_ConvertFToBF16INTELDv2_f(<2 x float> zeroinitializer)

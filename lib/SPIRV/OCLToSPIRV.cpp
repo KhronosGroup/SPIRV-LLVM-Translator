@@ -1941,6 +1941,42 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
 
 void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
                                                       StringRef DemangledName) {
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort) {
+    assert(CI->getType()->isIntegerTy(16U) &&
+           CI->getOperand(0)->getType()->isFloatTy() &&
+           "OpConvertBFloat16AsUShort must be of i16 and take float");
+  } else {
+    FixedVectorType *RetTy = dyn_cast_or_null<FixedVectorType>(CI->getType());
+    FixedVectorType *ArgTy =
+        dyn_cast_or_null<FixedVectorType>(CI->getOperand(0)->getType());
+    assert(RetTy && RetTy->getElementType()->isIntegerTy(16U) && ArgTy &&
+           ArgTy->getElementType()->isFloatTy() &&
+           ArgTy->getElementType()->isFloatTy() && "OpConvertBFloat16NAsUShortN"
+                                                   " must be of <N x i16> and "
+                                                   "take <N x float>");
+
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat162AsUShort2)
+      assert(RetTy->getNumElements() == 2 && ArgTy->getNumElements() == 2 &&
+             "ConvertBFloat162AsUShort2 must be of <2 x i16> and take <2 x "
+             "float>");
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat163AsUShort3)
+      assert(RetTy->getNumElements() == 3 && ArgTy->getNumElements() == 3 &&
+             "ConvertBFloat163AsUShort3 must be of <3 x i16> and take <3 x "
+             "float>");
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4)
+      assert(RetTy->getNumElements() == 4 && ArgTy->getNumElements() == 4 &&
+             "ConvertBFloat164AsUShort4 must be of <4 x i16> and take <4 x "
+             "float>");
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8)
+      assert(RetTy->getNumElements() == 8 && ArgTy->getNumElements() == 8 &&
+             "ConvertBFloat168AsUShort8 must be of <8 x i16> and take <8 x "
+             "float>");
+    if (DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16)
+      assert(RetTy->getNumElements() == 16 && ArgTy->getNumElements() == 16 &&
+             "ConvertBFloat1616AsUShort16 must be of <16 x i16> and take <16 x "
+             "float>");
+  }
+
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,
@@ -1952,6 +1988,41 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
 
 void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
                                                      StringRef DemangledName) {
+  if (DemangledName == kOCLBuiltinName::ConvertAsBFloat16Float) {
+    assert(CI->getType()->isFloatTy() &&
+           CI->getOperand(0)->getType()->isIntegerTy(16U) &&
+           "OpConvertAsBFloat16Float must be of float and take i16");
+  } else {
+    FixedVectorType *RetTy = dyn_cast_or_null<FixedVectorType>(CI->getType());
+    FixedVectorType *ArgTy =
+        dyn_cast_or_null<FixedVectorType>(CI->getOperand(0)->getType());
+    assert(
+        RetTy && RetTy->getElementType()->isFloatTy() && ArgTy &&
+        ArgTy->getElementType()->isIntegerTy(16U) &&
+        "OpConvertAsBFloat16NFloatN must be of <N x float> and take <N x i16>");
+
+    if (DemangledName == kOCLBuiltinName::ConvertAsBFloat162Float2)
+      assert(
+          RetTy->getNumElements() == 2 && ArgTy->getNumElements() == 2 &&
+          "ConvertAsBFloat162Float2 must be of <2 x float> and take <2 x i16>");
+    if (DemangledName == kOCLBuiltinName::ConvertAsBFloat163Float3)
+      assert(
+          RetTy->getNumElements() == 3 && ArgTy->getNumElements() == 3 &&
+          "ConvertAsBFloat163Float3 must be of <3 x float> and take <3 x i16>");
+    if (DemangledName == kOCLBuiltinName::ConvertAsBFloat164Float4)
+      assert(
+          RetTy->getNumElements() == 4 && ArgTy->getNumElements() == 4 &&
+          "ConvertAsBFloat164Float4 must be of <4 x float> and take <4 x i16>");
+    if (DemangledName == kOCLBuiltinName::ConvertAsBFloat168Float8)
+      assert(
+          RetTy->getNumElements() == 8 && ArgTy->getNumElements() == 8 &&
+          "ConvertAsBFloat168Float8 must be of <8 x float> and take <8 x i16>");
+    if (DemangledName == kOCLBuiltinName::ConvertAsBFloat1616Float16)
+      assert(RetTy->getNumElements() == 16 && ArgTy->getNumElements() == 16 &&
+             "ConvertAsBFloat1616Float16 must be of <16 x float> and take <16 "
+             "x i16>");
+  }
+
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,
