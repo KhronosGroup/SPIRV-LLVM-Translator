@@ -1941,7 +1941,7 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
 
 void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
                                                       StringRef DemangledName) {
-    if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort) {
+  if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort) {
     assert(CI->getType()->isIntegerTy(16U) &&
            CI->getOperand(0)->getType()->isFloatTy() &&
            "OpConvertBFloat16AsUShort must be of i16 and take float");
@@ -1951,9 +1951,9 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
         dyn_cast_or_null<FixedVectorType>(CI->getOperand(0)->getType());
     assert(RetTy && RetTy->getElementType()->isIntegerTy(16U) && ArgTy &&
            ArgTy->getElementType()->isFloatTy() &&
-           ArgTy->getElementType()->isFloatTy() && "OpConvertBFloat16NAsUShortN"
-                                                   " must be of <N x i16> and "
-                                                   "take <N x float>");
+           ArgTy->getElementType()->isFloatTy() &&
+           "OpConvertBFloat16NAsUShortN must be of <N x i16> and take <N x "
+           "float>");
 
     if (DemangledName == kOCLBuiltinName::ConvertBFloat162AsUShort2)
       assert(RetTy->getNumElements() == 2 && ArgTy->getNumElements() == 2 &&
