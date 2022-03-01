@@ -264,7 +264,7 @@ public:
                       StringRef DemangledName);
 
   /// For cl_intel_convert_bfloat16_as_ushort
-  void visitConvertBFloat16AsUshort(CallInst *CI, StringRef DemangledName);
+  void visitCallConvertBFloat16AsUshort(CallInst *CI, StringRef DemangledName);
   /// For cl_intel_convert_as_bfloat16_float
   void visitCallConvertAsBFloat16Float(CallInst *CI, StringRef DemangledName);
 
@@ -585,7 +585,7 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
       DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4 ||
       DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8 ||
       DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16) {
-    visitConvertBFloat16AsUshort(&CI, DemangledName);
+    visitCallConvertBFloat16AsUshort(&CI, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::ConvertAsBFloat16Float ||
@@ -1939,9 +1939,8 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
   visitCallBuiltinSimple(CI, MangledName, DemangledName);
 }
 
-void OCLToSPIRVBase::visitConvertBFloat16AsUshort(CallInst *CI,
-                                                  StringRef DemangledName) {
-  assert(CI->getCalledFunction() && "Unexpected indirect call");
+void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
+                                                      StringRef DemangledName) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,
@@ -1953,7 +1952,6 @@ void OCLToSPIRVBase::visitConvertBFloat16AsUshort(CallInst *CI,
 
 void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
                                                      StringRef DemangledName) {
-  assert(CI->getCalledFunction() && "Unexpected indirect call");
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
       M, CI,

@@ -1,4 +1,9 @@
 ; RUN: llvm-as %s -o %t.bc
+
+; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
+; RUN: llvm-dis %t.regularized.bc -o %t.regularized.ll
+; RUN: FileCheck < %t.regularized.ll %s --check-prefix=CHECK-REGULARIZED
+
 ; RUN: llvm-spirv --spirv-text %t.bc -o %t.spt --spirv-ext=+SPV_INTEL_bfloat16_conversion
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
@@ -11,6 +16,19 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM-SPV
+
+; CHECK-REGULARIZED: call spir_func zeroext i16 @_Z27__spirv_ConvertFToBF16INTELf(float 0.000000e+00)
+; CHECK-REGULARIZED: call spir_func <2 x i16> @_Z27__spirv_ConvertFToBF16INTELDv2_f(<2 x float> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <3 x i16> @_Z27__spirv_ConvertFToBF16INTELDv3_f(<3 x float> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <4 x i16> @_Z27__spirv_ConvertFToBF16INTELDv4_f(<4 x float> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <8 x i16> @_Z27__spirv_ConvertFToBF16INTELDv8_f(<8 x float> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <16 x i16> @_Z27__spirv_ConvertFToBF16INTELDv16_f(<16 x float> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 zeroext 0)
+; CHECK-REGULARIZED: call spir_func <2 x float> @_Z27__spirv_ConvertBF16ToFINTELDv2_s(<2 x i16> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <3 x float> @_Z27__spirv_ConvertBF16ToFINTELDv3_s(<3 x i16> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <4 x float> @_Z27__spirv_ConvertBF16ToFINTELDv4_s(<4 x i16> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <8 x float> @_Z27__spirv_ConvertBF16ToFINTELDv8_s(<8 x i16> zeroinitializer)
+; CHECK-REGULARIZED: call spir_func <16 x float> @_Z27__spirv_ConvertBF16ToFINTELDv16_s(<16 x i16> zeroinitializer)
 
 ; CHECK-SPIRV: TypeInt [[#Int16Ty:]] 16 0
 ; CHECK-SPIRV: TypeFloat [[#FloatTy:]] 32
