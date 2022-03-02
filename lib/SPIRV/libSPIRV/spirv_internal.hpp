@@ -46,14 +46,6 @@ enum InternalOp {
   IOpJointMatrixStoreINTEL = 6121,
   IOpJointMatrixMadINTEL = 6122,
   IOpArithmeticFenceINTEL = 6145,
-  IOpGroupIMulINTEL = 6401,
-  IOpGroupFMulINTEL = 6402,
-  IOpGroupBitwiseAndINTEL = 6403,
-  IOpGroupBitwiseOrINTEL = 6404,
-  IOpGroupBitwiseXorINTEL = 6405,
-  IOpGroupLogicalAndINTEL = 6406,
-  IOpGroupLogicalOrINTEL = 6407,
-  IOpGroupLogicalXorINTEL = 6408,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -80,8 +72,7 @@ enum InternalCapability {
   ICapBfloat16ConversionINTEL = 6115,
   ICapabilityJointMatrixINTEL = 6118,
   ICapabilityHWThreadQueryINTEL = 6134,
-  ICapFPArithmeticFenceINTEL = 6144,
-  ICapabilityGroupUniformArithmeticINTEL = 6400
+  ICapFPArithmeticFenceINTEL = 6144
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -120,16 +111,6 @@ _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
 _SPIRV_OP(BuiltIn, HWThreadIDINTEL)
 _SPIRV_OP(BuiltIn, MaxHWThreadIDPerSubDeviceINTEL)
-
-_SPIRV_OP(Capability, GroupUniformArithmeticINTEL)
-_SPIRV_OP(Op, GroupIMulINTEL)
-_SPIRV_OP(Op, GroupFMulINTEL)
-_SPIRV_OP(Op, GroupBitwiseAndINTEL)
-_SPIRV_OP(Op, GroupBitwiseOrINTEL)
-_SPIRV_OP(Op, GroupBitwiseXorINTEL)
-_SPIRV_OP(Op, GroupLogicalAndINTEL)
-_SPIRV_OP(Op, GroupLogicalOrINTEL)
-_SPIRV_OP(Op, GroupLogicalXorINTEL)
 #undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);

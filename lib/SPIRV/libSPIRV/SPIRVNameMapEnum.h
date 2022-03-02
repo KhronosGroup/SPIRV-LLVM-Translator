@@ -568,6 +568,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
+  add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
 
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
@@ -585,8 +586,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
   add(internal::CapabilityJointMatrixINTEL, "JointMatrixINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
-  add(internal::CapabilityGroupUniformArithmeticINTEL,
-      "GroupUniformArithmeticINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
