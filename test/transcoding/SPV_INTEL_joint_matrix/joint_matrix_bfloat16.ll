@@ -1,10 +1,26 @@
 ; RUN: llvm-as < %s -o %t.bc
+
+; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
+; RUN: llvm-dis %t.regularized.bc -o %t.regularized.ll
+; RUN: FileCheck < %t.regularized.ll %s --check-prefix=CHECK-REGULARIZED
+
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_bfloat16_conversion,+SPV_INTEL_joint_matrix -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; CHECK-REGULARIZED: %spirv.JointMatrixINTEL._bfloat16_8_16_0_3
+; CHECK-REGULARIZED: %ref.tmp.i = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
+; CHECK-REGULARIZED: %ref.tmp.ascast.i = addrspacecast %"class.cl::sycl::ext::intel::experimental::bfloat16"* %ref.tmp.i to %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)*
+; CHECK-REGULARIZED: %value.i.i.i = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %ref.tmp.ascast.i, i64 0, i32 0
+; CHECK-REGULARIZED: %[[#Extract:]] = call spir_func i16 @_Z28__spirv_VectorExtractDynamicIN2cl4sycl3ext5intel12experimental8bfloat16ELm8ELm16ELN5__spv12MatrixLayoutE0ELNS6_5Scope4FlagE3EET_PNS6_24__spirv_JointMatrixINTELISA_XT0_EXT1_EXT2_EXT3_EEEm(%spirv.JointMatrixINTEL._bfloat16_8_16_0_3 addrspace(4)* align 2 %{{.*}}, i64 noundef %{{.*}})
+; CHECK-REGULARIZED: %[[#GEP:]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %ref.tmp.ascast.i, i32 0, i32 0
+; CHECK-REGULARIZED: store i16 %[[#Extract]], i16 addrspace(4)* %[[#GEP]], align 2
+; CHECK-REGULARIZED: %[[#Load:]] = load i16, i16 addrspace(4)* %value.i.i.i, align 2
+; CHECK-REGULARIZED: %call.i.i.i.i = call spir_func noundef float @_Z27__spirv_ConvertBF16ToFINTELt(i16 noundef zeroext %[[#Load]])
+; CHECK-REGULARIZED: %add.i.i = fadd float %call.i.i.i.i, %{{.*}}
 
 ; CHECK-SPIRV: TypeInt [[#TypeI16ID:]] 16 0
 ; CHECK-SPIRV: TypeFloat [[#TypeFID:]] 32
