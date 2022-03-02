@@ -1,7 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 
-; CHECK-ERROR: "OpConvertAsBFloat16NFloatN must be of <N x float> and take <N x i16>"
+; CHECK-ERROR: OpConvertAsBFloat16NFloatN must be of <N x float> and take <N x i16>
 
 ; ModuleID = 'kernel.cl'
 source_filename = "kernel.cl"
