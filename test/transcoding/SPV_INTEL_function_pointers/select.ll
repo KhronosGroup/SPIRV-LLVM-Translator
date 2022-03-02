@@ -6,15 +6,15 @@
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: EntryPoint 6 [[#KERNEL_ID:]] "_ZTS6kernel"
+; CHECK-SPIRV: Name [[#KERNEL_ID:]] "_ZTS6kernel"
 ; CHECK-SPIRV-DAG: Name [[#BAR:]] "_Z3barii"
 ; CHECK-SPIRV-DAG: Name [[#BAZ:]] "_Z3bazii"
 ; CHECK-SPIRV: TypeInt [[#INT32:]] 32
 ; CHECK-SPIRV: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]]
 ; CHECK-SPIRV: TypePointer [[#FUNC_PTR_TYPE:]] [[#]] [[#FUNC_TYPE]]
 ; CHECK-SPIRV: TypePointer [[#FUNC_PTR_ALLOCA_TYPE:]] [[#]] [[#FUNC_PTR_TYPE]]
-; CHECK-SPIRV-DAG: ConstFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BARPTR:]] [[#BAR]]
-; CHECK-SPIRV-DAG: ConstFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BAZPTR:]] [[#BAZ]]
+; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BARPTR:]] [[#BAR]]
+; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BAZPTR:]] [[#BAZ]]
 ; CHECK-SPIRV: Function [[#]] [[#KERNEL_ID]]
 ; CHECK-SPIRV: Variable [[#FUNC_PTR_ALLOCA_TYPE]] [[#FPTR:]]
 ; CHECK-SPIRV: Select [[#FUNC_PTR_TYPE]] [[#SELECT:]] [[#]] [[#BARPTR]] [[#BAZPTR]]

@@ -133,14 +133,11 @@ public:
   virtual const SPIRVCapMap &getCapability() const = 0;
   virtual bool hasCapability(SPIRVCapabilityKind) const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
-  virtual SPIRVFunction *getEntryPoint(SPIRVExecutionModelKind,
-                                       unsigned) const = 0;
   virtual std::set<std::string> &getExtension() = 0;
   virtual SPIRVFunction *getFunction(unsigned) const = 0;
   virtual SPIRVVariable *getVariable(unsigned) const = 0;
   virtual SPIRVMemoryModelKind getMemoryModel() const = 0;
   virtual unsigned getNumFunctions() const = 0;
-  virtual unsigned getNumEntryPoints(SPIRVExecutionModelKind) const = 0;
   virtual unsigned getNumVariables() const = 0;
   virtual SourceLanguage getSourceLanguage(SPIRVWord *) const = 0;
   virtual std::set<std::string> &getSourceExtension() = 0;
@@ -177,6 +174,7 @@ public:
   virtual void setGeneratorVer(unsigned short) = 0;
   virtual void resolveUnknownStructFields() = 0;
   virtual void setSPIRVVersion(SPIRVWord) = 0;
+  virtual void insertEntryNoId(SPIRVEntry *Entry) = 0;
 
   void setMinSPIRVVersion(SPIRVWord Ver) {
     setSPIRVVersion(std::max(Ver, getSPIRVVersion()));
@@ -212,7 +210,9 @@ public:
                          const std::vector<SPIRVEntry *> &Targets) = 0;
   virtual SPIRVGroupDecorateGeneric *
   addGroupDecorateGeneric(SPIRVGroupDecorateGeneric *GDec) = 0;
-  virtual void addEntryPoint(SPIRVExecutionModelKind, SPIRVId) = 0;
+  virtual void addEntryPoint(SPIRVExecutionModelKind, SPIRVId,
+                             const std::string &,
+                             const std::vector<SPIRVId> &) = 0;
   virtual SPIRVForward *addForward(SPIRVType *Ty) = 0;
   virtual SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) = 0;
   virtual SPIRVFunction *addFunction(SPIRVFunction *) = 0;
@@ -267,8 +267,8 @@ public:
                            const std::vector<SPIRVValue *> &Elements) = 0;
   virtual SPIRVEntry *
   addSpecConstantCompositeContinuedINTEL(const std::vector<SPIRVValue *> &) = 0;
-  virtual SPIRVValue *addConstFunctionPointerINTEL(SPIRVType *Ty,
-                                                   SPIRVFunction *F) = 0;
+  virtual SPIRVValue *addConstantFunctionPointerINTEL(SPIRVType *Ty,
+                                                      SPIRVFunction *F) = 0;
   virtual SPIRVValue *addConstant(SPIRVValue *) = 0;
   virtual SPIRVValue *addConstant(SPIRVType *, uint64_t) = 0;
   virtual SPIRVValue *addConstant(SPIRVType *, llvm::APInt) = 0;

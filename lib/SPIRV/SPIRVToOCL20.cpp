@@ -97,6 +97,10 @@ void SPIRVToOCL20Base::visitCallSPIRVMemoryBarrier(CallInst *CI) {
 
 void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  SmallVector<AttributeSet, 2> ArgAttrs = {Attrs.getParamAttrs(1),
+                                           Attrs.getParamAttrs(2)};
+  AttributeList NewAttrs = AttributeList::get(*Ctx, Attrs.getFnAttrs(),
+                                              Attrs.getRetAttrs(), ArgAttrs);
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
@@ -116,7 +120,7 @@ void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
         return (ExecScope == ScopeWorkgroup) ? kOCLBuiltinName::WorkGroupBarrier
                                              : kOCLBuiltinName::SubGroupBarrier;
       },
-      &Attrs);
+      &NewAttrs);
 }
 
 std::string SPIRVToOCL20Base::mapFPAtomicName(Op OC) {
@@ -181,7 +185,7 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
             OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
         auto Ptr = findFirstPtr(Args);
         Type *ValueTy =
-            cast<PointerType>(Args[Ptr]->getType())->getElementType();
+            cast<PointerType>(Args[Ptr]->getType())->getPointerElementType();
         assert(ValueTy->isIntegerTy());
         Args.insert(Args.begin() + 1, llvm::ConstantInt::get(ValueTy, 1));
         return Name;
@@ -256,7 +260,8 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
         new StoreInst(Args[1], PExpected, PInsertBefore);
         unsigned AddrSpc = SPIRAS_Generic;
         Type *PtrTyAS =
-            PExpected->getType()->getElementType()->getPointerTo(AddrSpc);
+            PExpected->getType()->getPointerElementType()->getPointerTo(
+                AddrSpc);
         Args[1] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
             PExpected, PtrTyAS, PExpected->getName() + ".as", PInsertBefore);
         std::swap(Args[3], Args[4]);
@@ -275,6 +280,79 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
         return new LoadInst(
             CI->getArgOperand(1)->getType()->getPointerElementType(),
             CI->getArgOperand(1), "original", PInsertBefore);
+      },
+      &Attrs);
+}
+
+void SPIRVToOCL20Base::visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) {
+  assert(CI->getCalledFunction() && "Unexpected indirect call");
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  Instruction *PInsertBefore = CI;
+
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        bool HasVaargs = Args.size() > 10;
+        bool HasEvents = true;
+        Value *EventRet = Args[5];
+        if (isa<ConstantPointerNull>(EventRet)) {
+          Value *NumEvents = Args[3];
+          if (isa<ConstantInt>(NumEvents)) {
+            ConstantInt *NE = cast<ConstantInt>(NumEvents);
+            HasEvents = NE->getZExtValue() != 0;
+          }
+        }
+
+        Value *Invoke = Args[6];
+        auto *Int8PtrTyGen = Type::getInt8PtrTy(*Ctx, SPIRAS_Generic);
+        Args[6] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
+            Invoke, Int8PtrTyGen, "", PInsertBefore);
+
+        // Don't remove arguments immediately, just mark them as removed with
+        // nullptr, and remove them at the end of processing. It allows for
+        // easier understanding of which argument is going to be removed.
+        auto MarkAsRemoved = [&Args](size_t Start, size_t End) {
+          assert(Start <= End);
+          for (size_t I = Start; I < End; I++)
+            Args[I] = nullptr;
+        };
+
+        if (!HasEvents) {
+          // Mark arguments at indices 3 (Num Events), 4 (Wait Events), 5 (Ret
+          // Event) as removed.
+          MarkAsRemoved(3, 6);
+        }
+
+        if (!HasVaargs) {
+          // Mark arguments at indices 8 (Param Size), 9 (Param Align) as
+          // removed.
+          MarkAsRemoved(8, 10);
+        } else {
+          // GEP to array of sizes of local arguments
+          Value *GEP = Args[10];
+          size_t NumLocalArgs = Args.size() - 10;
+
+          // Mark all SPIRV-specific arguments as removed
+          MarkAsRemoved(8, Args.size());
+
+          Type *Int32Ty = Type::getInt32Ty(*Ctx);
+          Args[8] = ConstantInt::get(Int32Ty, NumLocalArgs);
+          Args[9] = GEP;
+        }
+
+        Args.erase(std::remove(Args.begin(), Args.end(), nullptr), Args.end());
+
+        std::string FName = "";
+        if (!HasVaargs && !HasEvents)
+          FName = "__enqueue_kernel_basic";
+        else if (!HasVaargs && HasEvents)
+          FName = "__enqueue_kernel_basic_events";
+        else if (HasVaargs && !HasEvents)
+          FName = "__enqueue_kernel_varargs";
+        else
+          FName = "__enqueue_kernel_events_varargs";
+
+        return FName;
       },
       &Attrs);
 }

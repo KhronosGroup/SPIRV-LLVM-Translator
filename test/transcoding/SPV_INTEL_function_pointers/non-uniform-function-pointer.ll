@@ -29,13 +29,13 @@
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 ;
-; CHECK-SPIRV: EntryPoint 6 [[KERNEL_ID:[0-9]+]] "test"
+; CHECK-SPIRV: Name [[KERNEL_ID:[0-9]+]] "test"
 ; CHECK-SPIRV: TypeInt [[TYPE_INT32_ID:[0-9+]]] 32
 ; CHECK-SPIRV: TypeFunction [[FOO_TYPE_ID:[0-9]+]] [[TYPE_INT32_ID]] [[TYPE_INT32_ID]]
 ; CHECK-SPIRV: TypePointer [[FOO_PTR_TYPE_ID:[0-9]+]] {{[0-9]+}} [[FOO_TYPE_ID]]
 ; CHECK-SPIRV: TypePointer [[FOO_PTR_ALLOCA_TYPE_ID:[0-9]+]] 7 [[FOO_PTR_TYPE_ID]]
-; CHECK-SPIRV: ConstFunctionPointerINTEL [[FOO_PTR_TYPE_ID]] [[FOO_PTR_ID:[0-9]+]] [[FOO_ID:[0-9]+]]
-; CHECK-SPIRV: ConstFunctionPointerINTEL [[FOO_PTR_TYPE_ID]] [[BAR_PTR_ID:[0-9]+]] [[BAR_ID:[0-9]+]]
+; CHECK-SPIRV: ConstantFunctionPointerINTEL [[FOO_PTR_TYPE_ID]] [[FOO_PTR_ID:[0-9]+]] [[FOO_ID:[0-9]+]]
+; CHECK-SPIRV: ConstantFunctionPointerINTEL [[FOO_PTR_TYPE_ID]] [[BAR_PTR_ID:[0-9]+]] [[BAR_ID:[0-9]+]]
 ;
 ; CHECK-SPIRV: Function {{[0-9]+}} [[FOO_ID]] {{[0-9]+}} [[FOO_TYPE_ID]]
 ; CHECK-SPIRV: Function {{[0-9]+}} [[BAR_ID]] {{[0-9]+}} [[FOO_TYPE_ID]]

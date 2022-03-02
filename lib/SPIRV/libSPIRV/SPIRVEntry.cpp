@@ -275,8 +275,8 @@ void SPIRVEntry::addDecorate(Decoration Kind) {
 
 void SPIRVEntry::addDecorate(Decoration Kind, SPIRVWord Literal) {
   switch (static_cast<int>(Kind)) {
-  case internal::DecorationAliasScopeINTEL:
-  case internal::DecorationNoAliasINTEL:
+  case DecorationAliasScopeINTEL:
+  case DecorationNoAliasINTEL:
     addDecorate(new SPIRVDecorateId(Kind, this, Literal));
     return;
   default:
@@ -441,6 +441,14 @@ SPIRVEntry::getDecorations(Decoration Kind) const {
   return Decors;
 }
 
+std::vector<SPIRVDecorate const *> SPIRVEntry::getDecorations() const {
+  std::vector<SPIRVDecorate const *> Decors;
+  Decors.reserve(Decorates.size());
+  for (auto &DecoPair : Decorates)
+    Decors.push_back(DecoPair.second);
+  return Decors;
+}
+
 std::set<SPIRVId> SPIRVEntry::getDecorateId(Decoration Kind,
                                             size_t Index) const {
   auto Range = DecorateIds.equal_range(Kind);
@@ -541,9 +549,11 @@ void SPIRVEntryPoint::encode(spv_ostream &O) const {
 }
 
 void SPIRVEntryPoint::decode(std::istream &I) {
-  getDecoder(I) >> ExecModel >> Target >> Name >> Variables;
+  getDecoder(I) >> ExecModel >> Target >> Name;
+  Variables.resize(WordCount - FixedWC - getSizeInWords(Name) + 1);
+  getDecoder(I) >> Variables;
   Module->setName(getOrCreateTarget(), Name);
-  Module->addEntryPoint(ExecModel, Target);
+  Module->addEntryPoint(ExecModel, Target, Name, Variables);
 }
 
 void SPIRVExecutionMode::encode(spv_ostream &O) const {

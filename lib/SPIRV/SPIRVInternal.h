@@ -289,6 +289,9 @@ typedef SPIRVMap<spv::Scope, std::string> SPIRVMatrixScopeMap;
 #define SPIR_MD_KERNEL_ARG_TYPE_QUAL "kernel_arg_type_qual"
 #define SPIR_MD_KERNEL_ARG_NAME "kernel_arg_name"
 
+#define SPIRV_MD_PARAMETER_DECORATIONS "spirv.ParameterDecorations"
+#define SPIRV_MD_DECORATIONS "spirv.Decorations"
+
 #define OCL_TYPE_NAME_SAMPLER_T "sampler_t"
 #define SPIR_TYPE_NAME_EVENT_T "opencl.event_t"
 #define SPIR_TYPE_NAME_CLK_EVENT_T "opencl.clk_event_t"
@@ -377,6 +380,7 @@ const static char TranslateOCLMemScope[] = "__translate_ocl_memory_scope";
 const static char TranslateSPIRVMemOrder[] = "__translate_spirv_memory_order";
 const static char TranslateSPIRVMemScope[] = "__translate_spirv_memory_scope";
 const static char TranslateSPIRVMemFence[] = "__translate_spirv_memory_fence";
+const static char EntrypointPrefix[] = "__spirv_entry_";
 } // namespace kSPIRVName
 
 namespace kSPIRVPostfix {
@@ -465,7 +469,7 @@ public:
   /// Translate builtin function name and set
   /// argument attributes and unsigned args.
   BuiltinFuncMangleInfo(const std::string &UniqName = "")
-      : LocalArgBlockIdx(-1), VarArgIdx(-1) {
+      : LocalArgBlockIdx(-1), VarArgIdx(-1), DontMangle(false) {
     if (!UniqName.empty())
       init(UniqName);
   }
@@ -492,6 +496,7 @@ public:
     assert(0 <= Ndx && "it is not allowed to set less than zero index");
     VarArgIdx = Ndx;
   }
+  void setAsDontMangle() { DontMangle = true; }
   bool isArgUnsigned(int Ndx) {
     return UnsignedArgs.count(-1) || UnsignedArgs.count(Ndx);
   }
@@ -511,6 +516,7 @@ public:
       *Enum = Loc->second;
     return true;
   }
+  bool avoidMangling() { return DontMangle; }
   unsigned getArgAttr(int Ndx) {
     auto Loc = Attrs.find(Ndx);
     if (Loc == Attrs.end())
@@ -549,6 +555,9 @@ protected:
   int LocalArgBlockIdx; // index of a block with local arguments, idx < 0 if
                         // none
   int VarArgIdx;        // index of ellipsis argument, idx < 0 if none
+private:
+  bool DontMangle; // clang doesn't apply mangling for some builtin functions
+                   // (i.e. enqueue_kernel)
 };
 
 /// \returns a vector of types for a collection of values.
@@ -641,6 +650,9 @@ Decoration getArgAsDecoration(CallInst *CI, unsigned I);
 bool isPointerToOpaqueStructType(llvm::Type *Ty);
 bool isPointerToOpaqueStructType(llvm::Type *Ty, const std::string &Name);
 
+/// Check if a type is SPIRV sampler type.
+bool isSPIRVSamplerType(llvm::Type *Ty);
+
 /// Check if a type is OCL image type.
 /// \return type name without "opencl." prefix.
 bool isOCLImageType(llvm::Type *Ty, StringRef *Name = nullptr);
@@ -649,6 +661,8 @@ bool isOCLImageType(llvm::Type *Ty, StringRef *Name = nullptr);
 /// \param Postfix contains postfixes extracted from the SPIR-V image
 ///   type name as spirv.BaseTyName.Postfixes.
 bool isSPIRVType(llvm::Type *Ty, StringRef BaseTyName, StringRef *Postfix = 0);
+
+bool isSYCLHalfType(llvm::Type *Ty);
 
 /// Decorate a function name as __spirv_{Name}_
 std::string decorateSPIRVFunction(const std::string &S);
@@ -695,7 +709,7 @@ bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 /// false for other functions
 bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp = false);
 
-/// Check if a function type is void(void).
+/// Check if a function returns void
 bool isVoidFuncTy(FunctionType *FT);
 
 /// \returns true if \p T is a function pointer type.
@@ -751,6 +765,19 @@ Instruction *mutateCallInstSPIRV(
 void mutateFunction(
     Function *F,
     std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
+    BuiltinFuncMangleInfo *Mangle = nullptr, AttributeList *Attrs = nullptr,
+    bool TakeName = true);
+
+/// Mutate function by change the arguments & the return type.
+/// \param ArgMutate mutates the function arguments.
+/// \param RetMutate mutates the function return value.
+/// \param TakeName Take the original function's name if a new function with
+///   different type needs to be created.
+void mutateFunction(
+    Function *F,
+    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
+        ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
     BuiltinFuncMangleInfo *Mangle = nullptr, AttributeList *Attrs = nullptr,
     bool TakeName = true);
 

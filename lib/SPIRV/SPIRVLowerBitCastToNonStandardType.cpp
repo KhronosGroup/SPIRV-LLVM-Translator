@@ -46,6 +46,7 @@
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Pass.h"
 
 #include <utility>
 
@@ -56,7 +57,7 @@ namespace SPIRV {
 static VectorType *getVectorType(Type *Ty) {
   assert(Ty != nullptr && "Expected non-null type");
   if (auto *ElemTy = dyn_cast<PointerType>(Ty))
-    Ty = ElemTy->getElementType();
+    Ty = ElemTy->getPointerElementType();
   return dyn_cast<VectorType>(Ty);
 }
 
@@ -105,8 +106,8 @@ bool lowerBitCastToNonStdVec(Instruction *OldInst, Value *NewInst,
       }
       // Handle extractelement instruction which is following the load
       else if (auto *EEI = dyn_cast<ExtractElementInst>(U)) {
-        uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getValue();
-        uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getValue();
+        uint64_t NumElemsInOldVec = OldVecTy->getElementCount().getFixedValue();
+        uint64_t NumElemsInNewVec = NewVecTy->getElementCount().getFixedValue();
         uint64_t OldElemIdx =
             cast<ConstantInt>(EEI->getIndexOperand())->getZExtValue();
         uint64_t NewElemIdx =
@@ -168,7 +169,8 @@ public:
           continue;
         VectorType *SrcVecTy = getVectorType(BC->getSrcTy());
         if (SrcVecTy) {
-          uint64_t NumElemsInSrcVec = SrcVecTy->getElementCount().getValue();
+          uint64_t NumElemsInSrcVec =
+              SrcVecTy->getElementCount().getFixedValue();
           if (!isValidVectorSize(NumElemsInSrcVec))
             report_fatal_error(
                 llvm::Twine("Unsupported vector type with the size of: " +
@@ -177,7 +179,8 @@ public:
         }
         VectorType *DestVecTy = getVectorType(BC->getDestTy());
         if (DestVecTy) {
-          uint64_t NumElemsInDestVec = DestVecTy->getElementCount().getValue();
+          uint64_t NumElemsInDestVec =
+              DestVecTy->getElementCount().getFixedValue();
           if (!isValidVectorSize(NumElemsInDestVec))
             BCastsToNonStdVec.push_back(&I);
         }
