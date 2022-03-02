@@ -991,12 +991,12 @@ void SPIRVToOCLBase::visitCallSPIRVBFloat16Conversions(CallInst *CI, Op OC) {
   mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args) {
+        Type *ArgTy = CI->getOperand(0)->getType();
+        std::string N =
+            ArgTy->isVectorTy()
+                ? std::to_string(cast<FixedVectorType>(ArgTy)->getNumElements())
+                : "";
         std::string Name;
-        std::string N = CI->getOperand(0)->getType()->isVectorTy()
-                            ? std::to_string(dyn_cast<FixedVectorType>(
-                                                 CI->getOperand(0)->getType())
-                                                 ->getNumElements())
-                            : "";
         switch (static_cast<uint32_t>(OC)) {
         case internal::OpConvertFToBF16INTEL:
           Name = "intel_convert_bfloat16" + N + "_as_ushort" + N;

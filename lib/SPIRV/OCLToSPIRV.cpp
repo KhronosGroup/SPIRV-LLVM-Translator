@@ -1941,39 +1941,40 @@ void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
 
 void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
                                                       StringRef DemangledName) {
+  Type *RetTy = CI->getType();
+  Type *ArgTy = CI->getOperand(0)->getType();
   if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort) {
-    if (!CI->getType()->isIntegerTy(16U) ||
-        !CI->getOperand(0)->getType()->isFloatTy())
+    if (!RetTy->isIntegerTy(16U) || !ArgTy->isFloatTy())
       report_fatal_error(
           "OpConvertBFloat16AsUShort must be of i16 and take float");
 
   } else {
-    FixedVectorType *RetTy = dyn_cast_or_null<FixedVectorType>(CI->getType());
-    FixedVectorType *ArgTy =
-        dyn_cast_or_null<FixedVectorType>(CI->getOperand(0)->getType());
-    if (!RetTy || !RetTy->getElementType()->isIntegerTy(16U) || !ArgTy ||
-        !ArgTy->getElementType()->isFloatTy())
+    FixedVectorType *RetTyVec = cast<FixedVectorType>(RetTy);
+    FixedVectorType *ArgTyVec = cast<FixedVectorType>(ArgTy);
+    if (!RetTyVec || !RetTyVec->getElementType()->isIntegerTy(16U) ||
+        !ArgTyVec || !ArgTyVec->getElementType()->isFloatTy())
       report_fatal_error("OpConvertBFloat16NAsUShortN must be of <N x i16> and "
                          "take <N x float>");
-
+    unsigned RetTyVecSize = RetTyVec->getNumElements();
+    unsigned ArgTyVecSize = ArgTyVec->getNumElements();
     if (DemangledName == kOCLBuiltinName::ConvertBFloat162AsUShort2)
-      if (RetTy->getNumElements() != 2 || ArgTy->getNumElements() != 2)
+      if (RetTyVecSize != 2 || ArgTyVecSize != 2)
         report_fatal_error("ConvertBFloat162AsUShort2 must be of <2 x i16> and "
                            "take <2 x float>");
     if (DemangledName == kOCLBuiltinName::ConvertBFloat163AsUShort3)
-      if (RetTy->getNumElements() != 3 || ArgTy->getNumElements() != 3)
+      if (RetTyVecSize != 3 || ArgTyVecSize != 3)
         report_fatal_error("ConvertBFloat163AsUShort3 must be of <3 x i16> and "
                            "take <3 x float>");
     if (DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4)
-      if (RetTy->getNumElements() != 4 || ArgTy->getNumElements() != 4)
+      if (RetTyVecSize != 4 || ArgTyVecSize != 4)
         report_fatal_error("ConvertBFloat164AsUShort4 must be of <4 x i16> and "
                            "take <4 x float>");
     if (DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8)
-      if (RetTy->getNumElements() != 8 || ArgTy->getNumElements() != 8)
+      if (RetTyVecSize != 8 || ArgTyVecSize != 8)
         report_fatal_error("ConvertBFloat168AsUShort8 must be of <8 x i16> and "
                            "take <8 x float>");
     if (DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16)
-      if (RetTy->getNumElements() != 16 || ArgTy->getNumElements() != 16)
+      if (RetTyVecSize != 16 || ArgTyVecSize != 16)
         report_fatal_error("ConvertBFloat1616AsUShort16 must be of <16 x i16> "
                            "and take <16 x float>");
   }
@@ -1989,38 +1990,39 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
 
 void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
                                                      StringRef DemangledName) {
+  Type *RetTy = CI->getType();
+  Type *ArgTy = CI->getOperand(0)->getType();
   if (DemangledName == kOCLBuiltinName::ConvertAsBFloat16Float) {
-    if (!CI->getType()->isFloatTy() ||
-        !CI->getOperand(0)->getType()->isIntegerTy(16U))
+    if (!RetTy->isFloatTy() || !ArgTy->isIntegerTy(16U))
       report_fatal_error(
           "OpConvertAsBFloat16Float must be of float and take i16");
   } else {
-    FixedVectorType *RetTy = dyn_cast_or_null<FixedVectorType>(CI->getType());
-    FixedVectorType *ArgTy =
-        dyn_cast_or_null<FixedVectorType>(CI->getOperand(0)->getType());
-    if (!RetTy || !RetTy->getElementType()->isFloatTy() || !ArgTy ||
-        !ArgTy->getElementType()->isIntegerTy(16U))
+    FixedVectorType *RetTyVec = cast<FixedVectorType>(RetTy);
+    FixedVectorType *ArgTyVec = cast<FixedVectorType>(ArgTy);
+    if (!RetTyVec || !RetTyVec->getElementType()->isFloatTy() || !ArgTyVec ||
+        !ArgTyVec->getElementType()->isIntegerTy(16U))
       report_fatal_error("OpConvertAsBFloat16NFloatN must be of <N x float> "
                          "and take <N x i16>");
-
+    unsigned RetTyVecSize = RetTyVec->getNumElements();
+    unsigned ArgTyVecSize = ArgTyVec->getNumElements();
     if (DemangledName == kOCLBuiltinName::ConvertAsBFloat162Float2)
-      if (RetTy->getNumElements() != 2 || ArgTy->getNumElements() != 2)
+      if (RetTyVecSize != 2 || ArgTyVecSize != 2)
         report_fatal_error("ConvertAsBFloat162Float2 must be of <2 x float> "
                            "and take <2 x i16>");
     if (DemangledName == kOCLBuiltinName::ConvertAsBFloat163Float3)
-      if (RetTy->getNumElements() != 3 || ArgTy->getNumElements() != 3)
+      if (RetTyVecSize != 3 || ArgTyVecSize != 3)
         report_fatal_error("ConvertAsBFloat163Float3 must be of <3 x float> "
                            "and take <3 x i16>");
     if (DemangledName == kOCLBuiltinName::ConvertAsBFloat164Float4)
-      if (RetTy->getNumElements() != 4 || ArgTy->getNumElements() != 4)
+      if (RetTyVecSize != 4 || ArgTyVecSize != 4)
         report_fatal_error("ConvertAsBFloat164Float4 must be of <4 x float> "
                            "and take <4 x i16>");
     if (DemangledName == kOCLBuiltinName::ConvertAsBFloat168Float8)
-      if (RetTy->getNumElements() != 8 || ArgTy->getNumElements() != 8)
+      if (RetTyVecSize != 8 || ArgTyVecSize != 8)
         report_fatal_error("ConvertAsBFloat168Float8 must be of <8 x float> "
                            "and take <8 x i16>");
     if (DemangledName == kOCLBuiltinName::ConvertAsBFloat1616Float16)
-      if (RetTy->getNumElements() != 16 || ArgTy->getNumElements() != 16)
+      if (RetTyVecSize != 16 || ArgTyVecSize != 16)
         report_fatal_error("ConvertAsBFloat1616Float16 must be of <16 x float> "
                            "and take <16 x i16>");
   }
