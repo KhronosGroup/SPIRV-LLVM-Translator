@@ -495,13 +495,9 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
         llvm_unreachable("Unexpected type for matrix!");
       StringRef STElemTyName = STElemTy->getName();
       STElemTyName.consume_front("class.");
-      if ((STElemTyName.startswith("cl::sycl::") ||
-           STElemTyName.startswith("__sycl_internal::")) &&
-          STElemTyName.endswith("::half"))
+      if (isSYCLHalfType(ElemTy))
         ElemTyStr = "half";
-      if ((STElemTyName.startswith("cl::sycl::") ||
-           STElemTyName.startswith("__sycl_internal::")) &&
-          STElemTyName.endswith("::bfloat16"))
+      if (isSYCLBfloat16Type(ElemTy))
         ElemTyStr = "bfloat16";
       if (ElemTyStr.size() == 0)
         llvm_unreachable("Unexpected type for matrix!");
