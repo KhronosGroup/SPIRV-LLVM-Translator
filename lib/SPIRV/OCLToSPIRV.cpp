@@ -1960,30 +1960,22 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
       if (RetTyVecSize != 2 || ArgTyVecSize != 2)
         report_fatal_error("ConvertBFloat162AsUShort2 must be of <2 x i16> and "
                            "take <2 x float>");
-    } else {
-      if (DemangledName == kOCLBuiltinName::ConvertBFloat163AsUShort3) {
-        if (RetTyVecSize != 3 || ArgTyVecSize != 3)
-          report_fatal_error("ConvertBFloat163AsUShort3 must be of <3 x i16> "
-                             "and take <3 x float>");
-      } else {
-        if (DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4) {
-          if (RetTyVecSize != 4 || ArgTyVecSize != 4)
-            report_fatal_error("ConvertBFloat164AsUShort4 must be of <4 x i16> "
-                               "and take <4 x float>");
-        } else {
-          if (DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8) {
-            if (RetTyVecSize != 8 || ArgTyVecSize != 8)
-              report_fatal_error("ConvertBFloat168AsUShort8 must be of <8 x "
-                                 "i16> and take <8 x float>");
-          } else {
-            if (DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16) {
-              if (RetTyVecSize != 16 || ArgTyVecSize != 16)
-                report_fatal_error("ConvertBFloat1616AsUShort16 must be of <16 "
-                                   "x i16> and take <16 x float>");
-            }
-          }
-        }
-      }
+    } else if (DemangledName == kOCLBuiltinName::ConvertBFloat163AsUShort3) {
+      if (RetTyVecSize != 3 || ArgTyVecSize != 3)
+        report_fatal_error("ConvertBFloat163AsUShort3 must be of <3 x i16> and "
+                           "take <3 x float>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertBFloat164AsUShort4) {
+      if (RetTyVecSize != 4 || ArgTyVecSize != 4)
+        report_fatal_error("ConvertBFloat164AsUShort4 must be of <4 x i16> and "
+                           "take <4 x float>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertBFloat168AsUShort8) {
+      if (RetTyVecSize != 8 || ArgTyVecSize != 8)
+        report_fatal_error("ConvertBFloat168AsUShort8 must be of <8 x i16> and "
+                           "take <8 x float>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertBFloat1616AsUShort16) {
+      if (RetTyVecSize != 16 || ArgTyVecSize != 16)
+        report_fatal_error("ConvertBFloat1616AsUShort16 must be of <16 x i16> "
+                           "and take <16 x float>");
     }
   }
 
@@ -2017,30 +2009,22 @@ void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
       if (RetTyVecSize != 2 || ArgTyVecSize != 2)
         report_fatal_error("ConvertAsBFloat162Float2 must be of <2 x float> "
                            "and take <2 x i16>");
-    } else {
-      if (DemangledName == kOCLBuiltinName::ConvertAsBFloat163Float3) {
-        if (RetTyVecSize != 3 || ArgTyVecSize != 3)
-          report_fatal_error("ConvertAsBFloat163Float3 must be of <3 x float> "
-                             "and take <3 x i16>");
-      } else {
-        if (DemangledName == kOCLBuiltinName::ConvertAsBFloat164Float4) {
-          if (RetTyVecSize != 4 || ArgTyVecSize != 4)
-            report_fatal_error("ConvertAsBFloat164Float4 must be of <4 x "
-                               "float> and take <4 x i16>");
-        } else {
-          if (DemangledName == kOCLBuiltinName::ConvertAsBFloat168Float8) {
-            if (RetTyVecSize != 8 || ArgTyVecSize != 8)
-              report_fatal_error("ConvertAsBFloat168Float8 must be of <8 x "
-                                 "float> and take <8 x i16>");
-          } else {
-            if (DemangledName == kOCLBuiltinName::ConvertAsBFloat1616Float16) {
-              if (RetTyVecSize != 16 || ArgTyVecSize != 16)
-                report_fatal_error("ConvertAsBFloat1616Float16 must be of <16 "
-                                   "x float> and take <16 x i16>");
-            }
-          }
-        }
-      }
+    } else if (DemangledName == kOCLBuiltinName::ConvertAsBFloat163Float3) {
+      if (RetTyVecSize != 3 || ArgTyVecSize != 3)
+        report_fatal_error("ConvertAsBFloat163Float3 must be of <3 x float> "
+                           "and take <3 x i16>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertAsBFloat164Float4) {
+      if (RetTyVecSize != 4 || ArgTyVecSize != 4)
+        report_fatal_error("ConvertAsBFloat164Float4 must be of <4 x float> "
+                           "and take <4 x i16>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertAsBFloat168Float8) {
+      if (RetTyVecSize != 8 || ArgTyVecSize != 8)
+        report_fatal_error("ConvertAsBFloat168Float8 must be of <8 x float> "
+                           "and take <8 x i16>");
+    } else if (DemangledName == kOCLBuiltinName::ConvertAsBFloat1616Float16) {
+      if (RetTyVecSize != 16 || ArgTyVecSize != 16)
+        report_fatal_error("ConvertAsBFloat1616Float16 must be of <16 x float> "
+                           "and take <16 x i16>");
     }
   }
 
