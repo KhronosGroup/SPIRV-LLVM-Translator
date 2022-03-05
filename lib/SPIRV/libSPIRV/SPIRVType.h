@@ -282,9 +282,11 @@ public:
       : Pointer(nullptr), SC(StorageClassUniformConstant) {}
 
   SPIRVTypePointer *getPointer() const { return Pointer; }
+  SPIRVId getPointerId() const { return PointerId; }
   _SPIRV_DCL_ENCDEC
 private:
   SPIRVTypePointer *Pointer;
+  SPIRVId PointerId;
   SPIRVStorageClassKind SC;
 };
 

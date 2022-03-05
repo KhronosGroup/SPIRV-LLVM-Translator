@@ -496,6 +496,7 @@ private:
   SPIRVForwardPointerVec ForwardPointerVec;
   SPIRVTypeVec TypeVec;
   SPIRVIdToEntryMap IdEntryMap;
+  SPIRVIdToEntryMap IdTypeForwardMap; // Forward declared IDs
   SPIRVFunctionVector FuncVec;
   SPIRVConstantVector ConstVec;
   SPIRVVariableVec VariableVec;
@@ -693,9 +694,15 @@ SPIRVEntry *SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
     } else
       IdEntryMap[Id] = Entry;
   } else {
+    // Collect entries with no ID to de-allocate them at end.
     // Entry of OpLine will be deleted by std::shared_ptr automatically.
     if (Entry->getOpCode() != OpLine)
       EntryNoId.insert(Entry);
+
+    // Store the known ID of pointer type that would be declared later.
+    if (Entry->getOpCode() == OpTypeForwardPointer)
+      IdTypeForwardMap[static_cast<SPIRVTypeForwardPointer *>(Entry)
+                           ->getPointerId()] = Entry;
   }
 
   Entry->setModule(this);
@@ -749,8 +756,15 @@ SPIRVId SPIRVModuleImpl::getId(SPIRVId Id, unsigned Increment) {
 SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
   assert(Id != SPIRVID_INVALID && "Invalid Id");
   SPIRVIdToEntryMap::const_iterator Loc = IdEntryMap.find(Id);
-  assert(Loc != IdEntryMap.end() && "Id is not in map");
-  return Loc->second;
+  if (Loc != IdEntryMap.end()) {
+    return Loc->second;
+  }
+  SPIRVIdToEntryMap::const_iterator LocFwd = IdTypeForwardMap.find(Id);
+  if (LocFwd != IdTypeForwardMap.end()) {
+    return LocFwd->second;
+  }
+  assert("Id is not in map");
+  return nullptr;
 }
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {

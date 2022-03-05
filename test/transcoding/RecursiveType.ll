@@ -13,24 +13,33 @@ target triple = "spir-unknown-unknown"
 %struct.C = type { i32, %struct.B }
 %struct.B = type { i32, %struct.A addrspace(4)* }
 %struct.Node = type { %struct.Node addrspace(1)*, i32 }
+%struct.Flag = type { [3 x %struct.Flag addrspace(4)*] }
 
+; CHECK-SPIRV-DAG: 3 TypeForwardPointer [[FlagFwdPtr:[0-9]+]] 8
 ; CHECK-SPIRV-DAG: 3 TypeForwardPointer [[NodeFwdPtr:[0-9]+]] 5
 ; CHECK-SPIRV-DAG: 3 TypeForwardPointer [[AFwdPtr:[0-9]+]] 8
 ; CHECK-SPIRV: 4 TypeInt [[IntID:[0-9]+]] 32 0
 ; CHECK-SPIRV: 4 TypeStruct [[BID:[0-9]+]] {{[0-9]+}} [[AFwdPtr]]
 ; CHECK-SPIRV: 4 TypeStruct [[CID:[0-9]+]] {{[0-9]+}} [[BID]]
 ; CHECK-SPIRV: 4 TypeStruct [[AID:[0-9]+]] {{[0-9]+}} [[CID]]
+
 ; CHECK-SPIRV: 4 TypePointer [[AFwdPtr]] 8 [[AID:[0-9]+]]
 ; CHECK-SPIRV: 4 TypeStruct [[NodeID:[0-9]+]] [[NodeFwdPtr]]
+
 ; CHECK-SPIRV: 4 TypePointer [[NodeFwdPtr]] 5 [[NodeID]]
+; CHECK-SPIRV: 4 TypeArray [[FlagID:[0-9]+]] [[FlagFwdPtr]]
+; CHECK-SPIRV: 3 TypeStruct [[FlagStructID:[0-9]+]] [[FlagID]]
+
+; CHECK-SPIRV: 4 TypePointer [[FlagFwdPtr]] 8 [[FlagStructID]]
 
 ; CHECK-LLVM: %struct.A = type { i32, %struct.C }
 ; CHECK-LLVM: %struct.C = type { i32, %struct.B }
 ; CHECK-LLVM: %struct.B = type { i32, %struct.A addrspace(4)* }
 ; CHECK-LLVM: %struct.Node = type { %struct.Node addrspace(1)*, i32 }
+; CHECK-LLVM: %struct.Flag = type { [3 x %struct.Flag addrspace(4)*] }
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(%struct.A addrspace(1)* %result, %struct.Node addrspace(1)* %node) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
+define spir_kernel void @test(%struct.A addrspace(1)* %result, %struct.Node addrspace(1)* %node, %struct.Flag addrspace(1)* %flag) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
   ret void
 }
 

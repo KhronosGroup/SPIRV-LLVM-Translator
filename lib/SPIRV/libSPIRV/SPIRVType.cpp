@@ -271,7 +271,6 @@ void SPIRVTypeForwardPointer::encode(spv_ostream &O) const {
 
 void SPIRVTypeForwardPointer::decode(std::istream &I) {
   auto Decoder = getDecoder(I);
-  SPIRVId PointerId;
   Decoder >> PointerId >> SC;
 }
 
