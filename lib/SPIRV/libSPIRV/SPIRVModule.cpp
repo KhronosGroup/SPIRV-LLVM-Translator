@@ -1749,7 +1749,7 @@ class TopologicalSort {
           SPIRVTypePointer *Ptr = static_cast<SPIRVTypePointer *>(E);
           SPIRVModule *BM = E->getModule();
           ForwardPointerSet.insert(BM->add(new SPIRVTypeForwardPointer(
-              BM, Ptr, Ptr->getPointerStorageClass())));
+              BM, Ptr->getId(), Ptr->getPointerStorageClass())));
           return false;
         }
         return true;
@@ -1780,11 +1780,11 @@ public:
       : ForwardPointerSet(
             16, // bucket count
             [](const SPIRVTypeForwardPointer *Ptr) {
-              return std::hash<SPIRVId>()(Ptr->getPointer()->getId());
+              return std::hash<SPIRVId>()(Ptr->getPointerId());
             },
             [](const SPIRVTypeForwardPointer *Ptr1,
                const SPIRVTypeForwardPointer *Ptr2) {
-              return Ptr1->getPointer()->getId() == Ptr2->getPointer()->getId();
+              return Ptr1->getPointerId() == Ptr2->getPointerId();
             }),
         EntryStateMap([](SPIRVEntry *A, SPIRVEntry *B) -> bool {
           return A->getId() < B->getId();
