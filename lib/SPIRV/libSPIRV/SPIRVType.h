@@ -276,10 +276,12 @@ class SPIRVTypeForwardPointer : public SPIRVEntryNoId<OpTypeForwardPointer> {
 public:
   SPIRVTypeForwardPointer(SPIRVModule *M, SPIRVTypePointer *Pointer,
                           SPIRVStorageClassKind SC)
-      : SPIRVEntryNoId(M, 3), Pointer(Pointer), SC(SC) {}
+      : SPIRVEntryNoId(M, 3), Pointer(Pointer), PointerId(SPIRVID_INVALID),
+        SC(SC) {}
 
   SPIRVTypeForwardPointer()
-      : Pointer(nullptr), SC(StorageClassUniformConstant) {}
+      : Pointer(nullptr), PointerId(SPIRVID_INVALID),
+        SC(StorageClassUniformConstant) {}
 
   SPIRVTypePointer *getPointer() const { return Pointer; }
   SPIRVId getPointerId() const { return PointerId; }

@@ -763,7 +763,7 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
   if (LocFwd != IdTypeForwardMap.end()) {
     return LocFwd->second;
   }
-  assert("Id is not in map");
+  assert(false && "Id is not in map");
   return nullptr;
 }
 
