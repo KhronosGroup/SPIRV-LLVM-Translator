@@ -694,7 +694,7 @@ SPIRVEntry *SPIRVModuleImpl::addEntry(SPIRVEntry *Entry) {
     } else
       IdEntryMap[Id] = Entry;
   } else {
-    // Collect entries with no ID to de-allocate them at end.
+    // Collect entries with no ID to de-allocate them at the end.
     // Entry of OpLine will be deleted by std::shared_ptr automatically.
     if (Entry->getOpCode() != OpLine)
       EntryNoId.insert(Entry);
@@ -1736,6 +1736,11 @@ class TopologicalSort {
       return true;
     State = Discovered;
     for (SPIRVEntry *Op : E->getNonLiteralOperands()) {
+      if (Op->getOpCode() == OpTypeForwardPointer) {
+        SPIRVEntry *FP = E->getModule()->getEntry(
+            static_cast<SPIRVTypeForwardPointer *>(Op)->getPointerId());
+        Op = FP;
+      }
       if (EntryStateMap[Op] == Visited)
         continue;
       if (visit(Op)) {
