@@ -43,6 +43,7 @@
 ; CHECK-LLVM: %call.i.i3.i.i = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %call.i.i)
 ; CHECK-LLVM: %add.i.i = fadd float %call.i.i.i.i, %call.i.i3.i.i
 ; CHECK-LLVM: %call.i.i4.i.i = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float %add.i.i)
+; CHECK-LLVM: store i16 %call.i.i4.i.i, i16 addrspace(4)* %[[#]], align 2
 
 ; ModuleID = 'joint_matrix_bfloat16_test.bc'
 source_filename = "joint_matrix_bfloat16_test.cpp"
