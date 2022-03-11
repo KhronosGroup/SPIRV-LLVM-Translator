@@ -12,15 +12,15 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-REGULARIZED: %spirv.JointMatrixINTEL._bfloat16_8_16_0_3
-; CHECK-REGULARIZED: %ref.tmp.i = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
-; CHECK-REGULARIZED: %ref.tmp.ascast.i = addrspacecast %"class.cl::sycl::ext::intel::experimental::bfloat16"* %ref.tmp.i to %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)*
-; CHECK-REGULARIZED: %value.i.i.i = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %ref.tmp.ascast.i, i64 0, i32 0
+; CHECK-REGULARIZED: %[[Alloca:.*]] = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
+; CHECK-REGULARIZED: %[[ASCast:.*]] = addrspacecast %"class.cl::sycl::ext::intel::experimental::bfloat16"* %[[Alloca]] to %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)*
+; CHECK-REGULARIZED: %[[GEP1:.*]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %[[ASCast]], i64 0, i32 0
 ; CHECK-REGULARIZED: %[[#Extract:]] = call spir_func i16 @_Z28__spirv_VectorExtractDynamicIN2cl4sycl3ext5intel12experimental8bfloat16ELm8ELm16ELN5__spv12MatrixLayoutE0ELNS6_5Scope4FlagE3EET_PNS6_24__spirv_JointMatrixINTELISA_XT0_EXT1_EXT2_EXT3_EEEm(%spirv.JointMatrixINTEL._bfloat16_8_16_0_3 addrspace(4)* align 2 %{{.*}}, i64 noundef %{{.*}})
-; CHECK-REGULARIZED: %[[#GEP:]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %ref.tmp.ascast.i, i32 0, i32 0
-; CHECK-REGULARIZED: store i16 %[[#Extract]], i16 addrspace(4)* %[[#GEP]], align 2
-; CHECK-REGULARIZED: %[[#Load:]] = load i16, i16 addrspace(4)* %value.i.i.i, align 2
-; CHECK-REGULARIZED: %call.i.i.i.i = call spir_func noundef float @_Z27__spirv_ConvertBF16ToFINTELt(i16 noundef zeroext %[[#Load]])
-; CHECK-REGULARIZED: %add.i.i = fadd float %call.i.i.i.i, %{{.*}}
+; CHECK-REGULARIZED: %[[#GEP2:]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %[[ASCast]], i32 0, i32 0
+; CHECK-REGULARIZED: store i16 %[[#Extract]], i16 addrspace(4)* %[[#GEP2]], align 2
+; CHECK-REGULARIZED: %[[#Load:]] = load i16, i16 addrspace(4)* %[[GEP1]], align 2
+; CHECK-REGULARIZED: %[[ConvertVal:.*]] = call spir_func noundef float @_Z27__spirv_ConvertBF16ToFINTELt(i16 noundef zeroext %[[#Load]])
+; CHECK-REGULARIZED: %{{.*}} = fadd float %[[ConvertVal]], %{{.*}}
 
 ; CHECK-SPIRV: TypeInt [[#TypeI16ID:]] 16 0
 ; CHECK-SPIRV: TypeFloat [[#TypeFID:]] 32
@@ -36,14 +36,15 @@
 ; CHECK-SPIRV: VectorInsertDynamic [[#TypeJointMID]] [[#]] [[#PhiID]] [[#LoadID]] [[#]]
 
 ; CHECK-LLVM: %spirv.JointMatrixINTEL._short_8_16_0_3
-; CHECK-LLVM: %value.i.i.i = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %{{.*}}, i64 0, i32 0
-; CHECK-LLVM: %call.i.i = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float 2.000000e+00)
-; CHECK-LLVM: %[[#LoadGEP:]] = load i16, i16 addrspace(4)* %value.i.i.i, align 2
-; CHECK-LLVM: %call.i.i.i.i = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %[[#LoadGEP]])
-; CHECK-LLVM: %call.i.i3.i.i = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %call.i.i)
-; CHECK-LLVM: %add.i.i = fadd float %call.i.i.i.i, %call.i.i3.i.i
-; CHECK-LLVM: %call.i.i4.i.i = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float %add.i.i)
-; CHECK-LLVM: store i16 %call.i.i4.i.i, i16 addrspace(4)* %[[#]], align 2
+; CHECK-LLVM: %[[GEP1:.*]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %{{.*}}, i64 0, i32 0
+; CHECK-LLVM: %[[GEP2:.*]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %{{.*}}, i64 0, i32 0
+; CHECK-LLVM: %[[ConvertConst:.*]] = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float 2.000000e+00)
+; CHECK-LLVM: %[[#LoadGEP:]] = load i16, i16 addrspace(4)* %[[GEP2]], align 2
+; CHECK-LLVM: %[[ConvertVal:.*]] = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %[[#LoadGEP]])
+; CHECK-LLVM: %[[ConvertConstToF:.*]] = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %[[ConvertConst]])
+; CHECK-LLVM: %[[FAddRes:.*]] = fadd float %[[ConvertVal]], %[[ConvertConstToF]]
+; CHECK-LLVM: %[[ConvertResToBF:.*]] = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float %[[FAddRes]])
+; CHECK-LLVM: store i16 %[[ConvertResToBF]], i16 addrspace(4)* %[[#]], align 2
 
 ; ModuleID = 'joint_matrix_bfloat16_test.bc'
 source_filename = "joint_matrix_bfloat16_test.cpp"
@@ -74,8 +75,8 @@ declare void @llvm.lifetime.start.p0i8(i64 immarg, i8* nocapture) #0
 ; Function Attrs: convergent inlinehint norecurse
 define linkonce_odr dso_local spir_func void @_ZZZ17matrix_verify_addIN2cl4sycl3ext5intel12experimental8bfloat16ELm16ELm16EEvNS1_5queueER10big_matrixIT_XT0_EXT1_EERNS1_8nd_rangeILi2EEEfENKUlRNS1_7handlerEE_clESF_ENKUlNS1_7nd_itemILi2EEEE_clESI_(%class.anon addrspace(4)* noundef align 8 dereferenceable_or_null(56) %this, %"class.cl::sycl::nd_item"* noundef byval(%"class.cl::sycl::nd_item") align 8 %spmd_item) local_unnamed_addr #1 comdat align 2 {
 entry:
-  %agg.tmp.i54 = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
   %ref.tmp.i = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
+  %agg.tmp.i54 = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
   %agg.tmp.i = alloca %"class.cl::sycl::ext::intel::experimental::bfloat16", align 2
   %spmd_item.ascast = addrspacecast %"class.cl::sycl::nd_item"* %spmd_item to %"class.cl::sycl::nd_item" addrspace(4)*
   %arrayidx.i.i.i = getelementptr inbounds %"class.cl::sycl::nd_item", %"class.cl::sycl::nd_item" addrspace(4)* %spmd_item.ascast, i64 0, i32 0, i32 0, i32 1, i32 0, i32 0, i64 0
