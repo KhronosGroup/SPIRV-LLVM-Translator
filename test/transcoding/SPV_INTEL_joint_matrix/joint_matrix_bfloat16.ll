@@ -38,12 +38,12 @@
 ; CHECK-LLVM: %spirv.JointMatrixINTEL._short_8_16_0_3
 ; CHECK-LLVM: %[[GEP1:.*]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %{{.*}}, i64 0, i32 0
 ; CHECK-LLVM: %[[GEP2:.*]] = getelementptr inbounds %"class.cl::sycl::ext::intel::experimental::bfloat16", %"class.cl::sycl::ext::intel::experimental::bfloat16" addrspace(4)* %{{.*}}, i64 0, i32 0
-; CHECK-LLVM: %[[ConvertConst:.*]] = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float 2.000000e+00)
+; CHECK-LLVM: %[[ConvertConst:.*]] = call spir_func i16 @_Z32intel_convert_bfloat16_as_ushortf(float 2.000000e+00)
 ; CHECK-LLVM: %[[#LoadGEP:]] = load i16, i16 addrspace(4)* %[[GEP2]], align 2
-; CHECK-LLVM: %[[ConvertVal:.*]] = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %[[#LoadGEP]])
-; CHECK-LLVM: %[[ConvertConstToF:.*]] = call spir_func float @_Z27__spirv_ConvertBF16ToFINTELs(i16 %[[ConvertConst]])
+; CHECK-LLVM: %[[ConvertVal:.*]] = call spir_func float @_Z31intel_convert_as_bfloat16_floats(i16 %[[#LoadGEP]])
+; CHECK-LLVM: %[[ConvertConstToF:.*]] = call spir_func float @_Z31intel_convert_as_bfloat16_floats(i16 %[[ConvertConst]])
 ; CHECK-LLVM: %[[FAddRes:.*]] = fadd float %[[ConvertVal]], %[[ConvertConstToF]]
-; CHECK-LLVM: %[[ConvertResToBF:.*]] = call spir_func i16 @_Z27__spirv_ConvertFToBF16INTELf(float %[[FAddRes]])
+; CHECK-LLVM: %[[ConvertResToBF:.*]] = call spir_func i16 @_Z32intel_convert_bfloat16_as_ushortf(float %[[FAddRes]])
 ; CHECK-LLVM: store i16 %[[ConvertResToBF]], i16 addrspace(4)* %[[#]], align 2
 
 ; ModuleID = 'joint_matrix_bfloat16_test.bc'
