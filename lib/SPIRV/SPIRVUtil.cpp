@@ -1956,6 +1956,9 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), ST->getPointerOperand());
       auto *NewCI = CallInst::Create(NewF, Args, CI->getName(), CI);
+      NewCI->addParamAttr(0, Attribute::get(*Context,
+                                            Attribute::AttrKind::StructRet,
+                                            F->getReturnType()));
       NewCI->setCallingConv(CI->getCallingConv());
       InstToRemove.push_back(ST);
       InstToRemove.push_back(CI);
