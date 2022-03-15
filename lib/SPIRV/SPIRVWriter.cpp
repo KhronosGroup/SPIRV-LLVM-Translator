@@ -888,7 +888,7 @@ SPIRVInstruction *LLVMToSPIRV::transBinaryInst(BinaryOperator *B,
       transBoolOpCode(Op0, OpCodeMap::map(LLVMOC)), transType(B->getType()),
       Op0, transValue(B->getOperand(1), BB), BB);
 
-// BinaryOperator can have no parent if it is handled as an expression inside
+  // BinaryOperator can have no parent if it is handled as an expression inside
   // another instruction.
   if (B->getParent() && isUnfusedMulAdd(B)) {
     Function *F = B->getFunction();
