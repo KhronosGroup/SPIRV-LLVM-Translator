@@ -2581,7 +2581,7 @@ void processOptionalAnnotationInfo(Constant *Const,
     }
   } else if (auto *ZeroStruct =
                  dyn_cast<ConstantAggregateZero>(Const->getOperand(0))) {
-    // It covers case when when all elements of struct are 0 and they become
+    // It covers case when all elements of struct are 0 and they become
     // zeroinitializer. It represents like: { i32 i32 ... } zeroinitializer
     uint32_t NumOperands = ZeroStruct->getType()->getStructNumElements();
     AnnotationString += ": ";
