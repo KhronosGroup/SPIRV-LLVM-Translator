@@ -2506,6 +2506,25 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         BV, Builder.CreateIntrinsic(Intrinsic::arithmetic_fence, RetTy, Val));
   }
 
+  case internal::OpComplexFMulINTEL: {
+    IRBuilder<> Builder(BB);
+    auto *BC = static_cast<SPIRVBinary *>(BV);
+    Value *Op1 = transValue(BC->getOperand(0), F, BB);
+    Value *Op2 = transValue(BC->getOperand(1), F, BB);
+    return mapValue(
+        BV, Builder.CreateBinaryIntrinsic(Intrinsic::experimental_complex_fmul,
+                                          Op1, Op2));
+  }
+  case internal::OpComplexFDivINTEL: {
+    IRBuilder<> Builder(BB);
+    auto *BC = static_cast<SPIRVBinary *>(BV);
+    Value *Op1 = transValue(BC->getOperand(0), F, BB);
+    Value *Op2 = transValue(BC->getOperand(1), F, BB);
+    return mapValue(
+        BV, Builder.CreateBinaryIntrinsic(Intrinsic::experimental_complex_fdiv,
+                                          Op1, Op2));
+  }
+
   default: {
     auto OC = BV->getOpCode();
     if (isCmpOpCode(OC))

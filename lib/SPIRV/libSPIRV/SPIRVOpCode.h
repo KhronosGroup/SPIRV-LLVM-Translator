@@ -244,6 +244,11 @@ inline bool isEventOpCode(Op OpCode) {
   return OpRetainEvent <= OpCode && OpCode <= OpCaptureEventProfilingInfo;
 }
 
+inline bool isComplexBinaryOpCode(Op OpCode) {
+  return internal::OpComplexFMulINTEL <= OpCode &&
+         OpCode <= internal::OpComplexFDivINTEL;
+}
+
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVOPCODE_H

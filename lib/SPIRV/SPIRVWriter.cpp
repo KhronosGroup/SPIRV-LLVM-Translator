@@ -3553,6 +3553,30 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Op;
   }
+  case Intrinsic::experimental_complex_fmul: {
+    BM->getErrorLog().checkError(
+        BM->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_complex_float_mul_div),
+        SPIRVEC_RequiresExtension, "SPV_INTEL_complex_float_mul_div\n");
+    BM->addExtension(ExtensionID::SPV_INTEL_complex_float_mul_div);
+    BM->addCapability(internal::CapabilityComplexFloatMulDivINTEL);
+    SPIRVType *Ty = transType(II->getType());
+    return BM->addBinaryInst(internal::OpComplexFMulINTEL, Ty,
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
+  }
+  case Intrinsic::experimental_complex_fdiv: {
+    BM->getErrorLog().checkError(
+        BM->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_complex_float_mul_div),
+        SPIRVEC_RequiresExtension, "SPV_INTEL_complex_float_mul_div\n");
+    BM->addExtension(ExtensionID::SPV_INTEL_complex_float_mul_div);
+    BM->addCapability(internal::CapabilityComplexFloatMulDivINTEL);
+    SPIRVType *Ty = transType(II->getType());
+    return BM->addBinaryInst(internal::OpComplexFDivINTEL, Ty,
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
+  }
   default:
     if (BM->isUnknownIntrinsicAllowed(II))
       return BM->addCallInst(

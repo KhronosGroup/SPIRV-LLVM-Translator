@@ -630,7 +630,7 @@ protected:
 
     (void)Op1Ty;
     (void)Op2Ty;
-    if (isBinaryOpCode(OpCode)) {
+    if (isBinaryOpCode(OpCode) || isComplexBinaryOpCode(OpCode)) {
       assert(getValueType(Op1) == getValueType(Op2) &&
              "Invalid type for binary instruction");
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
@@ -685,6 +685,10 @@ _SPIRV_OP(BitwiseOr)
 _SPIRV_OP(BitwiseXor)
 _SPIRV_OP(Dot)
 #undef _SPIRV_OP
+#define _SPIRV_OP_INTERNAL(x) typedef SPIRVBinaryInst<internal::Op##x> SPIRV##x;
+_SPIRV_OP_INTERNAL(ComplexFMulINTEL)
+_SPIRV_OP_INTERNAL(ComplexFDivINTEL)
+#undef _SPIRV_OP_INTERNAL
 
 template <Op TheOpCode> class SPIRVInstNoOperand : public SPIRVInstruction {
 public:
