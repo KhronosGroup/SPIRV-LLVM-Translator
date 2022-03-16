@@ -3248,6 +3248,31 @@ protected:
 _SPIRV_OP(ConvertFToBF16INTEL)
 _SPIRV_OP(ConvertBF16ToFINTEL)
 #undef _SPIRV_OP
+
+class SPIRVGroupUniformArithmeticKHRInstBase : public SPIRVInstTemplateBase {
+public:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityGroupUniformArithmeticKHR);
+  }
+
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_KHR_uniform_group_instructions;
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVGroupUniformArithmeticKHRInstBase,            \
+                            Op##x##KHR, __VA_ARGS__>                           \
+      SPIRV##x##KHR;
+_SPIRV_OP(GroupIMul, true, 6, false, 1)
+_SPIRV_OP(GroupFMul, true, 6, false, 1)
+_SPIRV_OP(GroupBitwiseAnd, true, 6, false, 1)
+_SPIRV_OP(GroupBitwiseOr, true, 6, false, 1)
+_SPIRV_OP(GroupBitwiseXor, true, 6, false, 1)
+_SPIRV_OP(GroupLogicalAnd, true, 6, false, 1)
+_SPIRV_OP(GroupLogicalOr, true, 6, false, 1)
+_SPIRV_OP(GroupLogicalXor, true, 6, false, 1)
+#undef _SPIRV_OP
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

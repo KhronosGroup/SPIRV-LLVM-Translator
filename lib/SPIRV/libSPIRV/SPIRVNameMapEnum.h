@@ -559,6 +559,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
+  add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
 
   // From spirv_internal.hpp
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
