@@ -3315,8 +3315,8 @@ public:
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVGroupUniformArithmeticKHRInstBase, Op##x##KHR,\
-                            __VA_ARGS__>                                       \
+  typedef SPIRVInstTemplate<SPIRVGroupUniformArithmeticKHRInstBase,            \
+                            Op##x##KHR, __VA_ARGS__>                           \
       SPIRV##x##KHR;
 _SPIRV_OP(GroupIMul, true, 6, false, 1)
 _SPIRV_OP(GroupFMul, true, 6, false, 1)
