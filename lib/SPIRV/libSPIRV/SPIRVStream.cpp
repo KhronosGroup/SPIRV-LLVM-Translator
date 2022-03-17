@@ -123,13 +123,11 @@ template <class T> const SPIRVEncoder &encode(const SPIRVEncoder &O, T V) {
 
 template <>
 const SPIRVEncoder &operator<<(const SPIRVEncoder &O, SPIRVType *P) {
-  if (P->hasId())
-    return O << P->getId();
-  else if (P->getOpCode() == OpTypeForwardPointer)
+  if (!P->hasId() && P->getOpCode() == OpTypeForwardPointer)
     return O << static_cast<SPIRVTypeForwardPointer *>(
                     static_cast<SPIRVEntry *>(P))
                     ->getPointerId();
-  assert(false && "Unexpected SPIRV type");
+  return O << P->getId();
 }
 
 #define SPIRV_DEF_ENCDEC(Type)                                                 \
