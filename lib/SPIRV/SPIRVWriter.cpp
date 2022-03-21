@@ -2530,7 +2530,8 @@ SPIRVValue *LLVMToSPIRVBase::oclTransSpvcCastSampler(CallInst *CI,
   return BV;
 }
 
-using DecorationsInfoVec = std::vector<std::pair<Decoration, std::string>>;
+using DecorationsInfoVec =
+    std::vector<std::pair<Decoration, std::vector<std::string>>>;
 
 struct AnnotationDecorations {
   DecorationsInfoVec MemoryAttributesVec;
@@ -2553,17 +2554,21 @@ struct IntelLSUControlsInfo {
     DecorationsInfoVec ResultVec;
     // Simple flags
     if (BurstCoalesce)
-      ResultVec.emplace_back(DecorationBurstCoalesceINTEL, "");
+      ResultVec.emplace_back(DecorationBurstCoalesceINTEL,
+                             std::vector<std::string>());
     if (DontStaticallyCoalesce)
-      ResultVec.emplace_back(DecorationDontStaticallyCoalesceINTEL, "");
+      ResultVec.emplace_back(DecorationDontStaticallyCoalesceINTEL,
+                             std::vector<std::string>());
     // Conditional values
     if (CacheSizeInfo.hasValue()) {
-      ResultVec.emplace_back(DecorationCacheSizeINTEL,
-                             std::to_string(CacheSizeInfo.getValue()));
+      ResultVec.emplace_back(
+          DecorationCacheSizeINTEL,
+          std::vector<std::string>{std::to_string(CacheSizeInfo.getValue())});
     }
     if (PrefetchInfo.hasValue()) {
-      ResultVec.emplace_back(DecorationPrefetchINTEL,
-                             std::to_string(PrefetchInfo.getValue()));
+      ResultVec.emplace_back(
+          DecorationPrefetchINTEL,
+          std::vector<std::string>{std::to_string(PrefetchInfo.getValue())});
     }
     return ResultVec;
   }
@@ -2628,35 +2633,74 @@ void processAnnotationString(IntrinsicInst *II, std::string &AnnotationString) {
       processOptionalAnnotationInfo(C, AnnotationString);
 }
 
+// Try to parse the annotation decoration values in a string. These values must
+// be separated by a "," and must be either a word (including numbers) or a
+// quotation mark enclosed string.
+static bool tryParseAnnotationDecoValues(StringRef ValueStr,
+                                         std::vector<std::string> &ParsedArgs) {
+  unsigned ValueStart = 0;
+  bool ParsingStrLit = false;
+  for (unsigned I = 0; I < ValueStr.size(); ++I) {
+    const char CurrentC = ValueStr[I];
+    if (ParsingStrLit) {
+      if (CurrentC == '"') {
+        ParsingStrLit = false;
+        ParsedArgs.push_back(ValueStr.substr(ValueStart, I - ValueStart).str());
+        if (I + 1 != ValueStr.size() && ValueStr[I + 1] != ',')
+          return false;
+        // Skip the , delimiter and go directly to the start of next value.
+        ValueStart = (++I) + 1;
+      }
+      continue;
+    }
+    if (CurrentC == ',') {
+      ParsedArgs.push_back(ValueStr.substr(ValueStart, I - ValueStart).str());
+      ValueStart = I + 1;
+      continue;
+    }
+    if (CurrentC == '"') {
+      if (I != 0 && ValueStr[I - 1] != ',')
+        return false;
+      ParsingStrLit = true;
+      ValueStart = I + 1;
+      continue;
+    }
+  }
+  if (ValueStart < ValueStr.size())
+    ParsedArgs.push_back(
+        ValueStr.substr(ValueStart, ValueStr.size() - ValueStart).str());
+  return !ParsingStrLit;
+}
+
 AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                                                StringRef AnnotatedCode) {
   AnnotationDecorations Decorates;
-  const bool AllowFPGAMemAccesses =
-      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_memory_accesses);
-  const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
-      ExtensionID::SPV_INTEL_fpga_memory_attributes);
-  if (!AllowFPGAMemAccesses && !AllowFPGAMemAttr) {
-    Decorates.MemoryAttributesVec.emplace_back(DecorationUserSemantic,
-                                               AnnotatedCode.str());
-    return Decorates;
-  }
 
-  IntelLSUControlsInfo LSUControls;
-
-  // Intel FPGA decorations are separated into
-  // {word} OR {word:value,value,...} blocks
-  std::regex DecorationRegex("\\{[\\w:,-]+\\}");
+  // Annotation string decorations are separated into {word} OR
+  // {word:value,value,...} blocks, where value is either a word (including
+  // numbers) or a quotation mark enclosed string.
+  std::regex DecorationRegex("\\{\\w([\\w:,-]|\"[^\"]*\")*\\}");
   using RegexIterT = std::regex_iterator<StringRef::const_iterator>;
   RegexIterT DecorationsIt(AnnotatedCode.begin(), AnnotatedCode.end(),
                            DecorationRegex);
   RegexIterT DecorationsEnd;
-  // If we didn't find any FPGA specific annotations that are seprated as
-  // described above, then add a UserSemantic decoration
-  if (DecorationsIt == DecorationsEnd)
-    Decorates.MemoryAttributesVec.emplace_back(DecorationUserSemantic,
-                                               AnnotatedCode.str());
-  bool IntelFPGADecorationFound = false;
-  DecorationsInfoVec IntelFPGADecorationsVec;
+
+  // If we didn't find any annotations that are separated as described above,
+  // then add a UserSemantic decoration
+  if (DecorationsIt == DecorationsEnd) {
+    Decorates.MemoryAttributesVec.emplace_back(
+        DecorationUserSemantic, std::vector<std::string>{AnnotatedCode.str()});
+    return Decorates;
+  }
+
+  const bool AllowFPGAMemAccesses =
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_memory_accesses);
+  const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
+      ExtensionID::SPV_INTEL_fpga_memory_attributes);
+
+  bool ValidDecorationFound = false;
+  DecorationsInfoVec DecorationsVec;
+  IntelLSUControlsInfo LSUControls;
   for (; DecorationsIt != DecorationsEnd; ++DecorationsIt) {
     // Drop the braces surrounding the actual decoration
     const StringRef AnnotatedDecoration = AnnotatedCode.substr(
@@ -2664,16 +2708,29 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
 
     std::pair<StringRef, StringRef> Split = AnnotatedDecoration.split(':');
     StringRef Name = Split.first, ValueStr = Split.second;
+
+    unsigned DecorationKind = 0;
+    if(!Name.getAsInteger(10, DecorationKind)) {
+      // If the name is a number it represents the decoration by its kind.
+      std::vector<std::string> DecValues;
+      if (tryParseAnnotationDecoValues(ValueStr, DecValues)) {
+        ValidDecorationFound = true;
+        DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
+                                    std::move(DecValues));
+      }
+      continue;
+    }
+
     if (AllowFPGAMemAccesses) {
       if (Name == "params") {
-        IntelFPGADecorationFound = true;
+        ValidDecorationFound = true;
         unsigned ParamsBitMask = 0;
         bool Failure = ValueStr.getAsInteger(10, ParamsBitMask);
         assert(!Failure && "Non-integer LSU controls value");
         (void)Failure;
         LSUControls.setWithBitMask(ParamsBitMask);
       } else if (Name == "cache-size") {
-        IntelFPGADecorationFound = true;
+        ValidDecorationFound = true;
         if (!LSUControls.CacheSizeInfo.hasValue())
           continue;
         unsigned CacheSizeValue = 0;
@@ -2684,18 +2741,18 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       } // TODO: Support LSU prefetch size, which currently defaults to 0
     }
     if (AllowFPGAMemAttr) {
-      StringRef Annotation;
+      std::vector<std::string> DecValues;
       Decoration Dec;
       if (Name == "pump") {
-        IntelFPGADecorationFound = true;
+        ValidDecorationFound = true;
         Dec = llvm::StringSwitch<Decoration>(ValueStr)
                   .Case("1", DecorationSinglepumpINTEL)
                   .Case("2", DecorationDoublepumpINTEL);
       } else if (Name == "register") {
-        IntelFPGADecorationFound = true;
+        ValidDecorationFound = true;
         Dec = DecorationRegisterINTEL;
       } else if (Name == "simple_dual_port") {
-        IntelFPGADecorationFound = true;
+        ValidDecorationFound = true;
         Dec = DecorationSimpleDualPortINTEL;
       } else {
         Dec = llvm::StringSwitch<Decoration>(Name)
@@ -2709,37 +2766,47 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                   .Case("force_pow2_depth", DecorationForcePow2DepthINTEL)
                   .Default(DecorationUserSemantic);
         if (Dec == DecorationUserSemantic)
-          Annotation = AnnotatedDecoration;
-        else {
-          IntelFPGADecorationFound = true;
-          Annotation = ValueStr;
+          DecValues = std::vector<std::string>({AnnotatedDecoration.str()});
+        else if (Dec == DecorationMergeINTEL) {
+          ValidDecorationFound = true;
+          std::pair<StringRef, StringRef> MergeValues = ValueStr.split(':');
+          DecValues = std::vector<std::string>({MergeValues.first.str(),
+                                                MergeValues.second.str()});
+        } else if (Dec == DecorationBankBitsINTEL) {
+          ValidDecorationFound = true;
+          SmallVector<StringRef, 4> BitsStrs;
+          ValueStr.split(BitsStrs, ',');
+          DecValues.reserve(BitsStrs.size());
+          for (const StringRef &BitsStr : BitsStrs)
+            DecValues.push_back(BitsStr.str());
+        } else {
+          ValidDecorationFound = true;
+          DecValues = std::vector<std::string>({ValueStr.str()});
         }
       }
-      IntelFPGADecorationsVec.emplace_back(Dec, Annotation.str());
+      DecorationsVec.emplace_back(Dec, std::move(DecValues));
     }
   }
   // Even if there is an annotation string that is split in blocks like Intel
   // FPGA annotation, it's not necessarily an FPGA annotation. Translate the
   // whole string as UserSemantic decoration in this case.
-  if (IntelFPGADecorationFound)
-    Decorates.MemoryAttributesVec = IntelFPGADecorationsVec;
+  if (ValidDecorationFound)
+    Decorates.MemoryAttributesVec = DecorationsVec;
   else
-    Decorates.MemoryAttributesVec.emplace_back(DecorationUserSemantic,
-                                               AnnotatedCode.str());
+    Decorates.MemoryAttributesVec.emplace_back(
+        DecorationUserSemantic,
+        std::vector<std::string>({AnnotatedCode.str()}));
   Decorates.MemoryAccessesVec = LSUControls.getDecorationsFromCurrentState();
 
   return Decorates;
 }
 
-std::vector<SPIRVWord> getBankBitsFromString(StringRef S) {
-  SmallVector<StringRef, 4> BitsString;
-  S.split(BitsString, ',');
-
-  std::vector<SPIRVWord> Bits(BitsString.size());
-  for (size_t J = 0; J < BitsString.size(); ++J)
-    if (BitsString[J].getAsInteger(10, Bits[J]))
+std::vector<SPIRVWord>
+getBankBitsFromStrings(const std::vector<std::string> &BitsStrings) {
+  std::vector<SPIRVWord> Bits(BitsStrings.size());
+  for (size_t J = 0; J < BitsStrings.size(); ++J)
+    if (StringRef(BitsStrings[J]).getAsInteger(10, Bits[J]))
       return {};
-
   return Bits;
 }
 
@@ -2753,27 +2820,31 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
 
     switch (I.first) {
     case DecorationUserSemantic:
-      E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second));
+      assert(I.second.size() == 1);
+      E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second[0]));
       break;
     case DecorationMemoryINTEL: {
       if (M->isAllowedToUseExtension(
-              ExtensionID::SPV_INTEL_fpga_memory_attributes))
-        E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second));
+              ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
+        assert(I.second.size() == 1);
+        E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second[0]));
+      }
     } break;
     case DecorationMergeINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        StringRef Name = StringRef(I.second).split(':').first;
-        StringRef Direction = StringRef(I.second).split(':').second;
+        assert(I.second.size() == 2);
         E->addDecorate(
-            new SPIRVDecorateMergeINTELAttr(E, Name.str(), Direction.str()));
+            new SPIRVDecorateMergeINTELAttr(E, I.second[0], I.second[1]));
       }
     } break;
     case DecorationBankBitsINTEL: {
       if (M->isAllowedToUseExtension(
-              ExtensionID::SPV_INTEL_fpga_memory_attributes))
+              ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
+      assert(I.second.size() > 0);
         E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(
-            E, getBankBitsFromString(I.second)));
+            E, getBankBitsFromStrings(I.second)));
+      }
     } break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
@@ -2800,8 +2871,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationForcePow2DepthINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
+        assert(I.second.size() == 1);
         SPIRVWord Result = 0;
-        StringRef(I.second).getAsInteger(10, Result);
+        StringRef(I.second[0]).getAsInteger(10, Result);
         E->addDecorate(I.first, Result);
       }
     } break;
@@ -2809,8 +2881,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationPrefetchINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_accesses)) {
+        assert(I.second.size() == 1);
         SPIRVWord Result = 0;
-        StringRef(I.second).getAsInteger(10, Result);
+        StringRef(I.second[0]).getAsInteger(10, Result);
         E->addDecorate(I.first, Result);
       }
     } break;
@@ -2834,22 +2907,24 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
 
     switch (I.first) {
     case DecorationUserSemantic:
-      E->addMemberDecorate(
-          new SPIRVMemberDecorateUserSemanticAttr(E, MemberNumber, I.second));
+      assert(I.second.size() == 1);
+      E->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
+          E, MemberNumber, I.second[0]));
       break;
     case DecorationMemoryINTEL:
+      assert(I.second.size() == 1);
       E->addMemberDecorate(
-          new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second));
+          new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second[0]));
       break;
     case DecorationMergeINTEL: {
-      StringRef Name = StringRef(I.second).split(':').first;
-      StringRef Direction = StringRef(I.second).split(':').second;
+      assert(I.second.size() == 2);
       E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
-          E, MemberNumber, Name.str(), Direction.str()));
+          E, MemberNumber, I.second[0], I.second[1]));
     } break;
     case DecorationBankBitsINTEL:
+      assert(I.second.size() > 0);
       E->addMemberDecorate(new SPIRVMemberDecorateBankBitsINTELAttr(
-          E, MemberNumber, getBankBitsFromString(I.second)));
+          E, MemberNumber, getBankBitsFromStrings(I.second)));
       break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
@@ -2865,8 +2940,9 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     // DecorationMaxReplicatesINTEL
     // DecorationForcePow2DepthINTEL
     default:
+      assert(I.second.size() == 1);
       SPIRVWord Result = 0;
-      StringRef(I.second).getAsInteger(10, Result);
+      StringRef(I.second[0]).getAsInteger(10, Result);
       E->addMemberDecorate(MemberNumber, I.first, Result);
       break;
     }
