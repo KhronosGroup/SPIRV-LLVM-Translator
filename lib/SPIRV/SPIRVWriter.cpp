@@ -2710,7 +2710,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
     StringRef Name = Split.first, ValueStr = Split.second;
 
     unsigned DecorationKind = 0;
-    if(!Name.getAsInteger(10, DecorationKind)) {
+    if (!Name.getAsInteger(10, DecorationKind)) {
       // If the name is a number it represents the decoration by its kind.
       std::vector<std::string> DecValues;
       if (tryParseAnnotationDecoValues(ValueStr, DecValues)) {
@@ -2770,8 +2770,8 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
         else if (Dec == DecorationMergeINTEL) {
           ValidDecorationFound = true;
           std::pair<StringRef, StringRef> MergeValues = ValueStr.split(':');
-          DecValues = std::vector<std::string>({MergeValues.first.str(),
-                                                MergeValues.second.str()});
+          DecValues = std::vector<std::string>(
+              {MergeValues.first.str(), MergeValues.second.str()});
         } else if (Dec == DecorationBankBitsINTEL) {
           ValidDecorationFound = true;
           SmallVector<StringRef, 4> BitsStrs;
@@ -2841,7 +2841,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationBankBitsINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-      assert(I.second.size() > 0);
+        assert(I.second.size() > 0);
         E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(
             E, getBankBitsFromStrings(I.second)));
       }
