@@ -685,10 +685,6 @@ _SPIRV_OP(BitwiseOr)
 _SPIRV_OP(BitwiseXor)
 _SPIRV_OP(Dot)
 #undef _SPIRV_OP
-#define _SPIRV_OP_INTERNAL(x) typedef SPIRVBinaryInst<internal::Op##x> SPIRV##x;
-_SPIRV_OP_INTERNAL(ComplexFMulINTEL)
-_SPIRV_OP_INTERNAL(ComplexFDivINTEL)
-#undef _SPIRV_OP_INTERNAL
 
 template <Op TheOpCode> class SPIRVInstNoOperand : public SPIRVInstruction {
 public:
@@ -3330,6 +3326,23 @@ _SPIRV_OP(GroupBitwiseXor, true, 6, false, 1)
 _SPIRV_OP(GroupLogicalAnd, true, 6, false, 1)
 _SPIRV_OP(GroupLogicalOr, true, 6, false, 1)
 _SPIRV_OP(GroupLogicalXor, true, 6, false, 1)
+#undef _SPIRV_OP
+
+template <Op OC>
+class SPIRVComplexFloatInst
+    : public SPIRVInstTemplate<SPIRVBinary, OC, true, 5, false> {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityComplexFloatMulDivINTEL);
+  }
+
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_complex_float_mul_div;
+  }
+};
+
+#define _SPIRV_OP(x) typedef SPIRVComplexFloatInst<internal::Op##x> SPIRV##x;
+_SPIRV_OP(ComplexFMulINTEL)
+_SPIRV_OP(ComplexFDivINTEL)
 #undef _SPIRV_OP
 } // namespace SPIRV
 
