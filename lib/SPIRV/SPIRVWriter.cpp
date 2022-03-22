@@ -2639,13 +2639,17 @@ void processAnnotationString(IntrinsicInst *II, std::string &AnnotationString) {
 static bool tryParseAnnotationDecoValues(StringRef ValueStr,
                                          std::vector<std::string> &ParsedArgs) {
   unsigned ValueStart = 0;
-  bool ParsingStrLit = false;
+  bool IsParsingStringLiteral = false;
   for (unsigned I = 0; I < ValueStr.size(); ++I) {
     const char CurrentC = ValueStr[I];
-    if (ParsingStrLit) {
+    if (IsParsingStringLiteral) {
       if (CurrentC == '"') {
-        ParsingStrLit = false;
+        // We have reached the end of a string literal and have the arg string
+        // between this character and the start of the string literal.
+        IsParsingStringLiteral = false;
         ParsedArgs.push_back(ValueStr.substr(ValueStart, I - ValueStart).str());
+        // End of a string literal must either be at the end of the values or
+        // right before a comma.
         if (I + 1 != ValueStr.size() && ValueStr[I + 1] != ',')
           return false;
         // Skip the , delimiter and go directly to the start of next value.
@@ -2654,22 +2658,33 @@ static bool tryParseAnnotationDecoValues(StringRef ValueStr,
       continue;
     }
     if (CurrentC == ',') {
+      // Since we are not currently in a string literal, comma denotes a
+      // separation of decoration arguments and we can copy the substring we are
+      // currently parsing.
       ParsedArgs.push_back(ValueStr.substr(ValueStart, I - ValueStart).str());
       ValueStart = I + 1;
       continue;
     }
     if (CurrentC == '"') {
+      // We are entering a string literal. This must be either at the beginning
+      // of the values or right after a comma.
       if (I != 0 && ValueStr[I - 1] != ',')
         return false;
-      ParsingStrLit = true;
+      IsParsingStringLiteral = true;
       ValueStart = I + 1;
       continue;
     }
+    // Any other character will be consumed as part of the argument.
   }
+  // If we were still parsing a decoration argument when reaching the end of the
+  // parsed string, we must be at the end of the argument.
   if (ValueStart < ValueStr.size())
     ParsedArgs.push_back(
         ValueStr.substr(ValueStart, ValueStr.size() - ValueStart).str());
-  return !ParsingStrLit;
+
+  // At the end, the arguments parsed are valid if we were not parsing a string
+  // literal with no end.
+  return !IsParsingStringLiteral;
 }
 
 AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
@@ -2820,20 +2835,26 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
 
     switch (I.first) {
     case DecorationUserSemantic:
-      assert(I.second.size() == 1);
+      M->getErrorLog().checkError(I.second.size() == 1,
+                                  SPIRVEC_InvalidDecoration,
+                                  "UserSemantic requires a single argument.");
       E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second[0]));
       break;
     case DecorationMemoryINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        assert(I.second.size() == 1);
+        M->getErrorLog().checkError(I.second.size() == 1,
+                                    SPIRVEC_InvalidDecoration,
+                                    "MemoryINTEL requires a single argument.");
         E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second[0]));
       }
     } break;
     case DecorationMergeINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        assert(I.second.size() == 2);
+        M->getErrorLog().checkError(I.second.size() == 2,
+                                    SPIRVEC_InvalidDecoration,
+                                    "MergeINTEL requires two arguments.");
         E->addDecorate(
             new SPIRVDecorateMergeINTELAttr(E, I.second[0], I.second[1]));
       }
@@ -2841,7 +2862,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationBankBitsINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        assert(I.second.size() > 0);
+        M->getErrorLog().checkError(
+            I.second.size() > 0, SPIRVEC_InvalidDecoration,
+            "BankBitsINTEL requires at least one argument.");
         E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(
             E, getBankBitsFromStrings(I.second)));
       }
@@ -2852,7 +2875,8 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationSimpleDualPortINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        assert(I.second.empty());
+        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidDecoration,
+                                    "Decoration takes no arguments.");
         E->addDecorate(I.first);
       }
     } break;
@@ -2860,7 +2884,8 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationDontStaticallyCoalesceINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_accesses)) {
-        assert(I.second.empty());
+        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidDecoration,
+                                    "Decoration takes no arguments.");
         E->addDecorate(I.first);
       }
     } break;
@@ -2871,7 +2896,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationForcePow2DepthINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        assert(I.second.size() == 1);
+        M->getErrorLog().checkError(I.second.size() == 1,
+                                    SPIRVEC_InvalidDecoration,
+                                    "Decoration requires a single argument.");
         SPIRVWord Result = 0;
         StringRef(I.second[0]).getAsInteger(10, Result);
         E->addDecorate(I.first, Result);
@@ -2881,7 +2908,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationPrefetchINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_accesses)) {
-        assert(I.second.size() == 1);
+        M->getErrorLog().checkError(I.second.size() == 1,
+                                    SPIRVEC_InvalidDecoration,
+                                    "Decoration requires a single argument.");
         SPIRVWord Result = 0;
         StringRef(I.second[0]).getAsInteger(10, Result);
         E->addDecorate(I.first, Result);
@@ -2898,6 +2927,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
 void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
                                              SPIRVWord MemberNumber,
                                              DecorationsInfoVec &Decorations) {
+  SPIRVModule *M = E->getModule();
   for (const auto &I : Decorations) {
     // Such decoration already exists on a type, skip it
     if (E->hasMemberDecorate(I.first, /*Index=*/0, MemberNumber,
@@ -2907,22 +2937,31 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
 
     switch (I.first) {
     case DecorationUserSemantic:
-      assert(I.second.size() == 1);
+      M->getErrorLog().checkError(I.second.size() == 1,
+                                  SPIRVEC_InvalidMemberDecoration,
+                                  "UserSemantic requires a single argument.");
       E->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
           E, MemberNumber, I.second[0]));
       break;
     case DecorationMemoryINTEL:
-      assert(I.second.size() == 1);
+      M->getErrorLog().checkError(I.second.size() == 1,
+                                  SPIRVEC_InvalidMemberDecoration,
+                                  "MemoryINTEL requires a single argument.");
       E->addMemberDecorate(
           new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second[0]));
       break;
     case DecorationMergeINTEL: {
-      assert(I.second.size() == 2);
+      M->getErrorLog().checkError(I.second.size() == 2,
+                                  SPIRVEC_InvalidMemberDecoration,
+                                  "MergeINTEL requires two arguments.");
+      // First argument is the name, the other is the direction.
       E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
           E, MemberNumber, I.second[0], I.second[1]));
     } break;
     case DecorationBankBitsINTEL:
-      assert(I.second.size() > 0);
+      M->getErrorLog().checkError(
+          I.second.size() > 0, SPIRVEC_InvalidMemberDecoration,
+          "BankBitsINTEL requires at least one argument.");
       E->addMemberDecorate(new SPIRVMemberDecorateBankBitsINTELAttr(
           E, MemberNumber, getBankBitsFromStrings(I.second)));
       break;
@@ -2930,7 +2969,9 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
     case DecorationSimpleDualPortINTEL:
-      assert(I.second.empty());
+      M->getErrorLog().checkError(I.second.empty(),
+                                  SPIRVEC_InvalidMemberDecoration,
+                                  "Member decoration takes no arguments.");
       E->addMemberDecorate(MemberNumber, I.first);
       break;
     // The rest of IntelFPGA decorations:
@@ -2940,7 +2981,9 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     // DecorationMaxReplicatesINTEL
     // DecorationForcePow2DepthINTEL
     default:
-      assert(I.second.size() == 1);
+      M->getErrorLog().checkError(
+          I.second.size() == 1, SPIRVEC_InvalidMemberDecoration,
+          "Member decoration requires a single argument.");
       SPIRVWord Result = 0;
       StringRef(I.second[0]).getAsInteger(10, Result);
       E->addMemberDecorate(MemberNumber, I.first, Result);
