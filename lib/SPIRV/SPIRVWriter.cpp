@@ -2836,7 +2836,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     switch (I.first) {
     case DecorationUserSemantic:
       M->getErrorLog().checkError(I.second.size() == 1,
-                                  SPIRVEC_InvalidDecoration,
+                                  SPIRVEC_InvalidLlvmModule,
                                   "UserSemantic requires a single argument.");
       E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second[0]));
       break;
@@ -2844,7 +2844,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
         M->getErrorLog().checkError(I.second.size() == 1,
-                                    SPIRVEC_InvalidDecoration,
+                                    SPIRVEC_InvalidLlvmModule,
                                     "MemoryINTEL requires a single argument.");
         E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second[0]));
       }
@@ -2853,8 +2853,9 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
         M->getErrorLog().checkError(I.second.size() == 2,
-                                    SPIRVEC_InvalidDecoration,
+                                    SPIRVEC_InvalidLlvmModule,
                                     "MergeINTEL requires two arguments.");
+        // First argument is the name and the second argument is the direction.
         E->addDecorate(
             new SPIRVDecorateMergeINTELAttr(E, I.second[0], I.second[1]));
       }
@@ -2863,7 +2864,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
         M->getErrorLog().checkError(
-            I.second.size() > 0, SPIRVEC_InvalidDecoration,
+            I.second.size() > 0, SPIRVEC_InvalidLlvmModule,
             "BankBitsINTEL requires at least one argument.");
         E->addDecorate(new SPIRVDecorateBankBitsINTELAttr(
             E, getBankBitsFromStrings(I.second)));
@@ -2875,7 +2876,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationSimpleDualPortINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
-        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidDecoration,
+        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidLlvmModule,
                                     "Decoration takes no arguments.");
         E->addDecorate(I.first);
       }
@@ -2884,7 +2885,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
     case DecorationDontStaticallyCoalesceINTEL: {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_accesses)) {
-        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidDecoration,
+        M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidLlvmModule,
                                     "Decoration takes no arguments.");
         E->addDecorate(I.first);
       }
@@ -2897,7 +2898,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_attributes)) {
         M->getErrorLog().checkError(I.second.size() == 1,
-                                    SPIRVEC_InvalidDecoration,
+                                    SPIRVEC_InvalidLlvmModule,
                                     "Decoration requires a single argument.");
         SPIRVWord Result = 0;
         StringRef(I.second[0]).getAsInteger(10, Result);
@@ -2909,7 +2910,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       if (M->isAllowedToUseExtension(
               ExtensionID::SPV_INTEL_fpga_memory_accesses)) {
         M->getErrorLog().checkError(I.second.size() == 1,
-                                    SPIRVEC_InvalidDecoration,
+                                    SPIRVEC_InvalidLlvmModule,
                                     "Decoration requires a single argument.");
         SPIRVWord Result = 0;
         StringRef(I.second[0]).getAsInteger(10, Result);
@@ -2938,21 +2939,21 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     switch (I.first) {
     case DecorationUserSemantic:
       M->getErrorLog().checkError(I.second.size() == 1,
-                                  SPIRVEC_InvalidMemberDecoration,
+                                  SPIRVEC_InvalidLlvmModule,
                                   "UserSemantic requires a single argument.");
       E->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
           E, MemberNumber, I.second[0]));
       break;
     case DecorationMemoryINTEL:
       M->getErrorLog().checkError(I.second.size() == 1,
-                                  SPIRVEC_InvalidMemberDecoration,
+                                  SPIRVEC_InvalidLlvmModule,
                                   "MemoryINTEL requires a single argument.");
       E->addMemberDecorate(
           new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second[0]));
       break;
     case DecorationMergeINTEL: {
       M->getErrorLog().checkError(I.second.size() == 2,
-                                  SPIRVEC_InvalidMemberDecoration,
+                                  SPIRVEC_InvalidLlvmModule,
                                   "MergeINTEL requires two arguments.");
       // First argument is the name, the other is the direction.
       E->addMemberDecorate(new SPIRVMemberDecorateMergeINTELAttr(
@@ -2960,7 +2961,7 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     } break;
     case DecorationBankBitsINTEL:
       M->getErrorLog().checkError(
-          I.second.size() > 0, SPIRVEC_InvalidMemberDecoration,
+          I.second.size() > 0, SPIRVEC_InvalidLlvmModule,
           "BankBitsINTEL requires at least one argument.");
       E->addMemberDecorate(new SPIRVMemberDecorateBankBitsINTELAttr(
           E, MemberNumber, getBankBitsFromStrings(I.second)));
@@ -2969,8 +2970,7 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     case DecorationSinglepumpINTEL:
     case DecorationDoublepumpINTEL:
     case DecorationSimpleDualPortINTEL:
-      M->getErrorLog().checkError(I.second.empty(),
-                                  SPIRVEC_InvalidMemberDecoration,
+      M->getErrorLog().checkError(I.second.empty(), SPIRVEC_InvalidLlvmModule,
                                   "Member decoration takes no arguments.");
       E->addMemberDecorate(MemberNumber, I.first);
       break;
@@ -2982,7 +2982,7 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     // DecorationForcePow2DepthINTEL
     default:
       M->getErrorLog().checkError(
-          I.second.size() == 1, SPIRVEC_InvalidMemberDecoration,
+          I.second.size() == 1, SPIRVEC_InvalidLlvmModule,
           "Member decoration requires a single argument.");
       SPIRVWord Result = 0;
       StringRef(I.second[0]).getAsInteger(10, Result);
