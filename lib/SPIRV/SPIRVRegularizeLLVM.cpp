@@ -123,6 +123,18 @@ public:
   void expandVEDWithSYCLTypeSRetArg(Function *F);
   void expandVIDWithSYCLTypeByValComp(Function *F);
 
+  // According to the specification, the operands of a shift instruction must be
+  // a scalar/vector of integer. When LLVM-IR contains a shift instruction with
+  // i1 operands, they are treated as a bool. We need to extend them to i32 to
+  // comply with the specification. For example:
+  // %21 = load i1, i1 addrspace(4)* %20
+  // %22 = load i32, i32 addrspace(4)* %9
+  // %23 = trunc i32 %22 to i1
+  // %24 = lshr i1 %21, %23
+  // %25 = zext i1 %24 to i32
+  // %24 should be changed to take (i32(%21), %22); %25 users should use %24
+  Value *extendBitInstBoolArg(Instruction *OldInst);
+
   static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
   void adaptStructTypes(StructType *ST);
   static char ID;
@@ -418,6 +430,13 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
     expandVIDWithSYCLTypeByValComp(F);
 }
 
+Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
+  IRBuilder<> Builder(II);
+  auto *NewBase = Builder.CreateZExt(II->getOperand(0), Builder.getInt32Ty());
+  auto *ShiftInt32 = cast<User>(II->getOperand(1))->getOperand(0);
+  return Builder.CreateLShr(NewBase, ShiftInt32);
+}
+
 void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   if (!ST->hasName())
     return;
@@ -560,6 +579,19 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               lowerFunnelShift(II);
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
+          }
+        }
+
+        if (II.isLogicalShift() &&
+            II.getOperand(0)->getType()->isIntegerTy(1)) {
+          if (II.getOpcode() == Instruction::LShr) {
+            auto *NewLSHR = extendBitInstBoolArg(&II);
+            for (auto U : II.users()) {
+              U->replaceAllUsesWith(NewLSHR);
+              ToErase.push_back(cast<Instruction>(U));
+            }
+            ToErase.push_back(&II);
+            ToErase.push_back(cast<Instruction>(II.getOperand(1)));
           }
         }
 
