@@ -586,7 +586,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             II.getOperand(0)->getType()->isIntegerTy(1)) {
           if (II.getOpcode() == Instruction::LShr) {
             auto *NewLSHR = extendBitInstBoolArg(&II);
-            for (auto U : II.users()) {
+            for (auto *U : II.users()) {
               U->replaceAllUsesWith(NewLSHR);
               ToErase.push_back(cast<Instruction>(U));
             }
