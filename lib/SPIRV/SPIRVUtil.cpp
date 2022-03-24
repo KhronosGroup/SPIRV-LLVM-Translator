@@ -1103,6 +1103,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     case 8:
       return SPIR::RefParamType(new SPIR::PrimitiveType(
           Signed ? SPIR::PRIMITIVE_CHAR : SPIR::PRIMITIVE_UCHAR));
+    case 9:
     case 16:
       return SPIR::RefParamType(new SPIR::PrimitiveType(
           Signed ? SPIR::PRIMITIVE_SHORT : SPIR::PRIMITIVE_USHORT));
