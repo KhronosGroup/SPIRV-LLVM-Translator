@@ -8,10 +8,17 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 
 ; CHECK: %[[#Base:]] = load i1, i1 addrspace(4)*{{.*}}, align 1
-; CHECK: %[[#Shift:]] = load i32, i32 addrspace(4)*{{.*}} align 4
+; CHECK: %[[#LoadShift:]] = load i32, i32 addrspace(4)*{{.*}} align 4
+; CHECK: %[[#AndShift:]] = and i32 %[[#LoadShift]], 1
+; CHECK: %[[#CmpShift:]] = icmp ne i32 %[[#AndShift]], 0
 ; CHECK: %[[#ExtBase:]] = select i1 %[[#Base]], i32 1, i32 0
-; CHECK: %[[#LSHR:]] = lshr i32 %[[#ExtBase]], %[[#Shift]]
+; CHECK: %[[#ExtShift:]] = select i1 %[[#CmpShift]], i32 1, i32 0
+; CHECK: %[[#LSHR:]] = lshr i32 %[[#ExtBase]], %[[#ExtShift]]
 ; CHECK: and i32 %[[#LSHR]], 1
+
+; CHECK: %[[#ExtVecBase:]] = select <2 x i1> %vec1, <2 x i32> <i32 1, i32 1>, <2 x i32> zeroinitializer
+; CHECK: %[[#ExtVecShift:]] = select <2 x i1> %vec2, <2 x i32> <i32 1, i32 1>, <2 x i32> zeroinitializer
+; CHECK: lshr <2 x i32> %[[#ExtVecBase]], %[[#ExtVecShift]]
 
 ; ModuleID = 'source.bc'
 source_filename = "source.cpp"
@@ -21,7 +28,7 @@ target triple = "spir64-unknown-unknown"
 %"class.ac" = type { i1 }
 
 ; Function Attrs: convergent mustprogress norecurse nounwind
-define linkonce_odr dso_local spir_func void @foo() align 2 {
+define linkonce_odr dso_local spir_func void @foo(<2 x i1> %vec1, <2 x i1> %vec2) align 2 {
   %1 = alloca %"class.ac" addrspace(4)*, align 8
   %2 = alloca i32, align 4
   %3 = addrspacecast %"class.ac" addrspace(4)** %1 to %"class.ac" addrspace(4)* addrspace(4)*
@@ -34,5 +41,6 @@ define linkonce_odr dso_local spir_func void @foo() align 2 {
   %10 = lshr i1 %7, %9
   %11 = zext i1 %10 to i32
   %12 = and i32 %11, 1
+  %13 = lshr <2 x i1> %vec1, %vec2
   ret void
 }
