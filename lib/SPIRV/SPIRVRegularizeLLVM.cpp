@@ -428,14 +428,14 @@ Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
   auto *ArgTy = II->getOperand(0)->getType();
   Type *NewArgType = nullptr;
   if (ArgTy->isIntegerTy()) {
-   NewArgType = Builder.getInt32Ty();
+    NewArgType = Builder.getInt32Ty();
   } else {
     unsigned NumElements = cast<FixedVectorType>(ArgTy)->getNumElements();
     NewArgType = VectorType::get(Builder.getInt32Ty(), NumElements, false);
   }
   auto *NewBase = Builder.CreateZExt(II->getOperand(0), NewArgType);
   auto *NewShift = Builder.CreateZExt(II->getOperand(1), NewArgType);
-  switch(II->getOpcode()) {
+  switch (II->getOpcode()) {
   case Instruction::LShr:
     return Builder.CreateLShr(NewBase, NewShift);
   case Instruction::Shl:
