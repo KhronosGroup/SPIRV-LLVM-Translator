@@ -1103,7 +1103,6 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     case 8:
       return SPIR::RefParamType(new SPIR::PrimitiveType(
           Signed ? SPIR::PRIMITIVE_CHAR : SPIR::PRIMITIVE_UCHAR));
-    case 9:
     case 16:
       return SPIR::RefParamType(new SPIR::PrimitiveType(
           Signed ? SPIR::PRIMITIVE_SHORT : SPIR::PRIMITIVE_USHORT));
@@ -1114,7 +1113,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
       return SPIR::RefParamType(new SPIR::PrimitiveType(
           Signed ? SPIR::PRIMITIVE_LONG : SPIR::PRIMITIVE_ULONG));
     default:
-      llvm_unreachable("invliad int size");
+      return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
     }
   }
   if (Ty->isVoidTy())
