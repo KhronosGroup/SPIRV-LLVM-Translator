@@ -568,8 +568,12 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
   SPIRVValue *Columns = transConstant(ParseInteger(Postfixes[2]));
   SPIRVValue *Layout = transConstant(ParseInteger(Postfixes[3]));
   SPIRVValue *Scope = transConstant(ParseInteger(Postfixes[4]));
+  // Use is an optional type declaration instruction parameter
+  SPIRVValue *Use = nullptr;
+  if (Postfixes.size() == 6)
+    Use = transConstant(ParseInteger(Postfixes[5]));
   return mapType(T, BM->addJointMatrixINTELType(transType(ElemTy), Rows,
-                                                Columns, Layout, Scope));
+                                                Columns, Layout, Scope, Use));
 }
 
 SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(Type *T) {
