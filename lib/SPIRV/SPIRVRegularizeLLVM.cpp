@@ -123,9 +123,12 @@ public:
   void expandVEDWithSYCLTypeSRetArg(Function *F);
   void expandVIDWithSYCLTypeByValComp(Function *F);
 
-  // %shift = lshr i1 0, 1
+  // According to the specification, the operands of a shift instruction must be
+  // a scalar/vector of integer. When LLVM-IR contains a shift instruction with
+  // i1 operands, they are treated as a bool. We need to extend them to i32 to
+  // comply with the specification. For example: "%shift = lshr i1 0, 1";
   // The bit instruction should be changed to the extended version
-  // "%shift = i32 0, 1" so the args are treated as int operands
+  // "%shift = i32 0, 1" so the args are treated as int operands.
   Value *extendBitInstBoolArg(Instruction *OldInst);
 
   static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
@@ -429,9 +432,12 @@ Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
   Type *NewArgType = nullptr;
   if (ArgTy->isIntegerTy()) {
     NewArgType = Builder.getInt32Ty();
-  } else {
+  } else if (ArgTy->isVectorTy() &&
+             cast<VectorType>(ArgTy)->getElementType()->isIntegerTy()) {
     unsigned NumElements = cast<FixedVectorType>(ArgTy)->getNumElements();
     NewArgType = VectorType::get(Builder.getInt32Ty(), NumElements, false);
+  } else {
+    llvm_unreachable("Unexpected type");
   }
   auto *NewBase = Builder.CreateZExt(II->getOperand(0), NewArgType);
   auto *NewShift = Builder.CreateZExt(II->getOperand(1), NewArgType);
