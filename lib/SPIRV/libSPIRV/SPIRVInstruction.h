@@ -630,7 +630,7 @@ protected:
 
     (void)Op1Ty;
     (void)Op2Ty;
-    if (isBinaryOpCode(OpCode) || isComplexBinaryOpCode(OpCode)) {
+    if (isBinaryOpCode(OpCode)) {
       assert(getValueType(Op1) == getValueType(Op2) &&
              "Invalid type for binary instruction");
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
@@ -3328,9 +3328,31 @@ _SPIRV_OP(GroupLogicalOr, true, 6, false, 1)
 _SPIRV_OP(GroupLogicalXor, true, 6, false, 1)
 #undef _SPIRV_OP
 
-template <Op OC>
-class SPIRVComplexFloatInst
-    : public SPIRVInstTemplate<SPIRVBinary, OC, true, 5, false> {
+class SPIRVComplexFloat : public SPIRVInstTemplateBase {
+protected:
+  void validate() const override {
+    SPIRVId Op1 = Ops[0];
+    SPIRVId Op2 = Ops[1];
+    SPIRVType *Op1Ty, *Op2Ty;
+    SPIRVInstruction::validate();
+    if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
+      return;
+    if (getValueType(Op1)->isTypeVector()) {
+      Op1Ty = getValueType(Op1)->getVectorComponentType();
+      Op2Ty = getValueType(Op2)->getVectorComponentType();
+      assert(getValueType(Op1)->getVectorComponentCount() ==
+                 getValueType(Op2)->getVectorComponentCount() &&
+             "Inconsistent Vector component width");
+    } else {
+      Op1Ty = getValueType(Op1);
+      Op2Ty = getValueType(Op2);
+    }
+    (void)Op1Ty;
+    (void)Op2Ty;
+    assert(Op1Ty->isTypeFloat() && "Invalid type for complex instruction");
+    assert(Op1Ty == Op2Ty && "Invalid type for complex instruction");
+  }
+public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(internal::CapabilityComplexFloatMulDivINTEL);
   }
@@ -3338,6 +3360,11 @@ class SPIRVComplexFloatInst
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_complex_float_mul_div;
   }
+};
+
+template <Op OC>
+class SPIRVComplexFloatInst
+    : public SPIRVInstTemplate<SPIRVComplexFloat, OC, true, 5, false> {
 };
 
 #define _SPIRV_OP(x) typedef SPIRVComplexFloatInst<internal::Op##x> SPIRV##x;
