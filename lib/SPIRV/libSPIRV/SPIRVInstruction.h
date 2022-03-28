@@ -3352,6 +3352,7 @@ protected:
     assert(Op1Ty->isTypeFloat() && "Invalid type for complex instruction");
     assert(Op1Ty == Op2Ty && "Invalid type for complex instruction");
   }
+
 public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(internal::CapabilityComplexFloatMulDivINTEL);
@@ -3364,8 +3365,7 @@ public:
 
 template <Op OC>
 class SPIRVComplexFloatInst
-    : public SPIRVInstTemplate<SPIRVComplexFloat, OC, true, 5, false> {
-};
+    : public SPIRVInstTemplate<SPIRVComplexFloat, OC, true, 5, false> {};
 
 #define _SPIRV_OP(x) typedef SPIRVComplexFloatInst<internal::Op##x> SPIRV##x;
 _SPIRV_OP(ComplexFMulINTEL)
