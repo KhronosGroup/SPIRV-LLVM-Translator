@@ -1064,7 +1064,6 @@ class SPIRVTypeJointMatrixINTEL : public SPIRVType {
   SPIRVValue *Columns;
   SPIRVValue *Layout;
   SPIRVValue *Scope;
-  SPIRVValue *Use;
 
 public:
   const static Op OC = internal::OpTypeJointMatrixINTEL;
@@ -1072,8 +1071,7 @@ public:
   // Complete constructor
   SPIRVTypeJointMatrixINTEL(SPIRVModule *M, SPIRVId TheId, SPIRVType *CompType,
                             SPIRVValue *Rows, SPIRVValue *Columns,
-                            SPIRVValue *Layout, SPIRVValue *Scope,
-                            SPIRVValue *Use);
+                            SPIRVValue *Layout, SPIRVValue *Scope);
   // Incomplete constructor
   SPIRVTypeJointMatrixINTEL();
   _SPIRV_DCL_ENCDEC
@@ -1088,7 +1086,6 @@ public:
   SPIRVValue *getRows() const { return Rows; }
   SPIRVValue *getColumns() const { return Columns; }
   SPIRVValue *getScope() const { return Scope; }
-  SPIRVValue *getUse() const { return Use; }
 };
 
 } // namespace SPIRV

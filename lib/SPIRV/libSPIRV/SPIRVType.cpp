@@ -277,23 +277,15 @@ void SPIRVTypeForwardPointer::decode(std::istream &I) {
 
 SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL(
     SPIRVModule *M, SPIRVId TheId, SPIRVType *CompType, SPIRVValue *Rows,
-    SPIRVValue *Columns, SPIRVValue *Layout, SPIRVValue *Scope, SPIRVValue *Use)
+    SPIRVValue *Columns, SPIRVValue *Layout, SPIRVValue *Scope)
     : SPIRVType(M, FixedWC, OC, TheId), CompType(CompType), Rows(Rows),
-      Columns(Columns), Layout(Layout), Scope(Scope), Use(Use) {}
+      Columns(Columns), Layout(Layout), Scope(Scope) {}
 
 SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL()
     : SPIRVType(OC), CompType(nullptr), Rows(nullptr), Columns(nullptr),
-      Layout(nullptr), Scope(nullptr), Use(nullptr) {}
+      Layout(nullptr), Scope(nullptr) {}
 
-void SPIRVTypeJointMatrixINTEL::encode(spv_ostream &O) const {
-  auto Encoder = getEncoder(O);
-  Encoder << Id << CompType << Rows << Columns << Layout << Scope;
-  if (Use)
-    Encoder << Use;
-}
+_SPIRV_IMP_ENCDEC6(SPIRVTypeJointMatrixINTEL, Id, CompType, Rows, Columns,
+                   Layout, Scope)
 
-void SPIRVTypeJointMatrixINTEL::decode(std::istream &I) {
-  auto Decoder = getDecoder(I);
-  Decoder >> Id >> CompType >> Rows >> Columns >> Layout >> Scope >> Use;
-}
 } // namespace SPIRV
