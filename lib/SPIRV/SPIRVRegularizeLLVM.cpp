@@ -128,7 +128,7 @@ public:
   // i1 operands, they are treated as a bool. We need to extend them to i32 to
   // comply with the specification. For example: "%shift = lshr i1 0, 1";
   // The bit instruction should be changed to the extended version
-  // "%shift = i32 0, 1" so the args are treated as int operands.
+  // "%shift = lshr i32 0, 1" so the args are treated as int operands.
   Value *extendBitInstBoolArg(Instruction *OldInst);
 
   static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
