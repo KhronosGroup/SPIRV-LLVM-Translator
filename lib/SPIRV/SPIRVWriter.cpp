@@ -564,12 +564,14 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     consumeUnsignedInteger(Postfix, 10, N);
     return getUInt32(M, N);
   };
-  SPIRVValue *Rows = transConstant(ParseInteger(Postfixes[1]));
-  SPIRVValue *Columns = transConstant(ParseInteger(Postfixes[2]));
-  SPIRVValue *Layout = transConstant(ParseInteger(Postfixes[3]));
-  SPIRVValue *Scope = transConstant(ParseInteger(Postfixes[4]));
-  return mapType(T, BM->addJointMatrixINTELType(transType(ElemTy), Rows,
-                                                Columns, Layout, Scope));
+  std::vector<SPIRVValue *> Args;
+  Args.emplace_back(transConstant(ParseInteger(Postfixes[1])));
+  Args.emplace_back(transConstant(ParseInteger(Postfixes[2])));
+  Args.emplace_back(transConstant(ParseInteger(Postfixes[3])));
+  Args.emplace_back(transConstant(ParseInteger(Postfixes[4])));
+  if (Postfixes.size() == 6)
+    Args.emplace_back(transConstant(ParseInteger(Postfixes[5])));
+  return mapType(T, BM->addJointMatrixINTELType(transType(ElemTy), Args));
 }
 
 SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(Type *T) {
