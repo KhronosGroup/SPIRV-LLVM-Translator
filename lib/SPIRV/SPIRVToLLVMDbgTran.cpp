@@ -207,7 +207,8 @@ SPIRVToLLVMDbgTran::transTypeArray(const SPIRVExtInst *DebugInst) {
     SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
     int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
     Subscripts.push_back(Builder.getOrCreateSubrange(0, Count));
-    TotalCount *= static_cast<uint64_t>(Count);
+    // Count = -1 means that the array is empty
+    TotalCount *= Count > 0 ? static_cast<size_t>(Count) : 0;
   }
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);
   size_t Size = getDerivedSizeInBits(BaseTy) * TotalCount;
