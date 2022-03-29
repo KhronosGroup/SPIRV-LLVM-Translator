@@ -888,8 +888,9 @@ SPIRVTypeVector *SPIRVModuleImpl::addVectorType(SPIRVType *CompType,
   return addType(new SPIRVTypeVector(this, getId(), CompType, CompCount));
 }
 
-SPIRVTypeJointMatrixINTEL *SPIRVModuleImpl::addJointMatrixINTELType(
-    SPIRVType *CompType, std::vector<SPIRVValue *> Args) {
+SPIRVTypeJointMatrixINTEL *
+SPIRVModuleImpl::addJointMatrixINTELType(SPIRVType *CompType,
+                                         std::vector<SPIRVValue *> Args) {
   return addType(new SPIRVTypeJointMatrixINTEL(this, getId(), CompType, Args));
 }
 

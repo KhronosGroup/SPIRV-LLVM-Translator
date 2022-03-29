@@ -1082,9 +1082,9 @@ public:
     Args.resize(WordCount - FixedWC);
   }
   SPIRVType *getCompType() const { return CompType; }
-  SPIRVValue *getLayout() const { return Args[0]; }
-  SPIRVValue *getRows() const { return Args[1]; }
-  SPIRVValue *getColumns() const { return Args[2]; }
+  SPIRVValue *getRows() const { return Args[0]; }
+  SPIRVValue *getColumns() const { return Args[1]; }
+  SPIRVValue *getLayout() const { return Args[2]; }
   SPIRVValue *getScope() const { return Args[3]; }
   SPIRVValue *getUse() const {
     if (Args.size() > 4)

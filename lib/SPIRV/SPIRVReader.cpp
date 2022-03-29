@@ -471,7 +471,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
     SS << kSPIRVTypeName::PostfixDelim << R << kSPIRVTypeName::PostfixDelim << C
        << kSPIRVTypeName::PostfixDelim << L << kSPIRVTypeName::PostfixDelim
        << S;
-    if (auto Use = MT->getUse())
+    if (auto *Use = MT->getUse())
       SS << kSPIRVTypeName::PostfixDelim
          << static_cast<SPIRVConstant *>(Use)->getZExtIntValue();
     std::string Name =

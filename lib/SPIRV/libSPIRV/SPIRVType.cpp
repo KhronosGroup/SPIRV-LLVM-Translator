@@ -295,5 +295,4 @@ void SPIRVTypeJointMatrixINTEL::decode(std::istream &I) {
   Decoder >> Id >> CompType >> Args;
 }
 
-
 } // namespace SPIRV
