@@ -603,6 +603,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           auto *NewInst = extendBitInstBoolArg(&II);
           for (auto *U : II.users()) {
             if (cast<Instruction>(U)->getOpcode() == Instruction::ZExt) {
+              U->dropAllReferences();
               U->replaceAllUsesWith(NewInst);
               ToErase.push_back(cast<Instruction>(U));
             }
