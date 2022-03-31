@@ -2853,7 +2853,6 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     F->setName("old_" + Name);
     auto *NewFn = Function::Create(NewFT, F->getLinkage(), F->getAddressSpace(),
                                    Name, F->getParent());
-    F->dropAllReferences();
     return NewFn;
   }
 
