@@ -1087,9 +1087,7 @@ public:
   SPIRVValue *getLayout() const { return Args[2]; }
   SPIRVValue *getScope() const { return Args[3]; }
   SPIRVValue *getUse() const {
-    if (Args.size() > 4)
-      return Args[4];
-    return nullptr;
+    return Args.size() > 4 ? Args[4] : nullptr;
   }
 };
 
