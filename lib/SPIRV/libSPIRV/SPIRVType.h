@@ -1086,9 +1086,7 @@ public:
   SPIRVValue *getColumns() const { return Args[1]; }
   SPIRVValue *getLayout() const { return Args[2]; }
   SPIRVValue *getScope() const { return Args[3]; }
-  SPIRVValue *getUse() const {
-    return Args.size() > 4 ? Args[4] : nullptr;
-  }
+  SPIRVValue *getUse() const { return Args.size() > 4 ? Args[4] : nullptr; }
 };
 
 } // namespace SPIRV
