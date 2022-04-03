@@ -166,9 +166,9 @@ inline bool isNonUniformArithmeticOpCode(Op OpCode) {
 inline bool isGroupLogicalOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OC == OpGroupNonUniformLogicalAnd ||
-         OC == OpGroupNonUniformLogicalOr || OC == OpGroupNonUniformLogicalXor ||
-         OC == OpGroupLogicalAndKHR || OC == OpGroupLogicalOrKHR ||
-         OC == OpGroupLogicalXorKHR;
+         OC == OpGroupNonUniformLogicalOr ||
+         OC == OpGroupNonUniformLogicalXor || OC == OpGroupLogicalAndKHR ||
+         OC == OpGroupLogicalOrKHR || OC == OpGroupLogicalXorKHR;
 }
 
 inline bool isGroupOpCode(Op OpCode) {
