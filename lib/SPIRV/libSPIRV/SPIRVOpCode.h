@@ -148,12 +148,14 @@ inline bool hasGroupOperation(Op OpCode) {
   unsigned OC = OpCode;
   return (OpGroupIAdd <= OC && OC <= OpGroupSMax) ||
          (OpGroupNonUniformBallotBitCount == OC) ||
-         (OpGroupNonUniformIAdd <= OC && OC <= OpGroupNonUniformLogicalXor);
+         (OpGroupNonUniformIAdd <= OC && OC <= OpGroupNonUniformLogicalXor) ||
+         (OpGroupIMulKHR <= OC && OC <= OpGroupLogicalXorKHR);
 }
 
 inline bool isUniformArithmeticOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return (OpGroupIAdd <= OC && OC <= OpGroupSMax);
+  return (OpGroupIAdd <= OC && OC <= OpGroupSMax) ||
+         (OpGroupIMulKHR <= OC && OC <= OpGroupLogicalXorKHR);
 }
 
 inline bool isNonUniformArithmeticOpCode(Op OpCode) {
@@ -164,12 +166,15 @@ inline bool isNonUniformArithmeticOpCode(Op OpCode) {
 inline bool isGroupLogicalOpCode(Op OpCode) {
   unsigned OC = OpCode;
   return OC == OpGroupNonUniformLogicalAnd ||
-         OC == OpGroupNonUniformLogicalOr || OC == OpGroupNonUniformLogicalXor;
+         OC == OpGroupNonUniformLogicalOr ||
+         OC == OpGroupNonUniformLogicalXor || OC == OpGroupLogicalAndKHR ||
+         OC == OpGroupLogicalOrKHR || OC == OpGroupLogicalXorKHR;
 }
 
 inline bool isGroupOpCode(Op OpCode) {
   unsigned OC = OpCode;
-  return OpGroupAll <= OC && OC <= OpGroupSMax;
+  return (OpGroupAll <= OC && OC <= OpGroupSMax) ||
+         (OpGroupIMulKHR <= OC && OC <= OpGroupLogicalXorKHR);
 }
 
 inline bool isGroupNonUniformOpcode(Op OpCode) {
