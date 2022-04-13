@@ -2774,7 +2774,7 @@ void SPIRVToLLVM::transFunctionAttrs(SPIRVFunction *BF, Function *F) {
         AttrTy = cast<PointerType>(I->getType())->getPointerElementType();
         break;
       case Attribute::AttrKind::StructRet:
-        AttrTy = I->getType();
+        AttrTy = cast<PointerType>(I->getType())->getPointerElementType();
         break;
       default:
         break; // do nothing
