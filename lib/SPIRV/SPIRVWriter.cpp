@@ -4677,7 +4677,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
+      ResTy = CI->getParamStructRetType(0);
       OpItr++;
     }
 
@@ -4768,7 +4768,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
+      ResTy = CI->getParamStructRetType(0);
       OpItr++;
     }
 
@@ -4845,7 +4845,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // the original return type.
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
-      ResTy = cast<PointerType>(OpItr->getType())->getPointerElementType();
+      ResTy = CI->getParamStructRetType(0);
       OpItr++;
     }
 
@@ -4950,7 +4950,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       if (!RetTy->isVoidTy()) {
         SPRetTy = transType(RetTy);
       } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
-        SPRetTy = transType(F->arg_begin()->getType()->getPointerElementType());
+        SPRetTy = transType(F->getParamStructRetType(0));
         Args.erase(Args.begin());
       }
       auto *SPI = SPIRVInstTemplateBase::create(OC);
