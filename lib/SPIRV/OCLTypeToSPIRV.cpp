@@ -329,6 +329,8 @@ Type *OCLTypeToSPIRVBase::getAdaptedType(Value *V) {
 
 } // namespace SPIRV
 
+AnalysisKey OCLTypeToSPIRVPass::Key;
+
 INITIALIZE_PASS(OCLTypeToSPIRVLegacy, "cltytospv", "Adapt OCL types for SPIR-V",
                 false, true)
 
