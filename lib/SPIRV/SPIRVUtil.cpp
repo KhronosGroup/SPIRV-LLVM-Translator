@@ -275,19 +275,21 @@ bool isOCLImageStructType(llvm::Type *Ty, StringRef *Name) {
 ///   type Name as spirv.BaseTyName.Postfixes.
 bool isSPIRVStructType(llvm::Type *Ty, StringRef BaseTyName,
                        StringRef *Postfix) {
-  if (auto *ST = dyn_cast<StructType>(Ty))
-    if (ST->isOpaque()) {
-      auto FullName = ST->getName();
-      std::string N =
-          std::string(kSPIRVTypeName::PrefixAndDelim) + BaseTyName.str();
-      if (FullName != N)
-        N = N + kSPIRVTypeName::Delimiter;
-      if (FullName.startswith(N)) {
-        if (Postfix)
-          *Postfix = FullName.drop_front(N.size());
-        return true;
-      }
+  auto *ST = dyn_cast<StructType>(Ty);
+  if (!ST)
+    return false;
+  if (ST->isOpaque()) {
+    auto FullName = ST->getName();
+    std::string N =
+        std::string(kSPIRVTypeName::PrefixAndDelim) + BaseTyName.str();
+    if (FullName != N)
+      N = N + kSPIRVTypeName::Delimiter;
+    if (FullName.startswith(N)) {
+      if (Postfix)
+        *Postfix = FullName.drop_front(N.size());
+      return true;
     }
+  }
   return false;
 }
 
@@ -646,7 +648,41 @@ bool hasArrayArg(Function *F) {
   return false;
 }
 
+/// Convert a struct name from the name given to it in Itanium name mangling to
+/// the name given to it as an LLVM opaque struct.
+static std::string demangleBuiltinOpenCLTypeName(StringRef MangledStructName) {
+  assert(MangledStructName.startswith("ocl_") &&
+         "Not a valid builtin OpenCL mangled name");
+  // Bare structure type that starts with ocl_ is a builtin opencl type.
+  // See clang/lib/CodeGen/CGOpenCLRuntime for how these map to LLVM types
+  // and clang/lib/AST/ItaniumMangle for how they are mangled.
+  // In general, ocl_<foo> is mapped to pointer-to-%opencl.<foo>, but
+  // there is some variance around whether or not _t is included in the
+  // mangled name.
+  std::string LlvmStructName = StringSwitch<StringRef>(MangledStructName)
+                                   .Case("ocl_sampler", "opencl.sampler_t")
+                                   .Case("ocl_event", "opencl.event_t")
+                                   .Case("ocl_clkevent", "opencl.clk_event_t")
+                                   .Case("ocl_queue", "opencl.queue_t")
+                                   .Case("ocl_reserveid", "opencl.reserve_id_t")
+                                   .Default("")
+                                   .str();
+  if (LlvmStructName.empty()) {
+    LlvmStructName = "opencl.";
+    LlvmStructName += MangledStructName.substr(4); // Strip off ocl_
+    if (!MangledStructName.endswith("_t"))
+      LlvmStructName += "_t";
+  }
+  return LlvmStructName;
+}
+
 void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
+  // If there's no mangled name, we can't do anything. Also, if there's no
+  // parameters, do nothing.
+  StringRef Name = F->getName();
+  if (!Name.startswith("_Z") || F->arg_empty())
+    return;
+
   // Start by filling in a skeleton of information we can get from the LLVM type
   // itself.
   ArgTys.clear();
@@ -666,12 +702,6 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
     }
   }
 
-  // If there's no mangled name, we can't do anything. Also, if there's no
-  // parameters, do nothing.
-  StringRef Name = F->getName();
-  if (!Name.startswith("_Z") || ArgTys.empty())
-    return;
-
   Module *M = F->getParent();
 
   // Skip the first argument if it's an sret parameter--this would be an
@@ -680,10 +710,15 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
   if (HasSret)
     ++ArgIter;
 
-  // Demangle the function arguments.
+  // Demangle the function arguments. If we get an input name of
+  // "_Z12write_imagei20ocl_image1d_array_woDv2_iiDv4_i", then we expect
+  // that Demangler.getFunctionParameters will return
+  // "(ocl_image1d_array_wo, int __vector(2), int, int __vector(4))" (in other
+  // words, the stuff between the parentheses if you ran C++ filt, including
+  // the parentheses itself).
   ItaniumPartialDemangler Demangler;
-  std::string OwnedStr = F->getName().str();
-  if (Demangler.partialDemangle(OwnedStr.c_str()))
+  std::string MangledName = F->getName().str();
+  if (Demangler.partialDemangle(MangledName.c_str()))
     return;
   char *Buf = nullptr;
   size_t BufLen = 0;
@@ -729,27 +764,7 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
           Pointee = getOrCreateOpaqueStructType(M, MangledStructName);
         }
       } else if (!Arg.contains(' ') && Arg.startswith("ocl_")) {
-        // Bare structure type that starts with ocl_ is a builtin opencl type.
-        // See clang/lib/CodeGen/CGOpenCLRuntime for how these map to LLVM types
-        // and clang/lib/AST/ItaniumMangle for how they are mangled.
-        // In general, ocl_<foo> is mapped to pointer-to-%opencl.<foo>, but
-        // there is some variance around whether or not _t is included in the
-        // mangled name.
-        std::string StructName =
-            StringSwitch<StringRef>(Arg)
-                .Case("ocl_sampler", "opencl.sampler_t")
-                .Case("ocl_event", "opencl.event_t")
-                .Case("ocl_clkevent", "opencl.clk_event_t")
-                .Case("ocl_queue", "opencl.queue_t")
-                .Case("ocl_reserveid", "opencl.reserve_id_t")
-                .Default("")
-                .str();
-        if (StructName.empty()) {
-          StructName = "opencl.";
-          StructName += Arg.substr(4); // Strip off ocl_
-          if (!Arg.endswith("_t"))
-            StructName += "_t";
-        }
+        std::string StructName = demangleBuiltinOpenCLTypeName(Arg);
         Pointee = getOrCreateOpaqueStructType(M, StructName);
       }
       *ArgIter++ = Pointee;

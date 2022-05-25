@@ -1903,10 +1903,7 @@ void OCLToSPIRVBase::visitSubgroupAVCBuiltinCallWithSampler(
         SmallVector<StructType *, 4> ParamTys;
         getParameterTypes(CI, ParamTys);
         auto *TyIt =
-            std::find_if(ParamTys.begin(), ParamTys.end(), [](StructType *Ty) {
-              return Ty && Ty->hasName() &&
-                     Ty->getName() == kSPR2TypeName::Sampler;
-            });
+            std::find_if(ParamTys.begin(), ParamTys.end(), isSamplerStructTy);
         assert(TyIt != ParamTys.end() &&
                "Invalid Subgroup AVC Intel built-in call");
         auto SamplerIt = Args.begin() + (TyIt - ParamTys.begin());

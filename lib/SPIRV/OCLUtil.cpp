@@ -1369,6 +1369,10 @@ bool isSpecialTypeInitializer(Instruction *Inst) {
   return isSamplerInitializer(Inst) || isPipeStorageInitializer(Inst);
 }
 
+bool isSamplerStructTy(StructType *STy) {
+  return STy && STy->hasName() && STy->getName() == kSPR2TypeName::Sampler;
+}
+
 bool isPipeOrAddressSpaceCastBI(const StringRef MangledName) {
   return MangledName == "write_pipe_2" || MangledName == "read_pipe_2" ||
          MangledName == "write_pipe_2_bl" || MangledName == "read_pipe_2_bl" ||
