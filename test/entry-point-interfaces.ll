@@ -1,4 +1,4 @@
-; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-as -opaque-pointers=0 %s -o %t.bc
 
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val --target-env spv1.4 %t.spv
