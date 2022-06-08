@@ -21,14 +21,14 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_32:[0-9]+]] 32
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_64:[0-9]+]] 64
 ;; Check float operand of atomic_fetch_sub is handled correctly
-; CHECK-SPIRV: Constant [[TYPE_FLOAT_32]] 12 3278176256
-; CHECK-SPIRV: Constant [[TYPE_FLOAT_64]] 20 0 3228884992
+; CHECK-SPIRV: Constant [[TYPE_FLOAT_32]] [[NEGATIVE_229:[0-9]+]] 3278176256
+; CHECK-SPIRV: Constant [[TYPE_FLOAT_64]] [[NEGATIVE_334:[0-9]+]] 0 3228884992
 
 
 ; Function Attrs: convergent norecurse nounwind
 define dso_local spir_func void @test_atomic_float(float addrspace(1)* %a) local_unnamed_addr #0 {
 entry:
-  ; CHECK-SPIRV: 7 AtomicFAddEXT [[TYPE_FLOAT_32]]
+  ; CHECK-SPIRV: 7 AtomicFAddEXT [[TYPE_FLOAT_32]] 13 7 10 11 [[NEGATIVE_229]]
   ; CHECK-LLVM-CL20: call spir_func float @_Z25atomic_fetch_add_explicitPU3AS4VU7_Atomicff12memory_order12memory_scope(float addrspace(4)* %a.as, float -2.290000e+02, i32 0, i32 1) #0
   ; CHECK-LLVM-SPV: call spir_func float @_Z21__spirv_AtomicFAddEXTPU3AS1fiif(float addrspace(1)* %a, i32 2, i32 0, float -2.290000e+02) #0
   %call2 = tail call spir_func float @_Z25atomic_fetch_sub_explicitPU3AS1VU7_Atomicff12memory_order12memory_scope(float addrspace(1)* noundef %a, float noundef 2.290000e+02, i32 noundef 0, i32 noundef 1) #2
@@ -42,7 +42,7 @@ declare spir_func float @_Z25atomic_fetch_sub_explicitPU3AS1VU7_Atomicff12memory
 ; Function Attrs: convergent norecurse nounwind
 define dso_local spir_func void @test_atomic_double(double addrspace(1)* %a) local_unnamed_addr #0 {
 entry:
-  ; CHECK-SPIRV: 7 AtomicFAddEXT [[TYPE_FLOAT_64]]
+  ; CHECK-SPIRV: 7 AtomicFAddEXT [[TYPE_FLOAT_64]] 21 18 10 11 [[NEGATIVE_334]]
   ; CHECK-LLVM-CL20: call spir_func double @_Z25atomic_fetch_add_explicitPU3AS4VU7_Atomicdd12memory_order12memory_scope(double addrspace(4)* %a.as, double -3.340000e+02, i32 0, i32 1) #0
   ; CHECK-LLVM-SPV: call spir_func double @_Z21__spirv_AtomicFAddEXTPU3AS1diid(double addrspace(1)* %a, i32 2, i32 0, double -3.340000e+02) #0
   %call = tail call spir_func double @_Z25atomic_fetch_sub_explicitPU3AS1VU7_Atomicdd12memory_order12memory_scope(double addrspace(1)* noundef %a, double noundef 3.340000e+02, i32 noundef 0, i32 noundef 1) #2
