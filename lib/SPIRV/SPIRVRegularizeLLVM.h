@@ -41,28 +41,26 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 
-using namespace llvm;
-
 namespace SPIRV {
 
 class SPIRVRegularizeLLVMBase {
 public:
   SPIRVRegularizeLLVMBase() : M(nullptr), Ctx(nullptr) {}
 
-  bool runRegularizeLLVM(Module &M);
+  bool runRegularizeLLVM(llvm::Module &M);
   // Lower functions
   bool regularize();
 
   // SPIR-V disallows functions being entrypoints and called
   // LLVM doesn't. This adds a wrapper around the entry point
   // that later SPIR-V writer renames.
-  void addKernelEntryPoint(Module *M);
+  void addKernelEntryPoint(llvm::Module *M);
 
   /// Some LLVM intrinsics that have no SPIR-V counterpart may be wrapped in
   /// @spirv.llvm_intrinsic_* function. During reverse translation from SPIR-V
   /// to LLVM IR we can detect this @spirv.llvm_intrinsic_* function and
   /// replace it with @llvm.intrinsic.* back.
-  void lowerIntrinsicToFunction(IntrinsicInst *Intrinsic);
+  void lowerIntrinsicToFunction(llvm::IntrinsicInst *Intrinsic);
 
   /// No SPIR-V counterpart for @llvm.fshl.*(@llvm.fshr.*) intrinsic. It will be
   /// lowered to a newly generated @spirv.llvm_fshl_*(@spirv.llvm_fshr_*)
@@ -79,10 +77,10 @@ public:
   ///
   /// The actual implementation algorithm will be slightly different for
   /// simplification purposes.
-  void lowerFunnelShift(IntrinsicInst *FSHIntrinsic);
+  void lowerFunnelShift(llvm::IntrinsicInst *FSHIntrinsic);
 
-  void lowerUMulWithOverflow(IntrinsicInst *UMulIntrinsic);
-  void buildUMulWithOverflowFunc(Function *UMulFunc);
+  void lowerUMulWithOverflow(llvm::IntrinsicInst *UMulIntrinsic);
+  void buildUMulWithOverflowFunc(llvm::Function *UMulFunc);
 
   // For some cases Clang emits VectorExtractDynamic as:
   // void @_Z28__spirv_VectorExtractDynamic(<Ty>* sret(<Ty>), jointMatrix, idx);
@@ -94,9 +92,9 @@ public:
   // @_Z27__spirv_VectorInsertDynamic(jointMatrix, <Ty>, idx)
   // Need to add additional GEP, store and load instructions and mutate called
   // function to avoid translation failures
-  void expandSYCLTypeUsing(Module *M);
-  void expandVEDWithSYCLTypeSRetArg(Function *F);
-  void expandVIDWithSYCLTypeByValComp(Function *F);
+  void expandSYCLTypeUsing(llvm::Module *M);
+  void expandVEDWithSYCLTypeSRetArg(llvm::Function *F);
+  void expandVIDWithSYCLTypeByValComp(llvm::Function *F);
 
   // According to the specification, the operands of a shift instruction must be
   // a scalar/vector of integer. When LLVM-IR contains a shift instruction with
@@ -104,15 +102,15 @@ public:
   // comply with the specification. For example: "%shift = lshr i1 0, 1";
   // The bit instruction should be changed to the extended version
   // "%shift = lshr i32 0, 1" so the args are treated as int operands.
-  Value *extendBitInstBoolArg(Instruction *OldInst);
+  Value *extendBitInstBoolArg(llvm::Instruction *OldInst);
 
-  static std::string lowerLLVMIntrinsicName(IntrinsicInst *II);
-  void adaptStructTypes(StructType *ST);
+  static std::string lowerLLVMIntrinsicName(llvm::IntrinsicInst *II);
+  void adaptStructTypes(llvm::StructType *ST);
   static char ID;
 
 private:
-  Module *M;
-  LLVMContext *Ctx;
+  llvm::Module *M;
+  llvm::LLVMContext *Ctx;
 };
 
 class SPIRVRegularizeLLVMPass
@@ -126,14 +124,14 @@ public:
   }
 };
 
-class SPIRVRegularizeLLVMLegacy : public ModulePass,
+class SPIRVRegularizeLLVMLegacy : public llvm::ModulePass,
                                   public SPIRVRegularizeLLVMBase {
 public:
   SPIRVRegularizeLLVMLegacy() : ModulePass(ID) {
     initializeSPIRVRegularizeLLVMLegacyPass(*PassRegistry::getPassRegistry());
   }
 
-  bool runOnModule(Module &M) override;
+  bool runOnModule(llvm::Module &M) override;
 
   static char ID;
 };
