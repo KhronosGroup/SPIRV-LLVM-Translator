@@ -20,6 +20,9 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: Extension "SPV_EXT_shader_atomic_float_add"
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_32:[0-9]+]] 32
 ; CHECK-SPIRV: TypeFloat [[TYPE_FLOAT_64:[0-9]+]] 64
+;; Check float operand of atomic_fetch_sub is handled correctly
+; CHECK-SPIRV: Constant [[TYPE_FLOAT_32]] 12 3278176256
+; CHECK-SPIRV: Constant [[TYPE_FLOAT_64]] 20 0 3228884992
 
 
 ; Function Attrs: convergent norecurse nounwind
