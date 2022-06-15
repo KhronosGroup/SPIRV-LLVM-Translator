@@ -141,7 +141,9 @@ inline bool isAccessChainOpCode(Op OpCode) {
 inline bool hasExecScope(Op OpCode) {
   unsigned OC = OpCode;
   return (OpGroupWaitEvents <= OC && OC <= OpGroupSMax) ||
-         (OpGroupReserveReadPipePackets <= OC && OC <= OpGroupCommitWritePipe);
+         (OpGroupReserveReadPipePackets <= OC &&
+          OC <= OpGroupCommitWritePipe) ||
+         (OC == OpGroupNonUniformRotateKHR);
 }
 
 inline bool hasGroupOperation(Op OpCode) {
@@ -179,7 +181,8 @@ inline bool isGroupOpCode(Op OpCode) {
 
 inline bool isGroupNonUniformOpcode(Op OpCode) {
   unsigned OC = OpCode;
-  return OpGroupNonUniformElect <= OC && OC <= OpGroupNonUniformQuadSwap;
+  return (OpGroupNonUniformElect <= OC && OC <= OpGroupNonUniformQuadSwap) ||
+         (OC == OpGroupNonUniformRotateKHR);
 }
 
 inline bool isMediaBlockINTELOpcode(Op OpCode) {

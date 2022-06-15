@@ -2170,6 +2170,10 @@ public:
     case OpGroupNonUniformShuffleDown:
       addUnsignedArg(2);
       break;
+    case OpGroupNonUniformRotateKHR:
+      if (ArgTys.size() == 4)
+        addUnsignedArg(3);
+      break;
     case OpGroupNonUniformInverseBallot:
     case OpGroupNonUniformBallotFindLSB:
     case OpGroupNonUniformBallotFindMSB:
