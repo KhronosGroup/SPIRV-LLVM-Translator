@@ -554,6 +554,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "DotProductInput4x8BitPackedKHR");
   add(CapabilityDotProductKHR, "DotProductKHR");
   add(CapabilityBitInstructions, "BitInstructions");
+  add(CapabilityGroupNonUniformRotateKHR, "GroupNonUniformRotateKHR");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
