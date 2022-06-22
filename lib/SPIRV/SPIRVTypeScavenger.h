@@ -73,17 +73,16 @@ class SPIRVTypeScavenger {
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, DeducedType Ty) {
     if (auto *AsTy = dyn_cast<Type *>(Ty))
       return OS << *AsTy;
-    else if (auto *AsDeferred = dyn_cast<DeferredType *>(Ty))
+    if (auto *AsDeferred = dyn_cast<DeferredType *>(Ty))
       return OS << "deferred type for " << *AsDeferred->Values[0];
-    else if (auto *AsValue = dyn_cast<Value *>(Ty))
+    if (auto *AsValue = dyn_cast<Value *>(Ty))
       return OS << "points to " << *AsValue;
-    else
-      return OS;
+    return OS;
   }
 
   /// Compute the pointer element type of a value, solely based on its
   /// definition. The value must be pointer-valued.
-  DeducedType getTypeInternal(Value *V);
+  DeducedType computePointerElementType(Value *V);
 
   /// This stores the Value -> pointer element type mapping for the module.
   ValueMap<Value *, DeducedType> DeducedTypes;
@@ -97,11 +96,11 @@ class SPIRVTypeScavenger {
   /// This assigns known pointer element types for the parameters of a function.
   /// This method should be called for all functions before doing any type
   /// analysis on the module.
-  void deduceDeclarationTypes(Function &F);
+  void deduceFunctionType(Function &F);
 
   /// This assigns known pointer element types for parameters of LLVM
   /// intrinsics.
-  void typeIntrinsicArgs(Function &F, Intrinsic::ID Id);
+  void deduceIntrinsicTypes(Function &F, Intrinsic::ID Id);
 
 public:
   /// Compute pointer element types for all pertinent values in the module. This

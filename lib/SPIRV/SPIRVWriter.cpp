@@ -336,7 +336,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   if (T->isPointerTy()) {
-    auto ET = T->isOpaquePointerTy() ?
+    auto *ET = T->isOpaquePointerTy() ?
       Type::getInt8Ty(T->getContext()) : T->getNonOpaquePointerElementType();
     auto AddrSpc = T->getPointerAddressSpace();
     return transPointerType(ET, AddrSpc);
@@ -1195,16 +1195,18 @@ SPIRVInstruction *LLVMToSPIRVBase::transCmpInst(CmpInst *Cmp,
 
 SPIRVValue *LLVMToSPIRVBase::transUnaryInst(UnaryInstruction *U,
                                             SPIRVBasicBlock *BB) {
-  Op BOC = OpNop;
   if (isa<BitCastInst>(U) && U->getType()->isPointerTy()) {
     if (isa<ConstantPointerNull>(U->getOperand(0))) {
       SPIRVType *ExpectedTy = transScavengedType(U);
       return BM->addNullConstant(bcast<SPIRVTypePointer>(ExpectedTy));
-    } else if (isa<UndefValue>(U->getOperand(0))) {
+    }
+    if (isa<UndefValue>(U->getOperand(0))) {
       SPIRVType *ExpectedTy = transScavengedType(U);
       return BM->addUndef(ExpectedTy);
     }
   }
+
+  Op BOC = OpNop;
   if (auto Cast = dyn_cast<AddrSpaceCastInst>(U)) {
     const auto SrcAddrSpace = Cast->getSrcTy()->getPointerAddressSpace();
     const auto DestAddrSpace = Cast->getDestTy()->getPointerAddressSpace();
