@@ -1,4 +1,4 @@
-; RUN: llvm-as  < %s -o %t.bc
+; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_debug_module %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.ll
 

@@ -1,4 +1,4 @@
-; RUN: llvm-as  %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc
 
 ; --- Source code ---

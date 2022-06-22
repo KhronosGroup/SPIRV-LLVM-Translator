@@ -1,4 +1,4 @@
-; RUN: llvm-as  %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-max-version=1.1 --spirv-ext=+SPV_KHR_float_controls
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck %s --input-file %t.spt -check-prefixes=SPV,SPVEXT

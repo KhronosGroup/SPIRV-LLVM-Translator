@@ -1,4 +1,4 @@
-; RUN: llvm-as  %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-tools-dis -o - | FileCheck %s
 ; RUN: llvm-spirv %t.bc --spirv-tools-dis -o - | spirv-as
 
