@@ -2822,8 +2822,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
       ExtensionID::SPV_INTEL_fpga_memory_attributes);
 
-  bool ValidAttrDecorationFound = false;
-  bool ValidAccessesDecorationFound = false;
+  bool ValidDecorationFound = false;
   DecorationsInfoVec DecorationsVec;
   IntelLSUControlsInfo LSUControls;
   for (; DecorationsIt != DecorationsEnd; ++DecorationsIt) {
@@ -2839,7 +2838,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       // If the name is a number it represents the decoration by its kind.
       std::vector<std::string> DecValues;
       if (tryParseAnnotationDecoValues(ValueStr, DecValues)) {
-        ValidAttrDecorationFound = true;
+        ValidDecorationFound = true;
         DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
                                     std::move(DecValues));
       }
@@ -2848,14 +2847,14 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
 
     if (AllowFPGAMemAccesses) {
       if (Name == "params") {
-        ValidAccessesDecorationFound = true;
+        ValidDecorationFound = true;
         unsigned ParamsBitMask = 0;
         bool Failure = ValueStr.getAsInteger(10, ParamsBitMask);
         assert(!Failure && "Non-integer LSU controls value");
         (void)Failure;
         LSUControls.setWithBitMask(ParamsBitMask);
       } else if (Name == "cache-size") {
-        ValidAccessesDecorationFound = true;
+        ValidDecorationFound = true;
         if (!LSUControls.CacheSizeInfo.hasValue())
           continue;
         unsigned CacheSizeValue = 0;
@@ -2869,15 +2868,15 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       std::vector<std::string> DecValues;
       Decoration Dec;
       if (Name == "pump") {
-        ValidAttrDecorationFound = true;
+        ValidDecorationFound = true;
         Dec = llvm::StringSwitch<Decoration>(ValueStr)
                   .Case("1", DecorationSinglepumpINTEL)
                   .Case("2", DecorationDoublepumpINTEL);
       } else if (Name == "register") {
-        ValidAttrDecorationFound = true;
+        ValidDecorationFound = true;
         Dec = DecorationRegisterINTEL;
       } else if (Name == "simple_dual_port") {
-        ValidAttrDecorationFound = true;
+        ValidDecorationFound = true;
         Dec = DecorationSimpleDualPortINTEL;
       } else {
         Dec = llvm::StringSwitch<Decoration>(Name)
@@ -2893,19 +2892,19 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
         if (Dec == DecorationUserSemantic)
           DecValues = std::vector<std::string>({AnnotatedDecoration.str()});
         else if (Dec == DecorationMergeINTEL) {
-          ValidAttrDecorationFound = true;
+          ValidDecorationFound = true;
           std::pair<StringRef, StringRef> MergeValues = ValueStr.split(':');
           DecValues = std::vector<std::string>(
               {MergeValues.first.str(), MergeValues.second.str()});
         } else if (Dec == DecorationBankBitsINTEL) {
-          ValidAttrDecorationFound = true;
+          ValidDecorationFound = true;
           SmallVector<StringRef, 4> BitsStrs;
           ValueStr.split(BitsStrs, ',');
           DecValues.reserve(BitsStrs.size());
           for (const StringRef &BitsStr : BitsStrs)
             DecValues.push_back(BitsStr.str());
         } else {
-          ValidAttrDecorationFound = true;
+          ValidDecorationFound = true;
           DecValues = std::vector<std::string>({ValueStr.str()});
         }
       }
@@ -2915,19 +2914,17 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   // Even if there is an annotation string that is split in blocks like Intel
   // FPGA annotation, it's not necessarily an FPGA annotation. Translate the
   // whole string as UserSemantic decoration in this case.
-  if (ValidAttrDecorationFound)
+  if (ValidDecorationFound) {
     Decorates.MemoryAttributesVec = DecorationsVec;
-  else
+    Decorates.MemoryAccessesVec = LSUControls.getDecorationsFromCurrentState();
+  } else {
     Decorates.MemoryAttributesVec.emplace_back(
         DecorationUserSemantic,
         std::vector<std::string>({AnnotatedCode.str()}));
-  if (ValidAccessesDecorationFound)
-    Decorates.MemoryAccessesVec = LSUControls.getDecorationsFromCurrentState();
-  else
     Decorates.MemoryAccessesVec.emplace_back(
         DecorationUserSemantic,
         std::vector<std::string>({AnnotatedCode.str()}));
-
+  }
   return Decorates;
 }
 
