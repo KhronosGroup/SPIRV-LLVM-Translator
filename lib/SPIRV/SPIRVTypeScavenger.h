@@ -1,11 +1,11 @@
 //===- SPIRVTypeScavenger.h - Recover pointer types in opaque pointer IR --===//
 //
-//                     The LLVM/SPIRV Translator
+//                     The LLVM/SPIR-V Translator
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
 //
-// Copyright (c) 2022 Intel Corporation. All rights reserved.
+// Copyright (c) 2022 The Khronos Group Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -19,7 +19,7 @@
 // Redistributions in binary form must reproduce the above copyright notice,
 // this list of conditions and the following disclaimers in the documentation
 // and/or other materials provided with the distribution.
-// Neither the names of Intel Corporation, nor the names of its
+// Neither the names of The Khronos Group, nor the names of its
 // contributors may be used to endorse or promote products derived from this
 // Software without specific prior written permission.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -102,10 +102,11 @@ class SPIRVTypeScavenger {
   /// intrinsics.
   void deduceIntrinsicTypes(Function &F, Intrinsic::ID Id);
 
-public:
-  /// Compute pointer element types for all pertinent values in the module. This
-  /// method must be called before any other method on this class.
+  /// Compute pointer element types for all pertinent values in the module.
   void typeModule(Module &M);
+
+public:
+  explicit SPIRVTypeScavenger(Module &M) { typeModule(M); }
 
   /// This type represents the type that a pointer element type of a type. If it
   /// is a Type value, then the pointee type represents a pointer to that type.

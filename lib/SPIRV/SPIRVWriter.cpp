@@ -336,8 +336,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   if (T->isPointerTy()) {
-    auto *ET = T->isOpaquePointerTy() ?
-      Type::getInt8Ty(T->getContext()) : T->getNonOpaquePointerElementType();
+    auto *ET = T->isOpaquePointerTy() ? Type::getInt8Ty(T->getContext())
+                                      : T->getNonOpaquePointerElementType();
     auto AddrSpc = T->getPointerAddressSpace();
     return transPointerType(ET, AddrSpc);
   }
@@ -718,7 +718,8 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
       if (!Ty) {
         Ty = Arg.getType();
         if (Ty->isPointerTy())
-          PointeeTy = Scavenger.getArgumentPointerElementType(F, Arg.getArgNo());
+          PointeeTy =
+              Scavenger->getArgumentPointerElementType(F, Arg.getArgNo());
       }
       SPIRVType *TransTy = nullptr;
       if (Ty->isPointerTy())
@@ -731,12 +732,12 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
     return getSPIRVFunctionType(RT, PT);
   }
 
-  auto PointeeTy = Scavenger.getPointerElementType(V);
+  auto PointeeTy = Scavenger->getPointerElementType(V);
   auto AddrSpace = Ty->getPointerAddressSpace();
   if (auto *AsTy = dyn_cast<Type *>(PointeeTy))
     return transPointerType(AsTy, AddrSpace);
   return transPointerType(transScavengedType(cast<Value *>(PointeeTy)),
-      AddrSpace);
+                          AddrSpace);
 }
 
 SPIRVType *
@@ -1975,8 +1976,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                          FuncTransMode::Pointer));
       IncomingPairs.push_back(transValue(Phi->getIncomingBlock(I), nullptr));
     }
-    return mapValue(
-        V, BM->addPhiInst(transScavengedType(Phi), IncomingPairs, BB));
+    return mapValue(V,
+                    BM->addPhiInst(transScavengedType(Phi), IncomingPairs, BB));
   }
 
   if (auto Ext = dyn_cast<ExtractValueInst>(V)) {
@@ -4339,7 +4340,7 @@ bool LLVMToSPIRVBase::translate() {
     BM->addCapability(CapabilityLinkage);
 
   // Use the type scavenger to recover pointer element types.
-  Scavenger.typeModule(*M);
+  Scavenger = std::make_unique<SPIRVTypeScavenger>(*M);
 
   // Transform SPV-IR builtin calls to builtin variables.
   if (!transWorkItemBuiltinCallsToVariables())

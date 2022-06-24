@@ -180,7 +180,7 @@ private:
   std::unique_ptr<CallGraph> CG;
   OCLTypeToSPIRVBase *OCLTypeToSPIRVPtr;
   std::vector<llvm::Instruction *> UnboundInst;
-  SPIRVTypeScavenger Scavenger;
+  std::unique_ptr<SPIRVTypeScavenger> Scavenger;
 
   enum class FPContract { UNDEF, DISABLED, ENABLED };
   DenseMap<Function *, FPContract> FPContractMap;

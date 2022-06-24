@@ -1,11 +1,11 @@
 //===- SPIRVTypeScavenger.cpp - Recover pointer types in opaque pointer IR ===//
 //
-//                     The LLVM/SPIRV Translator
+//                     The LLVM/SPIR-V Translator
 //
 // This file is distributed under the University of Illinois Open Source
 // License. See LICENSE.TXT for details.
 //
-// Copyright (c) 2022 Intel Corporation. All rights reserved.
+// Copyright (c) 2022 The Khronos Group Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -19,7 +19,7 @@
 // Redistributions in binary form must reproduce the above copyright notice,
 // this list of conditions and the following disclaimers in the documentation
 // and/or other materials provided with the distribution.
-// Neither the names of Intel Corporation, nor the names of its
+// Neither the names of The Khronos Group, nor the names of its
 // contributors may be used to endorse or promote products derived from this
 // Software without specific prior written permission.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -39,13 +39,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVTypeScavenger.h"
+
+#include "SPIRVInternal.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/NoFolder.h"
 #include "llvm/IR/Operator.h"
-#include "SPIRVInternal.h"
 
 #define DEBUG_TYPE "type-scavenger"
 
@@ -124,14 +125,14 @@ void SPIRVTypeScavenger::deduceIntrinsicTypes(Function &F, Intrinsic::ID Id) {
       // TODO: Handle return types properly.
     } else {
       Argument *Arg = F.getArg(ArgNo);
-      LLVM_DEBUG(dbgs() << "Parameter " << *Arg << " of " << F.getName() << " has type " << Ty << "\n");
+      LLVM_DEBUG(dbgs() << "Parameter " << *Arg << " of " << F.getName()
+                        << " has type " << Ty << "\n");
       DeducedTypes[Arg] = Ty;
     }
   };
   LLVMContext &Ctx = F.getContext();
 
   switch (Id) {
-  // TODO: handle case Intrinsic::memset
   case Intrinsic::memcpy:
     // First parameter is a pointer, but it may be any pointer type.
     return;
@@ -142,7 +143,8 @@ void SPIRVTypeScavenger::deduceIntrinsicTypes(Function &F, Intrinsic::ID Id) {
     AddParameter(1, Type::getInt8Ty(Ctx));
     return;
   // Second and third parameters are strings, which mean nothing.
-  case Intrinsic::annotation: return;
+  case Intrinsic::annotation:
+    return;
   case Intrinsic::var_annotation:
   case Intrinsic::ptr_annotation:
     AddParameter(0, Type::getInt8Ty(Ctx));
@@ -212,7 +214,9 @@ void SPIRVTypeScavenger::deduceFunctionType(Function &F) {
         Type *PointeeTy = getPointerUseType(&F, OC, Arg->getArgNo());
         if (PointeeTy) {
           DeducedTypes[Arg] = PointeeTy;
-          LLVM_DEBUG(dbgs() << "Arg " << Arg->getArgNo() << " of " << F.getName() << " has type " << *PointeeTy << "\n");
+          LLVM_DEBUG(dbgs()
+                     << "Arg " << Arg->getArgNo() << " of " << F.getName()
+                     << " has type " << *PointeeTy << "\n");
         }
       }
     }
@@ -230,7 +234,8 @@ void SPIRVTypeScavenger::deduceFunctionType(Function &F) {
     for (Argument *Arg : PointerArgs) {
       if (auto *Ty = ParameterTypes[Arg->getArgNo()]) {
         DeducedTypes[Arg] = Ty;
-        LLVM_DEBUG(dbgs() << "Arg " << Arg->getArgNo() << " of " << F.getName() << " has type " << *Ty << "\n");
+        LLVM_DEBUG(dbgs() << "Arg " << Arg->getArgNo() << " of " << F.getName()
+                          << " has type " << *Ty << "\n");
       }
     }
   }
@@ -248,7 +253,7 @@ static bool doesNotImplyType(Value *V) {
 SPIRVTypeScavenger::DeducedType
 SPIRVTypeScavenger::computePointerElementType(Value *V) {
   assert(V->getType()->isPointerTy() &&
-      "Trying to get the pointer type of a non-pointer value?");
+         "Trying to get the pointer type of a non-pointer value?");
 
   // Don't try to store null, undef, or poison in our type map. We'll call these
   // i8* by default; if any use has a different type, a bitcast will be added
@@ -281,9 +286,9 @@ SPIRVTypeScavenger::computePointerElementType(Value *V) {
       return nullptr;
 
     DeducedType SourceTy = computePointerElementType(Source);
-    if (auto *Deferred = dyn_cast<DeferredType*>(SourceTy)) {
-      LLVM_DEBUG(dbgs() << *Source << " will receive the same type as " <<
-          *V << "\n");
+    if (auto *Deferred = dyn_cast<DeferredType *>(SourceTy)) {
+      LLVM_DEBUG(dbgs() << *Source << " will receive the same type as " << *V
+                        << "\n");
       Deferred->Values.push_back(V);
     }
     return SourceTy;
@@ -333,16 +338,18 @@ SPIRVTypeScavenger::computePointerElementType(Value *V) {
   } else {
     // TODO: handle pointer-valued extractvalue, which probably comes from
     // cmpxchg or inlineasm.
-    LLVM_DEBUG(dbgs() << "Value " << *V << " is not a known type of " <<
-        "pointer-valued instruction, this logic is probably wrong!\n");
+    LLVM_DEBUG(
+        dbgs()
+        << "Value " << *V << " is not a known type of "
+        << "pointer-valued instruction, this logic is probably wrong!\n");
   }
 
   // If we haven't gotten a type at this point, we need to construct a new
   // deferred type to handle this value. This also considers cases where we
   // were trying to propagate a null constant.
   if (!Ty) {
-    LLVM_DEBUG(dbgs() << "Value " << *V <<
-        " has no known type, creating a new type for it\n");
+    LLVM_DEBUG(dbgs() << "Value " << *V
+                      << " has no known type, creating a new type for it\n");
     DeferredType *Deferred = new DeferredType;
     Deferred->Values.push_back(V);
     Ty = Deferred;
@@ -369,19 +376,19 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
   // Basic instructions that have a clearly fixed type.
   if (auto *GEP = dyn_cast<GetElementPtrInst>(&I)) {
     PointerOperands.emplace_back(GetElementPtrInst::getPointerOperandIndex(),
-        GEP->getSourceElementType());
+                                 GEP->getSourceElementType());
   } else if (auto *LI = dyn_cast<LoadInst>(&I)) {
     PointerOperands.emplace_back(LoadInst::getPointerOperandIndex(),
-        GetMemoryType(LI));
+                                 GetMemoryType(LI));
   } else if (auto *SI = dyn_cast<StoreInst>(&I)) {
     PointerOperands.emplace_back(StoreInst::getPointerOperandIndex(),
-        GetMemoryType(SI->getValueOperand()));
+                                 GetMemoryType(SI->getValueOperand()));
   } else if (auto *AI = dyn_cast<AtomicCmpXchgInst>(&I)) {
     PointerOperands.emplace_back(AtomicCmpXchgInst::getPointerOperandIndex(),
-        GetMemoryType(AI->getCompareOperand()));
+                                 GetMemoryType(AI->getCompareOperand()));
   } else if (auto *AI = dyn_cast<AtomicRMWInst>(&I)) {
     PointerOperands.emplace_back(AtomicRMWInst::getPointerOperandIndex(),
-        GetMemoryType(AI->getValOperand()));
+                                 GetMemoryType(AI->getValOperand()));
   } else if (auto *CI = dyn_cast<ICmpInst>(&I)) {
     // icmp can compare pointers. If it isn't, ignore the instruction.
     if (!CI->getOperand(0)->getType()->isPointerTy())
@@ -389,7 +396,7 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
 
     // The two pointer operands should have the same type.
     PointerOperands.emplace_back(1,
-        computePointerElementType(CI->getOperand(0)));
+                                 computePointerElementType(CI->getOperand(0)));
   } else if (auto *SI = dyn_cast<SelectInst>(&I)) {
     if (!SI->getType()->isPointerTy())
       return;
@@ -418,13 +425,14 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
     PointerOperands.emplace_back(0, Type::getInt8Ty(I.getContext()));
   } else if (auto *CB = dyn_cast<CallBase>(&I)) {
     PointerOperands.emplace_back(CB->getCalledOperandUse().getOperandNo(),
-        CB->getFunctionType());
+                                 CB->getFunctionType());
     // If we have an identified function for the call instruction, map the
     // arguments we pass in to the argument requirements of the function.
     if (Function *F = CB->getCalledFunction()) {
       for (Use &U : CB->args()) {
         if (U->getType()->isPointerTy())
-          PointerOperands.emplace_back(U.getOperandNo(),
+          PointerOperands.emplace_back(
+              U.getOperandNo(),
               computePointerElementType(F->getArg(CB->getArgOperandNo(&U))));
       }
     }
@@ -451,17 +459,18 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
     }
 
     auto InsertCast = [&]() {
-      if (isa<Type*>(UsedTy)) {
-        LLVM_DEBUG(dbgs() << "Inserting bitcast of " << *U.get() <<
-            " to change its type to " << *cast<Type*>(UsedTy) <<
-            " because of use in " << *U.getUser() << "\n");
+      if (isa<Type *>(UsedTy)) {
+        LLVM_DEBUG(dbgs() << "Inserting bitcast of " << *U.get()
+                          << " to change its type to " << *cast<Type *>(UsedTy)
+                          << " because of use in " << *U.getUser() << "\n");
       } else {
-        LLVM_DEBUG(dbgs() << "Inserting bitcast of " << *U.get() <<
-            " for indirect pointer use of " << *cast<Value*>(UsedTy) <<
-            " because of use in " << *U.getUser() << "\n");
+        LLVM_DEBUG(dbgs() << "Inserting bitcast of " << *U.get()
+                          << " for indirect pointer use of "
+                          << *cast<Value *>(UsedTy) << " because of use in "
+                          << *U.getUser() << "\n");
       }
       Value *CastedValue =
-        Builder.Insert(CastInst::CreatePointerCast(U, U->getType()));
+          Builder.Insert(CastInst::CreatePointerCast(U, U->getType()));
       DeducedTypes[CastedValue] = UsedTy;
       U.set(CastedValue);
     };
@@ -499,7 +508,7 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
 void SPIRVTypeScavenger::fixType(DeferredType &Ty, Type *ActualTy) {
   for (Value *V : Ty.Values) {
     LLVM_DEBUG(dbgs() << "Inferred type of " << *V << " to be " << *ActualTy
-        << "\n");
+                      << "\n");
     DeducedTypes[V] = ActualTy;
   }
   delete &Ty;
@@ -539,12 +548,13 @@ SPIRVTypeScavenger::getPointerElementType(Value *V) {
   // If it's a constant expression, we won't have a type for it. Constant
   // expressions are currently translated via converting them to instructions
   // without a basic block.
-  bool IsFromConstantExpr = isa<ConstantExpr>(V) ||
-    (isa<Instruction>(V) && !cast<Instruction>(V)->getParent());
+  bool IsFromConstantExpr =
+      isa<ConstantExpr>(V) ||
+      (isa<Instruction>(V) && !cast<Instruction>(V)->getParent());
   (void)IsFromConstantExpr;
   auto It = DeducedTypes.find(V);
-  assert((It != DeducedTypes.end() || IsFromConstantExpr)
-      && "How have we not typed the value?");
+  assert((It != DeducedTypes.end() || IsFromConstantExpr) &&
+         "How have we not typed the value?");
   if (It != DeducedTypes.end()) {
     if (auto *Ty = dyn_cast<Type *>(It->second))
       return Ty;
@@ -560,4 +570,3 @@ Type *SPIRVTypeScavenger::getArgumentPointerElementType(Function *F,
                                                         unsigned ArgNo) {
   return cast<Type *>(getPointerElementType(F->getArg(ArgNo)));
 }
-
