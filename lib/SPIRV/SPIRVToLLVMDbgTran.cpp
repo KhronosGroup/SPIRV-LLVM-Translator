@@ -760,6 +760,8 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   DIFile *File = getFile(Ops[SourceIdx]);
   auto *Entity = transDebugInst<DINode>(BM->get<SPIRVExtInst>(Ops[EntityIdx]));
   if (Ops[TagIdx] == SPIRVDebug::ImportedModule) {
+    if (DIModule *DM = dyn_cast<DIModule>(Entity))
+      return Builder.createImportedModule(Scope, DM, File, Line);
     if (DIImportedEntity *IE = dyn_cast<DIImportedEntity>(Entity))
       return Builder.createImportedModule(Scope, IE, File, Line);
     if (DINamespace *NS = dyn_cast<DINamespace>(Entity))
@@ -774,6 +776,25 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
     return Builder.createImportedDeclaration(Scope, Entity, File, Line, Name);
   }
   llvm_unreachable("Unexpected kind of imported entity!");
+}
+
+DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::ModuleINTEL;
+  const SPIRVWordVec &Ops = DebugInst->getArguments();
+  assert(Ops.size() >= OperandCount && "Invalid number of operands");
+  DIScope *Scope = getScope(BM->getEntry(Ops[ParentIdx]));
+  unsigned Line = Ops[LineIdx];
+  DIFile *File = getFile(Ops[SourceIdx]);
+  StringRef Name = getString(Ops[NameIdx]);
+  StringRef ConfigMacros = getString(Ops[ConfigMacrosIdx]);
+  StringRef IncludePath = getString(Ops[IncludePathIdx]);
+
+  std::string SysRoot = std::to_string(Line) + "?";
+  if (File) {
+    SysRoot += File->getDirectory().str() + "?" + File->getFilename().str();
+  }
+  return Builder.createModule(Scope, Name, ConfigMacros, IncludePath,
+                              StringRef(SysRoot));
 }
 
 MDNode *SPIRVToLLVMDbgTran::transExpression(const SPIRVExtInst *DebugInst) {
@@ -871,6 +892,9 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
 
   case SPIRVDebug::ImportedEntity:
     return transImportedEntry(DebugInst);
+
+  case SPIRVDebug::ModuleINTEL:
+    return transModule(DebugInst);
 
   case SPIRVDebug::Operation: // To be translated with transExpression
   case SPIRVDebug::Source:    // To be used by other instructions
