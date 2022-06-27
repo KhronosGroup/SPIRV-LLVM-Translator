@@ -46,8 +46,8 @@
 #include "SPIRVError.h"
 #include "libSPIRV/SPIRVDebug.h"
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Linker/Linker.h"
@@ -58,14 +58,10 @@ using namespace SPIRV;
 
 namespace SPIRV {
 
-void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
-  IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
-  if (!II || II->getIntrinsicID() != Intrinsic::sadd_with_overflow)
-    return;
+void SPIRVLowerSaddWithOverflowBase::replaceSaddOverflow(Function &F) {
+  assert(F.getIntrinsicID() == Intrinsic::sadd_with_overflow);
 
-  Function *IntrinsicFunc = I.getCalledFunction();
-  assert(IntrinsicFunc && "Missing function");
-  StringRef IntrinsicName = IntrinsicFunc->getName();
+  StringRef IntrinsicName = F.getName();
   std::string FuncName = "llvm_sadd_with_overflow_i";
   if (IntrinsicName.endswith(".i16"))
     FuncName += "16";
@@ -81,39 +77,85 @@ void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
 
   // Redirect @llvm.sadd.with.overflow.* call to the function we have in
   // the loaded module @llvm_sadd_with_overflow_*
-  Function *F = Mod->getFunction(FuncName);
-  if (F) { // This function is already linked in.
-    I.setCalledFunction(F);
-    return;
-  }
-  FunctionCallee FC = Mod->getOrInsertFunction(FuncName, I.getFunctionType());
-  I.setCalledFunction(FC);
+  Function *ReplacementFunc = Mod->getFunction(FuncName);
+  if (!ReplacementFunc) { // This function needs linking.
+    Mod->getOrInsertFunction(FuncName, F.getFunctionType());
+    // Read LLVM IR with the intrinsic's implementation
+    SMDiagnostic Err;
+    auto MB = MemoryBuffer::getMemBuffer(LLVMSaddWithOverflow);
+    auto SaddWithOverflowModule =
+        parseIR(MB->getMemBufferRef(), Err, *Context,
+                [&](StringRef) { return Mod->getDataLayoutStr(); });
+    if (!SaddWithOverflowModule) {
+      std::string ErrMsg;
+      raw_string_ostream ErrStream(ErrMsg);
+      Err.print("", ErrStream);
+      SPIRVErrorLog EL;
+      EL.checkError(false, SPIRVEC_InvalidLlvmModule, ErrMsg);
+      return;
+    }
 
-  // Read LLVM IR with the intrinsic's implementation
-  SMDiagnostic Err;
-  auto MB = MemoryBuffer::getMemBuffer(LLVMSaddWithOverflow);
-  auto SaddWithOverflowModule =
-      parseIR(MB->getMemBufferRef(), Err, *Context,
-              [&](StringRef) { return Mod->getDataLayoutStr(); });
-  if (!SaddWithOverflowModule) {
-    std::string ErrMsg;
-    raw_string_ostream ErrStream(ErrMsg);
-    Err.print("", ErrStream);
-    SPIRVErrorLog EL;
-    EL.checkError(false, SPIRVEC_InvalidLlvmModule, ErrMsg);
-    return;
+    // Link in the intrinsic's implementation.
+    if (!Linker::linkModules(*Mod, std::move(SaddWithOverflowModule),
+                             Linker::LinkOnlyNeeded))
+      TheModuleIsModified = true;
+
+    ReplacementFunc = Mod->getFunction(FuncName);
+    assert(ReplacementFunc && "How did we not link in the necessary function?");
   }
 
-  // Link in the intrinsic's implementation.
-  if (!Linker::linkModules(*Mod, std::move(SaddWithOverflowModule),
-                           Linker::LinkOnlyNeeded))
-    TheModuleIsModified = true;
+  F.replaceAllUsesWith(ReplacementFunc);
+}
+
+void SPIRVLowerSaddWithOverflowBase::replaceSaddSat(Function &F) {
+  assert(F.getIntrinsicID() == Intrinsic::sadd_sat);
+
+  SmallVector<IntrinsicInst *, 4> Intrinsics;
+  for (User *U : F.users()) {
+    if (auto *II = dyn_cast<IntrinsicInst>(U))
+      Intrinsics.push_back(II);
+  }
+
+  // Get the corresponding sadd_with_overflow intrinsic for the sadd_sat.
+  Type *IntTy = F.getFunctionType()->getReturnType();
+  Function *SaddO =
+      Intrinsic::getDeclaration(Mod, Intrinsic::sadd_with_overflow, IntTy);
+
+  // Replace all uses of the intrinsic with equivalent code relying on
+  // sadd_with_overflow
+  IRBuilder<> Builder(F.getContext());
+  unsigned BitWidth = IntTy->getIntegerBitWidth();
+  Value *IntMin = Builder.getInt(APInt::getSignedMinValue(BitWidth));
+  Value *ShiftWidth = Builder.getIntN(BitWidth, BitWidth - 1);
+
+  for (IntrinsicInst *II : Intrinsics) {
+    Builder.SetInsertPoint(II);
+    // sadd_sat(a, b) => overflow ? (res >> bitwidth) ^ intmin : res;
+    Value *StructRes =
+        Builder.CreateCall(SaddO, {II->getArgOperand(0), II->getArgOperand(1)});
+    Value *Sum = Builder.CreateExtractValue(StructRes, 0);
+    Value *Overflow = Builder.CreateExtractValue(StructRes, 1);
+    Value *OverflowedRes =
+        Builder.CreateXor(Builder.CreateAShr(Sum, ShiftWidth), IntMin);
+    Value *Result = Builder.CreateSelect(Overflow, OverflowedRes, Sum);
+    II->replaceAllUsesWith(Result);
+    II->eraseFromParent();
+  }
+
+  // Now replace the sadd_with_overflow intrinsic itself.
+  replaceSaddOverflow(*SaddO);
 }
 
 bool SPIRVLowerSaddWithOverflowBase::runLowerSaddWithOverflow(Module &M) {
   Context = &M.getContext();
   Mod = &M;
-  visit(M);
+  for (Function &F : M) {
+    Intrinsic::ID IntrinId = F.getIntrinsicID();
+    if (IntrinId == Intrinsic::sadd_with_overflow)
+      replaceSaddOverflow(F);
+    else if (IntrinId == Intrinsic::sadd_sat)
+      replaceSaddSat(F);
+  }
 
   verifyRegularizationPass(M, "SPIRVLowerSaddWithOverflow");
   return TheModuleIsModified;

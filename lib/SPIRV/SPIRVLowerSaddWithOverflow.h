@@ -35,22 +35,21 @@
 #ifndef SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
 #define SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
 
-#include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 
 namespace SPIRV {
 
-class SPIRVLowerSaddWithOverflowBase
-    : public llvm::InstVisitor<SPIRVLowerSaddWithOverflowBase> {
+class SPIRVLowerSaddWithOverflowBase {
 public:
-  SPIRVLowerSaddWithOverflowBase() : Context(nullptr), Mod(nullptr) {}
-  virtual ~SPIRVLowerSaddWithOverflowBase() {}
-  virtual void visitIntrinsicInst(llvm::CallInst &I);
+  SPIRVLowerSaddWithOverflowBase() : Context(nullptr) {}
 
   bool runLowerSaddWithOverflow(llvm::Module &M);
 
 private:
+  void replaceSaddOverflow(llvm::Function &F);
+  void replaceSaddSat(llvm::Function &F);
+
   llvm::LLVMContext *Context;
   llvm::Module *Mod;
   bool TheModuleIsModified = false;
