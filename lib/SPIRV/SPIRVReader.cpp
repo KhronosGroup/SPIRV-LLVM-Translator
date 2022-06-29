@@ -111,7 +111,7 @@ const static char *Restrict = "restrict";
 const static char *Pipe = "pipe";
 } // namespace kOCLTypeQualifierName
 
-static bool isKernel(SPIRVFunction *BF) {
+static bool isEntryPointKernel(SPIRVFunction *BF) {
   return BF->getModule()->isEntryPoint(ExecutionModelKernel, BF->getId());
 }
 
@@ -2810,7 +2810,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   if (Loc != FuncMap.end())
     return Loc->second;
 
-  auto IsKernel = isKernel(BF);
+  bool IsKernel = isEntryPointKernel(BF);
 
   if (IsKernel) {
     // search for a previous function with the same name
@@ -3725,7 +3725,7 @@ bool SPIRVToLLVM::transFPContractMetadata() {
   bool ContractOff = false;
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     SPIRVFunction *BF = BM->getFunction(I);
-    if (!isKernel(BF))
+    if (!isEntryPointKernel(BF))
       continue;
     if (BF->getExecutionMode(ExecutionModeContractionOff)) {
       ContractOff = true;
@@ -3819,12 +3819,14 @@ void SPIRVToLLVM::transFunctionDecorationsToMetadata(SPIRVFunction *BF,
 
 bool SPIRVToLLVM::transMetadata() {
   SmallVector<Function *, 2> CtorKernels;
+  SmallSet<Function *, 8> HandledLLVMKernels;
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
     SPIRVFunction *BF = BM->getFunction(I);
     Function *F = static_cast<Function *>(getTranslatedValue(BF));
     assert(F && "Invalid translated function");
 
-    transOCLMetadata(BF);
+    if (!isEntryPointKernel(BF) || !HandledLLVMKernels.contains(F))
+      transOCLMetadata(BF);
     transVectorComputeMetadata(BF);
     transFPGAFunctionMetadata(BF, F);
 
@@ -3834,7 +3836,7 @@ bool SPIRVToLLVM::transMetadata() {
 
     if (BF->hasDecorate(internal::DecorationCallableFunctionINTEL))
       F->addFnAttr(kVCMetadata::VCCallable);
-    if (isKernel(BF) &&
+    if (isEntryPointKernel(BF) &&
         BF->getExecutionMode(internal::ExecutionModeFastCompositeKernelINTEL))
       F->addFnAttr(kVCMetadata::VCFCEntry);
 
@@ -3916,6 +3918,7 @@ bool SPIRVToLLVM::transMetadata() {
       F->setMetadata(kSPIR2MD::IntelFPGAIPInterface,
                      MDNode::get(*Context, InterfaceMDVec));
     }
+    HandledLLVMKernels.insert(F);
   }
   NamedMDNode *MemoryModelMD =
       M->getOrInsertNamedMetadata(kSPIRVMD::MemoryModel);
@@ -4070,7 +4073,7 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
   unsigned FloatControl = 0;
   // RoundMode and FloatMode are always same for all types in Cm
   // While Denorm could be different for double, float and half
-  if (isKernel(BF)) {
+  if (isEntryPointKernel(BF)) {
     FPRoundingModeExecModeMap::foreach (
         [&](FPRoundingMode VCRM, ExecutionMode EM) {
           if (BF->getExecutionMode(EM)) {
