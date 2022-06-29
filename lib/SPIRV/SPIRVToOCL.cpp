@@ -276,6 +276,8 @@ void SPIRVToOCLBase::visitCallSPRIVImageQuerySize(CallInst *CI) {
   }
 
   AttributeList Attributes = CI->getCalledFunction()->getAttributes();
+  Attributes = Attributes.addParamAttributes(*Ctx, 0,
+      AttrBuilder(*Ctx).addTypeAttr(Attribute::ElementType, ImgTy));
   BuiltinFuncMangleInfo Mangle;
   Type *Int32Ty = Type::getInt32Ty(*Ctx);
   Instruction *GetImageSize = nullptr;

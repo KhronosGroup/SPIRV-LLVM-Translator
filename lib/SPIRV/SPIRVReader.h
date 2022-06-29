@@ -45,6 +45,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
 
 namespace llvm {
@@ -82,6 +83,7 @@ public:
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
   std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &);
+  llvm::AttributeList transTypeAttributes(llvm::ArrayRef<SPIRVType *> Tys);
   bool translate();
   bool transAddressingModel();
 

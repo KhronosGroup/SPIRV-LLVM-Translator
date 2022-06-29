@@ -157,7 +157,8 @@ bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
 
 /// \brief Mangle OpenCL builtin function function name.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
-                         ArrayRef<Type *> ArgTypes, std::string &MangledName);
+                         ArrayRef<Type *> ArgTypes, AttributeList &Attrs,
+                         std::string &MangledName);
 
 /// Create a pass for translating LLVM to SPIR-V.
 ModulePass *createLLVMToSPIRVLegacy(SPIRV::SPIRVModule *);
