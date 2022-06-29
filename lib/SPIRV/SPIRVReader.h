@@ -41,10 +41,12 @@
 #ifndef SPIRVREADER_H
 #define SPIRVREADER_H
 
+#include "SPIRVInternal.h"
 #include "SPIRVModule.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
 
 namespace llvm {
@@ -82,6 +84,8 @@ public:
   Type *transType(SPIRVType *BT, bool IsClassMember = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
   std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &);
+  std::vector<PointerIndirectPair>
+  getPointerElementTypes(llvm::ArrayRef<SPIRVType *> Tys);
   bool translate();
   bool transAddressingModel();
 

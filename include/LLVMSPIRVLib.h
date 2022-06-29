@@ -106,6 +106,10 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg);
 
+/// This contains a pair of the pointer element type and an indirection
+/// parameter (to capture cases where an array of OpenCL types is used).
+typedef llvm::PointerIntPair<llvm::Type *, 1, bool> PointerIndirectPair;
+
 } // End namespace SPIRV
 
 namespace llvm {
@@ -157,7 +161,9 @@ bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
 
 /// \brief Mangle OpenCL builtin function function name.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
-                         ArrayRef<Type *> ArgTypes, std::string &MangledName);
+                         ArrayRef<Type *> ArgTypes,
+                         ArrayRef<SPIRV::PointerIndirectPair> ArgPointerTypes,
+                         std::string &MangledName);
 
 /// Create a pass for translating LLVM to SPIR-V.
 ModulePass *createLLVMToSPIRVLegacy(SPIRV::SPIRVModule *);
