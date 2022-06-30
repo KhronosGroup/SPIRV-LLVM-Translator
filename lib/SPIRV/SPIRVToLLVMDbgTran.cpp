@@ -760,6 +760,9 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   DIFile *File = getFile(Ops[SourceIdx]);
   auto *Entity = transDebugInst<DINode>(BM->get<SPIRVExtInst>(Ops[EntityIdx]));
   if (Ops[TagIdx] == SPIRVDebug::ImportedModule) {
+    if (!Entity)
+      return Builder.createImportedModule(
+          Scope, static_cast<DIImportedEntity *>(nullptr), File, Line);
     if (DIModule *DM = dyn_cast<DIModule>(Entity))
       return Builder.createImportedModule(Scope, DM, File, Line);
     if (DIImportedEntity *IE = dyn_cast<DIImportedEntity>(Entity))
@@ -784,7 +787,7 @@ DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
   DIScope *Scope = getScope(BM->getEntry(Ops[ParentIdx]));
   unsigned Line = Ops[LineIdx];
-  DIFile *File = getFile(Ops[SourceIdx]);
+  DIFile *File = getDIFile(getString(Ops[SourceIdx]));
   StringRef Name = getString(Ops[NameIdx]);
   StringRef ConfigMacros = getString(Ops[ConfigMacrosIdx]);
   StringRef IncludePath = getString(Ops[IncludePathIdx]);

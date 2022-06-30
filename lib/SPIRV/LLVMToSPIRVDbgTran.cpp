@@ -985,18 +985,28 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
   using namespace SPIRVDebug::Operand::ModuleINTEL;
   SPIRVWordVec Ops(OperandCount);
   Ops[NameIdx] = BM->getString(Module->getName().str())->getId();
-  Ops[SourceIdx] = getSource(Module->getFile())->getId();
   Ops[ParentIdx] = getScope(Module->getScope())->getId();
   Ops[ConfigMacrosIdx] =
       BM->getString(Module->getConfigurationMacros().str())->getId();
   Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
 
+  unsigned lineNo = 0;
+  std::string source = "";
+
   auto SysRoot = Module->getISysRoot();
-  SmallVector<StringRef, 4> SysRootParts;
-  SysRoot.split(SysRootParts, '?');
-  if (!SysRootParts.empty()) {
-    Ops[LineIdx] = std::stoi(SysRootParts[0]);
+  if (SysRoot != "")
+  {
+    SmallVector<StringRef, 4> SysRootParts;
+    SysRoot.split(SysRootParts, '?');
+    if (SysRootParts.size() >= 1) {
+      lineNo = std::stoi(SysRootParts[0]);
+    }
+    if (SysRootParts.size() >= 3) {
+      source = SysRootParts[1].str() + "/" + SysRootParts[2].str();
+    }
   }
+  Ops[LineIdx] = lineNo;
+  Ops[SourceIdx] = BM->getString(source)->getId();
 
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
   BM->addCapability(spv::internal::CapabilityDebugInfoModuleINTEL);
