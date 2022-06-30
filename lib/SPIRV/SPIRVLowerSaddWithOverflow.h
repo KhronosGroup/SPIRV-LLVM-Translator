@@ -42,7 +42,7 @@ namespace SPIRV {
 
 class SPIRVLowerSaddWithOverflowBase {
 public:
-  SPIRVLowerSaddWithOverflowBase() : Context(nullptr) {}
+  SPIRVLowerSaddWithOverflowBase() : Context(nullptr), Mod(nullptr) {}
 
   bool runLowerSaddWithOverflow(llvm::Module &M);
 
