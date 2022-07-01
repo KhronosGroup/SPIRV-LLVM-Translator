@@ -990,23 +990,22 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
       BM->getString(Module->getConfigurationMacros().str())->getId();
   Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
 
-  unsigned lineNo = 0;
-  std::string source = "";
+  unsigned LineNo = 0;
+  std::string Source = "";
 
   auto SysRoot = Module->getISysRoot();
-  if (SysRoot != "")
-  {
+  if (SysRoot != "") {
     SmallVector<StringRef, 4> SysRootParts;
     SysRoot.split(SysRootParts, '?');
     if (SysRootParts.size() >= 1) {
-      lineNo = std::stoi(SysRootParts[0]);
+      LineNo = std::stoi(SysRootParts[0]);
     }
     if (SysRootParts.size() >= 3) {
-      source = SysRootParts[1].str() + "/" + SysRootParts[2].str();
+      Source = SysRootParts[1].str() + "/" + SysRootParts[2].str();
     }
   }
-  Ops[LineIdx] = lineNo;
-  Ops[SourceIdx] = BM->getString(source)->getId();
+  Ops[LineIdx] = LineNo;
+  Ops[SourceIdx] = BM->getString(Source)->getId();
 
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
   BM->addCapability(spv::internal::CapabilityDebugInfoModuleINTEL);
