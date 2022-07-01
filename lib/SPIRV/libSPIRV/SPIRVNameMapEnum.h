@@ -576,7 +576,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "ArbitraryPrecisionIntegersINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");
-
+  add(internal::CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
