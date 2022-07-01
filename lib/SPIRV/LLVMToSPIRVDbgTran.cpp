@@ -305,6 +305,12 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
     case dwarf::DW_TAG_imported_declaration:
       return transDbgImportedEntry(cast<DIImportedEntity>(DIEntry));
 
+    case dwarf::DW_TAG_module: {
+      if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_debug_module))
+        return transDbgModule(cast<DIModule>(DIEntry));
+      return getDebugInfoNone();
+    }
+
     default:
       return getDebugInfoNone();
     }
@@ -760,7 +766,8 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
   SPIRVEntry *Parent = SPIRVCU;
   // Global variable may be declared in scope of a namespace or it may be a
   // static variable declared in scope of a function
-  if (Context && (isa<DINamespace>(Context) || isa<DISubprogram>(Context)))
+  if (Context && (isa<DINamespace>(Context) || isa<DISubprogram>(Context) ||
+                  isa<DIModule>(Context)))
     Parent = transDbgEntry(Context);
   Ops[ParentIdx] = Parent->getId();
 
@@ -972,4 +979,35 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   Ops[ColumnIdx] = 0; // This version of DIImportedEntity has no column number
   Ops[ParentIdx] = getScope(IE->getScope())->getId();
   return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
+}
+
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
+  using namespace SPIRVDebug::Operand::ModuleINTEL;
+  SPIRVWordVec Ops(OperandCount);
+  Ops[NameIdx] = BM->getString(Module->getName().str())->getId();
+  Ops[ParentIdx] = getScope(Module->getScope())->getId();
+  Ops[ConfigMacrosIdx] =
+      BM->getString(Module->getConfigurationMacros().str())->getId();
+  Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
+
+  unsigned LineNo = 0;
+  std::string Source = "";
+
+  auto SysRoot = Module->getISysRoot();
+  if (SysRoot != "") {
+    SmallVector<StringRef, 4> SysRootParts;
+    SysRoot.split(SysRootParts, '?');
+    if (SysRootParts.size() >= 1) {
+      LineNo = std::stoi(SysRootParts[0]);
+    }
+    if (SysRootParts.size() >= 3) {
+      Source = SysRootParts[1].str() + "/" + SysRootParts[2].str();
+    }
+  }
+  Ops[LineIdx] = LineNo;
+  Ops[SourceIdx] = BM->getString(Source)->getId();
+
+  BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
+  BM->addCapability(spv::internal::CapabilityDebugInfoModuleINTEL);
+  return BM->addDebugInfo(SPIRVDebug::ModuleINTEL, getVoidTy(), Ops);
 }

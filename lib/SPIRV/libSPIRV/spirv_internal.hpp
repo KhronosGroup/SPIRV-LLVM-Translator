@@ -49,8 +49,8 @@ enum InternalDecoration {
 
 enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
+  ICapDebugInfoModuleINTEL = 6114
 };
-
 
 enum InternalMemoryAccessMask {
   IMemAccessAliasScopeINTELMask = 0x10000,
@@ -73,7 +73,8 @@ constexpr Decoration DecorationNoAliasINTEL =
 
 constexpr Capability CapabilityMemoryAccessAliasingINTEL =
     static_cast<Capability>(ICapMemoryAccessAliasingINTEL);
-
+constexpr Capability CapabilityDebugInfoModuleINTEL =
+    static_cast<Capability>(ICapDebugInfoModuleINTEL);
 
 constexpr MemoryAccessMask MemoryAccessAliasScopeINTELMask =
     static_cast<MemoryAccessMask>(IMemAccessAliasScopeINTELMask);
