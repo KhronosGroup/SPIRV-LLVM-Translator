@@ -593,6 +593,7 @@ inline bool isValid(spv::Capability V) {
   case CapabilityGroupNonUniformClustered:
   case CapabilityGroupNonUniformQuad:
   case CapabilityFunctionFloatControlINTEL:
+  case CapabilityBfloat16ConversionINTEL:
     return true;
   default:
     return false;
@@ -1037,6 +1038,8 @@ inline bool isValid(spv::Op V) {
   case OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL:
   case OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL:
   case OpSubgroupAvcSicGetInterRawSadsINTEL:
+  case OpConvertBF16ToFINTEL:
+  case OpConvertFToBF16INTEL:
     return true;
   default:
     return false;
