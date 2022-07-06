@@ -849,23 +849,6 @@ void mutateFunction(
     F->eraseFromParent();
 }
 
-CallInst *mutateCallInstSPIRV(
-    Module *M, CallInst *CI,
-    std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
-    AttributeList *Attrs) {
-  BuiltinFuncMangleInfo BtnInfo;
-  return mutateCallInst(M, CI, ArgMutate, &BtnInfo, Attrs);
-}
-
-Instruction *mutateCallInstSPIRV(
-    Module *M, CallInst *CI,
-    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
-        ArgMutate,
-    std::function<Instruction *(CallInst *)> RetMutate, AttributeList *Attrs) {
-  BuiltinFuncMangleInfo BtnInfo;
-  return mutateCallInst(M, CI, ArgMutate, RetMutate, &BtnInfo, Attrs);
-}
-
 CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
                       ArrayRef<Value *> Args, AttributeList *Attrs,
                       Instruction *Pos, BuiltinFuncMangleInfo *Mangle,
@@ -1423,13 +1406,6 @@ bool isSPIRVConstantName(StringRef TyName) {
     return true;
 
   return false;
-}
-
-Type *getSPIRVTypeByChangeBaseTypeName(Module *M, Type *T, StringRef OldName,
-                                       StringRef NewName) {
-  return PointerType::get(
-      getSPIRVStructTypeByChangeBaseTypeName(M, T, OldName, NewName),
-      SPIRAS_Global);
 }
 
 Type *getSPIRVStructTypeByChangeBaseTypeName(Module *M, Type *T,
