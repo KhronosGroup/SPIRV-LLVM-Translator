@@ -8,7 +8,7 @@
 ; TODO: run validator once it supports the extension
 ; RUNx: spirv-val %t.spv
 
-; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 
 ; CHECK-SPIRV: Capability LongConstantCompositeINTEL 
 ; CHECK-SPIRV: Extension "SPV_INTEL_long_constant_composite"
