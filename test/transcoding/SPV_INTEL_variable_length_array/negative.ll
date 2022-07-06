@@ -1,6 +1,6 @@
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-INTRINSIC
-; RUN: not --crash llvm-spirv %t.bc -spirv-allow-unknown-intrinsics -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ALLOCA
+; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-INTRINSIC
+; RUN: not llvm-spirv %t.bc -spirv-allow-unknown-intrinsics -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ALLOCA
 
 ; CHECK-INTRINSIC: InvalidFunctionCall: Unexpected llvm intrinsic:
 ; CHECK-INTRINSIC-NEXT: call i8* @llvm.stacksave()
