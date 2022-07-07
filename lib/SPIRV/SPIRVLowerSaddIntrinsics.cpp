@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflow.cpp - Lower llvm.sadd.with.overflow -----===//
+//===- SPIRVLowerSaddIntrinsics.cpp - Lower llvm.sadd.* -------------------===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,14 +32,14 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements lowering of llvm.sadd.with.overflow.* into basic LLVM
+// This file implements lowering of llvm.sadd.* into basic LLVM
 // operations. Probably, in the future this pass can be generalized for other
 // function calls
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "spv-lower-llvm_sadd_with_overflow"
+#define DEBUG_TYPE "spv-lower-llvm_sadd_intrinsics"
 
-#include "SPIRVLowerSaddWithOverflow.h"
+#include "SPIRVLowerSaddIntrinsics.h"
 #include "LLVMSaddWithOverflow.h"
 
 #include "LLVMSPIRVLib.h"
@@ -58,7 +58,7 @@ using namespace SPIRV;
 
 namespace SPIRV {
 
-void SPIRVLowerSaddWithOverflowBase::replaceSaddOverflow(Function &F) {
+void SPIRVLowerSaddIntrinsicsBase::replaceSaddOverflow(Function &F) {
   assert(F.getIntrinsicID() == Intrinsic::sadd_with_overflow);
 
   StringRef IntrinsicName = F.getName();
@@ -107,7 +107,7 @@ void SPIRVLowerSaddWithOverflowBase::replaceSaddOverflow(Function &F) {
   F.replaceAllUsesWith(ReplacementFunc);
 }
 
-void SPIRVLowerSaddWithOverflowBase::replaceSaddSat(Function &F) {
+void SPIRVLowerSaddIntrinsicsBase::replaceSaddSat(Function &F) {
   assert(F.getIntrinsicID() == Intrinsic::sadd_sat);
 
   SmallVector<IntrinsicInst *, 4> Intrinsics;
@@ -130,6 +130,7 @@ void SPIRVLowerSaddWithOverflowBase::replaceSaddSat(Function &F) {
 
   for (IntrinsicInst *II : Intrinsics) {
     Builder.SetInsertPoint(II);
+    // {res, overflow} = @llvm.sadd_with_overflow(a, b)
     // sadd_sat(a, b) => overflow ? (res >> bitwidth) ^ intmin : res;
     Value *StructRes =
         Builder.CreateCall(SaddO, {II->getArgOperand(0), II->getArgOperand(1)});
@@ -146,7 +147,7 @@ void SPIRVLowerSaddWithOverflowBase::replaceSaddSat(Function &F) {
   replaceSaddOverflow(*SaddO);
 }
 
-bool SPIRVLowerSaddWithOverflowBase::runLowerSaddWithOverflow(Module &M) {
+bool SPIRVLowerSaddIntrinsicsBase::runLowerSaddIntrinsics(Module &M) {
   Context = &M.getContext();
   Mod = &M;
   for (Function &F : M) {
@@ -157,35 +158,35 @@ bool SPIRVLowerSaddWithOverflowBase::runLowerSaddWithOverflow(Module &M) {
       replaceSaddSat(F);
   }
 
-  verifyRegularizationPass(M, "SPIRVLowerSaddWithOverflow");
+  verifyRegularizationPass(M, "SPIRVLowerSaddIntrinsics");
   return TheModuleIsModified;
 }
 
 llvm::PreservedAnalyses
-SPIRVLowerSaddWithOverflowPass::run(llvm::Module &M,
-                                    llvm::ModuleAnalysisManager &MAM) {
-  return runLowerSaddWithOverflow(M) ? llvm::PreservedAnalyses::none()
-                                     : llvm::PreservedAnalyses::all();
+SPIRVLowerSaddIntrinsicsPass::run(llvm::Module &M,
+                                  llvm::ModuleAnalysisManager &MAM) {
+  return runLowerSaddIntrinsics(M) ? llvm::PreservedAnalyses::none()
+                                   : llvm::PreservedAnalyses::all();
 }
 
-SPIRVLowerSaddWithOverflowLegacy::SPIRVLowerSaddWithOverflowLegacy()
+SPIRVLowerSaddIntrinsicsLegacy::SPIRVLowerSaddIntrinsicsLegacy()
     : ModulePass(ID) {
-  initializeSPIRVLowerSaddWithOverflowLegacyPass(
+  initializeSPIRVLowerSaddIntrinsicsLegacyPass(
       *PassRegistry::getPassRegistry());
 }
 
-bool SPIRVLowerSaddWithOverflowLegacy::runOnModule(Module &M) {
-  return runLowerSaddWithOverflow(M);
+bool SPIRVLowerSaddIntrinsicsLegacy::runOnModule(Module &M) {
+  return runLowerSaddIntrinsics(M);
 }
 
-char SPIRVLowerSaddWithOverflowLegacy::ID = 0;
+char SPIRVLowerSaddIntrinsicsLegacy::ID = 0;
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVLowerSaddWithOverflowLegacy,
-                "spv-lower-llvm_sadd_with_overflow",
-                "Lower llvm.sadd.with.overflow.* intrinsics", false, false)
+INITIALIZE_PASS(SPIRVLowerSaddIntrinsicsLegacy,
+                "spv-lower-llvm_sadd_intrinsics",
+                "Lower llvm.sadd.* intrinsics", false, false)
 
-ModulePass *llvm::createSPIRVLowerSaddWithOverflowLegacy() {
-  return new SPIRVLowerSaddWithOverflowLegacy();
+ModulePass *llvm::createSPIRVLowerSaddIntrinsicsLegacy() {
+  return new SPIRVLowerSaddIntrinsicsLegacy();
 }

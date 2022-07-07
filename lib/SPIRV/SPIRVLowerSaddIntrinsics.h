@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflowBase.h - sadd lowering  --------*- C++ -*-===//
+//===- SPIRVLowerSaddIntrinsics.h - sadd lowering  --------------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -32,19 +32,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
-#define SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
+#ifndef SPIRV_SPIRVLOWERSADDINTRINSICS_H
+#define SPIRV_SPIRVLOWERSADDINTRINSICS_H
 
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 
 namespace SPIRV {
 
-class SPIRVLowerSaddWithOverflowBase {
+class SPIRVLowerSaddIntrinsicsBase {
 public:
-  SPIRVLowerSaddWithOverflowBase() : Context(nullptr), Mod(nullptr) {}
+  SPIRVLowerSaddIntrinsicsBase() : Context(nullptr), Mod(nullptr) {}
 
-  bool runLowerSaddWithOverflow(llvm::Module &M);
+  bool runLowerSaddIntrinsics(llvm::Module &M);
 
 private:
   void replaceSaddOverflow(llvm::Function &F);
@@ -55,18 +55,18 @@ private:
   bool TheModuleIsModified = false;
 };
 
-class SPIRVLowerSaddWithOverflowPass
-    : public llvm::PassInfoMixin<SPIRVLowerSaddWithOverflowPass>,
-      public SPIRVLowerSaddWithOverflowBase {
+class SPIRVLowerSaddIntrinsicsPass
+    : public llvm::PassInfoMixin<SPIRVLowerSaddIntrinsicsPass>,
+      public SPIRVLowerSaddIntrinsicsBase {
 public:
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
 };
 
-class SPIRVLowerSaddWithOverflowLegacy : public llvm::ModulePass,
-                                         public SPIRVLowerSaddWithOverflowBase {
+class SPIRVLowerSaddIntrinsicsLegacy : public llvm::ModulePass,
+                                       public SPIRVLowerSaddIntrinsicsBase {
 public:
-  SPIRVLowerSaddWithOverflowLegacy();
+  SPIRVLowerSaddIntrinsicsLegacy();
 
   bool runOnModule(llvm::Module &M) override;
 
@@ -75,4 +75,4 @@ public:
 
 } // namespace SPIRV
 
-#endif // SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
+#endif // SPIRV_SPIRVLOWERSADDINTRINSICS_H
