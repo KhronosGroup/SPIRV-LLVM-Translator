@@ -38,6 +38,8 @@ enum InternalOp {
   IOpAliasDomainDeclINTEL = 5911,
   IOpAliasScopeDeclINTEL = 5912,
   IOpAliasScopeListDeclINTEL = 5913,
+  IOpConvertFToBF16INTEL = 6116,
+  IOpConvertBF16ToFINTEL = 6117,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -49,7 +51,8 @@ enum InternalDecoration {
 
 enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
-  ICapDebugInfoModuleINTEL = 6114
+  ICapDebugInfoModuleINTEL = 6114,
+  ICapBfloat16ConversionINTEL = 6115
 };
 
 enum InternalMemoryAccessMask {
@@ -65,11 +68,16 @@ constexpr Op OpAliasDomainDeclINTEL = static_cast<Op>(IOpAliasDomainDeclINTEL);
 constexpr Op OpAliasScopeDeclINTEL = static_cast<Op>(IOpAliasScopeDeclINTEL);
 constexpr Op OpAliasScopeListDeclINTEL =
     static_cast<Op>(IOpAliasScopeListDeclINTEL);
+constexpr Op OpConvertFToBF16INTEL = static_cast<Op>(IOpConvertFToBF16INTEL);
+constexpr Op OpConvertBF16ToFINTEL = static_cast<Op>(IOpConvertBF16ToFINTEL);
 
 constexpr Decoration DecorationAliasScopeINTEL =
     static_cast<Decoration>(IDecAliasScopeINTEL );
 constexpr Decoration DecorationNoAliasINTEL =
     static_cast<Decoration>(IDecNoAliasINTEL);
+
+constexpr Capability CapabilityBfloat16ConversionINTEL =
+    static_cast<Capability>(ICapBfloat16ConversionINTEL);
 
 constexpr Capability CapabilityMemoryAccessAliasingINTEL =
     static_cast<Capability>(ICapMemoryAccessAliasingINTEL);
