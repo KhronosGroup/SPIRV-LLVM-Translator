@@ -870,8 +870,8 @@ CallInst *addCallInstSPIRV(Module *M, StringRef FuncName, Type *RetTy,
   BuiltinFuncMangleInfo BtnInfo;
   for (unsigned I = 0; I < PointerElementTypes.size(); I++) {
     BtnInfo.getTypeMangleInfo(I).PointerElementType = PointerElementTypes[I];
-    if (Args[I]->getType()->isPointerTy())
-      assert(Args[I]->getType()->getPointerElementType() == PointerElementTypes[I]);
+    if (Args[I]->getType()->isPointerTy() && !Args[I]->getType()->isOpaquePointerTy())
+      assert(Args[I]->getType()->getNonOpaquePointerElementType() == PointerElementTypes[I]);
   }
   return addCallInst(M, FuncName, RetTy, Args, Attrs, Pos, &BtnInfo, InstName);
 }
