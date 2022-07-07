@@ -2808,10 +2808,8 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   RegexIterT DecorationsEnd;
 
   // If we didn't find any annotations that are separated as described above,
-  // then add a UserSemantic decoration
+  // then return an empty list of decorations
   if (DecorationsIt == DecorationsEnd) {
-    Decorates.MemoryAttributesVec.emplace_back(
-        DecorationUserSemantic, std::vector<std::string>{AnnotatedCode.str()});
     return Decorates;
   }
 
@@ -2914,10 +2912,6 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   // whole string as UserSemantic decoration in this case.
   if (ValidDecorationFound)
     Decorates.MemoryAttributesVec = DecorationsVec;
-  else
-    Decorates.MemoryAttributesVec.emplace_back(
-        DecorationUserSemantic,
-        std::vector<std::string>({AnnotatedCode.str()}));
   Decorates.MemoryAccessesVec = LSUControls.getDecorationsFromCurrentState();
 
   return Decorates;
