@@ -2998,6 +2998,13 @@ getBankBitsFromStrings(const std::vector<std::string> &BitsStrings) {
 void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
   SPIRVModule *M = E->getModule();
   for (const auto &I : Decorations) {
+    // Such decoration already exists on a type, try to skip it
+    if (E->hasDecorate(I.first, /*Index=*/0, /*Result=*/nullptr)) {
+      // Allow multiple UserSemantic Decorations
+      if (I.first != DecorationUserSemantic)
+        continue;
+    }
+
     switch (I.first) {
     case DecorationUserSemantic:
       M->getErrorLog().checkError(I.second.size() == 1,
