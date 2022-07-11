@@ -30,7 +30,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: String [[IncludePath:[0-9]+]] "/llvm/tools/clang/test/Modules/Inputs"
 ; CHECK-SPIRV: String [[ApiNotes:[0-9]+]] "m.apinotes"
 
-; CHECK-SPIRV: ExtInst {{[0-9]+}} [[Module:[0-9]+]] {{[0-9]+}} DebugModuleINTEL [[Name]] {{[0-9]+}} 0 {{[0-9]+}} [[Defines]] [[IncludePath]] [[ApiNotes]] 0
+; CHECK-SPIRV: ExtInst {{[0-9]+}} [[Module:[0-9]+]] {{[0-9]+}} DebugModuleINTEL [[Name]] {{[0-9]+}} 0 {{[0-9]+}} [[Defines]] [[IncludePath]] [[ApiNotes]]
 ; CHECK-SPIRV: ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} DebugImportedEntity {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} [[Module]]
 
 !llvm.dbg.cu = !{!0}

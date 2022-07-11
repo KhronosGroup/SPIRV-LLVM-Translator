@@ -780,8 +780,7 @@ enum {
   ConfigMacrosIdx = 4,
   IncludePathIdx  = 5,
   ApiNotesIdx     = 6,
-  IsDeclIdx       = 7,
-  OperandCount    = 8
+  OperandCount    = 7
 };
 }
 
