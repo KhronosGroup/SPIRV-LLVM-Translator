@@ -52,6 +52,7 @@ enum InternalDecoration {
 enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
   ICapOptNoneINTEL = 6094,
+  ICapDebugInfoModuleINTEL = 6114,
   ICapBfloat16ConversionINTEL = 6115
 };
 
@@ -86,6 +87,8 @@ constexpr Capability CapabilityMemoryAccessAliasingINTEL =
     static_cast<Capability>(ICapMemoryAccessAliasingINTEL);
 constexpr Capability CapabilityBfloat16ConversionINTEL =
     static_cast<Capability>(ICapBfloat16ConversionINTEL);
+constexpr Capability CapabilityDebugInfoModuleINTEL =
+    static_cast<Capability>(ICapDebugInfoModuleINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
