@@ -160,6 +160,9 @@ bool regularizeLlvmForSpirv(Module *M, std::string &ErrMsg,
                             const SPIRV::TranslatorOpts &Opts);
 
 /// \brief Mangle OpenCL builtin function function name.
+/// If any type in ArgTypes is a pointer type, the corresponding entry in
+/// ArgPointerTypes should contain the type should point to. If there are no
+/// pointer-typed arguments in ArgTypes, then ArgPointerTypes may be empty.
 void mangleOpenClBuiltin(const std::string &UnmangledName,
                          ArrayRef<Type *> ArgTypes,
                          ArrayRef<SPIRV::PointerIndirectPair> ArgPointerTypes,

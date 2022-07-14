@@ -2390,26 +2390,26 @@ private:
 
 namespace SPIRV {
 void BuiltinFuncMangleInfo::fillPointerElementTypes(
-    ArrayRef<PointerIndirectPair> PETs) {
-  for (unsigned I = 0; I < PETs.size(); I++) {
-    getTypeMangleInfo(I).PointerElementType = PETs[I];
+    ArrayRef<PointerIndirectPair> PointerElementTys) {
+  for (unsigned I = 0; I < PointerElementTys.size(); I++) {
+    getTypeMangleInfo(I).PointerElementType = PointerElementTys[I];
   }
 }
 
-std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
-                                           ArrayRef<Type *> ArgTys,
-                                           ArrayRef<PointerIndirectPair> PETs,
-                                           Type *RetTy) {
+std::string
+getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId, ArrayRef<Type *> ArgTys,
+                               ArrayRef<PointerIndirectPair> PointerElementTys,
+                               Type *RetTy) {
   OpenCLStdToSPIRVFriendlyIRMangleInfo MangleInfo(ExtOpId, ArgTys, RetTy);
-  MangleInfo.fillPointerElementTypes(PETs);
+  MangleInfo.fillPointerElementTypes(PointerElementTys);
   return mangleBuiltin(MangleInfo.getUnmangledName(), ArgTys, &MangleInfo);
 }
 
-std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
-                                           spv::Op OC, ArrayRef<Type *> ArgTys,
-                                           ArrayRef<PointerIndirectPair> PETs) {
+std::string getSPIRVFriendlyIRFunctionName(
+    const std::string &UniqName, spv::Op OC, ArrayRef<Type *> ArgTys,
+    ArrayRef<PointerIndirectPair> PointerElementTys) {
   SPIRVFriendlyIRMangleInfo MangleInfo(OC, ArgTys);
-  MangleInfo.fillPointerElementTypes(PETs);
+  MangleInfo.fillPointerElementTypes(PointerElementTys);
   return mangleBuiltin(UniqName, ArgTys, &MangleInfo);
 }
 

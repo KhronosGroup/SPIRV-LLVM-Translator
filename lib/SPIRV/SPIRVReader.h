@@ -46,7 +46,6 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSet.h"
-#include "llvm/IR/Attributes.h"
 #include "llvm/IR/GlobalValue.h" // llvm::GlobalValue::LinkageTypes
 
 namespace llvm {

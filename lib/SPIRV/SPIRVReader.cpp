@@ -584,7 +584,7 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
 
 std::vector<PointerIndirectPair>
 SPIRVToLLVM::getPointerElementTypes(ArrayRef<SPIRVType *> Tys) {
-  std::vector<PointerIndirectPair> PETs;
+  std::vector<PointerIndirectPair> PointerElementTys;
   for (SPIRVType *T : Tys) {
     PointerIndirectPair PtrElemTy;
     switch (static_cast<SPIRVWord>(T->getOpCode())) {
@@ -657,7 +657,8 @@ SPIRVToLLVM::getPointerElementTypes(ArrayRef<SPIRVType *> Tys) {
     }
     case OpTypeFunction: {
       // A function parameter will get converted into a function pointer later,
-      // so make sure elementtype() attribute reflects the actual function type.
+      // so make sure that the pointer element type gets the actual function
+      // type.
       PtrElemTy.setPointer(transType(T));
       break;
     }
@@ -669,9 +670,9 @@ SPIRVToLLVM::getPointerElementTypes(ArrayRef<SPIRVType *> Tys) {
     }
     }
 
-    PETs.push_back(PtrElemTy);
+    PointerElementTys.push_back(PtrElemTy);
   }
-  return PETs;
+  return PointerElementTys;
 }
 
 std::vector<Type *>
@@ -3116,13 +3117,13 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     }
   }
 
-  std::vector<PointerIndirectPair> PETs =
+  std::vector<PointerIndirectPair> PointerElementTys =
       getPointerElementTypes(SPIRVInstruction::getOperandTypes(Ops));
   if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
-    mangleOpenClBuiltin(FuncName, ArgTys, PETs, MangledName);
+    mangleOpenClBuiltin(FuncName, ArgTys, PointerElementTys, MangledName);
   else
-    MangledName =
-        getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(), ArgTys, PETs);
+    MangledName = getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(),
+                                                 ArgTys, PointerElementTys);
 
   Function *Func = M->getFunction(MangledName);
   FunctionType *FT = FunctionType::get(RetTy, ArgTys, false);
@@ -4353,11 +4354,11 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
          "Not OpenCL extended instruction");
 
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes());
-  std::vector<PointerIndirectPair> PETs =
+  std::vector<PointerIndirectPair> PointerElementTys =
       getPointerElementTypes(BC->getArgTypes());
   Type *RetTy = transType(BC->getType());
   std::string MangledName =
-      getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, PETs, RetTy);
+      getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, PointerElementTys, RetTy);
 
   SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] UnmangledName: "
                      << UnmangledName << " MangledName: " << MangledName

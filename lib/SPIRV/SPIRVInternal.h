@@ -447,10 +447,6 @@ enum Spir2SamplerKind {
   CLK_FILTER_LINEAR = 0x0020,
 };
 
-/// This contains a pair of the pointer element type and an indirection
-/// parameter (to capture cases where an array of OpenCL types is used).
-typedef llvm::PointerIntPair<llvm::Type *, 1, bool> PointerIndirectPair;
-
 /// Additional information for mangling a function argument type.
 struct BuiltinArgTypeMangleInfo {
   bool IsSigned;
@@ -523,7 +519,7 @@ public:
     UnmangledName = UniqUnmangledName.str();
   }
 
-  void fillPointerElementTypes(ArrayRef<PointerIndirectPair> PETs);
+  void fillPointerElementTypes(ArrayRef<PointerIndirectPair>);
 
 protected:
   std::string UnmangledName;
