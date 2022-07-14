@@ -1,5 +1,7 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
+; RUN: llvm-spirv %t.bc -o %t-spirv.spv
+; RUN: spirv-val %t-spirv.spv
 ; RUN: llvm-dis %t.regularized.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_KHR_integer_dot_product -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
