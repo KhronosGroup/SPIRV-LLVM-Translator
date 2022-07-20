@@ -1,19 +1,19 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv -s %t.bc -o %t.regularized.bc
-; RUN: llvm-spirv %t.bc -o %t-spirv.spv
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_integer_dot_product -o %t-spirv.spv
 ; RUN: spirv-val %t-spirv.spv
 ; RUN: llvm-dis %t.regularized.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_KHR_integer_dot_product -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
-;CHECK-LLVM: call i32 @_Z15__spirv_SDotKHR
-;CHECK-LLVM: call i32 @_Z16__spirv_SUDotKHR
-;CHECK-LLVM: call i32 @_Z16__spirv_SUDotKHR
-;CHECK-LLVM: call i32 @_Z15__spirv_UDotKHR
+;CHECK-LLVM: call spir_func i32 @_Z15__spirv_SDotKHR
+;CHECK-LLVM: call spir_func i32 @_Z16__spirv_SUDotKHR
+;CHECK-LLVM: call spir_func i32 @_Z16__spirv_SUDotKHR
+;CHECK-LLVM: call spir_func i32 @_Z15__spirv_UDotKHR
 
-;CHECK-LLVM: call i32 @_Z21__spirv_SDotAccSatKHR
-;CHECK-LLVM: call i32 @_Z22__spirv_SUDotAccSatKHR
-;CHECK-LLVM: call i32 @_Z22__spirv_SUDotAccSatKHR
-;CHECK-LLVM: call i32 @_Z21__spirv_UDotAccSatKHR
+;CHECK-LLVM: call spir_func i32 @_Z21__spirv_SDotAccSatKHR
+;CHECK-LLVM: call spir_func i32 @_Z22__spirv_SUDotAccSatKHR
+;CHECK-LLVM: call spir_func i32 @_Z22__spirv_SUDotAccSatKHR
+;CHECK-LLVM: call spir_func i32 @_Z21__spirv_UDotAccSatKHR
 
 ;CHECK-SPIRV: SDotKHR
 ;CHECK-SPIRV: SUDotKHR

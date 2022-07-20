@@ -328,7 +328,8 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     visitCallDot(&CI);
     return;
   }
-  if (DemangledName == kOCLBuiltinName::Dot || DemangledName == kOCLBuiltinName::Dot_Acc_Sat) {
+  if (DemangledName == kOCLBuiltinName::Dot ||
+      DemangledName == kOCLBuiltinName::DotAccSat) {
     if (CI.getOperand(0)->getType()->isVectorTy()) {
       auto *VT = (VectorType *)(CI.getOperand(0)->getType());
       if (!isa<llvm::IntegerType>(VT->getElementType())) {
@@ -1393,35 +1394,27 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI, StringRef MangledName,
   }
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
-    M, CI,
-    [=](CallInst *, std::vector<Value *> &Args /*, Type *&Ret*/) {
-      // If arguments are in order unsigned -> signed
-      // then the translator shouldswap them,
-      // so that the OpSUDotKHR can be used properly
-      if (IsFirstSigned == false && IsSecondSigned == true) {
-        Args.clear();
-        Args.push_back(CI->getOperand(1));
-        Args.push_back(CI->getOperand(0));
-        if (CI->arg_size() > 2) {
-          Args.push_back(CI->getOperand(2));
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        // If arguments are in order unsigned -> signed
+        // then the translator should swap them,
+        // so that the OpSUDotKHR can be used properly
+        if (IsFirstSigned == false && IsSecondSigned == true) {
+          std::swap(Args[0], Args[1]);
         }
-        if (CI->arg_size() > 3) {
-          Args.push_back(CI->getOperand(3));
+        Op OC;
+        if (IsDot) {
+          OC = (IsFirstSigned != IsSecondSigned
+                    ? OpSUDot
+                    : ((IsFirstSigned) ? OpSDot : OpUDot));
+        } else {
+          OC = (IsFirstSigned != IsSecondSigned
+                    ? OpSUDotAccSat
+                    : ((IsFirstSigned) ? OpSDotAccSat : OpUDotAccSat));
         }
-      }
-      Op OC;
-      if (IsDot) {
-        OC = (IsFirstSigned != IsSecondSigned
-                  ? OpSUDot
-                  : ((IsFirstSigned) ? OpSDot : OpUDot));
-      } else {
-        OC = (IsFirstSigned != IsSecondSigned
-                  ? OpSUDotAccSat
-                  : ((IsFirstSigned) ? OpSDotAccSat : OpUDotAccSat));
-      }
-      return getSPIRVFuncName(OC);
-    },
-    &Attrs);
+        return getSPIRVFuncName(OC);
+      },
+      &Attrs);
 }
 
 void OCLToSPIRVBase::visitCallScalToVec(CallInst *CI, StringRef MangledName,
