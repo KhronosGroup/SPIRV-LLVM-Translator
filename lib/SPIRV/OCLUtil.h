@@ -180,6 +180,7 @@ const static char Barrier[] = "barrier";
 const static char Clamp[] = "clamp";
 const static char ConvertPrefix[] = "convert_";
 const static char Dot[] = "dot";
+const static char DotAccSat[] = "dot_acc_sat";
 const static char EnqueueKernel[] = "enqueue_kernel";
 const static char FMax[] = "fmax";
 const static char FMin[] = "fmin";
