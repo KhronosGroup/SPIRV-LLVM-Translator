@@ -80,11 +80,10 @@ public:
 
   static const StringSet<> BuiltInConstFunc;
 
-  Type *transType(SPIRVType *BT, bool IsClassMember = false);
+  Type *transType(SPIRVType *BT, bool UseTypedPointerTypes = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
-  std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &);
-  std::vector<PointerIndirectPair>
-  getPointerElementTypes(llvm::ArrayRef<SPIRVType *> Tys);
+  std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &,
+                                      bool UseTypedPointerTypes = false);
   bool translate();
   bool transAddressingModel();
 
