@@ -80,6 +80,11 @@ public:
 
   static const StringSet<> BuiltInConstFunc;
 
+  /// Translate the SPIR-V type into an LLVM type. If UseTypedPointerTypes is
+  /// true, then generate a TypedPointerType instead of a PointerType. The
+  /// intended use of TypedPointerTypes is for name mangling, so pointer types
+  /// that occur as array members or struct members will not be represented with
+  /// TypedPointerType, even when UseTypedPointerTypes is true.
   Type *transType(SPIRVType *BT, bool UseTypedPointerTypes = false);
   std::string transTypeToOCLTypeName(SPIRVType *BT, bool IsSigned = true);
   std::vector<Type *> transTypeVector(const std::vector<SPIRVType *> &,

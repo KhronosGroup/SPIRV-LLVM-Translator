@@ -357,6 +357,11 @@ std::string SPIRVToLLVM::transVCTypeName(SPIRVTypeBufferSurfaceINTEL *PST) {
 }
 
 Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
+  // Try to reuse a known type if it's already matched. However, if we want to
+  // produce a TypedPointerType in lieu of a PointerType, we *do not* want to
+  // pull a PointerType out of the type map, nor do we want to store a
+  // TypedPointerType in there. This is generally safe to do, as types are
+  // usually uniqued by LLVM, but we need to be cautious around struct types.
   auto Loc = TypeMap.find(T);
   if (Loc != TypeMap.end() && !UseTPT)
     return Loc->second;
@@ -364,10 +369,12 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   auto MakeOpaqueType = [&](StringRef Name,
                             unsigned AS = SPIRAS_Global) -> Type * {
     Type *StructTy = getOrCreateOpaqueStructType(M, Name);
+    // Return a PointerType or TypedPointerType as appropriate. Note that the
+    // call to getOrCreateOpaqueStructType above will ensure that we do not
+    // create duplicate struct types with the same name.
     if (UseTPT)
       return TypedPointerType::get(StructTy, AS);
-    else
-      return mapType(T, PointerType::get(StructTy, AS));
+    return mapType(T, PointerType::get(StructTy, AS));
   };
   SPIRVDBG(spvdbgs() << "[transType] " << *T << " -> ";)
   T->validate();
@@ -391,7 +398,8 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   case internal::OpTypeTokenINTEL:
     return mapType(T, Type::getTokenTy(*Context));
   case OpTypePointer: {
-    unsigned AS = SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
+    const unsigned AS =
+        SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
     Type *ElementTy = transType(T->getPointerElementType(), UseTPT);
     if (UseTPT)
       return TypedPointerType::get(ElementTy, AS);
@@ -427,7 +435,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     return MakeOpaqueType(transOCLSampledImageTypeName(ST));
   }
   case OpTypeStruct: {
-    // Use the cached type, even if we're using typed pointer types.
+    // We do not generate structs with any TypedPointerType members. To ensure
+    // that uniqueness of struct types is maintained, reuse an existing struct
+    // type in the type map, even if UseTPT is true.
     if (Loc != TypeMap.end())
       return Loc->second;
     auto ST = static_cast<SPIRVTypeStruct *>(T);
@@ -498,8 +508,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   default: {
     auto OC = T->getOpCode();
     if (isOpaqueGenericTypeOpCode(OC) || isSubgroupAvcINTELTypeOpCode(OC)) {
-      std::string Name = getSPIRVTypeName(SPIRVOpaqueTypeOpCodeMap::rmap(OC));
-      unsigned AS = getOCLOpaqueTypeAddrSpace(OC);
+      const std::string Name =
+          getSPIRVTypeName(SPIRVOpaqueTypeOpCodeMap::rmap(OC));
+      const unsigned AS = getOCLOpaqueTypeAddrSpace(OC);
       return MakeOpaqueType(Name, AS);
     }
     llvm_unreachable("Not implemented!");
