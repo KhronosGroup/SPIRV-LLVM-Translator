@@ -355,6 +355,10 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   STName.consume_front("__spv::");
   StringRef MangledName = STName.substr(0, STName.find('.'));
 
+  // Older versions of clang will generate JointMatrixINTEL types using this
+  // representation. Newer versions will generate the correct struct name
+  // "%spirv.JointMatrixINTEL._{parameters}" directly, obviating the need for
+  // this check.
   // Representation in LLVM IR before the translator is a pointer array wrapped
   // in a structure:
   // %struct.__spirv_JointMatrixINTEL = type { [R x [C x [L x [S x type]]]]* }
@@ -373,10 +377,11 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   // simply not true.
   if (MangledName == "__spirv_JointMatrixINTEL") {
     auto *PtrTy = dyn_cast<PointerType>(ST->getElementType(0));
-    assert(PtrTy &&
+    assert(PtrTy && !PtrTy->isOpaque() &&
            "Expected a pointer to an array to represent joint matrix type");
     std::vector<size_t> TypeLayout;
-    ArrayType *ArrayTy = dyn_cast<ArrayType>(PtrTy->getPointerElementType());
+    ArrayType *ArrayTy =
+        dyn_cast<ArrayType>(PtrTy->getNonOpaquePointerElementType());
     assert(ArrayTy && "Expected a pointer element type of an array type to "
                       "represent joint matrix type");
     TypeLayout.push_back(ArrayTy->getNumElements());
