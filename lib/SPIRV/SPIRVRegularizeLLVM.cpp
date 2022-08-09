@@ -377,7 +377,7 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   // simply not true.
   if (MangledName == "__spirv_JointMatrixINTEL" && !PtrTy->isOpaque()) {
     auto *PtrTy = dyn_cast<PointerType>(ST->getElementType(0));
-    assert(PtrTy && !PtrTy->isOpaque() &&
+    assert(PtrTy &&
            "Expected a pointer to an array to represent joint matrix type");
     std::vector<size_t> TypeLayout;
     ArrayType *ArrayTy =
