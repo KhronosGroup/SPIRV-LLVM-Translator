@@ -375,7 +375,7 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
   // register by OpCompositeConstruct. And we can't claim, that the Result type
   // of OpCompositeConstruct instruction is always the joint matrix type, it's
   // simply not true.
-  if (MangledName == "__spirv_JointMatrixINTEL" && !PtrTy->isOpaque()) {
+  if (MangledName == "__spirv_JointMatrixINTEL" && !ST->isOpaquePointerTy()) {
     auto *PtrTy = dyn_cast<PointerType>(ST->getElementType(0));
     assert(PtrTy &&
            "Expected a pointer to an array to represent joint matrix type");
