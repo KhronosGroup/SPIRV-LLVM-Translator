@@ -1604,9 +1604,7 @@ Value *SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(
 
 void llvm::mangleOpenClBuiltin(const std::string &UniqName,
                                ArrayRef<Type *> ArgTypes,
-                               ArrayRef<PointerIndirectPair> PointerElementTys,
                                std::string &MangledName) {
   OCLUtil::OCLBuiltinFuncMangleInfo BtnInfo(ArgTypes);
-  BtnInfo.fillPointerElementTypes(PointerElementTys);
   MangledName = SPIRV::mangleBuiltin(UniqName, ArgTypes, &BtnInfo);
 }
