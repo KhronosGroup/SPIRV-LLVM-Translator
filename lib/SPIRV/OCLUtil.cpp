@@ -1154,9 +1154,11 @@ public:
     } else if (NameRef.startswith("vstore")) {
       addUnsignedArg(1);
     } else if (NameRef.startswith("ndrange_")) {
-      addUnsignedArg(-1);
+      addUnsignedArgs(0, 2);
       if (NameRef[8] == '2' || NameRef[8] == '3') {
-        setArgAttr(-1, SPIR::ATTR_CONST);
+        setArgAttr(0, SPIR::ATTR_CONST);
+        setArgAttr(1, SPIR::ATTR_CONST);
+        setArgAttr(2, SPIR::ATTR_CONST);
       }
     } else if (NameRef.contains("umax")) {
       addUnsignedArg(-1);

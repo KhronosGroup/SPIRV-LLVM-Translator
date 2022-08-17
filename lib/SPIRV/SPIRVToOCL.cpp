@@ -42,6 +42,7 @@
 #define DEBUG_TYPE "spvtocl"
 
 #include "SPIRVToOCL.h"
+#include "llvm/IR/TypedPointerType.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -108,7 +109,7 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   }
 
   if (OC == OpImageQuerySize || OC == OpImageQuerySizeLod) {
-    visitCallSPRIVImageQuerySize(&CI);
+    visitCallSPIRVImageQuerySize(&CI);
     return;
   }
   if (OC == OpMemoryBarrier) {
@@ -249,7 +250,7 @@ void SPIRVToOCLBase::visitCastInst(CastInst &Cast) {
   Cast.eraseFromParent();
 }
 
-void SPIRVToOCLBase::visitCallSPRIVImageQuerySize(CallInst *CI) {
+void SPIRVToOCLBase::visitCallSPIRVImageQuerySize(CallInst *CI) {
   // Get image type
   SmallVector<StructType *, 4> ParamTys;
   getParameterTypes(CI, ParamTys);
@@ -277,6 +278,7 @@ void SPIRVToOCLBase::visitCallSPRIVImageQuerySize(CallInst *CI) {
 
   AttributeList Attributes = CI->getCalledFunction()->getAttributes();
   BuiltinFuncMangleInfo Mangle;
+  Mangle.getTypeMangleInfo(0).PointerTy = TypedPointerType::get(ImgTy, 0);
   Type *Int32Ty = Type::getInt32Ty(*Ctx);
   Instruction *GetImageSize = nullptr;
 
@@ -785,8 +787,8 @@ void SPIRVToOCLBase::mutateArgsForImageOperands(std::vector<Value *> &Args,
       if (ImOpValue & ImageOperandsMask::ImageOperandsZeroExtendMask)
         IsSigned = false;
       ImOpValue &= ~SignZeroExtMasks;
-      Args[3] = getInt32(M, ImOpValue);
-      ImOp = cast<ConstantInt>(Args[3]);
+      Args[ImOpArgIndex] = getInt32(M, ImOpValue);
+      ImOp = cast<ConstantInt>(Args[ImOpArgIndex]);
     }
     // Drop "Image Operands" argument.
     Args.erase(Args.begin() + ImOpArgIndex);

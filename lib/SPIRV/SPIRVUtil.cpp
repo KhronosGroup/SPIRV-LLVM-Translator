@@ -54,6 +54,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Metadata.h"
+#include "llvm/IR/TypedPointerType.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -102,7 +103,7 @@ void saveLLVMModule(Module *M, const std::string &OutputFile) {
   Out.keep();
 }
 
-std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed) {
+std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed, Type *PET) {
   if (Ty->isHalfTy())
     return "half";
   if (Ty->isFloatTy())
@@ -147,6 +148,11 @@ std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed) {
   // value of some SPIR-V instructions may be represented as pointer to a struct
   // in LLVM IR) we can mangle the type.
   BuiltinFuncMangleInfo MangleInfo;
+  if (Ty->isPointerTy()) {
+    assert(cast<PointerType>(const_cast<Type *>(Ty))
+               ->isOpaqueOrPointeeTypeMatches(PET));
+    Ty = TypedPointerType::get(PET, Ty->getPointerAddressSpace());
+  }
   std::string MangledName =
       mangleBuiltin("", const_cast<Type *>(Ty), &MangleInfo);
   // Remove "_Z0"(3 characters) from the front of the name
@@ -283,7 +289,7 @@ bool isSYCLHalfType(llvm::Type *Ty) {
       return false;
     StringRef Name = ST->getName();
     Name.consume_front("class.");
-    if ((Name.startswith("cl::sycl::") ||
+    if ((Name.startswith("sycl::") || Name.startswith("cl::sycl::") ||
          Name.startswith("__sycl_internal::")) &&
         Name.endswith("::half")) {
       return true;
@@ -298,7 +304,7 @@ bool isSYCLBfloat16Type(llvm::Type *Ty) {
       return false;
     StringRef Name = ST->getName();
     Name.consume_front("class.");
-    if ((Name.startswith("cl::sycl::") ||
+    if ((Name.startswith("sycl::") || Name.startswith("cl::sycl::") ||
          Name.startswith("__sycl_internal::")) &&
         Name.endswith("::bfloat16")) {
       return true;
@@ -403,9 +409,10 @@ std::string getSPIRVFuncName(Op OC, StringRef PostFix) {
   return prefixSPIRVName(getName(OC) + PostFix.str());
 }
 
-std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned) {
+std::string getSPIRVFuncName(Op OC, const Type *PRetTy, bool IsSigned,
+                             Type *PET) {
   return prefixSPIRVName(getName(OC) + kSPIRVPostfix::Divider +
-                         getPostfixForReturnType(PRetTy, IsSigned));
+                         getPostfixForReturnType(PRetTy, IsSigned, PET));
 }
 
 std::string getSPIRVFuncName(SPIRVBuiltinVariableKind BVKind) {
@@ -463,9 +470,10 @@ std::string getPostfixForReturnType(CallInst *CI, bool IsSigned) {
   return getPostfixForReturnType(CI->getType(), IsSigned);
 }
 
-std::string getPostfixForReturnType(const Type *PRetTy, bool IsSigned) {
+std::string getPostfixForReturnType(const Type *PRetTy, bool IsSigned,
+                                    Type *PET) {
   return std::string(kSPIRVPostfix::Return) +
-         mapLLVMTypeToOCLType(PRetTy, IsSigned);
+         mapLLVMTypeToOCLType(PRetTy, IsSigned, PET);
 }
 
 // Enqueue kernel, kernel query, pipe and address space cast built-ins
@@ -750,6 +758,26 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
   free(Buf);
 }
 
+static Type *toTypedPointerType(Type *T) {
+  if (!isa<PointerType>(T))
+    return T;
+  return TypedPointerType::get(
+      toTypedPointerType(T->getNonOpaquePointerElementType()),
+      T->getPointerAddressSpace());
+}
+
+// This is a transitional helper function to fill in mangling information for
+// mangleBuiltin while all the calls to mutateCallInst are being transitioned.
+static void typeMangle(BuiltinFuncMangleInfo *Mangle, ArrayRef<Value *> Args) {
+  if (!Mangle)
+    return;
+  for (unsigned I = 0; I < Args.size(); I++)
+    if (Args[I]->getType()->isPointerTy()) {
+      Mangle->getTypeMangleInfo(I).PointerTy =
+          toTypedPointerType(Args[I]->getType());
+    }
+}
+
 CallInst *mutateCallInst(
     Module *M, CallInst *CI,
     std::function<std::string(CallInst *, std::vector<Value *> &)> ArgMutate,
@@ -763,6 +791,7 @@ CallInst *mutateCallInst(
     InstName = CI->getName().str();
     CI->setName(InstName + ".old");
   }
+  typeMangle(Mangle, Args);
   auto NewCI = addCallInst(M, NewName, CI->getType(), Args, Attrs, CI, Mangle,
                            InstName, TakeFuncName);
   NewCI->setDebugLoc(CI->getDebugLoc());
@@ -784,6 +813,7 @@ Instruction *mutateCallInst(
   Type *RetTy = CI->getType();
   auto NewName = ArgMutate(CI, Args, RetTy);
   StringRef InstName = CI->getName();
+  typeMangle(Mangle, Args);
   auto NewCI = addCallInst(M, NewName, RetTy, Args, Attrs, CI, Mangle, InstName,
                            TakeFuncName);
   auto NewI = RetMutate(NewCI);
@@ -857,8 +887,17 @@ CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
 
 CallInst *addCallInstSPIRV(Module *M, StringRef FuncName, Type *RetTy,
                            ArrayRef<Value *> Args, AttributeList *Attrs,
+                           ArrayRef<Type *> PointerElementTypes,
                            Instruction *Pos, StringRef InstName) {
   BuiltinFuncMangleInfo BtnInfo;
+  for (unsigned I = 0; I < PointerElementTypes.size(); I++) {
+    if (Args[I]->getType()->isPointerTy()) {
+      assert(cast<PointerType>(Args[I]->getType())
+                 ->isOpaqueOrPointeeTypeMatches(PointerElementTypes[I]));
+      BtnInfo.getTypeMangleInfo(I).PointerTy = TypedPointerType::get(
+          PointerElementTypes[I], Args[I]->getType()->getPointerAddressSpace());
+    }
+  }
   return addCallInst(M, FuncName, RetTy, Args, Attrs, Pos, &BtnInfo, InstName);
 }
 
@@ -1165,7 +1204,10 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
   if (Info.IsSampler)
     return SPIR::RefParamType(
         new SPIR::PrimitiveType(SPIR::PRIMITIVE_SAMPLER_T));
-  if (Info.IsAtomic && !Ty->isPointerTy()) {
+  if (Ty->isPointerTy())
+    Ty = TypedPointerType::get(Type::getInt8Ty(Ty->getContext()),
+                               Ty->getPointerAddressSpace());
+  if (Info.IsAtomic && !isa<TypedPointerType>(Ty)) {
     BuiltinArgTypeMangleInfo DTInfo = Info;
     DTInfo.IsAtomic = false;
     return SPIR::RefParamType(new SPIR::AtomicType(transTypeDesc(Ty, DTInfo)));
@@ -1203,7 +1245,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
         transTypeDesc(VecTy->getElementType(), Info), VecTy->getNumElements()));
   }
   if (Ty->isArrayTy()) {
-    return transTypeDesc(PointerType::get(Ty->getArrayElementType(), 0), Info);
+    return transTypeDesc(TypedPointerType::get(Ty->getArrayElementType(), 0),
+                         Info);
   }
   if (Ty->isStructTy()) {
     auto Name = Ty->getStructName();
@@ -1230,8 +1273,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     return SPIR::RefParamType(new SPIR::UserDefinedType(Name.str()));
   }
 
-  if (Ty->isPointerTy()) {
-    auto ET = Ty->getPointerElementType();
+  if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
+    auto *ET = TPT->getElementType();
     SPIR::ParamType *EPT = nullptr;
     if (isa<FunctionType>(ET)) {
       assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
@@ -1285,9 +1328,9 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
 
     if (VoidPtr && ET->isIntegerTy(8))
       ET = Type::getVoidTy(ET->getContext());
-    auto PT = new SPIR::PointerType(transTypeDesc(ET, Info));
+    auto *PT = new SPIR::PointerType(transTypeDesc(ET, Info));
     PT->setAddressSpace(static_cast<SPIR::TypeAttributeEnum>(
-        Ty->getPointerAddressSpace() + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
+        TPT->getAddressSpace() + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
     for (unsigned I = SPIR::ATTR_QUALIFIER_FIRST, E = SPIR::ATTR_QUALIFIER_LAST;
          I <= E; ++I)
       PT->setQualifier(static_cast<SPIR::TypeAttributeEnum>(I), I & Attr);
@@ -1588,6 +1631,10 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
                                               : (unsigned)BtnInfo->getVarArg();
          I != E; ++I) {
       auto T = ArgTypes[I];
+      auto MangleInfo = BtnInfo->getTypeMangleInfo(I);
+      if (MangleInfo.PointerTy && T->isPointerTy()) {
+        T = MangleInfo.PointerTy;
+      }
       FD.Parameters.emplace_back(
           transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
     }

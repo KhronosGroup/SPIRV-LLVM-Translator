@@ -1380,8 +1380,7 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
       else if (S == "llvm.loop.unroll.count" &&
                !(LoopControl & LoopControlDontUnrollMask)) {
         if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
-          BM->setMinSPIRVVersion(
-              static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+          BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_4);
           size_t I = getMDOperandAsInt(Node, 1);
           ParametersToSort.emplace_back(spv::LoopControlPartialCountMask, I);
           LoopControl |= spv::LoopControlPartialCountMask;
@@ -2701,15 +2700,15 @@ struct IntelLSUControlsInfo {
       ResultVec.emplace_back(DecorationDontStaticallyCoalesceINTEL,
                              std::vector<std::string>());
     // Conditional values
-    if (CacheSizeInfo.hasValue()) {
+    if (CacheSizeInfo.has_value()) {
       ResultVec.emplace_back(
           DecorationCacheSizeINTEL,
-          std::vector<std::string>{std::to_string(CacheSizeInfo.getValue())});
+          std::vector<std::string>{std::to_string(CacheSizeInfo.value())});
     }
-    if (PrefetchInfo.hasValue()) {
+    if (PrefetchInfo.has_value()) {
       ResultVec.emplace_back(
           DecorationPrefetchINTEL,
-          std::vector<std::string>{std::to_string(PrefetchInfo.getValue())});
+          std::vector<std::string>{std::to_string(PrefetchInfo.value())});
     }
     return ResultVec;
   }
@@ -2887,7 +2886,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
         LSUControls.setWithBitMask(ParamsBitMask);
       } else if (Name == "cache-size") {
         ValidDecorationFound = true;
-        if (!LSUControls.CacheSizeInfo.hasValue())
+        if (!LSUControls.CacheSizeInfo.has_value())
           continue;
         unsigned CacheSizeValue = 0;
         bool Failure = ValueStr.getAsInteger(10, CacheSizeValue);
@@ -4213,8 +4212,7 @@ LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
       SPIRVWord ModuleVersion = static_cast<SPIRVWord>(BM->getSPIRVVersion());
       if (AS != SPIRAS_Input && AS != SPIRAS_Output &&
           ModuleVersion < static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4))
-        BM->setMinSPIRVVersion(
-            static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+        BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_4);
       Interface.push_back(ValueMap[&GV]->getId());
     }
   }
@@ -4516,7 +4514,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         break;
       case spv::ExecutionModeLocalSize:
       case spv::ExecutionModeLocalSizeHint: {
-        unsigned X, Y, Z;
+        unsigned X = 0, Y = 0, Z = 0;
         N.get(X).get(Y).get(Z);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
@@ -4524,7 +4522,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::ExecutionModeMaxWorkgroupSizeINTEL: {
         if (BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_kernel_attributes)) {
-          unsigned X, Y, Z;
+          unsigned X = 0, Y = 0, Z = 0;
           N.get(X).get(Y).get(Z);
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
               BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
@@ -4569,8 +4567,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::ExecutionModeRoundingModeRTE:
       case spv::ExecutionModeRoundingModeRTZ: {
         if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
-          BM->setMinSPIRVVersion(
-              static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4));
+          BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_4);
           AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
         } else if (BM->isAllowedToUseExtension(
                        ExtensionID::SPV_KHR_float_controls)) {
@@ -5255,7 +5252,7 @@ bool runSpirvWriterPasses(Module *M, std::ostream *OS, std::string &ErrMsg,
     if (!BM->getErrorLog().checkError(ModuleVer <= Opts.getMaxVersion(),
                                       SPIRVEC_TripleMaxVersionIncompatible))
       return false;
-    BM->setMinSPIRVVersion(static_cast<SPIRVWord>(ModuleVer));
+    BM->setMinSPIRVVersion(ModuleVer);
   }
 
   ModulePassManager PassMgr;
