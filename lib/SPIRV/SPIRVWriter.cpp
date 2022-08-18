@@ -4491,7 +4491,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         return false;
 
       auto AddSingleArgExecutionMode = [&](ExecutionMode EMode) {
-        uint32_t Arg;
+        uint32_t Arg = ~0u;
         N.get(Arg);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(BF, EMode, Arg)));
       };
