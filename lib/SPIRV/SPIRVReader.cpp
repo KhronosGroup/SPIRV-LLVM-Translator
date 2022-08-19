@@ -2133,10 +2133,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto AC = static_cast<SPIRVAccessChainBase *>(BV);
     auto Base = transValue(AC->getBase(), F, BB);
     SPIRVType *BaseSPVTy = AC->getBase()->getType();
-    Type *BaseTy = BaseSPVTy->isTypeVector()
-      ? transType(BaseSPVTy->getVectorComponentType()->
-                  getPointerElementType())
-      : transType(BaseSPVTy->getPointerElementType());
+    Type *BaseTy =
+        BaseSPVTy->isTypeVector()
+            ? transType(
+                  BaseSPVTy->getVectorComponentType()->getPointerElementType())
+            : transType(BaseSPVTy->getPointerElementType());
     auto Index = transValue(AC->getIndices(), F, BB);
     if (!AC->hasPtrIndex())
       Index.insert(Index.begin(), getInt32(M, 0));
@@ -2557,9 +2558,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     uint32_t Alignment = Inst->getOpWord(1);
     Value *Mask = transValue(Inst->getOperand(2), F, BB);
     Value *FillEmpty = transValue(Inst->getOperand(3), F, BB);
-    return mapValue(
-        BV, Builder.CreateMaskedGather(RetTy, PtrVector, Align(Alignment), Mask,
-                                      FillEmpty));
+    return mapValue(BV, Builder.CreateMaskedGather(RetTy, PtrVector,
+                                                   Align(Alignment), Mask,
+                                                   FillEmpty));
   }
 
   case internal::OpMaskedScatterINTEL: {
@@ -2569,9 +2570,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Value *PtrVector = transValue(Inst->getOperand(1), F, BB);
     uint32_t Alignment = Inst->getOpWord(2);
     Value *Mask = transValue(Inst->getOperand(3), F, BB);
-    return mapValue(
-        BV, Builder.CreateMaskedScatter(InputVector, PtrVector,
-                                        Align(Alignment), Mask));
+    return mapValue(BV, Builder.CreateMaskedScatter(InputVector, PtrVector,
+                                                    Align(Alignment), Mask));
   }
 
   default: {
@@ -3181,9 +3181,10 @@ std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
   if (BI->getOpCode() == OpGenericCastToPtrExplicit) {
     Suffix += kSPIRVPostfix::Divider;
     auto Ty = BI->getType();
-    auto GenericCastToPtrInst = Ty->isTypeVectorPointer() ?
-      Ty->getVectorComponentType()->getPointerStorageClass() :
-      Ty->getPointerStorageClass();
+    auto GenericCastToPtrInst =
+        Ty->isTypeVectorPointer()
+            ? Ty->getVectorComponentType()->getPointerStorageClass()
+            : Ty->getPointerStorageClass();
     switch (GenericCastToPtrInst) {
     case StorageClassCrossWorkgroup:
       Suffix += std::string(kSPIRVPostfix::ToGlobal);

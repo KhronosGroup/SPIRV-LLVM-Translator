@@ -553,8 +553,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
                 cast<PointerType>(DestTy), SrcTy->getPointerAddressSpace());
             if (DestTy->isVectorTy())
               InterTy = VectorType::get(
-                  InterTy,
-                  cast<VectorType>(DestTy)->getElementCount());
+                  InterTy, cast<VectorType>(DestTy)->getElementCount());
             BitCastInst *NewBCast = new BitCastInst(
                 ASCast->getPointerOperand(), InterTy, /*NameStr=*/"", ASCast);
             AddrSpaceCastInst *NewASCast =

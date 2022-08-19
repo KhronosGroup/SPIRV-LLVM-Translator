@@ -3431,9 +3431,8 @@ class SPIRVMaskedGatherINTELInst : public SPIRVSIMDINTELInstBase {
     std::string InstName = "MaskedGatherINTEL";
 
     SPIRVType *ResTy = this->getType();
-    SPVErrLog.checkError(
-        ResTy->isTypeVector(), SPIRVEC_InvalidInstruction,
-        InstName + "\nResult must be a vector type\n");
+    SPVErrLog.checkError(ResTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+                         InstName + "\nResult must be a vector type\n");
     SPIRVWord ResCompCount = ResTy->getVectorComponentCount();
     SPIRVType *ResCompTy = ResTy->getVectorComponentType();
 
@@ -3454,23 +3453,24 @@ class SPIRVMaskedGatherINTELInst : public SPIRVSIMDINTELInstBase {
     SPIRVValue *Mask =
         const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(2);
     SPIRVType *MaskTy = Mask->getType();
-    SPVErrLog.checkError(
-        MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
-        InstName + "\nMask must be a vector type\n");
+    SPVErrLog.checkError(MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+                         InstName + "\nMask must be a vector type\n");
     SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
 
     SPIRVValue *FillEmpty =
         const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(3);
     SPIRVType *FillEmptyTy = FillEmpty->getType();
-    SPVErrLog.checkError(
-        FillEmptyTy->isTypeVector(), SPIRVEC_InvalidInstruction,
-        InstName + "\nFillEmpty must be a vector type\n");
+    SPVErrLog.checkError(FillEmptyTy->isTypeVector(),
+                         SPIRVEC_InvalidInstruction,
+                         InstName + "\nFillEmpty must be a vector type\n");
     SPIRVWord FillEmptyCompCount = FillEmptyTy->getVectorComponentCount();
     SPIRVType *FillEmptyCompTy = FillEmptyTy->getVectorComponentType();
 
     SPVErrLog.checkError(
-        ResCompCount == PtrVecCompCount && PtrVecCompCount == FillEmptyCompCount
-        && FillEmptyCompCount == MaskCompCount, SPIRVEC_InvalidInstruction,
+        ResCompCount == PtrVecCompCount &&
+            PtrVecCompCount == FillEmptyCompCount &&
+            FillEmptyCompCount == MaskCompCount,
+        SPIRVEC_InvalidInstruction,
         InstName + "\nResult, PtrVector, Mask and FillEmpty vectors must have "
                    "the same size\n");
 
@@ -3514,14 +3514,14 @@ class SPIRVMaskedScatterINTELInst : public SPIRVSIMDINTELInstBase {
     SPIRVValue *Mask =
         const_cast<SPIRVMaskedScatterINTELInst *>(this)->getOperand(2);
     SPIRVType *MaskTy = Mask->getType();
-    SPVErrLog.checkError(
-        MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
-        InstName + "\nMask must be a vector type\n");
+    SPVErrLog.checkError(MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+                         InstName + "\nMask must be a vector type\n");
     SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
 
     SPVErrLog.checkError(
         InputVecCompCount == PtrVecCompCount &&
-        PtrVecCompCount == MaskCompCount, SPIRVEC_InvalidInstruction,
+            PtrVecCompCount == MaskCompCount,
+        SPIRVEC_InvalidInstruction,
         InstName + "\nInputVector, PtrVector and Mask vectors must have "
                    "the same size\n");
 
@@ -3534,7 +3534,7 @@ class SPIRVMaskedScatterINTELInst : public SPIRVSIMDINTELInstBase {
 
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVSIMDINTELInstBase, internal::Op##x##INTEL,    \
-                            __VA_ARGS__> \
+                            __VA_ARGS__>                                       \
       SPIRV##x##INTEL;
 _SPIRV_OP(MaskedGather, true, 7)
 _SPIRV_OP(MaskedScatter, false, 5)
