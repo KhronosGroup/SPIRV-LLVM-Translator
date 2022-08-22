@@ -3180,7 +3180,7 @@ std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
   }
   if (BI->getOpCode() == OpGenericCastToPtrExplicit) {
     Suffix += kSPIRVPostfix::Divider;
-    auto Ty = BI->getType();
+    auto *Ty = BI->getType();
     auto GenericCastToPtrInst =
         Ty->isTypeVectorPointer()
             ? Ty->getVectorComponentType()->getPointerStorageClass()

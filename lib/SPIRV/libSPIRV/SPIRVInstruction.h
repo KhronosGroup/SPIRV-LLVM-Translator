@@ -3414,7 +3414,7 @@ _SPIRV_OP(ComplexFMulINTEL)
 _SPIRV_OP(ComplexFDivINTEL)
 #undef _SPIRV_OP
 
-class SPIRVSIMDINTELInstBase : public SPIRVInstTemplateBase {
+class SPIRVGatherScatterINTELInstBase : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(internal::CapabilityMaskedGatherScatterINTEL);
@@ -3424,7 +3424,7 @@ protected:
   }
 };
 
-class SPIRVMaskedGatherINTELInst : public SPIRVSIMDINTELInstBase {
+class SPIRVMaskedGatherINTELInst : public SPIRVGatherScatterINTELInstBase {
   void validate() const override {
     SPIRVInstruction::validate();
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
@@ -3482,7 +3482,7 @@ class SPIRVMaskedGatherINTELInst : public SPIRVSIMDINTELInstBase {
   }
 };
 
-class SPIRVMaskedScatterINTELInst : public SPIRVSIMDINTELInstBase {
+class SPIRVMaskedScatterINTELInst : public SPIRVGatherScatterINTELInstBase {
   void validate() const override {
     SPIRVInstruction::validate();
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
@@ -3533,8 +3533,8 @@ class SPIRVMaskedScatterINTELInst : public SPIRVSIMDINTELInstBase {
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVSIMDINTELInstBase, internal::Op##x##INTEL,    \
-                            __VA_ARGS__>                                       \
+  typedef SPIRVInstTemplate<SPIRVGatherScatterINTELInstBase,                   \
+                            internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
 _SPIRV_OP(MaskedGather, true, 7)
 _SPIRV_OP(MaskedScatter, false, 5)
