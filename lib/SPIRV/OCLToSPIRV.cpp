@@ -306,8 +306,7 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     return;
   }
   if (DemangledName == kOCLBuiltinName::Dot &&
-      (CI.getOperand(0)->getType()->isFloatTy() ||
-       CI.getOperand(1)->getType()->isDoubleTy())) {
+      CI.getOperand(0)->getType()->isFloatingPointTy()) {
     visitCallDot(&CI);
     return;
   }
