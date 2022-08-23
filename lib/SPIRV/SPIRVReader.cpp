@@ -949,7 +949,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   if (LC && internal::LoopControlMaxReinvocationDelayINTELMask) {
     Metadata.push_back(llvm::MDNode::get(
         *Context, getMetadataFromNameAndParameter(
-                      "llvm.loop.intel.max_reinvocation_delay.count",,
+                      "llvm.loop.intel.max_reinvocation_delay.count",
                       LoopControlParameters[NumParam++])));
     assert(NumParam <= LoopControlParameters.size() &&
            "Missing loop control parameter!");
