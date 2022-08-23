@@ -356,7 +356,7 @@ void PreprocessMetadataBase::preprocessVectorComputeMetadata(Module *M,
           .getAsInteger(0, NBarrierCnt);
       EM.addOp()
           .add(&F)
-          .add(spv::internal::ExecutionModeNamedBarrierCountINTEL)
+          .add(spv::ExecutionModeNamedBarrierCountINTEL)
           .add(NBarrierCnt)
           .done();
     }
