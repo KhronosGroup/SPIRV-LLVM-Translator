@@ -575,6 +575,7 @@ attributes #4 = { nounwind }
 ; CHECK-LLVM: br label %for.cond{{[0-9]*}}, !llvm.loop ![[MD_H:[0-9]+]]
 ; CHECK-LLVM: br label %for.cond{{[0-9]*}}, !llvm.loop ![[MD_I:[0-9]+]]
 ; CHECK-LLVM: br label %for.cond{{[0-9]*}}, !llvm.loop ![[MD_NF:[0-9]+]]
+; CHECK-LLVM: br label %for.cond{{[0-9]*}}, !llvm.loop ![[MD_MRD:[0-9]+]]
 
 ; CHECK-LLVM: ![[MD_A]] = distinct !{![[MD_A]], ![[MD_ivdep_enable:[0-9]+]]}
 ; CHECK-LLVM: ![[MD_ivdep_enable]] = !{!"llvm.loop.ivdep.enable"}
