@@ -1478,7 +1478,7 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
           BM->addCapability(CapabilityFPGALoopControlsINTEL);
           size_t I = getMDOperandAsInt(Node, 1);
           ParametersToSort.emplace_back(
-              spv::LoopControlMaxReinvocationDelayINTELMask, I);
+              internal::LoopControlMaxReinvocationDelayINTELMask, I);
           LoopControl |= internal::LoopControlMaxReinvocationDelayINTELMask;
         }
       }
