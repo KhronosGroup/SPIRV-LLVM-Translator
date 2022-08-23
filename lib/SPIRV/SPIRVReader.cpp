@@ -946,7 +946,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
           "llvm.loop.intel.loopcount_avg", static_cast<int64_t>(LoopCountAvg)));
     }
   }
-  if (LC && LoopControlMaxReinvocationDelayINTELMask) {
+  if (LC && internal::LoopControlMaxReinvocationDelayINTELMask) {
     Metadata.push_back(llvm::MDNode::get(
         *Context, getMetadataFromNameAndParameter(
                       "llvm.loop.intel.max_reinvocation_delay.count",,
