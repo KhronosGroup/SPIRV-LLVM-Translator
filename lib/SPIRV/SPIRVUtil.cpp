@@ -893,7 +893,7 @@ void getParameterTypes(Function *F, SmallVectorImpl<TypedPointerType *> &ArgTys,
 
   // Sanity check that the name mangling matches up to the expected number of
   // arguments.
-  if (RootNode->getParams().size() > (size_t)(ArgTys.end() - ArgIter)) {
+  if (RootNode->getParams().size() != (size_t)(ArgTys.end() - ArgIter)) {
     LLVM_DEBUG(dbgs() << "[getParameterTypes] function " << MangledName
                       << " appears to have " << RootNode->getParams().size()
                       << " arguments but has " << (ArgTys.end() - ArgIter)
