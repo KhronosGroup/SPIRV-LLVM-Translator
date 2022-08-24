@@ -261,6 +261,8 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilityVectorComputeINTEL});
   ADD_VEC_INIT(ExecutionModeFastCompositeKernelINTEL,
                {CapabilityFastCompositeINTEL});
+  ADD_VEC_INIT(ExecutionModeNamedBarrierCountINTEL,
+               {CapabilityVectorComputeINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
