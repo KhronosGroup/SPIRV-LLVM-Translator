@@ -86,7 +86,10 @@ enum InternalExecutionMode {
   IExecModeStreamingInterfaceINTEL = 6154
 };
 
-enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
+enum InternalLoopControlMask {
+  ILoopControlLoopCountINTELMask = 0x1000000,
+  ILoopControlMaxReinvocationDelayINTELMask = 0x2000000
+};
 
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
@@ -180,6 +183,8 @@ constexpr ExecutionMode ExecutionModeStreamingInterfaceINTEL =
 
 static const LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
+static const LoopControlMask LoopControlMaxReinvocationDelayINTELMask =
+    static_cast<LoopControlMask>(ILoopControlMaxReinvocationDelayINTELMask);
 
 } // namespace internal
 } // namespace spv
