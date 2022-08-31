@@ -645,15 +645,94 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
   else
     llvm_unreachable("Unexpected type for matrix!");
 
-  auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
+  auto ParseInteger = [](StringRef Postfix) -> uint32_t {
     unsigned long long N = 0;
     consumeUnsignedInteger(Postfix, 10, N);
-    return getUInt32(M, N);
+    return N;
   };
-  std::vector<SPIRVValue *> Args;
+  std::vector<uint32_t> ProcessedPostfixes;
   for (size_t I = 1; I != Postfixes.size(); ++I)
-    Args.emplace_back(transConstant(ParseInteger(Postfixes[I])));
+    ProcessedPostfixes.emplace_back(ParseInteger(Postfixes[I]));
+  // Overwrite the 'Layout' argument depending on 'Use' if we have it.
+  if (ProcessedPostfixes.size() == 5) {
+    if (ProcessedPostfixes[4] == internal::InternalJointMatrixUse::MatrixB)
+      ProcessedPostfixes[2] = internal::InternalJointMatrixLayout::PackedB;
+    else
+      ProcessedPostfixes[2] = internal::InternalJointMatrixLayout::RowMajor;
+    // Remove 'Use' if it's 'Unnecessary'
+    if (ProcessedPostfixes[4] > internal::InternalJointMatrixUse::Accumulator)
+      ProcessedPostfixes.pop_back();
+  }
+  std::vector<SPIRVValue *> Args;
+  for (auto Val : ProcessedPostfixes)
+    Args.emplace_back(transConstant(getUInt32(M, Val)));
   return BM->addJointMatrixINTELType(transType(ElemTy), Args);
+}
+
+// Helper for translation of OpJointMatrixLoadINTEL and OpJointMatrixStoreINTEL
+// instructions.
+// For 'Layout' we have the following enum in SYCL spec:
+// { row_major, col_major, PackedA, PackedB, unused }
+// while the SPIR-V spec states, that 'Layout' can be:
+// { RowMajor, ColMajor, PackedA, PackedB }
+// So we need to transform packed to PackedA or PackedB depending on
+// 'Use' parameter of the JointMatrix type.
+template <uint32_t LayoutPos = 0>
+SPIRVValue *LLVMToSPIRVBase::transSPIRVJointMatrixINTELMemoryLayout(
+    CallInst *CI, SPIRVBasicBlock *BB, SPIRVTypeJointMatrixINTEL *MatTy) {
+  auto *Use = MatTy->getUse();
+  if (!Use)
+    return transValue(CI->getArgOperand(LayoutPos), BB);
+  const uint64_t UseVal =
+      static_cast<SPIRVConstant *>(MatTy->getUse())->getZExtIntValue();
+  const uint64_t LayoutValue =
+      cast<ConstantInt>(CI->getArgOperand(LayoutPos))->getZExtValue();
+  switch (LayoutValue) {
+  case 0:
+  case 1:
+    return transValue(CI->getArgOperand(LayoutPos), BB);
+  case 2:
+  case 3: {
+    if (UseVal == internal::InternalJointMatrixUse::MatrixA)
+      return transValue(
+          ConstantInt::get(Type::getInt32Ty(CI->getContext()),
+                           internal::InternalJointMatrixLayout::PackedA),
+          BB);
+    if (UseVal == internal::InternalJointMatrixUse::MatrixB)
+      return transValue(
+          ConstantInt::get(Type::getInt32Ty(CI->getContext()),
+                           internal::InternalJointMatrixLayout::PackedB),
+          BB);
+    getErrorLog().checkError(
+        false, SPIRVEC_InvalidModule, CI,
+        "Incompatible with Packed 'Layout' JointMatrixINTEL 'Use' parameter\n"
+        "Should be MatrixA or MatrixB\n");
+    return nullptr;
+  }
+  case 4: {
+    if (UseVal == internal::InternalJointMatrixUse::MatrixA)
+      return transValue(
+          ConstantInt::get(Type::getInt32Ty(CI->getContext()),
+                           internal::InternalJointMatrixLayout::PackedA),
+          BB);
+    if (UseVal == internal::InternalJointMatrixUse::MatrixB)
+      return transValue(
+          ConstantInt::get(Type::getInt32Ty(CI->getContext()),
+                           internal::InternalJointMatrixLayout::PackedB),
+          BB);
+    return transValue(
+        ConstantInt::get(Type::getInt32Ty(CI->getContext()),
+                         internal::InternalJointMatrixLayout::RowMajor),
+        BB);
+  }
+  default:
+    getErrorLog().checkError(
+        false, SPIRVEC_InvalidModule, CI,
+        "Invalid JointMatrixINTEL 'Layout' parameter passed to memory "
+        "instruction\n Should be RowMajor, ColumnMajor or Packed\n");
+    return nullptr;
+  }
+  return nullptr;
 }
 
 SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
@@ -4838,7 +4917,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                      SPIRVBasicBlock *BB) {
   if (isGroupOpCode(OC))
     BM->addCapability(CapabilityGroups);
-  switch (OC) {
+  switch (static_cast<uint32_t>(OC)) {
   case OpControlBarrier: {
     auto BArgs = transValue(getArguments(CI), BB);
     return BM->addControlBarrierInst(BArgs[0], BArgs[1], BArgs[2], BB);
@@ -5129,6 +5208,35 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
         transValue(CI->getArgOperand(0), BB)->getId()};
     return BM->addCompositeConstructInst(transType(CI->getType()), Operands,
                                          BB);
+  }
+  case internal::OpJointMatrixLoadINTEL: {
+    auto *SPVTy = transType(CI->getType());
+    auto *MatTy = static_cast<SPIRVTypeJointMatrixINTEL *>(SPVTy);
+    std::vector<SPIRVId> Operands = {
+        transValue(CI->getArgOperand(0), BB)->getId(),
+        transValue(CI->getArgOperand(1), BB)->getId(),
+        transSPIRVJointMatrixINTELMemoryLayout<2>(CI, BB, MatTy)->getId(),
+        transValue(CI->getArgOperand(3), BB)->getId()};
+    // Translate optional 'Memory Access' argument
+    if (CI->getNumOperands() == 6)
+      Operands.emplace_back(transValue(CI->getArgOperand(4), BB)->getId());
+    return BM->addInstTemplate(internal::OpJointMatrixLoadINTEL, Operands, BB,
+                               SPVTy);
+  }
+  case internal::OpJointMatrixStoreINTEL: {
+    auto *MatrixObj = transValue(CI->getArgOperand(1), BB);
+    auto *MatTy =
+        static_cast<SPIRVTypeJointMatrixINTEL *>(MatrixObj->getType());
+    std::vector<SPIRVId> Operands = {
+        transValue(CI->getArgOperand(0), BB)->getId(), MatrixObj->getId(),
+        transValue(CI->getArgOperand(2), BB)->getId(),
+        transSPIRVJointMatrixINTELMemoryLayout<3>(CI, BB, MatTy)->getId(),
+        transValue(CI->getArgOperand(4), BB)->getId()};
+    // Translate optional 'Memory Access' argument
+    if (CI->getNumOperands() == 7)
+      Operands.emplace_back(transValue(CI->getArgOperand(5), BB)->getId());
+    return BM->addInstTemplate(internal::OpJointMatrixStoreINTEL, Operands, BB,
+                               nullptr);
   }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {

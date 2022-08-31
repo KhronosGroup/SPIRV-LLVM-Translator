@@ -104,7 +104,11 @@ enum InternalJointMatrixLayout {
   PackedB = 3
 };
 
-enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
+enum InternalJointMatrixUse {
+  MatrixA = 0,
+  MatrixB = 1,
+  Accumulator = 2
+};
 
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,

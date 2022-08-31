@@ -139,6 +139,10 @@ public:
                               bool CreateForward = true,
                               FuncTransMode FuncTrans = FuncTransMode::Decl);
   void transGlobalIOPipeStorage(GlobalVariable *V, MDNode *IO);
+  template <uint32_t>
+  SPIRVValue *
+  transSPIRVJointMatrixINTELMemoryLayout(CallInst *CI, SPIRVBasicBlock *BB,
+                                         SPIRVTypeJointMatrixINTEL *MatTy);
 
   static SPIRVInstruction *applyRoundingModeConstraint(Value *V,
                                                        SPIRVInstruction *I);
