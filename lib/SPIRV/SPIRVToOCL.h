@@ -222,7 +222,8 @@ public:
   /// - OCL1.2: barrier
   virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
 
-  /// Transform split __spirv_ControlBarrier barrier to:
+  /// Transform split __spirv_ControlBarrierArriveINTEL and
+  /// __spirv_ControlBarrierWaitINTEL barrier to:
   /// - OCL2.0: overload with a memory_scope argument
   /// - OCL1.2: overload with no memory_scope argument
   virtual void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) = 0;
@@ -310,7 +311,8 @@ public:
   ///       barrier(flag(sema))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
 
-  /// Transform split __spirv_ControlBarrier barrier to overloads without a
+  /// Transform split __spirv_ControlBarrierArriveINTEL and
+  /// __spirv_ControlBarrierWaitINTEL barrier to overloads without a
   /// memory_scope argument.
   void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
 
@@ -403,7 +405,8 @@ public:
   ///         sub_group_barrier(flag(sema), map(memScope))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
 
-  /// Transform split __spirv_ControlBarrier barrier to overloads with a
+  /// Transform split __spirv_ControlBarrierArriveINTEL and
+  /// __spirv_ControlBarrierWaitINTEL barrier to overloads with a
   /// memory_scope argument.
   void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
 

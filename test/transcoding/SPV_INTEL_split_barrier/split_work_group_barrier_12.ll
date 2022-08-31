@@ -29,7 +29,6 @@ target triple = "spir64"
 
 ; CHECK-SPIRV: Capability SplitBarrierINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_split_barrier"
-; CHECK-SPIRV: Name [[TEST_FUNC:[0-9]+]] "test"
 ; CHECK-SPIRV: TypeInt [[UINT:[0-9]+]] 32 0
 ;
 ; Scopes:
@@ -49,7 +48,6 @@ target triple = "spir64"
 ; 0x4 Release + 0x100 WorkgroupMemory + 0x200 CrossWorkgroupMemory
 ; CHECK-SPIRV-DAG: Constant [[UINT]] [[RELEASE_LOCAL_GLOBAL:[0-9]+]] 772
 ;
-; CHECK-SPIRV: Function {{[0-9]+}} [[TEST_FUNC]]
 ; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[RELEASE_LOCAL]]
 ; CHECK-SPIRV: ControlBarrierWaitINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[ACQUIRE_LOCAL]]
 ; CHECK-SPIRV: ControlBarrierArriveINTEL [[SCOPE_WORK_GROUP]] [[SCOPE_WORK_GROUP]] [[RELEASE_GLOBAL]]
