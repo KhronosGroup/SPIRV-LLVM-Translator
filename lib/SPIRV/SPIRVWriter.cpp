@@ -1683,7 +1683,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
           }
         }
       }
-      BVarInit = transValue(Init, nullptr);
+      BVarInit = transValue(Init, nullptr, CreateForward, FuncTrans);
     }
 
     SPIRVStorageClassKind StorageClass;
@@ -4159,7 +4159,11 @@ bool LLVMToSPIRVBase::transGlobalVariables() {
       continue;
     } else if (MDNode *IO = ((*I).getMetadata("io_pipe_id")))
       transGlobalIOPipeStorage(&(*I), IO);
-    else if (!transValue(&(*I), nullptr))
+    // As global variables define a pointer to their "content" type, we should
+    // translate here only pointer without declaration even it is a function
+    // pointer.
+    else if (!transValue(&(*I), nullptr, true /*CreateForward - default value*/,
+                         FuncTransMode::Pointer))
       return false;
   }
   return true;
