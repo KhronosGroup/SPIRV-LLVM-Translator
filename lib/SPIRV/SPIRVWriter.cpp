@@ -3852,44 +3852,44 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return Op;
   }
   case Intrinsic::masked_gather: {
-    if (BM->isAllowedToUseExtension(
+    if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
-      SPIRVType *Ty = transType(II->getType());
-      auto *PtrVector = transValue(II->getArgOperand(0), BB);
-      uint32_t Alignment =
-          cast<ConstantInt>(II->getArgOperand(1))->getZExtValue();
-      auto *Mask = transValue(II->getArgOperand(2), BB);
-      auto *FillEmpty = transValue(II->getArgOperand(3), BB);
-      std::vector<SPIRVWord> Ops = {PtrVector->getId(), Alignment,
-                                    Mask->getId(), FillEmpty->getId()};
-      return BM->addInstTemplate(internal::OpMaskedGatherINTEL, Ops, BB, Ty);
+      BM->getErrorLog().checkError(
+          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
+          "Translation of llvm.masked.gather intrinsic requires "
+          "SPV_INTEL_masked_gather_scatter extension or "
+          "-spirv-allow-unknown-intrinsics option.");
+      return nullptr;
     }
-    BM->getErrorLog().checkError(
-        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
-        "Translation of llvm.masked.gather intrinsic requires "
-        "SPV_INTEL_masked_gather_scatter extension or "
-        "-spirv-allow-unknown-intrinsics option.");
-    break;
+    SPIRVType *Ty = transType(II->getType());
+    auto *PtrVector = transValue(II->getArgOperand(0), BB);
+    uint32_t Alignment =
+        cast<ConstantInt>(II->getArgOperand(1))->getZExtValue();
+    auto *Mask = transValue(II->getArgOperand(2), BB);
+    auto *FillEmpty = transValue(II->getArgOperand(3), BB);
+    std::vector<SPIRVWord> Ops = {PtrVector->getId(), Alignment,
+                                  Mask->getId(), FillEmpty->getId()};
+    return BM->addInstTemplate(internal::OpMaskedGatherINTEL, Ops, BB, Ty);
   }
   case Intrinsic::masked_scatter: {
-    if (BM->isAllowedToUseExtension(
+    if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
-      auto *InputVector = transValue(II->getArgOperand(0), BB);
-      auto *PtrVector = transValue(II->getArgOperand(1), BB);
-      uint32_t Alignment =
-          cast<ConstantInt>(II->getArgOperand(2))->getZExtValue();
-      auto *Mask = transValue(II->getArgOperand(3), BB);
-      std::vector<SPIRVWord> Ops = {InputVector->getId(), PtrVector->getId(),
-                                    Alignment, Mask->getId()};
-      return BM->addInstTemplate(internal::OpMaskedScatterINTEL, Ops, BB,
-                                 nullptr);
+      BM->getErrorLog().checkError(
+          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
+          "Translation of llvm.masked.scatter intrinsic requires "
+          "SPV_INTEL_masked_gather_scatter extension or "
+          "-spirv-allow-unknown-intrinsics option.");
+      return nullptr;
     }
-    BM->getErrorLog().checkError(
-        BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, II,
-        "Translation of llvm.masked.scatter intrinsic requires "
-        "SPV_INTEL_masked_gather_scatter extension or "
-        "-spirv-allow-unknown-intrinsics option.");
-    break;
+    auto *InputVector = transValue(II->getArgOperand(0), BB);
+    auto *PtrVector = transValue(II->getArgOperand(1), BB);
+    uint32_t Alignment =
+        cast<ConstantInt>(II->getArgOperand(2))->getZExtValue();
+    auto *Mask = transValue(II->getArgOperand(3), BB);
+    std::vector<SPIRVWord> Ops = {InputVector->getId(), PtrVector->getId(),
+                                  Alignment, Mask->getId()};
+    return BM->addInstTemplate(internal::OpMaskedScatterINTEL, Ops, BB,
+                               nullptr);
   }
 
   default:

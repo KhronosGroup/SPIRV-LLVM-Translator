@@ -1034,8 +1034,6 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   switch (BC->getOpCode()) {
   case OpPtrCastToGeneric:
   case OpGenericCastToPtr:
-    CO = Instruction::AddrSpaceCast;
-    break;
   case OpPtrCastToCrossWorkgroupINTEL:
   case OpCrossWorkgroupCastToPtrINTEL: {
     // If module has pointers with DeviceOnlyINTEL and HostOnlyINTEL storage
