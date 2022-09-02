@@ -38,6 +38,10 @@
 ///
 //===----------------------------------------------------------------------===//
 
+// This file needs to be included before anything that declares
+// llvm::PointerType to avoid a compilation bug on MSVC.
+#include "llvm/Demangle/ItaniumDemangle.h"
+
 #include "FunctionDescriptor.h"
 #include "ManglingUtils.h"
 #include "NameMangleAPI.h"
@@ -50,7 +54,6 @@
 
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-#include "llvm/Demangle/ItaniumDemangle.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Metadata.h"
