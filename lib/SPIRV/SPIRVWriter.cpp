@@ -3867,8 +3867,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         cast<ConstantInt>(II->getArgOperand(1))->getZExtValue();
     auto *Mask = transValue(II->getArgOperand(2), BB);
     auto *FillEmpty = transValue(II->getArgOperand(3), BB);
-    std::vector<SPIRVWord> Ops = {PtrVector->getId(), Alignment,
-                                  Mask->getId(), FillEmpty->getId()};
+    std::vector<SPIRVWord> Ops = {PtrVector->getId(), Alignment, Mask->getId(),
+                                  FillEmpty->getId()};
     return BM->addInstTemplate(internal::OpMaskedGatherINTEL, Ops, BB, Ty);
   }
   case Intrinsic::masked_scatter: {

@@ -3424,8 +3424,8 @@ protected:
   }
 };
 
-class SPIRVMaskedGatherINTELInst :
-  public SPIRVMaskedGatherScatterINTELInstBase {
+class SPIRVMaskedGatherINTELInst
+    : public SPIRVMaskedGatherScatterINTELInstBase {
   void validate() const override {
     SPIRVInstruction::validate();
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
@@ -3450,9 +3450,10 @@ class SPIRVMaskedGatherINTELInst :
     SPVErrLog.checkError(
         this->isOperandLiteral(1), SPIRVEC_InvalidInstruction,
         InstName + "\nAlignment must be a constant expression integer\n");
-    const uint32_t Align = static_cast<SPIRVConstant *>(
-        const_cast<SPIRVMaskedGatherINTELInst *>(
-          this)->getOperand(2))->getZExtIntValue();
+    const uint32_t Align =
+        static_cast<SPIRVConstant *>(
+            const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(2))
+            ->getZExtIntValue();
     SPVErrLog.checkError(
         ((Align & (Align - 1)) == 0), SPIRVEC_InvalidInstruction,
         InstName + "\nAlignment must be 0 or power-of-two integer\n");
@@ -3492,8 +3493,8 @@ class SPIRVMaskedGatherINTELInst :
   }
 };
 
-class SPIRVMaskedScatterINTELInst :
-  public SPIRVMaskedGatherScatterINTELInstBase {
+class SPIRVMaskedScatterINTELInst
+    : public SPIRVMaskedGatherScatterINTELInstBase {
   void validate() const override {
     SPIRVInstruction::validate();
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
@@ -3521,9 +3522,10 @@ class SPIRVMaskedScatterINTELInst :
     SPVErrLog.checkError(
         this->isOperandLiteral(2), SPIRVEC_InvalidInstruction,
         InstName + "\nAlignment must be a constant expression integer\n");
-    const uint32_t Align = static_cast<SPIRVConstant *>(
-        const_cast<SPIRVMaskedScatterINTELInst *>(
-          this)->getOperand(2))->getZExtIntValue();
+    const uint32_t Align =
+        static_cast<SPIRVConstant *>(
+            const_cast<SPIRVMaskedScatterINTELInst *>(this)->getOperand(2))
+            ->getZExtIntValue();
     SPVErrLog.checkError(
         ((Align & (Align - 1)) == 0), SPIRVEC_InvalidInstruction,
         InstName + "\nAlignment must be 0 or power-of-two integer\n");
