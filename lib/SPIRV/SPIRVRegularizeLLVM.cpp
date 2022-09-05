@@ -550,7 +550,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           if (DestTy->getScalarType()->getNonOpaquePointerElementType() !=
               SrcTy->getScalarType()->getNonOpaquePointerElementType()) {
             Type *InterTy = PointerType::getWithSamePointeeType(
-                cast<PointerType>(DestTy), SrcTy->getPointerAddressSpace());
+                cast<PointerType>(DestTy->getScalarType()),
+                cast<PointerType>(SrcTy->getScalarType())
+                ->getPointerAddressSpace());
             if (DestTy->isVectorTy())
               InterTy = VectorType::get(
                   InterTy, cast<VectorType>(DestTy)->getElementCount());

@@ -57,6 +57,7 @@ entry:
   %tmp2 = addrspacecast <4 x i32 addrspace(4)*> %tmp1 to  <4 x i32 addrspace(1)*>
   %tmp3 = call <4 x i32 addrspace(1)*> @boo(<4 x i32 addrspace(1)*> %tmp2)
   %tmp4 = getelementptr inbounds i32, <4 x i32 addrspace(1)*> %tmp3, i32 1
+  %tmp5 = addrspacecast <4 x i32 addrspace(4)*> %tmp1 to <4 x i8 addrspace(1)*>
   ret void
 }
 
