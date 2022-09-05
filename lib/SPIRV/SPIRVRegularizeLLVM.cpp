@@ -552,7 +552,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             Type *InterTy = PointerType::getWithSamePointeeType(
                 cast<PointerType>(DestTy->getScalarType()),
                 cast<PointerType>(SrcTy->getScalarType())
-                ->getPointerAddressSpace());
+                    ->getPointerAddressSpace());
             if (DestTy->isVectorTy())
               InterTy = VectorType::get(
                   InterTy, cast<VectorType>(DestTy)->getElementCount());
