@@ -137,9 +137,10 @@ entry:
 ;                            [[ConstInt0]] [[EventNull]] [[EventNull]]
 ;                            [[BlockKer1]] [[BlockLit1]] [[ConstInt17]] [[ConstInt8]]
 
-; CHECK-LLVM: [[Block2:%[0-9]+]] = addrspacecast [[BlockTy2]]* %block to i8 addrspace(4)*
+; CHECK-LLVM: [[Block2:%[0-9]+]] = bitcast [[BlockTy2]]* %block to i8*
+; CHECK-LLVM: [[Block2Cast:%[0-9]+]] = addrspacecast i8* [[Block2]] to i8 addrspace(4)*
 ; CHECK-LLVM: [[BlockInv2:%[0-9]+]] = addrspacecast void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_kernel to i8 addrspace(4)*
-; CHECK-LLVM: call i32 @__enqueue_kernel_basic(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i8 addrspace(4)* [[BlockInv2]], i8 addrspace(4)* [[Block2]])
+; CHECK-LLVM: call i32 @__enqueue_kernel_basic(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i8 addrspace(4)* [[BlockInv2]], i8 addrspace(4)* [[Block2Cast]])
 
   %5 = call i32 @__enqueue_kernel_basic(%opencl.queue_t* %1, i32 %2, %struct.ndrange_t* byval %ndrange, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* %4)
   %6 = addrspacecast %opencl.clk_event_t** %event_wait_list to %opencl.clk_event_t* addrspace(4)*
@@ -165,9 +166,10 @@ entry:
 ;                            [[ConstInt2]] [[Event1]] [[Event2]]
 ;                            [[BlockKer2]] [[BlockLit2]] [[ConstInt20]] [[ConstInt8]]
 
-; CHECK-LLVM: [[Block3:%[0-9]+]] = addrspacecast [[BlockTy3]]* %block3 to i8 addrspace(4)*
+; CHECK-LLVM: [[Block3:%[0-9]+]] = bitcast [[BlockTy3]]* %block3 to i8*
+; CHECK-LLVM: [[Block3Cast:%[0-9]+]] = addrspacecast i8* [[Block3]] to i8 addrspace(4)*
 ; CHECK-LLVM: [[BlockInv3:%[0-9]+]] = addrspacecast void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_2_kernel to i8 addrspace(4)*
-; CHECK-LLVM: call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i32 2, %opencl.clk_event_t* addrspace(4)* {{.*}}, %opencl.clk_event_t* addrspace(4)* {{.*}}, i8 addrspace(4)* [[BlockInv3]], i8 addrspace(4)* [[Block3]])
+; CHECK-LLVM: call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i32 2, %opencl.clk_event_t* addrspace(4)* {{.*}}, %opencl.clk_event_t* addrspace(4)* {{.*}}, i8 addrspace(4)* [[BlockInv3]], i8 addrspace(4)* [[Block3Cast]])
 
   %10 = call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* %1, i32 %2, %struct.ndrange_t* %ndrange, i32 2, %opencl.clk_event_t* addrspace(4)* %6, %opencl.clk_event_t* addrspace(4)* %7, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_2_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* %9)
   %11 = alloca [1 x i32]
@@ -221,7 +223,7 @@ entry:
 ;                            [[BlockKer5]] [[BlockLit5]] [[ConstInt20]] [[ConstInt8]]
 
 ; CHECK-LLVM: [[BlockInv5:%[0-9]+]] = addrspacecast void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_5_kernel to i8 addrspace(4)*
-; CHECK-LLVM: call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* {{.*}}, i8 addrspace(4)* [[BlockInv5]], i8 addrspace(4)* [[Block3]])
+; CHECK-LLVM: call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* {{.*}}, i32 {{.*}}, %struct.ndrange_t* {{.*}}, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* {{.*}}, i8 addrspace(4)* [[BlockInv5]], i8 addrspace(4)* [[Block3Cast]])
 
   %21 = call i32 @__enqueue_kernel_basic_events(%opencl.queue_t* %1, i32 %2, %struct.ndrange_t* %ndrange, i32 0, %opencl.clk_event_t* addrspace(4)* null, %opencl.clk_event_t* addrspace(4)* %7, i8 addrspace(4)* addrspacecast (i8* bitcast (void (i8 addrspace(4)*)* @__device_side_enqueue_block_invoke_5_kernel to i8*) to i8 addrspace(4)*), i8 addrspace(4)* %9)
 
