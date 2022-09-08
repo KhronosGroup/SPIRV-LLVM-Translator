@@ -571,6 +571,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "MemoryAccessAliasingINTEL");
   add(internal::CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
+  add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
