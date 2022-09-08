@@ -897,6 +897,7 @@ enum Capability {
   CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
+  CapabilityMaskedGatherScatterINTEL = 6427,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1414,6 +1415,8 @@ enum Op {
   OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL = 5815,
   OpSubgroupAvcSicGetInterRawSadsINTEL = 5816,
   OpTypeBufferSurfaceINTEL = 6086,
+  OpMaskedGatherINTEL = 6428,
+  OpMaskedScatterINTEL = 6429,
   OpMax = 0x7fffffff,
 };
 
