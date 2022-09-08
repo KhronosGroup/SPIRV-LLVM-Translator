@@ -40,6 +40,8 @@ enum InternalOp {
   IOpAliasScopeListDeclINTEL = 5913,
   IOpConvertFToBF16INTEL = 6116,
   IOpConvertBF16ToFINTEL = 6117,
+  IOpMaskedGatherINTEL = 6428,
+  IOpMaskedScatterINTEL = 6429,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -53,7 +55,8 @@ enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
   ICapOptNoneINTEL = 6094,
   ICapDebugInfoModuleINTEL = 6114,
-  ICapBfloat16ConversionINTEL = 6115
+  ICapBfloat16ConversionINTEL = 6115,
+  ICapabilityMaskedGatherScatterINTEL = 6427
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -67,6 +70,12 @@ enum InternalMemoryAccessMask {
 
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
+
+#define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
+_SPIRV_OP(Capability, MaskedGatherScatterINTEL)
+_SPIRV_OP(Op, MaskedGatherINTEL)
+_SPIRV_OP(Op, MaskedScatterINTEL)
+#undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpAliasDomainDeclINTEL = static_cast<Op>(IOpAliasDomainDeclINTEL);
