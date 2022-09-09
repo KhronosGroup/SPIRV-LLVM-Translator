@@ -208,10 +208,7 @@ public:
     using std::is_invocable;
     IRBuilder<> Builder(CI);
     Value *V = Args[Index];
-    Type *T = getPointerElementType(Index);
-    // T may be unused in some template invocations. Silence any warnings that
-    // may occur in such cases.
-    (void)T;
+    [[maybe_unused]] Type *T = getPointerElementType(Index);
 
     // Dispatch the function call as appropriate, based on the types that the
     // function may be called with.
@@ -242,7 +239,7 @@ public:
   }
 };
 
-/// A helper cass for generating calls to SPIR-V builtins with appropriate name
+/// A helper class for generating calls to SPIR-V builtins with appropriate name
 /// mangling rules. It is expected that transformation passes inherit from this
 /// class.
 class BuiltinCallHelper {
