@@ -94,6 +94,7 @@ Value *BuiltinCallMutator::doConversion() {
   Result->takeName(CI);
   if (!CI->getType()->isVoidTy())
     CI->replaceAllUsesWith(Result);
+  CI->dropAllReferences();
   CI->eraseFromParent();
   CI = nullptr;
   return Result;
