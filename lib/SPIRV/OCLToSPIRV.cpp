@@ -442,15 +442,15 @@ void OCLToSPIRVBase::visitCallNDRange(CallInst *CI, StringRef DemangledName) {
   switch (CI->arg_size()) {
   case 2: {
     // Has global work size.
-    auto T = Mutator.getArg(1)->getType();
-    auto C = getScalarOrArrayConstantInt(CI, T, Len, 0);
+    auto *T = Mutator.getArg(1)->getType();
+    auto *C = getScalarOrArrayConstantInt(CI, T, Len, 0);
     Mutator.appendArg(C);
     Mutator.appendArg(C);
     break;
   }
   case 3: {
     // Has global and local work size.
-    auto T = Mutator.getArg(1)->getType();
+    auto *T = Mutator.getArg(1)->getType();
     Mutator.appendArg(getScalarOrArrayConstantInt(CI, T, Len, 0));
     break;
   }

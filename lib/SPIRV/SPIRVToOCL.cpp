@@ -1115,7 +1115,7 @@ void SPIRVToOCLBase::visitCallSPIRVVStore(CallInst *CI, OCLExtOpKind Kind) {
   bool DropLastArg = false;
   if (Kind == OpenCLLIB::Vstore_half_r || Kind == OpenCLLIB::Vstore_halfn_r ||
       Kind == OpenCLLIB::Vstorea_halfn_r) {
-    auto C = cast<ConstantInt>(CI->getArgOperand(CI->arg_size() - 1));
+    auto *C = cast<ConstantInt>(CI->getArgOperand(CI->arg_size() - 1));
     auto RoundingMode = static_cast<SPIRVFPRoundingModeKind>(C->getZExtValue());
     Name.replace(Name.find("_r"), 2,
                  std::string("_") +
@@ -1126,7 +1126,8 @@ void SPIRVToOCLBase::visitCallSPIRVVStore(CallInst *CI, OCLExtOpKind Kind) {
   if (Kind == OpenCLLIB::Vstore_halfn || Kind == OpenCLLIB::Vstore_halfn_r ||
       Kind == OpenCLLIB::Vstorea_halfn || Kind == OpenCLLIB::Vstorea_halfn_r ||
       Kind == OpenCLLIB::Vstoren) {
-    if (auto DataType = dyn_cast<VectorType>(CI->getArgOperand(0)->getType())) {
+    if (auto *DataType =
+            dyn_cast<VectorType>(CI->getArgOperand(0)->getType())) {
       uint64_t NumElements = DataType->getElementCount().getFixedValue();
       assert((NumElements == 2 || NumElements == 3 || NumElements == 4 ||
               NumElements == 8 || NumElements == 16) &&
