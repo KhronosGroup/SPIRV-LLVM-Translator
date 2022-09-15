@@ -1190,7 +1190,7 @@ SPIRVToLLVM::expandOCLBuiltinWithScalarArg(CallInst *CI,
     auto Mutator = mutateCallInst(CI, FuncName);
     Mutator.mapArg(0, [=](Value *Arg) {
       Value *NewVec = nullptr;
-      if (auto CA = dyn_cast<Constant>(Arg))
+      if (auto *CA = dyn_cast<Constant>(Arg))
         NewVec = ConstantVector::getSplat(VecElemCount, CA);
       else {
         NewVec = ConstantVector::getSplat(
