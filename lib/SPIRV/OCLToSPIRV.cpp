@@ -1020,10 +1020,10 @@ void OCLToSPIRVBase::visitCallReadImageWithSampler(CallInst *CI,
       M, ImageTy, kSPIRVTypeName::Image, kSPIRVTypeName::SampledImg);
   auto *SampledImgTy = PointerType::get(SampledImgStructTy, SPIRAS_Global);
   Value *SampledImgArgs[] = {CI->getArgOperand(0), CI->getArgOperand(1)};
-  auto SampledImg = addCallInstSPIRV(M, getSPIRVFuncName(OpSampledImage),
-                                     SampledImgTy, SampledImgArgs, nullptr,
-                                     {ArgStructTys[0], ArgStructTys[1]}, CI,
-                                     kSPIRVName::TempSampledImage);
+  auto *SampledImg = addCallInstSPIRV(M, getSPIRVFuncName(OpSampledImage),
+                                      SampledImgTy, SampledImgArgs, nullptr,
+                                      {ArgStructTys[0], ArgStructTys[1]}, CI,
+                                      kSPIRVName::TempSampledImage);
 
   auto Mutator = mutateCallInst(
       CI, getSPIRVFuncName(OpImageSampleExplicitLod,
