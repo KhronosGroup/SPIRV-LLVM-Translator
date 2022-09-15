@@ -1836,7 +1836,7 @@ void OCLToSPIRVBase::visitSubgroupAVCBuiltinCallWithSampler(
     AdaptedTys.push_back(
         OCLTypeToSPIRVPtr->getAdaptedArgumentType(CI->getCalledFunction(), I)
             .second);
-  auto AdaptedIter = AdaptedTys.begin();
+  auto *AdaptedIter = AdaptedTys.begin();
 
   mutateCallInst(CI, OC)
       .mapArgs([&](Value *Arg, Type *PointerTy) {
