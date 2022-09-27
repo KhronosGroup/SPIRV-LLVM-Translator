@@ -2999,11 +2999,10 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
   SPIRVModule *M = E->getModule();
   for (const auto &I : Decorations) {
     // Such decoration already exists on a type, try to skip it
-    if (E->hasDecorate(I.first, /*Index=*/0, /*Result=*/nullptr)) {
+    if (E->hasDecorate(I.first, /*Index=*/0, /*Result=*/nullptr))
       // Allow multiple UserSemantic Decorations
       if (I.first != DecorationUserSemantic)
         continue;
-    }
 
     switch (I.first) {
     case DecorationUserSemantic:
@@ -3104,9 +3103,10 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
   for (const auto &I : Decorations) {
     // Such decoration already exists on a type, skip it
     if (E->hasMemberDecorate(I.first, /*Index=*/0, MemberNumber,
-                             /*Result=*/nullptr)) {
-      continue;
-    }
+                             /*Result=*/nullptr))
+      // Allow multiple UserSemantic Decorations
+      if (I.first != DecorationUserSemantic)
+        continue;
 
     switch (I.first) {
     case DecorationUserSemantic:
