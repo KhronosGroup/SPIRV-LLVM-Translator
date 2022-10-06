@@ -3526,24 +3526,34 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         AnnotationsMap.emplace(std::move(StringAnnotStr), GS);
       }
 
-      Value *BaseInst =
+      Value *AnnotInst =
           AL ? Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName()) : Inst;
 
       // Try to find alloca instruction for statically allocated variables.
       // Alloca might be hidden by a couple of casts.
       bool isStaticMemoryAttribute = AL ? true : false;
-      while (!isStaticMemoryAttribute && Inst &&
-             (isa<BitCastInst>(Inst) || isa<AddrSpaceCastInst>(Inst))) {
-        Inst = dyn_cast<Instruction>(Inst->getOperand(0));
-        isStaticMemoryAttribute = (Inst && isa<AllocaInst>(Inst));
+      const Instruction *BaseInst = Inst;
+      while (!isStaticMemoryAttribute && BaseInst &&
+             (isa<BitCastInst>(BaseInst) || isa<AddrSpaceCastInst>(BaseInst))) {
+        BaseInst = dyn_cast<Instruction>(BaseInst->getOperand(0));
+        isStaticMemoryAttribute = isa_and_nonnull<AllocaInst>(BaseInst);
       }
       auto AnnotationFn =
           isStaticMemoryAttribute
               ? llvm::Intrinsic::getDeclaration(M, Intrinsic::var_annotation)
               : llvm::Intrinsic::getDeclaration(M, Intrinsic::ptr_annotation,
-                                                BaseInst->getType());
+                                                AnnotInst->getType());
 
-      llvm::Value *Args[] = {BaseInst,
+      // var_annotation only supports address space zero pointers, so add a
+      // pointer cast if AnnnotInst has a non-zero address space.
+      if (isStaticMemoryAttribute) {
+        auto *const PtrType = cast<PointerType>(AnnotInst->getType());
+        if (PtrType->getAddressSpace() != 0)
+          AnnotInst = Builder.CreateAddrSpaceCast(
+              AnnotInst, PointerType::getWithSamePointeeType(PtrType, 0));
+      }
+
+      llvm::Value *Args[] = {AnnotInst,
                              Builder.CreateBitCast(GS, Int8PtrTyPrivate),
                              UndefInt8Ptr, UndefInt32, UndefInt8Ptr};
       Builder.CreateCall(AnnotationFn, Args);
