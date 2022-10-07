@@ -221,8 +221,7 @@ define weak_odr dso_local spir_kernel void @_ZTSZ11TestKernelAvE4MyIP(i32 addrsp
   ; CHECK-LLVM: %[[ALLOCA:.*]] = alloca %struct.MyIP, align 8
   ; CHECK-LLVM: %[[BITCAST:.*]] = bitcast ptr %[[ALLOCA]] to ptr
   ; CHECK-LLVM: %[[ADDRSPACECAST:.*]] = addrspacecast ptr %[[BITCAST]] to ptr addrspace(4)
-  ; CHECK-LLVM: %[[UNADDRSPACECAST:.*]] = addrspacecast ptr addrspace(4) %[[ADDRSPACECAST]] to ptr
-  ; CHECK-LLVM: call void @llvm.var.annotation(ptr %[[UNADDRSPACECAST]], ptr [[STR12]], ptr undef, i32 undef, ptr undef)
+  ; CHECK-LLVM: call ptr addrspace(4) @llvm.ptr.annotation.p4(ptr addrspace(4) %[[ADDRSPACECAST]], ptr [[STR12]], ptr undef, i32 undef, ptr undef)
   %6 = bitcast i8 addrspace(4)* %5 to i32 addrspace(4)* addrspace(4)*
   %7 = addrspacecast i32 addrspace(1)* %0 to i32 addrspace(4)*
   store i32 addrspace(4)* %7, i32 addrspace(4)* addrspace(4)* %6, align 8, !tbaa !17

@@ -3536,7 +3536,15 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       while (!isStaticMemoryAttribute && BaseInst &&
              (isa<BitCastInst>(BaseInst) || isa<AddrSpaceCastInst>(BaseInst))) {
         BaseInst = dyn_cast<Instruction>(BaseInst->getOperand(0));
-        isStaticMemoryAttribute = isa_and_nonnull<AllocaInst>(BaseInst);
+        if (const auto*const BaseAlloca = dyn_cast_or_null<AllocaInst>(BaseInst)) {
+
+          // If the alloca has a struct type, the annotation is likely for the
+          // first member (even though there's no GEP) and so should still use
+          // ptr_annotation. var_annotation should be used otherwise.
+          if (!isa<StructType>(BaseAlloca->getAllocatedType()))
+            isStaticMemoryAttribute = true;
+          break;
+        }
       }
       auto AnnotationFn =
           isStaticMemoryAttribute
