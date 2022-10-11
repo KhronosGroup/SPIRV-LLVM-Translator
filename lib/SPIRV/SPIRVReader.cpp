@@ -3592,10 +3592,9 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       Constant *StrConstant =
           ConstantDataArray::getString(*Context, StringRef(AnnotStr));
 
-      auto *GS = new GlobalVariable(*GV->getParent(), StrConstant->getType(),
-                                    /*IsConstant*/ true,
-                                    GlobalValue::PrivateLinkage, StrConstant,
-                                    "");
+      auto *GS = new GlobalVariable(
+          *GV->getParent(), StrConstant->getType(),
+          /*IsConstant*/ true, GlobalValue::PrivateLinkage, StrConstant, "");
 
       GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
       GS->setSection("llvm.metadata");

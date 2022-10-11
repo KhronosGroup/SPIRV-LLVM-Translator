@@ -429,7 +429,7 @@ protected:
   typedef std::multimap<Decoration, const SPIRVDecorate *> DecorateMapType;
   typedef std::multimap<Decoration, const SPIRVDecorateId *> DecorateIdMapType;
   typedef std::multimap<std::pair<SPIRVWord, Decoration>,
-                   const SPIRVMemberDecorate *>
+                        const SPIRVMemberDecorate *>
       MemberDecorateMapType;
 
   bool canHaveMemberDecorates() const {

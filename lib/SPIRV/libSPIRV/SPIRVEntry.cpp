@@ -303,8 +303,8 @@ void SPIRVEntry::setLine(const std::shared_ptr<const SPIRVLine> &L) {
 
 void SPIRVEntry::addMemberDecorate(SPIRVMemberDecorate *Dec) {
   assert(canHaveMemberDecorates());
-  MemberDecorates.insert(std::make_pair(std::make_pair(
-          Dec->getMemberNumber(), Dec->getDecorateKind()), Dec));
+  MemberDecorates.insert(std::make_pair(
+      std::make_pair(Dec->getMemberNumber(), Dec->getDecorateKind()), Dec));
   Module->addDecorate(Dec);
   SPIRVDBG(spvdbgs() << "[addMemberDecorate] " << *Dec << '\n';)
 }
