@@ -909,7 +909,7 @@ void getParameterTypes(Function *F, SmallVectorImpl<TypedPointerType *> &ArgTys,
       Params = NodeArray(Params.begin(), Params.size() - 1);
     } else {
       LLVM_DEBUG(dbgs() << "[getParameterTypes] function " << MangledName
-                        << " was expected to have a varargs function type\n");
+                        << " was expected to have a varargs parameter\n");
       return;
     }
   }
