@@ -222,6 +222,11 @@ public:
   /// - OCL1.2: barrier
   virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
 
+  /// Transform split __spirv_ControlBarrier barrier to:
+  /// - OCL2.0: overload with a memory_scope argument
+  /// - OCL1.2: overload with no memory_scope argument
+  virtual void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) = 0;
+
   /// Transform __spirv_EnqueueKernel to __enqueue_kernel
   virtual void visitCallSPIRVEnqueueKernel(CallInst *CI, Op OC) = 0;
 
@@ -301,6 +306,10 @@ public:
   ///   __spirv_ControlBarrier(execScope, memScope, sema) =>
   ///       barrier(flag(sema))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
+
+  /// Transform split __spirv_ControlBarrier barrier to overloads without a
+  /// memory_scope argument.
+  void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
 
   /// Transform __spirv_OpAtomic functions. It firstly conduct generic
   /// mutations for all builtins and then mutate some of them seperately
@@ -390,6 +399,10 @@ public:
   ///    __spirv_ControlBarrier(execScope, memScope, sema) =>
   ///         sub_group_barrier(flag(sema), map(memScope))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
+
+  /// Transform split __spirv_ControlBarrier barrier to overloads with a
+  /// memory_scope argument.
+  void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
 
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>

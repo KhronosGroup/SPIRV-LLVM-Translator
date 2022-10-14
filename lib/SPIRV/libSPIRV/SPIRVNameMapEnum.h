@@ -567,6 +567,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");
+  add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
 
   add(CapabilityMax, "Max");
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
