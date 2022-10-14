@@ -585,6 +585,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityTensorFloat32ConversionINTEL,
       "TensorFloat32ConversionINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
+  add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
+
+  add(CapabilityMax, "Max");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

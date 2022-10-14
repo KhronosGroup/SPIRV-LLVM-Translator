@@ -984,6 +984,7 @@ enum Capability {
   CapabilityAtomicFloat64AddEXT = 6034,
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
+  CapabilitySplitBarrierINTEL = 6141,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1542,6 +1543,8 @@ enum Op {
   OpTypeStructContinuedINTEL = 6090,
   OpConstantCompositeContinuedINTEL = 6091,
   OpSpecConstantCompositeContinuedINTEL = 6092,
+  OpControlBarrierArriveINTEL = 6142,
+  OpControlBarrierWaitINTEL = 6143,
   OpMax = 0x7fffffff,
 };
 
@@ -2083,6 +2086,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
       *hasResult = true;
       *hasResultType = false;
       break;
+    case OpControlBarrierArriveINTEL: *hasResult = false; *hasResultType = false; break;
+    case OpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     }
 }
 #endif /* SPV_ENABLE_UTILITY_CODE */

@@ -1064,6 +1064,8 @@ inline bool isValid(spv::Op V) {
   case OpSubgroupAvcSicGetInterRawSadsINTEL:
   case OpFPGARegINTEL:
   case OpLoopControlINTEL:
+  case OpControlBarrierArriveINTEL:
+  case OpControlBarrierWaitINTEL:
     return true;
   default:
     return false;
