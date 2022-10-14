@@ -546,7 +546,9 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     return;
   }
   if (DemangledName == kOCLBuiltinName::Dot ||
-      DemangledName == kOCLBuiltinName::DotAccSat) {
+      DemangledName == kOCLBuiltinName::DotAccSat ||
+      DemangledName.startswith(kOCLBuiltinName::Dot4x8PackedPrefix) ||
+      DemangledName.startswith(kOCLBuiltinName::DotAccSat4x8PackedPrefix)) {
     if (CI.getOperand(0)->getType()->isVectorTy()) {
       auto *VT = (VectorType *)(CI.getOperand(0)->getType());
       if (!isa<llvm::IntegerType>(VT->getElementType())) {
@@ -1535,19 +1537,11 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI, StringRef MangledName,
   // translation for dot function calls,
   // to differentiate between integer dot products
 
-  SmallVector<Value *, 3> Args;
-  Args.push_back(CI->getOperand(0));
-  Args.push_back(CI->getOperand(1));
   bool IsFirstSigned, IsSecondSigned;
   bool IsDot = DemangledName == kOCLBuiltinName::Dot;
-  std::string FunName = (IsDot) ? "DotKHR" : "DotAccSatKHR";
-  if (CI->getNumArgOperands() > 2) {
-    Args.push_back(CI->getOperand(2));
-  }
-  if (CI->getNumArgOperands() > 3) {
-    Args.push_back(CI->getOperand(3));
-  }
-  if (CI->getOperand(0)->getType()->isVectorTy()) {
+  bool IsAccSat = DemangledName.contains(kOCLBuiltinName::DotAccSat);
+  bool IsPacked = CI->getOperand(0)->getType()->isIntegerTy();
+  if (!IsPacked) {
     if (IsDot) {
       // dot(char4, char4) _Z3dotDv4_cS_
       // dot(char4, uchar4) _Z3dotDv4_cDv4_h
@@ -1588,21 +1582,28 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI, StringRef MangledName,
     }
   } else {
     // for packed format
-    // dot(int, int, int) _Z3dotiii
-    // dot(int, uint, int) _Z3dotiji
-    // dot(uint, int, int) _Z3dotjii
-    // dot(uint, uint, int) _Z3dotjji
+    // dot_4x8packed_ss_int(uint, uint) _Z20dot_4x8packed_ss_intjj
+    // dot_4x8packed_su_int(uint, uint) _Z20dot_4x8packed_su_intjj
+    // dot_4x8packed_us_int(uint, uint) _Z20dot_4x8packed_us_intjj
+    // dot_4x8packed_uu_uint(uint, uint) _Z21dot_4x8packed_uu_uintjj
     // or
-    // dot_acc_sat(int, int, int, int) _Z11dot_acc_satiiii
-    // dot_acc_sat(int, uint, int, int) _Z11dot_acc_satijii
-    // dot_acc_sat(uint, int, int, int) _Z11dot_acc_satjiii
-    // dot_acc_sat(uint, uint, int, int) _Z11dot_acc_satjjii
-    assert(MangledName.startswith("_Z3dot") ||
-           MangledName.startswith("_Z11dot_acc_sat"));
-    IsFirstSigned = (IsDot) ? (MangledName[MangledName.size() - 3] == 'i')
-                            : (MangledName[MangledName.size() - 4] == 'i');
-    IsSecondSigned = (IsDot) ? (MangledName[MangledName.size() - 2] == 'i')
-                             : (MangledName[MangledName.size() - 3] == 'i');
+    // dot_acc_sat_4x8packed_ss_int(uint, uint, int)
+    // _Z28dot_acc_sat_4x8packed_ss_intjji
+    // dot_acc_sat_4x8packed_su_int(uint, uint, int)
+    // _Z28dot_acc_sat_4x8packed_su_intjji
+    // dot_acc_sat_4x8packed_us_int(uint, uint, int)
+    // _Z28dot_acc_sat_4x8packed_us_intjji
+    // dot_acc_sat_4x8packed_uu_uint(uint, uint, uint)
+    // _Z29dot_acc_sat_4x8packed_uu_uintjjj
+    assert(MangledName.startswith("_Z20dot_4x8packed") ||
+           MangledName.startswith("_Z21dot_4x8packed") ||
+           MangledName.startswith("_Z28dot_acc_sat_4x8packed") ||
+           MangledName.startswith("_Z29dot_acc_sat_4x8packed"));
+    size_t SignIndex = IsAccSat
+                           ? strlen(kOCLBuiltinName::DotAccSat4x8PackedPrefix)
+                           : strlen(kOCLBuiltinName::Dot4x8PackedPrefix);
+    IsFirstSigned = DemangledName[SignIndex] == 's';
+    IsSecondSigned = DemangledName[SignIndex + 1] == 's';
   }
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   mutateCallInstSPIRV(
@@ -1615,7 +1616,7 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI, StringRef MangledName,
           std::swap(Args[0], Args[1]);
         }
         Op OC;
-        if (IsDot) {
+        if (!IsAccSat) {
           OC = (IsFirstSigned != IsSecondSigned
                     ? OpSUDotKHR
                     : ((IsFirstSigned) ? OpSDotKHR : OpUDotKHR));
@@ -1623,6 +1624,14 @@ void OCLToSPIRVBase::visitCallDot(CallInst *CI, StringRef MangledName,
           OC = (IsFirstSigned != IsSecondSigned
                     ? OpSUDotAccSatKHR
                     : ((IsFirstSigned) ? OpSDotAccSatKHR : OpUDotAccSatKHR));
+        }
+        if (IsPacked) {
+          // As per SPIRV specification the dot OpCodes
+          // which use scalar integers to represent
+          // packed vectors need additional argument
+          // specified - the Packed Vector Format
+          Args.push_back(
+              getInt32(M, PackedVectorFormatPackedVectorFormat4x8BitKHR));
         }
         return getSPIRVFuncName(OC);
       },
