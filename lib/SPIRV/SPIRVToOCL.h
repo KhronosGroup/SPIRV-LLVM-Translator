@@ -152,6 +152,11 @@ public:
   /// - OCL1.2: barrier
   virtual void visitCallSPIRVControlBarrier(CallInst *CI) = 0;
 
+  /// Transform split __spirv_ControlBarrier barrier to:
+  /// - OCL2.0: overload with a memory_scope argument
+  /// - OCL1.2: overload with no memory_scope argument
+  virtual void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) = 0;
+
   /// Conduct generic mutations for all atomic builtins
   virtual CallInst *mutateCommonAtomicArguments(CallInst *CI, Op OC) = 0;
 
