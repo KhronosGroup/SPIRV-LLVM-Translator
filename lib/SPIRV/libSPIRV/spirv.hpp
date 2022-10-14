@@ -1048,6 +1048,7 @@ enum Capability {
     CapabilityDotProductInput4x8BitKHR = 6017,
     CapabilityDotProductInput4x8BitPackedKHR = 6018,
     CapabilityDotProductKHR = 6019,
+    CapabilitySplitBarrierINTEL = 6141,
     CapabilityBitInstructions = 6025,
     CapabilityGroupNonUniformRotateKHR = 6026,
     CapabilityAtomicFloat32AddEXT = 6033,
@@ -1790,6 +1791,8 @@ enum Op {
     OpRayQueryGetIntersectionFrontFaceKHR = 6025,
     OpRayQueryGetIntersectionCandidateAABBOpaqueKHR = 6026,
     OpRayQueryGetIntersectionObjectRayDirectionKHR = 6027,
+    OpControlBarrierArriveINTEL = 6142,
+    OpControlBarrierWaitINTEL = 6143,
     OpRayQueryGetIntersectionObjectRayOriginKHR = 6028,
     OpRayQueryGetWorldRayDirectionKHR = 6029,
     OpRayQueryGetWorldRayOriginKHR = 6030,
@@ -2432,6 +2435,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpRayQueryGetRayTMinKHR: *hasResult = true; *hasResultType = true; break;
     case OpRayQueryGetRayFlagsKHR: *hasResult = true; *hasResultType = true; break;
     case OpRayQueryGetIntersectionTKHR: *hasResult = true; *hasResultType = true; break;
+    case SpvOpControlBarrierArriveINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     case OpRayQueryGetIntersectionInstanceCustomIndexKHR: *hasResult = true; *hasResultType = true; break;
     case OpRayQueryGetIntersectionInstanceIdKHR: *hasResult = true; *hasResultType = true; break;
     case OpRayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR: *hasResult = true; *hasResultType = true; break;
