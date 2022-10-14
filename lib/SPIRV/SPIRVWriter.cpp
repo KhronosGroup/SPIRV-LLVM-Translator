@@ -3761,8 +3761,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // to the first member of the struct; if so, attempt to get a struct type
     // from an alloca instead.
     SPIRVType *StructTy = nullptr;
-    SPIRVValue *ResPtr;
-    SPIRVWord MemberNumber;
+    [[maybe_unused]] SPIRVValue *ResPtr = nullptr;
+    [[maybe_unused]] SPIRVWord MemberNumber = 0;
     if (auto *const GI = dyn_cast<GetElementPtrInst>(AnnotSubj)) {
       if (auto *const STy = dyn_cast<StructType>(GI->getSourceElementType())) {
         StructTy = transType(STy);
