@@ -284,6 +284,9 @@ public:
                                               StringRef MangledName,
                                               const std::string &DemangledName);
 
+  /// For cl_intel_split_work_group_barrier built-ins:
+  void visitCallSplitBarrierINTEL(CallInst *CI, StringRef DemangledName);
+
   void visitCallLdexp(CallInst *CI, StringRef MangledName,
                       StringRef DemangledName);
 
@@ -568,6 +571,10 @@ void OCL20ToSPIRV::visitCallInst(CallInst &CI) {
   if (DemangledName.find(kOCLBuiltinName::SubgroupImageMediaBlockINTELPrefix) ==
       0) {
     visitSubgroupImageMediaBlockINTEL(&CI, DemangledName);
+    return;
+  }
+  if (DemangledName.find(kOCLBuiltinName::SplitBarrierINTELPrefix) == 0) {
+    visitCallSplitBarrierINTEL(&CI, DemangledName);
     return;
   }
   // Handle 'cl_intel_device_side_avc_motion_estimation' extension built-ins
@@ -2027,6 +2034,37 @@ void OCL20ToSPIRV::visitSubgroupAVCBuiltinCallWithSampler(
                                      kSPIRVName::TempSampledImage);
         }
         return getSPIRVFuncName(OC);
+      },
+      &Attrs);
+}
+
+void OCL20ToSPIRV::visitCallSplitBarrierINTEL(CallInst *CI,
+                                                StringRef DemangledName) {
+  auto Lit = getBarrierLiterals(CI);
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  Op OpCode =
+      StringSwitch<Op>(DemangledName)
+          .Case("intel_work_group_barrier_arrive", OpControlBarrierArriveINTEL)
+          .Case("intel_work_group_barrier_wait", OpControlBarrierWaitINTEL)
+          .Default(OpNop);
+
+  mutateCallInstSPIRV(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        Args.resize(3);
+        // Execution scope
+        Args[0] = addInt32(map<Scope>(std::get<2>(Lit)));
+        // Memory scope
+        Args[1] = addInt32(map<Scope>(std::get<1>(Lit)));
+        // Memory semantics
+        // OpControlBarrierArriveINTEL -> Release,
+        // OpControlBarrierWaitINTEL -> Acquire
+        unsigned MemFenceFlag = std::get<0>(Lit);
+        OCLMemOrderKind MemOrder = OpCode == OpControlBarrierArriveINTEL
+                                       ? OCLMO_release
+                                       : OCLMO_acquire;
+        Args[2] = addInt32(mapOCLMemSemanticToSPIRV(MemFenceFlag, MemOrder));
+        return getSPIRVFuncName(OpCode);
       },
       &Attrs);
 }

@@ -241,6 +241,7 @@ const static char SubgroupBlockWriteINTELPrefix[] =
     "intel_sub_group_block_write";
 const static char SubgroupImageMediaBlockINTELPrefix[] =
     "intel_sub_group_media_block";
+const static char SplitBarrierINTELPrefix[] = "intel_work_group_barrier_";
 const static char LDEXP[] = "ldexp";
 #define _SPIRV_OP(x)                                                           \
   const static char ConvertBFloat16##x##AsUShort##x[] =                        \
@@ -918,6 +919,9 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   // cl_khr_subgroup_shuffle_relative
   _SPIRV_OP(group_shuffle_up, GroupNonUniformShuffleUp)
   _SPIRV_OP(group_shuffle_down, GroupNonUniformShuffleDown)
+  // cl_khr_split_work_group_barrier
+  _SPIRV_OP(intel_work_group_barrier_arrive, ControlBarrierArriveINTEL)
+  _SPIRV_OP(intel_work_group_barrier_wait, ControlBarrierWaitINTEL)
 #undef _SPIRV_OP
 }
 
