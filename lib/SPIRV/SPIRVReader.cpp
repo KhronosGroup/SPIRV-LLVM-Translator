@@ -2133,7 +2133,8 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
     auto OC = BI->getOpCode();
-    if (isGroupOpCode(OC) || isIntelSubgroupOpCode(OC))
+    if (isGroupOpCode(OC) || isIntelSubgroupOpCode(OC) ||
+        isSplitBarrierINTELOpCode(OC) || OC == OpControlBarrier)
       Func->addFnAttr(Attribute::Convergent);
   }
   auto Call =
