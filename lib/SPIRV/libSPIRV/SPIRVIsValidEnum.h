@@ -1042,6 +1042,8 @@ inline bool isValid(spv::Op V) {
   case OpSubgroupAvcSicGetInterRawSadsINTEL:
   case OpConvertBF16ToFINTEL:
   case OpConvertFToBF16INTEL:
+  case OpControlBarrierArriveINTEL:
+  case OpControlBarrierWaitINTEL:
     return true;
   default:
     return false;

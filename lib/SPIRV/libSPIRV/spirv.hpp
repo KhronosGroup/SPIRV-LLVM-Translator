@@ -904,6 +904,7 @@ enum Capability {
   CapabilityHWThreadQueryINTEL = 6134,
   CapabilityTensorFloat32ConversionINTEL = 6425,
   CapabilityMaskedGatherScatterINTEL = 6427,
+  CapabilitySplitBarrierINTEL = 6141,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1426,6 +1427,8 @@ enum Op {
   OpConvertFToTF32INTEL = 6426,
   OpMaskedGatherINTEL = 6428,
   OpMaskedScatterINTEL = 6429,
+  OpControlBarrierArriveINTEL = 6142,
+  OpControlBarrierWaitINTEL = 6143,
   OpMax = 0x7fffffff,
 };
 
@@ -1963,6 +1966,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
       *hasResult = true;
       *hasResultType = false;
       break;
+    case OpControlBarrierArriveINTEL: *hasResult = false; *hasResultType = false; break;
+    case OpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     }
 }
 #endif /* SPV_ENABLE_UTILITY_CODE */
