@@ -472,7 +472,9 @@ public:
     } else if (UnmangledName.find("barrier") != std::string::npos) {
       addUnsignedArg(0);
       if (UnmangledName == "work_group_barrier" ||
-          UnmangledName == "sub_group_barrier")
+          UnmangledName == "sub_group_barrier" ||
+          UnmangledName == "intel_work_group_barrier_arrive" ||
+          UnmangledName == "intel_work_group_barrier_wait")
         setEnumArg(1, SPIR::PRIMITIVE_MEMORY_SCOPE);
     } else if (UnmangledName.find("atomic_work_item_fence") == 0) {
       addUnsignedArg(0);
