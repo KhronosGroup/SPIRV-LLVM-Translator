@@ -4398,7 +4398,7 @@ static auto stablePreDominatorTraversal(Function &F, const DominatorTree &DT) {
     const DominatorTree *DT;
 
     // The set of basic blocks already visited in this traversal.
-    DenseSet<const BasicBlock *> VisitedBBs;
+    SmallPtrSet<const BasicBlock *, 4> VisitedBBs;
 
     // The next basic block in original function order, or nullptr if the
     // traversal is over.
@@ -4421,7 +4421,7 @@ static auto stablePreDominatorTraversal(Function &F, const DominatorTree &DT) {
       BasicBlock *const Dominator = DomNode->getBlock();
 
       // If the dominator's been visited, BB can now be visited.
-      if (VisitedBBs.count(Dominator))
+      if (VisitedBBs.contains(Dominator))
         return BB;
 
       // Otherwise, find the dominator's visitable dominator instead.
@@ -4437,7 +4437,7 @@ static auto stablePreDominatorTraversal(Function &F, const DominatorTree &DT) {
         return nullptr;
 
       // Check if NextBB has already been visited; if so, advance past it.
-      if (VisitedBBs.count(NextBB)) {
+      if (VisitedBBs.contains(NextBB)) {
         NextBB = NextBB->getNextNode();
         return next();
       }

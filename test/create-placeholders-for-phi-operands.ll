@@ -30,7 +30,7 @@ BB.0:
   %or.cond = select i1 %cmp41, i1 true, i1 %cmp42.not104
   br i1 %or.cond, label %BB.2, label %BB.3
 
-BB.1:                                             ; preds = %BB.12, %BB.7
+BB.1:                                             ; preds = %BB.12.loopexit, %BB.11.loopexit
   %savedstack.sink = phi i8* [ %savedstack, %BB.12.loopexit ], [ %savedstack.us, %BB.11.loopexit ]
   call void @llvm.stackrestore(i8* %savedstack.sink), !llvm.access.group !9
   br label %BB.2
