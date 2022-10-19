@@ -3349,6 +3349,25 @@ protected:
 _SPIRV_OP(ConvertFToBF16INTEL)
 _SPIRV_OP(ConvertBF16ToFINTEL)
 #undef _SPIRV_OP
+
+class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySplitBarrierINTEL);
+  }
+
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_split_barrier;
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSplitBarrierINTELBase, Op##x, __VA_ARGS__>    \
+      SPIRV##x;
+_SPIRV_OP(ControlBarrierArriveINTEL, false, 4)
+_SPIRV_OP(ControlBarrierWaitINTEL, false, 4)
+#undef _SPIRV_OP
+
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

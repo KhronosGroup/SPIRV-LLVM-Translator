@@ -60,6 +60,10 @@ public:
   ///       barrier(flag(sema))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
 
+  /// Transform split __spirv_ControlBarrier barrier to overloads with a
+  /// memory_scope argument.
+  void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
+
   /// Transform __spirv_OpAtomic functions. It firstly conduct generic
   /// mutations for all builtins and then mutate some of them seperately
   Instruction *visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) override;
@@ -164,6 +168,19 @@ void SPIRVToOCL12::visitCallSPIRVControlBarrier(CallInst *CI) {
             transSPIRVMemorySemanticsIntoOCLMemFenceFlags(Args[2], CI);
         Args.assign(1, MemFenceFlags);
         return kOCLBuiltinName::Barrier;
+      },
+      &Attrs);
+}
+
+void SPIRVToOCL12::visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        Value *MemFenceFlags =
+            SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(Args[2], CI);
+        Args.assign(1, MemFenceFlags);
+        return OCLSPIRVBuiltinMap::rmap(OC);
       },
       &Attrs);
 }
