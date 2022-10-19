@@ -11,16 +11,16 @@
 
 kernel
 void sample() {
-  #pragma clang loop unroll(enable)
+  #pragma clang loop unroll(full)
   for(;;);
 }
 
 // Check that all Line items are retained
 // CHECK-SPIRV: Line [[File:[0-9]+]] 15 0
 // Loop control
-// CHECK-SPIRV: 2 LoopControlINTEL 1
+// CHECK-SPIRV: LoopControlINTEL 257 1
 // CHECK-SPIRV-NEXT: Branch
 
 // CHECK-LLVM: br label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
 // CHECK-LLVM: ![[MD]] = distinct !{![[MD]], ![[MD_unroll:[0-9]+]]}
-// CHECK-LLVM: ![[MD_unroll]] = !{!"llvm.loop.unroll.enable"}
+// CHECK-LLVM: ![[MD_unroll]] = !{!"llvm.loop.unroll.full"}

@@ -40,8 +40,8 @@
 ; void foo();
 ;
 ; void unroll_full() {
-;   #pragma nounroll // but 'disable' is replaced with 'full'
-;   for (int i = 0; i != 4; ++i) {
+;   #pragma clang unroll(full)
+;   for (int i = 0; i != 1024; ++i) {
 ;     foo();
 ;   }
 ; }
@@ -270,7 +270,7 @@ define spir_func void @unroll_full() {
   %3 = phi i32 [ 0, %0 ], [ %4, %2 ]
   tail call void @_Z3foov()
   %4 = add nuw nsw i32 %3, 1
-  %5 = icmp eq i32 %4, 4
+  %5 = icmp eq i32 %4, 1024
   ; CHECK-LLVM: br i1 %[[#]], label %[[#]], label %[[#]], !llvm.loop ![[#FULL:]]
   br i1 %5, label %1, label %2, !llvm.loop !11
 }
