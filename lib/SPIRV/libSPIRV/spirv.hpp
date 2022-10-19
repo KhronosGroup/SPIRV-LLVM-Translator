@@ -1059,6 +1059,7 @@ enum Capability {
     CapabilityAtomicFloat64AddEXT = 6034,
     CapabilityLongConstantCompositeINTEL = 6089,
     CapabilityFastCompositeINTEL = 6093,
+    CapabilitySplitBarrierINTEL = 6141,
     CapabilityMax = 0x7fffffff,
 };
 
@@ -1767,6 +1768,8 @@ enum Op {
     OpTypeStructContinuedINTEL = 6090,
     OpConstantCompositeContinuedINTEL = 6091,
     OpSpecConstantCompositeContinuedINTEL = 6092,
+    OpControlBarrierArriveINTEL = 6142,
+    OpControlBarrierWaitINTEL = 6143,
     OpMax = 0x7fffffff,
 };
 
@@ -2401,6 +2404,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpRayQueryGetIntersectionWorldToObjectKHR: *hasResult = true; *hasResultType = true; break;
     case OpAtomicFAddEXT: *hasResult = true; *hasResultType = true; break;
     case OpTypeBufferSurfaceINTEL: *hasResult = true; *hasResultType = false; break;
+    case SpvOpControlBarrierArriveINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     }
 }
 #endif /* SPV_ENABLE_UTILITY_CODE */

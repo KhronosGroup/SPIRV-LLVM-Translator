@@ -64,6 +64,10 @@ public:
   ///         sub_group_barrier(flag(sema), map(memScope))
   void visitCallSPIRVControlBarrier(CallInst *CI) override;
 
+  /// Transform split __spirv_ControlBarrier barrier to overloads without a
+  /// memory_scope argument.
+  void visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) override;
+
   /// Transform __spirv_Atomic* to atomic_*.
   ///   __spirv_Atomic*(atomic_op, scope, sema, ops, ...) =>
   ///      atomic_*(generic atomic_op, ops, ..., order(sema), map(scope))
@@ -163,6 +167,28 @@ void SPIRVToOCL20::visitCallSPIRVControlBarrier(CallInst *CI) {
 
         return (ExecScope == ScopeWorkgroup) ? kOCLBuiltinName::WorkGroupBarrier
                                              : kOCLBuiltinName::SubGroupBarrier;
+      },
+      &Attrs);
+}
+
+void SPIRVToOCL20::visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        auto GetArg = [=](unsigned I) {
+          return cast<ConstantInt>(Args[I])->getZExtValue();
+        };
+        Value *MemScope =
+            getInt32(M, rmap<OCLScopeKind>(static_cast<Scope>(GetArg(1))));
+        Value *MemFenceFlags =
+            SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(Args[2], CI);
+
+        Args.resize(2);
+        Args[0] = MemFenceFlags;
+        Args[1] = MemScope;
+
+        return OCLSPIRVBuiltinMap::rmap(OC);
       },
       &Attrs);
 }
