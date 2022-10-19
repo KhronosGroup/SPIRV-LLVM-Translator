@@ -11,7 +11,7 @@
 
 kernel
 void sample() {
-  #pragma clang loop unroll(full)
+  #pragma clang loop unroll(enable)
   for(;;);
 }
 
