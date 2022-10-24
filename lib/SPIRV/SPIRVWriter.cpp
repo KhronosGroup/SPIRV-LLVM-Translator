@@ -2004,9 +2004,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         IndexGroupArrayMap[ContainedIndexGroup].insert(AccessedArrayId);
       }
     }
-
-    SPIRVType *TranslatedTy = transPointerType(
-        GEP->getResultElementType(), GEP->getType()->getPointerAddressSpace());
+    SPIRVType *TranslatedTy =
+        GEP->getType()->isVectorTy()
+            ? transType(GEP->getType())
+            : transPointerType(GEP->getResultElementType(),
+                               GEP->getType()->getPointerAddressSpace());
     return mapValue(V,
                     BM->addPtrAccessChainInst(TranslatedTy, TransPointerOperand,
                                               Indices, BB, GEP->isInBounds()));
