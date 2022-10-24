@@ -1559,8 +1559,15 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
       // appear first.
       if (S == "llvm.loop.unroll.disable")
         LoopControl |= spv::LoopControlDontUnrollMask;
-      else if (S == "llvm.loop.unroll.full" || S == "llvm.loop.unroll.enable")
+      else if (S == "llvm.loop.unroll.enable")
         LoopControl |= spv::LoopControlUnrollMask;
+      // Attempt to do full unroll of the loop and disable unrolling if the trip
+      // count is not known at compile time by setting PartialCount to 1
+      else if (S == "llvm.loop.unroll.full") {
+        LoopControl |= spv::LoopControlUnrollMask;
+        Parameters.push_back(1);
+        LoopControl |= spv::LoopControlPartialCountMask;
+      }
       if (S == "llvm.loop.ivdep.enable")
         LoopControl |= spv::LoopControlDependencyInfiniteMask;
       if (S == "llvm.loop.ivdep.safelen") {
