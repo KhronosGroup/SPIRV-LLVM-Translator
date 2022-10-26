@@ -2106,11 +2106,23 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         IndexGroupArrayMap[ContainedIndexGroup].insert(AccessedArrayId);
       }
     }
-    SPIRVType *TranslatedTy =
-        GEP->getType()->isVectorTy()
-            ? transType(GEP->getType())
-            : transPointerType(GEP->getResultElementType(),
-                               GEP->getType()->getPointerAddressSpace());
+    // GEP can return a vector of pointers, in this case GEP will calculate
+    // addresses for each pointer in the vector
+    SPIRVType *TranslatedTy = nullptr;
+    if (auto *VecPtrTy = dyn_cast<VectorType>(GEP->getType())) {
+      if (!VecPtrTy->getElementType()->isOpaquePointerTy())
+        TranslatedTy = transType(GEP->getType());
+      else
+        // Re-create vector type from GEP's result element type in opaque
+        // pointers mode
+        TranslatedTy = transType(VectorType::get(
+              TypedPointerType::get(GEP->getResultElementType(),
+                                    VecPtrTy->getPointerAddressSpace()),
+              VecPtrTy->getElementCount()));
+    } else {
+      TranslatedTy = transPointerType(GEP->getResultElementType(),
+                                      GEP->getType()->getPointerAddressSpace());
+    }
     return mapValue(V,
                     BM->addPtrAccessChainInst(TranslatedTy, TransPointerOperand,
                                               Indices, BB, GEP->isInBounds()));
