@@ -2110,15 +2110,20 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // addresses for each pointer in the vector
     SPIRVType *TranslatedTy = nullptr;
     if (auto *VecPtrTy = dyn_cast<VectorType>(GEP->getType())) {
-      if (!VecPtrTy->getElementType()->isOpaquePointerTy())
+      if (!VecPtrTy->getElementType()->isOpaquePointerTy()) {
         TranslatedTy = transType(GEP->getType());
-      else
+      } else {
         // Re-create vector type from GEP's result element type in opaque
         // pointers mode
-        TranslatedTy = transType(VectorType::get(
-              TypedPointerType::get(GEP->getResultElementType(),
-                                    VecPtrTy->getPointerAddressSpace()),
-              VecPtrTy->getElementCount()));
+        llvm::VectorType *GEPReturn = VectorType::get(TypedPointerType::get(
+              GEP->getResultElementType(), VecPtrTy->getPointerAddressSpace()),
+            VecPtrTy->getElementCount());
+        TranslatedTy = transType(GEPReturn);
+        // Align Base with the return type
+        if (!GEP->getResultElementType()->isVoidTy())
+          TransPointerOperand = BM->addUnaryInst(OpBitcast, TranslatedTy,
+                                                 TransPointerOperand, BB);
+      }
     } else {
       TranslatedTy = transPointerType(GEP->getResultElementType(),
                                       GEP->getType()->getPointerAddressSpace());
