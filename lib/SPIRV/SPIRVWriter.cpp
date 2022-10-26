@@ -2115,8 +2115,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       } else {
         // Re-create vector type from GEP's result element type in opaque
         // pointers mode
-        llvm::VectorType *GEPReturn = VectorType::get(TypedPointerType::get(
-              GEP->getResultElementType(), VecPtrTy->getPointerAddressSpace()),
+        llvm::VectorType *GEPReturn = VectorType::get(
+            TypedPointerType::get(GEP->getResultElementType(),
+                                  VecPtrTy->getPointerAddressSpace()),
             VecPtrTy->getElementCount());
         TranslatedTy = transType(GEPReturn);
         // Align Base with the return type
