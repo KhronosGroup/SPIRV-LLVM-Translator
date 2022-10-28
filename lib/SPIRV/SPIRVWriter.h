@@ -52,6 +52,7 @@
 #include "SPIRVInstruction.h"
 #include "SPIRVModule.h"
 #include "SPIRVType.h"
+#include "SPIRVTypeScavenger.h"
 #include "SPIRVValue.h"
 
 #include "llvm/ADT/SmallSet.h"
@@ -82,6 +83,7 @@ public:
 
   SPIRVType *transType(Type *T);
   SPIRVType *transPointerType(Type *PointeeTy, unsigned AddrSpace);
+  SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace);
   SPIRVType *transSPIRVOpaqueType(StringRef STName, unsigned AddrSpace);
   SPIRVType *
   transSPIRVJointMatrixINTELType(SmallVector<std::string, 8> Postfixes);
@@ -128,6 +130,9 @@ public:
   bool transExecutionMode();
   void transFPContract();
   SPIRVValue *transConstant(Value *V);
+  /// Translate a reference to a constant in a constant expression. This may
+  /// involve inserting extra bitcasts to correct type issues.
+  SPIRVValue *transConstantUse(Constant *V);
   SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
                          bool CreateForward = true,
                          FuncTransMode FuncTrans = FuncTransMode::Decl);
@@ -178,6 +183,7 @@ private:
   std::unique_ptr<CallGraph> CG;
   OCLTypeToSPIRVBase *OCLTypeToSPIRVPtr;
   std::vector<llvm::Instruction *> UnboundInst;
+  std::unique_ptr<SPIRVTypeScavenger> Scavenger;
 
   enum class FPContract { UNDEF, DISABLED, ENABLED };
   DenseMap<Function *, FPContract> FPContractMap;
@@ -229,8 +235,7 @@ private:
 
   SPIRVValue *transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB);
   SPIRVValue *oclTransSpvcCastSampler(CallInst *CI, SPIRVBasicBlock *BB);
-  SPIRV::SPIRVInstruction *transUnaryInst(UnaryInstruction *U,
-                                          SPIRVBasicBlock *BB);
+  SPIRVValue *transUnaryInst(UnaryInstruction *U, SPIRVBasicBlock *BB);
 
   void transFunction(Function *I);
   SPIRV::SPIRVLinkageTypeKind transLinkageType(const GlobalValue *GV);

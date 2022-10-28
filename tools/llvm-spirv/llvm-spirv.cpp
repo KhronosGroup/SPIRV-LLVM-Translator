@@ -153,6 +153,12 @@ static cl::opt<bool>
     SPIRVToolsDis("spirv-tools-dis", cl::init(false),
                   cl::desc("Emit textual assembly using SPIRV-Tools"));
 
+static cl::opt<bool>
+    EmitOpaquePointers("emit-opaque-pointers", cl::init(false),
+                       cl::desc("Emit opaque instead of typed LLVM pointers "
+                                "for the translation from SPIR-V."),
+                       cl::Hidden);
+
 using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -344,7 +350,7 @@ static bool isFileEmpty(const std::string &FileName) {
 
 static int convertSPIRVToLLVM(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
-  Context.setOpaquePointers(false);
+  Context.setOpaquePointers(EmitOpaquePointers);
 
   std::ifstream IFS(InputFile, std::ios::binary);
   Module *M;
@@ -575,7 +581,7 @@ bool parseSpecConstOpt(llvm::StringRef SpecConstStr,
       }
       APInt Value;
       bool Err = Params[2].getAsInteger(10, Value);
-      if (Err || Value.getNumWords() > 1 ||
+      if (Err || Value.getActiveWords() > 1 ||
           (Width < 64 && Value.getZExtValue() >> Width)) {
         errs() << "Error: Invalid value for '-" << SpecConst.ArgStr
                << "' option! In \"" << Option << "\": can't convert \""
