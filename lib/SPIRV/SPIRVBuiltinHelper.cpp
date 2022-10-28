@@ -266,7 +266,7 @@ Type *BuiltinCallHelper::adjustImageType(Type *T, StringRef OldImageKind,
 BuiltinCallMutator::ValueTypePair
 BuiltinCallHelper::getCallValue(CallInst *CI, unsigned ArgNo) {
   Function *CalledFunc = CI->getCalledFunction();
-  assert(CalledFunc && "Call must be to a builtin function");
+  assert(CalledFunc && "Unexpected indirect call");
   if (CalledFunc != CachedFunc) {
     CachedFunc = CalledFunc;
     [[maybe_unused]] bool DidDemangle =
