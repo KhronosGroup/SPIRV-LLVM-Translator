@@ -1,3 +1,7 @@
+; clang-8 does not generate 'OpCapability Float16', leading to failure in 'spirv-val' step
+; error: line 61: Cannot form constants of 8- or 16-bit types
+; XFAIL: *
+
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
