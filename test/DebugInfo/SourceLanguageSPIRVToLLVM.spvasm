@@ -7,6 +7,9 @@
 ; test case for C++ for OpenCL should be updated to check that CPP_for_OpenCL
 ; is mapped to DW_LANG_C_plus_plus_17, not DW_LANG_C_plus_plus_14.
 
+; TODO: llvm_release_80 branch does not have code for OpModuleProcessed
+; XFAIL: *
+
 ; REQUIRES: spirv-as
 
 ; RUN: sed -e 's/SOURCE_LANGUAGE/OpenCL_CPP/' %s | spirv-as --target-env spv1.3 - -o %t.spv
