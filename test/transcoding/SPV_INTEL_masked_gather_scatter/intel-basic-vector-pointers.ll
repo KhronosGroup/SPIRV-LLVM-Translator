@@ -15,30 +15,30 @@
 ; CHECK-SPIRV-DAG: Capability MaskedGatherScatterINTEL
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_masked_gather_scatter"
 
-; CHECK-SPIRV-DAG: TypeInt [[#INTTYPE1:]] 32 0
-; CHECK-SPIRV-DAG: TypeInt [[#INTTYPE2:]] 8 0
-; CHECK-SPIRV-DAG: TypePointer [[#PTRTYPE1:]] 5 [[#INTTYPE1]]
-; CHECK-SPIRV-DAG: TypeVector [[#VECTYPE1:]] [[#PTRTYPE1]] 4
-; CHECK-SPIRV-DAG: TypePointer [[#PTRTYPE2:]] 8 [[#INTTYPE2]]
-; CHECK-SPIRV-DAG: TypeVector [[#VECTYPE2:]] [[#PTRTYPE2]] 4
-; CHECK-SPIRV-DAG: TypePointer [[#PTRTOVECTYPE:]] 7 [[#VECTYPE2]]
-; CHECK-SPIRV-DAG: TypePointer [[#PTRTYPE3:]] 8 [[#INTTYPE1]]
-; CHECK-SPIRV-DAG: TypeVector [[#VECTYPE3:]] [[#PTRTYPE3]] 4
+; CHECK-SPIRV-DAG: TypeInt [[INTTYPE1:[0-9]+]] 32 0
+; CHECK-SPIRV-DAG: TypeInt [[INTTYPE2:[0-9]+]] 8 0
+; CHECK-SPIRV-DAG: TypePointer [[PTRTYPE1:[0-9]+]] 5 [[INTTYPE1]]
+; CHECK-SPIRV-DAG: TypeVector [[VECTYPE1:[0-9]+]] [[PTRTYPE1]] 4
+; CHECK-SPIRV-DAG: TypePointer [[PTRTYPE2:[0-9]+]] 8 [[INTTYPE2]]
+; CHECK-SPIRV-DAG: TypeVector [[VECTYPE2:[0-9]+]] [[PTRTYPE2]] 4
+; CHECK-SPIRV-DAG: TypePointer [[PTRTOVECTYPE:[0-9]+]] 7 [[VECTYPE2]]
+; CHECK-SPIRV-DAG: TypePointer [[PTRTYPE3:[0-9]+]] 8 [[INTTYPE1]]
+; CHECK-SPIRV-DAG: TypeVector [[VECTYPE3:[0-9]+]] [[PTRTYPE3]] 4
 
-; CHECK-SPIRV: Variable [[#PTRTOVECTYPE]]
-; CHECK-SPIRV: Variable [[#PTRTOVECTYPE]]
-; CHECK-SPIRV: Load [[#VECTYPE2]]
+; CHECK-SPIRV: Variable [[PTRTOVECTYPE]]
+; CHECK-SPIRV: Variable [[PTRTOVECTYPE]]
+; CHECK-SPIRV: Load [[VECTYPE2]]
 ; CHECK-SPIRV: Store
-; CHECK-SPIRV: Bitcast [[#VECTYPE3]]
-; CHECK-SPIRV: GenericCastToPtr [[#VECTYPE1]]
-; CHECK-SPIRV: FunctionCall [[#VECTYPE1]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#VECTYPE1]]
+; CHECK-SPIRV: Bitcast [[VECTYPE3]]
+; CHECK-SPIRV: GenericCastToPtr [[VECTYPE1]]
+; CHECK-SPIRV: FunctionCall [[VECTYPE1]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[VECTYPE1]]
 
 ; CHECK-LLVM: alloca <4 x i8 addrspace(4)*>
 ; CHECK-LLVM-NEXT: alloca <4 x i8 addrspace(4)*>
 ; CHECK-LLVM-NEXT: load <4 x i8 addrspace(4)*>, <4 x i8 addrspace(4)*>*
-; CHECK-LLVM-NEXT: store <4 x i8 addrspace(4)*> %[[#]], <4 x i8 addrspace(4)*>*
-; CHECK-LLVM-NEXT: bitcast <4 x i8 addrspace(4)*> %[[#]] to <4 x i32 addrspace(4)*>
+; CHECK-LLVM-NEXT: store <4 x i8 addrspace(4)*> %{{.*}}, <4 x i8 addrspace(4)*>*
+; CHECK-LLVM-NEXT: bitcast <4 x i8 addrspace(4)*> %{{.*}} to <4 x i32 addrspace(4)*>
 ; CHECK-LLVM-NEXT: addrspacecast <4 x i32 addrspace(4)*> %{{.*}} to <4 x i32 addrspace(1)*>
 ; CHECK-LLVM-NEXT: call spir_func <4 x i32 addrspace(1)*> @boo(<4 x i32 addrspace(1)*>
 ; CHECK-LLVM-NEXT: getelementptr inbounds i32, <4 x i32 addrspace(1)*> %{{.*}}, i32 1

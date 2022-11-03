@@ -14,29 +14,29 @@
 ; CHECK-SPIRV-DAG: Capability MaskedGatherScatterINTEL
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_masked_gather_scatter"
 
-; CHECK-SPIRV-DAG: TypeInt [[#TYPEINT:]] 32 0
-; CHECK-SPIRV-DAG: TypePointer [[#TYPEPTRINT:]] [[#]] [[#TYPEINT]]
-; CHECK-SPIRV-DAG: TypeVector [[#TYPEVECPTR:]] [[#TYPEPTRINT]] 4
-; CHECK-SPIRV-DAG: TypeVector [[#TYPEVECINT:]] [[#TYPEINT]] 4
+; CHECK-SPIRV-DAG: TypeInt [[TYPEINT:[0-9]+]] 32 0
+; CHECK-SPIRV-DAG: TypePointer [[TYPEPTRINT:[0-9]+]] {{[0-9]+}} [[TYPEINT]]
+; CHECK-SPIRV-DAG: TypeVector [[TYPEVECPTR:[0-9]+]] [[TYPEPTRINT]] 4
+; CHECK-SPIRV-DAG: TypeVector [[TYPEVECINT:[0-9]+]] [[TYPEINT]] 4
 
-; CHECK-SPIRV-DAG: Constant [[#TYPEINT]] [[#CONST4:]] 4
-; CHECK-SPIRV-DAG: Constant [[#TYPEINT]] [[#CONST0:]] 0
-; CHECK-SPIRV-DAG: Constant [[#TYPEINT]] [[#CONST1:]] 1
-; CHECK-SPIRV-DAG: ConstantTrue [[#]] [[#TRUE:]]
-; CHECK-SPIRV-DAG: ConstantFalse [[#]] [[#FALSE:]]
-; CHECK-SPIRV-DAG: ConstantComposite [[#]] [[#MASK1:]] [[#TRUE]] [[#FALSE]] [[#TRUE]] [[#TRUE]]
-; CHECK-SPIRV-DAG: ConstantComposite [[#]] [[#FILL:]] [[#CONST4]] [[#CONST0]] [[#CONST1]] [[#CONST0]]
-; CHECK-SPIRV-DAG: ConstantComposite [[#]] [[#MASK2:]] [[#TRUE]] [[#TRUE]] [[#TRUE]] [[#TRUE]]
+; CHECK-SPIRV-DAG: Constant [[TYPEINT]] [[CONST4:[0-9]+]] 4
+; CHECK-SPIRV-DAG: Constant [[TYPEINT]] [[CONST0:[0-9]+]] 0
+; CHECK-SPIRV-DAG: Constant [[TYPEINT]] [[CONST1:[0-9]+]] 1
+; CHECK-SPIRV-DAG: ConstantTrue {{[0-9]+}} [[TRUE:[0-9]+]]
+; CHECK-SPIRV-DAG: ConstantFalse {{[0-9]+}} [[FALSE:[0-9]+]]
+; CHECK-SPIRV-DAG: ConstantComposite {{[0-9]+}} [[MASK1:[0-9]+]] [[TRUE]] [[FALSE]] [[TRUE]] [[TRUE]]
+; CHECK-SPIRV-DAG: ConstantComposite {{[0-9]+}} [[FILL:[0-9]+]] [[CONST4]] [[CONST0]] [[CONST1]] [[CONST0]]
+; CHECK-SPIRV-DAG: ConstantComposite {{[0-9]+}} [[MASK2:[0-9]+]] [[TRUE]] [[TRUE]] [[TRUE]] [[TRUE]]
 
-; CHECK-SPIRV: Load [[#TYPEVECPTR]] [[#VECGATHER:]]
-; CHECK-SPIRV: Load [[#TYPEVECPTR]] [[#VECSCATTER:]]
-; CHECK-SPIRV: MaskedGatherINTEL [[#TYPEVECINT]] [[#GATHER:]] [[#VECGATHER]] 4 [[#MASK1]] 23
-; CHECK-SPIRV: MaskedScatterINTEL [[#GATHER]] [[#VECSCATTER]] 4 [[#MASK2]]
+; CHECK-SPIRV: Load [[TYPEVECPTR]] [[VECGATHER:[0-9]+]]
+; CHECK-SPIRV: Load [[TYPEVECPTR]] [[VECSCATTER:[0-9]+]]
+; CHECK-SPIRV: MaskedGatherINTEL [[TYPEVECINT]] [[GATHER:[0-9]+]] [[VECGATHER]] 4 [[MASK1]] 23
+; CHECK-SPIRV: MaskedScatterINTEL [[GATHER]] [[VECSCATTER]] 4 [[MASK2]]
 
-; CHECK-LLVM: %[[#VECGATHER:]] = load <4 x i32 addrspace(4)*>, <4 x i32 addrspace(4)*>*
-; CHECK-LLVM: %[[#VECSCATTER:]] = load <4 x i32 addrspace(4)*>, <4 x i32 addrspace(4)*>*
-; CHECK-LLVM: %[[GATHER:[a-z0-9]+]] = call <4 x i32> @llvm.masked.gather.v4i32.v4p4i32(<4 x i32 addrspace(4)*> %[[#VECGATHER]], i32 4, <4 x i1> <i1 true, i1 false, i1 true, i1 true>, <4 x i32> <i32 4, i32 0, i32 1, i32 0>)
-; CHECK-LLVM: call void @llvm.masked.scatter.v4i32.v4p4i32(<4 x i32> %[[GATHER]], <4 x i32 addrspace(4)*> %[[#VECSCATTER]], i32 4, <4 x i1> <i1 true, i1 true, i1 true, i1 true>)
+; CHECK-LLVM: %[[VECGATHER:[a-z0-9]+]] = load <4 x i32 addrspace(4)*>, <4 x i32 addrspace(4)*>*
+; CHECK-LLVM: %[[VECSCATTER:[a-z0-9]+]] = load <4 x i32 addrspace(4)*>, <4 x i32 addrspace(4)*>*
+; CHECK-LLVM: %[[GATHER:[a-z0-9]+]] = call <4 x i32> @llvm.masked.gather.v4i32.v4p4i32(<4 x i32 addrspace(4)*> %[[VECGATHER]], i32 4, <4 x i1> <i1 true, i1 false, i1 true, i1 true>, <4 x i32> <i32 4, i32 0, i32 1, i32 0>)
+; CHECK-LLVM: call void @llvm.masked.scatter.v4i32.v4p4i32(<4 x i32> %[[GATHER]], <4 x i32 addrspace(4)*> %[[VECSCATTER]], i32 4, <4 x i1> <i1 true, i1 true, i1 true, i1 true>)
 
 ; CHECK-LLVM-DAG: declare <4 x i32> @llvm.masked.gather.v4i32.v4p4i32(<4 x i32 addrspace(4)*>, i32, <4 x i1>, <4 x i32>)
 ; CHECK-LLVM-DAG: declare void @llvm.masked.scatter.v4i32.v4p4i32(<4 x i32>, <4 x i32 addrspace(4)*>, i32, <4 x i1>)
