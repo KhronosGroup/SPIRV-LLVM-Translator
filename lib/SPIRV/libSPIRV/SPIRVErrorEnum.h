@@ -11,5 +11,5 @@ _SPIRV_OP(InvalidArraySize, "Array size must be at least 1:")
 _SPIRV_OP(InvalidModule, "Invalid SPIR-V module:")
 _SPIRV_OP(UnimplementedOpCode, "Unimplemented opcode")
 _SPIRV_OP(InvalidInstruction, "Can't translate llvm instruction:\n")
-_SPIRV_OP(RequiresExtension, 
+_SPIRV_OP(RequiresExtension,
           "Feature requires the following SPIR-V extension:\n")

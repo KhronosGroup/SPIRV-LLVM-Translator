@@ -2668,7 +2668,7 @@ class SPIRVMaskedScatterINTELInst
 
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVMaskedGatherScatterINTELInstBase,             \
-                            Op##x##INTEL, __VA_ARGS__>               \
+                            Op##x##INTEL, __VA_ARGS__>                         \
       SPIRV##x##INTEL;
 _SPIRV_OP(MaskedGather, true, 7)
 _SPIRV_OP(MaskedScatter, false, 5)

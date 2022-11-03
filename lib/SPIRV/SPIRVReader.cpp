@@ -1866,9 +1866,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     uint32_t Alignment = Inst->getOpWord(1);
     Value *Mask = transValue(Inst->getOperand(2), F, BB);
     Value *FillEmpty = transValue(Inst->getOperand(3), F, BB);
-    return mapValue(BV, Builder.CreateMaskedGather(PtrVector,
-                                                   Alignment, Mask,
-                                                   FillEmpty));
+    return mapValue(
+        BV, Builder.CreateMaskedGather(PtrVector, Alignment, Mask, FillEmpty));
   }
 
   case OpMaskedScatterINTEL: {

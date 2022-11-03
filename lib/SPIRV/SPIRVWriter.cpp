@@ -1435,9 +1435,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
           BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + "\nTranslation of llvm.masked.gather intrinsic requires "
-                         "SPV_INTEL_masked_gather_scatter extension or "
-                         "-spirv-allow-unknown-intrinsics option.");
+          toString(II) + 
+              "\nTranslation of llvm.masked.gather intrinsic requires "
+              "SPV_INTEL_masked_gather_scatter extension or "
+              "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
     }
     SPIRVType *Ty = transType(II->getType());
@@ -1455,9 +1456,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
           BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + "\nTranslation of llvm.masked.scatter intrinsic requires "
-                         "SPV_INTEL_masked_gather_scatter extension or "
-                         "-spirv-allow-unknown-intrinsics option.");
+          toString(II) + 
+              "\nTranslation of llvm.masked.scatter intrinsic requires "
+              "SPV_INTEL_masked_gather_scatter extension or "
+              "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
     }
     auto *InputVector = transValue(II->getArgOperand(0), BB);
@@ -1467,8 +1469,7 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     auto *Mask = transValue(II->getArgOperand(3), BB);
     std::vector<SPIRVWord> Ops = {InputVector->getId(), PtrVector->getId(),
                                   Alignment, Mask->getId()};
-    return BM->addInstTemplate(OpMaskedScatterINTEL, Ops, BB,
-                               nullptr);
+    return BM->addInstTemplate(OpMaskedScatterINTEL, Ops, BB, nullptr);
   }
 
   default:

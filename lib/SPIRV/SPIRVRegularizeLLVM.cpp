@@ -147,7 +147,7 @@ bool SPIRVRegularizeLLVM::regularize() {
               SrcTy->getScalarType()->getPointerElementType()) {
             Type *InterTy = PointerType::get(
                 DestTy->getScalarType()->getPointerElementType(),
-	        SrcTy->getPointerAddressSpace());
+                SrcTy->getPointerAddressSpace());
             if (DestTy->isVectorTy())
               InterTy = VectorType::get(
                   InterTy, cast<VectorType>(DestTy)->getNumElements());
