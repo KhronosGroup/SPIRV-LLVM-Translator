@@ -1308,14 +1308,13 @@ SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
   return M->getOrAddAliasScopeListDeclINTELInst(ListId, AliasingListMD);
 }
 
-
 // Translate alias.scope/noalias metadata attached to store and load
 // instructions.
 void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
                             std::vector<uint32_t> &MemoryAccess,
                             SPIRVWord MemAccessMask) {
   if (!BM->isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
   auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
   if (!MemAliasList)
@@ -1958,24 +1957,21 @@ bool LLVMToSPIRVBase::transAlign(Value *V, SPIRVValue *BV) {
 void LLVMToSPIRVBase::transMemAliasingINTELDecorations(Instruction *Inst,
                                                        SPIRVValue *BV) {
   if (!BM->isAllowedToUseExtension(
-         ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
-  if (MDNode *AliasingListMD =
-          Inst->getMetadata(LLVMContext::MD_alias_scope)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+  if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_alias_scope)) {
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
-    BV->addDecorate(new SPIRVDecorateId(
-          internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
+    BV->addDecorate(new SPIRVDecorateId(internal::DecorationAliasScopeINTEL, BV,
+                                        MemAliasList->getId()));
   }
   if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_noalias)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
-    BV->addDecorate(new SPIRVDecorateId(
-          internal::DecorationNoAliasINTEL, BV, MemAliasList->getId()));
+    BV->addDecorate(new SPIRVDecorateId(internal::DecorationNoAliasINTEL, BV,
+                                        MemAliasList->getId()));
   }
 }
 
@@ -2895,8 +2891,9 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + "\nTranslation of llvm.masked.gather intrinsic requires "
+          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall,
+          toString(II) +
+              "\nTranslation of llvm.masked.gather intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
@@ -2915,8 +2912,9 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + "\nTranslation of llvm.masked.scatter intrinsic requires "
+          BM->isUnknownIntrinsicAllowed(II), SPIRVEC_InvalidFunctionCall,
+          toString(II) +
+              "\nTranslation of llvm.masked.scatter intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
@@ -2942,8 +2940,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     else
       // Other LLVM intrinsics shouldn't get to SPIRV, because they
       // can't be represented in SPIRV or aren't implemented yet.
-      BM->SPIRVCK(
-          false, InvalidFunctionCall, II->getCalledOperand()->getName().str());
+      BM->SPIRVCK(false, InvalidFunctionCall,
+                  II->getCalledOperand()->getName().str());
   }
   return nullptr;
 }
