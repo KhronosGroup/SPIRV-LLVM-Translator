@@ -617,6 +617,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityNonConstantAddrspacePrintfINTEL,
       "NonConstantAddrspacePrintfINTEL");
   add(internal::CapabilityComplexFloatMulDivINTEL, "ComplexFloatMulDivINTEL");
+  add(internal::CapabilityTensorFloat32ConversionINTEL,
+      "TensorFloat32ConversionINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

@@ -13,3 +13,4 @@ _SPIRV_OP_INTERNAL(JointMatrixWorkItemLengthINTEL,
                    internal::OpJointMatrixWorkItemLengthINTEL)
 _SPIRV_OP_INTERNAL(ComplexFMulINTEL, internal::ComplexFMulINTEL)
 _SPIRV_OP_INTERNAL(ComplexFDivINTEL, internal::ComplexFDivINTEL)
+_SPIRV_OP_INTERNAL(ConvertFToTF32INTEL, internal::ConvertFToTF32INTEL)

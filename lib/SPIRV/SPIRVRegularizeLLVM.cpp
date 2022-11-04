@@ -376,7 +376,7 @@ void SPIRVRegularizeLLVMBase::adaptStructTypes(StructType *ST) {
     assert(PtrTy &&
            "Expected a pointer to an array to represent joint matrix type");
     std::vector<size_t> TypeLayout;
-    ArrayType *ArrayTy = dyn_cast<ArrayType>(PtrTy->getPointerElementType());
+    ArrayType *ArrayTy = dyn_cast<ArrayType>(PtrTy->getNonOpaquePointerElementType());
     assert(ArrayTy && "Expected a pointer element type of an array type to "
                       "represent joint matrix type");
     TypeLayout.push_back(ArrayTy->getNumElements());
