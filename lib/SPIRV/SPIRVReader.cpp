@@ -901,7 +901,7 @@ Value *SPIRVToLLVM::oclTransConstantPipeStorage(
 template <typename SPIRVInstType>
 void SPIRVToLLVM::transAliasingMemAccess(SPIRVInstType *BI, Instruction *I) {
   static_assert(std::is_same<SPIRVInstType, SPIRVStore>::value ||
-                std::is_same<SPIRVInstType, SPIRVLoad>::value,
+                    std::is_same<SPIRVInstType, SPIRVLoad>::value,
                 "Only stores and loads can be aliased by memory access mask");
   if (BI->SPIRVMemoryAccess::isNoAlias())
     addMemAliasMetadata(I, BI->SPIRVMemoryAccess::getNoAliasInstID(),
@@ -1800,9 +1800,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     uint32_t Alignment = Inst->getOpWord(1);
     Value *Mask = transValue(Inst->getOperand(2), F, BB);
     Value *FillEmpty = transValue(Inst->getOperand(3), F, BB);
-    return mapValue(BV, Builder.CreateMaskedGather(PtrVector,
-                                                   Alignment, Mask,
-                                                   FillEmpty));
+    return mapValue(
+        BV, Builder.CreateMaskedGather(PtrVector, Alignment, Mask, FillEmpty));
   }
 
   case internal::OpMaskedScatterINTEL: {
