@@ -1281,14 +1281,13 @@ SPIRVEntry *addMemAliasingINTELInstructions(SPIRVModule *M,
   return M->getOrAddAliasScopeListDeclINTELInst(ListId, AliasingListMD);
 }
 
-
 // Translate alias.scope/noalias metadata attached to store and load
 // instructions.
 void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
                             std::vector<uint32_t> &MemoryAccess,
                             SPIRVWord MemAccessMask) {
   if (!BM->isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
   auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
   if (!MemAliasList)
@@ -1901,26 +1900,23 @@ bool LLVMToSPIRV::transAlign(Value *V, SPIRVValue *BV) {
 // Apply aliasing decorations to instructions annotated with aliasing metadata.
 // Do it for any instruction but loads and stores.
 void LLVMToSPIRV::transMemAliasingINTELDecorations(Instruction *Inst,
-                                                       SPIRVValue *BV) {
+                                                   SPIRVValue *BV) {
   if (!BM->isAllowedToUseExtension(
-         ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
-  if (MDNode *AliasingListMD =
-          Inst->getMetadata(LLVMContext::MD_alias_scope)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+  if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_alias_scope)) {
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
-    BV->addDecorate(new SPIRVDecorateId(
-          internal::DecorationAliasScopeINTEL, BV, MemAliasList->getId()));
+    BV->addDecorate(new SPIRVDecorateId(internal::DecorationAliasScopeINTEL, BV,
+                                        MemAliasList->getId()));
   }
   if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_noalias)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
-    BV->addDecorate(new SPIRVDecorateId(
-          internal::DecorationNoAliasINTEL, BV, MemAliasList->getId()));
+    BV->addDecorate(new SPIRVDecorateId(internal::DecorationNoAliasINTEL, BV,
+                                        MemAliasList->getId()));
   }
 }
 
@@ -2944,8 +2940,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall,
-          toString(II) + "\nTranslation of llvm.masked.gather intrinsic requires "
+          BM->isSPIRVAllowUnknownIntrinsicsEnabled(),
+          SPIRVEC_InvalidFunctionCall,
+          toString(II) +
+              "\nTranslation of llvm.masked.gather intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
@@ -2964,8 +2962,10 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall,
-          toString(II) + "\nTranslation of llvm.masked.scatter intrinsic requires "
+          BM->isSPIRVAllowUnknownIntrinsicsEnabled(),
+          SPIRVEC_InvalidFunctionCall,
+          toString(II) +
+              "\nTranslation of llvm.masked.scatter intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
       return nullptr;
