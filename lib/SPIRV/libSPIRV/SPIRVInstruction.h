@@ -3604,10 +3604,10 @@ protected:
         ResCompTy->isTypeFloat(32), SPIRVEC_InvalidInstruction,
         InstName + "\nResult value must be a scalar or vector of floating-point"
                    " 32-bit type\n");
-    SPVErrLog.checkError(
-        InCompTy->isTypeFloat(32), SPIRVEC_InvalidInstruction,
-        InstName + "\nInput value must be a scalar or vector of "
-                   "floating-point 32-bit type\n");
+    SPVErrLog.checkError(InCompTy->isTypeFloat(32), SPIRVEC_InvalidInstruction,
+                         InstName +
+                             "\nInput value must be a scalar or vector of "
+                             "floating-point 32-bit type\n");
     SPVErrLog.checkError(
         ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
         InstName + "\nInput type must have the same number of components as "
