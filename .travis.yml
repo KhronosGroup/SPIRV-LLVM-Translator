@@ -3,8 +3,8 @@ language: cpp
 os:
   - linux
 
-# Use Ubuntu 18.04 LTS (Bionic) as the Linux testing environment.
-dist: bionic
+# Use Ubuntu 20.04 LTS (Focal) as the Linux testing environment.
+dist: focal
 
 git:
   depth: 1
@@ -24,9 +24,9 @@ before_install:
       curl -L "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
       curl -L "https://packages.lunarg.com/lunarg-signing-key-pub.asc" | sudo apt-key add -
       curl -L "https://apt.kitware.com/keys/kitware-archive-latest.asc" | sudo apt-key add -
-      echo "deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-14 main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
-      echo "deb https://packages.lunarg.com/vulkan bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
-      echo "deb https://apt.kitware.com/ubuntu/ bionic main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
+      echo "deb https://apt.llvm.org/focal/ llvm-toolchain-focal-14 main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
+      echo "deb https://packages.lunarg.com/vulkan focal main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
+      echo "deb https://apt.kitware.com/ubuntu/ focal main" | sudo tee -a ${TRAVIS_ROOT}/etc/apt/sources.list
       sudo apt-get update
       sudo apt-get -yq --no-install-suggests --no-install-recommends install \
         llvm-${LLVM_VERSION}-dev \
