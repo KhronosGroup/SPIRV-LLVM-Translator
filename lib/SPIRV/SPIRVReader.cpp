@@ -2634,8 +2634,6 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
     mapValue(BA, &(*I));
     setName(&(*I), BA);
     BA->foreachAttr([&](SPIRVFuncParamAttrKind Kind) {
-      if (Kind == FunctionParameterAttributeNoWrite)
-        return;
       Attribute::AttrKind LLVMKind = SPIRSPIRVFuncParamAttrMap::rmap(Kind);
       Type *AttrTy = nullptr;
       if (LLVMKind == Attribute::AttrKind::ByVal)
@@ -3896,7 +3894,9 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
     if (isFuncNoUnwind())
       F->addFnAttr(Attribute::NoUnwind);
     if (isFuncReadNone(UnmangledName))
-      F->addFnAttr(Attribute::ReadNone);
+      for (llvm::Argument &Arg : F->args())
+        if (Arg.getType()->isPointerTy())
+          Arg.addAttr(Attribute::ReadNone);
   }
   auto Args = transValue(BC->getArgValues(), F, BB);
   SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F

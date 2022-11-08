@@ -38,6 +38,6 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-LLVM: define spir_kernel void @test(<4 x i8> addrspace(1)* nocapture %src1, <4 x i8> addrspace(1)* nocapture %src2, <4 x i8> addrspace(1)* nocapture %dst) {{.*}} !kernel_arg_type_qual ![[QUALS:[0-9]+]]
+; CHECK-LLVM: define spir_kernel void @test(<4 x i8> addrspace(1)* nocapture readonly %src1, <4 x i8> addrspace(1)* nocapture readonly %src2, <4 x i8> addrspace(1)* nocapture %dst) {{.*}} !kernel_arg_type_qual ![[QUALS:[0-9]+]]
 
 ; CHECK-LLVM: ![[QUALS]] = !{!"const", !"const", !""}
