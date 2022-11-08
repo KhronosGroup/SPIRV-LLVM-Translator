@@ -13,4 +13,4 @@ EXT(SPV_INTEL_float_controls2)
 EXT(SPV_INTEL_vector_compute)
 EXT(SPV_INTEL_fast_composite)
 EXT(SPV_INTEL_optnone)
-
+EXT(SPV_INTEL_bfloat16_conversion)

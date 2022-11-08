@@ -2525,6 +2525,77 @@ _SPIRV_OP(SicGetIpeChromaMode, true, 4)
 
 SPIRVSpecConstantOp *createSpecConstantOpInst(SPIRVInstruction *Inst);
 SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *C);
+
+template <Op OC>
+class SPIRVBfloat16ConversionINTELInstBase : public SPIRVUnaryInst<OC> {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityBfloat16ConversionINTEL);
+  }
+
+  SPIRVExtSet getRequiredExtensions() const override {
+    return getSet(ExtensionID::SPV_INTEL_bfloat16_conversion);
+  }
+
+  void validate() const override {
+    SPIRVUnaryInst<OC>::validate();
+
+    SPIRVType *ResCompTy = this->getType();
+    SPIRVWord ResCompCount = 1;
+    if (ResCompTy->isTypeVector()) {
+      ResCompCount = ResCompTy->getVectorComponentCount();
+      ResCompTy = ResCompTy->getVectorComponentType();
+    }
+
+    // validate is a const method, whilst getOperand is non-const method
+    // because it may call a method of class Module that may modify LiteralMap
+    // of Module field. That modification is not impacting validate method for
+    // these instructions, so const_cast is safe here.
+    using SPVBf16ConvTy = SPIRVBfloat16ConversionINTELInstBase<OC>;
+    SPIRVValue *Input = const_cast<SPVBf16ConvTy *>(this)->getOperand(0);
+
+    SPIRVType *InCompTy = Input->getType();
+    SPIRVWord InCompCount = 1;
+    if (InCompTy->isTypeVector()) {
+      InCompCount = InCompTy->getVectorComponentCount();
+      InCompTy = InCompTy->getVectorComponentType();
+    }
+
+    auto InstName = OpCodeNameMap::map(OC);
+    SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
+
+    if (OC == OpConvertFToBF16INTEL) {
+      SPVErrLog.checkError(
+          ResCompTy->isTypeInt(16), SPIRVEC_InvalidInstruction,
+          InstName + "\nResult value must be a scalar or vector of integer "
+                     "16-bit type\n");
+      SPVErrLog.checkError(
+          InCompTy->isTypeFloat(32), SPIRVEC_InvalidInstruction,
+          InstName + "\nInput value must be a scalar or vector of "
+                     "floating-point 32-bit type\n");
+    } else {
+      SPVErrLog.checkError(
+          ResCompTy->isTypeFloat(32), SPIRVEC_InvalidInstruction,
+          InstName + "\nResult value must be a scalar or vector of "
+                     "floating-point 32-bit type\n");
+      SPVErrLog.checkError(
+          InCompTy->isTypeInt(16), SPIRVEC_InvalidInstruction,
+          InstName + "\nInput value must be a scalar or vector of integer "
+                     "16-bit type\n");
+    }
+
+    SPVErrLog.checkError(
+        ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
+        InstName + "\nInput type must have the same number of components as "
+                   "result type\n");
+  }
+};
+
+#define _SPIRV_OP(x)                                                           \
+  typedef SPIRVBfloat16ConversionINTELInstBase<Op##x> SPIRV##x;
+_SPIRV_OP(ConvertFToBF16INTEL)
+_SPIRV_OP(ConvertBF16ToFINTEL)
+#undef _SPIRV_OP
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

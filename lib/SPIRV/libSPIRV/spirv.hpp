@@ -897,6 +897,7 @@ enum Capability {
   CapabilityFunctionFloatControlINTEL = 5821,
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
+  CapabilityBfloat16ConversionINTEL = 6115,
   CapabilityMax = 0x7fffffff,
 };
 
@@ -1414,6 +1415,8 @@ enum Op {
   OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL = 5815,
   OpSubgroupAvcSicGetInterRawSadsINTEL = 5816,
   OpTypeBufferSurfaceINTEL = 6086,
+  OpConvertFToBF16INTEL = 6116,
+  OpConvertBF16ToFINTEL = 6117,
   OpMax = 0x7fffffff,
 };
 
@@ -1945,6 +1948,8 @@ inline void HasResultAndType(Op opcode, bool *hasResult, bool *hasResultType) {
     case OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL: *hasResult = true; *hasResultType = true; break;
     case OpSubgroupAvcSicGetInterRawSadsINTEL: *hasResult = true; *hasResultType = true; break;
+    case OpConvertFToBF16INTEL: *hasResult = true; *hasResultType = true; break;
+    case OpConvertBF16ToFINTEL: *hasResult = true; *hasResultType = true; break;
     case OpTypeBufferSurfaceINTEL:
       *hasResult = true;
       *hasResultType = false;
