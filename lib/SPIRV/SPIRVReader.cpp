@@ -1190,7 +1190,7 @@ static void replaceOperandWithAnnotationIntrinsicCallResult(Value *&V) {
 template <typename SPIRVInstType>
 void SPIRVToLLVM::transAliasingMemAccess(SPIRVInstType *BI, Instruction *I) {
   static_assert(std::is_same<SPIRVInstType, SPIRVStore>::value ||
-                std::is_same<SPIRVInstType, SPIRVLoad>::value,
+                    std::is_same<SPIRVInstType, SPIRVLoad>::value,
                 "Only stores and loads can be aliased by memory access mask");
   if (BI->SPIRVMemoryAccess::isNoAlias())
     addMemAliasMetadata(I, BI->SPIRVMemoryAccess::getNoAliasInstID(),
@@ -1982,10 +1982,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
       case 4: {
         for (int Idx = 0; Idx < 4; ++Idx) {
-          Value *V1 = Builder.CreateShuffleVector(
-              MCache[0], MCache[1], ArrayRef<int>{Idx, Idx + 4});
-          Value *V2 = Builder.CreateShuffleVector(
-              MCache[2], MCache[3], ArrayRef<int>{Idx, Idx + 4});
+          Value *V1 = Builder.CreateShuffleVector(MCache[0], MCache[1],
+                                                  ArrayRef<int>{Idx, Idx + 4});
+          Value *V2 = Builder.CreateShuffleVector(MCache[2], MCache[3],
+                                                  ArrayRef<int>{Idx, Idx + 4});
           Value *V3 =
               Builder.CreateShuffleVector(V1, V2, ArrayRef<int>{0, 1, 2, 3});
           V = Builder.CreateInsertValue(V, V3, Idx);
@@ -2415,6 +2415,28 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpArbitraryFloatPowNINTEL:
     return mapValue(
         BV, transArbFloatInst(static_cast<SPIRVInstruction *>(BV), BB, true));
+
+  case internal::OpMaskedGatherINTEL: {
+    IRBuilder<> Builder(BB);
+    auto *Inst = static_cast<SPIRVMaskedGatherINTELInst *>(BV);
+    Value *PtrVector = transValue(Inst->getOperand(0), F, BB);
+    uint32_t Alignment = Inst->getOpWord(1);
+    Value *Mask = transValue(Inst->getOperand(2), F, BB);
+    Value *FillEmpty = transValue(Inst->getOperand(3), F, BB);
+    return mapValue(BV, Builder.CreateMaskedGather(PtrVector, Align(Alignment),
+                                                   Mask, FillEmpty));
+  }
+
+  case internal::OpMaskedScatterINTEL: {
+    IRBuilder<> Builder(BB);
+    auto *Inst = static_cast<SPIRVMaskedScatterINTELInst *>(BV);
+    Value *InputVector = transValue(Inst->getOperand(0), F, BB);
+    Value *PtrVector = transValue(Inst->getOperand(1), F, BB);
+    uint32_t Alignment = Inst->getOpWord(2);
+    Value *Mask = transValue(Inst->getOperand(3), F, BB);
+    return mapValue(BV, Builder.CreateMaskedScatter(InputVector, PtrVector,
+                                                    Align(Alignment), Mask));
+  }
 
   default: {
     auto OC = BV->getOpCode();
@@ -2947,7 +2969,11 @@ std::string getSPIRVFuncSuffix(SPIRVInstruction *BI) {
   }
   if (BI->getOpCode() == OpGenericCastToPtrExplicit) {
     Suffix += kSPIRVPostfix::Divider;
-    auto GenericCastToPtrInst = BI->getType()->getPointerStorageClass();
+    auto *Ty = BI->getType();
+    auto GenericCastToPtrInst =
+        Ty->isTypeVectorPointer()
+            ? Ty->getVectorComponentType()->getPointerStorageClass()
+            : Ty->getPointerStorageClass();
     switch (GenericCastToPtrInst) {
     case StorageClassCrossWorkgroup:
       Suffix += std::string(kSPIRVPostfix::ToGlobal);

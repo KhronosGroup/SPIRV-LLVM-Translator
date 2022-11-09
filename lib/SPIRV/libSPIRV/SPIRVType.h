@@ -101,6 +101,7 @@ public:
   bool isTypeVectorOrScalarInt() const;
   bool isTypeVectorOrScalarFloat() const;
   bool isTypeVectorOrScalarBool() const;
+  bool isTypeVectorPointer() const;
   bool isTypeSubgroupAvcINTEL() const;
   bool isTypeSubgroupAvcMceINTEL() const;
 };
