@@ -380,7 +380,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     return nullptr;
   }
   case OpTypeSampledImage: {
-    auto ST = static_cast<SPIRVTypeSampledImage *>(T)->getImageType();
+    const auto *ST = static_cast<SPIRVTypeSampledImage *>(T)->getImageType();
     return mapType(
         T, getSPIRVType(OpTypeSampledImage, transType(ST->getSampledType()),
                         ST->getDescriptor(), getAccessQualifier(ST), !UseTPT));
