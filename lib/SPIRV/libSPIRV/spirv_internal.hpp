@@ -80,7 +80,7 @@ enum InternalCapability {
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityNonConstantAddrspacePrintfINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
-  ICapabilityTensorFloat32ConversionINTEL = 6425
+  ICapabilityTensorFloat32ConversionINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427
 };
 
