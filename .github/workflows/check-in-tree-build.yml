@@ -60,6 +60,13 @@ jobs:
             clang-${{ env.LLVM_VERSION }} \
             spirv-tools
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ env.LLVM_VERSION }} 1000
+          # GCC 9.4.0 (which is default for Ubuntu 20.04 in github actions) has
+          # a bug preventing us to build the translator in-tree with shared
+          # libraries.
+          sudo apt-get install g++-10
+          sudo apt-get install gcc-10
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 1000
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 1000
       - name: Checkout LLVM sources
         uses: actions/checkout@v2
         with:
