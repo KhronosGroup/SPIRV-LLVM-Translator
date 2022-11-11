@@ -209,6 +209,10 @@ bool SPIRVType::isTypeVectorOrScalarBool() const {
   return isTypeBool() || isTypeVectorBool();
 }
 
+bool SPIRVType::isTypeVectorPointer() const {
+  return isTypeVector() && getVectorComponentType()->isTypePointer();
+}
+
 bool SPIRVType::isTypeSubgroupAvcINTEL() const {
   return isSubgroupAvcINTELTypeOpCode(OpCode);
 }
