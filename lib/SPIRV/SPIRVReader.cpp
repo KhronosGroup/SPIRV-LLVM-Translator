@@ -2138,27 +2138,22 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       Index.insert(Index.begin(), getInt32(M, 0));
     auto IsInbound = AC->isInBounds();
     Value *V = nullptr;
-    if (Use *SingleUse = Base->getSingleUndroppableUse()) {
-      if (auto *GI = dyn_cast<GetElementPtrInst>(SingleUse->getUser())) {
-        if (GI->getPointerOperandType() == Base->getType()) {
-          if (Use *SingleUseGI = GI->getSingleUndroppableUse()) {
-            if (auto *II = dyn_cast<IntrinsicInst>(SingleUseGI->getUser())) {
-              if (II->getIntrinsicID() == Intrinsic::ptr_annotation) {
-                if (Use *SingleUseII = II->getSingleUndroppableUse()) {
-                  if (auto II2 =
-                          dyn_cast<IntrinsicInst>(SingleUseII->getUser())) {
-                    if (II2->getIntrinsicID() == Intrinsic::ptr_annotation)
-                      V = II2;
-                  }
-                }
-              }
-              if (!V)
-                V = II;
-            }
+
+    if (GEPOrUseMap.count(BaseTy)) {
+      auto Element = GEPOrUseMap[BaseTy];
+      auto Idx = AC->getIndices();
+
+      if (Element.first.size() == Idx.size()) {
+        bool IsEqual = true;
+        for (size_t I = 0; I < Idx.size(); I++) {
+          SPIRVWord Index = static_cast<ConstantInt*>(getTranslatedValue(Idx[I]))->getZExtValue();
+          if (Index != Element.first[I]) {
+            IsEqual = false;
+            break;
           }
-          if (!V)
-            V = GI;
         }
+        if (IsEqual)
+          V = Element.second;
       }
     }
 
@@ -3547,31 +3542,30 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
           GetElementPtrInst *GEP = nullptr;
-          IntrinsicInst *PtrAnn = nullptr;
-          if (Use *SingleUse = V->getSingleUndroppableUse()) {
-            if (auto *GI = dyn_cast<GetElementPtrInst>(SingleUse->getUser())) {
-              if (GI->getPointerOperandType() == V->getType()) {
-                if (Use *SingleUseGI = GI->getSingleUndroppableUse()) {
-                  if (auto *II =
-                          dyn_cast<IntrinsicInst>(SingleUseGI->getUser()))
-                    if (II->getIntrinsicID() == Intrinsic::ptr_annotation)
-                      PtrAnn = II;
-                }
-                if (!GEP)
-                  GEP = GI;
-              }
+          Instruction *PtrAnn = nullptr;
+          llvm::Value *PtrAnnotationValue = nullptr;
+
+          if (GEPOrUseMap.count(AllocatedTy)) {
+            auto Element = GEPOrUseMap[AllocatedTy];
+            std::vector<SPIRVWord> vec = {0, I};
+
+            if (Element.first == vec) {
+              PtrAnn = Element.second;
+            } else {
+              GEP = cast<GetElementPtrInst>(
+                  Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
+              GEPOrUseMap[AllocatedTy] = std::make_pair(vec, GEP);
             }
-          }
-          if (!GEP)
+          } else {
             GEP = cast<GetElementPtrInst>(
                 Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
+            std::vector<SPIRVWord> vec{0, I};
+            GEPOrUseMap[AllocatedTy] = std::make_pair(vec, GEP);
+          }
 
           Type *IntTy = nullptr;
-          llvm::Value *PtrAnnotationValue = nullptr;
           if (PtrAnn) {
-            IntTy = PtrAnn->getType()->getPointerElementType()->isIntegerTy()
-                        ? PtrAnn->getType()
-                        : Int8PtrTyPrivate;
+            IntTy = PtrAnn->getType();
             PtrAnnotationValue =
                 Builder.CreateBitCast(PtrAnn, IntTy, PtrAnn->getName());
           } else {
@@ -3587,7 +3581,11 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           llvm::Value *Args[] = {PtrAnnotationValue,
                                  Builder.CreateBitCast(GS, Int8PtrTyPrivate),
                                  UndefInt8Ptr, UndefInt32, UndefInt8Ptr};
-          Builder.CreateCall(AnnotationFn, Args);
+          auto PtrAnnotationCall = Builder.CreateCall(AnnotationFn, Args);
+          auto Element = GEPOrUseMap[AllocatedTy];
+          if (Element.first == std::vector<SPIRVWord>{0,I}) {
+              GEPOrUseMap[AllocatedTy] = std::make_pair(std::vector<SPIRVWord>{0,I} ,PtrAnnotationCall);
+          }
         }
       }
     }

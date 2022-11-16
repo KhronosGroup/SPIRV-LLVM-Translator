@@ -155,6 +155,8 @@ public:
   typedef std::map<const BasicBlock *, const SPIRVValue *>
       SPIRVToLLVMLoopMetadataMap;
 
+  typedef std::unordered_map<Type*, std::pair<std::vector<SPIRVWord>, Instruction *>> TypeToGEPOrUseMap;
+
 private:
   Module *M;
   LLVMContext *Context;
@@ -185,6 +187,8 @@ private:
   SPIRVToLLVMMDAliasInstMap MDAliasDomainMap;
   SPIRVToLLVMMDAliasInstMap MDAliasScopeMap;
   SPIRVToLLVMMDAliasInstMap MDAliasListMap;
+
+  TypeToGEPOrUseMap GEPOrUseMap;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
