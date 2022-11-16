@@ -19,11 +19,11 @@
 kernel
 void sample() {
   int arr[10];
-  #pragma clang loop unroll(full)
+  #pragma clang loop unroll(enable)
   for (int i = 0; i < 10; i++)
     arr[i] = 0;
   int j = 0;
-  #pragma clang loop unroll(full)
+  #pragma clang loop unroll(enable)
   do {
     arr[j] = 0;
   } while (j++ < 10);
@@ -35,6 +35,6 @@ void sample() {
 // CHECK-SPIRV: {{[0-9]+}} LoopMerge [[MergeBlock:[0-9]+]] [[ContinueTarget:[0-9]+]] 1
 // CHECK-SPIRV-NOT: ExtInst
 // CHECK-SPIRV: Branch
-// CHECK-LLVM: br i1 %{{.*}}, label %{{.*}}, label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
+// CHECK-LLVM: br label %{{.*}}, !dbg !{{[0-9]+}}, !llvm.loop ![[MD:[0-9]+]]
 // CHECK-LLVM: ![[MD]] = distinct !{![[MD]], ![[MD_unroll:[0-9]+]]}
 // CHECK-LLVM: ![[MD_unroll]] = !{!"llvm.loop.unroll.enable"}
