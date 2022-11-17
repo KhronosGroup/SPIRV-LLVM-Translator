@@ -182,10 +182,10 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
 
   // From spirv_internal.hpp
   add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
-  add(internal::DecorationMathOpDSPModeINTEL, "MathOpDSPModeINTEL");
-  add(internal::DecorationInitiationIntervalINTEL, "InitiationIntervalINTEL");
-  add(internal::DecorationMaxConcurrencyINTEL, "MaxConcurrencyINTEL");
-  add(internal::DecorationPipelineEnableINTEL, "PipelineEnableINTEL");
+  add(DecorationMathOpDSPModeINTEL, "MathOpDSPModeINTEL");
+  add(DecorationInitiationIntervalINTEL, "InitiationIntervalINTEL");
+  add(DecorationMaxConcurrencyINTEL, "MaxConcurrencyINTEL");
+  add(DecorationPipelineEnableINTEL, "PipelineEnableINTEL");
   add(internal::DecorationRuntimeAlignedINTEL, "RuntimeAlignedINTEL");
   add(internal::DecorationHostAccessINTEL, "HostAccessINTEL");
   add(internal::DecorationInitModeINTEL, "InitModeINTEL");
@@ -599,13 +599,13 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
 
   // From spirv_internal.hpp
-  add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
+  add(CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
-  add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
+  add(CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
-  add(internal::CapabilityRuntimeAlignedAttributeINTEL,
+  add(CapabilityRuntimeAlignedAttributeINTEL,
       "RuntimeAlignedAttributeINTEL");
   add(CapabilityMax, "Max");
   add(internal::CapabilityFPArithmeticFenceINTEL, "FPArithmeticFenceINTEL");

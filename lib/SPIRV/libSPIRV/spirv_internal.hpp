@@ -54,6 +54,7 @@ enum InternalOp {
 };
 
 enum InternalDecoration {
+  IDecRuntimeAlignedINTEL = 5940,
   IDecCallableFunctionINTEL = 6087,
   IDecHostAccessINTEL = 6147,
   IDecInitModeINTEL = 6148,
@@ -136,6 +137,8 @@ constexpr Op OpConvertBF16ToFINTEL = static_cast<Op>(IOpConvertBF16ToFINTEL);
 
 constexpr Decoration DecorationCallableFunctionINTEL =
     static_cast<Decoration>(IDecCallableFunctionINTEL);
+constexpr Decoration DecorationRuntimeAlignedINTEL =
+    static_cast<Decoration>(IDecRuntimeAlignedINTEL);
 constexpr Decoration DecorationHostAccessINTEL =
     static_cast<Decoration>(IDecHostAccessINTEL);
 constexpr Decoration DecorationInitModeINTEL =
