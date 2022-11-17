@@ -155,7 +155,11 @@ public:
   typedef std::map<const BasicBlock *, const SPIRVValue *>
       SPIRVToLLVMLoopMetadataMap;
 
-  typedef std::unordered_map<Type*, std::pair<std::vector<SPIRVWord>, Instruction *>> TypeToGEPOrUseMap;
+  // Store all the allocations to Struct Types that are further
+  // accessed inside GetElementPtr instruction or in ptr.annotation intrinsics.
+  // For every structure we save the accessed structure field index and the
+  // last corresponding translated LLVM instruction.
+  typedef std::unordered_map<Value*, std::unordered_map<SPIRVWord, Instruction *> > TypeToGEPOrUseMap;
 
 private:
   Module *M;

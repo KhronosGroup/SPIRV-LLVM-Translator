@@ -2139,21 +2139,27 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto IsInbound = AC->isInBounds();
     Value *V = nullptr;
 
-    if (GEPOrUseMap.count(BaseTy)) {
-      auto Element = GEPOrUseMap[BaseTy];
+    if (GEPOrUseMap.count(Base)) {
+      auto Element = GEPOrUseMap[Base];
       auto Idx = AC->getIndices();
+      int a = Element.size();
+      int b = GEPOrUseMap.size();
 
-      if (Element.first.size() == Idx.size()) {
+      // In transIntelFPGADecorations we generated GEPs only for the fields of
+      // structure, meaning that GEP to `0` accesses the Structure itself, and
+      // the second `Id` is a Key in the map.
+      if (Idx.size() == 2) {
         bool IsEqual = true;
-        for (size_t I = 0; I < Idx.size(); I++) {
-          SPIRVWord Index = static_cast<ConstantInt*>(getTranslatedValue(Idx[I]))->getZExtValue();
-          if (Index != Element.first[I]) {
-            IsEqual = false;
-            break;
-          }
-        }
+        if (static_cast<ConstantInt *>(getTranslatedValue(Idx[0]))
+                ->getZExtValue() != 0)
+          IsEqual = false;
+        if (!Element.count(
+                static_cast<ConstantInt *>(getTranslatedValue(Idx[1]))
+                    ->getZExtValue()))
+          IsEqual = false;
         if (IsEqual)
-          V = Element.second;
+          V = Element[static_cast<ConstantInt *>(getTranslatedValue(Idx[1]))
+                          ->getZExtValue()];
       }
     }
 
@@ -2165,7 +2171,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         V = GEP;
       }
     } else {
-      V = ConstantExpr::getGetElementPtr(BaseTy, dyn_cast<Constant>(Base),
+      if (!V)
+        V = ConstantExpr::getGetElementPtr(BaseTy, dyn_cast<Constant>(Base),
                                          Index, IsInbound);
     }
     return mapValue(BV, V);
@@ -3545,22 +3552,21 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           Instruction *PtrAnn = nullptr;
           llvm::Value *PtrAnnotationValue = nullptr;
 
-          if (GEPOrUseMap.count(AllocatedTy)) {
-            auto Element = GEPOrUseMap[AllocatedTy];
-            std::vector<SPIRVWord> vec = {0, I};
-
-            if (Element.first == vec) {
-              PtrAnn = Element.second;
+          if (GEPOrUseMap.count(AL)) {
+            auto Element = GEPOrUseMap[AL];
+            int a = Element.size();
+            int b = GEPOrUseMap.size();
+            if (Element.count(I)) {
+              PtrAnn = Element[I];
             } else {
               GEP = cast<GetElementPtrInst>(
                   Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
-              GEPOrUseMap[AllocatedTy] = std::make_pair(vec, GEP);
+              Element.emplace(I, GEP);
             }
           } else {
             GEP = cast<GetElementPtrInst>(
                 Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
-            std::vector<SPIRVWord> vec{0, I};
-            GEPOrUseMap[AllocatedTy] = std::make_pair(vec, GEP);
+             GEPOrUseMap[AL].emplace(I, GEP);
           }
 
           Type *IntTy = nullptr;
@@ -3582,10 +3588,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
                                  Builder.CreateBitCast(GS, Int8PtrTyPrivate),
                                  UndefInt8Ptr, UndefInt32, UndefInt8Ptr};
           auto PtrAnnotationCall = Builder.CreateCall(AnnotationFn, Args);
-          auto Element = GEPOrUseMap[AllocatedTy];
-          if (Element.first == std::vector<SPIRVWord>{0,I}) {
-              GEPOrUseMap[AllocatedTy] = std::make_pair(std::vector<SPIRVWord>{0,I} ,PtrAnnotationCall);
-          }
+          GEPOrUseMap[AL][I] = PtrAnnotationCall;
         }
       }
     }
