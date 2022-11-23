@@ -3374,7 +3374,7 @@ void generateIntelFPGAAnnotation(
       // UserSemantic has a single literal string
       llvm::SmallString<256> UserSemanticStr;
       llvm::raw_svector_ostream UserSemanticOut(UserSemanticStr);
-      for (auto Str : Annotations[I])
+      for (const auto &Str : Annotations[I])
         UserSemanticOut << Str;
       AnnotStrVec.emplace_back(UserSemanticStr);
     }
@@ -3440,7 +3440,7 @@ void generateIntelFPGAAnnotationForStructMember(
       // UserSemantic has a single literal string
       llvm::SmallString<256> UserSemanticStr;
       llvm::raw_svector_ostream UserSemanticOut(UserSemanticStr);
-      for (auto Str : Annotations[I])
+      for (const auto &Str : Annotations[I])
         UserSemanticOut << Str;
       AnnotStrVec.emplace_back(UserSemanticStr);
     }
@@ -3470,7 +3470,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       for (SPIRVWord I = 0; I < STS->getMemberCount(); ++I) {
         std::vector<SmallString<256>> AnnotStrVec;
         generateIntelFPGAAnnotationForStructMember(ST, I, AnnotStrVec);
-        for (auto AnnotStr : AnnotStrVec) {
+        for (const auto &AnnotStr : AnnotStrVec) {
           auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
           auto *GEP = cast<GetElementPtrInst>(
@@ -3494,9 +3494,9 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
 
     std::vector<SmallString<256>> AnnotStrVec;
     generateIntelFPGAAnnotation(BV, AnnotStrVec);
-    for (auto AnnotStr : AnnotStrVec) {
+    for (const auto &AnnotStr : AnnotStrVec) {
       Constant *GS = nullptr;
-      std::string StringAnnotStr = AnnotStr.c_str();
+      const auto StringAnnotStr = static_cast<std::string>(AnnotStr);
       auto AnnotItr = AnnotationsMap.find(StringAnnotStr);
       if (AnnotItr != AnnotationsMap.end()) {
         GS = AnnotItr->second;
@@ -3543,7 +3543,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       return;
     }
 
-    for (auto AnnotStr : AnnotStrVec) {
+    for (const auto &AnnotStr : AnnotStrVec) {
       Constant *StrConstant =
           ConstantDataArray::getString(*Context, StringRef(AnnotStr));
 
@@ -3602,7 +3602,8 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 // ect.)
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
   auto TransFun = transFunction(Fun);
-  for (auto UsSem : Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
+  for (const auto &UsSem :
+       Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
     auto V = cast<Value>(TransFun);
     Constant *StrConstant =
         ConstantDataArray::getString(*Context, StringRef(UsSem));
