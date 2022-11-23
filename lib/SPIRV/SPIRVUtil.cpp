@@ -1635,7 +1635,8 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
       Ty = VecTy->getElementType();
     }
     if ((!Ty->isFloatTy() && !Ty->isDoubleTy() && !Ty->isHalfTy()) ||
-        ((NumElems > 4) && (NumElems != 8) && (NumElems != 16))) {
+        (!BM->hasCapability(CapabilityVectorAnyINTEL) &&
+         ((NumElems > 4) && (NumElems != 8) && (NumElems != 16)))) {
       BM->getErrorLog().checkError(false, SPIRVEC_InvalidFunctionCall,
                                    II->getCalledOperand()->getName().str(), "",
                                    __FILE__, __LINE__);
@@ -1651,7 +1652,8 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
       Ty = VecTy->getElementType();
     }
     if ((!Ty->isIntegerTy()) ||
-        ((NumElems > 4) && (NumElems != 8) && (NumElems != 16))) {
+        (!BM->hasCapability(CapabilityVectorAnyINTEL) &&
+         ((NumElems > 4) && (NumElems != 8) && (NumElems != 16)))) {
       BM->getErrorLog().checkError(false, SPIRVEC_InvalidFunctionCall,
                                    II->getCalledOperand()->getName().str(), "",
                                    __FILE__, __LINE__);
