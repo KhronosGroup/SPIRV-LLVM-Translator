@@ -297,7 +297,7 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
   return Run(Ty);
 }
 
-SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
+SPIRVType *LLVMToSPIRVBase::transType(Type *T, bool IsGlobalSymbol) {
   LLVMToSPIRVTypeMap::iterator Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
     return Loc->second;
@@ -316,11 +316,16 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     // capabilities.
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_arbitrary_precision_integers) ||
-        BM->getErrorLog().checkError(
-            BitWidth == 8 || BitWidth == 16 || BitWidth == 32 || BitWidth == 64,
-            SPIRVEC_InvalidBitWidth, std::to_string(BitWidth))) {
-      return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
-    }
+            BitWidth == 8 || BitWidth == 16 || BitWidth == 32 || BitWidth == 64)
+      return mapType(T, BM->addIntegerType(BitWidth));
+    // Map non-standart integers to either int32 or int64 in case if they are
+    // not a part of a function type.
+    if (!IsGlobalSymbol && BitWidth < 32)
+      return mapType(T, BM->addIntegerType(32));
+    if (!IsGlobalSymbol && BitWidth < 64)
+      return mapType(T, BM->addIntegerType(64));
+    BM->getErrorLog().checkError(false, SPIRVEC_InvalidBitWidth,
+                                 std::to_string(BitWidth));
   }
 
   if (T->isFloatingPointTy())
@@ -368,7 +373,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
       BM->addExtension(ExtensionID::SPV_INTEL_masked_gather_scatter);
       BM->addCapability(internal::CapabilityMaskedGatherScatterINTEL);
     }
-    return mapType(T, BM->addVectorType(transType(VecTy->getElementType()),
+    return mapType(T, BM->addVectorType(transType(VecTy->getElementType(),
+                                                  IsGlobalSymbol),
                                         VecTy->getNumElements()));
   }
 
@@ -382,7 +388,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
       SPIRVCK(T->getArrayNumElements() >= 1, InvalidArraySize, OS.str());
     }
     return mapType(T, BM->addArrayType(
-                          transType(T->getArrayElementType()),
+                          transType(T->getArrayElementType(), IsGlobalSymbol),
                           static_cast<SPIRVConstant *>(transValue(
                               ConstantInt::get(getSizetType(),
                                                T->getArrayNumElements(), false),
@@ -453,24 +459,26 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
           recursiveType(ST, ElemTy))
         ForwardRefs.push_back(I);
       else
-        Struct->setMemberType(I, transType(ST->getElementType(I)));
+        Struct->setMemberType(I, transType(ST->getElementType(I),
+                                           IsGlobalSymbol));
     }
 
     BM->closeStructType(Struct, ST->isPacked());
 
     for (auto I : ForwardRefs)
-      Struct->setMemberType(I, transType(ST->getElementType(I)));
+      Struct->setMemberType(I, transType(ST->getElementType(I),
+                                         IsGlobalSymbol));
 
     return Struct;
   }
 
   if (FunctionType *FT = dyn_cast<FunctionType>(T)) {
-    SPIRVType *RT = transType(FT->getReturnType());
+    SPIRVType *RT = transType(FT->getReturnType(), /*IsGlobalSymbol*/ true);
     std::vector<SPIRVType *> PT;
     for (FunctionType::param_iterator I = FT->param_begin(),
                                       E = FT->param_end();
          I != E; ++I)
-      PT.push_back(transType(*I));
+      PT.push_back(transType(*I, /*IsGlobalSymbol*/ true));
     return mapType(T, getSPIRVFunctionType(RT, PT));
   }
 
@@ -727,7 +735,7 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
     return transType(Ty);
 
   if (auto *F = dyn_cast<Function>(V)) {
-    SPIRVType *RT = transType(F->getReturnType());
+    SPIRVType *RT = transType(F->getReturnType(), /*IsGlobalSymbol*/ true);
     std::vector<SPIRVType *> PT;
     for (Argument &Arg : F->args()) {
       Type *Ty = OCLTypeToSPIRVPtr->getAdaptedArgumentType(F, Arg.getArgNo());
@@ -1706,7 +1714,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         std::vector<SPIRVValue *> Elements;
         for (Type *E : ST->elements())
           Elements.push_back(transValue(UndefValue::get(E), nullptr));
-        BVarInit = BM->addCompositeConstant(transType(ST), Elements);
+        BVarInit = BM->addCompositeConstant(transType(ST,
+                                                      /*IsGlobalSymbol*/ true),
+            Elements);
         ValueMap[Init] = BVarInit;
       } else
         BVarInit = I->second;
