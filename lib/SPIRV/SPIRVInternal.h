@@ -57,6 +57,10 @@
 using namespace SPIRV;
 using namespace llvm;
 
+namespace llvm {
+class IntrinsicInst;
+}
+
 namespace SPIRV {
 
 /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
@@ -950,6 +954,10 @@ bool hasLoopUnrollMetadata(const Module *M);
 // and find Loop Control mask and possible parameters.
 spv::LoopControlMask getLoopControl(const BranchInst *Branch,
                                     std::vector<SPIRVWord> &Parameters);
+
+// check LLVM Intrinsics type(s) for validity
+bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM);
+
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H
