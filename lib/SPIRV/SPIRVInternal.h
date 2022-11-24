@@ -57,6 +57,10 @@
 using namespace SPIRV;
 using namespace llvm;
 
+namespace llvm {
+class IntrinsicInst;
+}
+
 namespace SPIRV {
 
 /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
@@ -1006,6 +1010,9 @@ spv::LoopControlMask getLoopControl(const BranchInst *Branch,
 // Check if CI is a call to instruction from OpenCL Extended Instruction Set.
 // If so, return it's extended opcode in ExtOp.
 bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+
+// check LLVM Intrinsics type(s) for validity
+bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM);
 
 /// Decode SPIR-V type name in the format spirv.{TypeName}._{Postfixes}
 /// where Postfixes are strings separated by underscores.
