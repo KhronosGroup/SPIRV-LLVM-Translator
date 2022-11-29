@@ -833,6 +833,36 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   return ConstantExpr::getCast(CO, dyn_cast<Constant>(Src), Dst);
 }
 
+static void applyNoIntegerWrapDecorations(const SPIRVValue *BV,
+                                          Instruction *Inst) {
+  if (BV->hasDecorate(DecorationNoSignedWrap)) {
+    Inst->setHasNoSignedWrap(true);
+  }
+
+  if (BV->hasDecorate(DecorationNoUnsignedWrap)) {
+    Inst->setHasNoUnsignedWrap(true);
+  }
+}
+
+static void applyFPFastMathModeDecorations(const SPIRVValue *BV,
+                                           Instruction *Inst) {
+  SPIRVWord V;
+  FastMathFlags FMF;
+  if (BV->hasDecorate(DecorationFPFastMathMode, 0, &V)) {
+    if (V & FPFastMathModeNotNaNMask)
+      FMF.setNoNaNs();
+    if (V & FPFastMathModeNotInfMask)
+      FMF.setNoInfs();
+    if (V & FPFastMathModeNSZMask)
+      FMF.setNoSignedZeros();
+    if (V & FPFastMathModeAllowRecipMask)
+      FMF.setAllowReciprocal();
+    if (V & FPFastMathModeFastMask)
+      FMF.setFast();
+    Inst->setFastMathFlags(FMF);
+  }
+}
+
 BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV,
                                                           BasicBlock *BB,
                                                           Function *F) {
@@ -846,15 +876,8 @@ BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV,
   auto Inst = BinaryOperator::Create(BO, transValue(BBN->getOperand(0), F, BB),
                                      transValue(BBN->getOperand(1), F, BB),
                                      BV->getName(), BB);
-
-  if (BV->hasDecorate(DecorationNoSignedWrap)) {
-    Inst->setHasNoSignedWrap(true);
-  }
-
-  if (BV->hasDecorate(DecorationNoUnsignedWrap)) {
-    Inst->setHasNoUnsignedWrap(true);
-  }
-
+  applyNoIntegerWrapDecorations(BV, Inst);
+  applyFPFastMathModeDecorations(BV, Inst);
   return Inst;
 }
 
@@ -1853,9 +1876,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
   case OpFNegate: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
-    return mapValue(
-        BV, BinaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
-                                       BV->getName(), BB));
+    auto Neg = BinaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
+                                          BV->getName(), BB);
+    applyFPFastMathModeDecorations(BV, Neg);
+    return mapValue(BV, Neg);
   }
 
   case OpNot:
