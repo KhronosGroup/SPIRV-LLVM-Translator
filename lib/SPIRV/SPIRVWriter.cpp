@@ -4112,11 +4112,11 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       if (FormatStrPtr->getAddressSpace() !=
           SPIR::TypeAttributeEnum::ATTR_CONST) {
         if (BM->isAllowedToUseExtension(
-               ExtensionID::SPV_EXT_relaxed_printf_string_address_space)) {
+                ExtensionID::SPV_EXT_relaxed_printf_string_address_space)) {
           BM->addExtension(
               ExtensionID::SPV_EXT_relaxed_printf_string_address_space);
         } else if (BM->isAllowedToUseExtension(
-                      ExtensionID::SPV_INTEL_non_constant_addrspace_printf)) {
+                       ExtensionID::SPV_INTEL_non_constant_addrspace_printf)) {
           BM->addExtension(
               ExtensionID::SPV_INTEL_non_constant_addrspace_printf);
           BM->addCapability(
