@@ -3412,7 +3412,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::trunc: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
       break;
-    SPIRVWord ExtOp = allowsApproxFunction(II)
+    const SPIRVWord ExtOp = allowsApproxFunction(II)
                           ? getNativeBuiltinIdForIntrinsic(IID)
                           : getBuiltinIdForIntrinsic(IID);
     SPIRVType *STy = transType(II->getType());
@@ -3430,7 +3430,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::minnum: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
       break;
-    SPIRVWord ExtOp = allowsApproxFunction(II)
+    const SPIRVWord ExtOp = allowsApproxFunction(II)
                           ? getNativeBuiltinIdForIntrinsic(IID)
                           : getBuiltinIdForIntrinsic(IID);
     SPIRVType *STy = transType(II->getType());
@@ -3447,7 +3447,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
     SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
 
-    Op OC =
+    const Op OC =
         (IID == Intrinsic::smin)
             ? OpSLessThan
             : ((IID == Intrinsic::smax)
@@ -3487,7 +3487,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   }
   case Intrinsic::ctlz:
   case Intrinsic::cttz: {
-    SPIRVWord ExtOp = IID == Intrinsic::ctlz ? OpenCLLIB::Clz : OpenCLLIB::Ctz;
+    const SPIRVWord ExtOp = IID == Intrinsic::ctlz ? OpenCLLIB::Clz : OpenCLLIB::Ctz;
     SPIRVType *Ty = transType(II->getType());
     std::vector<SPIRVValue *> Ops(1, transValue(II->getArgOperand(0), BB));
     return BM->addExtInst(Ty, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
