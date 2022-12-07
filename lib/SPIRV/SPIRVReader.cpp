@@ -2140,39 +2140,34 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Value *V = nullptr;
 
     if (GEPOrUseMap.count(Base)) {
-      auto Element = GEPOrUseMap[Base];
+      auto IdxToInstMap = GEPOrUseMap[Base];
       auto Idx = AC->getIndices();
-      int a = Element.size();
-      int b = GEPOrUseMap.size();
 
       // In transIntelFPGADecorations we generated GEPs only for the fields of
       // structure, meaning that GEP to `0` accesses the Structure itself, and
       // the second `Id` is a Key in the map.
       if (Idx.size() == 2) {
-        bool IsEqual = true;
-        if (static_cast<ConstantInt *>(getTranslatedValue(Idx[0]))
-                ->getZExtValue() != 0)
-          IsEqual = false;
-        if (!Element.count(
-                static_cast<ConstantInt *>(getTranslatedValue(Idx[1]))
-                    ->getZExtValue()))
-          IsEqual = false;
-        if (IsEqual)
-          V = Element[static_cast<ConstantInt *>(getTranslatedValue(Idx[1]))
-                          ->getZExtValue()];
+        unsigned Idx1 = static_cast<ConstantInt *>(getTranslatedValue(Idx[0]))
+                            ->getZExtValue();
+        if (Idx1 == 0) {
+          unsigned Idx2 = static_cast<ConstantInt *>(getTranslatedValue(Idx[1]))
+                              ->getZExtValue();
+
+          // If we already have the instruction in a map, use it.
+          if (IdxToInstMap.count(Idx2))
+            return mapValue(BV, IdxToInstMap[Idx2]);
+        }
       }
     }
 
     if (BB) {
-      if (!V) {
-        auto GEP =
-            GetElementPtrInst::Create(BaseTy, Base, Index, BV->getName(), BB);
-        GEP->setIsInBounds(IsInbound);
-        V = GEP;
-      }
+      auto GEP =
+          GetElementPtrInst::Create(BaseTy, Base, Index, BV->getName(), BB);
+      GEP->setIsInBounds(IsInbound);
+      V = GEP;
+
     } else {
-      if (!V)
-        V = ConstantExpr::getGetElementPtr(BaseTy, dyn_cast<Constant>(Base),
+      V = ConstantExpr::getGetElementPtr(BaseTy, dyn_cast<Constant>(Base),
                                          Index, IsInbound);
     }
     return mapValue(BV, V);
@@ -3548,45 +3543,37 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         for (auto AnnotStr : AnnotStrVec) {
           auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
-          GetElementPtrInst *GEP = nullptr;
-          Instruction *PtrAnn = nullptr;
-          llvm::Value *PtrAnnotationValue = nullptr;
+          Instruction *PtrAnnFirstArg = nullptr;
 
           if (GEPOrUseMap.count(AL)) {
-            auto Element = GEPOrUseMap[AL];
-            int a = Element.size();
-            int b = GEPOrUseMap.size();
-            if (Element.count(I)) {
-              PtrAnn = Element[I];
-            } else {
-              GEP = cast<GetElementPtrInst>(
-                  Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
-              Element.emplace(I, GEP);
+            auto IdxToInstMap = GEPOrUseMap[AL];
+            if (IdxToInstMap.count(I)) {
+              PtrAnnFirstArg = IdxToInstMap[I];
             }
-          } else {
-            GEP = cast<GetElementPtrInst>(
-                Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
-             GEPOrUseMap[AL].emplace(I, GEP);
           }
 
           Type *IntTy = nullptr;
-          if (PtrAnn) {
-            IntTy = PtrAnn->getType();
-            PtrAnnotationValue =
-                Builder.CreateBitCast(PtrAnn, IntTy, PtrAnn->getName());
-          } else {
+
+          if (!PtrAnnFirstArg) {
+            GetElementPtrInst* GEP = cast<GetElementPtrInst>(
+                Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
+  
             IntTy = GEP->getResultElementType()->isIntegerTy()
                         ? GEP->getType()
                         : Int8PtrTyPrivate;
-            PtrAnnotationValue =
-                Builder.CreateBitCast(GEP, IntTy, GEP->getName());
+            PtrAnnFirstArg = GEP;
+          } else {
+            IntTy = PtrAnnFirstArg->getType();
           }
+
           auto AnnotationFn = llvm::Intrinsic::getDeclaration(
               M, Intrinsic::ptr_annotation, IntTy);
 
-          llvm::Value *Args[] = {PtrAnnotationValue,
-                                 Builder.CreateBitCast(GS, Int8PtrTyPrivate),
-                                 UndefInt8Ptr, UndefInt32, UndefInt8Ptr};
+          llvm::Value *Args[] = {
+              Builder.CreateBitCast(PtrAnnFirstArg, IntTy,
+                                    PtrAnnFirstArg->getName()),
+              Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
+              UndefInt32, UndefInt8Ptr};
           auto PtrAnnotationCall = Builder.CreateCall(AnnotationFn, Args);
           GEPOrUseMap[AL][I] = PtrAnnotationCall;
         }
