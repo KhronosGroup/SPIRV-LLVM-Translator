@@ -159,7 +159,9 @@ public:
   // accessed inside GetElementPtr instruction or in ptr.annotation intrinsics.
   // For every structure we save the accessed structure field index and the
   // last corresponding translated LLVM instruction.
-  typedef std::unordered_map<Value*, std::unordered_map<SPIRVWord, Instruction *> > TypeToGEPOrUseMap;
+  typedef std::unordered_map<Value *,
+                             std::unordered_map<SPIRVWord, Instruction *>>
+      TypeToGEPOrUseMap;
 
 private:
   Module *M;

@@ -3555,9 +3555,9 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           Type *IntTy = nullptr;
 
           if (!PtrAnnFirstArg) {
-            GetElementPtrInst* GEP = cast<GetElementPtrInst>(
+            GetElementPtrInst *GEP = cast<GetElementPtrInst>(
                 Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
-  
+
             IntTy = GEP->getResultElementType()->isIntegerTy()
                         ? GEP->getType()
                         : Int8PtrTyPrivate;
@@ -3574,7 +3574,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
                                     PtrAnnFirstArg->getName()),
               Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
               UndefInt32, UndefInt8Ptr};
-          auto PtrAnnotationCall = Builder.CreateCall(AnnotationFn, Args);
+          auto *PtrAnnotationCall = Builder.CreateCall(AnnotationFn, Args);
           GEPOrUseMap[AL][I] = PtrAnnotationCall;
         }
       }
