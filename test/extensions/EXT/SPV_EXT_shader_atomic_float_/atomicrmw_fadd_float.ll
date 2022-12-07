@@ -3,6 +3,8 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
 
+; CHECK-DAG: Extension "SPV_EXT_shader_atomic_float_add"
+; CHECK-DAG: Capability AtomicFloat32AddEXT
 ; CHECK: TypeInt [[Int:[0-9]+]] 32 0
 ; CHECK-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
