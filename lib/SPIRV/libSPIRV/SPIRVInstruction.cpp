@@ -251,7 +251,7 @@ SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
       Comp.push_back(*I);
     }
     RetInst = new SPIRVVectorShuffle(Inst->getId(), Inst->getType(), Ops[0],
-                                  Ops[1], Comp, nullptr, Inst->getModule());
+                                     Ops[1], Comp, nullptr, Inst->getModule());
     break;
   }
   case OpCompositeExtract: {
@@ -260,7 +260,7 @@ SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
       Indices.push_back(*I);
     }
     RetInst = new SPIRVCompositeExtract(Inst->getType(), Inst->getId(), Ops[0],
-                                     Indices, nullptr, Inst->getModule());
+                                        Indices, nullptr, Inst->getModule());
     break;
   }
   case OpCompositeInsert: {
@@ -268,18 +268,18 @@ SPIRVInstruction *createInstFromSpecConstantOp(SPIRVSpecConstantOp *Inst) {
     for (auto I = Ops.begin() + 2, E = Ops.end(); I != E; ++I) {
       Indices.push_back(*I);
     }
-    RetInst = new SPIRVCompositeInsert(Inst->getType(), Inst->getId(), Ops[0],
-                                    Ops[1], Indices, nullptr,
-                                    Inst->getModule());
+    RetInst =
+        new SPIRVCompositeInsert(Inst->getType(), Inst->getId(), Ops[0], Ops[1],
+                                 Indices, nullptr, Inst->getModule());
     break;
   }
   case OpSelect:
     RetInst = new SPIRVSelect(Inst->getId(), Inst->getType(), Ops[0], Ops[1],
-                           Ops[2], nullptr, Inst->getModule());
+                              Ops[2], nullptr, Inst->getModule());
     break;
   default:
     RetInst = SPIRVInstTemplateBase::create(OC, Inst->getType(), Inst->getId(),
-                                         Ops, nullptr, Inst->getModule());
+                                            Ops, nullptr, Inst->getModule());
     break;
   }
   // Instruction that creates from OpSpecConstantOp has the same Id
