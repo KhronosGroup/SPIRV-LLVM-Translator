@@ -4844,6 +4844,17 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::ExecutionModeNumSIMDWorkitemsINTEL:
       case spv::ExecutionModeSchedulerTargetFmaxMhzINTEL:
       case spv::ExecutionModeMaxWorkDimINTEL:
+      case spv::internal::ExecutionModeRegisterMapInterfaceINTEL: {
+        if (!BM->isAllowedToUseExtension(
+                ExtensionID::SPV_INTEL_kernel_attributes))
+          break;
+        AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
+        BM->addExtension(ExtensionID::SPV_INTEL_kernel_attributes);
+        // CapabilityFPGAKernelAttributesINTELv2 implicitly defines
+        // CapabilityFPGAKernelAttributesINTEL
+        BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
+        BM->addCapability(CapabilityFPGAKernelAttributesINTELv2);
+      } break;
       case spv::internal::ExecutionModeStreamingInterfaceINTEL: {
         if (!BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_kernel_attributes))
