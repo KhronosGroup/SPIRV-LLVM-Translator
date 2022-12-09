@@ -1152,7 +1152,7 @@ SPIRVValue *LLVMToSPIRV::transValueWithoutDecoration(Value *V,
   }
 
   if (InlineAsm *IA = dyn_cast<InlineAsm>(V))
-      return mapValue(V, transAsmINTEL(IA));
+    return mapValue(V, transAsmINTEL(IA));
 
   if (CallInst *CI = dyn_cast<CallInst>(V))
     return mapValue(V, transCallInst(CI, BB));
@@ -1446,7 +1446,7 @@ static bool allowsApproxFunction(IntrinsicInst *II) {
 }
 
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
-                                                SPIRVBasicBlock *BB) {
+                                            SPIRVBasicBlock *BB) {
   auto GetMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
     if (SPIRVWord AlignVal = MI->getDestAlignment()) {
@@ -1689,8 +1689,9 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + 
+          BM->isSPIRVAllowUnknownIntrinsicsEnabled(),
+          SPIRVEC_InvalidFunctionCall,
+          toString(II) +
               "\nTranslation of llvm.masked.gather intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
@@ -1710,8 +1711,9 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     if (!BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_masked_gather_scatter)) {
       BM->getErrorLog().checkError(
-          BM->isSPIRVAllowUnknownIntrinsicsEnabled(), SPIRVEC_InvalidFunctionCall, 
-          toString(II) + 
+          BM->isSPIRVAllowUnknownIntrinsicsEnabled(),
+          SPIRVEC_InvalidFunctionCall,
+          toString(II) +
               "\nTranslation of llvm.masked.scatter intrinsic requires "
               "SPV_INTEL_masked_gather_scatter extension or "
               "-spirv-allow-unknown-intrinsics option.");
