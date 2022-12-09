@@ -646,6 +646,9 @@ template <> void LLVMSPIRVAtomicRmwOpCodeMap::init() {
   add(llvm::AtomicRMWInst::Min, OpAtomicSMin);
   add(llvm::AtomicRMWInst::UMax, OpAtomicUMax);
   add(llvm::AtomicRMWInst::UMin, OpAtomicUMin);
+  add(llvm::AtomicRMWInst::FAdd, OpAtomicFAddEXT);
+  add(llvm::AtomicRMWInst::FMin, OpAtomicFMinEXT);
+  add(llvm::AtomicRMWInst::FMax, OpAtomicFMaxEXT);
 }
 
 } // namespace SPIRV
@@ -799,12 +802,15 @@ unsigned getOCLVersion(Module *M, bool AllowMulti) {
   return encodeOCLVer(Ver.first, Ver.second, 0);
 }
 
-void decodeMDNode(MDNode *N, unsigned &X, unsigned &Y, unsigned &Z) {
+SmallVector<unsigned, 3> decodeMDNode(MDNode *N) {
   if (N == NULL)
-    return;
-  X = getMDOperandAsInt(N, 0);
-  Y = getMDOperandAsInt(N, 1);
-  Z = getMDOperandAsInt(N, 2);
+    return {};
+  size_t NumOperands = N->getNumOperands();
+  SmallVector<unsigned, 3> ReadVals;
+  ReadVals.reserve(NumOperands);
+  for (unsigned I = 0; I < NumOperands; ++I)
+    ReadVals.push_back(getMDOperandAsInt(N, I));
+  return ReadVals;
 }
 
 /// Encode LLVM type by SPIR-V execution mode VecTypeHint
@@ -872,7 +878,7 @@ unsigned transVecTypeHint(MDNode *Node) {
 }
 
 SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode) {
-  switch (OpCode) {
+  switch ((unsigned)OpCode) {
   case OpTypeQueue:
     return SPIRV_QUEUE_T_ADDR_SPACE;
   case OpTypeEvent:
@@ -886,10 +892,13 @@ SPIRAddressSpace getOCLOpaqueTypeAddrSpace(Op OpCode) {
     return SPIRV_PIPE_ADDR_SPACE;
   case OpTypeImage:
   case OpTypeSampledImage:
+  case OpTypeVmeImageINTEL:
     return SPIRV_IMAGE_ADDR_SPACE;
   case OpConstantSampler:
   case OpTypeSampler:
     return SPIRV_SAMPLER_T_ADDR_SPACE;
+  case internal::OpTypeJointMatrixINTEL:
+    return SPIRAS_Global;
   default:
     if (isSubgroupAvcINTELTypeOpCode(OpCode))
       return SPIRV_AVC_INTEL_T_ADDR_SPACE;

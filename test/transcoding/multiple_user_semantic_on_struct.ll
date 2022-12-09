@@ -62,27 +62,27 @@
 
 ; CHECK-LLVM: %[[#ObjClassA:]] = alloca %class.A, align 4
 ; CHECK-LLVM: %[[#GepClassAVal:]] = getelementptr inbounds %class.A, %class.A* %[[#ObjClassA]], i32 0, i32 0
-; CHECK-LLVM: %[[#PtrAnnClassAVal:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#GepClassAVal]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructA]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
-; CHECK-LLVM: %[[#PtrAnn2ClassAVal:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#PtrAnnClassAVal]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructA2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnnClassAVal:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#GepClassAVal]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructA]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnn2ClassAVal:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#PtrAnnClassAVal]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructA2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
 
 ; CHECK-LLVM: %[[#GepMultiDec:]] = getelementptr inbounds %class.A, %class.A* %[[#ObjClassA]], i32 0, i32 1
-; CHECK-LLVM: %[[#PtrAnnMultiDec:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#GepMultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec1]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
-; CHECK-LLVM: %[[#PtrAnn2MultiDec:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#PtrAnnMultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
-; CHECK-LLVM: %[[#PtrAnn3MultiDec:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#PtrAnn2MultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec3]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnnMultiDec:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#GepMultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec1]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnn2MultiDec:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#PtrAnnMultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnn3MultiDec:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#PtrAnn2MultiDec]], i8* getelementptr inbounds ([5 x i8], [5 x i8]* @[[#Dec3]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
 
 ; CHECK-LLVM: %[[#GepClassAFieldB:]] = getelementptr inbounds %class.A, %class.A* %[[#ObjClassA]], i32 0, i32 2
 ; CHECK-LLVM: %[[#CastClassAFieldB:]] = bitcast %class.B* %[[#GepClassAFieldB]] to i8*
-; CHECK-LLVM: %[[#PtrAnnClassAFieldB:]] = call i8* @llvm.ptr.annotation.p0i8(i8* %[[#CastClassAFieldB]], i8* getelementptr inbounds ([13 x i8], [13 x i8]* @[[#StrAfieldB]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnnClassAFieldB:]] = call i8* @llvm.ptr.annotation.p0i8.p0i8(i8* %[[#CastClassAFieldB]], i8* getelementptr inbounds ([13 x i8], [13 x i8]* @[[#StrAfieldB]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
 
 ; CHECK-LLVM: %[[#ObjClassB:]] = alloca %class.B, align 4
 ; CHECK-LLVM: %[[#GEPClassB:]] = getelementptr inbounds %class.B, %class.B* %[[#ObjClassB]], i32 0, i32 0
-; CHECK-LLVM: %[[#PtrAnnClassB:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#GEPClassB]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructB]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
-; CHECK-LLVM: %[[#PtrAnn2ClassB:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#PtrAnnClassB]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructB2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnnClassB:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#GEPClassB]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructB]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnn2ClassB:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#PtrAnnClassB]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrStructB2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
 
 ; CHECK-LLVM: %[[#Obj2ClassA:]] = alloca %class.A, align 4
 ; CHECK-LLVM: %[[#GepObj2ClassA:]] = getelementptr inbounds %class.A, %class.A* %[[#Obj2ClassA]], i32 0, i32 0
-; CHECK-LLVM: %[[#PtrAnnObj2ClassA:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#GepObj2ClassA]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrObj2StructA]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
-; CHECK-LLVM: %[[#PtrAnn2Obj2ClassA:]] = call i32* @llvm.ptr.annotation.p0i32(i32* %[[#PtrAnnObj2ClassA]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrObj2StructA2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnnObj2ClassA:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#GepObj2ClassA]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrObj2StructA]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
+; CHECK-LLVM: %[[#PtrAnn2Obj2ClassA:]] = call i32* @llvm.ptr.annotation.p0i32.p0i8(i32* %[[#PtrAnnObj2ClassA]], i8* getelementptr inbounds ([7 x i8], [7 x i8]* @[[#StrObj2StructA2]], i32 0, i32 0), i8* undef, i32 undef, i8* undef)
 
 
 ; CHECK-LLVM: %[[#CastClassAVal:]] = bitcast i32* %[[#PtrAnn2ClassAVal]] to i8*
