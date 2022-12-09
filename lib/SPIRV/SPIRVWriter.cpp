@@ -1834,7 +1834,7 @@ static bool allowsApproxFunction(IntrinsicInst *II) {
 }
 
 SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
-                                                SPIRVBasicBlock *BB) {
+                                            SPIRVBasicBlock *BB) {
   auto GetMemoryAccess = [](MemIntrinsic *MI) -> std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
     if (SPIRVWord AlignVal = MI->getDestAlignment()) {
