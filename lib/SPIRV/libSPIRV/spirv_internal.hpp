@@ -84,8 +84,6 @@ enum InternalExecutionMode {
   IExecModeStreamingInterfaceINTEL = 6154
 };
 
-enum InternalLoopControlMask {};
-
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
