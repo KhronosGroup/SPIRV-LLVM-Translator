@@ -649,7 +649,8 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
 
   auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
     unsigned long long N = 0;
-    consumeUnsignedInteger(Postfix, 10, N);
+    if (consumeUnsignedInteger(Postfix, 10, N))
+      assert(0 && "Error in extracting integer value");
     return getUInt32(M, N);
   };
   std::vector<SPIRVValue *> Args;
@@ -4285,8 +4286,8 @@ void LLVMToSPIRVBase::transGlobalAnnotation(GlobalVariable *V) {
         cast<GlobalVariable>(CS->getOperand(1)->stripPointerCasts());
 
     StringRef AnnotationString;
-    bool HasAnno = getConstantStringInfo(GV, AnnotationString);
-    assert(HasAnno && "Annotation string missing");
+    if (!getConstantStringInfo(GV, AnnotationString))
+      assert(0 && "Annotation string missing");
     DecorationsInfoVec Decorations =
         tryParseAnnotationString(BM, AnnotationString).MemoryAttributesVec;
 
