@@ -471,7 +471,7 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
     size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
     size_t Len = 0;
     if (Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
-        .getAsInteger(10, Len))
+            .getAsInteger(10, Len))
       assert(0 && "Error in extracting integer value");
     DemangledName = Name.substr(Start, Len);
   } else {
