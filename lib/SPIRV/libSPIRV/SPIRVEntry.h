@@ -536,7 +536,7 @@ public:
 
   _SPIRV_DCL_ENCDEC
 protected:
-  SPIRVExecutionModelKind ExecModel;
+  SPIRVExecutionModelKind ExecModel = ExecutionModelMax;
   std::string Name;
 
 private:
