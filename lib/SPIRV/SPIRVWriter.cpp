@@ -2172,8 +2172,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     AtomicRMWInst::BinOp Op = ARMW->getOperation();
     bool SupportedAtomicInst =
         AtomicRMWInst::isFPOperation(Op)
-            ? (Op == AtomicRMWInst::FAdd || Op == AtomicRMWInst::FMin ||
-               Op == AtomicRMWInst::FMax)
+            ? (Op == AtomicRMWInst::FAdd || Op == AtomicRMWInst::FSub ||
+               Op == AtomicRMWInst::FMin || Op == AtomicRMWInst::FMax)
             : Op != AtomicRMWInst::Nand;
     if (!BM->getErrorLog().checkError(
             SupportedAtomicInst, SPIRVEC_InvalidInstruction, V,
@@ -2195,8 +2195,13 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     Operands[1] = getUInt32(M, spv::ScopeDevice);
     Operands[2] = getUInt32(M, MemSem);
     Operands[3] = ARMW->getValOperand();
-    std::vector<SPIRVId> Ops = BM->getIds(transValue(Operands, BB));
+    std::vector<SPIRVValue *> OpVals = transValue(Operands, BB);
+    std::vector<SPIRVId> Ops = BM->getIds(OpVals);
     SPIRVType *Ty = transType(ARMW->getType());
+
+    // Negate operand for fsub so we can use FAddEXT.
+    if (Op == AtomicRMWInst::FSub)
+      Ops[3] = BM->addUnaryInst(OpFNegate, Ty, OpVals[3], BB)->getId();
 
     return mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
   }

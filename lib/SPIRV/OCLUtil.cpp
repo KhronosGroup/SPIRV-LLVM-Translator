@@ -647,6 +647,7 @@ template <> void LLVMSPIRVAtomicRmwOpCodeMap::init() {
   add(llvm::AtomicRMWInst::UMax, OpAtomicUMax);
   add(llvm::AtomicRMWInst::UMin, OpAtomicUMin);
   add(llvm::AtomicRMWInst::FAdd, OpAtomicFAddEXT);
+  add(llvm::AtomicRMWInst::FSub, OpAtomicFAddEXT);
   add(llvm::AtomicRMWInst::FMin, OpAtomicFMinEXT);
   add(llvm::AtomicRMWInst::FMax, OpAtomicFMaxEXT);
 }
