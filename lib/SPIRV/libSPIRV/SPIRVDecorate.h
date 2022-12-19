@@ -127,7 +127,7 @@ public:
   // Incomplete constructor
   SPIRVDecorate() : SPIRVDecorateGeneric(OC) {}
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<size_t>(Dec)) {
     case DecorationRegisterINTEL:
     case DecorationMemoryINTEL:
@@ -164,13 +164,13 @@ public:
       return ExtensionID::SPV_INTEL_loop_fuse;
     case internal::DecorationCallableFunctionINTEL:
       return ExtensionID::SPV_INTEL_fast_composite;
-    case internal::DecorationMathOpDSPModeINTEL:
+    case DecorationMathOpDSPModeINTEL:
       return ExtensionID::SPV_INTEL_fpga_dsp_control;
-    case internal::DecorationInitiationIntervalINTEL:
+    case DecorationInitiationIntervalINTEL:
       return ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes;
-    case internal::DecorationMaxConcurrencyINTEL:
+    case DecorationMaxConcurrencyINTEL:
       return ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes;
-    case internal::DecorationPipelineEnableINTEL:
+    case DecorationPipelineEnableINTEL:
       return ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes;
     case internal::DecorationRuntimeAlignedINTEL:
       return ExtensionID::SPV_INTEL_runtime_aligned;
@@ -201,7 +201,7 @@ public:
   // Incomplete constructor
   SPIRVDecorateId() : SPIRVDecorateGeneric(OC) {}
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<int>(Dec)) {
     case DecorationAliasScopeINTEL:
     case DecorationNoAliasINTEL:
@@ -266,7 +266,7 @@ public:
       Decoder >> Literals;
   }
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     if (getLinkageType() == SPIRVLinkageTypeKind::LinkageTypeLinkOnceODR)
       return ExtensionID::SPV_KHR_linkonce_odr;
     return {};
@@ -292,7 +292,7 @@ public:
   SPIRVMemberDecorate()
       : SPIRVDecorateGeneric(OC), MemberNumber(SPIRVWORD_MAX) {}
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<size_t>(Dec)) {
     case DecorationRegisterINTEL:
     case DecorationMemoryINTEL:
@@ -658,8 +658,8 @@ public:
   // Complete constructor for SPIRVDecorateMathOpDSPModeINTEL
   SPIRVDecorateMathOpDSPModeINTEL(SPIRVEntry *TheTarget, SPIRVWord Mode,
                                   SPIRVWord Propagate)
-      : SPIRVDecorate(spv::internal::DecorationMathOpDSPModeINTEL, TheTarget,
-                      Mode, Propagate){};
+      : SPIRVDecorate(spv::DecorationMathOpDSPModeINTEL, TheTarget, Mode,
+                      Propagate){};
 };
 
 class SPIRVDecorateAliasScopeINTEL : public SPIRVDecorateId {
@@ -680,15 +680,15 @@ class SPIRVDecorateInitiationIntervalINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVDecorateInitiationIntervalINTEL
   SPIRVDecorateInitiationIntervalINTEL(SPIRVEntry *TheTarget, SPIRVWord Cycles)
-      : SPIRVDecorate(spv::internal::DecorationInitiationIntervalINTEL,
-                      TheTarget, Cycles){};
+      : SPIRVDecorate(spv::DecorationInitiationIntervalINTEL, TheTarget,
+                      Cycles){};
 };
 
 class SPIRVDecorateMaxConcurrencyINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVDecorateMaxConcurrencyINTEL
   SPIRVDecorateMaxConcurrencyINTEL(SPIRVEntry *TheTarget, SPIRVWord Invocations)
-      : SPIRVDecorate(spv::internal::DecorationMaxConcurrencyINTEL, TheTarget,
+      : SPIRVDecorate(spv::DecorationMaxConcurrencyINTEL, TheTarget,
                       Invocations){};
 };
 
@@ -696,8 +696,7 @@ class SPIRVDecoratePipelineEnableINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVDecoratePipelineEnableINTEL
   SPIRVDecoratePipelineEnableINTEL(SPIRVEntry *TheTarget, SPIRVWord Enable)
-      : SPIRVDecorate(spv::internal::DecorationPipelineEnableINTEL, TheTarget,
-                      Enable){};
+      : SPIRVDecorate(spv::DecorationPipelineEnableINTEL, TheTarget, Enable){};
 };
 
 class SPIRVDecorateHostAccessINTEL : public SPIRVDecorate {

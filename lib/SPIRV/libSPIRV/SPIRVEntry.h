@@ -45,12 +45,11 @@
 #include "SPIRVError.h"
 #include "SPIRVIsValidEnum.h"
 
-#include <llvm/ADT/Optional.h>
-
 #include <cassert>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -293,9 +292,7 @@ public:
   Op getOpCode() const { return OpCode; }
   SPIRVModule *getModule() const { return Module; }
   virtual SPIRVCapVec getRequiredCapability() const { return SPIRVCapVec(); }
-  virtual llvm::Optional<ExtensionID> getRequiredExtension() const {
-    return {};
-  }
+  virtual std::optional<ExtensionID> getRequiredExtension() const { return {}; }
   const std::string &getName() const { return Name; }
   size_t getNumDecorations() const { return Decorates.size(); }
   bool hasDecorate(Decoration Kind, size_t Index = 0,
@@ -539,7 +536,7 @@ public:
 
   _SPIRV_DCL_ENCDEC
 protected:
-  SPIRVExecutionModelKind ExecModel;
+  SPIRVExecutionModelKind ExecModel = ExecutionModelMax;
   std::string Name;
 
 private:
@@ -847,7 +844,7 @@ public:
     }
   }
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<unsigned>(Kind)) {
     case CapabilityRoundToInfinityINTEL:
     case CapabilityFloatingPointModeINTEL:
@@ -909,7 +906,7 @@ public:
     return getVec(CapabilityLongConstantCompositeINTEL);
   }
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  std::optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_long_constant_composite;
   }
 

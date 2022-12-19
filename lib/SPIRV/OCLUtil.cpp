@@ -646,6 +646,9 @@ template <> void LLVMSPIRVAtomicRmwOpCodeMap::init() {
   add(llvm::AtomicRMWInst::Min, OpAtomicSMin);
   add(llvm::AtomicRMWInst::UMax, OpAtomicUMax);
   add(llvm::AtomicRMWInst::UMin, OpAtomicUMin);
+  add(llvm::AtomicRMWInst::FAdd, OpAtomicFAddEXT);
+  add(llvm::AtomicRMWInst::FMin, OpAtomicFMinEXT);
+  add(llvm::AtomicRMWInst::FMax, OpAtomicFMaxEXT);
 }
 
 } // namespace SPIRV
@@ -1499,7 +1502,7 @@ void insertImageNameAccessQualifier(SPIRVAccessQualifierKind Acc,
 } // namespace OCLUtil
 
 Value *SPIRV::transOCLMemScopeIntoSPIRVScope(Value *MemScope,
-                                             Optional<int> DefaultCase,
+                                             std::optional<int> DefaultCase,
                                              Instruction *InsertBefore) {
   if (auto *C = dyn_cast<ConstantInt>(MemScope)) {
     return ConstantInt::get(
@@ -1512,8 +1515,10 @@ Value *SPIRV::transOCLMemScopeIntoSPIRVScope(Value *MemScope,
                                DefaultCase, InsertBefore);
 }
 
-Value *SPIRV::transOCLMemOrderIntoSPIRVMemorySemantics(
-    Value *MemOrder, Optional<int> DefaultCase, Instruction *InsertBefore) {
+Value *
+SPIRV::transOCLMemOrderIntoSPIRVMemorySemantics(Value *MemOrder,
+                                                std::optional<int> DefaultCase,
+                                                Instruction *InsertBefore) {
   if (auto *C = dyn_cast<ConstantInt>(MemOrder)) {
     return ConstantInt::get(
         C->getType(), mapOCLMemSemanticToSPIRV(
@@ -1544,9 +1549,9 @@ SPIRV::transSPIRVMemoryScopeIntoOCLMemoryScope(Value *MemScope,
     }
   }
 
-  return getOrCreateSwitchFunc(kSPIRVName::TranslateSPIRVMemScope, MemScope,
-                               OCLMemScopeMap::getRMap(),
-                               /* IsReverse */ true, None, InsertBefore);
+  return getOrCreateSwitchFunc(
+      kSPIRVName::TranslateSPIRVMemScope, MemScope, OCLMemScopeMap::getRMap(),
+      /* IsReverse */ true, std::nullopt, InsertBefore);
 }
 
 Value *
@@ -1575,7 +1580,8 @@ SPIRV::transSPIRVMemorySemanticsIntoOCLMemoryOrder(Value *MemorySemantics,
              MemorySemanticsSequentiallyConsistentMask;
   return getOrCreateSwitchFunc(kSPIRVName::TranslateSPIRVMemOrder,
                                MemorySemantics, OCLMemOrderMap::getRMap(),
-                               /* IsReverse */ true, None, InsertBefore, Mask);
+                               /* IsReverse */ true, std::nullopt, InsertBefore,
+                               Mask);
 }
 
 Value *SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(
@@ -1591,10 +1597,10 @@ Value *SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(
   int Mask = MemorySemanticsWorkgroupMemoryMask |
              MemorySemanticsCrossWorkgroupMemoryMask |
              MemorySemanticsImageMemoryMask;
-  return getOrCreateSwitchFunc(kSPIRVName::TranslateSPIRVMemFence,
-                               MemorySemantics,
-                               OCLMemFenceExtendedMap::getRMap(),
-                               /* IsReverse */ true, None, InsertBefore, Mask);
+  return getOrCreateSwitchFunc(
+      kSPIRVName::TranslateSPIRVMemFence, MemorySemantics,
+      OCLMemFenceExtendedMap::getRMap(),
+      /* IsReverse */ true, std::nullopt, InsertBefore, Mask);
 }
 
 void llvm::mangleOpenClBuiltin(const std::string &UniqName,
