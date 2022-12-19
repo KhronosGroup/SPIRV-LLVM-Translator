@@ -2300,21 +2300,36 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpFMod: {
     // translate OpFMod(a, b) to:
-    //   r = frem(a, b)
-    //   c = copysign(r, b)
-    //   needs_fixing = islessgreater(r, c)
-    //   result = needs_fixing ? r + b : c
+    //   r = fmod(a, b)
+    //   result = copysign(r, b)
+    // this is how the CTS expects it to be implemented
     IRBuilder<> Builder(BB);
     SPIRVFMod *FMod = static_cast<SPIRVFMod *>(BV);
-    auto Dividend = transValue(FMod->getOperand(0), F, BB);
     auto Divisor = transValue(FMod->getOperand(1), F, BB);
-    auto FRem = Builder.CreateFRem(Dividend, Divisor, "frem.res");
-    auto CopySign = Builder.CreateBinaryIntrinsic(
-        llvm::Intrinsic::copysign, FRem, Divisor, nullptr, "copysign.res");
-    auto FAdd = Builder.CreateFAdd(FRem, Divisor, "fadd.res");
-    auto Cmp = Builder.CreateFCmpONE(FRem, CopySign, "cmp.res");
-    auto Select = Builder.CreateSelect(Cmp, FAdd, CopySign);
-    return mapValue(BV, Select);
+    auto *FModBuiltinCall = transBuiltinFromInst("fmod", FMod, BB);
+    auto *CopySign = Builder.CreateBinaryIntrinsic(llvm::Intrinsic::copysign,
+                                                   FModBuiltinCall, Divisor,
+                                                   nullptr, "copysign.res");
+    return mapValue(BV, CopySign);
+  }
+
+  case OpFRem: {
+    // translate OpFRem(a, b) to:
+    //   result = fmod(a, b)
+    // unless the instruction has a fast math declaration, this is how the CTS
+    // expects it to be implemented
+    IRBuilder<> Builder(BB);
+    SPIRVFRem *FRem = static_cast<SPIRVFRem *>(BV);
+    Value *Result = nullptr;
+    if (BV->hasDecorate(DecorationFPFastMathMode)) {
+      auto *Dividend = transValue(FRem->getOperand(0), F, BB);
+      auto *Divisor = transValue(FRem->getOperand(1), F, BB);
+      Result = Builder.CreateFRem(Dividend, Divisor);
+      applyFPFastMathModeDecorations(BV, cast<Instruction>(Result));
+    } else {
+      Result = transBuiltinFromInst("fmod", FRem, BB);
+    }
+    return mapValue(BV, Result);
   }
 
   case OpSMod: {

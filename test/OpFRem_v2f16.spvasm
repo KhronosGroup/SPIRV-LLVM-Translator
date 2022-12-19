@@ -4,20 +4,22 @@
 ; RUN: llvm-spirv -r -emit-opaque-pointers -o - %t.spv | llvm-dis | FileCheck %s
                OpCapability Addresses
                OpCapability Kernel
+               OpCapability Float16
                OpMemoryModel Physical32 OpenCL
-               OpEntryPoint Kernel %1 "testFMod_f32"
+               OpEntryPoint Kernel %1 "testFRem_v2f16"
                OpName %a "a"
                OpName %b "b"
        %void = OpTypeVoid
-      %float = OpTypeFloat 32
-          %5 = OpTypeFunction %void %float %float
+       %half = OpTypeFloat 16
+      %half2 = OpTypeVector %half 2
+          %5 = OpTypeFunction %void %half2 %half2
           %1 = OpFunction %void None %5
-          %a = OpFunctionParameter %float
-          %b = OpFunctionParameter %float
+          %a = OpFunctionParameter %half2
+          %b = OpFunctionParameter %half2
           %6 = OpLabel
-          %7 = OpFMod %float %a %b
+          %7 = OpFRem %half2 %a %b
                OpReturn
                OpFunctionEnd
 
-; CHECK-DAG: %[[fmod_res:[a-zA-Z0-9_]*]] = call spir_func float @_Z4fmodff(float %a, float %b)
-; CHECK-DAG: %copysign.res = call float @llvm.copysign.f32(float %[[fmod_res]], float %b)
+; CHECK: %[[fmod_res:[a-zA-Z0-9_]*]] = call spir_func <2 x half> @_Z4fmodDv2_DhS_(<2 x half> %a, <2 x half> %b)
+; CHECK-NEXT: ret void

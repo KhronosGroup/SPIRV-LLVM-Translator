@@ -21,8 +21,5 @@
                OpReturn
                OpFunctionEnd
 
-; CHECK-DAG: %frem.res = frem <2 x half> %a, %b
-; CHECK-DAG: %copysign.res = call <2 x half> @llvm.copysign.v2f16(<2 x half> %frem.res, <2 x half> %b)
-; CHECK-DAG: %fadd.res = fadd <2 x half> {{%frem\.res, %b|%b, %frem\.res}}
-; CHECK-DAG: %cmp.res = fcmp one <2 x half> {{%frem\.res, %copysign\.res|%copysign\.res, %frem\.res}}
-; CHECK: select <2 x i1> %cmp.res, <2 x half> %fadd.res, <2 x half> %copysign.res
+; CHECK-DAG: %[[fmod_res:[a-zA-Z0-9_]*]] = call spir_func <2 x half> @_Z4fmodDv2_DhS_(<2 x half> %a, <2 x half> %b)
+; CHECK-DAG: %copysign.res = call <2 x half> @llvm.copysign.v2f16(<2 x half> %[[fmod_res]], <2 x half> %b)

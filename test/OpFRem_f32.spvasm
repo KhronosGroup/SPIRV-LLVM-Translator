@@ -5,7 +5,7 @@
                OpCapability Addresses
                OpCapability Kernel
                OpMemoryModel Physical32 OpenCL
-               OpEntryPoint Kernel %1 "testFMod_f32"
+               OpEntryPoint Kernel %1 "testFRem_f32"
                OpName %a "a"
                OpName %b "b"
        %void = OpTypeVoid
@@ -15,9 +15,9 @@
           %a = OpFunctionParameter %float
           %b = OpFunctionParameter %float
           %6 = OpLabel
-          %7 = OpFMod %float %a %b
+          %7 = OpFRem %float %a %b
                OpReturn
                OpFunctionEnd
 
-; CHECK-DAG: %[[fmod_res:[a-zA-Z0-9_]*]] = call spir_func float @_Z4fmodff(float %a, float %b)
-; CHECK-DAG: %copysign.res = call float @llvm.copysign.f32(float %[[fmod_res]], float %b)
+; CHECK: %[[fmod_res:[a-zA-Z0-9_]*]] = call spir_func float @_Z4fmodff(float %a, float %b)
+; CHECK-NEXT: ret void

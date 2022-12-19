@@ -27,7 +27,7 @@
 ; CHECK-SPIRV: 5 FRem [[float]] [[#r6]]
 ; CHECK-SPIRV: 5 FRem [[float]] [[#r7]]
 
-; CHECK-LLVM: %r1 = frem float %a, %b
+; CHECK-LLVM: %r1 = call spir_func float @_Z4fmodff(float %a, float %b)
 ; CHECK-LLVM: %r2 = frem nnan float %a, %b
 ; CHECK-LLVM: %r3 = frem ninf float %a, %b
 ; CHECK-LLVM: %r4 = frem nsz float %a, %b
