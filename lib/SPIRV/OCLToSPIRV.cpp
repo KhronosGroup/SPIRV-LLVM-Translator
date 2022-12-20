@@ -417,6 +417,10 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     visitCallConvertAsBFloat16Float(&CI, DemangledName);
     return;
   }
+  if (DemangledName.find(kOCLBuiltinName::IntelJointMatrixPrefix) == 0) {
+    visitCallIntelJointMatrix(&CI, DemangledName);
+    return;
+  }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
 
@@ -1785,6 +1789,22 @@ void OCLToSPIRVBase::visitCallConvertBFloat16AsUshort(CallInst *CI,
   }
 
   mutateCallInst(CI, internal::OpConvertFToBF16INTEL);
+}
+
+void OCLToSPIRVBase::visitCallIntelJointMatrix(CallInst *CI,
+                                               StringRef DemangledName) {
+  Op OpCode =
+      StringSwitch<Op>(DemangledName)
+          .Case("intel_joint_matrix_store", internal::OpJointMatrixStoreINTEL)
+          .Case("intel_joint_matrix_mad", internal::OpJointMatrixMadINTEL)
+          .Default(OpNop);
+  auto FuncName = getSPIRVFuncName(OpCode);
+  // Add postfix for intel_joint_matrix_load_* functions
+  if (DemangledName.find("intel_joint_matrix_load") == 0)
+    FuncName = getSPIRVFuncName(internal::OpJointMatrixLoadINTEL) + "_" +
+               DemangledName.substr(23).str();
+  // Add matrix scope, only supoort matrix_scope_sub_group_intel
+  mutateCallInst(CI, FuncName).appendArg(addInt32(0));
 }
 
 void OCLToSPIRVBase::visitCallConvertAsBFloat16Float(CallInst *CI,
