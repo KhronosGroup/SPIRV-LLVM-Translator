@@ -73,8 +73,9 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     case OpenCLLIB::Printf: {
       // TODO: Lower the printf instruction with the non-constant address space
       // format string to suitable for OpenCL representation
-      if (dyn_cast<PointerType>(CI.getOperand(0)->getType())
-              ->getAddressSpace() == SPIR::TypeAttributeEnum::ATTR_CONST)
+      auto PT = dyn_cast<PointerType>(CI.getOperand(0)->getType());
+      assert(PT && "operant must have a type");
+      if (PT->getAddressSpace() == SPIR::TypeAttributeEnum::ATTR_CONST)
         visitCallSPIRVPrintf(&CI, ExtOp);
       break;
     }
