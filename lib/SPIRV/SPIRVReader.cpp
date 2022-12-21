@@ -1427,7 +1427,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case OpTypeMatrix:
     case OpTypeArray:
       auto AT = cast<ArrayType>(transType(BCC->getType()));
-      return mapValue( BV, ConstantArray::get(AT, CV));
+      return mapValue(BV, ConstantArray::get(AT, CV));
     }
     case OpTypeStruct: {
       auto BCCTy = cast<StructType>(transType(BCC->getType()));
