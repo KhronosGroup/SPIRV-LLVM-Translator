@@ -1426,13 +1426,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       return mapValue(BV, ConstantVector::get(CV));
     case OpTypeMatrix:
     case OpTypeArray:
-      auto AT = dyn_cast<ArrayType>(transType(BCC->getType()));
-      assert(AT && "must have an array type");
+      auto AT = cast<ArrayType>(transType(BCC->getType()));
       return mapValue( BV, ConstantArray::get(AT, CV));
     }
     case OpTypeStruct: {
-      auto BCCTy = dyn_cast<StructType>(transType(BCC->getType()));
-      assert(BCCTy && "must have a struct type");
+      auto BCCTy = cast<StructType>(transType(BCC->getType()));
       auto Members = BCCTy->getNumElements();
       auto Constants = CV.size();
       // if we try to initialize constant TypeStruct, add bitcasts
