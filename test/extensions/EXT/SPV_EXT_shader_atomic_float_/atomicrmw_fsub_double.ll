@@ -1,10 +1,10 @@
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.spv
+; RUN: llvm-as -opaque-pointers=0 < %s -o %t.bc
+; RUN: llvm-spirv -opaque-pointers=0 --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck --check-prefix=CHECK-SPIRV %s
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM
+; RUN: llvm-dis -opaque-pointers=0 %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: Extension "SPV_EXT_shader_atomic_float_add"
 ; CHECK-SPIRV-DAG: Capability AtomicFloat64AddEXT
