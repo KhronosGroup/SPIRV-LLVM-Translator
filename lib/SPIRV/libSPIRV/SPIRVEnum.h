@@ -276,7 +276,7 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilityFloatingPointModeINTEL});
   ADD_VEC_INIT(ExecutionModeSharedLocalMemorySizeINTEL,
                {CapabilityVectorComputeINTEL});
-  ADD_VEC_INIT(internal::ExecutionModeStreamingInterfaceINTEL,
+  ADD_VEC_INIT(ExecutionModeStreamingInterfaceINTEL,
                {CapabilityFPGAKernelAttributesINTEL});
   ADD_VEC_INIT(ExecutionModeNamedBarrierCountINTEL,
                {CapabilityVectorComputeINTEL});
