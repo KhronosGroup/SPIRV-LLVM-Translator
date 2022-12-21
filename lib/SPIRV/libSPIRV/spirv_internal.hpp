@@ -120,9 +120,7 @@ enum InternalCapability {
   ICapabilityBindlessImagesINTEL = 6528
 };
 
-enum InternalExecutionMode {
-  IExecModeStreamingInterfaceINTEL = 6154,
-};
+enum InternalExecutionMode {};
 
 enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
 
@@ -284,9 +282,6 @@ constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
 
 constexpr Decoration DecorationMathOpDSPModeINTEL =
     static_cast<Decoration>(IDecMathOpDSPModeINTEL);
-
-constexpr ExecutionMode ExecutionModeStreamingInterfaceINTEL =
-    static_cast<ExecutionMode>(IExecModeStreamingInterfaceINTEL);
 
 constexpr LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
