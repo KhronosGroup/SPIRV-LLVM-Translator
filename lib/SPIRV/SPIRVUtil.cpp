@@ -1381,8 +1381,8 @@ Value *getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
   auto GEP = cast<GEPOperator>(V);
   assert(GEP->getNumOperands() == 3 && "must be a GEP from an array");
   assert(GEP->getSourceElementType()->getArrayNumElements() == Size);
-  [[maybe_unused]] auto OP1 = dyn_cast<ConstantInt>(GEP->getOperand(1));
-  [[maybe_unused]] auto OP2 = dyn_cast<ConstantInt>(GEP->getOperand(2));
+  [[maybe_unused]] auto *OP1 = dyn_cast<ConstantInt>(GEP->getOperand(1));
+  [[maybe_unused]] auto *OP2 = dyn_cast<ConstantInt>(GEP->getOperand(2));
   assert(OP1 && "Operand 1 must be a constant integer");
   assert(OP2 && "Operand 2 must be a constant integer");
   assert(OP1->getZExtValue() == 0);
