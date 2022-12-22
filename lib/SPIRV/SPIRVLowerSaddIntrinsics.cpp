@@ -166,7 +166,7 @@ namespace {
 //     return static_cast<unsigned T>(-1);
 //   return a + b;
 // }
-Function *GenerateUaddSatReplacement(Module *M, const std::string &FuncName,
+Function *generateUaddSatReplacement(Module *M, const std::string &FuncName,
                                      int IntegerBitWidth) {
   Function *F;
   if ((F = M->getFunction(FuncName)))
@@ -207,7 +207,7 @@ void SPIRVLowerSaddIntrinsicsBase::replaceUaddSat(Function &F) {
     return;
 
   std::string FuncName = "llvm_uadd_sat_i" + std::to_string(IBW);
-  Function *Replacement = GenerateUaddSatReplacement(Mod, FuncName, IBW);
+  Function *Replacement = generateUaddSatReplacement(Mod, FuncName, IBW);
   for (auto *II : IntrinsicInsts) {
     SmallVector<Value *, 2> Args = {II->getArgOperand(0), II->getArgOperand(1)};
     CallInst *CI = CallInst::Create(Replacement, Args, "replaced_intrinsic");
