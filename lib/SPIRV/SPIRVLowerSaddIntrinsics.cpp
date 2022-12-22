@@ -37,8 +37,6 @@
 // function calls
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "spv-lower-llvm_sadd_intrinsics"
-
 #include "SPIRVLowerSaddIntrinsics.h"
 #include "LLVMSaddWithOverflow.h"
 
@@ -149,6 +147,8 @@ void SPIRVLowerSaddIntrinsicsBase::replaceSaddSat(Function &F) {
   replaceSaddOverflow(*SaddO);
 }
 
+namespace {
+
 // This function for a given @IntegerBitWidth generates the following IR:
 // Lets define T as i{IntegerBitWidth} (for example, i8, i16, i32 or i64).
 // define dso_local T @FuncName(T %a, T %b) {
@@ -166,9 +166,8 @@ void SPIRVLowerSaddIntrinsicsBase::replaceSaddSat(Function &F) {
 //     return static_cast<unsigned T>(-1);
 //   return a + b;
 // }
-static Function *GenerateUaddSatReplacement(Module *M,
-                                            const std::string FuncName,
-                                            int IntegerBitWidth) {
+Function *GenerateUaddSatReplacement(Module *M, const std::string &FuncName,
+                                     int IntegerBitWidth) {
   Function *F;
   if ((F = M->getFunction(FuncName)))
     return F;
@@ -192,6 +191,8 @@ static Function *GenerateUaddSatReplacement(Module *M,
   IB.CreateRet(RetVal);
   return F;
 }
+
+} // namespace
 
 void SPIRVLowerSaddIntrinsicsBase::replaceUaddSat(Function &F) {
   SmallVector<IntrinsicInst *, 4> IntrinsicInsts;
