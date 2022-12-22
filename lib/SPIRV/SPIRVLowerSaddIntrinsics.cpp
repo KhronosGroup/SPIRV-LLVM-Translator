@@ -46,12 +46,14 @@
 #include "SPIRVError.h"
 #include "libSPIRV/SPIRVDebug.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Linker/Linker.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
 using namespace llvm;
 using namespace SPIRV;
@@ -147,16 +149,90 @@ void SPIRVLowerSaddIntrinsicsBase::replaceSaddSat(Function &F) {
   replaceSaddOverflow(*SaddO);
 }
 
+// This function for a given @IntegerBitWidth generates the following IR:
+// Lets define T as i{IntegerBitWidth} (for example, i8, i16, i32 or i64).
+// define dso_local T @FuncName(T %a, T %b) {
+//   %not = xor T %a, -1
+//   %cmp = icmp ult T %not, %b
+//   %add = add T %b, %a
+//   %retval.0 = select i1 %cmp, T 0, T %add
+//   ret T %retval.0
+// }
+//
+// which is equivalent to the following C++ code:
+// unsigned T uadd_sat(unsigned T a, unsigned T b) {
+//   // ~a is equivalent to std::numeric_limits<unsigned T>::max() - a
+//   if (~a < b)
+//     return static_cast<unsigned T>(-1);
+//   return a + b;
+// }
+static Function *GenerateUaddSatReplacement(Module *M,
+                                            const std::string FuncName,
+                                            int IntegerBitWidth) {
+  Function *F;
+  if ((F = M->getFunction(FuncName)))
+    return F;
+
+  Type *ReturnType = IntegerType::get(M->getContext(), IntegerBitWidth);
+  SmallVector<Type *> ArgTypes = {ReturnType, ReturnType};
+  FunctionType *FT = FunctionType::get(ReturnType, ArgTypes, false);
+  F = Function::Create(FT, Function::InternalLinkage, FuncName, M);
+  BasicBlock *BB = BasicBlock::Create(F->getContext(), "entry", F);
+  IRBuilder<> IB(F->getContext());
+  IB.SetInsertPoint(BB);
+
+  Value *FirstArg = F->getArg(0);
+  Value *SecondArg = F->getArg(1);
+  Constant *Constant = ConstantInt::getSigned(ReturnType, -1);
+  Value *Not =
+      IB.CreateXor(FirstArg, Constant); // This is equivalent to ~FirstArg.
+  Value *Cmp = IB.CreateICmpULT(Not, SecondArg);
+  Value *Add = IB.CreateAdd(FirstArg, SecondArg);
+  Value *RetVal = IB.CreateSelect(Cmp, Constant, Add);
+  IB.CreateRet(RetVal);
+  return F;
+}
+
+void SPIRVLowerSaddIntrinsicsBase::replaceUaddSat(Function &F) {
+  SmallVector<IntrinsicInst *, 4> IntrinsicInsts;
+  int IBW = F.getFunctionType()->getReturnType()->getIntegerBitWidth();
+  assert((IBW == 8 || IBW == 16 || IBW == 32 || IBW == 64) &&
+         "Unsupported bit width of llvm.uadd.sat.* intrinsic");
+  for (User *U : F.users())
+    if (auto *II = dyn_cast<IntrinsicInst>(U))
+      IntrinsicInsts.push_back(II);
+
+  if (IntrinsicInsts.empty())
+    return;
+
+  std::string FuncName = "llvm_uadd_sat_i" + std::to_string(IBW);
+  Function *Replacement = GenerateUaddSatReplacement(Mod, FuncName, IBW);
+  for (auto *II : IntrinsicInsts) {
+    SmallVector<Value *, 2> Args = {II->getArgOperand(0), II->getArgOperand(1)};
+    CallInst *CI = CallInst::Create(Replacement, Args, "replaced_intrinsic");
+    II->replaceAllUsesWith(CI);
+    ReplaceInstWithInst(II, CI);
+  }
+}
+
 bool SPIRVLowerSaddIntrinsicsBase::runLowerSaddIntrinsics(Module &M) {
   Context = &M.getContext();
   Mod = &M;
+  SmallVector<Function *, 4> FuncsToRemove;
   for (Function &F : M) {
     Intrinsic::ID IntrinId = F.getIntrinsicID();
     if (IntrinId == Intrinsic::sadd_with_overflow)
       replaceSaddOverflow(F);
     else if (IntrinId == Intrinsic::sadd_sat)
       replaceSaddSat(F);
+    else if (IntrinId == Intrinsic::uadd_sat) {
+      replaceUaddSat(F);
+      FuncsToRemove.push_back(&F);
+    }
   }
+
+  for (auto *F : FuncsToRemove)
+    F->eraseFromParent();
 
   verifyRegularizationPass(M, "SPIRVLowerSaddIntrinsics");
   return TheModuleIsModified;

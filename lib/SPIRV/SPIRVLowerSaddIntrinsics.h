@@ -35,6 +35,7 @@
 #ifndef SPIRV_SPIRVLOWERSADDINTRINSICS_H
 #define SPIRV_SPIRVLOWERSADDINTRINSICS_H
 
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 
@@ -45,10 +46,14 @@ public:
   SPIRVLowerSaddIntrinsicsBase() : Context(nullptr), Mod(nullptr) {}
 
   bool runLowerSaddIntrinsics(llvm::Module &M);
+  bool runLowerUaddIntrinsics(llvm::Module &M);
 
 private:
   void replaceSaddOverflow(llvm::Function &F);
   void replaceSaddSat(llvm::Function &F);
+
+  // TODO: implement replaceUaddOverflow
+  void replaceUaddSat(llvm::Function &F);
 
   llvm::LLVMContext *Context;
   llvm::Module *Mod;
