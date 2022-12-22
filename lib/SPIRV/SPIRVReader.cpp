@@ -3418,8 +3418,8 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{simple_dual_port:1}";
   if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber)) {
     Out << "{merge";
-    for (const auto &Str : E->getMemberDecorationStringLiteral(DecorationMergeINTEL,
-                                                        MemberNumber))
+    for (const auto &Str : E->getMemberDecorationStringLiteral(
+             DecorationMergeINTEL, MemberNumber))
       Out << ":" << Str;
     Out << '}';
   }
