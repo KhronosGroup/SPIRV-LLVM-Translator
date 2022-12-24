@@ -649,33 +649,37 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM, Instruction *BI) {
 void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
   assert(F);
 
-  if (!FuncLoopMetadataMap.empty()) {
-    // In SPIRV loop metadata is linked to a header basic block of a loop
-    // whilst in LLVM IR it is linked to a latch basic block (the one
-    // whose back edge goes to a header basic block) of the loop.
+  if (FuncLoopMetadataMap.empty())
+    return;
 
-    using Edge = std::pair<const BasicBlock *, const BasicBlock *>;
-    SmallVector<Edge, 32> Edges;
-    FindFunctionBackedges(*F, Edges);
+  // Function declaration doesn't contain loop metadata.
+  if (F->isDeclaration())
+    return;
 
-    for (const auto &BkEdge : Edges) {
-      // Check that loop header BB contains loop metadata.
-      const auto LMDItr = FuncLoopMetadataMap.find(BkEdge.second);
-      if (LMDItr == FuncLoopMetadataMap.end())
-        continue;
+  // In SPIRV loop metadata is linked to a header basic block of a loop
+  // whilst in LLVM IR it is linked to a latch basic block (the one
+  // whose back edge goes to a header basic block) of the loop.
 
-      auto *BI = const_cast<Instruction *>(BkEdge.first->getTerminator());
-      const auto *LMD = LMDItr->second;
-      if (LMD->getOpCode() == OpLoopMerge) {
-        const auto *LM = static_cast<const SPIRVLoopMerge *>(LMD);
-        setLLVMLoopMetadata<SPIRVLoopMerge>(LM, BI);
-      } else if (LMD->getOpCode() == OpLoopControlINTEL) {
-        const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
-        setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, BI);
-      }
+  using Edge = std::pair<const BasicBlock *, const BasicBlock *>;
+  SmallVector<Edge, 32> Edges;
+  FindFunctionBackedges(*F, Edges);
 
-      FuncLoopMetadataMap.erase(LMDItr);
+  for (const auto &BkEdge : Edges) {
+    // Check that loop header BB contains loop metadata.
+    const auto LMDItr = FuncLoopMetadataMap.find(BkEdge.second);
+    if (LMDItr == FuncLoopMetadataMap.end())
+      continue;
+
+    auto *BI = const_cast<Instruction *>(BkEdge.first->getTerminator());
+    const auto *LMD = LMDItr->second;
+    if (LMD->getOpCode() == OpLoopMerge) {
+      const auto *LM = static_cast<const SPIRVLoopMerge *>(LMD);
+      setLLVMLoopMetadata<SPIRVLoopMerge>(LM, BI);
+    } else if (LMD->getOpCode() == OpLoopControlINTEL) {
+      const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
+      setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, BI);
     }
+    FuncLoopMetadataMap.erase(LMDItr);
   }
 }
 
