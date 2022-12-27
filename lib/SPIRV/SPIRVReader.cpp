@@ -221,9 +221,9 @@ Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   return nullptr;
 }
 
-static llvm::Optional<llvm::Attribute>
+static std::optional<llvm::Attribute>
 translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext &Context) {
-  llvm::Optional<llvm::Attribute> RetAttr;
+  std::optional<llvm::Attribute> RetAttr;
 
   if (!BV->hasDecorate(DecorationSingleElementVectorINTEL))
     return RetAttr;
@@ -306,7 +306,7 @@ std::string SPIRVToLLVM::transVCTypeName(SPIRVTypeBufferSurfaceINTEL *PST) {
 }
 
 template <typename ImageType>
-Optional<SPIRVAccessQualifierKind> getAccessQualifier(ImageType *T) {
+std::optional<SPIRVAccessQualifierKind> getAccessQualifier(ImageType *T) {
   if (!T->hasAccessQualifier())
     return {};
   return T->getAccessQualifier();
@@ -619,7 +619,7 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   if (!LM)
     return;
 
-  auto Temp = MDNode::getTemporary(*Context, None);
+  auto Temp = MDNode::getTemporary(*Context, std::nullopt);
   auto Self = MDNode::get(*Context, Temp.get());
   Self->replaceOperandWith(0, Self);
   SPIRVWord LC = LM->getLoopControl();
@@ -766,7 +766,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
           // Emit a distinct index group that will be referenced from
           // llvm.loop.parallel_access_indices metadata; hash the new
           // MDNode for future accesses to the same memory.
-          CurrentDepthIdxGroup = llvm::MDNode::getDistinct(*Context, None);
+          CurrentDepthIdxGroup =
+              llvm::MDNode::getDistinct(*Context, std::nullopt);
           OffsetIdxGroupMap.emplace(Info, CurrentDepthIdxGroup);
         } else {
           // Previous accesses to that field have already been indexed,
@@ -776,7 +777,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
       } else /* Regular kernel-scope array/pointer variable */ {
         // Emit a distinct index group that will be referenced from
         // llvm.loop.parallel_access_indices metadata
-        CurrentDepthIdxGroup = llvm::MDNode::getDistinct(*Context, None);
+        CurrentDepthIdxGroup =
+            llvm::MDNode::getDistinct(*Context, std::nullopt);
       }
 
       unsigned Safelen = PointerSflnMap.find(ArrayGEPIt.first)->second;
@@ -1423,12 +1425,12 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case OpTypeVector:
       return mapValue(BV, ConstantVector::get(CV));
     case OpTypeMatrix:
-    case OpTypeArray:
-      return mapValue(
-          BV, ConstantArray::get(dyn_cast<ArrayType>(transType(BCC->getType())),
-                                 CV));
+    case OpTypeArray: {
+      auto *AT = cast<ArrayType>(transType(BCC->getType()));
+      return mapValue(BV, ConstantArray::get(AT, CV));
+    }
     case OpTypeStruct: {
-      auto BCCTy = dyn_cast<StructType>(transType(BCC->getType()));
+      auto *BCCTy = cast<StructType>(transType(BCC->getType()));
       auto Members = BCCTy->getNumElements();
       auto Constants = CV.size();
       // if we try to initialize constant TypeStruct, add bitcasts
@@ -1445,9 +1447,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         }
       }
 
-      return mapValue(BV,
-                      ConstantStruct::get(
-                          dyn_cast<StructType>(transType(BCC->getType())), CV));
+      return mapValue(BV, ConstantStruct::get(BCCTy, CV));
     }
     default:
       llvm_unreachable("not implemented");
@@ -3356,7 +3356,7 @@ void generateIntelFPGAAnnotation(
     Out << "{simple_dual_port:1}";
   if (E->hasDecorate(DecorationMergeINTEL)) {
     Out << "{merge";
-    for (auto Str : E->getDecorationStringLiteral(DecorationMergeINTEL))
+    for (const auto &Str : E->getDecorationStringLiteral(DecorationMergeINTEL))
       Out << ":" << Str;
     Out << '}';
   }
@@ -3438,8 +3438,8 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{simple_dual_port:1}";
   if (E->hasMemberDecorate(DecorationMergeINTEL, 0, MemberNumber)) {
     Out << "{merge";
-    for (auto Str : E->getMemberDecorationStringLiteral(DecorationMergeINTEL,
-                                                        MemberNumber))
+    for (const auto &Str : E->getMemberDecorationStringLiteral(
+             DecorationMergeINTEL, MemberNumber))
       Out << ":" << Str;
     Out << '}';
   }
@@ -3999,8 +3999,7 @@ bool SPIRVToLLVM::transMetadata() {
                      getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
     // Generate metadata for Intel FPGA streaming interface
-    if (auto *EM = BF->getExecutionMode(
-            internal::ExecutionModeStreamingInterfaceINTEL)) {
+    if (auto *EM = BF->getExecutionMode(ExecutionModeStreamingInterfaceINTEL)) {
       std::vector<uint32_t> InterfaceVec = EM->getLiterals();
       assert(InterfaceVec.size() == 1 &&
              "Expected StreamingInterfaceINTEL to have exactly 1 literal");
@@ -4612,7 +4611,42 @@ bool llvm::getSpecConstInfo(std::istream &IS,
       if (C->hasDecorate(DecorationSpecId, 0, &SpecConstIdLiteral)) {
         SPIRVType *Ty = C->getType();
         uint32_t SpecConstSize = Ty->isTypeBool() ? 1 : Ty->getBitWidth() / 8;
-        SpecConstInfo.emplace_back(SpecConstIdLiteral, SpecConstSize);
+        std::string TypeString = "";
+        if (Ty->isTypeBool()) {
+          TypeString = "i1";
+        } else if (Ty->isTypeInt()) {
+          switch (SpecConstSize) {
+          case 1:
+            TypeString = "i8";
+            break;
+          case 2:
+            TypeString = "i16";
+            break;
+          case 4:
+            TypeString = "i32";
+            break;
+          case 8:
+            TypeString = "i64";
+            break;
+          }
+        } else if (Ty->isTypeFloat()) {
+          switch (SpecConstSize) {
+          case 2:
+            TypeString = "f16";
+            break;
+          case 4:
+            TypeString = "f32";
+            break;
+          case 8:
+            TypeString = "f64";
+            break;
+          }
+        }
+        if (TypeString == "")
+          return false;
+
+        SpecConstInfo.emplace_back(
+            SpecConstInfoTy({SpecConstIdLiteral, SpecConstSize, TypeString}));
       }
       break;
     }
