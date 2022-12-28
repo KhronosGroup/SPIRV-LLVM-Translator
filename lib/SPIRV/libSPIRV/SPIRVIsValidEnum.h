@@ -167,6 +167,7 @@ inline bool isValid(spv::FunctionParameterAttribute V) {
   case FunctionParameterAttributeNoCapture:
   case FunctionParameterAttributeNoWrite:
   case FunctionParameterAttributeNoReadWrite:
+  case FunctionParameterAttributeRuntimeAlignedINTEL:
     return true;
   default:
     return false;
