@@ -1,7 +1,7 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s
-; RUN: spir-val %t.spv
+; RUN: spirv-val %t.spv
 
 ; Test checks that saturation addition and substraction llvm intrinsics
 ; are translated into instruction from OpenCL Extended Instruction Set.
