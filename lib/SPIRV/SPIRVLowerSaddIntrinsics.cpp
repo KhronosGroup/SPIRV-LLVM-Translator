@@ -154,8 +154,6 @@ bool SPIRVLowerSaddIntrinsicsBase::runLowerSaddIntrinsics(Module &M) {
     Intrinsic::ID IntrinId = F.getIntrinsicID();
     if (IntrinId == Intrinsic::sadd_with_overflow)
       replaceSaddOverflow(F);
-    else if (IntrinId == Intrinsic::sadd_sat)
-      replaceSaddSat(F);
   }
 
   verifyRegularizationPass(M, "SPIRVLowerSaddIntrinsics");
