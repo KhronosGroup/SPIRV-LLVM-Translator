@@ -183,9 +183,13 @@ BuiltinCallMutator &BuiltinCallMutator::replaceArg(unsigned Index,
 BuiltinCallMutator &BuiltinCallMutator::removeArg(unsigned Index) {
   // If the argument being dropped is the last one, there is nothing to move, so
   // just remove the attributes.
-  if (Index == Args.size() - 1)
-    Attrs = Attrs.removeParamAttributes(CI->getContext(), Index);
-  else
+  if (Index == Args.size() - 1) {
+    SmallVector<AttributeSet, 4> ArgAttrs;
+    for (unsigned I = 0; I < Index; ++I)
+      ArgAttrs.push_back(Attrs.getParamAttrs(I));
+    Attrs = AttributeList::get(CI->getContext(), Attrs.getFnAttrs(),
+                               Attrs.getRetAttrs(), ArgAttrs);
+  } else
     moveAttributes(CI->getContext(), Attrs, Index + 1, Args.size() - Index - 1,
                    Index);
   Args.erase(Args.begin() + Index);
