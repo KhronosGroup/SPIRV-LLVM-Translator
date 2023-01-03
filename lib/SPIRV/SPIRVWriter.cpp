@@ -905,7 +905,6 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
     // TODO: Once the design for per-kernel register size allocation is
     // finalized, we will need to move away from UserSemantic and introduce an
     // extension
-    assert(isKernel(F) && "Only kernels should have RegisterAllocMode");
     int RegisterAllocNodeMDOp = getMDOperandAsInt(RegisterAllocModeMD, 0);
     // The current RegisterAllocMode metadata format is as follows
     // AUTO - 0
