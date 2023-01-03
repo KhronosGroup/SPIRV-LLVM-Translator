@@ -140,11 +140,16 @@ bool SPIRVTypeScavenger::typeIntrinsicCall(
     case Intrinsic::lifetime_start:
     case Intrinsic::lifetime_end:
     case Intrinsic::invariant_start:
-    case Intrinsic::invariant_end:
       // These intrinsics were stored as i8* as typed pointers, and the SPIR-V
       // writer will expect these to be i8*, even if they can be any pointer
       // type.
       ArgTys.emplace_back(1, Type::getInt8Ty(Ctx));
+      break;
+    case Intrinsic::invariant_end:
+      // This is like invariant_start with an extra string parameter in the
+      // beginning (so the pointer object moves to argument two).
+      ArgTys.emplace_back(0, Type::getInt8Ty(Ctx));
+      ArgTys.emplace_back(2, Type::getInt8Ty(Ctx));
       break;
     case Intrinsic::var_annotation:
     case Intrinsic::ptr_annotation:
