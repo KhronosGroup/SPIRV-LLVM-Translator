@@ -901,7 +901,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   transFPGAFunctionMetadata(BF, F);
 
-  if (auto RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
+  if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
     // TODO: Once the design for per-kernel register size allocation is
     // finalized, we will need to move away from UserSemantic and introduce an
     // extension
