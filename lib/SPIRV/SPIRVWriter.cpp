@@ -918,7 +918,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
       // means small grf mode
       std::string NumThreads = RegisterAllocNodeMDOp == 2 ? "4" : "8";
       BF->addDecorate(new SPIRVDecorateUserSemanticAttr(
-                          BF, "num-thread-per-eu " + NumThreads));
+          BF, "num-thread-per-eu " + NumThreads));
     }
   }
 
