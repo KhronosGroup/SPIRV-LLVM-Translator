@@ -1,10 +1,18 @@
+; This test checks that the translator is capable to correctly translate
+; __spirv_ControlBarrier with runtime-known MemScope parameter
+; to SPIR-V and back to OpenCL 2.0 IR.
+; TODO: to remove this test once
+; https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/1805
+; is fixed as barrier.cl and sub_group_barrier.cl will be enough to test this
+; case
+
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.spv.txt
 ; RUN: FileCheck < %t.spv.txt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -to-binary %t.spv.txt -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv --spirv-target-env=CL2.0 -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc | FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv --spirv-target-env=CL2.0 -r %t.spv -o %t.bc
+; RUN: llvm-dis %t.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: FunctionCall [[#]] [[#SCOPE:]] [[#]]
 ; CHECK-SPIRV: ControlBarrier [[#]] [[#SCOPE]] [[#]]
