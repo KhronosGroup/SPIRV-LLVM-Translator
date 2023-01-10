@@ -650,7 +650,7 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
   auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
     unsigned long long N = 0;
     if (consumeUnsignedInteger(Postfix, 10, N)) {
-      SPIRVDBG(errs() << "Error in extracting integer value");
+      BM->getErrorLog().checkError(false, InvalidLlvmModule, "TypeJointMatrixINTEL expects integer parameters");
       return 0;
     }
     return getUInt32(M, N);
