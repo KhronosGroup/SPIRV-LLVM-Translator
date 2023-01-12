@@ -1198,6 +1198,12 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     return BI;
   }
 
+  // Translate aliases to their aliasee because they can't be represented
+  // directly in SPIR-V.
+  if (auto ConstAlias = dyn_cast<GlobalAlias>(V)) {
+    return transValue(ConstAlias->getAliasee(), nullptr, false);
+  }
+
   if (isa<UndefValue>(V)) {
     return BM->addUndef(transType(V->getType()));
   }
