@@ -1200,8 +1200,9 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
 
   // Translate aliases to their aliasee because they can't be represented
   // directly in SPIR-V.
-  if (auto ConstAlias = dyn_cast<GlobalAlias>(V)) {
-    return transValue(ConstAlias->getAliasee(), nullptr, false);
+  if (auto *const ConstAlias = dyn_cast<GlobalAlias>(V)) {
+    return transValue(ConstAlias->getAliasee(), nullptr, false,
+                      FuncTransMode::Pointer);
   }
 
   if (isa<UndefValue>(V)) {
