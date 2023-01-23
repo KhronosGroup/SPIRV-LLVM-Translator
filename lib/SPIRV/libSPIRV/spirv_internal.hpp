@@ -58,7 +58,8 @@ enum InternalCapability {
   ICapDebugInfoModuleINTEL = 6114,
   ICapBfloat16ConversionINTEL = 6115,
   ICapabilityTensorFloat32ConversionINTEL = 6425,
-  ICapabilityMaskedGatherScatterINTEL = 6427
+  ICapabilityMaskedGatherScatterINTEL = 6427,
+  ICapabilityHWThreadQueryINTEL = 6134,
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -80,6 +81,16 @@ _SPIRV_OP(Op, MaskedScatterINTEL)
 
 _SPIRV_OP(Capability, TensorFloat32ConversionINTEL)
 _SPIRV_OP(Op, ConvertFToTF32INTEL)
+
+enum InternalBuiltIn {
+  IBuiltInSubDeviceIDINTEL = 6135,
+  IBuiltInGlobalHWThreadIDINTEL = 6136,
+};
+
+#define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
+_SPIRV_OP(Capability, HWThreadQueryINTEL)
+_SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
+_SPIRV_OP(BuiltIn, GlobalHWThreadIDINTEL)
 #undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);

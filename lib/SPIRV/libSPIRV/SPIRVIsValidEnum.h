@@ -173,7 +173,7 @@ inline bool isValid(spv::FunctionParameterAttribute V) {
 }
 
 inline bool isValid(spv::BuiltIn V) {
-  switch (V) {
+  switch (static_cast<uint32_t>(V)) {
   case BuiltInPosition:
   case BuiltInPointSize:
   case BuiltInClipDistance:
@@ -272,6 +272,8 @@ inline bool isValid(spv::BuiltIn V) {
   case BuiltInSMCountNV:
   case BuiltInWarpIDNV:
   case BuiltInSMIDNV:
+  case internal::BuiltInSubDeviceIDINTEL:
+  case internal::BuiltInGlobalHWThreadIDINTEL:
     return true;
   default:
     return false;
