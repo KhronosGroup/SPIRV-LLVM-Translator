@@ -21,13 +21,13 @@
 ; CHECK-SPIRV: TypePointer [[#CrossWFStorClassPtrTy:]] 4 [[#TypeInt8Id]]
 ; CHECK-SPIRV: TypePointer [[#GenericStorCalssPtrTy:]] 8 [[#TypeInt8Id]]
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#FunctionStorClassPtrTy]] [[#GEP1:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP1]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP1]]
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#WGStorClassPtrTy]] [[#GEP2:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP2]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP2]]
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#CrossWFStorClassPtrTy:]] [[#GEP3:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP3]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP3]]
 ; CHECK-SPIRV: InBoundsPtrAccessChain [[#GenericStorCalssPtrTy:]] [[#GEP4:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] [[#]] [[#ExtInstSetId:]] printf [[#GEP4]]
+; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP4]]
 
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPc(i8* {{.*}}
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* {{.*}}
