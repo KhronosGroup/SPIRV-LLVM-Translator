@@ -424,6 +424,8 @@ template <> inline void SPIRVMap<BuiltIn, std::string>::init() {
   add(BuiltInSubgroupLtMask, "BuiltInSubgroupLtMask");
   add(BuiltInVertexIndex, "BuiltInVertexIndex");
   add(BuiltInInstanceIndex, "BuiltInInstanceIndex");
+  add(internal::BuiltInSubDeviceIDINTEL, "BuiltInSubDeviceIDINTEL");
+  add(internal::BuiltInGlobalHWThreadIDINTEL, "BuiltInGlobalHWThreadIDINTEL");
 }
 SPIRV_DEF_NAMEMAP(BuiltIn, SPIRVBuiltInNameMap)
 
@@ -574,6 +576,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
   add(internal::CapabilityTensorFloat32ConversionINTEL,
       "TensorFloat32ConversionINTEL");
+  add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
