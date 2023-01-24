@@ -183,6 +183,19 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationInitiationIntervalINTEL, "InitiationIntervalINTEL");
   add(DecorationMaxConcurrencyINTEL, "MaxConcurrencyINTEL");
   add(DecorationPipelineEnableINTEL, "PipelineEnableINTEL");
+  add(DecorationConduitKernelArgumentINTEL, "ConduitKernelArgumentINTEL");
+  add(DecorationRegisterMapKernelArgumentINTEL,
+      "RegisterMapKernelArgumentINTEL");
+  add(DecorationMMHostInterfaceAddressWidthINTEL,
+      "MMHostInterfaceAddressWidthINTEL");
+  add(DecorationMMHostInterfaceDataWidthINTEL, "MMHostInterfaceDataWidthINTEL");
+  add(DecorationMMHostInterfaceLatencyINTEL, "MMHostInterfaceLatencyINTEL");
+  add(DecorationMMHostInterfaceReadWriteModeINTEL,
+      "MMHostInterfaceReadWriteModeINTEL");
+  add(DecorationMMHostInterfaceMaxBurstINTEL, "MMHostInterfaceMaxBurstINTEL");
+  add(DecorationMMHostInterfaceWaitRequestINTEL,
+      "MMHostInterfaceWaitRequestINTEL");
+  add(DecorationStableKernelArgumentINTEL, "StableKernelArgumentINTEL");
 
   // From spirv_internal.hpp
   add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
@@ -602,6 +615,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "FPGAInvocationPipeliningAttributesINTEL");
   add(CapabilityRuntimeAlignedAttributeINTEL, "RuntimeAlignedAttributeINTEL");
   add(CapabilityMax, "Max");
+  add(CapabilityFPGAArgumentInterfacesINTEL, "FPGAArgumentInterfacesINTEL");
 
   // From spirv_internal.hpp
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
