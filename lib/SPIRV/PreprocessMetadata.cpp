@@ -267,7 +267,7 @@ void PreprocessMetadataBase::visit(Module *M) {
           InterfaceMode = 1;
         EM.addOp()
             .add(&Kernel)
-            .add(spv::internal::ExecutionModeStreamingInterfaceINTEL)
+            .add(spv::ExecutionModeStreamingInterfaceINTEL)
             .add(InterfaceMode)
             .done();
       }
