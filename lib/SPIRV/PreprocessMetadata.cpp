@@ -249,7 +249,7 @@ void PreprocessMetadataBase::visit(Module *M) {
           InterfaceMode = 1;
         EM.addOp()
             .add(&Kernel)
-            .add(spv::internal::ExecutionModeRegisterMapInterfaceINTEL)
+            .add(spv::ExecutionModeRegisterMapInterfaceINTEL)
             .add(InterfaceMode)
             .done();
       }

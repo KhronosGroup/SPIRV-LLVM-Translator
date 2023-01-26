@@ -3960,7 +3960,7 @@ bool SPIRVToLLVM::transMetadata() {
     }
     // Generate metadata for Intel FPGA register map interface
     if (auto *EM = BF->getExecutionMode(
-            internal::ExecutionModeRegisterMapInterfaceINTEL)) {
+        ExecutionModeRegisterMapInterfaceINTEL)) {
       std::vector<uint32_t> InterfaceVec = EM->getLiterals();
       assert(InterfaceVec.size() == 1 &&
              "Expected RegisterMapInterfaceINTEL to have exactly 1 literal");
