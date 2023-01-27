@@ -159,6 +159,7 @@ constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
 
 constexpr ExecutionMode ExecutionModeFastCompositeKernelINTEL =
     static_cast<ExecutionMode>(IExecModeFastCompositeKernelINTEL);
+
 } // namespace internal
 } // namespace spv
 
