@@ -269,7 +269,9 @@ template <> void SPIRVMap<std::string, Op, SPIRVInstruction>::init() {
   _SPIRV_OP(store_explicit, AtomicStore)
   _SPIRV_OP(exchange_explicit, AtomicExchange)
   _SPIRV_OP(compare_exchange_strong_explicit, AtomicCompareExchange)
-  _SPIRV_OP(compare_exchange_weak_explicit, AtomicCompareExchangeWeak)
+  // OpAtomicCompareExchangeWeak is not "weak" at all, but instead has the same
+  // semantics as OpAtomicCompareExchange.
+  _SPIRV_OP(compare_exchange_weak_explicit, AtomicCompareExchange)
   _SPIRV_OP(inc, AtomicIIncrement)
   _SPIRV_OP(dec, AtomicIDecrement)
   _SPIRV_OP(fetch_add_explicit, AtomicIAdd)
