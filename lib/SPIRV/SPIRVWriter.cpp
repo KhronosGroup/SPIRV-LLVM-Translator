@@ -4922,10 +4922,12 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
         BM->addExtension(ExtensionID::SPV_INTEL_kernel_attributes);
+        BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
+        // For ExecutionModeRegisterMapInterfaceINTEL,
         // CapabilityFPGAKernelAttributesv2INTEL implicitly defines
         // CapabilityFPGAKernelAttributesINTEL
-        BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
-        BM->addCapability(CapabilityFPGAKernelAttributesv2INTEL);
+        if (EMode == spv::ExecutionModeRegisterMapInterfaceINTEL)
+          BM->addCapability(CapabilityFPGAKernelAttributesv2INTEL);
       } break;
       case spv::ExecutionModeStreamingInterfaceINTEL: {
         if (!BM->isAllowedToUseExtension(
