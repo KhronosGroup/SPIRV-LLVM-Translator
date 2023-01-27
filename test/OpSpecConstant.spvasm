@@ -171,3 +171,7 @@
 %double_6_2800000000000002 = OpSpecConstant %double 6.2800000000000002
          %39 = OpSpecConstantComposite %struct_S %uchar_98 %double_6_2800000000000002
          %ss = OpVariable %_ptr_CrossWorkgroup_struct_S CrossWorkgroup %39
+       %void = OpTypeVoid
+         %xf = OpTypeFunction %void 
+         %xi = OpFunction %void None %xf
+               OpFunctionEnd
