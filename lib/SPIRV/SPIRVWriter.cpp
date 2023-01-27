@@ -4923,9 +4923,9 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
         BM->addExtension(ExtensionID::SPV_INTEL_kernel_attributes);
         BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
-        // For ExecutionModeRegisterMapInterfaceINTEL,
-        // CapabilityFPGAKernelAttributesv2INTEL implicitly defines
-        // CapabilityFPGAKernelAttributesINTEL
+        // RegisterMapInterfaceINTEL mode is defined by the
+        // CapabilityFPGAKernelAttributesv2INTEL capability and that
+        // capability implicitly defines CapabilityFPGAKernelAttributesINTEL
         if (EMode == spv::ExecutionModeRegisterMapInterfaceINTEL)
           BM->addCapability(CapabilityFPGAKernelAttributesv2INTEL);
       } break;
