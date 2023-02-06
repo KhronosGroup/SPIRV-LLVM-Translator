@@ -631,6 +631,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
   add(internal::CapabilityTensorFloat32ConversionINTEL,
       "TensorFloat32ConversionINTEL");
+  add(internal::CapabilityJointMatrixWIInstructionsINTEL,
+      "JointMatrixWIInstructionsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
