@@ -99,6 +99,13 @@ enum InternalJointMatrixLayout {
 
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
 
+enum InternalJointMatrixCTI {
+  TF32 = 0,
+  Bfloat16 = 1,
+  PackedInt2 = 2,
+  PackedInt4 = 3
+};
+
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
   IBuiltInGlobalHWThreadIDINTEL = 6136,

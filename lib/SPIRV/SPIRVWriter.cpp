@@ -621,27 +621,6 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
 // simply not true.
 SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     SmallVector<std::string, 8> Postfixes) {
-  Type *ElemTy = nullptr;
-  StringRef Ty{Postfixes[0]};
-  auto NumBits = llvm::StringSwitch<unsigned>(Ty)
-                     .Case("char", 8)
-                     .Case("short", 16)
-                     .Case("int", 32)
-                     .Case("long", 64)
-                     .Default(0);
-  if (NumBits)
-    ElemTy = IntegerType::get(M->getContext(), NumBits);
-  else if (Ty == "half")
-    ElemTy = Type::getHalfTy(M->getContext());
-  else if (Ty == "float")
-    ElemTy = Type::getFloatTy(M->getContext());
-  else if (Ty == "double")
-    ElemTy = Type::getDoubleTy(M->getContext());
-  else if (Ty == "bfloat16")
-    ElemTy = Type::getInt16Ty(M->getContext());
-  else
-    llvm_unreachable("Unexpected type for matrix!");
-
   auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
     unsigned long long N = 0;
     if (consumeUnsignedInteger(Postfix, 10, N)) {
@@ -655,6 +634,36 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
   std::vector<SPIRVValue *> Args;
   for (size_t I = 1; I != Postfixes.size(); ++I)
     Args.emplace_back(transConstant(ParseInteger(Postfixes[I])));
+
+  Type *ElemTy = nullptr;
+  StringRef Ty{Postfixes[0]};
+  auto NumBits = llvm::StringSwitch<unsigned>(Ty)
+                     .Case("char", 8)
+                     .Case("short", 16)
+                     .Case("int", 32)
+                     .Case("long", 64)
+                     .Default(0);
+  if (NumBits) {
+    ElemTy = IntegerType::get(M->getContext(), NumBits);
+  } else if (Ty == "half") {
+    ElemTy = Type::getHalfTy(M->getContext());
+  } else if (Ty == "float") {
+    ElemTy = Type::getFloatTy(M->getContext());
+  } else if (Ty == "double") {
+    ElemTy = Type::getDoubleTy(M->getContext());
+  } else if (Ty == "bfloat16") {
+    ElemTy = Type::getInt16Ty(M->getContext());
+    auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
+            internal::InternalJointMatrixCTI::Bfloat16)));
+    Args.push_back(CTI);
+  } else if (Ty == "tf32") {
+    ElemTy = Type::getFloatTy(M->getContext());
+    auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
+            internal::InternalJointMatrixCTI::TF32)));
+    Args.push_back(CTI);
+  } else {
+    llvm_unreachable("Unexpected type for matrix!");
+  }
   return BM->addJointMatrixINTELType(transType(ElemTy), Args);
 }
 
