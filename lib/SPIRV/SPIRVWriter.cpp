@@ -656,11 +656,14 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
             internal::InternalJointMatrixCTI::Bfloat16)));
     Args.push_back(CTI);
+    // TODO: add BF16 CTI capability when we do breaking change
+    // BM->addCapability(internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
   } else if (Ty == "tf32") {
     ElemTy = Type::getFloatTy(M->getContext());
     auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
             internal::InternalJointMatrixCTI::TF32)));
     Args.push_back(CTI);
+    BM->addCapability(internal::CapabilityJointMatrixTF32ComponentTypeINTEL);
   } else {
     llvm_unreachable("Unexpected type for matrix!");
   }

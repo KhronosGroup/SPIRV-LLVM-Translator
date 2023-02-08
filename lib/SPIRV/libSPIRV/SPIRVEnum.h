@@ -202,6 +202,10 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
                {CapabilitySubgroupAvcMotionEstimationIntraINTEL});
   ADD_VEC_INIT(internal::CapabilityJointMatrixWIInstructionsINTEL,
                {internal::CapabilityJointMatrixINTEL});
+  ADD_VEC_INIT(JointMatrixTF32ComponentTypeINTEL, {JointMatrixINTEL});
+  ADD_VEC_INIT(JointMatrixBF16ComponentTypeINTEL, {JointMatrixINTEL});
+  ADD_VEC_INIT(JointMatrixPackedInt2ComponentTypeINTEL, {JointMatrixINTEL});
+  ADD_VEC_INIT(JointMatrixPackedInt4ComponentTypeINTEL, {JointMatrixINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {

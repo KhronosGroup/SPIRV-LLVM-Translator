@@ -78,7 +78,11 @@ enum InternalCapability {
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32ConversionINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
-  ICapabilityJointMatrixWIInstructionsINTEL = 6435
+  ICapabilityJointMatrixWIInstructionsINTEL = 6435,
+  ICapabilityJointMatrixTF32ComponentTypeINTEL = 6436,
+  ICapabilityJointMatrixBF16ComponentTypeINTEL = 6437,
+  ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
+  ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -114,6 +118,10 @@ enum InternalBuiltIn {
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, JointMatrixINTEL)
 _SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
+_SPIRV_OP(Capability, JointMatrixTF32ComponentTypeINTEL)
+_SPIRV_OP(Capability, JointMatrixBF16ComponentTypeINTEL)
+_SPIRV_OP(Capability, JointMatrixPackedInt2ComponentTypeINTEL)
+_SPIRV_OP(Capability, JointMatrixPackedInt4ComponentTypeINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
