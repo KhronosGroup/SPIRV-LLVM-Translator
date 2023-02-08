@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-WO-EXT
+; RUN: not --crash llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-WO-EXT
 
 ; RUN: llvm-spirv -spirv-text %t.bc -o %t.spt --spirv-ext=+SPV_EXT_relaxed_printf_string_address_space
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
@@ -13,21 +13,21 @@
 ; CHECK-WO-EXT: SPV_EXT_relaxed_printf_string_address_space extension should be allowed to translate this module, because this LLVM module contains the printf function with format string, whose address space is not equal to 2 (constant).
 
 ; CHECK-SPIRV: Extension "SPV_EXT_relaxed_printf_string_address_space"
-; CHECK-SPIRV: ExtInstImport [[#ExtInstSetId:]] "OpenCL.std"
-; CHECK-SPIRV: TypeInt [[#TypeInt8Id:]] 8 0
-; CHECK-SPIRV: TypeInt [[#TypeInt32Id:]] 32 0
-; CHECK-SPIRV: TypePointer [[#FunctionStorClassPtrTy:]] 7 [[#TypeInt8Id]]
-; CHECK-SPIRV: TypePointer [[#WGStorClassPtrTy:]] 5 [[#TypeInt8Id]]
-; CHECK-SPIRV: TypePointer [[#CrossWFStorClassPtrTy:]] 4 [[#TypeInt8Id]]
-; CHECK-SPIRV: TypePointer [[#GenericStorCalssPtrTy:]] 8 [[#TypeInt8Id]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#FunctionStorClassPtrTy]] [[#GEP1:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP1]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#WGStorClassPtrTy]] [[#GEP2:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP2]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#CrossWFStorClassPtrTy:]] [[#GEP3:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP3]]
-; CHECK-SPIRV: InBoundsPtrAccessChain [[#GenericStorCalssPtrTy:]] [[#GEP4:]]
-; CHECK-SPIRV: ExtInst [[#TypeInt32Id]] {{[0-9]+}} [[#ExtInstSetId:]] printf [[#GEP4]]
+; CHECK-SPIRV: ExtInstImport [[ExtInstSetId:[0-9]+]] "OpenCL.std"
+; CHECK-SPIRV: TypeInt [[TypeInt8Id:[0-9]+]] 8 0
+; CHECK-SPIRV: TypeInt [[TypeInt32Id:[0-9]+]] 32 0
+; CHECK-SPIRV: TypePointer [[FunctionStorClassPtrTy:[0-9]+]] 7 [[TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[WGStorClassPtrTy:[0-9]+]] 5 [[TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[CrossWFStorClassPtrTy:[0-9]+]] 4 [[TypeInt8Id]]
+; CHECK-SPIRV: TypePointer [[GenericStorCalssPtrTy:[0-9]+]] 8 [[TypeInt8Id]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[FunctionStorClassPtrTy]] [[GEP1:[0-9]+]]
+; CHECK-SPIRV: ExtInst [[TypeInt32Id]] {{[0-9]+}} [[ExtInstSetId1:[0-9]+]] printf [[GEP1]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[WGStorClassPtrTy]] [[GEP2:[0-9]+]]
+; CHECK-SPIRV: ExtInst [[TypeInt32Id]] {{[0-9]+}} [[ExtInstSetId2:[0-9]+]] printf [[GEP2]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[CrossWFStorClassPtrTy]] [[GEP3:[0-9]+]]
+; CHECK-SPIRV: ExtInst [[TypeInt32Id]] {{[0-9]+}} [[ExtInstSetId3:[0-9]+]] printf [[GEP3]]
+; CHECK-SPIRV: InBoundsPtrAccessChain [[GenericStorCalssPtrTy]] [[GEP4:[0-9]+]]
+; CHECK-SPIRV: ExtInst [[TypeInt32Id]] {{[0-9]+}} [[ExtInstSetId4:[0-9]+]] printf [[GEP4]]
 
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPc(i8* {{.*}}
 ; CHECK-LLVM: call spir_func i32 @_Z18__spirv_ocl_printfPU3AS1c(i8 addrspace(1)* {{.*}}
