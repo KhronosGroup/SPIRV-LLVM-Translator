@@ -206,6 +206,14 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
   ADD_VEC_INIT(JointMatrixBF16ComponentTypeINTEL, {JointMatrixINTEL});
   ADD_VEC_INIT(JointMatrixPackedInt2ComponentTypeINTEL, {JointMatrixINTEL});
   ADD_VEC_INIT(JointMatrixPackedInt4ComponentTypeINTEL, {JointMatrixINTEL});
+  ADD_VEC_INIT(internal::CapabilityJointMatrixTF32ComponentTypeINTEL,
+               {internal::CapabilityJointMatrixINTEL});
+  ADD_VEC_INIT(internal::CapabilityJointMatrixBF16ComponentTypeINTEL,
+               {internal::CapabilityJointMatrixINTEL});
+  ADD_VEC_INIT(internal::CapabilityJointMatrixPackedInt2ComponentTypeINTEL,
+               {internal::CapabilityJointMatrixINTEL});
+  ADD_VEC_INIT(internal::CapabilityJointMatrixPackedInt4ComponentTypeINTEL,
+               {internal::CapabilityJointMatrixINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {
