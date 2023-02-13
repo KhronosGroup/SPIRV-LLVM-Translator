@@ -445,9 +445,17 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
                                        (unsigned)S};
     if (auto *Use = MT->getUse())
       Params.push_back(static_cast<SPIRVConstant *>(Use)->getZExtIntValue());
-    return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
-                                   transTypeToOCLTypeName(MT->getCompType()),
-                                   Params, !UseTPT));
+    SourceLanguage Lang = BM->getSourceLanguage(nullptr);
+    if (Lang == SourceLanguageOpenCL_C) {
+
+      return mapType(T,
+                     getOCLMatrixType(internal::OpTypeJointMatrixINTEL,
+                                      transTypeToOCLTypeName(MT->getCompType()),
+                                      Params, !UseTPT));
+    } else
+      return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
+                                     transTypeToOCLTypeName(MT->getCompType()),
+                                     Params, !UseTPT));
   }
   case OpTypeForwardPointer: {
     SPIRVTypeForwardPointer *FP =

@@ -254,6 +254,7 @@ public:
 
   void visitCallLdexp(CallInst *CI, StringRef MangledName,
                       StringRef DemangledName);
+  void visitCallIntelJointMatrix(CallInst *CI, StringRef DemangledName);
 
   /// For cl_intel_convert_bfloat16_as_ushort
   void visitCallConvertBFloat16AsUshort(CallInst *CI, StringRef DemangledName);

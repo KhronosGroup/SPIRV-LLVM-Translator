@@ -327,6 +327,52 @@ Type *BuiltinCallHelper::getSPIRVType(spv::Op TypeOpcode,
   return UseRealType ? (Type *)PointerType::get(STy, AddrSpace)
                      : TypedPointerType::get(STy, AddrSpace);
 }
+Type *BuiltinCallHelper::getOCLMatrixType(spv::Op TypeOpcode,
+                                          StringRef InnerTypeName,
+                                          ArrayRef<unsigned> Parameters,
+                                          bool UseRealType) {
+  // OpenCL matrix will have such form:
+  // %struct.ocl_Mat_{Element-type}_{Row}_{Col}_{Layout}_{Scope}
+  std::string FullName;
+  {
+    raw_string_ostream OS(FullName);
+    OS << "struct.ocl_Mat_";
+    std::string MatrixEleType = StringSwitch<std::string>(InnerTypeName)
+                                    .Case("char", "matrix_i8_intel")
+                                    .Case("short", "matrix_i16_intel")
+                                    .Case("int", "matrix_i32_intel")
+                                    .Case("long", "matrix_i64_intel")
+                                    .Case("bfloat16", "matrix_bf16_intel")
+                                    .Case("half", "matrix_fp16_intel")
+                                    .Case("float", "matrix_fp32_intel")
+                                    .Case("double", "matrix_fp64_intel")
+                                    .Default("invalid");
+    assert(MatrixEleType != "invalid" && "invalid matrix element type");
+    OS << MatrixEleType;
+    // Add Row
+    OS << kSPIRVTypeName::PostfixDelim << Parameters[0];
+    // Add Col
+    OS << kSPIRVTypeName::PostfixDelim << Parameters[1];
+    std::string Layout =
+        StringSwitch<std::string>(std::to_string(Parameters[2]))
+            .Case("0", "matrix_layout_row_major_intel")
+            .Case("1", "matrix_layout_column_major_intel")
+            .Case("2", "matrix_layout_packed_a_intel")
+            .Case("3", "matrix_layout_packed_b_intel")
+            .Default("invalid");
+    assert(Layout != "invalid" && "invalid matrix layout");
+    OS << kSPIRVTypeName::PostfixDelim << Layout;
+    // Add Scope
+    OS << kSPIRVTypeName::PostfixDelim << "matrix_scope_sub_group_intel";
+  }
+  auto *STy = StructType::getTypeByName(M->getContext(), FullName);
+  if (!STy)
+    STy = StructType::create(M->getContext(), FullName);
+
+  unsigned AddrSpace = getOCLOpaqueTypeAddrSpace(TypeOpcode);
+  return UseRealType ? (Type *)PointerType::get(STy, AddrSpace)
+                     : TypedPointerType::get(STy, AddrSpace);
+}
 
 BuiltinCallMutator::ValueTypePair
 BuiltinCallHelper::getCallValue(CallInst *CI, unsigned ArgNo) {

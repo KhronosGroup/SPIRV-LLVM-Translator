@@ -253,6 +253,9 @@ public:
 
   void translateOpaqueTypes();
 
+  void visitCallSPIRVJointMatrixINTEL(CallInst *CI, Op OC, StringRef DemangledName);
+  std::string mapJointMatrixFuncName(Op OC);
+
 private:
   /// Transform uniform group opcode to corresponding OpenCL function name,
   /// example: GroupIAdd(Reduce) => group_iadd => work_group_reduce_add |

@@ -195,6 +195,12 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVGenericPtrMemSemantics(&CI);
     return;
   }
+  if (OC == internal::OpJointMatrixLoadINTEL ||
+      OC == internal::OpJointMatrixMadINTEL ||
+      OC == internal::OpJointMatrixStoreINTEL) {
+    visitCallSPIRVJointMatrixINTEL(&CI, OC, DemangledName);
+    return;
+  }
   // Check if OC is OpenCL relational builtin except bitselect and select.
   auto IsOclRelationalOp = [](Op OC) {
     return isUnaryPredicateOpCode(OC) || OC == OpOrdered || OC == OpUnordered ||
@@ -1018,6 +1024,29 @@ void SPIRVToOCLBase::visitCallSPIRVRelational(CallInst *CI, Op OC) {
       .changeReturnType(RetTy, [=](IRBuilder<> &Builder, CallInst *NewCI) {
         return Builder.CreateTruncOrBitCast(NewCI, CI->getType());
       });
+}
+
+std::string SPIRVToOCLBase::mapJointMatrixFuncName(Op OC) {
+  switch (static_cast<size_t>(OC)) {
+  case internal::OpJointMatrixLoadINTEL:
+    return "intel_joint_matrix_load";
+  case internal::OpJointMatrixStoreINTEL:
+    return "intel_joint_matrix_store";
+  case internal::OpJointMatrixMadINTEL:
+    return "intel_joint_matrix_mad";
+  default:
+    llvm_unreachable("Unsupported opcode!");
+  }
+}
+
+void SPIRVToOCLBase::visitCallSPIRVJointMatrixINTEL(CallInst *CI, Op OC,
+                                                      StringRef DemangledName) {
+  std::string FuncName = mapJointMatrixFuncName(OC);
+  // Add postfix for intel_joint_matrix_load_* functions
+  if (OC == internal::OpJointMatrixLoadINTEL)
+    // 28 is sizeof "intel_joint_matrix_load"
+    FuncName += DemangledName.substr(28);
+  auto Mutator = mutateCallInst(CI, FuncName);
 }
 
 std::string SPIRVToOCLBase::getGroupBuiltinPrefix(CallInst *CI) {

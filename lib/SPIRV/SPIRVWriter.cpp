@@ -577,6 +577,60 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
           return TranslatedTy;
         }
       }
+      // Translate OpenCL matrix to SPIRVType
+      if (STName.startswith("struct.ocl_Mat_")) {
+        // %struct.ocl_Mat_{Element-type}_{Row}_{Col}_{Layout}_{Scope}
+        STName.consume_front("struct.ocl_Mat_");
+        assert(!STName.empty() && "Invalid opencl matrix type");
+        SmallVector<std::string, 8> Postfixes;
+        // Extract element type
+        STName.consume_front("matrix_");
+        assert(!STName.empty() && "Invalid opencl matrix element type");
+        auto pos = STName.find("_intel");
+        StringRef MatrixEleType = StringSwitch<StringRef>(STName.substr(0, pos))
+                                      .Case("i8", "char")
+                                      .Case("i16", "short")
+                                      .Case("i32", "int")
+                                      .Case("i64", "long")
+                                      .Case("bf16", "bfloat16")
+                                      .Case("fp16", "half")
+                                      .Case("fp32", "float")
+                                      .Case("fp64", "double")
+                                      .Default("invalid");
+        Postfixes.push_back(MatrixEleType.str());
+        STName = STName.drop_front(pos + 7);
+        // Extract Row
+        pos = STName.find('_');
+        assert(pos != StringRef::npos && "Extract opencl matrix Row failed");
+        Postfixes.push_back(STName.substr(0, pos).str());
+        STName = STName.drop_front(pos + 1);
+        // Extract Col
+        pos = STName.find('_');
+        assert(pos != StringRef::npos && "Extract opencl Column failed");
+        Postfixes.push_back(STName.substr(0, pos).str());
+        STName = STName.drop_front(pos + 1);
+        // Extract Layout
+        STName.consume_front("matrix_layout_");
+        assert(!STName.empty() && "Invalid opencl matrix layout");
+        pos = STName.find("_intel");
+        assert(pos != StringRef::npos && "Extract opencl matrix layout failed");
+        StringRef Layout = StringSwitch<StringRef>(STName.substr(0, pos))
+                               .Case("row_major", "0")
+                               .Case("column_major", "1")
+                               .Case("packed_a", "2")
+                               .Case("packed_b", "3")
+                               .Default("invalid");
+        Postfixes.push_back(Layout.str());
+        STName = STName.drop_front(pos + 7);
+        // Extract Scope
+        STName.consume_front("matrix_scope_sub_group_intel_");
+        assert(!STName.empty() && "Invalid opencl matrix scope");
+        Postfixes.push_back("0");
+        // Translate to SPIRVType
+        SPIRVType *TranslatedTy = transSPIRVJointMatrixINTELType(Postfixes);
+        PointeeTypeMap[TypeKey] = TranslatedTy;
+        return TranslatedTy;
+      }
     }
     SPIRVType *ElementType = transType(ET);
     // ET, as a recursive type, may contain exactly the same pointer T, so it

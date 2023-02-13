@@ -345,6 +345,12 @@ public:
                            llvm::ArrayRef<unsigned> Parameters,
                            bool UseRealType = false);
 
+  /// Generate corresponding OpenCL matrix type for SPIRVType
+  llvm::Type *getOCLMatrixType(spv::Op TypeOpcode,
+                               llvm::StringRef InnerTypeName,
+                               llvm::ArrayRef<unsigned> Parameters,
+                               bool UseRealType = false);
+
 private:
   llvm::SmallVector<llvm::Type *, 4> CachedParameterTypes;
   llvm::Function *CachedFunc = nullptr;
