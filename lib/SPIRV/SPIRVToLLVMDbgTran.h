@@ -70,7 +70,9 @@ public:
   template <typename T = MDNode>
   T *transDebugInst(const SPIRVExtInst *DebugInst) {
     assert((DebugInst->getExtSetKind() == SPIRVEIS_Debug ||
-            DebugInst->getExtSetKind() == SPIRVEIS_OpenCL_DebugInfo_100) &&
+            DebugInst->getExtSetKind() == SPIRVEIS_OpenCL_DebugInfo_100 ||
+            DebugInst->getExtSetKind() ==
+                SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) &&
            "Unexpected extended instruction set");
     auto It = DebugInstCache.find(DebugInst);
     if (It != DebugInstCache.end())
@@ -112,6 +114,8 @@ private:
   DICompositeType *transTypeVector(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeComposite(const SPIRVExtInst *DebugInst);
+
+  DISubrange *transTypeSubrange(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeMember(const SPIRVExtInst *DebugInst);
 

@@ -277,6 +277,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
     case dwarf::DW_TAG_array_type:
       return transDbgArrayType(cast<DICompositeType>(DIEntry));
 
+    case dwarf::DW_TAG_subrange_type:
+      return transDbgSubrangeType(cast<DISubrange>(DIEntry));
+
     case dwarf::DW_TAG_const_type:
     case dwarf::DW_TAG_restrict_type:
     case dwarf::DW_TAG_volatile_type:
@@ -560,8 +563,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
   DINodeArray AR(AT->getElements());
   // For N-dimensianal arrays AR.getNumElements() == N
   const unsigned N = AR.size();
-  Ops.resize(ComponentCountIdx + N);
-  SPIRVWordVec LowerBounds(N);
+  Ops.resize(SubrangesIdx + N);
   for (unsigned I = 0; I < N; ++I) {
     DISubrange *SR = cast<DISubrange>(AR[I]);
     ConstantInt *Count = SR->getCount().get<ConstantInt *>();
@@ -570,28 +572,71 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
       Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
-    if (Count) {
-      Ops[ComponentCountIdx + I] =
-          SPIRVWriter->transValue(Count, nullptr)->getId();
+    if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) {
+      Ops[SubrangesIdx + I] = transDbgEntry(SR)->getId();
     } else {
-      if (auto *UpperBound = dyn_cast<MDNode>(SR->getRawUpperBound()))
-        Ops[ComponentCountIdx + I] = transDbgEntry(UpperBound)->getId();
+      // According to the OpenCL.DebugInfo.100 specification Count must be a
+      // Constant or DIVariable. No other operands must be preserved.
+      if (Count)
+        Ops[ComponentCountIdx + I] =
+            SPIRVWriter->transValue(Count, nullptr)->getId();
+      else if (auto *CountNode =
+                   dyn_cast_or_null<MDNode>(SR->getRawCountNode()))
+        Ops[ComponentCountIdx + I] = transDbgEntry(CountNode)->getId();
       else
         Ops[ComponentCountIdx + I] = getDebugInfoNoneId();
     }
-    if (auto *RawLB = SR->getRawLowerBound()) {
-      if (auto *DIExprLB = dyn_cast<MDNode>(RawLB))
-        LowerBounds[I] = transDbgEntry(DIExprLB)->getId();
-      else {
-        ConstantInt *ConstIntLB = SR->getLowerBound().get<ConstantInt *>();
-        LowerBounds[I] = SPIRVWriter->transValue(ConstIntLB, nullptr)->getId();
-      }
-    } else {
-      LowerBounds[I] = getDebugInfoNoneId();
-    }
   }
-  Ops.insert(Ops.end(), LowerBounds.begin(), LowerBounds.end());
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
+}
+
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
+  using namespace SPIRVDebug::Operand::TypeSubrange;
+  SPIRVWordVec Ops(OperandCount);
+  auto transOperand = [&Ops, this, ST](int Idx) -> void {
+    Metadata *RawNode = nullptr;
+    switch (Idx) {
+    case LowerBoundIdx:
+      RawNode = ST->getRawLowerBound();
+      break;
+    case UpperBoundIdx:
+      RawNode = ST->getRawUpperBound();
+      break;
+    case CountIdx:
+      RawNode = ST->getRawCountNode();
+      break;
+    case StrideIdx:
+      RawNode = ST->getRawStride();
+      break;
+    }
+    if (!RawNode) {
+      Ops[Idx] = getDebugInfoNoneId();
+      return;
+    } else if (auto *Node = dyn_cast<MDNode>(RawNode)) {
+      Ops[Idx] = transDbgEntry(Node)->getId();
+    } else {
+      ConstantInt *IntNode = nullptr;
+      switch (Idx) {
+      case LowerBoundIdx:
+        IntNode = ST->getLowerBound().get<ConstantInt *>();
+        break;
+      case UpperBoundIdx:
+        IntNode = ST->getUpperBound().get<ConstantInt *>();
+        break;
+      case CountIdx:
+        IntNode = ST->getCount().get<ConstantInt *>();
+        break;
+      case StrideIdx:
+        IntNode = ST->getStride().get<ConstantInt *>();
+        break;
+      }
+      Ops[Idx] = IntNode ? SPIRVWriter->transValue(IntNode, nullptr)->getId()
+                         : getDebugInfoNoneId();
+    }
+  };
+  for (int Idx = CountIdx; Idx < OperandCount; ++Idx)
+    transOperand(Idx);
+  return BM->addDebugInfo(SPIRVDebug::TypeSubrange, getVoidTy(), Ops);
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgTypeDef(const DIDerivedType *DT) {
