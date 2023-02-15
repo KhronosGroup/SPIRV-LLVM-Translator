@@ -608,7 +608,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
   return TranslatedTy;
 }
 
-// Representation in LLVM IR before the translator is a pointer to in an opaque
+// Representation in LLVM IR before the translator is a pointer to an opaque
 // structure:
 // %spirv.JointMatrixINTEL._%element_type%_%rows%_%cols%_%scope%_%use%
 // Here we check the structure name yet again. Another option would be to
