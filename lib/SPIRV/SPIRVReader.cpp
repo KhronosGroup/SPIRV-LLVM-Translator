@@ -2885,6 +2885,14 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   // assuming llvm.memset is supported by the device compiler. If this
   // assumption is not safe, we should have a command line option to control
   // this behavior.
+  if (FuncNameRef.startswith("spirv.llvm_memset_p")) {
+    // We can't guarantee that the name is correctly mangled due to opaque
+    // pointers. Derive the correct name from the function type.
+    FuncName =
+        Intrinsic::getDeclaration(M, Intrinsic::memset,
+                                  {FT->getParamType(0), FT->getParamType(2)})
+            ->getName();
+  }
   if (FuncNameRef.consume_front("spirv.")) {
     FuncNameRef.consume_back(".volatile");
     FuncName = FuncNameRef.str();
@@ -3369,6 +3377,8 @@ void generateIntelFPGAAnnotation(
   }
   if (E->hasDecorate(DecorationForcePow2DepthINTEL, 0, &Result))
     Out << "{force_pow2_depth:" << Result << '}';
+  if (E->hasDecorate(DecorationBufferLocationINTEL, 0, &Result))
+    Out << "{sycl-buffer-location:" << Result << '}';
 
   unsigned LSUParamsBitmask = 0;
   llvm::SmallString<32> AdditionalParamsStr;
