@@ -2,6 +2,7 @@
 #define SPIRV_DEBUG_H
 #include "SPIRVUtil.h"
 #include "spirv/unified1/spirv.hpp"
+#include "spirv_internal.hpp"
 #include "llvm/BinaryFormat/Dwarf.h"
 
 namespace SPIRVDebug {
@@ -806,6 +807,8 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRV(dwarf::SourceLanguage D
   case dwarf::SourceLanguage::DW_LANG_C99:
   case dwarf::SourceLanguage::DW_LANG_OpenCL:
     return spv::SourceLanguage::SourceLanguageOpenCL_C;
+  case dwarf::SourceLanguage::DW_LANG_Fortran95:
+    return spv::internal::SourceLanguageFortran95;
   default:
     return spv::SourceLanguage::SourceLanguageUnknown;
   }
@@ -821,6 +824,8 @@ inline dwarf::SourceLanguage convertSPIRVSourceLangToDWARF(unsigned SourceLang) 
     // LLVM does not yet define DW_LANG_C_plus_plus_17
     // SourceLang = dwarf::SourceLanguage::DW_LANG_C_plus_plus_17;
     return dwarf::SourceLanguage::DW_LANG_C_plus_plus_14;
+  case spv::internal::SourceLanguageFortran95:
+    return dwarf::SourceLanguage::DW_LANG_Fortran95;
   case spv::SourceLanguage::SourceLanguageOpenCL_C:
   case spv::SourceLanguage::SourceLanguageESSL:
   case spv::SourceLanguage::SourceLanguageGLSL:

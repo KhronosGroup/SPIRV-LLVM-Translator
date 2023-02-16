@@ -1,15 +1,11 @@
 ; RUN: llvm-as %s -o %t.bc
 ; Translation shouldn't crash:
-; RUN: llvm-spirv %t.bc -spirv-text
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-allow-extra-diexpressions
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-allow-extra-diexpressions
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-; XFAIL: *
-; The language ID is not preserved when translating from .ll to .spv
-; and back to .ll. This causes the LLVM IR verifier to fail as there
-; are different rules for valid DISubRange depending on language ID.
-
+; CHECK-LLVM: !DICompileUnit(language: DW_LANG_Fortran95
 ; CHECK-LLVM: !DISubrange(lowerBound: !DIExpression(DW_OP_push_object_address, DW_OP_plus_uconst, 64, DW_OP_deref), upperBound: !DIExpression(DW_OP_push_object_address, DW_OP_plus_uconst, 64, DW_OP_deref, DW_OP_push_object_address, DW_OP_plus_uconst, 48, DW_OP_deref, DW_OP_plus, DW_OP_constu, 1, DW_OP_minus))
 
 source_filename = "llvm-link"

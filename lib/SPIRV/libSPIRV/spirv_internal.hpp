@@ -29,6 +29,10 @@
 namespace spv {
 namespace internal {
 
+enum InternalSourceLanguage {
+  ISourceLanguageFortran95 = 105,
+};
+
 enum InternalLinkageType {
   ILTPrev = LinkageTypeMax - 2,
   ILTInternal
@@ -127,6 +131,9 @@ _SPIRV_OP(Op, MaskedScatterINTEL)
 _SPIRV_OP(Capability, TensorFloat32ConversionINTEL)
 _SPIRV_OP(Op, ConvertFToTF32INTEL)
 #undef _SPIRV_OP
+
+constexpr SourceLanguage SourceLanguageFortran95 =
+    static_cast<SourceLanguage>(ISourceLanguageFortran95);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpTypeTokenINTEL = static_cast<Op>(IOpTypeTokenINTEL);
