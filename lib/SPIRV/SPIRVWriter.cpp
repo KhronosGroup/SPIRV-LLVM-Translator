@@ -5134,7 +5134,7 @@ Op LLVMToSPIRVBase::transBoolOpCode(SPIRVValue *Opn, Op OC) {
 SPIRVInstruction *
 LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                      SPIRVBasicBlock *BB) {
-  if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)){
+  if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
     // OpAtomicCompareExchangeWeak is not "weak" at all,
     // but instead has the same semantics as OpAtomicCompareExchange.
     // Moreover, OpAtomicCompareExchangeWeak has been deprecated for
