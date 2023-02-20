@@ -264,37 +264,12 @@ SPIRVToLLVMDbgTran::transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst) {
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
   size_t TotalCount = 1;
   SmallVector<llvm::Metadata *, 8> Subscripts;
-  if (DebugInst->isExtInst(SPIRVEIS_NonSemantic_Kernel_DebugInfo_100,
-                           SPIRVDebug::TypeArray)) {
+  if (DebugInst->getExtOp() == SPIRVDebug::TypeArray) {
     for (size_t I = SubrangesIdx; I < Ops.size(); ++I) {
       auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
       if (auto *Count = SR->getCount().get<ConstantInt *>())
         TotalCount *= Count->getZExtValue() > 0 ? Count->getZExtValue() : 0;
       Subscripts.push_back(SR);
-    }
-  } else {
-    for (size_t I = ComponentCountIdx, E = Ops.size(); I < E; ++I) {
-      // Otherwise Count could be a constant or DIVariable
-      if (auto *LocalVarCount = getDbgInst<SPIRVDebug::LocalVariable>(Ops[I])) {
-        auto *DILocalVarCount = transDebugInst<DILocalVariable>(LocalVarCount);
-        Subscripts.push_back(Builder.getOrCreateSubrange(
-            DILocalVarCount, nullptr, nullptr, nullptr));
-      } else if (auto *GlobalVarCount =
-                     getDbgInst<SPIRVDebug::GlobalVariable>(Ops[I])) {
-        auto *DIGlobalVarCount =
-            transDebugInst<DIGlobalVariable>(GlobalVarCount);
-        Subscripts.push_back(Builder.getOrCreateSubrange(
-            DIGlobalVarCount, nullptr, nullptr, nullptr));
-      } else if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[I])) {
-        SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
-        int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
-        // Count = -1 means that the array is empty
-        TotalCount *= Count > 0 ? Count : 0;
-        auto *CountAsMD = ConstantAsMetadata::get(
-            ConstantInt::get(M->getContext(), APInt(64, Count)));
-        Subscripts.push_back(
-            Builder.getOrCreateSubrange(CountAsMD, nullptr, nullptr, nullptr));
-      }
     }
   }
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);

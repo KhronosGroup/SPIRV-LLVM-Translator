@@ -627,20 +627,7 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
       Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
-    if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) {
-      Ops[SubrangesIdx + I] = transDbgEntry(SR)->getId();
-    } else {
-      // According to the OpenCL.DebugInfo.100 specification Count must be a
-      // Constant or DIVariable. No other operands must be preserved.
-      if (Count)
-        Ops[ComponentCountIdx + I] =
-            SPIRVWriter->transValue(Count, nullptr)->getId();
-      else if (auto *CountNode =
-                   dyn_cast_or_null<MDNode>(SR->getRawCountNode()))
-        Ops[ComponentCountIdx + I] = transDbgEntry(CountNode)->getId();
-      else
-        Ops[ComponentCountIdx + I] = getDebugInfoNoneId();
-    }
+    Ops[SubrangesIdx + I] = transDbgEntry(SR)->getId();
   }
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
 }
@@ -648,7 +635,7 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
   using namespace SPIRVDebug::Operand::TypeSubrange;
   SPIRVWordVec Ops(OperandCount);
-  auto transOperand = [&Ops, this, ST](int Idx) -> void {
+  auto TransOperand = [&Ops, this, ST](int Idx) -> void {
     Metadata *RawNode = nullptr;
     switch (Idx) {
     case LowerBoundIdx:
@@ -667,7 +654,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
     if (!RawNode) {
       Ops[Idx] = getDebugInfoNoneId();
       return;
-    } else if (auto *Node = dyn_cast<MDNode>(RawNode)) {
+    }
+    if (auto *Node = dyn_cast<MDNode>(RawNode)) {
       Ops[Idx] = transDbgEntry(Node)->getId();
     } else {
       ConstantInt *IntNode = nullptr;
@@ -690,7 +678,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
     }
   };
   for (int Idx = CountIdx; Idx < OperandCount; ++Idx)
-    transOperand(Idx);
+    TransOperand(Idx);
   return BM->addDebugInfo(SPIRVDebug::TypeSubrange, getVoidTy(), Ops);
 }
 

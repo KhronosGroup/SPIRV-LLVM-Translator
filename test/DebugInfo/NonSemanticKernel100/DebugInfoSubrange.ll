@@ -1,8 +1,3 @@
-; According to the OpenCL.DebugInfo.100 specification only Count should be
-; preserved after LLVM-IR -> SPIR-V translation. Since there is no Count
-; operands, DISubrange shouldn't be preserved after reverse translation.
-; To preserve them using "--spirv-debug-info-version=nonsemantic-kernel-100":
-
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-kernel-100
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
