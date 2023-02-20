@@ -380,7 +380,7 @@ SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() == OperandCount && "Invalid number of operands");
   std::vector<Metadata *> TranslatedOps(OperandCount, nullptr);
-  auto transOperand = [&Ops, &TranslatedOps, this](int Idx) -> void {
+  auto TransOperand = [&Ops, &TranslatedOps, this](int Idx) -> void {
     if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[Idx])) {
       if (auto *GlobalVar = getDbgInst<SPIRVDebug::GlobalVariable>(Ops[Idx])) {
         TranslatedOps[Idx] =
@@ -399,7 +399,7 @@ SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
     }
   };
   for (int Idx = CountIdx; Idx < OperandCount; ++Idx)
-    transOperand(Idx);
+    TransOperand(Idx);
   return Builder.getOrCreateSubrange(TranslatedOps[0], TranslatedOps[1],
                                      TranslatedOps[2], TranslatedOps[3]);
 }
