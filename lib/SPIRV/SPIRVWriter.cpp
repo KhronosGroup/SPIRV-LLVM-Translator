@@ -5139,9 +5139,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     // but instead has the same semantics as OpAtomicCompareExchange.
     // Moreover, OpAtomicCompareExchangeWeak has been deprecated for
     // SPIR-V version 1.4 or later.
-    if (OC == OpAtomicCompareExchangeWeak) {
+    if (OC == OpAtomicCompareExchangeWeak)
       OC = OpAtomicCompareExchange;
-    }
   }
   if (isGroupOpCode(OC))
     BM->addCapability(CapabilityGroups);
