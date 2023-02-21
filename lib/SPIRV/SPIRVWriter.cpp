@@ -653,10 +653,10 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     ElemTy = Type::getDoubleTy(M->getContext());
   } else if (Ty == "bfloat16") {
     ElemTy = Type::getInt16Ty(M->getContext());
-    auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
-            internal::InternalJointMatrixCTI::Bfloat16)));
-    Args.push_back(CTI);
-    // TODO: add BF16 CTI capability when we do breaking change
+    // TODO: add BF16 CTI when we do breaking change
+    // auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
+    //        internal::InternalJointMatrixCTI::Bfloat16)));
+    // Args.push_back(CTI);
     // BM->addCapability(internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
   } else if (Ty == "tf32") {
     ElemTy = Type::getFloatTy(M->getContext());
