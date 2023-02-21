@@ -660,8 +660,8 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     // BM->addCapability(internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
   } else if (Ty == "tf32") {
     ElemTy = Type::getFloatTy(M->getContext());
-    auto *CTI = transConstant(getUInt32(M, static_cast<uint64_t>(
-            internal::InternalJointMatrixCTI::TF32)));
+    auto *CTI = transConstant(getUInt32(
+        M, static_cast<uint64_t>(internal::InternalJointMatrixCTI::TF32)));
     Args.push_back(CTI);
     BM->addCapability(internal::CapabilityJointMatrixTF32ComponentTypeINTEL);
   } else {
