@@ -617,7 +617,8 @@ DINode *SPIRVToLLVMDbgTran::transFunction(const SPIRVExtInst *DebugInst) {
     }
     DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty,
                                  ScopeLine, Flags, SPFlags, TParamsArray, FD,
-                                 nullptr, nullptr, TargetFunction);
+                                 /*ThrownTypes*/ nullptr,
+                                 /*Annotations*/ nullptr, TargetFunction);
   }
   DebugInstCache[DebugInst] = DIS;
   SPIRVId RealFuncId = Ops[FunctionIdIdx];
