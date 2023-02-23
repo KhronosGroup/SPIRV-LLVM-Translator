@@ -513,6 +513,7 @@ enum {
   ScopeLineIdx    = 8,
   FunctionIdIdx   = 9,
   DeclarationIdx  = 10,
+  TargetFunctionNameIdx  = 11,
   MinOperandCount = 10
 };
 }
