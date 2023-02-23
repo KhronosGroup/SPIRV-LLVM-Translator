@@ -988,8 +988,10 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
 
     if (DISubprogram *FuncDecl = Func->getDeclaration())
       Ops.push_back(transDbgEntry(FuncDecl)->getId());
-    else
+    else {
       Ops.push_back(getDebugInfoNoneId());
+      // no support for targetFuncName (Fortran trampoline) in LLVM 14
+    }
 
     DebugFunc = BM->addDebugInfo(SPIRVDebug::Function, getVoidTy(), Ops);
     MDMap.insert(std::make_pair(Func, DebugFunc));
