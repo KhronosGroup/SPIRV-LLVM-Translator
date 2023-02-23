@@ -994,10 +994,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
         // Translate targetFuncName mostly for Fortran trampoline function if it
         // is the case
         StringRef TargetFunc = Func->getTargetFuncName();
-        if (!TargetFunc.empty()) {
-          Ops.resize(MinOperandCount + 2);
-          Ops[TargetFunctionNameIdx] = BM->getString(TargetFunc.str())->getId();
-        }
+        if (!TargetFunc.empty())
+          Ops.push_back(BM->getString(TargetFunc.str())->getId());
       }
     }
 
