@@ -609,9 +609,11 @@ DINode *SPIRVToLLVMDbgTran::transFunction(const SPIRVExtInst *DebugInst) {
       !IsDefinition)
     DIS = Builder.createMethod(Scope, Name, LinkageName, File, LineNo, Ty, 0, 0,
                                nullptr, Flags, SPFlags, TParamsArray);
-  else
+  else {
+    // no support for targetFuncName (Fortran trampoline) in LLVM 14
     DIS = Builder.createFunction(Scope, Name, LinkageName, File, LineNo, Ty,
                                  ScopeLine, Flags, SPFlags, TParamsArray, FD);
+  }
   DebugInstCache[DebugInst] = DIS;
   SPIRVId RealFuncId = Ops[FunctionIdIdx];
   FuncMap[RealFuncId] = DIS;
