@@ -445,7 +445,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
                                        (unsigned)S};
     if (auto *Use = MT->getUse())
       Params.push_back(static_cast<SPIRVConstant *>(Use)->getZExtIntValue());
-    auto *CTI = MT->getCTI();
+    auto *CTI = MT->getComponentTypeInterpretation();
     if (!CTI)
       return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
                                      transTypeToOCLTypeName(MT->getCompType()),
