@@ -236,15 +236,15 @@ void PreprocessMetadataBase::visit(Module *M) {
       // Streaming metadata.
       //
       // Register Map mode metadata:
-      // Not 'AcceptDownstreamStall' mode (to be mapped on '0' literal)
+      // Not 'WaitForDoneWrite' mode (to be mapped on '0' literal)
       // !ip_interface !N
       // !N = !{!"csr"}
-      // 'AcceptDownstreamStall' mode (to be mapped on '1' literal)
+      // 'WaitForDoneWrite' mode (to be mapped on '1' literal)
       // !ip_interface !N
-      // !N = !{!"csr", !"accept_downstream_stall"}
+      // !N = !{!"csr", !"wait_for_done_write"}
       if (InterfaceStrSet.find("csr") != InterfaceStrSet.end()) {
         int32_t InterfaceMode = 0;
-        if (InterfaceStrSet.find("accept_downstream_stall")
+        if (InterfaceStrSet.find("wait_for_done_write")
           != InterfaceStrSet.end())
           InterfaceMode = 1;
         EM.addOp()

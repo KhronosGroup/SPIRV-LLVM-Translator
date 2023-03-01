@@ -3971,7 +3971,7 @@ bool SPIRVToLLVM::transMetadata() {
           return {MDString::get(*Context, "csr")};
         case 1:
           return {MDString::get(*Context, "csr"),
-                  MDString::get(*Context, "accept_downstream_stall")};
+                  MDString::get(*Context, "wait_for_done_write")};
         default:
           llvm_unreachable("Invalid register map interface mode");
         }
