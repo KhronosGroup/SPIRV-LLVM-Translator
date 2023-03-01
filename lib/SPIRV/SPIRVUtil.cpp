@@ -481,7 +481,10 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   } else {
     size_t Start = Name.find_first_not_of("0123456789", 2);
     size_t Len = 0;
-    Name.substr(2, Start - 2).getAsInteger(10, Len);
+    if (Name.substr(2, Start - 2).getAsInteger(10, Len)) {
+      SPIRVDBG(errs() << "Error in extracting integer value");
+      return false;
+    }
     DemangledName = Name.substr(Start, Len);
   }
   return true;
