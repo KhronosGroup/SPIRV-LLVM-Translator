@@ -547,10 +547,7 @@ SPIRVModuleImpl::getCurrentLine() const {
 
 void SPIRVModuleImpl::setCurrentLine(
     const std::shared_ptr<const SPIRVLine> &Line) {
-  if (Line)
-    CurrentLine = Line;
-  else
-    CurrentLine.reset();
+  CurrentLine = Line;
 }
 
 void SPIRVModuleImpl::addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
