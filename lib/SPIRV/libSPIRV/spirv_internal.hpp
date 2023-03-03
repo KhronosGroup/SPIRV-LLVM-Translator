@@ -104,10 +104,11 @@ enum InternalJointMatrixLayout {
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
 
 enum InternalJointMatrixCTI {
-  TF32 = 0,
-  Bfloat16 = 1,
-  PackedInt2 = 2,
-  PackedInt4 = 3
+  None = 0,
+  TF32 = 1,
+  Bfloat16 = 2,
+  PackedInt2 = 3,
+  PackedInt4 = 4
 };
 
 enum InternalBuiltIn {

@@ -610,7 +610,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
 
 // Representation in LLVM IR before the translator is a pointer to an opaque
 // structure:
-// %spirv.JointMatrixINTEL._%element_type%_%rows%_%cols%_%scope%_%use%
+// %spirv.JointMatrixINTEL._%element_type%_%rows%_%cols%_%layout%_%scope%_%use%
 // Here we check the structure name yet again. Another option would be to
 // check SPIR-V friendly function calls (by their name) and obtain return
 // or their parameter types, assuming, that the appropriate types are Matrix
@@ -623,12 +623,10 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
     SmallVector<std::string, 8> Postfixes) {
   auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
     unsigned long long N = 0;
-    if (consumeUnsignedInteger(Postfix, 10, N)) {
+    if (consumeUnsignedInteger(Postfix, 10, N))
       BM->getErrorLog().checkError(
           false, SPIRVEC_InvalidLlvmModule,
           "TypeJointMatrixINTEL expects integer parameters");
-      return 0;
-    }
     return getUInt32(M, N);
   };
   std::vector<SPIRVValue *> Args;

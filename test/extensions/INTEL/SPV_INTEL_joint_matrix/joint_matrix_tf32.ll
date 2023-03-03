@@ -13,11 +13,11 @@
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_tensor_float32_conversion"
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_joint_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#TypeInt:]] 32 0
-; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#CTI:]] 0
+; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#CTI:]] 1 {{$}}
 ; CHECK-SPIRV-DAG: TypeFloat [[#FloatTy:]] 32
-; CHECK-SPIRV-DAG: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]]
-; CHECK-SPIRV-DAG: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#CTI]]
-; CHECK-SPIRV-DAG: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#CTI]]
+; CHECK-SPIRV: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#CTI]]
+; CHECK-SPIRV: TypeJointMatrixINTEL [[#]] [[#FloatTy]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#CTI]]
 
 ; CHECK-LLVM: %spirv.JointMatrixINTEL._float_8_16_3_3_2 = type opaque
 ; CHECK-LLVM: %spirv.JointMatrixINTEL._tf32_8_16_0_3_0 = type opaque
