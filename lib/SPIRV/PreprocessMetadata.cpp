@@ -244,8 +244,8 @@ void PreprocessMetadataBase::visit(Module *M) {
       // !N = !{!"csr", !"wait_for_done_write"}
       if (InterfaceStrSet.find("csr") != InterfaceStrSet.end()) {
         int32_t InterfaceMode = 0;
-        if (InterfaceStrSet.find("wait_for_done_write")
-          != InterfaceStrSet.end())
+        if (InterfaceStrSet.find("wait_for_done_write") !=
+            InterfaceStrSet.end())
           InterfaceMode = 1;
         EM.addOp()
             .add(&Kernel)
@@ -344,17 +344,16 @@ void PreprocessMetadataBase::preprocessVectorComputeMetadata(Module *M,
           FPRoundingModeExecModeMap::map(getFPRoundingMode(Mode));
       spv::ExecutionMode ExecFloatMode =
           FPOperationModeExecModeMap::map(getFPOperationMode(Mode));
-      VCFloatTypeSizeMap::foreach (
-          [&](VCFloatType FloatType, unsigned TargetWidth) {
-            EM.addOp().add(&F).add(ExecRoundMode).add(TargetWidth).done();
-            EM.addOp().add(&F).add(ExecFloatMode).add(TargetWidth).done();
-            EM.addOp()
-                .add(&F)
-                .add(FPDenormModeExecModeMap::map(
-                    getFPDenormMode(Mode, FloatType)))
-                .add(TargetWidth)
-                .done();
-          });
+      VCFloatTypeSizeMap::foreach ([&](VCFloatType FloatType,
+                                       unsigned TargetWidth) {
+        EM.addOp().add(&F).add(ExecRoundMode).add(TargetWidth).done();
+        EM.addOp().add(&F).add(ExecFloatMode).add(TargetWidth).done();
+        EM.addOp()
+            .add(&F)
+            .add(FPDenormModeExecModeMap::map(getFPDenormMode(Mode, FloatType)))
+            .add(TargetWidth)
+            .done();
+      });
     }
     if (Attrs.hasFnAttr(kVCMetadata::VCSLMSize)) {
       SPIRVWord SLMSize = 0;
