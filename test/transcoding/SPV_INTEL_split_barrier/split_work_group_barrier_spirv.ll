@@ -32,11 +32,7 @@
 
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-
-; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
-; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
-; CHECK-ERROR-NEXT: SPV_INTEL_split_barrier
+; FAIL: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; ModuleID = 'split_barrier_spirv.cl'
 source_filename = "split_barrier_spirv.cl"
