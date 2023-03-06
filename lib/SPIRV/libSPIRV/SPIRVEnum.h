@@ -78,6 +78,8 @@ enum SPIRVExtInstSetKind {
   SPIRVEIS_OpenCL,
   SPIRVEIS_Debug,
   SPIRVEIS_OpenCL_DebugInfo_100,
+  SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
+  SPIRVEIS_NonSemantic_Kernel_DebugInfo_100,
   SPIRVEIS_Count,
 };
 
@@ -129,6 +131,10 @@ template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
   add(SPIRVEIS_OpenCL, "OpenCL.std");
   add(SPIRVEIS_Debug, "SPIRV.debug");
   add(SPIRVEIS_OpenCL_DebugInfo_100, "OpenCL.DebugInfo.100");
+  add(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
+      "NonSemantic.Shader.DebugInfo.100");
+  add(SPIRVEIS_NonSemantic_Kernel_DebugInfo_100,
+      "NonSemantic.Kernel.DebugInfo.100");
 }
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
 
@@ -197,6 +203,8 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
                {CapabilitySubgroupAvcMotionEstimationINTEL});
   ADD_VEC_INIT(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
                {CapabilitySubgroupAvcMotionEstimationIntraINTEL});
+  ADD_VEC_INIT(internal::CapabilityJointMatrixWIInstructionsINTEL,
+               {internal::CapabilityJointMatrixINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {

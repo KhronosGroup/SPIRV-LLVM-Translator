@@ -29,6 +29,25 @@
 namespace spv {
 namespace internal {
 
+enum InternalSourceLanguageNonSemanticDI {
+  ISourceLanguagePython = 101,
+  ISourceLanguageJulia = 102,
+  ISourceLanguageRust = 103,
+  ISourceLanguageD = 104,
+  ISourceLanguageFortran95 = 105,
+  ISourceLanguageFortran2003 = 106,
+  ISourceLanguageFortran2008 = 107,
+  ISourceLanguageC = 108,
+  ISourceLanguageC99 = 109,
+  ISourceLanguageC11 = 110,
+  ISourceLanguageCPP = 111,
+  ISourceLanguageCPP03 = 112,
+  ISourceLanguageCPP11 = 113,
+  ISourceLanguageCPP14 = 114,
+  ISourceLanguageCPP17 = 115,
+  ISourceLanguageCPP20 = 116,
+};
+
 enum InternalLinkageType {
   ILTPrev = LinkageTypeMax - 2,
   ILTInternal
@@ -42,6 +61,9 @@ enum InternalOp {
   IOpJointMatrixLoadINTEL = 6120,
   IOpJointMatrixStoreINTEL = 6121,
   IOpJointMatrixMadINTEL = 6122,
+  IOpJointMatrixSUMadINTEL = 6128,
+  IOpJointMatrixUSMadINTEL = 6129,
+  IOpJointMatrixUUMadINTEL = 6130,
   IOpArithmeticFenceINTEL = 6145,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
@@ -49,6 +71,7 @@ enum InternalOp {
   IOpConvertFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
+  IOpJointMatrixGetElementCoordINTEL = 6440,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -73,7 +96,8 @@ enum InternalCapability {
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32ConversionINTEL = 6425,
-  ICapabilityMaskedGatherScatterINTEL = 6427
+  ICapabilityMaskedGatherScatterINTEL = 6427,
+  ICapabilityJointMatrixWIInstructionsINTEL = 6435
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -101,11 +125,17 @@ enum InternalBuiltIn {
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, JointMatrixINTEL)
+_SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
 _SPIRV_OP(Op, JointMatrixMadINTEL)
+_SPIRV_OP(Op, JointMatrixSUMadINTEL)
+_SPIRV_OP(Op, JointMatrixUSMadINTEL)
+_SPIRV_OP(Op, JointMatrixUUMadINTEL)
 _SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
+_SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
+
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
 _SPIRV_OP(BuiltIn, GlobalHWThreadIDINTEL)
@@ -121,6 +151,39 @@ _SPIRV_OP(Op, MaskedScatterINTEL)
 _SPIRV_OP(Capability, TensorFloat32ConversionINTEL)
 _SPIRV_OP(Op, ConvertFToTF32INTEL)
 #undef _SPIRV_OP
+
+constexpr SourceLanguage SourceLanguagePython =
+    static_cast<SourceLanguage>(ISourceLanguagePython);
+constexpr SourceLanguage SourceLanguageJulia =
+    static_cast<SourceLanguage>(ISourceLanguageJulia);
+constexpr SourceLanguage SourceLanguageRust =
+    static_cast<SourceLanguage>(ISourceLanguageRust);
+constexpr SourceLanguage SourceLanguageD =
+    static_cast<SourceLanguage>(ISourceLanguageD);
+constexpr SourceLanguage SourceLanguageFortran95 =
+    static_cast<SourceLanguage>(ISourceLanguageFortran95);
+constexpr SourceLanguage SourceLanguageFortran2003 =
+    static_cast<SourceLanguage>(ISourceLanguageFortran2003);
+constexpr SourceLanguage SourceLanguageFortran2008 =
+    static_cast<SourceLanguage>(ISourceLanguageFortran2008);
+constexpr SourceLanguage SourceLanguageC =
+    static_cast<SourceLanguage>(ISourceLanguageC);
+constexpr SourceLanguage SourceLanguageC99 =
+    static_cast<SourceLanguage>(ISourceLanguageC99);
+constexpr SourceLanguage SourceLanguageC11 =
+    static_cast<SourceLanguage>(ISourceLanguageC11);
+constexpr SourceLanguage SourceLanguageCPP =
+    static_cast<SourceLanguage>(ISourceLanguageCPP);
+constexpr SourceLanguage SourceLanguageCPP03 =
+    static_cast<SourceLanguage>(ISourceLanguageCPP03);
+constexpr SourceLanguage SourceLanguageCPP11 =
+    static_cast<SourceLanguage>(ISourceLanguageCPP11);
+constexpr SourceLanguage SourceLanguageCPP14 =
+    static_cast<SourceLanguage>(ISourceLanguageCPP14);
+constexpr SourceLanguage SourceLanguageCPP17 =
+    static_cast<SourceLanguage>(ISourceLanguageCPP17);
+constexpr SourceLanguage SourceLanguageCPP20 =
+    static_cast<SourceLanguage>(ISourceLanguageCPP20);
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpTypeTokenINTEL = static_cast<Op>(IOpTypeTokenINTEL);
