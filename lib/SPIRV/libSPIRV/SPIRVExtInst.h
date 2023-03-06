@@ -221,7 +221,7 @@ SPIRV_DEF_NAMEMAP(OCLExtOpKind, OCLExtOpMap)
 typedef SPIRVDebug::Instruction SPIRVDebugExtOpKind;
 template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::DebugInfoNone, "DebugInfoNone");
-  add(SPIRVDebug::CompilationUnit, "DebugCompileUnit");
+  add(SPIRVDebug::CompilationUnit, "DebugCompilationUnit");
   add(SPIRVDebug::Source, "DebugSource");
   add(SPIRVDebug::TypeBasic, "DebugTypeBasic");
   add(SPIRVDebug::TypePointer, "DebugTypePointer");
