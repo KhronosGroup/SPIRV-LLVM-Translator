@@ -7,8 +7,8 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; FPGAKernelAttributesv2INTEL implicitly defines FPGAKernelAttributesINTEL
-; CHECK-SPIRV: Capability FPGAKernelAttributesINTEL
-; CHECK-SPIRV: Capability FPGAKernelAttributesv2INTEL
+; CHECK-SPIRV-DAG: Capability FPGAKernelAttributesINTEL
+; CHECK-SPIRV-DAG: Capability FPGAKernelAttributesv2INTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_kernel_attributes"
 ; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL1:]] "test_1"
 ; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL2:]] "test_2"
