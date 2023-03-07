@@ -2249,6 +2249,7 @@ public:
     case OpGroupNonUniformBallotFindMSB:
       addUnsignedArg(1);
       break;
+    case OpBitFieldSExtract:
     case OpGroupNonUniformBallotBitExtract:
       addUnsignedArg(1);
       addUnsignedArg(2);
@@ -2269,6 +2270,7 @@ public:
     case OpGroupNonUniformLogicalXor:
       addUnsignedArg(3);
       break;
+    case OpBitFieldInsert:
     case OpGroupNonUniformUMax:
     case OpGroupNonUniformUMin:
       addUnsignedArg(2);
@@ -2319,6 +2321,7 @@ public:
     case OpSubgroupAvcImeSetSingleReferenceINTEL:
       addUnsignedArg(1);
       break;
+    case OpBitFieldUExtract:
     case OpSubgroupAvcImeInitializeINTEL:
     case OpSubgroupAvcMceSetMotionVectorCostFunctionINTEL:
     case OpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL:
