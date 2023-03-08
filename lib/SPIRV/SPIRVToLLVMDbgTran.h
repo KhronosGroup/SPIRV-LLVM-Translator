@@ -113,6 +113,7 @@ private:
   DICompositeType *transTypeArray(const SPIRVExtInst *DebugInst);
   DICompositeType *transTypeArrayOpenCL(const SPIRVExtInst *DebugInst);
   DICompositeType *transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst);
+  DICompositeType *transTypeArrayDynamic(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeVector(const SPIRVExtInst *DebugInst);
 
