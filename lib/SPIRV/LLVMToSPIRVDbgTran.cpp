@@ -582,8 +582,7 @@ SPIRVEntry *
 LLVMToSPIRVDbgTran::transDbgArrayTypeOpenCL(const DICompositeType *AT) {
   using namespace SPIRVDebug::Operand::TypeArray;
   SPIRVWordVec Ops(MinOperandCount);
-  SPIRVEntry *Base = transDbgEntry(AT->getBaseType());
-  Ops[BaseTypeIdx] = Base->getId();
+  Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
 
   DINodeArray AR(AT->getElements());
   // For N-dimensianal arrays AR.getNumElements() == N
@@ -626,8 +625,7 @@ SPIRVEntry *
 LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
   using namespace SPIRVDebug::Operand::TypeArray;
   SPIRVWordVec Ops(MinOperandCount);
-  SPIRVEntry *Base = transDbgEntry(AT->getBaseType());
-  Ops[BaseTypeIdx] = Base->getId();
+  Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
 
   DINodeArray AR(AT->getElements());
   // For N-dimensianal arrays AR.getNumElements() == N
@@ -651,12 +649,11 @@ SPIRVEntry *
 LLVMToSPIRVDbgTran::transDbgArrayTypeDynamic(const DICompositeType *AT) {
   using namespace SPIRVDebug::Operand::TypeArrayDynamic;
   SPIRVWordVec Ops(MinOperandCount);
-  SPIRVEntry *Base = transDbgEntry(AT->getBaseType());
-  Ops[BaseTypeIdx] = Base->getId();
+  Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
 
   // DataLocation, Associated, Allocated and Rank can be either DIExpression
   // metadata or DIVariable
-  auto TransOperand = [&](llvm::Metadata *DIMD, SPIRVWord Idx) -> SPIRVWord {
+  auto TransOperand = [&](llvm::Metadata *DIMD) -> SPIRVWord {
     if (auto *DIExpr = dyn_cast_or_null<DIExpression>(DIMD))
       return transDbgExpression(DIExpr)->getId();
     if (auto *DIVar = dyn_cast_or_null<DIVariable>(DIMD)) {
@@ -668,14 +665,10 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeDynamic(const DICompositeType *AT) {
     return getDebugInfoNoneId();
   };
 
-  auto *DataLocation = AT->getRawDataLocation();
-  Ops[DataLocationIdx] = TransOperand(DataLocation, DataLocationIdx);
-  auto *Associated = AT->getRawAssociated();
-  Ops[AssociatedIdx] = TransOperand(Associated, DataLocationIdx);
-  auto *Allocated = AT->getRawAllocated();
-  Ops[AllocatedIdx] = TransOperand(Allocated, DataLocationIdx);
-  auto *Rank = AT->getRawRank();
-  Ops[RankIdx] = TransOperand(Rank, DataLocationIdx);
+  Ops[DataLocationIdx] = TransOperand(AT->getRawDataLocation());
+  Ops[AssociatedIdx] = TransOperand(AT->getRawAssociated());
+  Ops[AllocatedIdx] = TransOperand(AT->getRawAllocated());
+  Ops[RankIdx] = TransOperand(AT->getRawRank());
 
   DINodeArray AR(AT->getElements());
   // For N-dimensianal arrays AR.getNumElements() == N

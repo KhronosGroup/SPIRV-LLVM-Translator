@@ -273,7 +273,7 @@ SPIRVToLLVMDbgTran::transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst) {
     for (size_t I = SubrangesIdx; I < Ops.size(); ++I) {
       auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
       if (auto *Count = SR->getCount().get<ConstantInt *>())
-        TotalCount *= Count->getZExtValue() > 0 ? Count->getZExtValue() : 0;
+        TotalCount *= Count->getSExtValue();
       Subscripts.push_back(SR);
     }
   }
@@ -294,7 +294,7 @@ SPIRVToLLVMDbgTran::transTypeArrayDynamic(const SPIRVExtInst *DebugInst) {
   for (size_t I = SubrangesIdx; I < Ops.size(); ++I) {
     auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
     if (auto *Count = SR->getCount().get<ConstantInt *>())
-      TotalCount *= Count->getZExtValue() > 0 ? Count->getZExtValue() : 0;
+      TotalCount *= Count->getSExtValue();
     Subscripts.push_back(SR);
   }
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);
