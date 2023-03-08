@@ -1,4 +1,12 @@
 ;; DebugInfo/dwarfdump-dataLocationVar.ll from llvm.org is used as base for this test
+;; The test checks, that Fortran dynamic arrays are being correctly represented
+;; by SPIR-V debug information
+;; Unlike 'static' arrays dynamic can have following parameters of
+;; DICompositeType metadata with DW_TAG_array_type tag:
+;; Data Location, Associated, Allocated and Rank which can be represented
+;; by either DIExpression or DIVariable (both local and global).
+;; This test if for variable representation.
+;; FortranDynamicArrayVar.ll is for expression representation.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-debug-info-version=nonsemantic-kernel-100 -o - | FileCheck %s --check-prefix=CHECK-SPIRV
