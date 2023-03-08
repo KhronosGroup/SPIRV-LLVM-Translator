@@ -11,13 +11,13 @@
 ; CHECK-SPIRV-DAG: TypeVoid [[#VoidT:]]
 ; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgInfoNone:]] [[#Import]] DebugInfoNone
 ; CHECK-SPIRV: ExtInst [[#VoidT]] [[#ArrayBasicT:]] [[#Import]] DebugTypeBasic [[#BasicTName]] [[#IntConst]] 4
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExpr1:]] [[#Import]] DebugExpression [[#]] [[#]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExpr2:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] [[#]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExpr3:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExpr4:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExpr5:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgSubRangeId:]] [[#Import]] DebugTypeSubrange [[#DbgInfoNone]] [[#DbgExpr3]] [[#DbgExpr4]] [[#DbgExpr5]]
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgArrayId:]] [[#Import]] DebugTypeArrayDynamic [[#ArrayBasicT]] [[#DbgExpr1]] [[#DbgExpr2]] [[#DbgInfoNone]] [[#DbgInfoNone]] [[#DbgSubRangeId]]
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExprLocation:]] [[#Import]] DebugExpression [[#]] [[#]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExprAssociated:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] [[#]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExprLowerBound:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExprUpperBound:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgExprCount:]] [[#Import]] DebugExpression [[#]] [[#]] [[#]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgSubRangeId:]] [[#Import]] DebugTypeSubrange [[#DbgInfoNone]] [[#DbgExprLowerBound]] [[#DbgExprUpperBound]] [[#DbgExprCount]]
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#DbgArrayId:]] [[#Import]] DebugTypeArrayDynamic [[#ArrayBasicT]] [[#DbgExprLocation]] [[#DbgExprAssociated]] [[#DbgInfoNone]] [[#DbgInfoNone]] [[#DbgSubRangeId]]
 
 ; CHECK-LLVM: %[[#Array:]] = alloca
 ; CHECK-LLVM: call void @llvm.dbg.value(metadata ptr %[[#Array]], metadata ![[#DbgLVar:]]
