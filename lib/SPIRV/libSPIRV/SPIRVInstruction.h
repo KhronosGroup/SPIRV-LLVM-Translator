@@ -1690,6 +1690,7 @@ public:
   SPIRVFunctionCall(SPIRVId TheId, SPIRVFunction *TheFunction,
                     const std::vector<SPIRVWord> &TheArgs, SPIRVBasicBlock *BB);
   SPIRVFunctionCall() : FunctionId(SPIRVID_INVALID) {}
+  // NOLINTNEXTLINE
   SPIRVFunction *getFunction() const { return get<SPIRVFunction>(FunctionId); }
   _SPIRV_DEF_ENCDEC4(Type, Id, FunctionId, Args)
   void validate() const override;
