@@ -283,11 +283,11 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
       else
         return getDebugInfoNone();
 
-    case dwarf::DW_TAG_string_type:
+    case dwarf::DW_TAG_string_type: {
       if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100)
         return transDbgStringType(cast<DIStringType>(DIEntry));
-      else
-        return getDebugInfoNone();
+      return getDebugInfoNone();
+    }
 
     case dwarf::DW_TAG_const_type:
     case dwarf::DW_TAG_restrict_type:

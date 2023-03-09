@@ -457,8 +457,12 @@ SPIRVToLLVMDbgTran::transTypeString(const SPIRVExtInst *DebugInst) {
   assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
 
   StringRef Name = getString(Ops[NameIdx]);
-  DIType *BaseTy =
-      transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
+  unsigned Encoding = 0;
+  if (!getDbgInst<SPIRVDebug::DebugInfoNone>((Ops[BaseTypeIdx]))) {
+    DIBasicType *BaseTy =
+        transTypeBasic(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
+    Encoding = BaseTy->getEncoding();
+  }
 
   DIExpression *StrLocationExp = nullptr;
   if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[DataLocationIdx])) {
@@ -483,14 +487,11 @@ SPIRVToLLVMDbgTran::transTypeString(const SPIRVExtInst *DebugInst) {
       StringLengthExp = transDebugInst<DIExpression>(DIExpr);
   }
 
-  if (SizeInBits)
-    return Builder.createStringType(Name, SizeInBits);
-  if (StringLengthVar)
-    return Builder.createStringType(Name, StringLengthVar, StrLocationExp);
-  if (StringLengthExp)
-    return Builder.createStringType(Name, StringLengthExp, StrLocationExp);
-
-  assert("Invalid DebugTypeString arguments");
+  return DIStringType::get(M->getContext(), dwarf::DW_TAG_string_type, Name,
+                           cast_or_null<Metadata>(StringLengthVar),
+                           cast_or_null<Metadata>(StringLengthExp),
+                           cast_or_null<Metadata>(StrLocationExp), SizeInBits,
+                           0 /*AlignInBits*/, Encoding);
 }
 
 DINode *SPIRVToLLVMDbgTran::transTypeMember(const SPIRVExtInst *DebugInst) {
