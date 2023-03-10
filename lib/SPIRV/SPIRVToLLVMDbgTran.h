@@ -121,6 +121,8 @@ private:
 
   DISubrange *transTypeSubrange(const SPIRVExtInst *DebugInst);
 
+  DIStringType *transTypeString(const SPIRVExtInst *DebugInst);
+
   DINode *transTypeMember(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeEnum(const SPIRVExtInst *DebugInst);
