@@ -1115,6 +1115,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   case SPIRVDebug::ImportedEntity:
     return transImportedEntry(DebugInst);
 
+  case SPIRVDebug::Module:
   case SPIRVDebug::ModuleINTEL:
     return transModule(DebugInst);
 

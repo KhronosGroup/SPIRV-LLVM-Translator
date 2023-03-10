@@ -360,7 +360,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
       return transDbgImportedEntry(cast<DIImportedEntity>(DIEntry));
 
     case dwarf::DW_TAG_module: {
-      if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_debug_module))
+      if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_debug_module) ||
+          BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100)
         return transDbgModule(cast<DIModule>(DIEntry));
       return getDebugInfoNone();
     }
@@ -1266,6 +1267,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
   Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
   Ops[ApiNotesIdx] = BM->getString(Module->getAPINotesFile().str())->getId();
   Ops[IsDeclIdx] = Module->getIsDecl();
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) {
+    return BM->addDebugInfo(SPIRVDebug::Module, getVoidTy(), Ops);
+  }
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
   BM->addCapability(spv::CapabilityDebugInfoModuleINTEL);
   return BM->addDebugInfo(SPIRVDebug::ModuleINTEL, getVoidTy(), Ops);
