@@ -272,7 +272,8 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
     }
 
     if (auto *PtrTy = dyn_cast<PointerType>(Ty)) {
-      Type *ElTy = PtrTy->getPointerElementType();
+			auto &C = Ty->getContext();
+			Type *ElTy = PtrTy->isOpaquePointerTy() ? Type::getVoidTy(C) : PtrTy->getPointerElementType();
       if (auto *FTy = dyn_cast<FunctionType>(ElTy)) {
         // If we have a function pointer, then argument types and return type of
         // the referenced function also need to be checked
@@ -334,7 +335,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   if (T->isPointerTy()) {
-    auto ET = T->getPointerElementType();
+	  auto &C = T->getContext();
+    auto ET = T->isOpaquePointerTy() ? Type::getVoidTy(C) : T->getPointerElementType();
     auto AddrSpc = T->getPointerAddressSpace();
     return transPointerType(ET, AddrSpc);
   }
@@ -723,8 +725,10 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
       Type *PointeeTy = TypePair.second;
       if (!Ty) {
         Ty = Arg.getType();
-        if (Ty->isPointerTy())
-          PointeeTy = Ty->getNonOpaquePointerElementType();
+        if (Ty->isPointerTy()) {
+			    auto &C = Ty->getContext();
+          PointeeTy = Ty->isOpaquePointerTy() ? Type::getVoidTy(C) : Ty->getNonOpaquePointerElementType();
+        }
       }
       SPIRVType *TransTy = nullptr;
       if (Ty->isPointerTy())
