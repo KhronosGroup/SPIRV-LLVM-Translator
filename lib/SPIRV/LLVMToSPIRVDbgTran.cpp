@@ -763,9 +763,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgStringType(const DIStringType *ST) {
   ConstantInt *Size = getUInt(M, ST->getSizeInBits());
   Ops[SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
 
-  if (const auto *StrLengthExp = ST->getRawStringLengthExp()) {
+  if (auto *StrLengthExp = ST->getRawStringLengthExp()) {
     Ops[LengthAddrIdx] = TransOperand(StrLengthExp);
-  } else if (const auto *StrLengthVar = ST->getRawStringLength()) {
+  } else if (auto *StrLengthVar = ST->getRawStringLength()) {
     Ops[LengthAddrIdx] = TransOperand(StrLengthVar);
   } else {
     Ops[LengthAddrIdx] = getDebugInfoNoneId();
