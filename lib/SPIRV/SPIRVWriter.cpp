@@ -1302,6 +1302,9 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     return BM->addNullConstant(
         bcast<SPIRVTypePointer>(transType(CPNull->getType())));
 
+  if (isa<ConstantTargetNone>(V))
+    return BM->addNullConstant(transType(V->getType()));
+
   if (auto CAZero = dyn_cast<ConstantAggregateZero>(V)) {
     Type *AggType = CAZero->getType();
     if (const StructType *ST = dyn_cast<StructType>(AggType))
@@ -3102,7 +3105,7 @@ SPIRVValue *LLVMToSPIRVBase::oclTransSpvcCastSampler(CallInst *CI,
   auto FT = F->getFunctionType();
   auto RT = FT->getReturnType();
   assert(FT->getNumParams() == 1);
-  if (!RT->isOpaquePointerTy()) {
+  if (RT->isPointerTy() && !RT->isOpaquePointerTy()) {
     StructType *ST = dyn_cast<StructType>(RT->getNonOpaquePointerElementType());
     (void)ST;
     assert(isSPIRVStructType(ST, kSPIRVTypeName::Sampler) ||
