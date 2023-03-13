@@ -28,11 +28,13 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: String [[#Defines:]] "-DMODULES=0"
 ; CHECK-SPIRV: String [[#IncludePath:]] "/llvm/tools/clang/test/Modules/Inputs"
 ; CHECK-SPIRV: String [[#ApiNotes:]] "m.apinotes"
+; CHECK-SPIRV: TypeInt [[#TypeInt32:]] 32 0
+; CHECK-SPIRV: Constant [[#TypeInt32]] [[#Constant0:]] 0
 
 ; CHECK-SPIRV: ExtInst [[#]] [[#Source:]] [[#]] DebugSource [[#FileName]]
 ; CHECK-SPIRV: ExtInst [[#]] [[#Parent:]] [[#]] DebugCompileUnit 65536 4
 ; CHECK-SPIRV: ExtInst [[#]] [[#SourceEmpty:]] [[#]] DebugSource [[#EmptyStr]]
-; CHECK-SPIRV: ExtInst [[#]] [[#Module:]] [[#]] DebugModule [[#Name]] [[#SourceEmpty]] 0 [[#Parent]] [[#Defines]] [[#IncludePath]] [[#ApiNotes]] 0
+; CHECK-SPIRV: ExtInst [[#]] [[#Module:]] [[#]] DebugModule [[#Name]] [[#SourceEmpty]] [[#Constant0]] [[#Parent]] [[#Defines]] [[#IncludePath]] [[#ApiNotes]] [[#Constant0]]
 ; CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugImportedEntity [[#]] [[#]] [[#]] [[#Source]] [[#Module]]
 
 !llvm.dbg.cu = !{!0}

@@ -1000,14 +1000,22 @@ DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::ModuleINTEL;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
+  bool IsNonSemanticDI =
+      (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Kernel_DebugInfo_100);
   DIScope *Scope = getScope(BM->getEntry(Ops[ParentIdx]));
-  unsigned Line = Ops[LineIdx];
+  auto GetInt = [&](SPIRVId Id) -> ConstantInt * {
+    auto *V = BM->get<SPIRVValue>(Id);
+    return cast<ConstantInt>(SPIRVReader->transValue(V, nullptr, nullptr));
+  };
+  unsigned Line =
+      IsNonSemanticDI ? GetInt(Ops[LineIdx])->getZExtValue() : Ops[LineIdx];
   DIFile *File = getFile(Ops[SourceIdx]);
   StringRef Name = getString(Ops[NameIdx]);
   StringRef ConfigMacros = getString(Ops[ConfigMacrosIdx]);
   StringRef IncludePath = getString(Ops[IncludePathIdx]);
   StringRef ApiNotes = getString(Ops[ApiNotesIdx]);
-  bool IsDecl = Ops[IsDeclIdx];
+  bool IsDecl =
+      IsNonSemanticDI ? GetInt(Ops[IsDeclIdx])->getZExtValue() : Ops[IsDeclIdx];
 
   return Builder.createModule(Scope, Name, ConfigMacros, IncludePath, ApiNotes,
                               File, Line, IsDecl);
