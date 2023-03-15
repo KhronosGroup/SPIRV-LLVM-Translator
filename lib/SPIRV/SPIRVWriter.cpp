@@ -512,7 +512,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
       case internal::OpTypeJointMatrixINTEL: {
         // The expected representation is:
         // target("spirv.JointMatrixINTEL", %element_type, %rows%, %cols%,
-        //        %scope%, %use%, (optional) %element_type_interpretation%)
+        //        %layout%, %scope%, %use%,
+        //        (optional) %element_type_interpretation%)
         auto *ElemTy = transType(TargetTy->getTypeParameter(0));
         ArrayRef<unsigned> Ops = TargetTy->int_params();
         std::vector<SPIRVValue *> Args;
