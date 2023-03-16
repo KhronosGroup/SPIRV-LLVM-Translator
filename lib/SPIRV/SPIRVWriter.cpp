@@ -5520,6 +5520,29 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), APIntInst, {},
                             BB);
   }
+  case internal::OpTaskSequenceGetINTEL: {
+    Type *ResTy = CI->getType();
+
+    assert(ResTy->isVoidTy() && "Return type is not void for the "
+      "TaskSequenceGetINTEL instruction.");
+
+    auto OpItr = CI->value_op_begin();
+    if (CI->hasStructRetAttr()) {
+      assert(ResTy->isVoidTy() && "Return type is not void");
+      ResTy = CI->getParamStructRetType(0);
+      OpItr++;
+    }
+
+    SPIRVType *RetTy = transType(ResTy);
+    SPIRVValue *ObjPtr = transValue(*OpItr++, BB);
+    SPIRVValue *GetCapacity = transValue(*OpItr, BB);
+    auto *TaskSequenceGet = BM->addTaskSequenceGetINTELInst(RetTy, ObjPtr,
+      Capacity, BB);
+    if (!CI->hasStructRetAttr())
+      return TaskSequenceGet;
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB),
+                            TaskSequenceGet, {}, BB);
+  }
   case OpLoad: {
     std::vector<SPIRVWord> MemoryAccess;
     assert(CI->arg_size() > 0 && "Expected at least 1 operand for OpLoad call");
@@ -5605,6 +5628,14 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
           assert((Pointee == Args[I] || !isa<Function>(Pointee)) &&
                  "Illegal use of a function pointer type");
         }
+        if ((OC == OpTaskSequenceCreateINTEL || OC == OpTaskSequenceAsyncINTEL)
+            && isa<Function>(Args[I]) && BM->getErrorLog().checkError(
+                BM->isAllowedToUseExtension(
+                    ExtensionID::SPV_INTEL_function_pointers),
+                SPIRVEC_FunctionPointers, CI))
+          SPArgs.push_back(
+              transValue(Args[I], BB, false, FuncTransMode::Pointer)->getId());
+        else
         SPArgs.push_back(SPI->isOperandLiteral(I)
                              ? cast<ConstantInt>(Args[I])->getZExtValue()
                              : transValue(Args[I], BB)->getId());

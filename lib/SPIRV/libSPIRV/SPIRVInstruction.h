@@ -3394,6 +3394,75 @@ _SPIRV_OP(GroupLogicalOr, true, 6, false, 1)
 _SPIRV_OP(GroupLogicalXor, true, 6, false, 1)
 #undef _SPIRV_OP
 
+class SPRIVTaskSequenceINTELInst : public SPIRVInstTemplateBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityTaskSequenceINTEL);
+  }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_task_sequence;
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPRIVTaskSequenceINTELInst, internal::Op##x##INTEL,\
+                            __VA_ARGS__>                                       \
+      SPIRV##x##INTEL;
+_SPIRV_OP(TaskSequenceCreate, true, 5, false)
+_SPIRV_OP(TaskSequenceAsync, false, 3, true)
+_SPIRV_OP(TaskSequenceRelease, false, 2, false)
+#undef _SPIRV_OP
+
+// The __spirv_TaskSequenceGetINTEL intrinsic may or may not have a
+// return type (be void). It should be implemented as a separate class, unlike
+// the others TaskSequence instructions, because SPIRVInstTemplateBase class
+// objects without Type / with void Type can't have an Id:
+// SPIRVModuleImpl::addInstTemplate(...) {
+// assert(!Ty || !Ty->isTypeVoid());
+// SPIRVId Id = Ty ? getId() : SPIRVID_INVALID;
+
+class SPIRVTaskSequenceGetINTEL : public SPIRVInstruction {
+public:
+  static const Op OC = internal::OpTaskSequenceGetINTEL;
+  static const SPIRVWord FixedWordCount = 3;
+
+  SPIRVTaskSequenceGetINTEL(SPIRVType *RetTy, SPIRVId TheObjPtr,
+                            SPIRVId TheCapacityId, SPIRVBasicBlock *BB)
+      : SPIRVInstruction(FixedWordCount, OC, RetTy, BB),
+        ObjPtr(TheObjPtr), CapacityId(TheCapacityId) {
+    validate();
+    assert(BB && "Invalid BB");
+  }
+
+  SPIRVTaskSequenceGetINTEL() : SPIRVInstruction(OC), ObjPtr(SPIRVID_MAX),
+                                CapacityId(SPIRVID_MAX) {};
+
+  std::vector<SPIRVValue *> getOperands() override {
+    return getValues({ObjPtr, CapacityId});
+  }
+
+  void encode(spv_ostream &O) const override {
+    getEncoder(O) << Type << ObjPtr << CapacityId;
+  }
+
+  void decode(std::istream &I) override {
+    getDecoder(I) >> Type >> ObjPtr >> CapacityId;
+  }
+
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityTaskSequenceINTEL);
+  }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_task_sequence;
+  }
+
+  SPIRVId ObjPtr;
+  SPIRVId CapacityId;
+};
+
 class SPIRVComplexFloat : public SPIRVInstTemplateBase {
 protected:
   void validate() const override {

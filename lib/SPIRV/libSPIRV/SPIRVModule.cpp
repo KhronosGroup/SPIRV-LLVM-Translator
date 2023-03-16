@@ -445,6 +445,9 @@ public:
   SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy, SPIRVValue *Value,
                                      SPIRVValue *ExpectedValue,
                                      SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addTaskSequenceGetINTELInst(SPIRVType *, SPIRVValue *,
+                                                SPIRVValue *,
+                                                SPIRVBasicBlock *) override;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const override;
 
@@ -1626,6 +1629,14 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
                             OpExpectKHR, ResultTy, getId(),
                             getVec(Value->getId(), ExpectedValue->getId()), BB,
                             this),
+                        BB);
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addTaskSequenceGetINTELInst(
+    SPIRVType *RetTy, SPIRVValue *ObjPtr, SPIRVValue *GetCapacity,
+    SPIRVBasicBlock *BB) {
+  return addInstruction(new SPIRVTaskSequenceGetINTEL(
+                            RetTy, ObjPtr->getId(), GetCapacity->getId(), BB),
                         BB);
 }
 

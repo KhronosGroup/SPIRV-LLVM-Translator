@@ -617,6 +617,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityRuntimeAlignedAttributeINTEL, "RuntimeAlignedAttributeINTEL");
   add(CapabilityMax, "Max");
   add(CapabilityFPGAArgumentInterfacesINTEL, "FPGAArgumentInterfacesINTEL");
+  add(CapabilityTaskSequenceINTEL, "TaskSequenceINTEL");
 
   // From spirv_internal.hpp
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");

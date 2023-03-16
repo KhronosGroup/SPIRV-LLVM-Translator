@@ -1360,7 +1360,10 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     auto *ET = TPT->getElementType();
     SPIR::ParamType *EPT = nullptr;
     if (isa<FunctionType>(ET)) {
-      assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
+      // Do not assert on isVoidFuncTy for task_sequence as those are
+      // permitted with task sequences.
+      assert((isVoidFuncTy(cast<FunctionType>(ET)) ||
+              InstName.contains("TaskSequence")) && "Not supported");
       EPT = new SPIR::BlockType;
     } else if (auto StructTy = dyn_cast<StructType>(ET)) {
       LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
