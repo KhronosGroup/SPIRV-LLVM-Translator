@@ -5523,9 +5523,6 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   case internal::OpTaskSequenceGetINTEL: {
     Type *ResTy = CI->getType();
 
-    assert(ResTy->isVoidTy() && "Return type is not void for the "
-      "TaskSequenceGetINTEL instruction.");
-
     auto OpItr = CI->value_op_begin();
     if (CI->hasStructRetAttr()) {
       assert(ResTy->isVoidTy() && "Return type is not void");
