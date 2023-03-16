@@ -207,6 +207,10 @@ bool isOCLImageType(llvm::Type *Ty, StringRef *Name) {
           return true;
         }
       }
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    assert(!Name && "Cannot get the name for a target-extension type image");
+    return TET->getName() == "spirv.Image";
+  }
   return false;
 }
 /// \param BaseTyName is the type Name as in spirv.BaseTyName.Postfixes
@@ -1666,6 +1670,13 @@ size_t getImageOperandsIndex(Op OpCode) {
 }
 
 SPIRVTypeImageDescriptor getImageDescriptor(Type *Ty) {
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    auto IntParams = TET->int_params();
+    assert(IntParams.size() > 6 && "Expected type to be an image type");
+    return SPIRVTypeImageDescriptor(SPIRVImageDimKind(IntParams[0]),
+                                    IntParams[1], IntParams[2], IntParams[3],
+                                    IntParams[4], IntParams[5]);
+  }
   StringRef TyName;
   [[maybe_unused]] bool IsImg = isOCLImageType(Ty, &TyName);
   assert(IsImg && "Must be an image type");
