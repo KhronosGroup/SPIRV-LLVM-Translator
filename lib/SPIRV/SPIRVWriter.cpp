@@ -1156,36 +1156,36 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
         NonSemanticIntelPreserve::FunctionAttribute,
         transType(Type::getVoidTy(F->getContext())), Ops);
   }
-    SmallVector<std::pair<unsigned, MDNode *>> AllMD;
-    SmallVector<StringRef> MDNames;
-    F->getContext().getMDKindNames(MDNames);
-    F->getAllMetadata(AllMD);
-    for (auto MD : AllMD) {
-      // Format for metadata is:
-      // NonSemanticIntelPreserveFunctionMetadata Fcn MDName MDVals...
-      // MDName is always a String, MDVals have different types as explained
-      // below. Also note this instruction has a variable number of operands
-      std::vector<SPIRVWord> Ops;
-      Ops.push_back(BF->getId());
-      Ops.push_back(BM->getString(MDNames[MD.first].str())->getId());
-      for (unsigned int i = 0; i < MD.second->getNumOperands(); i++) {
-        const auto &CurOp = MD.second->getOperand(i);
-        if (auto MDStr = dyn_cast<MDString>(CurOp)) {
-          // For MDString, MDVal is String
-          auto SPIRVStr = BM->getString(MDStr->getString().str());
-          Ops.push_back(SPIRVStr->getId());
-        } else if (auto ValueAsMeta = dyn_cast<ValueAsMetadata>(CurOp)) {
-          // For Value metadata, MDVal is a SPIRVValue
-          auto SPIRVVal = transValue(ValueAsMeta->getValue(), nullptr);
-          Ops.push_back(SPIRVVal->getId());
-        } else {
-          assert(false && "Unsupported metadata type");
-        }
+  SmallVector<std::pair<unsigned, MDNode *>> AllMD;
+  SmallVector<StringRef> MDNames;
+  F->getContext().getMDKindNames(MDNames);
+  F->getAllMetadata(AllMD);
+  for (auto MD : AllMD) {
+    // Format for metadata is:
+    // NonSemanticIntelPreserveFunctionMetadata Fcn MDName MDVals...
+    // MDName is always a String, MDVals have different types as explained
+    // below. Also note this instruction has a variable number of operands
+    std::vector<SPIRVWord> Ops;
+    Ops.push_back(BF->getId());
+    Ops.push_back(BM->getString(MDNames[MD.first].str())->getId());
+    for (unsigned int i = 0; i < MD.second->getNumOperands(); i++) {
+      const auto &CurOp = MD.second->getOperand(i);
+      if (auto MDStr = dyn_cast<MDString>(CurOp)) {
+        // For MDString, MDVal is String
+        auto SPIRVStr = BM->getString(MDStr->getString().str());
+        Ops.push_back(SPIRVStr->getId());
+      } else if (auto ValueAsMeta = dyn_cast<ValueAsMetadata>(CurOp)) {
+        // For Value metadata, MDVal is a SPIRVValue
+        auto SPIRVVal = transValue(ValueAsMeta->getValue(), nullptr);
+        Ops.push_back(SPIRVVal->getId());
+      } else {
+        assert(false && "Unsupported metadata type");
       }
-      BM->addPreservedFunctionMetadataOrAttributes(
-          NonSemanticIntelPreserve::FunctionMetadata,
-          transType(Type::getVoidTy(F->getContext())), Ops);
     }
+    BM->addPreservedFunctionMetadataOrAttributes(
+        NonSemanticIntelPreserve::FunctionMetadata,
+        transType(Type::getVoidTy(F->getContext())), Ops);
+  }
 }
 
 SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C) {
