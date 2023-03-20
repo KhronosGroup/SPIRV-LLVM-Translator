@@ -122,6 +122,14 @@ public:
 
   void setMemToRegEnabled(bool Mem2Reg) { SPIRVMemToReg = Mem2Reg; }
 
+  bool preserveAllFunctionAttributesAndMetadata() const {
+    return PreserveAllFunctionAttributesAndMetadata;
+  }
+
+  void setPreserveAllFunctionAttributesAndMetadata(bool ArgValue) {
+    PreserveAllFunctionAttributesAndMetadata = ArgValue;
+  }
+
   void setGenKernelArgNameMDEnabled(bool ArgNameMD) {
     GenKernelArgNameMD = ArgNameMD;
   }
@@ -230,6 +238,8 @@ private:
   // Add a workaround to preserve OpenCL kernel_arg_type and
   // kernel_arg_type_qual metadata through OpString
   bool PreserveOCLKernelArgTypeMetadataThroughString = false;
+
+  bool PreserveAllFunctionAttributesAndMetadata = false;
 };
 
 } // namespace SPIRV

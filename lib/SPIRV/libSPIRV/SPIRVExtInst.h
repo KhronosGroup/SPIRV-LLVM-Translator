@@ -40,6 +40,7 @@
 #ifndef SPIRV_LIBSPIRV_SPIRVEXTINST_H
 #define SPIRV_LIBSPIRV_SPIRVEXTINST_H
 
+#include "NonSemantic.Intel.Preserve.h"
 #include "OpenCL.std.h"
 #include "SPIRV.debug.h"
 #include "SPIRVEnum.h"
@@ -262,6 +263,16 @@ template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::Operation, "DebugOperation");
 }
 SPIRV_DEF_NAMEMAP(SPIRVDebugExtOpKind, SPIRVDebugExtOpMap)
+
+typedef NonSemanticIntelPreserve::Instruction NonSemanticIntelPreserveOpKind;
+template <>
+inline void SPIRVMap<NonSemanticIntelPreserveOpKind, std::string>::init() {
+  add(NonSemanticIntelPreserve::FunctionMetadata,
+      "NonSemanticIntelPreserveFunctionMetadata");
+  add(NonSemanticIntelPreserve::FunctionAttribute,
+      "NonSemanticIntelPreserveFunctionAttribute");
+}
+SPIRV_DEF_NAMEMAP(NonSemanticIntelPreserveOpKind, NonSemanticIntelPreserveOpMap)
 
 } // namespace SPIRV
 

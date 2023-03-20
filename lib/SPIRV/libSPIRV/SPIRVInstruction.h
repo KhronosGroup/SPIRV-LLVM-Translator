@@ -1763,7 +1763,8 @@ public:
     assert((ExtSetKind == SPIRVEIS_OpenCL || ExtSetKind == SPIRVEIS_Debug ||
             ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
-            ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
+            ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_200 ||
+            ExtSetKind == SPIRVEIS_Intel_Preserve) &&
            "not supported");
   }
   void encode(spv_ostream &O) const override {
@@ -1777,6 +1778,9 @@ public:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       getEncoder(O) << ExtOpDebug;
+      break;
+    case SPIRVEIS_Intel_Preserve:
+      getEncoder(O) << ExtOpNonSemanticPreserve;
       break;
     default:
       assert(0 && "not supported");
@@ -1796,6 +1800,9 @@ public:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       getDecoder(I) >> ExtOpDebug;
+      break;
+    case SPIRVEIS_Intel_Preserve:
+      getDecoder(I) >> ExtOpNonSemanticPreserve;
       break;
     default:
       assert(0 && "not supported");
@@ -1842,6 +1849,12 @@ public:
     return ArgTypes;
   }
 
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (SPIRVBuiltinSetNameMap::map(ExtSetKind).find("NonSemantic.") == 0)
+      return ExtensionID::SPV_KHR_non_semantic_info;
+    return {};
+  }
+
 protected:
   SPIRVExtInstSetKind ExtSetKind;
   SPIRVId ExtSetId;
@@ -1849,6 +1862,7 @@ protected:
     SPIRVWord ExtOp;
     OCLExtOpKind ExtOpOCL;
     SPIRVDebugExtOpKind ExtOpDebug;
+    NonSemanticIntelPreserveOpKind ExtOpNonSemanticPreserve;
   };
 };
 
