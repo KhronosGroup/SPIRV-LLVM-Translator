@@ -1,5 +1,5 @@
 ; RUN: llvm-as -opaque-pointers %s -o %t.bc
-; RUN: llvm-spirv --opaque-pointers -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-kernel-100
+; RUN: llvm-spirv --opaque-pointers -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv --opaque-pointers -to-binary %t.spt -o %t.spv
 
@@ -7,7 +7,7 @@
 ; RUN: llvm-dis -opaque-pointers %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s -check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: ExtInstImport [[#EISId:]] "NonSemantic.Kernel.DebugInfo.100"
+; CHECK-SPIRV: ExtInstImport [[#EISId:]] "NonSemantic.Shader.DebugInfo.200"
 ; CHECK-SPIRV: String [[#StrGreet:]] ".str.GREETING"
 ; CHECK-SPIRV: String [[#StrChar1:]] "CHARACTER_1"
 ; CHECK-SPIRV: String [[#StrChar2:]] "CHARACTER_2"
