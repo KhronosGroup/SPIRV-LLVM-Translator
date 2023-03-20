@@ -186,8 +186,9 @@ private:
     return nullptr;
   }
   const std::string &getString(const SPIRVId Id);
-  SPIRVWord getConstantOrLiteral(const std::vector<SPIRVWord> &,
-                                 const SPIRVWord, const SPIRVExtInstSetKind);
+  SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
+                                      const SPIRVWord,
+                                      const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 };

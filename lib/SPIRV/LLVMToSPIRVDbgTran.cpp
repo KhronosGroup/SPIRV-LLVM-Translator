@@ -1330,33 +1330,23 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
   using namespace SPIRVDebug::Operand::ModuleINTEL;
   SPIRVWordVec Ops(OperandCount);
-  // The difference in translation of NonSemantic Debug Info and
-  // SPV_INTEL_debug_module extension is that extension allows Line and IsDecl
-  // operands to be Literals, when the non-OpenCL Debug Info allows only IDs to
-  // the constant values.
-  bool IsNonSemanticDI =
-      (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200);
   Ops[NameIdx] = BM->getString(Module->getName().str())->getId();
   Ops[SourceIdx] = getSource(Module->getFile())->getId();
-  if (IsNonSemanticDI) {
-    ConstantInt *Line = getUInt(M, Module->getLineNo());
-    Ops[LineIdx] = SPIRVWriter->transValue(Line, nullptr)->getId();
-  } else {
-    Ops[LineIdx] = Module->getLineNo();
-  }
+  Ops[LineIdx] = Module->getLineNo();
   Ops[ParentIdx] = getScope(Module->getScope())->getId();
   Ops[ConfigMacrosIdx] =
       BM->getString(Module->getConfigurationMacros().str())->getId();
   Ops[IncludePathIdx] = BM->getString(Module->getIncludePath().str())->getId();
   Ops[ApiNotesIdx] = BM->getString(Module->getAPINotesFile().str())->getId();
-  if (IsNonSemanticDI) {
-    ConstantInt *IsDecl = getUInt(M, Module->getIsDecl());
-    Ops[IsDeclIdx] = SPIRVWriter->transValue(IsDecl, nullptr)->getId();
-  } else {
-    Ops[IsDeclIdx] = Module->getIsDecl();
-  }
-  if (IsNonSemanticDI)
+  Ops[IsDeclIdx] = Module->getIsDecl();
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+    // The difference in translation of NonSemantic Debug Info and
+    // SPV_INTEL_debug_module extension is that extension allows Line and IsDecl
+    // operands to be Literals, when the non-OpenCL Debug Info allows only IDs
+    // to the constant values.
+    transformToConstant(Ops, { LineIdx, IsDeclIdx });
     return BM->addDebugInfo(SPIRVDebug::Module, getVoidTy(), Ops);
+  }
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
   BM->addCapability(spv::CapabilityDebugInfoModuleINTEL);
   return BM->addDebugInfo(SPIRVDebug::ModuleINTEL, getVoidTy(), Ops);
