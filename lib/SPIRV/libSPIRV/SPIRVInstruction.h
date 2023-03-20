@@ -42,6 +42,7 @@
 
 #include "SPIRVBasicBlock.h"
 #include "SPIRVEnum.h"
+#include "SPIRVFunction.h"
 #include "SPIRVIsValidEnum.h"
 #include "SPIRVOpCode.h"
 #include "SPIRVStream.h"

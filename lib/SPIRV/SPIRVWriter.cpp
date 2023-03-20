@@ -1168,15 +1168,15 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
     std::vector<SPIRVWord> Ops;
     Ops.push_back(BF->getId());
     Ops.push_back(BM->getString(MDNames[MD.first].str())->getId());
-    for (unsigned int i = 0; i < MD.second->getNumOperands(); i++) {
-      const auto &CurOp = MD.second->getOperand(i);
-      if (auto MDStr = dyn_cast<MDString>(CurOp)) {
+    for (unsigned int OpIdx = 0; OpIdx < MD.second->getNumOperands(); OpIdx++) {
+      const auto &CurOp = MD.second->getOperand(OpIdx);
+      if (auto *MDStr = dyn_cast<MDString>(CurOp)) {
         // For MDString, MDVal is String
-        auto SPIRVStr = BM->getString(MDStr->getString().str());
+        auto *SPIRVStr = BM->getString(MDStr->getString().str());
         Ops.push_back(SPIRVStr->getId());
-      } else if (auto ValueAsMeta = dyn_cast<ValueAsMetadata>(CurOp)) {
+      } else if (auto *ValueAsMeta = dyn_cast<ValueAsMetadata>(CurOp)) {
         // For Value metadata, MDVal is a SPIRVValue
-        auto SPIRVVal = transValue(ValueAsMeta->getValue(), nullptr);
+        auto *SPIRVVal = transValue(ValueAsMeta->getValue(), nullptr);
         Ops.push_back(SPIRVVal->getId());
       } else {
         assert(false && "Unsupported metadata type");
