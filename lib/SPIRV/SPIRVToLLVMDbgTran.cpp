@@ -206,7 +206,7 @@ DIType *SPIRVToLLVMDbgTran::transTypePointer(const SPIRVExtInst *DebugInst) {
   std::optional<unsigned> AS;
   SPIRVWord SC = getConstantValueOrLiteral(Ops, StorageClassIdx,
                                            DebugInst->getExtSetKind());
-  if (SC != ~0U)
+  if (SC != ~0U) // all ones denote no address space
     AS = SPIRSPIRVAddrSpaceMap::rmap(static_cast<SPIRVStorageClassKind>(SC));
   DIType *Ty;
   SPIRVWord Flags = getConstantValueOrLiteral(Ops, FlagsIdx,
