@@ -188,6 +188,9 @@ public:
     case DecorationMMHostInterfaceMaxBurstINTEL:
     case DecorationMMHostInterfaceWaitRequestINTEL:
       return ExtensionID::SPV_INTEL_fpga_argument_interfaces;
+    case DecorationLatencyControlLabelINTEL:
+    case DecorationLatencyControlConstraintINTEL:
+      return ExtensionID::SPV_INTEL_fpga_latency_control;
     default:
       return {};
     }
@@ -533,6 +536,17 @@ public:
   SPIRVDecorateBankBitsINTELAttr(SPIRVEntry *TheTarget,
                                  const std::vector<SPIRVWord> &TheBits)
       : SPIRVDecorate(DecorationBankBitsINTEL, TheTarget) {
+    Literals = TheBits;
+    WordCount += Literals.size();
+  }
+};
+
+class SPIRVDecorateLatencyControlConstraintINTELAttr : public SPIRVDecorate {
+public:
+  // Complete constructor for LatencyControlConstraintINTEL decoration
+  SPIRVDecorateLatencyControlConstraintINTELAttr(SPIRVEntry *TheTarget,
+                                 const std::vector<SPIRVWord> &TheBits)
+      : SPIRVDecorate(DecorationLatencyControlConstraintINTEL, TheTarget) {
     Literals = TheBits;
     WordCount += Literals.size();
   }
