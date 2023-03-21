@@ -900,6 +900,10 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(
   case dwarf::SourceLanguage::DW_LANG_D:
     return spv::internal::SourceLanguageD;
 
+  case dwarf::SourceLanguage::DW_LANG_Fortran77:
+    return spv::internal::SourceLanguageFortran77;
+  case dwarf::SourceLanguage::DW_LANG_Fortran90:
+    return spv::internal::SourceLanguageFortran90;
   case dwarf::SourceLanguage::DW_LANG_Fortran95:
     return spv::internal::SourceLanguageFortran95;
   case dwarf::SourceLanguage::DW_LANG_Fortran03:
@@ -946,6 +950,10 @@ convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(unsigned SourceLang) {
   case spv::internal::SourceLanguageD:
     return dwarf::SourceLanguage::DW_LANG_D;
 
+  case spv::internal::SourceLanguageFortran77:
+    return dwarf::SourceLanguage::DW_LANG_Fortran77;
+  case spv::internal::SourceLanguageFortran90:
+    return dwarf::SourceLanguage::DW_LANG_Fortran90;
   case spv::internal::SourceLanguageFortran95:
     return dwarf::SourceLanguage::DW_LANG_Fortran95;
   case spv::internal::SourceLanguageFortran2003:
