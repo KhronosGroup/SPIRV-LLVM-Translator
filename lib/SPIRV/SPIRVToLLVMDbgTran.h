@@ -74,7 +74,7 @@ public:
             DebugInst->getExtSetKind() ==
                 SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
             DebugInst->getExtSetKind() ==
-                SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) &&
+                SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
            "Unexpected extended instruction set");
     auto It = DebugInstCache.find(DebugInst);
     if (It != DebugInstCache.end())
@@ -186,6 +186,9 @@ private:
     return nullptr;
   }
   const std::string &getString(const SPIRVId Id);
+  SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
+                                      const SPIRVWord,
+                                      const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   Optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 };

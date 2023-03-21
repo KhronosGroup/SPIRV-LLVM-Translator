@@ -234,10 +234,10 @@ static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
             "version of SPIR-V debug info format is compatible with the rules "
             "regarding non-semantic instruction sets."),
         clEnumValN(
-            SPIRV::DebugInfoEIS::NonSemantic_Kernel_DebugInfo_100,
-            "nonsemantic-kernel-100",
+            SPIRV::DebugInfoEIS::NonSemantic_Shader_DebugInfo_200,
+            "nonsemantic-shader-200",
             "Emit debug info compliant with the "
-            "NonSemantic.Kernel.DebugInfo.100 extended instruction set. This "
+            "NonSemantic.Shader.DebugInfo.200 extended instruction set. This "
             "version of SPIR-V debug info format is compatible with the rules "
             "regarding non-semantic instruction sets.")));
 
@@ -730,8 +730,14 @@ int main(int Ac, char **Av) {
     } else {
       Opts.setDebugInfoEIS(DebugEIS);
       if (DebugEIS.getValue() ==
-          SPIRV::DebugInfoEIS::NonSemantic_Kernel_DebugInfo_100)
+          SPIRV::DebugInfoEIS::NonSemantic_Shader_DebugInfo_200)
         Opts.setAllowExtraDIExpressionsEnabled(true);
+      if (DebugEIS.getValue() ==
+          SPIRV::DebugInfoEIS::NonSemantic_Shader_DebugInfo_200 ||
+          DebugEIS.getValue() ==
+          SPIRV::DebugInfoEIS::NonSemantic_Shader_DebugInfo_200)
+        Opts.setAllowedToUseExtension(
+            SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
     }
   }
 

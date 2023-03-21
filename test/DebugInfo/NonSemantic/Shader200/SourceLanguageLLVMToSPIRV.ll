@@ -2,21 +2,25 @@
 ; appropriate SourceLanguages in SPIRV when the extended debug info is enabled.
 
 ; RUN: sed -e 's/INPUT_LANGUAGE/DW_LANG_C99/' %s | llvm-as - -o %t.bc
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-kernel-100 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-C99
+; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-C99
 
 ; RUN: sed -e 's/INPUT_LANGUAGE/DW_LANG_OpenCL/' %s | llvm-as - -o %t.bc
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-kernel-100 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-OPENCLC
+; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-OPENCLC
 
 ; RUN: sed -e 's/INPUT_LANGUAGE/DW_LANG_C_plus_plus/' %s | llvm-as - -o %t.bc
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-kernel-100 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-CPP
+; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-CPP
 
 ; RUN: sed -e 's/INPUT_LANGUAGE/DW_LANG_C_plus_plus_14/' %s | llvm-as - -o %t.bc
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-kernel-100 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-CPP14
+; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-CPP14
 
-; CHECK-C99: DebugCompileUnit [[#]] [[#]] [[#]] 109
-; CHECK-OPENCLC: DebugCompileUnit [[#]] [[#]] [[#]] 3
-; CHECK-CPP: DebugCompileUnit [[#]] [[#]] [[#]] 111
-; CHECK-CPP14: DebugCompileUnit [[#]] [[#]] [[#]] 114
+; CHECK-C99: Constant [[#]] [[#Constant:]] 109
+; CHECK-C99: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-OPENCLC: Constant [[#]] [[#Constant:]] 3
+; CHECK-OPENCLC: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-CPP: Constant [[#]] [[#Constant:]] 111
+; CHECK-CPP: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-CPP14: Constant [[#]] [[#Constant:]] 114
+; CHECK-CPP14: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
