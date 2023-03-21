@@ -553,8 +553,8 @@ LLVMToSPIRVDbgTran::transDbgCompilationUnit(const DICompileUnit *CU) {
           ? convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(DwarfLang)
           : convertDWARFSourceLangToSPIRV(DwarfLang);
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { SPIRVDebugInfoVersionIdx, DWARFVersionIdx,
-                               LanguageIdx });
+    transformToConstant(
+        Ops, {SPIRVDebugInfoVersionIdx, DWARFVersionIdx, LanguageIdx});
   BM->addModuleProcessed(SPIRVDebug::ProducerPrefix + CU->getProducer().str());
   // Cache CU in a member.
   SPIRVCU = static_cast<SPIRVExtInst *>(
@@ -575,7 +575,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgBaseType(const DIBasicType *BT) {
   SPIRV::DbgEncodingMap::find(Encoding, &EncTag);
   Ops[EncodingIdx] = EncTag;
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { EncodingIdx });
+    transformToConstant(Ops, {EncodingIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeBasic, getVoidTy(), Ops);
 }
 
@@ -592,7 +592,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgPointerType(const DIDerivedType *PT) {
   }
   Ops[FlagsIdx] = transDebugFlags(PT);
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { StorageClassIdx, FlagsIdx });
+    transformToConstant(Ops, {StorageClassIdx, FlagsIdx});
   SPIRVEntry *Res = BM->addDebugInfo(SPIRVDebug::TypePointer, getVoidTy(), Ops);
   return Res;
 }
@@ -605,7 +605,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgQualifiedType(const DIDerivedType *QT) {
   Ops[QualifierIdx] = SPIRV::DbgTypeQulifierMap::map(
       static_cast<llvm::dwarf::Tag>(QT->getTag()));
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { QualifierIdx });
+    transformToConstant(Ops, {QualifierIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeQualifier, getVoidTy(), Ops);
 }
 
@@ -637,7 +637,7 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeOpenCL(const DICompositeType *AT) {
       assert(N == 1 && "Multidimensional vector is not expected!");
       Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
       if (isNonSemanticDebugInfo())
-        transformToConstant(Ops, { ComponentCountIdx });
+        transformToConstant(Ops, {ComponentCountIdx});
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
     if (Count) {
@@ -825,7 +825,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgTypeDef(const DIDerivedType *DT) {
   assert(Scope && "Couldn't translate scope!");
   Ops[ParentIdx] = Scope->getId();
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::Typedef, getVoidTy(), Ops);
 }
 
@@ -849,7 +849,7 @@ LLVMToSPIRVDbgTran::transDbgSubroutineType(const DISubroutineType *FT) {
   }
 
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { FlagsIdx });
+    transformToConstant(Ops, {FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeFunction, getVoidTy(), Ops);
 }
 
@@ -884,7 +884,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEnumType(const DICompositeType *ET) {
     Ops.push_back(Name->getId());
   }
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeEnum, getVoidTy(), Ops);
 }
 
@@ -918,7 +918,7 @@ LLVMToSPIRVDbgTran::transDbgCompositeType(const DICompositeType *CT) {
   }
 
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
   SPIRVEntry *Res =
       BM->addDebugInfo(SPIRVDebug::TypeComposite, getVoidTy(), Ops);
 
@@ -961,7 +961,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgMemberType(const DIDerivedType *MT) {
     }
   }
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeMember, getVoidTy(), Ops);
 }
 
@@ -976,7 +976,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInheritance(const DIDerivedType *DT) {
   Ops[SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
   Ops[FlagsIdx] = transDebugFlags(DT);
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { FlagsIdx });
+    transformToConstant(Ops, {FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::Inheritance, getVoidTy(), Ops);
 }
 
@@ -1017,7 +1017,7 @@ LLVMToSPIRVDbgTran::transDbgTemplateParameter(const DITemplateParameter *TP) {
   Ops[LineIdx] = 0;   // This version of DITemplateParameter has no line number
   Ops[ColumnIdx] = 0; // This version of DITemplateParameter has no column info
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx});
+    transformToConstant(Ops, {LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeTemplateParameter, getVoidTy(), Ops);
 }
 
@@ -1033,7 +1033,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgTemplateTemplateParameter(
   Ops[LineIdx] = 0; // This version of DITemplateValueParameter has no line info
   Ops[ColumnIdx] = 0; // This version of DITemplateValueParameter has no column
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeTemplateTemplateParameter,
                           getVoidTy(), Ops);
 }
@@ -1055,7 +1055,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgTemplateParameterPack(
     Ops.push_back(P->getId());
   }
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::TypeTemplateParameterPack, getVoidTy(),
                           Ops);
 }
@@ -1091,7 +1091,7 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
     Ops.push_back(transDbgEntry(StaticMember)->getId());
 
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::GlobalVariable, getVoidTy(), Ops);
 }
 
@@ -1116,7 +1116,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
   Ops[LinkageNameIdx] = BM->getString(Func->getLinkageName().str())->getId();
   Ops[FlagsIdx] = adjustAccessFlags(Scope, transDebugFlags(Func));
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
 
   SPIRVEntry *DebugFunc = nullptr;
   if (!Func->isDefinition()) {
@@ -1127,7 +1127,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
     Ops.resize(MinOperandCount);
     Ops[ScopeLineIdx] = Func->getScopeLine();
     if (isNonSemanticDebugInfo())
-      transformToConstant(Ops, { ScopeLineIdx });
+      transformToConstant(Ops, {ScopeLineIdx});
 
     Ops[FunctionIdIdx] = getDebugInfoNoneId();
     for (const llvm::Function &F : M->functions()) {
@@ -1176,8 +1176,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgScope(const DIScope *S) {
     Ops[SourceIdx] = getSource(S)->getId();
     Ops[DiscriminatorIdx] = LBF->getDiscriminator();
     Ops[ParentIdx] = getScope(S->getScope())->getId();
-  if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { DiscriminatorIdx });
+    if (isNonSemanticDebugInfo())
+      transformToConstant(Ops, {DiscriminatorIdx});
     return BM->addDebugInfo(SPIRVDebug::LexicalBlockDiscriminator, getVoidTy(),
                             Ops);
   }
@@ -1194,7 +1194,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgScope(const DIScope *S) {
     Ops.push_back(BM->getString(NS->getName().str())->getId());
   }
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::LexicalBlock, getVoidTy(), Ops);
 }
 
@@ -1225,7 +1225,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInlinedAt(const DILocation *Loc) {
   if (DILocation *IA = Loc->getInlinedAt())
     Ops.push_back(transDbgEntry(IA)->getId());
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx });
+    transformToConstant(Ops, {LineIdx});
   return BM->addDebugInfo(SPIRVDebug::InlinedAt, getVoidTy(), Ops);
 }
 
@@ -1275,7 +1275,7 @@ LLVMToSPIRVDbgTran::transDbgLocalVariable(const DILocalVariable *Var) {
   if (SPIRVWord ArgNumber = Var->getArg())
     Ops.push_back(ArgNumber);
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { LineIdx, ColumnIdx, FlagsIdx });
+    transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
   return BM->addDebugInfo(SPIRVDebug::LocalVariable, getVoidTy(), Ops);
 }
 
@@ -1299,7 +1299,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
     SPIRVWordVec Op(OpCount);
     Op[OpCodeIdx] = OC;
     if (isNonSemanticDebugInfo())
-      transformToConstant(Op, { OpCodeIdx });
+      transformToConstant(Op, {OpCodeIdx});
     for (unsigned J = 1; J < OpCount; ++J)
       Op[J] = Expr->getElement(++I);
     auto *Operation = BM->addDebugInfo(SPIRVDebug::Operation, getVoidTy(), Op);
@@ -1323,7 +1323,7 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   Ops[ColumnIdx] = 0; // This version of DIImportedEntity has no column number
   Ops[ParentIdx] = getScope(IE->getScope())->getId();
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, { TagIdx, LineIdx, ColumnIdx });
+    transformToConstant(Ops, {TagIdx, LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
 }
 
@@ -1344,7 +1344,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgModule(const DIModule *Module) {
     // SPV_INTEL_debug_module extension is that extension allows Line and IsDecl
     // operands to be Literals, when the non-OpenCL Debug Info allows only IDs
     // to the constant values.
-    transformToConstant(Ops, { LineIdx, IsDeclIdx });
+    transformToConstant(Ops, {LineIdx, IsDeclIdx});
     return BM->addDebugInfo(SPIRVDebug::Module, getVoidTy(), Ops);
   }
   BM->addExtension(ExtensionID::SPV_INTEL_debug_module);
