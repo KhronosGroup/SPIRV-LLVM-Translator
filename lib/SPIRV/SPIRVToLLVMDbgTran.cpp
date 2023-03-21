@@ -861,12 +861,10 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
     StaticMemberDecl = transDebugInst<DIDerivedType>(
         BM->get<SPIRVExtInst>(Ops[StaticMemberDeclarationIdx]));
   }
-  bool IsLocal = getConstantValueOrLiteral(Ops, FlagsIdx,
-                                           DebugInst->getExtSetKind())
-    & SPIRVDebug::FlagIsLocal;
-  bool IsDefinition = getConstantValueOrLiteral(Ops, FlagsIdx,
-                                                DebugInst->getExtSetKind())
-    & SPIRVDebug::FlagIsDefinition;
+  SPIRVWord Flags = getConstantValueOrLiteral(Ops, FlagsIdx,
+                                              DebugInst->getExtSetKind());
+  bool IsLocal = Flags & SPIRVDebug::FlagIsLocal;
+  bool IsDefinition = Flags & SPIRVDebug::FlagIsDefinition;
   MDNode *VarDecl = nullptr;
   if (IsDefinition) {
     VarDecl = Builder.createGlobalVariableExpression(
