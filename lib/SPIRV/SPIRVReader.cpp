@@ -3406,7 +3406,8 @@ void generateIntelFPGAAnnotation(
         E->getDecorationLiterals(DecorationLatencyControlConstraintINTEL);
     assert(Literals.size() == 3 &&
            "Latency Control Constraint decoration shall have 3 extra operands");
-    Out << "{sycl-latency-constraint:" << Literals[0] << "," << Literals[1] << "," << Literals[2] << '}';
+    Out << "{sycl-latency-constraint:" << Literals[0] << "," << Literals[1]
+        << "," << Literals[2] << '}';
   }
 
   unsigned LSUParamsBitmask = 0;

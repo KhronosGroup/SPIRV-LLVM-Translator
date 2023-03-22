@@ -60,6 +60,11 @@ public:
   // Complete constructor for decorations with two word literals
   SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
                        SPIRVEntry *TheTarget, SPIRVWord V1, SPIRVWord V2);
+  // Complete constructor for decorations with three word literals
+  SPIRVDecorateGeneric(Op OC, SPIRVWord WC, Decoration TheDec,
+                       SPIRVEntry *TheTarget, SPIRVWord V1, SPIRVWord V2,
+                       SPIRVWord V3);
+
   // Incomplete constructor
   SPIRVDecorateGeneric(Op OC);
 
@@ -124,6 +129,11 @@ public:
   SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V1,
                 SPIRVWord V2)
       : SPIRVDecorateGeneric(OC, 5, TheDec, TheTarget, V1, V2) {}
+  // Complete constructor for decorations with three word literals
+  SPIRVDecorate(Decoration TheDec, SPIRVEntry *TheTarget, SPIRVWord V1,
+                SPIRVWord V2, SPIRVWord V3)
+      : SPIRVDecorateGeneric(OC, 6, TheDec, TheTarget, V1, V2, V3) {}
+
   // Incomplete constructor
   SPIRVDecorate() : SPIRVDecorateGeneric(OC) {}
 
@@ -536,17 +546,6 @@ public:
   SPIRVDecorateBankBitsINTELAttr(SPIRVEntry *TheTarget,
                                  const std::vector<SPIRVWord> &TheBits)
       : SPIRVDecorate(DecorationBankBitsINTEL, TheTarget) {
-    Literals = TheBits;
-    WordCount += Literals.size();
-  }
-};
-
-class SPIRVDecorateLatencyControlConstraintINTELAttr : public SPIRVDecorate {
-public:
-  // Complete constructor for LatencyControlConstraintINTEL decoration
-  SPIRVDecorateLatencyControlConstraintINTELAttr(SPIRVEntry *TheTarget,
-                                 const std::vector<SPIRVWord> &TheBits)
-      : SPIRVDecorate(DecorationLatencyControlConstraintINTEL, TheTarget) {
     Literals = TheBits;
     WordCount += Literals.size();
   }

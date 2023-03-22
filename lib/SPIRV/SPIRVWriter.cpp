@@ -3058,10 +3058,11 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
           Decorates.BufferLocationVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else if (AllowFPGALatencyControl &&
-            (DecorationKind == DecorationLatencyControlLabelINTEL ||
-            DecorationKind == DecorationLatencyControlConstraintINTEL)) {
-          Decorates.LatencyControlVec.emplace_back(static_cast<Decoration>(DecorationKind),
-                                      std::move(DecValues));
+                   (DecorationKind == DecorationLatencyControlLabelINTEL ||
+                    DecorationKind ==
+                        DecorationLatencyControlConstraintINTEL)) {
+          Decorates.LatencyControlVec.emplace_back(
+              static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else {
           DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
                                       std::move(DecValues));
@@ -3265,22 +3266,30 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       }
     } break;
     case DecorationLatencyControlLabelINTEL: {
-      if (M->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_latency_control)) {
-        M->getErrorLog().checkError(I.second.size() == 1, SPIRVEC_InvalidLlvmModule,
-                        "LatencyControlLabelINTEL requires exactly 1 extra operand");
+      if (M->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_fpga_latency_control)) {
+        M->getErrorLog().checkError(
+            I.second.size() == 1, SPIRVEC_InvalidLlvmModule,
+            "LatencyControlLabelINTEL requires exactly 1 extra operand");
         SPIRVWord Label = 0;
         StringRef(I.second[0]).getAsInteger(10, Label);
         E->addDecorate(
             new SPIRVDecorate(DecorationLatencyControlLabelINTEL, E, Label));
-      } break;
+      }
+      break;
     }
     case DecorationLatencyControlConstraintINTEL: {
-      if (M->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_latency_control)) {
-        M->getErrorLog().checkError(I.second.size() == 3, SPIRVEC_InvalidLlvmModule,
-                        "LatencyControlConstraintINTEL requires exactly 3 extra operands");
-        E->addDecorate(new SPIRVDecorateLatencyControlConstraintINTELAttr(
-            E, getLiteralsFromStrings(I.second)));
-      } break;
+      if (M->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_fpga_latency_control)) {
+        M->getErrorLog().checkError(
+            I.second.size() == 3, SPIRVEC_InvalidLlvmModule,
+            "LatencyControlConstraintINTEL requires exactly 3 extra operands");
+        auto Literals = getLiteralsFromStrings(I.second);
+        E->addDecorate(
+            new SPIRVDecorate(DecorationLatencyControlConstraintINTEL, E,
+                              Literals[0], Literals[1], Literals[2]));
+      }
+      break;
     }
     default:
       // Other decorations are either not supported by the translator or
