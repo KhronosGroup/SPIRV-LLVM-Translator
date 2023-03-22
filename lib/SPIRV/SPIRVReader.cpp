@@ -3593,8 +3593,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       // Alloca might be hidden by a couple of casts.
       bool isStaticMemoryAttribute = AL ? true : false;
       while (!isStaticMemoryAttribute && Inst &&
-             (isa<BitCastInst>(Inst) || isa<AddrSpaceCastInst>(Inst) ||
-              isa<GetElementPtrInst>(Inst))) {
+             (isa<BitCastInst>(Inst) || isa<AddrSpaceCastInst>(Inst))) {
         Inst = dyn_cast<Instruction>(Inst->getOperand(0));
         isStaticMemoryAttribute = (Inst && isa<AllocaInst>(Inst));
       }

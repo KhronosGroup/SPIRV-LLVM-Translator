@@ -4054,8 +4054,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         addAnnotationDecorations(ResPtr, Decorations.MemoryAccessesVec);
         if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
           addAnnotationDecorations(ResPtr, Decorations.BufferLocationVec);
-          BM->addExtension(ExtensionID::SPV_INTEL_fpga_latency_control);
-          BM->addCapability(CapabilityFPGALatencyControlINTEL);
           addAnnotationDecorations(ResPtr, Decorations.LatencyControlVec);
         }
       }
@@ -4075,10 +4073,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         // accessed by the latter.
         addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
         if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
-          addAnnotationDecorations(ResPtr, Decorations.BufferLocationVec);
-          BM->addExtension(ExtensionID::SPV_INTEL_fpga_latency_control);
-          BM->addCapability(CapabilityFPGALatencyControlINTEL);
-          addAnnotationDecorations(ResPtr, Decorations.LatencyControlVec);
+          addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
+          addAnnotationDecorations(DecSubj, Decorations.LatencyControlVec);
         }
       }
       II->replaceAllUsesWith(II->getOperand(0));
