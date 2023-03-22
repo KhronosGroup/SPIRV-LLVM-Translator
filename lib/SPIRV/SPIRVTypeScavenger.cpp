@@ -233,7 +233,8 @@ void SPIRVTypeScavenger::deduceFunctionType(Function &F) {
 
   // The first non-sret argument of block_invoke functions is the block capture
   // struct, which should be passed as an i8*.
-  static Regex BlockInvokeRegex("^(__.+)?_block_invoke(_[0-9]+)?(_kernel)?$");
+  static const Regex BlockInvokeRegex(
+      "^(__.+)?_block_invoke(_[0-9]+)?(_kernel)?$");
   if (BlockInvokeRegex.match(F.getName())) {
     for (Argument *Arg : PointerArgs) {
       if (!Arg->hasAttribute(Attribute::StructRet)) {
