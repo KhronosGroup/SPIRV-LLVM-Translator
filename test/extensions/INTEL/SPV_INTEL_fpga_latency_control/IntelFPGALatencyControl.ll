@@ -8,15 +8,15 @@
 
 ; CHECK-SPIRV: Capability FPGALatencyControlINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_latency_control"
-; CHECK-SPIRV: 4 Decorate [[ARGA:[0-9]+]] LatencyControlLabelINTEL 0
-; CHECK-SPIRV: 4 Decorate [[ARGB:[0-9]+]] LatencyControlLabelINTEL 1
-; CHECK-SPIRV: 6 Decorate [[ARGB:[0-9]+]] LatencyControlConstraintINTEL 0 1 5
-; CHECK-SPIRV: 4 Bitcast {{[0-9]+}} [[OUT1:[0-9]+]] [[ARGA]]
-; CHECK-SPIRV-DAG: 4 Bitcast {{[0-9]+}} [[OUT2:[0-9]+]] [[OUT1]]
-; CHECK-SPIRV-DAG: 6 Load {{[0-9]+}} {{[0-9]+}} [[OUT2]] {{[0-9]+}} {{[0-9]+}}
-; CHECK-SPIRV: 4 Bitcast {{[0-9]+}} [[OUT3:[0-9]+]] [[ARGB]]
-; CHECK-SPIRV-DAG: 4 Bitcast {{[0-9]+}} [[OUT4:[0-9]+]] [[OUT3]]
-; CHECK-SPIRV-DAG: 6 Load {{[0-9]+}} {{[0-9]+}} [[OUT4]] {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV: Decorate [[#ARGA:]] LatencyControlLabelINTEL 0
+; CHECK-SPIRV: Decorate [[#ARGB:]] LatencyControlLabelINTEL 1
+; CHECK-SPIRV: Decorate [[#ARGB]] LatencyControlConstraintINTEL 0 1 5
+; CHECK-SPIRV: Bitcast [[#]] [[#OUT1:]] [[#ARGA]]
+; CHECK-SPIRV-DAG: Bitcast [[#]] [[#OUT2:]] [[#OUT1]]
+; CHECK-SPIRV-DAG: Load [[#]] [[#]] [[#OUT2]] [[#]] [[#]]
+; CHECK-SPIRV: Bitcast [[#]] [[#OUT3:]] [[#ARGB]]
+; CHECK-SPIRV-DAG: Bitcast [[#]] [[#OUT4:]] [[#OUT3]]
+; CHECK-SPIRV-DAG: Load [[#]] [[#]] [[#OUT4]] [[#]] [[#]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -30,6 +30,9 @@ $_ZTSZ4fooEUlvE_ = comdat any
 @.str.9 = private unnamed_addr constant [11 x i8] c"{6172:\220\22}\00", section "llvm.metadata"
 @.str.10 = private unnamed_addr constant [25 x i8] c"{6172:\221\22}{6173:\220,1,5\22}\00", section "llvm.metadata"
 
+; CHECK-LLVM: @[[#ANN_STR1:]] = private unnamed_addr constant [27 x i8] c"{sycl-latency-anchor-id:0}\00"
+; CHECK-LLVM: @[[#ANN_STR2:]] = private unnamed_addr constant [58 x i8] c"{sycl-latency-anchor-id:1}{sycl-latency-constraint:0,1,5}\00"
+
 ; Function Attrs: mustprogress norecurse
 define weak_odr dso_local spir_kernel void @_ZTSZ4fooEUlvE_(ptr %0) local_unnamed_addr #0 comdat !kernel_arg_buffer_location !5 !sycl_kernel_omit_args !5 {
 entry:
@@ -39,14 +42,14 @@ entry:
   %3 = getelementptr inbounds %struct.__spirv_Something, ptr %2, i32 0, i32 0
   %4 = bitcast ptr %3 to ptr
   %5 = call ptr @llvm.ptr.annotation.p0.p0(ptr %4, ptr @.str.9, ptr @.str.1, i32 5, ptr null)
-; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0.p0(ptr %4, ptr getelementptr inbounds ([27 x i8], ptr @[[ANN_STR1]], i32 0, i32 0), ptr undef, i32 undef, ptr undef)
-  %7 = load i32, ptr %6, align 8
-  %8 = load ptr, ptr %1, align 8
-  %9 = getelementptr inbounds %struct.__spirv_Something, ptr %8, i32 0, i32 1
-  %10 = bitcast ptr %9 to ptr
-  %11 = call ptr @llvm.ptr.annotation.p0.p0(ptr %10, ptr @.str.10, ptr @.str.1, i32 5, ptr null)
-; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0.p0(ptr %11, ptr getelementptr inbounds ([58 x i8], ptr @[[ANN_STR2]], i32 0, i32 0), ptr undef, i32 undef, ptr undef)
-  %13 = load i32, ptr %12, align 8
+; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0.p0(ptr %[[#]], ptr @[[#ANN_STR1]], ptr undef, i32 undef, ptr undef)
+  %6 = load i32, ptr %5, align 8
+  %7 = load ptr, ptr %1, align 8
+  %8 = getelementptr inbounds %struct.__spirv_Something, ptr %7, i32 0, i32 1
+  %9 = bitcast ptr %8 to ptr
+  %10 = call ptr @llvm.ptr.annotation.p0.p0(ptr %9, ptr @.str.10, ptr @.str.1, i32 5, ptr null)
+; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0.p0(ptr %[[#]], ptr @[[#ANN_STR2]], ptr undef, i32 undef, ptr undef)
+  %11 = load i32, ptr %10, align 8
   ret void
 }
 
