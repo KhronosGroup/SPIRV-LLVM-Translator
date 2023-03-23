@@ -272,8 +272,9 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
     }
 
     if (auto *PtrTy = dyn_cast<PointerType>(Ty)) {
-			auto &C = Ty->getContext();
-			Type *ElTy = PtrTy->isOpaquePointerTy() ? Type::getVoidTy(C) : PtrTy->getPointerElementType();
+      auto &C = Ty->getContext();
+      Type *ElTy = PtrTy->isOpaquePointerTy() ? Type::getVoidTy(C)
+                                              : PtrTy->getPointerElementType();
       if (auto *FTy = dyn_cast<FunctionType>(ElTy)) {
         // If we have a function pointer, then argument types and return type of
         // the referenced function also need to be checked
@@ -335,8 +336,9 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   if (T->isPointerTy()) {
-	  auto &C = T->getContext();
-    auto ET = T->isOpaquePointerTy() ? Type::getVoidTy(C) : T->getPointerElementType();
+    auto &C = T->getContext();
+    auto *ET = T->isOpaquePointerTy() ? Type::getVoidTy(C)
+                                      : T->getPointerElementType();
     auto AddrSpc = T->getPointerAddressSpace();
     return transPointerType(ET, AddrSpc);
   }
@@ -726,8 +728,10 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
       if (!Ty) {
         Ty = Arg.getType();
         if (Ty->isPointerTy()) {
-			    auto &C = Ty->getContext();
-          PointeeTy = Ty->isOpaquePointerTy() ? Type::getVoidTy(C) : Ty->getNonOpaquePointerElementType();
+          auto &C = Ty->getContext();
+          PointeeTy = Ty->isOpaquePointerTy()
+                          ? Type::getVoidTy(C)
+                          : Ty->getNonOpaquePointerElementType();
         }
       }
       SPIRVType *TransTy = nullptr;
@@ -1591,7 +1595,7 @@ void transAliasingMemAccess(SPIRVModule *BM, MDNode *AliasingListMD,
                             std::vector<uint32_t> &MemoryAccess,
                             SPIRVWord MemAccessMask) {
   if (!BM->isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
   auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
   if (!MemAliasList)
@@ -2517,20 +2521,17 @@ bool LLVMToSPIRVBase::transAlign(Value *V, SPIRVValue *BV) {
 void LLVMToSPIRVBase::transMemAliasingINTELDecorations(Instruction *Inst,
                                                        SPIRVValue *BV) {
   if (!BM->isAllowedToUseExtension(
-         ExtensionID::SPV_INTEL_memory_access_aliasing))
+          ExtensionID::SPV_INTEL_memory_access_aliasing))
     return;
-  if (MDNode *AliasingListMD =
-          Inst->getMetadata(LLVMContext::MD_alias_scope)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+  if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_alias_scope)) {
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
     BV->addDecorate(new SPIRVDecorateId(DecorationAliasScopeINTEL, BV,
                                         MemAliasList->getId()));
   }
   if (MDNode *AliasingListMD = Inst->getMetadata(LLVMContext::MD_noalias)) {
-    auto *MemAliasList =
-        addMemAliasingINTELInstructions(BM, AliasingListMD);
+    auto *MemAliasList = addMemAliasingINTELInstructions(BM, AliasingListMD);
     if (!MemAliasList)
       return;
     BV->addDecorate(
@@ -3912,8 +3913,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     else
       // Other LLVM intrinsics shouldn't get to SPIRV, because they
       // can't be represented in SPIRV or aren't implemented yet.
-      BM->SPIRVCK(
-          false, InvalidFunctionCall, II->getCalledOperand()->getName().str());
+      BM->SPIRVCK(false, InvalidFunctionCall,
+                  II->getCalledOperand()->getName().str());
   }
   return nullptr;
 }
