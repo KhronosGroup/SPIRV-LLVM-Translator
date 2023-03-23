@@ -1359,6 +1359,9 @@ bool isSamplerTy(Type *Ty) {
     auto *STy = dyn_cast_or_null<StructType>(TPT->getElementType());
     return STy && STy->hasName() && STy->getName() == kSPR2TypeName::Sampler;
   }
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    return TET->getName() == "spirv.Sampler";
+  }
   return false;
 }
 

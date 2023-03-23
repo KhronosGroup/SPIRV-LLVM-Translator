@@ -579,6 +579,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGALoopControlsINTEL, "FPGALoopControlsINTEL");
   add(CapabilityKernelAttributesINTEL, "KernelAttributesINTEL");
   add(CapabilityFPGAKernelAttributesINTEL, "FPGAKernelAttributesINTEL");
+  add(CapabilityFPGAKernelAttributesv2INTEL, "FPGAKernelAttributesv2INTEL");
   add(CapabilityFPGAMemoryAccessesINTEL, "FPGAMemoryAccessesINTEL");
   add(CapabilityFPGAClusterAttributesINTEL, "FPGAClusterAttributesINTEL");
   add(CapabilityLoopFuseINTEL, "LoopFuseINTEL");
@@ -633,6 +634,14 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "TensorFloat32ConversionINTEL");
   add(internal::CapabilityJointMatrixWIInstructionsINTEL,
       "JointMatrixWIInstructionsINTEL");
+  add(internal::CapabilityJointMatrixTF32ComponentTypeINTEL,
+      "JointMatrixTF32ComponentTypeINTEL");
+  add(internal::CapabilityJointMatrixBF16ComponentTypeINTEL,
+      "JointMatrixBF16ComponentTypeINTEL");
+  add(internal::CapabilityJointMatrixPackedInt2ComponentTypeINTEL,
+      "JointMatrixPackedInt2ComponentTypeINTEL");
+  add(internal::CapabilityJointMatrixPackedInt4ComponentTypeINTEL,
+      "JointMatrixPackedInt4ComponentTypeINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

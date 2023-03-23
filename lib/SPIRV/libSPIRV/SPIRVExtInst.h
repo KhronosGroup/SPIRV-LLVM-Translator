@@ -226,6 +226,7 @@ template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::TypeBasic, "DebugTypeBasic");
   add(SPIRVDebug::TypePointer, "DebugTypePointer");
   add(SPIRVDebug::TypeArray, "DebugTypeArray");
+  add(SPIRVDebug::TypeArrayDynamic, "DebugTypeArrayDynamic");
   add(SPIRVDebug::TypeVector, "DebugTypeVector");
   add(SPIRVDebug::TypeQualifier, "DebugTypeQualifier");
   add(SPIRVDebug::TypeFunction, "DebugTypeFunction");
@@ -240,6 +241,7 @@ template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::TypeTemplate, "DebugTemplate");
   add(SPIRVDebug::TypePtrToMember, "DebugTypePtrToMember,");
   add(SPIRVDebug::TypeSubrange, "DebugTypeSubrange");
+  add(SPIRVDebug::TypeString, "DebugTypeString");
   add(SPIRVDebug::Inheritance, "DebugInheritance");
   add(SPIRVDebug::Function, "DebugFunction");
   add(SPIRVDebug::FunctionDecl, "DebugFunctionDecl");
@@ -255,6 +257,7 @@ template <> inline void SPIRVMap<SPIRVDebugExtOpKind, std::string>::init() {
   add(SPIRVDebug::InlinedAt, "DebugInlinedAt");
   add(SPIRVDebug::ImportedEntity, "DebugImportedEntity");
   add(SPIRVDebug::ModuleINTEL, "DebugModuleINTEL");
+  add(SPIRVDebug::Module, "DebugModule");
   add(SPIRVDebug::Expression, "DebugExpression");
   add(SPIRVDebug::Operation, "DebugOperation");
 }

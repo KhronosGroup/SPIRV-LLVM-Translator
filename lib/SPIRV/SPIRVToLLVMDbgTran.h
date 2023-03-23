@@ -74,7 +74,7 @@ public:
             DebugInst->getExtSetKind() ==
                 SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
             DebugInst->getExtSetKind() ==
-                SPIRVEIS_NonSemantic_Kernel_DebugInfo_100) &&
+                SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
            "Unexpected extended instruction set");
     auto It = DebugInstCache.find(DebugInst);
     if (It != DebugInstCache.end())
@@ -114,12 +114,15 @@ private:
   DICompositeType *transTypeArray(const SPIRVExtInst *DebugInst);
   DICompositeType *transTypeArrayOpenCL(const SPIRVExtInst *DebugInst);
   DICompositeType *transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst);
+  DICompositeType *transTypeArrayDynamic(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeVector(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeComposite(const SPIRVExtInst *DebugInst);
 
   DISubrange *transTypeSubrange(const SPIRVExtInst *DebugInst);
+
+  DIStringType *transTypeString(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeMember(const SPIRVExtInst *DebugInst);
 
@@ -183,6 +186,9 @@ private:
     return nullptr;
   }
   const std::string &getString(const SPIRVId Id);
+  SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
+                                      const SPIRVWord,
+                                      const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 };

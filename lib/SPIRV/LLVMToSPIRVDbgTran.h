@@ -87,8 +87,12 @@ private:
 
   // Helper methods
   SPIRVType *getVoidTy();
+  SPIRVType *getInt32Ty();
   SPIRVEntry *getScope(DIScope *SR);
   SPIRVEntry *getGlobalVariable(const DIGlobalVariable *GV);
+  inline bool isNonSemanticDebugInfo();
+  void transformToConstant(std::vector<SPIRVWord> &Ops,
+                           std::vector<SPIRVWord> Idxs);
 
   // No debug info
   SPIRVEntry *getDebugInfoNone();
@@ -107,7 +111,9 @@ private:
   SPIRVEntry *transDbgArrayType(const DICompositeType *AT);
   SPIRVEntry *transDbgArrayTypeOpenCL(const DICompositeType *AT);
   SPIRVEntry *transDbgArrayTypeNonSemantic(const DICompositeType *AT);
+  SPIRVEntry *transDbgArrayTypeDynamic(const DICompositeType *AT);
   SPIRVEntry *transDbgSubrangeType(const DISubrange *ST);
+  SPIRVEntry *transDbgStringType(const DIStringType *ST);
   SPIRVEntry *transDbgTypeDef(const DIDerivedType *D);
   SPIRVEntry *transDbgSubroutineType(const DISubroutineType *FT);
   SPIRVEntry *transDbgEnumType(const DICompositeType *ET);
@@ -155,7 +161,8 @@ private:
   std::unordered_map<const MDNode *, SPIRVEntry *> MDMap;
   std::unordered_map<std::string, SPIRVExtInst *> FileMap;
   DebugInfoFinder DIF;
-  SPIRVType *VoidT;
+  SPIRVType *VoidT = nullptr;
+  SPIRVType *Int32T = nullptr;
   SPIRVEntry *DebugInfoNone;
   SPIRVExtInst *SPIRVCU = nullptr;
   std::vector<const DbgVariableIntrinsic *> DbgDeclareIntrinsics;
