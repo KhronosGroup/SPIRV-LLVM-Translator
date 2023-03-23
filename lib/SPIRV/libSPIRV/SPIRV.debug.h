@@ -52,7 +52,10 @@ enum Instruction {
   Source                        = 35,
   ModuleINTEL                   = 36,
   InstCount                     = 37,
-  TypeSubrange                  = 110
+  Module                        = 200,
+  TypeSubrange                  = 201,
+  TypeArrayDynamic              = 202,
+  TypeString                    = 203
 };
 
 enum Flag {
@@ -330,6 +333,18 @@ enum {
 };
 }
 
+namespace TypeArrayDynamic {
+enum {
+  BaseTypeIdx     = 0,
+  DataLocationIdx = 1,
+  AssociatedIdx   = 2,
+  AllocatedIdx    = 3,
+  RankIdx         = 4,
+  SubrangesIdx    = 5,
+  MinOperandCount = 6
+};
+}
+
 namespace TypeVector = TypeArray;
 
 namespace TypeSubrange {
@@ -339,6 +354,18 @@ enum {
   UpperBoundIdx   = 2,
   StrideIdx       = 3,
   OperandCount    = 4
+};
+}
+
+namespace TypeString {
+enum {
+  NameIdx         = 0,
+  BaseTypeIdx     = 1,
+  DataLocationIdx = 2,
+  SizeIdx         = 3,
+  LengthAddrIdx   = 4,
+  LengthSizeIdx   = 5,
+  MinOperandCount = 5
 };
 }
 
@@ -868,6 +895,8 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(
     return spv::internal::SourceLanguageC99;
   case dwarf::SourceLanguage::DW_LANG_C11:
     return spv::internal::SourceLanguageC11;
+  case dwarf::SourceLanguage::DW_LANG_C17:
+    return spv::internal::SourceLanguageC17;
 
   case dwarf::SourceLanguage::DW_LANG_Python:
     return spv::internal::SourceLanguagePython;
@@ -878,12 +907,18 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(
   case dwarf::SourceLanguage::DW_LANG_D:
     return spv::internal::SourceLanguageD;
 
+  case dwarf::SourceLanguage::DW_LANG_Fortran77:
+    return spv::internal::SourceLanguageFortran77;
+  case dwarf::SourceLanguage::DW_LANG_Fortran90:
+    return spv::internal::SourceLanguageFortran90;
   case dwarf::SourceLanguage::DW_LANG_Fortran95:
     return spv::internal::SourceLanguageFortran95;
   case dwarf::SourceLanguage::DW_LANG_Fortran03:
     return spv::internal::SourceLanguageFortran2003;
   case dwarf::SourceLanguage::DW_LANG_Fortran08:
     return spv::internal::SourceLanguageFortran2008;
+  case dwarf::SourceLanguage::DW_LANG_Fortran18:
+    return spv::internal::SourceLanguageFortran2018;
   default:
     return spv::SourceLanguage::SourceLanguageUnknown;
   }
@@ -918,6 +953,8 @@ convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(unsigned SourceLang) {
     return dwarf::SourceLanguage::DW_LANG_C99;
   case spv::internal::SourceLanguageC11:
     return dwarf::SourceLanguage::DW_LANG_C11;
+  case spv::internal::SourceLanguageC17:
+    return dwarf::SourceLanguage::DW_LANG_C17;
 
   case spv::internal::SourceLanguagePython:
     return dwarf::SourceLanguage::DW_LANG_Python;
@@ -928,12 +965,18 @@ convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(unsigned SourceLang) {
   case spv::internal::SourceLanguageD:
     return dwarf::SourceLanguage::DW_LANG_D;
 
+  case spv::internal::SourceLanguageFortran77:
+    return dwarf::SourceLanguage::DW_LANG_Fortran77;
+  case spv::internal::SourceLanguageFortran90:
+    return dwarf::SourceLanguage::DW_LANG_Fortran90;
   case spv::internal::SourceLanguageFortran95:
     return dwarf::SourceLanguage::DW_LANG_Fortran95;
   case spv::internal::SourceLanguageFortran2003:
     return dwarf::SourceLanguage::DW_LANG_Fortran03;
   case spv::internal::SourceLanguageFortran2008:
     return dwarf::SourceLanguage::DW_LANG_Fortran08;
+  case spv::internal::SourceLanguageFortran2018:
+    return dwarf::SourceLanguage::DW_LANG_Fortran18;
 
   case spv::SourceLanguage::SourceLanguageOpenCL_C:
   case spv::SourceLanguage::SourceLanguageESSL:

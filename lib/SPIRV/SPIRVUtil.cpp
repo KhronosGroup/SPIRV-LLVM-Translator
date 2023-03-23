@@ -189,6 +189,10 @@ bool isOCLImageType(llvm::Type *Ty, StringRef *Name) {
           return true;
         }
       }
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    assert(!Name && "Cannot get the name for a target-extension type image");
+    return TET->getName() == "spirv.Image";
+  }
   return false;
 }
 /// \param BaseTyName is the type Name as in spirv.BaseTyName.Postfixes
@@ -885,7 +889,7 @@ bool getParameterTypes(Function *F, SmallVectorImpl<Type *> &ArgTys,
       LLVM_DEBUG(dbgs() << "Failed to recover type of argument " << *ArgTy
                         << " of function " << F->getName() << "\n");
       DemangledSuccessfully = false;
-    } else if (!DemangledTy)
+    } else if (ArgTy->isTargetExtTy() || !DemangledTy)
       DemangledTy = ArgTy;
     *ArgIter++ = DemangledTy;
   }
@@ -1336,6 +1340,25 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     }
     return SPIR::RefParamType(new SPIR::UserDefinedType(Name.str()));
   }
+  if (auto *TargetTy = dyn_cast<TargetExtType>(Ty)) {
+    std::string FullName;
+    {
+      raw_string_ostream OS(FullName);
+      StringRef Name = TargetTy->getName();
+      if (Name.consume_front(kSPIRVTypeName::PrefixAndDelim)) {
+        OS << "__spirv_" << Name;
+      } else {
+        OS << Name;
+      }
+      if (!TargetTy->int_params().empty())
+        OS << "_";
+      for (Type *InnerTy : TargetTy->type_params())
+        OS << "_" << convertTypeToPostfix(InnerTy);
+      for (unsigned Param : TargetTy->int_params())
+        OS << "_" << Param;
+    }
+    return SPIR::RefParamType(new SPIR::UserDefinedType(FullName));
+  }
 
   if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
     auto *ET = TPT->getElementType();
@@ -1586,6 +1609,13 @@ std::string getImageBaseTypeName(StringRef Name) {
 }
 
 SPIRVTypeImageDescriptor getImageDescriptor(Type *Ty) {
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    auto IntParams = TET->int_params();
+    assert(IntParams.size() > 6 && "Expected type to be an image type");
+    return SPIRVTypeImageDescriptor(SPIRVImageDimKind(IntParams[0]),
+                                    IntParams[1], IntParams[2], IntParams[3],
+                                    IntParams[4], IntParams[5]);
+  }
   StringRef TyName;
   [[maybe_unused]] bool IsImg = isOCLImageType(Ty, &TyName);
   assert(IsImg && "Must be an image type");
