@@ -157,8 +157,7 @@ public:
   virtual unsigned short getGeneratorVer() const = 0;
   virtual SPIRVWord getSPIRVVersion() const = 0;
   virtual const std::vector<SPIRVExtInst *> &getDebugInstVec() const = 0;
-  virtual const std::vector<SPIRVExtInst *> &
-  getPreservedFunctionMetadataAndAttributesInstVec() const = 0;
+  virtual const std::vector<SPIRVExtInst *> &getAuxDataInstVec() const = 0;
 
   virtual const std::vector<SPIRVString *> &getStringVec() const = 0;
 
@@ -312,9 +311,8 @@ public:
                                        SPIRVInstruction * = nullptr) = 0;
   virtual SPIRVEntry *addDebugInfo(SPIRVWord, SPIRVType *,
                                    const std::vector<SPIRVWord> &) = 0;
-  virtual SPIRVEntry *
-  addPreservedFunctionMetadataOrAttributes(SPIRVWord, SPIRVType *,
-                                           const std::vector<SPIRVWord> &) = 0;
+  virtual SPIRVEntry *addAuxData(SPIRVWord, SPIRVType *,
+                                 const std::vector<SPIRVWord> &) = 0;
   virtual SPIRVEntry *addModuleProcessed(const std::string &) = 0;
   virtual void addCapability(SPIRVCapabilityKind) = 0;
   template <typename T> void addCapabilities(const T &Caps) {

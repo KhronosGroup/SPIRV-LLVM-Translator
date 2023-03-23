@@ -28,10 +28,10 @@
 // Author: Nick Sarnie, Intel
 //
 
-namespace NonSemanticIntelPreserve {
+namespace NonSemanticAuxData {
 enum Instruction {
   FunctionMetadata = 0,
   FunctionAttribute = 1,
   PreserveCount = 2
 };
-} // namespace NonSemanticIntelPreserve
+} // namespace NonSemanticAuxData

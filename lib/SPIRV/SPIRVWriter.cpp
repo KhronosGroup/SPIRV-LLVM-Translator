@@ -966,7 +966,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   transFunctionMetadataAsUserSemanticDecoration(BF, F);
 
-  transIntelPreserveInst(BF, F);
+  transAuxDataInst(BF, F);
 
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
            spvdbgs() << *BF << '\n';)
@@ -1121,7 +1121,7 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
   }
 }
 
-void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
+void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
   auto *BM = BF->getModule();
   if (!BM->preserveAllFunctionAttributesAndMetadata())
     return;
@@ -1131,9 +1131,9 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
     Ops.push_back(BF->getId());
     if (Attr.isStringAttribute()) {
       // Format for String attributes is:
-      // NonSemanticIntelPreserveFunctionAttribute Fcn AttrName AttrValue
+      // NonSemanticAuxDataFunctionAttribute Fcn AttrName AttrValue
       // or, if no value:
-      // NonSemanticIntelPreserveFunctionAttribute Fcn AttrName
+      // NonSemanticAuxDataFunctionAttribute Fcn AttrName
       //
       // AttrName and AttrValue are always Strings
       StringRef AttrKind = Attr.getKindAsString();
@@ -1146,15 +1146,14 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
       }
     } else {
       // Format for other types is:
-      // NonSemanticIntelPreserveFunctionAttribute Fcn AttrStr
+      // NonSemanticAuxDataFunctionAttribute Fcn AttrStr
       // AttrStr is always a String.
       std::string AttrStr = Attr.getAsString();
       auto *AttrSpvString = BM->getString(AttrStr);
       Ops.push_back(AttrSpvString->getId());
     }
-    BM->addPreservedFunctionMetadataOrAttributes(
-        NonSemanticIntelPreserve::FunctionAttribute,
-        transType(Type::getVoidTy(F->getContext())), Ops);
+    BM->addAuxData(NonSemanticAuxData::FunctionAttribute,
+                   transType(Type::getVoidTy(F->getContext())), Ops);
   }
   SmallVector<std::pair<unsigned, MDNode *>> AllMD;
   SmallVector<StringRef> MDNames;
@@ -1162,7 +1161,7 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
   F->getAllMetadata(AllMD);
   for (auto MD : AllMD) {
     // Format for metadata is:
-    // NonSemanticIntelPreserveFunctionMetadata Fcn MDName MDVals...
+    // NonSemanticAuxDataFunctionMetadata Fcn MDName MDVals...
     // MDName is always a String, MDVals have different types as explained
     // below. Also note this instruction has a variable number of operands
     std::vector<SPIRVWord> Ops;
@@ -1182,9 +1181,8 @@ void LLVMToSPIRVBase::transIntelPreserveInst(SPIRVFunction *BF, Function *F) {
         assert(false && "Unsupported metadata type");
       }
     }
-    BM->addPreservedFunctionMetadataOrAttributes(
-        NonSemanticIntelPreserve::FunctionMetadata,
-        transType(Type::getVoidTy(F->getContext())), Ops);
+    BM->addAuxData(NonSemanticAuxData::FunctionMetadata,
+                   transType(Type::getVoidTy(F->getContext())), Ops);
   }
 }
 
@@ -2831,8 +2829,8 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
       return false;
   }
   if (BM->preserveAllFunctionAttributesAndMetadata()) {
-    if (!BM->importBuiltinSet(
-            SPIRVBuiltinSetNameMap::map(SPIRVEIS_Intel_Preserve), &EISId))
+    if (!BM->importBuiltinSet(SPIRVBuiltinSetNameMap::map(SPIRVEIS_Aux_Data),
+                              &EISId))
       return false;
   }
   return true;

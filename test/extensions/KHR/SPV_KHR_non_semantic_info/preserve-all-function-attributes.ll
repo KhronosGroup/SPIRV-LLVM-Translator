@@ -7,7 +7,7 @@
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{foo|bar|baz}}"
 
 ; CHECK-SPIRV: Extension "SPV_KHR_non_semantic_info" 
-; CHECK-SPIRV: ExtInstImport [[#Import:]] "NonSemantic.Intel.Preserve" 
+; CHECK-SPIRV: ExtInstImport [[#Import:]] "NonSemantic.AuxData"
 
 ; CHECK-SPIRV: String [[#Attr0:]] "foo"
 ; CHECK-SPIRV: String [[#Attr1LHS:]] "bar"
@@ -18,8 +18,8 @@
 
 ; CHECK-SPIRV: TypeVoid [[#VoidT:]]
 
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#Attr0Inst:]] [[#Import]] NonSemanticIntelPreserveFunctionAttribute [[#Fcn0]] [[#Attr0]] {{$}}
-; CHECK-SPIRV: ExtInst [[#VoidT]] [[#Attr1Inst:]] [[#Import]] NonSemanticIntelPreserveFunctionAttribute [[#Fcn1]] [[#Attr1LHS]] [[#Attr1RHS]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#Attr0Inst:]] [[#Import]] NonSemanticAuxDataFunctionAttribute [[#Fcn0]] [[#Attr0]] {{$}}
+; CHECK-SPIRV: ExtInst [[#VoidT]] [[#Attr1Inst:]] [[#Import]] NonSemanticAuxDataFunctionAttribute [[#Fcn1]] [[#Attr1LHS]] [[#Attr1RHS]] {{$}}
 
 target triple = "spir64-unknown-unknown"
 

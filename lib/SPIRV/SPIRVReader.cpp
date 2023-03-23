@@ -3334,9 +3334,8 @@ bool SPIRVToLLVM::translate() {
   DbgTran->addDbgInfoVersion();
   DbgTran->finalize();
 
-  for (SPIRVExtInst *EI :
-       BM->getPreservedFunctionMetadataAndAttributesInstVec()) {
-    transIntelPreserveInst(EI);
+  for (SPIRVExtInst *EI : BM->getAuxDataInstVec()) {
+    transAuxDataInst(EI);
   }
 
   return true;
@@ -4468,8 +4467,8 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   return CI;
 }
 
-void SPIRVToLLVM::transIntelPreserveInst(SPIRVExtInst *BC) {
-  assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_Intel_Preserve);
+void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
+  assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_Aux_Data);
   if (!BC->getModule()->preserveAllFunctionAttributesAndMetadata())
     return;
   auto Args = BC->getArguments();
@@ -4480,7 +4479,7 @@ void SPIRVToLLVM::transIntelPreserveInst(SPIRVExtInst *BC) {
   assert(F && "Function should already have been translated!");
   auto AttrOrMDName = BC->getModule()->get<SPIRVString>(Args[1])->getStr();
   switch (BC->getExtOp()) {
-  case NonSemanticIntelPreserve::FunctionAttribute: {
+  case NonSemanticAuxData::FunctionAttribute: {
     assert(Args.size() < 4 && "Unexpected FunctionAttribute Args");
     // If this attr was specially handled and added elsewhere, skip it.
     if (F->hasFnAttribute(AttrOrMDName))
@@ -4495,7 +4494,7 @@ void SPIRVToLLVM::transIntelPreserveInst(SPIRVExtInst *BC) {
     }
     break;
   }
-  case NonSemanticIntelPreserve::FunctionMetadata: {
+  case NonSemanticAuxData::FunctionMetadata: {
     // If this metadata was specially handled and added elsewhere, skip it.
     if (F->hasMetadata(AttrOrMDName))
       break;

@@ -1765,7 +1765,7 @@ public:
             ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_200 ||
-            ExtSetKind == SPIRVEIS_Intel_Preserve) &&
+            ExtSetKind == SPIRVEIS_Aux_Data) &&
            "not supported");
   }
   void encode(spv_ostream &O) const override {
@@ -1780,8 +1780,8 @@ public:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       getEncoder(O) << ExtOpDebug;
       break;
-    case SPIRVEIS_Intel_Preserve:
-      getEncoder(O) << ExtOpNonSemanticPreserve;
+    case SPIRVEIS_Aux_Data:
+      getEncoder(O) << ExtOpNonSemanticAuxData;
       break;
     default:
       assert(0 && "not supported");
@@ -1802,8 +1802,8 @@ public:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       getDecoder(I) >> ExtOpDebug;
       break;
-    case SPIRVEIS_Intel_Preserve:
-      getDecoder(I) >> ExtOpNonSemanticPreserve;
+    case SPIRVEIS_Aux_Data:
+      getDecoder(I) >> ExtOpNonSemanticAuxData;
       break;
     default:
       assert(0 && "not supported");
@@ -1863,7 +1863,7 @@ protected:
     SPIRVWord ExtOp;
     OCLExtOpKind ExtOpOCL;
     SPIRVDebugExtOpKind ExtOpDebug;
-    NonSemanticIntelPreserveOpKind ExtOpNonSemanticPreserve;
+    NonSemanticAuxDataOpKind ExtOpNonSemanticAuxData;
   };
 };
 
