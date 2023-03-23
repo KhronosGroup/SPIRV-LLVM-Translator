@@ -14,13 +14,13 @@
 ; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-CPP14
 
 ; CHECK-C99: Constant [[#]] [[#Constant:]] 211
-; CHECK-C99: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-C99: DebugCompilationUnit [[#]] [[#]] [[#]] [[#Constant]]
 ; CHECK-OPENCLC: Constant [[#]] [[#Constant:]] 3
-; CHECK-OPENCLC: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-OPENCLC: DebugCompilationUnit [[#]] [[#]] [[#]] [[#Constant]]
 ; CHECK-CPP: Constant [[#]] [[#Constant:]] 214
-; CHECK-CPP: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-CPP: DebugCompilationUnit [[#]] [[#]] [[#]] [[#Constant]]
 ; CHECK-CPP14: Constant [[#]] [[#Constant:]] 217
-; CHECK-CPP14: DebugCompileUnit [[#]] [[#]] [[#]] [[#Constant]]
+; CHECK-CPP14: DebugCompilationUnit [[#]] [[#]] [[#]] [[#Constant]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
