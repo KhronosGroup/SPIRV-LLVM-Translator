@@ -149,7 +149,7 @@ DIScope *SPIRVToLLVMDbgTran::getScope(const SPIRVEntry *ScopeInst) {
 }
 
 DICompileUnit *
-SPIRVToLLVMDbgTran::transCompileUnit(const SPIRVExtInst *DebugInst) {
+SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
   const SPIRVWordVec &Ops = DebugInst->getArguments();
 
   using namespace SPIRVDebug::Operand::CompilationUnit;
@@ -337,8 +337,8 @@ SPIRVToLLVMDbgTran::transTypeArrayDynamic(const SPIRVExtInst *DebugInst) {
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);
   size_t Size = getDerivedSizeInBits(BaseTy) * TotalCount;
 
-  auto TransOperand = [&](SPIRVWord Idx) -> PointerUnion<DIExpression *,
-                                                         DIVariable *> {
+  auto TransOperand =
+      [&](SPIRVWord Idx) -> PointerUnion<DIExpression *, DIVariable *> {
     if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[Idx])) {
       if (const auto *GV = getDbgInst<SPIRVDebug::GlobalVariable>(Ops[Idx]))
         return transDebugInst<DIGlobalVariable>(GV);
@@ -737,9 +737,10 @@ DINode *SPIRVToLLVMDbgTran::transFunction(const SPIRVExtInst *DebugInst) {
 
   // Here we create fake array of template parameters. If it was plain nullptr,
   // the template parameter operand would be removed in DISubprogram::getImpl.
-  // But we want it to be there, because if there is DebugTemplate instruction
-  // refering to this function, TransTemplate method must be able to replace the
-  // template parameter operand, thus it must be in the operands list.
+  // But we want it to be there, because if there is DebugTypeTemplate
+  // instruction refering to this function, transTypeTemplate method must be
+  // able to replace the template parameter operand, thus it must be in the
+  // operands list.
   SmallVector<llvm::Metadata *, 8> Elts;
   DINodeArray TParams = Builder.getOrCreateArray(Elts);
   llvm::DITemplateParameterArray TParamsArray = TParams.get();
@@ -809,9 +810,10 @@ DINode *SPIRVToLLVMDbgTran::transFunctionDecl(const SPIRVExtInst *DebugInst) {
 
   // Here we create fake array of template parameters. If it was plain nullptr,
   // the template parameter operand would be removed in DISubprogram::getImpl.
-  // But we want it to be there, because if there is DebugTemplate instruction
-  // refering to this function, TransTemplate method must be able to replace the
-  // template parameter operand, thus it must be in the operands list.
+  // But we want it to be there, because if there is DebugTypeTemplate
+  // instruction refering to this function, transTypeTemplate method must be
+  // able to replace the template parameter operand, thus it must be in the
+  // operands list.
   SmallVector<llvm::Metadata *, 8> Elts;
   DINodeArray TParams = Builder.getOrCreateArray(Elts);
   llvm::DITemplateParameterArray TParamsArray = TParams.get();
@@ -925,7 +927,8 @@ DINode *SPIRVToLLVMDbgTran::transTypedef(const SPIRVExtInst *DebugInst) {
   return Builder.createTypedef(Ty, Alias, File, LineNo, Scope);
 }
 
-DINode *SPIRVToLLVMDbgTran::transInheritance(const SPIRVExtInst *DebugInst) {
+DINode *
+SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
@@ -946,8 +949,8 @@ DINode *SPIRVToLLVMDbgTran::transInheritance(const SPIRVExtInst *DebugInst) {
 }
 
 DINode *
-SPIRVToLLVMDbgTran::transTemplateParameter(const SPIRVExtInst *DebugInst) {
-  using namespace SPIRVDebug::Operand::TemplateParameter;
+SPIRVToLLVMDbgTran::transTypeTemplateParameter(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::TypeTemplateParameter;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
   StringRef Name = getString(Ops[NameIdx]);
@@ -965,9 +968,9 @@ SPIRVToLLVMDbgTran::transTemplateParameter(const SPIRVExtInst *DebugInst) {
   return Builder.createTemplateTypeParameter(Context, Name, Ty, false);
 }
 
-DINode *SPIRVToLLVMDbgTran::transTemplateTemplateParameter(
+DINode *SPIRVToLLVMDbgTran::transTypeTemplateTemplateParameter(
     const SPIRVExtInst *DebugInst) {
-  using namespace SPIRVDebug::Operand::TemplateTemplateParameter;
+  using namespace SPIRVDebug::Operand::TypeTemplateTemplateParameter;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
   StringRef Name = getString(Ops[NameIdx]);
@@ -977,9 +980,9 @@ DINode *SPIRVToLLVMDbgTran::transTemplateTemplateParameter(
                                                  TemplName);
 }
 
-DINode *
-SPIRVToLLVMDbgTran::transTemplateParameterPack(const SPIRVExtInst *DebugInst) {
-  using namespace SPIRVDebug::Operand::TemplateParameterPack;
+DINode *SPIRVToLLVMDbgTran::transTypeTemplateParameterPack(
+    const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::TypeTemplateParameterPack;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
   StringRef Name = getString(Ops[NameIdx]);
@@ -992,8 +995,8 @@ SPIRVToLLVMDbgTran::transTemplateParameterPack(const SPIRVExtInst *DebugInst) {
   return Builder.createTemplateParameterPack(Context, Name, nullptr, Pack);
 }
 
-MDNode *SPIRVToLLVMDbgTran::transTemplate(const SPIRVExtInst *DebugInst) {
-  using namespace SPIRVDebug::Operand::Template;
+MDNode *SPIRVToLLVMDbgTran::transTypeTemplate(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::TypeTemplate;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   const size_t NumOps = Ops.size();
   assert(NumOps >= MinOperandCount && "Invalid number of operands");
@@ -1097,7 +1100,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
     return nullptr;
 
   case SPIRVDebug::CompilationUnit:
-    return transCompileUnit(DebugInst);
+    return transCompilationUnit(DebugInst);
 
   case SPIRVDebug::TypeBasic:
     return transTypeBasic(DebugInst);
@@ -1144,7 +1147,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   case SPIRVDebug::Function:
     return transFunction(DebugInst);
 
-  case SPIRVDebug::FunctionDecl:
+  case SPIRVDebug::FunctionDeclaration:
     return transFunctionDecl(DebugInst);
 
   case SPIRVDebug::GlobalVariable:
@@ -1159,20 +1162,20 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   case SPIRVDebug::InlinedAt:
     return transDebugInlined(DebugInst);
 
-  case SPIRVDebug::Inheritance:
-    return transInheritance(DebugInst);
+  case SPIRVDebug::TypeInheritance:
+    return transTypeInheritance(DebugInst);
 
   case SPIRVDebug::TypeTemplateParameter:
-    return transTemplateParameter(DebugInst);
+    return transTypeTemplateParameter(DebugInst);
 
   case SPIRVDebug::TypeTemplateTemplateParameter:
-    return transTemplateTemplateParameter(DebugInst);
+    return transTypeTemplateTemplateParameter(DebugInst);
 
   case SPIRVDebug::TypeTemplateParameterPack:
-    return transTemplateParameterPack(DebugInst);
+    return transTypeTemplateParameterPack(DebugInst);
 
   case SPIRVDebug::TypeTemplate:
-    return transTemplate(DebugInst);
+    return transTypeTemplate(DebugInst);
 
   case SPIRVDebug::ImportedEntity:
     return transImportedEntry(DebugInst);
