@@ -714,9 +714,13 @@ int main(int Ac, char **Av) {
       return -1;
   }
 
-  if (SPIRVPreserveAuxData)
+  if (SPIRVPreserveAuxData) {
     Opts.setPreserveAuxData(
         SPIRVPreserveAuxData);
+    if (!IsReverse)
+      Opts.setAllowedToUseExtension(
+          SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+  }
 
   if (SPIRVAllowUnknownIntrinsics.getNumOccurrences() != 0) {
     if (IsReverse) {

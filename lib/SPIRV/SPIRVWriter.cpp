@@ -1125,6 +1125,7 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
   auto *BM = BF->getModule();
   if (!BM->preserveAuxData())
     return;
+  BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
   const auto &FnAttrs = F->getAttributes().getFnAttrs();
   for (const auto &Attr : FnAttrs) {
     std::vector<SPIRVWord> Ops;

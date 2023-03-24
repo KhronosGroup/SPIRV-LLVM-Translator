@@ -1,6 +1,6 @@
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata --spirv-ext=+SPV_KHR_non_semantic_info -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-preserve-auxdata --spirv-ext=+SPV_KHR_non_semantic_info
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-preserve-auxdata
 ; RUN: llvm-spirv -r -emit-opaque-pointers --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.without.bc
