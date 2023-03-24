@@ -657,7 +657,7 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
         EI->getExtOp() != SPIRVDebug::NoScope) {
       DebugInstVec.push_back(EI);
     }
-    if (EI->getExtSetKind() == SPIRVEIS_Aux_Data)
+    if (EI->getExtSetKind() == SPIRVEIS_NonSemantic_AuxData)
       AuxDataInstVec.push_back(EI);
     break;
   }
@@ -1315,8 +1315,8 @@ SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
 
 SPIRVEntry *SPIRVModuleImpl::addAuxData(SPIRVWord InstId, SPIRVType *TheType,
                                         const std::vector<SPIRVWord> &Args) {
-  return addEntry(new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_Aux_Data,
-                                   getExtInstSetId(SPIRVEIS_Aux_Data), InstId,
+  return addEntry(new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_NonSemantic_AuxData,
+                                   getExtInstSetId(SPIRVEIS_NonSemantic_AuxData), InstId,
                                    Args));
 }
 

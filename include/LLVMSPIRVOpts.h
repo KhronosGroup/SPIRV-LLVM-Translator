@@ -122,12 +122,12 @@ public:
 
   void setMemToRegEnabled(bool Mem2Reg) { SPIRVMemToReg = Mem2Reg; }
 
-  bool preserveAllFunctionAttributesAndMetadata() const {
-    return PreserveAllFunctionAttributesAndMetadata;
+  bool preserveAuxData() const {
+    return PreserveAuxData;
   }
 
-  void setPreserveAllFunctionAttributesAndMetadata(bool ArgValue) {
-    PreserveAllFunctionAttributesAndMetadata = ArgValue;
+  void setPreserveAuxData(bool ArgValue) {
+    PreserveAuxData = ArgValue;
   }
 
   void setGenKernelArgNameMDEnabled(bool ArgNameMD) {
@@ -239,7 +239,7 @@ private:
   // kernel_arg_type_qual metadata through OpString
   bool PreserveOCLKernelArgTypeMetadataThroughString = false;
 
-  bool PreserveAllFunctionAttributesAndMetadata = false;
+  bool PreserveAuxData = false;
 };
 
 } // namespace SPIRV

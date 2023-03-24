@@ -526,8 +526,8 @@ public:
         .shouldPreserveOCLKernelArgTypeMetadataThroughString();
   }
 
-  bool preserveAllFunctionAttributesAndMetadata() const noexcept {
-    return TranslationOpts.preserveAllFunctionAttributesAndMetadata();
+  bool preserveAuxData() const noexcept {
+    return TranslationOpts.preserveAuxData();
   }
 
   SPIRVExtInstSetKind getDebugInfoEIS() const {

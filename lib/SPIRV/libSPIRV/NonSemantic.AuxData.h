@@ -24,10 +24,6 @@
 ** IN THE MATERIALS.
 */
 
-//
-// Author: Nick Sarnie, Intel
-//
-
 namespace NonSemanticAuxData {
 enum Instruction {
   FunctionMetadata = 0,

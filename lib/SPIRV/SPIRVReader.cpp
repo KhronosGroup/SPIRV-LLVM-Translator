@@ -4468,8 +4468,8 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
 }
 
 void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
-  assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_Aux_Data);
-  if (!BC->getModule()->preserveAllFunctionAttributesAndMetadata())
+  assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_NonSemantic_AuxData);
+  if (!BC->getModule()->preserveAuxData())
     return;
   auto Args = BC->getArguments();
   // Args 0 and 1 are common between attributes and metadata.
@@ -4483,7 +4483,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     assert(Args.size() < 4 && "Unexpected FunctionAttribute Args");
     // If this attr was specially handled and added elsewhere, skip it.
     if (F->hasFnAttribute(AttrOrMDName))
-      break;
+      return;
     // For attributes, arg 2 is the attribute value as a string, which may not
     // exist.
     if (Args.size() == 3) {
@@ -4497,7 +4497,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   case NonSemanticAuxData::FunctionMetadata: {
     // If this metadata was specially handled and added elsewhere, skip it.
     if (F->hasMetadata(AttrOrMDName))
-      break;
+      return;
     SmallVector<Metadata *> MetadataArgs;
     // Process the metadata values.
     for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {

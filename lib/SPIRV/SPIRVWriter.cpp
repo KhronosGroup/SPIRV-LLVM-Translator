@@ -1123,7 +1123,7 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
 
 void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
   auto *BM = BF->getModule();
-  if (!BM->preserveAllFunctionAttributesAndMetadata())
+  if (!BM->preserveAuxData())
     return;
   const auto &FnAttrs = F->getAttributes().getFnAttrs();
   for (const auto &Attr : FnAttrs) {
@@ -2828,8 +2828,8 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
             SPIRVBuiltinSetNameMap::map(BM->getDebugInfoEIS()), &EISId))
       return false;
   }
-  if (BM->preserveAllFunctionAttributesAndMetadata()) {
-    if (!BM->importBuiltinSet(SPIRVBuiltinSetNameMap::map(SPIRVEIS_Aux_Data),
+  if (BM->preserveAuxData()) {
+    if (!BM->importBuiltinSet(SPIRVBuiltinSetNameMap::map(SPIRVEIS_NonSemantic_AuxData),
                               &EISId))
       return false;
   }

@@ -193,9 +193,9 @@ static cl::opt<bool>
     SPIRVMemToReg("spirv-mem2reg", cl::init(false),
                   cl::desc("LLVM/SPIR-V translation enable mem2reg"));
 
-static cl::opt<bool> SPIRVPreserveAllFunctionAttributesAndMetadata(
-    "spirv-preserve-all-function-attributes-and-metadata", cl::init(false),
-    cl::desc("Preserve all function attributes and metadata"));
+static cl::opt<bool> SPIRVPreserveAuxData(
+    "spirv-preserve-auxdata", cl::init(false),
+    cl::desc("Preserve all auxillary data, such as function attributes and metadata"));
 
 static cl::opt<bool> SpecConstInfo(
     "spec-const-info",
@@ -714,9 +714,9 @@ int main(int Ac, char **Av) {
       return -1;
   }
 
-  if (SPIRVPreserveAllFunctionAttributesAndMetadata)
-    Opts.setPreserveAllFunctionAttributesAndMetadata(
-        SPIRVPreserveAllFunctionAttributesAndMetadata);
+  if (SPIRVPreserveAuxData)
+    Opts.setPreserveAuxData(
+        SPIRVPreserveAuxData);
 
   if (SPIRVAllowUnknownIntrinsics.getNumOccurrences() != 0) {
     if (IsReverse) {
