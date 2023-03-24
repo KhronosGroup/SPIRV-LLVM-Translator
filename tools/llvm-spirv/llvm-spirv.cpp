@@ -195,7 +195,7 @@ static cl::opt<bool>
 
 static cl::opt<bool> SPIRVPreserveAuxData(
     "spirv-preserve-auxdata", cl::init(false),
-    cl::desc("Preserve all auxillary data, such as function attributes and metadata"));
+    cl::desc("Preserve all auxiliary data, such as function attributes and metadata"));
 
 static cl::opt<bool> SpecConstInfo(
     "spec-const-info",
