@@ -1315,9 +1315,9 @@ SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
 
 SPIRVEntry *SPIRVModuleImpl::addAuxData(SPIRVWord InstId, SPIRVType *TheType,
                                         const std::vector<SPIRVWord> &Args) {
-  return addEntry(new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_NonSemantic_AuxData,
-                                   getExtInstSetId(SPIRVEIS_NonSemantic_AuxData), InstId,
-                                   Args));
+  return addEntry(new SPIRVExtInst(
+      this, getId(), TheType, SPIRVEIS_NonSemantic_AuxData,
+      getExtInstSetId(SPIRVEIS_NonSemantic_AuxData), InstId, Args));
 }
 
 SPIRVEntry *SPIRVModuleImpl::addModuleProcessed(const std::string &Process) {

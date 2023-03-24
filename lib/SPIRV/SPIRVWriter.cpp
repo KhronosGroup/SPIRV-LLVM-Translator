@@ -2830,8 +2830,8 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
       return false;
   }
   if (BM->preserveAuxData()) {
-    if (!BM->importBuiltinSet(SPIRVBuiltinSetNameMap::map(SPIRVEIS_NonSemantic_AuxData),
-                              &EISId))
+    if (!BM->importBuiltinSet(
+            SPIRVBuiltinSetNameMap::map(SPIRVEIS_NonSemantic_AuxData), &EISId))
       return false;
   }
   return true;

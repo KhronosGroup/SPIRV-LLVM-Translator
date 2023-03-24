@@ -122,13 +122,9 @@ public:
 
   void setMemToRegEnabled(bool Mem2Reg) { SPIRVMemToReg = Mem2Reg; }
 
-  bool preserveAuxData() const {
-    return PreserveAuxData;
-  }
+  bool preserveAuxData() const { return PreserveAuxData; }
 
-  void setPreserveAuxData(bool ArgValue) {
-    PreserveAuxData = ArgValue;
-  }
+  void setPreserveAuxData(bool ArgValue) { PreserveAuxData = ArgValue; }
 
   void setGenKernelArgNameMDEnabled(bool ArgNameMD) {
     GenKernelArgNameMD = ArgNameMD;
