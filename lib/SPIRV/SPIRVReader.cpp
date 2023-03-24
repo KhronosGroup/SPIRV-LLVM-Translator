@@ -1236,6 +1236,8 @@ Value *SPIRVToLLVM::oclTransConstantPipeStorage(
                             GlobalValue::NotThreadLocal, SPIRAS_Global);
 }
 
+namespace {
+
 // A pointer annotation may have been generated for the operand. If the operand
 // is used further in IR, it should be replaced with the intrinsic call result.
 // Otherwise, the generated pointer annotation call is left unused.
@@ -1292,6 +1294,8 @@ static void replaceOperandWithAnnotationIntrinsicCallResult(Function *F,
       V = CallResult;
   }
 }
+
+} // namespace
 
 // Translate aliasing memory access masks for SPIRVLoad and SPIRVStore
 // instructions. These masks are mapped on alias.scope and noalias
