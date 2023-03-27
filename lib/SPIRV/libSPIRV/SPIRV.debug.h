@@ -90,6 +90,7 @@ enum Flag {
   FlagTypePassByValue        = 1 << 15,
   FlagTypePassByReference    = 1 << 16,
   FlagUnknownPhysicalLayout  = 1 << 17,
+  FlagBitField               = 1 << 18
 };
 
 enum EncodingTag {

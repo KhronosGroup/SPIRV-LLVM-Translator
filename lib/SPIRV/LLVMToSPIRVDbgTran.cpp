@@ -486,6 +486,8 @@ SPIRVWord mapDebugFlags(DINode::DIFlags DFlags) {
     Flags |= SPIRVDebug::FlagTypePassByValue;
   if (DFlags & DINode::FlagTypePassByReference)
     Flags |= SPIRVDebug::FlagTypePassByReference;
+  if (DFlags & DINode::FlagBitField)
+    Flags |= SPIRVDebug::FlagBitField;
   return Flags;
 }
 
