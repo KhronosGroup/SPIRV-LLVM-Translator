@@ -534,8 +534,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
   add(CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
-  add(CapabilityTensorFloat32ConversionINTEL,
-      "TensorFloat32ConversionINTEL");
+  add(CapabilityTensorFloat32RoundingINTEL, "TensorFloat32RoundingINTEL");
   add(CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
 
