@@ -584,8 +584,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityFPArithmeticFenceINTEL, "FPArithmeticFenceINTEL");
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
-  add(internal::CapabilityTensorFloat32ConversionINTEL,
-      "TensorFloat32ConversionINTEL");
+  add(internal::CapabilityTensorFloat32RoundingINTEL,
+      "TensorFloat32RoundingINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
