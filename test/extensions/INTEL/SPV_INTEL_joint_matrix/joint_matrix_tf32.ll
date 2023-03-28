@@ -1,6 +1,6 @@
 ; RUN: llvm-as -opaque-pointers=0 < %s -o %t.bc
 
-; RUN: llvm-spirv %t.bc -opaque-pointers=0 --spirv-ext=+SPV_INTEL_tensor_float32_rounding,+SPV_INTEL_joint_matrix -o %t.spv
+; RUN: llvm-spirv %t.bc -opaque-pointers=0 --spirv-ext=+SPV_INTEL_tensor_float32_conversion,+SPV_INTEL_joint_matrix -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
@@ -10,7 +10,7 @@
 ; CHECK-SPIRV-DAG: Capability TensorFloat32RoundingINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixTF32ComponentTypeINTEL
-; CHECK-SPIRV-DAG: Extension "SPV_INTEL_tensor_float32_rounding"
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_tensor_float32_conversion"
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_joint_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#TypeInt:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#CTI:]] 1 {{$}}

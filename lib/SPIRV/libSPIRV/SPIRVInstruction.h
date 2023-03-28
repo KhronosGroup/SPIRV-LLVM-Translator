@@ -3594,7 +3594,7 @@ protected:
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_INTEL_tensor_float32_rounding;
+    return ExtensionID::SPV_INTEL_tensor_float32_conversion;
   }
 
   void validate() const override {
