@@ -53,6 +53,7 @@ EXT(SPV_INTEL_hw_thread_queries)
 EXT(SPV_INTEL_global_variable_decorations)
 EXT(SPV_INTEL_complex_float_mul_div)
 EXT(SPV_INTEL_split_barrier)
-EXT(SPV_INTEL_tensor_float32_conversion)
 EXT(SPV_INTEL_masked_gather_scatter)
+EXT(SPV_INTEL_tensor_float32_conversion) // TODO: to remove old extension
+EXT(SPV_INTEL_tensor_float32_rounding)
 EXT(SPV_EXT_relaxed_printf_string_address_space)
