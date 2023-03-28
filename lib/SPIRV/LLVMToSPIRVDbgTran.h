@@ -87,15 +87,19 @@ private:
 
   // Helper methods
   SPIRVType *getVoidTy();
+  SPIRVType *getInt32Ty();
   SPIRVEntry *getScope(DIScope *SR);
   SPIRVEntry *getGlobalVariable(const DIGlobalVariable *GV);
+  inline bool isNonSemanticDebugInfo();
+  void transformToConstant(std::vector<SPIRVWord> &Ops,
+                           std::vector<SPIRVWord> Idxs);
 
   // No debug info
   SPIRVEntry *getDebugInfoNone();
   SPIRVId getDebugInfoNoneId();
 
   // Compilation unit
-  SPIRVEntry *transDbgCompilationUnit(const DICompileUnit *CU);
+  SPIRVEntry *transDbgCompileUnit(const DICompileUnit *CU);
 
   /// The following methods (till the end of the file) implement translation
   /// of debug instrtuctions described in the spec.
@@ -157,7 +161,8 @@ private:
   std::unordered_map<const MDNode *, SPIRVEntry *> MDMap;
   std::unordered_map<std::string, SPIRVExtInst *> FileMap;
   DebugInfoFinder DIF;
-  SPIRVType *VoidT;
+  SPIRVType *VoidT = nullptr;
+  SPIRVType *Int32T = nullptr;
   SPIRVEntry *DebugInfoNone;
   SPIRVExtInst *SPIRVCU = nullptr;
   std::vector<const DbgVariableIntrinsic *> DbgDeclareIntrinsics;

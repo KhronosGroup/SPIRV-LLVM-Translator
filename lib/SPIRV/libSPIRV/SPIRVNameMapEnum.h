@@ -196,6 +196,8 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMMHostInterfaceWaitRequestINTEL,
       "MMHostInterfaceWaitRequestINTEL");
   add(DecorationStableKernelArgumentINTEL, "StableKernelArgumentINTEL");
+  add(DecorationLatencyControlLabelINTEL, "LatencyControlLabelINTEL");
+  add(DecorationLatencyControlConstraintINTEL, "LatencyControlConstraintINTEL");
 
   // From spirv_internal.hpp
   add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
@@ -617,8 +619,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityRuntimeAlignedAttributeINTEL, "RuntimeAlignedAttributeINTEL");
   add(CapabilityMax, "Max");
   add(CapabilityFPGAArgumentInterfacesINTEL, "FPGAArgumentInterfacesINTEL");
+  add(CapabilityFPGALatencyControlINTEL, "FPGALatencyControlINTEL");
   add(CapabilityTaskSequenceINTEL, "TaskSequenceINTEL");
-
   // From spirv_internal.hpp
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");

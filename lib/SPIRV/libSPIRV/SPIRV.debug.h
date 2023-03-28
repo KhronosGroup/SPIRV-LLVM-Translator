@@ -26,14 +26,14 @@ enum Instruction {
   TypeEnum                      = 9,
   TypeComposite                 = 10,
   TypeMember                    = 11,
-  Inheritance                   = 12,
+  TypeInheritance               = 12,
   TypePtrToMember               = 13,
   TypeTemplate                  = 14,
   TypeTemplateParameter         = 15,
   TypeTemplateParameterPack     = 16,
   TypeTemplateTemplateParameter = 17,
   GlobalVariable                = 18,
-  FunctionDecl                  = 19,
+  FunctionDeclaration           = 19,
   Function                      = 20,
   LexicalBlock                  = 21,
   LexicalBlockDiscriminator     = 22,
@@ -52,8 +52,8 @@ enum Instruction {
   Source                        = 35,
   ModuleINTEL                   = 36,
   InstCount                     = 37,
-  TypeSubrange                  = 110,
   Module                        = 200,
+  TypeSubrange                  = 201,
   TypeArrayDynamic              = 202,
   TypeString                    = 203
 };
@@ -456,7 +456,7 @@ enum {
 };
 }
 
-namespace Template {
+namespace TypeTemplate {
 enum {
   TargetIdx         = 0,
   FirstParameterIdx = 1,
@@ -464,7 +464,7 @@ enum {
 };
 }
 
-namespace TemplateParameter {
+namespace TypeTemplateParameter {
 enum {
   NameIdx      = 0,
   TypeIdx      = 1,
@@ -476,7 +476,7 @@ enum {
 };
 }
 
-namespace TemplateTemplateParameter {
+namespace TypeTemplateTemplateParameter {
 enum {
   NameIdx         = 0,
   TemplateNameIdx = 1,
@@ -487,7 +487,7 @@ enum {
 };
 }
 
-namespace TemplateParameterPack {
+namespace TypeTemplateParameterPack {
 enum {
   NameIdx           = 0,
   SourceIdx         = 1,
@@ -895,6 +895,8 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(
     return spv::internal::SourceLanguageC99;
   case dwarf::SourceLanguage::DW_LANG_C11:
     return spv::internal::SourceLanguageC11;
+  case dwarf::SourceLanguage::DW_LANG_C17:
+    return spv::internal::SourceLanguageC17;
 
   case dwarf::SourceLanguage::DW_LANG_Python:
     return spv::internal::SourceLanguagePython;
@@ -905,12 +907,18 @@ inline spv::SourceLanguage convertDWARFSourceLangToSPIRVNonSemanticDbgInfo(
   case dwarf::SourceLanguage::DW_LANG_D:
     return spv::internal::SourceLanguageD;
 
+  case dwarf::SourceLanguage::DW_LANG_Fortran77:
+    return spv::internal::SourceLanguageFortran77;
+  case dwarf::SourceLanguage::DW_LANG_Fortran90:
+    return spv::internal::SourceLanguageFortran90;
   case dwarf::SourceLanguage::DW_LANG_Fortran95:
     return spv::internal::SourceLanguageFortran95;
   case dwarf::SourceLanguage::DW_LANG_Fortran03:
     return spv::internal::SourceLanguageFortran2003;
   case dwarf::SourceLanguage::DW_LANG_Fortran08:
     return spv::internal::SourceLanguageFortran2008;
+  case dwarf::SourceLanguage::DW_LANG_Fortran18:
+    return spv::internal::SourceLanguageFortran2018;
   default:
     return spv::SourceLanguage::SourceLanguageUnknown;
   }
@@ -945,6 +953,8 @@ convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(unsigned SourceLang) {
     return dwarf::SourceLanguage::DW_LANG_C99;
   case spv::internal::SourceLanguageC11:
     return dwarf::SourceLanguage::DW_LANG_C11;
+  case spv::internal::SourceLanguageC17:
+    return dwarf::SourceLanguage::DW_LANG_C17;
 
   case spv::internal::SourceLanguagePython:
     return dwarf::SourceLanguage::DW_LANG_Python;
@@ -955,12 +965,18 @@ convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(unsigned SourceLang) {
   case spv::internal::SourceLanguageD:
     return dwarf::SourceLanguage::DW_LANG_D;
 
+  case spv::internal::SourceLanguageFortran77:
+    return dwarf::SourceLanguage::DW_LANG_Fortran77;
+  case spv::internal::SourceLanguageFortran90:
+    return dwarf::SourceLanguage::DW_LANG_Fortran90;
   case spv::internal::SourceLanguageFortran95:
     return dwarf::SourceLanguage::DW_LANG_Fortran95;
   case spv::internal::SourceLanguageFortran2003:
     return dwarf::SourceLanguage::DW_LANG_Fortran03;
   case spv::internal::SourceLanguageFortran2008:
     return dwarf::SourceLanguage::DW_LANG_Fortran08;
+  case spv::internal::SourceLanguageFortran2018:
+    return dwarf::SourceLanguage::DW_LANG_Fortran18;
 
   case spv::SourceLanguage::SourceLanguageOpenCL_C:
   case spv::SourceLanguage::SourceLanguageESSL:

@@ -189,6 +189,10 @@ bool isOCLImageType(llvm::Type *Ty, StringRef *Name) {
           return true;
         }
       }
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    assert(!Name && "Cannot get the name for a target-extension type image");
+    return TET->getName() == "spirv.Image";
+  }
   return false;
 }
 /// \param BaseTyName is the type Name as in spirv.BaseTyName.Postfixes
@@ -472,19 +476,22 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
     size_t DemangledNameLenStart = NameSpaceStart + 11;
     size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
     size_t Len = 0;
-    if (Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
-            .getAsInteger(10, Len)) {
-      SPIRVDBG(errs() << "Error in extracting integer value");
-      return false;
+    if (!Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
+             .getAsInteger(10, Len)) {
+      DemangledName = Name.substr(Start, Len);
+      return true;
     }
-    DemangledName = Name.substr(Start, Len);
-  } else {
-    size_t Start = Name.find_first_not_of("0123456789", 2);
-    size_t Len = 0;
-    Name.substr(2, Start - 2).getAsInteger(10, Len);
-    DemangledName = Name.substr(Start, Len);
+    SPIRVDBG(errs() << "Error in extracting integer value");
+    return false;
   }
-  return true;
+  size_t Start = Name.find_first_not_of("0123456789", 2);
+  size_t Len = 0;
+  if (!Name.substr(2, Start - 2).getAsInteger(10, Len)) {
+    DemangledName = Name.substr(Start, Len);
+    return true;
+  }
+  SPIRVDBG(errs() << "Error in extracting integer value");
+  return false;
 }
 
 // Check if a mangled type Name is unsigned
@@ -1608,6 +1615,13 @@ std::string getImageBaseTypeName(StringRef Name) {
 }
 
 SPIRVTypeImageDescriptor getImageDescriptor(Type *Ty) {
+  if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
+    auto IntParams = TET->int_params();
+    assert(IntParams.size() > 6 && "Expected type to be an image type");
+    return SPIRVTypeImageDescriptor(SPIRVImageDimKind(IntParams[0]),
+                                    IntParams[1], IntParams[2], IntParams[3],
+                                    IntParams[4], IntParams[5]);
+  }
   StringRef TyName;
   [[maybe_unused]] bool IsImg = isOCLImageType(Ty, &TyName);
   assert(IsImg && "Must be an image type");

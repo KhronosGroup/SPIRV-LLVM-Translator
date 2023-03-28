@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-kernel-100
+; RUN: llvm-spirv -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
 
@@ -7,7 +7,7 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s -check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: ExtInstImport [[#EISId:]] "NonSemantic.Kernel.DebugInfo.100"
+; CHECK-SPIRV: ExtInstImport [[#EISId:]] "NonSemantic.Shader.DebugInfo.200"
 
 ; CHECK-SPIRV: String [[#LocalVarNameId:]] "A$1$upperbound"
 ; CHECK-SPIRV: TypeInt [[#TyInt64Id:]] 64 0
@@ -16,8 +16,8 @@
 ; CHECK-SPIRV: [[#DINoneId:]] [[#EISId]] DebugInfoNone
 
 ; CHECK-SPIRV: [[#DebugFuncId:]] [[#EISId]] DebugFunction
-; CHECK-SPIRV: [[#DebugTemplate:]] [[#EISId]] DebugTemplate [[#DebugFuncId]]
-; CHECK-SPIRV: [[#LocalVarId:]] [[#EISId]] DebugLocalVariable [[#LocalVarNameId]] [[#]] [[#]] [[#]] [[#]] [[#DebugTemplate]]
+; CHECK-SPIRV: [[#DebugTypeTemplate:]] [[#EISId]] DebugTypeTemplate [[#DebugFuncId]]
+; CHECK-SPIRV: [[#LocalVarId:]] [[#EISId]] DebugLocalVariable [[#LocalVarNameId]] [[#]] [[#]] [[#]] [[#]] [[#DebugTypeTemplate]]
 ; CHECK-SPIRV: [[#EISId]] DebugTypeSubrange [[#DINoneId]] [[#Constant1Id]] [[#LocalVarId]]  [[#DINoneId]]
 
 ; CHECK-SPIRV: [[#DIExprId:]] [[#EISId]] DebugExpression

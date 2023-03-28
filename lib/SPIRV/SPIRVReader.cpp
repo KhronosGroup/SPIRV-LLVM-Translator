@@ -2317,7 +2317,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       return mapValue(BV, transOCLBuiltinFromExtInst(ExtInst, BB));
     case SPIRVEIS_Debug:
     case SPIRVEIS_OpenCL_DebugInfo_100:
-    case SPIRVEIS_NonSemantic_Kernel_DebugInfo_100:
+    case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       return mapValue(BV, DbgTran->transDebugIntrinsic(ExtInst, BB));
     default:
       llvm_unreachable("Unknown extended instruction set!");
@@ -3399,6 +3399,16 @@ void generateIntelFPGAAnnotation(
     Out << "{force_pow2_depth:" << Result << '}';
   if (E->hasDecorate(DecorationBufferLocationINTEL, 0, &Result))
     Out << "{sycl-buffer-location:" << Result << '}';
+  if (E->hasDecorate(DecorationLatencyControlLabelINTEL, 0, &Result))
+    Out << "{sycl-latency-anchor-id:" << Result << '}';
+  if (E->hasDecorate(DecorationLatencyControlConstraintINTEL)) {
+    auto Literals =
+        E->getDecorationLiterals(DecorationLatencyControlConstraintINTEL);
+    assert(Literals.size() == 3 &&
+           "Latency Control Constraint decoration shall have 3 extra operands");
+    Out << "{sycl-latency-constraint:" << Literals[0] << "," << Literals[1]
+        << "," << Literals[2] << '}';
+  }
 
   unsigned LSUParamsBitmask = 0;
   llvm::SmallString<32> AdditionalParamsStr;

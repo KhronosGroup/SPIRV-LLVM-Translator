@@ -79,7 +79,7 @@ enum SPIRVExtInstSetKind {
   SPIRVEIS_Debug,
   SPIRVEIS_OpenCL_DebugInfo_100,
   SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
-  SPIRVEIS_NonSemantic_Kernel_DebugInfo_100,
+  SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
   SPIRVEIS_Count,
 };
 
@@ -133,8 +133,8 @@ template <> inline void SPIRVMap<SPIRVExtInstSetKind, std::string>::init() {
   add(SPIRVEIS_OpenCL_DebugInfo_100, "OpenCL.DebugInfo.100");
   add(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
       "NonSemantic.Shader.DebugInfo.100");
-  add(SPIRVEIS_NonSemantic_Kernel_DebugInfo_100,
-      "NonSemantic.Kernel.DebugInfo.100");
+  add(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
+      "NonSemantic.Shader.DebugInfo.200");
 }
 typedef SPIRVMap<SPIRVExtInstSetKind, std::string> SPIRVBuiltinSetNameMap;
 
@@ -487,6 +487,10 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGAArgumentInterfacesINTEL});
   ADD_VEC_INIT(DecorationStableKernelArgumentINTEL,
                {CapabilityFPGAArgumentInterfacesINTEL});
+  ADD_VEC_INIT(DecorationLatencyControlLabelINTEL,
+               {CapabilityFPGALatencyControlINTEL});
+  ADD_VEC_INIT(DecorationLatencyControlConstraintINTEL,
+               {CapabilityFPGALatencyControlINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
