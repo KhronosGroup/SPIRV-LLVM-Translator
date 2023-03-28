@@ -40,6 +40,7 @@ EXT(SPV_INTEL_memory_access_aliasing)
 EXT(SPV_INTEL_split_barrier)
 EXT(SPV_INTEL_bfloat16_conversion)
 EXT(SPV_INTEL_masked_gather_scatter)
-EXT(SPV_INTEL_tensor_float32_conversion)
+EXT(SPV_INTEL_tensor_float32_conversion) // TODO: to remove old extension
+EXT(SPV_INTEL_tensor_float32_rounding)
 EXT(SPV_INTEL_hw_thread_queries)
 EXT(SPV_EXT_relaxed_printf_string_address_space)
