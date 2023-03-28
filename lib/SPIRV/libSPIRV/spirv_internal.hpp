@@ -188,12 +188,6 @@ _SPIRV_OP(Op, MaskedScatterINTEL)
 
 _SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
 _SPIRV_OP(Op, RoundFToTF32INTEL)
-
-_SPIRV_OP(Capability, CacheControlsINTEL)
-
-_SPIRV_OP(Capability, BindlessImagesINTEL)
-_SPIRV_OP(Op, ConvertHandleToImageINTEL)
-_SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
