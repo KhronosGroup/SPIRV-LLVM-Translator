@@ -5534,7 +5534,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     SPIRVValue *ObjPtr = transValue(*OpItr++, BB);
     SPIRVValue *GetCapacity = transValue(*OpItr, BB);
     auto *TaskSequenceGet = BM->addTaskSequenceGetINTELInst(RetTy, ObjPtr,
-      Capacity, BB);
+      GetCapacity, BB);
     if (!CI->hasStructRetAttr())
       return TaskSequenceGet;
     return BM->addStoreInst(transValue(CI->getArgOperand(0), BB),

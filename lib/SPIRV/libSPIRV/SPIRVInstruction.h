@@ -3397,7 +3397,7 @@ _SPIRV_OP(GroupLogicalXor, true, 6, false, 1)
 class SPRIVTaskSequenceINTELInst : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityTaskSequenceINTEL);
+    return getVec(CapabilityTaskSequenceINTEL);
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
@@ -3452,7 +3452,7 @@ public:
 
 protected:
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityTaskSequenceINTEL);
+    return getVec(CapabilityTaskSequenceINTEL);
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
