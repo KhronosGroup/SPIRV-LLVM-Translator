@@ -504,6 +504,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
   // For N-dimensianal arrays AR.getNumElements() == N
   const unsigned N = AR.size();
   Ops.resize(ComponentCountIdx + N);
+  SPIRVWordVec LowerBounds(N);
   for (unsigned I = 0; I < N; ++I) {
     DISubrange *SR = cast<DISubrange>(AR[I]);
     ConstantInt *Count = SR->getCount().get<ConstantInt *>();
@@ -513,8 +514,13 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
     SPIRVValue *C = SPIRVWriter->transValue(Count, nullptr);
+    ConstantInt *LowerBound =
+        ConstantInt::get(Count->getType(), SR->getLowerBound());
+    SPIRVValue *Lo = SPIRVWriter->transValue(LowerBound, nullptr);
     Ops[ComponentCountIdx + I] = C->getId();
+    LowerBounds[I] = Lo->getId();
   }
+  Ops.insert(Ops.end(), LowerBounds.begin(), LowerBounds.end());
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
 }
 

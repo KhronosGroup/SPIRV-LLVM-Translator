@@ -200,11 +200,14 @@ SPIRVToLLVMDbgTran::transTypeArray(const SPIRVExtInst *DebugInst) {
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
   size_t TotalCount = 1;
   SmallVector<llvm::Metadata *, 8> Subscripts;
-  for (size_t I = ComponentCountIdx, E = Ops.size(); I < E; ++I) {
+  // Ops looks like: { BaseType, count1, count2, ..., countN
+  // lowerBound1, lowerBound2, ..., lowerBoundN }
+  for (size_t I = ComponentCountIdx, E = Ops.size() / 2 + 1; I < E; ++I) {
     SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
+    SPIRVConstant *Lo = BM->get<SPIRVConstant>(Ops[Ops.size() / 2 + I]);
     int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
-    Subscripts.push_back(Builder.getOrCreateSubrange(0, Count));
-    // Count = -1 means that the array is empty
+    int64_t LowerBound = static_cast<int64_t>(Lo->getZExtIntValue());
+    Subscripts.push_back(Builder.getOrCreateSubrange(LowerBound, Count));
     TotalCount *= Count > 0 ? static_cast<size_t>(Count) : 0;
   }
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);
