@@ -199,16 +199,38 @@ SPIRVToLLVMDbgTran::transTypeArray(const SPIRVExtInst *DebugInst) {
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
   size_t TotalCount = 1;
   SmallVector<llvm::Metadata *, 8> Subscripts;
-  for (size_t I = ComponentCountIdx, E = Ops.size(); I < E; ++I) {
-    if (getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[I])) {
-      Subscripts.push_back(Builder.getOrCreateSubrange(1, nullptr));
+  // Ops looks like: { BaseType, count1|upperBound1, count2|upperBound2, ...,
+  // countN|upperBoundN, lowerBound1, lowerBound2, ..., lowerBoundN }
+  for (size_t I = ComponentCountIdx, E = Ops.size() / 2 + 1; I < E; ++I) {
+    if (auto *LocalVar = getDbgInst<SPIRVDebug::LocalVariable>(Ops[I])) {
+      auto *UpperBound = transDebugInst<DILocalVariable>(LocalVar);
+      SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[Ops.size() / 2 + I]);
+      int64_t ConstantAsInt = static_cast<int64_t>(C->getZExtIntValue());
+      auto *LowerBound = ConstantAsMetadata::get(
+          ConstantInt::get(M->getContext(), APInt(64, ConstantAsInt)));
+      Subscripts.push_back(Builder.getOrCreateSubrange(nullptr, LowerBound,
+                                                       UpperBound, nullptr));
       continue;
     }
-    SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
-    int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
-    Subscripts.push_back(Builder.getOrCreateSubrange(0, Count));
-    // Count = -1 means that the array is empty
-    TotalCount *= Count > 0 ? static_cast<size_t>(Count) : 0;
+    if (auto *ExprUB = getDbgInst<SPIRVDebug::Expression>(Ops[I])) {
+      auto *UpperBound = transDebugInst<DIExpression>(ExprUB);
+      auto *ExprLB =
+          getDbgInst<SPIRVDebug::Expression>(Ops[Ops.size() / 2 + I]);
+      auto *LowerBound = transDebugInst<DIExpression>(ExprLB);
+      Subscripts.push_back(Builder.getOrCreateSubrange(nullptr, LowerBound,
+                                                       UpperBound, nullptr));
+      continue;
+    }
+    if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[I])) {
+      SPIRVConstant *C = BM->get<SPIRVConstant>(Ops[I]);
+      int64_t Count = static_cast<int64_t>(C->getZExtIntValue());
+      C = BM->get<SPIRVConstant>(Ops[Ops.size() / 2 + I]);
+      int64_t LowerBound = static_cast<int64_t>(C->getZExtIntValue());
+      Subscripts.push_back(Builder.getOrCreateSubrange(LowerBound, Count));
+      // Count = -1 means that the array is empty
+      TotalCount *= Count > 0 ? static_cast<size_t>(Count) : 0;
+      continue;
+    }
   }
   DINodeArray SubscriptArray = Builder.getOrCreateArray(Subscripts);
   size_t Size = getDerivedSizeInBits(BaseTy) * TotalCount;
