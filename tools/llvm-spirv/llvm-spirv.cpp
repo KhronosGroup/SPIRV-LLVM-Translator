@@ -503,8 +503,11 @@ static int parseSPVExtOption(
   //  - during SPIR-V generation, assume that any known extension is disallowed.
   //  - during conversion to/from SPIR-V text representation, assume that any
   //    known extension is allowed.
+  std::optional<bool> DefaultVal;
+  if (IsReverse)
+    DefaultVal = true;
   for (const auto &It : ExtensionNamesMap)
-    ExtensionsStatus[It.second] = IsReverse;
+    ExtensionsStatus[It.second] = DefaultVal;
 
   if (SPVExt.empty())
     return 0; // Nothing to do

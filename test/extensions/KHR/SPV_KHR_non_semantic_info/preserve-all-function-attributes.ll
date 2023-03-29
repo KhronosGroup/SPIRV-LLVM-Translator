@@ -1,5 +1,6 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: not llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata --spirv-ext=-SPV_KHR_non_semantic_info -o - 2>&1 | FileCheck %s --check-prefix=CHECK-SPIRV-EXT-DISABLED
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-preserve-auxdata
 ; RUN: llvm-spirv -r -emit-opaque-pointers --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
@@ -38,3 +39,5 @@ attributes #0 = { "foo" }
 ; CHECK-LLVM: attributes #[[#Fcn1IRAttr]] = { {{.*}}"bar"="baz" }
 attributes #1 = { "bar"="baz" }
  
+; CHECK-SPIRV-EXT-DISABLED: RequiresExtension: Feature requires the following SPIR-V extension:
+; CHECK-SPIRV-EXT-DISABLED-NEXT: SPV_KHR_non_semantic_info
