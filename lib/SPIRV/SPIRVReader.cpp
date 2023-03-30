@@ -1289,7 +1289,7 @@ static void replaceOperandWithAnnotationIntrinsicCallResult(Function *F,
       return DT.dominates(CallResult, U);
     });
 
-    // overwite V
+    // overwrite V
     if (V == BaseValue)
       V = CallResult;
   }
