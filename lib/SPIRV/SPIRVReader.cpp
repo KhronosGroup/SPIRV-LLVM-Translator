@@ -1280,7 +1280,7 @@ static void replaceOperandWithAnnotationIntrinsicCallResult(Function *F,
     }
   }
 
-  // overwite operand with intrinsic call result
+  // overwrite operand with intrinsic call result
   if (CallResult) {
     SPIRVDBG(dbgs() << "BaseValue: " << *BaseValue << '\n'
                     << "CallResult: " << *CallResult << '\n');
