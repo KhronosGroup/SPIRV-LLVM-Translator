@@ -76,18 +76,18 @@ attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite
 !llvm.ident = !{!5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5, !5}
 !llvm.module.flags = !{!6, !7, !8, !9}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !1, producer: "clang based Intel(R) oneAPI DPC++/C++ Compiler 2023.0.0 (2023.0.0.20221201)", isOptimized: false, flags: " --driver-mode=g++ --intel -O0 -g bitfields-packed.cpp -o test2.out -v -save-temps=cwd -fveclib=SVML -fheinous-gnu-extensions", runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
-!1 = !DIFile(filename: "tmp2/icpx-bc8802/bitfields-packed.cpp", directory: "/nfs/site/home/asudarsa/jiras/45254/tmp/run2")
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !1, producer: "clang", isOptimized: false, flags: "", runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
+!1 = !DIFile(filename: "bitfields-packed.cpp", directory: "/tmp")
 !2 = !{i32 1, i32 2}
 !3 = !{i32 4, i32 100000}
 !4 = !{}
-!5 = !{!"Intel(R) oneAPI DPC++/C++ Compiler 2023.0.0 (2023.0.0.20221201)"}
+!5 = !{!"Compiler"}
 !6 = !{i32 7, !"Dwarf Version", i32 4}
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"frame-pointer", i32 2}
 !10 = distinct !DISubprogram(name: "foo", linkageName: "_Z3fooii", scope: !11, file: !11, line: 29, type: !12, scopeLine: 29, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !4)
-!11 = !DIFile(filename: "bitfields-packed.cpp", directory: "/nfs/site/home/asudarsa/jiras/45254/tmp/run2")
+!11 = !DIFile(filename: "bitfields-packed.cpp", directory: "/tmp")
 !12 = !DISubroutineType(cc: DW_CC_LLVM_SpirFunction, types: !13)
 !13 = !{!14, !14, !14}
 !14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
