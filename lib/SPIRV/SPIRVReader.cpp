@@ -441,8 +441,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     auto C = static_cast<SPIRVConstant *>(MT->getColumns())->getZExtIntValue();
     std::vector<unsigned> Params = {(unsigned)R, (unsigned)C};
     if (auto *Layout = MT->getLayout())
-      Params.push_back(
-          static_cast<SPIRVConstant *>(Layout)->getZExtIntValue());
+      Params.push_back(static_cast<SPIRVConstant *>(Layout)->getZExtIntValue());
     Params.push_back(
         static_cast<SPIRVConstant *>(MT->getScope())->getZExtIntValue());
     if (auto *Use = MT->getUse())

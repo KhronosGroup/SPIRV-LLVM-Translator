@@ -289,7 +289,8 @@ SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL(
     SPIRVModule *M, SPIRVId TheId, SPIRVType *CompType,
     std::vector<SPIRVValue *> Args)
     : SPIRVType(M, FixedWC + Args.size(), internal::OpTypeJointMatrixINTEL,
-                TheId), CompType(CompType), Args(std::move(Args)) {}
+                TheId),
+      CompType(CompType), Args(std::move(Args)) {}
 
 SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL()
     : SPIRVType(internal::OpTypeJointMatrixINTEL), CompType(nullptr),
