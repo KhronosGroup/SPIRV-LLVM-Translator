@@ -42,7 +42,7 @@ enum InternalOp {
   IOpAliasScopeListDeclINTEL = 5913,
   IOpConvertFToBF16INTEL = 6116,
   IOpConvertBF16ToFINTEL = 6117,
-  IOpConvertFToTF32INTEL = 6426,
+  IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
   IOpPrev = OpMax - 2,
@@ -59,7 +59,7 @@ enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
   ICapOptNoneINTEL = 6094,
   ICapBfloat16ConversionINTEL = 6115,
-  ICapabilityTensorFloat32ConversionINTEL = 6425,
+  ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityHWThreadQueryINTEL = 6134,
 };
@@ -79,8 +79,8 @@ _SPIRV_OP(Capability, MaskedGatherScatterINTEL)
 _SPIRV_OP(Op, MaskedGatherINTEL)
 _SPIRV_OP(Op, MaskedScatterINTEL)
 
-_SPIRV_OP(Capability, TensorFloat32ConversionINTEL)
-_SPIRV_OP(Op, ConvertFToTF32INTEL)
+_SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
+_SPIRV_OP(Op, RoundFToTF32INTEL)
 
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
