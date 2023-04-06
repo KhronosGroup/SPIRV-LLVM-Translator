@@ -4,11 +4,17 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: 8 Decorate 4 UserSemantic "num-thread-per-eu 4"
-; CHECK-SPIRV: 8 Decorate 6 UserSemantic "num-thread-per-eu 8"
-; CHECK-SPIRV  8 Decorate 8 UserSemantic "num-thread-per-eu 0"
-; CHECK-SPIRV-NOT: 8 Decorate 10
-; CHECK-SPIRV-NOT: 8 Decorate 12
+; CHECK-SPIRV: Name [[#FUNC0:]] "main_l3"
+; CHECK-SPIRV: Name [[#FUNC1:]] "main_l6"
+; CHECK-SPIRV: Name [[#FUNC2:]] "main_l9"
+; CHECK-SPIRV: Name [[#FUNC3:]] "main_l13"
+; CHECK-SPIRV: Name [[#FUNC4:]] "main_l19"
+
+; CHECK-SPIRV: Decorate [[#FUNC0]] UserSemantic "num-thread-per-eu 4"
+; CHECK-SPIRV: Decorate [[#FUNC1]] UserSemantic "num-thread-per-eu 8"
+; CHECK-SPIRV:  Decorate [[#FUNC2]] UserSemantic "num-thread-per-eu 0"
+; CHECK-SPIRV-NOT: Decorate [[#FUNC3]] UserSemantic
+; CHECK-SPIRV-NOT: Decorate [[#FUNC4]] UserSemantic
 
 ; CHECK-LLVM: @[[FLAG0:[0-9]+]] = private unnamed_addr constant [20 x i8] c"num-thread-per-eu 4\00", section "llvm.metadata"
 ; CHECK-LLVM: @[[FLAG1:[0-9]+]] = private unnamed_addr constant [20 x i8] c"num-thread-per-eu 8\00", section "llvm.metadata"
