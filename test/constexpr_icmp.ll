@@ -1,5 +1,5 @@
-; RUN: llvm-as -opaque-pointers=0 %s -o %t.bc
-; RUN: llvm-spirv %t.bc  -spirv-ext=+SPV_INTEL_vector_compute -opaque-pointers=0 -o %t.spv
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc  -spirv-ext=+SPV_INTEL_vector_compute -o %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.bc
 ; RUN: llvm-dis %t.bc -o %t.ll
