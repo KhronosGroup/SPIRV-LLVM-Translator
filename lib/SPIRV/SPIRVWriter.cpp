@@ -4265,11 +4265,14 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // Adds test for Negative/Positive values
     auto GetNegPosInstTest = [&](SPIRVValue *TestInst, bool IsNegative) {
       auto *SignBitTest =
-          BM->addInstTemplate(OpSignBitSet, {TestInst->getId()}, BB, ResTy);
+          BM->addInstTemplate(OpSignBitSet, {InputFloat->getId()}, BB, ResTy);
       if (IsNegative)
-        return SignBitTest;
-      return BM->addInstTemplate(OpLogicalNot,
-                                 {SignBitTest->getId()}, BB, ResTy);
+        return BM->addInstTemplate(
+            OpLogicalAnd, {SignBitTest->getId(), TestInst->getId()}, BB, ResTy);
+      auto *NotInst =
+          BM->addInstTemplate(OpLogicalNot, {SignBitTest->getId()}, BB, ResTy);
+      return BM->addInstTemplate(
+          OpLogicalAnd, {NotInst->getId(), TestInst->getId()}, BB, ResTy);
     };
 
     // Get LLVM Op type converted to integer. It can be either scalar or vector.
@@ -4290,10 +4293,10 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // Since a single intrinsic can provide multiple tests - here we might end
     // up adding several sequences of SPIR-V instructions
     if (FPClass & fcNan) {
-      auto *TestIsNan = BM->addInstTemplate(OpIsNan, {InputFloat->getId()}, BB,
-                                            ResTy);
       // Map on OpIsNan if we have both QNan and SNan test bits set
       if (FPClass & fcSNan && FPClass & fcQNan) {
+      auto *TestIsNan = BM->addInstTemplate(OpIsNan, {InputFloat->getId()}, BB,
+                                            ResTy);
         ResultVec.emplace_back(TestIsNan);
       } else {
         // isquiet(V) ==> abs(V) >= (unsigned(Inf) | quiet_bit)
@@ -4313,6 +4316,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           ResultVec.emplace_back(TestIsQNan);
         } else {
           // issignaling(V) ==> isnan(V) && !isquiet(V)
+          auto *TestIsNan = BM->addInstTemplate(OpIsNan, {InputFloat->getId()},
+                                                BB, ResTy);
           auto *NotQNan =
               BM->addInstTemplate(OpLogicalNot, {TestIsQNan->getId()}, BB,
                                   ResTy);
@@ -4346,7 +4351,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                                                  FPClass & fcNegNormal));
     }
     if (FPClass & fcSubnormal) {
-       // issubnormal(V) ==> unsigned(abs(V) - 1) < (all mantissa bits set)
+      // issubnormal(V) ==> unsigned(abs(V) - 1) < (all mantissa bits set)
       auto *BitCastToInt = BM->addUnaryInst(OpBitcast, OpSPIRVTy,
                                             InputFloat, BB);
       SPIRVValue *IntAbs =
@@ -4362,7 +4367,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         ResultVec.emplace_back(TestIsSubnormal);
       else
         ResultVec.emplace_back(GetNegPosInstTest(TestIsSubnormal,
-                                                 FPClass & fcNegNormal));
+                                                 FPClass & fcNegSubnormal));
     }
     if (FPClass & fcZero) {
       // Create zero integer constant and check for equality with bitcasted to
@@ -4377,7 +4382,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         ResultVec.emplace_back(TestIsZero);
       else
         ResultVec.emplace_back(GetNegPosInstTest(TestIsZero,
-                                                 FPClass & fcNegNormal));
+                                                 FPClass & fcNegZero));
     }
     if (ResultVec.size() == 1)
       return ResultVec.back();
