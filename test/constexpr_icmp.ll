@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc  -spirv-ext=+SPV_INTEL_vector_compute -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.bc
 ; RUN: llvm-dis %t.bc -o %t.ll
@@ -12,11 +12,11 @@ target triple = "spir64"
 define linkonce_odr hidden spir_func void @foo() {
 entry:
 ; CHECK-SPIRV: [[#]] ExtInst [[#]] [[#]] [[#]] DebugValue [[#]] [[#]] [[#]]
-; CHECK-LLVM: call void @llvm.dbg.value(metadata <2 x i8> <i8 zext (i1 icmp ne (i8 extractelement (<8 x i8> bitcast (<1 x i64> <i64 72340172838076673> to <8 x i8>), i32 0), i8 0) to i8), i8 zext (i1 icmp ne (i8 extractelement (<8 x i8> bitcast (<1 x i64> <i64 72340172838076673> to <8 x i8>), i32 0), i8 0) to i8)>, metadata ![[#]], metadata !DIExpression()), !dbg ![[#]]
+; CHECK-LLVM: call void @llvm.dbg.value(metadata <2 x i8> <i8 zext (i1 icmp ne (i8 extractelement (<16 x i8> bitcast (<2 x i64> <i64 72340172838076673, i64 72340172838076673> to <16 x i8>), i32 0), i8 0) to i8), i8 zext (i1 icmp ne (i8 extractelement (<16 x i8> bitcast (<2 x i64> <i64 72340172838076673, i64 72340172838076673> to <16 x i8>), i32 0), i8 0) to i8)>, metadata ![[#]], metadata !DIExpression()), !dbg ![[#]]
 
   call void @llvm.dbg.value(
-    metadata <2 x i8> <i8 zext (i1 icmp ne (i8 extractelement (<8 x i8> bitcast (<1 x i64> <i64 72340172838076673> to <8 x i8>), i64 0), i8 0) to i8),
-                       i8 zext (i1 icmp ne (i8 extractelement (<8 x i8> bitcast (<1 x i64> <i64 72340172838076673> to <8 x i8>), i64 0), i8 0) to i8)>,
+    metadata <2 x i8> <i8 zext (i1 icmp ne (i8 extractelement (<16 x i8> bitcast (<2 x i64> <i64 72340172838076673, i64 72340172838076673> to <16 x i8>), i64 0), i8 0) to i8),
+                       i8 zext (i1 icmp ne (i8 extractelement (<16 x i8> bitcast (<2 x i64> <i64 72340172838076673, i64 72340172838076673> to <16 x i8>), i64 0), i8 0) to i8)>,
     metadata !12,
     metadata !DIExpression()), !dbg !7
   ret void
