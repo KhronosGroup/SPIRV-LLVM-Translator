@@ -4265,16 +4265,20 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // Adds test for Negative/Positive values
     SPIRVValue *SignBitTest = nullptr;
     SPIRVValue *NoSignTest = nullptr;
-    auto GetNegPosInstTest = [&](SPIRVValue *TestInst, bool IsNegative) ->
-      SPIRVValue * {
-      SignBitTest = (SignBitTest) ? SignBitTest :
-          BM->addInstTemplate(OpSignBitSet, {InputFloat->getId()}, BB, ResTy);
+    auto GetNegPosInstTest = [&](SPIRVValue *TestInst,
+                                 bool IsNegative) -> SPIRVValue * {
+      SignBitTest = (SignBitTest)
+                        ? SignBitTest
+                        : BM->addInstTemplate(OpSignBitSet,
+                                              {InputFloat->getId()}, BB, ResTy);
       if (IsNegative) {
         return BM->addInstTemplate(
             OpLogicalAnd, {SignBitTest->getId(), TestInst->getId()}, BB, ResTy);
       }
-      NoSignTest = (NoSignTest) ? NoSignTest :
-          BM->addInstTemplate(OpLogicalNot, {SignBitTest->getId()}, BB, ResTy);
+      NoSignTest = (NoSignTest)
+                       ? NoSignTest
+                       : BM->addInstTemplate(OpLogicalNot,
+                                             {SignBitTest->getId()}, BB, ResTy);
       return BM->addInstTemplate(
           OpLogicalAnd, {NoSignTest->getId(), TestInst->getId()}, BB, ResTy);
     };
@@ -4295,8 +4299,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // Some checks can be inverted tests for simple cases, for example
     // simultaneous check for inf, normal, subnormal and zero is a check for
     // non nan.
-    auto getInvertedFPClassTest = [](const llvm::FPClassTest Test)
-      -> llvm::FPClassTest {
+    auto GetInvertedFPClassTest =
+        [](const llvm::FPClassTest Test) -> llvm::FPClassTest {
       llvm::FPClassTest InvertedTest = ~Test & fcAllFlags;
       switch (InvertedTest) {
       default:
@@ -4324,15 +4328,14 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return fcNone;
     };
     bool IsInverted = false;
-    if (llvm::FPClassTest InvertedCheck = getInvertedFPClassTest(FPClass)) {
+    if (llvm::FPClassTest InvertedCheck = GetInvertedFPClassTest(FPClass)) {
       IsInverted = true;
       FPClass = InvertedCheck;
     }
     auto GetInvertedTestIfNeeded = [&](SPIRVValue *TestInst) -> SPIRVValue * {
       if (!IsInverted)
         return TestInst;
-      return BM->addInstTemplate(OpLogicalNot,
-                                 {TestInst->getId()}, BB, ResTy);
+      return BM->addInstTemplate(OpLogicalNot, {TestInst->getId()}, BB, ResTy);
     };
 
     // Integer parameter of the intrinsic is combined from several bit masks
@@ -4382,7 +4385,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       else
         // Map on OpIsInf with following check for sign bit
         ResultVec.emplace_back(GetInvertedTestIfNeeded(
-              GetNegPosInstTest(TestIsInf, FPClass & fcNegInf)));
+            GetNegPosInstTest(TestIsInf, FPClass & fcNegInf)));
     }
     if (FPClass & fcNormal) {
       auto *TestIsNormal =
