@@ -578,9 +578,8 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgBaseType(const DIBasicType *BT) {
       BM->getDebugInfoEIS() != SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
     EncTag = SPIRVDebug::Unspecified;
   Ops[EncodingIdx] = EncTag;
-  if (isNonSemanticDebugInfo()) {
+  if (isNonSemanticDebugInfo())
     transformToConstant(Ops, {EncodingIdx});
-  }
   return BM->addDebugInfo(SPIRVDebug::TypeBasic, getVoidTy(), Ops);
 }
 

@@ -89,7 +89,7 @@ enum EncodingTag {
   SignedChar   = 5,
   Unsigned     = 6,
   UnsignedChar = 7,
-  Complex = 8
+  Complex      = 8
 };
 
 enum CompositeTypeTag {
