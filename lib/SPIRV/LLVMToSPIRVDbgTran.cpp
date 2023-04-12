@@ -486,8 +486,12 @@ SPIRVWord mapDebugFlags(DINode::DIFlags DFlags) {
     Flags |= SPIRVDebug::FlagTypePassByValue;
   if (DFlags & DINode::FlagTypePassByReference)
     Flags |= SPIRVDebug::FlagTypePassByReference;
-  if (DFlags & DINode::FlagBitField)
-    Flags |= SPIRVDebug::FlagBitField;
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+    if (DFlags & DINode::FlagUnknownPhysicalLayout)
+      Flags |= SPIRVDebug::FlagUnknownPhysicalLayout;
+    if (DFlags & DINode::FlagBitField)
+      Flags |= SPIRVDebug::FlagBitField;
+  }
   return Flags;
 }
 
