@@ -8,15 +8,15 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
 
-; CHECK: 4 TypeInt [[I8:[0-9]+]] 8 0
-; CHECK: 4 TypePointer [[I8PTR:[0-9]+]] 7 [[I8]]
-; CHECK: 4 TypePointer [[I8PTRPTR:[0-9]+]] 7 [[I8PTR]]
-; CHECK: 4 TypePointer [[I8PTRPTRPTR:[0-9]+]] 7 [[I8PTRPTR]]
+; CHECK: TypeInt [[I8:[0-9]+]] 8 0
+; CHECK: TypePointer [[I8PTR:[0-9]+]] 7 [[I8]]
+; CHECK: TypePointer [[I8PTRPTR:[0-9]+]] 7 [[I8PTR]]
+; CHECK: TypePointer [[I8PTRPTRPTR:[0-9]+]] 7 [[I8PTRPTR]]
 
 ; Function Attrs: nounwind
 define spir_kernel void @foo() {
-; CHECK: 4 Variable [[I8PTRPTR]] [[PTR:[0-9]+]] 7
-; CHECK: 4 Bitcast [[I8PTRPTRPTR]] [[STOREPTR:[0-9]+]] [[PTR]]
+; CHECK: Variable [[I8PTRPTR]] [[PTR:[0-9]+]] 7
+; CHECK: Bitcast [[I8PTRPTRPTR]] [[STOREPTR:[0-9]+]] [[PTR]]
 ; CHECK: Store [[STOREPTR]] [[PTR]]
 entry:
   %ptr = alloca ptr, align 4

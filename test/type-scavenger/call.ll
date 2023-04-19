@@ -7,16 +7,16 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; CHECK: Name [[CALL:[0-9]+]] "call"
-; CHECK: 4 TypeInt [[INT:[0-9]+]] 32 0
-; CHECK: 4 TypePointer [[INTPTR:[0-9]+]] 7 [[INT]]
-; CHECK: 3 TypeFloat [[FLOAT:[0-9]+]] 32
-; CHECK: 4 TypePointer [[FLOATPTR:[0-9]+]] 7 [[FLOAT]]
-; CHECK: 4 TypeFunction [[CALLTY:[0-9]+]] [[INTPTR]] [[INTPTR]]
+; CHECK: TypeInt [[INT:[0-9]+]] 32 0
+; CHECK: TypePointer [[INTPTR:[0-9]+]] 7 [[INT]]
+; CHECK: TypeFloat [[FLOAT:[0-9]+]] 32
+; CHECK: TypePointer [[FLOATPTR:[0-9]+]] 7 [[FLOAT]]
+; CHECK: TypeFunction [[CALLTY:[0-9]+]] [[INTPTR]] [[INTPTR]]
 
 ; Function Attrs: nounwind
 define spir_kernel void @foo() {
-; CHECK: 4 Variable [[INTPTR]] [[IPTR:[0-9]+]] 7
-; CHECK: 4 Variable [[FLOATPTR]] [[FPTR:[0-9]+]] 7
+; CHECK: Variable [[INTPTR]] [[IPTR:[0-9]+]] 7
+; CHECK: Variable [[FLOATPTR]] [[FPTR:[0-9]+]] 7
 ; CHECK: FunctionCall [[INTPTR]] [[IPTR1:[0-9]+]] [[CALL]] [[IPTR]]
 ; CHECK: Store [[IPTR1]]
 ; CHECK: Bitcast [[INTPTR]] [[FPTR1:[0-9]+]] [[FPTR]]

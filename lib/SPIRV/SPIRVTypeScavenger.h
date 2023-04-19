@@ -55,6 +55,7 @@ using namespace llvm;
 class SPIRVTypeScavenger {
   /// The mapping from type variables to concrete types.
   std::vector<Type *> TypeVariables;
+
   /// The structure storing which type variables have been unified.
   IntEqClasses UnifiedTypeVars;
 
@@ -102,13 +103,14 @@ class SPIRVTypeScavenger {
     }
     /// Establishes typeof(operand) == concrete type
     static TypeRule is(Use &U, Type *Ty) {
-      return TypeRule(U.getOperandNo(), false, Ty, false);
+      return TypeRule::is(U.getOperandNo(), Ty);
     }
     /// Establishes typeof(operand) == typeof(operand)
     static TypeRule is(User &U, unsigned Op1, unsigned Op2) {
       return TypeRule(Op1, false, &U.getOperandUse(Op2), false);
     }
     /// Establishes typedptr(typeof(operand)) == typedptr(typeof(operand))
+    /// (this is useful when the address spaces do not need to match).
     static TypeRule isIndirect(User &U, unsigned Op1, unsigned Op2) {
       return TypeRule(Op1, true, &U.getOperandUse(Op2), true);
     }

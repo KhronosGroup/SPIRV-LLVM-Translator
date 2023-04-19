@@ -17,11 +17,11 @@ target triple = "spir-unknown-unknown"
 
 ; Function Attrs: nounwind
 define spir_kernel void @foo() {
-; CHECK: 4 Variable [[INTPTR]] [[IPTR:[0-9]+]] 7
-; CHECK: 4 Variable [[INTPPTR]] [[PPTR:[0-9]+]] 7
+; CHECK: Variable [[INTPTR]] [[IPTR:[0-9]+]] 7
+; CHECK: Variable [[INTPPTR]] [[PPTR:[0-9]+]] 7
 ; CHECK: Store [[PPTR]] [[IPTR]]
 ; CHECK: Load [[INTPTR]] [[LOAD1:[0-9]+]] [[PPTR]]
-; CHECK: 4 Bitcast [[FLOATPTR]] [[LOADPTR2:[0-9]+]] [[LOAD1]]
+; CHECK: Bitcast [[FLOATPTR]] [[LOADPTR2:[0-9]+]] [[LOAD1]]
 ; CHECK: Load [[FLOAT]] [[LOAD2:[0-9]+]] [[LOADPTR2]]
 entry:
   %iptr = alloca i32, align 4

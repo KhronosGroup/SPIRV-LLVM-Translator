@@ -37,7 +37,7 @@
 //
 // The core algorithm being implemented is rather simple, although there are
 // several complications that make its implementation more difficult. At its
-// core, the algorithm work like this:
+// core, the algorithm works like this:
 //
 // 1. Replace every instance of an opaque pointer type with a typed pointer that
 //    points to an unknown type variable.
@@ -51,7 +51,9 @@
 //    assign i8 to them instead.
 //
 // Typed pointers are represented with the TypedPointerType. Type variables are
-// represented as target("typevar", i), where i is an integer.
+// represented as target("typevar", i), where i is an integer to disambiguate
+// between different unknown types. (It is an index into the TypeVariables and
+// UnifiedTypeVars fields).
 //
 // Step 3 of the above algorithm is represented by unifyType, which implements a
 // unification-based type algorithm. This means there exists essentially just
@@ -113,6 +115,11 @@
 // instead look through the type rules to see if we can get the type of the
 // return value from one of its input operands.
 //
+// Recursive pointer types are not possible to express, as we make no attempt
+// to recover pointer types within struct types. It is still possible for
+// a type rule to suggest an infinite recursive type (consider the example
+// store ptr %x, ptr %x), so we have to guard against it in unifyType.
+//
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVTypeScavenger.h"
@@ -131,13 +138,12 @@
 using namespace llvm;
 
 namespace {
-static bool isTypeVariable(Type *T, unsigned &TypeVarNum) {
+static inline std::optional<unsigned> isTypeVariable(Type *T) {
   if (auto *TET = dyn_cast<TargetExtType>(T))
     if (TET->getName() == "typevar") {
-      TypeVarNum = TET->getIntParameter(0);
-      return true;
+      return TET->getIntParameter(0);
     }
-  return false;
+  return std::nullopt;
 }
 
 /// Convert Ty to a type that can be unified with a type-variable-ified L, given
@@ -158,6 +164,8 @@ static Type *adjustIndirect(Type *L, bool LIndirect, Type *Ty, bool TIndirect) {
   return Ty;
 }
 
+/// Return the type with all inner pointer types replaced with the result of
+/// calling MutatePointer(PointerAddressSpace).
 template <typename Fn> Type *mutateType(Type *T, Fn MutatePointer) {
   if (T->isPointerTy()) {
     return MutatePointer(T->getPointerAddressSpace());
@@ -205,7 +213,7 @@ Type *getUnknownTyped(Type *T) {
       T, [=](unsigned AS) { return TypedPointerType::get(Int8Ty, AS); });
 }
 
-bool hasTypeVariable(Type *T, unsigned TypeVarNum) {
+bool hasTypeVariable(Type *T, const unsigned TypeVarNum) {
   if (auto *TPT = dyn_cast<TypedPointerType>(T))
     return hasTypeVariable(TPT->getElementType(), TypeVarNum);
   if (auto *VT = dyn_cast<VectorType>(T))
@@ -218,9 +226,8 @@ bool hasTypeVariable(Type *T, unsigned TypeVarNum) {
         return true;
     return hasTypeVariable(FT->getReturnType(), TypeVarNum);
   }
-  unsigned CheckNum;
-  if (isTypeVariable(T, CheckNum)) {
-    return TypeVarNum == CheckNum;
+  if (auto CheckNum = isTypeVariable(T)) {
+    return TypeVarNum == *CheckNum;
   }
   return false;
 }
@@ -243,8 +250,8 @@ Type *SPIRVTypeScavenger::substituteTypeVariables(Type *T) {
     Type *ReturnTy = substituteTypeVariables(FT->getReturnType());
     return FunctionType::get(ReturnTy, ParamTypes, FT->isVarArg());
   }
-  unsigned TypeVarNum;
-  if (isTypeVariable(T, TypeVarNum)) {
+  if (auto Index = isTypeVariable(T)) {
+    unsigned TypeVarNum = *Index;
     TypeVarNum = UnifiedTypeVars.join(TypeVarNum, TypeVarNum);
     Type *&SubstTy = TypeVariables[TypeVarNum];
     // A value in TypeVariables may itself contain type variables that need to
@@ -287,24 +294,23 @@ bool SPIRVTypeScavenger::unifyType(Type *T1, Type *T2) {
     return true;
   };
 
-  unsigned T1Num, T2Num;
-  if (isTypeVariable(T1, T1Num)) {
-    if (isTypeVariable(T2, T2Num)) {
+  if (auto T1Num = isTypeVariable(T1)) {
+    if (auto T2Num = isTypeVariable(T2)) {
       // Two type variables. Unify the two of them into the same type.
       if (T1Num != T2Num) {
-        UnifiedTypeVars.join(T1Num, T2Num);
-        LLVM_DEBUG(dbgs() << "Joining typevar " << T1Num << " and " << T2Num
+        UnifiedTypeVars.join(*T1Num, *T2Num);
+        LLVM_DEBUG(dbgs() << "Joining typevar " << *T1Num << " and " << *T2Num
                           << "\n");
       }
       return true;
     }
-    return SetTypeVar(T1Num, T2);
+    return SetTypeVar(*T1Num, T2);
   }
 
-  if (isTypeVariable(T2, T2Num)) {
+  if (auto T2Num = isTypeVariable(T2)) {
     // We know that T1 can't be a type variable, so the only possibility is that
     // we assign T2 to T1.
-    return SetTypeVar(T2Num, T1);
+    return SetTypeVar(*T2Num, T1);
   }
 
   // At this point, we know that neither type is a type variable. If the two
