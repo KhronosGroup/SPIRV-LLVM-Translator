@@ -880,7 +880,6 @@ inline bool hasDbgInstParentScopeIdx(const uint32_t Kind,
   default:
     return false;
   }
-  return false;
 }
 
 } // namespace Operand

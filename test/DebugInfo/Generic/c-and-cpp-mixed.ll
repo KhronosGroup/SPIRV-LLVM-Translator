@@ -1,3 +1,6 @@
+;; This test checks that two DICompileUnits resulted in a link of C and C++
+;; object files are being translated correctly
+
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
