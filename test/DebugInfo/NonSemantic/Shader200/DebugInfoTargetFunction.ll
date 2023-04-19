@@ -1,7 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -spirv-text %t.bc -o %t.spt --spirv-debug-info-version=nonsemantic-shader-200
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-debug-info-version=nonsemantic-shader-200
+; RUN: llvm-spirv -to-text %t.spv -o %t.spt
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -12,7 +12,7 @@
 ; CHECK-SPIRV-DAG: String [[#TargetFunc:]] "_Z3foov"
 
 ; CHECK-SPIRV-DAG: ExtInst [[#]] [[#DebugNone:]] [[#]] DebugInfoNone
-; CHECK-SPIRV-DAG: ExtInst [[#]] [[#]] [[#]] DebugFunction [[#Func]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#DebugNone]] [[#TargetFunc]]
+; CHECK-SPIRV-DAG: ExtInst [[#]] [[#]] [[#]] DebugFunction [[#Func]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#DebugNone]] [[#TargetFunc]]
 
 ; CHECK-LLVM: define spir_func void @_Z11foo_wrapperv() {{.*}} !dbg ![[#DbgSubProg:]] {
 ; CHECK-LLVM: ![[#DbgSubProg]] = distinct !DISubprogram(name: "foo_wrapper", linkageName: "_Z11foo_wrapperv", scope: null, file: ![[#]], line: 3, type: ![[#]], scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: ![[#]], templateParams: ![[#]], retainedNodes: ![[#]], targetFuncName: "_Z3foov")
