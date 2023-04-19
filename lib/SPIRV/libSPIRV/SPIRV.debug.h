@@ -13,6 +13,8 @@ static const std::string ChecksumKindPrefx = {"//__CSK_"};
 
 // clang-format off
 
+// Need to update hasDbgInstParentScopeIdx each time we add new instruction
+// with ParentScopeIdx
 enum Instruction {
   DebugInfoNone                 = 0,
   CompilationUnit               = 1,
