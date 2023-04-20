@@ -63,9 +63,7 @@ SPIRVInstruction *
 SPIRVBasicBlock::addInstruction(SPIRVInstruction *I,
                                 const SPIRVInstruction *InsertBefore) {
   assert(I && "Invalid instruction");
-  // Avoid adding the instruction 2 times to the same module
-  if (!InsertBefore)
-    Module->add(I);
+  Module->add(I);
   I->setParent(this);
   if (InsertBefore) {
     auto Pos = find(InsertBefore);
