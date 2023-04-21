@@ -1139,10 +1139,10 @@ void OCLToSPIRVBase::visitCallRelational(CallInst *CI,
   Type *BoolTy = CI->getType()->getWithNewType(Type::getInt1Ty(*Ctx));
   mutateCallInst(CI, OC).changeReturnType(
       BoolTy, [=](IRBuilder<> &Builder, CallInst *NewCI) {
-        Value *TruOp = CI->getType()->isVectorTy()
+        Value *TrueOp = CI->getType()->isVectorTy()
                            ? Constant::getAllOnesValue(CI->getType())
                            : getInt32(M, 1);
-        return Builder.CreateSelect(NewCI, TruOp,
+        return Builder.CreateSelect(NewCI, TrueOp,
                                     Constant::getNullValue(CI->getType()));
       });
 }
