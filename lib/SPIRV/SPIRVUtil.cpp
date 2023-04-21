@@ -656,8 +656,7 @@ public:
 } // unnamed namespace
 
 static StringRef stringify(const itanium_demangle::NameType *Node) {
-  const itanium_demangle::StringView Str = Node->getName();
-  return StringRef(Str.begin(), Str.size());
+  return Node->getName();
 }
 
 /// Convert a mangled name that represents a basic integer, floating-point,
