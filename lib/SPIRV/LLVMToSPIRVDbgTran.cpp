@@ -554,10 +554,13 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgCompileUnit(const DICompileUnit *CU) {
     transformToConstant(
         Ops, {SPIRVDebugInfoVersionIdx, DWARFVersionIdx, LanguageIdx});
 
-  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
-    Ops.push_back(BM->getString(CU->getProducer().str())->getId());
-  } else if (BM->getDebugInfoEIS() !=
-             SPIRVEIS_NonSemantic_Shader_DebugInfo_100) {
+  if (isNonSemanticDebugInfo()) {
+    if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+      Ops.push_back(BM->getString(CU->getProducer().str())->getId());
+    }
+  } else {
+    // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
+    // info by default
     BM->addModuleProcessed(SPIRVDebug::ProducerPrefix +
                            CU->getProducer().str());
   }

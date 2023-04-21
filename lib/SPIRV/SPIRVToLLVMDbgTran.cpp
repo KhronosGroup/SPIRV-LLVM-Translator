@@ -184,6 +184,8 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
         SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0);
   }
+  // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
+  // info by default
   auto Producer = findModuleProducer();
   return BuilderMap[DebugInst->getId()]->createCompileUnit(
       SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0);
