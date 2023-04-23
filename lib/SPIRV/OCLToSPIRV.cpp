@@ -1137,11 +1137,15 @@ void OCLToSPIRVBase::visitCallRelational(CallInst *CI,
   OCLSPIRVBuiltinMap::find(DemangledName.str(), &OC);
   // i1 or <i1 x N>, depending on whether it returns a vector type.
   Type *BoolTy = CI->getType()->getWithNewType(Type::getInt1Ty(*Ctx));
-  mutateCallInst(CI, OC).changeReturnType(BoolTy, [=](IRBuilder<> &Builder,
-                                                      CallInst *NewCI) {
-    return Builder.CreateSelect(NewCI, Constant::getAllOnesValue(CI->getType()),
-                                Constant::getNullValue(CI->getType()));
-  });
+  mutateCallInst(CI, OC).changeReturnType(
+      BoolTy, [=](IRBuilder<> &Builder, CallInst *NewCI) {
+        Constant *ResultTrue =
+            CI->getType()->isVectorTy()
+                ? Constant::getAllOnesValue(CI->getType())
+                : Constant::getIntegerValue(CI->getType(), APInt(32, 1));
+        return Builder.CreateSelect(NewCI, ResultTrue,
+                                    Constant::getNullValue(CI->getType()));
+      });
 }
 
 void OCLToSPIRVBase::visitCallVecLoadStore(CallInst *CI, StringRef MangledName,
