@@ -3335,7 +3335,11 @@ bool SPIRVToLLVM::translate() {
     // Translate Compile Units first.
     if (EI->getExtOp() == SPIRVDebug::CompilationUnit)
       DbgTran->transDebugInst(EI);
+    // And Entry points first
+    if (EI->getExtOp() == SPIRVDebug::EntryPoint)
+      DbgTran->transDebugInst(EI);
   }
+
   // Then translate all debug instructions.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     DbgTran->transDebugInst(EI);
