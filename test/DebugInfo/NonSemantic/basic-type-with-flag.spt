@@ -48,7 +48,7 @@
 4 Constant 3 46 3
 4 Constant 3 47 136
 4 Constant 3 49 16
-4 Constant 3 56 131072
+4 Constant 3 56 131072 ;; FlagUnknownPhysicalLayout
 4 TypePointer 5 7 4
 4 TypeFunction 6 3 5
 4 TypePointer 10 7 5
