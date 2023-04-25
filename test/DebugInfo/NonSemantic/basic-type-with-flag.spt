@@ -49,6 +49,7 @@
 4 Constant 3 47 136
 4 Constant 3 49 16
 4 Constant 3 56 131072
+4 Constant 3 57 0
 4 TypePointer 5 7 4
 4 TypeFunction 6 3 5
 4 TypePointer 10 7 5
@@ -65,10 +66,10 @@
 9 ExtInst 13 29 2 DebugCompilationUnit 27 21 26 28
 9 ExtInst 13 33 2 DebugTypeBasic 30 31 32 56
 14 ExtInst 13 39 2 DebugTypeMember 36 33 26 37 21 34 21 31 38
-15 ExtInst 13 34 2 DebugTypeComposite 35 0 26 37 21 29 14 31 21 39
+15 ExtInst 13 34 2 DebugTypeComposite 35 57 26 37 21 29 14 31 21 39
 8 ExtInst 13 42 2 DebugTypePointer 34 41 21
 8 ExtInst 13 43 2 DebugTypeFunction 21 33 42
-16 ExtInst 13 48 2 DebugFunction 44 43 26 46 21 29 45 47 46 7 14
+15 ExtInst 13 48 2 DebugFunction 44 43 26 46 21 29 45 47 46 14
 9 ExtInst 13 50 2 DebugLexicalBlock 26 46 49 48
 13 ExtInst 13 52 2 DebugLocalVariable 51 42 26 46 21 48 21 1
 5 ExtInst 13 53 2 DebugExpression
@@ -77,6 +78,7 @@
 3 FunctionParameter 5 8
 
 2 Label 9
+7 ExtInst 13 58 2 DebugFunctionDefinition 48 7
 4 Variable 10 11 7
 4 Bitcast 10 12 11
 5 Store 12 8 2 8
