@@ -918,8 +918,7 @@ MDNode *SPIRVToLLVMDbgTran::transEntryPoint(const SPIRVExtInst *DebugInst) {
 
   using namespace SPIRVDebug::Operand::EntryPoint;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
-  const size_t NumOps = Ops.size();
-  assert(NumOps == OperandCount && "Invalid number of operands");
+  assert(Ops.size() == OperandCount && "Invalid number of operands");
 
   SPIRVExtInst *EP = BM->get<SPIRVExtInst>(Ops[EntryPointIdx]);
   return transFunction(EP, true /*IsMainSubprogram*/);
