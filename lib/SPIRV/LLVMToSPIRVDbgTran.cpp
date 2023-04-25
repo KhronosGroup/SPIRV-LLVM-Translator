@@ -1364,6 +1364,14 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgExpression(const DIExpression *Expr) {
 
 SPIRVEntry *
 LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
+  if (isNonSemanticDebugInfo())
+    return transDbgImportedEntryNonSemantic(IE);
+  return transDbgImportedEntryOpenCL(IE);
+}
+
+// FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
+SPIRVEntry *
+LLVMToSPIRVDbgTran::transDbgImportedEntryOpenCL(const DIImportedEntity *IE) {
   using namespace SPIRVDebug::Operand::ImportedEntity;
   SPIRVWordVec Ops(OperandCount);
   auto Tag = static_cast<dwarf::Tag>(IE->getTag());
@@ -1376,6 +1384,23 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   Ops[ParentIdx] = getScope(IE->getScope())->getId();
   if (isNonSemanticDebugInfo())
     transformToConstant(Ops, {TagIdx, LineIdx, ColumnIdx});
+  return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
+}
+
+SPIRVEntry *
+LLVMToSPIRVDbgTran::transDbgImportedEntryNonSemantic(
+    const DIImportedEntity *IE) {
+  using namespace SPIRVDebug::Operand::ImportedEntity::NonSemantic;
+  SPIRVWordVec Ops(OperandCount);
+  auto Tag = static_cast<dwarf::Tag>(IE->getTag());
+  Ops[NameIdx] = BM->getString(IE->getName().str())->getId();
+  Ops[TagIdx] = SPIRV::DbgImportedEntityMap::map(Tag);
+  Ops[SourceIdx] = getSource(IE->getFile())->getId();
+  Ops[EntityIdx] = transDbgEntry(IE->getEntity())->getId();
+  Ops[LineIdx] = IE->getLine();
+  Ops[ColumnIdx] = 0; // This version of DIImportedEntity has no column number
+  Ops[ParentIdx] = getScope(IE->getScope())->getId();
+  transformToConstant(Ops, {TagIdx, LineIdx, ColumnIdx});
   return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
 }
 
