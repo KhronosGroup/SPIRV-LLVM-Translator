@@ -1218,19 +1218,16 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
 
   if (isNonSemanticDebugInfo() &&
       (Func->isMainSubprogram() || IsEntryPointKernel))
-    transDbgEntryPoint(Func, DebugFunc);
+    [[maybe_unused]] SPIRVEntry *Inst = transDbgEntryPoint(Func, DebugFunc);
 
-  if (isNonSemanticDebugInfo())
-    transDbgFuncDefinition(FuncDef, DebugFunc);
+  if (isNonSemanticDebugInfo() && FuncDef)
+    [[maybe_unused]] SPIRVEntry *Inst = transDbgFuncDefinition(FuncDef, DebugFunc);
 
   return DebugFunc;
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFuncDefinition(SPIRVValue *FuncDef,
                                                        SPIRVEntry *DbgFunc) {
-  if (!isNonSemanticDebugInfo() || !FuncDef)
-    return nullptr;
-
   using namespace SPIRVDebug::Operand::FunctionDefinition;
   SPIRVWordVec Ops(OperandCount);
   Ops[FunctionIdx] = DbgFunc->getId();
@@ -1245,20 +1242,23 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFuncDefinition(SPIRVValue *FuncDef,
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryPoint(const DISubprogram *Func,
                                                    SPIRVEntry *DbgFunc) {
-  if (!isNonSemanticDebugInfo())
-    return nullptr;
-
-  SPIRVWordVec Ops(SPIRVDebug::Operand::EntryPoint::OperandCount);
+  using namespace SPIRVDebug::Operand::EntryPoint;
+  SPIRVWordVec Ops(OperandCount);
+  Ops[EntryPointIdx] = DbgFunc->getId();
 
   DICompileUnit *CU = Func->getUnit();
+  if (!CU) {
+    Ops[CompilationUnitIdx] = SPIRVCUMap.begin()->second->getId();
+    SPIRVWord EmptyStrIdx = BM->getString("")->getId();
+    Ops[CompilerSignatureIdx] = EmptyStrIdx;
+    Ops[CommandLineArgsIdx] = EmptyStrIdx;
+    return BM->addDebugInfo(SPIRVDebug::EntryPoint, getVoidTy(), Ops);
+  }
+
   StringRef Producer = CU->getProducer();
   StringRef Flags = CU->getFlags();
+  SPIRVEntry *CUVal = SPIRVCUMap[CU] ? SPIRVCUMap[CU] : getDebugInfoNone();
 
-  auto It = MDMap.find(CU);
-  SPIRVEntry *CUVal = It != MDMap.end() ? It->second : getDebugInfoNone();
-
-  using namespace SPIRVDebug::Operand::EntryPoint;
-  Ops[EntryPointIdx] = DbgFunc->getId();
   Ops[CompilationUnitIdx] = CUVal->getId();
   Ops[CompilerSignatureIdx] = BM->getString(Producer.str())->getId();
   Ops[CommandLineArgsIdx] = BM->getString(Flags.str())->getId();

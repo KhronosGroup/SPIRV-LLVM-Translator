@@ -879,6 +879,9 @@ inline bool hasDbgInstParentScopeIdx(const uint32_t Kind,
   case SPIRVDebug::Function:
     ParentScopeIdx = Function::ParentIdx;
     return true;
+  case SPIRVDebug::EntryPoint:
+    ParentScopeIdx = EntryPoint::CompilationUnitIdx;
+    return true;
   case SPIRVDebug::LexicalBlock:
     ParentScopeIdx = LexicalBlock::ParentIdx;
     return true;
