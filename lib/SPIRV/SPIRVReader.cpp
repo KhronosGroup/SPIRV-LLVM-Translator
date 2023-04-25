@@ -3330,13 +3330,16 @@ bool SPIRVToLLVM::translate() {
       transGlobalCtorDtors(BV);
   }
 
+  // Entry Points should be translated before all debug intrinsics.
+  for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    if (EI->getExtOp() == SPIRVDebug::EntryPoint)
+      DbgTran->transDebugInst(EI);
+  }
+
   // Compile unit might be needed during translation of debug intrinsics.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     // Translate Compile Units first.
     if (EI->getExtOp() == SPIRVDebug::CompilationUnit)
-      DbgTran->transDebugInst(EI);
-    // And Entry points first
-    if (EI->getExtOp() == SPIRVDebug::EntryPoint)
       DbgTran->transDebugInst(EI);
   }
 

@@ -103,7 +103,9 @@ private:
 
   MDNode *transDebugInlined(const SPIRVExtInst *Inst);
 
-  DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst);
+  DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst,
+                                      const std::string CompilerVersion = "",
+                                      const std::string Flags = "");
 
   DIBasicType *transTypeBasic(const SPIRVExtInst *DebugInst);
 

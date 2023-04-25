@@ -152,7 +152,14 @@ DIScope *SPIRVToLLVMDbgTran::getScope(const SPIRVEntry *ScopeInst) {
 }
 
 DICompileUnit *
-SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
+SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
+                                         const std::string CompilerVersion,
+                                         const std::string Flags) {
+  // Do nothing in case we have already translated the CU (e.g. during
+  // DebugEntryPoint translation)
+  if (BuilderMap[DebugInst->getId()])
+    return nullptr;
+
   const SPIRVWordVec &Ops = DebugInst->getArguments();
 
   using namespace SPIRVDebug::Operand::CompilationUnit;
@@ -177,18 +184,18 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
 
   if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_100) {
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
-        SourceLang, getFile(Ops[SourceIdx]), "spirv", false, "", 0);
+        SourceLang, getFile(Ops[SourceIdx]), CompilerVersion, false, Flags, 0);
   }
   if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
     StringRef Producer = getString(Ops[ProducerIdx]);
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
-        SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0);
+        SourceLang, getFile(Ops[SourceIdx]), Producer, false, Flags, 0);
   }
   // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
   // info by default
   auto Producer = findModuleProducer();
   return BuilderMap[DebugInst->getId()]->createCompileUnit(
-      SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0);
+      SourceLang, getFile(Ops[SourceIdx]), Producer, false, Flags, 0);
 }
 
 DIBasicType *SPIRVToLLVMDbgTran::transTypeBasic(const SPIRVExtInst *DebugInst) {
@@ -913,14 +920,17 @@ DINode *SPIRVToLLVMDbgTran::transFunctionDecl(const SPIRVExtInst *DebugInst) {
 }
 
 MDNode *SPIRVToLLVMDbgTran::transEntryPoint(const SPIRVExtInst *DebugInst) {
-  if (!isNonSemanticDebugInfo(DebugInst->getExtSetKind()))
-    return nullptr;
-
   using namespace SPIRVDebug::Operand::EntryPoint;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() == OperandCount && "Invalid number of operands");
 
   SPIRVExtInst *EP = BM->get<SPIRVExtInst>(Ops[EntryPointIdx]);
+  SPIRVExtInst *CU = BM->get<SPIRVExtInst>(Ops[CompilationUnitIdx]);
+  std::string Producer = getString(Ops[CompilerSignatureIdx]);
+  std::string CLArgs = getString(Ops[CommandLineArgsIdx]);
+
+  transCompilationUnit(CU, Producer, CLArgs);
+
   return transFunction(EP, true /*IsMainSubprogram*/);
 }
 
