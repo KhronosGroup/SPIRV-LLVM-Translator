@@ -546,6 +546,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgCompileUnit(const DICompileUnit *CU) {
   Ops[SPIRVDebugInfoVersionIdx] = SPIRVDebug::DebugInfoVersion;
   Ops[DWARFVersionIdx] = M->getDwarfVersion();
   Ops[SourceIdx] = getSource(CU)->getId();
+
+  genBuildIdentifierAndStoragePath(CU);
+
   auto DwarfLang =
       static_cast<llvm::dwarf::SourceLanguage>(CU->getSourceLanguage());
   Ops[LanguageIdx] =
@@ -1385,6 +1388,49 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
       BM->addDebugInfo(SPIRVDebug::Source, getVoidTy(), Ops));
   FileMap[FileName] = Source;
   return Source;
+}
+
+template <class T>
+void LLVMToSPIRVDbgTran::genBuildIdentifierAndStoragePath(const T *DIEntry) {
+  static bool generated=false;
+  static uint64_t firstDWOId{0};
+  static std::string firstPathString{""};
+
+  // get information from LLVM IR
+  auto DWOId = DIEntry->getDWOId();
+  const std::string PathString = DIEntry->getSplitDebugFilename().str();
+
+  if (generated) {
+    // Ensure new information matches previous information
+    if (DWOId!=firstDWOId)
+      report_fatal_error(llvm::Twine("Multiple BuildIdentifier values are not allowed: ") +
+                         llvm::Twine(firstDWOId) +
+                         llvm::Twine(" and ") +
+                         llvm::Twine(DWOId));
+    if (PathString!=firstPathString)
+      report_fatal_error(llvm::Twine("Multiple StoragePaths are not allowed: ") +
+                         llvm::Twine(firstPathString) +
+                         llvm::Twine(" and ") +
+                         llvm::Twine(PathString));
+
+    return;
+  }
+
+  // generate BuildIdentifier insn
+  SPIRVWordVec BuildIdentifierOps(SPIRVDebug::Operand::BuildIdentifier::OperandCount);
+  const std::string IdString = std::to_string(DWOId);
+  BuildIdentifierOps[SPIRVDebug::Operand::BuildIdentifier::IdentifierIdx] = BM->getString(IdString)->getId();
+  BuildIdentifierOps[SPIRVDebug::Operand::BuildIdentifier::FlagsIdx] = BM->getLiteralAsConstant(1)->getId(); // Placeholder value for now
+  BM->addDebugInfo(SPIRVDebug::BuildIdentifier, getVoidTy(), BuildIdentifierOps);
+
+  // generate StoragePath insn
+  SPIRVWordVec StoragePathOps(SPIRVDebug::Operand::StoragePath::OperandCount);
+  StoragePathOps[SPIRVDebug::Operand::StoragePath::PathIdx] = BM->getString(PathString)->getId();
+  BM->addDebugInfo(SPIRVDebug::StoragePath, getVoidTy(), StoragePathOps);
+
+  generated=true;
+  firstDWOId = DWOId;
+  firstPathString.assign(PathString);
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFileType(const DIFile *F) {

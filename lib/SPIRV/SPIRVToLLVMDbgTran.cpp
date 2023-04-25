@@ -217,6 +217,14 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
   // info by default
   auto Producer = findModuleProducer();
+  auto [BuildIdentifier, StoragePath] = getBuildIdentifierAndStoragePath();
+
+ if (!StoragePath.empty()) {
+   return BuilderMap[DebugInst->getId()]->createCompileUnit(
+              SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0,
+              StoragePath, DICompileUnit::DebugEmissionKind::FullDebug, BuildIdentifier);
+ }
+
   return BuilderMap[DebugInst->getId()]->createCompileUnit(
       SourceLang, getFile(Ops[SourceIdx]), Producer, false, Flags, 0);
 }
@@ -1341,9 +1349,11 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   case SPIRVDebug::ModuleINTEL:
     return transModule(DebugInst);
 
-  case SPIRVDebug::Operation: // To be translated with transExpression
-  case SPIRVDebug::Source:    // To be used by other instructions
-  case SPIRVDebug::SourceContinued:
+  case SPIRVDebug::Operation:       // To be translated with transExpression
+  case SPIRVDebug::Source:          // To be used by other instructions
+  case SPIRVDebug::SourceContinued:        
+  case SPIRVDebug::BuildIdentifier: // To be used by transCompilationUnit
+  case SPIRVDebug::StoragePath:     // To be used by transCompilationUnit
     return nullptr;
 
   case SPIRVDebug::Expression:
@@ -1490,6 +1500,55 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
 
   return getDIFile(getString(SourceArgs[FileIdx]), std::nullopt,
                    getStringContinued(SourceArgs[TextIdx], Source));
+}
+
+std::tuple<uint64_t, const std::string &> SPIRVToLLVMDbgTran::getBuildIdentifierAndStoragePath() {
+  bool                foundBuildIdentifier{false};
+  bool                foundStoragePath{false};
+  static uint64_t     buildIdentifier=0;
+  static std::string  storagePath{""};
+  static bool  initialized=false;
+
+  if (!initialized)
+    for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
+      if (EI->getExtOp() == SPIRVDebug::BuildIdentifier) {
+        using namespace SPIRVDebug::Operand::BuildIdentifier;
+        SPIRVWordVec BuildIdentifierArgs = EI->getArguments();
+        assert(BuildIdentifierArgs.size() == OperandCount && "Invalid number of operands");
+        auto newBuildIdentifier = strtoull(getString(BuildIdentifierArgs[IdentifierIdx]).c_str(),NULL,10);
+
+        if (foundBuildIdentifier &&
+            buildIdentifier!=newBuildIdentifier) {
+          report_fatal_error(llvm::Twine("Multiple BuildIdentifier values are not allowed: ") +
+                             llvm::Twine(buildIdentifier) +
+                             llvm::Twine(" and ") +
+                             llvm::Twine(newBuildIdentifier));
+        }
+        buildIdentifier=newBuildIdentifier;
+        foundBuildIdentifier=true;
+      } else if (EI->getExtOp() == SPIRVDebug::StoragePath) {
+        using namespace SPIRVDebug::Operand::StoragePath;
+        SPIRVWordVec StoragePathArgs = EI->getArguments();
+        assert(StoragePathArgs.size() == OperandCount && "Invalid number of operands");
+        auto newStoragePath = getString(StoragePathArgs[PathIdx]);
+
+        if (!newStoragePath.empty()) {
+          if (foundStoragePath) {
+            if (storagePath!=newStoragePath)
+              report_fatal_error(llvm::Twine("Multiple StoragePaths are not allowed: ") +
+                                 llvm::Twine(storagePath) +
+                                 llvm::Twine(" and ") +
+                                 llvm::Twine(newStoragePath));
+          } else {
+            storagePath.assign(newStoragePath);
+            foundStoragePath=true;
+          }
+        }
+      }
+    }
+
+  initialized=true;
+  return {buildIdentifier, storagePath};
 }
 
 DIBuilder &SPIRVToLLVMDbgTran::getDIBuilder(const SPIRVExtInst *DebugInst) {

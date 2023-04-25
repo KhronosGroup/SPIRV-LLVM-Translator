@@ -146,6 +146,9 @@ private:
   template <class T> SPIRVExtInst *getSource(const T *DIEntry);
   SPIRVEntry *transDbgFileType(const DIFile *F);
 
+  // Split Debug information
+  template <class T> void genBuildIdentifierAndStoragePath(const T *DIEntry);
+
   // Local Variables
   SPIRVEntry *transDbgLocalVariable(const DILocalVariable *Var);
 
