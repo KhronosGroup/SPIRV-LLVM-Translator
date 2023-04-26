@@ -1217,11 +1217,11 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFunction(const DISubprogram *Func) {
   }
 
   if (isNonSemanticDebugInfo() &&
-      (Func->isMainSubprogram() || IsEntryPointKernel))
-    [[maybe_unused]] SPIRVEntry *Inst = transDbgEntryPoint(Func, DebugFunc);
+      (Func->isMainSubprogram() || IsEntryPointKernel)) [[maybe_unused]]
+    SPIRVEntry *Inst = transDbgEntryPoint(Func, DebugFunc);
 
-  if (isNonSemanticDebugInfo() && FuncDef)
-    [[maybe_unused]] SPIRVEntry *Inst = transDbgFuncDefinition(FuncDef, DebugFunc);
+  if (isNonSemanticDebugInfo() && FuncDef) [[maybe_unused]]
+    SPIRVEntry *Inst = transDbgFuncDefinition(FuncDef, DebugFunc);
 
   return DebugFunc;
 }

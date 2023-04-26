@@ -41,5 +41,7 @@ void kernel k() {
 // CHECK-SPIRV: DebugFunctionDefinition [[#FuncK]] [[#k_id]]
 // CHECK-LLVM: define spir_kernel void @k() #{{[0-9]+}} !dbg ![[#k_id:]]
 
-// CHECK-LLVM: ![[#foo_id]] = distinct !DISubprogram(name: "foo", {{.*}} spFlags: DISPFlagDefinition,
-// CHECK-LLVM: ![[#k_id]] = distinct !DISubprogram(name: "k", {{.*}} spFlags: DISPFlagDefinition | DISPFlagMainSubprogram,
+// CHECK-LLVM: ![[#foo_id]] = distinct !DISubprogram(name: "foo"
+// CHECK-LLVM-SAME: spFlags: DISPFlagDefinition,
+// CHECK-LLVM: ![[#k_id]] = distinct !DISubprogram(name: "k"
+// CHECK-LLVM-SAME: spFlags: DISPFlagDefinition | DISPFlagMainSubprogram,
