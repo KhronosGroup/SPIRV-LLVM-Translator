@@ -20,8 +20,9 @@
 ; Check that we don't produce "producer" info for NonSemantic.Shader.DebugInfo.100 as it's not specification conformant
 ; RUN: llvm-spirv %t.bc --spirv-debug-info-version=nonsemantic-shader-100 -spirv-text -o %t.spt
 ; RUN: FileCheck %s --input-file %t.spt --check-prefix CHECK-SPIRV-100
-; RUN: llvm-spirv -spirv-text -r --opaque-pointers %t.spt -o %t.rev.bc
-; RUN: llvm-dis -opaque-pointers %t.rev.bc -o - | FileCheck %s --check-prefix CHECK-LLVM-100
+; RUN: llvm-spirv %t.bc --spirv-debug-info-version=nonsemantic-shader-100 -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix CHECK-LLVM-100
 
 ; ModuleID = 's.bc'
 source_filename = "s.cpp"
