@@ -1368,8 +1368,8 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   auto Tag = static_cast<dwarf::Tag>(IE->getTag());
   // FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
   // It's W/A for missing 2nd index in OpenCL's implementation
-  const SPIRVWord OffsetIdx = isNonSemanticDebugInfo()
-    ? OperandCount - NonSemantic::OperandCount : 0;
+  const SPIRVWord OffsetIdx =
+      isNonSemanticDebugInfo() ? OperandCount - NonSemantic::OperandCount : 0;
   SPIRVWordVec Ops(OperandCount - OffsetIdx);
   Ops[NameIdx] = BM->getString(IE->getName().str())->getId();
   Ops[TagIdx] = SPIRV::DbgImportedEntityMap::map(Tag);
@@ -1380,8 +1380,8 @@ LLVMToSPIRVDbgTran::transDbgImportedEntry(const DIImportedEntity *IE) {
   Ops[ColumnIdx - OffsetIdx] = 0;
   Ops[ParentIdx - OffsetIdx] = getScope(IE->getScope())->getId();
   if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, {TagIdx, LineIdx - OffsetIdx,
-                              ColumnIdx - OffsetIdx});
+    transformToConstant(Ops,
+                        {TagIdx, LineIdx - OffsetIdx, ColumnIdx - OffsetIdx});
   return BM->addDebugInfo(SPIRVDebug::ImportedEntity, getVoidTy(), Ops);
 }
 

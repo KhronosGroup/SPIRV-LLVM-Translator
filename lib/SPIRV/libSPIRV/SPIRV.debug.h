@@ -832,7 +832,7 @@ enum {
   ParentIdx    = 7,
   OperandCount = 8
 };
-}
+} // OpenCL
 namespace NonSemantic {
 enum {
   NameIdx      = 0,
@@ -844,8 +844,8 @@ enum {
   ParentIdx    = 6,
   OperandCount = 7
 };
-}
-}
+} // NonSemantic
+} // ImportedEntity
 
 namespace ModuleINTEL {
 enum {

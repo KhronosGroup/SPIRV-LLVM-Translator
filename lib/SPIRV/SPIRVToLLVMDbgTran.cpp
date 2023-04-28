@@ -1105,7 +1105,8 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   // FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
   // It's W/A for missing 2nd index in OpenCL's implementation
   const SPIRVWord OffsetIdx = isNonSemanticDebugInfo(DebugInst->getExtSetKind())
-    ? OperandCount - NonSemantic::OperandCount : 0;
+                                  ? OperandCount - NonSemantic::OperandCount
+                                  : 0;
 
   assert(Ops.size() >= (OperandCount - OffsetIdx) &&
          "Invalid number of operands");
@@ -1113,8 +1114,8 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   SPIRVWord Line = getConstantValueOrLiteral(Ops, LineIdx - OffsetIdx,
                                              DebugInst->getExtSetKind());
   DIFile *File = getFile(Ops[SourceIdx - OffsetIdx]);
-  auto *Entity = transDebugInst<DINode>(
-      BM->get<SPIRVExtInst>(Ops[EntityIdx - OffsetIdx]));
+  auto *Entity =
+      transDebugInst<DINode>(BM->get<SPIRVExtInst>(Ops[EntityIdx - OffsetIdx]));
   SPIRVWord Tag =
       getConstantValueOrLiteral(Ops, TagIdx, DebugInst->getExtSetKind());
   if (Tag == SPIRVDebug::ImportedModule) {
