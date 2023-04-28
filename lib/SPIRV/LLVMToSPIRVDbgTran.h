@@ -152,10 +152,7 @@ private:
   SPIRVEntry *transDbgExpression(const DIExpression *Expr);
 
   // Imported declarations and modules
-  // FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
   SPIRVEntry *transDbgImportedEntry(const DIImportedEntity *IE);
-  SPIRVEntry *transDbgImportedEntryOpenCL(const DIImportedEntity *IE);
-  SPIRVEntry *transDbgImportedEntryNonSemantic(const DIImportedEntity *IE);
 
   // A module in programming language. Example - Fortran module, clang module.
   SPIRVEntry *transDbgModule(const DIModule *IE);
