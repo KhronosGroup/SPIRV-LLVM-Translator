@@ -1143,6 +1143,7 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   }
   llvm_unreachable("Unexpected kind of imported entity!");
 }
+
 DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::ModuleINTEL;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
