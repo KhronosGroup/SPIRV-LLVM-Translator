@@ -254,6 +254,19 @@ static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
              "instruction from OpenCL extended instruction set"),
     cl::init(true));
 
+static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
+    "spirv-builtin-format", cl::desc("Set SPIRV builtin format:"),
+    cl::init(SPIRV::BuiltinFormat::Auto),
+    cl::values(
+        clEnumValN(SPIRV::BuiltinFormat::Function, "function",
+                   "Use functions to represent builtins"),
+        clEnumValN(SPIRV::BuiltinFormat::Global, "global",
+                   "Use globals to represent builtins"),
+        clEnumValN(
+            SPIRV::BuiltinFormat::Auto, "auto",
+            "Automatically choose a builtin format. For forward translation, "
+            "globals are used. For reverse translation, functions are used.")));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -707,6 +720,11 @@ int main(int Ac, char **Av) {
   }
 
   Opts.setFPContractMode(FPCMode);
+  if (SPIRVBuiltinFormat == SPIRV::BuiltinFormat::Auto)
+    Opts.setBuiltinFormat(IsReverse ? SPIRV::BuiltinFormat::Function
+                                    : SPIRV::BuiltinFormat::Global);
+  else
+    Opts.setBuiltinFormat(SPIRVBuiltinFormat);
 
   if (SPIRVMemToReg)
     Opts.setMemToRegEnabled(SPIRVMemToReg);
