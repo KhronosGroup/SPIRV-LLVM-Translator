@@ -1108,7 +1108,7 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
                                   ? OperandCount - NonSemantic::OperandCount
                                   : 0;
 
-  assert(Ops.size() >= (OperandCount - OffsetIdx) &&
+  assert(Ops.size() == (OperandCount - OffsetIdx) &&
          "Invalid number of operands");
   DIScope *Scope = getScope(BM->getEntry(Ops[ParentIdx - OffsetIdx]));
   SPIRVWord Line = getConstantValueOrLiteral(Ops, LineIdx - OffsetIdx,
