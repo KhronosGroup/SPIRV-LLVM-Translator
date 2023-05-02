@@ -47,12 +47,12 @@ attributes #0 = { noinline norecurse nounwind optnone "correctly-rounded-divide-
 !llvm.ident = !{!7}
 
 ; CHECK-LLVM-200: !DICompileUnit
-; CHECK-LLVM-200-SAME: producer: "clang{{.*}}version{{.*}}13.0.0
+; CHECK-LLVM-200-SAME: producer: "clang version 13.0.0
 ; CHECK-LLVM-200-SAME: flags: "-O2"
 ; CHECK-LLVM-200-NOT: producer: "spirv"
 
 ; CHECK-LLVM-100: !DICompileUnit
-; CHECK-LLVM-100-SAME: producer: "clang{{.*}}version{{.*}}13.0.0
+; CHECK-LLVM-100-SAME: producer: "clang version 13.0.0
 ; CHECK-LLVM-100-SAME: flags: "-O2"
 
 ; CHECK-SPIRV-200: String [[#ProducerId:]] "clang version 13.0.0 (https://github.com/llvm/llvm-project.git 16a50c9e642fd085e5ceb68c403b71b5b2e0607c)"
