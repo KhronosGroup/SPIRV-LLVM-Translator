@@ -159,10 +159,18 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
   M->addModuleFlag(llvm::Module::Max, "Dwarf Version", DWARFVersion);
   SPIRVWord SourceLang =
       getConstantValueOrLiteral(Ops, LanguageIdx, DebugInst->getExtSetKind());
-  if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+  if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
     SourceLang = convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(SourceLang);
-  else
+  } else if (isSPIRVSourceLangValid(SourceLang)) {
     SourceLang = convertSPIRVSourceLangToDWARF(SourceLang);
+  } else {
+    // Some SPIR-V producers generate invalid source language value. In such
+    // case the original value should be preserved in "Source Lang Literal"
+    // module flag for later use by LLVM IR consumers.
+    M->addModuleFlag(llvm::Module::Warning, "Source Lang Literal", SourceLang);
+    SourceLang = dwarf::DW_LANG_OpenCL;
+  }
+
   auto Producer = findModuleProducer();
   return Builder.createCompileUnit(SourceLang, getFile(Ops[SourceIdx]),
                                    Producer, false, "", 0);
