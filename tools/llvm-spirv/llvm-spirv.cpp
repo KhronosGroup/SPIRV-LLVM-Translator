@@ -255,7 +255,7 @@ static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
     cl::init(true));
 
 static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
-    "spirv-builtin-format", cl::desc("Set SPIRV builtin format:"),
+    "spirv-builtin-format", cl::desc("Set SPIR-V builtin format:"),
     cl::init(SPIRV::BuiltinFormat::Auto),
     cl::values(
         clEnumValN(SPIRV::BuiltinFormat::Function, "function",
