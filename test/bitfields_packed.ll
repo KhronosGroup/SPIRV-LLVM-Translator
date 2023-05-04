@@ -1,10 +1,12 @@
 ; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %t.bc
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %t.bc
 ; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 %t.bc -o %t.spv
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 %t.spv -o %t.spt --to-text
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 -r -emit-opaque-pointers %t.spv -o %t.bc
-; RUN: llvm-dis %t.bc -o %t.ll
+; RUN: llvm-spirv %t.spv -o %t.spt --to-text
+; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t_1.bc
+; RUN: llvm-dis %t_1.bc -o %t_1.ll
 ; RUN: FileCheck %s --input-file %t.spt -check-prefix=CHECK-SPIRV
-; RUN: FileCheck %s --input-file %t.ll  -check-prefix=CHECK-LLVM
+; RUN: FileCheck %s --input-file %t_1.ll  -check-prefix=CHECK-LLVM
 ; RUN: spirv-val %t.spv
 
 ;CHECK-SPIRV: String [[#A:]] "a"
