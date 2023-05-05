@@ -1632,8 +1632,9 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
 // Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
 // instructions
 template <typename AliasingInstType>
-SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddMemAliasingINTELInst(std::vector<SPIRVId> Args,
+                                              llvm::MDNode *MD) {
   assert(MD && "noalias/alias.scope metadata can't be null");
   // Don't duplicate aliasing instruction. For that use a map with a MDNode key
   if (AliasInstMDMap.find(MD) != AliasInstMDMap.end())
@@ -1644,20 +1645,23 @@ SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
 }
 
 // Create AliasDomainDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                                  llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasDomainDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                                 llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeListDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                                     llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeListDeclINTEL>(Args, MD);
 }
 
@@ -1869,7 +1873,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   }
 
   if (M.isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_memory_access_aliasing)) {
+          ExtensionID::SPV_INTEL_memory_access_aliasing)) {
     O << SPIRVNL() << MI.AliasInstMDVec;
   }
 
@@ -1894,8 +1898,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
                      }),
       MI.DebugInstVec.end());
 
-  O << SPIRVNL() << MI.DebugInstVec << SPIRVNL()
-    << MI.FuncVec;
+  O << SPIRVNL() << MI.DebugInstVec << SPIRVNL() << MI.FuncVec;
   return O;
 }
 
