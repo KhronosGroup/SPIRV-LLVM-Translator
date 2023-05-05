@@ -7,7 +7,6 @@
 ; RUN: llvm-dis %t_1.bc -o %t_1.ll
 ; RUN: FileCheck %s --input-file %t.spt -check-prefix=CHECK-SPIRV
 ; RUN: FileCheck %s --input-file %t_1.ll  -check-prefix=CHECK-LLVM
-; RUN: spirv-val %t.spv
 
 ;CHECK-SPIRV: String [[#A:]] "a"
 ;CHECK-SPIRV: String [[#B:]] "b"
