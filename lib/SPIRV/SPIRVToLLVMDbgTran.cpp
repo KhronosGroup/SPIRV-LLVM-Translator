@@ -77,14 +77,21 @@ void SPIRVToLLVMDbgTran::addDbgInfoVersion() {
 
 DIFile *
 SPIRVToLLVMDbgTran::getDIFile(const std::string &FileName,
-                              Optional<DIFile::ChecksumInfo<StringRef>> CS) {
+                              Optional<DIFile::ChecksumInfo<StringRef>> CS,
+                              Optional<std::string> Source) {
   return getOrInsert(FileMap, FileName, [=]() {
     SplitFileName Split(FileName);
     // Use the first builder from the map to crete DIFile since it's
     // relations with other debug metadata is not going through DICompileUnit
-    if (!Split.BaseName.empty())
+    if (!Split.BaseName.empty()) {
+      if (Source.hasValue()) {
+        StringRef SourceRef = StringRef(Source.getValue());
+        return BuilderMap.begin()->second->createFile(
+            Split.BaseName, Split.Path, CS, SourceRef);
+      }
       return BuilderMap.begin()->second->createFile(Split.BaseName, Split.Path,
                                                     CS);
+    }
     return static_cast<DIFile *>(nullptr);
   });
 }
@@ -132,6 +139,19 @@ const std::string &SPIRVToLLVMDbgTran::getString(const SPIRVId Id) {
   SPIRVString *String = BM->get<SPIRVString>(Id);
   assert(String && "Invalid string");
   return String->getStr();
+}
+
+Optional<std::string>
+SPIRVToLLVMDbgTran::getStringContinued(const SPIRVId Id,
+                                       SPIRVExtInst *DebugInst) {
+  std::string Str = BM->get<SPIRVString>(Id)->getStr();
+  using namespace SPIRVDebug::Operand::SourceContinued;
+  for (auto *I : DebugInst->getContinuedInstructions()) {
+    std::string TmpStr =
+        BM->get<SPIRVString>(I->getArguments()[TextIdx])->getStr();
+    Str.append(TmpStr);
+  }
+  return Str;
 }
 
 void SPIRVToLLVMDbgTran::transDbgInfo(const SPIRVValue *SV, Value *V) {
@@ -1327,6 +1347,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
 
   case SPIRVDebug::Operation: // To be translated with transExpression
   case SPIRVDebug::Source:    // To be used by other instructions
+  case SPIRVDebug::SourceContinued:
     return nullptr;
 
   case SPIRVDebug::Expression:
@@ -1458,12 +1479,21 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
   assert(Source->getExtOp() == SPIRVDebug::Source &&
          "DebugSource instruction is expected");
   SPIRVWordVec SourceArgs = Source->getArguments();
-  assert(SourceArgs.size() == OperandCount && "Invalid number of operands");
-  std::string ChecksumStr =
-      getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
-          ? ""
-          : getString(SourceArgs[TextIdx]);
-  return getDIFile(getString(SourceArgs[FileIdx]), ParseChecksum(ChecksumStr));
+  assert(SourceArgs.size() >= MinOperandCount && "Invalid number of operands");
+  if (SourceArgs.size() == MinOperandCount)
+    return getDIFile(getString(SourceArgs[FileIdx]));
+
+  if (!isNonSemanticDebugInfo(Source->getExtSetKind())) {
+    std::string ChecksumStr =
+        getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
+            ? ""
+            : getString(SourceArgs[TextIdx]);
+    return getDIFile(getString(SourceArgs[FileIdx]),
+                     ParseChecksum(ChecksumStr));
+  }
+
+  return getDIFile(getString(SourceArgs[FileIdx]), None,
+                   getStringContinued(SourceArgs[TextIdx], Source));
 }
 
 DIBuilder &SPIRVToLLVMDbgTran::getDIBuilder(const SPIRVExtInst *DebugInst) {
