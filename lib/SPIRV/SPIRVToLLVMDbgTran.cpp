@@ -136,8 +136,10 @@ const std::string &SPIRVToLLVMDbgTran::getString(const SPIRVId Id) {
 }
 
 const std::string
-SPIRVToLLVMDbgTran::getStringContinued(const SPIRVId Id,
-                                       SPIRVExtInst *DebugInst) {
+SPIRVToLLVMDbgTran::getStringSourceContinued(const SPIRVId Id,
+                                             SPIRVExtInst *DebugInst) {
+  if (!isValidId(Id))
+    return "";
   std::string Str = BM->get<SPIRVString>(Id)->getStr();
   using namespace SPIRVDebug::Operand::SourceContinued;
   for (auto *I : DebugInst->getContinuedInstructions()) {
@@ -1486,8 +1488,24 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
                      ParseChecksum(ChecksumStr));
   }
 
-  return getDIFile(getString(SourceArgs[FileIdx]), std::nullopt,
-                   getStringContinued(SourceArgs[TextIdx], Source));
+  std::optional<DIFile::ChecksumInfo<StringRef>> CS;
+  SPIRVWord StrIdx = SourceArgs[TextIdx];
+  if (Source->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+    auto KindStr = getString(SourceArgs[ChecksumKind]);
+    StringRef Checksum = getString(SourceArgs[ChecksumValue]);
+    if (auto Kind = DIFile::getChecksumKind(KindStr)) {
+      size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
+      CS.emplace(Kind.value(), Checksum.substr(0, ChecksumEndPos));
+    }
+
+    if (SourceArgs.size() == MaxOperandCount)
+      StrIdx = SourceArgs[TextNonSemIdx];
+    else
+      StrIdx = SPIRVID_INVALID;
+  }
+
+  return getDIFile(getString(SourceArgs[FileIdx]), CS,
+                   getStringSourceContinued(StrIdx, Source));
 }
 
 DIBuilder &SPIRVToLLVMDbgTran::getDIBuilder(const SPIRVExtInst *DebugInst) {

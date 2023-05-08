@@ -305,7 +305,12 @@ namespace Source {
 enum {
   FileIdx         = 0,
   TextIdx         = 1,
-  MinOperandCount = 1
+  // For NonSemantic.Shader.DebugInfo.200
+  ChecksumKind    = 1,
+  ChecksumValue   = 2,
+  TextNonSemIdx   = 3,
+  MinOperandCount = 1,
+  MaxOperandCount = 4
 };
 }
 
