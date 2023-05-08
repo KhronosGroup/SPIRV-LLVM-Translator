@@ -5063,7 +5063,7 @@ bool LLVMToSPIRVBase::translate() {
   if (isEmptyLLVMModule(M))
     BM->addCapability(CapabilityLinkage);
 
-  if (!lowerBuiltins(BM, M))
+  if (!lowerBuiltinCallsToVariables(M))
     return false;
 
   // Use the type scavenger to recover pointer element types.

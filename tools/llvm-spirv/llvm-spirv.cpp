@@ -255,17 +255,14 @@ static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
     cl::init(true));
 
 static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
-    "spirv-builtin-format", cl::desc("Set SPIR-V builtin format:"),
-    cl::init(SPIRV::BuiltinFormat::Auto),
+    "spirv-builtin-format",
+    cl::desc("Set LLVM-IR representation of SPIR-V builtin variables:"),
+    cl::init(SPIRV::BuiltinFormat::Function),
     cl::values(
         clEnumValN(SPIRV::BuiltinFormat::Function, "function",
-                   "Use functions to represent builtins"),
+                   "Use functions to represent SPIR-V builtin variables"),
         clEnumValN(SPIRV::BuiltinFormat::Global, "global",
-                   "Use globals to represent builtins"),
-        clEnumValN(
-            SPIRV::BuiltinFormat::Auto, "auto",
-            "Automatically choose a builtin format. For forward translation, "
-            "globals are used. For reverse translation, functions are used.")));
+                   "Use globals to represent SPIR-V builtin variables")));
 
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
@@ -720,11 +717,15 @@ int main(int Ac, char **Av) {
   }
 
   Opts.setFPContractMode(FPCMode);
-  if (SPIRVBuiltinFormat == SPIRV::BuiltinFormat::Auto)
-    Opts.setBuiltinFormat(IsReverse ? SPIRV::BuiltinFormat::Function
-                                    : SPIRV::BuiltinFormat::Global);
-  else
-    Opts.setBuiltinFormat(SPIRVBuiltinFormat);
+
+  if (SPIRVBuiltinFormat.getNumOccurrences() != 0) {
+    if (!IsReverse) {
+      errs() << "Note: --spirv-builtin-format option ignored as it only "
+                "affects translation from SPIR-V to LLVM IR";
+    } else {
+      Opts.setBuiltinFormat(SPIRVBuiltinFormat);
+    }
+  }
 
   if (SPIRVMemToReg)
     Opts.setMemToRegEnabled(SPIRVMemToReg);

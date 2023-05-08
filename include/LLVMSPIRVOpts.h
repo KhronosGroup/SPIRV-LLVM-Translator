@@ -87,7 +87,7 @@ enum class DebugInfoEIS : uint32_t {
   NonSemantic_Shader_DebugInfo_200
 };
 
-enum class BuiltinFormat : uint32_t { Function, Global, Auto };
+enum class BuiltinFormat : uint32_t { Function, Global };
 
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
@@ -249,7 +249,7 @@ private:
 
   bool PreserveAuxData = false;
 
-  BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Auto;
+  BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Function;
 };
 
 } // namespace SPIRV

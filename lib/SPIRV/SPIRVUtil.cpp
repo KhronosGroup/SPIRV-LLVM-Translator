@@ -2164,7 +2164,6 @@ bool lowerBuiltinCallsToVariables(Module *M) {
 
 bool lowerBuiltins(SPIRVModule *BM, Module *M) {
   auto Format = BM->getBuiltinFormat();
-  assert(Format != BuiltinFormat::Auto);
   if (Format == BuiltinFormat::Function && !lowerBuiltinVariablesToCalls(M))
     return false;
   if (Format == BuiltinFormat::Global && !lowerBuiltinCallsToVariables(M))
