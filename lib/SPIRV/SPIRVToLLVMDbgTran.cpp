@@ -123,12 +123,19 @@ SPIRVToLLVMDbgTran::transCompileUnit(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::CompilationUnit;
   assert(Ops.size() == OperandCount && "Invalid number of operands");
   M->addModuleFlag(llvm::Module::Max, "Dwarf Version", Ops[DWARFVersionIdx]);
-  SPIRVExtInst *Source = BM->get<SPIRVExtInst>(Ops[SourceIdx]);
-  SPIRVId FileId = Source->getArguments()[SPIRVDebug::Operand::Source::FileIdx];
-  std::string File = getString(FileId);
-  unsigned SourceLang = convertSPIRVSourceLangToDWARF(Ops[LanguageIdx]);
+  SPIRVWord SourceLang = Ops[LanguageIdx];
+  if (isSPIRVSourceLangValid(SourceLang)) {
+    SourceLang = convertSPIRVSourceLangToDWARF(SourceLang);
+  } else {
+    // Some SPIR-V producers generate invalid source language value. In such
+    // case the original value should be preserved in "Source Lang Literal"
+    // module flag for later use by LLVM IR consumers.
+    M->addModuleFlag(llvm::Module::Warning, "Source Lang Literal", SourceLang);
+    SourceLang = dwarf::DW_LANG_OpenCL;
+  }
+
   auto Producer = findModuleProducer();
-  CU = Builder.createCompileUnit(SourceLang, getDIFile(File), Producer, false,
+  CU = Builder.createCompileUnit(SourceLang, getFile(Ops[SourceIdx]), Producer, false,
                                  "", 0);
   return CU;
 }
