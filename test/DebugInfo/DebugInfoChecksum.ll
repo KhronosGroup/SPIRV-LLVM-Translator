@@ -51,8 +51,10 @@ attributes #0 = { noinline norecurse nounwind optnone "correctly-rounded-divide-
 ; CHECK-SPIRV-OCL: String [[#REG:]] "//__CSK_MD5:7bb56387968a9caa6e9e35fff94eaf7b"
 ; CHECK-SPIRV-OCL: DebugSource [[#]] [[#REG]]
 
-; CHECK-SPIRV-200: String [[#Kind:]] "CSK_MD5"
+; 0 means MD5
 ; CHECK-SPIRV-200: String [[#Val:]] "7bb56387968a9caa6e9e35fff94eaf7b"
+; CHECK-SPIRV-200: TypeInt [[#TypeInt32:]] 32
+; CHECK-SPIRV-200: Constant [[#TypeInt32]] [[#Kind:]] 0
 ; CHECK-SPIRV-200: DebugSource [[#]] [[#Kind]] [[#Val]]
 
 !0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !1, producer: "clang version 13.0.0 (https://github.com/llvm/llvm-project.git 7d09e1d7cf27ce781e83f9d388a7a3e1e6487ead)", isOptimized: true, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: None)

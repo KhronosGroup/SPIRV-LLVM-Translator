@@ -1491,11 +1491,15 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
   std::optional<DIFile::ChecksumInfo<StringRef>> CS;
   SPIRVWord StrIdx = SourceArgs[TextIdx];
   if (Source->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
-    auto KindStr = getString(SourceArgs[ChecksumKind]);
-    StringRef Checksum = getString(SourceArgs[ChecksumValue]);
-    if (auto Kind = DIFile::getChecksumKind(KindStr)) {
+    if (!getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[ChecksumKind]) &&
+        !getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[ChecksumValue])) {
+      llvm::DIFile::ChecksumKind Kind = SPIRV::DbgChecksumKindMap::rmap(
+          static_cast<SPIRVDebug::FileChecksumKind>(
+              BM->get<SPIRVConstant>(SourceArgs[ChecksumKind])
+                  ->getZExtIntValue()));
+      StringRef Checksum = getString(SourceArgs[ChecksumValue]);
       size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
-      CS.emplace(Kind.value(), Checksum.substr(0, ChecksumEndPos));
+      CS.emplace(Kind, Checksum.substr(0, ChecksumEndPos));
     }
 
     if (SourceArgs.size() == MaxOperandCount)

@@ -26,9 +26,11 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-OCL: DebugSource
 ; CHECK-SPIRV-OCL-SAME: [[#ChecksumInfo]]
 
-; CHECK-SPIRV-200: String [[#Kind:]] "CSK_MD5"
 ; CHECK-SPIRV-200: String [[#Val:]] "7768106c1e51aa084de0ffae6fbe50c4"
 ; CHECK-SPIRV-200: String [[#Source:]] "int main() {}"
+; CHECK-SPIRV-200: TypeInt [[#TypeInt32:]] 32
+; 0 means MD5
+; CHECK-SPIRV-200: Constant [[#TypeInt32]] [[#Kind:]] 0
 ; CHECK-SPIRV-200: DebugSource [[#]] [[#Kind]] [[#Val]] [[#Source]]
 
 !0 = !{i32 2, !"Debug Info Version", i32 3}

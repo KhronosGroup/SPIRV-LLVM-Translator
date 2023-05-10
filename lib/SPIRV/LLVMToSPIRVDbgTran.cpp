@@ -1356,7 +1356,13 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
                         ->getId());
     else if (BM->getDebugInfoEIS() ==
              SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
-      Ops.push_back(BM->getString(CheckSum.getKindAsString().str())->getId());
+      SPIRVDebug::FileChecksumKind ChecksumKind =
+          SPIRV::DbgChecksumKindMap::map(CheckSum.Kind);
+
+      Ops.push_back(
+          BM->addIntegerConstant(static_cast<SPIRVTypeInt *>(getInt32Ty()),
+                                 ChecksumKind)
+              ->getId());
       Ops.push_back(BM->getString(CheckSum.Value.str())->getId());
     }
   }
