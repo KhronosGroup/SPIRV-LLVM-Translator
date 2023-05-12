@@ -44,8 +44,8 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/DebugLoc.h"
 
-#include <unordered_map>
 #include <tuple>
+#include <unordered_map>
 
 namespace llvm {
 class Module;
@@ -90,7 +90,7 @@ public:
 
 private:
   DIFile *getFile(const SPIRVId SourceId);
-  std::tuple<uint64_t, const std::string &> getBuildIdentifierAndStoragePath();
+  std::tuple<uint64_t, const std::string> getBuildIdentifierAndStoragePath();
 
   DIFile *
   getDIFile(const std::string &FileName,
