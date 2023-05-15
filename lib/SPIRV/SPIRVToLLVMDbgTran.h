@@ -77,10 +77,11 @@ public:
                 SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
            "Unexpected extended instruction set");
     auto It = DebugInstCache.find(DebugInst);
-    if (It != DebugInstCache.end())
+    if (It != DebugInstCache.end() && It->second != nullptr)
       return static_cast<T *>(It->second);
     MDNode *Res = transDebugInstImpl(DebugInst);
-    DebugInstCache[DebugInst] = Res;
+    if (Res)
+      DebugInstCache[DebugInst] = Res;
     return static_cast<T *>(Res);
   }
   Instruction *transDebugIntrinsic(const SPIRVExtInst *DebugInst,
@@ -128,7 +129,13 @@ private:
 
   DIStringType *transTypeString(const SPIRVExtInst *DebugInst);
 
-  DINode *transTypeMember(const SPIRVExtInst *DebugInst);
+  DINode *
+  transTypeMember(const SPIRVExtInst *DebugInst, const SPIRVExtInst *ParentInst,
+                  DIScope *Scope);
+  DINode *transTypeMemberOpenCL(const SPIRVExtInst *DebugInst);
+  DINode *transTypeMemberNonSemantic(
+      const SPIRVExtInst *DebugInst, const SPIRVExtInst *ParentInst,
+      DIScope *Scope);
 
   DINode *transTypeEnum(const SPIRVExtInst *DebugInst);
 
