@@ -1505,7 +1505,9 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
 
 std::tuple<uint64_t, const std::string>
 SPIRVToLLVMDbgTran::getBuildIdentifierAndStoragePath() {
+#ifndef NDEBUG
   bool FoundBuildIdentifier{false};
+#endif
   uint64_t BuildIdentifier = 0;
   const std::string *StoragePathPtr{};
 
@@ -1519,7 +1521,9 @@ SPIRVToLLVMDbgTran::getBuildIdentifierAndStoragePath() {
              "More than one BuildIdentifier instruction not allowed");
       BuildIdentifier = strtoull(
           getString(BuildIdentifierArgs[IdentifierIdx]).c_str(), NULL, 10);
+#ifndef NDEBUG
       FoundBuildIdentifier = true;
+#endif
     } else if (EI->getExtOp() == SPIRVDebug::StoragePath) {
       using namespace SPIRVDebug::Operand::StoragePath;
       SPIRVWordVec StoragePathArgs = EI->getArguments();
