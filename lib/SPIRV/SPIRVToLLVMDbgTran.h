@@ -44,7 +44,6 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/DebugLoc.h"
 
-#include <tuple>
 #include <unordered_map>
 
 namespace llvm {
@@ -90,7 +89,6 @@ public:
 
 private:
   DIFile *getFile(const SPIRVId SourceId);
-  std::tuple<uint64_t, const std::string> getBuildIdentifierAndStoragePath();
 
   DIFile *
   getDIFile(const std::string &FileName,
@@ -206,6 +204,12 @@ private:
                                       const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
+
+  // BuildIdentifier and StoragePath must both be set or both unset.
+  // If StoragePath is empty both variables are unset and not valid.
+  uint64_t BuildIdentifier{0};
+  std::string StoragePath{};
+  void SetBuildIdentifierAndStoragePath();
 };
 } // namespace SPIRV
 

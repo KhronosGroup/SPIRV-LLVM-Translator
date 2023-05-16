@@ -217,7 +217,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
   // info by default
   auto Producer = findModuleProducer();
-  auto [BuildIdentifier, StoragePath] = getBuildIdentifierAndStoragePath();
+  SetBuildIdentifierAndStoragePath();
 
   if (!StoragePath.empty()) {
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
@@ -1503,13 +1503,11 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
                    getStringContinued(SourceArgs[TextIdx], Source));
 }
 
-std::tuple<uint64_t, const std::string>
-SPIRVToLLVMDbgTran::getBuildIdentifierAndStoragePath() {
+void SPIRVToLLVMDbgTran::SetBuildIdentifierAndStoragePath() {
 #ifndef NDEBUG
   bool FoundBuildIdentifier{false};
+  bool FoundStoragePath{false};
 #endif
-  uint64_t BuildIdentifier = 0;
-  const std::string *StoragePathPtr{};
 
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     if (EI->getExtOp() == SPIRVDebug::BuildIdentifier) {
@@ -1529,13 +1527,17 @@ SPIRVToLLVMDbgTran::getBuildIdentifierAndStoragePath() {
       SPIRVWordVec StoragePathArgs = EI->getArguments();
       assert(StoragePathArgs.size() == OperandCount &&
              "Invalid number of operands");
-      assert(!StoragePathPtr &&
+      assert(!FoundStoragePath &&
              "More than one StoragePath instruction not allowed");
-      StoragePathPtr = &getString(StoragePathArgs[PathIdx]);
+      StoragePath = getString(StoragePathArgs[PathIdx]);
+#ifndef NDEBUG
+      FoundStoragePath = true;
+#endif
     }
   }
-
-  return {BuildIdentifier, StoragePathPtr ? *StoragePathPtr : ""};
+  assert(((FoundBuildIdentifier && FoundStoragePath) ||
+          (!FoundBuildIdentifier && !FoundStoragePath)) &&
+         "BuildIdentifier and StoragePath must both be set or both unset");
 }
 
 DIBuilder &SPIRVToLLVMDbgTran::getDIBuilder(const SPIRVExtInst *DebugInst) {
