@@ -1405,21 +1405,21 @@ void LLVMToSPIRVDbgTran::generateBuildIdentifierAndStoragePath(
     return;
   }
 
-  // generate BuildIdentifier insn
-  SPIRVWordVec BuildIdentifierOps(
-      SPIRVDebug::Operand::BuildIdentifier::OperandCount);
+  using namespace SPIRVDebug::Operand;
+
+  // generate BuildIdentifier inst
+  SPIRVWordVec BuildIdentifierOps(BuildIdentifier::OperandCount);
   const std::string IdString = std::to_string(BuildIdentifier);
-  BuildIdentifierOps[SPIRVDebug::Operand::BuildIdentifier::IdentifierIdx] =
+  BuildIdentifierOps[BuildIdentifier::IdentifierIdx] =
       BM->getString(IdString)->getId();
-  BuildIdentifierOps[SPIRVDebug::Operand::BuildIdentifier::FlagsIdx] =
+  BuildIdentifierOps[BuildIdentifier::FlagsIdx] =
       BM->getLiteralAsConstant(1)->getId(); // Placeholder value for now
   BM->addDebugInfo(SPIRVDebug::BuildIdentifier, getVoidTy(),
                    BuildIdentifierOps);
 
-  // generate StoragePath insn
-  SPIRVWordVec StoragePathOps(SPIRVDebug::Operand::StoragePath::OperandCount);
-  StoragePathOps[SPIRVDebug::Operand::StoragePath::PathIdx] =
-      BM->getString(StoragePath)->getId();
+  // generate StoragePath inst
+  SPIRVWordVec StoragePathOps(StoragePath::OperandCount);
+  StoragePathOps[StoragePath::PathIdx] = BM->getString(StoragePath)->getId();
   BM->addDebugInfo(SPIRVDebug::StoragePath, getVoidTy(), StoragePathOps);
 
   // record generated information
