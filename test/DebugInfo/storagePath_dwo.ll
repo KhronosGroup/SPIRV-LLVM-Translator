@@ -8,10 +8,10 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LLVM
 
-; CHECK-SPIRV: String [[stringA_id:[0-9]+]] "11111"
-; CHECK-SPIRV: String [[stringA_sf:[0-9]+]] "debugA_info.dwo"
-; CHECK-SPIRV: [[buildID_A:[0-9]+]] [[#]] DebugBuildIdentifier [[stringA_id]]
-; CHECK-SPIRV: [[storageID_A:[0-9]+]] [[#]] DebugStoragePath [[stringA_sf]]
+; CHECK-SPIRV: String [[#stringA_id:]] "11111"
+; CHECK-SPIRV: String [[#stringA_sf:]] "debugA_info.dwo"
+; CHECK-SPIRV: [[#buildID_A:]] [[#]] DebugBuildIdentifier [[#stringA_id]]
+; CHECK-SPIRV: [[#storageID_A:]] [[#]] DebugStoragePath [[#stringA_sf]]
 
 ; CHECK-LLVM: !DICompileUnit
 ; CHECK-LLVM-SAME: splitDebugFilename: "debugA_info.dwo"
