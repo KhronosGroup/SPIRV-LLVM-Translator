@@ -209,7 +209,7 @@ private:
   // If StoragePath is empty both variables are unset and not valid.
   uint64_t BuildIdentifier{0};
   std::string StoragePath{};
-  void SetBuildIdentifierAndStoragePath();
+  void setBuildIdentifierAndStoragePath();
 };
 } // namespace SPIRV
 

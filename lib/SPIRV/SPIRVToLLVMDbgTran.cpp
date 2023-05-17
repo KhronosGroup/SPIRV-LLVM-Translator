@@ -217,7 +217,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
   // info by default
   auto Producer = findModuleProducer();
-  SetBuildIdentifierAndStoragePath();
+  setBuildIdentifierAndStoragePath();
 
   if (!StoragePath.empty()) {
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
@@ -1503,7 +1503,7 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
                    getStringContinued(SourceArgs[TextIdx], Source));
 }
 
-void SPIRVToLLVMDbgTran::SetBuildIdentifierAndStoragePath() {
+void SPIRVToLLVMDbgTran::setBuildIdentifierAndStoragePath() {
 #ifndef NDEBUG
   bool FoundBuildIdentifier{false};
   bool FoundStoragePath{false};
