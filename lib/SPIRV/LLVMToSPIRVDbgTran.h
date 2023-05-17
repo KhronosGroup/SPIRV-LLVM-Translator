@@ -175,9 +175,8 @@ private:
   std::vector<const DbgVariableIntrinsic *> DbgDeclareIntrinsics;
   std::vector<const DbgVariableIntrinsic *> DbgValueIntrinsics;
 
-  inline static bool BuildIdentifierAndStoragePathGenerated{false};
-  inline static uint64_t BuildIdentifier;
-  inline static std::string StoragePath;
+  inline static SPIRVExtInst *BuildIdentifierInsn{nullptr};
+  inline static SPIRVExtInst *StoragePathInsn{nullptr};
 }; // class LLVMToSPIRVDbgTran
 
 } // namespace SPIRV

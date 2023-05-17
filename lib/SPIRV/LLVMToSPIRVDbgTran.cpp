@@ -1394,38 +1394,47 @@ void LLVMToSPIRVDbgTran::generateBuildIdentifierAndStoragePath(
     const DICompileUnit *DIEntry) {
   // get information from LLVM IR
   auto BuildIdentifier = DIEntry->getDWOId();
+  const std::string BuildIdentifierString = std::to_string(BuildIdentifier);
   const std::string StoragePath = DIEntry->getSplitDebugFilename().str();
-
-  if (LLVMToSPIRVDbgTran::BuildIdentifierAndStoragePathGenerated) {
-    // BuildIdentifier and StoragePath instructions already generated
-    assert(LLVMToSPIRVDbgTran::BuildIdentifier == BuildIdentifier &&
-           "New BuildIdentifier should match previous BuildIdentifier");
-    assert(LLVMToSPIRVDbgTran::StoragePath == StoragePath &&
-           "New StoragePath should match previous StoragePath");
-    return;
-  }
 
   using namespace SPIRVDebug::Operand;
 
+  if (BuildIdentifierInsn || StoragePathInsn) {
+#ifndef NDEBUG
+    assert(BuildIdentifierInsn && StoragePathInsn &&
+           "BuildIdentifier and StoragePath instructions must both be created");
+
+    auto PreviousBuildIdentifierString =
+        BM->get<SPIRVString>(
+              BuildIdentifierInsn
+                  ->getArguments()[BuildIdentifier::IdentifierIdx])
+            ->getStr();
+    assert(PreviousBuildIdentifierString == BuildIdentifierString &&
+           "New BuildIdentifier should match previous BuildIdentifier");
+    auto PreviousStoragePath =
+        BM->get<SPIRVString>(
+              StoragePathInsn->getArguments()[StoragePath::PathIdx])
+            ->getStr();
+    assert(PreviousStoragePath == StoragePath &&
+           "New StoragePath should match previous StoragePath");
+#endif
+    return;
+  }
+
   // generate BuildIdentifier inst
   SPIRVWordVec BuildIdentifierOps(BuildIdentifier::OperandCount);
-  const std::string IdString = std::to_string(BuildIdentifier);
   BuildIdentifierOps[BuildIdentifier::IdentifierIdx] =
-      BM->getString(IdString)->getId();
+      BM->getString(BuildIdentifierString)->getId();
   BuildIdentifierOps[BuildIdentifier::FlagsIdx] =
       BM->getLiteralAsConstant(1)->getId(); // Placeholder value for now
-  BM->addDebugInfo(SPIRVDebug::BuildIdentifier, getVoidTy(),
-                   BuildIdentifierOps);
+  BuildIdentifierInsn = static_cast<SPIRVExtInst *>(BM->addDebugInfo(
+      SPIRVDebug::BuildIdentifier, getVoidTy(), BuildIdentifierOps));
 
   // generate StoragePath inst
   SPIRVWordVec StoragePathOps(StoragePath::OperandCount);
   StoragePathOps[StoragePath::PathIdx] = BM->getString(StoragePath)->getId();
-  BM->addDebugInfo(SPIRVDebug::StoragePath, getVoidTy(), StoragePathOps);
-
-  // record generated information
-  LLVMToSPIRVDbgTran::BuildIdentifier = BuildIdentifier;
-  LLVMToSPIRVDbgTran::StoragePath = StoragePath;
-  LLVMToSPIRVDbgTran::BuildIdentifierAndStoragePathGenerated = true;
+  StoragePathInsn = static_cast<SPIRVExtInst *>(
+      BM->addDebugInfo(SPIRVDebug::StoragePath, getVoidTy(), StoragePathOps));
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgFileType(const DIFile *F) {
