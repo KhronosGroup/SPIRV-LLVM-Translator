@@ -587,7 +587,8 @@ bool SPIRVTypeScavenger::typeIntrinsicCall(
     TypeRules.push_back(TypeRule::pointsTo(CB, 4, DevEvent));
     TypeRules.push_back(TypeRule::pointsTo(CB, 5, DevEvent));
     TypeRules.push_back(TypeRule::pointsTo(CB, 7, Type::getInt8Ty(Ctx)));
-  } else if (TargetFn->getName().starts_with("_Z33__regcall3____builtin_invoke_simd")) {
+  } else if (TargetFn->getName().starts_with(
+                 "_Z33__regcall3____builtin_invoke_simd")) {
     // First argument is a function to call, subsequent arguments are parameters
     // to said function.
     auto *FnTy = getFunctionType(cast<Function>(CB.getArgOperand(0)));

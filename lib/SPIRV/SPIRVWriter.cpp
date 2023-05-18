@@ -1879,8 +1879,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // they can be represented in SPIR-V as uninitialized variables with
     // 'Export' linkage type, just as tentative definitions look in C
     llvm::Constant *Init = GV->hasInitializer() && !GV->hasCommonLinkage()
-                            ? GV->getInitializer()
-                            : nullptr;
+                               ? GV->getInitializer()
+                               : nullptr;
     SPIRVValue *BVarInit = nullptr;
     StructType *ST = Init ? dyn_cast<StructType>(Init->getType()) : nullptr;
     if (ST && ST->hasName() && isSPIRVConstantName(ST->getName())) {
