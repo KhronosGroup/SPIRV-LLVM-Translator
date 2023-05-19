@@ -217,7 +217,10 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // TODO: Remove this workaround once we switch to NonSemantic.Shader.* debug
   // info by default
   auto Producer = findModuleProducer();
-  setBuildIdentifierAndStoragePath();
+  assert(BuilderMap.size() != 0 && "No debug compile units");
+  if (BuilderMap.size()==1)
+    // Only initialize once
+    setBuildIdentifierAndStoragePath();
 
   if (!StoragePath.empty()) {
     return BuilderMap[DebugInst->getId()]->createCompileUnit(
