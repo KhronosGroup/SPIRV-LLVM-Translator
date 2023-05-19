@@ -1341,11 +1341,24 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
   Ops[FileIdx] = BM->getString(FileName)->getId();
   DIFile *F = DIEntry ? DIEntry->getFile() : nullptr;
 
-  if (F && F->getRawChecksum() && !isNonSemanticDebugInfo()) {
+  if (F && F->getRawChecksum()) {
     auto CheckSum = F->getChecksum().getValue();
-    Ops.push_back(BM->getString("//__" + CheckSum.getKindAsString().str() +
-                                ":" + CheckSum.Value.str())
-                      ->getId());
+
+    if (!isNonSemanticDebugInfo())
+      Ops.push_back(BM->getString("//__" + CheckSum.getKindAsString().str() +
+                                  ":" + CheckSum.Value.str())
+                        ->getId());
+    else if (BM->getDebugInfoEIS() ==
+             SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+      SPIRVDebug::FileChecksumKind ChecksumKind =
+          SPIRV::DbgChecksumKindMap::map(CheckSum.Kind);
+
+      Ops.push_back(
+          BM->addIntegerConstant(static_cast<SPIRVTypeInt *>(getInt32Ty()),
+                                 ChecksumKind)
+              ->getId());
+      Ops.push_back(BM->getString(CheckSum.Value.str())->getId());
+    }
   }
 
   if (F && F->getRawSource() && isNonSemanticDebugInfo()) {
@@ -1355,6 +1368,11 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
     constexpr size_t MaxStrSize = MaxNumWords * 4 - 1;
     const size_t NumWords = getSizeInWords(Str);
 
+    if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200 &&
+        Ops.size() == MinOperandCount) {
+      Ops.push_back(getDebugInfoNoneId());
+      Ops.push_back(getDebugInfoNoneId());
+    }
     Ops.push_back(BM->getString(Str.substr(0, MaxStrSize))->getId());
     SPIRVExtInst *Source = static_cast<SPIRVExtInst *>(
         BM->addDebugInfo(SPIRVDebug::Source, getVoidTy(), Ops));
