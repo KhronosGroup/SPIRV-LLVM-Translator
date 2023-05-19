@@ -89,6 +89,7 @@ public:
 
 private:
   DIFile *getFile(const SPIRVId SourceId);
+
   DIFile *
   getDIFile(const std::string &FileName,
             Optional<DIFile::ChecksumInfo<StringRef>> CS = None,
@@ -204,6 +205,12 @@ private:
                                       const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   Optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
+
+  // BuildIdentifier and StoragePath must both be set or both unset.
+  // If StoragePath is empty both variables are unset and not valid.
+  uint64_t BuildIdentifier{0};
+  std::string StoragePath{};
+  void setBuildIdentifierAndStoragePath();
 };
 } // namespace SPIRV
 
