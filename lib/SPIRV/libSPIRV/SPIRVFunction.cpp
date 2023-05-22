@@ -143,7 +143,11 @@ bool SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     SPIRVEntry *Entry = Decoder.getEntry();
 
     if (Decoder.OpCode == OpLine) {
-      Module->add(Entry);
+      //     Module->add(Entry);  ??? why is this necessary?  Tests pass without this line
+
+      //  ??? setCurrentLine should be done when processing a basic-block, not when parsing an individual instruction
+      std::shared_ptr<const SPIRVLine> L(static_cast<SPIRVLine *>(Entry));
+      Module->setCurrentLine(L);
       continue;
     }
 
@@ -159,6 +163,11 @@ bool SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     assert(Inst);
     if (Inst->getOpCode() == OpUndef) {
       Module->add(Inst);
+    } else if (Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,SPIRVDebug::DebugLine) ||
+               Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,SPIRVDebug::DebugLine)) {
+      std::shared_ptr<const SPIRVExtInst> DL(static_cast<SPIRVExtInst *>(Inst));
+      Module->setCurrentDebugLine(DL);
+      /* ??? is this the right thing to do.  OpLine processing was modified to match this */
     } else {
       if (Inst->isExtInst(SPIRVEIS_Debug, SPIRVDebug::Scope) ||
           Inst->isExtInst(SPIRVEIS_OpenCL_DebugInfo_100, SPIRVDebug::Scope) ||

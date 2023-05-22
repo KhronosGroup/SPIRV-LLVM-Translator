@@ -185,10 +185,16 @@ public:
                                  const std::string &Name) override;
   void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
                              SPIRVId ID) override;
+  // Line
   void addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
                SPIRVWord Column) override;
   const std::shared_ptr<const SPIRVLine> &getCurrentLine() const override;
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
+  // DebugLine
+  void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId, SPIRVWord Line,
+                    SPIRVWord Column) override;
+  const std::shared_ptr<const SPIRVExtInst> &getCurrentDebugLine() const override;
+  void setCurrentDebugLine(const std::shared_ptr<const SPIRVExtInst> &DebugLine) override;
   void addCapability(SPIRVCapabilityKind) override;
   void addCapabilityInternal(SPIRVCapabilityKind) override;
   void addExtension(ExtensionID) override;
@@ -296,6 +302,8 @@ public:
                                const std::vector<SPIRVValue *> &,
                                SPIRVBasicBlock *,
                                SPIRVInstruction * = nullptr) override;
+  SPIRVEntry *createDebugInfo(SPIRVWord, SPIRVType *TheType,
+                              const std::vector<SPIRVWord> &) override;
   SPIRVEntry *addDebugInfo(SPIRVWord, SPIRVType *TheType,
                            const std::vector<SPIRVWord> &) override;
   SPIRVEntry *addAuxData(SPIRVWord, SPIRVType *TheType,
@@ -511,6 +519,7 @@ private:
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
   std::shared_ptr<const SPIRVLine> CurrentLine;
+  std::shared_ptr<const SPIRVExtInst> CurrentDebugLine;
   SPIRVDecorateVec DecorateVec;
   SPIRVDecGroupVec DecGroupVec;
   SPIRVGroupDecVec GroupDecVec;
@@ -562,6 +571,52 @@ void SPIRVModuleImpl::addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
     CurrentLine.reset(new SPIRVLine(this, FileNameId, Line, Column));
   assert(E && "invalid entry");
   E->setLine(CurrentLine);
+}
+
+const std::shared_ptr<const SPIRVExtInst> &
+SPIRVModuleImpl::getCurrentDebugLine() const {
+  return CurrentDebugLine;
+}
+
+void SPIRVModuleImpl::setCurrentDebugLine(
+    const std::shared_ptr<const SPIRVExtInst> &DebugLine) {
+  CurrentDebugLine = DebugLine;
+}
+
+/* ??? where should this function be placed */
+static bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine, SPIRVId FileNameId, SPIRVId LineId,
+                             SPIRVId ColumnId) {
+  assert(CurrentDebugLine.getExtOp()==SPIRVDebug::DebugLine);
+  const std::vector<SPIRVWord> CurrentDebugLineArgs = CurrentDebugLine.getArguments();
+
+  using namespace SPIRVDebug::Operand::DebugLine;
+  return CurrentDebugLineArgs[SourceIdx]      == FileNameId &&
+         CurrentDebugLineArgs[StartIdx]       == LineId &&
+         CurrentDebugLineArgs[EndIdx]         == LineId &&
+         CurrentDebugLineArgs[ColumnStartIdx] == ColumnId &&
+         CurrentDebugLineArgs[ColumnEndIdx]   == ColumnId;
+}
+
+void SPIRVModuleImpl::addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId, SPIRVWord Line,
+                              SPIRVWord Column) {
+  if (!(CurrentDebugLine && isDebugLineEqual(*CurrentDebugLine,FileNameId,
+                                             getLiteralAsConstant(Line)->getId(),
+                                             getLiteralAsConstant(Column)->getId()))) {
+    using namespace SPIRVDebug::Operand::DebugLine;
+
+    std::vector<SPIRVWord> DebugLineOps(OperandCount);
+    DebugLineOps[SourceIdx]      = FileNameId;
+    DebugLineOps[StartIdx]       = getLiteralAsConstant(Line)->getId();
+    DebugLineOps[EndIdx]         = getLiteralAsConstant(Line)->getId();
+    DebugLineOps[ColumnStartIdx] = getLiteralAsConstant(Column)->getId();
+    DebugLineOps[ColumnEndIdx]   = getLiteralAsConstant(Column)->getId();
+
+    CurrentDebugLine.reset(static_cast<SPIRVExtInst *>(createDebugInfo(SPIRVDebug::DebugLine, TheType,
+                                                                       DebugLineOps)));
+  }
+
+  assert(E && "invalid entry");
+  E->setDebugLine(CurrentDebugLine);
 }
 
 SPIRVValue *SPIRVModuleImpl::addSamplerConstant(SPIRVType *TheType,
@@ -1306,11 +1361,15 @@ SPIRVInstruction *SPIRVModuleImpl::addExtInst(
       InsertBefore);
 }
 
+SPIRVEntry *SPIRVModuleImpl::createDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
+                                             const std::vector<SPIRVWord> &Args) {
+  return new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_OpenCL_DebugInfo_100,
+                          ExtInstSetIds[getDebugInfoEIS()], InstId, Args);
+}
+
 SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
                                           const std::vector<SPIRVWord> &Args) {
-  return addEntry(
-      new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_OpenCL_DebugInfo_100,
-                       ExtInstSetIds[getDebugInfoEIS()], InstId, Args));
+  return addEntry(createDebugInfo(InstId,TheType,Args));
 }
 
 SPIRVEntry *SPIRVModuleImpl::addAuxData(SPIRVWord InstId, SPIRVType *TheType,
@@ -1836,6 +1895,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
   // Start tracking of the current line with no line
   MI.CurrentLine.reset();
+  MI.CurrentDebugLine.reset();
 
   SPIRVEncoder Encoder(O);
   Encoder << MagicNumber << MI.SPIRVVersion

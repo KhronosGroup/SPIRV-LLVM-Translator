@@ -1443,9 +1443,17 @@ DebugLoc SPIRVToLLVMDbgTran::transDebugScope(const SPIRVInstruction *Inst) {
   unsigned Col = 0;
   MDNode *Scope = nullptr;
   MDNode *InlinedAt = nullptr;
+
+  assert(!(Inst->getLine() && Inst->getDebugLine()) && "OpLine and DebugLine must not both be used");
+
   if (auto L = Inst->getLine()) {
     Line = L->getLine();
     Col = L->getColumn();
+  } else if (auto DL = Inst->getDebugLine()) {
+    using namespace SPIRVDebug::Operand::DebugLine;
+    SPIRVWordVec DebugLineArgs = DL->getArguments();
+    Line = getConstantValueOrLiteral(DebugLineArgs,StartIdx,DL->getExtSetKind());
+    Col = getConstantValueOrLiteral(DebugLineArgs,ColumnStartIdx,DL->getExtSetKind());
   }
   if (SPIRVEntry *S = Inst->getDebugScope()) {
     using namespace SPIRVDebug::Operand::Scope;
