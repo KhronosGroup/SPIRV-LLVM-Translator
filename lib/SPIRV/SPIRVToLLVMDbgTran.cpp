@@ -218,7 +218,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // info by default
   auto Producer = findModuleProducer();
   assert(BuilderMap.size() != 0 && "No debug compile units");
-  if (BuilderMap.size()==1)
+  if (BuilderMap.size() == 1)
     // Only initialize once
     setBuildIdentifierAndStoragePath();
 
@@ -1444,7 +1444,8 @@ DebugLoc SPIRVToLLVMDbgTran::transDebugScope(const SPIRVInstruction *Inst) {
   MDNode *Scope = nullptr;
   MDNode *InlinedAt = nullptr;
 
-  assert(!(Inst->getLine() && Inst->getDebugLine()) && "OpLine and DebugLine must not both be used");
+  assert(!(Inst->getLine() && Inst->getDebugLine()) &&
+         "OpLine and DebugLine must not both be used");
 
   if (auto L = Inst->getLine()) {
     Line = L->getLine();
@@ -1452,8 +1453,10 @@ DebugLoc SPIRVToLLVMDbgTran::transDebugScope(const SPIRVInstruction *Inst) {
   } else if (auto DL = Inst->getDebugLine()) {
     using namespace SPIRVDebug::Operand::DebugLine;
     SPIRVWordVec DebugLineArgs = DL->getArguments();
-    Line = getConstantValueOrLiteral(DebugLineArgs,StartIdx,DL->getExtSetKind());
-    Col = getConstantValueOrLiteral(DebugLineArgs,ColumnStartIdx,DL->getExtSetKind());
+    Line =
+        getConstantValueOrLiteral(DebugLineArgs, StartIdx, DL->getExtSetKind());
+    Col = getConstantValueOrLiteral(DebugLineArgs, ColumnStartIdx,
+                                    DL->getExtSetKind());
   }
   if (SPIRVEntry *S = Inst->getDebugScope()) {
     using namespace SPIRVDebug::Operand::Scope;

@@ -202,10 +202,13 @@ public:
   virtual const std::shared_ptr<const SPIRVLine> &getCurrentLine() const = 0;
   virtual void setCurrentLine(const std::shared_ptr<const SPIRVLine> &) = 0;
   // DebugLine
-  virtual void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId, SPIRVWord Line,
+  virtual void addDebugLine(SPIRVEntry *E, SPIRVType *TheType,
+                            SPIRVId FileNameId, SPIRVWord Line,
                             SPIRVWord Column) = 0;
-  virtual const std::shared_ptr<const SPIRVExtInst> &getCurrentDebugLine() const = 0;
-  virtual void setCurrentDebugLine(const std::shared_ptr<const SPIRVExtInst> &) = 0;
+  virtual const std::shared_ptr<const SPIRVExtInst> &
+  getCurrentDebugLine() const = 0;
+  virtual void
+  setCurrentDebugLine(const std::shared_ptr<const SPIRVExtInst> &) = 0;
   virtual const SPIRVDecorateGeneric *addDecorate(SPIRVDecorateGeneric *) = 0;
   virtual SPIRVDecorationGroup *addDecorationGroup() = 0;
   virtual SPIRVDecorationGroup *
@@ -465,12 +468,14 @@ public:
   virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVValue *,
                                                 SPIRVBasicBlock *) = 0;
-  virtual SPIRVEntry *getOrAddAliasDomainDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeListDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                   llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                                      llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                      llvm::MDNode *MD) = 0;
   virtual SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
                                                  SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy,
@@ -574,7 +579,6 @@ protected:
 private:
   bool IsValid;
 };
-
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 

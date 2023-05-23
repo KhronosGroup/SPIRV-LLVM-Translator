@@ -191,10 +191,12 @@ public:
   const std::shared_ptr<const SPIRVLine> &getCurrentLine() const override;
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
   // DebugLine
-  void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId, SPIRVWord Line,
-                    SPIRVWord Column) override;
-  const std::shared_ptr<const SPIRVExtInst> &getCurrentDebugLine() const override;
-  void setCurrentDebugLine(const std::shared_ptr<const SPIRVExtInst> &DebugLine) override;
+  void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId,
+                    SPIRVWord Line, SPIRVWord Column) override;
+  const std::shared_ptr<const SPIRVExtInst> &
+  getCurrentDebugLine() const override;
+  void setCurrentDebugLine(
+      const std::shared_ptr<const SPIRVExtInst> &DebugLine) override;
   void addCapability(SPIRVCapabilityKind) override;
   void addCapabilityInternal(SPIRVCapabilityKind) override;
   void addExtension(ExtensionID) override;
@@ -584,35 +586,39 @@ void SPIRVModuleImpl::setCurrentDebugLine(
 }
 
 /* ??? where should this function be placed */
-static bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine, SPIRVId FileNameId, SPIRVId LineId,
+static bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine,
+                             SPIRVId FileNameId, SPIRVId LineId,
                              SPIRVId ColumnId) {
-  assert(CurrentDebugLine.getExtOp()==SPIRVDebug::DebugLine);
-  const std::vector<SPIRVWord> CurrentDebugLineArgs = CurrentDebugLine.getArguments();
+  assert(CurrentDebugLine.getExtOp() == SPIRVDebug::DebugLine);
+  const std::vector<SPIRVWord> CurrentDebugLineArgs =
+      CurrentDebugLine.getArguments();
 
   using namespace SPIRVDebug::Operand::DebugLine;
-  return CurrentDebugLineArgs[SourceIdx]      == FileNameId &&
-         CurrentDebugLineArgs[StartIdx]       == LineId &&
-         CurrentDebugLineArgs[EndIdx]         == LineId &&
+  return CurrentDebugLineArgs[SourceIdx] == FileNameId &&
+         CurrentDebugLineArgs[StartIdx] == LineId &&
+         CurrentDebugLineArgs[EndIdx] == LineId &&
          CurrentDebugLineArgs[ColumnStartIdx] == ColumnId &&
-         CurrentDebugLineArgs[ColumnEndIdx]   == ColumnId;
+         CurrentDebugLineArgs[ColumnEndIdx] == ColumnId;
 }
 
-void SPIRVModuleImpl::addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId, SPIRVWord Line,
-                              SPIRVWord Column) {
-  if (!(CurrentDebugLine && isDebugLineEqual(*CurrentDebugLine,FileNameId,
-                                             getLiteralAsConstant(Line)->getId(),
-                                             getLiteralAsConstant(Column)->getId()))) {
+void SPIRVModuleImpl::addDebugLine(SPIRVEntry *E, SPIRVType *TheType,
+                                   SPIRVId FileNameId, SPIRVWord Line,
+                                   SPIRVWord Column) {
+  if (!(CurrentDebugLine &&
+        isDebugLineEqual(*CurrentDebugLine, FileNameId,
+                         getLiteralAsConstant(Line)->getId(),
+                         getLiteralAsConstant(Column)->getId()))) {
     using namespace SPIRVDebug::Operand::DebugLine;
 
     std::vector<SPIRVWord> DebugLineOps(OperandCount);
-    DebugLineOps[SourceIdx]      = FileNameId;
-    DebugLineOps[StartIdx]       = getLiteralAsConstant(Line)->getId();
-    DebugLineOps[EndIdx]         = getLiteralAsConstant(Line)->getId();
+    DebugLineOps[SourceIdx] = FileNameId;
+    DebugLineOps[StartIdx] = getLiteralAsConstant(Line)->getId();
+    DebugLineOps[EndIdx] = getLiteralAsConstant(Line)->getId();
     DebugLineOps[ColumnStartIdx] = getLiteralAsConstant(Column)->getId();
-    DebugLineOps[ColumnEndIdx]   = getLiteralAsConstant(Column)->getId();
+    DebugLineOps[ColumnEndIdx] = getLiteralAsConstant(Column)->getId();
 
-    CurrentDebugLine.reset(static_cast<SPIRVExtInst *>(createDebugInfo(SPIRVDebug::DebugLine, TheType,
-                                                                       DebugLineOps)));
+    CurrentDebugLine.reset(static_cast<SPIRVExtInst *>(
+        createDebugInfo(SPIRVDebug::DebugLine, TheType, DebugLineOps)));
   }
 
   assert(E && "invalid entry");
@@ -1361,15 +1367,16 @@ SPIRVInstruction *SPIRVModuleImpl::addExtInst(
       InsertBefore);
 }
 
-SPIRVEntry *SPIRVModuleImpl::createDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
-                                             const std::vector<SPIRVWord> &Args) {
+SPIRVEntry *
+SPIRVModuleImpl::createDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
+                                 const std::vector<SPIRVWord> &Args) {
   return new SPIRVExtInst(this, getId(), TheType, SPIRVEIS_OpenCL_DebugInfo_100,
                           ExtInstSetIds[getDebugInfoEIS()], InstId, Args);
 }
 
 SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
                                           const std::vector<SPIRVWord> &Args) {
-  return addEntry(createDebugInfo(InstId,TheType,Args));
+  return addEntry(createDebugInfo(InstId, TheType, Args));
 }
 
 SPIRVEntry *SPIRVModuleImpl::addAuxData(SPIRVWord InstId, SPIRVType *TheType,
@@ -1706,8 +1713,9 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
 // Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
 // instructions
 template <typename AliasingInstType>
-SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddMemAliasingINTELInst(std::vector<SPIRVId> Args,
+                                              llvm::MDNode *MD) {
   assert(MD && "noalias/alias.scope metadata can't be null");
   // Don't duplicate aliasing instruction. For that use a map with a MDNode key
   if (AliasInstMDMap.find(MD) != AliasInstMDMap.end())
@@ -1718,20 +1726,23 @@ SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
 }
 
 // Create AliasDomainDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                                  llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasDomainDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                                 llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeListDeclINTEL instruction
-SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(
-    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
+SPIRVEntry *
+SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                                     llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeListDeclINTEL>(Args, MD);
 }
 
@@ -1944,7 +1955,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   }
 
   if (M.isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_memory_access_aliasing)) {
+          ExtensionID::SPV_INTEL_memory_access_aliasing)) {
     O << SPIRVNL() << MI.AliasInstMDVec;
   }
 

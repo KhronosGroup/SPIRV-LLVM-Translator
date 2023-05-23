@@ -183,7 +183,8 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
     O << *Line;
     Module->setCurrentLine(Line);
   }
-  assert(OpCode!=OpNoLine && "Does this really exist"); /* ??? never fails in our tests */
+  assert(OpCode != OpNoLine &&
+         "Does this really exist"); /* ??? never fails in our tests */
 
   if (isEndOfBlock() || OpCode == OpNoLine)
     Module->setCurrentLine(nullptr);
@@ -195,27 +196,30 @@ static bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
   std::vector<SPIRVWord> DL2Args = DL2.getArguments();
 
   using namespace SPIRVDebug::Operand::DebugLine;
-  assert(DL1Args.size() == OperandCount &&
-         DL2Args.size() == OperandCount &&
+  assert(DL1Args.size() == OperandCount && DL2Args.size() == OperandCount &&
          "Invalid number of operands");
-  return DL1Args[SourceIdx]      == DL2Args[SourceIdx]      &&
-         DL1Args[StartIdx]       == DL2Args[StartIdx]       &&
-         DL1Args[EndIdx]         == DL2Args[EndIdx]         &&
+  return DL1Args[SourceIdx] == DL2Args[SourceIdx] &&
+         DL1Args[StartIdx] == DL2Args[StartIdx] &&
+         DL1Args[EndIdx] == DL2Args[EndIdx] &&
          DL1Args[ColumnStartIdx] == DL2Args[ColumnStartIdx] &&
-         DL1Args[ColumnEndIdx]   == DL2Args[ColumnEndIdx];
+         DL1Args[ColumnEndIdx] == DL2Args[ColumnEndIdx];
 }
 
 void SPIRVEntry::encodeDebugLine(spv_ostream &O) const {
   if (!Module)
     return;
-  const std::shared_ptr<const SPIRVExtInst> &CurrDebugLine = Module->getCurrentDebugLine();
-  if (DebugLine && (!CurrDebugLine || !isDebugLineEqual(*DebugLine,*CurrDebugLine))) {
+  const std::shared_ptr<const SPIRVExtInst> &CurrDebugLine =
+      Module->getCurrentDebugLine();
+  if (DebugLine &&
+      (!CurrDebugLine || !isDebugLineEqual(*DebugLine, *CurrDebugLine))) {
     O << *DebugLine;
     Module->setCurrentDebugLine(DebugLine);
   }
   if (isEndOfBlock() ||
-      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,SPIRVDebug::DebugNoLine) ||
-      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,SPIRVDebug::DebugNoLine))
+      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
+                SPIRVDebug::DebugNoLine) ||
+      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
+                SPIRVDebug::DebugNoLine))
     Module->setCurrentDebugLine(nullptr);
 }
 
@@ -701,9 +705,9 @@ void SPIRVLine::encode(spv_ostream &O) const {
 
 void SPIRVLine::decode(std::istream &I) {
   getDecoder(I) >> FileName >> Line >> Column;
-  //  ??? setCurrentLine should be done when processing a basic-block, not when parsing an individual instruction
-  //  std::shared_ptr<const SPIRVLine> L(this);
-  //  Module->setCurrentLine(L);
+  //  ??? setCurrentLine should be done when processing a basic-block, not when
+  //  parsing an individual instruction std::shared_ptr<const SPIRVLine>
+  //  L(this); Module->setCurrentLine(L);
 }
 
 void SPIRVLine::validate() const {
