@@ -191,7 +191,8 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
 }
 
 /* ??? where should this function be placed */
-static bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
+namespace {
+bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
   std::vector<SPIRVWord> DL1Args = DL1.getArguments();
   std::vector<SPIRVWord> DL2Args = DL2.getArguments();
 
@@ -204,6 +205,7 @@ static bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
          DL1Args[ColumnStartIdx] == DL2Args[ColumnStartIdx] &&
          DL1Args[ColumnEndIdx] == DL2Args[ColumnEndIdx];
 }
+} // namespace
 
 void SPIRVEntry::encodeDebugLine(spv_ostream &O) const {
   if (!Module)

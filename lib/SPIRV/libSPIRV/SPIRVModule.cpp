@@ -586,9 +586,9 @@ void SPIRVModuleImpl::setCurrentDebugLine(
 }
 
 /* ??? where should this function be placed */
-static bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine,
-                             SPIRVId FileNameId, SPIRVId LineId,
-                             SPIRVId ColumnId) {
+namespace {
+bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine, SPIRVId FileNameId,
+                      SPIRVId LineId, SPIRVId ColumnId) {
   assert(CurrentDebugLine.getExtOp() == SPIRVDebug::DebugLine);
   const std::vector<SPIRVWord> CurrentDebugLineArgs =
       CurrentDebugLine.getArguments();
@@ -600,6 +600,7 @@ static bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine,
          CurrentDebugLineArgs[ColumnStartIdx] == ColumnId &&
          CurrentDebugLineArgs[ColumnEndIdx] == ColumnId;
 }
+} // namespace
 
 void SPIRVModuleImpl::addDebugLine(SPIRVEntry *E, SPIRVType *TheType,
                                    SPIRVId FileNameId, SPIRVWord Line,
