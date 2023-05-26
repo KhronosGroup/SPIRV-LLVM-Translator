@@ -3680,4 +3680,27 @@ _SPIRV_OP(RoundFToTF32INTEL)
 #undef _SPIRV_OP
 } // namespace SPIRV
 
+
+template <Op OC>
+class SPIRVShaderClockKHRInstBase : public SPIRVInstTemplateBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityShaderClockKHR);
+  }
+
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_KHR_shader_clock;
+  }
+
+  void validate() const override {
+
+  }
+};
+
+#define _SPIRV_OP(x)
+    typedef SPIRVInstTemplate<SPIRVExpectKHRInstBase, Op##x, __VA_ARGS__> SPIRV##x;
+
+_SPIRV_OP(ShaderClockKHR)
+#undef _SPIRV_OP
+
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H
