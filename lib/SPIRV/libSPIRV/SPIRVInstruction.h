@@ -3682,7 +3682,7 @@ _SPIRV_OP(RoundFToTF32INTEL)
 
 
 template <Op OC>
-class SPIRVShaderClockKHRInstBase : public SPIRVInstTemplateBase {
+class SPIRVShaderClockKHRInstBase : public SPIRVUnaryInst<OC> {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilityShaderClockKHR);
@@ -3698,7 +3698,7 @@ protected:
 };
 
 #define _SPIRV_OP(x)
-    typedef SPIRVInstTemplate<SPIRVExpectKHRInstBase, Op##x, __VA_ARGS__> SPIRV##x;
+    typedef SPIRVInstTemplate<SPIRVShaderClockKHRInstBase, Op##x> SPIRV##x;
 
 _SPIRV_OP(ShaderClockKHR)
 #undef _SPIRV_OP
