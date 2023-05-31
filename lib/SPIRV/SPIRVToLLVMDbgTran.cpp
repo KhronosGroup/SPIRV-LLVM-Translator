@@ -532,8 +532,8 @@ SPIRVToLLVMDbgTran::transTypeComposite(const SPIRVExtInst *DebugInst) {
     auto *MemberInst = BM->get<SPIRVExtInst>(Ops[I]);
     if (MemberInst->getExtOp() == SPIRVDebug::TypeMember) {
       auto *SPVMemberInst = BM->get<SPIRVExtInst>(Ops[I]);
-      DINode *MemberMD = transTypeMember(SPVMemberInst, DebugInst,
-                                         cast<DIScope>(CT));
+      DINode *MemberMD =
+          transTypeMember(SPVMemberInst, DebugInst, cast<DIScope>(CT));
       EltTys.push_back(MemberMD);
       DebugInstCache[SPVMemberInst] = MemberMD;
     } else {
@@ -620,9 +620,10 @@ SPIRVToLLVMDbgTran::transTypeString(const SPIRVExtInst *DebugInst) {
                            0 /*AlignInBits*/, Encoding);
 }
 
-DINode *SPIRVToLLVMDbgTran::transTypeMember(
-    const SPIRVExtInst *DebugInst, const SPIRVExtInst *ParentInst = nullptr,
-    DIScope *Scope = nullptr) {
+DINode *
+SPIRVToLLVMDbgTran::transTypeMember(const SPIRVExtInst *DebugInst,
+                                    const SPIRVExtInst *ParentInst = nullptr,
+                                    DIScope *Scope = nullptr) {
   if (isNonSemanticDebugInfo(DebugInst->getExtSetKind()))
     // In NonSemantic spec TypeMember doesn't have Scope parameter
     return transTypeMemberNonSemantic(DebugInst, ParentInst, Scope);
@@ -668,14 +669,15 @@ SPIRVToLLVMDbgTran::transTypeMemberOpenCL(const SPIRVExtInst *DebugInst) {
   uint64_t Size = BM->get<SPIRVConstant>(Ops[SizeIdx])->getZExtIntValue();
   uint64_t Alignment = 0;
 
-  return getDIBuilder(DebugInst).createMemberType(
-      Scope, Name, File, LineNo, Size, Alignment, OffsetInBits, Flags,
-      BaseType);
+  return getDIBuilder(DebugInst).createMemberType(Scope, Name, File, LineNo,
+                                                  Size, Alignment, OffsetInBits,
+                                                  Flags, BaseType);
 }
 
-DINode *SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(
-    const SPIRVExtInst *DebugInst, const SPIRVExtInst *ParentInst,
-    DIScope *Scope) {
+DINode *
+SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(const SPIRVExtInst *DebugInst,
+                                               const SPIRVExtInst *ParentInst,
+                                               DIScope *Scope) {
   if (!Scope)
     // Will be translated later when processing TypeMember's parent
     return nullptr;
@@ -715,9 +717,9 @@ DINode *SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(
   uint64_t Size = BM->get<SPIRVConstant>(Ops[SizeIdx])->getZExtIntValue();
   uint64_t Alignment = 0;
 
-  return getDIBuilder(ParentInst).createMemberType(
-      Scope, Name, File, LineNo, Size, Alignment, OffsetInBits, Flags,
-      BaseType);
+  return getDIBuilder(ParentInst)
+      .createMemberType(Scope, Name, File, LineNo, Size, Alignment,
+                        OffsetInBits, Flags, BaseType);
 }
 
 DINode *SPIRVToLLVMDbgTran::transTypeEnum(const SPIRVExtInst *DebugInst) {

@@ -495,7 +495,7 @@ enum {
   MinOperandCount = 8
 };
 }
-} // TypeMember
+} // namespace TypeMember
 
 namespace TypeInheritance {
 enum {
