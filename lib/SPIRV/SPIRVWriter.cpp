@@ -3650,6 +3650,10 @@ bool allowDecorateWithBufferLocationOrLatencyControlINTEL(IntrinsicInst *II) {
   for (auto &Inst : UserList)
     if (isa<LoadInst>(Inst) || isa<StoreInst>(Inst))
       return true;
+    else if (auto *III = dyn_cast<IntrinsicInst>(Inst)) {
+      if (III->getIntrinsicID() == Intrinsic::memcpy)
+        return true;
+    }
 
   return false;
 }
