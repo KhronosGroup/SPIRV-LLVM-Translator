@@ -183,9 +183,6 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
     O << *Line;
     Module->setCurrentLine(Line);
   }
-  assert(OpCode != OpNoLine &&
-         "Does this really exist"); /* ??? never fails in our tests */
-
   if (isEndOfBlock() || OpCode == OpNoLine)
     Module->setCurrentLine(nullptr);
 }
@@ -707,9 +704,6 @@ void SPIRVLine::encode(spv_ostream &O) const {
 
 void SPIRVLine::decode(std::istream &I) {
   getDecoder(I) >> FileName >> Line >> Column;
-  //  ??? setCurrentLine should be done when processing a basic-block, not when
-  //  parsing an individual instruction std::shared_ptr<const SPIRVLine>
-  //  L(this); Module->setCurrentLine(L);
 }
 
 void SPIRVLine::validate() const {
