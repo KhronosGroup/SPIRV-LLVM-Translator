@@ -583,7 +583,6 @@ void SPIRVModuleImpl::setCurrentDebugLine(
   CurrentDebugLine = DebugLine;
 }
 
-/* ??? where should this function be placed */
 namespace {
 bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine, SPIRVId FileNameId,
                       SPIRVId LineId, SPIRVId ColumnId) {

@@ -187,7 +187,6 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
     Module->setCurrentLine(nullptr);
 }
 
-/* ??? where should this function be placed */
 namespace {
 bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
   std::vector<SPIRVWord> DL1Args = DL1.getArguments();
