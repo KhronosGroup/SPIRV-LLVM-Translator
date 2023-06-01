@@ -245,8 +245,6 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
     Entry->setScope(Scope);
   Entry->setWordCount(WordCount);
 
-  assert(!(M.getCurrentLine() && M.getCurrentDebugLine()) &&
-         "OpLine and DebugLine must not both be used");
   if (OpCode != OpLine)
     Entry->setLine(M.getCurrentLine());
   if (!Entry->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,

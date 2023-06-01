@@ -166,6 +166,11 @@ bool SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
     if (Inst->getOpCode() == OpUndef) {
       Module->add(Inst);
     } else if (Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
+                               SPIRVDebug::DebugNoLine) ||
+               Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
+                               SPIRVDebug::DebugNoLine)) {
+      continue;
+    } else if (Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
                                SPIRVDebug::DebugLine) ||
                Inst->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
                                SPIRVDebug::DebugLine)) {
