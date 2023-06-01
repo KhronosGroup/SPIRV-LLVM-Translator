@@ -244,7 +244,6 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
   } else
     Entry->setScope(Scope);
   Entry->setWordCount(WordCount);
-
   if (OpCode != OpLine)
     Entry->setLine(M.getCurrentLine());
   if (!Entry->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,

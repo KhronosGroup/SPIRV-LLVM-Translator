@@ -218,7 +218,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // info by default
   auto Producer = findModuleProducer();
   assert(BuilderMap.size() != 0 && "No debug compile units");
-  if (BuilderMap.size() == 1)
+  if (BuilderMap.size()==1)
     // Only initialize once
     setBuildIdentifierAndStoragePath();
 

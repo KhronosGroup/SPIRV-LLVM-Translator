@@ -185,12 +185,10 @@ public:
                                  const std::string &Name) override;
   void addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
                              SPIRVId ID) override;
-  // Line
   void addLine(SPIRVEntry *E, SPIRVId FileNameId, SPIRVWord Line,
                SPIRVWord Column) override;
   const std::shared_ptr<const SPIRVLine> &getCurrentLine() const override;
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
-  // DebugLine
   void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId,
                     SPIRVWord Line, SPIRVWord Column) override;
   const std::shared_ptr<const SPIRVExtInst> &
@@ -1714,9 +1712,8 @@ SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
 // Create AliasDomainDeclINTEL/AliasScopeDeclINTEL/AliasScopeListDeclINTEL
 // instructions
 template <typename AliasingInstType>
-SPIRVEntry *
-SPIRVModuleImpl::getOrAddMemAliasingINTELInst(std::vector<SPIRVId> Args,
-                                              llvm::MDNode *MD) {
+SPIRVEntry *SPIRVModuleImpl::getOrAddMemAliasingINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
   assert(MD && "noalias/alias.scope metadata can't be null");
   // Don't duplicate aliasing instruction. For that use a map with a MDNode key
   if (AliasInstMDMap.find(MD) != AliasInstMDMap.end())
@@ -1727,23 +1724,20 @@ SPIRVModuleImpl::getOrAddMemAliasingINTELInst(std::vector<SPIRVId> Args,
 }
 
 // Create AliasDomainDeclINTEL instruction
-SPIRVEntry *
-SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
-                                                  llvm::MDNode *MD) {
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasDomainDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasDomainDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeDeclINTEL instruction
-SPIRVEntry *
-SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
-                                                 llvm::MDNode *MD) {
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeDeclINTEL>(Args, MD);
 }
 
 // Create AliasScopeListDeclINTEL instruction
-SPIRVEntry *
-SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
-                                                     llvm::MDNode *MD) {
+SPIRVEntry *SPIRVModuleImpl::getOrAddAliasScopeListDeclINTELInst(
+    std::vector<SPIRVId> Args, llvm::MDNode *MD) {
   return getOrAddMemAliasingINTELInst<SPIRVAliasScopeListDeclINTEL>(Args, MD);
 }
 
@@ -1956,7 +1950,7 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   }
 
   if (M.isAllowedToUseExtension(
-          ExtensionID::SPV_INTEL_memory_access_aliasing)) {
+        ExtensionID::SPV_INTEL_memory_access_aliasing)) {
     O << SPIRVNL() << MI.AliasInstMDVec;
   }
 
