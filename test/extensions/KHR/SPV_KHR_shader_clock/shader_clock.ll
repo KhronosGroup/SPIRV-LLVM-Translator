@@ -22,10 +22,10 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: FunctionParameter [[#I32Ty]] [[I32ValId:.*]]
 
-; CHECK-SPIRV: ShaderClockKHR [[#I32Ty]] [[#]] [[I32ValId]]
-; CHECK-SPIRV: ShaderClockKHR [[#I32v2Ty]] [[#]] [[I32ValId]]
-; CHECK-SPIRV: ShaderClockKHR [[#I64Ty]] [[#]] [[I32ValId]]
-; CHECK-SPIRV: ShaderClockKHR [[#I64v2Ty]] [[#]] [[I32ValId]]
+; CHECK-SPIRV: ReadClockKHR [[#I32Ty]] [[#]] [[I32ValId]]
+; CHECK-SPIRV: ReadClockKHR [[#I32v2Ty]] [[#]] [[I32ValId]]
+; CHECK-SPIRV: ReadClockKHR [[#I64Ty]] [[#]] [[I32ValId]]
+; CHECK-SPIRV: ReadClockKHR [[#I64v2Ty]] [[#]] [[I32ValId]]
 
 ; CHECK-LLVM: call spir_func i32 @_Z20__spirv_ReadClockKHRIjET_j(i32
 ; CHECK-LLVM: call spir_func <2 x i32> @_Z20__spirv_ReadClockKHRIDv2_jET_j(i32
