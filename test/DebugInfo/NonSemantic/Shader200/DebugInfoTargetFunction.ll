@@ -12,19 +12,19 @@
 ; CHECK-SPIRV-DAG: String [[#TargetFunc:]] "_Z3foov"
 
 ; CHECK-SPIRV-DAG: TypeInt [[#TyInt32Id:]] 32 0
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant1Id:]] 1
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant4Id:]] 4
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant5Id:]] 5
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant8Id:]] 8
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant9Id:]] 9
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant1Id:]] 1{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant4Id:]] 4{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant5Id:]] 5{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant8Id:]] 8{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant9Id:]] 9{{[[:space:]]}}
 
 ; CHECK-SPIRV-DAG: ExtInst [[#]] [[#DebugNone:]] [[#]] DebugInfoNone
 ; CHECK-SPIRV-DAG: ExtInst [[#]] [[#]] [[#]] DebugFunction [[#Func]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#DebugNone]] [[#TargetFunc]]
 
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const4Id:]] [[#Const4Id:]] [[#Const5Id:]] [[#Const5Id:]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const5Id:]] [[#Const5Id:]] [[#Const1Id:]] [[#Const1Id:]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const8Id:]] [[#Const8Id:]] [[#Const5Id:]] [[#Const5Id:]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9Id:]] [[#Const9Id:]] [[#Const1Id:]] [[#Const1Id:]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant4Id]] [[#Constant4Id]] [[#Constant5Id]] [[#Constant5Id]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant5Id]] [[#Constant5Id]] [[#Constant1Id]] [[#Constant1Id]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant8Id]] [[#Constant8Id]] [[#Constant5Id]] [[#Constant5Id]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant9Id]] [[#Constant9Id]] [[#Constant1Id]] [[#Constant1Id]]
 
 ; CHECK-LLVM: define spir_func void @_Z11foo_wrapperv() {{.*}} !dbg ![[#DbgSubProg:]] {
 ; CHECK-LLVM: ![[#Scope_foo_wrapper:]] = distinct !DISubprogram(name: "foo_wrapper", linkageName: "_Z11foo_wrapperv", scope: null, file: ![[#]], line: 3, type: ![[#]], scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: ![[#]], templateParams: ![[#]], retainedNodes: ![[#]], targetFuncName: "_Z3foov")

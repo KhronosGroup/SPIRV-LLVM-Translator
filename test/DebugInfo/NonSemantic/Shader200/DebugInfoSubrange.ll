@@ -13,12 +13,12 @@
 ; CHECK-SPIRV-DAG: TypeInt [[#TyInt32Id:]] 32 0
 ; CHECK-SPIRV-DAG: TypeInt [[#TyInt64Id:]] 64 0
 ; CHECK-NOT: THIS LINE IS USED TO SEPARATE DAGs
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant15Id:]] 15
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant24Id:]] 24
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant27Id:]] 27
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant33Id:]] 33
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant34Id:]] 34
-; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant67Id:]] 67
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant15Id:]] 15{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant24Id:]] 24{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant27Id:]] 27{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant33Id:]] 33{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant34Id:]] 34{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TyInt32Id]] [[#Constant67Id:]] 67{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TyInt64Id]] [[#Constant1Id:]] 1 0
 ; CHECK-SPIRV-DAG: Constant [[#TyInt64Id]] [[#Constant1000Id:]] 1000 0
 ; CHECK-SPIRV: [[#DINoneId:]] [[#EISId]] DebugInfoNone
@@ -33,9 +33,9 @@
 
 ; CHECK-SPIRV: [[#EISId]] DebugTypeSubrange [[#Constant1000Id]] [[#Constant1Id]] [[#DINoneId]] [[#DINoneId]]
 
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const15Id:]] [[#Const15Id:]] [[#Const67Id:]] [[#Const67Id:]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const27Id:]] [[#Const27Id:]] [[#Const24Id:]] [[#Const24Id:]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const34Id:]] [[#Const34Id:]] [[#Const33Id:]] [[#Const33Id:]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant15Id]] [[#Constant15Id]] [[#Constant67Id]] [[#Constant67Id]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant27Id]] [[#Constant27Id]] [[#Constant24Id]] [[#Constant24Id]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Constant34Id]] [[#Constant34Id]] [[#Constant33Id]] [[#Constant33Id]]
 
 ; CHECK-LLVM: ![[#Scope_A:]] = distinct !DISubprogram(name: "random_fill_sp.DIR.OMP.TARGET.8.split.split.split.split"
 ; CHECK-LLVM: [[#Subrange1:]] = !DISubrange(lowerBound: 1, upperBound: ![[#UpperBound:]])
