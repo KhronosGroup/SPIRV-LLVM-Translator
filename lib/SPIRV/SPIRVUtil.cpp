@@ -2322,6 +2322,14 @@ public:
     case OpSubgroupAvcSicConfigureSkcINTEL:
       addUnsignedArgs(0, 4);
       break;
+    case OpUDotKHR:
+    case OpUDotAccSatKHR:
+      addUnsignedArg(-1);
+      break;
+    case OpSUDotKHR:
+    case OpSUDotAccSatKHR:
+      addUnsignedArg(1);
+      break;
     default:;
       // No special handling is needed
     }
