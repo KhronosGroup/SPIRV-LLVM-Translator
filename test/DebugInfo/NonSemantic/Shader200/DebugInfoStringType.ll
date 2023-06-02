@@ -15,13 +15,17 @@
 ; CHECK-SPIRV: TypeInt [[#TypeInt:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#ConstZero:]] 0{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const1:]] 1{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const2:]] 2{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const6:]] 6{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const7:]] 7{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const9:]] 9{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const12:]] 12{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const23:]] 23{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const24:]] 24{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const27:]] 27{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const28:]] 28{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const36:]] 36{{[[:space:]]}}
+; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const37:]] 37{{[[:space:]]}}
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const80:]] 80{{[[:space:]]}}
 ; CHECK-SPIRV: TypeVoid [[#TypeVoid:]]
 
@@ -40,15 +44,15 @@
 ; CHECK-SPIRV-COUNT-4: [[#LengthAddrVar2:]] [[#EISId]] DebugLocalVariable
 ; CHECK-SPIRV-NEXT: [[#EISId]] DebugTypeString [[#StrChar2]] [[#DINoneId]] [[#DINoneId]] [[#ConstZero]] [[#LengthAddrVar2]]
 
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const6]] [[#Const6]] [[#Const23]] [[#Const23]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const27]] [[#Const27]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const36]] [[#Const36]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const7]] [[#Const7]] [[#Const1]] [[#Const1]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const27]] [[#Const27]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const36]] [[#Const36]]
-; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const12]] [[#Const12]] [[#Const1]] [[#Const1]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const6]] [[#Const6]] [[#Const23]] [[#Const24]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]] [[#Const1]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const27]] [[#Const28]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const36]] [[#Const37]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const7]] [[#Const7]] [[#Const1]] [[#Const2]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#ConstZero]] [[#ConstZero]] [[#ConstZero]] [[#Const1]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const27]] [[#Const28]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const9]] [[#Const9]] [[#Const36]] [[#Const37]]
+; CHECK-SPIRV: [[#EISId]] DebugLine [[#]] [[#Const12]] [[#Const12]] [[#Const1]] [[#Const2]]
 
 ; CHECK-LLVM-DAG: !DICompileUnit(language: DW_LANG_Fortran95
 ; CHECK-LLVM-DAG: ![[#Scope_hello_world:]] = distinct !DISubprogram(name: "hello_world", linkageName: "MAIN__"
