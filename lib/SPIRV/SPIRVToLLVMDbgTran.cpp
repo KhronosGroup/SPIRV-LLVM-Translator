@@ -620,10 +620,9 @@ SPIRVToLLVMDbgTran::transTypeString(const SPIRVExtInst *DebugInst) {
                            0 /*AlignInBits*/, Encoding);
 }
 
-DINode *
-SPIRVToLLVMDbgTran::transTypeMember(const SPIRVExtInst *DebugInst,
-                                    const SPIRVExtInst *ParentInst,
-                                    DIScope *Scope) {
+DINode *SPIRVToLLVMDbgTran::transTypeMember(const SPIRVExtInst *DebugInst,
+                                            const SPIRVExtInst *ParentInst,
+                                            DIScope *Scope) {
   if (isNonSemanticDebugInfo(DebugInst->getExtSetKind()))
     // In NonSemantic spec TypeMember doesn't have Scope parameter
     return transTypeMemberNonSemantic(DebugInst, ParentInst, Scope);
