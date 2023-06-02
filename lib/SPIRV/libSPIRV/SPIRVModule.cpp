@@ -190,7 +190,8 @@ public:
   const std::shared_ptr<const SPIRVLine> &getCurrentLine() const override;
   void setCurrentLine(const std::shared_ptr<const SPIRVLine> &Line) override;
   void addDebugLine(SPIRVEntry *E, SPIRVType *TheType, SPIRVId FileNameId,
-                    SPIRVWord Line, SPIRVWord Column) override;
+                    SPIRVWord LineStart, SPIRVWord LineEnd,
+                    SPIRVWord ColumnStart, SPIRVWord ColumnEnd) override;
   const std::shared_ptr<const SPIRVExtInst> &
   getCurrentDebugLine() const override;
   void setCurrentDebugLine(
@@ -585,35 +586,39 @@ void SPIRVModuleImpl::setCurrentDebugLine(
 
 namespace {
 bool isDebugLineEqual(const SPIRVExtInst &CurrentDebugLine, SPIRVId FileNameId,
-                      SPIRVId LineId, SPIRVId ColumnId) {
+                      SPIRVId LineStartId, SPIRVId LineEndId,
+                      SPIRVId ColumnStartId, SPIRVId ColumnEndId) {
   assert(CurrentDebugLine.getExtOp() == SPIRVDebug::DebugLine);
   const std::vector<SPIRVWord> CurrentDebugLineArgs =
       CurrentDebugLine.getArguments();
 
   using namespace SPIRVDebug::Operand::DebugLine;
   return CurrentDebugLineArgs[SourceIdx] == FileNameId &&
-         CurrentDebugLineArgs[StartIdx] == LineId &&
-         CurrentDebugLineArgs[EndIdx] == LineId &&
-         CurrentDebugLineArgs[ColumnStartIdx] == ColumnId &&
-         CurrentDebugLineArgs[ColumnEndIdx] == ColumnId;
+         CurrentDebugLineArgs[StartIdx] == LineStartId &&
+         CurrentDebugLineArgs[EndIdx] == LineEndId &&
+         CurrentDebugLineArgs[ColumnStartIdx] == ColumnStartId &&
+         CurrentDebugLineArgs[ColumnEndIdx] == ColumnEndId;
 }
 } // namespace
 
 void SPIRVModuleImpl::addDebugLine(SPIRVEntry *E, SPIRVType *TheType,
-                                   SPIRVId FileNameId, SPIRVWord Line,
-                                   SPIRVWord Column) {
+                                   SPIRVId FileNameId, SPIRVWord LineStart,
+                                   SPIRVWord LineEnd, SPIRVWord ColumnStart,
+                                   SPIRVWord ColumnEnd) {
   if (!(CurrentDebugLine &&
         isDebugLineEqual(*CurrentDebugLine, FileNameId,
-                         getLiteralAsConstant(Line)->getId(),
-                         getLiteralAsConstant(Column)->getId()))) {
+                         getLiteralAsConstant(LineStart)->getId(),
+                         getLiteralAsConstant(LineEnd)->getId(),
+                         getLiteralAsConstant(ColumnStart)->getId(),
+                         getLiteralAsConstant(ColumnEnd)->getId()))) {
     using namespace SPIRVDebug::Operand::DebugLine;
 
     std::vector<SPIRVWord> DebugLineOps(OperandCount);
     DebugLineOps[SourceIdx] = FileNameId;
-    DebugLineOps[StartIdx] = getLiteralAsConstant(Line)->getId();
-    DebugLineOps[EndIdx] = getLiteralAsConstant(Line)->getId();
-    DebugLineOps[ColumnStartIdx] = getLiteralAsConstant(Column)->getId();
-    DebugLineOps[ColumnEndIdx] = getLiteralAsConstant(Column)->getId();
+    DebugLineOps[StartIdx] = getLiteralAsConstant(LineStart)->getId();
+    DebugLineOps[EndIdx] = getLiteralAsConstant(LineEnd)->getId();
+    DebugLineOps[ColumnStartIdx] = getLiteralAsConstant(ColumnStart)->getId();
+    DebugLineOps[ColumnEndIdx] = getLiteralAsConstant(ColumnEnd)->getId();
 
     CurrentDebugLine.reset(static_cast<SPIRVExtInst *>(
         createDebugInfo(SPIRVDebug::DebugLine, TheType, DebugLineOps)));
