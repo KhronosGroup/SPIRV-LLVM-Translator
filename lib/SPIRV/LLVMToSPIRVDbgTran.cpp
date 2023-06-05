@@ -1036,8 +1036,8 @@ LLVMToSPIRVDbgTran::transDbgMemberTypeNonSemantic(const DIDerivedType *MT) {
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInheritance(const DIDerivedType *DT) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
-  SPIRVWordVec Ops(OperandCount - Offset);
   const SPIRVWord Offset = isNonSemanticDebugInfo() ? 1 : 0;
+  SPIRVWordVec Ops(OperandCount - Offset);
   // There is no Child operand in NonSemantic debug spec
   if (!isNonSemanticDebugInfo())
     Ops[ChildIdx] = transDbgEntry(DT->getScope())->getId();
