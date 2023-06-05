@@ -3634,15 +3634,17 @@ static bool allowsApproxFunction(IntrinsicInst *II) {
            cast<VectorType>(Ty)->getElementType()->isFloatTy()));
 }
 
-static bool checkMemUser(User *User) {
+namespace {
+bool checkMemUser(User *User) {
   if (isa<LoadInst>(User) || isa<StoreInst>(User))
     return true;
-  else if (auto *III = dyn_cast<IntrinsicInst>(User)) {
+  if (auto *III = dyn_cast<IntrinsicInst>(User)) {
     if (III->getIntrinsicID() == Intrinsic::memcpy)
       return true;
   }
   return false;
 }
+} // namespace
 
 bool allowDecorateWithBufferLocationOrLatencyControlINTEL(IntrinsicInst *II) {
   for (auto *Inst : II->users()) {
