@@ -605,7 +605,8 @@ bool SPIRVTypeScavenger::typeIntrinsicCall(
 void SPIRVTypeScavenger::typeFunctionParams(
     CallBase &CB, FunctionType *FT, unsigned ArgStart, bool IncludeRet,
     SmallVectorImpl<TypeRule> &TypeRules) {
-  for (const auto &[U, ArgTy] : zip(drop_begin(CB.args(), ArgStart), FT->params())) {
+  for (const auto &[U, ArgTy] :
+       zip(drop_begin(CB.args(), ArgStart), FT->params())) {
     if (hasPointerType(U->getType())) {
       TypeRules.push_back(TypeRule::is(U, ArgTy));
     }
