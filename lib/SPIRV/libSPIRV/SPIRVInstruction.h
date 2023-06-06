@@ -3679,8 +3679,7 @@ protected:
 _SPIRV_OP(RoundFToTF32INTEL)
 #undef _SPIRV_OP
 
-template <Op OC>
-class SPIRVReadClockKHRInstBase : public SPIRVUnaryInst<OC> {
+template <Op OC> class SPIRVReadClockKHRInstBase : public SPIRVUnaryInst<OC> {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilityShaderClockKHR);
@@ -3702,18 +3701,19 @@ protected:
     auto InstName = OpCodeNameMap::map(OC);
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
 
-    // check for either 64 bit int type or two element vector of 32 bit int types.
+    // check for either 64 bit int type or two element vector of 32 bit int
+    // types.
     SPVErrLog.checkError(
-        ResCompTy->isTypeInt(64) || (ResCompCount == 2 && ResCompTy->isTypeInt(32)) , SPIRVEC_InvalidInstruction,
+        ResCompTy->isTypeInt(64) ||
+            (ResCompCount == 2 && ResCompTy->isTypeInt(32)),
+        SPIRVEC_InvalidInstruction,
         InstName + "\nResult value must be a scalar of integer"
                    " 64-bit type or two element vector of 32-bit type\n");
   }
-
 };
 
-#define _SPIRV_OP(x, ...) \
-  typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> \
-      SPIRV##x;
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> SPIRV##x;
 _SPIRV_OP(ReadClockKHR, true, 4)
 #undef _SPIRV_OP
 

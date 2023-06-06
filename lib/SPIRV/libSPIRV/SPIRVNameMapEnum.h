@@ -613,7 +613,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
-//   add(CapabilityShaderClockKHR,"ShaderClockKHR");
   add(CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
