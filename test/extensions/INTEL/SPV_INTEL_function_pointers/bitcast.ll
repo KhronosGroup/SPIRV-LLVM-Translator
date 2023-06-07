@@ -4,6 +4,7 @@
 ; }
 ; void bar() {
 ;    int (*fun_ptr)(int) = &foo;
+;    fun_ptr(0);
 ; }
 
 ; RUN: llvm-as %s -o %t.bc
