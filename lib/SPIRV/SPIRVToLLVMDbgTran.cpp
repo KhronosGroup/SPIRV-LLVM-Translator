@@ -211,6 +211,8 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
     if (BuilderMap.size() == 1)
       setBuildIdentifierAndStoragePath();
 
+    // This assertion is a guard/reminder to update the Producer argument to
+    // createCompileUnit() if a new DebugInfo type is ever created
     assert(DebugInst->getExtSetKind() ==
                SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
            DebugInst->getExtSetKind() ==
