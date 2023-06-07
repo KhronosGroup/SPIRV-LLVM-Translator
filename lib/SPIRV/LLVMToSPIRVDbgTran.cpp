@@ -240,10 +240,10 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
               BM->getDebugInfoEIS() ==
                   SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
             BM->addDebugLine(V, getVoidTy(),
-                             File ? File->getId() : getDebugInfoNone()->getId(),
+                             File ? File->getId() : getDebugInfoNoneId(),
                              LineNo, LineNo, Col, Col + 1);
           else
-            BM->addLine(V, File ? File->getId() : getDebugInfoNone()->getId(),
+            BM->addLine(V, File ? File->getId() : getDebugInfoNoneId(),
                         LineNo, Col);
         }
       } // Instructions
