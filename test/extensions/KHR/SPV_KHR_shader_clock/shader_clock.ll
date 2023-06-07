@@ -18,35 +18,24 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: TypeInt [[#I32Ty:]] 32
 ; CHECK-SPIRV: TypeInt [[#I64Ty:]] 64
 ; CHECK-SPIRV: TypeVector [[#I32v2Ty:]] [[#I32Ty]] 2
-; CHECK-SPIRV: TypeVector [[#I64v2Ty:]] [[#I64Ty]] 2
 
 ; CHECK-SPIRV: FunctionParameter [[#I32Ty]] [[I32ValId:.*]]
 
-; CHECK-SPIRV: ReadClockKHR [[#I32Ty]] [[#]] [[I32ValId]]
 ; CHECK-SPIRV: ReadClockKHR [[#I32v2Ty]] [[#]] [[I32ValId]]
 ; CHECK-SPIRV: ReadClockKHR [[#I64Ty]] [[#]] [[I32ValId]]
-; CHECK-SPIRV: ReadClockKHR [[#I64v2Ty]] [[#]] [[I32ValId]]
 
-; CHECK-LLVM: call spir_func i32 @_Z20__spirv_ReadClockKHRIjET_j(i32
 ; CHECK-LLVM: call spir_func <2 x i32> @_Z20__spirv_ReadClockKHRIDv2_jET_j(i32
 ; CHECK-LLVM: call spir_func i64 @_Z20__spirv_ReadClockKHRImET_j(i32
-; CHECK-LLVM: call spir_func <2 x i64> @_Z20__spirv_ReadClockKHRIDv2_mET_j(i32
 
 define spir_func void @_Z7read_types(i32 %a) {
-  %1 = tail call spir_func i32 @_Z20__spirv_ReadClockKHRIjET_j(i32 %a)
   %2 = tail call spir_func <2 x i32> @_Z20__spirv_ReadClockKHRIDv2_jET_j(i32 %a)
   %3 = tail call spir_func i64 @_Z20__spirv_ReadClockKHRImET_j(i32 %a)
-  %4 = tail call spir_func <2 x i64> @_Z20__spirv_ReadClockKHRIDv2_mET_j(i32 %a)
   ret void
 }
-
-declare spir_func i32 @_Z20__spirv_ReadClockKHRIjET_j(i32)
 
 declare spir_func <2 x i32> @_Z20__spirv_ReadClockKHRIDv2_jET_j(i32)
 
 declare spir_func i64 @_Z20__spirv_ReadClockKHRImET_j(i32)
-
-declare spir_func <2 x i64> @_Z20__spirv_ReadClockKHRIDv2_mET_j(i32)
 
 !opencl.spir.version = !{!0}
 !spirv.Source = !{!1}
