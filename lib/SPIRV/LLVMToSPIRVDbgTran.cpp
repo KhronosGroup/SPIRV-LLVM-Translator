@@ -243,8 +243,8 @@ void LLVMToSPIRVDbgTran::transLocationInfo() {
                              File ? File->getId() : getDebugInfoNoneId(),
                              LineNo, LineNo, Col, Col + 1);
           else
-            BM->addLine(V, File ? File->getId() : getDebugInfoNoneId(),
-                        LineNo, Col);
+            BM->addLine(V, File ? File->getId() : getDebugInfoNoneId(), LineNo, 
+                        Col);
         }
       } // Instructions
     }   // Basic Blocks
