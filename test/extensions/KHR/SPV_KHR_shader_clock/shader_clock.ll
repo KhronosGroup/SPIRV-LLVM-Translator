@@ -28,8 +28,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-LLVM: call spir_func i64 @_Z20__spirv_ReadClockKHRImET_j(i32
 
 define spir_func void @_Z7read_types(i32 %a) {
-  %1 = tail call spir_func <2 x i32> @_Z20__spirv_ReadClockKHRIDv2_jET_j(i32 %a)
-  %2 = tail call spir_func i64 @_Z20__spirv_ReadClockKHRImET_j(i32 %a)
+  %1 = tail call spir_func <2 x i32> @_Z20__spirv_ReadClockKHR
+  %2 = tail call spir_func i64 @_Z20__spirv_ReadClockKHR
   ret void
 }
 
