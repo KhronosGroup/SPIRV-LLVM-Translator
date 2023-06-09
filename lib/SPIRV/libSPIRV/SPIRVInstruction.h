@@ -3711,10 +3711,9 @@ protected:
                    " 64-bit type or two element vector of 32-bit type\n");
   }
 };
-
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVInstTemplateBase, Op##x, __VA_ARGS__> SPIRV##x;
-_SPIRV_OP(ReadClockKHR, true, 4)
+  typedef SPIRVReadClockKHRInstBase<Op##x> SPIRV##x;
+_SPIRV_OP(ReadClockKHR)
 #undef _SPIRV_OP
 
 } // namespace SPIRV
