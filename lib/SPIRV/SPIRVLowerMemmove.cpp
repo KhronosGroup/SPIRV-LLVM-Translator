@@ -41,6 +41,7 @@
 #include "SPIRVInternal.h"
 #include "libSPIRV/SPIRVDebug.h"
 
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 
@@ -101,7 +102,8 @@ bool SPIRVLowerMemmoveBase::expandMemMoveIntrinsicUses(Function &F) {
   for (User *U : make_early_inc_range(F.users())) {
     MemMoveInst *Inst = cast<MemMoveInst>(U);
     if (!isa<ConstantInt>(Inst->getLength())) {
-      expandMemMoveAsLoop(Inst);
+      expandMemMoveAsLoop(Inst,
+                          TargetTransformInfo(F.getParent()->getDataLayout()));
       Inst->eraseFromParent();
     } else {
       LowerMemMoveInst(*Inst);
