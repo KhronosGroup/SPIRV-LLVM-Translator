@@ -662,9 +662,6 @@ SPIRVToLLVMDbgTran::transTypeMemberOpenCL(const SPIRVExtInst *DebugInst) {
   }
   if (SPIRVFlags & SPIRVDebug::FlagIsStaticMember)
     Flags |= DINode::FlagStaticMember;
-  if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
-    if (SPIRVFlags & SPIRVDebug::FlagBitField)
-      Flags |= DINode::FlagBitField;
   if (Flags & DINode::FlagStaticMember && Ops.size() > MinOperandCount) {
     SPIRVValue *ConstVal = BM->get<SPIRVValue>(Ops[ValueIdx]);
     assert(isConstantOpCode(ConstVal->getOpCode()) &&
@@ -712,6 +709,8 @@ SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(const SPIRVExtInst *DebugInst,
   }
   if (SPIRVFlags & SPIRVDebug::FlagIsStaticMember)
     Flags |= DINode::FlagStaticMember;
+  if (SPIRVFlags & SPIRVDebug::FlagBitField)
+    Flags |= DINode::FlagBitField;
 
   if (Flags & DINode::FlagStaticMember && Ops.size() > MinOperandCount) {
     SPIRVValue *ConstVal = BM->get<SPIRVValue>(Ops[ValueIdx]);

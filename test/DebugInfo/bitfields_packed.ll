@@ -1,32 +1,48 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %t.bc
-; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %t.bc
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
+; RUN: FileCheck %s --input-file %t.spt -check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NO-BITFIELD
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t_1.bc
 ; RUN: llvm-dis %t_1.bc -o %t_1.ll
-; RUN: FileCheck %s --input-file %t.spt -check-prefix=CHECK-SPIRV
-; RUN: FileCheck %s --input-file %t_1.ll  -check-prefix=CHECK-LLVM
+; RUN: FileCheck %s --input-file %t_1.ll  -check-prefixes=CHECK-LLVM,CHECK-LLVM-NO-BITFIELD
 
-;CHECK-SPIRV: String [[#A:]] "a"
-;CHECK-SPIRV: String [[#B:]] "b"
-;CHECK-SPIRV: String [[#C:]] "c"
-;CHECK-SPIRV: String [[#D:]] "d"
-;CHECK-SPIRV: String [[#E:]] "e"
-;CHECK-SPIRV: String [[#F:]] "f"
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %t.bc
+; RUN: llvm-spirv %t.spv -o %t.spt --to-text
+; RUN: FileCheck %s --input-file %t.spt -check-prefixes=CHECK-SPIRV,CHECK-SPIRV-BITFIELD
+; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t_1.bc
+; RUN: llvm-dis %t_1.bc -o %t_1.ll
+; RUN: FileCheck %s --input-file %t_1.ll  -check-prefixes=CHECK-LLVM,CHECK-LLVM-NO-BITFIELD
 
-;CHECK-SPIRV: Constant [[#]] [[#]] 3
-;CHECK-SPIRV: Constant [[#]] [[#THREE:]] 3
-;CHECK-SPIRV: Constant [[#]] [[#]] 1
-;CHECK-SPIRV: Constant [[#]] [[#]] 1
-;CHECK-SPIRV: Constant [[#]] [[#ONE:]] 1
+; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-200 %t.bc -o %t.spv
+; RUN: llvm-spirv %t.spv -o %t.spt --to-text
+; RUN: FileCheck %s --input-file %t.spt -check-prefixes=CHECK-SPIRV,CHECK-SPIRV-BITFIELD
+; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t_1.bc
+; RUN: llvm-dis %t_1.bc -o %t_1.ll
+; RUN: FileCheck %s --input-file %t_1.ll  -check-prefixes=CHECK-LLVM,CHECK-LLVM-BITFIELD
 
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#A]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]]
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#B]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]]
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#C]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]]
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#D]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]]
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#E]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]]
-;CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#F]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#ONE]]
+; CHECK-SPIRV: String [[#A:]] "a"
+; CHECK-SPIRV: String [[#B:]] "b"
+; CHECK-SPIRV: String [[#C:]] "c"
+; CHECK-SPIRV: String [[#D:]] "d"
+; CHECK-SPIRV: String [[#E:]] "e"
+; CHECK-SPIRV: String [[#F:]] "f"
+
+; CHECK-SPIRV-DAG: Constant [[#]] [[#THREE:]] 3 {{$}}
+; CHECK-SPIRV-DAG: Constant [[#]] [[#ONE:]] 1 {{$}}
+
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#A]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#B]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#C]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#D]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#E]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+; CHECK-SPIRV-NO-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#F]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#]]
+
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#A]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]] [[#]]
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#B]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]] [[#]]
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#C]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]] [[#]]
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#D]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]] [[#]]
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#E]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#THREE]] [[#]]
+; CHECK-SPIRV-BITFIELD: ExtInst [[#]] [[#]] [[#]] DebugTypeMember [[#F]] [[#]] [[#]] [[#]] [[#]] [[#]] [[#ONE]] [[#]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -103,12 +119,13 @@ attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite
 ; CHECK-LLVM: ![[#BITFIELD_STRUCT]] = {{.*}}!DICompositeType(tag: DW_TAG_structure_type, name: "struct_bit_fields1", {{.*}}, identifier: "_ZTS18struct_bit_fields1")
 !21 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "struct_bit_fields1", file: !11, line: 19, size: 16, flags: DIFlagTypePassByValue, elements: !22, identifier: "_ZTS18struct_bit_fields1")
 !22 = !{!23, !25, !26, !27, !28, !29}
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "a", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, flags: {{.*}}DIFlagBitField{{.*}})
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "b", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 3, flags: {{.*}}DIFlagBitField{{.*}})
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "c", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 6, flags: {{.*}}DIFlagBitField{{.*}})
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "d", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 9, flags: {{.*}}DIFlagBitField{{.*}})
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "e", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 12, flags: {{.*}}DIFlagBitField{{.*}})
-; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "f", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 1, offset: 15, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "a", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "b", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 3, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "c", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 6, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "d", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 9, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "e", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 3, offset: 12, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-BITFIELD: !DIDerivedType(tag: DW_TAG_member, name: "f", scope: ![[#BITFIELD_STRUCT]], {{.*}}, size: 1, offset: 15, flags: {{.*}}DIFlagBitField{{.*}})
+; CHECK-LLVM-NO-BITFIELD-NOT: DIFlagBitField
 !23 = !DIDerivedType(tag: DW_TAG_member, name: "a", scope: !21, file: !11, line: 21, baseType: !24, size: 3, flags: DIFlagBitField, extraData: i64 0)
 !24 = !DIBasicType(name: "unsigned short", size: 16, encoding: DW_ATE_unsigned)
 !25 = !DIDerivedType(tag: DW_TAG_member, name: "b", scope: !21, file: !11, line: 22, baseType: !24, size: 3, offset: 3, flags: DIFlagBitField, extraData: i64 0)
