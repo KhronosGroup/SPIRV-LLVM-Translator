@@ -456,7 +456,7 @@ void LLVMToSPIRVDbgTran::transformToConstant(std::vector<SPIRVWord> &Ops,
   }
 }
 
-SPIRVWord mapDebugFlags(DINode::DIFlags DFlags) {
+SPIRVWord LLVMToSPIRVDbgTran::mapDebugFlags(DINode::DIFlags DFlags) {
   SPIRVWord Flags = 0;
   if ((DFlags & DINode::FlagAccessibility) == DINode::FlagPublic)
     Flags |= SPIRVDebug::FlagIsPublic;
@@ -486,10 +486,13 @@ SPIRVWord mapDebugFlags(DINode::DIFlags DFlags) {
     Flags |= SPIRVDebug::FlagTypePassByValue;
   if (DFlags & DINode::FlagTypePassByReference)
     Flags |= SPIRVDebug::FlagTypePassByReference;
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+    if (DFlags & DINode::FlagBitField)
+      Flags |= SPIRVDebug::FlagBitField;
   return Flags;
 }
 
-SPIRVWord transDebugFlags(const DINode *DN) {
+SPIRVWord LLVMToSPIRVDbgTran::transDebugFlags(const DINode *DN) {
   SPIRVWord Flags = 0;
   if (const DIGlobalVariable *GV = dyn_cast<DIGlobalVariable>(DN)) {
     if (GV->isLocalToUnit())
@@ -1391,7 +1394,10 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDebugLoc(const DebugLoc &Loc,
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInlinedAt(const DILocation *Loc) {
-  using namespace SPIRVDebug::Operand::InlinedAt;
+  // There is a Column operand in NonSemantic.Shader.200 spec
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+    return transDbgInlinedAtNonSemanticShader200(Loc);
+  using namespace SPIRVDebug::Operand::InlinedAt::OpenCL;
   SPIRVWordVec Ops(MinOperandCount);
   Ops[LineIdx] = Loc->getLine();
   Ops[ScopeIdx] = getScope(Loc->getScope())->getId();
@@ -1399,6 +1405,19 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInlinedAt(const DILocation *Loc) {
     Ops.push_back(transDbgEntry(IA)->getId());
   if (isNonSemanticDebugInfo())
     transformToConstant(Ops, {LineIdx});
+  return BM->addDebugInfo(SPIRVDebug::InlinedAt, getVoidTy(), Ops);
+}
+
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInlinedAtNonSemanticShader200(
+    const DILocation *Loc) {
+  using namespace SPIRVDebug::Operand::InlinedAt::NonSemantic;
+  SPIRVWordVec Ops(MinOperandCount);
+  Ops[LineIdx] = Loc->getLine();
+  Ops[ColumnIdx] = Loc->getColumn();
+  transformToConstant(Ops, {LineIdx, ColumnIdx});
+  Ops[ScopeIdx] = getScope(Loc->getScope())->getId();
+  if (DILocation *IA = Loc->getInlinedAt())
+    Ops.push_back(transDbgEntry(IA)->getId());
   return BM->addDebugInfo(SPIRVDebug::InlinedAt, getVoidTy(), Ops);
 }
 
