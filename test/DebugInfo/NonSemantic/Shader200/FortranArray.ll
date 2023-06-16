@@ -6,7 +6,6 @@
 ; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-
 ; CHECK-SPIRV: [[#CompUnit:]] [[#]] DebugCompilationUnit
 ; CHECK-SPIRV: [[#None:]] [[#]] DebugInfoNone
 ; CHECK-SPIRV: [[#EntryFunc:]] [[#]] DebugFunction
