@@ -161,7 +161,7 @@ static void translateSEVDecoration(Attribute Sev, SPIRVValue *Val) {
     Val->addDecorate(DecorationSingleElementVectorINTEL);
 }
 
-static SPIRVWord convertFloatToSPPIRVWord(float f) {
+static SPIRVWord convertFloatToSPIRVWord(float f) {
   union {
     float f;
     SPIRVWord spir;
@@ -3544,7 +3544,7 @@ SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
       II->getAttributes().getFnAttr("fpbuiltin-max-error")
                          .getValueAsString().getAsDouble(f);
       I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
-                     convertFloatToSPPIRVWord(f));
+                     convertFloatToSPIRVWord(f));
     }
   return I;
 }
@@ -3577,63 +3577,27 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
   //       and assume that the operations have no side effects (FP status flags
   //       aren't maintained), so the OpenCL builtin behavior should be
   //       acceptable.
-  case Intrinsic::fpbuiltin_acos:
-    return OpenCLLIB::Acos;
-  case Intrinsic::fpbuiltin_acosh:
-    return OpenCLLIB::Acosh;
-  case Intrinsic::fpbuiltin_asin:
-    return OpenCLLIB::Asin;
-  case Intrinsic::fpbuiltin_asinh:
-    return OpenCLLIB::Asinh;
-  case Intrinsic::fpbuiltin_atan:
-    return OpenCLLIB::Atan;
-  case Intrinsic::fpbuiltin_atan2:
-    return OpenCLLIB::Atan2;
-  case Intrinsic::fpbuiltin_atanh:
-    return OpenCLLIB::Atanh;
   case Intrinsic::ceil:
     return OpenCLLIB::Ceil;
   case Intrinsic::copysign:
     return OpenCLLIB::Copysign;
   case Intrinsic::cos:
-  case Intrinsic::fpbuiltin_cos:
     return OpenCLLIB::Cos;
-  case Intrinsic::fpbuiltin_cosh:
-    return OpenCLLIB::Cosh;
-  case Intrinsic::fpbuiltin_erf:
-    return OpenCLLIB::Erf;
-  case Intrinsic::fpbuiltin_erfc:
-    return OpenCLLIB::Erfc;
   case Intrinsic::exp:
-  case Intrinsic::fpbuiltin_exp:
     return OpenCLLIB::Exp;
   case Intrinsic::exp2:
-  case Intrinsic::fpbuiltin_exp2:
     return OpenCLLIB::Exp2;
-  case Intrinsic::fpbuiltin_exp10:
-    return OpenCLLIB::Exp10;
-  case Intrinsic::fpbuiltin_expm1:
-    return OpenCLLIB::Expm1;
   case Intrinsic::fabs:
     return OpenCLLIB::Fabs;
   case Intrinsic::floor:
     return OpenCLLIB::Floor;
   case Intrinsic::fma:
     return OpenCLLIB::Fma;
-  case Intrinsic::fpbuiltin_hypot:
-    return OpenCLLIB::Hypot;
-  case Intrinsic::fpbuiltin_ldexp:
-    return OpenCLLIB::Ldexp;
   case Intrinsic::log:
-  case Intrinsic::fpbuiltin_log:
     return OpenCLLIB::Log;
   case Intrinsic::log10:
-  case Intrinsic::fpbuiltin_log10:
     return OpenCLLIB::Log10;
-  case Intrinsic::fpbuiltin_log1p:
-    return OpenCLLIB::Log1p;
   case Intrinsic::log2:
-  case Intrinsic::fpbuiltin_log2:
     return OpenCLLIB::Log2;
   case Intrinsic::maximum:
     return OpenCLLIB::Fmax;
@@ -3646,7 +3610,6 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
   case Intrinsic::nearbyint:
     return OpenCLLIB::Rint;
   case Intrinsic::pow:
-  case Intrinsic::fpbuiltin_pow:
     return OpenCLLIB::Pow;
   case Intrinsic::powi:
     return OpenCLLIB::Pown;
@@ -3656,22 +3619,10 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
     return OpenCLLIB::Round;
   case Intrinsic::roundeven:
     return OpenCLLIB::Rint;
-  case Intrinsic::fpbuiltin_rsqrt:
-    return OpenCLLIB::Rsqrt;
   case Intrinsic::sin:
-  case Intrinsic::fpbuiltin_sin:
     return OpenCLLIB::Sin;
-  case Intrinsic::fpbuiltin_sincos:
-    return OpenCLLIB::Sincos;
-  case Intrinsic::fpbuiltin_sinh:
-    return OpenCLLIB::Sinh;
   case Intrinsic::sqrt:
-  case Intrinsic::fpbuiltin_sqrt:
     return OpenCLLIB::Sqrt;
-  case Intrinsic::fpbuiltin_tan:
-    return OpenCLLIB::Tan;
-  case Intrinsic::fpbuiltin_tanh:
-    return OpenCLLIB::Tanh;
   case Intrinsic::trunc:
     return OpenCLLIB::Trunc;
   default:
@@ -4547,100 +4498,133 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Result;
   }
-
-  // add/sub/mul/div/rem fpbuiltin intrinsics
-  case Intrinsic::fpbuiltin_fadd: {
-    auto BI = BM->addBinaryInst(OpFAdd, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
-  case Intrinsic::fpbuiltin_fsub: {
-    auto BI = BM->addBinaryInst(OpFSub, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
-  case Intrinsic::fpbuiltin_fmul: {
-    auto BI = BM->addBinaryInst(OpFMul, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
-  case Intrinsic::fpbuiltin_fdiv: {
-    auto BI = BM->addBinaryInst(OpFDiv, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
-  case Intrinsic::fpbuiltin_frem: {
-    auto BI = BM->addBinaryInst(OpFRem, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
-
-  // Unary fpbuiltin intrinsics
-  case::fpbuiltin_sin:
-  case::fpbuiltin_cos:
-  case::fpbuiltin_tan:
-  case::fpbuiltin_sinh:
-  case::fpbuiltin_cosh:
-  case::fpbuiltin_tanh:
-  case::fpbuiltin_asin:
-  case::fpbuiltin_acos:
-  case::fpbuiltin_atan:
-  case::fpbuiltin_atan2:
-  case::fpbuiltin_asinh:
-  case::fpbuiltin_acosh:
-  case::fpbuiltin_atanh:
-  case::fpbuiltin_exp:
-  case::fpbuiltin_exp2:
-  case::fpbuiltin_exp10:
-  case::fpbuiltin_expm1:
-  case::fpbuiltin_log:
-  case::fpbuiltin_log2:
-  case::fpbuiltin_log10:
-  case::fpbuiltin_log1p:
-  case::fpbuiltin_sqrt:
-  case::fpbuiltin_rsqrt:
-  case::fpbuiltin_erf:
-  case::fpbuiltin_erfc: {
-    if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
-      break;
-    SPIRVWord ExtOp = getBuiltinIdForIntrinsic(IID);
-    SPIRVType *STy = transType(II->getType());
-    std::vector<SPIRVValue *> Ops(1, transValue(II->getArgOperand(0), BB));
-    auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
-                          BB);
-    return addFPBuiltinDecoration(BM, II, BI);
-  }
   
   default:
+    if (auto BVar = transFPBuiltinIntrinsicInst(II, BB))
+      return BVar;
     if (BM->isUnknownIntrinsicAllowed(II)) {
-      auto BVar = BM->addCallInst(
+      return BM->addCallInst(
           transFunctionDecl(II->getCalledFunction()),
           transArguments(II, BB,
                          SPIRVEntry::createUnique(OpFunctionCall).get()),
           BB);
-      const bool AllowFPMaxError =
-        BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
-      bool IsLLVMFPBuiltin =
-          II->getCalledFunction()->getName().startswith("llvm.fpbuiltin");
-      // Add a new decoration for llvm.builtin intrinsics, if needed
-      if (IsLLVMFPBuiltin && AllowFPMaxError)
-        if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
-          double f = 0.0;
-          II->getAttributes().getFnAttr("fpbuiltin-max-error")
-              .getValueAsString().getAsDouble(f);
-          BVar->addDecorate(DecorationFPMaxErrorDecorationINTEL, convertFloatToSPPIRVWord(f));
-        }
-      return BVar;
     } else
       // Other LLVM intrinsics shouldn't get to SPIRV, because they
       // can't be represented in SPIRV or aren't implemented yet.
       BM->SPIRVCK(
           false, InvalidFunctionCall, II->getCalledOperand()->getName().str());
+  }
+  return nullptr;
+}
+
+LLVMToSPIRVBase::FPBuiltinType
+LLVMToSPIRVBase::getFPBuiltinType(IntrinsicInst *II, StringRef &OpName) {
+  StringRef Name = II->getCalledFunction()->getName();
+  if (!Name.startswith("llvm.fpbuiltin"))
+    return FPBuiltinType::UNKNOWN;
+  Name.consume_front("llvm.fpbuiltin.");
+  OpName = Name.split('.').first;
+  llvm::errs() << "ARV: OpName = " << OpName << "\n";
+  FPBuiltinType Type = StringSwitch<FPBuiltinType>(OpName)
+  .Cases("fadd", "fsub", "fmul", "fdiv", "frem", FPBuiltinType::REGULAR_MATH)
+  .Cases("sin", "cos", "tan", FPBuiltinType::EXT_1OPS)
+  .Cases("sinh", "cosh", "tanh", FPBuiltinType::EXT_1OPS)
+  .Cases("asin", "acos", "atan", FPBuiltinType::EXT_1OPS)
+  .Cases("asinh", "acosh", "atanh", FPBuiltinType::EXT_1OPS)
+  .Cases("exp", "exp2", "exp10", "expm1", FPBuiltinType::EXT_1OPS)
+  .Cases("log", "log2", "log10", "log1p", FPBuiltinType::EXT_1OPS)
+  .Cases("sqrt", "rsqrt", "erf", "erfc", FPBuiltinType::EXT_1OPS)
+  .Cases("atan2", "pow", "hypot", "ldexp", FPBuiltinType::EXT_2OPS)
+  .Case("sincos", FPBuiltinType::EXT_3OPS)
+  .Default(FPBuiltinType::UNKNOWN);
+  return Type;
+}
+
+SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
+                                                         SPIRVBasicBlock *BB) {
+  StringRef OpName;
+  auto FPBuiltinType = getFPBuiltinType(II, OpName);
+  switch (FPBuiltinType) {
+    case FPBuiltinType::REGULAR_MATH: {
+      auto BinOp = StringSwitch<Op>(OpName)
+      .Case("fadd", OpFAdd)
+      .Case("fsub", OpFSub)
+      .Case("fmul", OpFMul)
+      .Case("fdiv", OpFDiv)
+      .Case("frem", OpFRem)
+      .Default(OpUndef);
+      auto BI = BM->addBinaryInst(BinOp, transType(II->getType()),
+                                  transValue(II->getArgOperand(0), BB),
+                                  transValue(II->getArgOperand(1), BB), BB);
+      return addFPBuiltinDecoration(BM, II, BI);
+    }
+    case FPBuiltinType::EXT_1OPS: {
+      if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
+        break;
+      SPIRVType *STy = transType(II->getType());
+      std::vector<SPIRVValue *> Ops(1, transValue(II->getArgOperand(0), BB));
+      auto ExtOp = StringSwitch<SPIRVWord>(OpName)
+      .Case("sin", OpenCLLIB::Sin)
+      .Case("cos", OpenCLLIB::Cos)
+      .Case("tan", OpenCLLIB::Tan)
+      .Case("sinh", OpenCLLIB::Sinh)
+      .Case("cosh", OpenCLLIB::Cosh)
+      .Case("tanh", OpenCLLIB::Tanh)
+      .Case("asin", OpenCLLIB::Asin)
+      .Case("acos", OpenCLLIB::Acos)
+      .Case("atan", OpenCLLIB::Atan)
+      .Case("asinh", OpenCLLIB::Asinh)
+      .Case("acosh", OpenCLLIB::Acosh)
+      .Case("atanh", OpenCLLIB::Atanh)
+      .Case("exp", OpenCLLIB::Exp)
+      .Case("exp2", OpenCLLIB::Exp2)
+      .Case("exp10", OpenCLLIB::Exp10)
+      .Case("expm1", OpenCLLIB::Expm1)
+      .Case("log", OpenCLLIB::Log)
+      .Case("log2", OpenCLLIB::Log2)
+      .Case("log10", OpenCLLIB::Log10)
+      .Case("log1p", OpenCLLIB::Log1p)
+      .Case("sqrt", OpenCLLIB::Sqrt)
+      .Case("rsqrt", OpenCLLIB::Rsqrt)
+      .Case("erf", OpenCLLIB::Erf)
+      .Case("erfc", OpenCLLIB::Erfc)
+      .Default(SPIRVWORD_MAX);
+      auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                               Ops, BB);
+      return addFPBuiltinDecoration(BM, II, BI);
+    }
+    case FPBuiltinType::EXT_2OPS: {
+      if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
+        break;
+      SPIRVType *STy = transType(II->getType());
+      std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                    transValue(II->getArgOperand(1), BB)};
+      auto ExtOp = StringSwitch<SPIRVWord>(OpName)
+      .Case("atan2", OpenCLLIB::Atan2)
+      .Case("hypot", OpenCLLIB::Hypot)
+      .Case("pow", OpenCLLIB::Pow)
+      .Case("ldexp", OpenCLLIB::Ldexp)
+      .Default(SPIRVWORD_MAX);
+      auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                               Ops, BB);
+      return addFPBuiltinDecoration(BM, II, BI);
+    }
+    case FPBuiltinType::EXT_3OPS: {
+      if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
+        break;
+      SPIRVType *STy = transType(II->getType());
+      std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
+                                    transValue(II->getArgOperand(1), BB),
+                                    transValue(II->getArgOperand(2), BB)};
+      auto ExtOp = StringSwitch<SPIRVWord>(OpName)
+      .Case("sincos", OpenCLLIB::Sincos)
+      .Default(SPIRVWORD_MAX);
+      auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                               Ops, BB);
+      return addFPBuiltinDecoration(BM, II, BI);
+    }
+    default:
+      return nullptr;
   }
   return nullptr;
 }

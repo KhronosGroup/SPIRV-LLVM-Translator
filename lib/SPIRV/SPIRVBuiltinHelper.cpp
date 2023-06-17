@@ -102,6 +102,7 @@ Value *BuiltinCallMutator::doConversion() {
   CallInst *NewCall =
       Builder.Insert(addCallInst(CI->getModule(), FuncName, ReturnTy, Args,
                                  &Attrs, nullptr, Mangler.get()));
+  NewCall->copyMetadata(*CI);
   Value *Result = MutateRet ? MutateRet(Builder, NewCall) : NewCall;
   Result->takeName(CI);
   if (!CI->getType()->isVoidTy())
