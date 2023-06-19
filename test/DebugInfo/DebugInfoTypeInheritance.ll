@@ -9,7 +9,7 @@
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-debug-info-version=nonsemantic-shader-100 -o %t.spt
 ; RUN: FileCheck %s --input-file %t.spt --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NONSEM
 ; RUN: llvm-spirv %t.bc --spirv-debug-info-version=nonsemantic-shader-100 -o %t.spv
-; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LLVM
 
@@ -39,45 +39,43 @@ target triple = "spir64-unknown-unknown"
 %class.C = type { i8 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define dso_local noundef i32 @_Z3foov() #0 !dbg !10 {
+define dso_local noundef i32 @_Z3foov() #0 !dbg !8 {
   %1 = alloca %class.C, align 1
-  call void @llvm.dbg.declare(metadata %class.C* %1, metadata !16, metadata !DIExpression()), !dbg !24
-  ret i32 0, !dbg !25
+  call void @llvm.dbg.declare(metadata %class.C* %1, metadata !14, metadata !DIExpression()), !dbg !22
+  ret i32 0, !dbg !23
 }
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { mustprogress noinline }
-attributes #1 = { willreturn }
+attributes #0 = { mustprogress noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { nofree nosync nounwind readnone speculatable willreturn }
 
 !llvm.dbg.cu = !{!0}
-!llvm.module.flags = !{!2, !3, !4, !5, !6, !7, !8}
-!llvm.ident = !{!9}
+!llvm.module.flags = !{!2, !3, !4, !5, !6}
+!llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !1, producer: "clang version 17.0.0 (https://github.com/llvm/llvm-project.git 1f8a33c19c79fd4649a07eb70ea394c60a8ce316)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !1, producer: "clang version 14.0.0 (https://github.com/llvm/llvm-project.git 329fda39c507e8740978d10458451dcdb21563be)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
 !1 = !DIFile(filename: "/app/example.cpp", directory: "/app")
 !2 = !{i32 7, !"Dwarf Version", i32 4}
 !3 = !{i32 2, !"Debug Info Version", i32 3}
 !4 = !{i32 1, !"wchar_size", i32 4}
-!5 = !{i32 8, !"PIC Level", i32 2}
-!6 = !{i32 7, !"PIE Level", i32 2}
-!7 = !{i32 7, !"uwtable", i32 2}
-!8 = !{i32 7, !"frame-pointer", i32 2}
-!9 = !{!"clang version 17.0.0 (https://github.com/llvm/llvm-project.git 1f8a33c19c79fd4649a07eb70ea394c60a8ce316)"}
-!10 = distinct !DISubprogram(name: "foo", linkageName: "_Z3foov", scope: !11, file: !11, line: 4, type: !12, scopeLine: 4, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !15)
-!11 = !DIFile(filename: "example.cpp", directory: "/app")
-!12 = !DISubroutineType(types: !13)
-!13 = !{!14}
-!14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!15 = !{}
-!16 = !DILocalVariable(name: "c", scope: !10, file: !11, line: 7, type: !17)
-!17 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "C", file: !11, line: 3, size: 8, flags: DIFlagTypePassByValue, elements: !18, identifier: "_ZTS1C")
-!18 = !{!19}
-!19 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !17, baseType: !20, flags: DIFlagPublic, extraData: i32 0)
-!20 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "B", file: !11, line: 2, size: 8, flags: DIFlagTypePassByValue, elements: !21, identifier: "_ZTS1B")
-!21 = !{!22}
-!22 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !20, baseType: !23, flags: DIFlagPublic, extraData: i32 0)
-!23 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "A", file: !11, line: 1, size: 8, flags: DIFlagTypePassByValue, elements: !15, identifier: "_ZTS1A")
-!24 = !DILocation(line: 7, column: 11, scope: !10)
-!25 = !DILocation(line: 8, column: 3, scope: !10)
+!5 = !{i32 7, !"uwtable", i32 1}
+!6 = !{i32 7, !"frame-pointer", i32 2}
+!7 = !{!"clang version 14.0.0 (https://github.com/llvm/llvm-project.git 329fda39c507e8740978d10458451dcdb21563be)"}
+!8 = distinct !DISubprogram(name: "foo", linkageName: "_Z3foov", scope: !9, file: !9, line: 4, type: !10, scopeLine: 4, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !13)
+!9 = !DIFile(filename: "example.cpp", directory: "/app")
+!10 = !DISubroutineType(types: !11)
+!11 = !{!12}
+!12 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!13 = !{}
+!14 = !DILocalVariable(name: "c", scope: !8, file: !9, line: 7, type: !15)
+!15 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "C", file: !9, line: 3, size: 8, flags: DIFlagTypePassByValue, elements: !16, identifier: "_ZTS1C")
+!16 = !{!17}
+!17 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !15, baseType: !18, flags: DIFlagPublic, extraData: i32 0)
+!18 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "B", file: !9, line: 2, size: 8, flags: DIFlagTypePassByValue, elements: !19, identifier: "_ZTS1B")
+!19 = !{!20}
+!20 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !18, baseType: !21, flags: DIFlagPublic, extraData: i32 0)
+!21 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "A", file: !9, line: 1, size: 8, flags: DIFlagTypePassByValue, elements: !13, identifier: "_ZTS1A")
+!22 = !DILocation(line: 7, column: 11, scope: !8)
+!23 = !DILocation(line: 8, column: 3, scope: !8)
