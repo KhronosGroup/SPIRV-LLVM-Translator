@@ -3239,7 +3239,7 @@ bool SPIRVToLLVM::translate() {
   }
 
   for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
-    auto BV = BM->getVariable(I);
+    auto *BV = BM->getVariable(I);
     if (BV->getStorageClass() != StorageClassFunction)
       transValue(BV, nullptr, nullptr);
     else

@@ -141,11 +141,11 @@ const std::string &SPIRVToLLVMDbgTran::getString(const SPIRVId Id) {
   return String->getStr();
 }
 
-const std::string
+Optional<std::string>
 SPIRVToLLVMDbgTran::getStringSourceContinued(const SPIRVId Id,
                                              SPIRVExtInst *DebugInst) {
   if (!isValidId(Id) || getDbgInst<SPIRVDebug::DebugInfoNone>(Id))
-    return "";
+    return {};
   std::string Str = BM->get<SPIRVString>(Id)->getStr();
   using namespace SPIRVDebug::Operand::SourceContinued;
   for (auto *I : DebugInst->getContinuedInstructions()) {
