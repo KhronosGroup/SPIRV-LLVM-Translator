@@ -4524,7 +4524,6 @@ LLVMToSPIRVBase::getFPBuiltinType(IntrinsicInst *II, StringRef &OpName) {
     return FPBuiltinType::UNKNOWN;
   Name.consume_front("llvm.fpbuiltin.");
   OpName = Name.split('.').first;
-  llvm::errs() << "ARV: OpName = " << OpName << "\n";
   FPBuiltinType Type = StringSwitch<FPBuiltinType>(OpName)
   .Cases("fadd", "fsub", "fmul", "fdiv", "frem", FPBuiltinType::REGULAR_MATH)
   .Cases("sin", "cos", "tan", FPBuiltinType::EXT_1OPS)
