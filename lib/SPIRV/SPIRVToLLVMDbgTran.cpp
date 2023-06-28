@@ -85,7 +85,7 @@ SPIRVToLLVMDbgTran::getDIFile(const std::string &FileName,
     // relations with other debug metadata is not going through DICompileUnit
     if (!Split.BaseName.empty()) {
       if (Source.hasValue()) {
-        StringRef SourceRef = StringRef(Source.getValue());
+        const StringRef SourceRef = StringRef(Source.getValue());
         return BuilderMap.begin()->second->createFile(
             Split.BaseName, Split.Path, CS, SourceRef);
       }
@@ -149,7 +149,7 @@ SPIRVToLLVMDbgTran::getStringSourceContinued(const SPIRVId Id,
   std::string Str = BM->get<SPIRVString>(Id)->getStr();
   using namespace SPIRVDebug::Operand::SourceContinued;
   for (auto *I : DebugInst->getContinuedInstructions()) {
-    std::string TmpStr =
+    const std::string TmpStr =
         BM->get<SPIRVString>(I->getArguments()[TextIdx])->getStr();
     Str.append(TmpStr);
   }
@@ -696,14 +696,14 @@ SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(const SPIRVExtInst *DebugInst,
   assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
 
   DIFile *File = getFile(Ops[SourceIdx]);
-  SPIRVWord LineNo =
+  const SPIRVWord LineNo =
       getConstantValueOrLiteral(Ops, LineIdx, DebugInst->getExtSetKind());
-  StringRef Name = getString(Ops[NameIdx]);
+  const StringRef Name = getString(Ops[NameIdx]);
   DIType *BaseType =
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[TypeIdx]));
-  uint64_t OffsetInBits =
+  const uint64_t OffsetInBits =
       BM->get<SPIRVConstant>(Ops[OffsetIdx])->getZExtIntValue();
-  SPIRVWord SPIRVFlags =
+  const SPIRVWord SPIRVFlags =
       getConstantValueOrLiteral(Ops, FlagsIdx, DebugInst->getExtSetKind());
   DINode::DIFlags Flags = DINode::FlagZero;
   if ((SPIRVDebug::FlagAccess & SPIRVFlags) == SPIRVDebug::FlagIsPublic) {
@@ -726,8 +726,8 @@ SPIRVToLLVMDbgTran::transTypeMemberNonSemantic(const SPIRVExtInst *DebugInst,
     return getDIBuilder(DebugInst).createStaticMemberType(
         Scope, Name, File, LineNo, BaseType, Flags, cast<llvm::Constant>(Val));
   }
-  uint64_t Size = BM->get<SPIRVConstant>(Ops[SizeIdx])->getZExtIntValue();
-  uint64_t Alignment = 0;
+  const uint64_t Size = BM->get<SPIRVConstant>(Ops[SizeIdx])->getZExtIntValue();
+  const uint64_t Alignment = 0;
 
   return getDIBuilder(ParentInst)
       .createMemberType(Scope, Name, File, LineNo, Size, Alignment,
@@ -1164,7 +1164,8 @@ DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
   // No Child operand for NonSemantic debug spec
-  SPIRVWord Offset = isNonSemanticDebugInfo(DebugInst->getExtSetKind()) ? 1 : 0;
+  const SPIRVWord Offset =
+      isNonSemanticDebugInfo(DebugInst->getExtSetKind()) ? 1 : 0;
   DIType *Parent =
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ParentIdx - Offset]));
   DIType *Child =
@@ -1172,15 +1173,15 @@ DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
           ? ChildClass
           : transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ChildIdx]));
   DINode::DIFlags Flags = DINode::FlagZero;
-  SPIRVWord SPIRVFlags = getConstantValueOrLiteral(Ops, FlagsIdx - Offset,
-                                                   DebugInst->getExtSetKind());
+  const SPIRVWord SPIRVFlags = getConstantValueOrLiteral(
+      Ops, FlagsIdx - Offset, DebugInst->getExtSetKind());
   if ((SPIRVFlags & SPIRVDebug::FlagAccess) == SPIRVDebug::FlagIsPublic)
     Flags |= llvm::DINode::FlagPublic;
   if ((SPIRVFlags & SPIRVDebug::FlagAccess) == SPIRVDebug::FlagIsProtected)
     Flags |= llvm::DINode::FlagProtected;
   if ((SPIRVFlags & SPIRVDebug::FlagAccess) == SPIRVDebug::FlagIsPrivate)
     Flags |= llvm::DINode::FlagPrivate;
-  uint64_t OffsetVal =
+  const uint64_t OffsetVal =
       BM->get<SPIRVConstant>(Ops[OffsetIdx - Offset])->getZExtIntValue();
   return getDIBuilder(DebugInst).createInheritance(Child, Parent, OffsetVal, 0,
                                                    Flags);
@@ -1533,7 +1534,7 @@ DebugLoc SPIRVToLLVMDbgTran::transDebugScope(const SPIRVInstruction *Inst) {
   // If DebugLine and OpLine are both active give DebugLine priority
   if (auto DL = Inst->getDebugLine()) {
     using namespace SPIRVDebug::Operand::DebugLine;
-    SPIRVWordVec DebugLineArgs = DL->getArguments();
+    const SPIRVWordVec DebugLineArgs = DL->getArguments();
     Line =
         getConstantValueOrLiteral(DebugLineArgs, StartIdx, DL->getExtSetKind());
     Col = getConstantValueOrLiteral(DebugLineArgs, ColumnStartIdx,
@@ -1581,9 +1582,9 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInlinedNonSemanticShader200(
   using namespace SPIRVDebug::Operand::InlinedAt::NonSemantic;
   SPIRVWordVec Ops = DebugInst->getArguments();
   assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
-  SPIRVWord Line =
+  const SPIRVWord Line =
       getConstantValueOrLiteral(Ops, LineIdx, DebugInst->getExtSetKind());
-  unsigned Col =
+  const unsigned Col =
       getConstantValueOrLiteral(Ops, ColumnIdx, DebugInst->getExtSetKind());
   DILocalScope *Scope =
       cast<DILocalScope>(getScope(BM->getEntry(Ops[ScopeIdx])));
@@ -1613,7 +1614,7 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
     return getDIFile(getString(SourceArgs[FileIdx]));
 
   if (!isNonSemanticDebugInfo(Source->getExtSetKind())) {
-    std::string ChecksumStr =
+    const std::string ChecksumStr =
         getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[TextIdx])
             ? ""
             : getString(SourceArgs[TextIdx]);
@@ -1629,12 +1630,12 @@ DIFile *SPIRVToLLVMDbgTran::getFile(const SPIRVId SourceId) {
       // go together
       if (!getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[ChecksumKind]) &&
           !getDbgInst<SPIRVDebug::DebugInfoNone>(SourceArgs[ChecksumValue])) {
-        llvm::DIFile::ChecksumKind Kind = SPIRV::DbgChecksumKindMap::rmap(
+        const llvm::DIFile::ChecksumKind Kind = SPIRV::DbgChecksumKindMap::rmap(
             static_cast<SPIRVDebug::FileChecksumKind>(
                 BM->get<SPIRVConstant>(SourceArgs[ChecksumKind])
                     ->getZExtIntValue()));
-        StringRef Checksum = getString(SourceArgs[ChecksumValue]);
-        size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
+        const StringRef Checksum = getString(SourceArgs[ChecksumValue]);
+        const size_t ChecksumEndPos = Checksum.find_if_not(llvm::isHexDigit);
         CS.emplace(Kind, Checksum.substr(0, ChecksumEndPos));
       }
     }

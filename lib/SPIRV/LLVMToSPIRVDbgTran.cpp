@@ -1440,7 +1440,7 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
                         ->getId());
     else if (BM->getDebugInfoEIS() ==
              SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
-      SPIRVDebug::FileChecksumKind ChecksumKind =
+      const SPIRVDebug::FileChecksumKind ChecksumKind =
           SPIRV::DbgChecksumKindMap::map(CheckSum.Kind);
 
       Ops.push_back(
@@ -1473,10 +1473,10 @@ SPIRVExtInst *LLVMToSPIRVDbgTran::getSource(const T *DIEntry) {
     if (NumWords < MaxNumWords)
       return Source;
 
-    uint64_t NumOfContinuedInstructions =
+    const uint64_t NumOfContinuedInstructions =
         NumWords / MaxNumWords - 1 + (NumWords % MaxNumWords ? 1 : 0);
     for (uint64_t J = 0; J < NumOfContinuedInstructions; J++) {
-      SPIRVWord Op = BM->getString(Str.substr(0, MaxStrSize))->getId();
+      const SPIRVWord Op = BM->getString(Str.substr(0, MaxStrSize))->getId();
       BM->addDebugInfo(SPIRVDebug::SourceContinued, getVoidTy(), {Op});
       Str.erase(0, MaxStrSize);
     }
