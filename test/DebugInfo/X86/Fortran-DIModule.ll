@@ -2,6 +2,13 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_debug_module %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.ll
+; RUN: llc -mtriple=x86_64-unknown-linux-gnu %t.ll -filetype=obj -o - | \
+; RUN:   llvm-dwarfdump - | FileCheck %s
+
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_debug_module %t.bc -o %t.spv --spirv-debug-info-version=nonsemantic-shader-100
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.ll
+; RUN: llc -mtriple=x86_64-unknown-linux-gnu %t.ll -filetype=obj -o - | \
+; RUN:   llvm-dwarfdump - | FileCheck %s
 
 ; RUN: llc -mtriple=x86_64-unknown-linux-gnu %t.ll -filetype=obj -o - | \
 ; RUN:   llvm-dwarfdump - | FileCheck %s
