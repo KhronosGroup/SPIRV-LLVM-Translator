@@ -815,7 +815,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
                          : getDebugInfoNoneId();
     }
   };
-  for (int Idx = CountIdx; Idx < OperandCount; ++Idx)
+  for (int Idx = 0; Idx < OperandCount; ++Idx)
     TransOperand(Idx);
   return BM->addDebugInfo(SPIRVDebug::TypeSubrange, getVoidTy(), Ops);
 }

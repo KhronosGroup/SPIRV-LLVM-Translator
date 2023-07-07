@@ -396,9 +396,9 @@ namespace TypeVector = TypeArray;
 
 namespace TypeSubrange {
 enum {
-  CountIdx        = 0,
-  LowerBoundIdx   = 1,
-  UpperBoundIdx   = 2,
+  LowerBoundIdx   = 0,
+  UpperBoundIdx   = 1,
+  CountIdx        = 2,
   StrideIdx       = 3,
   OperandCount    = 4
 };
