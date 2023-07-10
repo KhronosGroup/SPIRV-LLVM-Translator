@@ -400,7 +400,8 @@ enum {
   UpperBoundIdx   = 1,
   CountIdx        = 2,
   StrideIdx       = 3,
-  OperandCount    = 4
+  MinOperandCount = 3,
+  MaxOperandCount = 4
 };
 }
 

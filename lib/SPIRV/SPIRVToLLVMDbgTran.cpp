@@ -556,8 +556,8 @@ DISubrange *
 SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::TypeSubrange;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
-  assert(Ops.size() == OperandCount && "Invalid number of operands");
-  std::vector<Metadata *> TranslatedOps(OperandCount, nullptr);
+  assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
+  std::vector<Metadata *> TranslatedOps(MaxOperandCount, nullptr);
   auto TransOperand = [&Ops, &TranslatedOps, this](int Idx) -> void {
     if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[Idx])) {
       if (auto *GlobalVar = getDbgInst<SPIRVDebug::GlobalVariable>(Ops[Idx])) {
@@ -576,7 +576,7 @@ SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
       }
     }
   };
-  for (int Idx = 0; Idx < OperandCount; ++Idx)
+  for (size_t Idx = 0; Idx < Ops.size(); ++Idx)
     TransOperand(Idx);
   return getDIBuilder(DebugInst).getOrCreateSubrange(
       TranslatedOps[CountIdx], TranslatedOps[LowerBoundIdx],
