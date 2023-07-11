@@ -819,7 +819,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
     if (auto *Node = dyn_cast<MDNode>(RawNode))
       Ops[StrideIdx] = transDbgEntry(Node)->getId();
     else
-      Ops[StrideIdx] = SPIRVWriter->transValue(ST->getStride().get<ConstantInt *>(), nullptr)->getId();
+      Ops[StrideIdx] =
+          SPIRVWriter->transValue(ST->getStride().get<ConstantInt *>(), nullptr)
+              ->getId();
   }
   return BM->addDebugInfo(SPIRVDebug::TypeSubrange, getVoidTy(), Ops);
 }
