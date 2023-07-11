@@ -785,15 +785,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
     case CountIdx:
       RawNode = ST->getRawCountNode();
       break;
-    case StrideIdx:
-      RawNode = ST->getRawStride();
-      if (RawNode)
-        Ops.resize(MaxOperandCount);
-      break;
     }
     if (!RawNode) {
-      if (Idx != StrideIdx)
-        Ops[Idx] = getDebugInfoNoneId();
+      Ops[Idx] = getDebugInfoNoneId();
       return;
     }
     if (auto *Node = dyn_cast<MDNode>(RawNode)) {
@@ -818,8 +812,15 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgSubrangeType(const DISubrange *ST) {
                          : getDebugInfoNoneId();
     }
   };
-  for (int Idx = 0; Idx < MaxOperandCount; ++Idx)
+  for (int Idx = 0; Idx < MinOperandCount; ++Idx)
     TransOperand(Idx);
+  if (auto *RawNode = ST->getRawStride()) {
+    Ops.resize(MaxOperandCount);
+    if (auto *Node = dyn_cast<MDNode>(RawNode))
+      Ops[StrideIdx] = transDbgEntry(Node)->getId();
+    else
+      Ops[StrideIdx] = SPIRVWriter->transValue(ST->getStride().get<ConstantInt *>(), nullptr)->getId();
+  }
   return BM->addDebugInfo(SPIRVDebug::TypeSubrange, getVoidTy(), Ops);
 }
 
