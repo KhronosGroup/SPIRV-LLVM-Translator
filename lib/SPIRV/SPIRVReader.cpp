@@ -3873,9 +3873,17 @@ bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
       assert(Literals.size() == 1 &&
              "FP Max Error decoration shall have 1 operand");
       auto f = convertSPIRVWordToFloat(Literals[0]);
-      MDNode *N =
+      if (CallInst *CI = dyn_cast<CallInst>(I)) {
+        // Add atribute
+        auto A = llvm::Attribute::get(*Context, "fpbuiltin-max-error",
+                                      std::to_string(f));
+        CI->addFnAttr(A);
+      } else {
+        // Add metadata
+        MDNode *N =
           MDNode::get(*Context, MDString::get(*Context, std::to_string(f)));
-      I->setMetadata("fpbuiltin-max-error", N);
+        I->setMetadata("fpbuiltin-max-error", N);
+      }
       return true;
     }
 

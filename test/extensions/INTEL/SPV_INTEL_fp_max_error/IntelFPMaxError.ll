@@ -113,7 +113,7 @@
 ; CHECK-SPIRV: ExtInst [[#FTYPE]] [[#T31]] [[#OCLEXTID]] ldexp
 ; CHECK-SPIRV: ExtInst [[#FTYPE]] [[#T32]] [[#OCLEXTID]] pow
 ; CHECK-SPIRV: ExtInst [[#FTYPE]] [[#T33]] [[#OCLEXTID]] hypot
-; CHECK-SPIRV: ExtInst [[#FTYPE]] [[#T34]] [[#OCLEXTID]] sincos
+; CHECK-SPIRV: ExtInst [[#FTYPE]] [[#T34]] [[#OCLEXTID]] hypot
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -131,72 +131,73 @@ entry:
   %t4 = call float @llvm.fpbuiltin.fdiv.f32(float %f1, float %f2) #1
   %t5 = call float @llvm.fpbuiltin.frem.f32(float %f1, float %f2) #1
 
-; CHECK-LLVM: call spir_func float @_Z3sinf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3:]]
-; CHECK-LLVM: call spir_func float @_Z3cosf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z3tanf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM: call spir_func float @_Z3sinf(float %f1) #[[#AT3:]]
+; CHECK-LLVM: call spir_func float @_Z3cosf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z3tanf(float %f1) #[[#AT3]]
   %t6 = call float @llvm.fpbuiltin.sin.f32(float %f1) #2
   %t7 = call float @llvm.fpbuiltin.cos.f32(float %f1) #2
   %t8 = call float @llvm.fpbuiltin.tan.f32(float %f1) #2
 
-; CHECK-LLVM: call spir_func float @_Z4sinhf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4coshf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4tanhf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM: call spir_func float @_Z4sinhf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4coshf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4tanhf(float %f1) #[[#AT3]]
   %t9 = call float @llvm.fpbuiltin.sinh.f32(float %f1) #2
   %t10 = call float @llvm.fpbuiltin.cosh.f32(float %f1) #2
   %t11 = call float @llvm.fpbuiltin.tanh.f32(float %f1) #2
 
-; CHECK-LLVM: call spir_func float @_Z4asinf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4acosf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4atanf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM: call spir_func float @_Z4asinf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4acosf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4atanf(float %f1) #[[#AT3]]
   %t12 = call float @llvm.fpbuiltin.asin.f32(float %f1) #2
   %t13 = call float @llvm.fpbuiltin.acos.f32(float %f1) #2
   %t14 = call float @llvm.fpbuiltin.atan.f32(float %f1) #2
 
-; CHECK-LLVM:15 = call spir_func float @_Z5asinhf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM:16 = call spir_func float @_Z5acoshf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM:17 = call spir_func float @_Z5atanhf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM:15 = call spir_func float @_Z5asinhf(float %f1) #[[#AT3]]
+; CHECK-LLVM:16 = call spir_func float @_Z5acoshf(float %f1) #[[#AT3]]
+; CHECK-LLVM:17 = call spir_func float @_Z5atanhf(float %f1) #[[#AT3]]
   %t15 = call float @llvm.fpbuiltin.asinh.f32(float %f1) #2
   %t16 = call float @llvm.fpbuiltin.acosh.f32(float %f1) #2
   %t17 = call float @llvm.fpbuiltin.atanh.f32(float %f1) #2
 
-; CHECK-LLVM:18 = call spir_func float @_Z3expf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM:19 = call spir_func float @_Z4exp2f(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM:20 = call spir_func float @_Z5exp10f(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM:21 = call spir_func float @_Z5expm1f(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM:18 = call spir_func float @_Z3expf(float %f1) #[[#AT3]]
+; CHECK-LLVM:19 = call spir_func float @_Z4exp2f(float %f1) #[[#AT3]]
+; CHECK-LLVM:20 = call spir_func float @_Z5exp10f(float %f1) #[[#AT3]]
+; CHECK-LLVM:21 = call spir_func float @_Z5expm1f(float %f1) #[[#AT3]]
   %t18 = call float @llvm.fpbuiltin.exp.f32(float %f1) #2
   %t19 = call float @llvm.fpbuiltin.exp2.f32(float %f1) #2
   %t20 = call float @llvm.fpbuiltin.exp10.f32(float %f1) #2
   %t21 = call float @llvm.fpbuiltin.expm1.f32(float %f1) #2
 
-; CHECK-LLVM: call spir_func float @_Z3logf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4log2f(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z5log10f(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z5log1pf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM: call spir_func float @_Z3logf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4log2f(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z5log10f(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z5log1pf(float %f1) #[[#AT3]]
   %t22 = call float @llvm.fpbuiltin.log.f32(float %f1) #2
   %t23 = call float @llvm.fpbuiltin.log2.f32(float %f1) #2
   %t24 = call float @llvm.fpbuiltin.log10.f32(float %f1) #2
   %t25 = call float @llvm.fpbuiltin.log1p.f32(float %f1) #2
 
-; CHECK-LLVM: call spir_func float @_Z4sqrtf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z5rsqrtf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z3erff(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
-; CHECK-LLVM: call spir_func float @_Z4erfcf(float %f1) {{.*}} !fpbuiltin-max-error ![[#ME3]]
+; CHECK-LLVM: call spir_func float @_Z4sqrtf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z5rsqrtf(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z3erff(float %f1) #[[#AT3]]
+; CHECK-LLVM: call spir_func float @_Z4erfcf(float %f1) #[[#AT3]]
   %t26 = call float @llvm.fpbuiltin.sqrt.f32(float %f1) #2
   %t27 = call float @llvm.fpbuiltin.rsqrt.f32(float %f1) #2
   %t28 = call float @llvm.fpbuiltin.erf.f32(float %f1) #2
   %t29 = call float @llvm.fpbuiltin.erfc.f32(float %f1) #2
 
-; CHECK-LLVM: call spir_func float @_Z5atan2ff(float %f1, float %f2) {{.*}} !fpbuiltin-max-error ![[#ME4:]]
-; CHECK-LLVM: call spir_func float @_Z5ldexpff(float %f1, float %f2) {{.*}} !fpbuiltin-max-error ![[#ME4]]
-; CHECK-LLVM: call spir_func float @_Z3powff(float %f1, float %f2) {{.*}} !fpbuiltin-max-error ![[#ME4]]
-; CHECK-LLVM: call spir_func float @_Z5hypotff(float %f1, float %f2) #0, !fpbuiltin-max-error ![[#ME4]]
+; CHECK-LLVM: call spir_func float @_Z5atan2ff(float %f1, float %f2) #[[#AT4:]]
+; CHECK-LLVM: call spir_func float @_Z5ldexpff(float %f1, float %f2) #[[#AT4]]
+; CHECK-LLVM: call spir_func float @_Z3powff(float %f1, float %f2) #[[#AT4]]
+; CHECK-LLVM: call spir_func float @_Z5hypotff(float %f1, float %f2) #[[#AT4]]
   %t30 = call float @llvm.fpbuiltin.atan2.f32(float %f1, float %f2) #3
   %t31 = call float @llvm.fpbuiltin.ldexp.f32(float %f1, float %f2) #3
   %t32 = call float @llvm.fpbuiltin.pow.f32(float %f1, float %f2) #3
   %t33 = call float @llvm.fpbuiltin.hypot.f32(float %f1, float %f2) #3
+  
+  ; CHECK-LLVM: call spir_func float @_Z5hypotff(float %f1, float %f2) #[[#AT5:]]
+  %t34 = call float @llvm.fpbuiltin.hypot.f32(float %f1, float %f2) #4
 
-; CHECK-LLVM: call spir_func float @_Z6sincosfff(float %f1, float %f2, float %f3) {{.*}} !fpbuiltin-max-error ![[#ME5:]]
-  %t34 = call float @llvm.fpbuiltin.sincos.f32(float %f1, float %f2, float %f3) #4
   ret void
 }
 
@@ -236,13 +237,12 @@ declare float @llvm.fpbuiltin.hypot.f32(float, float)
 declare float @llvm.fpbuiltin.pow.f32(float, float)
 declare float @llvm.fpbuiltin.ldexp.f32(float, float)
 
-declare float @llvm.fpbuiltin.sincos.f32(float, float, float)
-
+; CHECK-LLVM: attributes #[[#AT3]] = {{{.*}} "fpbuiltin-max-error"="2.5{{0+}}" {{.*}}}
+; CHECK-LLVM: attributes #[[#AT4]] = {{{.*}} "fpbuiltin-max-error"="4.0{{0+}}" {{.*}}}
+; CHECK-LLVM: attributes #[[#AT5]] = {{{.*}} "fpbuiltin-max-error"="4096.0{{0+}}" {{.*}}}
 ; CHECK-LLVM: ![[#ME1]] = !{!"0.500000"}
 ; CHECK-LLVM: ![[#ME2]] = !{!"1.000000"}
-; CHECK-LLVM: ![[#ME3]] = !{!"2.500000"}
-; CHECK-LLVM: ![[#ME4]] = !{!"4.000000"}
-; CHECK-LLVM: ![[#ME5]] = !{!"4096.000000"}
+
 attributes #0 = { "fpbuiltin-max-error"="0.5" }
 attributes #1 = { "fpbuiltin-max-error"="1.0" }
 attributes #2 = { "fpbuiltin-max-error"="2.5" }
