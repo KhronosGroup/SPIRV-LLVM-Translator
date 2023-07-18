@@ -450,26 +450,28 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
       Params.push_back(static_cast<SPIRVConstant *>(Use)->getZExtIntValue());
     auto *CTI = MT->getComponentTypeInterpretation();
     if (!CTI)
-      return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
-                                     transTypeToOCLTypeName(MT->getCompType()),
-                                     Params, !UseTPT));
-    std::string ComponentTypeName;
+      return mapType(
+          T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
+                                      transType(MT->getCompType()), Params));
     switch (static_cast<SPIRVConstant *>(CTI)->getZExtIntValue()) {
     case internal::InternalJointMatrixCTI::TF32:
-      ComponentTypeName = "tf32";
+      Params.push_back(1);
       break;
     case internal::InternalJointMatrixCTI::Bfloat16:
-      ComponentTypeName = "bfloat16";
+      Params.push_back(2);
       break;
     case internal::InternalJointMatrixCTI::PackedInt2:
+      Params.push_back(3);
+      break;
     case internal::InternalJointMatrixCTI::PackedInt4:
-      // Do nothing just now
+      Params.push_back(4);
       break;
     default:
       llvm_unreachable("Unexpected joint matrix component type");
     }
-    return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
-                                   ComponentTypeName, Params, !UseTPT));
+    return mapType(
+        T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
+                                    transType(MT->getCompType()), Params));
   }
   case OpTypeForwardPointer: {
     SPIRVTypeForwardPointer *FP =
