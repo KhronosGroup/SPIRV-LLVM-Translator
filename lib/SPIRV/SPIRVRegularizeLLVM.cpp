@@ -415,7 +415,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
         }
 
         // FIXME: This is not valid handling for freeze instruction
-        if (auto FI = dyn_cast<FreezeInst>(&II)) {
+        if (auto *FI = dyn_cast<FreezeInst>(&II)) {
           FI->replaceAllUsesWith(FI->getOperand(0));
           FI->dropAllReferences();
           ToErase.push_back(FI);
