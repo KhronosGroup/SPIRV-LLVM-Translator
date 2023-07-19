@@ -155,7 +155,7 @@ static cl::opt<bool>
                   cl::desc("Emit textual assembly using SPIRV-Tools"));
 
 static cl::opt<bool>
-    EmitOpaquePointers("emit-opaque-pointers", cl::init(false),
+    EmitOpaquePointers("emit-opaque-pointers", cl::init(true),
                        cl::desc("Emit opaque instead of typed LLVM pointers "
                                 "for the translation from SPIR-V."),
                        cl::Hidden);
