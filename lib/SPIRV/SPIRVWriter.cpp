@@ -3860,21 +3860,127 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::usub_sat:
   case Intrinsic::sadd_sat:
   case Intrinsic::ssub_sat: {
-    SPIRVWord ExtOp;
-    if (IID == Intrinsic::uadd_sat)
-      ExtOp = OpenCLLIB::UAdd_sat;
-    else if (IID == Intrinsic::usub_sat)
-      ExtOp = OpenCLLIB::USub_sat;
-    else if (IID == Intrinsic::sadd_sat)
-      ExtOp = OpenCLLIB::SAdd_sat;
-    else
-      ExtOp = OpenCLLIB::SSub_sat;
+    if (BM->shouldUseOpenCLExtInstructionsForLLVMIntrinsic()) {
+      SPIRVWord ExtOp;
+      if (IID == Intrinsic::uadd_sat)
+        ExtOp = OpenCLLIB::UAdd_sat;
+      else if (IID == Intrinsic::usub_sat)
+        ExtOp = OpenCLLIB::USub_sat;
+      else if (IID == Intrinsic::sadd_sat)
+        ExtOp = OpenCLLIB::SAdd_sat;
+      else
+        ExtOp = OpenCLLIB::SSub_sat;
 
-    SPIRVType *Ty = transType(II->getType());
-    std::vector<SPIRVValue *> Operands = {transValue(II->getArgOperand(0), BB),
-                                          transValue(II->getArgOperand(1), BB)};
-    return BM->addExtInst(Ty, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
-                          std::move(Operands), BB);
+      SPIRVType *Ty = transType(II->getType());
+      std::vector<SPIRVValue *> Operands = {
+        transValue(II->getArgOperand(0), BB),
+        transValue(II->getArgOperand(1), BB)};
+      return BM->addExtInst(Ty, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+                            std::move(Operands), BB);
+    }
+    Type *LLVMTy = II->getType();
+    SPIRVType *Ty = transType(LLVMTy);
+    Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
+    if (auto *VecTy = dyn_cast<VectorType>(LLVMTy))
+      BoolTy = VectorType::get(BoolTy, VecTy->getElementCount());
+    SPIRVType *SPVBoolTy = transType(BoolTy);
+    SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
+    if (IID == Intrinsic::uadd_sat) {
+      // uadd.sat(a, b) -> res = a + b, (res > a) ? res : MAX
+      SPIRVValue *Max =
+          transValue(Constant::getAllOnesValue(II->getType()), BB);
+      SPIRVValue *Add =
+          BM->addBinaryInst(OpIAdd, Ty, FirstArgVal, SecondArgVal, BB);
+      SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, SPVBoolTy,
+                                       Add, FirstArgVal, BB);
+      return BM->addSelectInst(Cmp, Add, Max, BB);
+    }
+    if (IID == Intrinsic::usub_sat) {
+      // usub.sat(a, b) -> (a > b) ? a - b : 0
+      SPIRVValue *Sub =
+          BM->addBinaryInst(OpISub, Ty, FirstArgVal, SecondArgVal, BB);
+      SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, SPVBoolTy,
+                                       FirstArgVal, SecondArgVal, BB);
+      SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
+      return BM->addSelectInst(Cmp, Sub, Zero, BB);
+    }
+
+    uint64_t NumBits = LLVMTy->getScalarSizeInBits();
+    SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
+    SPIRVValue *Max =
+        transValue(Constant::getIntegerValue(
+              LLVMTy, APInt::getSignedMaxValue(NumBits)), BB);
+    SPIRVValue *Min =
+        transValue(Constant::getIntegerValue(
+              LLVMTy, APInt::getSignedMinValue(NumBits)), BB);
+    SPIRVValue *IsPositive =
+        BM->addCmpInst(OpSGreaterThan, SPVBoolTy, SecondArgVal, Zero, BB);
+    SPIRVValue *IsNegative =
+        BM->addCmpInst(OpSLessThan, SPVBoolTy, SecondArgVal, Zero, BB);
+    if (IID == Intrinsic::sadd_sat) {
+      // sadd.sat(a, b) -> if (b > 0) && a > MAX - b => overflow -> MAX
+      //                -> else if (b < 0) && a < MIN - b => overflow -> MIN
+      //                -> else a + b
+      // There two ways to represent such sequence in IR:
+      // 1. Via 2 branch instructions plus 'phi' instruction;
+      // 2. Via set of select instructions.
+      // The later was chosed because of the following consideration:
+      // speculative branch prediction will most likely consider 'if' statements
+      // here as always false falling through to 'a + b', and reversing it will
+      // case performance degradation.
+      SPIRVValue *Add =
+          BM->addBinaryInst(OpIAdd, Ty, FirstArgVal, SecondArgVal, BB);
+
+      // check if (b > 0) && a > MAX - b condition
+      SPIRVValue *MaxSubB =
+          BM->addBinaryInst(OpISub, Ty, Max, SecondArgVal, BB);
+      SPIRVValue *CanPosOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
+                                                  FirstArgVal, MaxSubB, BB);
+      SPIRVValue *PosOverflow = BM->addInstTemplate(
+          OpLogicalAnd, {CanPosOverflow->getId(), IsPositive->getId()},
+          BB, SPVBoolTy);
+
+      // check if (b < 0) && MIN - b > a condition
+      SPIRVValue *MinSubB =
+          BM->addBinaryInst(OpISub, Ty, Min, SecondArgVal, BB);
+      SPIRVValue *CanNegOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
+                                                  MinSubB, FirstArgVal, BB);
+      SPIRVValue *NegOverflow = BM->addInstTemplate(
+          OpLogicalAnd, {CanNegOverflow->getId(), IsNegative->getId()},
+          BB, SPVBoolTy);
+
+      // do selects
+      SPIRVValue *FirstSelect = BM->addSelectInst(PosOverflow, Max, Add, BB);
+      return BM->addSelectInst(NegOverflow, Min, FirstSelect, BB);
+    }
+    // ssub.sat(a, b) -> if (b > 0) && a < MIN + b => overflow -> MIN
+    //                -> else if (b < 0) && a > MAX + b => overflow -> MAX
+    //                -> else a - b
+    // still represent via 2 selects
+    assert(IID == Intrinsic::ssub_sat && "Expected llvm.ssub_sat");
+    SPIRVValue *Sub =
+        BM->addBinaryInst(OpISub, Ty, FirstArgVal, SecondArgVal, BB);
+
+    // check if (b > 0) && MIN + b > a
+    SPIRVValue *MinAddB = BM->addBinaryInst(OpIAdd, Ty, Min, SecondArgVal, BB);
+    SPIRVValue *CanNegOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
+                                                MinAddB, FirstArgVal, BB);
+    SPIRVValue *NegOverflow = BM->addInstTemplate(
+        OpLogicalAnd, {CanNegOverflow->getId(), IsPositive->getId()},
+        BB, SPVBoolTy);
+
+    // check if (b < 0) && a > MAX + b
+    SPIRVValue *MaxAddB = BM->addBinaryInst(OpIAdd, Ty, Max, SecondArgVal, BB);
+    SPIRVValue *CanPosOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
+                                                FirstArgVal, MaxAddB, BB);
+    SPIRVValue *PosOverflow = BM->addInstTemplate(
+        OpLogicalAnd, {CanPosOverflow->getId(), IsNegative->getId()},
+        BB, SPVBoolTy);
+
+    // do selects
+    SPIRVValue *FirstSelect = BM->addSelectInst(PosOverflow, Max, Sub, BB);
+    return BM->addSelectInst(NegOverflow, Min, FirstSelect, BB);
   }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
