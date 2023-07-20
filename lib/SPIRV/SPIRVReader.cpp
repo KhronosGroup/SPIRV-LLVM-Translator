@@ -3863,14 +3863,18 @@ void SPIRVToLLVM::transVarDecorationsToMetadata(SPIRVValue *BV, Value *V) {
   }
 }
 
-static float convertSPIRVWordToFloat(SPIRVWord spir) {
+namespace {
+
+static float convertSPIRVWordToFloat(SPIRVWord Spir) {
   union {
-    float f;
-    SPIRVWord spir;
+    float F;
+    SPIRVWord Spir;
   } FPMaxError;
-  FPMaxError.spir = spir;
-  return FPMaxError.f;
+  FPMaxError.Spir = Spir;
+  return FPMaxError.F;
 }
+
+} // namespace
 
 bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
   SPIRVWord ID;
@@ -3880,16 +3884,16 @@ bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
           BV->getDecorationLiterals(DecorationFPMaxErrorDecorationINTEL);
       assert(Literals.size() == 1 &&
              "FP Max Error decoration shall have 1 operand");
-      auto f = convertSPIRVWordToFloat(Literals[0]);
+      auto F = convertSPIRVWordToFloat(Literals[0]);
       if (CallInst *CI = dyn_cast<CallInst>(I)) {
         // Add atribute
         auto A = llvm::Attribute::get(*Context, "fpbuiltin-max-error",
-                                      std::to_string(f));
+                                      std::to_string(F));
         CI->addFnAttr(A);
       } else {
         // Add metadata
         MDNode *N =
-          MDNode::get(*Context, MDString::get(*Context, std::to_string(f)));
+          MDNode::get(*Context, MDString::get(*Context, std::to_string(F)));
         I->setMetadata("fpbuiltin-max-error", N);
       }
       return true;

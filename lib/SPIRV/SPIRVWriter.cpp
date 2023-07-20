@@ -106,6 +106,19 @@ using namespace llvm;
 using namespace SPIRV;
 using namespace OCLUtil;
 
+namespace {
+
+static SPIRVWord convertFloatToSPIRVWord(float F) {
+  union {
+    float F;
+    SPIRVWord Spir;
+  } FPMaxError;
+  FPMaxError.F = F;
+  return FPMaxError.Spir;
+}
+
+} // namespace
+
 namespace SPIRV {
 
 static void foreachKernelArgMD(
@@ -159,15 +172,6 @@ static void translateSEVDecoration(Attribute Sev, SPIRVValue *Val) {
                      IndirectLevelsOnElement);
   } else
     Val->addDecorate(DecorationSingleElementVectorINTEL);
-}
-
-static SPIRVWord convertFloatToSPIRVWord(float f) {
-  union {
-    float f;
-    SPIRVWord spir;
-  } FPMaxError;
-  FPMaxError.f = f;
-  return FPMaxError.spir;
 }
 
 LLVMToSPIRVBase::LLVMToSPIRVBase(SPIRVModule *SMod)
@@ -3540,13 +3544,13 @@ SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
   // Add a new decoration for llvm.builtin intrinsics, if needed
   if (IsLLVMFPBuiltin && AllowFPMaxError)
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
-      double f = 0.0;
+      double F = 0.0;
       II->getAttributes()
           .getFnAttr("fpbuiltin-max-error")
           .getValueAsString()
-          .getAsDouble(f);
+          .getAsDouble(F);
       I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
-                     convertFloatToSPIRVWord(f));
+                     convertFloatToSPIRVWord(F));
     }
   return I;
 }
@@ -4497,7 +4501,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return Result;
   }
   default:
-    if (auto BVar = transFPBuiltinIntrinsicInst(II, BB))
+    if (auto *BVar = transFPBuiltinIntrinsicInst(II, BB))
       return BVar;
     if (BM->isUnknownIntrinsicAllowed(II))
       return BM->addCallInst(
@@ -4551,7 +4555,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("fdiv", OpFDiv)
                      .Case("frem", OpFRem)
                      .Default(OpUndef);
-    auto BI = BM->addBinaryInst(BinOp, transType(II->getType()),
+    auto *BI = BM->addBinaryInst(BinOp, transType(II->getType()),
                                 transValue(II->getArgOperand(0), BB),
                                 transValue(II->getArgOperand(1), BB), BB);
     return addFPBuiltinDecoration(BM, II, BI);
@@ -4587,7 +4591,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("erf", OpenCLLIB::Erf)
                      .Case("erfc", OpenCLLIB::Erfc)
                      .Default(SPIRVWORD_MAX);
-    auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
@@ -4603,7 +4607,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("pow", OpenCLLIB::Pow)
                      .Case("ldexp", OpenCLLIB::Ldexp)
                      .Default(SPIRVWORD_MAX);
-    auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
@@ -4617,7 +4621,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
     auto ExtOp = StringSwitch<SPIRVWord>(OpName)
                      .Case("sincos", OpenCLLIB::Sincos)
                      .Default(SPIRVWORD_MAX);
-    auto BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
+    auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
