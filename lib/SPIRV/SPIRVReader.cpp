@@ -453,22 +453,11 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
       return mapType(
           T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
                                       transType(MT->getCompType()), Params));
-    switch (static_cast<SPIRVConstant *>(CTI)->getZExtIntValue()) {
-    case internal::InternalJointMatrixCTI::TF32:
-      Params.push_back(1);
-      break;
-    case internal::InternalJointMatrixCTI::Bfloat16:
-      Params.push_back(2);
-      break;
-    case internal::InternalJointMatrixCTI::PackedInt2:
-      Params.push_back(3);
-      break;
-    case internal::InternalJointMatrixCTI::PackedInt4:
-      Params.push_back(4);
-      break;
-    default:
-      llvm_unreachable("Unexpected joint matrix component type");
-    }
+    const unsigned CTIValue =
+        static_cast<SPIRVConstant *>(CTI)->getZExtIntValue();
+    assert(CTIValue <= internal::InternalJointMatrixCTI::PackedInt4 &&
+           "Unknown matrix component type interpretation"); 
+    Params.push_back(CTIValue);
     return mapType(
         T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
                                     transType(MT->getCompType()), Params));
