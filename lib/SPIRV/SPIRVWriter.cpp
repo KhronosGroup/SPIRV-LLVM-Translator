@@ -3555,7 +3555,6 @@ SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
   return I;
 }
 
-
 // Performs mapping of LLVM IR rounding mode to SPIR-V rounding mode
 // Value *V is metadata <rounding mode> argument of
 // llvm.experimental.constrained.* intrinsics
@@ -4556,8 +4555,8 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("frem", OpFRem)
                      .Default(OpUndef);
     auto *BI = BM->addBinaryInst(BinOp, transType(II->getType()),
-                                transValue(II->getArgOperand(0), BB),
-                                transValue(II->getArgOperand(1), BB), BB);
+                                 transValue(II->getArgOperand(0), BB),
+                                 transValue(II->getArgOperand(1), BB), BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_1OPS: {
@@ -4592,7 +4591,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("erfc", OpenCLLIB::Erfc)
                      .Default(SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
-                             Ops, BB);
+                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_2OPS: {
@@ -4608,7 +4607,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("ldexp", OpenCLLIB::Ldexp)
                      .Default(SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
-                             Ops, BB);
+                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
   case FPBuiltinType::EXT_3OPS: {
@@ -4622,7 +4621,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("sincos", OpenCLLIB::Sincos)
                      .Default(SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
-                             Ops, BB);
+                              Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
   }
   default:

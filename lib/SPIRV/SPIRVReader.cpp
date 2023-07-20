@@ -3893,7 +3893,7 @@ bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
       } else {
         // Add metadata
         MDNode *N =
-          MDNode::get(*Context, MDString::get(*Context, std::to_string(F)));
+            MDNode::get(*Context, MDString::get(*Context, std::to_string(F)));
         I->setMetadata("fpbuiltin-max-error", N);
       }
       return true;
