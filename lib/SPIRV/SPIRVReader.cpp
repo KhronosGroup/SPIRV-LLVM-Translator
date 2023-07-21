@@ -456,7 +456,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     const unsigned CTIValue =
         static_cast<SPIRVConstant *>(CTI)->getZExtIntValue();
     assert(CTIValue <= internal::InternalJointMatrixCTI::PackedInt4 &&
-           "Unknown matrix component type interpretation"); 
+           "Unknown matrix component type interpretation");
     Params.push_back(CTIValue);
     return mapType(
         T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
