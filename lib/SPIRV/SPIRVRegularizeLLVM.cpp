@@ -417,12 +417,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
         // FIXME: This is not valid handling for freeze instruction
         if (auto *FI = dyn_cast<FreezeInst>(&II)) {
           auto *V = FI->getOperand(0);
-          if (isa<UndefValue>(V)) {
-            if (V->getType()->isIntegerTy())
-              V = ConstantInt::get(V->getType(), 0);
-            else if (V->getType()->isFPOrFPVectorTy())
-              V = ConstantFP::get(V->getType(), 0.0);
-          }
+          if (isa<UndefValue>(V))
+            V = Constant::getNullValue(V->getType());
           FI->replaceAllUsesWith(V);
           FI->dropAllReferences();
           ToErase.push_back(FI);
