@@ -418,7 +418,14 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
                    getSPIRVType(OpTypePipe, PT->getAccessQualifier(), !UseTPT));
   }
   case OpTypePipeStorage: {
-    return mapType(T, getSPIRVType(OpTypePipeStorage, !UseTPT));
+    StringRef FullName = "spirv.PipeStorage";
+    auto *STy = StructType::getTypeByName(*Context, FullName);
+    if (!STy)
+      STy = StructType::create(*Context, FullName);
+    if (UseTPT) {
+      return mapType(T, TypedPointerType::get(STy, 1));
+    }
+    return mapType(T, PointerType::get(STy, 1));
   }
   case OpTypeVmeImageINTEL: {
     auto *VT = static_cast<SPIRVTypeVmeImageINTEL *>(T)->getImageType();
@@ -754,6 +761,9 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
           continue;
 
         Value *AccessedPointer = GEP->getPointerOperand();
+        if (auto *BC = dyn_cast<CastInst>(AccessedPointer))
+          if (BC->getSrcTy() == BC->getDestTy())
+            AccessedPointer = BC->getOperand(0);
         if (auto *LI = dyn_cast<LoadInst>(AccessedPointer))
           AccessedPointer = LI->getPointerOperand();
         auto PointerSflnIt = PointerSflnMap.find(AccessedPointer);
@@ -2504,13 +2514,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       else {
         IID = Intrinsic::ptr_annotation;
         auto *PtrTy = dyn_cast<PointerType>(Ty);
-        if (PtrTy &&
-            (PtrTy->isOpaque() ||
-             isa<IntegerType>(PtrTy->getNonOpaquePointerElementType())))
+        if (PtrTy) {
           RetTy = PtrTy;
-        // Whether a struct or a pointer to some other type,
-        // bitcast to i8*
-        else {
+        } else {
+          // If a struct - bitcast to i8*
           RetTy = Int8PtrTyPrivate;
           ValAsArg = Builder.CreateBitCast(Val, RetTy);
         }
