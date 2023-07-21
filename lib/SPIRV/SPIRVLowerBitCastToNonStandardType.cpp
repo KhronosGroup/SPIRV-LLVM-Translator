@@ -77,7 +77,7 @@ static Value *removeBitCasts(Value *OldValue, Type *NewTy, NFIRBuilder &Builder,
   if (auto *LI = dyn_cast<LoadInst>(OldValue)) {
     Builder.SetInsertPoint(LI);
     Value *Pointer = LI->getPointerOperand();
-    if (!Pointer->getType()->isOpaquePointerTy()) {
+    if (!Pointer->getType()->isPointerTy()) {
       Type *NewPointerTy =
           PointerType::get(NewTy, LI->getPointerAddressSpace());
       Pointer = removeBitCasts(Pointer, NewPointerTy, Builder, InstsToErase);
