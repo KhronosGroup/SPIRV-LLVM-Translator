@@ -1,15 +1,69 @@
 ;; Test to check that freeze instruction does not cause a crash
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o - -spirv-text | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; All freeze instructions should be deleted and uses of freeze's result should be replaced
+; with freeze's source or a random constant if freeze's source is poison or undef.
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM --implicit-check-not="= freeze"
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-define spir_kernel void @testfunction(i32 %val) {
+; CHECK-LLVM: @testfunction_i32A
+; Uses of result should be replaced with freeze's source
+; CHECK-LLVM-NEXT: add nsw i32 %val, 1
+define spir_func i32 @testfunction_i32A(i32 %val) {
    %1 = freeze i32 %val
-   ret void
+   %2 = add nsw i32 %1, 1
+   ret i32 %2
 }
 
-; Check there is an entrypoint to ensure llvm-spirv did not crash
-; CHECK-SPIRV: EntryPoint 6 [[#]] "testfunction"
+; CHECK-LLVM: @testfunction_i32B
+; Frozen poison/undef should produce a constant.
+; add should be deleted since both inputs are constant.
+; CHECK-LLVM-NEXT: ret i32
+define spir_func i32 @testfunction_i32B(i32 %val) {
+   %1 = freeze i32 poison
+   %2 = add nsw i32 %1, 1   
+   ret i32 %2
+}
+
+; CHECK-LLVM: @testfunction_i32C
+; Frozen poison/undef should produce a constant.
+; add should be deleted since both inputs are constant.
+; CHECK-LLVM-NEXT: ret i32
+define spir_func i32 @testfunction_i32C(i32 %val) {
+   %1 = freeze i32 undef
+   %2 = add nsw i32 %1, 1   
+   ret i32 %2
+}
+
+; CHECK-LLVM: @testfunction_floatA
+; freeze should be eliminated.
+; Uses of result should be replaced with freeze's source
+; CHECK-LLVM-NEXT: fadd float %val
+define spir_func float @testfunction_floatA(float %val) {
+   %1 = freeze float %val
+   %2 = fadd float %1, 1.0
+   ret float %2
+}
+
+; CHECK-LLVM: @testfunction_floatB
+; Frozen poison/undef should produce a constant.
+; add should be deleted since both inputs are constant.
+; CHECK-LLVM-NEXT: ret float
+define spir_func float @testfunction_floatB(float %val) {
+   %1 = freeze float poison
+   %2 = fadd float %1, 1.0
+   ret float %2
+}
+
+; CHECK-LLVM: @testfunction_floatC
+; Frozen poison/undef should produce a constant.
+; add should be deleted since both inputs are constant.
+; CHECK-LLVM-NEXT: ret float
+define spir_func float @testfunction_floatC(float %val) {
+   %1 = freeze float undef
+   %2 = fadd float %1, 1.0
+   ret float %2
+}
