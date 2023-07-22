@@ -287,20 +287,6 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
              StructTy->element_end();
     }
 
-    // Opaque pointers are translated to i8*, so they're not going to create
-    // recursive types.
-    if (Ty->isPointerTy() && !Ty->isOpaquePointerTy()) {
-      Type *ElTy = Ty->getNonOpaquePointerElementType();
-      if (auto *FTy = dyn_cast<FunctionType>(ElTy)) {
-        // If we have a function pointer, then argument types and return type of
-        // the referenced function also need to be checked
-        return Run(FTy->getReturnType()) ||
-               any_of(FTy->param_begin(), FTy->param_end(), Run);
-      }
-
-      return Run(ElTy);
-    }
-
     if (auto *ArrayTy = dyn_cast<ArrayType>(Ty))
       return Run(ArrayTy->getArrayElementType());
 
@@ -547,6 +533,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
         return mapType(T, BM->addJointMatrixINTELType(ElemTy, Args));
       }
       default:
+        if (isSubgroupAvcINTELTypeOpCode(Opcode))
+          return mapType(T, BM->addSubgroupAvcINTELType(Opcode));
         return mapType(T, BM->addOpaqueGenericType(Opcode));
       }
     }
@@ -2287,6 +2275,12 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // a so-called index group, an MDNode by itself.
     if (MDNode *IndexGroup = GEP->getMetadata("llvm.index.group")) {
       SPIRVValue *ActualMemoryPtr = TransPointerOperand;
+      // If the source is a no-op bitcast (generated to fix up types), look
+      // through it to the underlying gep if possible.
+      if (auto *BC = dyn_cast<CastInst>(PointerOperand))
+        if (BC->getSrcTy() == BC->getDestTy()) {
+          PointerOperand = BC->getOperand(0);
+        }
       if (auto *Load = dyn_cast<LoadInst>(PointerOperand)) {
         ActualMemoryPtr = transValue(Load->getPointerOperand(), BB);
       }
