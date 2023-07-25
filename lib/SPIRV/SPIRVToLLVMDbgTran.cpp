@@ -1266,19 +1266,19 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   // FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
   // It's W/A for missing 2nd index in OpenCL's implementation
   const SPIRVWord OffsetIdx = isNonSemanticDebugInfo(DebugInst->getExtSetKind())
-                                  ? OperandCount - NonSemantic::OperandCount
+                                  ? OpenCL::OperandCount - NonSemantic::OperandCount
                                   : 0;
 
-  assert(Ops.size() == (OperandCount - OffsetIdx) &&
+  assert(Ops.size() == (OpenCL::OperandCount - OffsetIdx) &&
          "Invalid number of operands");
-  DIScope *Scope = getScope(BM->getEntry(Ops[ParentIdx - OffsetIdx]));
-  SPIRVWord Line = getConstantValueOrLiteral(Ops, LineIdx - OffsetIdx,
+  DIScope *Scope = getScope(BM->getEntry(Ops[OpenCL::ParentIdx - OffsetIdx]));
+  SPIRVWord Line = getConstantValueOrLiteral(Ops, OpenCL::LineIdx - OffsetIdx,
                                              DebugInst->getExtSetKind());
-  DIFile *File = getFile(Ops[SourceIdx - OffsetIdx]);
+  DIFile *File = getFile(Ops[OpenCL::SourceIdx - OffsetIdx]);
   auto *Entity =
-      transDebugInst<DINode>(BM->get<SPIRVExtInst>(Ops[EntityIdx - OffsetIdx]));
+      transDebugInst<DINode>(BM->get<SPIRVExtInst>(Ops[OpenCL::EntityIdx - OffsetIdx]));
   SPIRVWord Tag =
-      getConstantValueOrLiteral(Ops, TagIdx, DebugInst->getExtSetKind());
+      getConstantValueOrLiteral(Ops, OpenCL::TagIdx, DebugInst->getExtSetKind());
   if (Tag == SPIRVDebug::ImportedModule) {
     if (!Entity)
       return getDIBuilder(DebugInst).createImportedModule(
@@ -1294,7 +1294,7 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
                                                           Line);
   }
   if (Tag == SPIRVDebug::ImportedDeclaration) {
-    StringRef Name = getString(Ops[NameIdx]);
+    StringRef Name = getString(Ops[OpenCL::NameIdx]);
     if (DIGlobalVariableExpression *GVE =
             dyn_cast<DIGlobalVariableExpression>(Entity))
       return getDIBuilder(DebugInst).createImportedDeclaration(
