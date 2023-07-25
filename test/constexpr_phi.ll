@@ -21,8 +21,8 @@
 ; CHECK-SPIRV: Branch [[#L3]]
 ; CHECK-SPIRV: Label [[#L3]]
 ; CHECK-SPIRV-NEXT: Phi [[#]] [[#]]
-  ; CHECK-SPIRV-SAME: [[#Compos0]] [[#L2]]
-  ; CHECK-SPIRV-SAME: [[#Compos1]] [[#L1]]
+; CHECK-SPIRV-SAME: [[#Compos0]] [[#L2]]
+; CHECK-SPIRV-SAME: [[#Compos1]] [[#L1]]
 
 ; CHECK-LLVM: br label %[[#L:]]
 ; CHECK-LLVM: [[#L]]:
