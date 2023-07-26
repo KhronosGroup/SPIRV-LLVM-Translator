@@ -1021,10 +1021,10 @@ inline bool hasDbgInstParentScopeIdx(
     ParentScopeIdx = LocalVariable::ParentIdx;
     return true;
   case SPIRVDebug::ImportedEntity:
-    if (ExtKind == SPIRV::SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
-      ParentScopeIdx = ImportedEntity::NonSemantic::ParentIdx;
-    else
+    if (ExtKind == SPIRV::SPIRVEIS_OpenCL_DebugInfo_100)
       ParentScopeIdx = ImportedEntity::OpenCL::ParentIdx;
+    else
+      ParentScopeIdx = ImportedEntity::NonSemantic::ParentIdx;
     return true;
   case SPIRVDebug::ModuleINTEL:
     ParentScopeIdx = ModuleINTEL::ParentIdx;
