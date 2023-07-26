@@ -43,9 +43,10 @@
 
 namespace SPIRV {
 
-class SPIRVRegularizeLLVMBase {
+class SPIRVRegularizeLLVMPass
+  : public llvm::PassInfoMixin<SPIRVRegularizeLLVMPass> {
 public:
-  SPIRVRegularizeLLVMBase() : M(nullptr), Ctx(nullptr) {}
+  SPIRVRegularizeLLVMPass() : M(nullptr), Ctx(nullptr) {}
 
   bool runRegularizeLLVM(llvm::Module &M);
   // Lower functions
@@ -106,33 +107,15 @@ public:
 
   static std::string lowerLLVMIntrinsicName(llvm::IntrinsicInst *II);
   static char ID;
-
-private:
-  llvm::Module *M;
-  llvm::LLVMContext *Ctx;
-};
-
-class SPIRVRegularizeLLVMPass
-    : public llvm::PassInfoMixin<SPIRVRegularizeLLVMPass>,
-      public SPIRVRegularizeLLVMBase {
-public:
+  
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM) {
     return runRegularizeLLVM(M) ? llvm::PreservedAnalyses::none()
                                 : llvm::PreservedAnalyses::all();
   }
-};
-
-class SPIRVRegularizeLLVMLegacy : public llvm::ModulePass,
-                                  public SPIRVRegularizeLLVMBase {
-public:
-  SPIRVRegularizeLLVMLegacy() : ModulePass(ID) {
-    initializeSPIRVRegularizeLLVMLegacyPass(*PassRegistry::getPassRegistry());
-  }
-
-  bool runOnModule(llvm::Module &M) override;
-
-  static char ID;
+private:
+  llvm::Module *M;
+  llvm::LLVMContext *Ctx;  
 };
 
 } // namespace SPIRV

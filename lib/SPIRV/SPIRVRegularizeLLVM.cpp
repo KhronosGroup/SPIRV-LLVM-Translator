@@ -64,13 +64,7 @@ namespace SPIRV {
 static bool SPIRVDbgSaveRegularizedModule = false;
 static std::string RegularizedModuleTmpFile = "regularized.bc";
 
-char SPIRVRegularizeLLVMLegacy::ID = 0;
-
-bool SPIRVRegularizeLLVMLegacy::runOnModule(Module &Module) {
-  return runRegularizeLLVM(Module);
-}
-
-std::string SPIRVRegularizeLLVMBase::lowerLLVMIntrinsicName(IntrinsicInst *II) {
+std::string SPIRVRegularizeLLVMPass::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   Function *IntrinsicFunc = II->getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   std::string FuncName = IntrinsicFunc->getName().str();
@@ -79,7 +73,7 @@ std::string SPIRVRegularizeLLVMBase::lowerLLVMIntrinsicName(IntrinsicInst *II) {
   return FuncName;
 }
 
-void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(
+void SPIRVRegularizeLLVMPass::lowerIntrinsicToFunction(
     IntrinsicInst *Intrinsic) {
   // For @llvm.memset.* intrinsic cases with constant value and length arguments
   // are emulated via "storing" a constant array to the destination. For other
@@ -147,7 +141,7 @@ void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(
   return;
 }
 
-void SPIRVRegularizeLLVMBase::lowerFunnelShift(IntrinsicInst *FSHIntrinsic) {
+void SPIRVRegularizeLLVMPass::lowerFunnelShift(IntrinsicInst *FSHIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
   // current one. Then simply replace the intrinsic uses with a call to the new
   // function.
@@ -209,7 +203,7 @@ void SPIRVRegularizeLLVMBase::lowerFunnelShift(IntrinsicInst *FSHIntrinsic) {
   FSHIntrinsic->setCalledFunction(FSHFunc);
 }
 
-void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
+void SPIRVRegularizeLLVMPass::buildUMulWithOverflowFunc(Function *UMulFunc) {
   if (!UMulFunc->empty())
     return;
 
@@ -235,7 +229,7 @@ void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
   Builder.CreateRet(Res);
 }
 
-void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
+void SPIRVRegularizeLLVMPass::lowerUMulWithOverflow(
     IntrinsicInst *UMulIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
   // current one. Then simply replace the intrinsic uses with a call to the new
@@ -249,7 +243,7 @@ void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
-void SPIRVRegularizeLLVMBase::expandVEDWithSYCLTypeSRetArg(Function *F) {
+void SPIRVRegularizeLLVMPass::expandVEDWithSYCLTypeSRetArg(Function *F) {
   auto Attrs = F->getAttributes();
   StructType *SRetTy = cast<StructType>(Attrs.getParamStructRetType(0));
   Attrs = Attrs.removeParamAttribute(F->getContext(), 0, Attribute::StructRet);
@@ -272,7 +266,7 @@ void SPIRVRegularizeLLVMBase::expandVEDWithSYCLTypeSRetArg(Function *F) {
       nullptr, &Attrs, true);
 }
 
-void SPIRVRegularizeLLVMBase::expandVIDWithSYCLTypeByValComp(Function *F) {
+void SPIRVRegularizeLLVMPass::expandVIDWithSYCLTypeByValComp(Function *F) {
   auto Attrs = F->getAttributes();
   auto *CompPtrTy = cast<StructType>(Attrs.getParamByValType(1));
   Attrs = Attrs.removeParamAttribute(F->getContext(), 1, Attribute::ByVal);
@@ -289,7 +283,7 @@ void SPIRVRegularizeLLVMBase::expandVIDWithSYCLTypeByValComp(Function *F) {
       nullptr, &Attrs, true);
 }
 
-void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
+void SPIRVRegularizeLLVMPass::expandSYCLTypeUsing(Module *M) {
   std::vector<Function *> ToExpandVEDWithSYCLTypeSRetArg;
   std::vector<Function *> ToExpandVIDWithSYCLTypeByValComp;
 
@@ -322,7 +316,7 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
     expandVIDWithSYCLTypeByValComp(F);
 }
 
-Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
+Value *SPIRVRegularizeLLVMPass::extendBitInstBoolArg(Instruction *II) {
   IRBuilder<> Builder(II);
   auto *ArgTy = II->getOperand(0)->getType();
   Type *NewArgType = nullptr;
@@ -347,7 +341,7 @@ Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
   }
 }
 
-bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
+bool SPIRVRegularizeLLVMPass::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
 
@@ -361,7 +355,7 @@ bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
 }
 
 /// Remove entities not representable by SPIR-V
-bool SPIRVRegularizeLLVMBase::regularize() {
+bool SPIRVRegularizeLLVMPass::regularize() {
   eraseUselessFunctions(M);
   addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
@@ -502,7 +496,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   return true;
 }
 
-void SPIRVRegularizeLLVMBase::addKernelEntryPoint(Module *M) {
+void SPIRVRegularizeLLVMPass::addKernelEntryPoint(Module *M) {
   std::vector<Function *> Work;
 
   // Get a list of all functions that have SPIR kernel calling conv
@@ -566,10 +560,3 @@ void SPIRVRegularizeLLVMBase::addKernelEntryPoint(Module *M) {
 }
 
 } // namespace SPIRV
-
-INITIALIZE_PASS(SPIRVRegularizeLLVMLegacy, "spvregular",
-                "Regularize LLVM for SPIR-V", false, false)
-
-ModulePass *llvm::createSPIRVRegularizeLLVMLegacy() {
-  return new SPIRVRegularizeLLVMLegacy();
-}
