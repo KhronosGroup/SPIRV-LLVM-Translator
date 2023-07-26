@@ -563,6 +563,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityVectorComputeINTEL, "VectorComputeINTEL");
   add(CapabilityVectorAnyINTEL, "VectorAnyINTEL");
   add(CapabilityExpectAssumeKHR, "ExpectAssumeKHR");
+  add(CapabilityFreezeKHR, "FreezeKHR");
   add(CapabilitySubgroupAvcMotionEstimationINTEL,
       "SubgroupAvcMotionEstimationINTEL");
   add(CapabilitySubgroupAvcMotionEstimationIntraINTEL,

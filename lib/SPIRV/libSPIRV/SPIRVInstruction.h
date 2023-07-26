@@ -2909,6 +2909,28 @@ protected:
 _SPIRV_OP(ExpectKHR, true, 5)
 #undef _SPIRV_OP
 
+class SPIRVFreezeKHRInstBase : public SPIRVInstTemplateBase {
+public:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityFreezeKHR);
+  }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_KHR_freeze;
+  }
+
+protected:
+  void validate() const override {
+    SPIRVInstruction::validate();
+
+    assert(OpCode == OpFreezeKHR &&
+           "Invalid op code for FreezeKHR instruction");
+    assert(getType() == getValueType(Ops[0]) && "Inconsistent type");
+  }
+};
+typedef SPIRVInstTemplate<SPIRVFreezeKHRInstBase, OpFreezeKHR, true, 4>
+    SPIRVFreezeKHR;
+
 class SPIRVDotKHRBase : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
