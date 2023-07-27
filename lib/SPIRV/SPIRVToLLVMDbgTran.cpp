@@ -1265,7 +1265,8 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   // FIXME: 'OpenCL/bugged' version is kept because it's hard to remove it
   // It's W/A for missing 2nd index in OpenCL's implementation
-  const SPIRVWord OffsetIdx = static_cast<int>(isNonSemanticDebugInfo());
+  const SPIRVWord OffsetIdx =
+      static_cast<int>(isNonSemanticDebugInfo(DebugInst->getExtSetKind()));
 
   assert(Ops.size() == (OpenCL::OperandCount - OffsetIdx) &&
          "Invalid number of operands");
