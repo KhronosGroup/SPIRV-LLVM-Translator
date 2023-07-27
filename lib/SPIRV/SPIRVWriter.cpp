@@ -789,9 +789,7 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
 
 SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
   if (auto *F = dyn_cast<Function>(V)) {
-    FunctionType *FnTy = F->getType()->isPointerTy()
-                             ? Scavenger->getFunctionType(F)
-                             : F->getFunctionType();
+    FunctionType *FnTy = Scavenger->getFunctionType(F);
     SPIRVType *RT = transType(FnTy->getReturnType());
     std::vector<SPIRVType *> PT;
     for (Argument &Arg : F->args()) {
@@ -1989,8 +1987,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (isa<Constant>(V)) {
     auto BV = transConstant(V);
     assert(BV);
-    // Don't store opaque pointer constants in the map--we might reuse the wrong
-    // type for (e.g.) a null value if we do so.
+    // Don't store pointer constants in the map -- they are opaque and thus we
+    // might reuse the wrong type (Example: a null value) if we do so.
     if (V->getType()->isPointerTy())
       return BV;
     return mapValue(V, BV);
