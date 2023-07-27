@@ -3204,7 +3204,7 @@ SPIRVToLLVM::SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
   initialize(*M);
   Context = &M->getContext();
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR)
-    UseTargetTypes = !Context->supportsTypedPointers();
+    UseTargetTypes = true;
   DbgTran.reset(new SPIRVToLLVMDbgTran(TheSPIRVModule, LLVMModule, this));
 }
 

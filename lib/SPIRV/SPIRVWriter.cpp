@@ -1804,7 +1804,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       auto BV = transConstant(Init);
       assert(BV);
       return mapValue(V, BV);
-    } else if (ConstantExpr *ConstUE = dyn_cast_or_null<ConstantExpr>(Init)) {
+    } else if (Init && isa<ConstantExpr>(Init)) {
       BVarInit = transValue(Init, nullptr);
     } else if (ST && isa<UndefValue>(Init)) {
       // Undef initializer for LLVM structure be can translated to
