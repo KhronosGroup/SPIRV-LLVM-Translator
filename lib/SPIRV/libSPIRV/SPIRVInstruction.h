@@ -2145,8 +2145,7 @@ protected:
     if (getValue(VectorId)->isForward())
       return;
     assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL() ||
-           getValueType(VectorId)->isTypeCooperativeMatrixKHR());
+           getValueType(VectorId)->isTypeJointMatrixINTEL());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2184,8 +2183,7 @@ protected:
     if (getValue(VectorId)->isForward())
       return;
     assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL() ||
-           getValueType(VectorId)->isTypeCooperativeMatrixKHR());
+           getValueType(VectorId)->isTypeJointMatrixINTEL());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;

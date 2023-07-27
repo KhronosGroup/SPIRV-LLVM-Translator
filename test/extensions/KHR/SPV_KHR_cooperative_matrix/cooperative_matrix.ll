@@ -30,7 +30,7 @@
 
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) @_Z26__spirv_CompositeConstructi(i32 0)
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 12, 48, 0, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_12_48_0_3PU3AS4clii
-; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_48_12_2_3PU3AS4clii
+; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_48_12_2_3PU3AS4cl
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_12_48_0_3PU3AS144__spirv_CooperativeMatrixKHR__char_48_12_2_3PU3AS144__spirv_CooperativeMatrixKHR__uint_12_12_3_3i(target("spirv.CooperativeMatrixKHR", i8, 12, 48, 0, 3) %{{.*}}, target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) %{{.*}}, target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3)
 ; CHECK-LLVM: call spir_func void @_Z33__spirv_CooperativeMatrixStoreKHRPU3AS4iPU3AS144__spirv_CooperativeMatrixKHR__uint_12_12_3_3liii(ptr addrspace(4) %call.ascast.i.i, target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3)
 
@@ -43,13 +43,13 @@ target triple = "spir64-unknown-unknown"
 %"class.sycl::_V1::detail::array" = type { [2 x i64] }
 %"class.sycl::_V1::id" = type { %"class.sycl::_V1::detail::array" }
 
-$_ZTSZZ15matrix_multiplyIiaLm24ELm96ELm24ELm96ELm24ELm24EEvR10big_matrixIT_XT5_EXT6_EERS0_IT0_XT1_EXT2_EERS0_IS4_XT3_EXT4_EEENKUlRN4sycl3_V17handlerEE_clESC_E7imatrix = comdat any
+$_ZTSZZ15matrix_multiply = comdat any
 
 @__spirv_BuiltInGlobalInvocationId = external dso_local local_unnamed_addr addrspace(1) constant <3 x i64>, align 32
 @__spirv_BuiltInLocalInvocationId = external dso_local local_unnamed_addr addrspace(1) constant <3 x i64>, align 32
 
 ; Function Attrs: convergent norecurse
-define weak_odr dso_local spir_kernel void @_ZTSZZ15matrix_multiplyIiaLm24ELm96ELm24ELm96ELm24ELm24EEvR10big_matrixIT_XT5_EXT6_EERS0_IT0_XT1_EXT2_EERS0_IS4_XT3_EXT4_EEENKUlRN4sycl3_V17handlerEE_clESC_E7imatrix(ptr addrspace(1) noundef align 1 %_arg_accA, ptr addrspace(1) noundef align 1 %_arg_accB, ptr noundef byval(%"class.sycl::_V1::range") align 8 %_arg_accB5, ptr noundef byval(%"class.sycl::_V1::id") align 8 %_arg_accB6, ptr addrspace(1) noundef align 4 %_arg_accC, i64 noundef %_arg_N, i64 noundef %_arg_K) local_unnamed_addr #0 comdat {
+define weak_odr dso_local spir_kernel void @_ZTSZZ15matrix_multiply(ptr addrspace(1) noundef align 1 %_arg_accA, ptr addrspace(1) noundef align 1 %_arg_accB, ptr noundef byval(%"class.sycl::_V1::range") align 8 %_arg_accB5, ptr noundef byval(%"class.sycl::_V1::id") align 8 %_arg_accB6, ptr addrspace(1) noundef align 4 %_arg_accC, i64 noundef %_arg_N, i64 noundef %_arg_K) local_unnamed_addr #0 comdat {
 entry:
   %sub_c.sroa.0.i = alloca target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3), align 8
   %ref.tmp29.sroa.0.i = alloca target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3), align 8
@@ -110,7 +110,7 @@ for.body.i:                                       ; preds = %for.cond.i
   %mul23.i = mul i64 %mul22.i, %conv21.i
   %add.ptr.i111.i = getelementptr i8, ptr addrspace(1) %add.ptr.i108140.i, i64 %mul23.i
   %call.ascast.i72.i = addrspacecast ptr addrspace(1) %add.ptr.i111.i to ptr addrspace(4)
-  %call1.i73.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z32__spirv_CooperativeMatrixLoadKHR_2(ptr addrspace(4) noundef %call.ascast.i72.i, i64 noundef %mul22.i, i32 noundef 2, i32 noundef 3) #4
+  %call1.i73.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z32__spirv_CooperativeMatrixLoadKHR_2(ptr addrspace(4) noundef %call.ascast.i72.i, i64 noundef %mul22.i) #4
   call void @llvm.lifetime.start.p0(i64 8, ptr nonnull %ref.tmp29.sroa.0.i.0.i.0..sroa_cast)
   %sub_c.sroa.0.i.0.sub_c.sroa.0.i.0.sub_c.sroa.0.0.sub_c.sroa.0.0.sub_c.sroa.0.0.125.i = load target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3), ptr %sub_c.sroa.0.i, align 8
   %call.i77.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) @_Z34__spirv_CooperativeMatrixMulAddKHR(target("spirv.CooperativeMatrixKHR", i8, 12, 48, 0, 3) noundef %call1.i.i, target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) noundef %call1.i73.i, target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) noundef %sub_c.sroa.0.i.0.sub_c.sroa.0.i.0.sub_c.sroa.0.0.sub_c.sroa.0.0.sub_c.sroa.0.0.125.i, i32 noundef 3) #4
@@ -140,7 +140,7 @@ declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i32, 12
 declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 12, 48, 0, 3) @_Z32__spirv_CooperativeMatrixLoadKHR_1(ptr addrspace(4) noundef, i64 noundef, i32 noundef, i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
-declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z32__spirv_CooperativeMatrixLoadKHR_2(ptr addrspace(4) noundef, i64 noundef, i32 noundef, i32 noundef) local_unnamed_addr #2
+declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) @_Z32__spirv_CooperativeMatrixLoadKHR_2(ptr addrspace(4) noundef, i64 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
 declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) @_Z34__spirv_CooperativeMatrixMulAddKHR(target("spirv.CooperativeMatrixKHR", i8, 12, 48, 0, 3) noundef, target("spirv.CooperativeMatrixKHR", i8, 48, 12, 2, 3) noundef, target("spirv.CooperativeMatrixKHR", i32, 12, 12, 3, 3) noundef, i32 noundef) local_unnamed_addr #2
