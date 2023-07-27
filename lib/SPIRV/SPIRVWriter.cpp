@@ -2766,9 +2766,6 @@ SPIRVValue *LLVMToSPIRVBase::oclTransSpvcCastSampler(CallInst *CI,
                                                      SPIRVBasicBlock *BB) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
   llvm::Function *F = CI->getCalledFunction();
-  auto FT = F->getFunctionType();
-  assert(FT->getNumParams() == 1);
-  assert(FT->getParamType(0)->isIntegerTy() && "Invalid sampler type");
   auto Arg = CI->getArgOperand(0);
 
   auto *TransRT = transType(getSPIRVType(OpTypeSampler));
