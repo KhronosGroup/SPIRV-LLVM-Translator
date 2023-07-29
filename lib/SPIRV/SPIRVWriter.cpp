@@ -4538,8 +4538,10 @@ LLVMToSPIRVBase::getFPBuiltinType(IntrinsicInst *II, StringRef &OpName) {
 SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                                                          SPIRVBasicBlock *BB) {
   StringRef OpName;
-  auto FPBuiltinType = getFPBuiltinType(II, OpName);
-  switch (FPBuiltinType) {
+  auto FPBuiltinTypeVal = getFPBuiltinType(II, OpName);
+  if (FPBuiltinTypeVal == FPBuiltinType::UNKNOWN)
+    return nullptr;
+  switch (FPBuiltinTypeVal) {
   case FPBuiltinType::REGULAR_MATH: {
     auto BinOp = StringSwitch<Op>(OpName)
                      .Case("fadd", OpFAdd)
@@ -4584,6 +4586,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("erf", OpenCLLIB::Erf)
                      .Case("erfc", OpenCLLIB::Erfc)
                      .Default(SPIRVWORD_MAX);
+    assert(ExtOp != SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                               Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
@@ -4600,6 +4603,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
                      .Case("pow", OpenCLLIB::Pow)
                      .Case("ldexp", OpenCLLIB::Ldexp)
                      .Default(SPIRVWORD_MAX);
+    assert(ExtOp != SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                               Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
@@ -4614,6 +4618,7 @@ SPIRVValue *LLVMToSPIRVBase::transFPBuiltinIntrinsicInst(IntrinsicInst *II,
     auto ExtOp = StringSwitch<SPIRVWord>(OpName)
                      .Case("sincos", OpenCLLIB::Sincos)
                      .Default(SPIRVWORD_MAX);
+    assert(ExtOp != SPIRVWORD_MAX);
     auto *BI = BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                               Ops, BB);
     return addFPBuiltinDecoration(BM, II, BI);
