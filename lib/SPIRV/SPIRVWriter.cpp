@@ -3533,10 +3533,9 @@ SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
                                          SPIRVInstruction *I) {
   const bool AllowFPMaxError =
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
-  bool IsLLVMFPBuiltin =
-      II->getCalledFunction()->getName().startswith("llvm.fpbuiltin");
+  assert(II->getCalledFunction()->getName().startswith("llvm.fpbuiltin"));
   // Add a new decoration for llvm.builtin intrinsics, if needed
-  if (IsLLVMFPBuiltin && AllowFPMaxError)
+  if (AllowFPMaxError)
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
       double F = 0.0;
       II->getAttributes()
