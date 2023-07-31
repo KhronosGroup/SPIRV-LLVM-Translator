@@ -2765,9 +2765,7 @@ bool LLVMToSPIRVBase::transBuiltinSet() {
 SPIRVValue *LLVMToSPIRVBase::oclTransSpvcCastSampler(CallInst *CI,
                                                      SPIRVBasicBlock *BB) {
   assert(CI->getCalledFunction() && "Unexpected indirect call");
-  llvm::Function *F = CI->getCalledFunction();
   auto Arg = CI->getArgOperand(0);
-
   auto *TransRT = transType(getSPIRVType(OpTypeSampler));
 
   auto GetSamplerConstant = [&](uint64_t SamplerValue) {
