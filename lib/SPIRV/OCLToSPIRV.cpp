@@ -179,9 +179,6 @@ bool OCLToSPIRVBase::runOCLToSPIRV(Module &Module) {
   for (auto &I : ValuesToDelete)
     if (auto Inst = dyn_cast<Instruction>(I))
       Inst->eraseFromParent();
-  for (auto &I : ValuesToDelete)
-    if (auto GV = dyn_cast<GlobalValue>(I))
-      GV->eraseFromParent();
 
   eraseUselessFunctions(M); // remove unused functions declarations
   LLVM_DEBUG(dbgs() << "After OCLToSPIRV:\n" << *M);
