@@ -3401,10 +3401,10 @@ protected:
   typedef SPIRVInstTemplate<SPIRVCooperativeMatrixKHRInstBase, Op##x,          \
                             __VA_ARGS__>                                       \
       SPIRV##x;
-_SPIRV_OP(CooperativeMatrixLoadKHR, true, 5, true)
-_SPIRV_OP(CooperativeMatrixStoreKHR, false, 4, true)
+_SPIRV_OP(CooperativeMatrixLoadKHR, true, 5, true, 3)
+_SPIRV_OP(CooperativeMatrixStoreKHR, false, 4, true, 4)
 _SPIRV_OP(CooperativeMatrixLengthKHR, true, 4, false)
-_SPIRV_OP(CooperativeMatrixMulAddKHR, true, 6, true)
+_SPIRV_OP(CooperativeMatrixMulAddKHR, true, 6, true, 3)
 #undef _SPIRV_OP
 
 class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
