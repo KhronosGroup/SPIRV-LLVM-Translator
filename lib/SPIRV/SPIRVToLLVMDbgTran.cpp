@@ -151,6 +151,34 @@ DIScope *SPIRVToLLVMDbgTran::getScope(const SPIRVEntry *ScopeInst) {
   return transDebugInst<DIScope>(static_cast<const SPIRVExtInst *>(ScopeInst));
 }
 
+void SPIRVToLLVMDbgTran::appendToSourceLangLiteral(DICompileUnit *CompileUnit,
+                                                   SPIRVWord SourceLang) {
+  if (!M->getModuleFlag("Source Lang Literal")) {
+    M->addModuleFlag(llvm::Module::Warning, "Source Lang Literal",
+                     MDTuple::get(M->getContext(), {}));
+  }
+  auto *SourceLangLiteral =
+      dyn_cast<MDTuple>(M->getModuleFlag("Source Lang Literal"));
+
+  // Copy old content
+  SmallVector<Metadata *, 4> Nodes;
+  for (auto &Node : SourceLangLiteral->operands()) {
+    Nodes.push_back(Node);
+  }
+
+  // Add new entry
+  Nodes.push_back(MDTuple::get(
+      M->getContext(), SmallVector<Metadata *, 2>{
+                           CompileUnit,
+                           ConstantAsMetadata::get(ConstantInt::get(
+                               Type::getInt32Ty(M->getContext()), SourceLang)),
+                       }));
+
+  // Update
+  M->setModuleFlag(llvm::Module::Warning, "Source Lang Literal",
+                   MDTuple::get(M->getContext(), Nodes));
+}
+
 DICompileUnit *
 SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
   const SPIRVWordVec &Ops = DebugInst->getArguments();
@@ -168,6 +196,8 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
   }
   SPIRVWord SourceLang =
       getConstantValueOrLiteral(Ops, LanguageIdx, DebugInst->getExtSetKind());
+  SPIRVWord OriginalSourceLang = SourceLang;
+  bool InvalidSourceLang = false;
   if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
     SourceLang = convertSPIRVSourceLangToDWARFNonSemanticDbgInfo(SourceLang);
   } else if (isSPIRVSourceLangValid(SourceLang)) {
@@ -176,14 +206,18 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst) {
     // Some SPIR-V producers generate invalid source language value. In such
     // case the original value should be preserved in "Source Lang Literal"
     // module flag for later use by LLVM IR consumers.
-    M->addModuleFlag(llvm::Module::Warning, "Source Lang Literal", SourceLang);
     SourceLang = dwarf::DW_LANG_OpenCL;
+    InvalidSourceLang = true;
   }
 
   auto Producer = findModuleProducer();
   BuilderMap[DebugInst->getId()] = std::make_unique<DIBuilder>(*M);
-  return BuilderMap[DebugInst->getId()]->createCompileUnit(
+  auto *CompileUnit = BuilderMap[DebugInst->getId()]->createCompileUnit(
       SourceLang, getFile(Ops[SourceIdx]), Producer, false, "", 0);
+  if (InvalidSourceLang) {
+    appendToSourceLangLiteral(CompileUnit, OriginalSourceLang);
+  }
+  return CompileUnit;
 }
 
 DIBasicType *SPIRVToLLVMDbgTran::transTypeBasic(const SPIRVExtInst *DebugInst) {
