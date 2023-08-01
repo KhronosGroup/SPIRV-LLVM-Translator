@@ -487,6 +487,76 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     return mapType(T, getSPIRVFunctionType(RT, PT));
   }
 
+  if (auto *TargetTy = dyn_cast<TargetExtType>(T)) {
+    StringRef Name = TargetTy->getName();
+    if (Name.consume_front(kSPIRVTypeName::PrefixAndDelim)) {
+      auto Opcode = SPIRVOpaqueTypeOpCodeMap::map(Name.str());
+      auto CastAccess = [](unsigned Val) {
+        return static_cast<SPIRVAccessQualifierKind>(Val);
+      };
+      switch (static_cast<size_t>(Opcode)) {
+      case OpTypePipe: {
+        auto *PipeT = BM->addPipeType();
+        PipeT->setPipeAcessQualifier(CastAccess(TargetTy->getIntParameter(0)));
+        return mapType(T, PipeT);
+      }
+      case OpTypeImage: {
+        auto *SampledTy = transType(TargetTy->getTypeParameter(0));
+        ArrayRef<unsigned> Ops = TargetTy->int_params();
+        SPIRVTypeImageDescriptor Desc(static_cast<SPIRVImageDimKind>(Ops[0]),
+                                      Ops[1], Ops[2], Ops[3], Ops[4], Ops[5]);
+        return mapType(T,
+                       BM->addImageType(SampledTy, Desc, CastAccess(Ops[6])));
+      }
+      case OpTypeSampledImage: {
+        auto *ImageTy = static_cast<SPIRVTypeImage *>(transType(adjustImageType(
+            T, kSPIRVTypeName::SampledImg, kSPIRVTypeName::Image)));
+        return mapType(T, BM->addSampledImageType(ImageTy));
+      }
+      case OpTypeVmeImageINTEL: {
+        auto *ImageTy = static_cast<SPIRVTypeImage *>(transType(adjustImageType(
+            T, kSPIRVTypeName::VmeImageINTEL, kSPIRVTypeName::Image)));
+        return mapType(T, BM->addVmeImageINTELType(ImageTy));
+      }
+      case OpTypeQueue:
+        return mapType(T, BM->addQueueType());
+      case OpTypeDeviceEvent:
+        return mapType(T, BM->addDeviceEventType());
+      case OpTypeBufferSurfaceINTEL: {
+        ArrayRef<unsigned> Ops = TargetTy->int_params();
+        return mapType(T, BM->addBufferSurfaceINTELType(CastAccess(Ops[0])));
+      }
+      case internal::OpTypeJointMatrixINTEL: {
+        // The expected representation is:
+        // target("spirv.JointMatrixINTEL", %element_type, %rows%, %cols%,
+        //        %layout%, %scope%, %use%,
+        //        (optional) %element_type_interpretation%)
+        auto *ElemTy = transType(TargetTy->getTypeParameter(0));
+        ArrayRef<unsigned> Ops = TargetTy->int_params();
+        std::vector<SPIRVValue *> Args;
+        for (const auto &Op : Ops)
+          Args.emplace_back(transConstant(getUInt32(M, Op)));
+        return mapType(T, BM->addJointMatrixINTELType(ElemTy, Args));
+      }
+      case OpTypeCooperativeMatrixKHR: {
+        // The expected representation is:
+        // target("spirv.CooperativeMatrixKHR", %element_type, %scope%, %rows%,
+        // %cols%, %use%)
+        auto *ElemTy = transType(TargetTy->getTypeParameter(0));
+        ArrayRef<unsigned> Ops = TargetTy->int_params();
+        std::vector<SPIRVValue *> Args;
+        for (const auto &Op : Ops)
+          Args.emplace_back(transConstant(getUInt32(M, Op)));
+        return mapType(T, BM->addCooperativeMatrixKHRType(ElemTy, Args));
+      }
+      default:
+        if (isSubgroupAvcINTELTypeOpCode(Opcode))
+          return mapType(T, BM->addSubgroupAvcINTELType(Opcode));
+        return mapType(T, BM->addOpaqueGenericType(Opcode));
+      }
+    }
+  }
+
   llvm_unreachable("Not implemented!");
   return 0;
 }
