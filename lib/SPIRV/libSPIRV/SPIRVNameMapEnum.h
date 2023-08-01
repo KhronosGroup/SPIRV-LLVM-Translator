@@ -591,6 +591,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDotProduct, "DotProduct");
   add(CapabilityDotProductKHR, "DotProductKHR");
   add(CapabilityRayCullMaskKHR, "RayCullMaskKHR");
+  add(CapabilityCooperativeMatrixKHR, "CooperativeMatrixKHR");
   add(CapabilityBitInstructions, "BitInstructions");
   add(CapabilityGroupNonUniformRotateKHR, "GroupNonUniformRotateKHR");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
