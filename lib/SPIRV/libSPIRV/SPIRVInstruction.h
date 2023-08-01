@@ -1939,6 +1939,7 @@ protected:
     case OpTypeArray:
     case OpTypeStruct:
     case internal::OpTypeJointMatrixINTEL:
+    case OpTypeCooperativeMatrixKHR:
       break;
     default:
       assert(false && "Invalid type");
@@ -3405,6 +3406,26 @@ protected:
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
 _SPIRV_OP(JointMatrixGetElementCoord, true, 5)
+#undef _SPIRV_OP
+
+class SPIRVCooperativeMatrixKHRInstBase : public SPIRVInstTemplateBase {
+protected:
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_KHR_cooperative_matrix;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityCooperativeMatrixKHR);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVCooperativeMatrixKHRInstBase, Op##x,          \
+                            __VA_ARGS__>                                       \
+      SPIRV##x;
+_SPIRV_OP(CooperativeMatrixLoadKHR, true, 5, true, 3)
+_SPIRV_OP(CooperativeMatrixStoreKHR, false, 4, true, 4)
+_SPIRV_OP(CooperativeMatrixLengthKHR, true, 4, false)
+_SPIRV_OP(CooperativeMatrixMulAddKHR, true, 6, true, 3)
 #undef _SPIRV_OP
 
 class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
