@@ -224,7 +224,8 @@ inline bool isTypeOpCode(Op OpCode) {
   return (OpTypeVoid <= OC && OC <= OpTypePipe) || OC == OpTypePipeStorage ||
          isSubgroupAvcINTELTypeOpCode(OpCode) || OC == OpTypeVmeImageINTEL ||
          isVCOpCode(OpCode) || OC == internal::OpTypeTokenINTEL ||
-         OC == internal::OpTypeJointMatrixINTEL;
+         OC == internal::OpTypeJointMatrixINTEL ||
+         OC == OpTypeCooperativeMatrixKHR;
 }
 
 inline bool isSpecConstantOpCode(Op OpCode) {
