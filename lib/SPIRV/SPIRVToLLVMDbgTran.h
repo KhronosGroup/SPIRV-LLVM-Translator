@@ -105,6 +105,9 @@ private:
 
   DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst);
 
+  void appendToSourceLangLiteral(DICompileUnit *CompileUnit,
+                                 SPIRVWord SourceLang);
+
   DIBasicType *transTypeBasic(const SPIRVExtInst *DebugInst);
 
   DIDerivedType *transTypeQualifier(const SPIRVExtInst *DebugInst);
