@@ -478,6 +478,28 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool IsClassMember) {
         getSPIRVTypeName(kSPIRVTypeName::JointMatrixINTEL, SS.str());
     return mapType(T, getOrCreateOpaquePtrType(M, Name));
   }
+  case OpTypeCooperativeMatrixKHR: {
+    auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(T);
+    unsigned Scope =
+        static_cast<SPIRVConstant *>(MT->getScope())->getZExtIntValue();
+    unsigned Rows =
+        static_cast<SPIRVConstant *>(MT->getRows())->getZExtIntValue();
+    unsigned Cols =
+        static_cast<SPIRVConstant *>(MT->getColumns())->getZExtIntValue();
+    unsigned Use =
+        static_cast<SPIRVConstant *>(MT->getUse())->getZExtIntValue();
+
+    std::stringstream SS;
+    SS << kSPIRVTypeName::PostfixDelim;
+    SS << transTypeToOCLTypeName(MT->getCompType());
+    SS << kSPIRVTypeName::PostfixDelim << Scope << kSPIRVTypeName::PostfixDelim
+       << Rows << kSPIRVTypeName::PostfixDelim << Cols
+       << kSPIRVTypeName::PostfixDelim << Use;
+
+    std::string Name =
+        getSPIRVTypeName(kSPIRVTypeName::CooperativeMatrixKHR, SS.str());
+    return mapType(T, getOrCreateOpaquePtrType(M, Name));
+  }
   case OpTypeForwardPointer: {
     SPIRVTypeForwardPointer *FP =
         static_cast<SPIRVTypeForwardPointer *>(static_cast<SPIRVEntry *>(T));
@@ -2128,6 +2150,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                       ConstantStruct::get(
                           dyn_cast<StructType>(transType(CC->getType())), CV));
     case internal::OpTypeJointMatrixINTEL:
+    case OpTypeCooperativeMatrixKHR:
       return mapValue(BV, transSPIRVBuiltinFromInst(CC, BB));
     default:
       llvm_unreachable("Unhandled type!");
@@ -3188,6 +3211,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpUDotAccSatKHR:
   case OpSUDotAccSatKHR:
   case internal::OpJointMatrixLoadINTEL:
+  case OpCooperativeMatrixLoadKHR:
     AddRetTypePostfix = true;
     break;
   default: {

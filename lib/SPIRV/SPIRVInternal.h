@@ -333,6 +333,7 @@ const static char PipeStorage[] = "PipeStorage";
 const static char ConstantPipeStorage[] = "ConstantPipeStorage";
 const static char VmeImageINTEL[] = "VmeImageINTEL";
 const static char JointMatrixINTEL[] = "JointMatrixINTEL";
+const static char CooperativeMatrixKHR[] = "CooperativeMatrixKHR";
 } // namespace kSPIRVTypeName
 
 namespace kSPR2TypeName {
@@ -1059,6 +1060,7 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
   _SPIRV_OP(AvcImeDualReferenceStreaminINTEL)
   _SPIRV_OP(AvcRefResultINTEL)
   _SPIRV_OP(AvcSicResultINTEL)
+  _SPIRV_OP(CooperativeMatrixKHR)
 #undef _SPIRV_OP
 }
 
