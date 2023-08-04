@@ -113,7 +113,7 @@ static void foreachKernelArgMD(
     std::function<void(const std::string &Str, SPIRVFunctionParameter *BA)>
         Func) {
   assert(BF->getNumArguments() == MD->getNumOperands() &&
-         "Invalid kernel metadata ");
+         "Invalid kernel metadata");
   for (unsigned I = 0, E = MD->getNumOperands(); I != E; ++I) {
     SPIRVFunctionParameter *BA = BF->getArgument(I);
     Func(getMDOperandAsString(MD, I).str(), BA);
