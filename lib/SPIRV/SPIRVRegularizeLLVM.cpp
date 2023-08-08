@@ -506,8 +506,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   return true;
 }
 
-void
-SPIRVRegularizeLLVMBase::addKernelEntryPoint(std::vector<Function *> Work) {
+void SPIRVRegularizeLLVMBase::addKernelEntryPoint(
+    const std::vector<Function *> &Work) {
   for (auto &F : Work) {
     // for declarations just make them into SPIR functions.
     F->setCallingConv(CallingConv::SPIR_FUNC);

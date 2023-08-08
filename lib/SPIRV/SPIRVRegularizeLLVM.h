@@ -54,7 +54,7 @@ public:
   // SPIR-V disallows functions being entrypoints/kernels and called
   // OpenCL doesn't. This adds a wrapper around the entry point if it's called
   // by other entry point that later SPIR-V writer renames.
-  void addKernelEntryPoint(std::vector<Function *> CalledKernels);
+  void addKernelEntryPoint(const std::vector<Function *> &CalledKernels);
 
   /// Some LLVM intrinsics that have no SPIR-V counterpart may be wrapped in
   /// @spirv.llvm_intrinsic_* function. During reverse translation from SPIR-V
