@@ -363,9 +363,10 @@ bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
-  addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
 
+  // Kernels called by other kernels
+  std::vector<Function *> CalledKernels;
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
     if (F->isDeclaration() && F->use_empty()) {
@@ -379,7 +380,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
         if (auto *Call = dyn_cast<CallInst>(&II)) {
           Call->setTailCall(false);
           Function *CF = Call->getCalledFunction();
-          if (CF && CF->isIntrinsic()) {
+          if (CF && CF->getCallingConv() == CallingConv::SPIR_KERNEL) {
+            CalledKernels.push_back(CF);
+          } else if (CF && CF->isIntrinsic()) {
             removeFnAttr(Call, Attribute::NoUnwind);
             auto *II = cast<IntrinsicInst>(Call);
             if (II->getIntrinsicID() == Intrinsic::memset ||
@@ -497,19 +500,14 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     }
   }
 
+  addKernelEntryPoint(CalledKernels);
   if (SPIRVDbgSaveRegularizedModule)
     saveLLVMModule(M, RegularizedModuleTmpFile);
   return true;
 }
 
-void SPIRVRegularizeLLVMBase::addKernelEntryPoint(Module *M) {
-  std::vector<Function *> Work;
-
-  // Get a list of all functions that have SPIR kernel calling conv
-  for (auto &F : *M) {
-    if (F.getCallingConv() == CallingConv::SPIR_KERNEL)
-      Work.push_back(&F);
-  }
+void SPIRVRegularizeLLVMBase::addKernelEntryPoint(
+    const std::vector<Function *> &Work) {
   for (auto &F : Work) {
     // for declarations just make them into SPIR functions.
     F->setCallingConv(CallingConv::SPIR_FUNC);
