@@ -782,8 +782,8 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   BF->setFunctionControlMask(transFunctionControlMask(F));
   if (F->hasName()) {
     if (isKernel(F)) {
-      // Strip the entry point wrapper prefix as the runtime will be looking for
-      // this name if found if there is the prefix
+      // If found, strip the entry point wrapper prefix as the runtime will
+      // be looking for this name
       StringRef Name = F->getName();
       (void) Name.consume_front(kSPIRVName::EntrypointPrefix);
       BM->setName(BF, Name.str());

@@ -365,7 +365,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
   expandSYCLTypeUsing(M);
 
-  // Store kernels called by other kernels
+  // Kernels called by other kernels
   std::vector<Function *> CalledKernels;
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
