@@ -18,15 +18,25 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: FunctionParameter [[I32Ty]] [[#I32ValId:]]
 
 ; CHECK-SPIRV: OpIAddCarry [[StructI32I32Ty]] [[#]] [[I32ValId]] [[I32ValId]]
+; CHECK-SPIRV: OpISubBorrow [[StructI32I32Ty]] [[#]] [[I32ValId]] [[I32ValId]]
 
 ; CHECK-LLVM: call { i32, i1 } @llvm.uadd.with.overflow.i32
+; CHECK-LLVM: call { i32, i1 } @llvm.usub.with.overflow.i32
 
 
 declare { i32, i1 } @llvm.uadd.with.overflow.i32(i32, i32)
 
+declare { i32, i1 } @llvm.usub.with.overflow.i32(i32, i32)
+
 define { i32, i1 } @simple_fold(i32 %x) {
   %a = add nuw i32 %x, 7
   %b = tail call { i32, i1 } @llvm.uadd.with.overflow.i32(i32 %a, i32 13)
+  ret { i32, i1 } %b
+}
+
+define { i32, i1 } @simple_fold_sub(i32 %x) {
+  %a = sub nuw i32 %x, 7
+  %b = tail call { i32, i1 } @llvm.usub.with.overflow.i32(i32 %a, i32 13)
   ret { i32, i1 } %b
 }
 
