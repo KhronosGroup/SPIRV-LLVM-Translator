@@ -1,0 +1,43 @@
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; CHECK-LLVM: %[[#Matrix:]] = call spir_func target("spirv.CooperativeMatrixKHR", float, 3, 12, 12, 3) @_Z26__spirv_CompositeConstructf(float 0.000000e+00)
+; CHECK-LLVM: %[[#Scalar:]] = load float, ptr %rhs
+; CHECK-LLVM: %3 = call spir_func target("spirv.CooperativeMatrixKHR", float, 3, 12, 12, 3) @_Z25__spirv_MatrixTimesScalarPU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_3f(target("spirv.CooperativeMatrixKHR", float, 3, 12, 12, 3) %[[#Matrix]], float %[[#Scalar]])
+
+119734787 65536 458752 24 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Float64
+2 Capability Matrix
+2 Capability CooperativeMatrixKHR
+8 Extension "SPV_KHR_cooperative_matrix"
+3 MemoryModel 2 2
+8 EntryPoint 6 20 "matrix_times_scalar"
+3 Source 3 102000
+3 Name 14 "rhs"
+
+4 TypeInt 19 32 0 
+4 Constant 19 21 3 
+4 Constant 19 22 12
+2 TypeVoid 5
+3 TypeFloat 6 32
+4 Constant 6 23 0 
+7 TypeCooperativeMatrixKHR 8 6 21 22 22 21
+4 TypePointer 10 7 6            ; 10 : Pointer to Scalar
+4 TypeFunction 11 5 10
+
+5 Function 5 20 0 11
+3 FunctionParameter 10 14       ; rhs : Pointer to Scalar
+
+2 Label 15
+4 CompositeConstruct 8 16 23
+4 Load 6 17 14
+
+5 MatrixTimesScalar 8 18 16 17
+1 Return
+
+1 FunctionEnd
