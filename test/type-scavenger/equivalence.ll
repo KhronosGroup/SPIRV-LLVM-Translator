@@ -8,72 +8,72 @@
 
 ; Incorrect lookup of equivalence class leader caused an assertion failure when
 ; processing call instruction to this name
-; CHECK-SPIRV: _ZN4sycl3_V16marrayIiLm5EEixEm
-; CHECK-LLVM: _ZN4sycl3_V16marrayIiLm5EEixEm
+; CHECK-SPIRV: _func0
+; CHECK-LLVM: _func0
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-define spir_func void @_ZN4sycl3_V18lgamma_rINS0_6marrayINS0_6detail9half_impl4halfELm5EEENS0_9multi_ptrINS2_IiLm5EEELNS0_6access13address_spaceE0ELNS9_9decoratedE0EEEEENSt9enable_ifIXaaaasr6detailE11is_marray_vIT_Esr6detailE20is_valid_elem_type_vISE_fdS5_Eaaaasr6detailE14is_multi_ptr_vIT0_Esr6detailE26has_writeable_addr_space_vISF_Esr6detailE20is_valid_elem_type_vISF_NS3_15change_elementsIiSE_E4typeEEESE_E4typeESE_SF_() {
+define spir_func void @_func1() {
 entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.cond, %entry
-  %call3 = call spir_func ptr addrspace(4) @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE0ELNS4_9decoratedE0EEdeEv()
-  %call5 = call spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) %call3, i64 0)
+  %call3 = call spir_func ptr addrspace(4) @_func2()
+  %call5 = call spir_func ptr addrspace(4) @_func0(ptr addrspace(4) %call3, i64 0)
   br label %for.cond
 }
 
-define spir_func void @_ZN4sycl3_V18lgamma_rINS0_6marrayINS0_6detail9half_impl4halfELm5EEENS0_9multi_ptrINS2_IiLm5EEELNS0_6access13address_spaceE0ELNS9_9decoratedE1EEEEENSt9enable_ifIXaaaasr6detailE11is_marray_vIT_Esr6detailE20is_valid_elem_type_vISE_fdS5_Eaaaasr6detailE14is_multi_ptr_vIT0_Esr6detailE26has_writeable_addr_space_vISF_Esr6detailE20is_valid_elem_type_vISF_NS3_15change_elementsIiSE_E4typeEEESE_E4typeESE_SF_() {
+define spir_func void @_func3() {
 entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.cond, %entry
-  %call3 = call spir_func ptr @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE0ELNS4_9decoratedE1EEdeEv()
+  %call3 = call spir_func ptr @_func4()
   %call3.ascast = addrspacecast ptr %call3 to ptr addrspace(4)
-  %call5 = call spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) %call3.ascast, i64 0)
+  %call5 = call spir_func ptr addrspace(4) @_func0(ptr addrspace(4) %call3.ascast, i64 0)
   br label %for.cond
 }
 
-declare spir_func ptr addrspace(4) @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE1ELNS4_9decoratedE0EEdeEv()
+declare spir_func ptr addrspace(4) @_func5()
 
-define spir_func void @_ZN4sycl3_V18lgamma_rINS0_6marrayINS0_6detail9half_impl4halfELm5EEENS0_9multi_ptrINS2_IiLm5EEELNS0_6access13address_spaceE1ELNS9_9decoratedE1EEEEENSt9enable_ifIXaaaasr6detailE11is_marray_vIT_Esr6detailE20is_valid_elem_type_vISE_fdS5_Eaaaasr6detailE14is_multi_ptr_vIT0_Esr6detailE26has_writeable_addr_space_vISF_Esr6detailE20is_valid_elem_type_vISF_NS3_15change_elementsIiSE_E4typeEEESE_E4typeESE_SF_(ptr addrspace(4) %call3.ascast) {
+define spir_func void @_func6(ptr addrspace(4) %call3.ascast) {
 entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.cond, %entry
-  %call5 = call spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) %call3.ascast, i64 0)
+  %call5 = call spir_func ptr addrspace(4) @_func0(ptr addrspace(4) %call3.ascast, i64 0)
   br label %for.cond
 }
 
-define spir_func void @_ZN4sycl3_V18lgamma_rINS0_6marrayINS0_6detail9half_impl4halfELm5EEENS0_9multi_ptrINS2_IiLm5EEELNS0_6access13address_spaceE1ELNS9_9decoratedE0EEEEENSt9enable_ifIXaaaasr6detailE11is_marray_vIT_Esr6detailE20is_valid_elem_type_vISE_fdS5_Eaaaasr6detailE14is_multi_ptr_vIT0_Esr6detailE26has_writeable_addr_space_vISF_Esr6detailE20is_valid_elem_type_vISF_NS3_15change_elementsIiSE_E4typeEEESE_E4typeESE_SF_() {
+define spir_func void @_func7() {
 entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.cond, %entry
-  %call3 = call spir_func ptr addrspace(4) @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE1ELNS4_9decoratedE0EEdeEv()
-  %call5 = call spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) %call3, i64 0)
+  %call3 = call spir_func ptr addrspace(4) @_func5()
+  %call5 = call spir_func ptr addrspace(4) @_func0(ptr addrspace(4) %call3, i64 0)
   br label %for.cond
 }
 
-declare spir_func ptr @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE0ELNS4_9decoratedE1EEdeEv()
+declare spir_func ptr @_func4()
 
-declare spir_func ptr addrspace(4) @_ZNK4sycl3_V19multi_ptrINS0_6marrayIiLm5EEELNS0_6access13address_spaceE0ELNS4_9decoratedE0EEdeEv()
+declare spir_func ptr addrspace(4) @_func2()
 
-define spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) %this, i64 %index) {
+define spir_func ptr addrspace(4) @_func0(ptr addrspace(4) %this, i64 %index) {
 entry:
   %arrayidx = getelementptr [5 x i32], ptr addrspace(4) %this, i64 0, i64 %index
   ret ptr addrspace(4) null
 }
 
-define spir_func void @_ZN4sycl3_V16remquoINS0_6marrayINS0_6detail9half_impl4halfELm5EEES6_NS0_9multi_ptrINS2_IiLm5EEELNS0_6access13address_spaceE1ELNS9_9decoratedE1EEEEENSt9enable_ifIXaaaaaasr6detailE11is_marray_vIT_Esr6detailE20is_valid_elem_type_vISE_fdS5_Esr6detailE24check_all_same_op_type_vISE_T0_Eaaaasr6detailE14is_multi_ptr_vIT1_Esr6detailE26has_writeable_addr_space_vISG_Esr6detailE20is_valid_elem_type_vISG_NS3_15change_elementsIiSE_E4typeEEESE_E4typeESE_SF_SG_() {
+define spir_func void @_func8() {
 entry:
   br label %for.cond
 
 for.cond:                                         ; preds = %for.cond, %entry
-  %call8 = call spir_func ptr addrspace(4) @_ZN4sycl3_V16marrayIiLm5EEixEm(ptr addrspace(4) null, i64 0)
+  %call8 = call spir_func ptr addrspace(4) @_func0(ptr addrspace(4) null, i64 0)
   br label %for.cond
 }
 
 ; uselistorder directives
-uselistorder ptr @_ZN4sycl3_V16marrayIiLm5EEixEm, { 0, 4, 3, 2, 1 }
+uselistorder ptr @_func0, { 0, 4, 3, 2, 1 }
