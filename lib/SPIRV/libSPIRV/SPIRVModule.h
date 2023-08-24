@@ -482,6 +482,9 @@ public:
                                              SPIRVValue *Value,
                                              SPIRVValue *ExpectedValue,
                                              SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *
+  addTaskSequenceGetINTELInst(SPIRVType *, SPIRVValue *, SPIRVValue *,
+                              SPIRVBasicBlock *) = 0;
 
   virtual SPIRVId getExtInstSetId(SPIRVExtInstSetKind Kind) const = 0;
 
