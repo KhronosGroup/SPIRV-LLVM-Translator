@@ -3873,11 +3873,12 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
 
       SPIRVType *Ty = transType(II->getType());
       std::vector<SPIRVValue *> Operands = {
-        transValue(II->getArgOperand(0), BB),
-        transValue(II->getArgOperand(1), BB)};
+          transValue(II->getArgOperand(0), BB),
+          transValue(II->getArgOperand(1), BB)};
       return BM->addExtInst(Ty, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp,
                             std::move(Operands), BB);
     }
+
     Type *LLVMTy = II->getType();
     SPIRVType *Ty = transType(LLVMTy);
     Type *BoolTy = IntegerType::getInt1Ty(M->getContext());
@@ -3886,38 +3887,40 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVType *SPVBoolTy = transType(BoolTy);
     SPIRVValue *FirstArgVal = transValue(II->getArgOperand(0), BB);
     SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
+
     if (IID == Intrinsic::uadd_sat) {
       // uadd.sat(a, b) -> res = a + b, (res > a) ? res : MAX
       SPIRVValue *Max =
           transValue(Constant::getAllOnesValue(II->getType()), BB);
       SPIRVValue *Add =
           BM->addBinaryInst(OpIAdd, Ty, FirstArgVal, SecondArgVal, BB);
-      SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, SPVBoolTy,
-                                       Add, FirstArgVal, BB);
+      SPIRVValue *Cmp =
+          BM->addCmpInst(OpUGreaterThan, SPVBoolTy, Add, FirstArgVal, BB);
       return BM->addSelectInst(Cmp, Add, Max, BB);
     }
     if (IID == Intrinsic::usub_sat) {
       // usub.sat(a, b) -> (a > b) ? a - b : 0
       SPIRVValue *Sub =
           BM->addBinaryInst(OpISub, Ty, FirstArgVal, SecondArgVal, BB);
-      SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, SPVBoolTy,
-                                       FirstArgVal, SecondArgVal, BB);
+      SPIRVValue *Cmp = BM->addCmpInst(OpUGreaterThan, SPVBoolTy, FirstArgVal,
+                                       SecondArgVal, BB);
       SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
       return BM->addSelectInst(Cmp, Sub, Zero, BB);
     }
 
     uint64_t NumBits = LLVMTy->getScalarSizeInBits();
     SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
-    SPIRVValue *Max =
-        transValue(Constant::getIntegerValue(
-              LLVMTy, APInt::getSignedMaxValue(NumBits)), BB);
-    SPIRVValue *Min =
-        transValue(Constant::getIntegerValue(
-              LLVMTy, APInt::getSignedMinValue(NumBits)), BB);
+    SPIRVValue *Max = transValue(
+        Constant::getIntegerValue(LLVMTy, APInt::getSignedMaxValue(NumBits)),
+        BB);
+    SPIRVValue *Min = transValue(
+        Constant::getIntegerValue(LLVMTy, APInt::getSignedMinValue(NumBits)),
+        BB);
     SPIRVValue *IsPositive =
         BM->addCmpInst(OpSGreaterThan, SPVBoolTy, SecondArgVal, Zero, BB);
     SPIRVValue *IsNegative =
         BM->addCmpInst(OpSLessThan, SPVBoolTy, SecondArgVal, Zero, BB);
+
     if (IID == Intrinsic::sadd_sat) {
       // sadd.sat(a, b) -> if (b > 0) && a > MAX - b => overflow -> MAX
       //                -> else if (b < 0) && a < MIN - b => overflow -> MIN
@@ -3935,20 +3938,20 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       // check if (b > 0) && a > MAX - b condition
       SPIRVValue *MaxSubB =
           BM->addBinaryInst(OpISub, Ty, Max, SecondArgVal, BB);
-      SPIRVValue *CanPosOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
-                                                  FirstArgVal, MaxSubB, BB);
+      SPIRVValue *CanPosOverflow =
+          BM->addCmpInst(OpSGreaterThan, SPVBoolTy, FirstArgVal, MaxSubB, BB);
       SPIRVValue *PosOverflow = BM->addInstTemplate(
-          OpLogicalAnd, {CanPosOverflow->getId(), IsPositive->getId()},
-          BB, SPVBoolTy);
+          OpLogicalAnd, {CanPosOverflow->getId(), IsPositive->getId()}, BB,
+          SPVBoolTy);
 
       // check if (b < 0) && MIN - b > a condition
       SPIRVValue *MinSubB =
           BM->addBinaryInst(OpISub, Ty, Min, SecondArgVal, BB);
-      SPIRVValue *CanNegOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
-                                                  MinSubB, FirstArgVal, BB);
+      SPIRVValue *CanNegOverflow =
+          BM->addCmpInst(OpSGreaterThan, SPVBoolTy, MinSubB, FirstArgVal, BB);
       SPIRVValue *NegOverflow = BM->addInstTemplate(
-          OpLogicalAnd, {CanNegOverflow->getId(), IsNegative->getId()},
-          BB, SPVBoolTy);
+          OpLogicalAnd, {CanNegOverflow->getId(), IsNegative->getId()}, BB,
+          SPVBoolTy);
 
       // do selects
       SPIRVValue *FirstSelect = BM->addSelectInst(PosOverflow, Max, Add, BB);
@@ -3964,19 +3967,19 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
 
     // check if (b > 0) && MIN + b > a
     SPIRVValue *MinAddB = BM->addBinaryInst(OpIAdd, Ty, Min, SecondArgVal, BB);
-    SPIRVValue *CanNegOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
-                                                MinAddB, FirstArgVal, BB);
+    SPIRVValue *CanNegOverflow =
+        BM->addCmpInst(OpSGreaterThan, SPVBoolTy, MinAddB, FirstArgVal, BB);
     SPIRVValue *NegOverflow = BM->addInstTemplate(
-        OpLogicalAnd, {CanNegOverflow->getId(), IsPositive->getId()},
-        BB, SPVBoolTy);
+        OpLogicalAnd, {CanNegOverflow->getId(), IsPositive->getId()}, BB,
+        SPVBoolTy);
 
     // check if (b < 0) && a > MAX + b
     SPIRVValue *MaxAddB = BM->addBinaryInst(OpIAdd, Ty, Max, SecondArgVal, BB);
-    SPIRVValue *CanPosOverflow = BM->addCmpInst(OpSGreaterThan, SPVBoolTy,
-                                                FirstArgVal, MaxAddB, BB);
+    SPIRVValue *CanPosOverflow =
+        BM->addCmpInst(OpSGreaterThan, SPVBoolTy, FirstArgVal, MaxAddB, BB);
     SPIRVValue *PosOverflow = BM->addInstTemplate(
-        OpLogicalAnd, {CanPosOverflow->getId(), IsNegative->getId()},
-        BB, SPVBoolTy);
+        OpLogicalAnd, {CanPosOverflow->getId(), IsNegative->getId()}, BB,
+        SPVBoolTy);
 
     // do selects
     SPIRVValue *FirstSelect = BM->addSelectInst(PosOverflow, Max, Sub, BB);
