@@ -534,8 +534,8 @@ public:
     return TranslationOpts.shouldReplaceLLVMFmulAddWithOpenCLMad();
   }
 
-  bool shouldUseOpenCLExtInstructionsForLLVMIntrinsic() const noexcept {
-    return TranslationOpts.shouldUseOpenCLExtInstructionsForLLVMIntrinsic();
+  bool shouldUseOpenCLExtInstructionsForLLVMMathIntrinsic() const noexcept {
+    return TranslationOpts.shouldUseOpenCLExtInstructionsForLLVMMathIntrinsic();
   }
 
   bool shouldPreserveOCLKernelArgTypeMetadataThroughString() const noexcept {

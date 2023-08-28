@@ -258,8 +258,8 @@ static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
         clEnumValN(SPIRV::BuiltinFormat::Global, "global",
                    "Use globals to represent SPIR-V builtin variables")));
 
-static cl::opt<bool> SPIRVUseOpenCLExtInstructionsForLLVMIntrinsic(
-    "spirv-use-ocl-math-for-llvm-intrinsic", cl::init(true),
+static cl::opt<bool> SPIRVUseOpenCLExtInstructionsForLLVMMathIntrinsic(
+    "spirv-use-ocl-for-llvm-math-intrinsic", cl::init(true),
     cl::desc("Allow to use OpenCL.ExtendedInstructionSet.100 to translate "
              "LLVM math intrinsics. Otherwise use emulation for these "
              "intrinsics)"));
@@ -763,13 +763,14 @@ int main(int Ac, char **Av) {
     }
   }
 
-  if (SPIRVUseOpenCLExtInstructionsForLLVMIntrinsic.getNumOccurrences() != 0) {
+  if (SPIRVUseOpenCLExtInstructionsForLLVMMathIntrinsic.getNumOccurrences() !=
+      0) {
     if (IsReverse) {
-      errs() << "Note: --spirv-use-ocl-math-for-llvm-intrinsic option ignored "
+      errs() << "Note: --spirv-use-ocl-for-llvm-math-intrinsic option ignored "
                 "as it only affects translation from LLVM IR to SPIR-V";
     } else {
-      Opts.setUseOpenCLExtInstructionsForLLVMIntrinsic(
-          SPIRVUseOpenCLExtInstructionsForLLVMIntrinsic);
+      Opts.setUseOpenCLExtInstructionsForLLVMMathIntrinsic(
+          SPIRVUseOpenCLExtInstructionsForLLVMMathIntrinsic);
     }
   }
 

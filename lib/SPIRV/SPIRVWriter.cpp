@@ -3860,7 +3860,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::usub_sat:
   case Intrinsic::sadd_sat:
   case Intrinsic::ssub_sat: {
-    if (BM->shouldUseOpenCLExtInstructionsForLLVMIntrinsic()) {
+    if (BM->shouldUseOpenCLExtInstructionsForLLVMMathIntrinsic()) {
       SPIRVWord ExtOp;
       if (IID == Intrinsic::uadd_sat)
         ExtOp = OpenCLLIB::UAdd_sat;
@@ -3889,13 +3889,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVValue *SecondArgVal = transValue(II->getArgOperand(1), BB);
 
     if (IID == Intrinsic::uadd_sat) {
-      // uadd.sat(a, b) -> res = a + b, (res > a) ? res : MAX
+      // uadd.sat(a, b) -> res = a + b, (res >= a) ? res : MAX
       SPIRVValue *Max =
           transValue(Constant::getAllOnesValue(II->getType()), BB);
       SPIRVValue *Add =
           BM->addBinaryInst(OpIAdd, Ty, FirstArgVal, SecondArgVal, BB);
       SPIRVValue *Cmp =
-          BM->addCmpInst(OpUGreaterThan, SPVBoolTy, Add, FirstArgVal, BB);
+          BM->addCmpInst(OpUGreaterThanEqual, SPVBoolTy, Add, FirstArgVal, BB);
       return BM->addSelectInst(Cmp, Add, Max, BB);
     }
     if (IID == Intrinsic::usub_sat) {
@@ -3931,7 +3931,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       // The later was chosed because of the following consideration:
       // speculative branch prediction will most likely consider 'if' statements
       // here as always false falling through to 'a + b', and reversing it will
-      // case performance degradation.
+      // cause performance degradation.
       SPIRVValue *Add =
           BM->addBinaryInst(OpIAdd, Ty, FirstArgVal, SecondArgVal, BB);
 

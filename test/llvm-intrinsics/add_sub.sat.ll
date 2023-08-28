@@ -3,17 +3,15 @@
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,OPENCL
 ; RUN: spirv-val %t.spv
 
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-use-ocl-math-for-llvm-intrinsic=true -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-use-ocl-for-llvm-math-intrinsic=true -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,OPENCL
 ; RUN: spirv-val %t.spv
 
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-use-ocl-math-for-llvm-intrinsic=false -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-use-ocl-for-llvm-math-intrinsic=false -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,EMULATION
 ; RUN: spirv-val %t.spv
 
-; Test checks that saturation addition and substraction llvm intrinsics
+; Test checks that saturation addition and subtraction llvm intrinsics
 ; are translated into instruction from OpenCL Extended Instruction Set.
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

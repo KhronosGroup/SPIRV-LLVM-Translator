@@ -193,12 +193,12 @@ public:
     ReplaceLLVMFmulAddWithOpenCLMad = Value;
   }
 
-  void setUseOpenCLExtInstructionsForLLVMIntrinsic(bool Value) noexcept {
-    UseOpenCLExtInstructionsForLLVMIntrinsic = Value;
+  void setUseOpenCLExtInstructionsForLLVMMathIntrinsic(bool Value) noexcept {
+    UseOpenCLExtInstructionsForLLVMMathIntrinsic = Value;
   }
 
-  bool shouldUseOpenCLExtInstructionsForLLVMIntrinsic() const noexcept {
-    return UseOpenCLExtInstructionsForLLVMIntrinsic;
+  bool shouldUseOpenCLExtInstructionsForLLVMMathIntrinsic() const noexcept {
+    return UseOpenCLExtInstructionsForLLVMMathIntrinsic;
   }
 
   bool shouldPreserveOCLKernelArgTypeMetadataThroughString() const noexcept {
@@ -254,7 +254,7 @@ private:
   // Controls whether llvm math intrinsics should be replaced with instructions
   // from OpenCL extended instruction set or emulated by native SPIR-V
   // instructions
-  bool UseOpenCLExtInstructionsForLLVMIntrinsic = true;
+  bool UseOpenCLExtInstructionsForLLVMMathIntrinsic = true;
 
   // Add a workaround to preserve OpenCL kernel_arg_type and
   // kernel_arg_type_qual metadata through OpString
