@@ -50,7 +50,7 @@ entry:
 ; COMMON-NEXT: Label
 ; OPENCL-NEXT: ExtInst [[int]] {{[0-9]+}} [[ext]] u_add_sat [[lhs]] [[rhs]]
 ; EMULATION-NEXT: IAdd [[int]] [[add:[0-9]+]] [[lhs]] [[rhs]]
-; EMULATION-NEXT: UGreaterThan [[bool]] [[greater:[0-9]+]] [[add]] [[lhs]]
+; EMULATION-NEXT: UGreaterThanEqual [[bool]] [[greater:[0-9]+]] [[add]] [[lhs]]
 ; EMULATION-NEXT: Select [[int]] {{[0-9]+}} [[greater]] [[add]] [[uint_max]]
 ; COMMON-NEXT: Return
 
@@ -134,7 +134,7 @@ entry:
 ; COMMON-NEXT: Label
 ; OPENCL-NEXT: ExtInst [[vector]] {{[0-9]+}} [[ext]] u_add_sat [[lhs]] [[rhs]]
 ; EMULATION-NEXT: IAdd [[vector]] [[add:[0-9]+]] [[lhs]] [[rhs]]
-; EMULATION-NEXT: UGreaterThan [[vector_bool]] [[greater:[0-9]+]] [[add]] [[lhs]]
+; EMULATION-NEXT: UGreaterThanEqual [[vector_bool]] [[greater:[0-9]+]] [[add]] [[lhs]]
 ; EMULATION-NEXT: Select [[vector]] {{[0-9]+}} [[greater]] [[add]] [[vector_uint_max]]
 ; COMMON-NEXT: Return
 
