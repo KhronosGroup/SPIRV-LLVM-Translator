@@ -423,23 +423,6 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
       SPIRVStructNumElements = MaxNumElements;
     }
 
-    SmallVector<unsigned, 4> ForwardRefs;
-    SmallVector<SPIRVType *, 4> ElementTypes;
-
-    // Enforce structure's member types be in the module layout before
-    // appropriate OpTypeStruct
-    for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
-      auto *ElemTy = ST->getElementType(I);
-      if ((isa<StructType>(ElemTy) || isa<ArrayType>(ElemTy) ||
-           isa<VectorType>(ElemTy) || isa<PointerType>(ElemTy)) &&
-          recursiveType(ST, ElemTy)) {
-        ForwardRefs.push_back(I);
-        ElementTypes.push_back(nullptr);
-      } else {
-        ElementTypes.push_back(transType(ST->getElementType(I)));
-      }
-    }
-
     auto *Struct = BM->openStructType(SPIRVStructNumElements, Name.str());
     mapType(T, Struct);
 
@@ -460,9 +443,16 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
       }
     }
 
+    SmallVector<unsigned, 4> ForwardRefs;
+
     for (unsigned I = 0, E = T->getStructNumElements(); I != E; ++I) {
-      if (ElementTypes[I])
-        Struct->setMemberType(I, ElementTypes[I]);
+      auto *ElemTy = ST->getElementType(I);
+      if ((isa<StructType>(ElemTy) || isa<ArrayType>(ElemTy) ||
+           isa<VectorType>(ElemTy) || isa<PointerType>(ElemTy)) &&
+          recursiveType(ST, ElemTy))
+        ForwardRefs.push_back(I);
+      else
+        Struct->setMemberType(I, transType(ST->getElementType(I)));
     }
 
     BM->closeStructType(Struct, ST->isPacked());
