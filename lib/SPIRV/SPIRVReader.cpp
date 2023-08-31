@@ -3899,9 +3899,8 @@ static float convertSPIRVWordToFloat(SPIRVWord Spir) {
   return FPMaxError.F;
 }
 
-} // namespace
-
-bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
+static bool transFPMaxErrorDecoration(SPIRVValue *BV, Value *V,
+		                      LLVMContext *Context) {
   SPIRVWord ID;
   if (Instruction *I = dyn_cast<Instruction>(V))
     if (BV->hasDecorate(DecorationFPMaxErrorDecorationINTEL, 0, &ID)) {
@@ -3923,6 +3922,13 @@ bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
       }
       return true;
     }
+  return false;
+}
+} // namespace
+
+bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
+  if (transFPMaxErrorDecoration(BV, V, Context))
+    return true;
 
   if (!transAlign(BV, V))
     return false;
