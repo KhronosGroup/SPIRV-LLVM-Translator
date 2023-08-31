@@ -3,7 +3,7 @@
 ; RUN: llvm-spirv %t.spv --to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
-; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
 
 ; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
@@ -58,7 +58,7 @@ entry:
   ret void
 }
 
-declare <4 x i32 addrspace(1)*> @boo(<4 x i32 addrspace(1)*> %a)
+declare <4 x ptr addrspace(1)> @boo(<4 x ptr addrspace(1)> %a)
 
 !llvm.module.flags = !{!0}
 !opencl.spir.version = !{!1}

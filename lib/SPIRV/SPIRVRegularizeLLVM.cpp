@@ -363,9 +363,10 @@ bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
-  addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
 
+  // Kernels called by other kernels
+  std::vector<Function *> CalledKernels;
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
     if (F->isDeclaration() && F->use_empty()) {
@@ -376,10 +377,12 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     std::vector<Instruction *> ToErase;
     for (BasicBlock &BB : *F) {
       for (Instruction &II : BB) {
-        if (auto Call = dyn_cast<CallInst>(&II)) {
+        if (auto *Call = dyn_cast<CallInst>(&II)) {
           Call->setTailCall(false);
           Function *CF = Call->getCalledFunction();
-          if (CF && CF->isIntrinsic()) {
+          if (CF && CF->getCallingConv() == CallingConv::SPIR_KERNEL) {
+            CalledKernels.push_back(CF);
+          } else if (CF && CF->isIntrinsic()) {
             removeFnAttr(Call, Attribute::NoUnwind);
             auto *II = cast<IntrinsicInst>(Call);
             if (II->getIntrinsicID() == Intrinsic::memset ||
@@ -409,10 +412,21 @@ bool SPIRVRegularizeLLVMBase::regularize() {
         }
 
         // Remove optimization info not supported by SPIRV
-        if (auto BO = dyn_cast<BinaryOperator>(&II)) {
+        if (auto *BO = dyn_cast<BinaryOperator>(&II)) {
           if (isa<PossiblyExactOperator>(BO) && BO->isExact())
             BO->setIsExact(false);
         }
+
+        // FIXME: This is not valid handling for freeze instruction
+        if (auto *FI = dyn_cast<FreezeInst>(&II)) {
+          auto *V = FI->getOperand(0);
+          if (isa<UndefValue>(V))
+            V = Constant::getNullValue(V->getType());
+          FI->replaceAllUsesWith(V);
+          FI->dropAllReferences();
+          ToErase.push_back(FI);
+        }
+
         // Remove metadata not supported by SPIRV
         static const char *MDs[] = {
             "fpmath",
@@ -424,7 +438,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             II.setMetadata(MDName, nullptr);
           }
         }
-        if (auto Cmpxchg = dyn_cast<AtomicCmpXchgInst>(&II)) {
+        if (auto *Cmpxchg = dyn_cast<AtomicCmpXchgInst>(&II)) {
           // Transform:
           // %1 = cmpxchg i32* %ptr, i32 %comparator, i32 %0 seq_cst acquire
           // To:
@@ -486,19 +500,14 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     }
   }
 
+  addKernelEntryPoint(CalledKernels);
   if (SPIRVDbgSaveRegularizedModule)
     saveLLVMModule(M, RegularizedModuleTmpFile);
   return true;
 }
 
-void SPIRVRegularizeLLVMBase::addKernelEntryPoint(Module *M) {
-  std::vector<Function *> Work;
-
-  // Get a list of all functions that have SPIR kernel calling conv
-  for (auto &F : *M) {
-    if (F.getCallingConv() == CallingConv::SPIR_KERNEL)
-      Work.push_back(&F);
-  }
+void SPIRVRegularizeLLVMBase::addKernelEntryPoint(
+    const std::vector<Function *> &Work) {
   for (auto &F : Work) {
     // for declarations just make them into SPIR functions.
     F->setCallingConv(CallingConv::SPIR_FUNC);

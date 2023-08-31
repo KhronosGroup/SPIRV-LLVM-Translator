@@ -243,7 +243,7 @@ void SPIRVGroupDecorateGeneric::decode(std::istream &I) {
 
 void SPIRVGroupDecorate::decorateTargets() {
   for (auto &I : Targets) {
-    auto Target = getOrCreate(I);
+    auto *Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isDecorate());
       Target->addDecorate(static_cast<SPIRVDecorate *>(Dec));
@@ -253,7 +253,7 @@ void SPIRVGroupDecorate::decorateTargets() {
 
 void SPIRVGroupMemberDecorate::decorateTargets() {
   for (auto &I : Targets) {
-    auto Target = getOrCreate(I);
+    auto *Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
       assert(Dec->isMemberDecorate());
       Target->addMemberDecorate(static_cast<SPIRVMemberDecorate *>(Dec));
