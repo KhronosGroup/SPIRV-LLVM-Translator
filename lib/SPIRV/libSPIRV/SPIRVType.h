@@ -1116,6 +1116,10 @@ public:
       return Args.size() > 5 ? Args[5] : nullptr;
     return Args.size() > 4 ? Args[4] : nullptr;
   }
+
+  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+    return std::vector<SPIRVEntry *>(1, CompType);
+  }
 };
 
 class SPIRVTypeCooperativeMatrixKHR : public SPIRVType {
@@ -1144,6 +1148,10 @@ public:
   SPIRVValue *getRows() const { return Args[1]; }
   SPIRVValue *getColumns() const { return Args[2]; }
   SPIRVValue *getUse() const { return Args[3]; }
+
+  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+    return std::vector<SPIRVEntry *>(1, CompType);
+  }
 };
 
 } // namespace SPIRV
