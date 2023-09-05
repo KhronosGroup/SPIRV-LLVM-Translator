@@ -3905,7 +3905,7 @@ static float convertSPIRVWordToFloat(SPIRVWord Spir) {
 }
 
 static bool transFPMaxErrorDecoration(SPIRVValue *BV, Value *V,
-		                      LLVMContext *Context) {
+                                      LLVMContext *Context) {
   SPIRVWord ID;
   if (Instruction *I = dyn_cast<Instruction>(V))
     if (BV->hasDecorate(DecorationFPMaxErrorDecorationINTEL, 0, &ID)) {
