@@ -2624,6 +2624,48 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
           new SPIRVDecorateImplementInCSRINTEL(Target, Value->getZExtValue()));
       break;
     }
+    case spv::internal::DecorationCacheControlLoadINTEL: {
+      ErrLog.checkError(
+          NumOperands == 3, SPIRVEC_InvalidLlvmModule,
+          "CacheControlLoadINTEL requires exactly 2 extra operands");
+      auto *CacheLevel =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      auto *CacheControl =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(2));
+      ErrLog.checkError(CacheLevel, SPIRVEC_InvalidLlvmModule,
+                        "CacheControlLoadINTEL cache level operand is required "
+                        "to be an integer");
+      ErrLog.checkError(CacheControl, SPIRVEC_InvalidLlvmModule,
+                        "CacheControlLoadINTEL cache control operand is "
+                        "required to be an integer");
+
+      Target->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
+          Target, CacheLevel->getZExtValue(),
+          static_cast<internal::LoadCacheControlINTEL>(
+              CacheControl->getZExtValue())));
+      break;
+    }
+    case spv::internal::DecorationCacheControlStoreINTEL: {
+      ErrLog.checkError(
+          NumOperands == 3, SPIRVEC_InvalidLlvmModule,
+          "CacheControlStoreINTEL requires exactly 2 extra operands");
+      auto *CacheLevel =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      auto *CacheControl =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(2));
+      ErrLog.checkError(CacheLevel, SPIRVEC_InvalidLlvmModule,
+                        "CacheControlStoreINTEL cache level operand is "
+                        "required to be an integer");
+      ErrLog.checkError(CacheControl, SPIRVEC_InvalidLlvmModule,
+                        "CacheControlStoreINTEL cache control operand is "
+                        "required to be an integer");
+
+      Target->addDecorate(new SPIRVDecorateCacheControlStoreINTEL(
+          Target, CacheLevel->getZExtValue(),
+          static_cast<internal::StoreCacheControlINTEL>(
+              CacheControl->getZExtValue())));
+      break;
+    }
     default: {
       if (NumOperands == 1) {
         Target->addDecorate(new SPIRVDecorate(DecoKind, Target));
@@ -2711,9 +2753,12 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
         BV->setFPFastMathMode(M);
     }
   }
-  if (Instruction *Inst = dyn_cast<Instruction>(V))
+  if (Instruction *Inst = dyn_cast<Instruction>(V)) {
     if (shouldTryToAddMemAliasingDecoration(Inst))
       transMemAliasingINTELDecorations(Inst, BV);
+    if (auto *IDecoMD = Inst->getMetadata(SPIRV_MD_DECORATIONS))
+      transMetadataDecorations(IDecoMD, BV);
+  }
 
   if (auto *CI = dyn_cast<CallInst>(V)) {
     auto OC = BV->getOpCode();
@@ -3648,7 +3693,9 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return nullptr;
   }
   case Intrinsic::bitreverse: {
-    BM->addCapability(CapabilityShader);
+    if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_bit_instructions)) {
+      BM->addCapability(CapabilityShader);
+    }
     SPIRVType *Ty = transType(II->getType());
     SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
     return BM->addUnaryInst(OpBitReverse, Ty, Op, BB);
