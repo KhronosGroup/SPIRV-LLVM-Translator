@@ -4434,8 +4434,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (FPClass & fcZero) {
       // Create zero integer constant and check for equality with bitcasted to
       // int float value
-      auto SetUpCMPToZero = [&](SPIRVValue *BitCastToInt, bool IsPositive)
-        -> SPIRVValue * {
+      auto SetUpCMPToZero = [&](SPIRVValue *BitCastToInt,
+                                bool IsPositive) -> SPIRVValue * {
         APInt ZeroInt = APInt::getZero(BitSize);
         if (IsPositive) {
           auto *ZeroConst =
