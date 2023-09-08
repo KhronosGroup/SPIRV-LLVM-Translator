@@ -4434,30 +4434,38 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (FPClass & fcZero) {
       // Create zero integer constant and check for equality with bitcasted to
       // int float value
+      auto SetUpCMPToZero = [&](SPIRVValue *BitCastToInt, bool IsPositive)
+        -> SPIRVValue * {
+        APInt ZeroInt = APInt::getZero(BitSize);
+        if (IsPositive) {
+          auto *ZeroConst =
+              transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
+          return BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, ZeroConst, BB);
+        }
+        // Created 'negated' zero
+        ZeroInt.setSignBit();
+        auto *NegZeroConst =
+            transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
+        return BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, NegZeroConst, BB);
+      };
       auto *BitCastToInt =
           BM->addUnaryInst(OpBitcast, OpSPIRVTy, InputFloat, BB);
-      APInt ZeroInt = APInt::getZero(BitSize);
-      auto *ZeroConst =
-          transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
-      ZeroInt.setSignBit();
-      auto *NegZeroConst =
-          transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
       if (FPClass & fcPosZero && FPClass & fcNegZero) {
         auto *TestIsPosZero =
-            BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, ZeroConst, BB);
+            SetUpCMPToZero(BitCastToInt, true /*'positive' zero*/);
         auto *TestIsNegZero =
-            BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, NegZeroConst, BB);
+            SetUpCMPToZero(BitCastToInt, false /*'negated' zero*/);
         auto *TestIsZero = BM->addInstTemplate(
             OpLogicalOr, {TestIsPosZero->getId(), TestIsNegZero->getId()}, BB,
             ResTy);
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsZero));
       } else if (FPClass & fcPosZero) {
         auto *TestIsPosZero =
-            BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, ZeroConst, BB);
+            SetUpCMPToZero(BitCastToInt, true /*'positive' zero*/);
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsPosZero));
       } else {
         auto *TestIsNegZero =
-            BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, NegZeroConst, BB);
+            SetUpCMPToZero(BitCastToInt, false /*'negated' zero*/);
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsNegZero));
       }
     }
