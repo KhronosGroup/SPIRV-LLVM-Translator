@@ -4437,20 +4437,19 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       auto *BitCastToInt =
           BM->addUnaryInst(OpBitcast, OpSPIRVTy, InputFloat, BB);
       APInt ZeroInt = APInt::getZero(BitSize);
-      auto *ZeroConst = transValue(
-          Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
+      auto *ZeroConst =
+          transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
       ZeroInt.setSignBit();
-      auto *NegZeroConst = transValue(
-          Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
+      auto *NegZeroConst =
+          transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
       if (FPClass & fcPosZero && FPClass & fcNegZero) {
         auto *TestIsPosZero =
             BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, ZeroConst, BB);
         auto *TestIsNegZero =
             BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, NegZeroConst, BB);
-        auto *TestIsZero =
-            BM->addInstTemplate(OpLogicalOr, {TestIsPosZero->getId(),
-                                              TestIsNegZero->getId()}, BB,
-                                              ResTy);
+        auto *TestIsZero = BM->addInstTemplate(
+            OpLogicalOr, {TestIsPosZero->getId(), TestIsNegZero->getId()}, BB,
+            ResTy);
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsZero));
       } else if (FPClass & fcPosZero) {
         auto *TestIsPosZero =
