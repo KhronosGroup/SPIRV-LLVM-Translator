@@ -4432,14 +4432,14 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
             GetNegPosInstTest(TestIsSubnormal, FPClass & fcNegSubnormal)));
     }
     if (FPClass & fcZero) {
-      // Create zero integer constant and check for equality with bitcasted to
+      // Create zero integer constant and check for equality with converted to
       // int float value
-      auto *BitCastToInt =
-          BM->addUnaryInst(OpBitcast, OpSPIRVTy, InputFloat, BB);
+      auto *Convert =
+          BM->addUnaryInst(OpConvertFToU, OpSPIRVTy, InputFloat, BB);
       auto *ZeroConst = transValue(
           Constant::getIntegerValue(IntOpLLVMTy, APInt::getZero(BitSize)), BB);
       auto *TestIsZero =
-          BM->addCmpInst(OpIEqual, ResTy, BitCastToInt, ZeroConst, BB);
+          BM->addCmpInst(OpIEqual, ResTy, Convert, ZeroConst, BB);
       if (FPClass & fcPosZero && FPClass & fcNegZero)
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsZero));
       else

@@ -306,7 +306,7 @@ define i1 @test_class_zero(float %arg) {
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#]] [[#Val:]]
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
-; CHECK-SPIRV-NEXT: Bitcast [[#Int32Ty]] [[#BitCast:]] [[#Val]]
+; CHECK-SPIRV-NEXT: ConvertFToU [[#Int32Ty]] [[#BitCast:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#Equal:]] [[#BitCast]] [[#ZeroConst]] 
 ; CHECK-SPIRV-NEXT: ReturnValue [[#Equal]]
   %val = call i1 @llvm.is.fpclass.f32(float %arg, i32 96)
@@ -319,8 +319,8 @@ define i1 @test_class_poszero(float %arg) {
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#]] [[#Val:]]
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
-; CHECK-SPIRV-NEXT: Bitcast [[#Int32Ty]] [[#BitCast:]] [[#Val]]
-; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#Equal:]] [[#BitCast]] [[#ZeroConst]] 
+; CHECK-SPIRV-NEXT: ConvertFToU [[#Int32Ty]] [[#BitCast:]] [[#Val]]
+; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#Equal:]] [[#BitCast]] [[#ZeroConst]]
 ; CHECK-SPIRV-NEXT: SignBitSet [[#BoolTy]] [[#Sign:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: LogicalNot [[#BoolTy]] [[#Not:]] [[#Sign]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#BoolTy]] [[#And:]] [[#Not]] [[#Equal]]
@@ -335,7 +335,7 @@ define i1 @test_class_negzero(float %arg) {
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#]] [[#Val:]]
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
-; CHECK-SPIRV-NEXT: Bitcast [[#Int32Ty]] [[#BitCast:]] [[#Val]]
+; CHECK-SPIRV-NEXT: ConvertFToU [[#Int32Ty]] [[#BitCast:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#Equal:]] [[#BitCast]] [[#ZeroConst]] 
 ; CHECK-SPIRV-NEXT: SignBitSet [[#BoolTy]] [[#Sign:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#BoolTy]] [[#And:]] [[#Sign]] [[#Equal]]
@@ -381,7 +381,7 @@ define i1 @test_class_neginf_posnormal_negsubnormal_poszero_snan_f64(double %arg
 ; CHECK-SPIRV-NEXT: ISub [[#Int64Ty]] [[#Sub:]] [[#BitCast2]] [[#MantissaConst64]]
 ; CHECK-SPIRV-NEXT: ULessThan [[#BoolTy]] [[#Less:]] [[#Sub]] [[#MantissaConst64]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#BoolTy]] [[#And4:]] [[#Sign]] [[#Less]]
-; CHECK-SPIRV-NEXT: Bitcast [[#Int64Ty]] [[#BitCast3:]] [[#Val]]
+; CHECK-SPIRV-NEXT: ConvertFToU [[#Int64Ty]] [[#BitCast3:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#Equal:]] [[#BitCast3]] [[#ZeroConst64]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#BoolTy]] [[#And5:]] [[#Not2]] [[#Equal]]
 ; CHECK-SPIRV-NEXT: LogicalOr [[#BoolTy]] [[#Or1:]] [[#And1]] [[#And2]]
@@ -414,7 +414,7 @@ define <2 x i1> @test_class_neginf_posnormal_negsubnormal_poszero_snan_v2f16(<2 
 ; CHECK-SPIRV-NEXT: ISub [[#Int16VecTy]] [[#Sub:]] [[#BitCast2]] [[#MantissaConstVec16]]
 ; CHECK-SPIRV-NEXT: ULessThan [[#VecBoolTy]] [[#Less:]] [[#Sub]] [[#MantissaConstVec16]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#VecBoolTy]] [[#And4:]] [[#Sign]] [[#Less]]
-; CHECK-SPIRV-NEXT: Bitcast [[#Int16VecTy]] [[#BitCast3:]] [[#Val]]
+; CHECK-SPIRV-NEXT: ConvertFToU [[#Int16VecTy]] [[#BitCast3:]] [[#Val]]
 ; CHECK-SPIRV-NEXT: IEqual [[#VecBoolTy]] [[#Equal:]] [[#BitCast3]] [[#ZeroConst16]]
 ; CHECK-SPIRV-NEXT: LogicalAnd [[#VecBoolTy]] [[#And5:]] [[#Not2]] [[#Equal]]
 ; CHECK-SPIRV-NEXT: LogicalOr [[#VecBoolTy]] [[#Or1:]] [[#And1]] [[#And2]]
