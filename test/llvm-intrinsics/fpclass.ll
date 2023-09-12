@@ -21,7 +21,7 @@
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#QNanBitConst:]] 2143289344
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#MantissaConst:]] 8388607
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#ZeroConst:]] 0
-; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#MaxConst:]] 2147483647
+; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#MaskToClearSignBit:]] 2147483647
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#NegatedZeroConst:]] 2147483648
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#QNanBitConst64:]] 0 2146959360
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#MantissaConst64:]] 4294967295 1048575
@@ -309,7 +309,7 @@ define i1 @test_class_zero(float %arg) {
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
 ; CHECK-SPIRV-NEXT: Bitcast [[#Int32Ty]] [[#BitCast:]] [[#Val]]
-; CHECK-SPIRV-NEXT: BitwiseAnd [[#Int32Ty]] [[#BitwiseAndRes:]] [[#BitCast]] [[#MaxConst]]
+; CHECK-SPIRV-NEXT: BitwiseAnd [[#Int32Ty]] [[#BitwiseAndRes:]] [[#BitCast]] [[#MaskToClearSignBit]]
 ; CHECK-SPIRV-NEXT: IEqual [[#BoolTy]] [[#EqualPos:]] [[#BitwiseAndRes]] [[#ZeroConst]]
 ; CHECK-SPIRV-NEXT: ReturnValue [[#EqualPos]]
   %val = call i1 @llvm.is.fpclass.f32(float %arg, i32 96)

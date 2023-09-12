@@ -4454,12 +4454,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         APInt ZeroInt = APInt::getZero(BitSize);
         auto *ZeroConst =
             transValue(Constant::getIntegerValue(IntOpLLVMTy, ZeroInt), BB);
-        APInt SignedMaxInt = APInt::getSignedMaxValue(BitSize);
-        auto *SignedMaxConst =
-            transValue(Constant::getIntegerValue(IntOpLLVMTy, SignedMaxInt), BB);
-	auto *BitwiseAndRes =
-	    BM->addBinaryInst(OpBitwiseAnd, OpSPIRVTy, BitCastToInt, SignedMaxConst, BB);
-        auto *TestIsZero = BM->addCmpInst(OpIEqual, ResTy, BitwiseAndRes, ZeroConst, BB);
+        APInt MaskToClearSignBit = APInt::getSignedMaxValue(BitSize);
+        auto *MaskToClearSignBitConst = transValue(
+            Constant::getIntegerValue(IntOpLLVMTy, MaskToClearSignBit), BB);
+        auto *BitwiseAndRes = BM->addBinaryInst(
+            OpBitwiseAnd, OpSPIRVTy, BitCastToInt, MaskToClearSignBitConst, BB);
+        auto *TestIsZero =
+            BM->addCmpInst(OpIEqual, ResTy, BitwiseAndRes, ZeroConst, BB);
         ResultVec.emplace_back(GetInvertedTestIfNeeded(TestIsZero));
       } else if (FPClass & fcPosZero) {
         auto *TestIsPosZero =
