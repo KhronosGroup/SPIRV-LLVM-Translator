@@ -458,6 +458,10 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {internal::CapabilityGlobalVariableDecorationsINTEL});
   ADD_VEC_INIT(internal::DecorationArgumentAttributeINTEL,
                {CapabilityFunctionPointersINTEL});
+  ADD_VEC_INIT(internal::DecorationCacheControlLoadINTEL,
+               {internal::CapabilityCacheControlsINTEL});
+  ADD_VEC_INIT(internal::DecorationCacheControlStoreINTEL,
+               {internal::CapabilityCacheControlsINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
