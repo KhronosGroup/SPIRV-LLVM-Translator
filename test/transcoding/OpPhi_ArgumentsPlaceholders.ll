@@ -24,7 +24,6 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir"
 
 %struct.Node = type { ptr addrspace(1) }
-%struct.Node.0 = type opaque
 
 ; Function Attrs: nounwind
 define spir_kernel void @verify_linked_lists(ptr addrspace(1) %pNodes) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {

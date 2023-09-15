@@ -78,11 +78,9 @@ target triple = "spir64-unknown-linux"
 define spir_kernel void @_ZTSZ4mainE15kernel_function() #0 !kernel_arg_addr_space !4 !kernel_arg_access_qual !4 !kernel_arg_type !4 !kernel_arg_base_type !4 !kernel_arg_type_qual !4 {
 entry:
   %0 = alloca %class.anon, align 1
-  %1 = bitcast ptr %0 to ptr
-  call void @llvm.lifetime.start.p0(i64 1, ptr %1) #4
+  call void @llvm.lifetime.start.p0(i64 1, ptr %0) #4
   call spir_func void @"_ZZ4mainENK3$_0clEv"(ptr %0)
-  %2 = bitcast ptr %0 to ptr
-  call void @llvm.lifetime.end.p0(i64 1, ptr %2) #4
+  call void @llvm.lifetime.end.p0(i64 1, ptr %0) #4
   ret void
 }
 
@@ -110,16 +108,12 @@ entry:
   %var_two = alloca i32, align 4
   %var_three = alloca i8, align 1
   %var_four = alloca i8, align 1
-  %0 = bitcast ptr %var_one to ptr
-  call void @llvm.lifetime.start.p0(i64 4, ptr %0) #4
-  %var_one1 = bitcast ptr %var_one to ptr
+  call void @llvm.lifetime.start.p0(i64 4, ptr %var_one) #4
   ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{.*}}, ptr [[STR]], ptr undef, i32 undef, ptr undef)
-  call void @llvm.var.annotation(ptr %var_one1, ptr @.str, ptr @.str.1, i32 2, ptr undef)
-  %1 = bitcast ptr %var_two to ptr
-  call void @llvm.lifetime.start.p0(i64 4, ptr %1) #4
-  %var_two2 = bitcast ptr %var_two to ptr
+  call void @llvm.var.annotation(ptr %var_one, ptr @.str, ptr @.str.1, i32 2, ptr undef)
+  call void @llvm.lifetime.start.p0(i64 4, ptr %var_two) #4
   ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{.*}}, ptr [[STR2]], ptr undef, i32 undef, ptr undef)
-  call void @llvm.var.annotation(ptr %var_two2, ptr @.str.2, ptr @.str.1, i32 3, ptr undef)
+  call void @llvm.var.annotation(ptr %var_two, ptr @.str.2, ptr @.str.1, i32 3, ptr undef)
   call void @llvm.lifetime.start.p0(i64 1, ptr %var_three) #4
   ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{.*}}, ptr [[STR3]], ptr undef, i32 undef, ptr undef)
   call void @llvm.var.annotation(ptr %var_three, ptr @.str.3, ptr @.str.1, i32 4, ptr undef)
@@ -128,10 +122,8 @@ entry:
   ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{.*}}, ptr [[STR7]], ptr undef, i32 undef, ptr undef)
   call void @llvm.var.annotation(ptr %var_four, ptr @.str.7, ptr @.str.1, i32 4, ptr @.args.0)
   call void @llvm.lifetime.end.p0(i64 1, ptr %var_four) #4
-  %2 = bitcast ptr %var_two to ptr
-  call void @llvm.lifetime.end.p0(i64 4, ptr %2) #4
-  %3 = bitcast ptr %var_one to ptr
-  call void @llvm.lifetime.end.p0(i64 4, ptr %3) #4
+  call void @llvm.lifetime.end.p0(i64 4, ptr %var_two) #4
+  call void @llvm.lifetime.end.p0(i64 4, ptr %var_one) #4
   ret void
 }
 
@@ -142,32 +134,28 @@ declare void @llvm.var.annotation(ptr, ptr, ptr, i32, ptr) #4
 define spir_func void @_Z3bazv() #3 {
 entry:
   %s1 = alloca %struct.bar, align 4
-  %0 = bitcast ptr %s1 to ptr
-  call void @llvm.lifetime.start.p0(i64 8, ptr %0) #4
+  call void @llvm.lifetime.start.p0(i64 8, ptr %s1) #4
   ; CHECK-LLVM: %[[FIELD1:.*]] = getelementptr inbounds %struct.bar, ptr %{{[a-zA-Z0-9]+}}, i32 0, i32 0
   ; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0{{.*}}%[[FIELD1]]{{.*}}[[STR4]]
   %f1 = getelementptr inbounds %struct.bar, ptr %s1, i32 0, i32 0
-  %1 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f1, ptr @.str.4, ptr @.str.1, i32 8, ptr undef)
-  store i32 0, ptr %1, align 4, !tbaa !9
+  %0 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f1, ptr @.str.4, ptr @.str.1, i32 8, ptr undef)
+  store i32 0, ptr %0, align 4, !tbaa !9
   ; CHECK-LLVM: %[[FIELD2:.*]] = getelementptr inbounds %struct.bar, ptr %{{[a-zA-Z0-9]+}}, i32 0, i32 1
   ; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0{{.*}}%[[FIELD2]]{{.*}}[[STR5]]
   %f2 = getelementptr inbounds %struct.bar, ptr %s1, i32 0, i32 1
-  %2 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f2, ptr @.str.5, ptr @.str.1, i32 9, ptr undef)
-  store i8 0, ptr %2, align 4, !tbaa !13
+  %1 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f2, ptr @.str.5, ptr @.str.1, i32 9, ptr undef)
+  store i8 0, ptr %1, align 4, !tbaa !13
   ; CHECK-LLVM: %[[FIELD3:.*]] = getelementptr inbounds %struct.bar, ptr %{{[a-zA-Z0-9]+}}, i32 0, i32 2
   ; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0{{.*}}%[[FIELD3]]{{.*}}[[STR6]]
   %f3 = getelementptr inbounds %struct.bar, ptr %s1, i32 0, i32 2
-  %3 = bitcast ptr %f3 to ptr
-  %4 = call ptr @llvm.ptr.annotation.p0.p0(ptr %3, ptr @.str.6, ptr @.str.1, i32 9, ptr undef)
-  %5 = bitcast ptr %4 to ptr
-  store float 0.000000e+00,ptr %5, align 4, !tbaa !14
+  %2 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f3, ptr @.str.6, ptr @.str.1, i32 9, ptr undef)
+  store float 0.000000e+00,ptr %2, align 4, !tbaa !14
   ; CHECK-LLVM: %[[FIELD4:.*]] = getelementptr inbounds %struct.bar, ptr %{{[a-zA-Z0-9]+}}, i32 0, i32 3
   ; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0{{.*}}%[[FIELD4]]{{.*}}[[STR8]]
   %f4 = getelementptr inbounds %struct.bar, ptr %s1, i32 0, i32 3
-  %6 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f4, ptr @.str.7, ptr @.str.1, i32 9, ptr @.args.1)
-  store i8 0, ptr %6, align 4, !tbaa !13
-  %7 = bitcast ptr %s1 to ptr
-  call void @llvm.lifetime.end.p0(i64 12, ptr %7) #4
+  %3 = call ptr @llvm.ptr.annotation.p0.p0(ptr %f4, ptr @.str.7, ptr @.str.1, i32 9, ptr @.args.1)
+  store i8 0, ptr %3, align 4, !tbaa !13
+  call void @llvm.lifetime.end.p0(i64 12, ptr %s1) #4
   ret void
 }
 
@@ -219,22 +207,19 @@ entry:
 ; Function Attrs: mustprogress norecurse
 define weak_odr dso_local spir_kernel void @_ZTSZ11TestKernelAvE4MyIP(ptr addrspace(1) noundef align 4 %0) local_unnamed_addr #5 !kernel_arg_buffer_location !15 !sycl_kernel_omit_args !16 {
   %2 = alloca %struct.MyIP, align 8
-  %3 = bitcast ptr %2 to ptr
-  call void @llvm.lifetime.start.p0(i64 8, ptr nonnull %3) #4
-  %4 = addrspacecast ptr %3 to ptr addrspace(4)
-  %5 = call ptr addrspace(4) @llvm.ptr.annotation.p4.p0(ptr addrspace(4) %4, ptr @.str.11, ptr @.str.1.12, i32 13, ptr @.args)
+  call void @llvm.lifetime.start.p0(i64 8, ptr nonnull %2) #4
+  %3 = addrspacecast ptr %2 to ptr addrspace(4)
+  %4 = call ptr addrspace(4) @llvm.ptr.annotation.p4.p0(ptr addrspace(4) %3, ptr @.str.11, ptr @.str.1.12, i32 13, ptr @.args)
   ; CHECK-LLVM: %[[ALLOCA:.*]] = alloca %struct.MyIP, align 8
   ; CHECK-LLVM: %[[GEP:.*]] = getelementptr inbounds %struct.MyIP, ptr %[[ALLOCA]], i32 0, i32 0
   ; CHECK-LLVM: call ptr @llvm.ptr.annotation.p0.p0(ptr %[[GEP]], ptr [[STR12]], ptr undef, i32 undef, ptr undef)
-  %6 = bitcast ptr addrspace(4) %5 to ptr addrspace(4)
-  %7 = addrspacecast ptr addrspace(1) %0 to ptr addrspace(4)
-  store ptr addrspace(4) %7, ptr addrspace(4) %6, align 8, !tbaa !17
-  %8 = bitcast ptr addrspace(4) %5 to ptr addrspace(4)
-  %9 = load ptr addrspace(4), ptr addrspace(4) %8, align 8, !tbaa !17
-  %10 = load i32, ptr addrspace(4) %9, align 4, !tbaa !19
-  %11 = shl nsw i32 %10, 1
-  store i32 %11, ptr addrspace(4) %9, align 4, !tbaa !19
-  call void @llvm.lifetime.end.p0(i64 8, ptr nonnull %3) #4
+  %5 = addrspacecast ptr addrspace(1) %0 to ptr addrspace(4)
+  store ptr addrspace(4) %5, ptr addrspace(4) %4, align 8, !tbaa !17
+  %6 = load ptr addrspace(4), ptr addrspace(4) %4, align 8, !tbaa !17
+  %7 = load i32, ptr addrspace(4) %6, align 4, !tbaa !19
+  %8 = shl nsw i32 %7, 1
+  store i32 %8, ptr addrspace(4) %6, align 4, !tbaa !19
+  call void @llvm.lifetime.end.p0(i64 8, ptr nonnull %2) #4
   ret void
 }
 

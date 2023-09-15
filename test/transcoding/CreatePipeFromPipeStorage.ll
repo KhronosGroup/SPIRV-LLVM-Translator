@@ -37,7 +37,6 @@ target triple = "spir-unknown-unknown"
 
 %spirv.ConstantPipeStorage = type { i32, i32, i32 }
 %"class.cl::pipe_storage<int __attribute__((ext_vector_type(4))), 1>" = type { ptr addrspace(1) }
-%spirv.PipeStorage = type opaque
 %"class.cl::pipe<int __attribute__((ext_vector_type(4))), cl::pipe_access::read>" = type { target("spirv.Pipe", 0) }
 %"class.cl::pipe<int __attribute__((ext_vector_type(4))), cl::pipe_access::write>" = type { target("spirv.Pipe", 1) }
 
