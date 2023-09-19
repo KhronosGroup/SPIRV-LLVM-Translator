@@ -1989,19 +1989,20 @@ bool isSPIRVBuiltinVariable(GlobalVariable *GV,
 /// are accumulated in the AccumulatedOffset parameter, which will eventually be
 /// used to figure out which index of a variable is being used.
 static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
-                                    Function *ReplacementFunc) {
+                                    Function *ReplacementFunc,
+                                    GlobalVariable *GV) {
   const DataLayout &DL = ReplacementFunc->getParent()->getDataLayout();
   SmallVector<Instruction *, 4> InstsToRemove;
   for (User *U : V->users()) {
     if (auto *Cast = dyn_cast<CastInst>(U)) {
-      replaceUsesOfBuiltinVar(Cast, AccumulatedOffset, ReplacementFunc);
+      replaceUsesOfBuiltinVar(Cast, AccumulatedOffset, ReplacementFunc, GV);
       InstsToRemove.push_back(Cast);
     } else if (auto *GEP = dyn_cast<GetElementPtrInst>(U)) {
       APInt NewOffset = AccumulatedOffset.sextOrTrunc(
           DL.getIndexSizeInBits(GEP->getPointerAddressSpace()));
       if (!GEP->accumulateConstantOffset(DL, NewOffset))
         llvm_unreachable("Illegal GEP of a SPIR-V builtin variable");
-      replaceUsesOfBuiltinVar(GEP, NewOffset, ReplacementFunc);
+      replaceUsesOfBuiltinVar(GEP, NewOffset, ReplacementFunc, GV);
       InstsToRemove.push_back(GEP);
     } else if (auto *Load = dyn_cast<LoadInst>(U)) {
       // Figure out which index the accumulated offset corresponds to. If we
@@ -2024,6 +2025,10 @@ static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
       } else {
         // The function has an index parameter.
         if (auto *VecTy = dyn_cast<FixedVectorType>(Load->getType())) {
+          // Reconstruct the original global variable vector because
+          // the load type may not match.
+          // global <3 x i64>, load <6 x i32>
+          VecTy = cast<FixedVectorType>(GV->getValueType());
           if (!Index.isZero())
             llvm_unreachable("Illegal use of a SPIR-V builtin variable");
           Replacement = UndefValue::get(VecTy);
@@ -2034,6 +2039,10 @@ static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
                     Builder.CreateCall(ReplacementFunc, {Builder.getInt32(I)})),
                 Builder.getInt32(I));
           }
+          // Insert a bitcast from the reconstructed vector to the load vector
+          // type in case they are different. %2 = insertelement <3 x i64> %0,
+          // i64 %1, i32 2 bitcast <3 x i64> %2 to <6 x i32>
+          Replacement = Builder.CreateBitCast(Replacement, Load->getType());
         } else if (Load->getType() == ScalarTy) {
           Replacement = setAttrByCalledFunc(Builder.CreateCall(
               ReplacementFunc, {Builder.getInt32(Index.getZExtValue())}));
@@ -2087,7 +2096,7 @@ bool lowerBuiltinVariableToCall(GlobalVariable *GV,
     Func->setDoesNotAccessMemory();
   }
 
-  replaceUsesOfBuiltinVar(GV, APInt(64, 0), Func);
+  replaceUsesOfBuiltinVar(GV, APInt(64, 0), Func, GV);
   return true;
 }
 
