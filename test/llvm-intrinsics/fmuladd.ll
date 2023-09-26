@@ -4,9 +4,9 @@
 ; RUN: llvm-spirv %t.bc --spirv-replace-fmuladd-with-ocl-mad=false -o %t-break.spv
 ; RUN: spirv-val %t-replace.spv
 ; RUN: spirv-val %t-break.spv
-; RUN: llvm-spirv %t-default.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,REPLACE
-; RUN: llvm-spirv %t-replace.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,REPLACE
+; RUN: llvm-spirv %t-default.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,BREAK
 ; RUN: llvm-spirv %t-break.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,BREAK
+; RUN: llvm-spirv %t-replace.spv -to-text -o - | FileCheck %s --check-prefixes=COMMON,REPLACE
 
 ; COMMON-NOT: llvm.fmuladd
 

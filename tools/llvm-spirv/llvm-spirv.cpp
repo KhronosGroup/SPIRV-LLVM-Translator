@@ -246,7 +246,7 @@ static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
     "spirv-replace-fmuladd-with-ocl-mad",
     cl::desc("Allow replacement of llvm.fmuladd.* intrinsic with OpenCL mad "
              "instruction from OpenCL extended instruction set"),
-    cl::init(true));
+    cl::init(false));
 
 static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
     "spirv-builtin-format",

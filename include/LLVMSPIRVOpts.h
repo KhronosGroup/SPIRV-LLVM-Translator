@@ -240,8 +240,9 @@ private:
   DebugInfoEIS DebugInfoVersion = DebugInfoEIS::OpenCL_DebugInfo_100;
 
   // Controls whether llvm.fmuladd.* should be replaced with mad from OpenCL
-  // extended instruction set or with a simple fmul + fadd
-  bool ReplaceLLVMFmulAddWithOpenCLMad = true;
+  // extended instruction set or with a simple fmul + fadd. False by default
+  // since -cl-mad-enable option is off by default for OpenCL.
+  bool ReplaceLLVMFmulAddWithOpenCLMad = false;
 
   // Add a workaround to preserve OpenCL kernel_arg_type and
   // kernel_arg_type_qual metadata through OpString

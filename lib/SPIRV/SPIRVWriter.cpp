@@ -3920,7 +3920,15 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // If allowed, let's replace llvm.fmuladd.* with mad from OpenCL extended
     // instruction set, as it has the same semantic for FULL_PROFILE OpenCL
     // devices (implementation-defined for EMBEDDED_PROFILE).
-    if (BM->shouldReplaceLLVMFmulAddWithOpenCLMad()) {
+    bool SetClMadEnable = false;
+    if (Function *Func = II->getFunction())
+      if (Func->hasFnAttribute("less-precise-fpmad") &&
+          Func->getFnAttribute("less-precise-fpmad")
+              .getValueAsString()
+              .contains("true"))
+        SetClMadEnable = true;
+
+    if (BM->shouldReplaceLLVMFmulAddWithOpenCLMad() || SetClMadEnable) {
       std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB),
                                     transValue(II->getArgOperand(1), BB),
                                     transValue(II->getArgOperand(2), BB)};
