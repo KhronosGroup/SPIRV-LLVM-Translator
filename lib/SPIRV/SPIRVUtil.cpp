@@ -2029,7 +2029,8 @@ static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
           // the load type may not match.
           // global <3 x i64>, load <6 x i32>
           VecTy = cast<FixedVectorType>(GV->getValueType());
-          if (!Index.isZero())
+          if (!Index.isZero() || DL.getTypeSizeInBits(VecTy) !=
+                                     DL.getTypeSizeInBits(Load->getType()))
             llvm_unreachable("Illegal use of a SPIR-V builtin variable");
           Replacement = UndefValue::get(VecTy);
           for (unsigned I = 0; I < VecTy->getNumElements(); I++) {
