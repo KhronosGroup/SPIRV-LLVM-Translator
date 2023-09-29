@@ -2042,8 +2042,16 @@ static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
           }
           // Insert a bitcast from the reconstructed vector to the load vector
           // type in case they are different.
+          // Input:
+          // %1 = load <6 x i32>, ptr addrspace(1) %0, align 32
+          // %2 = extractelement <6 x i32> %1, i32 0
+          // %3 = add i32 5, %2
+          // Modified:
+          // < reconstruct global vector elements 0 and 1 >
           // %2 = insertelement <3 x i64> %0, i64 %1, i32 2
-          // bitcast <3 x i64> %2 to <6 x i32>
+          // %3 = bitcast <3 x i64> %2 to <6 x i32>
+          // %4 = extractelement <6 x i32> %3, i32 0
+          // %5 = add i32 5, %4
           Replacement = Builder.CreateBitCast(Replacement, Load->getType());
         } else if (Load->getType() == ScalarTy) {
           Replacement = setAttrByCalledFunc(Builder.CreateCall(
