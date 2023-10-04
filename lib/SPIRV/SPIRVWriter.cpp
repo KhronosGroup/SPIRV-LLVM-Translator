@@ -1029,12 +1029,11 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
       BF->addDecorate(new SPIRVDecorateMaxConcurrencyINTEL(BF, Invocations));
     }
   }
-  if (MDNode *DisableKernelPipelining =
-          F->getMetadata(kSPIR2MD::DisableKernelPipelining)) {
+  if (MDNode *PipelineKernel = F->getMetadata(kSPIR2MD::PipelineKernel)) {
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes)) {
-      size_t Disable = getMDOperandAsInt(DisableKernelPipelining, 0);
-      BF->addDecorate(new SPIRVDecoratePipelineEnableINTEL(BF, !Disable));
+      size_t Pipeline = getMDOperandAsInt(PipelineKernel, 0);
+      BF->addDecorate(new SPIRVDecoratePipelineEnableINTEL(BF, Pipeline));
     }
   }
 
@@ -1614,10 +1613,10 @@ LLVMToSPIRVBase::getLoopControl(const BranchInst *Branch,
           unsigned SafeLen = IVDep.getSafeLen();
           for (auto &ArrayId : IVDep.getArrayVariables())
             DependencyArrayParameters.emplace_back(ArrayId, SafeLen);
-        } else if (S == "llvm.loop.intel.pipelining.disable") {
+        } else if (S == "llvm.loop.intel.pipelining.enable") {
           BM->addExtension(ExtensionID::SPV_INTEL_fpga_loop_controls);
           BM->addCapability(CapabilityFPGALoopControlsINTEL);
-          size_t I = !getMDOperandAsInt(Node, 1);
+          size_t I = getMDOperandAsInt(Node, 1);
           ParametersToSort.emplace_back(spv::LoopControlPipelineEnableINTELMask,
                                         I);
           LoopControl |= spv::LoopControlPipelineEnableINTELMask;

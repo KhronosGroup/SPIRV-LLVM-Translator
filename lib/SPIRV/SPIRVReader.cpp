@@ -866,8 +866,8 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
   if (LC & LoopControlPipelineEnableINTELMask) {
     Metadata.push_back(llvm::MDNode::get(
         *Context,
-        getMetadataFromNameAndParameter("llvm.loop.intel.pipelining.disable",
-            static_cast<SPIRVWord>(!LoopControlParameters[NumParam++]))));
+        getMetadataFromNameAndParameter("llvm.loop.intel.pipelining.enable",
+                                        LoopControlParameters[NumParam++])));
     assert(NumParam <= LoopControlParameters.size() &&
            "Missing loop control parameter!");
   }
@@ -4531,8 +4531,8 @@ bool SPIRVToLLVM::transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F) {
   if (BF->hasDecorate(DecorationPipelineEnableINTEL)) {
     auto Literals = BF->getDecorationLiterals(DecorationPipelineEnableINTEL);
     std::vector<Metadata *> MetadataVec;
-    MetadataVec.push_back(ConstantAsMetadata::get(getInt32(M, !Literals[0])));
-    F->setMetadata(kSPIR2MD::DisableKernelPipelining,
+    MetadataVec.push_back(ConstantAsMetadata::get(getInt32(M, Literals[0])));
+    F->setMetadata(kSPIR2MD::PipelineKernel,
                    MDNode::get(*Context, MetadataVec));
   }
   return true;
