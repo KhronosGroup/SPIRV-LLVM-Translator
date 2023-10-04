@@ -3,9 +3,8 @@
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
-; TODO: come up with an approach and implement reverse translation
-; R/UN: llvm-spirv -r %t.spv -o %t.rev.bc
-; R/UN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: TypeInt [[#TypeInt:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#TypeInt]] [[#Const0:]] 0
@@ -24,6 +23,11 @@
 ; CHECK-SPIRV: AccessChain [[#TypeIntPtr]] [[#Res:]] [[#VarMatrixPtr]] [[#Const1]]
 ; CHECK-SPIRV: Store [[#Res]] [[#Const42]]
 
+; CHECK-LLVM: %0 = alloca %spirv.CooperativeMatrixKHR._int_3_12_12_0 addrspace(1)*
+; CHECK-LLVM: %Obj = call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_0 addrspace(1)* @_Z26__spirv_CompositeConstructi(i32 0)
+; CHECK-LLVM: store %spirv.CooperativeMatrixKHR._int_3_12_12_0 addrspace(1)* %Obj, %spirv.CooperativeMatrixKHR._int_3_12_12_0 addrspace(1)** %0
+; CHECK-LLVM: %call = call spir_func i32* @_Z19__spirv_AccessChainPPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_0i(%spirv.CooperativeMatrixKHR._int_3_12_12_0 addrspace(1)** %0, i32 1)
+; CHECK-LLVM: store i32 42, i32* %call
 
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "spir64-unknown-unknown"
