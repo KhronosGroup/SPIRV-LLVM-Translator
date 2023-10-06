@@ -184,10 +184,12 @@ public:
       return ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes;
     case internal::DecorationRuntimeAlignedINTEL:
       return ExtensionID::SPV_INTEL_runtime_aligned;
-    case internal::DecorationHostAccessINTEL:
-    case internal::DecorationInitModeINTEL:
-    case internal::DecorationImplementInCSRINTEL:
-      return ExtensionID::SPV_INTEL_global_variable_decorations;
+    case DecorationInitModeINTEL:
+    case DecorationImplementInRegisterMapINTEL:
+      return ExtensionID::SPV_INTEL_global_variable_fpga_decorations;
+    case DecorationHostAccessINTEL:
+      return ExtensionID::SPV_INTEL_global_variable_host_access;
+
     case DecorationConduitKernelArgumentINTEL:
     case DecorationRegisterMapKernelArgumentINTEL:
     case DecorationStableKernelArgumentINTEL:
@@ -732,7 +734,7 @@ public:
   // Complete constructor for SPIRVHostAccessINTEL
   SPIRVDecorateHostAccessINTEL(SPIRVEntry *TheTarget, SPIRVWord AccessMode,
                                const std::string &VarName)
-      : SPIRVDecorate(spv::internal::DecorationHostAccessINTEL, TheTarget) {
+      : SPIRVDecorate(DecorationHostAccessINTEL, TheTarget) {
     Literals.push_back(AccessMode);
     for (auto &I : getVec(VarName))
       Literals.push_back(I);
@@ -778,16 +780,16 @@ class SPIRVDecorateInitModeINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVInitModeINTEL
   SPIRVDecorateInitModeINTEL(SPIRVEntry *TheTarget, SPIRVWord Trigger)
-      : SPIRVDecorate(spv::internal::DecorationInitModeINTEL, TheTarget,
-                      Trigger) {}
+      : SPIRVDecorate(DecorationInitModeINTEL, TheTarget, Trigger) {}
 };
 
-class SPIRVDecorateImplementInCSRINTEL : public SPIRVDecorate {
+class SPIRVDecorateImplementInRegisterMapINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVImplementInCSRINTEL
-  SPIRVDecorateImplementInCSRINTEL(SPIRVEntry *TheTarget, SPIRVWord Value)
-      : SPIRVDecorate(spv::internal::DecorationImplementInCSRINTEL, TheTarget,
-                      Value) {}
+  SPIRVDecorateImplementInRegisterMapINTEL(SPIRVEntry *TheTarget,
+                                           SPIRVWord Value)
+      : SPIRVDecorate(DecorationImplementInRegisterMapINTEL, TheTarget, Value) {
+  }
 };
 
 class SPIRVDecorateCacheControlLoadINTEL : public SPIRVDecorate {
