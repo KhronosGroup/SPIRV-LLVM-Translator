@@ -2586,15 +2586,15 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
           AccessMode, SPIRVEC_InvalidLlvmModule,
           "HostAccessINTEL requires first extra operand to be an int");
 
-      // HostAccessQualifier Q =
-      //     static_cast<HostAccessQualifier>(AccessMode->getZExtValue());
+      HostAccessQualifier Q =
+          static_cast<HostAccessQualifier>(AccessMode->getZExtValue());
       auto *Name = dyn_cast<MDString>(DecoMD->getOperand(2));
       ErrLog.checkError(
           Name, SPIRVEC_InvalidLlvmModule,
           "HostAccessINTEL requires second extra operand to be a string");
 
-      Target->addDecorate(new SPIRVDecorateHostAccessINTEL(
-          Target, AccessMode->getZExtValue(), Name->getString().str()));
+      Target->addDecorate(
+          new SPIRVDecorateHostAccessINTEL(Target, Q, Name->getString().str()));
       break;
     }
 
@@ -2611,11 +2611,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
       ErrLog.checkError(Trigger, SPIRVEC_InvalidLlvmModule,
                         "InitModeINTEL requires extra operand to be an int");
 
-      // InitializationModeQualifier Q =
-      //     static_cast<InitializationModeQualifier>(Trigger->getZExtValue());
+      InitializationModeQualifier Q =
+          static_cast<InitializationModeQualifier>(Trigger->getZExtValue());
 
-      Target->addDecorate(
-          new SPIRVDecorateInitModeINTEL(Target, Trigger->getZExtValue()));
+      Target->addDecorate(new SPIRVDecorateInitModeINTEL(Target, Q));
 
       break;
     }

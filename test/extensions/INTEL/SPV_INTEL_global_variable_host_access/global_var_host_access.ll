@@ -22,8 +22,8 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability GlobalVariableHostAccessINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_host_access"
-; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] HostAccessINTEL 1 "IntVarName"
-; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID:]] HostAccessINTEL 3 "BoolVarName"
+; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] HostAccessINTEL ReadINTEL "IntVarName"
+; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID:]] HostAccessINTEL ReadWriteINTEL "BoolVarName"
 
 ; 5 is a global storage
 ; CHECK-SPIRV: Variable [[#]] [[#INT_VAR_ID]] 5

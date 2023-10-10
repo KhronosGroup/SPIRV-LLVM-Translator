@@ -24,13 +24,13 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Capability GlobalVariableFPGADecorationsINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_fpga_decorations"
 ; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] ImplementInRegisterMapINTEL 1
-; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] InitModeINTEL 0
+; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] InitModeINTEL InitOnDeviceReprogramINTEL
 
 ; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID:]] ImplementInRegisterMapINTEL 1
-; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID]] InitModeINTEL 1
+; CHECK-SPIRV: Decorate [[#FLOAT_VAR_ID]] InitModeINTEL InitOnDeviceResetINTEL
 
 ; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID:]] ImplementInRegisterMapINTEL 0
-; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] InitModeINTEL 0
+; CHECK-SPIRV: Decorate [[#BOOL_VAR_ID]] InitModeINTEL InitOnDeviceReprogramINTEL
 
 ; 5 is a global storage
 ; CHECK-SPIRV: Variable [[#]] [[#INT_VAR_ID]] 5

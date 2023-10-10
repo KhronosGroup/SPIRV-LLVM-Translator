@@ -732,7 +732,8 @@ public:
 class SPIRVDecorateHostAccessINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVHostAccessINTEL
-  SPIRVDecorateHostAccessINTEL(SPIRVEntry *TheTarget, SPIRVWord AccessMode,
+  SPIRVDecorateHostAccessINTEL(SPIRVEntry *TheTarget,
+                               HostAccessQualifier AccessMode,
                                const std::string &VarName)
       : SPIRVDecorate(DecorationHostAccessINTEL, TheTarget) {
     Literals.push_back(AccessMode);
@@ -750,7 +751,7 @@ public:
                              const std::vector<SPIRVWord> &Literals) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
     if (SPIRVUseTextFormat) {
-      Encoder << Literals.front();
+      Encoder << (HostAccessQualifier)Literals.front();
       std::string Name = getString(Literals.cbegin() + 1, Literals.cend());
       Encoder << Name;
     } else
@@ -762,7 +763,7 @@ public:
                              std::vector<SPIRVWord> &Literals) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
     if (SPIRVUseTextFormat) {
-      SPIRVWord Mode;
+      HostAccessQualifier Mode;
       Decoder >> Mode;
       std::string Name;
       Decoder >> Name;
@@ -779,8 +780,33 @@ public:
 class SPIRVDecorateInitModeINTEL : public SPIRVDecorate {
 public:
   // Complete constructor for SPIRVInitModeINTEL
-  SPIRVDecorateInitModeINTEL(SPIRVEntry *TheTarget, SPIRVWord Trigger)
-      : SPIRVDecorate(DecorationInitModeINTEL, TheTarget, Trigger) {}
+  SPIRVDecorateInitModeINTEL(SPIRVEntry *TheTarget,
+                             InitializationModeQualifier Trigger)
+      : SPIRVDecorate(DecorationInitModeINTEL, TheTarget) {
+    Literals.push_back(Trigger);
+    WordCount += Literals.size();
+  }
+  static void encodeLiterals(SPIRVEncoder &Encoder,
+                             const std::vector<SPIRVWord> &Literals) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if (SPIRVUseTextFormat) {
+      Encoder << (InitializationModeQualifier)Literals.back();
+    } else
+#endif
+      Encoder << Literals;
+  }
+
+  static void decodeLiterals(SPIRVDecoder &Decoder,
+                             std::vector<SPIRVWord> &Literals) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+    if (SPIRVUseTextFormat) {
+      InitializationModeQualifier Q;
+      Decoder >> Q;
+      Literals.back() = Q;
+    } else
+#endif
+      Decoder >> Literals;
+  }
 };
 
 class SPIRVDecorateImplementInRegisterMapINTEL : public SPIRVDecorate {

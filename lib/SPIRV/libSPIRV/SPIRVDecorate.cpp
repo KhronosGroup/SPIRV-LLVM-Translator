@@ -127,6 +127,9 @@ void SPIRVDecorate::encode(spv_ostream &O) const {
   case DecorationHostAccessINTEL:
     SPIRVDecorateHostAccessINTEL::encodeLiterals(Encoder, Literals);
     break;
+  case DecorationInitModeINTEL:
+    SPIRVDecorateInitModeINTEL::encodeLiterals(Encoder, Literals);
+    break;
   default:
     Encoder << Literals;
   }

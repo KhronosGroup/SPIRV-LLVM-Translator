@@ -655,6 +655,26 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
+template <>
+inline void SPIRVMap<InitializationModeQualifier, std::string>::init() {
+  add(InitializationModeQualifierInitOnDeviceReprogramINTEL,
+      "InitOnDeviceReprogramINTEL");
+  add(InitializationModeQualifierInitOnDeviceResetINTEL,
+      "InitOnDeviceResetINTEL");
+  add(InitializationModeQualifierMax, "Max");
+}
+SPIRV_DEF_NAMEMAP(InitializationModeQualifier,
+                  SPIRVInitializationModeQualifierNameMap)
+
+template <> inline void SPIRVMap<HostAccessQualifier, std::string>::init() {
+  add(HostAccessQualifierNoneINTEL, "NoneINTEL");
+  add(HostAccessQualifierReadINTEL, "ReadINTEL");
+  add(HostAccessQualifierWriteINTEL, "WriteINTEL");
+  add(HostAccessQualifierReadWriteINTEL, "ReadWriteINTEL");
+  add(HostAccessQualifierMax, "Max");
+}
+SPIRV_DEF_NAMEMAP(HostAccessQualifier, SPIRVHostAccessQualifierNameMap)
+
 } /* namespace SPIRV */
 
 #endif // SPIRV_LIBSPIRV_SPIRVNAMEMAPENUM_H
