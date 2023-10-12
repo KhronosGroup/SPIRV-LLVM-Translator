@@ -1023,7 +1023,7 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
   }
 }
 
-  void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
+void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
   auto *BM = BF->getModule();
   if (!BM->preserveAuxData())
     return;
