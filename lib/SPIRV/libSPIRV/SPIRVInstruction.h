@@ -663,6 +663,7 @@ class SPIRVBinaryInst
 /* ToDo: SMod and FMod to be added */
 #define _SPIRV_OP(x) typedef SPIRVBinaryInst<Op##x> SPIRV##x;
 _SPIRV_OP(IAdd)
+_SPIRV_OP(IAddCarry)
 _SPIRV_OP(FAdd)
 _SPIRV_OP(ISub)
 _SPIRV_OP(FSub)

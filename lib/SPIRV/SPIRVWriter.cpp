@@ -2220,6 +2220,7 @@ bool LLVMToSPIRV::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
+  case Intrinsic::uadd_with_overflow:
     return true;
   default:
     // Unknown intrinsics' declarations should always be translated
@@ -2478,6 +2479,11 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
                                      FirstArgVal, SecondArgVal, BB);
     SPIRVValue *Zero = transValue(Constant::getNullValue(II->getType()), BB);
     return BM->addSelectInst(Cmp, Sub, Zero, BB);
+  }
+  case Intrinsic::uadd_with_overflow: {
+    return BM->addBinaryInst(OpIAddCarry, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::memset: {
     // Generally memset can't be translated with current version of SPIRV spec.
