@@ -1044,8 +1044,8 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
       // NonSemanticAuxDataFunctionAttribute Fcn AttrName
       //
       // AttrName and AttrValue are always Strings
-      StringRef AttrKind = Attr.getKindAsString();
-      StringRef AttrValue = Attr.getValueAsString();
+      const StringRef AttrKind = Attr.getKindAsString();
+      const StringRef AttrValue = Attr.getValueAsString();
       auto *KindSpvString = BM->getString(AttrKind.str());
       Ops.push_back(KindSpvString->getId());
       if (!AttrValue.empty()) {
@@ -1056,7 +1056,7 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
       // Format for other types is:
       // NonSemanticAuxDataFunctionAttribute Fcn AttrStr
       // AttrStr is always a String.
-      std::string AttrStr = Attr.getAsString();
+      const std::string AttrStr = Attr.getAsString();
       auto *AttrSpvString = BM->getString(AttrStr);
       Ops.push_back(AttrSpvString->getId());
     }
@@ -1068,7 +1068,7 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
   F->getContext().getMDKindNames(MDNames);
   F->getAllMetadata(AllMD);
   for (auto MD : AllMD) {
-    std::string MDName = MDNames[MD.first].str();
+    const std::string MDName = MDNames[MD.first].str();
 
     // spirv.Decorations, spirv.ParameterDecorations and debug information are
     // handled elsewhere for both forward and reverse translation and are
