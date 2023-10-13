@@ -4459,7 +4459,8 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   case NonSemanticAuxData::FunctionAttribute: {
     assert(Args.size() < 4 && "Unexpected FunctionAttribute Args");
     // If this attr was specially handled and added elsewhere, skip it.
-    const Attribute::AttrKind AsKind = Attribute::getAttrKindFromName(AttrOrMDName);
+    const Attribute::AttrKind AsKind =
+        Attribute::getAttrKindFromName(AttrOrMDName);
     if (AsKind != Attribute::None && F->hasFnAttribute(AsKind))
       return;
     if (AsKind == Attribute::None && F->hasFnAttribute(AttrOrMDName))
