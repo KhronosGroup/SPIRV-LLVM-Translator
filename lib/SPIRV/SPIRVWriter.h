@@ -122,6 +122,7 @@ public:
   SPIRVFunction *transFunctionDecl(Function *F);
   void transVectorComputeMetadata(Function *F);
   void transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F);
+  void transAuxDataInst(SPIRVFunction *BF, Function *F);
   void transFunctionMetadataAsUserSemanticDecoration(SPIRVFunction *BF,
                                                      Function *F);
   bool transGlobalVariables();
