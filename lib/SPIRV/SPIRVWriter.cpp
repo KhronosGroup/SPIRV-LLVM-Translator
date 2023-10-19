@@ -2604,8 +2604,8 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
                         "InitModeINTEL only be applied to a global (module "
                         "scope) variable which has an Initializer operand");
 
-      ErrLog.checkError(NumOperands == 2, SPIRVEC_InvalidLlvmModule,
-                        "InitModeINTEL requires exactly 1 extra operand");
+      ErrLog.checkError(NumOperands == 3, SPIRVEC_InvalidLlvmModule,
+                        "InitModeINTEL requires exactly 2 extra operand");
       auto *Trigger = mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
       ErrLog.checkError(Trigger, SPIRVEC_InvalidLlvmModule,
                         "InitModeINTEL requires extra operand to be an int");
