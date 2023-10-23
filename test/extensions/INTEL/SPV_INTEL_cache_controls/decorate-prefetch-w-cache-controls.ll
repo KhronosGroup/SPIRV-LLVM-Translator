@@ -7,13 +7,13 @@ target triple = "spir64-unknown-unknown"
 $_ZTSZ4mainEUlvE_ = comdat any
 
 @.str.1 = private unnamed_addr addrspace(1) constant [16 x i8] c"../prefetch.hpp\00", section "llvm.metadata"
-@.str.9 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6443:\220,1\22}\00", section "llvm.metadata"
-@.str.10 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6443:\221,1\22}\00", section "llvm.metadata"
-@.str.11 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6443:\222,2\22}\00", section "llvm.metadata"
+@.str.9 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\220,1\22}\00", section "llvm.metadata"
+@.str.10 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\221,1\22}\00", section "llvm.metadata"
+@.str.11 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\222,3\22}\00", section "llvm.metadata"
 
-; CHECK: 5 Decorate [[ID1:.*]] CacheControlStoreINTEL 0 1
-; CHECK: 5 Decorate [[ID2:.*]] CacheControlStoreINTEL 1 1
-; CHECK: 5 Decorate [[ID3:.*]] CacheControlStoreINTEL 2 2
+; CHECK: 5 Decorate [[ID1:.*]] CacheControlLoadINTEL 0 1
+; CHECK: 5 Decorate [[ID2:.*]] CacheControlLoadINTEL 1 1
+; CHECK: 5 Decorate [[ID3:.*]] CacheControlLoadINTEL 2 3
 
 ; Function Attrs: convergent norecurse nounwind
 define weak_odr dso_local spir_kernel void @_ZTSZ4mainEUlvE_(ptr addrspace(1) noundef align 1 %_arg_dataPtr) local_unnamed_addr comdat !srcloc !5 !kernel_arg_buffer_location !6 !sycl_fixed_targets !7 !sycl_kernel_omit_args !8 {

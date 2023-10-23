@@ -3125,7 +3125,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else if (AllowCacheControls &&
                    DecorationKind ==
-                       internal::DecorationCacheControlStoreINTEL) {
+                       internal::DecorationCacheControlLoadINTEL) {
           Decorates.CacheControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else {
@@ -3358,18 +3358,18 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       }
       break;
     }
-    case spv::internal::DecorationCacheControlStoreINTEL: {
+    case spv::internal::DecorationCacheControlLoadINTEL: {
       if (M->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls)) {
         M->getErrorLog().checkError(
             I.second.size() == 2, SPIRVEC_InvalidLlvmModule,
-            "CacheControlStoreINTEL requires exactly 2 extra operands");
+            "CacheControlLoadINTEL requires exactly 2 extra operands");
         SPIRVWord CacheLevel = 0;
         SPIRVWord CacheControl = 0;
         StringRef(I.second[0]).getAsInteger(10, CacheLevel);
         StringRef(I.second[1]).getAsInteger(10, CacheControl);
-        E->addDecorate(new SPIRVDecorateCacheControlStoreINTEL(
+        E->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
             E, CacheLevel,
-            static_cast<internal::StoreCacheControlINTEL>(CacheControl)));
+            static_cast<internal::LoadCacheControlINTEL>(CacheControl)));
       }
     }
 
