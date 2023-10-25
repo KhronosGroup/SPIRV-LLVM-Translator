@@ -9,10 +9,16 @@ target triple = "spir64-unknown-unknown"
 
 $_ZTSZ4mainEUlvE_ = comdat any
 
+; https://github.com/KhronosGroup/SPIRV-Registry/blob/main/extensions/INTEL/SPV_INTEL_cache_controls.asciidoc
+; These strings are:
+; {CacheControlLoadINTEL_Token:\22CacheLevel,CacheControl\22}
 @.str.1 = private unnamed_addr addrspace(1) constant [16 x i8] c"../prefetch.hpp\00", section "llvm.metadata"
 @.str.9 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\220,1\22}\00", section "llvm.metadata"
 @.str.10 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\221,1\22}\00", section "llvm.metadata"
 @.str.11 = private unnamed_addr addrspace(1) constant [13 x i8] c"{6442:\222,3\22}\00", section "llvm.metadata"
+
+; these CHECK-SPIRV check that prefetch's arg is decorated with the appropriate
+; CacheLevel and CacheControl values.
 
 ; CHECK-SPIRV: 5 Decorate [[PTR_ID1:.*]] CacheControlLoadINTEL 0 1
 ; CHECK-SPIRV: 5 Decorate [[PTR_ID2:.*]] CacheControlLoadINTEL 1 1
@@ -22,6 +28,8 @@ $_ZTSZ4mainEUlvE_ = comdat any
 ; CHECK-SPIRV: 7 ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID2]] [[#]]
 ; CHECK-SPIRV: 7 ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID3]] [[#]]
 
+; Check that the appropriate !spirv.Decorations are preserved after reverse
+; translation
 
 ; CHECK-LLVM: %[[CALL1:.*]] = call spir_func ptr addrspace(1) @_Z41__spirv_GenericCastToPtrExplicit_ToGlobal{{.*}} !spirv.Decorations ![[MD1:.*]]
 ; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetch{{.*}}(ptr addrspace(1) %[[CALL1]], i64 1)
