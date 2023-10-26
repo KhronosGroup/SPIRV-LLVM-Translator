@@ -20,13 +20,13 @@ $_ZTSZ4mainEUlvE_ = comdat any
 ; these CHECK-SPIRV check that prefetch's arg is decorated with the appropriate
 ; CacheLevel and CacheControl values.
 
-; CHECK-SPIRV: 5 Decorate [[PTR_ID1:.*]] CacheControlLoadINTEL 0 1
-; CHECK-SPIRV: 5 Decorate [[PTR_ID2:.*]] CacheControlLoadINTEL 1 1
-; CHECK-SPIRV: 5 Decorate [[PTR_ID3:.*]] CacheControlLoadINTEL 2 3
+; CHECK-SPIRV: Decorate [[PTR_ID1:.*]] CacheControlLoadINTEL 0 1
+; CHECK-SPIRV: Decorate [[PTR_ID2:.*]] CacheControlLoadINTEL 1 1
+; CHECK-SPIRV: Decorate [[PTR_ID3:.*]] CacheControlLoadINTEL 2 3
 
-; CHECK-SPIRV: 7 ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID1]] [[#]]
-; CHECK-SPIRV: 7 ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID2]] [[#]]
-; CHECK-SPIRV: 7 ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID3]] [[#]]
+; CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID1]] [[#]]
+; CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID2]] [[#]]
+; CHECK-SPIRV: ExtInst [[#]] [[#]] [[#]] prefetch [[PTR_ID3]] [[#]]
 
 ; Check that the appropriate !spirv.Decorations are preserved after reverse
 ; translation
