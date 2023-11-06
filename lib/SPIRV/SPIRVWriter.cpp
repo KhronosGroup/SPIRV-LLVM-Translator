@@ -91,6 +91,7 @@
 #include "llvm/Transforms/Utils/LoopSimplify.h"
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -4022,6 +4023,33 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addBinaryInst(OpISubBorrow, transType(II->getType()),
                              transValue(II->getArgOperand(0), BB),
                              transValue(II->getArgOperand(1), BB), BB);
+  }
+  case Intrinsic::vector_reduce_add: {
+    VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
+    SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
+    SPIRVTypeInt *ResultType =
+        BM->addIntegerType(VT->getElementType()->getIntegerBitWidth());
+    SPIRVTypeInt *I32 = BM->addIntegerType(32);
+    unsigned ArrSize = VT->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
+    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+      Extracts[Idx] = BM->addVectorExtractDynamicInst(
+          SV, BM->addIntegerConstant(I32, Idx), BB);
+    }
+    unsigned Counter = ArrSize >> 1;
+    while (Counter != 0) {
+      for (unsigned Idx = 0; Idx < Counter; ++Idx) {
+        Extracts[Idx] =
+            BM->addBinaryInst(OpIAdd, ResultType, Extracts[Idx << 1],
+                              Extracts[(Idx << 1) + 1], BB);
+      }
+      Counter >>= 1;
+    }
+    if ((ArrSize & 1) != 0) {
+      Extracts[0] = BM->addBinaryInst(OpIAdd, ResultType, Extracts[0],
+                                      Extracts[ArrSize - 1], BB);
+    }
+    return Extracts[0];
   }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns

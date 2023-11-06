@@ -1,0 +1,280 @@
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck --check-prefix CHECK-SPIRV %s
+; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: spirv-val %t.spv
+
+target triple = "spir64-unknown-unknown"
+
+; CHECK-SPIRV: TypeInt [[#I8TYPE:]] 8
+; CHECK-SPIRV: TypeInt [[#I32TYPE:]] 32
+; CHECK-SPIRV: TypeInt [[#I16TYPE:]] 16
+; CHECK-SPIRV: TypeInt [[#I64TYPE:]] 64
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_0:]] 0
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_1:]] 1
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_2:]] 2
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_3:]] 3
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_4:]] 4
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_5:]] 5
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_6:]] 6
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_7:]] 7
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_8:]] 8
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_9:]] 9
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_10:]] 10
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_11:]] 11
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_12:]] 12
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_13:]] 13
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_14:]] 14
+; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_15:]] 15
+; CHECK-SPIRV: TypeVector [[#V2XI8TYPE:]] [[#I8TYPE]] 2
+; CHECK-SPIRV: TypeVector [[#V3XI8TYPE:]] [[#I8TYPE]] 3
+; CHECK-SPIRV: TypeVector [[#V4XI8TYPE:]] [[#I8TYPE]] 4
+; CHECK-SPIRV: TypeVector [[#V8XI8TYPE:]] [[#I8TYPE]] 8
+; CHECK-SPIRV: TypeVector [[#V16XI8TYPE:]] [[#I8TYPE]] 16
+; CHECK-SPIRV: TypeVector [[#V2XI16TYPE:]] [[#I16TYPE]] 2
+; CHECK-SPIRV: TypeVector [[#V3XI16TYPE:]] [[#I16TYPE]] 3
+; CHECK-SPIRV: TypeVector [[#V4XI16TYPE:]] [[#I16TYPE]] 4
+; CHECK-SPIRV: TypeVector [[#V8XI16TYPE:]] [[#I16TYPE]] 8
+; CHECK-SPIRV: TypeVector [[#V16XI16TYPE:]] [[#I16TYPE]] 16
+; CHECK-SPIRV: TypeVector [[#V2XI32TYPE:]] [[#I32TYPE]] 2
+; CHECK-SPIRV: TypeVector [[#V3XI32TYPE:]] [[#I32TYPE]] 3
+; CHECK-SPIRV: TypeVector [[#V4XI32TYPE:]] [[#I32TYPE]] 4
+; CHECK-SPIRV: TypeVector [[#V8XI32TYPE:]] [[#I32TYPE]] 8
+; CHECK-SPIRV: TypeVector [[#V16XI32TYPE:]] [[#I32TYPE]] 16
+; CHECK-SPIRV: TypeVector [[#V2XI64TYPE:]] [[#I64TYPE]] 2
+; CHECK-SPIRV: TypeVector [[#V3XI64TYPE:]] [[#I64TYPE]] 3
+; CHECK-SPIRV: TypeVector [[#V4XI64TYPE:]] [[#I64TYPE]] 4
+; CHECK-SPIRV: TypeVector [[#V8XI64TYPE:]] [[#I64TYPE]] 8
+; CHECK-SPIRV: TypeVector [[#V16XI64TYPE:]] [[#I64TYPE]] 16
+
+; CHECK-SPIRV: FunctionParameter [[#V2XI8TYPE]] [[#VEC_V2XI8TYPE:]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_0_V2XI8TYPE:]] [[#VEC_V2XI8TYPE]] [[#CONST_0]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_1_V2XI8TYPE:]] [[#VEC_V2XI8TYPE]] [[#CONST_1]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_0_V2XI8TYPE:]] [[#EXTRACT_0_V2XI8TYPE]] [[#EXTRACT_1_V2XI8TYPE]]
+; CHECK-SPIRV: ReturnValue [[#ADD_0_V2XI8TYPE]]
+
+; CHECK-SPIRV: FunctionParameter [[#V3XI8TYPE]] [[#VEC_V3XI8TYPE:]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_0_V3XI8TYPE:]] [[#VEC_V3XI8TYPE]] [[#CONST_0]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_1_V3XI8TYPE:]] [[#VEC_V3XI8TYPE]] [[#CONST_1]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_2_V3XI8TYPE:]] [[#VEC_V3XI8TYPE]] [[#CONST_2]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_0_V3XI8TYPE:]] [[#EXTRACT_0_V3XI8TYPE]] [[#EXTRACT_1_V3XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_1_V3XI8TYPE:]] [[#ADD_0_V3XI8TYPE]] [[#EXTRACT_2_V3XI8TYPE]]
+; CHECK-SPIRV: ReturnValue [[#ADD_1_V3XI8TYPE]]
+
+; CHECK-SPIRV: FunctionParameter [[#V4XI8TYPE]] [[#VEC_V4XI8TYPE:]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_0_V4XI8TYPE:]] [[#VEC_V4XI8TYPE]] [[#CONST_0]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_1_V4XI8TYPE:]] [[#VEC_V4XI8TYPE]] [[#CONST_1]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_2_V4XI8TYPE:]] [[#VEC_V4XI8TYPE]] [[#CONST_2]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_3_V4XI8TYPE:]] [[#VEC_V4XI8TYPE]] [[#CONST_3]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_0_V4XI8TYPE:]] [[#EXTRACT_0_V4XI8TYPE]] [[#EXTRACT_1_V4XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_1_V4XI8TYPE:]] [[#EXTRACT_2_V4XI8TYPE]] [[#EXTRACT_3_V4XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_2_V4XI8TYPE:]] [[#ADD_0_V4XI8TYPE]] [[#ADD_1_V4XI8TYPE]]
+; CHECK-SPIRV: ReturnValue [[#ADD_2_V4XI8TYPE]]
+
+; CHECK-SPIRV: FunctionParameter [[#V8XI8TYPE]] [[#VEC_V8XI8TYPE:]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_0_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_0]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_1_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_1]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_2_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_2]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_3_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_3]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_4_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_4]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_5_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_5]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_6_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_6]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_7_V8XI8TYPE:]] [[#VEC_V8XI8TYPE]] [[#CONST_7]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_0_V8XI8TYPE:]] [[#EXTRACT_0_V8XI8TYPE]] [[#EXTRACT_1_V8XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_1_V8XI8TYPE:]] [[#EXTRACT_2_V8XI8TYPE]] [[#EXTRACT_3_V8XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_2_V8XI8TYPE:]] [[#EXTRACT_4_V8XI8TYPE]] [[#EXTRACT_5_V8XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_3_V8XI8TYPE:]] [[#EXTRACT_6_V8XI8TYPE]] [[#EXTRACT_7_V8XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_4_V8XI8TYPE:]] [[#ADD_0_V8XI8TYPE]] [[#ADD_1_V8XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_5_V8XI8TYPE:]] [[#ADD_2_V8XI8TYPE]] [[#ADD_3_V8XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_6_V8XI8TYPE:]] [[#ADD_4_V8XI8TYPE]] [[#ADD_5_V8XI8TYPE]]
+; CHECK-SPIRV: ReturnValue [[#ADD_6_V8XI8TYPE]]
+
+; CHECK-SPIRV: FunctionParameter [[#V16XI8TYPE]] [[#VEC_V16XI8TYPE:]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_0_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_0]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_1_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_1]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_2_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_2]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_3_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_3]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_4_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_4]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_5_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_5]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_6_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_6]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_7_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_7]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_8_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_8]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_9_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_9]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_10_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_10]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_11_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_11]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_12_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_12]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_13_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_13]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_14_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_14]]
+; CHECK-SPIRV: VectorExtractDynamic [[#I8TYPE]] [[#EXTRACT_15_V16XI8TYPE:]] [[#VEC_V16XI8TYPE]] [[#CONST_15]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_0_V16XI8TYPE:]] [[#EXTRACT_0_V16XI8TYPE]] [[#EXTRACT_1_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_1_V16XI8TYPE:]] [[#EXTRACT_2_V16XI8TYPE]] [[#EXTRACT_3_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_2_V16XI8TYPE:]] [[#EXTRACT_4_V16XI8TYPE]] [[#EXTRACT_5_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_3_V16XI8TYPE:]] [[#EXTRACT_6_V16XI8TYPE]] [[#EXTRACT_7_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_4_V16XI8TYPE:]] [[#EXTRACT_8_V16XI8TYPE]] [[#EXTRACT_9_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_5_V16XI8TYPE:]] [[#EXTRACT_10_V16XI8TYPE]] [[#EXTRACT_11_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_6_V16XI8TYPE:]] [[#EXTRACT_12_V16XI8TYPE]] [[#EXTRACT_13_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_7_V16XI8TYPE:]] [[#EXTRACT_14_V16XI8TYPE]] [[#EXTRACT_15_V16XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_8_V16XI8TYPE:]] [[#ADD_0_V16XI8TYPE]] [[#ADD_1_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_9_V16XI8TYPE:]] [[#ADD_2_V16XI8TYPE]] [[#ADD_3_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_10_V16XI8TYPE:]] [[#ADD_4_V16XI8TYPE]] [[#ADD_5_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_11_V16XI8TYPE:]] [[#ADD_6_V16XI8TYPE]] [[#ADD_7_V16XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_12_V16XI8TYPE:]] [[#ADD_8_V16XI8TYPE]] [[#ADD_9_V16XI8TYPE]]
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_13_V16XI8TYPE:]] [[#ADD_10_V16XI8TYPE]] [[#ADD_11_V16XI8TYPE]]
+
+; CHECK-SPIRV: IAdd [[#I8TYPE]] [[#ADD_14_V16XI8TYPE:]] [[#ADD_12_V16XI8TYPE]] [[#ADD_13_V16XI8TYPE]]
+; CHECK-SPIRV: ReturnValue [[#ADD_14_V16XI8TYPE]]
+
+define spir_func i8 @test_vector_reduce_add_v2i8(<2 x i8> %v) {
+entry:
+  %0 = call i8 @llvm.vector.reduce.add.v2i8(<2 x i8> %v)
+  ret i8 %0
+}
+
+define spir_func i8 @test_vector_reduce_add_v3i8(<3 x i8> %v) {
+entry:
+  %0 = call i8 @llvm.vector.reduce.add.v3i8(<3 x i8> %v)
+  ret i8 %0
+}
+
+define spir_func i8 @test_vector_reduce_add_v4i8(<4 x i8> %v) {
+entry:
+  %0 = call i8 @llvm.vector.reduce.add.v4i8(<4 x i8> %v)
+  ret i8 %0
+}
+
+define spir_func i8 @test_vector_reduce_add_v8i8(<8 x i8> %v) {
+entry:
+  %0 = call i8 @llvm.vector.reduce.add.v8i8(<8 x i8> %v)
+  ret i8 %0
+}
+
+define spir_func i8 @test_vector_reduce_add_v16i8(<16 x i8> %v) {
+entry:
+  %0 = call i8 @llvm.vector.reduce.add.v16i8(<16 x i8> %v)
+  ret i8 %0
+}
+
+define spir_func i16 @test_vector_reduce_add_v2i16(<2 x i16> %v) {
+entry:
+  %0 = call i16 @llvm.vector.reduce.add.v2i16(<2 x i16> %v)
+  ret i16 %0
+}
+
+define spir_func i16 @test_vector_reduce_add_v3i16(<3 x i16> %v) {
+entry:
+  %0 = call i16 @llvm.vector.reduce.add.v3i16(<3 x i16> %v)
+  ret i16 %0
+}
+
+define spir_func i16 @test_vector_reduce_add_v4i16(<4 x i16> %v) {
+entry:
+  %0 = call i16 @llvm.vector.reduce.add.v4i16(<4 x i16> %v)
+  ret i16 %0
+}
+
+define spir_func i16 @test_vector_reduce_add_v8i16(<8 x i16> %v) {
+entry:
+  %0 = call i16 @llvm.vector.reduce.add.v8i16(<8 x i16> %v)
+  ret i16 %0
+}
+
+define spir_func i16 @test_vector_reduce_add_v16i16(<16 x i16> %v) {
+entry:
+  %0 = call i16 @llvm.vector.reduce.add.v16i16(<16 x i16> %v)
+  ret i16 %0
+}
+
+
+define spir_func i32 @test_vector_reduce_add_v2i32(<2 x i32> %v) {
+entry:
+  %0 = call i32 @llvm.vector.reduce.add.v2i32(<2 x i32> %v)
+  ret i32 %0
+}
+
+define spir_func i32 @test_vector_reduce_add_v3i32(<3 x i32> %v) {
+entry:
+  %0 = call i32 @llvm.vector.reduce.add.v3i32(<3 x i32> %v)
+  ret i32 %0
+}
+
+define spir_func i32 @test_vector_reduce_add_v4i32(<4 x i32> %v) {
+entry:
+  %0 = call i32 @llvm.vector.reduce.add.v4i32(<4 x i32> %v)
+  ret i32 %0
+}
+
+define spir_func i32 @test_vector_reduce_add_v8i32(<8 x i32> %v) {
+entry:
+  %0 = call i32 @llvm.vector.reduce.add.v8i32(<8 x i32> %v)
+  ret i32 %0
+}
+
+define spir_func i32 @test_vector_reduce_add_v16i32(<16 x i32> %v) {
+entry:
+  %0 = call i32 @llvm.vector.reduce.add.v16i32(<16 x i32> %v)
+  ret i32 %0
+}
+
+define spir_func i64 @test_vector_reduce_add_v2i64(<2 x i64> %v) {
+entry:
+  %0 = call i64 @llvm.vector.reduce.add.v2i64(<2 x i64> %v)
+  ret i64 %0
+}
+
+define spir_func i64 @test_vector_reduce_add_v3i64(<3 x i64> %v) {
+entry:
+  %0 = call i64 @llvm.vector.reduce.add.v3i64(<3 x i64> %v)
+  ret i64 %0
+}
+
+define spir_func i64 @test_vector_reduce_add_v4i64(<4 x i64> %v) {
+entry:
+  %0 = call i64 @llvm.vector.reduce.add.v4i64(<4 x i64> %v)
+  ret i64 %0
+}
+
+define spir_func i64 @test_vector_reduce_add_v8i64(<8 x i64> %v) {
+entry:
+  %0 = call i64 @llvm.vector.reduce.add.v8i64(<8 x i64> %v)
+  ret i64 %0
+}
+
+define spir_func i64 @test_vector_reduce_add_v16i64(<16 x i64> %v) {
+entry:
+  %0 = call i64 @llvm.vector.reduce.add.v16i64(<16 x i64> %v)
+  ret i64 %0
+}
+
+declare i8 @llvm.vector.reduce.add.v2i8(<2 x i8>)
+declare i8 @llvm.vector.reduce.add.v3i8(<3 x i8>)
+declare i8 @llvm.vector.reduce.add.v4i8(<4 x i8>)
+declare i8 @llvm.vector.reduce.add.v8i8(<8 x i8>)
+declare i8 @llvm.vector.reduce.add.v16i8(<16 x i8>)
+
+declare i16 @llvm.vector.reduce.add.v2i16(<2 x i16>)
+declare i16 @llvm.vector.reduce.add.v3i16(<3 x i16>)
+declare i16 @llvm.vector.reduce.add.v4i16(<4 x i16>)
+declare i16 @llvm.vector.reduce.add.v8i16(<8 x i16>)
+declare i16 @llvm.vector.reduce.add.v16i16(<16 x i16>)
+
+declare i32 @llvm.vector.reduce.add.v2i32(<2 x i32>)
+declare i32 @llvm.vector.reduce.add.v3i32(<3 x i32>)
+declare i32 @llvm.vector.reduce.add.v4i32(<4 x i32>)
+declare i32 @llvm.vector.reduce.add.v8i32(<8 x i32>)
+declare i32 @llvm.vector.reduce.add.v16i32(<16 x i32>)
+
+declare i64 @llvm.vector.reduce.add.v2i64(<2 x i64>)
+declare i64 @llvm.vector.reduce.add.v3i64(<3 x i64>)
+declare i64 @llvm.vector.reduce.add.v4i64(<4 x i64>)
+declare i64 @llvm.vector.reduce.add.v8i64(<8 x i64>)
+declare i64 @llvm.vector.reduce.add.v16i64(<16 x i64>)
