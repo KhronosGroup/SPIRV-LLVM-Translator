@@ -4024,7 +4024,14 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                              transValue(II->getArgOperand(0), BB),
                              transValue(II->getArgOperand(1), BB), BB);
   }
-  case Intrinsic::vector_reduce_add: {
+  case Intrinsic::vector_reduce_add:
+  case Intrinsic::vector_reduce_mul: {
+    Op Op;
+    if (IID == Intrinsic::vector_reduce_add) {
+      Op = OpIAdd;
+    } else if (IID == Intrinsic::vector_reduce_mul) {
+      Op = OpIMul;
+    }
     VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
     SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
     SPIRVTypeInt *ResultType =
@@ -4040,13 +4047,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     while (Counter != 0) {
       for (unsigned Idx = 0; Idx < Counter; ++Idx) {
         Extracts[Idx] =
-            BM->addBinaryInst(OpIAdd, ResultType, Extracts[Idx << 1],
+            BM->addBinaryInst(Op, ResultType, Extracts[Idx << 1],
                               Extracts[(Idx << 1) + 1], BB);
       }
       Counter >>= 1;
     }
     if ((ArrSize & 1) != 0) {
-      Extracts[0] = BM->addBinaryInst(OpIAdd, ResultType, Extracts[0],
+      Extracts[0] = BM->addBinaryInst(Op, ResultType, Extracts[0],
                                       Extracts[ArrSize - 1], BB);
     }
     return Extracts[0];
