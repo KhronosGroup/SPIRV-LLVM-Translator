@@ -54,7 +54,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-LLVM: [[FORCE_POW_2_DEPTH:@[0-9_.]+]] = {{.*}}{force_pow2_depth:2}
 ; CHECK-LLVM: [[STRIDESIZE:@[0-9_.]+]] = {{.*}}{stride_size:4}
 ; CHECK-LLVM: [[WORDSIZE:@[0-9_.]+]] = {{.*}}{word_size:8}
-; CHECK-LLVM: [[TRUE_DUAL_PORT:@[0-9_.]+]] = {{.*}}{true_dual_port:1}
+; CHECK-LLVM: [[TRUE_DUAL_PORT:@[0-9_.]+]] = {{.*}}{true_dual_port}
 ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{[a-zA-Z0-9_]+}}, ptr [[REGISTER]], ptr undef, i32 undef, ptr undef)
 ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{[a-zA-Z0-9_]+}}, ptr [[MEMORY]], ptr undef, i32 undef, ptr undef)
 ; CHECK-LLVM: call void @llvm.var.annotation.p0.p0(ptr %{{[a-zA-Z0-9_]+}}, ptr [[NUMBANKS]], ptr undef, i32 undef, ptr undef)
