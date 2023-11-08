@@ -4025,12 +4025,21 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                              transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::vector_reduce_add:
-  case Intrinsic::vector_reduce_mul: {
+  case Intrinsic::vector_reduce_mul:
+  case Intrinsic::vector_reduce_and:
+  case Intrinsic::vector_reduce_or:
+  case Intrinsic::vector_reduce_xor: {
     Op Op;
     if (IID == Intrinsic::vector_reduce_add) {
       Op = OpIAdd;
     } else if (IID == Intrinsic::vector_reduce_mul) {
       Op = OpIMul;
+    } else if (IID == Intrinsic::vector_reduce_and) {
+      Op = OpBitwiseAnd;
+    } else if (IID == Intrinsic::vector_reduce_or) {
+      Op = OpBitwiseOr;
+    } else if (IID == Intrinsic::vector_reduce_xor) {
+      Op = OpBitwiseXor;
     }
     VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
     SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
@@ -4046,9 +4055,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     unsigned Counter = ArrSize >> 1;
     while (Counter != 0) {
       for (unsigned Idx = 0; Idx < Counter; ++Idx) {
-        Extracts[Idx] =
-            BM->addBinaryInst(Op, ResultType, Extracts[Idx << 1],
-                              Extracts[(Idx << 1) + 1], BB);
+        Extracts[Idx] = BM->addBinaryInst(Op, ResultType, Extracts[Idx << 1],
+                                          Extracts[(Idx << 1) + 1], BB);
       }
       Counter >>= 1;
     }
@@ -4058,6 +4066,11 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Extracts[0];
   }
+  // case Intrinsic::vector_reduce_smax:
+  // case Intrinsic::vector_reduce_smin:
+  // case Intrinsic::vector_reduce_umax:
+  // case Intrinsic::vector_reduce_umin: {
+  // }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
     // out that memset is emitted by Clang for initialization in default
