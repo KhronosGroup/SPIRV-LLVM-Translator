@@ -3697,7 +3697,7 @@ protected:
     return getVec(CapabilityShaderClockKHR);
   }
 
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_KHR_shader_clock;
   }
 
