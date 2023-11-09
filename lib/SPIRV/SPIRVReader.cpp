@@ -2535,8 +2535,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVFPGARegINTELInstBase *BC =
         static_cast<SPIRVFPGARegINTELInstBase *>(BV);
 
-    PointerType *Int8PtrTyPrivate =
-        PointerType::get(*Context, SPIRAS_Private);
+    PointerType *Int8PtrTyPrivate = PointerType::get(*Context, SPIRAS_Private);
     IntegerType *Int32Ty = Type::getInt32Ty(*Context);
 
     Value *UndefInt8Ptr = UndefValue::get(Int8PtrTyPrivate);
@@ -3764,8 +3763,8 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
       GS->setSection("llvm.metadata");
 
-      Type *ResType = PointerType::get(
-          GV->getContext(), GV->getType()->getPointerAddressSpace());
+      Type *ResType = PointerType::get(GV->getContext(),
+                                       GV->getType()->getPointerAddressSpace());
       Constant *C = ConstantExpr::getPointerBitCastOrAddrSpaceCast(GV, ResType);
 
       Type *Int8PtrTyPrivate = PointerType::get(*Context, SPIRAS_Private);
@@ -3824,8 +3823,8 @@ void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
     GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
     GS->setSection("llvm.metadata");
 
-    Type *ResType = PointerType::get(
-        V->getContext(), V->getType()->getPointerAddressSpace());
+    Type *ResType = PointerType::get(V->getContext(),
+                                     V->getType()->getPointerAddressSpace());
     Constant *C =
         ConstantExpr::getPointerBitCastOrAddrSpaceCast(TransFun, ResType);
 
