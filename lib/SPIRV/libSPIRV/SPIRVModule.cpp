@@ -655,6 +655,15 @@ void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
     return;
   }
   SPIRVExt.insert(ExtName);
+
+  // The following lines is a temporary workaround to satisfy the specification
+  // until prospective refactoring will make getRequiredExtension() return
+  // a vector of capabilities instead of a single capability
+  if (Ext == ExtensionID::SPV_EXT_shader_atomic_float16_add) {
+    // TranslationOpts doesn't know about the workaround, don't ask TranslationOpts is it allowed
+    SPIRVMap<ExtensionID, std::string>::find(ExtensionID::SPV_EXT_shader_atomic_float_add, &ExtName);
+    SPIRVExt.insert(ExtName);
+  }
 }
 
 void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {

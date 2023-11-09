@@ -7,6 +7,7 @@
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: Extension "SPV_EXT_shader_atomic_float16_add"
+; CHECK-SPIRV-DAG: Extension "SPV_EXT_shader_atomic_float_add"
 ; CHECK-SPIRV-DAG: Capability AtomicFloat16AddEXT
 ; CHECK-SPIRV: TypeInt [[Int:[0-9]+]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1 {{$}}
