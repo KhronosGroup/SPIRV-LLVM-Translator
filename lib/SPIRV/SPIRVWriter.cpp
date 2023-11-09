@@ -4038,7 +4038,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       Op = OpBitwiseAnd;
     } else if (IID == Intrinsic::vector_reduce_or) {
       Op = OpBitwiseOr;
-    } else if (IID == Intrinsic::vector_reduce_xor) {
+    } else {
       Op = OpBitwiseXor;
     }
     VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
@@ -4066,11 +4066,48 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Extracts[0];
   }
-  // case Intrinsic::vector_reduce_smax:
-  // case Intrinsic::vector_reduce_smin:
-  // case Intrinsic::vector_reduce_umax:
-  // case Intrinsic::vector_reduce_umin: {
-  // }
+  case Intrinsic::vector_reduce_smax:
+  case Intrinsic::vector_reduce_smin:
+  case Intrinsic::vector_reduce_umax:
+  case Intrinsic::vector_reduce_umin: {
+    Op Op;
+    if (IID == Intrinsic::vector_reduce_smax) {
+      Op = OpSGreaterThan;
+    } else if (IID == Intrinsic::vector_reduce_smin) {
+      Op = OpSLessThan;
+    } else if (IID == Intrinsic::vector_reduce_umax) {
+      Op = OpUGreaterThan;
+    } else {
+      Op = OpULessThan;
+    }
+    VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
+    SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
+    SPIRVType *B = transType(Type::getInt1Ty(II->getContext()));
+    SPIRVTypeInt *I32 = BM->addIntegerType(32);
+    unsigned ArrSize = VT->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
+    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+      Extracts[Idx] = BM->addVectorExtractDynamicInst(
+          SV, BM->addIntegerConstant(I32, Idx), BB);
+    }
+    unsigned Counter = ArrSize >> 1;
+    while (Counter != 0) {
+      for (unsigned Idx = 0; Idx < Counter; ++Idx) {
+        SPIRVValue *Cond = BM->addBinaryInst(Op, B, Extracts[Idx << 1],
+                                             Extracts[(Idx << 1) + 1], BB);
+        Extracts[Idx] = BM->addSelectInst(Cond, Extracts[Idx << 1],
+                                          Extracts[(Idx << 1) + 1], BB);
+      }
+      Counter >>= 1;
+    }
+    if ((ArrSize & 1) != 0) {
+      SPIRVValue *Cond =
+          BM->addBinaryInst(Op, B, Extracts[0], Extracts[ArrSize - 1], BB);
+      Extracts[0] =
+          BM->addSelectInst(Cond, Extracts[0], Extracts[ArrSize - 1], BB);
+    }
+    return Extracts[0];
+  }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
     // out that memset is emitted by Clang for initialization in default

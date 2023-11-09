@@ -5,46 +5,46 @@
 
 target triple = "spir64-unknown-unknown"
 
-; CHECK-SPIRV: TypeInt [[#I8TYPE:]] 8
-; CHECK-SPIRV: TypeInt [[#I32TYPE:]] 32
-; CHECK-SPIRV: TypeInt [[#I16TYPE:]] 16
-; CHECK-SPIRV: TypeInt [[#I64TYPE:]] 64
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_0:]] 0
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_1:]] 1
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_2:]] 2
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_3:]] 3
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_4:]] 4
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_5:]] 5
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_6:]] 6
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_7:]] 7
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_8:]] 8
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_9:]] 9
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_10:]] 10
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_11:]] 11
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_12:]] 12
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_13:]] 13
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_14:]] 14
-; CHECK-SPIRV: Constant [[#I32TYPE]] [[#CONST_15:]] 15
-; CHECK-SPIRV: TypeVector [[#V2XI8TYPE:]] [[#I8TYPE]] 2
-; CHECK-SPIRV: TypeVector [[#V3XI8TYPE:]] [[#I8TYPE]] 3
-; CHECK-SPIRV: TypeVector [[#V4XI8TYPE:]] [[#I8TYPE]] 4
-; CHECK-SPIRV: TypeVector [[#V8XI8TYPE:]] [[#I8TYPE]] 8
-; CHECK-SPIRV: TypeVector [[#V16XI8TYPE:]] [[#I8TYPE]] 16
-; CHECK-SPIRV: TypeVector [[#V2XI16TYPE:]] [[#I16TYPE]] 2
-; CHECK-SPIRV: TypeVector [[#V3XI16TYPE:]] [[#I16TYPE]] 3
-; CHECK-SPIRV: TypeVector [[#V4XI16TYPE:]] [[#I16TYPE]] 4
-; CHECK-SPIRV: TypeVector [[#V8XI16TYPE:]] [[#I16TYPE]] 8
-; CHECK-SPIRV: TypeVector [[#V16XI16TYPE:]] [[#I16TYPE]] 16
-; CHECK-SPIRV: TypeVector [[#V2XI32TYPE:]] [[#I32TYPE]] 2
-; CHECK-SPIRV: TypeVector [[#V3XI32TYPE:]] [[#I32TYPE]] 3
-; CHECK-SPIRV: TypeVector [[#V4XI32TYPE:]] [[#I32TYPE]] 4
-; CHECK-SPIRV: TypeVector [[#V8XI32TYPE:]] [[#I32TYPE]] 8
-; CHECK-SPIRV: TypeVector [[#V16XI32TYPE:]] [[#I32TYPE]] 16
-; CHECK-SPIRV: TypeVector [[#V2XI64TYPE:]] [[#I64TYPE]] 2
-; CHECK-SPIRV: TypeVector [[#V3XI64TYPE:]] [[#I64TYPE]] 3
-; CHECK-SPIRV: TypeVector [[#V4XI64TYPE:]] [[#I64TYPE]] 4
-; CHECK-SPIRV: TypeVector [[#V8XI64TYPE:]] [[#I64TYPE]] 8
-; CHECK-SPIRV: TypeVector [[#V16XI64TYPE:]] [[#I64TYPE]] 16
+; CHECK-SPIRV-DAG: TypeInt [[#I8TYPE:]] 8
+; CHECK-SPIRV-DAG: TypeInt [[#I32TYPE:]] 32
+; CHECK-SPIRV-DAG: TypeInt [[#I16TYPE:]] 16
+; CHECK-SPIRV-DAG: TypeInt [[#I64TYPE:]] 64
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_0:]] 0
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_1:]] 1
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_2:]] 2
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_3:]] 3
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_4:]] 4
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_5:]] 5
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_6:]] 6
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_7:]] 7
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_8:]] 8
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_9:]] 9
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_10:]] 10
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_11:]] 11
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_12:]] 12
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_13:]] 13
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_14:]] 14
+; CHECK-SPIRV-DAG: Constant [[#I32TYPE]] [[#CONST_15:]] 15
+; CHECK-SPIRV-DAG: TypeVector [[#V2XI8TYPE:]] [[#I8TYPE]] 2
+; CHECK-SPIRV-DAG: TypeVector [[#V3XI8TYPE:]] [[#I8TYPE]] 3
+; CHECK-SPIRV-DAG: TypeVector [[#V4XI8TYPE:]] [[#I8TYPE]] 4
+; CHECK-SPIRV-DAG: TypeVector [[#V8XI8TYPE:]] [[#I8TYPE]] 8
+; CHECK-SPIRV-DAG: TypeVector [[#V16XI8TYPE:]] [[#I8TYPE]] 16
+; CHECK-SPIRV-DAG: TypeVector [[#V2XI16TYPE:]] [[#I16TYPE]] 2
+; CHECK-SPIRV-DAG: TypeVector [[#V3XI16TYPE:]] [[#I16TYPE]] 3
+; CHECK-SPIRV-DAG: TypeVector [[#V4XI16TYPE:]] [[#I16TYPE]] 4
+; CHECK-SPIRV-DAG: TypeVector [[#V8XI16TYPE:]] [[#I16TYPE]] 8
+; CHECK-SPIRV-DAG: TypeVector [[#V16XI16TYPE:]] [[#I16TYPE]] 16
+; CHECK-SPIRV-DAG: TypeVector [[#V2XI32TYPE:]] [[#I32TYPE]] 2
+; CHECK-SPIRV-DAG: TypeVector [[#V3XI32TYPE:]] [[#I32TYPE]] 3
+; CHECK-SPIRV-DAG: TypeVector [[#V4XI32TYPE:]] [[#I32TYPE]] 4
+; CHECK-SPIRV-DAG: TypeVector [[#V8XI32TYPE:]] [[#I32TYPE]] 8
+; CHECK-SPIRV-DAG: TypeVector [[#V16XI32TYPE:]] [[#I32TYPE]] 16
+; CHECK-SPIRV-DAG: TypeVector [[#V2XI64TYPE:]] [[#I64TYPE]] 2
+; CHECK-SPIRV-DAG: TypeVector [[#V3XI64TYPE:]] [[#I64TYPE]] 3
+; CHECK-SPIRV-DAG: TypeVector [[#V4XI64TYPE:]] [[#I64TYPE]] 4
+; CHECK-SPIRV-DAG: TypeVector [[#V8XI64TYPE:]] [[#I64TYPE]] 8
+; CHECK-SPIRV-DAG: TypeVector [[#V16XI64TYPE:]] [[#I64TYPE]] 16
 
 ; -------- I8 --------
 
