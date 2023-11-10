@@ -9,7 +9,7 @@
 ; CHECK: TypeInt [[TypeIntID:[0-9]+]] 32 0
 ; CHECK-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
-; CHECK: TypeFloat [[Half:[0-9]+]] 16
+; CHECK: TypeFloat [[TypeFloatHalfID:[0-9]+]] 16
 ; CHECK: Variable {{[0-9]+}} [[HalfPointer:[0-9]+]]
 ; CHECK: Constant [[Half]] [[HalfValue:[0-9]+]] 20800
 
