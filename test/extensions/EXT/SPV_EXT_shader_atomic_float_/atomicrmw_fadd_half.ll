@@ -6,7 +6,7 @@
 ; CHECK-DAG: Extension "SPV_EXT_shader_atomic_float16_add"
 ; CHECK-DAG: Extension "SPV_EXT_shader_atomic_float_add"
 ; CHECK-DAG: Capability AtomicFloat16AddEXT
-; CHECK: TypeInt [[Int:[0-9]+]] 32 0
+; CHECK: TypeInt [[TypeIntID:[0-9]+]] 32 0
 ; CHECK-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
 ; CHECK: TypeFloat [[Half:[0-9]+]] 16
