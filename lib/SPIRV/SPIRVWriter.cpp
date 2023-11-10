@@ -91,7 +91,6 @@
 #include "llvm/Transforms/Utils/LoopSimplify.h"
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -4066,6 +4065,26 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Extracts[0];
   }
+  case Intrinsic::vector_reduce_fadd:
+  case Intrinsic::vector_reduce_fmul: {
+    Op Op = IID == Intrinsic::vector_reduce_fadd ? OpFAdd : OpFMul;
+    SPIRVValue *VectorVal = transValue(II->getArgOperand(1), BB);
+    VectorType *VecType = cast<VectorType>(II->getArgOperand(1)->getType());
+    SPIRVValue *StartingVal = transValue(II->getArgOperand(0), BB);
+    SPIRVTypeInt *I32 = BM->addIntegerType(32);
+    unsigned ArrSize = VecType->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
+    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+      Extracts[Idx] = BM->addVectorExtractDynamicInst(
+          VectorVal, BM->addIntegerConstant(I32, Idx), BB);
+    }
+    SPIRVValue *V = BM->addBinaryInst(Op, StartingVal->getType(), StartingVal,
+                                      Extracts[0], BB);
+    for (unsigned Idx = 1; Idx < ArrSize; ++Idx) {
+      V = BM->addBinaryInst(Op, StartingVal->getType(), V, Extracts[Idx], BB);
+    }
+    return V;
+  }
   case Intrinsic::vector_reduce_smax:
   case Intrinsic::vector_reduce_smin:
   case Intrinsic::vector_reduce_umax:
@@ -4107,25 +4126,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           BM->addSelectInst(Cond, Extracts[0], Extracts[ArrSize - 1], BB);
     }
     return Extracts[0];
-  }
-  case Intrinsic::vector_reduce_fadd: {
-    SPIRVValue *VectorVal = transValue(II->getArgOperand(1), BB);
-    VectorType *VecType = cast<VectorType>(II->getArgOperand(1)->getType());
-    SPIRVValue *StartingVal = transValue(II->getArgOperand(0), BB);
-    SPIRVTypeInt *I32 = BM->addIntegerType(32);
-    unsigned ArrSize = VecType->getElementCount().getFixedValue();
-    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
-    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
-      Extracts[Idx] = BM->addVectorExtractDynamicInst(
-          VectorVal, BM->addIntegerConstant(I32, Idx), BB);
-    }
-    SPIRVValue *V = BM->addBinaryInst(OpFAdd, StartingVal->getType(),
-                                      StartingVal, Extracts[0], BB);
-    for (unsigned Idx = 1; Idx < ArrSize; ++Idx) {
-      V = BM->addBinaryInst(OpFAdd, StartingVal->getType(), V, Extracts[Idx],
-                            BB);
-    }
-    return V;
   }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
