@@ -1,0 +1,239 @@
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; Verify that the reverse translation works correctly and converts opaque-type generated intrinsics
+; (like 'spirv.llvm_memset_p0_i32') to the typed-pointer signatures (like to '@llvm.memset.p0i8.i32').
+
+; CHECK-LLVM: call void @llvm.memset.p4i8.i32(i8 addrspace(4)* align 4 %1, i8 0, i32 12, i1 false)
+; CHECK-LLVM: call void @llvm.memcpy.p0i8.p2i8.i32(i8* align 4 %3, i8 addrspace(2)* align 4 %4, i32 4, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p0a4i8.i32([4 x i8]* %x, i8 %v, i32 3, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p0a4i8.i32([4 x i8]* %x, i8 %v, i32 %s1, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p3s_struct.S1s.i32(%struct.S1 addrspace(3)* %a, i8 %v, i32 %s1, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p1s_struct.S1s.i64(%struct.S1 addrspace(1)* %b, i8 %v, i64 %s2, i1 false)
+; CHECK-LLVM: call void @llvm.memset.p1s_struct.S1s.i64(%struct.S1 addrspace(1)* %b, i8 %v, i64 %s2, i1 true)
+
+119734787 65536 393230 117 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Int64
+2 Capability GenericPointer
+2 Capability Int8
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 1 2
+3 Source 4 202000
+5 Name 3 "struct.S1"
+5 Name 9 "_Z5foo11v"
+5 Name 10 "agg.result"
+3 Name 11 "s1"
+3 Name 12 "s2"
+3 Name 13 "v"
+3 Name 18 "x"
+9 Name 39 "spirv.llvm_memset_p0_i32"
+4 Name 40 "dest"
+3 Name 41 "val"
+3 Name 42 "len"
+5 Name 43 "isvolatile"
+3 Name 47 "a"
+9 Name 49 "spirv.llvm_memset_p3_i32"
+4 Name 50 "dest"
+3 Name 51 "val"
+3 Name 52 "len"
+5 Name 53 "isvolatile"
+3 Name 56 "b"
+9 Name 58 "spirv.llvm_memset_p1_i64"
+4 Name 59 "dest"
+3 Name 60 "val"
+3 Name 61 "len"
+5 Name 62 "isvolatile"
+11 Name 65 "spirv.llvm_memset_p1_i64.volatile"
+4 Name 66 "dest"
+3 Name 67 "val"
+3 Name 68 "len"
+5 Name 69 "isvolatile"
+4 Name 71 "entry"
+6 Name 72 "loadstoreloop"
+4 Name 73 "split"
+4 Name 83 "entry"
+6 Name 84 "loadstoreloop"
+4 Name 85 "split"
+4 Name 94 "entry"
+6 Name 95 "loadstoreloop"
+4 Name 96 "split"
+4 Name 107 "entry"
+6 Name 108 "loadstoreloop"
+4 Name 109 "split"
+7 Decorate 9 LinkageAttributes "_Z5foo11v" Export
+4 Decorate 10 FuncParamAttr 4
+4 Decorate 10 FuncParamAttr 5
+4 Decorate 10 FuncParamAttr 3
+4 Decorate 18 Alignment 1
+3 Decorate 25 Constant
+3 Decorate 33 Constant
+11 Decorate 39 LinkageAttributes "spirv.llvm_memset_p0_i32" Export
+11 Decorate 49 LinkageAttributes "spirv.llvm_memset_p3_i32" Export
+11 Decorate 58 LinkageAttributes "spirv.llvm_memset_p1_i64" Export
+13 Decorate 65 LinkageAttributes "spirv.llvm_memset_p1_i64.volatile" Export
+4 TypeInt 4 32 0
+4 TypeInt 6 64 0
+4 TypeInt 7 8 0
+4 Constant 4 15 4
+4 Constant 4 21 12
+4 Constant 7 30 21
+4 Constant 4 35 3
+4 Constant 4 74 0
+4 Constant 4 80 1
+5 Constant 6 97 0 0
+5 Constant 6 104 1 0
+2 TypeVoid 2
+5 TypeStruct 3 4 4 4
+
+4 TypePointer 5 8 3
+7 TypeFunction 8 2 5 4 6 7
+4 TypeArray 16 7 15
+4 TypePointer 17 7 16
+4 TypePointer 19 8 7
+4 TypeArray 22 7 21
+4 TypePointer 24 0 22
+4 TypePointer 26 0 7
+4 TypePointer 28 7 7
+4 TypePointer 32 0 16
+2 TypeBool 36
+7 TypeFunction 38 2 17 7 4 36
+4 TypePointer 46 4 3
+7 TypeFunction 48 2 46 7 4 36
+4 TypePointer 55 5 3
+7 TypeFunction 57 2 55 7 6 36
+4 TypePointer 89 4 7
+4 TypePointer 101 5 7
+3 ConstantNull 22 23
+5 Variable 24 25 0 23
+7 ConstantComposite 16 31 30 30 30 30
+
+5 Variable 32 33 0 31
+3 ConstantFalse 36 37
+3 ConstantTrue 36 64
+
+
+5 Function 2 9 0 8
+3 FunctionParameter 5 10
+3 FunctionParameter 4 11
+3 FunctionParameter 6 12
+3 FunctionParameter 7 13
+
+2 Label 14
+4 Variable 17 18 7
+4 Bitcast 19 20 10
+4 Bitcast 26 27 25
+6 CopyMemorySized 20 27 21 2 4
+4 Bitcast 28 29 18
+4 Bitcast 26 34 33
+6 CopyMemorySized 29 34 15 2 4
+8 FunctionCall 2 44 39 18 13 35 37
+8 FunctionCall 2 45 39 18 13 11 37
+4 GenericCastToPtr 46 47 10
+8 FunctionCall 2 54 49 47 13 11 37
+4 GenericCastToPtr 55 56 10
+8 FunctionCall 2 63 58 56 13 12 37
+8 FunctionCall 2 70 65 56 13 12 64
+1 Return
+
+1 FunctionEnd
+
+5 Function 2 39 0 38
+3 FunctionParameter 17 40
+3 FunctionParameter 7 41
+3 FunctionParameter 4 42
+3 FunctionParameter 36 43
+
+2 Label 71
+5 IEqual 36 75 74 42
+4 BranchConditional 75 73 72
+
+2 Label 72
+7 Phi 4 77 74 71 76 72
+4 Bitcast 28 78 40
+5 InBoundsPtrAccessChain 28 79 78 77
+5 Store 79 41 2 1
+5 IAdd 4 76 77 80
+5 ULessThan 36 82 76 42
+4 BranchConditional 82 72 73
+
+2 Label 73
+1 Return
+
+1 FunctionEnd
+
+5 Function 2 49 0 48
+3 FunctionParameter 46 50
+3 FunctionParameter 7 51
+3 FunctionParameter 4 52
+3 FunctionParameter 36 53
+
+2 Label 83
+5 IEqual 36 86 74 52
+4 BranchConditional 86 85 84
+
+2 Label 84
+7 Phi 4 88 74 83 87 84
+4 Bitcast 89 90 50
+5 InBoundsPtrAccessChain 89 91 90 88
+5 Store 91 51 2 1
+5 IAdd 4 87 88 80
+5 ULessThan 36 93 87 52
+4 BranchConditional 93 84 85
+
+2 Label 85
+1 Return
+
+1 FunctionEnd
+
+5 Function 2 58 0 57
+3 FunctionParameter 55 59
+3 FunctionParameter 7 60
+3 FunctionParameter 6 61
+3 FunctionParameter 36 62
+
+2 Label 94
+5 IEqual 36 98 97 61
+4 BranchConditional 98 96 95
+
+2 Label 95
+7 Phi 6 100 97 94 99 95
+4 Bitcast 101 102 59
+5 InBoundsPtrAccessChain 101 103 102 100
+5 Store 103 60 2 1
+5 IAdd 6 99 100 104
+5 ULessThan 36 106 99 61
+4 BranchConditional 106 95 96
+
+2 Label 96
+1 Return
+
+1 FunctionEnd
+
+5 Function 2 65 0 57
+3 FunctionParameter 55 66
+3 FunctionParameter 7 67
+3 FunctionParameter 6 68
+3 FunctionParameter 36 69
+
+2 Label 107
+5 IEqual 36 110 97 68
+4 BranchConditional 110 109 108
+
+2 Label 108
+7 Phi 6 112 97 107 111 108
+4 Bitcast 101 113 66
+5 InBoundsPtrAccessChain 101 114 113 112
+5 Store 114 67 3 1
+5 IAdd 6 111 112 104
+5 ULessThan 36 116 111 68
+4 BranchConditional 116 108 109
+
+2 Label 109
+1 Return
+
+1 FunctionEnd
+
