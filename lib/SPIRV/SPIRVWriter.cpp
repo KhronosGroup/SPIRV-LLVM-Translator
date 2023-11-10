@@ -4088,7 +4088,11 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::vector_reduce_smax:
   case Intrinsic::vector_reduce_smin:
   case Intrinsic::vector_reduce_umax:
-  case Intrinsic::vector_reduce_umin: {
+  case Intrinsic::vector_reduce_umin:
+  case Intrinsic::vector_reduce_fmax:
+  case Intrinsic::vector_reduce_fmin:
+  case Intrinsic::vector_reduce_fmaximum:
+  case Intrinsic::vector_reduce_fminimum: {
     Op Op;
     if (IID == Intrinsic::vector_reduce_smax) {
       Op = OpSGreaterThan;
@@ -4096,8 +4100,16 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       Op = OpSLessThan;
     } else if (IID == Intrinsic::vector_reduce_umax) {
       Op = OpUGreaterThan;
-    } else {
+    } else if (IID == Intrinsic::vector_reduce_umin) {
       Op = OpULessThan;
+    } else if (IID == Intrinsic::vector_reduce_fmax) {
+      Op = OpFOrdGreaterThan;
+    } else if (IID == Intrinsic::vector_reduce_fmin) {
+      Op = OpFOrdLessThan;
+    } else if (IID == Intrinsic::vector_reduce_fmaximum) {
+      Op = OpFUnordGreaterThan;
+    } else {
+      Op = OpFUnordLessThan;
     }
     VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
     SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
