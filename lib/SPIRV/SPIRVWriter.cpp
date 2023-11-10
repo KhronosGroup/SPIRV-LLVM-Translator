@@ -4108,6 +4108,25 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     return Extracts[0];
   }
+  case Intrinsic::vector_reduce_fadd: {
+    SPIRVValue *VectorVal = transValue(II->getArgOperand(1), BB);
+    VectorType *VecType = cast<VectorType>(II->getArgOperand(1)->getType());
+    SPIRVValue *StartingVal = transValue(II->getArgOperand(0), BB);
+    SPIRVTypeInt *I32 = BM->addIntegerType(32);
+    unsigned ArrSize = VecType->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
+    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+      Extracts[Idx] = BM->addVectorExtractDynamicInst(
+          VectorVal, BM->addIntegerConstant(I32, Idx), BB);
+    }
+    SPIRVValue *V = BM->addBinaryInst(OpFAdd, StartingVal->getType(),
+                                      StartingVal, Extracts[0], BB);
+    for (unsigned Idx = 1; Idx < ArrSize; ++Idx) {
+      V = BM->addBinaryInst(OpFAdd, StartingVal->getType(), V, Extracts[Idx],
+                            BB);
+    }
+    return V;
+  }
   case Intrinsic::memset: {
     // Generally there is no direct mapping of memset to SPIR-V.  But it turns
     // out that memset is emitted by Clang for initialization in default
