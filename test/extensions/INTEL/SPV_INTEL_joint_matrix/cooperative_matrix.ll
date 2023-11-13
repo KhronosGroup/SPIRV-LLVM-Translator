@@ -9,9 +9,9 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
-; TODO: Capability CooperativeMatrixPrefetchINTEL
+; CHECK-SPIRV-DAG: Capability CooperativeMatrixPrefetchINTEL
 ; CHECK-SPIRV-DAG: Extension "SPV_KHR_cooperative_matrix"
-; TODO: Extension "SPV_INTEL_joint_matrix"
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_joint_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#Int8Ty:]] 8 0
 ; CHECK-SPIRV-DAG: TypeInt [[#Int32Ty:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#Const12:]] 12
@@ -27,6 +27,7 @@
 ; CHECK-SPIRV: CooperativeMatrixLoadKHR [[#MatTy2]] [[#Load1:]]
 ; TODO: Pass Matrix Type Id instead of Matrix Id to CooperativeMatrixLengthKHR.
 ; CHECK-SPIRV: CooperativeMatrixLengthKHR [[#Int32Ty]] [[#]] [[#Load1]]
+; CHECK-SPIRV: CooperativeMatrixPrefetchINTEL
 ; CHECK-SPIRV: CooperativeMatrixLoadKHR [[#MatTy3]]
 ; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy1]]
 ; CHECK-SPIRV: CooperativeMatrixStoreKHR
