@@ -4040,48 +4040,48 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     } else {
       Op = OpBitwiseXor;
     }
-    VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
-    SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
-    SPIRVTypeInt *ResultType =
-        BM->addIntegerType(VT->getElementType()->getIntegerBitWidth());
-    SPIRVTypeInt *I32 = BM->addIntegerType(32);
-    unsigned ArrSize = VT->getElementCount().getFixedValue();
-    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
-    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+    VectorType *VecTy = cast<VectorType>(II->getArgOperand(0)->getType());
+    SPIRVValue *VecSVal = transValue(II->getArgOperand(0), BB);
+    SPIRVTypeInt *ResultSType =
+        BM->addIntegerType(VecTy->getElementType()->getIntegerBitWidth());
+    SPIRVTypeInt *I32STy = BM->addIntegerType(32);
+    unsigned VecSize = VecTy->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(VecSize);
+    for (unsigned Idx = 0; Idx < VecSize; ++Idx) {
       Extracts[Idx] = BM->addVectorExtractDynamicInst(
-          SV, BM->addIntegerConstant(I32, Idx), BB);
+          VecSVal, BM->addIntegerConstant(I32STy, Idx), BB);
     }
-    unsigned Counter = ArrSize >> 1;
+    unsigned Counter = VecSize >> 1;
     while (Counter != 0) {
       for (unsigned Idx = 0; Idx < Counter; ++Idx) {
-        Extracts[Idx] = BM->addBinaryInst(Op, ResultType, Extracts[Idx << 1],
+        Extracts[Idx] = BM->addBinaryInst(Op, ResultSType, Extracts[Idx << 1],
                                           Extracts[(Idx << 1) + 1], BB);
       }
       Counter >>= 1;
     }
-    if ((ArrSize & 1) != 0) {
-      Extracts[0] = BM->addBinaryInst(Op, ResultType, Extracts[0],
-                                      Extracts[ArrSize - 1], BB);
+    if ((VecSize & 1) != 0) {
+      Extracts[0] = BM->addBinaryInst(Op, ResultSType, Extracts[0],
+                                      Extracts[VecSize - 1], BB);
     }
     return Extracts[0];
   }
   case Intrinsic::vector_reduce_fadd:
   case Intrinsic::vector_reduce_fmul: {
     Op Op = IID == Intrinsic::vector_reduce_fadd ? OpFAdd : OpFMul;
-    SPIRVValue *VectorVal = transValue(II->getArgOperand(1), BB);
-    VectorType *VecType = cast<VectorType>(II->getArgOperand(1)->getType());
-    SPIRVValue *StartingVal = transValue(II->getArgOperand(0), BB);
-    SPIRVTypeInt *I32 = BM->addIntegerType(32);
-    unsigned ArrSize = VecType->getElementCount().getFixedValue();
-    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
-    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+    VectorType *VecTy = cast<VectorType>(II->getArgOperand(1)->getType());
+    SPIRVValue *VecSVal = transValue(II->getArgOperand(1), BB);
+    SPIRVValue *StartingSVal = transValue(II->getArgOperand(0), BB);
+    SPIRVTypeInt *I32STy = BM->addIntegerType(32);
+    unsigned VecSize = VecTy->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(VecSize);
+    for (unsigned Idx = 0; Idx < VecSize; ++Idx) {
       Extracts[Idx] = BM->addVectorExtractDynamicInst(
-          VectorVal, BM->addIntegerConstant(I32, Idx), BB);
+          VecSVal, BM->addIntegerConstant(I32STy, Idx), BB);
     }
-    SPIRVValue *V = BM->addBinaryInst(Op, StartingVal->getType(), StartingVal,
+    SPIRVValue *V = BM->addBinaryInst(Op, StartingSVal->getType(), StartingSVal,
                                       Extracts[0], BB);
-    for (unsigned Idx = 1; Idx < ArrSize; ++Idx) {
-      V = BM->addBinaryInst(Op, StartingVal->getType(), V, Extracts[Idx], BB);
+    for (unsigned Idx = 1; Idx < VecSize; ++Idx) {
+      V = BM->addBinaryInst(Op, StartingSVal->getType(), V, Extracts[Idx], BB);
     }
     return V;
   }
@@ -4111,31 +4111,31 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     } else {
       Op = OpFUnordLessThan;
     }
-    VectorType *VT = cast<VectorType>(II->getArgOperand(0)->getType());
-    SPIRVValue *SV = transValue(II->getArgOperand(0), BB);
-    SPIRVType *B = transType(Type::getInt1Ty(II->getContext()));
-    SPIRVTypeInt *I32 = BM->addIntegerType(32);
-    unsigned ArrSize = VT->getElementCount().getFixedValue();
-    SmallVector<SPIRVValue *, 16> Extracts(ArrSize);
-    for (unsigned Idx = 0; Idx < ArrSize; ++Idx) {
+    VectorType *VecTy = cast<VectorType>(II->getArgOperand(0)->getType());
+    SPIRVValue *VecSVal = transValue(II->getArgOperand(0), BB);
+    SPIRVType *BoolSTy = transType(Type::getInt1Ty(II->getContext()));
+    SPIRVTypeInt *I32STy = BM->addIntegerType(32);
+    unsigned VecSize = VecTy->getElementCount().getFixedValue();
+    SmallVector<SPIRVValue *, 16> Extracts(VecSize);
+    for (unsigned Idx = 0; Idx < VecSize; ++Idx) {
       Extracts[Idx] = BM->addVectorExtractDynamicInst(
-          SV, BM->addIntegerConstant(I32, Idx), BB);
+          VecSVal, BM->addIntegerConstant(I32STy, Idx), BB);
     }
-    unsigned Counter = ArrSize >> 1;
+    unsigned Counter = VecSize >> 1;
     while (Counter != 0) {
       for (unsigned Idx = 0; Idx < Counter; ++Idx) {
-        SPIRVValue *Cond = BM->addBinaryInst(Op, B, Extracts[Idx << 1],
+        SPIRVValue *Cond = BM->addBinaryInst(Op, BoolSTy, Extracts[Idx << 1],
                                              Extracts[(Idx << 1) + 1], BB);
         Extracts[Idx] = BM->addSelectInst(Cond, Extracts[Idx << 1],
                                           Extracts[(Idx << 1) + 1], BB);
       }
       Counter >>= 1;
     }
-    if ((ArrSize & 1) != 0) {
-      SPIRVValue *Cond =
-          BM->addBinaryInst(Op, B, Extracts[0], Extracts[ArrSize - 1], BB);
+    if ((VecSize & 1) != 0) {
+      SPIRVValue *Cond = BM->addBinaryInst(Op, BoolSTy, Extracts[0],
+                                           Extracts[VecSize - 1], BB);
       Extracts[0] =
-          BM->addSelectInst(Cond, Extracts[0], Extracts[ArrSize - 1], BB);
+          BM->addSelectInst(Cond, Extracts[0], Extracts[VecSize - 1], BB);
     }
     return Extracts[0];
   }
