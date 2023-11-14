@@ -2191,7 +2191,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
   if (AtomicRMWInst *ARMW = dyn_cast<AtomicRMWInst>(V)) {
     AtomicRMWInst::BinOp Op = ARMW->getOperation();
-    bool SupportedAtomicInst =
+    const bool SupportedAtomicInst =
         AtomicRMWInst::isFPOperation(Op)
             ? (Op == AtomicRMWInst::FAdd || Op == AtomicRMWInst::FSub)
             : Op != AtomicRMWInst::Nand;
