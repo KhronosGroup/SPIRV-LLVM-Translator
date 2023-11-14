@@ -589,6 +589,17 @@ void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
     return;
   }
   SPIRVExt.insert(ExtName);
+
+  // SPV_EXT_shader_atomic_float16_add extends the
+  // SPV_EXT_shader_atomic_float_add extension.
+  // The specification requires both extensions to be added to use
+  // AtomicFloat16AddEXT capability whereas getRequiredExtension()
+  // is able to return a single extensionID.
+  if (Ext == ExtensionID::SPV_EXT_shader_atomic_float16_add) {
+    SPIRVMap<ExtensionID, std::string>::find(
+        ExtensionID::SPV_EXT_shader_atomic_float_add, &ExtName);
+    SPIRVExt.insert(ExtName);
+  }
 }
 
 void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
