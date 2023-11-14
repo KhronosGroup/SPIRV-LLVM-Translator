@@ -1729,10 +1729,13 @@ static int transAtomicOrdering(llvm::AtomicOrdering Ordering) {
 
 SPIRVValue *LLVMToSPIRVBase::transAtomicStore(StoreInst *ST,
                                               SPIRVBasicBlock *BB) {
-  std::vector<Value *> Ops{ST->getPointerOperand(),
-                           getUInt32(M, spv::ScopeDevice),
-                           getUInt32(M, transAtomicOrdering(ST->getOrdering())),
-                           ST->getValueOperand()};
+  SmallVector<StringRef> SSIDs;
+  ST->getContext().getSyncScopeNames(SSIDs);
+  std::vector<Value *> Ops{
+      ST->getPointerOperand(),
+      getUInt32(M, map<Scope>(SSIDs[ST->getSyncScopeID()].str())),
+      getUInt32(M, transAtomicOrdering(ST->getOrdering())),
+      ST->getValueOperand()};
   std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
 
   return mapValue(ST, BM->addInstTemplate(OpAtomicStore, BM->getIds(SPIRVOps),
@@ -1741,8 +1744,11 @@ SPIRVValue *LLVMToSPIRVBase::transAtomicStore(StoreInst *ST,
 
 SPIRVValue *LLVMToSPIRVBase::transAtomicLoad(LoadInst *LD,
                                              SPIRVBasicBlock *BB) {
+  SmallVector<StringRef> SSIDs;
+  LD->getContext().getSyncScopeNames(SSIDs);
   std::vector<Value *> Ops{
-      LD->getPointerOperand(), getUInt32(M, spv::ScopeDevice),
+      LD->getPointerOperand(),
+      getUInt32(M, map<Scope>(SSIDs[LD->getSyncScopeID()].str())),
       getUInt32(M, transAtomicOrdering(LD->getOrdering()))};
   std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
 
@@ -2308,7 +2314,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // an OpenCL environment, we can use the same memory scope as OpenCL atomic
     // functions that don't have memory_scope argument i.e. memory_scope_device.
     // See the OpenCL C specification p6.13.11. "Atomic Functions"
-    Operands[1] = getUInt32(M, spv::ScopeDevice);
+    SmallVector<StringRef> SSIDs;
+    ARMW->getContext().getSyncScopeNames(SSIDs);
+    Operands[1] = getUInt32(M, map<Scope>(SSIDs[ARMW->getSyncScopeID()].str()));
     Operands[2] = getUInt32(M, MemSem);
     Operands[3] = ARMW->getValOperand();
     std::vector<SPIRVValue *> OpVals = transValue(Operands, BB);
