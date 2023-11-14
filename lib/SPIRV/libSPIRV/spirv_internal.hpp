@@ -52,10 +52,7 @@ enum InternalSourceLanguageNonSemanticDI {
   ISourceLanguageCPP20 = 219,
 };
 
-enum InternalLinkageType {
-  ILTPrev = LinkageTypeMax - 2,
-  ILTInternal
-};
+enum InternalLinkageType { ILTPrev = LinkageTypeMax - 2, ILTInternal };
 
 enum InternalOp {
   IOpTypeTokenINTEL = 6113,

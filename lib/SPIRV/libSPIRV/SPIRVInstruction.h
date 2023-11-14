@@ -314,9 +314,7 @@ public:
     return Operands;
   }
 
-  virtual SPIRVValue *getOperand(unsigned I) {
-    return getOpValue(I);
-  }
+  virtual SPIRVValue *getOperand(unsigned I) { return getOpValue(I); }
 
   bool hasExecScope() const { return SPIRV::hasExecScope(OpCode); }
 
@@ -400,12 +398,12 @@ public:
     }
     if (MemoryAccess[0] & MemoryAccessAliasScopeINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
-          "Aliasing operand is missing");
+             "Aliasing operand is missing");
       AliasScopeInstID = MemoryAccess[MemAccessNumParam++];
     }
     if (MemoryAccess[0] & MemoryAccessNoAliasINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
-          "Aliasing operand is missing");
+             "Aliasing operand is missing");
       NoAliasInstID = MemoryAccess[MemAccessNumParam];
     }
   }
@@ -3396,7 +3394,8 @@ protected:
 _SPIRV_OP(JointMatrixGetElementCoord, true, 5)
 #undef _SPIRV_OP
 
-class SPIRVCooperativeMatrixPrefetchINTELInstBase : public SPIRVInstTemplateBase {
+class SPIRVCooperativeMatrixPrefetchINTELInstBase
+    : public SPIRVInstTemplateBase {
 protected:
   std::optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_joint_matrix;
