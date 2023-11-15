@@ -22,7 +22,6 @@
 ; CHECK-LLVM: %[[Apply:[%0-9a-z.]+]] = call spir_func target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) @"_Z43__spirv_CooperativeMatrixApplyFunctionINTELPU3AS477class.sycl::_V1::ext::oneapi::experimental::matrix::helper::reference_wrapperPU3AS144__spirv_CooperativeMatrixKHR__short_8_16_0_3"(ptr addrspace(4) %ref.tmp.ascast.i21, target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) %[[Mat]])
 ; CHECK-LLVM: call spir_func void @"_Z33__spirv_CooperativeMatrixStoreKHRPU3AS138class.sycl::_V1::ext::oneapi::bfloat16PU3AS144__spirv_CooperativeMatrixKHR__short_8_16_0_3liii"(ptr addrspace(1) %{{.*}}, target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) %[[Apply]], i64 32, i32 0, i32 3, i32 0)
 
-
 ; ModuleID = 'matrix_apply.bc'
 source_filename = "../llvm/sycl/test-e2e/Matrix/joint_matrix_apply_bf16.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
@@ -47,7 +46,6 @@ $_ZTSZZ17matrix_verify_addIN4sycl3_V13ext6oneapi8bfloat16ELm16ELm32EZ4mainEUlRS4
 ; Function Attrs: convergent norecurse nounwind
 define weak_odr dso_local spir_kernel void @_ZTSZZ17matrix_verify_addIN4sycl3_V13ext6oneapi8bfloat16ELm16ELm32EZ4mainEUlRS4_E_EvNS1_5queueER10big_matrixIT_XT0_EXT1_EERNS1_8nd_rangeILi2EEEfOT2_ENKUlRNS1_7handlerEE_clESI_EUlNS1_7nd_itemILi2EEEE_(ptr addrspace(1) noundef align 2 %_arg_accA, ptr noundef byval(%"class.sycl::_V1::range") align 8 %_arg_accA1, ptr noundef byval(%"class.sycl::_V1::range") align 8 %_arg_accA2, ptr noundef byval(%"class.sycl::_V1::id") align 8 %_arg_accA3) local_unnamed_addr {
 entry:
-  call spir_func void @__itt_offload_wi_start_wrapper()
   %ref.tmp.i20 = alloca %"class.sycl::_V1::ext::oneapi::experimental::matrix::helper::reference_wrapper", align 8
   %agg.tmp.i17 = alloca %"class.sycl::_V1::ext::oneapi::bfloat16", align 2
   %ref.tmp6.i = alloca float, align 4
@@ -85,14 +83,10 @@ entry:
   %5 = load i64, ptr addrspace(1) @__spirv_BuiltInLocalInvocationId, align 32
   %ref.tmp6.ascast.i = addrspacecast ptr %ref.tmp6.i to ptr addrspace(4)
   %cmp.i11 = icmp ult i64 %2, 2147483648
-  tail call void @llvm.assume(i1 %cmp.i11)
   %cmp.i = icmp ult i64 %3, 2147483648
-  tail call void @llvm.assume(i1 %cmp.i)
   %cmp.i15 = icmp ult i64 %4, 2147483648
-  tail call void @llvm.assume(i1 %cmp.i15)
   %sub.i = sub nsw i64 %2, %4
   %cmp.i12 = icmp ult i64 %5, 2147483648
-  tail call void @llvm.assume(i1 %cmp.i12)
   %sub5.i = sub nsw i64 %3, %5
   call void @llvm.lifetime.start.p0(i64 4, ptr nonnull %ref.tmp6.i)
   store float 5.000000e+00, ptr %ref.tmp6.i, align 4
@@ -122,7 +116,6 @@ entry:
   %add.ptr.i44 = getelementptr inbounds %"class.sycl::_V1::ext::oneapi::bfloat16", ptr addrspace(1) %add.ptr.i43, i64 %div14.i
   call spir_func void @_Z33__spirv_CooperativeMatrixStoreKHRPU3AS4iPU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_3ili(ptr addrspace(1) noundef %add.ptr.i44, target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) noundef %call.i22, i64 noundef 32, i32 noundef 0, i32 noundef 3, i32 noundef 0)
   call void @llvm.lifetime.end.p0(i64 64, ptr nonnull %__SYCLKernel)
-  call spir_func void @__itt_offload_wi_finish_wrapper()
   ret void
 }
 
@@ -131,9 +124,6 @@ declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture)
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture)
-
-; Function Attrs: nocallback nofree nosync nounwind willreturn memory(inaccessiblemem: write)
-declare void @llvm.assume(i1 noundef)
 
 ; Function Attrs: convergent nounwind
 declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) @_Z26__spirv_CompositeConstruct(ptr noundef byval(%"class.sycl::_V1::ext::oneapi::bfloat16") align 2) local_unnamed_addr
@@ -146,10 +136,6 @@ declare dso_local spir_func noundef target("spirv.CooperativeMatrixKHR", i16, 8,
 
 ; Function Attrs: convergent nounwind
 declare dso_local spir_func void @_Z33__spirv_CooperativeMatrixStoreKHRPU3AS4iPU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_3ili(ptr addrspace(1) noundef, target("spirv.CooperativeMatrixKHR", i16, 8, 16, 0, 3) noundef, i64 noundef, i32 noundef, i32 noundef, i32 noundef) local_unnamed_addr
-
-declare spir_func void @__itt_offload_wi_start_wrapper()
-
-declare spir_func void @__itt_offload_wi_finish_wrapper()
 
 !llvm.module.flags = !{!0, !1}
 !opencl.spir.version = !{!2}
