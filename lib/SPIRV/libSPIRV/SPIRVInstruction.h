@@ -3409,7 +3409,7 @@ protected:
   typedef SPIRVInstTemplate<SPIRVCooperativeMatrixPrefetchINTELInstBase,       \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
-_SPIRV_OP(CooperativeMatrixPrefetch, false, 8, true, 7)
+_SPIRV_OP(CooperativeMatrixPrefetch, false, 8, true, 5)
 #undef _SPIRV_OP
 
 class SPIRVCooperativeMatrixKHRInstBase : public SPIRVInstTemplateBase {
