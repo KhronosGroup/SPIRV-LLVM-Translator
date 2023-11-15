@@ -35,7 +35,7 @@
 
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 3) @_Z26__spirv_CompositeConstructi(i32 0)
 ; CHECK-LLVM: call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiiil(ptr addrspace(4) %[[MatrixPtr:[%0-9a-z.]+]], i32 0, i32 0, i32 1, i32 1, i32 0, i64 %_arg_K)
-; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 0, 12, 48, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS4clii
+; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 0, 12, 48, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS4clii(ptr addrspace(4) %[[MatrixPtr:[%0-9a-z.]+]], i64 %_arg_K, i32 0, i32 1)
 ; CHECK-LLVM: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3(target("spirv.CooperativeMatrixKHR", i8, 0, 12, 48, 3)
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 3) @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS4cl
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 3) @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_3i(target("spirv.CooperativeMatrixKHR", i8, 0, 12, 48, 3) %{{.*}}, target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 3) %{{.*}}, target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 3)

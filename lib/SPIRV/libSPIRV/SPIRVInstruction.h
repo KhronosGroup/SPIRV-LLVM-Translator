@@ -314,7 +314,9 @@ public:
     return Operands;
   }
 
-  virtual SPIRVValue *getOperand(unsigned I) { return getOpValue(I); }
+  virtual SPIRVValue *getOperand(unsigned I) {
+    return getOpValue(I);
+  }
 
   bool hasExecScope() const { return SPIRV::hasExecScope(OpCode); }
 
@@ -398,12 +400,12 @@ public:
     }
     if (MemoryAccess[0] & MemoryAccessAliasScopeINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
-             "Aliasing operand is missing");
+          "Aliasing operand is missing");
       AliasScopeInstID = MemoryAccess[MemAccessNumParam++];
     }
     if (MemoryAccess[0] & MemoryAccessNoAliasINTELMaskMask) {
       assert(MemoryAccess.size() > MemAccessNumParam &&
-             "Aliasing operand is missing");
+          "Aliasing operand is missing");
       NoAliasInstID = MemoryAccess[MemAccessNumParam];
     }
   }
