@@ -9,6 +9,13 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
 
+; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_KHR_cooperative_matrix,+SPV_INTEL_bfloat16_conversion 2>&1 \
+; RUN: | FileCheck %s --check-prefix=CHECK-ERROR
+
+; CHECK-ERROR: InvalidInstruction: Can't translate llvm instruction:
+; CHECK-ERROR-NEXT: ConvertFToBF16INTEL
+; CHECK-ERROR-NEXT: Can be used with cooperative matrices only when SPV_INTEL_joint_matrix is enabled
+
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
 ; CHECK-SPIRV-DAG: Capability Bfloat16ConversionINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixBF16ComponentTypeINTEL

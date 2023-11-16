@@ -6,6 +6,13 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_KHR_cooperative_matrix,+SPV_INTEL_tensor_float32_conversion 2>&1 \
+; RUN: | FileCheck %s --check-prefix=CHECK-ERROR
+
+; CHECK-ERROR: InvalidInstruction: Can't translate llvm instruction:
+; CHECK-ERROR-NEXT: RoundFToTF32INTEL
+; CHECK-ERROR-NEXT: Can be used with cooperative matrices only when SPV_INTEL_joint_matrix is enabled
+
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
 ; CHECK-SPIRV-DAG: Capability TensorFloat32RoundingINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixTF32ComponentTypeINTEL

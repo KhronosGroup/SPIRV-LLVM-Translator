@@ -3346,7 +3346,7 @@ protected:
                      "cooperative matrices only when SPV_INTEL_joint_matrix is "
                      "enabled\n");
       assert(InCompTy->isTypeCooperativeMatrixKHR() &&
-             "Input must also be a matrix");
+             "Input must also be a cooperative matrix");
       ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
                       ->getCompType();
       InCompTy =
@@ -3755,7 +3755,7 @@ protected:
                      "cooperative matrices only when SPV_INTEL_joint_matrix is "
                      "enabled\n");
       assert(InCompTy->isTypeCooperativeMatrixKHR() &&
-             "Input must also be a matrix");
+             "Input must also be a cooperative matrix");
       ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
                       ->getCompType();
       InCompTy =
