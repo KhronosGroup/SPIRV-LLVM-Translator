@@ -3341,14 +3341,16 @@ protected:
     if (ResCompTy->isTypeCooperativeMatrixKHR()) {
       SPVErrLog.checkError(
           Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_joint_matrix),
-          SPIRVEC_InvalidInstruction, InstName + "\nCan be used with "
-          "cooperative matrices only when SPV_INTEL_joint_matrix is enabled\n");
+          SPIRVEC_InvalidInstruction,
+          InstName + "\nCan be used with "
+                     "cooperative matrices only when SPV_INTEL_joint_matrix is "
+                     "enabled\n");
       assert(InCompTy->isTypeCooperativeMatrixKHR() &&
              "Input must also be a matrix");
-      ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)->
-        getCompType();
-      InCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(InCompTy)->
-        getCompType();
+      ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
+                      ->getCompType();
+      InCompTy =
+          static_cast<SPIRVTypeCooperativeMatrixKHR *>(InCompTy)->getCompType();
     }
     if (OC == internal::OpConvertFToBF16INTEL) {
       SPVErrLog.checkError(
@@ -3748,14 +3750,16 @@ protected:
     if (ResCompTy->isTypeCooperativeMatrixKHR()) {
       SPVErrLog.checkError(
           Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_joint_matrix),
-          SPIRVEC_InvalidInstruction, InstName + "\nCan be used with "
-          "cooperative matrices only when SPV_INTEL_joint_matrix is enabled\n");
+          SPIRVEC_InvalidInstruction,
+          InstName + "\nCan be used with "
+                     "cooperative matrices only when SPV_INTEL_joint_matrix is "
+                     "enabled\n");
       assert(InCompTy->isTypeCooperativeMatrixKHR() &&
              "Input must also be a matrix");
-      ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)->
-        getCompType();
-      InCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(InCompTy)->
-        getCompType();
+      ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
+                      ->getCompType();
+      InCompTy =
+          static_cast<SPIRVTypeCooperativeMatrixKHR *>(InCompTy)->getCompType();
     }
 
     SPVErrLog.checkError(
