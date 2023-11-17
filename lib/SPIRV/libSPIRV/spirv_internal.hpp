@@ -77,8 +77,8 @@ enum InternalOp {
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
   IOpJointMatrixGetElementCoordINTEL = 6440,
-  IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
+  IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpPrev = OpMax - 2,
   IOpForward
 };
