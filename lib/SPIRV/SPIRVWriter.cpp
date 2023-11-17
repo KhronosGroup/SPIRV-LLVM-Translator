@@ -1731,11 +1731,16 @@ SPIRVValue *LLVMToSPIRVBase::transAtomicStore(StoreInst *ST,
                                               SPIRVBasicBlock *BB) {
   SmallVector<StringRef> SSIDs;
   ST->getContext().getSyncScopeNames(SSIDs);
-  std::vector<Value *> Ops{
-      ST->getPointerOperand(),
-      getUInt32(M, map<Scope>(SSIDs[ST->getSyncScopeID()].str())),
-      getUInt32(M, transAtomicOrdering(ST->getOrdering())),
-      ST->getValueOperand()};
+
+  spv::Scope S;
+  // Fill unknown synscope value to default Device scope.
+  if (!OCLStrMemScopeMap::find(SSIDs[ST->getSyncScopeID()].str(), &S)) {
+    S = ScopeDevice;
+  }
+
+  std::vector<Value *> Ops{ST->getPointerOperand(), getUInt32(M, S),
+                           getUInt32(M, transAtomicOrdering(ST->getOrdering())),
+                           ST->getValueOperand()};
   std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
 
   return mapValue(ST, BM->addInstTemplate(OpAtomicStore, BM->getIds(SPIRVOps),
@@ -1746,9 +1751,15 @@ SPIRVValue *LLVMToSPIRVBase::transAtomicLoad(LoadInst *LD,
                                              SPIRVBasicBlock *BB) {
   SmallVector<StringRef> SSIDs;
   LD->getContext().getSyncScopeNames(SSIDs);
+
+  spv::Scope S;
+  // Fill unknown synscope value to default Device scope.
+  if (!OCLStrMemScopeMap::find(SSIDs[LD->getSyncScopeID()].str(), &S)) {
+    S = ScopeDevice;
+  }
+
   std::vector<Value *> Ops{
-      LD->getPointerOperand(),
-      getUInt32(M, map<Scope>(SSIDs[LD->getSyncScopeID()].str())),
+      LD->getPointerOperand(), getUInt32(M, S),
       getUInt32(M, transAtomicOrdering(LD->getOrdering()))};
   std::vector<SPIRVValue *> SPIRVOps = transValue(Ops, BB);
 
@@ -2316,7 +2327,13 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // See the OpenCL C specification p6.13.11. "Atomic Functions"
     SmallVector<StringRef> SSIDs;
     ARMW->getContext().getSyncScopeNames(SSIDs);
-    Operands[1] = getUInt32(M, map<Scope>(SSIDs[ARMW->getSyncScopeID()].str()));
+
+    spv::Scope S;
+    // Fill unknown synscope value to default Device scope.
+    if (!OCLStrMemScopeMap::find(SSIDs[ARMW->getSyncScopeID()].str(), &S)) {
+      S = ScopeDevice;
+    }
+    Operands[1] = getUInt32(M, S);
     Operands[2] = getUInt32(M, MemSem);
     Operands[3] = ARMW->getValOperand();
     std::vector<SPIRVValue *> OpVals = transValue(Operands, BB);

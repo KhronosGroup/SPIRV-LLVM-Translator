@@ -467,7 +467,16 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           // comparator, which matches with semantics of the flag returned by
           // cmpxchg.
           Value *Ptr = Cmpxchg->getPointerOperand();
-          Value *MemoryScope = getInt32(M, spv::ScopeDevice);
+          SmallVector<StringRef> SSIDs;
+          Cmpxchg->getContext().getSyncScopeNames(SSIDs);
+
+          spv::Scope S;
+          // Fill unknown synscope value to default Device scope.
+          if (!OCLStrMemScopeMap::find(SSIDs[Cmpxchg->getSyncScopeID()].str(),
+                                       &S)) {
+            S = ScopeDevice;
+          }
+          Value *MemoryScope = getInt32(M, S);
           auto SuccessOrder = static_cast<OCLMemOrderKind>(
               llvm::toCABI(Cmpxchg->getSuccessOrdering()));
           auto FailureOrder = static_cast<OCLMemOrderKind>(
