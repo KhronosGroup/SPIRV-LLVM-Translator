@@ -151,8 +151,6 @@ template <> void SPIRVMap<std::string, Scope>::init() {
   add("device", ScopeDevice);
   add("all_svm_devices", ScopeCrossDevice);
   add("subgroup", ScopeSubgroup);
-  // default
-  add("", ScopeDevice);
 }
 
 template <> void SPIRVMap<std::string, SPIRVGroupOperationKind>::init() {

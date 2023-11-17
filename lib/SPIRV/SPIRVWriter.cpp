@@ -4853,8 +4853,15 @@ SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
   }
 
   Module *M = FI->getParent()->getModule();
-  // Treat all llvm.fence instructions as having CrossDevice scope:
-  SPIRVValue *RetScope = transConstant(getUInt32(M, ScopeCrossDevice));
+  SmallVector<StringRef> SSIDs;
+  FI->getContext().getSyncScopeNames(SSIDs);
+  spv::Scope S;
+  // Treat all llvm.fence instructions as having CrossDevice scope by default
+  if (!OCLStrMemScopeMap::find(SSIDs[FI->getSyncScopeID()].str(), &S)) {
+    S = ScopeCrossDevice;
+  }
+
+  SPIRVValue *RetScope = transConstant(getUInt32(M, S));
   SPIRVValue *Val = transConstant(getUInt32(M, MemorySemantics));
   assert(RetScope && Val && "RetScope and Value are not constants");
   return BM->addMemoryBarrierInst(static_cast<Scope>(RetScope->getId()),
