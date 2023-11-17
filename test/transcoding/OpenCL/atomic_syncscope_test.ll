@@ -31,7 +31,7 @@ target triple = "spir64"
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt2:]] 2
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt3:]] 3
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt4:]] 4
-; CHECK-SPIRV-DAG: Constant [[#]] [[#Const2Power30:]] 1073741824 
+; CHECK-SPIRV-DAG: Constant [[#]] [[#Const2Power30:]] 1073741824
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt42:]] 42
 
 ; AtomicLoad ResTypeId ResId PtrId MemScopeId MemSemanticsId

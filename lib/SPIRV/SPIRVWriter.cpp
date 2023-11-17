@@ -1733,7 +1733,7 @@ SPIRVValue *LLVMToSPIRVBase::transAtomicStore(StoreInst *ST,
   ST->getContext().getSyncScopeNames(SSIDs);
 
   spv::Scope S;
-  // Fill unknown synscope value to default Device scope.
+  // Fill unknown syncscope value to default Device scope.
   if (!OCLStrMemScopeMap::find(SSIDs[ST->getSyncScopeID()].str(), &S)) {
     S = ScopeDevice;
   }
@@ -1753,7 +1753,7 @@ SPIRVValue *LLVMToSPIRVBase::transAtomicLoad(LoadInst *LD,
   LD->getContext().getSyncScopeNames(SSIDs);
 
   spv::Scope S;
-  // Fill unknown synscope value to default Device scope.
+  // Fill unknown syncscope value to default Device scope.
   if (!OCLStrMemScopeMap::find(SSIDs[LD->getSyncScopeID()].str(), &S)) {
     S = ScopeDevice;
   }
@@ -2319,17 +2319,18 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     auto MemSem = OCLMemOrderMap::map(static_cast<OCLMemOrderKind>(Ordering));
     std::vector<Value *> Operands(4);
     Operands[0] = ARMW->getPointerOperand();
-    // To get the memory scope argument we might use ARMW->getSyncScopeID(), but
+    // To get the memory scope argument we use ARMW->getSyncScopeID(), but
     // atomicrmw LLVM instruction is not aware of OpenCL(or SPIR-V) memory scope
-    // enumeration. And assuming the produced SPIR-V module will be consumed in
-    // an OpenCL environment, we can use the same memory scope as OpenCL atomic
-    // functions that don't have memory_scope argument i.e. memory_scope_device.
-    // See the OpenCL C specification p6.13.11. "Atomic Functions"
+    // enumeration. If the scope is not set and assuming the produced SPIR-V
+    // module will be consumed in an OpenCL environment, we can use the same
+    // memory scope as OpenCL atomic functions that don't have memory_scope
+    // argument i.e. memory_scope_device. See the OpenCL C specification
+    // p6.13.11. "Atomic Functions"
     SmallVector<StringRef> SSIDs;
     ARMW->getContext().getSyncScopeNames(SSIDs);
 
     spv::Scope S;
-    // Fill unknown synscope value to default Device scope.
+    // Fill unknown syncscope value to default Device scope.
     if (!OCLStrMemScopeMap::find(SSIDs[ARMW->getSyncScopeID()].str(), &S)) {
       S = ScopeDevice;
     }
