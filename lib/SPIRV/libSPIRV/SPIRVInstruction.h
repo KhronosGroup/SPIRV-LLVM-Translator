@@ -3375,6 +3375,7 @@ _SPIRV_OP(JointMatrixMad, true, 7)
 _SPIRV_OP(JointMatrixSUMad, true, 7)
 _SPIRV_OP(JointMatrixUSMad, true, 7)
 _SPIRV_OP(JointMatrixUUMad, true, 7)
+// TODO: move to SPIRVJointMatrixINTELWorkItemInst
 _SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 #undef _SPIRV_OP
 
@@ -3396,6 +3397,20 @@ _SPIRV_OP(CooperativeMatrixLoadKHR, true, 5, true, 3)
 _SPIRV_OP(CooperativeMatrixStoreKHR, false, 4, true, 4)
 _SPIRV_OP(CooperativeMatrixLengthKHR, true, 4, false)
 _SPIRV_OP(CooperativeMatrixMulAddKHR, true, 6, true, 3)
+#undef _SPIRV_OP
+
+class SPIRVJointMatrixINTELWorkItemInst : public SPIRVJointMatrixINTELInstBase {
+protected:
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityJointMatrixWIInstructionsINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVJointMatrixINTELWorkItemInst,                 \
+                            internal::Op##x##INTEL, __VA_ARGS__>               \
+      SPIRV##x##INTEL;
+_SPIRV_OP(JointMatrixGetElementCoord, true, 5)
 #undef _SPIRV_OP
 
 class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
