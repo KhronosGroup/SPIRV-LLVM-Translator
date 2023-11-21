@@ -3480,9 +3480,12 @@ void generateIntelFPGAAnnotation(
     Out << "{register:1}";
 
   SPIRVWord Result = 0;
-  if (E->hasDecorate(DecorationMemoryINTEL))
-    Out << "{memory:"
-        << E->getDecorationStringLiteral(DecorationMemoryINTEL).front() << '}';
+  if (E->hasDecorate(DecorationMemoryINTEL)) {
+    auto Annotations = E->getAllDecorationStringLiterals(DecorationMemoryINTEL);
+    for (size_t I = 0; I != Annotations.size(); ++I) {
+      Out << "{memory:" << Annotations[I].front() << '}';
+    }
+  }
   if (E->hasDecorate(DecorationBankwidthINTEL, 0, &Result))
     Out << "{bankwidth:" << Result << '}';
   if (E->hasDecorate(DecorationNumbanksINTEL, 0, &Result))
@@ -3575,12 +3578,12 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{register:1}";
 
   SPIRVWord Result = 0;
-  if (E->hasMemberDecorate(DecorationMemoryINTEL, 0, MemberNumber, &Result))
-    Out << "{memory:"
-        << E->getMemberDecorationStringLiteral(DecorationMemoryINTEL,
-                                               MemberNumber)
-               .front()
-        << '}';
+  if (E->hasMemberDecorate(DecorationMemoryINTEL, 0, MemberNumber, &Result)) {
+    auto Annotations = E->getAllMemberDecorationStringLiterals(DecorationMemoryINTEL, MemberNumber);
+    for (size_t I = 0; I != Annotations.size(); ++I) {
+      Out << "{memory:" << Annotations[I].front() << '}';
+    }
+  }
   if (E->hasMemberDecorate(DecorationBankwidthINTEL, 0, MemberNumber, &Result))
     Out << "{bankwidth:" << Result << '}';
   if (E->hasMemberDecorate(DecorationNumbanksINTEL, 0, MemberNumber, &Result))

@@ -3262,8 +3262,8 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
   for (const auto &I : Decorations) {
     // Such decoration already exists on a type, try to skip it
     if (E->hasDecorate(I.first, /*Index=*/0, /*Result=*/nullptr))
-      // Allow multiple UserSemantic Decorations
-      if (I.first != DecorationUserSemantic)
+      // Allow multiple UserSemantic and MemoryINTEL Decorations
+      if (I.first != DecorationUserSemantic && I.first != DecorationMemoryINTEL)
         continue;
 
     switch (static_cast<size_t>(I.first)) {
@@ -3421,8 +3421,8 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     // Such decoration already exists on a type, skip it
     if (E->hasMemberDecorate(I.first, /*Index=*/0, MemberNumber,
                              /*Result=*/nullptr))
-      // Allow multiple UserSemantic Decorations
-      if (I.first != DecorationUserSemantic)
+      // Allow multiple UserSemantic and MemoryINTEL Decorations
+      if (I.first != DecorationUserSemantic && I.first != DecorationMemoryINTEL)
         continue;
 
     switch (I.first) {
