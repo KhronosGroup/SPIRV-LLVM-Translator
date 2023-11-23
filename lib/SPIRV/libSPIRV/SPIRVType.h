@@ -1136,6 +1136,9 @@ class SPIRVTypeCooperativeMatrixKHR : public SPIRVType {
   SPIRVType *CompType;
   std::vector<SPIRVValue *> Args;
 
+protected:
+  void validate() const override;
+
 public:
   const static Op OC = OpTypeCooperativeMatrixKHR;
   const static SPIRVWord FixedWC = 7;
