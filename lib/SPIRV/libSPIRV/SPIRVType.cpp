@@ -343,7 +343,7 @@ void SPIRVTypeCooperativeMatrixKHR::validate() const {
   auto InstName = OpCodeNameMap::map(OC);
   uint64_t UseValue = UseConst->getZExtIntValue();
   SPVErrLog.checkError(
-      (UseValue <= internal::InternalJointMatrixUse::Accumulator),
+      (UseValue <= CooperativeMatrixUseMatrixAccumulatorKHR),
       SPIRVEC_InvalidInstruction,
       InstName + "\nIncorrect Use parameter, should be MatrixA, MatrixB or "
                  "Accumulator\n");
