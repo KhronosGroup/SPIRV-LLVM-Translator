@@ -4308,7 +4308,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       DecSubj->addDecorate(
           new SPIRVDecorateUserSemanticAttr(DecSubj, AnnotationString.c_str()));
     } else {
-      SPIRVDBG(spvdbgs() << "Artem: [transIntrinsicInst]: !Decorations.empty()" << "\n");
       addAnnotationDecorations(DecSubj, Decorations.MemoryAttributesVec);
       // Apply the LSU parameter decoration to the pointer result of a GEP
       // to the given struct member (InBoundsPtrAccessChain in SPIR-V).
