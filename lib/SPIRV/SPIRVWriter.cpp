@@ -1000,7 +1000,8 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
   }
   if (MDNode *StallFree = F->getMetadata(kSPIR2MD::StallFree)) {
     if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_fpga_cluster_attributesV2)) {
+            ExtensionID::SPV_INTEL_fpga_cluster_attributes) &&
+        BM->hasCapability(spv::CapabilityFPGAClusterAttributesV2INTEL)) {
       if (getMDOperandAsInt(StallFree, 0))
         BF->addDecorate(new SPIRVDecorateStallFreeINTEL(BF));
     }
@@ -2582,7 +2583,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVEntry *Target) {
       break;
     }
     case DecorationStallFreeINTEL: {
-      Target->addDecorate(new SPIRVDecorateStallFreeINTEL(Target));      
+      Target->addDecorate(new SPIRVDecorateStallFreeINTEL(Target));
       break;
     }
     case DecorationMergeINTEL: {

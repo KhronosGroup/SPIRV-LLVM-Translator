@@ -174,7 +174,7 @@ public:
     case DecorationStallEnableINTEL:
       return ExtensionID::SPV_INTEL_fpga_cluster_attributes;
     case DecorationStallFreeINTEL:
-      return ExtensionID::SPV_INTEL_fpga_cluster_attributesV2;
+      return ExtensionID::SPV_INTEL_fpga_cluster_attributes;
     case DecorationFuseLoopsInFunctionINTEL:
       return ExtensionID::SPV_INTEL_loop_fuse;
     case internal::DecorationCallableFunctionINTEL:
