@@ -38,12 +38,14 @@
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1DB_RD:[0-9]+]] [[FLOAT]] 5 0 0 0 0 0 0
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG1D_WR:[0-9]+]] [[VOID]] 0 0 0 0 0 0 1
 ; CHECK-SPIRV-DAG: 10 TypeImage [[IMG2D_RW:[0-9]+]] [[VOID]] 1 0 0 0 0 0 2
+; CHECK-SPIRV-DAG: 4 TypePointer [[PTR_IMG1D_WR:[0-9]+]] 7 [[IMG1D_WR]]
 ; CHECK-SPIRV-DAG: 2 TypeDeviceEvent [[DEVEVENT:[0-9]+]]
 ; CHECK-SPIRV-DAG: 2 TypeEvent [[EVENT:[0-9]+]]
 ; CHECK-SPIRV-DAG: 2 TypeQueue [[QUEUE:[0-9]+]]
 ; CHECK-SPIRV-DAG: 2 TypeReserveId [[RESID:[0-9]+]]
 ; CHECK-SPIRV-DAG: 2 TypeSampler [[SAMP:[0-9]+]]
 ; CHECK-SPIRV-DAG: 3 TypeSampledImage [[SAMPIMG:[0-9]+]] [[IMG2DD_RD]]
+; CHECK-SPIRV-DAG: 3 ConstantNull [[IMG1D_WR]] [[NULL_IMG1D_WR:[0-9]+]]
 
 ; ModuleID = 'cl-types.cl'
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
@@ -59,6 +61,8 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV: 3 FunctionParameter [[IMG1DB_RD]] {{[0-9]+}}
 ; CHECK-SPIRV: 3 FunctionParameter [[IMG1D_WR]] {{[0-9]+}}
 ; CHECK-SPIRV: 3 FunctionParameter [[IMG2D_RW]] {{[0-9]+}}
+; CHECK-SPIRV: 4 Variable [[PTR_IMG1D_WR]] [[VAR:[0-9]+]] 7
+; CHECK-SPIRV: 5 Store [[VAR]] [[NULL_IMG1D_WR]] 2 8
 
 ; CHECK-LLVM:        define spir_kernel void @foo(
 ; CHECK-LLVM-SAME:     ptr addrspace(1) %a,
@@ -75,6 +79,11 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LLVM-SAME:     !kernel_arg_type [[TYPE:![0-9]+]]
 ; CHECK-LLVM-SAME:     !kernel_arg_type_qual [[TQ:![0-9]+]]
 ; CHECK-LLVM-SAME:     !kernel_arg_base_type [[TYPE]]
+; CHECK-LLVM: [[ALLOCA:%.*]] = alloca ptr addrspace(1), align 8
+; CHECK-LLVM: store ptr addrspace(1) null, ptr [[ALLOCA]], align 8
+
+; CHECK-LLVM-SPIRV: [[ALLOCA2:%.*]] = alloca target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 1), align 8
+; CHECK-LLVM-SPIRV: store target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 1) zeroinitializer, ptr [[ALLOCA2]], align 8
 
 ; Function Attrs: nounwind readnone
 define spir_kernel void @foo(
@@ -88,6 +97,8 @@ define spir_kernel void @foo(
   target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 1) %c2,
   target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 2) %d3) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !4 !kernel_arg_type_qual !5 {
 entry:
+  %0 = alloca target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 1), align 8
+  store target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 1) zeroinitializer, ptr %0, align 8
   ret void
 }
 

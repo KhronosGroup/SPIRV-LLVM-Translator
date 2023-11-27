@@ -272,6 +272,7 @@ protected:
     assert((Type->isTypeComposite() || Type->isTypeOpaque() ||
             Type->isTypeEvent() || Type->isTypePointer() ||
             Type->isTypeReserveId() || Type->isTypeDeviceEvent() ||
+            Type->isTypeImage() ||
             (Type->isTypeSubgroupAvcINTEL() &&
              !Type->isTypeSubgroupAvcMceINTEL())) &&
            "Invalid type");
