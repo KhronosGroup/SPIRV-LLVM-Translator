@@ -15,10 +15,8 @@
 ; CHECK-SPIRV: Capability FPGAMemoryAttributesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_memory_attributes"
 ; CHECK-SPIRV: Decorate [[#empty:]] MemoryINTEL "DEFAULT" 
-; CHECK-SPIRV: Decorate [[#mlab:]] MemoryINTEL "DEFAULT" 
-; CHECK-SPIRV: Decorate [[#mlab]] MemoryINTEL "MLAB"
-; CHECK-SPIRV: Decorate [[#block_ram:]] MemoryINTEL "DEFAULT" 
-; CHECK-SPIRV: Decorate [[#block_ram]] MemoryINTEL "BLOCK_RAM"
+; CHECK-SPIRV: Decorate [[#mlab:]] MemoryINTEL "MLAB"
+; CHECK-SPIRV: Decorate [[#block_ram:]] MemoryINTEL "BLOCK_RAM"
 
 
 ; ModuleID = '/nfs/site/disks/swuser_work_aradzikh/external/llvm-intel/sycl/test/check_device_code/fpga_mem_local.cpp'
@@ -33,12 +31,12 @@ target triple = "spir64-unknown-unknown"
 @.str.3 = private unnamed_addr addrspace(1) constant [35 x i8] c"{5826:\22DEFAULT\22}{5826:\22BLOCK_RAM\22}\00", section "llvm.metadata"
 
 ; CHECK-SPV-IR: [[empty_annot:]] = private unnamed_addr constant [17 x i8] c"{memory:DEFAULT}\00", align 1
-; CHECK-SPV-IR: [[mlab_annot:]] = private unnamed_addr constant [30 x i8] c"{memory:DEFAULT}{memory:MLAB}\00", align 1
-; CHECK-SPV-IR: [[block_ram_annot:]] = private unnamed_addr constant [35 x i8] c"{memory:DEFAULT}{memory:BLOCK_RAM}\00", align 1
+; CHECK-SPV-IR: [[mlab_annot:]] = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", align 1
+; CHECK-SPV-IR: [[block_ram_annot:]] = private unnamed_addr constant [19 x i8] c"{memory:BLOCK_RAM}\00", align 1
 
 ; CHECK-LLVM: [[empty_annot:]] = private unnamed_addr constant [17 x i8] c"{memory:DEFAULT}\00", align 1
-; CHECK-LLVM: [[mlab_annot:]] = private unnamed_addr constant [30 x i8] c"{memory:DEFAULT}{memory:MLAB}\00", align 1
-; CHECK-LLVM: [[block_ram_annot:]] = private unnamed_addr constant [35 x i8] c"{memory:DEFAULT}{memory:BLOCK_RAM}\00", align 1
+; CHECK-LLVM: [[mlab_annot:]] = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", align 1
+; CHECK-LLVM: [[block_ram_annot:]] = private unnamed_addr constant [19 x i8] c"{memory:BLOCK_RAM}\00", align 1
 
 ; Function Attrs: mustprogress norecurse nounwind
 define weak_odr dso_local spir_kernel void @kernel(ptr addrspace(4) %out) {

@@ -3154,6 +3154,24 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                        internal::DecorationCacheControlLoadINTEL) {
           Decorates.CacheControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
+        } else if (DecorationKind == DecorationMemoryINTEL) {
+          // SPIRV doesn't allow the same Decoration to be applied multiple
+          // times on a single SPIRVEntry, unless explicitly allowed by the
+          // language spec. Filter out the less specific MemoryINTEL
+          // decorations, if applied multiple times
+          auto it =
+              std::find_if(DecorationsVec.begin(), DecorationsVec.end(),
+                           [](auto val) { return val.second[0] == "DEFAULT"; });
+
+          if (it != DecorationsVec.end()) {
+            // replace the less specific decoration
+            *it = {static_cast<Decoration>(DecorationKind),
+                   std::move(DecValues)};
+          } else {
+            // add new decoration
+            DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
+                                        std::move(DecValues));
+          }
         } else {
           DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
                                       std::move(DecValues));
@@ -3262,8 +3280,8 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
   for (const auto &I : Decorations) {
     // Such decoration already exists on a type, try to skip it
     if (E->hasDecorate(I.first, /*Index=*/0, /*Result=*/nullptr))
-      // Allow multiple UserSemantic and MemoryINTEL Decorations
-      if (I.first != DecorationUserSemantic && I.first != DecorationMemoryINTEL)
+      // Allow multiple UserSemantic Decorations
+      if (I.first != DecorationUserSemantic)
         continue;
 
     switch (static_cast<size_t>(I.first)) {
@@ -3421,8 +3439,8 @@ void addAnnotationDecorationsForStructMember(SPIRVEntry *E,
     // Such decoration already exists on a type, skip it
     if (E->hasMemberDecorate(I.first, /*Index=*/0, MemberNumber,
                              /*Result=*/nullptr))
-      // Allow multiple UserSemantic and MemoryINTEL Decorations
-      if (I.first != DecorationUserSemantic && I.first != DecorationMemoryINTEL)
+      // Allow multiple UserSemantic Decorations
+      if (I.first != DecorationUserSemantic)
         continue;
 
     switch (I.first) {
