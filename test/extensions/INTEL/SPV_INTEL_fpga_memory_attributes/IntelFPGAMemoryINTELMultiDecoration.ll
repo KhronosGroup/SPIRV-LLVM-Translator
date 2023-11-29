@@ -7,7 +7,7 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
-; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-SPV-IR
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
@@ -15,7 +15,9 @@
 ; CHECK-SPIRV: Capability FPGAMemoryAttributesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_fpga_memory_attributes"
 ; CHECK-SPIRV: Decorate [[#empty:]] MemoryINTEL "DEFAULT" 
+; CHECK-SPIRV-NOT: Decorate [[#]] MemoryINTEL "DEFAULT" 
 ; CHECK-SPIRV: Decorate [[#mlab:]] MemoryINTEL "MLAB"
+; CHECK-SPIRV-NOT: Decorate [[#]] MemoryINTEL "DEFAULT" 
 ; CHECK-SPIRV: Decorate [[#block_ram:]] MemoryINTEL "BLOCK_RAM"
 
 
@@ -29,10 +31,6 @@ target triple = "spir64-unknown-unknown"
 @.str.1 = private unnamed_addr addrspace(1) constant [17 x i8] c"{5826:\22DEFAULT\22}\00", section "llvm.metadata"
 @.str.2 = private unnamed_addr addrspace(1) constant [30 x i8] c"{5826:\22DEFAULT\22}{5826:\22MLAB\22}\00", section "llvm.metadata"
 @.str.3 = private unnamed_addr addrspace(1) constant [35 x i8] c"{5826:\22DEFAULT\22}{5826:\22BLOCK_RAM\22}\00", section "llvm.metadata"
-
-; CHECK-SPV-IR: [[empty_annot:]] = private unnamed_addr constant [17 x i8] c"{memory:DEFAULT}\00", align 1
-; CHECK-SPV-IR: [[mlab_annot:]] = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", align 1
-; CHECK-SPV-IR: [[block_ram_annot:]] = private unnamed_addr constant [19 x i8] c"{memory:BLOCK_RAM}\00", align 1
 
 ; CHECK-LLVM: [[empty_annot:]] = private unnamed_addr constant [17 x i8] c"{memory:DEFAULT}\00", align 1
 ; CHECK-LLVM: [[mlab_annot:]] = private unnamed_addr constant [14 x i8] c"{memory:MLAB}\00", align 1
