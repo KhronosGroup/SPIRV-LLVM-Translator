@@ -3159,13 +3159,17 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
           // times on a single SPIRVEntry, unless explicitly allowed by the
           // language spec. Filter out the less specific MemoryINTEL
           // decorations, if applied multiple times
-          auto it =
-              std::find_if(DecorationsVec.begin(), DecorationsVec.end(),
-                           [](auto val) { return val.second[0] == "DEFAULT"; });
+          auto CanFilterOut = [](auto Val) {
+            if (!Val.second.empty())
+              return (Val.second[0] == "DEFAULT");
+            return false;
+          };
+          auto It = std::find_if(DecorationsVec.begin(), DecorationsVec.end(),
+                                 CanFilterOut);
 
-          if (it != DecorationsVec.end()) {
+          if (It != DecorationsVec.end()) {
             // replace the less specific decoration
-            *it = {static_cast<Decoration>(DecorationKind),
+            *It = {static_cast<Decoration>(DecorationKind),
                    std::move(DecValues)};
           } else {
             // add new decoration
