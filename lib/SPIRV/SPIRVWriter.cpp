@@ -1000,10 +1000,11 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
   }
   if (MDNode *StallFree = F->getMetadata(kSPIR2MD::StallFree)) {
     if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_fpga_cluster_attributes) &&
-        BM->hasCapability(spv::CapabilityFPGAClusterAttributesV2INTEL)) {
-      if (getMDOperandAsInt(StallFree, 0))
+            ExtensionID::SPV_INTEL_fpga_cluster_attributes)) {
+      if (getMDOperandAsInt(StallFree, 0)) {
+        BM->addCapability(spv::CapabilityFPGAClusterAttributesV2INTEL);
         BF->addDecorate(new SPIRVDecorateStallFreeINTEL(BF));
+      }
     }
   }
   if (MDNode *LoopFuse = F->getMetadata(kSPIR2MD::LoopFuse)) {
