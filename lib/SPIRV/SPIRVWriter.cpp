@@ -3159,7 +3159,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
           // times on a single SPIRVEntry, unless explicitly allowed by the
           // language spec. Filter out the less specific MemoryINTEL
           // decorations, if applied multiple times
-          auto CanFilterOut = [](auto Val) {
+          auto CanFilterOut = [](auto &Val) {
             if (!Val.second.empty())
               return (Val.second[0] == "DEFAULT");
             return false;
