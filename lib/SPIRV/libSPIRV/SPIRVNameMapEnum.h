@@ -471,6 +471,10 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityImageReadWriteLodAMD, "ImageReadWriteLodAMD");
   add(CapabilityInt64ImageEXT, "Int64ImageEXT");
   add(CapabilityShaderClockKHR, "ShaderClockKHR");
+  add(CapabilityBrainFloat16KHR, "BrainFloat16KHR");
+  add(CapabilityBrainFloat16DotProductKHR, "BrainFloat16DotProductKHR");
+  add(CapabilityBrainFloat16CooperativeMatrixKHR,
+      "BrainFloat16CooperativeMatrixKHR");
   add(CapabilitySampleMaskOverrideCoverageNV, "SampleMaskOverrideCoverageNV");
   add(CapabilityGeometryShaderPassthroughNV, "GeometryShaderPassthroughNV");
   add(CapabilityShaderViewportIndexLayerEXT, "ShaderViewportIndexLayerEXT");

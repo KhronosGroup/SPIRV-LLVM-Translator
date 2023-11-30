@@ -235,7 +235,9 @@ public:
   // Type creation functions
   virtual SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *) = 0;
   virtual SPIRVTypeBool *addBoolType() = 0;
-  virtual SPIRVTypeFloat *addFloatType(unsigned) = 0;
+  virtual SPIRVTypeFloat *addFloatType(
+      unsigned BitWidth,
+      unsigned FloatingPointEncoding = FloatingPointEncodingIeee754Binary) = 0;
   virtual SPIRVTypeFunction *
   addFunctionType(SPIRVType *, const std::vector<SPIRVType *> &) = 0;
   virtual SPIRVTypeImage *addImageType(SPIRVType *,

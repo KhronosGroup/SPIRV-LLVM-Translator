@@ -288,6 +288,8 @@ Value *SPIRVToLLVM::mapFunction(SPIRVFunction *BF, Function *F) {
 }
 
 Type *SPIRVToLLVM::transFPType(SPIRVType *T) {
+  if (T->isTypeFloat(16, FloatingPointEncodingBrainFloatKHR))
+    return Type::getBFloatTy(*Context);
   switch (T->getFloatBitWidth()) {
   case 16:
     return Type::getHalfTy(*Context);
@@ -1453,7 +1455,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       const llvm::fltSemantics *FS = nullptr;
       switch (BT->getFloatBitWidth()) {
       case 16:
-        FS = &APFloat::IEEEhalf();
+        if (BT->isTypeFloat(16, FloatingPointEncodingBrainFloatKHR))
+          FS = &APFloat::BFloat();
+        else
+          FS = &APFloat::IEEEhalf();
         break;
       case 32:
         FS = &APFloat::IEEEsingle();

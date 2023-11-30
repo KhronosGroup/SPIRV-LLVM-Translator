@@ -205,6 +205,10 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
                {CapabilitySubgroupAvcMotionEstimationINTEL});
   ADD_VEC_INIT(CapabilitySubgroupAvcMotionEstimationChromaINTEL,
                {CapabilitySubgroupAvcMotionEstimationIntraINTEL});
+  ADD_VEC_INIT(CapabilityBrainFloat16DotProductKHR,
+               {CapabilityBrainFloat16KHR});
+  ADD_VEC_INIT(CapabilityBrainFloat16CooperativeMatrixKHR,
+               {CapabilityBrainFloat16KHR, CapabilityCooperativeMatrixKHR});
   ADD_VEC_INIT(internal::CapabilityJointMatrixWIInstructionsINTEL,
                {internal::CapabilityJointMatrixINTEL});
   ADD_VEC_INIT(internal::CapabilityJointMatrixTF32ComponentTypeINTEL,

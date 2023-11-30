@@ -328,6 +328,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     }
   }
 
+  if (T->isBFloatTy())
+    return mapType(T, BM->addFloatType(16, FloatingPointEncodingBrainFloatKHR));
   if (T->isFloatingPointTy())
     return mapType(T, BM->addFloatType(T->getPrimitiveSizeInBits()));
 
