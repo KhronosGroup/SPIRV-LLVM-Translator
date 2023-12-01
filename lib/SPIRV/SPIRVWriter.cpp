@@ -1002,7 +1002,6 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_fpga_cluster_attributes)) {
       if (getMDOperandAsInt(StallFree, 0)) {
-        BM->addCapability(spv::CapabilityFPGAClusterAttributesV2INTEL);
         BF->addDecorate(new SPIRVDecorateStallFreeINTEL(BF));
       }
     }
