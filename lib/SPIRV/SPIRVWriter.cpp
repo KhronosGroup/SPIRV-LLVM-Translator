@@ -2050,8 +2050,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
           std::vector<SPIRVId> Operands = {FrexpResult->getId(),
                                            IntFromFrexpResult->getId()};
-          auto Compos = BM->addCompositeConstructInst(transType(RV->getType()),
-                                                      Operands, BB);
+          auto *Compos = BM->addCompositeConstructInst(transType(RV->getType()),
+                                                       Operands, BB);
 
           return mapValue(V, BM->addReturnValueInst(Compos, BB));
         }
@@ -2213,15 +2213,15 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (auto *II = dyn_cast<IntrinsicInst>(Ext->getAggregateOperand())) {
       if (II->getIntrinsicID() == Intrinsic::frexp) {
         unsigned Idx = Ext->getIndices()[0];
-        auto Val = transValue(II, BB);
+        auto *Val = transValue(II, BB);
         if (Idx == 0)
           return mapValue(V, Val);
-        else { // Idx = 1
-          SPIRVValue *IntFromFrexpResult =
-              static_cast<SPIRVExtInst *>(Val)->getArgValues()[1];
-          IntFromFrexpResult = BM->addLoadInst(IntFromFrexpResult, {}, BB);
-          return mapValue(V, IntFromFrexpResult);
-        }
+
+        // Idx = 1
+        SPIRVValue *IntFromFrexpResult =
+            static_cast<SPIRVExtInst *>(Val)->getArgValues()[1];
+        IntFromFrexpResult = BM->addLoadInst(IntFromFrexpResult, {}, BB);
+        return mapValue(V, IntFromFrexpResult);
       }
     }
     return mapValue(V, BM->addCompositeExtractInst(

@@ -2234,12 +2234,12 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *CC = static_cast<SPIRVCompositeConstruct *>(BV);
     auto Constituents = transValue(CC->getOperands(), F, BB);
     std::vector<Constant *> CV;
-    bool hasRTValues = false;
+    bool HasRtValues = false;
     for (const auto &I : Constituents) {
       auto *C = dyn_cast<Constant>(I);
       CV.push_back(C);
-      if (!hasRTValues && C == nullptr)
-        hasRTValues = true;
+      if (!HasRtValues && C == nullptr)
+        HasRtValues = true;
     }
 
     switch (static_cast<size_t>(BV->getType()->getOpCode())) {
@@ -2251,7 +2251,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
     case OpTypeStruct: {
       auto *ST = cast<StructType>(transType(CC->getType()));
-      if (!hasRTValues)
+      if (!HasRtValues)
         return mapValue(BV, ConstantStruct::get(ST, CV));
 
       AllocaInst *Alloca = new AllocaInst(ST, SPIRAS_Private, "", BB);
