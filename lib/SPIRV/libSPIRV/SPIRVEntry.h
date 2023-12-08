@@ -912,7 +912,7 @@ public:
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_INTEL_long_composites;
+    return ExtensionID::SPV_INTEL_long_constant_composite;
   }
 
   SPIRVWord getNumElements() const { return Elements.size(); }

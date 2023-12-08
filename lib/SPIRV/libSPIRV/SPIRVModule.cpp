@@ -1204,10 +1204,10 @@ SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
   const int NumElements = Elements.size();
 
   // In case number of elements is greater than maximum WordCount and
-  // SPV_INTEL_long_composites is not enabled, the error will be emitted
+  // SPV_INTEL_long_constant_composite is not enabled, the error will be emitted
   // by validate functionality of SPIRVCompositeConstant class.
   if (NumElements <= MaxNumElements ||
-      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_composites))
+      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite))
     return addConstant(new SPIRVConstantComposite(this, Ty, getId(), Elements));
 
   auto Start = Elements.begin();
@@ -1239,10 +1239,10 @@ SPIRVValue *SPIRVModuleImpl::addSpecConstantComposite(
   const int NumElements = Elements.size();
 
   // In case number of elements is greater than maximum WordCount and
-  // SPV_INTEL_long_composites is not enabled, the error will be emitted
+  // SPV_INTEL_long_constant_composite is not enabled, the error will be emitted
   // by validate functionality of SPIRVSpecConstantComposite class.
   if (NumElements <= MaxNumElements ||
-      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_composites))
+      !isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_constant_composite))
     return addConstant(
         new SPIRVSpecConstantComposite(this, Ty, getId(), Elements));
 
