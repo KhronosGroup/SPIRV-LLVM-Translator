@@ -14,9 +14,9 @@
 
 ; CHECK-SPIRV: Extension "SPV_EXT_relaxed_printf_string_address_space"
 ; CHECK-SPIRV: ExtInstImport [[#ExtInstSetId:]] "OpenCL.std"
-; CHECK-SPIRV: TypeInt [[#TypeInt32Id:]] 32 0
-; CHECK-SPIRV: TypeInt [[#TypeInt8Id:]] 8 0
-; CHECK-SPIRV: TypeInt [[#TypeInt64Id:]] 64 0
+; CHECK-SPIRV-DAG: TypeInt [[#TypeInt32Id:]] 32 0
+; CHECK-SPIRV-DAG: TypeInt [[#TypeInt8Id:]] 8 0
+; CHECK-SPIRV-DAG: TypeInt [[#TypeInt64Id:]] 64 0
 ; CHECK-SPIRV: TypeArray [[#TypeArrayId:]] [[#TypeInt8Id]] [[#]]
 ; CHECK-SPIRV: TypePointer [[#ConstantStorClassGlobalPtrTy:]] 0 [[#TypeArrayId]]
 ; CHECK-SPIRV: TypePointer [[#WGStorClassGlobalPtrTy:]] 5 [[#TypeArrayId]]
