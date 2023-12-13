@@ -904,7 +904,7 @@ public:
   }
 
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(CapabilityLongConstantCompositeINTEL);
+    return getVec(CapabilityLongCompositesINTEL);
   }
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
