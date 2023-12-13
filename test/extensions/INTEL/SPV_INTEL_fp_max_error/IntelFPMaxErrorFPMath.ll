@@ -12,8 +12,12 @@
 ; CHECK-SPIRV: Extension "SPV_INTEL_fp_max_error"
 ; CHECK-SPIRV: ExtInstImport [[#OCLEXTID:]] "OpenCL.std"
 
+; CHECK-SPIRV: Name [[#CalleeName:]] "callee"
 ; CHECK-SPIRV: Name [[#F3:]] "f3"
 ; CHECK-SPIRV: Decorate [[#F3]] FPMaxErrorDecorationINTEL 1075838976
+; CHECK-SPIRV: Decorate [[#Callee:]] FPMaxErrorDecorationINTEL 1065353216
+
+; CHECK-SPIRV: TypeFloat [[#FloatTy:]] 32
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -29,6 +33,7 @@ entry:
 %f3 = fdiv float %f1, %f2, !fpmath !0
 
 ; CHECK-LLVM: call {{.*}} float @callee(float %f1, float %f2) #[[#ATTR0:]]
+; CHECK-SPIRV: FunctionCall [[#FloatTy]] [[#Callee]] [[#CalleeName]]
 call float @callee(float %f1, float %f2), !fpmath !1
 ret void
 }
