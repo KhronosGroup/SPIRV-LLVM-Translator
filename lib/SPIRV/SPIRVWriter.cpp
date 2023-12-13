@@ -312,7 +312,6 @@ void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
   if (auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
       II && II->getCalledFunction()->getName().startswith("llvm.fpbuiltin")) {
     // Add a new decoration for llvm.builtin intrinsics, if needed
-
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
       double F = 0.0;
       II->getAttributes()
