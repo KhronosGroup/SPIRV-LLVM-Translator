@@ -914,8 +914,8 @@ void OCLToSPIRVBase::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
     return;
   BuiltinCallMutator Mutator = mutateCallInst(CI, Info.UniqName + Info.Postfix);
   Info.PostProc(Mutator);
-  Type *OldRetTy = CI->getType();
   if (Info.RetTy) {
+    Type *OldRetTy = CI->getType();
     Mutator.changeReturnType(
         Info.RetTy, [OldRetTy, &Info](IRBuilder<> &Builder, CallInst *NewCI) {
           if (Info.RetTy->isIntegerTy() && OldRetTy->isIntegerTy()) {
