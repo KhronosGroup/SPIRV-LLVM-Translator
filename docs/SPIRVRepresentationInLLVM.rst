@@ -398,9 +398,9 @@ Global variables
 A global variable resides in an address space, and the default address space
 in LLVM is zero. The SPIR-V storage class represented by the zero LLVM IR
 address spaces is Function. However, SPIR-V global variable declarations are
-``OpVariable`` instructions whose Storage Class is not ``Function``. This
-means that global variable declarations are not permitted to have no address
-space or ``addrspace(0)``.
+``OpVariable`` instructions whose Storage Class cannot be ``Function``. This
+means that global variable declarations must always have an address space
+specified and that address space cannot be ``0``.
 
 Function metadata
 -----------------
