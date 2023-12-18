@@ -3236,7 +3236,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
   else
     MangledName =
-        getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(), ArgTys);
+        getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(), ArgTys, Ops);
 
   opaquifyTypedPointers(ArgTys);
 
@@ -3380,7 +3380,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   }
   }
 
-  bool IsRetSigned;
+  bool IsRetSigned = true;
   switch (OC) {
   case OpConvertFToU:
   case OpSatConvertSToU:
@@ -3389,8 +3389,16 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpUDotAccSatKHR:
     IsRetSigned = false;
     break;
+  case OpImageRead:
+  case OpImageSampleImplicitLod:
+  case OpImageSampleExplicitLod:
+    if (auto Ops = BI->getOperands(); Ops.size() > 2) {
+      auto C = static_cast<SPIRVConstant *>(Ops[2])->getZExtIntValue();
+      IsRetSigned = !(C & ImageOperandsMask::ImageOperandsZeroExtendMask);
+    }
+    break;
   default:
-    IsRetSigned = true;
+    break;
   }
 
   if (AddRetTypePostfix) {
