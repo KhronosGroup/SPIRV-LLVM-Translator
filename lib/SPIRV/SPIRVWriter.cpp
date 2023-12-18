@@ -308,7 +308,7 @@ void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
   if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error))
     return;
   auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
-  if (II && II->getCalledFunction()->getName().startswith("llvm.fpbuiltin")) {
+  if (II && II->getCalledFunction()->getName().starts_with("llvm.fpbuiltin")) {
     // Add a new decoration for llvm.builtin intrinsics, if needed
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
       double F = 0.0;
@@ -3651,26 +3651,6 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
     // Unknown intrinsics' declarations should always be translated
     return false;
   }
-}
-
-// Add decoration if needed
-SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
-                                         SPIRVInstruction *I) {
-  const bool AllowFPMaxError =
-      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
-  assert(II->getCalledFunction()->getName().starts_with("llvm.fpbuiltin"));
-  // Add a new decoration for llvm.builtin intrinsics, if needed
-  if (AllowFPMaxError)
-    if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
-      double F = 0.0;
-      II->getAttributes()
-          .getFnAttr("fpbuiltin-max-error")
-          .getValueAsString()
-          .getAsDouble(F);
-      I->addDecorate(DecorationFPMaxErrorDecorationINTEL,
-                     convertFloatToSPIRVWord(F));
-    }
-  return I;
 }
 
 // Performs mapping of LLVM IR rounding mode to SPIR-V rounding mode
