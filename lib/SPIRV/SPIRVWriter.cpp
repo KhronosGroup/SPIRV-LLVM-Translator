@@ -234,7 +234,7 @@ bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
   LLVM_DEBUG(dbgs() << "[oclIsBuiltinTransToExtInst] CallInst: demangled name: "
                     << DemangledName << '\n');
   StringRef S = DemangledName;
-  if (!S.startswith(kSPIRVName::Prefix))
+  if (!S.starts_with(kSPIRVName::Prefix))
     return false;
   S = S.drop_front(strlen(kSPIRVName::Prefix));
   auto Loc = S.find(kSPIRVPostfix::Divider);
@@ -406,9 +406,9 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   if (T->isStructTy() && !T->isSized()) {
     auto *ST = dyn_cast<StructType>(T);
     (void)ST; // Silence warning
-    assert(!ST->getName().startswith(kSPR2TypeName::PipeRO));
-    assert(!ST->getName().startswith(kSPR2TypeName::PipeWO));
-    assert(!ST->getName().startswith(kSPR2TypeName::ImagePrefix));
+    assert(!ST->getName().starts_with(kSPR2TypeName::PipeRO));
+    assert(!ST->getName().starts_with(kSPR2TypeName::PipeWO));
+    assert(!ST->getName().starts_with(kSPR2TypeName::ImagePrefix));
     return mapType(T, BM->addOpaqueType(T->getStructName().str()));
   }
 
@@ -603,15 +603,15 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
       return MappedTy;
     };
 
-    if (STName.startswith(kSPR2TypeName::PipeRO) ||
-        STName.startswith(kSPR2TypeName::PipeWO)) {
+    if (STName.starts_with(kSPR2TypeName::PipeRO) ||
+        STName.starts_with(kSPR2TypeName::PipeWO)) {
       auto *PipeT = BM->addPipeType();
-      PipeT->setPipeAcessQualifier(STName.startswith(kSPR2TypeName::PipeRO)
+      PipeT->setPipeAcessQualifier(STName.starts_with(kSPR2TypeName::PipeRO)
                                        ? AccessQualifierReadOnly
                                        : AccessQualifierWriteOnly);
       return SaveType(PipeT);
     }
-    if (STName.startswith(kSPR2TypeName::ImagePrefix)) {
+    if (STName.starts_with(kSPR2TypeName::ImagePrefix)) {
       assert(AddrSpc == SPIRAS_Global);
       Type *ImageTy =
           adjustImageType(TypedPointerType::get(ST, AddrSpc),
@@ -620,10 +620,10 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
     }
     if (STName == kSPR2TypeName::Sampler)
       return SaveType(transType(getSPIRVType(OpTypeSampler)));
-    if (STName.startswith(kSPIRVTypeName::PrefixAndDelim))
+    if (STName.starts_with(kSPIRVTypeName::PrefixAndDelim))
       return transSPIRVOpaqueType(STName, AddrSpc);
 
-    if (STName.startswith(kOCLSubgroupsAVCIntel::TypePrefix))
+    if (STName.starts_with(kOCLSubgroupsAVCIntel::TypePrefix))
       return SaveType(BM->addSubgroupAvcINTELType(
           OCLSubgroupINTELTypeOpCodeMap::map(ST->getName().str())));
 
@@ -632,7 +632,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
       return SaveType(transType(RealType));
     }
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute)) {
-      if (STName.startswith(kVCType::VCBufferSurface)) {
+      if (STName.starts_with(kVCType::VCBufferSurface)) {
         // VCBufferSurface always have Access Qualifier
         auto Access = getAccessQualifier(STName);
         return SaveType(BM->addBufferSurfaceINTELType(Access));
@@ -687,7 +687,7 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
   };
   StructType *ST = StructType::getTypeByName(M->getContext(), STName);
 
-  assert(STName.startswith(kSPIRVTypeName::PrefixAndDelim) &&
+  assert(STName.starts_with(kSPIRVTypeName::PrefixAndDelim) &&
          "Invalid SPIR-V opaque type name");
   SmallVector<std::string, 8> Postfixes;
   auto TN = decodeSPIRVTypeName(STName, Postfixes);
@@ -1911,6 +1911,14 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
               ExtensionID::SPV_INTEL_usm_storage_classes))
         AddressSpace = SPIRAS_Global;
       StorageClass = SPIRSPIRVAddrSpaceMap::map(AddressSpace);
+      if (StorageClass == StorageClassFunction) {
+        std::stringstream SS;
+        SS << "Global variable can not have Function storage class. "
+           << "Consider setting a proper address space.\n "
+           << "Original LLVM value:\n"
+           << toString(GV);
+        getErrorLog().checkError(false, SPIRVEC_InvalidInstruction, SS.str());
+      }
     }
 
     SPIRVType *TranslatedTy = transType(Ty);
@@ -2062,6 +2070,13 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (CmpInst *Cmp = dyn_cast<CmpInst>(V)) {
+    if (Cmp->getPredicate() == CmpInst::Predicate::FCMP_FALSE) {
+      auto *CmpTy = Cmp->getType();
+      SPIRVValue *FalseValue = CmpTy->isVectorTy()
+                                   ? BM->addNullConstant(transType(CmpTy))
+                                   : BM->addConstant(BM->addBoolType(), 0);
+      return mapValue(V, FalseValue);
+    }
     SPIRVInstruction *BI = transCmpInst(Cmp, BB);
     return mapValue(V, BI);
   }
@@ -3184,6 +3199,8 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
 
     std::pair<StringRef, StringRef> Split = AnnotatedDecoration.split(':');
     StringRef Name = Split.first, ValueStr = Split.second;
+    SPIRVDBG(spvdbgs() << "[tryParseAnnotationString]: AnnotationString: "
+                       << Name.str() << "\n");
 
     unsigned DecorationKind = 0;
     if (!Name.getAsInteger(10, DecorationKind)) {
@@ -3207,6 +3224,28 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
                        internal::DecorationCacheControlLoadINTEL) {
           Decorates.CacheControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
+        } else if (DecorationKind == DecorationMemoryINTEL) {
+          // SPIRV doesn't allow the same Decoration to be applied multiple
+          // times on a single SPIRVEntry, unless explicitly allowed by the
+          // language spec. Filter out the less specific MemoryINTEL
+          // decorations, if applied multiple times
+          auto CanFilterOut = [](auto &Val) {
+            if (!Val.second.empty())
+              return (Val.second[0] == "DEFAULT");
+            return false;
+          };
+          auto It = std::find_if(DecorationsVec.begin(), DecorationsVec.end(),
+                                 CanFilterOut);
+
+          if (It != DecorationsVec.end()) {
+            // replace the less specific decoration
+            *It = {static_cast<Decoration>(DecorationKind),
+                   std::move(DecValues)};
+          } else {
+            // add new decoration
+            DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
+                                        std::move(DecValues));
+          }
         } else {
           DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
                                       std::move(DecValues));
@@ -3624,7 +3663,7 @@ SPIRVInstruction *addFPBuiltinDecoration(SPIRVModule *BM, IntrinsicInst *II,
                                          SPIRVInstruction *I) {
   const bool AllowFPMaxError =
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
-  assert(II->getCalledFunction()->getName().startswith("llvm.fpbuiltin"));
+  assert(II->getCalledFunction()->getName().starts_with("llvm.fpbuiltin"));
   // Add a new decoration for llvm.builtin intrinsics, if needed
   if (AllowFPMaxError)
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
@@ -3646,13 +3685,13 @@ SPIRVInstruction *
 LLVMToSPIRVBase::applyRoundingModeConstraint(Value *V, SPIRVInstruction *I) {
   StringRef RMode =
       cast<MDString>(cast<MetadataAsValue>(V)->getMetadata())->getString();
-  if (RMode.endswith("tonearest"))
+  if (RMode.ends_with("tonearest"))
     I->addFPRoundingMode(FPRoundingModeRTE);
-  else if (RMode.endswith("towardzero"))
+  else if (RMode.ends_with("towardzero"))
     I->addFPRoundingMode(FPRoundingModeRTZ);
-  else if (RMode.endswith("upward"))
+  else if (RMode.ends_with("upward"))
     I->addFPRoundingMode(FPRoundingModeRTP);
-  else if (RMode.endswith("downward"))
+  else if (RMode.ends_with("downward"))
     I->addFPRoundingMode(FPRoundingModeRTN);
   return I;
 }
@@ -4355,19 +4394,17 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   // i8* <ptr> is a pointer on a GV, which can carry optinal variadic
   // clang::annotation attribute expression arguments.
   case Intrinsic::ptr_annotation: {
-    // Strip all bitcast and addrspace casts from the pointer argument:
-    //   llvm annotation intrinsic only takes i8*, so the original pointer
-    //   probably had to loose its addrspace and its original type.
-    Value *AnnotSubj = II->getArgOperand(0);
-    while (isa<BitCastInst>(AnnotSubj) || isa<AddrSpaceCastInst>(AnnotSubj)) {
-      AnnotSubj = cast<CastInst>(AnnotSubj)->getOperand(0);
+    Value *AnnotSubj = nullptr;
+    if (auto *BI = dyn_cast<BitCastInst>(II->getArgOperand(0))) {
+      AnnotSubj = BI->getOperand(0);
+    } else {
+      AnnotSubj = II->getOperand(0);
     }
 
     std::string AnnotationString;
     processAnnotationString(II, AnnotationString);
     AnnotationDecorations Decorations =
         tryParseAnnotationString(BM, AnnotationString);
-
     // Translate FPGARegIntel annotations to OpFPGARegINTEL.
     if (AnnotationString == kOCLBuiltinName::FPGARegIntel) {
       auto *Ty = transScavengedType(II);
@@ -4377,76 +4414,26 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return transValue(BI, BB);
     }
 
-    // If the pointer is a GEP on a struct, then we have to emit a member
-    // decoration for the GEP-accessed struct, or a memory access decoration
-    // for the GEP itself. There may not be a GEP in this case if the access is
-    // to the first member of the struct; if so, attempt to get a struct type
-    // from an alloca instead.
-    SPIRVType *StructTy = nullptr;
-    [[maybe_unused]] SPIRVValue *ResPtr = nullptr;
-    [[maybe_unused]] SPIRVWord MemberNumber = 0;
-    if (auto *const GI = dyn_cast<GetElementPtrInst>(AnnotSubj)) {
-      if (auto *const STy = dyn_cast<StructType>(GI->getSourceElementType())) {
-        StructTy = transType(STy);
-        ResPtr = transValue(GI, BB);
-        MemberNumber = dyn_cast<ConstantInt>(GI->getOperand(2))->getZExtValue();
-      }
-    } else if (auto *const AI = dyn_cast<AllocaInst>(AnnotSubj)) {
-      if (auto *const STy = dyn_cast<StructType>(AI->getAllocatedType())) {
-        StructTy = transType(STy);
-        ResPtr = transValue(AI, BB);
-        MemberNumber = 0;
-      }
-    }
-    if (StructTy) {
-
-      // If we didn't find any IntelFPGA-specific decorations, let's add the
-      // whole annotation string as UserSemantic Decoration
-      if (Decorations.empty()) {
-        // TODO: Is there a way to detect that the annotation belongs solely
-        // to struct member memory atributes or struct member memory access
-        // controls? This would allow emitting just the necessary decoration.
-        StructTy->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
-            StructTy, MemberNumber, AnnotationString.c_str()));
-        ResPtr->addDecorate(new SPIRVDecorateUserSemanticAttr(
-            ResPtr, AnnotationString.c_str()));
-      } else {
-        addAnnotationDecorationsForStructMember(
-            StructTy, MemberNumber, Decorations.MemoryAttributesVec);
-        // Apply the LSU parameter decoration to the pointer result of a GEP
-        // to the given struct member (InBoundsPtrAccessChain in SPIR-V).
-        // Decorating the member itself with a MemberDecoration is not feasible,
-        // because multiple accesses to the struct-held memory can require
-        // different LSU parameters.
-        addAnnotationDecorations(ResPtr, Decorations.MemoryAccessesVec);
-        if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
-          addAnnotationDecorations(ResPtr, Decorations.BufferLocationVec);
-          addAnnotationDecorations(ResPtr, Decorations.LatencyControlVec);
-        }
-      }
-      II->replaceAllUsesWith(II->getOperand(0));
+    SPIRVValue *DecSubj = transValue(AnnotSubj, BB);
+    if (Decorations.empty()) {
+      DecSubj->addDecorate(
+          new SPIRVDecorateUserSemanticAttr(DecSubj, AnnotationString.c_str()));
     } else {
-      // Memory accesses to a standalone pointer variable
-      auto *DecSubj = transValue(II->getArgOperand(0), BB);
-      if (Decorations.empty())
-        DecSubj->addDecorate(new SPIRVDecorateUserSemanticAttr(
-            DecSubj, AnnotationString.c_str()));
-      else {
-        // Apply the LSU parameter decoration to the pointer result of an
-        // instruction. Note it's the address to the accessed memory that's
-        // loaded from the original pointer variable, and not the value
-        // accessed by the latter.
-        addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
-        if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
-          addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
-          addAnnotationDecorations(DecSubj, Decorations.LatencyControlVec);
-        }
-
-        addAnnotationDecorations(DecSubj, Decorations.CacheControlVec);
+      addAnnotationDecorations(DecSubj, Decorations.MemoryAttributesVec);
+      // Apply the LSU parameter decoration to the pointer result of a GEP
+      // to the given struct member (InBoundsPtrAccessChain in SPIR-V).
+      // Decorating the member itself with a MemberDecoration is not feasible,
+      // because multiple accesses to the struct-held memory can require
+      // different LSU parameters.
+      addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
+      addAnnotationDecorations(DecSubj, Decorations.CacheControlVec);
+      if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
+        addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
+        addAnnotationDecorations(DecSubj, Decorations.LatencyControlVec);
       }
-      II->replaceAllUsesWith(II->getOperand(0));
     }
-    return nullptr;
+    II->replaceAllUsesWith(II->getOperand(0));
+    return DecSubj;
   }
   case Intrinsic::stacksave: {
     if (BM->isAllowedToUseExtension(
@@ -4973,7 +4960,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
   auto MangledName = F->getName();
   StringRef DemangledName;
 
-  if (MangledName.startswith(SPCV_CAST) || MangledName == SAMPLER_INIT)
+  if (MangledName.starts_with(SPCV_CAST) || MangledName == SAMPLER_INIT)
     return oclTransSpvcCastSampler(CI, BB);
 
   if (oclIsBuiltin(MangledName, DemangledName) ||
@@ -5534,9 +5521,9 @@ bool LLVMToSPIRVBase::translate() {
   std::vector<Function *> Decls, Defs;
   for (auto &F : *M) {
     if (isBuiltinTransToInst(&F) || isBuiltinTransToExtInst(&F) ||
-        F.getName().startswith(SPCV_CAST) ||
-        F.getName().startswith(LLVM_MEMCPY) ||
-        F.getName().startswith(SAMPLER_INIT))
+        F.getName().starts_with(SPCV_CAST) ||
+        F.getName().starts_with(LLVM_MEMCPY) ||
+        F.getName().starts_with(SAMPLER_INIT))
       continue;
     if (F.isDeclaration())
       Decls.push_back(&F);
@@ -5745,8 +5732,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         unsigned NBarrierCnt = 0;
         N.get(NBarrierCnt);
-        BF->addExecutionMode(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt)));
         BM->addExtension(ExtensionID::SPV_INTEL_vector_compute);
         BM->addCapability(CapabilityVectorComputeINTEL);
       } break;
