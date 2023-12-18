@@ -305,12 +305,10 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
 // Add decoration if needed
 void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
                             SPIRVInstruction *I) {
-  const bool AllowFPMaxError =
-      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
-  if (!AllowFPMaxError)
+  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error))
     return;
-  if (auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
-      II && II->getCalledFunction()->getName().startswith("llvm.fpbuiltin")) {
+  auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
+  if (II && II->getCalledFunction()->getName().startswith("llvm.fpbuiltin")) {
     // Add a new decoration for llvm.builtin intrinsics, if needed
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
       double F = 0.0;
