@@ -1200,7 +1200,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   }
 
   if (auto *ConstI = dyn_cast<ConstantInt>(V)) {
-    unsigned BitWidth = ConstI->getType()->getBitWidth();
+    unsigned BitWidth = ConstI->getIntegerType()->getBitWidth();
     if (BitWidth > 64) {
       BM->getErrorLog().checkError(
           BM->isAllowedToUseExtension(
