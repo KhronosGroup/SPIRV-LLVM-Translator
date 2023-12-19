@@ -3451,12 +3451,14 @@ protected:
     return ExtensionID::SPV_INTEL_joint_matrix;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL);
+    return getVec(
+        internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL);
   }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase,       \
+  typedef SPIRVInstTemplate<                                                   \
+      SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase,                  \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
 _SPIRV_OP(CooperativeMatrixLoadChecked, true, 7, true, 7)
