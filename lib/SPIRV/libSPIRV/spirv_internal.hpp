@@ -79,6 +79,8 @@ enum InternalOp {
   IOpJointMatrixGetElementCoordINTEL = 6440,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
   IOpCooperativeMatrixPrefetchINTEL = 6449,
+  IOpCooperativeMatrixLoadCheckedINTEL = 6991,
+  IOpCooperativeMatrixStoreCheckedINTEL = 6992,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -104,6 +106,7 @@ enum InternalCapability {
   ICapFPArithmeticFenceINTEL = 6144,
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
+  ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6993,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
@@ -182,6 +185,10 @@ _SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
 _SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
+
+_SPIRV_OP(Capability, CooperativeMatrixCheckedInstructionsINTEL)
+_SPIRV_OP(Op, CooperativeMatrixLoadCheckedINTEL)
+_SPIRV_OP(Op, CooperativeMatrixStoreCheckedINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixInvocationInstructionsINTEL)
 _SPIRV_OP(Op, CooperativeMatrixApplyFunctionINTEL)
