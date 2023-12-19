@@ -2468,8 +2468,8 @@ public:
       break;
     case OpImageWrite:
       if (Ops.size() > 3) {
-        auto C = static_cast<SPIRVConstant *>(Ops[3])->getZExtIntValue();
-        if (C & ImageOperandsMask::ImageOperandsZeroExtendMask)
+        auto ImOpMask = static_cast<SPIRVConstant *>(Ops[3])->getZExtIntValue();
+        if (ImOpMask & ImageOperandsMask::ImageOperandsZeroExtendMask)
           addUnsignedArg(2);
       }
       break;

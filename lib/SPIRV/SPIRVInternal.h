@@ -919,6 +919,7 @@ std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
 /// \param OC opcode of corresponding built-in instruction. Used to gather info
 /// for unsigned/constant arguments.
 /// \param Types of arguments of SPIR-V built-in function
+/// \param Operands of SPIRVInstruction
 /// \return IA64 mangled name.
 std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
                                            spv::Op OC, ArrayRef<Type *> ArgTys,
