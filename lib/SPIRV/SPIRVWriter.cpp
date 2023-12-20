@@ -305,15 +305,14 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
 // Add decoration if needed
 void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
                             SPIRVInstruction *I) {
-  bool Allow_fp_max_error =
+  bool AllowFPMaxError =
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_max_error);
 
   auto *II = dyn_cast_or_null<IntrinsicInst>(Inst);
   if (II && II->getCalledFunction()->getName().starts_with("llvm.fpbuiltin")) {
     // Add a new decoration for llvm.builtin intrinsics, if needed
     if (II->getAttributes().hasFnAttr("fpbuiltin-max-error")) {
-      BM->getErrorLog().checkError(Allow_fp_max_error,
-                                   SPIRVEC_RequiresExtension,
+      BM->getErrorLog().checkError(AllowFPMaxError, SPIRVEC_RequiresExtension,
                                    "SPV_INTEL_fp_max_error\n");
       double F = 0.0;
       II->getAttributes()
@@ -324,7 +323,7 @@ void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
                      convertFloatToSPIRVWord(F));
     }
   } else if (auto *MD = Inst->getMetadata("fpmath")) {
-    if (!Allow_fp_max_error)
+    if (!AllowFPMaxError)
       return;
     auto *MDVal = mdconst::dyn_extract<ConstantFP>(MD->getOperand(0));
     double ValAsDouble = MDVal->getValue().convertToFloat();
