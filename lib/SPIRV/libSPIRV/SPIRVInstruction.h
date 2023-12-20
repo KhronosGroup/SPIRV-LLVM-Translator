@@ -3459,7 +3459,7 @@ protected:
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<                                                   \
       SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase,                  \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+      internal::Op##x##INTEL, __VA_ARGS__>                                     \
       SPIRV##x##INTEL;
 _SPIRV_OP(CooperativeMatrixLoadChecked, true, 7, true, 7)
 _SPIRV_OP(CooperativeMatrixStoreChecked, false, 6, true, 6)
