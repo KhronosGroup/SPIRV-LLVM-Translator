@@ -3816,7 +3816,7 @@ static GlobalVariable *mutateGlobalCtorDtors(GlobalVariable *GV) {
 }
 
 void SPIRVToLLVM::transGlobalCtorDtors(SPIRVVariable *BV) {
-  GlobalVariable *V = cast<GlobalVariable>(transValue(BV, nullptr, nullptr));
+  auto *V = cast<GlobalVariable>(transValue(BV, nullptr, nullptr));
   V = mutateGlobalCtorDtors(V);
   V->setLinkage(GlobalVariable::AppendingLinkage);
 }
