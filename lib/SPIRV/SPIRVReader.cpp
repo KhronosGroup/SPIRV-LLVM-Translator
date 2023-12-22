@@ -1331,39 +1331,6 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
   }
 }
 
-/// When spirv is generated from LLVM IR with opapque pointer enabled and then
-/// the spirv is translated to LLVM IR with typed pointer, function pointer is
-/// casted to i8* type in \p Ty and \p Initializer, which causes error in LLVM
-/// IR verifier. E.g.
-///   [1 x %0][%0 { i32 1, i8* bitcast (void ()* @ctor to i8*), i8* null }]
-/// This function removes the cast so that LLVM IR is valid.
-static void postProcGlobalCtorDtorTypeInit(Type *&Ty, Constant *&Initializer) {
-  auto *InitArr = cast<ConstantArray>(Initializer);
-  unsigned NumEltsInArr = InitArr->getType()->getNumElements();
-  assert(NumEltsInArr && "array is empty");
-  auto *CS = cast<ConstantStruct>(InitArr->getAggregateElement(0u));
-  assert(CS->getType()->getNumElements() == 3 && "expect 3 elements in struct");
-  auto *Elt1 = CS->getAggregateElement(1);
-  if (!isa<ConstantExpr>(Elt1))
-    return;
-  auto *StTy = CS->getType();
-  auto *NewStTy = StructType::create(Ty->getContext(),
-                                     {StTy->getElementType(0),
-                                      Elt1->stripPointerCasts()->getType(),
-                                      StTy->getElementType(2)},
-                                     StTy->getName(), StTy->isPacked());
-  Ty = ArrayType::get(NewStTy, NumEltsInArr);
-  SmallVector<Constant *, 4> ArrElts;
-  for (unsigned I = 0; I < NumEltsInArr; ++I) {
-    auto *CS = cast<ConstantStruct>(InitArr->getAggregateElement(I));
-    ArrElts.push_back(ConstantStruct::get(
-        NewStTy, {CS->getAggregateElement(0u),
-                  CS->getAggregateElement(1)->stripPointerCasts(),
-                  CS->getAggregateElement(2)}));
-  }
-  Initializer = ConstantArray::get(cast<ArrayType>(Ty), ArrElts);
-}
-
 /// For instructions, this function assumes they are created in order
 /// and appended to the given basic block. An instruction may use a
 /// instruction from another BB which has not been translated. Such
@@ -1589,28 +1556,20 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVBuiltinVariableKind BVKind;
     if (BVar->isBuiltin(&BVKind))
       BV->setName(prefixSPIRVName(SPIRVBuiltInNameMap::map(BVKind)));
-    bool IsCtorOrDtor = (BV->getName() == "llvm.global_ctors" ||
-                         BV->getName() == "llvm.global_dtors");
-    if (Init && IsCtorOrDtor) {
-      Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
-      postProcGlobalCtorDtorTypeInit(Ty, Initializer);
-    }
     auto LVar = new GlobalVariable(*M, Ty, IsConst, LinkageTy,
                                    /*Initializer=*/nullptr, BV->getName(), 0,
                                    GlobalVariable::NotThreadLocal, AddrSpace);
     auto Res = mapValue(BV, LVar);
-    if (Init) {
-      if (!IsCtorOrDtor)
-        Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
-    } else if (LinkageTy == GlobalValue::CommonLinkage) {
+    if (Init)
+      Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
+    else if (LinkageTy == GlobalValue::CommonLinkage)
       // In LLVM, variables with common linkage type must be initialized to 0.
       Initializer = Constant::getNullValue(Ty);
-    } else if (BS == SPIRVStorageClassKind::StorageClassWorkgroup) {
+    else if (BS == SPIRVStorageClassKind::StorageClassWorkgroup)
       Initializer = dyn_cast<Constant>(UndefValue::get(Ty));
-    } else if ((LinkageTy != GlobalValue::ExternalLinkage) &&
-               (BS == SPIRVStorageClassKind::StorageClassCrossWorkgroup)) {
+    else if ((LinkageTy != GlobalValue::ExternalLinkage) &&
+             (BS == SPIRVStorageClassKind::StorageClassCrossWorkgroup))
       Initializer = Constant::getNullValue(Ty);
-    }
 
     LVar->setUnnamedAddr((IsConst && Ty->isArrayTy() &&
                           Ty->getArrayElementType()->isIntegerTy(8))
@@ -3327,10 +3286,11 @@ bool SPIRVToLLVM::translate() {
 
   for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
     auto *BV = BM->getVariable(I);
-    if (BV->getStorageClass() != StorageClassFunction)
-      transValue(BV, nullptr, nullptr);
-    else
+    if (BV->getName() == "llvm.global_ctors" ||
+        BV->getName() == "llvm.global_dtors")
       transGlobalCtorDtors(BV);
+    else if (BV->getStorageClass() != StorageClassFunction)
+      transValue(BV, nullptr, nullptr);
   }
 
   // Then translate all debug instructions.
@@ -3809,13 +3769,56 @@ bool SPIRVToLLVM::transDecoration(SPIRVValue *BV, Value *V) {
   return true;
 }
 
-void SPIRVToLLVM::transGlobalCtorDtors(SPIRVVariable *BV) {
-  if (BV->getName() != "llvm.global_ctors" &&
-      BV->getName() != "llvm.global_dtors")
-    return;
+/// When spirv is generated from LLVM IR with opaque pointer enabled and then
+/// the spirv is translated to LLVM IR with typed pointer, function pointer is
+/// casted to i8* type in GlobalVariable \p GV, which causes error in LLVM IR
+/// verifier. E.g.
+///   [1 x %0][%0 { i32 1, i8* bitcast (void ()* @ctor to i8*), i8* null }]
+/// This function removes the cast so that LLVM IR is valid.
+static GlobalVariable *mutateGlobalCtorDtors(GlobalVariable *GV) {
+  if (!GV->hasInitializer())
+    return GV;
+  auto *InitArr = cast<ConstantArray>(GV->getInitializer());
+  unsigned NumEltsInArr = InitArr->getType()->getNumElements();
+  if (NumEltsInArr == 0)
+    return GV;
+  auto *CS = cast<ConstantStruct>(InitArr->getAggregateElement(0u));
+  auto *Elt1 = CS->getAggregateElement(1);
+  if (!isa<ConstantExpr>(Elt1))
+    return GV;
 
-  Value *V = transValue(BV, nullptr, nullptr);
-  cast<GlobalValue>(V)->setLinkage(GlobalValue::AppendingLinkage);
+  auto *STy = CS->getType();
+  assert(STy->getNumElements() == 3 &&
+         "expect 3 fields in global variable element struct type");
+  auto *NewSTy = StructType::create(GV->getContext(),
+                                    {STy->getElementType(0),
+                                     Elt1->stripPointerCasts()->getType(),
+                                     STy->getElementType(2)},
+                                    STy->getName(), STy->isPacked());
+  auto *NewTy = ArrayType::get(NewSTy, NumEltsInArr);
+  SmallVector<Constant *, 4> ArrElts;
+  for (unsigned I = 0; I < NumEltsInArr; ++I) {
+    auto *CS = cast<ConstantStruct>(InitArr->getAggregateElement(I));
+    ArrElts.push_back(ConstantStruct::get(
+        NewSTy, {CS->getAggregateElement(0u),
+                 CS->getAggregateElement(1)->stripPointerCasts(),
+                 CS->getAggregateElement(2)}));
+  }
+  auto *NewInitializer = ConstantArray::get(NewTy, ArrElts);
+  auto *NewGV = new GlobalVariable(
+      *GV->getParent(), NewTy, GV->isConstant(), GV->getLinkage(),
+      NewInitializer, "", 0, GV->getThreadLocalMode(), GV->getAddressSpace(),
+      GV->isExternallyInitialized());
+  NewGV->copyAttributesFrom(GV);
+  NewGV->takeName(GV);
+  GV->eraseFromParent();
+  return NewGV;
+}
+
+void SPIRVToLLVM::transGlobalCtorDtors(SPIRVVariable *BV) {
+  GlobalVariable *V = cast<GlobalVariable>(transValue(BV, nullptr, nullptr));
+  V = mutateGlobalCtorDtors(V);
+  V->setLinkage(GlobalVariable::AppendingLinkage);
 }
 
 void SPIRVToLLVM::createCXXStructor(const char *ListName,
