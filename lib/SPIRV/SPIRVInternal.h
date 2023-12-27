@@ -848,6 +848,9 @@ std::string getImageBaseTypeName(StringRef Name);
 /// Extract the image type descriptor from the given image type.
 SPIRVTypeImageDescriptor getImageDescriptor(Type *Ty);
 
+/// Return the index of image operands given an image op.
+size_t getImageOperandsIndex(Op OpCode);
+
 /// Check if access qualifier is encoded in the type name.
 bool hasAccessQualifiedName(StringRef TyName);
 

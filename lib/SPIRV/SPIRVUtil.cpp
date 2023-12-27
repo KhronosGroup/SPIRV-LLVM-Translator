@@ -1629,6 +1629,18 @@ std::string getImageBaseTypeName(StringRef Name) {
   return ImageTyName;
 }
 
+size_t getImageOperandsIndex(Op OpCode) {
+  switch (OpCode) {
+  case OpImageRead:
+  case OpImageSampleExplicitLod:
+    return 2;
+  case OpImageWrite:
+    return 3;
+  default:
+    return ~0U;
+  }
+}
+
 SPIRVTypeImageDescriptor getImageDescriptor(Type *Ty) {
   if (auto *TET = dyn_cast_or_null<TargetExtType>(Ty)) {
     auto IntParams = TET->int_params();
@@ -2466,13 +2478,16 @@ public:
     case OpSUDotAccSatKHR:
       addUnsignedArg(1);
       break;
-    case OpImageWrite:
-      if (Ops.size() > 3) {
-        auto ImOpMask = static_cast<SPIRVConstant *>(Ops[3])->getZExtIntValue();
+    case OpImageWrite: {
+      size_t Idx = getImageOperandsIndex(OC);
+      if (Ops.size() > Idx) {
+        auto ImOpMask =
+            static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
         if (ImOpMask & ImageOperandsMask::ImageOperandsZeroExtendMask)
           addUnsignedArg(2);
       }
       break;
+    }
     default:;
       // No special handling is needed
     }
