@@ -3390,7 +3390,6 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
     IsRetSigned = false;
     break;
   case OpImageRead:
-  case OpImageSampleImplicitLod:
   case OpImageSampleExplicitLod: {
     size_t Idx = getImageOperandsIndex(OC);
     if (auto Ops = BI->getOperands(); Ops.size() > Idx) {
