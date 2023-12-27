@@ -2481,9 +2481,8 @@ public:
     case OpImageWrite: {
       size_t Idx = getImageOperandsIndex(OC);
       if (Ops.size() > Idx) {
-        auto ImOpMask =
-            static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
-        if (ImOpMask & ImageOperandsMask::ImageOperandsZeroExtendMask)
+        auto ImOp = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
+        if (ImOp & ImageOperandsMask::ImageOperandsZeroExtendMask)
           addUnsignedArg(2);
       }
       break;

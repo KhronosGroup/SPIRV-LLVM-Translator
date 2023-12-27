@@ -3393,9 +3393,8 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpImageSampleExplicitLod: {
     size_t Idx = getImageOperandsIndex(OC);
     if (auto Ops = BI->getOperands(); Ops.size() > Idx) {
-      auto ImOpMask = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
-      IsRetSigned =
-          !(ImOpMask & ImageOperandsMask::ImageOperandsZeroExtendMask);
+      auto ImOp = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
+      IsRetSigned = !(ImOp & ImageOperandsMask::ImageOperandsZeroExtendMask);
     }
     break;
   }
