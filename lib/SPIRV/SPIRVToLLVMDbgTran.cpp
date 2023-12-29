@@ -1132,7 +1132,8 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
 
   DIExpression *DIExpr = nullptr;
   if (Ops.size() > DIExpressionIdx)
-    DIExpr = transDebugInst<DIExpression>(BM->get<SPIRVExtInst>(Ops[DIExpressionIdx]));
+    DIExpr = transDebugInst<DIExpression>(
+        BM->get<SPIRVExtInst>(Ops[DIExpressionIdx]));
 
   SPIRVWord Flags =
       getConstantValueOrLiteral(Ops, FlagsIdx, DebugInst->getExtSetKind());
