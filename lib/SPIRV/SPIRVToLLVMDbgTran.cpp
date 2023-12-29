@@ -1124,10 +1124,16 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   StringRef LinkageName = getString(Ops[LinkageNameIdx]);
 
   DIDerivedType *StaticMemberDecl = nullptr;
-  if (Ops.size() > MinOperandCount) {
+  if (Ops.size() > MinOperandCount &&
+      !getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[StaticMemberDeclarationIdx])) {
     StaticMemberDecl = transDebugInst<DIDerivedType>(
         BM->get<SPIRVExtInst>(Ops[StaticMemberDeclarationIdx]));
   }
+
+  DIExpression *DIExpr = nullptr;
+  if (Ops.size() > DIExpressionIdx)
+    DIExpr = transDebugInst<DIExpression>(BM->get<SPIRVExtInst>(Ops[DIExpressionIdx]));
+
   SPIRVWord Flags =
       getConstantValueOrLiteral(Ops, FlagsIdx, DebugInst->getExtSetKind());
   bool IsLocal = Flags & SPIRVDebug::FlagIsLocal;
@@ -1136,7 +1142,7 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   if (IsDefinition) {
     VarDecl = getDIBuilder(DebugInst).createGlobalVariableExpression(
         Parent, Name, LinkageName, File, LineNo, Ty, IsLocal, IsDefinition,
-        nullptr, StaticMemberDecl);
+        DIExpr, StaticMemberDecl);
   } else {
     VarDecl = getDIBuilder(DebugInst).createTempGlobalVariableFwdDecl(
         Parent, Name, LinkageName, File, LineNo, Ty, IsLocal, StaticMemberDecl);

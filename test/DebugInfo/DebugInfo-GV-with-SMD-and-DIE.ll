@@ -1,0 +1,41 @@
+;; Ensure that DIExpressions are preserved in DIGlobalVariableExpressions
+;; when a Static Member Declaration is also needed.
+;; This utilizes SPIRV DebugGlobalVariable's optional fields Static Member Declaration and DIExpression
+
+;; Declaration generated from:
+;;
+;; struct A {
+;;   static int fully_specified;
+;; };
+;;  
+;; int A::fully_specified;
+
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv -o %t.spv %t.bc
+; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll
+
+; CHECK: ![[#]] = !DIGlobalVariableExpression(var: ![[#GV:]], expr: !DIExpression(DW_OP_constu, 1, DW_OP_stack_value))
+; CHECK: ![[#GV]] = distinct !DIGlobalVariable(name: "true", scope: ![[#]], file: ![[#]], line: 3777, type: ![[#]], isLocal: true, isDefinition: true, declaration: ![[#DECLARATION:]])
+; CHECK: ![[#DECLARATION]] = !DIDerivedType(tag: DW_TAG_member, name: "fully_specified", scope: ![[#SCOPE:]], file: ![[#]], line: 2, baseType: ![[#BASETYPE:]], flags: DIFlagPublic | DIFlagStaticMember)
+; CHECK: ![[#SCOPE]] = {{.*}}!DICompositeType(tag: DW_TAG_structure_type, name: "A", file: ![[#]], line: 1, size: 8, flags: DIFlagTypePassByValue, elements: ![[#ELEMENTS:]], identifier: "_ZTS1A")
+; CHECK: ![[#ELEMENTS]] = !{![[#DECLARATION]]}
+; CHECK: ![[#BASETYPE]] = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 7, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "clang", emissionKind: FullDebug, globals: !4)
+!3 = !DIFile(filename: "test.cpp", directory: "/path/to")
+!4 = !{!5}
+!5 = !DIGlobalVariableExpression(var: !6, expr: !DIExpression(DW_OP_constu, 1, DW_OP_stack_value))
+!6 = distinct !DIGlobalVariable(name: "true", scope: !2, file: !3, line: 3777, type: !7, isLocal: true, isDefinition: true, declaration: !10)
+!7 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !8)
+!8 = !DIBasicType(name: "bool", size: 8, encoding: DW_ATE_boolean)
+!9 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!10 = !DIDerivedType(tag: DW_TAG_member, name: "fully_specified", scope: !11, file: !3, line: 2, baseType: !9, flags: DIFlagStaticMember)
+!11 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "A", file: !3, line: 1, size: 8, flags: DIFlagTypePassByValue, elements: !12, identifier: "_ZTS1A")
+!12 = !{!10}

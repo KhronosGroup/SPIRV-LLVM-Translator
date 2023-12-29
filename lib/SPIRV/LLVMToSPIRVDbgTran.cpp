@@ -1184,8 +1184,16 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
   Ops[FlagsIdx] = transDebugFlags(GV);
 
   // Check if GV is the definition of previously declared static member
-  if (DIDerivedType *StaticMember = GV->getStaticDataMemberDeclaration())
-    Ops.push_back(transDbgEntry(StaticMember)->getId());
+  DIDerivedType *StaticMember = GV->getStaticDataMemberDeclaration();
+  Ops.push_back(StaticMember ? transDbgEntry(StaticMember)->getId() :
+                getDebugInfoNoneId());
+
+  for (const DIGlobalVariableExpression *G : DIF.global_variables()) {
+    if (G->getVariable()==GV) {
+      Ops.push_back(transDbgExpression(G->getExpression())->getId());
+      break;
+    }
+  }
 
   if (isNonSemanticDebugInfo())
     transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});
