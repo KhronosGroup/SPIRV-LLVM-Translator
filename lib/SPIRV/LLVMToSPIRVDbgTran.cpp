@@ -1188,12 +1188,14 @@ LLVMToSPIRVDbgTran::transDbgGlobalVariable(const DIGlobalVariable *GV) {
   Ops.push_back(StaticMember ? transDbgEntry(StaticMember)->getId()
                              : getDebugInfoNoneId());
 
-  for (const DIGlobalVariableExpression *G : DIF.global_variables()) {
-    if (G->getVariable() == GV) {
-      Ops.push_back(transDbgExpression(G->getExpression())->getId());
-      break;
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+    // Check if GV has an associated GVE with a DIExpression
+    for (const DIGlobalVariableExpression *GVE : DIF.global_variables()) {
+      if (GVE->getVariable() == GV) {
+        Ops.push_back(transDbgExpression(GVE->getExpression())->getId());
+        break;
+      }
     }
-  }
 
   if (isNonSemanticDebugInfo())
     transformToConstant(Ops, {LineIdx, ColumnIdx, FlagsIdx});

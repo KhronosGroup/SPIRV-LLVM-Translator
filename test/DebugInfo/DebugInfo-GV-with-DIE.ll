@@ -2,7 +2,7 @@
 ;; This utilizes SPIRV DebugGlobalVariable's optional field DIExpression
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -o %t.spv %t.bc
+; RUN: llvm-spirv -o %t.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll

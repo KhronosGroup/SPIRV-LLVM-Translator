@@ -1131,7 +1131,8 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   }
 
   DIExpression *DIExpr = nullptr;
-  if (Ops.size() > DIExpressionIdx)
+  if (DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200 &&
+      Ops.size() > DIExpressionIdx)
     DIExpr = transDebugInst<DIExpression>(
         BM->get<SPIRVExtInst>(Ops[DIExpressionIdx]));
 
