@@ -117,6 +117,45 @@ static SPIRVWord convertFloatToSPIRVWord(float F) {
   return FPMaxError.Spir;
 }
 
+/// Return one of the SPIR-V 1.4 SignExtend or ZeroExtend image operands
+/// for a function name, or 0 if the function does not return or
+/// write an integer type.
+int getImageSignZeroExt(Function *F) {
+  bool IsSigned = false;
+  bool IsUnsigned = false;
+
+  ParamSignedness RetSignedness;
+  SmallVector<ParamSignedness, 4> ArgSignedness;
+  if (!getRetParamSignedness(F, RetSignedness, ArgSignedness))
+    return 0;
+
+  StringRef Name = F->getName();
+  Name = Name.substr(Name.find(kSPIRVName::Prefix));
+  Name.consume_front(kSPIRVName::Prefix);
+  if (Name.consume_front("ImageRead") ||
+      Name.consume_front("ImageSampleExplicitLod")) {
+    if (RetSignedness == ParamSignedness::Signed)
+      IsSigned = true;
+    else if (RetSignedness == ParamSignedness::Unsigned)
+      IsUnsigned = true;
+    else if (F->getReturnType()->isIntOrIntVectorTy() &&
+             Name.consume_front("_R")) {
+      // Return type is mangled after _R, e.g. _Z23__spirv_ImageRead_Rint2li
+      IsSigned = isMangledTypeSigned(Name[0]);
+      IsUnsigned = Name.starts_with("u");
+    }
+  } else if (Name.starts_with("ImageWrite")) {
+    IsSigned = (ArgSignedness[2] == ParamSignedness::Signed);
+    IsUnsigned = (ArgSignedness[2] == ParamSignedness::Unsigned);
+  }
+
+  if (IsSigned)
+    return ImageOperandsMask::ImageOperandsSignExtendMask;
+  if (IsUnsigned)
+    return ImageOperandsMask::ImageOperandsZeroExtendMask;
+  return 0;
+}
+
 } // namespace
 
 namespace SPIRV {
@@ -5888,45 +5927,6 @@ Op LLVMToSPIRVBase::transBoolOpCode(SPIRVValue *Opn, Op OC) {
     return OC;
   IntBoolOpMap::find(OC, &OC);
   return OC;
-}
-
-/// Return one of the SPIR-V 1.4 SignExtend or ZeroExtend image operands
-/// for a function name, or 0 if the function does not return or
-/// write an integer type.
-static int getImageSignZeroExt(Function *F) {
-  bool IsSigned = false;
-  bool IsUnsigned = false;
-
-  ParamSignedness RetSignedness;
-  SmallVector<ParamSignedness, 4> ArgSignedness;
-  if (!getRetParamSignedness(F, RetSignedness, ArgSignedness))
-    return 0;
-
-  StringRef Name = F->getName();
-  Name = Name.substr(Name.find(kSPIRVName::Prefix));
-  Name.consume_front(kSPIRVName::Prefix);
-  if (Name.consume_front("ImageRead") ||
-      Name.consume_front("ImageSampleExplicitLod")) {
-    if (RetSignedness == ParamSignedness::Signed)
-      IsSigned = true;
-    else if (RetSignedness == ParamSignedness::Unsigned)
-      IsUnsigned = true;
-    else if (F->getReturnType()->isIntOrIntVectorTy() &&
-             Name.consume_front("_R")) {
-      // Return type is mangled after _R, e.g. _Z23__spirv_ImageRead_Rint2li
-      IsSigned = isMangledTypeSigned(Name[0]);
-      IsUnsigned = Name.starts_with("u");
-    }
-  } else if (Name.starts_with("ImageWrite")) {
-    IsSigned = (ArgSignedness[2] == ParamSignedness::Signed);
-    IsUnsigned = (ArgSignedness[2] == ParamSignedness::Unsigned);
-  }
-
-  if (IsSigned)
-    return ImageOperandsMask::ImageOperandsSignExtendMask;
-  if (IsUnsigned)
-    return ImageOperandsMask::ImageOperandsZeroExtendMask;
-  return 0;
 }
 
 SPIRVInstruction *
