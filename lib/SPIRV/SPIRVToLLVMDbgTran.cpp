@@ -1124,8 +1124,7 @@ MDNode *SPIRVToLLVMDbgTran::transGlobalVariable(const SPIRVExtInst *DebugInst) {
   StringRef LinkageName = getString(Ops[LinkageNameIdx]);
 
   DIDerivedType *StaticMemberDecl = nullptr;
-  if (Ops.size() > MinOperandCount &&
-      !getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[StaticMemberDeclarationIdx])) {
+  if (Ops.size() > MinOperandCount) {
     StaticMemberDecl = transDebugInst<DIDerivedType>(
         BM->get<SPIRVExtInst>(Ops[StaticMemberDeclarationIdx]));
   }
