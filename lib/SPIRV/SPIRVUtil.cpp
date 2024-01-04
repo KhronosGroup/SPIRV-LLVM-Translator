@@ -903,8 +903,8 @@ bool getRetParamSignedness(Function *F, ParamSignedness &RetSignedness,
       StringRef Arg(stringify(Name));
       if (Arg.starts_with("unsigned"))
         return ParamSignedness::Unsigned;
-      else if (Arg.equals("char") || Arg.equals("short") || Arg.equals("int") ||
-               Arg.equals("long"))
+      if (Arg.equals("char") || Arg.equals("short") || Arg.equals("int") ||
+          Arg.equals("long"))
         return ParamSignedness::Signed;
     }
     return ParamSignedness::Unknown;
