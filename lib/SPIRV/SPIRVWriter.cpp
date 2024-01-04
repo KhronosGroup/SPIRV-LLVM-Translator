@@ -5890,6 +5890,45 @@ Op LLVMToSPIRVBase::transBoolOpCode(SPIRVValue *Opn, Op OC) {
   return OC;
 }
 
+/// Return one of the SPIR-V 1.4 SignExtend or ZeroExtend image operands
+/// for a function name, or 0 if the function does not return or
+/// write an integer type.
+static int getImageSignZeroExt(Function *F) {
+  bool IsSigned = false;
+  bool IsUnsigned = false;
+
+  ParamSignedness RetSignedness;
+  SmallVector<ParamSignedness, 4> ArgSignedness;
+  if (!getRetParamSignedness(F, RetSignedness, ArgSignedness))
+    return 0;
+
+  StringRef Name = F->getName();
+  Name = Name.substr(Name.find(kSPIRVName::Prefix));
+  Name.consume_front(kSPIRVName::Prefix);
+  if (Name.consume_front("ImageRead") ||
+      Name.consume_front("ImageSampleExplicitLod")) {
+    if (RetSignedness == ParamSignedness::Signed)
+      IsSigned = true;
+    else if (RetSignedness == ParamSignedness::Unsigned)
+      IsUnsigned = true;
+    else if (F->getReturnType()->isIntOrIntVectorTy() &&
+             Name.consume_front("_R")) {
+      // Return type is mangled after _R, e.g. _Z23__spirv_ImageRead_Rint2li
+      IsSigned = isMangledTypeSigned(Name[0]);
+      IsUnsigned = Name.starts_with("u");
+    }
+  } else if (Name.starts_with("ImageWrite")) {
+    IsSigned = (ArgSignedness[2] == ParamSignedness::Signed);
+    IsUnsigned = (ArgSignedness[2] == ParamSignedness::Unsigned);
+  }
+
+  if (IsSigned)
+    return ImageOperandsMask::ImageOperandsSignExtendMask;
+  if (IsUnsigned)
+    return ImageOperandsMask::ImageOperandsZeroExtendMask;
+  return 0;
+}
+
 SPIRVInstruction *
 LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                      SPIRVBasicBlock *BB) {
@@ -5931,6 +5970,32 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addSampledImageInst(transType(SampledImgTy),
                                    transValue(Image, BB),
                                    transValue(Sampler, BB), BB);
+  }
+  case OpImageRead:
+  case OpImageSampleExplicitLod:
+  case OpImageWrite: {
+    // Image Op needs handling of SignExtend or ZeroExtend image operands.
+    auto Args = getArguments(CI);
+    SPIRVType *SPRetTy =
+        CI->getType()->isVoidTy() ? nullptr : transScavengedType(CI);
+    auto *SPI = SPIRVInstTemplateBase::create(OC);
+    std::vector<SPIRVWord> SPArgs;
+    for (size_t I = 0, E = Args.size(); I != E; ++I) {
+      if (Args[I]->getType()->isPointerTy()) {
+        Value *Pointee = Args[I]->stripPointerCasts();
+        (void)Pointee;
+        assert((Pointee == Args[I] || !isa<Function>(Pointee)) &&
+               "Illegal use of a function pointer type");
+      }
+      SPArgs.push_back(SPI->isOperandLiteral(I)
+                           ? cast<ConstantInt>(Args[I])->getZExtValue()
+                           : transValue(Args[I], BB)->getId());
+    }
+    if (Args.size() <= getImageOperandsIndex(OC))
+      if (int SignZeroExt = getImageSignZeroExt(CI->getCalledFunction()))
+        SPArgs.push_back(SignZeroExt);
+    BM->addInstTemplate(SPI, SPArgs, BB, SPRetTy);
+    return SPI;
   }
   case OpFixedSqrtINTEL:
   case OpFixedRecipINTEL:
