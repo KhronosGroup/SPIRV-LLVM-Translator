@@ -577,7 +577,6 @@ enum {
   VariableIdx                = 7,
   FlagsIdx                   = 8,
   StaticMemberDeclarationIdx = 9,
-  DIExpressionIdx            = 10,
   MinOperandCount            = 9
 };
 }
