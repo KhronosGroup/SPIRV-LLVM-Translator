@@ -322,31 +322,6 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
     expandVIDWithSYCLTypeByValComp(F);
 }
 
-Value *SPIRVRegularizeLLVMBase::extendBitInstBoolArg(Instruction *II) {
-  IRBuilder<> Builder(II);
-  auto *ArgTy = II->getOperand(0)->getType();
-  Type *NewArgType = nullptr;
-  if (ArgTy->isIntegerTy()) {
-    NewArgType = Builder.getInt32Ty();
-  } else if (ArgTy->isVectorTy() &&
-             cast<VectorType>(ArgTy)->getElementType()->isIntegerTy()) {
-    unsigned NumElements = cast<FixedVectorType>(ArgTy)->getNumElements();
-    NewArgType = VectorType::get(Builder.getInt32Ty(), NumElements, false);
-  } else {
-    llvm_unreachable("Unexpected type");
-  }
-  auto *NewBase = Builder.CreateZExt(II->getOperand(0), NewArgType);
-  auto *NewShift = Builder.CreateZExt(II->getOperand(1), NewArgType);
-  switch (II->getOpcode()) {
-  case Instruction::LShr:
-    return Builder.CreateLShr(NewBase, NewShift);
-  case Instruction::Shl:
-    return Builder.CreateShl(NewBase, NewShift);
-  default:
-    return II;
-  }
-}
-
 bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
@@ -393,19 +368,69 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           }
         }
 
-        // Translator treats i1 as boolean, but bit instructions take
-        // a scalar/vector integers, so we have to extend such arguments
-        if (II.isLogicalShift() &&
-            II.getOperand(0)->getType()->isIntOrIntVectorTy(1)) {
-          auto *NewInst = extendBitInstBoolArg(&II);
-          for (auto *U : II.users()) {
-            if (cast<Instruction>(U)->getOpcode() == Instruction::ZExt) {
-              U->dropAllReferences();
-              U->replaceAllUsesWith(NewInst);
-              ToErase.push_back(cast<Instruction>(U));
+        if (II.isLogicalShift()) {
+          // Translator treats i1 as boolean, but bit instructions take
+          // a scalar/vector integers, so we have to extend such arguments.
+          // shl i1 %a %b and lshr i1 %a %b are now converted on:
+          // %0 = select i1 %a, i32 1, i32 0
+          // %1 = select i1 %b, i32 1, i32 0
+          // %2 = lshr i32 %0, %1
+          // if any other instruction other than zext was dependant:
+          // %3 = icmp ne i32 %2, 0
+          // which converts it back to i1 and replace original result with %3
+          // to dependant instructions.
+          if (II.getOperand(0)->getType()->isIntegerTy(1)) {
+            IRBuilder<> Builder(&II);
+            Value *ExtendedBase = Builder.CreateSelect(
+                II.getOperand(0), Builder.getInt(APInt(32, 1)),
+                Builder.getInt(APInt(32, 0)));
+            Value *ExtendedShift = Builder.CreateSelect(
+                II.getOperand(1), Builder.getInt(APInt(32, 1)),
+                Builder.getInt(APInt(32, 0)));
+            Value *ExtendedShiftedVal =
+                Builder.CreateLShr(ExtendedBase, ExtendedShift);
+            Value *CmpNEInst = nullptr;
+            SmallVector<User *, 8> Users(II.users());
+            for (User *U : Users) {
+              if (auto *UI = dyn_cast<Instruction>(U)) {
+                if (UI->getOpcode() == Instruction::ZExt) {
+                  UI->dropAllReferences();
+                  UI->replaceAllUsesWith(ExtendedShiftedVal);
+                  ToErase.push_back(UI);
+                  continue;
+                }
+              }
+              if (!CmpNEInst) {
+                Value *ConstZero = ConstantInt::get(Builder.getInt32Ty(), 0);
+                CmpNEInst = Builder.CreateICmpNE(ExtendedShiftedVal, ConstZero);
+              }
+              U->replaceUsesOfWith(&II, CmpNEInst);
             }
+            ToErase.push_back(&II);
+          } else if (II.getOperand(0)->getType()->isIntOrIntVectorTy(1)) {
+            IRBuilder<> Builder(&II);
+            unsigned NumElements =
+                cast<FixedVectorType>(II.getOperand(0)->getType())
+                    ->getNumElements();
+            Type *ExtendedTy =
+                VectorType::get(Builder.getInt32Ty(), NumElements, false);
+            Value *ExtendedBase =
+                Builder.CreateZExt(II.getOperand(0), ExtendedTy);
+            Value *ExtendedShift =
+                Builder.CreateZExt(II.getOperand(1), ExtendedTy);
+            Value *ExtendedShiftedVal =
+                Builder.CreateLShr(ExtendedBase, ExtendedShift);
+            SmallVector<User *, 16> Users(II.users());
+            for (auto *U : Users) {
+              if (cast<Instruction>(U)->getOpcode() == Instruction::ZExt) {
+                U->dropAllReferences();
+                U->replaceAllUsesWith(ExtendedShiftedVal);
+                ToErase.push_back(cast<Instruction>(U));
+                continue;
+              }
+            }
+            ToErase.push_back(&II);
           }
-          ToErase.push_back(&II);
         }
 
         // Remove optimization info not supported by SPIRV
