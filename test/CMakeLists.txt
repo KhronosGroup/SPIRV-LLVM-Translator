@@ -98,6 +98,11 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
       llvm-readobj
     )
   endif(NOT SPIRV_SKIP_DEBUG_INFO_TESTS)
+  if(LLVM_BUILD_SHARED_LIBS)
+    list(APPEND LLVM_SPIRV_TEST_DEPS
+      opt
+    )
+  endif()
 endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 
 
