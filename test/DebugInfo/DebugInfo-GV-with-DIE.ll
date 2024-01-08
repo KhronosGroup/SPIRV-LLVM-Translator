@@ -1,5 +1,6 @@
 ;; Ensure that DIExpressions are preserved in DIGlobalVariableExpressions
-;; This utilizes SPIRV DebugGlobalVariable's optional field DIExpression
+;; This utilizes SPIRV DebugGlobalVariable's Variable field to hold the
+;; DIExpression.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv -o %t.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200

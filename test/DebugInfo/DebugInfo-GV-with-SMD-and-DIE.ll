@@ -1,6 +1,7 @@
 ;; Ensure that DIExpressions are preserved in DIGlobalVariableExpressions
 ;; when a Static Member Declaration is also needed.
-;; This utilizes SPIRV DebugGlobalVariable's optional fields Static Member Declaration and DIExpression
+;; This utilizes SPIRV DebugGlobalVariable's Variable field to hold the
+;; DIExpression.
 
 ;; Declaration generated from:
 ;;
