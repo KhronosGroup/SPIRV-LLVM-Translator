@@ -1,5 +1,6 @@
 ; Exercise Value field in SPIRV TypeMember.
-; It is used to preserve DIDerivedType's extraData argument in LLVM IR.
+; It is used to preserve DIDerivedType's extraData argument in
+; LLVM IR when a DIFlagStaticMember is present.
 
 ; Original *.cpp source
 ; 
