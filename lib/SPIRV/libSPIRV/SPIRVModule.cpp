@@ -41,6 +41,7 @@
 #include "SPIRVAsm.h"
 #include "SPIRVDebug.h"
 #include "SPIRVEntry.h"
+#include "SPIRVEnum.h"
 #include "SPIRVExtInst.h"
 #include "SPIRVFunction.h"
 #include "SPIRVInstruction.h"
@@ -2129,15 +2130,35 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   MI.setAutoAddCapability(false);
   MI.setAutoAddExtensions(false);
 
-  SPIRVWord Magic;
-  Decoder >> Magic;
+  auto ReadSPIRVWord = [](std::istream &I) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+  if (SPIRVUseTextFormat) {
+    uint32_t W;
+    I >> skipcomment >> W;
+    SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = 0\n");
+    return W;
+  }
+#endif
+    uint32_t W;
+    I.read(reinterpret_cast<char *>(&W), sizeof(W));
+    SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = 0\n");
+    return W;
+  };
+
+  SPIRVWord Magic = ReadSPIRVWord(I);
   if (!M.getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
                                   "invalid magic number")) {
     M.setInvalid();
     return I;
   }
 
-  Decoder >> MI.SPIRVVersion;
+  MI.SPIRVVersion = ReadSPIRVWord(I);
+  if (!M.getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
+                                  "invalid magic number")) {
+    M.setInvalid();
+    return I;
+  };
+
   bool SPIRVVersionIsKnown =
       static_cast<uint32_t>(VersionNumber::MinimumVersion) <= MI.SPIRVVersion &&
       MI.SPIRVVersion <= static_cast<uint32_t>(VersionNumber::MaximumVersion);
@@ -2162,15 +2183,14 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
     return I;
   }
 
-  SPIRVWord Generator = 0;
-  Decoder >> Generator;
+  SPIRVWord Generator = ReadSPIRVWord(I);
   MI.GeneratorId = Generator >> 16;
   MI.GeneratorVer = Generator & 0xFFFF;
 
   // Bound for Id
-  Decoder >> MI.NextId;
+  MI.NextId = ReadSPIRVWord(I);
 
-  Decoder >> MI.InstSchema;
+  MI.InstSchema = static_cast<SPIRVInstructionSchemaKind>(ReadSPIRVWord(I));
   if (!M.getErrorLog().checkError(MI.InstSchema == SPIRVISCH_Default,
                                   SPIRVEC_InvalidModule,
                                   "unsupported instruction schema")) {
@@ -2178,11 +2198,11 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
     return I;
   }
 
-  while (Decoder.getWordCountAndOpCode() && M.isModuleValid()) {
-    SPIRVEntry *Entry = Decoder.getEntry();
-    if (Entry != nullptr)
-      M.add(Entry);
-  }
+ while (Decoder.getWordCountAndOpCode() && M.isModuleValid()) {
+   SPIRVEntry *Entry = Decoder.getEntry();
+   if (Entry != nullptr)
+     M.add(Entry);
+ }
 
   MI.resolveUnknownStructFields();
   return I;
