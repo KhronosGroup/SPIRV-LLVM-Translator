@@ -15,20 +15,32 @@
 
 ; RUN: llvm-as %s -o %t.bc
 
+; RUN: llvm-spirv -o %t.spt %t.bc -spirv-text
+; RUN: FileCheck %s --input-file %t.spt --check-prefix CHECK-SPIRV
 ; RUN: llvm-spirv -o %t.spv %t.bc
 ; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LLVM
 
+; RUN: llvm-spirv -o %t.100.spt %t.bc --spirv-debug-info-version=nonsemantic-shader-100 -spirv-text
+; RUN: FileCheck %s --input-file %t.100.spt --check-prefix CHECK-SPIRV-NONSEMANTIC
 ; RUN: llvm-spirv -o %t.100.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-100
 ; RUN: llvm-spirv -r -o %t.100.rev.bc %t.100.spv
 ; RUN: llvm-dis %t.100.rev.bc -o %t.100.rev.ll
 ; RUN: FileCheck %s --input-file %t.100.rev.ll --check-prefix CHECK-LLVM
 
+; RUN: llvm-spirv -o %t.200.spt %t.bc --spirv-debug-info-version=nonsemantic-shader-200 -spirv-text
+; RUN: FileCheck %s --input-file %t.200.spt --check-prefix CHECK-SPIRV-NONSEMANTIC
 ; RUN: llvm-spirv -o %t.200.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: llvm-spirv -r -o %t.200.rev.bc %t.200.spv
 ; RUN: llvm-dis %t.200.rev.bc -o %t.200.rev.ll
 ; RUN: FileCheck %s --input-file %t.200.rev.ll --check-prefix CHECK-LLVM
+
+; CHECK-SPIRV: Constant [[#]] [[#VALUE:]] 351
+; CHECK-SPIRV: DebugTypeMember [[#NAME:]] [[#TYPE:]] [[#SOURCE:]] [[#LINE:]] [[#COLUMN:]] [[#PARENT:]] [[#OFFSET:]] [[#SIZE:]] [[#FLAGS:]] [[#VALUE:]] {{$}}
+
+; CHECK-SPIRV-NONSEMANTIC: Constant [[#]] [[#VALUE:]] 351
+; CHECK-SPIRV-NONSEMANTIC: DebugTypeMember [[#NAME:]] [[#TYPE:]] [[#SOURCE:]] [[#LINE:]] [[#COLUMN:]] [[#OFFSET:]] [[#SIZE:]] [[#FLAGS:]] [[#VALUE:]] {{$}}
 
 ; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "anon_static_decl_var", scope: ![[#]], file: ![[#]], line: 5, baseType: ![[#]], flags: {{.*}}DIFlagStaticMember{{.*}}, extraData: i32 351)
 
