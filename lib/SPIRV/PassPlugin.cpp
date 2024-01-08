@@ -94,10 +94,6 @@ PassPluginLibraryInfo getSPIRVPluginInfo() {
                 PM.addPass(SPIRVLowerBoolPass());
                 return true;
               }
-              if (Name.equals("spirv-lower-sadd-with-overflow")) {
-                PM.addPass(SPIRVLowerSaddWithOverflowPass());
-                return true;
-              }
               if (Name.equals("spirv-lower-constexpr")) {
                 PM.addPass(SPIRVLowerConstExprPass());
                 return true;
@@ -108,6 +104,10 @@ PassPluginLibraryInfo getSPIRVPluginInfo() {
               }
               if (Name.equals("spirv-lower-ocl-blocks")) {
                 PM.addPass(SPIRVLowerOCLBlocksPass());
+                return true;
+              }
+              if (Name.equals("spirv-lower-sadd-with-overflow")) {
+                PM.addPass(SPIRVLowerSaddWithOverflowPass());
                 return true;
               }
               if (Name.equals("spirv-regularize-llvm")) {
