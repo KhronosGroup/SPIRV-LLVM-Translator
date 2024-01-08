@@ -20,10 +20,15 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck %s --input-file %t.rev.ll
 
-; RUN: llvm-spirv -o %t.ns.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
-; RUN: llvm-spirv -r -o %t.ns.rev.bc %t.ns.spv
-; RUN: llvm-dis %t.ns.rev.bc -o %t.ns.rev.ll
-; RUN: FileCheck %s --input-file %t.ns.rev.ll
+; RUN: llvm-spirv -o %t.100.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-100
+; RUN: llvm-spirv -r -o %t.100.rev.bc %t.100.spv
+; RUN: llvm-dis %t.100.rev.bc -o %t.100.rev.ll
+; RUN: FileCheck %s --input-file %t.100.rev.ll
+
+; RUN: llvm-spirv -o %t.200.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
+; RUN: llvm-spirv -r -o %t.200.rev.bc %t.200.spv
+; RUN: llvm-dis %t.200.rev.bc -o %t.200.rev.ll
+; RUN: FileCheck %s --input-file %t.200.rev.ll
 
 ; CHECK: !DIDerivedType(tag: DW_TAG_member, name: "anon_static_decl_var", scope: ![[#]], file: ![[#]], line: 5, baseType: ![[#]], flags: {{.*}}DIFlagStaticMember{{.*}}, extraData: i32 351)
 
