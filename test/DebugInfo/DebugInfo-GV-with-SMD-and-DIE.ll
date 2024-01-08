@@ -12,10 +12,17 @@
 ;; int A::fully_specified;
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -o %t.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
-; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
-; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck %s --input-file %t.rev.ll
+
+; RUN: llvm-spirv -o %t.100.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-100
+; RUN: llvm-spirv -r -o %t.100.rev.bc %t.100.spv
+; RUN: llvm-dis %t.100.rev.bc -o %t.100.rev.ll
+; RUN: FileCheck %s --input-file %t.100.rev.ll
+
+; RUN: llvm-spirv -o %t.200.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
+; RUN: llvm-spirv -r -o %t.200.rev.bc %t.200.spv
+; RUN: llvm-dis %t.200.rev.bc -o %t.200.rev.ll
+; RUN: FileCheck %s --input-file %t.200.rev.ll
+
 
 ; CHECK: ![[#]] = !DIGlobalVariableExpression(var: ![[#GV:]], expr: !DIExpression(DW_OP_constu, 1, DW_OP_stack_value))
 ; CHECK: ![[#GV]] = distinct !DIGlobalVariable(name: "true", scope: ![[#]], file: ![[#]], line: 3777, type: ![[#]], isLocal: true, isDefinition: true, declaration: ![[#DECLARATION:]])
