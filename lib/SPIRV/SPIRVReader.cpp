@@ -2243,8 +2243,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
       auto *VT = cast<FixedVectorType>(transType(CC->getType()));
       Value *NewVec = ConstantVector::getSplat(
-          VT->getElementCount(),
-          PoisonValue::get(VT->getElementType()));
+          VT->getElementCount(), PoisonValue::get(VT->getElementType()));
 
       for (size_t I = 0; I < Constituents.size(); I++) {
         NewVec = InsertElementInst::Create(NewVec, Constituents[I],
