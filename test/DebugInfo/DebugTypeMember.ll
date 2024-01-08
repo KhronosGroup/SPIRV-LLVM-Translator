@@ -18,19 +18,19 @@
 ; RUN: llvm-spirv -o %t.spv %t.bc
 ; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck %s --input-file %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LLVM
 
 ; RUN: llvm-spirv -o %t.100.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-100
 ; RUN: llvm-spirv -r -o %t.100.rev.bc %t.100.spv
 ; RUN: llvm-dis %t.100.rev.bc -o %t.100.rev.ll
-; RUN: FileCheck %s --input-file %t.100.rev.ll
+; RUN: FileCheck %s --input-file %t.100.rev.ll --check-prefix CHECK-LLVM
 
 ; RUN: llvm-spirv -o %t.200.spv %t.bc --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: llvm-spirv -r -o %t.200.rev.bc %t.200.spv
 ; RUN: llvm-dis %t.200.rev.bc -o %t.200.rev.ll
-; RUN: FileCheck %s --input-file %t.200.rev.ll
+; RUN: FileCheck %s --input-file %t.200.rev.ll --check-prefix CHECK-LLVM
 
-; CHECK: !DIDerivedType(tag: DW_TAG_member, name: "anon_static_decl_var", scope: ![[#]], file: ![[#]], line: 5, baseType: ![[#]], flags: {{.*}}DIFlagStaticMember{{.*}}, extraData: i32 351)
+; CHECK-LLVM: !DIDerivedType(tag: DW_TAG_member, name: "anon_static_decl_var", scope: ![[#]], file: ![[#]], line: 5, baseType: ![[#]], flags: {{.*}}DIFlagStaticMember{{.*}}, extraData: i32 351)
 
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "spirv-unknown-unknown"
