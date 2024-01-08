@@ -1,5 +1,7 @@
 llvm_canonicalize_cmake_booleans(SPIRV_SKIP_CLANG_BUILD)
 llvm_canonicalize_cmake_booleans(SPIRV_SKIP_DEBUG_INFO_TESTS)
+llvm_canonicalize_cmake_booleans(LLVM_BUILD_SHARED_LIBS)
+llvm_canonicalize_cmake_booleans(LLVM_SPIRV_BUILD_EXTERNAL)
 
 # required by lit.site.cfg.py.in
 get_target_property(LLVM_SPIRV_DIR llvm-spirv BINARY_DIR)
