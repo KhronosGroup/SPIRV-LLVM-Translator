@@ -4989,6 +4989,46 @@ bool llvm::getSpecConstInfo(std::istream &IS,
   return !IS.bad();
 }
 
+bool llvm::readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
+                           std::string &ErrMsg) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  BM->setAutoAddExtensions(false);
+  SPIRVDecoder D(IS, *BM);
+  SPIRVWord Magic;
+  SPIRVWord Buffer;
+  D >> Magic;
+  if (!BM->getErrorLog().checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
+                                    "Invalid magic number")) {
+    ErrMsg = "Invalid magic number";
+    return false;
+  }
+
+  D >> Buffer;
+  Result.Version = static_cast<VersionNumber>(Buffer);
+  // Skip the rest of the header
+  D.ignore(3);
+  while (D.getWordCountAndOpCode()) {
+    if (D.OpCode == OpCapability) {
+      if (D.getNextSPIRVWord(Buffer))
+        Result.Capabilities.push_back(Buffer);
+    } else if (D.OpCode == OpMemoryModel) {
+      if (D.getNextSPIRVWord(Buffer)) {
+        Result.AddressingModel = Buffer;
+        D.getNextSPIRVWord(Buffer);
+        Result.MemoryModel = Buffer;
+        return true;
+      }
+    } else if (D.OpCode == OpExtension || D.OpCode == OpExtInstImport) {
+      // There could be extra SPIR-V words in OpExtension or OpExtInstImport
+      D.ignoreInstruction();
+    } else {
+      break;
+    }
+  }
+  ErrMsg = "Memory model not specified";
+  return false;
+}
+
 // clang-format off
 const StringSet<> SPIRVToLLVM::BuiltInConstFunc {
   "convert", "get_work_dim", "get_global_size", "sub_group_ballot_bit_count",

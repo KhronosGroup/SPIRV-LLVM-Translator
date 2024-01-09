@@ -196,6 +196,11 @@ static cl::opt<bool> SpecConstInfo(
     cl::desc("Display id of constants available for specializaion and their "
              "size in bytes"));
 
+static cl::opt<bool> CapabilitiesInfo(
+    "capabilities-info",
+    cl::desc("Display id of contained capabilities in SPIR-V module, "
+             "version, memory model and addresing model"));
+
 static cl::opt<SPIRV::FPContractMode> FPCMode(
     "spirv-fp-contract", cl::desc("Set FP Contraction mode:"),
     cl::init(SPIRV::FPContractMode::On),
@@ -797,7 +802,7 @@ int main(int Ac, char **Av) {
     return convertSPIRV();
 #endif
 
-  if (!IsReverse && !IsRegularization && !SpecConstInfo)
+  if (!IsReverse && !IsRegularization && !SpecConstInfo && !CapabilitiesInfo)
     return convertLLVMToSPIRV(Opts);
 
   if (IsReverse && IsRegularization) {
@@ -823,6 +828,21 @@ int main(int Ac, char **Av) {
       std::cout << "Spec const id = " << SpecConst.ID
                 << ", size in bytes = " << SpecConst.Size
                 << ", type = " << SpecConst.Type << "\n";
+  }
+
+  if (CapabilitiesInfo) {
+    std::ifstream IFS(InputFile, std::ios::binary);
+    SPIRVHeaderData Data;
+    std::string ErrMsg;
+    if (!readSPIRVHeader(IFS, Data, ErrMsg)) {
+      std::cout << ErrMsg << std::endl;
+      return -1;
+    }
+    for (auto Capability : Data.Capabilities)
+      std::cout << "Capability id = " << Capability << std::endl;
+    std::cout << "Version = " << static_cast<uint32_t>(Data.Version)
+              << "\nMemory model = " << Data.MemoryModel
+              << "\nAddressing model = " << Data.AddressingModel << std::endl;
   }
   return 0;
 }

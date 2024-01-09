@@ -1,0 +1,49 @@
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv --capabilities-info %t.spv | FileCheck %s --check-prefix=CHECK-INFO
+
+; CHECK-INFO: Capability id = 4
+; CHECK-INFO: Capability id = 6
+; CHECK-INFO: Capability id = 5939
+; CHECK-INFO: Version = 65536
+; CHECK-INFO: Memory model = 2
+; CHECK-INFO: Addressing model = 2
+
+119734787 65536 393230 15 0
+2 Capability Addresses
+2 Capability Kernel
+2 Capability RuntimeAlignedAttributeINTEL
+8 Extension "SPV_INTEL_runtime_aligned"
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 2 2
+5 EntryPoint 6 8 "test"
+3 Source 0 0
+3 Name 9 "a"
+3 Name 10 "b"
+3 Name 11 "c"
+3 Name 12 "d"
+3 Name 13 "e"
+4 Name 14 "entry"
+
+4 Decorate 9 RuntimeAlignedINTEL 1
+4 Decorate 11 RuntimeAlignedINTEL 1
+4 TypeInt 3 32 0
+2 TypeVoid 2
+4 TypePointer 4 5 3
+3 TypeFloat 5 32
+4 TypePointer 6 5 5
+8 TypeFunction 7 2 4 6 4 3 3
+
+
+
+5 Function 2 8 0 7
+3 FunctionParameter 4 9
+3 FunctionParameter 6 10
+3 FunctionParameter 4 11
+3 FunctionParameter 3 12
+3 FunctionParameter 3 13
+
+2 Label 14
+1 Return
+
+1 FunctionEnd

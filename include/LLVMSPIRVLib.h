@@ -140,6 +140,18 @@ struct SpecConstInfoTy {
 bool getSpecConstInfo(std::istream &IS,
                       std::vector<SpecConstInfoTy> &SpecConstInfo);
 
+struct SPIRVHeaderData {
+  std::uint32_t MemoryModel = ~0U; // SPIRVWORD_MAX
+  std::uint32_t AddressingModel = ~0U;
+  SPIRV::VersionNumber Version = static_cast<SPIRV::VersionNumber>(~0U);
+  std::vector<std::uint32_t> Capabilities;
+};
+/// \brief Partially load SPIR-V from the stream and decode memory model,
+/// addressing model, version and capabilities.
+/// \return true if succeeds.
+bool readSPIRVHeader(std::istream &IS, SPIRVHeaderData &Result,
+                     std::string &ErrMsg);
+
 /// \brief Convert a SPIRVModule into LLVM IR.
 /// \returns null on failure.
 std::unique_ptr<Module>
