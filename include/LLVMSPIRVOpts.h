@@ -68,6 +68,11 @@ enum class VersionNumber : uint32_t {
   MaximumVersion = SPIRV_1_4
 };
 
+inline bool isSPIRVVersionKnown(uint32_t Ver) {
+  return Ver >= static_cast<uint32_t>(VersionNumber::MinimumVersion) &&
+         Ver <= static_cast<uint32_t>(VersionNumber::MaximumVersion);
+}
+
 enum class ExtensionID : uint32_t {
   First,
 #define EXT(X) X,

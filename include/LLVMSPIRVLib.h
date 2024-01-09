@@ -106,6 +106,21 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg);
 
+/// \brief Partially load SPIR-V from the stream and decode only selected
+/// for the report instructions, needed to retrieve general information
+/// about the module.
+/// \returns nullopt on failure.
+struct SPIRVModuleReport {
+  SPIRV::VersionNumber Version;
+  uint32_t MemoryModel;
+  uint32_t AddrModel;
+  std::vector<std::string> Extensions;
+  std::vector<std::string> ExtensionImports;
+  std::vector<uint32_t> Capabilities;
+};
+std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS);
+std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS, int &ErrCode);
+
 } // End namespace SPIRV
 
 namespace llvm {

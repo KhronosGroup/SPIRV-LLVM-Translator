@@ -2138,9 +2138,7 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   }
 
   Decoder >> MI.SPIRVVersion;
-  bool SPIRVVersionIsKnown =
-      static_cast<uint32_t>(VersionNumber::MinimumVersion) <= MI.SPIRVVersion &&
-      MI.SPIRVVersion <= static_cast<uint32_t>(VersionNumber::MaximumVersion);
+  bool SPIRVVersionIsKnown = isSPIRVVersionKnown(MI.SPIRVVersion);
   if (!M.getErrorLog().checkError(
           SPIRVVersionIsKnown, SPIRVEC_InvalidModule,
           "unsupported SPIR-V version number '" + to_string(MI.SPIRVVersion) +

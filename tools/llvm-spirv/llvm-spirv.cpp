@@ -196,6 +196,12 @@ static cl::opt<bool> SpecConstInfo(
     cl::desc("Display id of constants available for specializaion and their "
              "size in bytes"));
 
+static cl::opt<bool>
+    SPIRVPrintReport("spirv-print-report", cl::init(false),
+                     cl::desc("Display general information about the module "
+                              "(capabilities, extensions, version, memory model"
+                              " and addresing model)"));
+
 static cl::opt<SPIRV::FPContractMode> FPCMode(
     "spirv-fp-contract", cl::desc("Set FP Contraction mode:"),
     cl::init(SPIRV::FPContractMode::On),
@@ -797,7 +803,7 @@ int main(int Ac, char **Av) {
     return convertSPIRV();
 #endif
 
-  if (!IsReverse && !IsRegularization && !SpecConstInfo)
+  if (!IsReverse && !IsRegularization && !SpecConstInfo && !SPIRVPrintReport)
     return convertLLVMToSPIRV(Opts);
 
   if (IsReverse && IsRegularization) {
@@ -823,6 +829,35 @@ int main(int Ac, char **Av) {
       std::cout << "Spec const id = " << SpecConst.ID
                 << ", size in bytes = " << SpecConst.Size
                 << ", type = " << SpecConst.Type << "\n";
+  }
+
+  if (SPIRVPrintReport) {
+    std::ifstream IFS(InputFile, std::ios::binary);
+    int ErrCode = 0;
+    std::optional<SPIRV::SPIRVModuleReport> Report = SPIRV::getSpirvReport(IFS, ErrCode);
+    if (!Report) {
+      std::cout << "Invalid SPIR-V binary, error code is " << ErrCode << "\n";
+      return -1;
+    }
+
+    std::cout << "SPIR-V module report:"
+              << "\n Version: " << static_cast<uint32_t>(Report->Version)
+              << "\n Memory model: " << Report->MemoryModel
+              << "\n Addressing model: " << Report->AddrModel << "\n";
+
+    std::cout << " Number of capabilities: " << Report->Capabilities.size()
+              << "\n";
+    for (auto Capability : Report->Capabilities)
+      std::cout << "  Capability: " << Capability << "\n";
+
+    std::cout << " Number of extensions: " << Report->Extensions.size() << "\n";
+    for (auto Extension : Report->Extensions)
+      std::cout << "  Extension: " << Extension << "\n";
+
+    std::cout << " Number of extension imports: "
+              << Report->ExtensionImports.size() << "\n";
+    for (auto ExtensionImport : Report->ExtensionImports)
+      std::cout << "  Extension Import: " << ExtensionImport << "\n";
   }
   return 0;
 }
