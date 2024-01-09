@@ -5991,9 +5991,11 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                            ? cast<ConstantInt>(Args[I])->getZExtValue()
                            : transValue(Args[I], BB)->getId());
     }
-    if (Args.size() <= getImageOperandsIndex(OC))
-      if (int SignZeroExt = getImageSignZeroExt(CI->getCalledFunction()))
-        SPArgs.push_back(SignZeroExt);
+    if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
+      if (Args.size() <= getImageOperandsIndex(OC))
+        if (int SignZeroExt = getImageSignZeroExt(CI->getCalledFunction()))
+          SPArgs.push_back(SignZeroExt);
+    }
     BM->addInstTemplate(SPI, SPArgs, BB, SPRetTy);
     return SPI;
   }
