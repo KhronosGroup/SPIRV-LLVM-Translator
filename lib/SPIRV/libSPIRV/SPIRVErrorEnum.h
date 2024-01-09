@@ -26,4 +26,4 @@ _SPIRV_OP(InvalidMagicNumber,
           "Invalid Magic Number.")
 _SPIRV_OP(InvalidVersionNumber,
           "Invalid Version Number.")
-_SPIRV_OP(UnspecifiedMemoryModel, "Unspecified Memory Model")
+_SPIRV_OP(UnspecifiedMemoryModel, "Unspecified Memory Model.")

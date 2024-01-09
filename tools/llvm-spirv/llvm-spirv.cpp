@@ -200,7 +200,7 @@ static cl::opt<bool>
     SPIRVPrintReport("spirv-print-report", cl::init(false),
                      cl::desc("Display general information about the module "
                               "(capabilities, extensions, version, memory model"
-                              " and addresing model)"));
+                              " and addressing model)"));
 
 static cl::opt<SPIRV::FPContractMode> FPCMode(
     "spirv-fp-contract", cl::desc("Set FP Contraction mode:"),
