@@ -5982,8 +5982,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     std::vector<SPIRVWord> SPArgs;
     for (size_t I = 0, E = Args.size(); I != E; ++I) {
       if (Args[I]->getType()->isPointerTy()) {
-        Value *Pointee = Args[I]->stripPointerCasts();
-        (void)Pointee;
+        [[maybe_unused]] Value *Pointee = Args[I]->stripPointerCasts();
         assert((Pointee == Args[I] || !isa<Function>(Pointee)) &&
                "Illegal use of a function pointer type");
       }
