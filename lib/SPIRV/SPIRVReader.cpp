@@ -4908,7 +4908,7 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
 }
 
 constexpr std::string_view formatAddressingModel(uint32_t AddrModel) {
-  switch(AddrModel) {
+  switch (AddrModel) {
   case AddressingModelLogical:
     return "Logical";
   case AddressingModelPhysical32:
@@ -4923,7 +4923,7 @@ constexpr std::string_view formatAddressingModel(uint32_t AddrModel) {
 }
 
 constexpr std::string_view formatMemoryModel(uint32_t MemoryModel) {
-  switch(MemoryModel) {
+  switch (MemoryModel) {
   case MemoryModelSimple:
     return "Simple";
   case MemoryModelGLSL450:
@@ -4939,7 +4939,8 @@ constexpr std::string_view formatMemoryModel(uint32_t MemoryModel) {
 
 SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
   SPIRVModuleTextReport TextReport;
-  TextReport.Version = formatVersionNumber(static_cast<uint32_t>(Report.Version));
+  TextReport.Version =
+      formatVersionNumber(static_cast<uint32_t>(Report.Version));
   TextReport.AddrModel = formatAddressingModel(Report.AddrModel);
   TextReport.MemoryModel = formatMemoryModel(Report.MemoryModel);
   // format capability codes as strings
