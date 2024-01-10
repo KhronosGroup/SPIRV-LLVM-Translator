@@ -4866,7 +4866,7 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
     case OpExtInstImport:
       Name.clear();
       D >> Word >> Name;
-      Report.ExtensionImports.push_back(Name);
+      Report.ExtendedInstructionSets.push_back(Name);
       break;
     case OpMemoryModel:
       if (IsMemoryModelDefined) {
@@ -4952,7 +4952,7 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
   }
   // copy other string content as is
   TextReport.Extensions = Report.Extensions;
-  TextReport.ExtensionImports = Report.ExtensionImports;
+  TextReport.ExtendedInstructionSets = Report.ExtendedInstructionSets;
   return TextReport;
 }
 

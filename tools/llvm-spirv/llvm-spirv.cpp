@@ -860,9 +860,9 @@ int main(int Ac, char **Av) {
       std::cout << "  Extension: " << Extension << "\n";
 
     std::cout << " Number of extension imports: "
-              << TextReport.ExtensionImports.size() << "\n";
-    for (auto ExtensionImport : TextReport.ExtensionImports)
-      std::cout << "  Extension Import: " << ExtensionImport << "\n";
+              << TextReport.ExtendedInstructionSets.size() << "\n";
+    for (auto ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
+      std::cout << "  Extension Import: " << ExtendedInstructionSet << "\n";
   }
   return 0;
 }

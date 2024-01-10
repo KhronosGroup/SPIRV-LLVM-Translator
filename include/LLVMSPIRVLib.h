@@ -111,7 +111,7 @@ struct SPIRVModuleReport {
   uint32_t MemoryModel;
   uint32_t AddrModel;
   std::vector<std::string> Extensions;
-  std::vector<std::string> ExtensionImports;
+  std::vector<std::string> ExtendedInstructionSets;
   std::vector<uint32_t> Capabilities;
 };
 /// \brief Partially load SPIR-V from the stream and decode only selected
@@ -127,7 +127,7 @@ struct SPIRVModuleTextReport {
   std::string MemoryModel;
   std::string AddrModel;
   std::vector<std::string> Extensions;
-  std::vector<std::string> ExtensionImports;
+  std::vector<std::string> ExtendedInstructionSets;
   std::vector<std::string> Capabilities;
 };
 /// \brief Create a human-readable form of the report returned by a call to
