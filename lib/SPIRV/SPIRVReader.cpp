@@ -4846,15 +4846,13 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
     ErrCode = SPIRVEC_InvalidVersionNumber;
     return {};
   }
-  SPIRVModuleReport Report = {.Version =
-                                  static_cast<SPIRV::VersionNumber>(Word),
-                              .MemoryModel = MemoryModelMax,
-                              .AddrModel = AddressingModelMax};
+  SPIRVModuleReport Report;
+  Report.Version = static_cast<SPIRV::VersionNumber>(Word);
   // Skip: Generator’s magic number, Bound and Reserved word
   D.ignore(3);
 
-  for (bool IsLastInstr = false;
-       !IS.bad() && !IsLastInstr && D.getWordCountAndOpCode();) {
+  bool IsLastInstr = false, IsMemoryModelDefined = false;
+  while (!IS.bad() && !IsLastInstr && D.getWordCountAndOpCode()) {
     switch (D.OpCode) {
     case OpCapability:
       D >> Word;
@@ -4869,29 +4867,37 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
       Report.ExtensionImports.push_back(Name);
       break;
     case OpMemoryModel:
+      if (IsMemoryModelDefined) {
+        ErrCode = SPIRVEC_RepeatedMemoryModel;
+        return {};
+      }
       SPIRVAddressingModelKind AddrModel;
       SPIRVMemoryModelKind MemoryModel;
       D >> AddrModel >> MemoryModel;
       if (!isValid(AddrModel)) {
         ErrCode = SPIRVEC_InvalidAddressingModel;
         return {};
-      } else if (!isValid(MemoryModel)) {
+      }
+      if (!isValid(MemoryModel)) {
         ErrCode = SPIRVEC_InvalidMemoryModel;
         return {};
-      } else {
-        Report.MemoryModel = MemoryModel;
-        Report.AddrModel = AddrModel;
-        IsLastInstr = true;
       }
+      Report.MemoryModel = MemoryModel;
+      Report.AddrModel = AddrModel;
+      IsMemoryModelDefined = true;
+      // In this report we don't analyze instructions after OpMemoryModel
+      IsLastInstr = true;
       break;
     default:
+      // No more instructions to gather information about
       IsLastInstr = true;
     }
   }
   if (IS.bad()) {
     ErrCode = SPIRVEC_InvalidModule;
     return {};
-  } else if (Report.MemoryModel == MemoryModelMax) {
+  }
+  if (!IsMemoryModelDefined) {
     ErrCode = SPIRVEC_UnspecifiedMemoryModel;
     return {};
   }
