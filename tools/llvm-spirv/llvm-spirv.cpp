@@ -834,29 +834,34 @@ int main(int Ac, char **Av) {
   if (SPIRVPrintReport) {
     std::ifstream IFS(InputFile, std::ios::binary);
     int ErrCode = 0;
-    std::optional<SPIRV::SPIRVModuleReport> Report = SPIRV::getSpirvReport(IFS, ErrCode);
-    if (!Report) {
+    std::optional<SPIRV::SPIRVModuleReport> BinReport =
+        SPIRV::getSpirvReport(IFS, ErrCode);
+    if (!BinReport) {
       std::cout << "Invalid SPIR-V binary, error code is " << ErrCode << "\n";
       return -1;
     }
 
-    std::cout << "SPIR-V module report:"
-              << "\n Version: " << static_cast<uint32_t>(Report->Version)
-              << "\n Memory model: " << Report->MemoryModel
-              << "\n Addressing model: " << Report->AddrModel << "\n";
+    SPIRV::SPIRVModuleTextReport TextReport =
+        SPIRV::formatSpirvReport(BinReport.value());
 
-    std::cout << " Number of capabilities: " << Report->Capabilities.size()
+    std::cout << "SPIR-V module report:"
+              << "\n Version: " << TextReport.Version
+              << "\n Memory model: " << TextReport.MemoryModel
+              << "\n Addressing model: " << TextReport.AddrModel << "\n";
+
+    std::cout << " Number of capabilities: " << TextReport.Capabilities.size()
               << "\n";
-    for (auto Capability : Report->Capabilities)
+    for (auto Capability : TextReport.Capabilities)
       std::cout << "  Capability: " << Capability << "\n";
 
-    std::cout << " Number of extensions: " << Report->Extensions.size() << "\n";
-    for (auto Extension : Report->Extensions)
+    std::cout << " Number of extensions: " << TextReport.Extensions.size()
+              << "\n";
+    for (auto Extension : TextReport.Extensions)
       std::cout << "  Extension: " << Extension << "\n";
 
     std::cout << " Number of extension imports: "
-              << Report->ExtensionImports.size() << "\n";
-    for (auto ExtensionImport : Report->ExtensionImports)
+              << TextReport.ExtensionImports.size() << "\n";
+    for (auto ExtensionImport : TextReport.ExtensionImports)
       std::cout << "  Extension Import: " << ExtensionImport << "\n";
   }
   return 0;

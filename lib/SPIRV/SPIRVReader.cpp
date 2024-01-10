@@ -4859,10 +4859,12 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
       Report.Capabilities.push_back(Word);
       break;
     case OpExtension:
+      Name.clear();
       D >> Name;
       Report.Extensions.push_back(Name);
       break;
     case OpExtInstImport:
+      Name.clear();
       D >> Word >> Name;
       Report.ExtensionImports.push_back(Name);
       break;
@@ -4903,6 +4905,54 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
   }
   ErrCode = SPIRVEC_Success;
   return std::make_optional(std::move(Report));
+}
+
+constexpr std::string_view formatAddressingModel(uint32_t AddrModel) {
+  switch(AddrModel) {
+  case AddressingModelLogical:
+    return "Logical";
+  case AddressingModelPhysical32:
+    return "Physical32";
+  case AddressingModelPhysical64:
+    return "Physical64";
+  case AddressingModelPhysicalStorageBuffer64:
+    return "PhysicalStorageBuffer64";
+  default:
+    return "Unknown";
+  }
+}
+
+constexpr std::string_view formatMemoryModel(uint32_t MemoryModel) {
+  switch(MemoryModel) {
+  case MemoryModelSimple:
+    return "Simple";
+  case MemoryModelGLSL450:
+    return "GLSL450";
+  case MemoryModelOpenCL:
+    return "OpenCL";
+  case MemoryModelVulkan:
+    return "Vulkan";
+  default:
+    return "Unknown";
+  }
+}
+
+SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
+  SPIRVModuleTextReport TextReport;
+  TextReport.Version = formatVersionNumber(static_cast<uint32_t>(Report.Version));
+  TextReport.AddrModel = formatAddressingModel(Report.AddrModel);
+  TextReport.MemoryModel = formatMemoryModel(Report.MemoryModel);
+  // format capability codes as strings
+  std::string Name;
+  for (auto Capability : Report.Capabilities) {
+    bool Found = SPIRVCapabilityNameMap::find(
+        static_cast<SPIRVCapabilityKind>(Capability), &Name);
+    TextReport.Capabilities.push_back(Found ? Name : "Unknown");
+  }
+  // copy other string content as is
+  TextReport.Extensions = Report.Extensions;
+  TextReport.ExtensionImports = Report.ExtensionImports;
+  return TextReport;
 }
 
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
