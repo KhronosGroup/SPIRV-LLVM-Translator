@@ -5992,9 +5992,23 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                            : transValue(Args[I], BB)->getId());
     }
     if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
-      if (Args.size() <= getImageOperandsIndex(OC))
+      size_t ImOpIdx = getImageOperandsIndex(OC);
+      if (Args.size() > ImOpIdx) {
+        // Update existing ImageOperands with SignExtendMask/ZeroExtendMask.
+        if (auto *ImOp = dyn_cast<ConstantInt>(Args[ImOpIdx])) {
+          uint64_t ImOpVal = ImOp->getZExtValue();
+          unsigned SignZeroExtMasks =
+              ImageOperandsMask::ImageOperandsSignExtendMask |
+              ImageOperandsMask::ImageOperandsZeroExtendMask;
+          if (!(ImOpVal & SignZeroExtMasks))
+            if (int SignZeroExt = getImageSignZeroExt(CI->getCalledFunction()))
+              SPArgs[ImOpIdx] = ImOpVal | SignZeroExt;
+        }
+      } else {
+        // Add new ImageOperands argument.
         if (int SignZeroExt = getImageSignZeroExt(CI->getCalledFunction()))
           SPArgs.push_back(SignZeroExt);
+      }
     }
     BM->addInstTemplate(SPI, SPArgs, BB, SPRetTy);
     return SPI;
