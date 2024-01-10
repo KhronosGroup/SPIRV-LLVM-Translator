@@ -3931,6 +3931,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVTypePointer *ITy = static_cast<SPIRVTypePointer *>(transPointerType(
         II->getType()->getStructElementType(1), SPIRAS_Private));
 
+    assert(ITy->getElementType()->getBitWidth() == 32);
+
     SPIRVValue *IntVal =
         BM->addVariable(ITy, false, spv::internal::LinkageTypeInternal, nullptr,
                         "", ITy->getStorageClass(), BB);
