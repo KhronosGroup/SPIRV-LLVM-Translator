@@ -53,8 +53,8 @@ enum InternalSourceLanguageNonSemanticDI {
 };
 
 enum InternalLinkageType {
-  ILTPrev = LinkageTypeMax - 2,
-  ILTInternal
+    ILTPrev = LinkageTypeMax - 2,
+    ILTInternal
 };
 
 enum InternalOp {
@@ -77,6 +77,8 @@ enum InternalOp {
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
   IOpJointMatrixGetElementCoordINTEL = 6440,
+  IOpCooperativeMatrixApplyFunctionINTEL = 6448,
+  IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -84,6 +86,9 @@ enum InternalOp {
 enum InternalDecoration {
   IDecRuntimeAlignedINTEL = 5940,
   IDecCallableFunctionINTEL = 6087,
+  IDecHostAccessINTEL = 6147,
+  IDecInitModeINTEL = 6148,
+  IDecImplementInCSRINTEL = 6149,
   IDecArgumentAttributeINTEL = 6409,
   IDecCacheControlLoadINTEL = 6442,
   IDecCacheControlStoreINTEL = 6443
@@ -98,10 +103,12 @@ enum InternalCapability {
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapFPArithmeticFenceINTEL = 6144,
   ICapGlobalVariableDecorationsINTEL = 6146,
+  ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
+  ICapabilityCooperativeMatrixInvocationInstructionsINTEL = 6435,
   ICapabilityJointMatrixTF32ComponentTypeINTEL = 6436,
   ICapabilityJointMatrixBF16ComponentTypeINTEL = 6437,
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
@@ -173,6 +180,12 @@ _SPIRV_OP(Op, JointMatrixUUMadINTEL)
 _SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
 _SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
 
+_SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
+_SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
+
+_SPIRV_OP(Capability, CooperativeMatrixInvocationInstructionsINTEL)
+_SPIRV_OP(Op, CooperativeMatrixApplyFunctionINTEL)
+
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
 _SPIRV_OP(BuiltIn, GlobalHWThreadIDINTEL)
@@ -242,6 +255,12 @@ constexpr Decoration DecorationCallableFunctionINTEL =
     static_cast<Decoration>(IDecCallableFunctionINTEL);
 constexpr Decoration DecorationRuntimeAlignedINTEL =
     static_cast<Decoration>(IDecRuntimeAlignedINTEL);
+constexpr Decoration DecorationHostAccessINTEL =
+    static_cast<Decoration>(IDecHostAccessINTEL);
+constexpr Decoration DecorationInitModeINTEL =
+    static_cast<Decoration>(IDecInitModeINTEL);
+constexpr Decoration DecorationImplementInCSRINTEL =
+    static_cast<Decoration>(IDecImplementInCSRINTEL);
 constexpr Decoration DecorationArgumentAttributeINTEL =
     static_cast<Decoration>(IDecArgumentAttributeINTEL);
 constexpr Decoration DecorationCacheControlLoadINTEL =

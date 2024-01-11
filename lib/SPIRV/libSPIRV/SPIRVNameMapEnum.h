@@ -161,11 +161,15 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMergeINTEL, "MergeINTEL");
   add(DecorationBankBitsINTEL, "BankBitsINTEL");
   add(DecorationForcePow2DepthINTEL, "ForcePow2DepthINTEL");
+  add(DecorationStridesizeINTEL, "StridesizeINTEL");
+  add(DecorationWordsizeINTEL, "WordsizeINTEL");
+  add(DecorationTrueDualPortINTEL, "TrueDualPortINTEL");
   add(DecorationBurstCoalesceINTEL, "BurstCoalesceINTEL");
   add(DecorationCacheSizeINTEL, "CacheSizeINTEL");
   add(DecorationDontStaticallyCoalesceINTEL, "DontStaticallyCoalesceINTEL");
   add(DecorationPrefetchINTEL, "PrefetchINTEL");
   add(DecorationStallEnableINTEL, "StallEnableINTEL");
+  add(DecorationStallFreeINTEL, "StallFreeINTEL");
   add(DecorationFuseLoopsInFunctionINTEL, "FuseLoopsInFunctionINTEL");
   add(DecorationAliasScopeINTEL, "AliasScopeINTEL");
   add(DecorationNoAliasINTEL, "NoAliasINTEL");
@@ -207,6 +211,9 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   // From spirv_internal.hpp
   add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
   add(internal::DecorationRuntimeAlignedINTEL, "RuntimeAlignedINTEL");
+  add(internal::DecorationHostAccessINTEL, "HostAccessINTEL");
+  add(internal::DecorationInitModeINTEL, "InitModeINTEL");
+  add(internal::DecorationImplementInCSRINTEL, "ImplementInCSRINTEL");
   add(internal::DecorationArgumentAttributeINTEL, "ArgumentAttributeINTEL");
   add(internal::DecorationCacheControlLoadINTEL, "CacheControlLoadINTEL");
   add(internal::DecorationCacheControlStoreINTEL, "CacheControlStoreINTEL");
@@ -588,6 +595,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGAKernelAttributesv2INTEL, "FPGAKernelAttributesv2INTEL");
   add(CapabilityFPGAMemoryAccessesINTEL, "FPGAMemoryAccessesINTEL");
   add(CapabilityFPGAClusterAttributesINTEL, "FPGAClusterAttributesINTEL");
+  add(CapabilityFPGAClusterAttributesV2INTEL, "FPGAClusterAttributesV2INTEL");
   add(CapabilityLoopFuseINTEL, "LoopFuseINTEL");
   add(CapabilityMemoryAccessAliasingINTEL, "MemoryAccessAliasingINTEL");
   add(CapabilityFPGABufferLocationINTEL, "FPGABufferLocationINTEL");
@@ -612,7 +620,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGroupNonUniformRotateKHR, "GroupNonUniformRotateKHR");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
-  add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
+  add(CapabilityLongCompositesINTEL, "LongCompositesINTEL");
   add(CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
@@ -637,6 +645,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
   add(internal::CapabilityJointMatrixINTEL, "JointMatrixINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
+  add(internal::CapabilityGlobalVariableDecorationsINTEL,
+      "GlobalVariableDecorationsINTEL");
   add(internal::CapabilityComplexFloatMulDivINTEL, "ComplexFloatMulDivINTEL");
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
   add(internal::CapabilityTensorFloat32RoundingINTEL,
@@ -652,6 +662,10 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityJointMatrixPackedInt4ComponentTypeINTEL,
       "JointMatrixPackedInt4ComponentTypeINTEL");
   add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
+  add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
+      "CooperativeMatrixPrefetchINTEL");
+  add(internal::CapabilityCooperativeMatrixInvocationInstructionsINTEL,
+      "CooperativeMatrixInvocationInstructionsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

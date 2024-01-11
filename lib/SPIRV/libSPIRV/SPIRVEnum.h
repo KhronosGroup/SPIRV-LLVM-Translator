@@ -215,6 +215,10 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
                {internal::CapabilityJointMatrixINTEL});
   ADD_VEC_INIT(internal::CapabilityJointMatrixPackedInt4ComponentTypeINTEL,
                {internal::CapabilityJointMatrixINTEL});
+  ADD_VEC_INIT(internal::CapabilityCooperativeMatrixPrefetchINTEL,
+               {CapabilityCooperativeMatrixKHR});
+  ADD_VEC_INIT(internal::CapabilityCooperativeMatrixInvocationInstructionsINTEL,
+               {CapabilityCooperativeMatrixKHR});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {
@@ -416,6 +420,11 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationBankBitsINTEL, {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationForcePow2DepthINTEL,
                {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationStridesizeINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationWordsizeINTEL, {CapabilityFPGAMemoryAttributesINTEL});
+  ADD_VEC_INIT(DecorationTrueDualPortINTEL,
+               {CapabilityFPGAMemoryAttributesINTEL});
   ADD_VEC_INIT(DecorationReferencedIndirectlyINTEL,
                {CapabilityIndirectReferencesINTEL});
   ADD_VEC_INIT(DecorationIOPipeStorageINTEL, {CapabilityIOPipesINTEL});
@@ -453,6 +462,8 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
   ADD_VEC_INIT(DecorationMediaBlockIOINTEL, {CapabilityVectorComputeINTEL});
   ADD_VEC_INIT(DecorationStallEnableINTEL,
                {CapabilityFPGAClusterAttributesINTEL});
+  ADD_VEC_INIT(DecorationStallFreeINTEL,
+               {CapabilityFPGAClusterAttributesV2INTEL});
   ADD_VEC_INIT(DecorationFuseLoopsInFunctionINTEL, {CapabilityLoopFuseINTEL});
   ADD_VEC_INIT(DecorationMathOpDSPModeINTEL, {CapabilityFPGADSPControlINTEL});
   ADD_VEC_INIT(DecorationInitiationIntervalINTEL,
@@ -463,6 +474,12 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGAInvocationPipeliningAttributesINTEL});
   ADD_VEC_INIT(internal::DecorationRuntimeAlignedINTEL,
                {CapabilityRuntimeAlignedAttributeINTEL});
+  ADD_VEC_INIT(internal::DecorationHostAccessINTEL,
+               {internal::CapabilityGlobalVariableDecorationsINTEL});
+  ADD_VEC_INIT(internal::DecorationInitModeINTEL,
+               {internal::CapabilityGlobalVariableDecorationsINTEL});
+  ADD_VEC_INIT(internal::DecorationImplementInCSRINTEL,
+               {internal::CapabilityGlobalVariableDecorationsINTEL});
   ADD_VEC_INIT(DecorationHostAccessINTEL,
                {CapabilityGlobalVariableHostAccessINTEL});
   ADD_VEC_INIT(DecorationInitModeINTEL,
