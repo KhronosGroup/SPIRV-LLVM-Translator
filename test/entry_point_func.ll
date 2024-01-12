@@ -21,12 +21,14 @@ define spir_kernel void @callerfunction() {
 declare spir_kernel void @testdeclaration()
 
 ; Check there is an entrypoint and a function produced.
-; CHECK-SPIRV: EntryPoint 6 [[#CallerEn:]] "callerfunction"
 ; CHECK-SPIRV: EntryPoint 6 [[#TestEn:]] "testfunction"
+; CHECK-SPIRV: EntryPoint 6 [[#CallerEn:]] "callerfunction"
 ; CHECK-SPIRV: Name [[#TestDecl:]] "testdeclaration"
 ; CHECK-SPIRV: Name [[#TestFn:]] "testfunction"
+; CHECK-SPIRV: Name [[#CallerFn:]] "callerfunction"
 ; CHECK-SPIRV: Decorate [[#TestDecl]] LinkageAttributes "testdeclaration" Import
 ; CHECK-SPIRV: Decorate [[#TestFn]] LinkageAttributes "testfunction" Export
+; CHECK-SPIRV: Decorate [[#CallerFn]] LinkageAttributes "callerfunction" Export
 
 ; CHECK-SPIRV: Function [[#]] [[#TestDecl]] [[#]] [[#]]
 ; CHECK-SPIRV-EMPTY:
@@ -39,7 +41,7 @@ declare spir_kernel void @testdeclaration()
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: FunctionEnd
 
-; CHECK-SPIRV: Function [[#]] [[#CallerEn]] [[#]] [[#]]
+; CHECK-SPIRV: Function [[#]] [[#CallerFn]] [[#]] [[#]]
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
 ; CHECK-SPIRV-NEXT: FunctionCall [[#]] [[#]] [[#TestFn]]
@@ -53,6 +55,14 @@ declare spir_kernel void @testdeclaration()
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: Label
 ; CHECK-SPIRV-NEXT: FunctionCall [[#]] [[#]] [[#TestFn]]
+; CHECK-SPIRV-NEXT: Return
+; CHECK-SPIRV-EMPTY:
+; CHECK-SPIRV-NEXT: FunctionEnd
+
+; CHECK-SPIRV: Function [[#]] [[#CallerEn]] [[#]] [[#]]
+; CHECK-SPIRV-EMPTY:
+; CHECK-SPIRV-NEXT: Label
+; CHECK-SPIRV-NEXT: FunctionCall [[#]] [[#]] [[#CallerFn]]
 ; CHECK-SPIRV-NEXT: Return
 ; CHECK-SPIRV-EMPTY:
 ; CHECK-SPIRV-NEXT: FunctionEnd
