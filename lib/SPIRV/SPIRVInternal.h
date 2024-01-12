@@ -892,7 +892,7 @@ inline bool getParameterTypes(CallInst *CI, SmallVectorImpl<Type *> &ArgTys) {
   return getParameterTypes(CI->getCalledFunction(), ArgTys);
 }
 
-enum ParamSignedness { Signed = 0, Unsigned, Unknown };
+enum class ParamSignedness { Signed = 0, Unsigned, Unknown };
 
 /// Extract signedness of return type and parameter types from a mangled
 /// function name.
