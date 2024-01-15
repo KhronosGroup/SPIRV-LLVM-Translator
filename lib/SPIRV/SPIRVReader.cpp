@@ -4851,8 +4851,8 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
   // Skip: Generator’s magic number, Bound and Reserved word
   D.ignore(3);
 
-  bool IsLastInstr = false, IsMemoryModelDefined = false;
-  while (!IS.bad() && !IsLastInstr && D.getWordCountAndOpCode()) {
+  bool IsReportGenCompleted = false, IsMemoryModelDefined = false;
+  while (!IS.bad() && !IsReportGenCompleted && D.getWordCountAndOpCode()) {
     switch (D.OpCode) {
     case OpCapability:
       D >> Word;
@@ -4888,11 +4888,11 @@ std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
       Report.AddrModel = AddrModel;
       IsMemoryModelDefined = true;
       // In this report we don't analyze instructions after OpMemoryModel
-      IsLastInstr = true;
+      IsReportGenCompleted = true;
       break;
     default:
       // No more instructions to gather information about
-      IsLastInstr = true;
+      IsReportGenCompleted = true;
     }
   }
   if (IS.bad()) {
@@ -4950,7 +4950,7 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
         static_cast<SPIRVCapabilityKind>(Capability), &Name);
     TextReport.Capabilities.push_back(Found ? Name : "Unknown");
   }
-  // copy other string content as is
+  // other fields with string content can be copied as is
   TextReport.Extensions = Report.Extensions;
   TextReport.ExtendedInstructionSets = Report.ExtendedInstructionSets;
   return TextReport;
