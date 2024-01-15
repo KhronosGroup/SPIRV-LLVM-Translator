@@ -115,8 +115,8 @@ struct SPIRVModuleReport {
   std::vector<uint32_t> Capabilities;
 };
 /// \brief Partially load SPIR-V from the stream and decode only selected
-/// for the report instructions, needed to retrieve general information
-/// about the module. If this call returns failure, readSPIRVModule is
+/// instructions that are needed to retrieve general information
+/// about the module. If this call fails, readSPIRVModule is
 /// expected to fail as well.
 /// \returns nullopt on failure.
 std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS);
@@ -131,7 +131,7 @@ struct SPIRVModuleTextReport {
   std::vector<std::string> Capabilities;
 };
 /// \brief Create a human-readable form of the report returned by a call to
-/// getSpirvReport by decoding its binary fields
+/// getSpirvReport by decoding its binary fields.
 /// \returns String with the human-readable report.
 SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report);
 

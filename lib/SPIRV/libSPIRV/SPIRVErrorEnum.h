@@ -27,4 +27,4 @@ _SPIRV_OP(InvalidMagicNumber,
 _SPIRV_OP(InvalidVersionNumber,
           "Invalid Version Number.")
 _SPIRV_OP(UnspecifiedMemoryModel, "Unspecified Memory Model.")
-_SPIRV_OP(RepeatedMemoryModel, "Expects the single OpMemoryModel instruction.")
+_SPIRV_OP(RepeatedMemoryModel, "Expects a single OpMemoryModel instruction.")
