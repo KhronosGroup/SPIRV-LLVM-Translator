@@ -12,7 +12,7 @@
 ; CHECK-DAG: Number of extensions: 2
 ; CHECK-DAG: Extension: SPV_INTEL_loop_fuse
 ; CHECK-DAG: Extension: SPV_KHR_bit_instructions
-; CHECK-DAG: Number of extension imports: 1
+; CHECK-DAG: Number of extended instruction sets: 1
 ; CHECK-DAG: Extension Import: OpenCL.std
 
 119734787 65536 393230 10 0
