@@ -859,7 +859,7 @@ int main(int Ac, char **Av) {
     for (auto Extension : TextReport.Extensions)
       std::cout << "  Extension: " << Extension << "\n";
 
-    std::cout << " Number of extension imports: "
+    std::cout << " Number of extended instruction sets: "
               << TextReport.ExtendedInstructionSets.size() << "\n";
     for (auto ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
       std::cout << "  Extension Import: " << ExtendedInstructionSet << "\n";
