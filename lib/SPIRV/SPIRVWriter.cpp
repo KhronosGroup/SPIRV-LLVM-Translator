@@ -870,11 +870,10 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   BF->setFunctionControlMask(transFunctionControlMask(F));
   if (F->hasName()) {
     if (isKernel(F)) {
-      // If found, strip the entry point wrapper prefix as the runtime will
-      // be looking for this name
-      StringRef Name = F->getName();
-      (void) Name.consume_front(kSPIRVName::EntrypointPrefix);
-      BM->setName(BF, Name.str());
+      /* strip the prefix as the runtime will be looking for this name */
+      std::string Prefix = kSPIRVName::EntrypointPrefix;
+      std::string Name = F->getName().str();
+      BM->setName(BF, Name.substr(Prefix.size()));
     } else {
       if (isUniformGroupOperation(F))
         BM->getErrorLog().checkError(
@@ -5840,9 +5839,8 @@ bool LLVMToSPIRVBase::transMetadata() {
 // Work around to translate kernel_arg_type and kernel_arg_type_qual metadata
 static void transKernelArgTypeMD(SPIRVModule *BM, Function *F, MDNode *MD,
                                  std::string MDName) {
-  StringRef FunName = F->getName();
-  (void) FunName.consume_front(kSPIRVName::EntrypointPrefix);
-  std::string Name = FunName.str();
+  std::string Prefix = kSPIRVName::EntrypointPrefix;
+  std::string Name = F->getName().str().substr(Prefix.size());
   std::string KernelArgTypesMDStr = std::string(MDName) + "." + Name + ".";
   for (const auto &TyOp : MD->operands())
     KernelArgTypesMDStr += cast<MDString>(TyOp)->getString().str() + ",";
