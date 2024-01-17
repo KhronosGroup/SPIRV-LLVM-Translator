@@ -837,7 +837,7 @@ int main(int Ac, char **Av) {
     std::optional<SPIRV::SPIRVModuleReport> BinReport =
         SPIRV::getSpirvReport(IFS, ErrCode);
     if (!BinReport) {
-      std::cout << "Invalid SPIR-V binary, error code is " << ErrCode << "\n";
+      std::cerr << "Invalid SPIR-V binary, error code is " << ErrCode << "\n";
       return -1;
     }
 
@@ -851,17 +851,17 @@ int main(int Ac, char **Av) {
 
     std::cout << " Number of capabilities: " << TextReport.Capabilities.size()
               << "\n";
-    for (auto Capability : TextReport.Capabilities)
+    for (auto &Capability : TextReport.Capabilities)
       std::cout << "  Capability: " << Capability << "\n";
 
     std::cout << " Number of extensions: " << TextReport.Extensions.size()
               << "\n";
-    for (auto Extension : TextReport.Extensions)
+    for (auto &Extension : TextReport.Extensions)
       std::cout << "  Extension: " << Extension << "\n";
 
     std::cout << " Number of extended instruction sets: "
               << TextReport.ExtendedInstructionSets.size() << "\n";
-    for (auto ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
+    for (auto &ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
       std::cout << "  Extension Import: " << ExtendedInstructionSet << "\n";
   }
   return 0;
