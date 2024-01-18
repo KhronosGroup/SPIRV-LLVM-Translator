@@ -59,9 +59,9 @@ declare { <2 x double>, <2 x i32> } @llvm.frexp.v2f64.v2i32(<2 x double>)
 ; CHECK-LLVM: %[[Frexp:[a-z0-9]+]] = call spir_func float @_Z5frexpfPi(float -0.000000e+00, ptr %[[#IntVar]])
 ; CHECK-LLVM: %[[#LoadIntVar:]] = load i32, ptr %[[#IntVar]]
 ; CHECK-LLVM: %[[#AllocaStrFloatInt:]] = alloca %[[StrTypeFloatInt]]
-; CHECK-LLVM: %[[GEPFloat:[a-z0-9]+]] = getelementptr inbounds float, ptr %[[#AllocaStrFloatInt]], i32 0
+; CHECK-LLVM: %[[GEPFloat:[a-z0-9]+]] = getelementptr inbounds %structtype, ptr %[[#AllocaStrFloatInt]], i32 0, i32 0
 ; CHECK-LLVM: store float %[[Frexp]], ptr %[[GEPFloat]]
-; CHECK-LLVM: %[[GEPInt:[a-z0-9]+]] = getelementptr inbounds i32, ptr %[[#AllocaStrFloatInt]], i32 1
+; CHECK-LLVM: %[[GEPInt:[a-z0-9]+]] = getelementptr inbounds %structtype, ptr %[[#AllocaStrFloatInt]], i32 0, i32 1
 ; CHECK-LLVM: store i32 %[[#LoadIntVar]], ptr %[[GEPInt]]
 ; CHECK-LLVM: %[[LoadStrFloatInt:[a-z0-9]+]] = load %[[StrTypeFloatInt]], ptr %[[#AllocaStrFloatInt]]
 ; CHECK-LLVM: ret %[[StrTypeFloatInt]] %[[LoadStrFloatInt]]
@@ -110,9 +110,9 @@ define { <4 x float>, <4 x i32> } @frexp_nonsplat_vector() {
 ; CHECK-LLVM: %[[Frexp1:[a-z0-9.]+]] = call spir_func float @_Z5frexpfPi(float %[[Frexp0]], ptr %[[#IntVar2]])
 ; CHECK-LLVM: %[[#LoadIntVar:]] = load i32, ptr %[[#IntVar2]]
 ; CHECK-LLVM: %[[#AllocaStrFloatInt:]] = alloca %[[StrTypeFloatInt]]
-; CHECK-LLVM: %[[GEPFloat:[a-z0-9]+]] = getelementptr inbounds float, ptr %[[#AllocaStrFloatInt]], i32 0
+; CHECK-LLVM: %[[GEPFloat:[a-z0-9]+]] = getelementptr inbounds %structtype, ptr %[[#AllocaStrFloatInt]], i32 0, i32 0
 ; CHECK-LLVM: store float %[[Frexp1]], ptr %[[GEPFloat]]
-; CHECK-LLVM: %[[GEPInt:[a-z0-9]+]] = getelementptr inbounds i32, ptr %[[#AllocaStrFloatInt]], i32 1
+; CHECK-LLVM: %[[GEPInt:[a-z0-9]+]] = getelementptr inbounds %structtype, ptr %[[#AllocaStrFloatInt]], i32 0, i32 1
 ; CHECK-LLVM: store i32 %[[#LoadIntVar]], ptr %[[GEPInt]]
 ; CHECK-LLVM: %[[LoadStrFloatInt:[a-z0-9]+]] = load %[[StrTypeFloatInt]], ptr %[[#AllocaStrFloatInt]]
 ; CHECK-LLVM: ret %[[StrTypeFloatInt]] %[[LoadStrFloatInt]]
