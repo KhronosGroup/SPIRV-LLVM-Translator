@@ -3931,7 +3931,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVTypePointer *ITy = static_cast<SPIRVTypePointer *>(transPointerType(
         II->getType()->getStructElementType(1), SPIRAS_Private));
 
-    assert(ITy->getElementType()->getBitWidth() == 32);
+    assert(ITy->getElementType()->getBitWidth() == 32 &&
+           "Unexpected integer width in @llvm.frexp instrinsic");
 
     SPIRVValue *IntVal =
         BM->addVariable(ITy, false, spv::internal::LinkageTypeInternal, nullptr,
