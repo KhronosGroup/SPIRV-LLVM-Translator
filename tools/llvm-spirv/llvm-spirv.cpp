@@ -862,7 +862,7 @@ int main(int Ac, char **Av) {
     std::cout << " Number of extended instruction sets: "
               << TextReport.ExtendedInstructionSets.size() << "\n";
     for (auto &ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
-      std::cout << "  Extension Import: " << ExtendedInstructionSet << "\n";
+      std::cout << "  Extended Instruction Set: " << ExtendedInstructionSet << "\n";
   }
   return 0;
 }

@@ -13,7 +13,7 @@
 ; CHECK-DAG: Extension: SPV_INTEL_loop_fuse
 ; CHECK-DAG: Extension: SPV_KHR_bit_instructions
 ; CHECK-DAG: Number of extended instruction sets: 1
-; CHECK-DAG: Extension Import: OpenCL.std
+; CHECK-DAG: Extended Instruction Set: OpenCL.std
 
 119734787 65536 393230 10 0
 2 Capability Addresses

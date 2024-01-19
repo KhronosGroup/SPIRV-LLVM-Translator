@@ -1,4 +1,5 @@
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
+; The next line is to corrupt the binary file by changing its Magic Number
 ; RUN: echo "0" > %t_corrupted.spv && cat %t.spv >> %t_corrupted.spv
 ; RUN: not llvm-spirv --spirv-print-report %t_corrupted.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 ;
