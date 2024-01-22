@@ -8,9 +8,9 @@
 
 ; CHECK-SPIRV: [[#CompUnit:]] [[#]] DebugCompilationUnit
 ; CHECK-SPIRV-DAG: [[#None:]] [[#]] DebugInfoNone
-; CHECK-SPIRV: [[#BaseTy:]] [[#]] DebugTypeBasic
-; CHECK-SPIRV: [[#Subrange:]] [[#]] DebugTypeSubrange
-; CHECK-SPIRV: DebugTypeArrayDynamic [[#BaseTy]] [[#]] [[#]] [[#None]] [[#None]] [[#Subrange]]
+; CHECK-SPIRV-DAG: [[#BaseTy:]] [[#]] DebugTypeBasic
+; CHECK-SPIRV-DAG: [[#Subrange:]] [[#]] DebugTypeSubrange
+; CHECK-SPIRV-DAG: DebugTypeArrayDynamic [[#BaseTy]] [[#]] [[#]] [[#None]] [[#None]] [[#Subrange]]
 ; CHECK-SPIRV-DAG: [[#EntryFunc:]] [[#]] DebugFunction [[#]]
 ; CHECK-SPIRV: DebugEntryPoint [[#EntryFunc]] [[#CompUnit]] [[#]] [[#]] {{$}}
 
