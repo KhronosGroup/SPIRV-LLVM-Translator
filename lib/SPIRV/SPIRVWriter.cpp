@@ -273,7 +273,7 @@ static bool recursiveType(const StructType *ST, const Type *Ty) {
 
     if (auto *PtrTy = dyn_cast<PointerType>(Ty)) {
       auto &C = Ty->getContext();
-      Type *ElTy = PtrTy->isOpaquePointerTy() ? Type::getVoidTy(C)
+      Type *ElTy = PtrTy->isOpaquePointerTy() ? Type::getInt8Ty(C)
                                               : PtrTy->getPointerElementType();
       if (auto *FTy = dyn_cast<FunctionType>(ElTy)) {
         // If we have a function pointer, then argument types and return type of
@@ -337,7 +337,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   // (non-pointer) image or pipe type.
   if (T->isPointerTy()) {
     auto &C = T->getContext();
-    auto *ET = T->isOpaquePointerTy() ? Type::getVoidTy(C)
+    auto *ET = T->isOpaquePointerTy() ? Type::getInt8Ty(C)
                                       : T->getPointerElementType();
     auto AddrSpc = T->getPointerAddressSpace();
     return transPointerType(ET, AddrSpc);
@@ -731,7 +731,7 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
         if (Ty->isPointerTy()) {
           auto &C = Ty->getContext();
           PointeeTy = Ty->isOpaquePointerTy()
-                          ? Type::getVoidTy(C)
+                          ? Type::getInt8Ty(C)
                           : Ty->getNonOpaquePointerElementType();
         }
       }
