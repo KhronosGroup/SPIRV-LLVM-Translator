@@ -174,18 +174,6 @@ inline bool SPIRVErrorLog::checkError(bool Cond, SPIRVErrorCode ErrCode,
   return Cond;
 }
 
-// Return the message associated with the error code or empty string if the
-// error code is invalid
-inline std::string getErrorMessage(int ErrCode) {
-  std::string ErrorMessage;
-  // It's ok if the error code is not present in the map, so we don't need to
-  // check a value returned by the find() call. ErrorMessage just keeps its
-  // value if the error code is not found.
-  if (ErrCode >= SPIRVEC_Success && ErrCode < SPIRVEC_InternalMaxErrorCode)
-    SPIRVErrorMap::find(static_cast<SPIRVErrorCode>(ErrCode), &ErrorMessage);
-  return ErrorMessage;
-}
-
 } // namespace SPIRV
 
 #endif // SPIRV_LIBSPIRV_SPIRVERROR_H
