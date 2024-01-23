@@ -1361,7 +1361,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     auto *ET = TPT->getElementType();
     SPIR::ParamType *EPT = nullptr;
     if (isa<FunctionType>(ET)) {
-      assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
+      // TODO: implement support for non void function type
+      // assert(isVoidFuncTy(cast<FunctionType>(ET)) && "Not supported");
       EPT = new SPIR::BlockType;
     } else if (auto *StructTy = dyn_cast<StructType>(ET)) {
       LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
