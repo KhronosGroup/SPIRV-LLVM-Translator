@@ -10,7 +10,7 @@
 
 ; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 
-; CHECK-SPIRV: Capability LongConstantCompositeINTEL 
+; CHECK-SPIRV: Capability LongCompositesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_long_constant_composite"
 ; CHECK-SPIRV: TypeForwardPointer [[TFwdPtr:[0-9]+]]
 ; CHECK-SPIRV: TypeInt [[TInt:[0-9]+]]
