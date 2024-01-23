@@ -2116,6 +2116,19 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
   UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
 }
 
+<<<<<<< HEAD
+=======
+static std::string to_string(uint32_t Version) {
+  std::string Res(formatVersionNumber(Version));
+  Res += " (" + std::to_string(Version) + ")";
+  return Res;
+}
+
+static std::string to_string(VersionNumber Version) {
+  return to_string(static_cast<uint32_t>(Version));
+}
+
+>>>>>>> 918036c6 (add API call to display general information about the module (#2298))
 std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   SPIRVDecoder Decoder(I, M);
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
