@@ -2188,6 +2188,11 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                 OpExt->getExtensionName() + "'")) {
       M.setInvalid();
     }
+static std::string to_string(uint32_t Version) {
+  std::string Res(formatVersionNumber(Version));
+  Res += " (" + std::to_string(Version) + ")";
+  return Res;
+}
 
     if (!M.getErrorLog().checkError(
             M.isAllowedToUseExtension(ExtID), SPIRVEC_InvalidModule,
@@ -2229,6 +2234,7 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
     return I;
   }
 
+<<<<<<< HEAD
   if (!ErrorLog.checkError(Magic == MagicNumber, SPIRVEC_InvalidModule,
                            "invalid magic number")) {
     MI.setInvalid();
@@ -2244,6 +2250,11 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
 
   bool SPIRVVersionIsKnown = isSPIRVVersionKnown(MI.SPIRVVersion);
   if (!ErrorLog.checkError(
+=======
+  Decoder >> MI.SPIRVVersion;
+  bool SPIRVVersionIsKnown = isSPIRVVersionKnown(MI.SPIRVVersion);
+  if (!M.getErrorLog().checkError(
+>>>>>>> 918036c6 (add API call to display general information about the module (#2298))
           SPIRVVersionIsKnown, SPIRVEC_InvalidModule,
           "unsupported SPIR-V version number '" + to_string(MI.SPIRVVersion) +
               "'. Range of supported/known SPIR-V "
