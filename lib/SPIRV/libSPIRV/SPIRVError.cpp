@@ -1,4 +1,4 @@
-//===- SPIRVError.cpp - SPIR-V error code and checking ------------*- C++ -*-===//
+//===- SPIRVError.cpp - SPIR-V error code and checking ----------*- C++ -*-===//
 //
 //                     The LLVM/SPIRV Translator
 //
