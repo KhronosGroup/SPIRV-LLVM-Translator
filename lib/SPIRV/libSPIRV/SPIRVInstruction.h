@@ -3461,8 +3461,8 @@ protected:
       SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase,                  \
       internal::Op##x##INTEL, __VA_ARGS__>                                     \
       SPIRV##x##INTEL;
-_SPIRV_OP(CooperativeMatrixLoadChecked, true, 7, true, 7)
-_SPIRV_OP(CooperativeMatrixStoreChecked, false, 6, true, 6)
+_SPIRV_OP(CooperativeMatrixLoadChecked, true, 9, true, 7)
+_SPIRV_OP(CooperativeMatrixStoreChecked, false, 8, true, 8)
 #undef _SPIRV_OP
 
 class SPIRVCooperativeMatrixInvocationInstructionsINTELInstBase

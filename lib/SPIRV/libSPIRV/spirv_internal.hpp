@@ -70,6 +70,8 @@ enum InternalOp {
   IOpJointMatrixUUMadINTEL = 6130,
   IOpArithmeticFenceINTEL = 6145,
   IOpTypeJointMatrixINTELv2 = 6184,
+  IOpCooperativeMatrixLoadCheckedINTEL = 6193,
+  IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
@@ -79,8 +81,6 @@ enum InternalOp {
   IOpJointMatrixGetElementCoordINTEL = 6440,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
   IOpCooperativeMatrixPrefetchINTEL = 6449,
-  IOpCooperativeMatrixLoadCheckedINTEL = 6991,
-  IOpCooperativeMatrixStoreCheckedINTEL = 6992,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -105,8 +105,8 @@ enum InternalCapability {
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapFPArithmeticFenceINTEL = 6144,
   ICapGlobalVariableDecorationsINTEL = 6146,
+  ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
-  ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6993,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
