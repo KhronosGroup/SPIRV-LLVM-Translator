@@ -5838,8 +5838,6 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::internal::ExecutionModeNamedSubgroupSizeINTEL: {
         if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_subgroup_requirements))
           break;
-        BM->addExtension(ExtensionID::SPV_INTEL_subgroup_requirements);
-        BM->addCapability(spv::internal::CapabilitySubgroupRequirementsINTEL);
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
       } break;
       default:
