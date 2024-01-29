@@ -379,17 +379,25 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           // %3 = icmp ne i32 %2, 0
           // which converts it back to i1 and replace original result with %3
           // to dependant instructions.
-          if (II.getOperand(0)->getType()->isIntegerTy(1)) {
+          if (II.getOperand(0)->getType()->isIntOrIntVectorTy(1)) {
             IRBuilder<> Builder(&II);
-            Value *ExtendedBase = Builder.CreateSelect(
-                II.getOperand(0), Builder.getInt(APInt(32, 1)),
-                Builder.getInt(APInt(32, 0)));
-            Value *ExtendedShift = Builder.CreateSelect(
-                II.getOperand(1), Builder.getInt(APInt(32, 1)),
-                Builder.getInt(APInt(32, 0)));
+            Value *CmpNEInst = nullptr;
+            Constant *ConstZero = ConstantInt::get(Builder.getInt32Ty(), 0);
+            Constant *ConstOne = ConstantInt::get(Builder.getInt32Ty(), 1);
+            if (auto *VecTy =
+                  dyn_cast<FixedVectorType>(II.getOperand(0)->getType())) {
+              const unsigned NumElements = VecTy->getNumElements();
+              ConstZero =
+                  ConstantVector::getSplat(ElementCount::getFixed(NumElements), ConstZero);
+              ConstOne =
+                  ConstantVector::getSplat(ElementCount::getFixed(NumElements), ConstOne);
+            }
+            Value *ExtendedBase =
+                Builder.CreateSelect(II.getOperand(0), ConstOne, ConstZero);
+            Value *ExtendedShift =
+                Builder.CreateSelect(II.getOperand(1), ConstOne, ConstZero);
             Value *ExtendedShiftedVal =
                 Builder.CreateLShr(ExtendedBase, ExtendedShift);
-            Value *CmpNEInst = nullptr;
             SmallVector<User *, 8> Users(II.users());
             for (User *U : Users) {
               if (auto *UI = dyn_cast<Instruction>(U)) {
@@ -401,44 +409,12 @@ bool SPIRVRegularizeLLVMBase::regularize() {
                 }
               }
               if (!CmpNEInst) {
-                Value *ConstZero = ConstantInt::get(Builder.getInt32Ty(), 0);
                 CmpNEInst = Builder.CreateICmpNE(ExtendedShiftedVal, ConstZero);
               }
               U->replaceUsesOfWith(&II, CmpNEInst);
             }
             ToErase.push_back(&II);
-          } else if (II.getOperand(0)->getType()->isIntOrIntVectorTy(1)) {
-            IRBuilder<> Builder(&II);
-            unsigned NumElements =
-                cast<FixedVectorType>(II.getOperand(0)->getType())
-                    ->getNumElements();
-            Constant *ConstZero = ConstantInt::get(Builder.getInt32Ty(), 0);
-            Constant *ConstOne = ConstantInt::get(Builder.getInt32Ty(), 1);
-            SmallVector<Constant *, 16> Zeroes(NumElements, ConstZero);
-            SmallVector<Constant *, 16> Ones(NumElements, ConstOne);
-            Constant *VecZeroes = ConstantVector::get(Zeroes);
-            Constant *VecOnes = ConstantVector::get(Ones);
-            Value *ExtendedBase =
-                Builder.CreateSelect(II.getOperand(0), VecOnes, VecZeroes);
-            Value *ExtendedShift =
-                Builder.CreateSelect(II.getOperand(1), VecOnes, VecZeroes);
-            Value *ExtendedShiftedVal =
-                Builder.CreateLShr(ExtendedBase, ExtendedShift);
-            Value *CmpNEInst = nullptr;
-            SmallVector<User *, 16> Users(II.users());
-            for (auto *U : Users) {
-              if (cast<Instruction>(U)->getOpcode() == Instruction::ZExt) {
-                U->dropAllReferences();
-                U->replaceAllUsesWith(ExtendedShiftedVal);
-                ToErase.push_back(cast<Instruction>(U));
-                continue;
-              }
-              if (!CmpNEInst) {
-                CmpNEInst = Builder.CreateICmpNE(ExtendedShiftedVal, VecZeroes);
-              }
-              U->replaceUsesOfWith(&II, CmpNEInst);
-            }
-            ToErase.push_back(&II);
+          }
           }
         }
 
