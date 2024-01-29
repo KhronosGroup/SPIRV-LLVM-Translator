@@ -385,12 +385,12 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             Constant *ConstZero = ConstantInt::get(Builder.getInt32Ty(), 0);
             Constant *ConstOne = ConstantInt::get(Builder.getInt32Ty(), 1);
             if (auto *VecTy =
-                  dyn_cast<FixedVectorType>(II.getOperand(0)->getType())) {
+                    dyn_cast<FixedVectorType>(II.getOperand(0)->getType())) {
               const unsigned NumElements = VecTy->getNumElements();
-              ConstZero =
-                  ConstantVector::getSplat(ElementCount::getFixed(NumElements), ConstZero);
-              ConstOne =
-                  ConstantVector::getSplat(ElementCount::getFixed(NumElements), ConstOne);
+              ConstZero = ConstantVector::getSplat(
+                  ElementCount::getFixed(NumElements), ConstZero);
+              ConstOne = ConstantVector::getSplat(
+                  ElementCount::getFixed(NumElements), ConstOne);
             }
             Value *ExtendedBase =
                 Builder.CreateSelect(II.getOperand(0), ConstOne, ConstZero);
@@ -414,7 +414,6 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               U->replaceUsesOfWith(&II, CmpNEInst);
             }
             ToErase.push_back(&II);
-          }
           }
         }
 
