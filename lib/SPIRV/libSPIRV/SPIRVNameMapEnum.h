@@ -636,6 +636,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "TensorFloat32RoundingINTEL");
   add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
+  add(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL,
+      "CooperativeMatrixCheckedInstructionsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

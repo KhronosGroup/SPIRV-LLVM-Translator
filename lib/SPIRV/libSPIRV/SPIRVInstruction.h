@@ -3374,6 +3374,27 @@ _SPIRV_OP(JointMatrixUUMad, true, 7)
 _SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 #undef _SPIRV_OP
 
+class SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase
+    : public SPIRVInstTemplateBase {
+protected:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_joint_matrix;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(
+        internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<                                                   \
+      SPIRVCooperativeMatrixCheckedInstructionsINTELInstBase,                  \
+      internal::Op##x##INTEL, __VA_ARGS__>                                     \
+      SPIRV##x##INTEL;
+_SPIRV_OP(CooperativeMatrixLoadChecked, true, 9, true, 7)
+_SPIRV_OP(CooperativeMatrixStoreChecked, false, 8, true, 8)
+#undef _SPIRV_OP
+
 class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
