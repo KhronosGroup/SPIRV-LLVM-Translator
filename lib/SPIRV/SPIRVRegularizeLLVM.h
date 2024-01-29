@@ -51,11 +51,10 @@ public:
   // Lower functions
   bool regularize();
 
-  // SPIR-V disallows functions being entrypoints/kernels and called
-  // OpenCL doesn't. This adds a wrapper around the entry points that are called
-  // by other entry point that later SPIR-V writer renames. Caller of the
-  // function is responsible to fill 'CalledKernels' with such entry points.
-  void addKernelEntryPoint(const std::vector<Function *> &CalledKernels);
+  // SPIR-V disallows functions being entrypoints and called
+  // LLVM doesn't. This adds a wrapper around the entry point
+  // that later SPIR-V writer renames.
+  void addKernelEntryPoint(llvm::Module *M);
 
   /// Some LLVM intrinsics that have no SPIR-V counterpart may be wrapped in
   /// @spirv.llvm_intrinsic_* function. During reverse translation from SPIR-V
@@ -122,6 +121,8 @@ public:
     return runRegularizeLLVM(M) ? llvm::PreservedAnalyses::none()
                                 : llvm::PreservedAnalyses::all();
   }
+
+  static bool isRequired() { return true; }
 };
 
 class SPIRVRegularizeLLVMLegacy : public llvm::ModulePass,
