@@ -31,7 +31,7 @@
 ; CHECK-SPIRV: CooperativeMatrixStoreCheckedINTEL
 
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2) @_Z26__spirv_CompositeConstructi(i32 0)
-; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4ciiillli(ptr addrspace(4) %[[MatrixPtr:[%0-9a-z.]+]], i32 0, i32 0, i32 0, i64 12, i64 12, i64 %_arg_K, i32 1)
+; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4ciiillli(ptr addrspace(4) %[[MatrixPtr:[%0-9a-z.]+]], i32 0, i32 0, i32 0, i64 12, i64 48, i64 %_arg_K, i32 1)
 ; CHECK-LLVM: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__char_3_12_48_0(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0)
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 1) @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4ciiilll
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2) @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_3_12_48_0PU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_1PU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_2i(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) %{{.*}}, target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 1) %{{.*}}, target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2)
@@ -102,14 +102,14 @@ for.body.i:                                       ; preds = %for.cond.i
   %conv13.i = zext i32 %mul12.i to i64
   %add.ptr.i96.i = getelementptr inbounds i8, ptr addrspace(1) %add.ptr.i93.i, i64 %conv13.i
   %call.ascast.i66.i = addrspacecast ptr addrspace(1) %add.ptr.i96.i to ptr addrspace(4)
-  %call1.i.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(ptr addrspace(4) noundef %call.ascast.i66.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 12, i64 noundef 12, i64 noundef %_arg_K, i32 noundef 1) #4
+  %call1.i.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(ptr addrspace(4) noundef %call.ascast.i66.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 12, i64 noundef 48, i64 noundef %_arg_K, i32 noundef 1) #4
   %len = tail call spir_func noundef i32 @_Z34__spirv_CooperativeMatrixLengthKHR(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) %call1.i.i)
   %div20.i = mul nsw i32 %k.0.i, 12
   %conv21.i = zext i32 %div20.i to i64
   %mul23.i = mul i64 %mul22.i, %conv21.i
   %add.ptr.i111.i = getelementptr i8, ptr addrspace(1) %add.ptr.i108140.i, i64 %mul23.i
   %call.ascast.i72.i = addrspacecast ptr addrspace(1) %add.ptr.i111.i to ptr addrspace(4)
-  %call1.i73.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 1) @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(ptr addrspace(4) noundef %call.ascast.i72.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 12, i64 noundef 12, i64 noundef %mul22.i) #4
+  %call1.i73.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 1) @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(ptr addrspace(4) noundef %call.ascast.i72.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 48, i64 noundef 12, i64 noundef %mul22.i) #4
   call void @llvm.lifetime.start.p0(i64 8, ptr nonnull %ref.tmp29.sroa.0.i)
   %sub_c.sroa.0.i.0.sub_c.sroa.0.i.0.sub_c.sroa.0.0.sub_c.sroa.0.0.sub_c.sroa.0.0.125.i = load target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2), ptr %sub_c.sroa.0.i, align 8
   %call.i77.i = tail call spir_func noundef target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2) @_Z34__spirv_CooperativeMatrixMulAddKHR(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 48, 0) noundef %call1.i.i, target("spirv.CooperativeMatrixKHR", i8, 2, 48, 12, 1) noundef %call1.i73.i, target("spirv.CooperativeMatrixKHR", i32, 3, 12, 12, 2) noundef %sub_c.sroa.0.i.0.sub_c.sroa.0.i.0.sub_c.sroa.0.0.sub_c.sroa.0.0.sub_c.sroa.0.0.125.i, i32 noundef 12) #4
