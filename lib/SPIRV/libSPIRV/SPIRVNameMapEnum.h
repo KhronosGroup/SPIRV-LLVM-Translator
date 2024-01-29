@@ -668,6 +668,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "CooperativeMatrixInvocationInstructionsINTEL");
   add(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL,
       "CooperativeMatrixCheckedInstructionsINTEL");
+  add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 

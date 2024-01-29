@@ -660,6 +660,9 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   case ExecutionModeSchedulerTargetFmaxMhzINTEL:
   case ExecutionModeRegisterMapInterfaceINTEL:
   case ExecutionModeStreamingInterfaceINTEL:
+  case internal::ExecutionModeMaximumRegistersINTEL:
+  case internal::ExecutionModeMaximumRegistersIdINTEL:
+  case internal::ExecutionModeNamedMaximumRegistersINTEL:
     WordLiterals.resize(1);
     break;
   default:

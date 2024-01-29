@@ -4306,6 +4306,21 @@ bool SPIRVToLLVM::transMetadata() {
       F->setMetadata(kSPIR2MD::IntelFPGAIPInterface,
                      MDNode::get(*Context, InterfaceMDVec));
     }
+    // TODO: Also add support for ExecutionModeMaximumRegistersIdINTEL and
+    // ExecutionModeNamedMaximumRegistersINTEL
+    if (auto *EM = BF->getExecutionMode(
+            internal::ExecutionModeMaximumRegistersINTEL)) {
+      NamedMDNode *ExecModeMD =
+          M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
+
+      SmallVector<Metadata *, 4> ValueVec;
+      ValueVec.push_back(ConstantAsMetadata::get(F));
+      ValueVec.push_back(
+          ConstantAsMetadata::get(getUInt32(M, EM->getExecutionMode())));
+      ValueVec.push_back(
+          ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0])));
+      ExecModeMD->addOperand(MDNode::get(*Context, ValueVec));
+    }
   }
   NamedMDNode *MemoryModelMD =
       M->getOrInsertNamedMetadata(kSPIRVMD::MemoryModel);

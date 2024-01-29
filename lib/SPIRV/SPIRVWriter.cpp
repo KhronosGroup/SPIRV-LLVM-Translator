@@ -977,7 +977,8 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   transFPGAFunctionMetadata(BF, F);
 
-  transFunctionMetadataAsUserSemanticDecoration(BF, F);
+  // transFunctionMetadataAsUserSemanticDecoration(BF, F);
+  transFunctionMetadataAsExecutionMode(BF, F);
 
   transAuxDataInst(BF, F);
 
@@ -1116,6 +1117,30 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
   // In addition, process the decorations on the function
   if (auto *FDecoMD = F->getMetadata(SPIRV_MD_DECORATIONS))
     transMetadataDecorations(FDecoMD, BF);
+}
+
+void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
+                                                           Function *F) {
+  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
+    return;
+
+  // TODO: Also add support for ExecutionModeMaximumRegistersIdINTEL
+  if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
+    auto *RegisterAllocMode = RegisterAllocModeMD->getOperand(0).get();
+    if (isa<MDString>(RegisterAllocMode)) {
+      StringRef Str = getMDOperandAsString(RegisterAllocModeMD, 0);
+      if (Str == "AutoINTEL")
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF,
+            internal::ExecutionModeNamedMaximumRegistersINTEL, 0)));
+    } else {
+      int64_t RegisterAllocNodeMDOp =
+          mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
+      BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+          OpExecutionMode, BF, internal::ExecutionModeMaximumRegistersINTEL,
+          RegisterAllocNodeMDOp)));
+    }
+  }
 }
 
 void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
