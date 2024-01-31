@@ -4497,8 +4497,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       // different LSU parameters.
       addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
       addAnnotationDecorations(DecSubj, Decorations.CacheControlVec);
+      addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
       if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
-        addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
         addAnnotationDecorations(DecSubj, Decorations.LatencyControlVec);
       }
     }
