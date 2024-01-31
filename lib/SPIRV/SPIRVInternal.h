@@ -952,6 +952,9 @@ std::string getImageBaseTypeName(StringRef Name);
 /// Map OpenCL opaque type name to SPIR-V type name.
 std::string mapOCLTypeNameToSPIRV(StringRef Name, StringRef Acc = "");
 
+/// Return the index of image operands given an image op.
+size_t getImageOperandsIndex(Op OpCode);
+
 /// Check if access qualifier is encoded in the type name.
 bool hasAccessQualifiedName(StringRef TyName);
 
@@ -1024,9 +1027,11 @@ std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
 /// \param OC opcode of corresponding built-in instruction. Used to gather info
 /// for unsigned/constant arguments.
 /// \param Types of arguments of SPIR-V built-in function
+/// \param Ops Operands of SPIRVInstruction
 /// \return IA64 mangled name.
 std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
-                                           spv::Op OC, ArrayRef<Type *> ArgTys);
+                                           spv::Op OC, ArrayRef<Type *> ArgTys,
+                                           ArrayRef<SPIRVValue *> Ops);
 
 /// Cast a function to a void(void) funtion pointer.
 Constant *castToVoidFuncPtr(Function *F);
