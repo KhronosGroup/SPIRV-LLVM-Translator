@@ -3393,6 +3393,7 @@ protected:
       SPIRV##x##INTEL;
 _SPIRV_OP(CooperativeMatrixLoadChecked, true, 9, true, 7)
 _SPIRV_OP(CooperativeMatrixStoreChecked, false, 8, true, 8)
+_SPIRV_OP(CooperativeMatrixConstructChecked, true, 8)
 #undef _SPIRV_OP
 
 class SPIRVSplitBarrierINTELBase : public SPIRVInstTemplateBase {
