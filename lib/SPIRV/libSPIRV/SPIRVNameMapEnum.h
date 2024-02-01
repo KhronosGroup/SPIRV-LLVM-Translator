@@ -529,6 +529,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilitySignedZeroInfNanPreserve, "SignedZeroInfNanPreserve");
   add(CapabilityRoundingModeRTE, "RoundingModeRTE");
   add(CapabilityRoundingModeRTZ, "RoundingModeRTZ");
+  add(CapabilityShaderClockKHR, "ShaderClockKHR");
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
   add(CapabilityAtomicFloat32MinMaxEXT, "AtomicFloat32MinMaxEXT");
