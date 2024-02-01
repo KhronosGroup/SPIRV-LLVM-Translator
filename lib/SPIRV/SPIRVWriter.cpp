@@ -6343,6 +6343,31 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addCompositeConstructInst(transType(CI->getType()), Operands,
                                          BB);
   }
+  case OpGroupNonUniformShuffleDown: {
+    Function *F = CI->getCalledFunction();
+    Type *LResTy = F->getParamStructRetType(0);
+    SPIRVValue *InValue =
+        transValue(CI->getArgOperand(0)->stripPointerCasts(), BB);
+    SPIRVId ScopeId = transValue(CI->getArgOperand(1), BB)->getId();
+    SPIRVValue *Delta = transValue(CI->getArgOperand(3), BB);
+    if (StructType *St = dyn_cast<StructType>(LResTy)) {
+      SPIRVValue *Composite0 = BM->addLoadInst(InValue, {}, BB);
+      Type *MemberTy = St->getElementType(0);
+      SPIRVType *ElementTy = transType(MemberTy);
+      SPIRVValue *Element0 =
+          BM->addCompositeExtractInst(ElementTy, Composite0, {0}, BB);
+      SPIRVValue *Src =
+          BM->addGroupInst(OpGroupNonUniformShuffleDown, ElementTy,
+                           static_cast<Scope>(ScopeId), {Element0, Delta}, BB);
+      SPIRVValue *Composite1 =
+          BM->addCompositeInsertInst(Src, Composite0, {0}, BB);
+      return BM->addStoreInst(InValue, Composite1, {}, BB);
+    }
+    SPIRVValue *Src =
+        BM->addGroupInst(OpGroupNonUniformShuffleDown, transType(LResTy),
+                         static_cast<Scope>(ScopeId), {InValue, Delta}, BB);
+    return BM->addStoreInst(InValue, Src, {}, BB);
+  }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transScavengedType(CI),
