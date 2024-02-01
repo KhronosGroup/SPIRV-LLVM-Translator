@@ -164,7 +164,7 @@ void SPIRVImageInstBase::setOpWords(const std::vector<SPIRVWord> &OpsArg) {
   // If the Image Operands field has the SignExtend or ZeroExtend bit set,
   // either raise the minimum SPIR-V version to 1.4, or drop the operand
   // if SPIR-V 1.4 cannot be emitted.
-  size_t ImgOpsIndex = getImageOperandsIndex(OpCode);
+  const size_t ImgOpsIndex = getImageOperandsIndex(OpCode);
   if (ImgOpsIndex != ~0U && ImgOpsIndex < Ops.size()) {
     SPIRVWord ImgOps = Ops[ImgOpsIndex];
     unsigned SignZeroExtMasks = ImageOperandsMask::ImageOperandsSignExtendMask |

@@ -3312,7 +3312,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
     break;
   case OpImageRead:
   case OpImageSampleExplicitLod: {
-    size_t Idx = getImageOperandsIndex(OC);
+    const size_t Idx = getImageOperandsIndex(OC);
     auto Ops = BI->getOperands();
     if (Ops.size() > Idx) {
       auto ImOp = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
