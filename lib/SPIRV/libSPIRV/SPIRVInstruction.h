@@ -2814,9 +2814,6 @@ public:
 
 protected:
   void setOpWords(const std::vector<SPIRVWord> &OpsArg) override;
-
-private:
-  size_t getImageOperandsIndex() const;
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
