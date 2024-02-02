@@ -10,30 +10,42 @@
 ; CHECK: ![[#]] = !DIGlobalVariableExpression(var: ![[#GV:]], expr: !DIExpression(DW_OP_constu, 1, DW_OP_stack_value))
 ; CHECK: ![[#GV]] = distinct !DIGlobalVariable(name: "true", scope: ![[#]], file: ![[#]], line: 3777, type: ![[#]], isLocal: true, isDefinition: true)
 
-119734787 65792 393230 19 0 
+119734787 65536 393230 31 0 
 2 Capability Addresses 
 2 Capability Linkage 
 2 Capability Kernel 
+8 Extension "SPV_KHR_non_semantic_info" 
 5 ExtInstImport 1 "OpenCL.std" 
-8 ExtInstImport 2 "OpenCL.DebugInfo.100" 
+11 ExtInstImport 2 "NonSemantic.Shader.DebugInfo.100" 
 3 MemoryModel 2 2 
 7 String 3 "/path/to/test.cpp" 
-4 String 8 "bool" 
-4 String 13 "true" 
-3 String 14 "" 
+3 String 6 "0" 
+3 String 10 "" 
+4 String 16 "bool" 
+4 String 23 "true" 
 3 Source 0 0 
-8 ModuleProcessed "Debug info producer: clang" 
-4 TypeInt 9 32 0 
-4 Constant 9 10 8 
+4 TypeInt 7 32 0 
+4 Constant 7 8 1 
+4 Constant 7 12 65536 
+4 Constant 7 13 4 
+4 Constant 7 14 6 
+4 Constant 7 17 8 
+4 Constant 7 18 2 
+4 Constant 7 21 0 
+4 Constant 7 25 7 
+4 Constant 7 28 3777 
+4 Constant 7 29 12 
 2 TypeVoid 4 
 
-5 ExtInst 4 5 2 DebugInfoNone 
-7 ExtInst 4 6 2 DebugSource 3 5 
-9 ExtInst 4 7 2 DebugCompilationUnit 65536 4 6 6 
-8 ExtInst 4 11 2 DebugTypeBasic 8 10 2 
-7 ExtInst 4 12 2 DebugTypeQualifier 11 0 
-7 ExtInst 4 15 2 DebugOperation 8 1 
-6 ExtInst 4 16 2 DebugOperation 7 
-7 ExtInst 4 17 2 DebugExpression 15 16 
-14 ExtInst 4 18 2 DebugGlobalVariable 13 12 6 3777 0 7 14 17 12 
+6 ExtInst 4 5 2 DebugSource 3 
+7 ExtInst 4 9 2 DebugBuildIdentifier 6 8 
+6 ExtInst 4 11 2 DebugStoragePath 10 
+9 ExtInst 4 15 2 DebugCompilationUnit 12 13 5 14 
+5 ExtInst 4 19 2 DebugInfoNone 
+9 ExtInst 4 20 2 DebugTypeBasic 16 17 18 19 
+7 ExtInst 4 22 2 DebugTypeQualifier 20 21 
+7 ExtInst 4 24 2 DebugOperation 17 8 
+6 ExtInst 4 26 2 DebugOperation 25 
+7 ExtInst 4 27 2 DebugExpression 24 26 
+14 ExtInst 4 30 2 DebugGlobalVariable 23 22 5 28 21 15 10 27 29 
 
