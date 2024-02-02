@@ -1701,8 +1701,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpReturnValue: {
     auto *RV = static_cast<SPIRVReturnValue *>(BV);
     return mapValue(
-         BV, ReturnInst::Create(*Context,
-                                transValue(RV->getReturnValue(), F, BB), BB));
+        BV, ReturnInst::Create(*Context,
+                               transValue(RV->getReturnValue(), F, BB), BB));
   }
 
   case OpLifetimeStart: {
