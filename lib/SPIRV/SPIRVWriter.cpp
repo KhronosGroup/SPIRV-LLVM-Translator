@@ -3867,7 +3867,7 @@ bool checkMemUser(User *User) {
 }
 } // namespace
 
-bool allowDecorateWithBufferLocationOrLatencyControlINTEL(IntrinsicInst *II) {
+bool allowDecorateWithLatencyControlINTEL(IntrinsicInst *II) {
   for (auto *Inst : II->users()) {
     // if castInst, check Successors
     if (auto *Cast = dyn_cast<CastInst>(Inst)) {
@@ -4498,7 +4498,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
       addAnnotationDecorations(DecSubj, Decorations.CacheControlVec);
       addAnnotationDecorations(DecSubj, Decorations.BufferLocationVec);
-      if (allowDecorateWithBufferLocationOrLatencyControlINTEL(II)) {
+      if (allowDecorateWithLatencyControlINTEL(II)) {
         addAnnotationDecorations(DecSubj, Decorations.LatencyControlVec);
       }
     }
