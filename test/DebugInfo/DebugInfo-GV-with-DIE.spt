@@ -1,0 +1,39 @@
+;; Ensure that reverse translation can handle an Expression in
+;; a DebugGlobalVariable's Variable field.
+;; This is used to preserve a DIExpressions in a DIGlobalVariableExpression.
+
+; RUN: llvm-spirv -to-binary %s -o %t.spv
+; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll
+
+; CHECK: ![[#]] = !DIGlobalVariableExpression(var: ![[#GV:]], expr: !DIExpression(DW_OP_constu, 1, DW_OP_stack_value))
+; CHECK: ![[#GV]] = distinct !DIGlobalVariable(name: "true", scope: ![[#]], file: ![[#]], line: 3777, type: ![[#]], isLocal: true, isDefinition: true)
+
+119734787 65792 393230 19 0 
+2 Capability Addresses 
+2 Capability Linkage 
+2 Capability Kernel 
+5 ExtInstImport 1 "OpenCL.std" 
+8 ExtInstImport 2 "OpenCL.DebugInfo.100" 
+3 MemoryModel 2 2 
+7 String 3 "/path/to/test.cpp" 
+4 String 8 "bool" 
+4 String 13 "true" 
+3 String 14 "" 
+3 Source 0 0 
+8 ModuleProcessed "Debug info producer: clang" 
+4 TypeInt 9 32 0 
+4 Constant 9 10 8 
+2 TypeVoid 4 
+
+5 ExtInst 4 5 2 DebugInfoNone 
+7 ExtInst 4 6 2 DebugSource 3 5 
+9 ExtInst 4 7 2 DebugCompilationUnit 65536 4 6 6 
+8 ExtInst 4 11 2 DebugTypeBasic 8 10 2 
+7 ExtInst 4 12 2 DebugTypeQualifier 11 0 
+7 ExtInst 4 15 2 DebugOperation 8 1 
+6 ExtInst 4 16 2 DebugOperation 7 
+7 ExtInst 4 17 2 DebugExpression 15 16 
+14 ExtInst 4 18 2 DebugGlobalVariable 13 12 6 3777 0 7 14 17 12 
+
