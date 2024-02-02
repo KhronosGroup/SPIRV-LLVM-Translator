@@ -1700,9 +1700,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpReturnValue: {
     auto *RV = static_cast<SPIRVReturnValue *>(BV);
-    Value *RI = ReturnInst::Create(*Context,
-                                  transValue(RV->getReturnValue(), F, BB), BB);
-    return mapValue(BV, RI);
+    return mapValue(
+         BV, ReturnInst::Create(*Context,
+                                transValue(RV->getReturnValue(), F, BB), BB));
   }
 
   case OpLifetimeStart: {
@@ -3700,8 +3700,8 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       if (AnnotationCall && !AnnotationCall->getType()->isVoidTy())
         BaseInst = AnnotationCall;
       else
-        BaseInst = AL ? Builder.CreateBitCast(
-            V, Int8PtrTyPrivate, V->getName()) : Inst;
+        BaseInst = AL ? Builder.CreateBitCast(V, Int8PtrTyPrivate, V->getName())
+                      : Inst;
 
       // Try to find alloca instruction for statically allocated variables.
       // Alloca might be hidden by a couple of casts.
