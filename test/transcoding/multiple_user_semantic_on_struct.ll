@@ -108,7 +108,7 @@ define dso_local noundef i32 @main() #0 {
   ; CHECK-LLVM: %[[#GepMultiDec:]] = getelementptr inbounds %class.A, ptr %[[#ObjClassA]], i32 0, i32 1
   ; CHECK-LLVM: %[[#PtrAnnMultiDec:]] = call ptr @llvm.ptr.annotation{{.*}}(ptr %[[#GepMultiDec]], ptr @[[#Dec1]]
   ; CHECK-LLVM: %[[#PtrAnn2MultiDec:]] = call ptr @llvm.ptr.annotation{{.*}}(ptr %[[#PtrAnnMultiDec]], ptr @[[#Dec2]]
-  ; CHECK-LLVM: %[[#PtrAnn3MultiDec:]] = call ptr @llvm.ptr.annotation{{.*}}(ptr %[[#PtrAnnMultiDec]], ptr @[[#Dec3]]
+  ; CHECK-LLVM: %[[#PtrAnn3MultiDec:]] = call ptr @llvm.ptr.annotation{{.*}}(ptr %[[#PtrAnn2MultiDec]], ptr @[[#Dec3]]
   %15 = load i32, ptr %14, align 4
   ; CHECK-LLVM: %[[#LoadMultiDec:]] = bitcast ptr %[[#PtrAnnMultiDec]] to ptr
   ; CHECK-LLVM: %[[#LoadMultiDec2:]] = bitcast ptr %[[#LoadMultiDec]] to ptr
