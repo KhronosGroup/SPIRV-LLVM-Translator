@@ -3,10 +3,46 @@
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
-; R/UN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
+
+; Source SYCL code example
+; int mult(int a, int b) {
+;   return a * b;
+; }
+
+; class MyKernel;
+
+; int main() {
+;   constexpr int kN = 16384;
+;   // create the device queue
+;   sycl::queue q(testconfig_selector_v, &m_exception_handler);
+;   // create input and golden output data
+;   int *in = malloc_host<int>(kN, q);
+;   int *res = malloc_shared<int>(kN, q);
+;   std::vector<int> golden(kN);
+;   for (int i = 0; i < kN; i++) {
+;     in[i] = i;
+;     golden[i] = i * i;
+;   }
+;   ext::oneapi::experimental::properties kernel_properties{
+;       sycl::ext::intel::experimental::use_stall_enable_clusters};
+;   q.single_task<MyKernel>(kernel_properties, [=]() {
+;      sycl::ext::intel::experimental::task_sequence<
+;          mult, decltype(ext::oneapi::experimental::properties(
+;                    balanced, invocation_capacity<10>, response_capacity<17>,
+;                    pipelined<>, use_stall_enable_clusters))>
+;          myMultTask;
+;      for (int i = 0; i < kN; i++) {
+;        myMultTask.async(in[i], in[i]);
+;      }
+;      for (int i = 0; i < kN; i++) {
+;        res[i] = myMultTask.get();
+;      }
+;    }).wait_and_throw();
+;   return 0;
+; }
 
 ; CHECK-SPIRV: TypeInt [[#IntTy:]] 32 0
 ; CHECK-SPIRV: TypeTaskSequenceINTEL [[#TypeTS:]]
