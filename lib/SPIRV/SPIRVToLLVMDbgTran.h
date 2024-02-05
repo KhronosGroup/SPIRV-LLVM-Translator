@@ -84,21 +84,6 @@ public:
     return static_cast<T *>(Res);
   }
 
-  DIType *transDebugTypeInst(const SPIRVExtInst *DebugInst) {
-    assert((DebugInst->getExtSetKind() == SPIRVEIS_Debug ||
-            DebugInst->getExtSetKind() == SPIRVEIS_OpenCL_DebugInfo_100 ||
-            DebugInst->getExtSetKind() ==
-                SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
-            DebugInst->getExtSetKind() ==
-                SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
-           "Unexpected extended instruction set");
-    auto It = DebugTypeInstCache.find(DebugInst);
-    if (It != DebugTypeInstCache.end())
-      return static_cast<DIType *>(It->second);
-    MDNode *Res = transDebugTypeInstImpl(DebugInst);
-    DebugTypeInstCache[DebugInst] = Res;
-    return static_cast<DIType *>(Res);
-  }
   Instruction *transDebugIntrinsic(const SPIRVExtInst *DebugInst,
                                    BasicBlock *BB);
   void finalize();
@@ -114,8 +99,8 @@ private:
   unsigned getLineNo(const SPIRVEntry *E);
 
   MDNode *transDebugInstImpl(const SPIRVExtInst *DebugInst);
-  
-  MDNode *transDebugTypeInstImpl(const SPIRVExtInst *DebugInst);
+
+  DIType *transNonNullDebugType(const SPIRVExtInst *DebugInst);
 
   llvm::DebugLoc transDebugLocation(const SPIRVExtInst *DebugInst);
 
@@ -205,7 +190,6 @@ private:
   std::unordered_map<std::string, DIFile *> FileMap;
   std::unordered_map<SPIRVId, DISubprogram *> FuncMap;
   std::unordered_map<const SPIRVExtInst *, MDNode *> DebugInstCache;
-  std::unordered_map<const SPIRVExtInst *, MDNode *> DebugTypeInstCache;
 
   struct SplitFileName {
     SplitFileName(const std::string &FileName);
