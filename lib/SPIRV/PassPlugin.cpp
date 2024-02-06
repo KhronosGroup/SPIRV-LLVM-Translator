@@ -107,7 +107,7 @@ PassPluginLibraryInfo getSPIRVPluginInfo() {
                 return true;
               }
               if (Name.equals("spirv-lower-sadd-with-overflow")) {
-                PM.addPass(SPIRVLowerSaddWithOverflowPass(TranslatorOpts{}));
+                PM.addPass(SPIRVLowerLLVMIntrinsicPass(TranslatorOpts{}));
                 return true;
               }
               if (Name.equals("spirv-regularize-llvm")) {

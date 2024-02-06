@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflow.cpp - Lower llvm.sadd.with.overflow -----===//
+//===- SPIRVLowerSaddWithOverflow.cpp - Lower llvm-intrinsics -----===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -32,10 +32,10 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements lowering of llvm.sadd.with.overflow.* and
-// llvm.bitreverse.* into basic LLVM
-// operations. Probably, in the future this pass can be generalized for other
-// function calls
+// This file implements lowering of:
+//   llvm.sadd.with.overflow.*
+//   llvm.bitreverse.*
+// into basic LLVM operations.
 //
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "spv-lower-llvm_intrinsic"
@@ -82,7 +82,7 @@ const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 
 } // namespace
 
-void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
+void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
 
   std::string FuncName;
@@ -140,43 +140,43 @@ void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
     TheModuleIsModified = true;
 }
 
-bool SPIRVLowerSaddWithOverflowBase::runLowerSaddWithOverflow(Module &M) {
+bool SPIRVLowerLLVMIntrinsicBase::runLowerLLVMIntrinsic(Module &M) {
   Context = &M.getContext();
   Mod = &M;
   visit(M);
 
-  verifyRegularizationPass(M, "SPIRVLowerSaddWithOverflow");
+  verifyRegularizationPass(M, "SPIRVLowerLLVMIntrinsic");
   return TheModuleIsModified;
 }
 
-SPIRVLowerSaddWithOverflowPass::SPIRVLowerSaddWithOverflowPass(const SPIRV::TranslatorOpts &Opts) : SPIRVLowerSaddWithOverflowBase(Opts) {
+SPIRVLowerLLVMIntrinsicPass::SPIRVLowerLLVMIntrinsicPass(const SPIRV::TranslatorOpts &Opts) : SPIRVLowerLLVMIntrinsicBase(Opts) {
 }
 
 llvm::PreservedAnalyses
-SPIRVLowerSaddWithOverflowPass::run(llvm::Module &M,
+SPIRVLowerLLVMIntrinsicPass::run(llvm::Module &M,
                                     llvm::ModuleAnalysisManager &MAM) {
-  return runLowerSaddWithOverflow(M) ? llvm::PreservedAnalyses::none()
-                                     : llvm::PreservedAnalyses::all();
+  return runLowerLLVMIntrinsic(M) ? llvm::PreservedAnalyses::none()
+                                  : llvm::PreservedAnalyses::all();
 }
 
-SPIRVLowerSaddWithOverflowLegacy::SPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts)
-  : ModulePass(ID), SPIRVLowerSaddWithOverflowBase(Opts) {
-  initializeSPIRVLowerSaddWithOverflowLegacyPass(
+SPIRVLowerLLVMIntrinsicLegacy::SPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts)
+  : ModulePass(ID), SPIRVLowerLLVMIntrinsicBase(Opts) {
+  initializeSPIRVLowerLLVMIntrinsicLegacyPass(
       *PassRegistry::getPassRegistry());
 }
 
-bool SPIRVLowerSaddWithOverflowLegacy::runOnModule(Module &M) {
-  return runLowerSaddWithOverflow(M);
+bool SPIRVLowerLLVMIntrinsicLegacy::runOnModule(Module &M) {
+  return runLowerLLVMIntrinsic(M);
 }
 
-char SPIRVLowerSaddWithOverflowLegacy::ID = 0;
+char SPIRVLowerLLVMIntrinsicLegacy::ID = 0;
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVLowerSaddWithOverflowLegacy,
-                "spv-lower-llvm_sadd_with_overflow",
-                "Lower llvm.sadd.with.overflow.* intrinsics", false, false)
+INITIALIZE_PASS(SPIRVLowerLLVMIntrinsicLegacy,
+                "spv-lower-llvm-intrinsic",
+                "Lower llvm intrinsics", false, false)
 
-ModulePass *llvm::createSPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts) {
-  return new SPIRVLowerSaddWithOverflowLegacy(Opts);
+ModulePass *llvm::createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts) {
+  return new SPIRVLowerLLVMIntrinsicLegacy(Opts);
 }

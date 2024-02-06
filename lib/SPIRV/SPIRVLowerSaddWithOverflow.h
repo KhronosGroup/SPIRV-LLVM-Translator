@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflowBase.h - sadd lowering  --------*- C++ -*-===//
+//===- SPIRVLowerSaddWithOverflowBase.h - llvm-intrinsic lowering  --------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -32,8 +32,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
-#define SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
+#ifndef SPIRV_SPIRVLOWERLLVMINTRINSIC_H
+#define SPIRV_SPIRVLOWERLLVMINTRINSIC_H
 
 #include "LLVMSPIRVOpts.h"
 
@@ -43,14 +43,14 @@
 
 namespace SPIRV {
 
-class SPIRVLowerSaddWithOverflowBase
-    : public llvm::InstVisitor<SPIRVLowerSaddWithOverflowBase> {
+class SPIRVLowerLLVMIntrinsicBase
+    : public llvm::InstVisitor<SPIRVLowerLLVMIntrinsicBase> {
 public:
-  SPIRVLowerSaddWithOverflowBase(const SPIRV::TranslatorOpts &Opts) : Context(nullptr), Mod(nullptr), Opts(Opts) {}
-  virtual ~SPIRVLowerSaddWithOverflowBase() {}
+  SPIRVLowerLLVMIntrinsicBase(const SPIRV::TranslatorOpts &Opts) : Context(nullptr), Mod(nullptr), Opts(Opts) {}
+  virtual ~SPIRVLowerLLVMIntrinsicBase() {}
   virtual void visitIntrinsicInst(llvm::CallInst &I);
 
-  bool runLowerSaddWithOverflow(llvm::Module &M);
+  bool runLowerLLVMIntrinsic(llvm::Module &M);
 
 private:
   llvm::LLVMContext *Context;
@@ -59,21 +59,21 @@ private:
   bool TheModuleIsModified = false;
 };
 
-class SPIRVLowerSaddWithOverflowPass
-    : public llvm::PassInfoMixin<SPIRVLowerSaddWithOverflowPass>,
-      public SPIRVLowerSaddWithOverflowBase {
+class SPIRVLowerLLVMIntrinsicPass
+    : public llvm::PassInfoMixin<SPIRVLowerLLVMIntrinsicPass>,
+      public SPIRVLowerLLVMIntrinsicBase {
 public:
-  SPIRVLowerSaddWithOverflowPass(const SPIRV::TranslatorOpts &Opts);
+  SPIRVLowerLLVMIntrinsicPass(const SPIRV::TranslatorOpts &Opts);
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
 
   static bool isRequired() { return true; }
 };
 
-class SPIRVLowerSaddWithOverflowLegacy : public llvm::ModulePass,
-                                         public SPIRVLowerSaddWithOverflowBase {
+class SPIRVLowerLLVMIntrinsicLegacy : public llvm::ModulePass,
+                                         public SPIRVLowerLLVMIntrinsicBase {
 public:
-  SPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts);
+  SPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts);
 
   bool runOnModule(llvm::Module &M) override;
 
@@ -82,4 +82,4 @@ public:
 
 } // namespace SPIRV
 
-#endif // SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
+#endif // SPIRV_SPIRVLOWERLLVMINTRINSIC_H
