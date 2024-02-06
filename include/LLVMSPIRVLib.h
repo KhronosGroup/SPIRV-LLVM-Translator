@@ -223,7 +223,7 @@ ModulePass *createSPIRVLowerOCLBlocksLegacy();
 ModulePass *createSPIRVLowerMemmoveLegacy();
 
 /// Create a pass for lowering llvm.sadd.with.overflow
-ModulePass *createSPIRVLowerSaddWithOverflowLegacy();
+ModulePass *createSPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts);
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
 ModulePass *createSPIRVRegularizeLLVMLegacy();

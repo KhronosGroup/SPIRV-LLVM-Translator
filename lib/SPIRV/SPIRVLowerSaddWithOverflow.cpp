@@ -32,15 +32,17 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements lowering of llvm.sadd.with.overflow.* into basic LLVM
+// This file implements lowering of llvm.sadd.with.overflow.* and
+// llvm.bitreverse.* into basic LLVM
 // operations. Probably, in the future this pass can be generalized for other
 // function calls
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "spv-lower-llvm_sadd_with_overflow"
+#define DEBUG_TYPE "spv-lower-llvm_intrinsic"
 
 #include "SPIRVLowerSaddWithOverflow.h"
 #include "LLVMSaddWithOverflow.h"
+#include "LLVMBitreverse.h"
 
 #include "LLVMSPIRVLib.h"
 #include "SPIRVError.h"
@@ -58,29 +60,55 @@ using namespace SPIRV;
 
 namespace SPIRV {
 
+namespace {
+typedef struct llvm_intrinsic_map_entry_type {
+  const Intrinsic::ID  ID;
+  const ExtensionID    SupportingExtension;
+  const char          *LLVMFuncName;
+  const char          *SPIRVFuncName;
+  const char          *ModuleText;
+} LLVMIntrinsicMapEntryType;
+
+#define NO_SUPPORTING_EXTENSION ExtensionID::Last
+
+const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverse},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverse},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverse},
+  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i16", "llvm_sadd_with_overflow_i16", LLVMSaddWithOverflow},
+  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i32", "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow},
+  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i64", "llvm_sadd_with_overflow_i64", LLVMSaddWithOverflow},
+};
+
+} // namespace
+
 void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
-  if (!II || II->getIntrinsicID() != Intrinsic::sadd_with_overflow)
-    return;
+
+  std::string FuncName;
+  const char *ModuleText{nullptr};
+
+  if (!II) return;
 
   Function *IntrinsicFunc = I.getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   StringRef IntrinsicName = IntrinsicFunc->getName();
-  std::string FuncName = "llvm_sadd_with_overflow_i";
-  if (IntrinsicName.ends_with(".i16"))
-    FuncName += "16";
-  else if (IntrinsicName.ends_with(".i32"))
-    FuncName += "32";
-  else if (IntrinsicName.ends_with(".i64"))
-    FuncName += "64";
-  else {
-    assert(false &&
-           "Unsupported overloading of llvm.sadd.with.overflow intrinsic");
-    return;
+
+  for (const LLVMIntrinsicMapEntryType &LLVMIntrinsicMapEntry : LLVMIntrinsicMapEntries) {
+    if (II->getIntrinsicID() == LLVMIntrinsicMapEntry.ID &&
+        IntrinsicName == LLVMIntrinsicMapEntry.LLVMFuncName &&
+        // Intrinsic is not supported by an extension
+        !Opts.isAllowedToUseExtension(LLVMIntrinsicMapEntry.SupportingExtension)) {
+      // emulation is needed
+      FuncName   = LLVMIntrinsicMapEntry.SPIRVFuncName;
+      ModuleText = LLVMIntrinsicMapEntry.ModuleText;
+    }
   }
 
-  // Redirect @llvm.sadd.with.overflow.* call to the function we have in
-  // the loaded module @llvm_sadd_with_overflow_*
+  if (!ModuleText) return;
+
+  // Redirect @llvm.* call to the function we have in
+  // the loaded module in ModuleText
   Function *F = Mod->getFunction(FuncName);
   if (F) { // This function is already linked in.
     I.setCalledFunction(F);
@@ -91,13 +119,13 @@ void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
 
   // Read LLVM IR with the intrinsic's implementation
   SMDiagnostic Err;
-  auto MB = MemoryBuffer::getMemBuffer(LLVMSaddWithOverflow);
-  auto SaddWithOverflowModule =
+  auto MB = MemoryBuffer::getMemBuffer(ModuleText);
+  auto EmulationModule =
       parseIR(MB->getMemBufferRef(), Err, *Context,
               ParserCallbacks([&](StringRef, StringRef) {
                 return Mod->getDataLayoutStr();
               }));
-  if (!SaddWithOverflowModule) {
+  if (!EmulationModule) {
     std::string ErrMsg;
     raw_string_ostream ErrStream(ErrMsg);
     Err.print("", ErrStream);
@@ -107,7 +135,7 @@ void SPIRVLowerSaddWithOverflowBase::visitIntrinsicInst(CallInst &I) {
   }
 
   // Link in the intrinsic's implementation.
-  if (!Linker::linkModules(*Mod, std::move(SaddWithOverflowModule),
+  if (!Linker::linkModules(*Mod, std::move(EmulationModule),
                            Linker::LinkOnlyNeeded))
     TheModuleIsModified = true;
 }
@@ -121,6 +149,9 @@ bool SPIRVLowerSaddWithOverflowBase::runLowerSaddWithOverflow(Module &M) {
   return TheModuleIsModified;
 }
 
+SPIRVLowerSaddWithOverflowPass::SPIRVLowerSaddWithOverflowPass(const SPIRV::TranslatorOpts &Opts) : SPIRVLowerSaddWithOverflowBase(Opts) {
+}
+
 llvm::PreservedAnalyses
 SPIRVLowerSaddWithOverflowPass::run(llvm::Module &M,
                                     llvm::ModuleAnalysisManager &MAM) {
@@ -128,8 +159,8 @@ SPIRVLowerSaddWithOverflowPass::run(llvm::Module &M,
                                      : llvm::PreservedAnalyses::all();
 }
 
-SPIRVLowerSaddWithOverflowLegacy::SPIRVLowerSaddWithOverflowLegacy()
-    : ModulePass(ID) {
+SPIRVLowerSaddWithOverflowLegacy::SPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts)
+  : ModulePass(ID), SPIRVLowerSaddWithOverflowBase(Opts) {
   initializeSPIRVLowerSaddWithOverflowLegacyPass(
       *PassRegistry::getPassRegistry());
 }
@@ -146,6 +177,6 @@ INITIALIZE_PASS(SPIRVLowerSaddWithOverflowLegacy,
                 "spv-lower-llvm_sadd_with_overflow",
                 "Lower llvm.sadd.with.overflow.* intrinsics", false, false)
 
-ModulePass *llvm::createSPIRVLowerSaddWithOverflowLegacy() {
-  return new SPIRVLowerSaddWithOverflowLegacy();
+ModulePass *llvm::createSPIRVLowerSaddWithOverflowLegacy(const SPIRV::TranslatorOpts &Opts) {
+  return new SPIRVLowerSaddWithOverflowLegacy(Opts);
 }
