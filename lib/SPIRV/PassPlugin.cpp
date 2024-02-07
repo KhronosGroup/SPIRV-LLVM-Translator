@@ -106,7 +106,7 @@ PassPluginLibraryInfo getSPIRVPluginInfo() {
                 PM.addPass(SPIRVLowerOCLBlocksPass());
                 return true;
               }
-              if (Name.equals("spirv-lower-sadd-with-overflow")) {
+              if (Name.equals("spirv-lower-llvm-intrinsic")) {
                 PM.addPass(SPIRVLowerLLVMIntrinsicPass(TranslatorOpts{}));
                 return true;
               }
