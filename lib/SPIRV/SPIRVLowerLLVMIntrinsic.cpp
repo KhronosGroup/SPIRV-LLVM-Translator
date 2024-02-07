@@ -41,8 +41,8 @@
 #define DEBUG_TYPE "spv-lower-llvm_intrinsic"
 
 #include "SPIRVLowerLLVMIntrinsic.h"
-#include "LLVMSaddWithOverflow.h"
 #include "LLVMBitreverse.h"
+#include "LLVMSaddWithOverflow.h"
 
 #include "LLVMSPIRVLib.h"
 #include "SPIRVError.h"
@@ -62,13 +62,13 @@ namespace SPIRV {
 
 namespace {
 typedef struct llvm_intrinsic_map_entry_type {
-  const Intrinsic::ID  ID;
+  const Intrinsic::ID ID;
   // Extension that supports the LLVM Intrinsic.
   // Thus, emulation is not needed if extension is enabled.
-  const ExtensionID    SupportingExtension;
-  const char          *LLVMFuncName;
-  const char          *SPIRVFuncName;
-  const char          *ModuleText;
+  const ExtensionID SupportingExtension;
+  const char *LLVMFuncName;
+  const char *SPIRVFuncName;
+  const char *ModuleText;
 } LLVMIntrinsicMapEntryType;
 
 #define NO_SUPPORTING_EXTENSION ExtensionID::Last
@@ -76,7 +76,7 @@ typedef struct llvm_intrinsic_map_entry_type {
 // clang-format off
 const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 // Intrinsic ID                   Supporting Extension                   LLVM Intrinsic Name            Emulation Name                 Module with
-//                                                                                                                                     emultation function
+//                                                                                                                                     emulation function
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverse},
@@ -85,7 +85,7 @@ const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
   {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i64", "llvm_sadd_with_overflow_i64", LLVMSaddWithOverflow},
 };
 // clang-format on
-  
+
 } // namespace
 
 void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
@@ -94,24 +94,28 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   std::string FuncName;
   const char *ModuleText{nullptr};
 
-  if (!II) return;
+  if (!II)
+    return;
 
   Function *IntrinsicFunc = I.getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   StringRef IntrinsicName = IntrinsicFunc->getName();
 
-  for (const LLVMIntrinsicMapEntryType &LLVMIntrinsicMapEntry : LLVMIntrinsicMapEntries) {
+  for (const LLVMIntrinsicMapEntryType &LLVMIntrinsicMapEntry :
+       LLVMIntrinsicMapEntries) {
     if (II->getIntrinsicID() == LLVMIntrinsicMapEntry.ID &&
         IntrinsicName == LLVMIntrinsicMapEntry.LLVMFuncName &&
         // Intrinsic is not supported by an extension
-        !Opts.isAllowedToUseExtension(LLVMIntrinsicMapEntry.SupportingExtension)) {
+        !Opts.isAllowedToUseExtension(
+            LLVMIntrinsicMapEntry.SupportingExtension)) {
       // emulation is needed
-      FuncName   = LLVMIntrinsicMapEntry.SPIRVFuncName;
+      FuncName = LLVMIntrinsicMapEntry.SPIRVFuncName;
       ModuleText = LLVMIntrinsicMapEntry.ModuleText;
     }
   }
 
-  if (!ModuleText) return;
+  if (!ModuleText)
+    return;
 
   // Redirect @llvm.* call to the function we have in
   // the loaded module in ModuleText
@@ -126,11 +130,10 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   // Read LLVM IR with the intrinsic's implementation
   SMDiagnostic Err;
   auto MB = MemoryBuffer::getMemBuffer(ModuleText);
-  auto EmulationModule =
-      parseIR(MB->getMemBufferRef(), Err, *Context,
-              ParserCallbacks([&](StringRef, StringRef) {
-                return Mod->getDataLayoutStr();
-              }));
+  auto EmulationModule = parseIR(MB->getMemBufferRef(), Err, *Context,
+                                 ParserCallbacks([&](StringRef, StringRef) {
+                                   return Mod->getDataLayoutStr();
+                                 }));
   if (!EmulationModule) {
     std::string ErrMsg;
     raw_string_ostream ErrStream(ErrMsg);
@@ -155,20 +158,21 @@ bool SPIRVLowerLLVMIntrinsicBase::runLowerLLVMIntrinsic(Module &M) {
   return TheModuleIsModified;
 }
 
-SPIRVLowerLLVMIntrinsicPass::SPIRVLowerLLVMIntrinsicPass(const SPIRV::TranslatorOpts &Opts) : SPIRVLowerLLVMIntrinsicBase(Opts) {
-}
+SPIRVLowerLLVMIntrinsicPass::SPIRVLowerLLVMIntrinsicPass(
+    const SPIRV::TranslatorOpts &Opts)
+    : SPIRVLowerLLVMIntrinsicBase(Opts) {}
 
 llvm::PreservedAnalyses
 SPIRVLowerLLVMIntrinsicPass::run(llvm::Module &M,
-                                    llvm::ModuleAnalysisManager &MAM) {
+                                 llvm::ModuleAnalysisManager &MAM) {
   return runLowerLLVMIntrinsic(M) ? llvm::PreservedAnalyses::none()
                                   : llvm::PreservedAnalyses::all();
 }
 
-SPIRVLowerLLVMIntrinsicLegacy::SPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts)
-  : ModulePass(ID), SPIRVLowerLLVMIntrinsicBase(Opts) {
-  initializeSPIRVLowerLLVMIntrinsicLegacyPass(
-      *PassRegistry::getPassRegistry());
+SPIRVLowerLLVMIntrinsicLegacy::SPIRVLowerLLVMIntrinsicLegacy(
+    const SPIRV::TranslatorOpts &Opts)
+    : ModulePass(ID), SPIRVLowerLLVMIntrinsicBase(Opts) {
+  initializeSPIRVLowerLLVMIntrinsicLegacyPass(*PassRegistry::getPassRegistry());
 }
 
 bool SPIRVLowerLLVMIntrinsicLegacy::runOnModule(Module &M) {
@@ -179,10 +183,10 @@ char SPIRVLowerLLVMIntrinsicLegacy::ID = 0;
 
 } // namespace SPIRV
 
-INITIALIZE_PASS(SPIRVLowerLLVMIntrinsicLegacy,
-                "spv-lower-llvm-intrinsic",
+INITIALIZE_PASS(SPIRVLowerLLVMIntrinsicLegacy, "spv-lower-llvm-intrinsic",
                 "Lower llvm intrinsics", false, false)
 
-ModulePass *llvm::createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts) {
+ModulePass *
+llvm::createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts) {
   return new SPIRVLowerLLVMIntrinsicLegacy(Opts);
 }

@@ -223,7 +223,8 @@ ModulePass *createSPIRVLowerOCLBlocksLegacy();
 ModulePass *createSPIRVLowerMemmoveLegacy();
 
 /// Create a pass for lowering llvm intrinsics
-ModulePass *createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts);
+ModulePass *
+createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts);
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
 ModulePass *createSPIRVRegularizeLLVMLegacy();

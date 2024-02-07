@@ -1,4 +1,5 @@
-//===- SPIRVLowerLLVMIntrinsic.h - llvm-intrinsic lowering  --------*- C++ -*-===//
+//===- SPIRVLowerLLVMIntrinsic.h - llvm-intrinsic lowering  --------*- C++
+//-*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //
@@ -46,7 +47,8 @@ namespace SPIRV {
 class SPIRVLowerLLVMIntrinsicBase
     : public llvm::InstVisitor<SPIRVLowerLLVMIntrinsicBase> {
 public:
-  SPIRVLowerLLVMIntrinsicBase(const SPIRV::TranslatorOpts &Opts) : Context(nullptr), Mod(nullptr), Opts(Opts) {}
+  SPIRVLowerLLVMIntrinsicBase(const SPIRV::TranslatorOpts &Opts)
+      : Context(nullptr), Mod(nullptr), Opts(Opts) {}
   virtual ~SPIRVLowerLLVMIntrinsicBase() {}
   virtual void visitIntrinsicInst(llvm::CallInst &I);
 
@@ -71,7 +73,7 @@ public:
 };
 
 class SPIRVLowerLLVMIntrinsicLegacy : public llvm::ModulePass,
-                                         public SPIRVLowerLLVMIntrinsicBase {
+                                      public SPIRVLowerLLVMIntrinsicBase {
 public:
   SPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts);
 
