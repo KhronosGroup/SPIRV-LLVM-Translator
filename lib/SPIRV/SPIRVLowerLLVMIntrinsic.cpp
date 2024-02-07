@@ -91,8 +91,7 @@ const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
 
-  std::string FuncName;
-  const char *ModuleText{nullptr};
+  const LLVMIntrinsicMapEntryType *MapEntry{nullptr};
 
   if (!II)
     return;
@@ -109,27 +108,27 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
         !Opts.isAllowedToUseExtension(
             LLVMIntrinsicMapEntry.SupportingExtension)) {
       // emulation is needed
-      FuncName = LLVMIntrinsicMapEntry.SPIRVFuncName;
-      ModuleText = LLVMIntrinsicMapEntry.ModuleText;
+      MapEntry=&LLVMIntrinsicMapEntry;
+      break;
     }
   }
 
-  if (!ModuleText)
+  if (!MapEntry)
     return;
 
   // Redirect @llvm.* call to the function we have in
   // the loaded module in ModuleText
-  Function *F = Mod->getFunction(FuncName);
+  Function *F = Mod->getFunction(MapEntry->SPIRVFuncName);
   if (F) { // This function is already linked in.
     I.setCalledFunction(F);
     return;
   }
-  FunctionCallee FC = Mod->getOrInsertFunction(FuncName, I.getFunctionType());
+  FunctionCallee FC = Mod->getOrInsertFunction(MapEntry->SPIRVFuncName, I.getFunctionType());
   I.setCalledFunction(FC);
 
   // Read LLVM IR with the intrinsic's implementation
   SMDiagnostic Err;
-  auto MB = MemoryBuffer::getMemBuffer(ModuleText);
+  auto MB = MemoryBuffer::getMemBuffer(MapEntry->ModuleText);
   auto EmulationModule = parseIR(MB->getMemBufferRef(), Err, *Context,
                                  ParserCallbacks([&](StringRef, StringRef) {
                                    return Mod->getDataLayoutStr();
