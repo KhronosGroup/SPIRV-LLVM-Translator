@@ -108,7 +108,7 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
         !Opts.isAllowedToUseExtension(
             LLVMIntrinsicMapEntry.SupportingExtension)) {
       // emulation is needed
-      MapEntry=&LLVMIntrinsicMapEntry;
+      MapEntry = &LLVMIntrinsicMapEntry;
       break;
     }
   }
@@ -123,7 +123,8 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
     I.setCalledFunction(F);
     return;
   }
-  FunctionCallee FC = Mod->getOrInsertFunction(MapEntry->SPIRVFuncName, I.getFunctionType());
+  FunctionCallee FC =
+      Mod->getOrInsertFunction(MapEntry->SPIRVFuncName, I.getFunctionType());
   I.setCalledFunction(FC);
 
   // Read LLVM IR with the intrinsic's implementation
