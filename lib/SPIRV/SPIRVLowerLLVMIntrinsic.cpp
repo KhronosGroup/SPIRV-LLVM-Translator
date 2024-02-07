@@ -63,6 +63,8 @@ namespace SPIRV {
 namespace {
 typedef struct llvm_intrinsic_map_entry_type {
   const Intrinsic::ID  ID;
+  // Extension that supports the LLVM Intrinsic.
+  // Thus, emulation is not needed if extension is enabled.
   const ExtensionID    SupportingExtension;
   const char          *LLVMFuncName;
   const char          *SPIRVFuncName;
@@ -71,7 +73,10 @@ typedef struct llvm_intrinsic_map_entry_type {
 
 #define NO_SUPPORTING_EXTENSION ExtensionID::Last
 
+// clang-format off
 const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
+// Intrinsic ID                   Supporting Extension                   LLVM Intrinsic Name            Emulation Name                 Module with
+//                                                                                                                                     emultation function
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverse},
@@ -79,7 +84,8 @@ const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
   {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i32", "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow},
   {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i64", "llvm_sadd_with_overflow_i64", LLVMSaddWithOverflow},
 };
-
+// clang-format on
+  
 } // namespace
 
 void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
