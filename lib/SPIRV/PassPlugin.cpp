@@ -43,7 +43,7 @@
 #include "SPIRVLowerConstExpr.h"
 #include "SPIRVLowerMemmove.h"
 #include "SPIRVLowerOCLBlocks.h"
-#include "SPIRVLowerSaddWithOverflow.h"
+#include "SPIRVLowerLLVMIntrinsic.h"
 #include "SPIRVRegularizeLLVM.h"
 #include "SPIRVToOCL.h"
 #include "SPIRVWriter.h"

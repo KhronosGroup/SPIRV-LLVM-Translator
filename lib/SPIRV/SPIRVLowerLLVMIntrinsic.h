@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflowBase.h - llvm-intrinsic lowering  --------*- C++ -*-===//
+//===- SPIRVLowerLLVMIntrinsic.h - llvm-intrinsic lowering  --------*- C++ -*-===//
 //
 //                     The LLVM/SPIR-V Translator
 //

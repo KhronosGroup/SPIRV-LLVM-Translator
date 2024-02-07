@@ -1,4 +1,4 @@
-//===- SPIRVLowerSaddWithOverflow.cpp - Lower llvm-intrinsics -----===//
+//===- SPIRVLowerLLVMIntrinsic.cpp - Lower llvm-intrinsics -----===//
 //
 //                     The LLVM/SPIRV Translator
 //
@@ -40,7 +40,7 @@
 //===----------------------------------------------------------------------===//
 #define DEBUG_TYPE "spv-lower-llvm_intrinsic"
 
-#include "SPIRVLowerSaddWithOverflow.h"
+#include "SPIRVLowerLLVMIntrinsic.h"
 #include "LLVMSaddWithOverflow.h"
 #include "LLVMBitreverse.h"
 
