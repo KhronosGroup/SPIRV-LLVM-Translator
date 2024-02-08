@@ -1224,11 +1224,11 @@ DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
   // No Child operand for NonSemantic debug spec
   SPIRVWord Offset = isNonSemanticDebugInfo(DebugInst->getExtSetKind()) ? 1 : 0;
   DIType *Parent =
-      transNonNullDebugType(BM->get<SPIRVExtInst>(Ops[ParentIdx - Offset]));
+      transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ParentIdx - Offset]));
   DIType *Child =
       isNonSemanticDebugInfo(DebugInst->getExtSetKind())
           ? ChildClass
-          : transNonNullDebugType(BM->get<SPIRVExtInst>(Ops[ChildIdx]));
+          : transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ChildIdx]));
   DINode::DIFlags Flags = DINode::FlagZero;
   SPIRVWord SPIRVFlags = getConstantValueOrLiteral(Ops, FlagsIdx - Offset,
                                                    DebugInst->getExtSetKind());
