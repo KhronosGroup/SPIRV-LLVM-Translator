@@ -1252,7 +1252,8 @@ SPIR::TypePrimitiveEnum getOCLTypePrimitiveEnum(StringRef TyName) {
 /// \param Signed indicates integer type should be translated as signed.
 /// \param VoidPtr indicates i8* should be translated as void*.
 static SPIR::RefParamType transTypeDesc(Type *Ty,
-                                        const BuiltinArgTypeMangleInfo &Info) {
+                                        const BuiltinArgTypeMangleInfo &Info,
+                                        StringRef InstName = "") {
   bool Signed = Info.IsSigned;
   unsigned Attr = Info.Attr;
   bool VoidPtr = Info.IsVoidPtr;
@@ -1362,10 +1363,12 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     SPIR::ParamType *EPT = nullptr;
     if (isa<FunctionType>(ET)) {
       FunctionType *FT = cast<FunctionType>(ET);
-      if (isVoidFuncTy(FT))
+      if (InstName.contains("TaskSequence")) {
+        EPT = new SPIR::PointerType(transTypeDesc(FT->getReturnType(), Info));
+      } else {
+        assert((isVoidFuncTy(FT)) && "Not supported");
         EPT = new SPIR::BlockType;
-      else
-        EPT = new SPIR::PointerType(transTypeDesc(FT->getParamType(0), Info));
+      }
     } else if (auto *StructTy = dyn_cast<StructType>(ET)) {
       LLVM_DEBUG(dbgs() << "ptr to struct: " << *Ty << '\n');
       auto TyName = StructTy->getStructName();
@@ -1693,7 +1696,7 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
         T = MangleInfo.PointerTy;
       }
       FD.Parameters.emplace_back(
-          transTypeDesc(T, BtnInfo->getTypeMangleInfo(I)));
+          transTypeDesc(T, BtnInfo->getTypeMangleInfo(I), UniqName));
     }
   }
   // Ellipsis must be the last argument of any function
