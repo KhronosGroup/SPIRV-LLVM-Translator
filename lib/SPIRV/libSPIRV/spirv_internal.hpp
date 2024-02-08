@@ -118,6 +118,7 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilityCacheControlsINTEL = 6441,
+  ICapabilitySubgroupRequirementsINTEL = 6445,
   ICapRegisterLimitsINTEL = 6460
 };
 
@@ -125,6 +126,7 @@ enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 enum InternalExecutionMode {
   IExecModeFastCompositeKernelINTEL = 6088,
+  IExecModeNamedSubgroupSizeINTEL = 6446,
   IExecModeMaximumRegistersINTEL = 6461,
   IExecModeMaximumRegistersIdINTEL = 6462,
   IExecModeNamedMaximumRegistersINTEL = 6463
@@ -215,6 +217,8 @@ _SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
 _SPIRV_OP(Op, RoundFToTF32INTEL)
 
 _SPIRV_OP(Capability, CacheControlsINTEL)
+
+_SPIRV_OP(Capability, SubgroupRequirementsINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
@@ -307,6 +311,9 @@ constexpr ExecutionMode ExecutionModeMaximumRegistersIdINTEL =
     static_cast<ExecutionMode>(IExecModeMaximumRegistersIdINTEL);
 constexpr ExecutionMode ExecutionModeNamedMaximumRegistersINTEL =
     static_cast<ExecutionMode>(IExecModeNamedMaximumRegistersINTEL);
+
+constexpr ExecutionMode ExecutionModeNamedSubgroupSizeINTEL =
+    static_cast<ExecutionMode>(IExecModeNamedSubgroupSizeINTEL);
 
 } // namespace internal
 } // namespace spv
