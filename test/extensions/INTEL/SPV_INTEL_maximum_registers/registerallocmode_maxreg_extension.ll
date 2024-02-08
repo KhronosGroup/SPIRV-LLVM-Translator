@@ -13,16 +13,19 @@
 
 ; CHECK-SPIRV: ExecutionMode [[#FUNC0]] 6461 2
 ; CHECK-SPIRV: ExecutionMode [[#FUNC1]] 6461 1
-; CHECK-SPIRV: ExecutionMode [[#FUNC2]] 6461 0
-; CHECK-SPIRV: ExecutionMode [[#FUNC3]] 6461 3
+; CHECK-SPIRV: ExecutionMode [[#FUNC2]] 6463 0
+; CHECK-SPIRV: ExecutionModeId [[#FUNC3]] 6462 [[#Const3:]]
+; CHECK-SPIRV: TypeInt [[#TypeInt:]] 32 0
+; CHECK-SPIRV: Constant [[#TypeInt]] [[#Const3]] 3
 
 ; CHECK-SPIRV-NOT: ExecutionMode [[#FUNC4]]
 
 ; CHECK-LLVM: !spirv.ExecutionMode = !{![[#FLAG0:]], ![[#FLAG1:]], ![[#FLAG2:]], ![[#FLAG3:]]}
 ; CHECK-LLVM: ![[#FLAG0]] = !{ptr @main_l3, i32 6461, i32 2}
 ; CHECK-LLVM: ![[#FLAG1]] = !{ptr @main_l6, i32 6461, i32 1}
-; CHECK-LLVM: ![[#FLAG2]] = !{ptr @main_l9, i32 6461, i32 0}
-; CHECK-LLVM: ![[#FLAG3]] = !{ptr @main_l13, i32 6461, i32 3}
+; CHECK-LLVM: ![[#FLAG2]] = !{ptr @main_l9, i32 6463, !"AutoINTEL"}
+; CHECK-LLVM: ![[#FLAG3]] = !{ptr @main_l13, i32 6462, ![[#VAL:]]}
+; CHECK-LLVM: ![[#VAL]] = !{i32 3}
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64"
@@ -77,5 +80,6 @@ attributes #0 = { noinline nounwind optnone }
 !9 = !{i32 2, i32 2}
 !10 = !{i32 2}
 !11 = !{i32 1}
-!12 = !{i32 0}
-!13 = !{i32 3}
+!12 = !{!"AutoINTEL"}
+!13 = !{!14}
+!14 = !{i32 3}

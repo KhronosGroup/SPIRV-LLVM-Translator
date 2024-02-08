@@ -1126,7 +1126,6 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
   if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
     return;
 
-  // TODO: Also add support for ExecutionModeMaximumRegistersIdINTEL
   if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
     auto *RegisterAllocMode = RegisterAllocModeMD->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
@@ -1135,6 +1134,15 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             OpExecutionMode, BF,
             internal::ExecutionModeNamedMaximumRegistersINTEL, 0)));
+    } else if (isa<MDNode>(RegisterAllocMode)) {
+      auto *RegisterAllocNodeMDOp =
+          getMDOperandAsMDNode(RegisterAllocModeMD, 0);
+      int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
+      auto *Const =
+          BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
+      BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+          OpExecutionModeId, BF, internal::ExecutionModeMaximumRegistersIdINTEL,
+          Const->getId())));
     } else {
       int64_t RegisterAllocNodeMDOp =
           mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
