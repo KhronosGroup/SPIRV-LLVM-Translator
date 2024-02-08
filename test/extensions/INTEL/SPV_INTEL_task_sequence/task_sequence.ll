@@ -67,8 +67,6 @@
 ; CHECK-SPIRV: Function [[#IntTy]] [[#FuncId]] 0 [[#FuncTy]]
 
 ; CHECK-LLVM: target("spirv.TaskSequenceINTEL")
-; _Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELU13block_pointerFvvEiiii
-; _Z31__spirv_TaskSequenceCreateINTELU13block_pointerFvvEiiii
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -82,7 +80,7 @@ define weak_odr dso_local spir_kernel void @_ZTS8MyKernel(ptr addrspace(1) nound
 entry:
   %myMultTask.i = alloca %"class.sycl::_V1::ext::intel::experimental::task_sequence.3", align 8
   store i32 0, ptr %myMultTask.i, align 8, !tbaa !10
-; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELU13block_pointerFvvEiiii(ptr @_Z4multii, i32 10, i32 -1, i32 17, i32 1)
+; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 10, i32 -1, i32 17, i32 1)
 ; CHECK-LLVM: store target("spirv.TaskSequenceINTEL") %[[TSCreate]], ptr %id.i
   %call.i1 = call spir_func noundef target("spirv.TaskSequenceINTEL") @_Z31__spirv_TaskSequenceCreateINTELIN4sycl3_V13ext5intel12experimental13task_sequenceIL_Z4multiiENS2_6oneapi12experimental10propertiesISt5tupleIJNS7_14property_valueINS4_13pipelined_keyEJSt17integral_constantIiLin1EEEEENSA_INS4_16fpga_cluster_keyEJSC_INS4_25fpga_cluster_options_enumELSG_1EEEEENSA_INS4_12balanced_keyEJEEENSA_INS4_23invocation_capacity_keyEJSC_IjLj10EEEEENSA_INS4_21response_capacity_keyEJSC_IjLj17EEEEEEEEEEEiJiiEEmPT_PFT0_DpT1_Ejjit(ptr noundef nonnull @_Z4multii, i32 noundef 10, i32 noundef -1, i32 noundef 17, i16 noundef zeroext 1) #3
   %id.i = getelementptr inbounds %"class.sycl::_V1::ext::intel::experimental::task_sequence.3", ptr %myMultTask.i, i64 0, i32 0
