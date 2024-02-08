@@ -61,7 +61,7 @@ using namespace SPIRV;
 namespace SPIRV {
 
 namespace {
-typedef struct llvm_intrinsic_map_entry_type {
+typedef struct {
   const Intrinsic::ID ID;
   // Extension that supports the LLVM Intrinsic.
   // Thus, emulation is not needed if extension is enabled.
@@ -183,6 +183,9 @@ char SPIRVLowerLLVMIntrinsicLegacy::ID = 0;
 
 } // namespace SPIRV
 
+// INITIALIZE_PASS defines static functions but clang-tidy enforces
+// anonymous namespace
+// NOLINTNEXTLINE
 INITIALIZE_PASS(SPIRVLowerLLVMIntrinsicLegacy, "spv-lower-llvm-intrinsic",
                 "Lower llvm intrinsics", false, false)
 
