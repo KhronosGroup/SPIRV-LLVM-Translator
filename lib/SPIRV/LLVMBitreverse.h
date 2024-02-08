@@ -24,15 +24,15 @@
 //===----------------------------------------------------------------------===//
 
 // The IR below is slightly manually modified IR which was produced by Clang
-// from the C code below. 
+// from the C code below.
 //
 // #include <stdlib.h>
 // #include <stdint.h>
-// 
+//
 // uint16_t llvm_bitreverse_i16(uint16_t a) {
 //   uint16_t ret=0;
 //   uint32_t i;
-// 
+//
 //   for (i=0; i<16; i++) {
 //     ret<<=1;
 //     if (a&0x1)
@@ -41,11 +41,11 @@
 //   }
 //   return ret;
 // }
-// 
+//
 // uint32_t llvm_bitreverse_i32(uint32_t a) {
 //   uint32_t ret=0;
 //   uint32_t i;
-// 
+//
 //   for (i=0; i<32; i++) {
 //     ret<<=1;
 //     if (a&0x1)
@@ -54,11 +54,11 @@
 //   }
 //   return ret;
 // }
-// 
+//
 // uint64_t llvm_bitreverse_i64(uint64_t a) {
 //   uint64_t ret=0;
 //   uint32_t i;
-// 
+//
 //   for (i=0; i<64; i++) {
 //     ret<<=1;
 //     if (a&0x1)
