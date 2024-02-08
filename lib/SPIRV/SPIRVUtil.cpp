@@ -1363,7 +1363,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     SPIR::ParamType *EPT = nullptr;
     if (isa<FunctionType>(ET)) {
       FunctionType *FT = cast<FunctionType>(ET);
-      if (InstName.contains("TaskSequence")) {
+      if (InstName.consume_front(kSPIRVName::Prefix) &&
+          InstName.starts_with("TaskSequence")) {
         EPT = new SPIR::PointerType(transTypeDesc(FT->getReturnType(), Info));
       } else {
         assert((isVoidFuncTy(FT)) && "Not supported");
