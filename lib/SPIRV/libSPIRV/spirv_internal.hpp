@@ -134,7 +134,6 @@ enum InternalCapability {
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
-  ICapabilityCacheControlsINTEL = 6441,
   ICapabilityBindlessImagesINTEL = 6528
 };
 
@@ -214,8 +213,6 @@ _SPIRV_OP(Op, MaskedScatterINTEL)
 
 _SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
 _SPIRV_OP(Op, RoundFToTF32INTEL)
-
-_SPIRV_OP(Capability, CacheControlsINTEL)
 
 _SPIRV_OP(Capability, BindlessImagesINTEL)
 _SPIRV_OP(Op, ConvertHandleToImageINTEL)
