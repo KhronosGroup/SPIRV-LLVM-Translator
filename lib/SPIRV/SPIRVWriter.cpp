@@ -2880,7 +2880,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
 
-    case spv::internal::DecorationCacheControlLoadINTEL: {
+    case DecorationCacheControlLoadINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlLoadINTEL requires exactly 2 extra operands");
@@ -2897,11 +2897,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::LoadCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<LoadCacheControl>(CacheControl->getZExtValue())));
       break;
     }
-    case spv::internal::DecorationCacheControlStoreINTEL: {
+    case DecorationCacheControlStoreINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlStoreINTEL requires exactly 2 extra operands");
@@ -2918,8 +2917,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlStoreINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::StoreCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<StoreCacheControl>(CacheControl->getZExtValue())));
       break;
     }
     default: {
@@ -3424,8 +3422,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
           Decorates.LatencyControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else if (AllowCacheControls &&
-                   DecorationKind ==
-                       internal::DecorationCacheControlLoadINTEL) {
+                   DecorationKind == DecorationCacheControlLoadINTEL) {
           Decorates.CacheControlVec.emplace_back(
               static_cast<Decoration>(DecorationKind), std::move(DecValues));
         } else if (DecorationKind == DecorationMemoryINTEL) {
@@ -3686,7 +3683,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
       }
       break;
     }
-    case spv::internal::DecorationCacheControlLoadINTEL: {
+    case DecorationCacheControlLoadINTEL: {
       if (M->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls)) {
         M->getErrorLog().checkError(
             I.second.size() == 2, SPIRVEC_InvalidLlvmModule,
@@ -3696,8 +3693,7 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
         StringRef(I.second[0]).getAsInteger(10, CacheLevel);
         StringRef(I.second[1]).getAsInteger(10, CacheControl);
         E->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
-            E, CacheLevel,
-            static_cast<internal::LoadCacheControlINTEL>(CacheControl)));
+            E, CacheLevel, static_cast<LoadCacheControl>(CacheControl)));
       }
     }
 
