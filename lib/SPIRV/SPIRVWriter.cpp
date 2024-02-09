@@ -3111,6 +3111,7 @@ using DecorationsInfoVec =
 struct AnnotationDecorations {
   DecorationsInfoVec MemoryAttributesVec;
   DecorationsInfoVec MemoryAccessesVec;
+  DecorationsInfoVec CacheControlVec;
 };
 
 struct IntelLSUControlsInfo {
@@ -3301,6 +3302,8 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fpga_memory_accesses);
   const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
       ExtensionID::SPV_INTEL_fpga_memory_attributes);
+  const bool AllowCacheControls =
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls);
 
   bool ValidDecorationFound = false;
   DecorationsInfoVec DecorationsVec;
@@ -3319,8 +3322,14 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
       std::vector<std::string> DecValues;
       if (tryParseAnnotationDecoValues(ValueStr, DecValues)) {
         ValidDecorationFound = true;
-        DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
-                                    std::move(DecValues));
+        if (AllowCacheControls &&
+            DecorationKind == DecorationCacheControlLoadINTEL) {
+          Decorates.CacheControlVec.emplace_back(
+              static_cast<Decoration>(DecorationKind), std::move(DecValues));
+        } else {
+          DecorationsVec.emplace_back(static_cast<Decoration>(DecorationKind),
+                                      std::move(DecValues));
+        }
       }
       continue;
     }
@@ -3505,6 +3514,30 @@ void addAnnotationDecorations(SPIRVEntry *E, DecorationsInfoVec &Decorations) {
         SPIRVWord Result = 0;
         StringRef(I.second[0]).getAsInteger(10, Result);
         E->addDecorate(I.first, Result);
+      }
+    } break;
+    case DecorationCacheControlLoadINTEL: {
+      if (M->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls)) {
+        // Annotation "{6442:"0,1"}" yields a single quoted value "0,1";
+        // split it on comma to get the two operands.
+        std::vector<std::string> Args = I.second;
+        if (Args.size() == 1) {
+          auto Pos = Args[0].find(',');
+          if (Pos != std::string::npos) {
+            std::string Second = Args[0].substr(Pos + 1);
+            Args[0] = Args[0].substr(0, Pos);
+            Args.push_back(std::move(Second));
+          }
+        }
+        M->getErrorLog().checkError(
+            Args.size() == 2, SPIRVEC_InvalidLlvmModule,
+            "CacheControlLoadINTEL requires exactly 2 extra operands");
+        SPIRVWord CacheLevel = 0;
+        SPIRVWord CacheControl = 0;
+        StringRef(Args[0]).getAsInteger(10, CacheLevel);
+        StringRef(Args[1]).getAsInteger(10, CacheControl);
+        E->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
+            E, CacheLevel, static_cast<LoadCacheControl>(CacheControl)));
       }
     } break;
     default:
@@ -4331,15 +4364,18 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     } else {
       // Memory accesses to a standalone pointer variable
       auto *DecSubj = transValue(II->getArgOperand(0), BB);
-      if (Decorations.MemoryAccessesVec.empty())
+      if (Decorations.MemoryAccessesVec.empty() &&
+          Decorations.CacheControlVec.empty())
         DecSubj->addDecorate(new SPIRVDecorateUserSemanticAttr(
             DecSubj, AnnotationString.c_str()));
-      else
+      else {
         // Apply the LSU parameter decoration to the pointer result of an
         // instruction. Note it's the address to the accessed memory that's
         // loaded from the original pointer variable, and not the value
         // accessed by the latter.
         addAnnotationDecorations(DecSubj, Decorations.MemoryAccessesVec);
+        addAnnotationDecorations(DecSubj, Decorations.CacheControlVec);
+      }
       II->replaceAllUsesWith(II->getOperand(0));
     }
     return nullptr;
