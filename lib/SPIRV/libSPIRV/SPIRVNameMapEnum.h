@@ -180,6 +180,8 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationAliasScopeINTEL, "AliasScopeINTEL");
   add(DecorationNoAliasINTEL, "NoAliasINTEL");
   add(DecorationFPMaxErrorDecorationINTEL, "FPMaxErrorDecorationINTEL");
+  add(DecorationCacheControlLoadINTEL, "CacheControlLoadINTEL");
+  add(DecorationCacheControlStoreINTEL, "CacheControlStoreINTEL");
 
   add(DecorationHostAccessINTEL, "HostAccessINTEL");
   add(DecorationInitModeINTEL, "InitModeINTEL");
@@ -195,9 +197,6 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(internal::DecorationInitModeINTEL, "InitModeINTEL");
   add(internal::DecorationImplementInCSRINTEL, "ImplementInCSRINTEL");
   add(internal::DecorationArgumentAttributeINTEL, "ArgumentAttributeINTEL");
-  add(internal::DecorationCacheControlLoadINTEL, "CacheControlLoadINTEL");
-  add(internal::DecorationCacheControlStoreINTEL, "CacheControlStoreINTEL");
-
   add(DecorationMax, "Max");
 }
 SPIRV_DEF_NAMEMAP(Decoration, SPIRVDecorationNameMap)
@@ -611,6 +610,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGlobalVariableHostAccessINTEL, "GlobalVariableHostAccessINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
+  add(CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
   add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
   add(CapabilityBFloat16CooperativeMatrixKHR, "BFloat16CooperativeMatrixKHR");
@@ -639,7 +639,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityMaskedGatherScatterINTEL, "MaskedGatherScatterINTEL");
   add(internal::CapabilityTensorFloat32RoundingINTEL,
       "TensorFloat32RoundingINTEL");
-  add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(internal::CapabilityJointMatrixWIInstructionsINTEL,
       "JointMatrixWIInstructionsINTEL");
   add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
