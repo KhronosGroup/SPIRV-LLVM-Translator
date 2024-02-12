@@ -229,7 +229,7 @@ private:
                           SPIRVWord *EntryPoint);
   void
   oclGetMutatedArgumentTypesByBuiltin(llvm::FunctionType *FT,
-                                      std::map<unsigned, Type *> &ChangedType,
+                                      std::unordered_map<unsigned, Type *> &ChangedType,
                                       Function *F);
   bool isBuiltinTransToInst(Function *F);
   bool isBuiltinTransToExtInst(Function *F,
@@ -244,7 +244,7 @@ private:
   SPIRVValue *transBuiltinToConstant(StringRef DemangledName, CallInst *CI);
   SPIRVInstruction *transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
                                                         SPIRVBasicBlock *BB);
-  void mutateFuncArgType(const std::map<unsigned, Type *> &ChangedType,
+  void mutateFuncArgType(const std::unordered_map<unsigned, Type *> &ChangedType,
                          Function *F);
 
   SPIRVValue *transSpcvCast(CallInst *CI, SPIRVBasicBlock *BB);

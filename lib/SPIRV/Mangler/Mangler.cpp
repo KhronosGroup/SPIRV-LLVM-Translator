@@ -66,7 +66,7 @@ public:
           ThistypeStr << NType;
       }
 #endif
-      std::map<std::string, unsigned>::iterator I =
+      std::unordered_map<std::string, unsigned>::iterator I =
           Substitutions.find(ThistypeStr.str());
       if (I == Substitutions.end())
         return false;
@@ -195,7 +195,7 @@ private:
   // Holds the mangled string representing the prototype of the function.
   std::stringstream &Stream;
   unsigned SeqId;
-  std::map<std::string, unsigned> Substitutions;
+  std::unordered_map<std::string, unsigned> Substitutions;
 };
 
 //
