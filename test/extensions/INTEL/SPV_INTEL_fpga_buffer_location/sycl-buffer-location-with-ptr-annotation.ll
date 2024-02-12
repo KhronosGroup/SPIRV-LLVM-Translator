@@ -6,13 +6,24 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: Decorate [[#Ret:]] BufferLocationINTEL 0
-; CHECK-SPIRV: Load [[#]] [[#Ret:]]
-; CHECK-SPIRV: ReturnValue [[#Ret]]
+; CHECK-SPIRV: Decorate [[#Ptr1:]] BufferLocationINTEL 0
+; CHECK-SPIRV: Decorate [[#Ptr2:]] BufferLocationINTEL 0
+
+; CHECK-SPIRV: Load [[#]] [[#Ptr1:]]
+; CHECK-SPIRV: ReturnValue [[#Ptr1]]
+
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#]] [[#Ptr2]]
+; CHECK-SPIRV: Bitcast [[#]] [[#Bitcast:]] [[#Ptr2]]
+; CHECK-SPIRV: ReturnValue [[#Bitcast]]
 
 ; CHECK-LLVM: %[[#Load:]] = load ptr addrspace(4)
-; CHECK-LLVM: %[[#Anno:]] = call ptr addrspace(4) @llvm.ptr.annotation.p4.p0(ptr addrspace(4) %[[#Load]], ptr @0, ptr undef, i32 undef, ptr undef)
-; CHECK-LLVM: ret ptr addrspace(4) %[[#Anno]]
+; CHECK-LLVM: %[[#Anno1:]] = call ptr addrspace(4) @llvm.ptr.annotation.p4.p0(ptr addrspace(4) %[[#Load]], ptr @0, ptr undef, i32 undef, ptr undef)
+; CHECK-LLVM: ret ptr addrspace(4) %[[#Anno1]]
+
+; CHECK-LLVM: %[[#GEP:]] = getelementptr inbounds %struct.MyIP
+; CHECK-LLVM: %[[#Anno2:]] = call ptr addrspace(4) @llvm.ptr.annotation.p4.p0(ptr addrspace(4) %[[#GEP]]
+; CHECK-LLVM: %[[#Bitcast:]] = bitcast ptr addrspace(4) %[[#Anno2]] to ptr addrspace(4)
+; CHECK-LLVM: ret ptr addrspace(4) %[[#Bitcast]]
 
 ; ModuleID = 'test-sycl-spir64-unknown-unknown.bc'
 source_filename = "test.cpp"
@@ -25,6 +36,8 @@ $_ZNK4MyIPclEv = comdat any
 
 $_Z8annotateIiEPT_S1_ = comdat any
 
+$_Z9annotate2IiEPT_S1_ = comdat any
+
 @.str = private unnamed_addr addrspace(1) constant [16 x i8] c"sycl-properties\00", section "llvm.metadata"
 @.str.1 = private unnamed_addr addrspace(1) constant [9 x i8] c"test.cpp\00", section "llvm.metadata"
 @.str.2 = private unnamed_addr addrspace(1) constant [21 x i8] c"sycl-buffer-location\00", section "llvm.metadata"
@@ -35,7 +48,8 @@ $_Z8annotateIiEPT_S1_ = comdat any
 ; Function Attrs: convergent mustprogress noinline norecurse nounwind optnone
 define linkonce_odr dso_local spir_func void @_ZNK4MyIPclEv(ptr addrspace(4) %this) comdat align 2 !srcloc !8 {
 entry:
-  %call = call spir_func noundef ptr addrspace(4) @_Z8annotateIiEPT_S1_(ptr addrspace(4) noundef %this)
+  %call1 = call spir_func noundef ptr addrspace(4) @_Z8annotateIiEPT_S1_(ptr addrspace(4) noundef %this)
+  %call2 = call spir_func noundef ptr addrspace(4) @_Z9annotate2IiEPT_S1_(ptr addrspace(4) noundef %this)
   ret void
 }
 
@@ -50,6 +64,20 @@ entry:
   %0 = load ptr addrspace(4), ptr addrspace(4) %ptr.addr.ascast, align 8
   %1 = call ptr addrspace(4) @llvm.ptr.annotation.p4.p1(ptr addrspace(4) %0, ptr addrspace(1) @.str.4, ptr addrspace(1) @.str.1, i32 25, ptr addrspace(1) null)
   ret ptr addrspace(4) %1
+}
+
+; Function Attrs: convergent mustprogress noinline norecurse nounwind optnone
+define linkonce_odr dso_local spir_func noundef ptr addrspace(4) @_Z9annotate2IiEPT_S1_(ptr addrspace(4) noundef %ptr) comdat !srcloc !9 {
+entry:
+  %retval = alloca ptr addrspace(4), align 8
+  %ptr.addr = alloca ptr addrspace(4), align 8
+  %retval.ascast = addrspacecast ptr %retval to ptr addrspace(4)
+  %ptr.addr.ascast = addrspacecast ptr %ptr.addr to ptr addrspace(4)
+  store ptr addrspace(4) %ptr, ptr addrspace(4) %ptr.addr.ascast, align 8
+  %0 = load ptr addrspace(4), ptr addrspace(4) %ptr.addr.ascast, align 8
+  %1 = getelementptr inbounds %struct.MyIP, ptr addrspace(4) %0, i32 0, i32 0
+  %2 = call ptr addrspace(4) @llvm.ptr.annotation.p4.p1(ptr addrspace(4) %1, ptr addrspace(1) @.str.4, ptr addrspace(1) @.str.1, i32 25, ptr addrspace(1) null)
+  ret ptr addrspace(4) %2
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(inaccessiblemem: readwrite)
