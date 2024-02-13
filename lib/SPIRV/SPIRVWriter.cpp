@@ -5525,6 +5525,7 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
   // is used to ensure blocks are written in the right order.
   const DominatorTree DT(*I);
   for (BasicBlock &FI : stablePreDominatorTraversal(*I, DT)) {
+    FI.convertFromNewDbgValues();
     transValue(&FI, nullptr);
   }
   for (auto &FI : *I) {
