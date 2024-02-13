@@ -15,7 +15,7 @@
 #include "NameMangleAPI.h"
 #include "ParameterType.h"
 #include <algorithm>
-#include <map>
+#include <unordered_map>
 #include <sstream>
 #include <string>
 
