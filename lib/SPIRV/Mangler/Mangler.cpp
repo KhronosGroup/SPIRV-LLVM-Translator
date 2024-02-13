@@ -15,9 +15,9 @@
 #include "NameMangleAPI.h"
 #include "ParameterType.h"
 #include <algorithm>
-#include <unordered_map>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 // According to IA64 name mangling spec,
 // builtin vector types should not be substituted
