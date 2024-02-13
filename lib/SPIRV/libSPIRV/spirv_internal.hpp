@@ -53,8 +53,8 @@ enum InternalSourceLanguageNonSemanticDI {
 };
 
 enum InternalLinkageType {
-    ILTPrev = LinkageTypeMax - 2,
-    ILTInternal
+  ILTPrev = LinkageTypeMax - 2,
+  ILTInternal
 };
 
 enum InternalOp {
