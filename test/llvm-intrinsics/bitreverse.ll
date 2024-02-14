@@ -12,11 +12,13 @@
 ; Check for expected bitreverse lowerings
 
 ; call-sites
+; CHECK-LLVM: i8 @llvm_bitreverse_i8
 ; CHECK-LLVM: i16 @llvm_bitreverse_i16
 ; CHECK-LLVM: i32 @llvm_bitreverse_i32
 ; CHECK-LLVM: i64 @llvm_bitreverse_i64
 
 ; definitions
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i8
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i16
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i32
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i64
@@ -25,20 +27,24 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; Function Attrs: convergent nounwind writeonly
-define spir_kernel void @testBitRev(i16 %a, i32 %b, i64 %c, ptr addrspace(1) nocapture %res) local_unnamed_addr #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !4 !kernel_arg_type !5 !kernel_arg_base_type !5 !kernel_arg_type_qual !6 {
+define spir_kernel void @testBitRev(i8 %a, i16 %b, i32 %c, i64 %d, ptr addrspace(1) nocapture %res) {
 entry:
-  %call16 = tail call i16 @llvm.bitreverse.i16(i16 %a)
+  %call8 = call i8 @llvm.bitreverse.i8(i8 %a)
+  store i8 %call8, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call16 = call i16 @llvm.bitreverse.i16(i16 %b)
   store i16 %call16, ptr addrspace(1) %res, align 2, !tbaa !7
   
-  %call32 = tail call i32 @llvm.bitreverse.i32(i32 %b)
+  %call32 = call i32 @llvm.bitreverse.i32(i32 %c)
   store i32 %call32, ptr addrspace(1) %res, align 4, !tbaa !7
 
-  %call64 = tail call i64 @llvm.bitreverse.i64(i64 %c)
+  %call64 = call i64 @llvm.bitreverse.i64(i64 %d)
   store i64 %call64, ptr addrspace(1) %res, align 8, !tbaa !7
   
   ret void
 }
 
+declare i8 @llvm.bitreverse.i8(i8)
 declare i16 @llvm.bitreverse.i16(i16)
 declare i32 @llvm.bitreverse.i32(i32)
 declare i64 @llvm.bitreverse.i64(i64)

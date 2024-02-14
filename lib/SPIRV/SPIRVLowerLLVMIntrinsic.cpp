@@ -77,6 +77,7 @@ typedef struct {
 const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 // Intrinsic ID                   Supporting Extension                   LLVM Intrinsic Name            Emulation Name                 Module with
 //                                                                                                                                     emulation function
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i8",          "llvm_bitreverse_i8",          LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverse},
   {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverse},

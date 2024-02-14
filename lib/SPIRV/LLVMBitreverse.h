@@ -23,112 +23,181 @@
 //
 //===----------------------------------------------------------------------===//
 
-// The IR below is slightly manually modified IR which was produced by Clang
-// from the C code below.
+// The IR below is slightly manually modified IR which was produced by the command:
+//
+//  clang -emit-llvm -O2 -g0 -fno-discard-value-names
+//
+// from the C code below with a custom clang that was modified to disable intrinsic
+// generation.
 //
 // #include <stdlib.h>
 // #include <stdint.h>
 //
-// uint16_t llvm_bitreverse_i16(uint16_t a) {
-//   uint16_t ret=0;
-//   uint32_t i;
+// #define MASK32HI 0xFFFFFFFF00000000LLU
+// #define MASK32LO 0x00000000FFFFFFFFLLU
 //
-//   for (i=0; i<16; i++) {
-//     ret<<=1;
-//     if (a&0x1)
-//       ret|=1;
-//     a>>=1;
-//   }
-//   return ret;
+// #define MASK16HI 0xFFFF0000FFFF0000LLU
+// #define MASK16LO 0x0000FFFF0000FFFFLLU
+//
+// #define  MASK8HI 0xFF00FF00FF00FF00LLU
+// #define  MASK8LO 0x00FF00FF00FF00FFLLU
+//
+// #define  MASK4HI 0xF0F0F0F0F0F0F0F0LLU
+// #define  MASK4LO 0x0F0F0F0F0F0F0F0FLLU
+//
+// #define  MASK2HI 0xCCCCCCCCCCCCCCCCLLU
+// #define  MASK2LO 0x3333333333333333LLU
+//
+// #define  MASK1HI 0xAAAAAAAAAAAAAAAALLU
+// #define  MASK1LO 0x5555555555555555LLU
+//
+// #define SWAP32(X,TYPE) ((((X)<<32)&((TYPE) MASK32HI)) | \
+//                         (((X)>>32)&((TYPE) MASK32LO)))
+// #define SWAP16(X,TYPE) ((((X)<<16)&((TYPE) MASK16HI)) | \
+//                         (((X)>>16)&((TYPE) MASK16LO)))
+// #define  SWAP8(X,TYPE) ((((X)<< 8)&((TYPE) MASK8HI )) | \
+//                         (((X)>> 8)&((TYPE) MASK8LO )))
+// #define  SWAP4(X,TYPE) ((((X)<< 4)&((TYPE) MASK4HI )) | \
+//                         (((X)>> 4)&((TYPE) MASK4LO )))
+// #define  SWAP2(X,TYPE) ((((X)<< 2)&((TYPE) MASK2HI )) | \
+//                         (((X)>> 2)&((TYPE) MASK2LO )))
+// #define  SWAP1(X,TYPE) ((((X)<< 1)&((TYPE) MASK1HI )) | \
+//                         (((X)>> 1)&((TYPE) MASK1LO )))
+//
+// uint8_t llvm_bitreverse_i8(uint8_t a) {
+//   a=SWAP4(a,uint8_t);
+//   a=SWAP2(a,uint8_t);
+//   a=SWAP1(a,uint8_t);
+//   return a;
+// }
+//
+// uint16_t llvm_bitreverse_i16(uint16_t a) {
+//   a=SWAP8(a,uint16_t);
+//   a=SWAP4(a,uint16_t);
+//   a=SWAP2(a,uint16_t);
+//   a=SWAP1(a,uint16_t);
+//   return a;
 // }
 //
 // uint32_t llvm_bitreverse_i32(uint32_t a) {
-//   uint32_t ret=0;
-//   uint32_t i;
-//
-//   for (i=0; i<32; i++) {
-//     ret<<=1;
-//     if (a&0x1)
-//       ret|=1;
-//     a>>=1;
-//   }
-//   return ret;
+//   a=SWAP16(a,uint32_t);
+//   a=SWAP8(a,uint32_t);
+//   a=SWAP4(a,uint32_t);
+//   a=SWAP2(a,uint32_t);
+//   a=SWAP1(a,uint32_t);
+//   return a;
 // }
 //
 // uint64_t llvm_bitreverse_i64(uint64_t a) {
-//   uint64_t ret=0;
-//   uint32_t i;
-//
-//   for (i=0; i<64; i++) {
-//     ret<<=1;
-//     if (a&0x1)
-//       ret|=1;
-//     a>>=1;
-//   }
-//   return ret;
+//   a=SWAP32(a,uint64_t);
+//   a=SWAP16(a,uint64_t);
+//   a=SWAP8(a,uint64_t);
+//   a=SWAP4(a,uint64_t);
+//   a=SWAP2(a,uint64_t);
+//   a=SWAP1(a,uint64_t);
+//   return a;
 // }
-//
-// Clang options: -emit-llvm -O1 -g0 -fno-discard-value-names
-// -O1 is used instead of -O2 to avoid generating a call to llvm.bitreverse.i16
 
 static const char LLVMBitreverse[]{R"(
+define zeroext i8 @llvm_bitreverse_i8(i8 %a) {
+entry:
+  %shl = shl i8 %a, 4
+  %shr = lshr i8 %a, 4
+  %or = or disjoint i8 %shl, %shr
+  %shl5 = shl i8 %or, 2
+  %and6 = and i8 %shl5, -52
+  %shr8 = lshr i8 %or, 2
+  %and9 = and i8 %shr8, 51
+  %or10 = or disjoint i8 %and6, %and9
+  %shl13 = shl i8 %or10, 1
+  %and14 = and i8 %shl13, -86
+  %shr16 = lshr i8 %or10, 1
+  %and17 = and i8 %shr16, 85
+  %or18 = or disjoint i8 %and14, %and17
+  ret i8 %or18
+}
+
 define zeroext i16 @llvm_bitreverse_i16(i16 %a) {
 entry:
-  br label %for.body
-
-for.body:                                         ; preds = %entry, %for.body
-  %i.013 = phi i32 [ 0, %entry ], [ %inc, %for.body ]
-  %ret.012 = phi i16 [ 0, %entry ], [ %spec.select, %for.body ]
-  %a.addr.011 = phi i16 [ %a, %entry ], [ %shr, %for.body ]
-  %shl = shl i16 %ret.012, 1
-  %0 = and i16 %a.addr.011, 1
-  %spec.select = or disjoint i16 %shl, %0
-  %shr = lshr i16 %a.addr.011, 1
-  %inc = add nuw nsw i32 %i.013, 1
-  %exitcond.not = icmp eq i32 %inc, 16
-  br i1 %exitcond.not, label %for.end, label %for.body
-
-for.end:                                          ; preds = %for.body
-  ret i16 %spec.select
+  %shl = shl i16 %a, 8
+  %shr = lshr i16 %a, 8
+  %or = or disjoint i16 %shl, %shr
+  %shl5 = shl i16 %or, 4
+  %and6 = and i16 %shl5, -3856
+  %shr8 = lshr i16 %or, 4
+  %and9 = and i16 %shr8, 3855
+  %or10 = or disjoint i16 %and6, %and9
+  %shl13 = shl i16 %or10, 2
+  %and14 = and i16 %shl13, -13108
+  %shr16 = lshr i16 %or10, 2
+  %and17 = and i16 %shr16, 13107
+  %or18 = or disjoint i16 %and14, %and17
+  %shl21 = shl i16 %or18, 1
+  %and22 = and i16 %shl21, -21846
+  %shr24 = lshr i16 %or18, 1
+  %and25 = and i16 %shr24, 21845
+  %or26 = or disjoint i16 %and22, %and25
+  ret i16 %or26
 }
 
 define i32 @llvm_bitreverse_i32(i32 %a) {
 entry:
-  br label %for.body
-
-for.body:                                         ; preds = %entry, %for.body
-  %i.07 = phi i32 [ 0, %entry ], [ %inc, %for.body ]
-  %ret.06 = phi i32 [ 0, %entry ], [ %spec.select, %for.body ]
-  %a.addr.05 = phi i32 [ %a, %entry ], [ %shr, %for.body ]
-  %shl = shl i32 %ret.06, 1
-  %and = and i32 %a.addr.05, 1
-  %spec.select = or disjoint i32 %shl, %and
-  %shr = lshr i32 %a.addr.05, 1
-  %inc = add nuw nsw i32 %i.07, 1
-  %exitcond.not = icmp eq i32 %inc, 32
-  br i1 %exitcond.not, label %for.end, label %for.body
-
-for.end:                                          ; preds = %for.body
-  ret i32 %spec.select
+  %shl = shl i32 %a, 16
+  %shr = lshr i32 %a, 16
+  %or = or disjoint i32 %shl, %shr
+  %shl2 = shl i32 %or, 8
+  %and3 = and i32 %shl2, -16711936
+  %shr4 = lshr i32 %or, 8
+  %and5 = and i32 %shr4, 16711935
+  %or6 = or disjoint i32 %and3, %and5
+  %shl7 = shl i32 %or6, 4
+  %and8 = and i32 %shl7, -252645136
+  %shr9 = lshr i32 %or6, 4
+  %and10 = and i32 %shr9, 252645135
+  %or11 = or disjoint i32 %and8, %and10
+  %shl12 = shl i32 %or11, 2
+  %and13 = and i32 %shl12, -858993460
+  %shr14 = lshr i32 %or11, 2
+  %and15 = and i32 %shr14, 858993459
+  %or16 = or disjoint i32 %and13, %and15
+  %shl17 = shl i32 %or16, 1
+  %and18 = and i32 %shl17, -1431655766
+  %shr19 = lshr i32 %or16, 1
+  %and20 = and i32 %shr19, 1431655765
+  %or21 = or disjoint i32 %and18, %and20
+  ret i32 %or21
 }
 
 define i64 @llvm_bitreverse_i64(i64 %a) {
 entry:
-  br label %for.body
-
-for.body:                                         ; preds = %entry, %for.body
-  %i.07 = phi i32 [ 0, %entry ], [ %inc, %for.body ]
-  %ret.06 = phi i64 [ 0, %entry ], [ %spec.select, %for.body ]
-  %a.addr.05 = phi i64 [ %a, %entry ], [ %shr, %for.body ]
-  %shl = shl i64 %ret.06, 1
-  %and = and i64 %a.addr.05, 1
-  %spec.select = or disjoint i64 %shl, %and
-  %shr = lshr i64 %a.addr.05, 1
-  %inc = add nuw nsw i32 %i.07, 1
-  %exitcond.not = icmp eq i32 %inc, 64
-  br i1 %exitcond.not, label %for.end, label %for.body
-
-for.end:                                          ; preds = %for.body
-  ret i64 %spec.select
+  %shl = shl i64 %a, 32
+  %shr = lshr i64 %a, 32
+  %or = or disjoint i64 %shl, %shr
+  %shl2 = shl i64 %or, 16
+  %and3 = and i64 %shl2, -281470681808896
+  %shr4 = lshr i64 %or, 16
+  %and5 = and i64 %shr4, 281470681808895
+  %or6 = or disjoint i64 %and3, %and5
+  %shl7 = shl i64 %or6, 8
+  %and8 = and i64 %shl7, -71777214294589696
+  %shr9 = lshr i64 %or6, 8
+  %and10 = and i64 %shr9, 71777214294589695
+  %or11 = or disjoint i64 %and8, %and10
+  %shl12 = shl i64 %or11, 4
+  %and13 = and i64 %shl12, -1085102592571150096
+  %shr14 = lshr i64 %or11, 4
+  %and15 = and i64 %shr14, 1085102592571150095
+  %or16 = or disjoint i64 %and13, %and15
+  %shl17 = shl i64 %or16, 2
+  %and18 = and i64 %shl17, -3689348814741910324
+  %shr19 = lshr i64 %or16, 2
+  %and20 = and i64 %shr19, 3689348814741910323
+  %or21 = or disjoint i64 %and18, %and20
+  %shl22 = shl i64 %or21, 1
+  %and23 = and i64 %shl22, -6148914691236517206
+  %shr24 = lshr i64 %or21, 1
+  %and25 = and i64 %shr24, 6148914691236517205
+  %or26 = or disjoint i64 %and23, %and25
+  ret i64 %or26
 }
 )"};
