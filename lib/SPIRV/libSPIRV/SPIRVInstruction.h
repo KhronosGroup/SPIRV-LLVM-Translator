@@ -3382,6 +3382,24 @@ _SPIRV_OP(JointMatrixUUMad, true, 7)
 _SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 #undef _SPIRV_OP
 
+class SPIRVCooperativeMatrixPrefetchINTELInstBase
+    : public SPIRVInstTemplateBase {
+protected:
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_joint_matrix;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilityCooperativeMatrixPrefetchINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVCooperativeMatrixPrefetchINTELInstBase,       \
+                            internal::Op##x##INTEL, __VA_ARGS__>               \
+      SPIRV##x##INTEL;
+_SPIRV_OP(CooperativeMatrixPrefetch, false, 8, true, 5)
+#undef _SPIRV_OP
+
 class SPIRVCooperativeMatrixKHRInstBase : public SPIRVInstTemplateBase {
 protected:
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
