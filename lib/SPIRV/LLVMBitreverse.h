@@ -23,12 +23,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-// The IR below is slightly manually modified IR which was produced by the command:
+// The IR below is slightly manually modified IR which was produced by the
+// command:
 //
 //  clang -emit-llvm -O2 -g0 -fno-discard-value-names
 //
-// from the C code below with a custom clang that was modified to disable intrinsic
-// generation.
+// from the C code below with a custom clang that was modified to disable
+// intrinsic generation.
 //
 // #include <stdlib.h>
 // #include <stdint.h>
