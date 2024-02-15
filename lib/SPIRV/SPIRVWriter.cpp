@@ -1123,9 +1123,6 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
 
 void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
                                                            Function *F) {
-  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
-    return;
-
   if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
     auto *RegisterAllocMode = RegisterAllocModeMD->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
@@ -1144,11 +1141,11 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
           OpExecutionModeId, BF, internal::ExecutionModeMaximumRegistersIdINTEL,
           Const->getId())));
     } else {
-      int64_t RegisterAllocNodeMDOp =
+      int64_t RegisterAllocVal =
           mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, internal::ExecutionModeMaximumRegistersINTEL,
-          RegisterAllocNodeMDOp)));
+          RegisterAllocVal)));
     }
   }
 }
