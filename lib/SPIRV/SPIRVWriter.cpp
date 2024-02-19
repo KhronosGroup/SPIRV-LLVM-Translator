@@ -1125,17 +1125,20 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
 
 void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
                                                            Function *F) {
-  if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
-    auto *RegisterAllocMode = RegisterAllocModeMD->getOperand(0).get();
+  SmallVector<MDNode *, 1> RegisterAllocModeMDs;
+  F->getMetadata("RegisterAllocMode", RegisterAllocModeMDs);
+
+  for (unsigned I = 0; I < RegisterAllocModeMDs.size(); I++) {
+    auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
-      StringRef Str = getMDOperandAsString(RegisterAllocModeMD, 0);
+      StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
       if (Str == "AutoINTEL")
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             OpExecutionMode, BF,
             internal::ExecutionModeNamedMaximumRegistersINTEL, 0)));
     } else if (isa<MDNode>(RegisterAllocMode)) {
       auto *RegisterAllocNodeMDOp =
-          getMDOperandAsMDNode(RegisterAllocModeMD, 0);
+          getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
       int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
