@@ -19,38 +19,38 @@
 // scalar
 ///////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t llvm_bitreverse_i8(uint8_t a) {
-  a=SWAP4(a,uint8_t);    
-  a=SWAP2(a,uint8_t);
-  a=SWAP1(a,uint8_t);
-  return a;
+uint8_t llvm_bitreverse_i8(uint8_t A) {
+  A=SWAP4(A,uint8_t);
+  A=SWAP2(A,uint8_t);
+  A=SWAP1(A,uint8_t);
+  return A;
 }
 
-uint16_t llvm_bitreverse_i16(uint16_t a) {
-  a=SWAP8(a,uint16_t);
-  a=SWAP4(a,uint16_t);
-  a=SWAP2(a,uint16_t);
-  a=SWAP1(a,uint16_t);
-  return a;
+uint16_t llvm_bitreverse_i16(uint16_t A) {
+  A=SWAP8(A,uint16_t);
+  A=SWAP4(A,uint16_t);
+  A=SWAP2(A,uint16_t);
+  A=SWAP1(A,uint16_t);
+  return A;
 }
 
-uint32_t llvm_bitreverse_i32(uint32_t a) {
-  a=SWAP16(a,uint32_t);  
-  a=SWAP8(a,uint32_t);  
-  a=SWAP4(a,uint32_t);  
-  a=SWAP2(a,uint32_t);  
-  a=SWAP1(a,uint32_t);  
-  return a;  
+uint32_t llvm_bitreverse_i32(uint32_t A) {
+  A=SWAP16(A,uint32_t);
+  A=SWAP8(A,uint32_t);
+  A=SWAP4(A,uint32_t);
+  A=SWAP2(A,uint32_t);
+  A=SWAP1(A,uint32_t);
+  return A;
 }
 
-uint64_t llvm_bitreverse_i64(uint64_t a) {
-  a=SWAP32(a,uint64_t);
-  a=SWAP16(a,uint64_t);    
-  a=SWAP8(a,uint64_t);  
-  a=SWAP4(a,uint64_t);  
-  a=SWAP2(a,uint64_t);  
-  a=SWAP1(a,uint64_t);  
-  return a;    
+uint64_t llvm_bitreverse_i64(uint64_t A) {
+  A=SWAP32(A,uint64_t);
+  A=SWAP16(A,uint64_t);
+  A=SWAP8(A,uint64_t);
+  A=SWAP4(A,uint64_t);
+  A=SWAP2(A,uint64_t);
+  A=SWAP1(A,uint64_t);
+  return A;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -62,38 +62,38 @@ typedef uint16_t uint16_t2  __attribute__((ext_vector_type(2)));
 typedef uint32_t uint32_t2  __attribute__((ext_vector_type(2)));
 typedef uint64_t uint64_t2  __attribute__((ext_vector_type(2)));
 
-uint8_t2 llvm_bitreverse_v2i8(uint8_t2 a) {
-  a=SWAP4(a,uint8_t);    
-  a=SWAP2(a,uint8_t);
-  a=SWAP1(a,uint8_t);
-  return a;
+uint8_t2 llvm_bitreverse_v2i8(uint8_t2 A) {
+  A=SWAP4(A,uint8_t);
+  A=SWAP2(A,uint8_t);
+  A=SWAP1(A,uint8_t);
+  return A;
 }
 
-uint16_t2 llvm_bitreverse_v2i16(uint16_t2 a) {
-  a=SWAP8(a,uint16_t);
-  a=SWAP4(a,uint16_t);
-  a=SWAP2(a,uint16_t);
-  a=SWAP1(a,uint16_t);
-  return a;
+uint16_t2 llvm_bitreverse_v2i16(uint16_t2 A) {
+  A=SWAP8(A,uint16_t);
+  A=SWAP4(A,uint16_t);
+  A=SWAP2(A,uint16_t);
+  A=SWAP1(A,uint16_t);
+  return A;
 }
 
-uint32_t2 llvm_bitreverse_v2i32(uint32_t2 a) {
-  a=SWAP16(a,uint32_t);  
-  a=SWAP8(a,uint32_t);  
-  a=SWAP4(a,uint32_t);  
-  a=SWAP2(a,uint32_t);  
-  a=SWAP1(a,uint32_t);  
-  return a;  
+uint32_t2 llvm_bitreverse_v2i32(uint32_t2 A) {
+  A=SWAP16(A,uint32_t);
+  A=SWAP8(A,uint32_t);
+  A=SWAP4(A,uint32_t);
+  A=SWAP2(A,uint32_t);
+  A=SWAP1(A,uint32_t);
+  return A;
 }
 
-uint64_t2 llvm_bitreverse_v2i64(uint64_t2 a) {
-  a=SWAP32(a,uint64_t);
-  a=SWAP16(a,uint64_t);    
-  a=SWAP8(a,uint64_t);  
-  a=SWAP4(a,uint64_t);  
-  a=SWAP2(a,uint64_t);  
-  a=SWAP1(a,uint64_t);  
-  return a;    
+uint64_t2 llvm_bitreverse_v2i64(uint64_t2 A) {
+  A=SWAP32(A,uint64_t);
+  A=SWAP16(A,uint64_t);
+  A=SWAP8(A,uint64_t);
+  A=SWAP4(A,uint64_t);
+  A=SWAP2(A,uint64_t);
+  A=SWAP1(A,uint64_t);
+  return A;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -105,36 +105,36 @@ typedef uint16_t uint16_t4  __attribute__((ext_vector_type(4)));
 typedef uint32_t uint32_t4  __attribute__((ext_vector_type(4)));
 typedef uint64_t uint64_t4  __attribute__((ext_vector_type(4)));
 
-uint8_t4 llvm_bitreverse_v4i8(uint8_t4 a) {
-  a=SWAP4(a,uint8_t);    
-  a=SWAP2(a,uint8_t);
-  a=SWAP1(a,uint8_t);
-  return a;
+uint8_t4 llvm_bitreverse_v4i8(uint8_t4 A) {
+  A=SWAP4(A,uint8_t);
+  A=SWAP2(A,uint8_t);
+  A=SWAP1(A,uint8_t);
+  return A;
 }
 
-uint16_t4 llvm_bitreverse_v4i16(uint16_t4 a) {
-  a=SWAP8(a,uint16_t);
-  a=SWAP4(a,uint16_t);
-  a=SWAP2(a,uint16_t);
-  a=SWAP1(a,uint16_t);
-  return a;
+uint16_t4 llvm_bitreverse_v4i16(uint16_t4 A) {
+  A=SWAP8(A,uint16_t);
+  A=SWAP4(A,uint16_t);
+  A=SWAP2(A,uint16_t);
+  A=SWAP1(A,uint16_t);
+  return A;
 }
 
-uint32_t4 llvm_bitreverse_v4i32(uint32_t4 a) {
-  a=SWAP16(a,uint32_t);  
-  a=SWAP8(a,uint32_t);  
-  a=SWAP4(a,uint32_t);  
-  a=SWAP2(a,uint32_t);  
-  a=SWAP1(a,uint32_t);  
-  return a;  
+uint32_t4 llvm_bitreverse_v4i32(uint32_t4 A) {
+  A=SWAP16(A,uint32_t);
+  A=SWAP8(A,uint32_t);
+  A=SWAP4(A,uint32_t);
+  A=SWAP2(A,uint32_t);
+  A=SWAP1(A,uint32_t);
+  return A;
 }
 
-uint64_t4 llvm_bitreverse_v4i64(uint64_t4 a) {
-  a=SWAP32(a,uint64_t);
-  a=SWAP16(a,uint64_t);    
-  a=SWAP8(a,uint64_t);  
-  a=SWAP4(a,uint64_t);  
-  a=SWAP2(a,uint64_t);  
-  a=SWAP1(a,uint64_t);  
-  return a;    
+uint64_t4 llvm_bitreverse_v4i64(uint64_t4 A) {
+  A=SWAP32(A,uint64_t);
+  A=SWAP16(A,uint64_t);
+  A=SWAP8(A,uint64_t);
+  A=SWAP4(A,uint64_t);
+  A=SWAP2(A,uint64_t);
+  A=SWAP1(A,uint64_t);
+  return A;
 }
