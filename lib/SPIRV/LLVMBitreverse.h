@@ -23,64 +23,46 @@
 //
 //===----------------------------------------------------------------------===//
 
-// The IR below is slightly manually modified IR which was produced by the
-// command:
+// The IR below is manually modified IR which was produced by the
+// commands:
 //
-//  clang -emit-llvm -O2 -g0 -fno-discard-value-names -c
+//   clang -emit-llvm bitreverse.c -c -O2
+//   llvm-dis bitreverse.bc
+//   cat bitreverse.ll | sed 's/ dso_local//'             \
+//                     | sed 's/ noundef//'               \
+//                     | sed 's/zeroext %/%/'             \
+//                     | sed 's/ local_unnamed_addr #0//' \
+//                     | sed 's/ local_unnamed_addr #1//' \
+//                     | sed 's/ local_unnamed_addr #2//' \
+//                     | sed 's/, !tbaa !3//'             \
+//                     | grep -v "Function Attrs:"
 //
-// from the C code below with a custom clang that was modified to disable
-// intrinsic generation.
+// from the C code in LLVMIntrinsicEmulation/bitreverse.c with a custom clang that was modified to disable
+// llvm.bitreverse.* intrinsic generation.
 //
-// #include <stdlib.h>
-// #include <stdint.h>
+// Manual modification was done to avoid coercing vector types into scalar types.  For example,
+// the original LLVM IR:
 //
-// #define MASK32LO 0x00000000FFFFFFFFLLU
-// #define MASK16LO 0x0000FFFF0000FFFFLLU
-// #define  MASK8LO 0x00FF00FF00FF00FFLLU
-// #define  MASK4LO 0x0F0F0F0F0F0F0F0FLLU
-// #define  MASK2LO 0x3333333333333333LLU
-// #define  MASK1LO 0x5555555555555555LLU
+//   define i32 @llvm_bitreverse_v4i8(i32 %a.coerce) {
+//   entry:
+//     %0 = bitcast i32 %a.coerce to <4 x i8>
+//     %shl = shl <4 x i8> %0, <i8 4, i8 4, i8 4, i8 4>
+//     %shr = lshr <4 x i8> %0, <i8 4, i8 4, i8 4, i8 4>
+//     ...
+//     %1 = bitcast <4 x i8> %or12 to i32
+//     ret i32 %1
+//   }
 //
-// #define SWAP32(X,TYPE) (((X&MASK32LO)<<32) | (((X)>>32)&((TYPE) MASK32LO)))
-// #define SWAP16(X,TYPE) (((X&MASK16LO)<<16) | (((X)>>16)&((TYPE) MASK16LO)))
-// #define  SWAP8(X,TYPE) (((X&MASK8LO )<< 8) | (((X)>> 8)&((TYPE) MASK8LO)))
-// #define  SWAP4(X,TYPE) (((X&MASK4LO )<< 4) | (((X)>> 4)&((TYPE) MASK4LO)))
-// #define  SWAP2(X,TYPE) (((X&MASK2LO )<< 2) | (((X)>> 2)&((TYPE) MASK2LO)))
-// #define  SWAP1(X,TYPE) (((X&MASK1LO )<< 1) | (((X)>> 1)&((TYPE) MASK1LO)))
+// was converted to:
 //
-// uint8_t llvm_bitreverse_i8(uint8_t a) {
-//   a=SWAP4(a,uint8_t);
-//   a=SWAP2(a,uint8_t);
-//   a=SWAP1(a,uint8_t);
-//   return a;
-// }
-//
-// uint16_t llvm_bitreverse_i16(uint16_t a) {
-//   a=SWAP8(a,uint16_t);
-//   a=SWAP4(a,uint16_t);
-//   a=SWAP2(a,uint16_t);
-//   a=SWAP1(a,uint16_t);
-//   return a;
-// }
-//
-// uint32_t llvm_bitreverse_i32(uint32_t a) {
-//   a=SWAP16(a,uint32_t);
-//   a=SWAP8(a,uint32_t);
-//   a=SWAP4(a,uint32_t);
-//   a=SWAP2(a,uint32_t);
-//   a=SWAP1(a,uint32_t);
-//   return a;
-// }
-//
-// uint64_t llvm_bitreverse_i64(uint64_t a) {
-//   a=SWAP32(a,uint64_t);
-//   a=SWAP16(a,uint64_t);
-//   a=SWAP8(a,uint64_t);
-//   a=SWAP4(a,uint64_t);
-//   a=SWAP2(a,uint64_t);
-//   a=SWAP1(a,uint64_t);
-//   return a;
-// }
+//   define <4 x i8> @llvm_bitreverse_v4i8(<4 x i8> %a) {
+//   entry:
+//     %shl = shl <4 x i8> %a, <i8 4, i8 4, i8 4, i8 4>
+//     %shr = lshr <4 x i8> %a, <i8 4, i8 4, i8 4, i8 4>
+//     ...
+//     ret <4 x i8> %or12
+//   }
+
 
 static const char LLVMBitreverseScalar[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %a) {
