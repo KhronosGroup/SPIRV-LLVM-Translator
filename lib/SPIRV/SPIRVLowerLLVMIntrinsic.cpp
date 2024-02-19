@@ -61,40 +61,39 @@ using namespace SPIRV;
 namespace SPIRV {
 
 namespace {
+
 typedef struct {
-  const Intrinsic::ID ID;
   // Extension that supports the LLVM Intrinsic.
   // Thus, emulation is not needed if extension is enabled.
   const ExtensionID SupportingExtension;
-  const char *LLVMFuncName;
   const char *SPIRVFuncName;
   const char *ModuleText;
-} LLVMIntrinsicMapEntryType;
+} LLVMIntrinsicMapValueType;
 
 #define NO_SUPPORTING_EXTENSION ExtensionID::Last
 
 // clang-format off
-const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
-// Intrinsic ID                   Supporting Extension                   LLVM Intrinsic Name            Emulation Name                 Module with
-//                                                                                                                                     emulation function
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i8",          "llvm_bitreverse_i8",          LLVMBitreverseScalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverseScalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverseScalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverseScalar},
+const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries= {
+//  LLVM Intrinsic Name             Supporting Extension                   Emulation Name                 Module with
+//                                                                                                        emulation function
+  { "llvm.bitreverse.i8",          {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i8",          LLVMBitreverseScalar}},
+  { "llvm.bitreverse.i16",         {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i16",         LLVMBitreverseScalar}},
+  { "llvm.bitreverse.i32",         {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i32",         LLVMBitreverseScalar}},
+  { "llvm.bitreverse.i64",         {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i64",         LLVMBitreverseScalar}},
 
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i8",        "llvm_bitreverse_v2i8",        LLVMBitreverseV2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i16",       "llvm_bitreverse_v2i16",       LLVMBitreverseV2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i32",       "llvm_bitreverse_v2i32",       LLVMBitreverseV2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i64",       "llvm_bitreverse_v2i64",       LLVMBitreverseV2},
+  { "llvm.bitreverse.v2i8",        {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i8",        LLVMBitreverseV2}},
+  { "llvm.bitreverse.v2i16",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i16",       LLVMBitreverseV2}},
+  { "llvm.bitreverse.v2i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i32",       LLVMBitreverseV2}},
+  { "llvm.bitreverse.v2i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i64",       LLVMBitreverseV2}},
 
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i8",        "llvm_bitreverse_v4i8",        LLVMBitreverseV4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i16",       "llvm_bitreverse_v4i16",       LLVMBitreverseV4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i32",       "llvm_bitreverse_v4i32",       LLVMBitreverseV4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i64",       "llvm_bitreverse_v4i64",       LLVMBitreverseV4},
+  { "llvm.bitreverse.v4i8",        {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i8",        LLVMBitreverseV4}},
+  { "llvm.bitreverse.v4i16",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i16",       LLVMBitreverseV4}},
+  { "llvm.bitreverse.v4i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i32",       LLVMBitreverseV4}},
+  { "llvm.bitreverse.v4i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i64",       LLVMBitreverseV4}},
 
-  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i16", "llvm_sadd_with_overflow_i16", LLVMSaddWithOverflow},
-  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i32", "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow},
-  {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i64", "llvm_sadd_with_overflow_i64", LLVMSaddWithOverflow},
+  { "llvm.sadd.with.overflow.i16", {NO_SUPPORTING_EXTENSION,               "llvm_sadd_with_overflow_i16", LLVMSaddWithOverflow}},
+  { "llvm.sadd.with.overflow.i32", {NO_SUPPORTING_EXTENSION,               "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow}},
+  { "llvm.sadd.with.overflow.i64", {NO_SUPPORTING_EXTENSION,               "llvm_sadd_with_overflow_i64", LLVMSaddWithOverflow}},
 };
 // clang-format on
 
@@ -103,8 +102,6 @@ const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
 
-  const LLVMIntrinsicMapEntryType *MapEntry{nullptr};
-
   if (!II)
     return;
 
@@ -112,20 +109,11 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   assert(IntrinsicFunc && "Missing function");
   StringRef IntrinsicName = IntrinsicFunc->getName();
 
-  for (const LLVMIntrinsicMapEntryType &LLVMIntrinsicMapEntry :
-       LLVMIntrinsicMapEntries) {
-    if (II->getIntrinsicID() == LLVMIntrinsicMapEntry.ID &&
-        IntrinsicName == LLVMIntrinsicMapEntry.LLVMFuncName &&
-        // Intrinsic is not supported by an extension
-        !Opts.isAllowedToUseExtension(
-            LLVMIntrinsicMapEntry.SupportingExtension)) {
-      // emulation is needed
-      MapEntry = &LLVMIntrinsicMapEntry;
-      break;
-    }
-  }
-
-  if (!MapEntry)
+  const LLVMIntrinsicMapValueType *MapEntry{nullptr};
+  auto It = LLVMIntrinsicMapEntries.find(IntrinsicName);
+  if (It!=LLVMIntrinsicMapEntries.end())
+    MapEntry = &It->second;
+  if (!MapEntry || Opts.isAllowedToUseExtension(MapEntry->SupportingExtension))
     return;
 
   // Redirect @llvm.* call to the function we have in
