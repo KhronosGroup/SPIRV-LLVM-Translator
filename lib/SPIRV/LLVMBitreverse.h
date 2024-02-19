@@ -82,74 +82,74 @@
 //   return a;
 // }
 
-static const char LLVMBitreverse[]{R"(
+static const char LLVMBitreverse_Scalar[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %a) {
 entry:
-  %0 = shl i8 %a, 4
-  %1 = lshr i8 %a, 4
-  %or29 = or disjoint i8 %0, %1
-  %2 = shl i8 %or29, 2
-  %3 = and i8 %2, -52
-  %4 = lshr i8 %or29, 2
-  %5 = and i8 %4, 51
-  %or1230 = or disjoint i8 %3, %5
-  %6 = shl i8 %or1230, 1
-  %7 = and i8 %6, -86
-  %8 = lshr i8 %or1230, 1
-  %9 = and i8 %8, 85
-  %or2131 = or disjoint i8 %7, %9
-  ret i8 %or2131
+  %and = shl i8 %a, 4
+  %shr = lshr i8 %a, 4
+  %or = or disjoint i8 %and, %shr
+  %and5 = shl i8 %or, 2
+  %shl6 = and i8 %and5, -52
+  %shr8 = lshr i8 %or, 2
+  %and9 = and i8 %shr8, 51
+  %or10 = or disjoint i8 %shl6, %and9
+  %and13 = shl i8 %or10, 1
+  %shl14 = and i8 %and13, -86
+  %shr16 = lshr i8 %or10, 1
+  %and17 = and i8 %shr16, 85
+  %or18 = or disjoint i8 %shl14, %and17
+  ret i8 %or18
 }
 
 define zeroext i16 @llvm_bitreverse_i16(i16 %a) {
 entry:
-  %0 = shl i16 %a, 8
-  %1 = lshr i16 %a, 8
-  %or40 = or disjoint i16 %0, %1
-  %2 = shl i16 %or40, 4
-  %3 = and i16 %2, -3856
-  %4 = lshr i16 %or40, 4
-  %5 = and i16 %4, 3855
-  %or1241 = or disjoint i16 %3, %5
-  %6 = shl i16 %or1241, 2
-  %7 = and i16 %6, -13108
-  %8 = lshr i16 %or1241, 2
-  %9 = and i16 %8, 13107
-  %or2142 = or disjoint i16 %7, %9
-  %10 = shl i16 %or2142, 1
-  %11 = and i16 %10, -21846
-  %12 = lshr i16 %or2142, 1
-  %13 = and i16 %12, 21845
-  %or3043 = or disjoint i16 %11, %13
-  ret i16 %or3043
+  %and = shl i16 %a, 8
+  %shr = lshr i16 %a, 8
+  %or = or disjoint i16 %and, %shr
+  %and5 = shl i16 %or, 4
+  %shl6 = and i16 %and5, -3856
+  %shr8 = lshr i16 %or, 4
+  %and9 = and i16 %shr8, 3855
+  %or10 = or disjoint i16 %shl6, %and9
+  %and13 = shl i16 %or10, 2
+  %shl14 = and i16 %and13, -13108
+  %shr16 = lshr i16 %or10, 2
+  %and17 = and i16 %shr16, 13107
+  %or18 = or disjoint i16 %shl14, %and17
+  %and21 = shl i16 %or18, 1
+  %shl22 = and i16 %and21, -21846
+  %shr24 = lshr i16 %or18, 1
+  %and25 = and i16 %shr24, 21845
+  %or26 = or disjoint i16 %shl22, %and25
+  ret i16 %or26
 }
 
 define i32 @llvm_bitreverse_i32(i32 %a) {
 entry:
-  %0 = shl i32 %a, 16
+  %and = shl i32 %a, 16
   %shr = lshr i32 %a, 16
-  %or46 = or disjoint i32 %0, %shr
-  %1 = shl i32 %or46, 8
-  %2 = and i32 %1, -16711936
-  %shr7 = lshr i32 %or46, 8
-  %and8 = and i32 %shr7, 16711935
-  %or1047 = or disjoint i32 %2, %and8
-  %3 = shl i32 %or1047, 4
-  %4 = and i32 %3, -252645136
-  %shr15 = lshr i32 %or1047, 4
-  %and16 = and i32 %shr15, 252645135
-  %or1848 = or disjoint i32 %4, %and16
-  %5 = shl i32 %or1848, 2
-  %6 = and i32 %5, -858993460
-  %shr23 = lshr i32 %or1848, 2
-  %and24 = and i32 %shr23, 858993459
-  %or2649 = or disjoint i32 %6, %and24
-  %7 = shl i32 %or2649, 1
-  %8 = and i32 %7, -1431655766
-  %shr31 = lshr i32 %or2649, 1
-  %and32 = and i32 %shr31, 1431655765
-  %or3450 = or disjoint i32 %8, %and32
-  ret i32 %or3450
+  %or = or disjoint i32 %and, %shr
+  %and2 = shl i32 %or, 8
+  %shl3 = and i32 %and2, -16711936
+  %shr4 = lshr i32 %or, 8
+  %and5 = and i32 %shr4, 16711935
+  %or6 = or disjoint i32 %shl3, %and5
+  %and7 = shl i32 %or6, 4
+  %shl8 = and i32 %and7, -252645136
+  %shr9 = lshr i32 %or6, 4
+  %and10 = and i32 %shr9, 252645135
+  %or11 = or disjoint i32 %shl8, %and10
+  %and12 = shl i32 %or11, 2
+  %shl13 = and i32 %and12, -858993460
+  %shr14 = lshr i32 %or11, 2
+  %and15 = and i32 %shr14, 858993459
+  %or16 = or disjoint i32 %shl13, %and15
+  %and17 = shl i32 %or16, 1
+  %shl18 = and i32 %and17, -1431655766
+  %shr19 = lshr i32 %or16, 1
+  %and20 = and i32 %shr19, 1431655765
+  %or21 = or disjoint i32 %shl18, %and20
+  ret i32 %or21
 }
 
 define i64 @llvm_bitreverse_i64(i64 %a) {
@@ -183,5 +183,213 @@ entry:
   %and25 = and i64 %shr24, 6148914691236517205
   %or26 = or disjoint i64 %shl23, %and25
   ret i64 %or26
+}
+)"};
+
+static const char LLVMBitreverse_V2[]{R"(
+define <2 x i8> @llvm_bitreverse_v2i8(<2 x i8> %a) {
+entry:
+  %shl = shl <2 x i8> %a, <i8 4, i8 4>
+  %shr = lshr <2 x i8> %a, <i8 4, i8 4>
+  %or = or disjoint <2 x i8> %shl, %shr
+  %and3 = shl <2 x i8> %or, <i8 2, i8 2>
+  %shl4 = and <2 x i8> %and3, <i8 -52, i8 -52>
+  %shr5 = lshr <2 x i8> %or, <i8 2, i8 2>
+  %and6 = and <2 x i8> %shr5, <i8 51, i8 51>
+  %or7 = or disjoint <2 x i8> %shl4, %and6
+  %and8 = shl <2 x i8> %or7, <i8 1, i8 1>
+  %shl9 = and <2 x i8> %and8, <i8 -86, i8 -86>
+  %shr10 = lshr <2 x i8> %or7, <i8 1, i8 1>
+  %and11 = and <2 x i8> %shr10, <i8 85, i8 85>
+  %or12 = or disjoint <2 x i8> %shl9, %and11
+  ret <2 x i8> %or12
+}
+
+define <2 x i16> @llvm_bitreverse_v2i16(<2 x i16> %a) {
+entry:
+  %shl = shl <2 x i16> %a, <i16 8, i16 8>
+  %shr = lshr <2 x i16> %a, <i16 8, i16 8>
+  %or = or disjoint <2 x i16> %shl, %shr
+  %and3 = shl <2 x i16> %or, <i16 4, i16 4>
+  %shl4 = and <2 x i16> %and3, <i16 -3856, i16 -3856>
+  %shr5 = lshr <2 x i16> %or, <i16 4, i16 4>
+  %and6 = and <2 x i16> %shr5, <i16 3855, i16 3855>
+  %or7 = or disjoint <2 x i16> %shl4, %and6
+  %and8 = shl <2 x i16> %or7, <i16 2, i16 2>
+  %shl9 = and <2 x i16> %and8, <i16 -13108, i16 -13108>
+  %shr10 = lshr <2 x i16> %or7, <i16 2, i16 2>
+  %and11 = and <2 x i16> %shr10, <i16 13107, i16 13107>
+  %or12 = or disjoint <2 x i16> %shl9, %and11
+  %and13 = shl <2 x i16> %or12, <i16 1, i16 1>
+  %shl14 = and <2 x i16> %and13, <i16 -21846, i16 -21846>
+  %shr15 = lshr <2 x i16> %or12, <i16 1, i16 1>
+  %and16 = and <2 x i16> %shr15, <i16 21845, i16 21845>
+  %or17 = or disjoint <2 x i16> %shl14, %and16
+  ret <2 x i16> %or17
+}
+
+define <2 x i32> @llvm_bitreverse_v2i32(<2 x i32> %a) {
+entry:
+  %shl = shl <2 x i32> %a, <i32 16, i32 16>
+  %shr = lshr <2 x i32> %a, <i32 16, i32 16>
+  %or = or disjoint <2 x i32> %shl, %shr
+  %and3 = shl <2 x i32> %or, <i32 8, i32 8>
+  %shl4 = and <2 x i32> %and3, <i32 -16711936, i32 -16711936>
+  %shr5 = lshr <2 x i32> %or, <i32 8, i32 8>
+  %and6 = and <2 x i32> %shr5, <i32 16711935, i32 16711935>
+  %or7 = or disjoint <2 x i32> %shl4, %and6
+  %and8 = shl <2 x i32> %or7, <i32 4, i32 4>
+  %shl9 = and <2 x i32> %and8, <i32 -252645136, i32 -252645136>
+  %shr10 = lshr <2 x i32> %or7, <i32 4, i32 4>
+  %and11 = and <2 x i32> %shr10, <i32 252645135, i32 252645135>
+  %or12 = or disjoint <2 x i32> %shl9, %and11
+  %and13 = shl <2 x i32> %or12, <i32 2, i32 2>
+  %shl14 = and <2 x i32> %and13, <i32 -858993460, i32 -858993460>
+  %shr15 = lshr <2 x i32> %or12, <i32 2, i32 2>
+  %and16 = and <2 x i32> %shr15, <i32 858993459, i32 858993459>
+  %or17 = or disjoint <2 x i32> %shl14, %and16
+  %and18 = shl <2 x i32> %or17, <i32 1, i32 1>
+  %shl19 = and <2 x i32> %and18, <i32 -1431655766, i32 -1431655766>
+  %shr20 = lshr <2 x i32> %or17, <i32 1, i32 1>
+  %and21 = and <2 x i32> %shr20, <i32 1431655765, i32 1431655765>
+  %or22 = or disjoint <2 x i32> %shl19, %and21
+  ret <2 x i32> %or22
+}
+
+define <2 x i64> @llvm_bitreverse_v2i64(<2 x i64> %a) {
+entry:
+  %shl = shl <2 x i64> %a, <i64 32, i64 32>
+  %shr = lshr <2 x i64> %a, <i64 32, i64 32>
+  %or = or disjoint <2 x i64> %shl, %shr
+  %and2 = shl <2 x i64> %or, <i64 16, i64 16>
+  %shl3 = and <2 x i64> %and2, <i64 -281470681808896, i64 -281470681808896>
+  %shr4 = lshr <2 x i64> %or, <i64 16, i64 16>
+  %and5 = and <2 x i64> %shr4, <i64 281470681808895, i64 281470681808895>
+  %or6 = or disjoint <2 x i64> %shl3, %and5
+  %and7 = shl <2 x i64> %or6, <i64 8, i64 8>
+  %shl8 = and <2 x i64> %and7, <i64 -71777214294589696, i64 -71777214294589696>
+  %shr9 = lshr <2 x i64> %or6, <i64 8, i64 8>
+  %and10 = and <2 x i64> %shr9, <i64 71777214294589695, i64 71777214294589695>
+  %or11 = or disjoint <2 x i64> %shl8, %and10
+  %and12 = shl <2 x i64> %or11, <i64 4, i64 4>
+  %shl13 = and <2 x i64> %and12, <i64 -1085102592571150096, i64 -1085102592571150096>
+  %shr14 = lshr <2 x i64> %or11, <i64 4, i64 4>
+  %and15 = and <2 x i64> %shr14, <i64 1085102592571150095, i64 1085102592571150095>
+  %or16 = or disjoint <2 x i64> %shl13, %and15
+  %and17 = shl <2 x i64> %or16, <i64 2, i64 2>
+  %shl18 = and <2 x i64> %and17, <i64 -3689348814741910324, i64 -3689348814741910324>
+  %shr19 = lshr <2 x i64> %or16, <i64 2, i64 2>
+  %and20 = and <2 x i64> %shr19, <i64 3689348814741910323, i64 3689348814741910323>
+  %or21 = or disjoint <2 x i64> %shl18, %and20
+  %and22 = shl <2 x i64> %or21, <i64 1, i64 1>
+  %shl23 = and <2 x i64> %and22, <i64 -6148914691236517206, i64 -6148914691236517206>
+  %shr24 = lshr <2 x i64> %or21, <i64 1, i64 1>
+  %and25 = and <2 x i64> %shr24, <i64 6148914691236517205, i64 6148914691236517205>
+  %or26 = or disjoint <2 x i64> %shl23, %and25
+  ret <2 x i64> %or26
+}
+)"};
+
+static const char LLVMBitreverse_V4[]{R"(
+define <4 x i8> @llvm_bitreverse_v4i8(<4 x i8> %a) {
+entry:
+  %shl = shl <4 x i8> %a, <i8 4, i8 4, i8 4, i8 4>
+  %shr = lshr <4 x i8> %a, <i8 4, i8 4, i8 4, i8 4>
+  %or = or disjoint <4 x i8> %shl, %shr
+  %and3 = shl <4 x i8> %or, <i8 2, i8 2, i8 2, i8 2>
+  %shl4 = and <4 x i8> %and3, <i8 -52, i8 -52, i8 -52, i8 -52>
+  %shr5 = lshr <4 x i8> %or, <i8 2, i8 2, i8 2, i8 2>
+  %and6 = and <4 x i8> %shr5, <i8 51, i8 51, i8 51, i8 51>
+  %or7 = or disjoint <4 x i8> %shl4, %and6
+  %and8 = shl <4 x i8> %or7, <i8 1, i8 1, i8 1, i8 1>
+  %shl9 = and <4 x i8> %and8, <i8 -86, i8 -86, i8 -86, i8 -86>
+  %shr10 = lshr <4 x i8> %or7, <i8 1, i8 1, i8 1, i8 1>
+  %and11 = and <4 x i8> %shr10, <i8 85, i8 85, i8 85, i8 85>
+  %or12 = or disjoint <4 x i8> %shl9, %and11
+  ret <4 x i8> %or12
+}
+
+define <4 x i16> @llvm_bitreverse_v4i16(<4 x i16> %a) {
+entry:
+  %shl = shl <4 x i16> %a, <i16 8, i16 8, i16 8, i16 8>
+  %shr = lshr <4 x i16> %a, <i16 8, i16 8, i16 8, i16 8>
+  %or = or disjoint <4 x i16> %shl, %shr
+  %and3 = shl <4 x i16> %or, <i16 4, i16 4, i16 4, i16 4>
+  %shl4 = and <4 x i16> %and3, <i16 -3856, i16 -3856, i16 -3856, i16 -3856>
+  %shr5 = lshr <4 x i16> %or, <i16 4, i16 4, i16 4, i16 4>
+  %and6 = and <4 x i16> %shr5, <i16 3855, i16 3855, i16 3855, i16 3855>
+  %or7 = or disjoint <4 x i16> %shl4, %and6
+  %and8 = shl <4 x i16> %or7, <i16 2, i16 2, i16 2, i16 2>
+  %shl9 = and <4 x i16> %and8, <i16 -13108, i16 -13108, i16 -13108, i16 -13108>
+  %shr10 = lshr <4 x i16> %or7, <i16 2, i16 2, i16 2, i16 2>
+  %and11 = and <4 x i16> %shr10, <i16 13107, i16 13107, i16 13107, i16 13107>
+  %or12 = or disjoint <4 x i16> %shl9, %and11
+  %and13 = shl <4 x i16> %or12, <i16 1, i16 1, i16 1, i16 1>
+  %shl14 = and <4 x i16> %and13, <i16 -21846, i16 -21846, i16 -21846, i16 -21846>
+  %shr15 = lshr <4 x i16> %or12, <i16 1, i16 1, i16 1, i16 1>
+  %and16 = and <4 x i16> %shr15, <i16 21845, i16 21845, i16 21845, i16 21845>
+  %or17 = or disjoint <4 x i16> %shl14, %and16
+  ret <4 x i16> %or17
+}
+
+define <4 x i32> @llvm_bitreverse_v4i32(<4 x i32> %a) {
+entry:
+  %shl = shl <4 x i32> %a, <i32 16, i32 16, i32 16, i32 16>
+  %shr = lshr <4 x i32> %a, <i32 16, i32 16, i32 16, i32 16>
+  %or = or disjoint <4 x i32> %shl, %shr
+  %and2 = shl <4 x i32> %or, <i32 8, i32 8, i32 8, i32 8>
+  %shl3 = and <4 x i32> %and2, <i32 -16711936, i32 -16711936, i32 -16711936, i32 -16711936>
+  %shr4 = lshr <4 x i32> %or, <i32 8, i32 8, i32 8, i32 8>
+  %and5 = and <4 x i32> %shr4, <i32 16711935, i32 16711935, i32 16711935, i32 16711935>
+  %or6 = or disjoint <4 x i32> %shl3, %and5
+  %and7 = shl <4 x i32> %or6, <i32 4, i32 4, i32 4, i32 4>
+  %shl8 = and <4 x i32> %and7, <i32 -252645136, i32 -252645136, i32 -252645136, i32 -252645136>
+  %shr9 = lshr <4 x i32> %or6, <i32 4, i32 4, i32 4, i32 4>
+  %and10 = and <4 x i32> %shr9, <i32 252645135, i32 252645135, i32 252645135, i32 252645135>
+  %or11 = or disjoint <4 x i32> %shl8, %and10
+  %and12 = shl <4 x i32> %or11, <i32 2, i32 2, i32 2, i32 2>
+  %shl13 = and <4 x i32> %and12, <i32 -858993460, i32 -858993460, i32 -858993460, i32 -858993460>
+  %shr14 = lshr <4 x i32> %or11, <i32 2, i32 2, i32 2, i32 2>
+  %and15 = and <4 x i32> %shr14, <i32 858993459, i32 858993459, i32 858993459, i32 858993459>
+  %or16 = or disjoint <4 x i32> %shl13, %and15
+  %and17 = shl <4 x i32> %or16, <i32 1, i32 1, i32 1, i32 1>
+  %shl18 = and <4 x i32> %and17, <i32 -1431655766, i32 -1431655766, i32 -1431655766, i32 -1431655766>
+  %shr19 = lshr <4 x i32> %or16, <i32 1, i32 1, i32 1, i32 1>
+  %and20 = and <4 x i32> %shr19, <i32 1431655765, i32 1431655765, i32 1431655765, i32 1431655765>
+  %or21 = or disjoint <4 x i32> %shl18, %and20
+  ret <4 x i32> %or21
+}
+
+define <4 x i64> @llvm_bitreverse_v4i64(<4 x i64> %a) {
+entry:
+  %shl = shl <4 x i64> %a, <i64 32, i64 32, i64 32, i64 32>
+  %shr = lshr <4 x i64> %a, <i64 32, i64 32, i64 32, i64 32>
+  %or = or disjoint <4 x i64> %shl, %shr
+  %and2 = shl <4 x i64> %or, <i64 16, i64 16, i64 16, i64 16>
+  %shl3 = and <4 x i64> %and2, <i64 -281470681808896, i64 -281470681808896, i64 -281470681808896, i64 -281470681808896>
+  %shr4 = lshr <4 x i64> %or, <i64 16, i64 16, i64 16, i64 16>
+  %and5 = and <4 x i64> %shr4, <i64 281470681808895, i64 281470681808895, i64 281470681808895, i64 281470681808895>
+  %or6 = or disjoint <4 x i64> %shl3, %and5
+  %and7 = shl <4 x i64> %or6, <i64 8, i64 8, i64 8, i64 8>
+  %shl8 = and <4 x i64> %and7, <i64 -71777214294589696, i64 -71777214294589696, i64 -71777214294589696, i64 -71777214294589696>
+  %shr9 = lshr <4 x i64> %or6, <i64 8, i64 8, i64 8, i64 8>
+  %and10 = and <4 x i64> %shr9, <i64 71777214294589695, i64 71777214294589695, i64 71777214294589695, i64 71777214294589695>
+  %or11 = or disjoint <4 x i64> %shl8, %and10
+  %and12 = shl <4 x i64> %or11, <i64 4, i64 4, i64 4, i64 4>
+  %shl13 = and <4 x i64> %and12, <i64 -1085102592571150096, i64 -1085102592571150096, i64 -1085102592571150096, i64 -1085102592571150096>
+  %shr14 = lshr <4 x i64> %or11, <i64 4, i64 4, i64 4, i64 4>
+  %and15 = and <4 x i64> %shr14, <i64 1085102592571150095, i64 1085102592571150095, i64 1085102592571150095, i64 1085102592571150095>
+  %or16 = or disjoint <4 x i64> %shl13, %and15
+  %and17 = shl <4 x i64> %or16, <i64 2, i64 2, i64 2, i64 2>
+  %shl18 = and <4 x i64> %and17, <i64 -3689348814741910324, i64 -3689348814741910324, i64 -3689348814741910324, i64 -3689348814741910324>
+  %shr19 = lshr <4 x i64> %or16, <i64 2, i64 2, i64 2, i64 2>
+  %and20 = and <4 x i64> %shr19, <i64 3689348814741910323, i64 3689348814741910323, i64 3689348814741910323, i64 3689348814741910323>
+  %or21 = or disjoint <4 x i64> %shl18, %and20
+  %and22 = shl <4 x i64> %or21, <i64 1, i64 1, i64 1, i64 1>
+  %shl23 = and <4 x i64> %and22, <i64 -6148914691236517206, i64 -6148914691236517206, i64 -6148914691236517206, i64 -6148914691236517206>
+  %shr24 = lshr <4 x i64> %or21, <i64 1, i64 1, i64 1, i64 1>
+  %and25 = and <4 x i64> %shr24, <i64 6148914691236517205, i64 6148914691236517205, i64 6148914691236517205, i64 6148914691236517205>
+  %or26 = or disjoint <4 x i64> %shl23, %and25
+  ret <4 x i64> %or26
 }
 )"};
