@@ -82,7 +82,7 @@
 //   return a;
 // }
 
-static const char LLVMBitreverse_Scalar[]{R"(
+static const char LLVMBitreverseScalar[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %a) {
 entry:
   %and = shl i8 %a, 4
@@ -186,7 +186,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverse_V2[]{R"(
+static const char LLVMBitreverseV2[]{R"(
 define <2 x i8> @llvm_bitreverse_v2i8(<2 x i8> %a) {
 entry:
   %shl = shl <2 x i8> %a, <i8 4, i8 4>
@@ -290,7 +290,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverse_V4[]{R"(
+static const char LLVMBitreverseV4[]{R"(
 define <4 x i8> @llvm_bitreverse_v4i8(<4 x i8> %a) {
 entry:
   %shl = shl <4 x i8> %a, <i8 4, i8 4, i8 4, i8 4>

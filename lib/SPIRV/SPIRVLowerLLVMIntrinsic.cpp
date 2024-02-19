@@ -77,20 +77,20 @@ typedef struct {
 const LLVMIntrinsicMapEntryType LLVMIntrinsicMapEntries[] = {
 // Intrinsic ID                   Supporting Extension                   LLVM Intrinsic Name            Emulation Name                 Module with
 //                                                                                                                                     emulation function
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i8",          "llvm_bitreverse_i8",          LLVMBitreverse_Scalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverse_Scalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverse_Scalar},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverse_Scalar},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i8",          "llvm_bitreverse_i8",          LLVMBitreverseScalar},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i16",         "llvm_bitreverse_i16",         LLVMBitreverseScalar},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i32",         "llvm_bitreverse_i32",         LLVMBitreverseScalar},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.i64",         "llvm_bitreverse_i64",         LLVMBitreverseScalar},
 
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i8",        "llvm_bitreverse_v2i8",        LLVMBitreverse_V2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i16",       "llvm_bitreverse_v2i16",       LLVMBitreverse_V2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i32",       "llvm_bitreverse_v2i32",       LLVMBitreverse_V2},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i64",       "llvm_bitreverse_v2i64",       LLVMBitreverse_V2},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i8",        "llvm_bitreverse_v2i8",        LLVMBitreverseV2},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i16",       "llvm_bitreverse_v2i16",       LLVMBitreverseV2},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i32",       "llvm_bitreverse_v2i32",       LLVMBitreverseV2},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v2i64",       "llvm_bitreverse_v2i64",       LLVMBitreverseV2},
 
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i8",        "llvm_bitreverse_v4i8",        LLVMBitreverse_V4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i16",       "llvm_bitreverse_v4i16",       LLVMBitreverse_V4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i32",       "llvm_bitreverse_v4i32",       LLVMBitreverse_V4},
-  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i64",       "llvm_bitreverse_v4i64",       LLVMBitreverse_V4},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i8",        "llvm_bitreverse_v4i8",        LLVMBitreverseV4},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i16",       "llvm_bitreverse_v4i16",       LLVMBitreverseV4},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i32",       "llvm_bitreverse_v4i32",       LLVMBitreverseV4},
+  {Intrinsic::bitreverse,         ExtensionID::SPV_KHR_bit_instructions, "llvm.bitreverse.v4i64",       "llvm_bitreverse_v4i64",       LLVMBitreverseV4},
 
   {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i16", "llvm_sadd_with_overflow_i16", LLVMSaddWithOverflow},
   {Intrinsic::sadd_with_overflow, NO_SUPPORTING_EXTENSION,               "llvm.sadd.with.overflow.i32", "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow},
