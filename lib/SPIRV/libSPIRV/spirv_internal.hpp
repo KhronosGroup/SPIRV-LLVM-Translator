@@ -161,6 +161,10 @@ enum InternalBuiltIn {
   IBuiltInGlobalHWThreadIDINTEL = 6136,
 };
 
+enum InternalNamedMaximumNumberOfRegisters {
+  NamedMaximumNumberOfRegistersAutoINTEL = 0,
+};
+
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, JointMatrixINTEL)
 _SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)

@@ -696,6 +696,14 @@ template <> inline void SPIRVMap<HostAccessQualifier, std::string>::init() {
 }
 SPIRV_DEF_NAMEMAP(HostAccessQualifier, SPIRVHostAccessQualifierNameMap)
 
+template <>
+inline void
+SPIRVMap<internal::InternalNamedMaximumNumberOfRegisters, std::string>::init() {
+  add(internal::NamedMaximumNumberOfRegistersAutoINTEL, "AutoINTEL");
+}
+SPIRV_DEF_NAMEMAP(internal::InternalNamedMaximumNumberOfRegisters,
+                  SPIRVNamedMaximumNumberOfRegistersNameMap);
+
 } /* namespace SPIRV */
 
 #endif // SPIRV_LIBSPIRV_SPIRVNAMEMAPENUM_H
