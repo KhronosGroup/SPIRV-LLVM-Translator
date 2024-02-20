@@ -111,7 +111,7 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
 
   const LLVMIntrinsicMapValueType *MapEntry{nullptr};
   auto It = LLVMIntrinsicMapEntries.find(IntrinsicName);
-  if (It!=LLVMIntrinsicMapEntries.end())
+  if (It != LLVMIntrinsicMapEntries.end())
     MapEntry = &It->second;
   if (!MapEntry || Opts.isAllowedToUseExtension(MapEntry->SupportingExtension))
     return;
