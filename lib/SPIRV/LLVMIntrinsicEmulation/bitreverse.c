@@ -1,3 +1,5 @@
+// clang-format off
+/*
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -138,3 +140,5 @@ uint64_t4 llvm_bitreverse_v4i64(uint64_t4 A) {
   A=SWAP1(A,uint64_t);
   return A;
 }
+*/
+// clang-format on
