@@ -697,7 +697,7 @@ public:
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
-    switch (ExecMode) {
+    switch (static_cast<unsigned>(ExecMode)) {
     case internal::ExecutionModeMaximumRegistersINTEL:
     case internal::ExecutionModeMaximumRegistersIdINTEL:
     case internal::ExecutionModeNamedMaximumRegistersINTEL:
