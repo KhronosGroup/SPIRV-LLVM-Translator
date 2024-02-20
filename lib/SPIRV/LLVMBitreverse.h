@@ -37,11 +37,11 @@
 //                     | sed 's/, !tbaa !3//'             \
 //                     | grep -v "Function Attrs:"
 //
-// from the C code in LLVMIntrinsicEmulation/bitreverse.c with a custom clang that was modified to disable
-// llvm.bitreverse.* intrinsic generation.
+// from the C code in LLVMIntrinsicEmulation/bitreverse.c with a custom clang
+// that was modified to disable llvm.bitreverse.* intrinsic generation.
 //
-// Manual modification was done to avoid coercing vector types into scalar types.  For example,
-// the original LLVM IR:
+// Manual modification was done to avoid coercing vector types into scalar
+// types.  For example, the original LLVM IR:
 //
 //   define i32 @llvm_bitreverse_v4i8(i32 %a.coerce) {
 //   entry:
@@ -62,7 +62,6 @@
 //     ...
 //     ret <4 x i8> %or12
 //   }
-
 
 static const char LLVMBitreverseScalar[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %a) {
