@@ -3017,7 +3017,7 @@ AnnotationDecorations tryParseAnnotationString(SPIRVModule *BM,
   const bool AllowFPGAMemAttr = BM->isAllowedToUseExtension(
       ExtensionID::SPV_INTEL_fpga_memory_attributes);
   const bool AllowCacheControls =
-        BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls);
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_cache_controls);
 
   bool ValidDecorationFound = false;
   DecorationsInfoVec DecorationsVec;
