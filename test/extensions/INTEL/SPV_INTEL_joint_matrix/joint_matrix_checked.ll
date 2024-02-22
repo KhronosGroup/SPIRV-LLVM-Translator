@@ -8,8 +8,8 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: Capability JointMatrixINTEL
-; CHECK-SPIRV-NOT: Capability CooperativeMatrixKHR
+; CHECK-SPIRV-DAG: Capability JointMatrixINTEL
+; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
 ; CHECK-SPIRV: Extension "SPV_INTEL_joint_matrix"
 ; CHECK-SPIRV-NOT: Extension "SPV_KHR_cooperative_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#Int8Ty:]] 8 0
