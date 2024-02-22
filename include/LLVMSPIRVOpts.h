@@ -54,6 +54,7 @@ class IntrinsicInst;
 
 namespace SPIRV {
 
+/// SPIR-V versions known to translator.
 enum class VersionNumber : uint32_t {
   // See section 2.3 of SPIR-V spec: Physical Layout of a SPIR_V Module and
   // Instruction
@@ -62,10 +63,9 @@ enum class VersionNumber : uint32_t {
   SPIRV_1_2 = 0x00010200,
   SPIRV_1_3 = 0x00010300,
   SPIRV_1_4 = 0x00010400,
-  // TODO: populate this enum with the latest versions (up to 1.5) once
-  // translator get support of corresponding features
+  SPIRV_1_5 = 0x00010500,
   MinimumVersion = SPIRV_1_0,
-  MaximumVersion = SPIRV_1_4
+  MaximumVersion = SPIRV_1_5
 };
 
 enum class ExtensionID : uint32_t {
