@@ -10,6 +10,7 @@
 
 ; CHECK-SPIRV-DAG: Capability JointMatrixINTEL
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
+; CHECK-SPIRV-DAG: Capability CooperativeMatrixCheckedInstructionsINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_joint_matrix"
 ; CHECK-SPIRV-NOT: Extension "SPV_KHR_cooperative_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#Int8Ty:]] 8 0
