@@ -174,6 +174,9 @@ enum ExecutionMode {
     ExecutionModeNumSIMDWorkitemsINTEL = 5896,
     ExecutionModeFastCompositeKernelINTEL = 6088,
     ExecutionModeNamedBarrierCountINTEL = 6417,
+    ExecutionModeMaximumRegistersINTEL = 6461,
+    ExecutionModeMaximumRegistersIdINTEL = 6462,
+    ExecutionModeNamedMaximumRegistersINTEL = 6463,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -985,12 +988,18 @@ enum Capability {
   CapabilityFastCompositeINTEL = 6093,
   CapabilityOptNoneINTEL = 6094,
   CapabilitySplitBarrierINTEL = 6141,
+  CapabilityRegisterLimitsINTEL = 6460,
   CapabilityMax = 0x7fffffff,
 };
 
 enum PackedVectorFormat {
   PackedVectorFormatPackedVectorFormat4x8BitKHR = 0,
   PackedVectorFormatMax = 0x7fffffff,
+};
+
+enum NamedMaximumNumberOfRegisters {
+  NamedMaximumNumberOfRegistersAutoINTEL = 0,
+  NamedMaximumNumberOfRegistersMax = 0x7fffffff,
 };
 
 enum Op {
