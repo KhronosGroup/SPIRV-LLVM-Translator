@@ -6347,8 +6347,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     Function *F = CI->getCalledFunction();
     if (F->arg_size() && F->getArg(0)->hasStructRetAttr()) {
       StructType *St = cast<StructType>(F->getParamStructRetType(0));
-      assert(St->getElementType(0)->isHalfTy() ||
-             St->getElementType(0)->isBFloatTy());
+      assert(isSYCLHalfType(St) || isSYCLBfloat16Type(St));
       SPIRVValue *InValue =
           transValue(CI->getArgOperand(0)->stripPointerCasts(), BB);
       SPIRVId ScopeId = transValue(CI->getArgOperand(1), BB)->getId();
