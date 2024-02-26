@@ -64,3 +64,4 @@ EXT(SPV_INTEL_tensor_float32_conversion) // TODO: to remove old extension
 EXT(SPV_INTEL_tensor_float32_rounding)
 EXT(SPV_EXT_relaxed_printf_string_address_space)
 EXT(SPV_INTEL_cache_controls)
+EXT(SPV_INTEL_maximum_registers)
