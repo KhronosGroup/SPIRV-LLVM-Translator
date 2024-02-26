@@ -72,6 +72,9 @@ inline bool isValid(spv::ExecutionModel V) {
   case ExecutionModelMissKHR:
   case ExecutionModelCallableKHR:
   case internal::ExecutionModeStreamingInterfaceINTEL:
+  case ExecutionModeMaximumRegistersINTEL:
+  case ExecutionModeMaximumRegistersIdINTEL:
+  case ExecutionModeNamedMaximumRegistersINTEL:
     return true;
   default:
     return false;
