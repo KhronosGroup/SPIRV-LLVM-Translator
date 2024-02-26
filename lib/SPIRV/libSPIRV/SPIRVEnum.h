@@ -285,6 +285,12 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilityFPGAKernelAttributesINTEL});
   ADD_VEC_INIT(ExecutionModeNamedBarrierCountINTEL,
                {CapabilityVectorComputeINTEL});
+  ADD_VEC_INIT(ExecutionModeMaximumRegistersINTEL,
+               {CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(ExecutionModeMaximumRegistersIdINTEL,
+               {CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(ExecutionModeNamedMaximumRegistersINTEL,
+               {CapabilityRegisterLimitsINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
