@@ -570,10 +570,8 @@ public:
     return SPIRVEIS_Debug;
   }
 
-  ExtInst getExtInst() const {
-    return TranslationOpts.getExtInst();
-  }
-  
+  ExtInst getExtInst() const { return TranslationOpts.getExtInst(); }
+
   BIsRepresentation getDesiredBIsRepresentation() const {
     return TranslationOpts.getDesiredBIsRepresentation();
   }

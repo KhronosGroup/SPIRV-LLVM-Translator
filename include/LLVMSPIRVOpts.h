@@ -184,14 +184,12 @@ public:
 
   void setExtInst(ExtInst Value) {
     // --spirv-ext-inst supersedes --spirv-replace-fmuladd-with-ocl-mad
-    ReplaceLLVMFmulAddWithOpenCLMad = false;    
+    ReplaceLLVMFmulAddWithOpenCLMad = false;
     ExtInstValue = Value;
   }
 
-  ExtInst getExtInst() const {
-    return ExtInstValue;
-  }
-  
+  ExtInst getExtInst() const { return ExtInstValue; }
+
   void setDesiredBIsRepresentation(BIsRepresentation Value) {
     DesiredRepresentationOfBIs = Value;
   }
