@@ -9,7 +9,7 @@
 ; CHECK-SPIRV-DAG: Name [[#Fun:]] "_Z3booi"
 ; CHECK-SPIRV-DAG: Decorate [[#Param:]] FuncParamAttr 3
 ; CHECK-SPIRV-DAG: TypePointer [[#PtrTy:]] [[#]] [[#StructTy:]]
-; CHECK-SPIRV=DAG: TypeStruct [[#StructTy]]
+; CHECK-SPIRV-DAG: TypeStruct [[#StructTy]]
 ; CHECK-SPIRV: Function [[#]] [[#Fun]]
 ; CHECK-SPIRV: FunctionParameter [[#PtrTy:]] [[#Param]]
 
