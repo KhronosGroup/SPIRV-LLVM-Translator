@@ -167,7 +167,7 @@ StructType *getOrCreateOpaqueStructType(Module *M, StringRef Name) {
 }
 
 void getFunctionTypeParameterTypes(llvm::FunctionType *FT,
-                                   std::vector<Type *> &ArgTys) {
+                                   SmallVector<Type *> &ArgTys) {
   for (auto I = FT->param_begin(), E = FT->param_end(); I != E; ++I) {
     ArgTys.push_back(*I);
   }
@@ -2174,8 +2174,9 @@ bool postProcessBuiltinReturningStruct(Function *F) {
   SmallVector<Instruction *, 32> InstToRemove;
   for (auto *U : F->users()) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
-      auto *ST = cast<StoreInst>(*(CI->user_begin()));
-      std::vector<Type *> ArgTys;
+      IRBuilder<> Builder(CI->getParent());
+      Builder.SetInsertPoint(CI);
+      SmallVector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(),
                     PointerType::get(F->getReturnType(), SPIRAS_Private));
@@ -2185,12 +2186,16 @@ bool postProcessBuiltinReturningStruct(Function *F) {
                                      F->getReturnType());
       NewF->addParamAttr(0, SretAttr);
       NewF->setCallingConv(F->getCallingConv());
+      AllocaInst *A = Builder.CreateAlloca(F->getReturnType());
       auto Args = getArguments(CI);
-      Args.insert(Args.begin(), ST->getPointerOperand());
-      auto *NewCI = CallInst::Create(NewF, Args, CI->getName(), CI);
+      Args.insert(Args.begin(), A);
+      CallInst *NewCI = Builder.CreateCall(NewF, Args, CI->getName());
       NewCI->addParamAttr(0, SretAttr);
       NewCI->setCallingConv(CI->getCallingConv());
-      InstToRemove.push_back(ST);
+      SmallVector<User *> CIUsers(CI->users());
+      for (auto *CIUser : CIUsers) {
+        CIUser->replaceUsesOfWith(CI, A);
+      }
       InstToRemove.push_back(CI);
     }
   }

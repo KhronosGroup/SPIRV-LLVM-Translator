@@ -65,6 +65,7 @@
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
 #include "VectorComputeUtil.h"
+#include "spirv/unified1/spirv.hpp"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -6382,6 +6383,20 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
         transValue(CI->getArgOperand(0), BB)->getId()};
     return BM->addCompositeConstructInst(transType(CI->getType()), Operands,
                                          BB);
+  }
+  case OpIAddCarry: {
+    Function *F = CI->getCalledFunction();
+    StructType *St = cast<StructType>(F->getParamStructRetType(0));
+    return BM->addBinaryInst(OpIAddCarry, transType(St),
+                             transValue(CI->getArgOperand(1), BB),
+                             transValue(CI->getArgOperand(2), BB), BB);
+  }
+  case OpISubBorrow: {
+    Function *F = CI->getCalledFunction();
+    StructType *St = cast<StructType>(F->getParamStructRetType(0));
+    return BM->addBinaryInst(OpISubBorrow, transType(St),
+                             transValue(CI->getArgOperand(1), BB),
+                             transValue(CI->getArgOperand(2), BB), BB);
   }
   case OpGroupNonUniformShuffleDown: {
     Function *F = CI->getCalledFunction();
