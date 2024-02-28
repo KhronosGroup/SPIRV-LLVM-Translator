@@ -137,8 +137,9 @@ static cl::opt<bool> SPIRVGenKernelArgNameMD(
 
 static cl::opt<SPIRV::ExtInst>
     ExtInst("spirv-ext-inst",
-            cl::desc("Specify external instructions to use when "
-                     "translating from LLVM IR to SPIR-V"),
+            cl::desc("Specify the external instruction set to use when "
+                     "translating from a LLVM intrinsic function to SPIR-V.  "
+                     "Otherwise the LLVM intrinsic function will be emulated."),
             cl::values(clEnumValN(SPIRV::ExtInst::None, "none",
                                   "No external instructions"),
                        clEnumValN(SPIRV::ExtInst::OpenCL, "OpenCL.std",
