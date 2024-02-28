@@ -75,10 +75,25 @@ const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMa
   { "llvm.bitreverse.v2i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i32",       LLVMBitreverseV2}},
   { "llvm.bitreverse.v2i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v2i64",       LLVMBitreverseV2}},
 
+  { "llvm.bitreverse.v3i8",        {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v3i8",        LLVMBitreverseV3}},
+  { "llvm.bitreverse.v3i16",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v3i16",       LLVMBitreverseV3}},
+  { "llvm.bitreverse.v3i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v3i32",       LLVMBitreverseV3}},
+  { "llvm.bitreverse.v3i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v3i64",       LLVMBitreverseV3}},
+
   { "llvm.bitreverse.v4i8",        {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i8",        LLVMBitreverseV4}},
   { "llvm.bitreverse.v4i16",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i16",       LLVMBitreverseV4}},
   { "llvm.bitreverse.v4i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i32",       LLVMBitreverseV4}},
   { "llvm.bitreverse.v4i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v4i64",       LLVMBitreverseV4}},
+
+  { "llvm.bitreverse.v8i8",        {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v8i8",        LLVMBitreverseV8}},
+  { "llvm.bitreverse.v8i16",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v8i16",       LLVMBitreverseV8}},
+  { "llvm.bitreverse.v8i32",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v8i32",       LLVMBitreverseV8}},
+  { "llvm.bitreverse.v8i64",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v8i64",       LLVMBitreverseV8}},
+
+  { "llvm.bitreverse.v16i8",       {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v16i8",       LLVMBitreverseV16}},
+  { "llvm.bitreverse.v16i16",      {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v16i16",      LLVMBitreverseV16}},
+  { "llvm.bitreverse.v16i32",      {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v16i32",      LLVMBitreverseV16}},
+  { "llvm.bitreverse.v16i64",      {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_v16i64",      LLVMBitreverseV16}},
 
   { "llvm.sadd.with.overflow.i16", {NO_SUPPORTING_EXTENSION,               "llvm_sadd_with_overflow_i16", LLVMSaddWithOverflow}},
   { "llvm.sadd.with.overflow.i32", {NO_SUPPORTING_EXTENSION,               "llvm_sadd_with_overflow_i32", LLVMSaddWithOverflow}},

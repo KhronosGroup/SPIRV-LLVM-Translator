@@ -44,6 +44,22 @@
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v2i64
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 3-element vector
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; call-sites
+; CHECK-LLVM: <3 x i8> @llvm_bitreverse_v3i8
+; CHECK-LLVM: <3 x i16> @llvm_bitreverse_v3i16
+; CHECK-LLVM: <3 x i32> @llvm_bitreverse_v3i32
+; CHECK-LLVM: <3 x i64> @llvm_bitreverse_v3i64
+
+; definitions
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v3i8
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v3i16
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v3i32
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v3i64
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 4-element vector
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -58,6 +74,38 @@
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v4i16
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v4i32
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v4i64
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 8-element vector
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; call-sites
+; CHECK-LLVM: <8 x i8> @llvm_bitreverse_v8i8
+; CHECK-LLVM: <8 x i16> @llvm_bitreverse_v8i16
+; CHECK-LLVM: <8 x i32> @llvm_bitreverse_v8i32
+; CHECK-LLVM: <8 x i64> @llvm_bitreverse_v8i64
+
+; definitions
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v8i8
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v8i16
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v8i32
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v8i64
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 16-element vector
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; call-sites
+; CHECK-LLVM: <16 x i8> @llvm_bitreverse_v16i8
+; CHECK-LLVM: <16 x i16> @llvm_bitreverse_v16i16
+; CHECK-LLVM: <16 x i32> @llvm_bitreverse_v16i32
+; CHECK-LLVM: <16 x i64> @llvm_bitreverse_v16i64
+
+; definitions
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v16i8
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v16i16
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v16i32
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_v16i64
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
@@ -97,6 +145,23 @@ entry:
   ret void
 }
 
+define spir_kernel void @testBitRevV3(<3 x i8> %a, <3 x i16> %b, <3 x i32> %c, <3 x i64> %d, ptr addrspace(1) nocapture %res) {
+entry:
+  %call8 = call <3 x i8> @llvm.bitreverse.v3i8(<3 x i8> %a)
+  store <3 x i8> %call8, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call16 = call <3 x i16> @llvm.bitreverse.v3i16(<3 x i16> %b)
+  store <3 x i16> %call16, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call32 = call <3 x i32> @llvm.bitreverse.v3i32(<3 x i32> %c)
+  store <3 x i32> %call32, ptr addrspace(1) %res, align 4, !tbaa !7
+
+  %call64 = call <3 x i64> @llvm.bitreverse.v3i64(<3 x i64> %d)
+  store <3 x i64> %call64, ptr addrspace(1) %res, align 8, !tbaa !7
+
+  ret void
+}
+
 define spir_kernel void @testBitRevV4(<4 x i8> %a, <4 x i16> %b, <4 x i32> %c, <4 x i64> %d, ptr addrspace(1) nocapture %res) {
 entry:
   %call8 = call <4 x i8> @llvm.bitreverse.v4i8(<4 x i8> %a)
@@ -114,6 +179,40 @@ entry:
   ret void
 }
 
+define spir_kernel void @testBitRevV8(<8 x i8> %a, <8 x i16> %b, <8 x i32> %c, <8 x i64> %d, ptr addrspace(1) nocapture %res) {
+entry:
+  %call8 = call <8 x i8> @llvm.bitreverse.v8i8(<8 x i8> %a)
+  store <8 x i8> %call8, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call16 = call <8 x i16> @llvm.bitreverse.v8i16(<8 x i16> %b)
+  store <8 x i16> %call16, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call32 = call <8 x i32> @llvm.bitreverse.v8i32(<8 x i32> %c)
+  store <8 x i32> %call32, ptr addrspace(1) %res, align 4, !tbaa !7
+
+  %call64 = call <8 x i64> @llvm.bitreverse.v8i64(<8 x i64> %d)
+  store <8 x i64> %call64, ptr addrspace(1) %res, align 8, !tbaa !7
+
+  ret void
+}
+
+define spir_kernel void @testBitRevV16(<16 x i8> %a, <16 x i16> %b, <16 x i32> %c, <16 x i64> %d, ptr addrspace(1) nocapture %res) {
+entry:
+  %call8 = call <16 x i8> @llvm.bitreverse.v16i8(<16 x i8> %a)
+  store <16 x i8> %call8, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call16 = call <16 x i16> @llvm.bitreverse.v16i16(<16 x i16> %b)
+  store <16 x i16> %call16, ptr addrspace(1) %res, align 2, !tbaa !7
+
+  %call32 = call <16 x i32> @llvm.bitreverse.v16i32(<16 x i32> %c)
+  store <16 x i32> %call32, ptr addrspace(1) %res, align 4, !tbaa !7
+
+  %call64 = call <16 x i64> @llvm.bitreverse.v16i64(<16 x i64> %d)
+  store <16 x i64> %call64, ptr addrspace(1) %res, align 8, !tbaa !7
+
+  ret void
+}
+
 declare i8 @llvm.bitreverse.i8(i8)
 declare i16 @llvm.bitreverse.i16(i16)
 declare i32 @llvm.bitreverse.i32(i32)
@@ -124,10 +223,25 @@ declare <2 x i16> @llvm.bitreverse.v2i16(<2 x i16>)
 declare <2 x i32> @llvm.bitreverse.v2i32(<2 x i32>)
 declare <2 x i64> @llvm.bitreverse.v2i64(<2 x i64>)
 
+declare <3 x i8>  @llvm.bitreverse.v3i8(<3 x i8>)
+declare <3 x i16> @llvm.bitreverse.v3i16(<3 x i16>)
+declare <3 x i32> @llvm.bitreverse.v3i32(<3 x i32>)
+declare <3 x i64> @llvm.bitreverse.v3i64(<3 x i64>)
+
 declare <4 x i8>  @llvm.bitreverse.v4i8(<4 x i8>)
 declare <4 x i16> @llvm.bitreverse.v4i16(<4 x i16>)
 declare <4 x i32> @llvm.bitreverse.v4i32(<4 x i32>)
 declare <4 x i64> @llvm.bitreverse.v4i64(<4 x i64>)
+
+declare <8 x i8>  @llvm.bitreverse.v8i8(<8 x i8>)
+declare <8 x i16> @llvm.bitreverse.v8i16(<8 x i16>)
+declare <8 x i32> @llvm.bitreverse.v8i32(<8 x i32>)
+declare <8 x i64> @llvm.bitreverse.v8i64(<8 x i64>)
+
+declare <16 x i8>  @llvm.bitreverse.v16i8(<16 x i8>)
+declare <16 x i16> @llvm.bitreverse.v16i16(<16 x i16>)
+declare <16 x i32> @llvm.bitreverse.v16i32(<16 x i32>)
+declare <16 x i64> @llvm.bitreverse.v16i64(<16 x i64>)
 
 attributes #0 = { convergent nounwind writeonly "correctly-rounded-divide-sqrt-fp-math"="false" "denorms-are-zero"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "uniform-work-group-size"="false" "unsafe-fp-math"="false" "use-soft-float"="false" }
 

@@ -56,89 +56,54 @@ uint64_t llvm_bitreverse_i64(uint64_t A) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-// 2-element vector 
+// vector
 ///////////////////////////////////////////////////////////////////////////////////////
 
-typedef  uint8_t  uint8_t2  __attribute__((ext_vector_type(2)));
-typedef uint16_t uint16_t2  __attribute__((ext_vector_type(2)));
-typedef uint32_t uint32_t2  __attribute__((ext_vector_type(2)));
-typedef uint64_t uint64_t2  __attribute__((ext_vector_type(2)));
-
-uint8_t2 llvm_bitreverse_v2i8(uint8_t2 A) {
-  A=SWAP4(A,uint8_t);
-  A=SWAP2(A,uint8_t);
-  A=SWAP1(A,uint8_t);
-  return A;
+#define GEN_VECTOR_BITREVERSE(LENGTH)                                          \
+typedef  uint8_t  uint8_t ## LENGTH  __attribute__((ext_vector_type(LENGTH))); \
+typedef uint16_t uint16_t ## LENGTH  __attribute__((ext_vector_type(LENGTH))); \
+typedef uint32_t uint32_t ## LENGTH  __attribute__((ext_vector_type(LENGTH))); \
+typedef uint64_t uint64_t ## LENGTH  __attribute__((ext_vector_type(LENGTH))); \
+                                                                               \
+uint8_t  ## LENGTH llvm_bitreverse_v ## LENGTH ## i8 (uint8_t  ## LENGTH A) {  \
+  A=SWAP4(A,uint8_t);                                                          \
+  A=SWAP2(A,uint8_t);                                                          \
+  A=SWAP1(A,uint8_t);                                                          \
+  return A;                                                                    \
+}                                                                              \
+                                                                               \
+uint16_t ## LENGTH llvm_bitreverse_v ## LENGTH ## i16(uint16_t ## LENGTH A) {  \
+  A=SWAP8(A,uint16_t);                                                         \
+  A=SWAP4(A,uint16_t);                                                         \
+  A=SWAP2(A,uint16_t);                                                         \
+  A=SWAP1(A,uint16_t);                                                         \
+  return A;                                                                    \
+}                                                                              \
+                                                                               \
+uint32_t ## LENGTH llvm_bitreverse_v ## LENGTH ## i32(uint32_t ## LENGTH A) {  \
+  A=SWAP16(A,uint32_t);                                                        \
+  A=SWAP8(A,uint32_t);                                                         \
+  A=SWAP4(A,uint32_t);                                                         \
+  A=SWAP2(A,uint32_t);                                                         \
+  A=SWAP1(A,uint32_t);                                                         \
+  return A;                                                                    \
+}                                                                              \
+                                                                               \
+uint64_t ## LENGTH llvm_bitreverse_v ## LENGTH ## i64(uint64_t ## LENGTH A) {  \
+  A=SWAP32(A,uint64_t);                                                        \
+  A=SWAP16(A,uint64_t);                                                        \
+  A=SWAP8(A,uint64_t);                                                         \
+  A=SWAP4(A,uint64_t);                                                         \
+  A=SWAP2(A,uint64_t);                                                         \
+  A=SWAP1(A,uint64_t);                                                         \
+  return A;                                                                    \
 }
 
-uint16_t2 llvm_bitreverse_v2i16(uint16_t2 A) {
-  A=SWAP8(A,uint16_t);
-  A=SWAP4(A,uint16_t);
-  A=SWAP2(A,uint16_t);
-  A=SWAP1(A,uint16_t);
-  return A;
-}
+GEN_VECTOR_BITREVERSE(2)
+GEN_VECTOR_BITREVERSE(3)
+GEN_VECTOR_BITREVERSE(4)
+GEN_VECTOR_BITREVERSE(8)
+GEN_VECTOR_BITREVERSE(16)
 
-uint32_t2 llvm_bitreverse_v2i32(uint32_t2 A) {
-  A=SWAP16(A,uint32_t);
-  A=SWAP8(A,uint32_t);
-  A=SWAP4(A,uint32_t);
-  A=SWAP2(A,uint32_t);
-  A=SWAP1(A,uint32_t);
-  return A;
-}
-
-uint64_t2 llvm_bitreverse_v2i64(uint64_t2 A) {
-  A=SWAP32(A,uint64_t);
-  A=SWAP16(A,uint64_t);
-  A=SWAP8(A,uint64_t);
-  A=SWAP4(A,uint64_t);
-  A=SWAP2(A,uint64_t);
-  A=SWAP1(A,uint64_t);
-  return A;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////
-// 4-element vector 
-///////////////////////////////////////////////////////////////////////////////////////
-
-typedef  uint8_t  uint8_t4  __attribute__((ext_vector_type(4)));
-typedef uint16_t uint16_t4  __attribute__((ext_vector_type(4)));
-typedef uint32_t uint32_t4  __attribute__((ext_vector_type(4)));
-typedef uint64_t uint64_t4  __attribute__((ext_vector_type(4)));
-
-uint8_t4 llvm_bitreverse_v4i8(uint8_t4 A) {
-  A=SWAP4(A,uint8_t);
-  A=SWAP2(A,uint8_t);
-  A=SWAP1(A,uint8_t);
-  return A;
-}
-
-uint16_t4 llvm_bitreverse_v4i16(uint16_t4 A) {
-  A=SWAP8(A,uint16_t);
-  A=SWAP4(A,uint16_t);
-  A=SWAP2(A,uint16_t);
-  A=SWAP1(A,uint16_t);
-  return A;
-}
-
-uint32_t4 llvm_bitreverse_v4i32(uint32_t4 A) {
-  A=SWAP16(A,uint32_t);
-  A=SWAP8(A,uint32_t);
-  A=SWAP4(A,uint32_t);
-  A=SWAP2(A,uint32_t);
-  A=SWAP1(A,uint32_t);
-  return A;
-}
-
-uint64_t4 llvm_bitreverse_v4i64(uint64_t4 A) {
-  A=SWAP32(A,uint64_t);
-  A=SWAP16(A,uint64_t);
-  A=SWAP8(A,uint64_t);
-  A=SWAP4(A,uint64_t);
-  A=SWAP2(A,uint64_t);
-  A=SWAP1(A,uint64_t);
-  return A;
-}
 */
 // clang-format on
