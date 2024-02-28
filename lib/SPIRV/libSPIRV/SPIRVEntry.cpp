@@ -626,6 +626,7 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   case ExecutionModeMaxWorkDimINTEL:
   case ExecutionModeNumSIMDWorkitemsINTEL:
   case ExecutionModeSchedulerTargetFmaxMhzINTEL:
+  case ExecutionModeRegisterMapInterfaceINTEL:
   case internal::ExecutionModeStreamingInterfaceINTEL:
     WordLiterals.resize(1);
     break;
