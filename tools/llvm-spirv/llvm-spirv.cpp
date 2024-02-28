@@ -135,16 +135,16 @@ static cl::opt<bool> SPIRVGenKernelArgNameMD(
     cl::desc("Enable generating OpenCL kernel argument name "
              "metadata"));
 
-static cl::opt<SPIRV::ExtInst>
-    ExtInst("spirv-ext-inst",
-            cl::desc("Specify the external instruction set to use when "
-                     "translating from a LLVM intrinsic function to SPIR-V.  "
-                     "Otherwise the LLVM intrinsic function will be emulated."),
-            cl::values(clEnumValN(SPIRV::ExtInst::None, "none",
-                                  "No external instructions"),
-                       clEnumValN(SPIRV::ExtInst::OpenCL, "OpenCL.std",
-                                  "OpenCL instructions")),
-            cl::init(SPIRV::ExtInst::None));
+static cl::opt<SPIRV::ExtInst> ExtInst(
+    "spirv-ext-inst",
+    cl::desc("Specify the extended instruction set to use when "
+             "translating from a LLVM intrinsic function to SPIR-V.  "
+             "If none, some LLVM intrinsic functions will be emulated."),
+    cl::values(clEnumValN(SPIRV::ExtInst::None, "none",
+                          "No extended instructions"),
+               clEnumValN(SPIRV::ExtInst::OpenCL, "OpenCL.std",
+                          "OpenCL.std extended instruction set")),
+    cl::init(SPIRV::ExtInst::None));
 
 static cl::opt<SPIRV::BIsRepresentation> BIsRepresentation(
     "spirv-target-env",
@@ -264,7 +264,7 @@ static cl::opt<SPIRV::DebugInfoEIS> DebugEIS(
 static cl::opt<bool> SPIRVReplaceLLVMFmulAddWithOpenCLMad(
     "spirv-replace-fmuladd-with-ocl-mad",
     cl::desc("Allow replacement of llvm.fmuladd.* intrinsic with OpenCL mad "
-             "instruction from OpenCL extended instruction set"),
+             "instruction from OpenCL extended instruction set (deprecated)"),
     cl::init(true));
 
 static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
@@ -722,12 +722,13 @@ int main(int Ac, char **Av) {
 
   if (ExtInst.getNumOccurrences() != 0) {
     if (ExtInst.getNumOccurrences() > 1) {
-      std::cout << "Error: --spirv-ext-inst cannot be used more than once\n";
+      errs() << "Error: --spirv-ext-inst cannot be used more than once\n";
       return -1;
     } else if (SPIRVReplaceLLVMFmulAddWithOpenCLMad.getNumOccurrences()) {
-      std::cout
+      errs()
           << "Error: --spirv-ext-inst and --spirv-replace-fmuladd-with-ocl-mad "
-             "cannot be used together\n";
+             "cannot be used together.  --spirv-replace-fmuladd-with-ocl-mad "
+             "is deprecated and --spirv-ext-inst is preferred.\n";
       return -1;
     } else if (IsReverse) {
       errs() << "Note: --spirv-ext-inst option ignored as it only "

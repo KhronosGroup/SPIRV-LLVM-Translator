@@ -248,7 +248,7 @@ private:
   // SPIR-V to LLVM translation options
   bool GenKernelArgNameMD = false;
   std::unordered_map<uint32_t, uint64_t> ExternalSpecialization;
-  // External instructions to use when translating from LLVM IR to SPIR-V
+  // Extended instruction set to use when translating from LLVM IR to SPIR-V
   ExtInst ExtInstValue = ExtInst::None;
   // Representation of built-ins, which should be used while translating from
   // SPIR-V to back to LLVM IR
