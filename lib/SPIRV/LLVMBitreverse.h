@@ -60,7 +60,7 @@
 //     ret <4 x i8> %or12
 //   }
 
-static const char LLVMBitreverseScalar[]{R"(
+static const char LLVMBitreverseScalar_8[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %A) {
 entry:
   %and = shl i8 %A, 4
@@ -78,7 +78,9 @@ entry:
   %or18 = or disjoint i8 %shl14, %and17
   ret i8 %or18
 }
+)"};
 
+static const char LLVMBitreverseScalar_16[]{R"(
 define zeroext i16 @llvm_bitreverse_i16(i16 %A) {
 entry:
   %and = shl i16 %A, 8
@@ -101,7 +103,9 @@ entry:
   %or26 = or disjoint i16 %shl22, %and25
   ret i16 %or26
 }
+)"};
 
+static const char LLVMBitreverseScalar_32[]{R"(
 define i32 @llvm_bitreverse_i32(i32 %A) {
 entry:
   %and = shl i32 %A, 16
@@ -129,7 +133,9 @@ entry:
   %or21 = or disjoint i32 %shl18, %and20
   ret i32 %or21
 }
+)"};
 
+static const char LLVMBitreverseScalar_64[]{R"(
 define i64 @llvm_bitreverse_i64(i64 %A) {
 entry:
   %and = shl i64 %A, 32
@@ -164,7 +170,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV2[]{R"(
+static const char LLVMBitreverseV2_8[]{R"(
 define <2 x i8> @llvm_bitreverse_v2i8(<2 x i8> %A) {
 entry:
   %shl = shl <2 x i8> %A, <i8 4, i8 4>
@@ -182,7 +188,9 @@ entry:
   %or12 = or disjoint <2 x i8> %shl9, %and11
   ret <2 x i8> %or12
 }
+)"};
 
+static const char LLVMBitreverseV2_16[]{R"(
 define <2 x i16> @llvm_bitreverse_v2i16(<2 x i16> %A) {
 entry:
   %shl = shl <2 x i16> %A, <i16 8, i16 8>
@@ -205,7 +213,9 @@ entry:
   %or17 = or disjoint <2 x i16> %shl14, %and16
   ret <2 x i16> %or17
 }
+)"};
 
+static const char LLVMBitreverseV2_32[]{R"(
 define <2 x i32> @llvm_bitreverse_v2i32(<2 x i32> %A) {
 entry:
   %shl = shl <2 x i32> %A, <i32 16, i32 16>
@@ -233,7 +243,9 @@ entry:
   %or22 = or disjoint <2 x i32> %shl19, %and21
   ret <2 x i32> %or22
 }
+)"};
 
+static const char LLVMBitreverseV2_64[]{R"(
 define <2 x i64> @llvm_bitreverse_v2i64(<2 x i64> %A) {
 entry:
   %shl = shl <2 x i64> %A, <i64 32, i64 32>
@@ -268,7 +280,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV3[]{R"(
+static const char LLVMBitreverseV3_8[]{R"(
 define <3 x i8> @llvm_bitreverse_v3i8(<3 x i8> %A) {
 entry:
   %shl = shl <3 x i8> %A, <i8 4, i8 4, i8 4>
@@ -286,7 +298,9 @@ entry:
   %or26 = or disjoint <3 x i8> %shl21, %and25
   ret <3 x i8> %or26
 }
+)"};
 
+static const char LLVMBitreverseV3_16[]{R"(
 define <3 x i16> @llvm_bitreverse_v3i16(<3 x i16> %A) {
 entry:
   %shl = shl <3 x i16> %A, <i16 8, i16 8, i16 8>
@@ -309,7 +323,9 @@ entry:
   %or36 = or disjoint <3 x i16> %shl31, %and35
   ret <3 x i16> %or36
 }
+)"};
 
+static const char LLVMBitreverseV3_32[]{R"(
 define <3 x i32> @llvm_bitreverse_v3i32(<3 x i32> %A) {
 entry:
   %shl = shl <3 x i32> %A, <i32 16, i32 16, i32 16>
@@ -337,7 +353,9 @@ entry:
   %or44 = or disjoint <3 x i32> %shl39, %and43
   ret <3 x i32> %or44
 }
+)"};
 
+static const char LLVMBitreverseV3_64[]{R"(
 define <3 x i64> @llvm_bitreverse_v3i64(<3 x i64> %A) {
 entry:
   %shl = shl <3 x i64> %A, <i64 32, i64 32, i64 32>
@@ -372,7 +390,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV4[]{R"(
+static const char LLVMBitreverseV4_8[]{R"(
 define <4 x i8> @llvm_bitreverse_v4i8(<4 x i8> %A) {
 entry:
   %shl = shl <4 x i8> %A, <i8 4, i8 4, i8 4, i8 4>
@@ -390,7 +408,9 @@ entry:
   %or12 = or disjoint <4 x i8> %shl9, %and11
   ret <4 x i8> %or12
 }
+)"};
 
+static const char LLVMBitreverseV4_16[]{R"(
 define <4 x i16> @llvm_bitreverse_v4i16(<4 x i16> %A) {
 entry:
   %shl = shl <4 x i16> %A, <i16 8, i16 8, i16 8, i16 8>
@@ -413,7 +433,9 @@ entry:
   %or17 = or disjoint <4 x i16> %shl14, %and16
   ret <4 x i16> %or17
 }
+)"};
 
+static const char LLVMBitreverseV4_32[]{R"(
 define <4 x i32> @llvm_bitreverse_v4i32(<4 x i32> %A) {
 entry:
   %shl = shl <4 x i32> %A, <i32 16, i32 16, i32 16, i32 16>
@@ -441,7 +463,9 @@ entry:
   %or21 = or disjoint <4 x i32> %shl18, %and20
   ret <4 x i32> %or21
 }
+)"};
 
+static const char LLVMBitreverseV4_64[]{R"(
 define <4 x i64> @llvm_bitreverse_v4i64(<4 x i64> %A) {
 entry:
   %shl = shl <4 x i64> %A, <i64 32, i64 32, i64 32, i64 32>
@@ -476,7 +500,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV8[]{R"(
+static const char LLVMBitreverseV8_8[]{R"(
 define <8 x i8> @llvm_bitreverse_v8i8(<8 x i8> %A) {
 entry:
   %shl = shl <8 x i8> %A, <i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4>
@@ -494,7 +518,9 @@ entry:
   %or12 = or disjoint <8 x i8> %shl9, %and11
   ret <8 x i8> %or12
 }
+)"};
 
+static const char LLVMBitreverseV8_16[]{R"(
 define <8 x i16> @llvm_bitreverse_v8i16(<8 x i16> %A) {
 entry:
   %shl = shl <8 x i16> %A, <i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8>
@@ -517,7 +543,9 @@ entry:
   %or16 = or disjoint <8 x i16> %shl13, %and15
   ret <8 x i16> %or16
 }
+)"};
 
+static const char LLVMBitreverseV8_32[]{R"(
 define <8 x i32> @llvm_bitreverse_v8i32(<8 x i32> %A) {
 entry:
   %shl = shl <8 x i32> %A, <i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16>
@@ -545,7 +573,9 @@ entry:
   %or21 = or disjoint <8 x i32> %shl18, %and20
   ret <8 x i32> %or21
 }
+)"};
 
+static const char LLVMBitreverseV8_64[]{R"(
 define <8 x i64> @llvm_bitreverse_v8i64(<8 x i64> %A) {
 entry:
   %shl = shl <8 x i64> %A, <i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32>
@@ -580,7 +610,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV16[]{R"(
+static const char LLVMBitreverseV16_8[]{R"(
 define <16 x i8> @llvm_bitreverse_v16i8(<16 x i8> %A) {
 entry:
   %shl = shl <16 x i8> %A, <i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4>
@@ -598,7 +628,9 @@ entry:
   %or11 = or disjoint <16 x i8> %shl8, %and10
   ret <16 x i8> %or11
 }
+)"};
 
+static const char LLVMBitreverseV16_16[]{R"(
 define <16 x i16> @llvm_bitreverse_v16i16(<16 x i16> %A) {
 entry:
   %shl = shl <16 x i16> %A, <i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8>
@@ -621,7 +653,9 @@ entry:
   %or16 = or disjoint <16 x i16> %shl13, %and15
   ret <16 x i16> %or16
 }
+)"};
 
+static const char LLVMBitreverseV16_32[]{R"(
 define <16 x i32> @llvm_bitreverse_v16i32(<16 x i32> %A) {
 entry:
   %shl = shl <16 x i32> %A, <i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16>
@@ -649,7 +683,9 @@ entry:
   %or21 = or disjoint <16 x i32> %shl18, %and20
   ret <16 x i32> %or21
 }
+)"};
 
+static const char LLVMBitreverseV16_64[]{R"(
 define <16 x i64> @llvm_bitreverse_v16i64(<16 x i64> %A) {
 entry:
   %shl = shl <16 x i64> %A, <i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32>
