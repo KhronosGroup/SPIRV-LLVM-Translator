@@ -6,7 +6,7 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-; SPV_KHR_bit_instructions extenstion was not enabled so BitReverse must not be generated
+; SPV_KHR_bit_instructions extension was not enabled so BitReverse must not be generated
 ; CHECK-SPIRV-NOT: BitReverse
 
 ; Check for expected bitreverse lowerings
