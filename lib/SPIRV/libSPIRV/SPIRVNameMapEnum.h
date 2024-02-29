@@ -607,6 +607,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "GlobalVariableFPGADecorationsINTEL");
   add(CapabilityGlobalVariableHostAccessINTEL, "GlobalVariableHostAccessINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
+  add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
   add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
   add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
@@ -641,7 +642,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "JointMatrixWIInstructionsINTEL");
   add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
       "CooperativeMatrixPrefetchINTEL");
-  add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL,
       "CooperativeMatrixCheckedInstructionsINTEL");
   add(internal::CapabilityBindlessImagesINTEL, "BindlessImagesINTEL");
@@ -669,11 +669,10 @@ template <> inline void SPIRVMap<HostAccessQualifier, std::string>::init() {
 SPIRV_DEF_NAMEMAP(HostAccessQualifier, SPIRVHostAccessQualifierNameMap)
 
 template <>
-inline void
-SPIRVMap<internal::InternalNamedMaximumNumberOfRegisters, std::string>::init() {
-  add(internal::NamedMaximumNumberOfRegistersAutoINTEL, "AutoINTEL");
+inline void SPIRVMap<NamedMaximumNumberOfRegisters, std::string>::init() {
+  add(NamedMaximumNumberOfRegistersAutoINTEL, "AutoINTEL");
 }
-SPIRV_DEF_NAMEMAP(internal::InternalNamedMaximumNumberOfRegisters,
+SPIRV_DEF_NAMEMAP(NamedMaximumNumberOfRegisters,
                   SPIRVNamedMaximumNumberOfRegistersNameMap);
 
 } /* namespace SPIRV */

@@ -117,15 +117,11 @@ enum InternalCapability {
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
   ICapabilityCacheControlsINTEL = 6441,
-  ICapRegisterLimitsINTEL = 6460,
   ICapabilityBindlessImagesINTEL = 6528
 };
 
 enum InternalExecutionMode {
   IExecModeStreamingInterfaceINTEL = 6154,
-  IExecModeMaximumRegistersINTEL = 6461,
-  IExecModeMaximumRegistersIdINTEL = 6462,
-  IExecModeNamedMaximumRegistersINTEL = 6463
 };
 
 enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
@@ -160,10 +156,6 @@ enum class StoreCacheControlINTEL {
   WriteThrough = 1,
   WriteBack = 2,
   Streaming = 3
-};
-
-enum InternalNamedMaximumNumberOfRegisters {
-  NamedMaximumNumberOfRegistersAutoINTEL = 0,
 };
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
@@ -289,8 +281,6 @@ constexpr Capability CapabilityBfloat16ConversionINTEL =
     static_cast<Capability>(ICapBfloat16ConversionINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
-constexpr Capability CapabilityRegisterLimitsINTEL =
-    static_cast<Capability>(ICapRegisterLimitsINTEL);
 
 constexpr Decoration DecorationMathOpDSPModeINTEL =
     static_cast<Decoration>(IDecMathOpDSPModeINTEL);
@@ -300,12 +290,6 @@ constexpr ExecutionMode ExecutionModeStreamingInterfaceINTEL =
 
 constexpr LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
-constexpr ExecutionMode ExecutionModeMaximumRegistersINTEL =
-    static_cast<ExecutionMode>(IExecModeMaximumRegistersINTEL);
-constexpr ExecutionMode ExecutionModeMaximumRegistersIdINTEL =
-    static_cast<ExecutionMode>(IExecModeMaximumRegistersIdINTEL);
-constexpr ExecutionMode ExecutionModeNamedMaximumRegistersINTEL =
-    static_cast<ExecutionMode>(IExecModeNamedMaximumRegistersINTEL);
 
 } // namespace internal
 } // namespace spv
