@@ -60,7 +60,7 @@
 //     ret <4 x i8> %or12
 //   }
 
-static const char LLVMBitreverseScalar_8[]{R"(
+static const char LLVMBitreverseScalari8[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %A) {
 entry:
   %and = shl i8 %A, 4
@@ -80,7 +80,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseScalar_16[]{R"(
+static const char LLVMBitreverseScalari16[]{R"(
 define zeroext i16 @llvm_bitreverse_i16(i16 %A) {
 entry:
   %and = shl i16 %A, 8
@@ -105,7 +105,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseScalar_32[]{R"(
+static const char LLVMBitreverseScalari32[]{R"(
 define i32 @llvm_bitreverse_i32(i32 %A) {
 entry:
   %and = shl i32 %A, 16
@@ -135,7 +135,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseScalar_64[]{R"(
+static const char LLVMBitreverseScalari64[]{R"(
 define i64 @llvm_bitreverse_i64(i64 %A) {
 entry:
   %and = shl i64 %A, 32
@@ -170,7 +170,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV2_8[]{R"(
+static const char LLVMBitreverseV2i8[]{R"(
 define <2 x i8> @llvm_bitreverse_v2i8(<2 x i8> %A) {
 entry:
   %shl = shl <2 x i8> %A, <i8 4, i8 4>
@@ -190,7 +190,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV2_16[]{R"(
+static const char LLVMBitreverseV2i16[]{R"(
 define <2 x i16> @llvm_bitreverse_v2i16(<2 x i16> %A) {
 entry:
   %shl = shl <2 x i16> %A, <i16 8, i16 8>
@@ -215,7 +215,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV2_32[]{R"(
+static const char LLVMBitreverseV2i32[]{R"(
 define <2 x i32> @llvm_bitreverse_v2i32(<2 x i32> %A) {
 entry:
   %shl = shl <2 x i32> %A, <i32 16, i32 16>
@@ -245,7 +245,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV2_64[]{R"(
+static const char LLVMBitreverseV2i64[]{R"(
 define <2 x i64> @llvm_bitreverse_v2i64(<2 x i64> %A) {
 entry:
   %shl = shl <2 x i64> %A, <i64 32, i64 32>
@@ -280,7 +280,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV3_8[]{R"(
+static const char LLVMBitreverseV3i8[]{R"(
 define <3 x i8> @llvm_bitreverse_v3i8(<3 x i8> %A) {
 entry:
   %shl = shl <3 x i8> %A, <i8 4, i8 4, i8 4>
@@ -300,7 +300,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV3_16[]{R"(
+static const char LLVMBitreverseV3i16[]{R"(
 define <3 x i16> @llvm_bitreverse_v3i16(<3 x i16> %A) {
 entry:
   %shl = shl <3 x i16> %A, <i16 8, i16 8, i16 8>
@@ -325,7 +325,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV3_32[]{R"(
+static const char LLVMBitreverseV3i32[]{R"(
 define <3 x i32> @llvm_bitreverse_v3i32(<3 x i32> %A) {
 entry:
   %shl = shl <3 x i32> %A, <i32 16, i32 16, i32 16>
@@ -355,7 +355,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV3_64[]{R"(
+static const char LLVMBitreverseV3i64[]{R"(
 define <3 x i64> @llvm_bitreverse_v3i64(<3 x i64> %A) {
 entry:
   %shl = shl <3 x i64> %A, <i64 32, i64 32, i64 32>
@@ -390,7 +390,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV4_8[]{R"(
+static const char LLVMBitreverseV4i8[]{R"(
 define <4 x i8> @llvm_bitreverse_v4i8(<4 x i8> %A) {
 entry:
   %shl = shl <4 x i8> %A, <i8 4, i8 4, i8 4, i8 4>
@@ -410,7 +410,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV4_16[]{R"(
+static const char LLVMBitreverseV4i16[]{R"(
 define <4 x i16> @llvm_bitreverse_v4i16(<4 x i16> %A) {
 entry:
   %shl = shl <4 x i16> %A, <i16 8, i16 8, i16 8, i16 8>
@@ -435,7 +435,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV4_32[]{R"(
+static const char LLVMBitreverseV4i32[]{R"(
 define <4 x i32> @llvm_bitreverse_v4i32(<4 x i32> %A) {
 entry:
   %shl = shl <4 x i32> %A, <i32 16, i32 16, i32 16, i32 16>
@@ -465,7 +465,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV4_64[]{R"(
+static const char LLVMBitreverseV4i64[]{R"(
 define <4 x i64> @llvm_bitreverse_v4i64(<4 x i64> %A) {
 entry:
   %shl = shl <4 x i64> %A, <i64 32, i64 32, i64 32, i64 32>
@@ -500,7 +500,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV8_8[]{R"(
+static const char LLVMBitreverseV8i8[]{R"(
 define <8 x i8> @llvm_bitreverse_v8i8(<8 x i8> %A) {
 entry:
   %shl = shl <8 x i8> %A, <i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4>
@@ -520,7 +520,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV8_16[]{R"(
+static const char LLVMBitreverseV8i16[]{R"(
 define <8 x i16> @llvm_bitreverse_v8i16(<8 x i16> %A) {
 entry:
   %shl = shl <8 x i16> %A, <i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8>
@@ -545,7 +545,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV8_32[]{R"(
+static const char LLVMBitreverseV8i32[]{R"(
 define <8 x i32> @llvm_bitreverse_v8i32(<8 x i32> %A) {
 entry:
   %shl = shl <8 x i32> %A, <i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16>
@@ -575,7 +575,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV8_64[]{R"(
+static const char LLVMBitreverseV8i64[]{R"(
 define <8 x i64> @llvm_bitreverse_v8i64(<8 x i64> %A) {
 entry:
   %shl = shl <8 x i64> %A, <i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32>
@@ -610,7 +610,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV16_8[]{R"(
+static const char LLVMBitreverseV16i8[]{R"(
 define <16 x i8> @llvm_bitreverse_v16i8(<16 x i8> %A) {
 entry:
   %shl = shl <16 x i8> %A, <i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4, i8 4>
@@ -630,7 +630,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV16_16[]{R"(
+static const char LLVMBitreverseV16i16[]{R"(
 define <16 x i16> @llvm_bitreverse_v16i16(<16 x i16> %A) {
 entry:
   %shl = shl <16 x i16> %A, <i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8>
@@ -655,7 +655,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV16_32[]{R"(
+static const char LLVMBitreverseV16i32[]{R"(
 define <16 x i32> @llvm_bitreverse_v16i32(<16 x i32> %A) {
 entry:
   %shl = shl <16 x i32> %A, <i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16>
@@ -685,7 +685,7 @@ entry:
 }
 )"};
 
-static const char LLVMBitreverseV16_64[]{R"(
+static const char LLVMBitreverseV16i64[]{R"(
 define <16 x i64> @llvm_bitreverse_v16i64(<16 x i64> %A) {
 entry:
   %shl = shl <16 x i64> %A, <i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32, i64 32>
