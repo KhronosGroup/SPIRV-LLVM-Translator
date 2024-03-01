@@ -2481,11 +2481,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                     transRelational(static_cast<SPIRVInstruction *>(BV), BB));
   case OpIAddCarry: {
     auto *BC = static_cast<SPIRVBinary *>(BV);
-    return mapValue(BV, transBuiltinFromInst("__spirv_IAddCarry", BC, BB));    
+    return mapValue(BV, transBuiltinFromInst("__spirv_IAddCarry", BC, BB));
   }
   case OpISubBorrow: {
     auto *BC = static_cast<SPIRVBinary *>(BV);
-    return mapValue(BV, transBuiltinFromInst("__spirv_ISubBorrow", BC, BB));    
+    return mapValue(BV, transBuiltinFromInst("__spirv_ISubBorrow", BC, BB));
   }
   case OpGetKernelWorkGroupSize:
   case OpGetKernelPreferredWorkGroupSizeMultiple:
