@@ -904,8 +904,6 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
     transFunctionMetadataAsExecutionMode(BF, F);
-  else
-    transFunctionMetadataAsUserSemanticDecoration(BF, F);
 
   transAuxDataInst(BF, F);
 
@@ -1061,29 +1059,6 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeMaximumRegistersINTEL,
           RegisterAllocVal)));
-    }
-  }
-}
-
-void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
-    SPIRVFunction *BF, Function *F) {
-  if (auto *RegisterAllocModeMD = F->getMetadata("RegisterAllocMode")) {
-    // TODO: Once the design for per-kernel register size allocation is
-    // finalized, we will need to move away from UserSemantic and introduce an
-    // extension
-    const int RegisterAllocNodeMDOp = getMDOperandAsInt(RegisterAllocModeMD, 0);
-    // The current RegisterAllocMode metadata format is as follows
-    // AUTO - 0
-    // SMALL - 1
-    // LARGE - 2
-    // DEFAULT - 3
-    // Currently we only support SMALL and LARGE
-    if (RegisterAllocNodeMDOp == 1 || RegisterAllocNodeMDOp == 2) {
-      // 4 threads per eu means large grf mode, and 8 threads per eu
-      // means small grf mode
-      const std::string NumThreads = RegisterAllocNodeMDOp == 2 ? "4" : "8";
-      BF->addDecorate(new SPIRVDecorateUserSemanticAttr(
-          BF, "num-thread-per-eu " + NumThreads));
     }
   }
 }
