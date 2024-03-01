@@ -1031,10 +1031,6 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
       BF->addDecorate(new SPIRVDecoratePipelineEnableINTEL(BF, !Disable));
     }
   }
-
-  // In addition, process the decorations on the function
-  if (auto *FDecoMD = F->getMetadata(SPIRV_MD_DECORATIONS))
-    transMetadataDecorations(FDecoMD, BF);
 }
 
 void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
@@ -1045,8 +1041,8 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
   for (unsigned I = 0; I < RegisterAllocModeMDs.size(); I++) {
     auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
-      StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
-      NamedMaximumNumberOfRegisters NamedValue =
+      const StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
+      const NamedMaximumNumberOfRegisters NamedValue =
           SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
@@ -1054,13 +1050,13 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
     } else if (isa<MDNode>(RegisterAllocMode)) {
       auto *RegisterAllocNodeMDOp =
           getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
-      int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
+      const int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
       BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(
           BF, ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
     } else {
-      int64_t RegisterAllocVal =
+      const int64_t RegisterAllocVal =
           mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeMaximumRegistersINTEL,
@@ -1075,7 +1071,7 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
     // TODO: Once the design for per-kernel register size allocation is
     // finalized, we will need to move away from UserSemantic and introduce an
     // extension
-    int RegisterAllocNodeMDOp = getMDOperandAsInt(RegisterAllocModeMD, 0);
+    const int RegisterAllocNodeMDOp = getMDOperandAsInt(RegisterAllocModeMD, 0);
     // The current RegisterAllocMode metadata format is as follows
     // AUTO - 0
     // SMALL - 1
@@ -1085,37 +1081,11 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
     if (RegisterAllocNodeMDOp == 1 || RegisterAllocNodeMDOp == 2) {
       // 4 threads per eu means large grf mode, and 8 threads per eu
       // means small grf mode
-      std::string NumThreads = RegisterAllocNodeMDOp == 2 ? "4" : "8";
+      const std::string NumThreads = RegisterAllocNodeMDOp == 2 ? "4" : "8";
       BF->addDecorate(new SPIRVDecorateUserSemanticAttr(
           BF, "num-thread-per-eu " + NumThreads));
     }
   }
-}
-
-SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C) {
-  // Constant expressions expect their pointer types to be i8* in opaque pointer
-  // mode, but the value may have a different "natural" type. If that is the
-  // case, we need to adjust the type of the constant.
-  SPIRVValue *Trans = transValue(C, nullptr, true, FuncTransMode::Pointer);
-  SPIRVType *ExpectedType = transType(C->getType());
-  if (Trans->getType() == ExpectedType || Trans->getType()->isTypePipeStorage())
-    return Trans;
-
-  assert(C->getType()->isPointerTy() &&
-         "Only pointer type mismatches should be possible");
-  // In the common case of strings ([N x i8] GVs), see if we can emit a GEP
-  // instruction.
-  if (auto *GV = dyn_cast<GlobalVariable>(C)) {
-    if (GV->getValueType()->isArrayTy() &&
-        GV->getValueType()->getArrayElementType()->isIntegerTy(8)) {
-      SPIRVValue *Offset = transValue(getUInt32(M, 0), nullptr);
-      return BM->addPtrAccessChainInst(ExpectedType, Trans, {Offset, Offset},
-                                       nullptr, true);
-    }
-  }
-
-  // Otherwise, just use a bitcast.
-  return BM->addUnaryInst(OpBitcast, ExpectedType, Trans, nullptr);
 }
 
 void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
