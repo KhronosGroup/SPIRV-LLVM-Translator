@@ -693,7 +693,7 @@ public:
     }
   }
 
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<unsigned>(ExecMode)) {
     case ExecutionModeMaximumRegistersINTEL:
     case ExecutionModeMaximumRegistersIdINTEL:
