@@ -21,10 +21,10 @@
 ; CHECK-SPIRV-NOT: ExecutionMode [[#FUNC4]]
 
 ; CHECK-LLVM: !spirv.ExecutionMode = !{![[#FLAG0:]], ![[#FLAG1:]], ![[#FLAG2:]], ![[#FLAG3:]]}
-; CHECK-LLVM: ![[#FLAG0]] = !{ptr @main_l3, i32 6461, i32 2}
-; CHECK-LLVM: ![[#FLAG1]] = !{ptr @main_l6, i32 6461, i32 1}
-; CHECK-LLVM: ![[#FLAG2]] = !{ptr @main_l9, i32 6463, !"AutoINTEL"}
-; CHECK-LLVM: ![[#FLAG3]] = !{ptr @main_l13, i32 6462, ![[#VAL:]]}
+; CHECK-LLVM: ![[#FLAG0]] = !{void ()* @main_l3, i32 6461, i32 2}
+; CHECK-LLVM: ![[#FLAG1]] = !{void ()* @main_l6, i32 6461, i32 1}
+; CHECK-LLVM: ![[#FLAG2]] = !{void ()* @main_l9, i32 6463, !"AutoINTEL"}
+; CHECK-LLVM: ![[#FLAG3]] = !{void ()* @main_l13, i32 6462, ![[#VAL:]]}
 ; CHECK-LLVM: ![[#VAL]] = !{i32 3}
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
