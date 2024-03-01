@@ -123,8 +123,6 @@ public:
   void transFPGAFunctionMetadata(SPIRVFunction *BF, Function *F);
   void transAuxDataInst(SPIRVFunction *BF, Function *F);
   void transFunctionMetadataAsExecutionMode(SPIRVFunction *BF, Function *F);
-  void transFunctionMetadataAsUserSemanticDecoration(SPIRVFunction *BF,
-                                                     Function *F);
   bool transGlobalVariables();
 
   Op transBoolOpCode(SPIRVValue *Opn, Op OC);
