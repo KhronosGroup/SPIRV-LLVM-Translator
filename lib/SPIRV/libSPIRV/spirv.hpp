@@ -1136,8 +1136,8 @@ enum PackedVectorFormat {
 };
 
 enum NamedMaximumNumberOfRegisters {
-    AutoINTEL = 0,
-    Max = 0x7fffffff,
+    NamedMaximumNumberOfRegistersAutoINTEL = 0,
+    NamedMaximumNumberOfRegistersMax = 0x7fffffff,
 };
 
 enum Op {
