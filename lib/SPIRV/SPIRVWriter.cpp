@@ -3920,8 +3920,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::ExecutionModeSubgroupsPerWorkgroup: {
         unsigned X;
         N.get(X);
-        BF->addExecutionMode(BM->add(
-            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode), X)));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), X)));
       } break;
       case spv::ExecutionModeNumSIMDWorkitemsINTEL:
       case spv::ExecutionModeSchedulerTargetFmaxMhzINTEL:
@@ -3931,7 +3931,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           unsigned X;
           N.get(X);
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-              BF, static_cast<ExecutionMode>(EMode), X)));
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), X)));
           BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
         }
       } break;
@@ -3941,7 +3941,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         unsigned SLMSize;
         N.get(SLMSize);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), SLMSize)));
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), SLMSize)));
       } break;
       case spv::ExecutionModeNamedBarrierCountINTEL: {
         if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
@@ -3965,7 +3965,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         unsigned TargetWidth;
         N.get(TargetWidth);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode),
+            TargetWidth)));
       } break;
       case spv::ExecutionModeRoundingModeRTPINTEL:
       case spv::ExecutionModeRoundingModeRTNINTEL:
@@ -3977,7 +3978,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         unsigned TargetWidth;
         N.get(TargetWidth);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), TargetWidth)));
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode),
+            TargetWidth)));
       } break;
       case spv::internal::ExecutionModeFastCompositeKernelINTEL: {
         if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite))
