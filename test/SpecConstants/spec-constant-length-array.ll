@@ -1,4 +1,5 @@
-; RUN: llvm-as %s -o - | llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
+; RUN: llvm-as %s -o - | llvm-spirv %t.bc -spirv-text -o %t
+; RUN: FileCheck < %t %s
 
 ; CHECK: Decorate [[#I64_CONST:]] SpecId [[#]]
 ; CHECK: Decorate [[#I32_CONST:]] SpecId [[#]]
