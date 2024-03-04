@@ -1,10 +1,23 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_task_sequence 2>&1 \
-; RUN: | FileCheck %s --check-prefix=CHECK-ERROR
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_task_sequence -o %t.spv
+; RUN: llvm-spirv %t.spv -to-text -o %t.spt
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
-; CHECK-ERROR: InvalidInstruction: Can't translate llvm instruction:
-; CHECK-ERROR-NEXT: TaskSequenceCreateINTEL
-; CHECK-ERROR-NEXT: GetCapacity must be an unsigned 32-bit integer.
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
+
+; CHECK-SPIRV: TypeInt [[#IntTy:]] 32 0
+; CHECK-SPIRV: TypeTaskSequenceINTEL [[#TypeTS:]]
+; CHECK-SPIRV: TypeFunction [[#FuncTy:]] [[#IntTy]] [[#IntTy]] [[#IntTy]]
+; CHECK-SPIRV: TypePointer [[#PtrTS:]] 7 [[#TypeTS]]
+
+; <id> Result Type <id> Result <id> Function Literal Pipelined Literal UseStallEnableClusters Literal GetCapacity Literal AsyncCapacity
+; CHECK-SPIRV: TaskSequenceCreateINTEL [[#TypeTS]] [[#CreateRes:]] [[#FuncId:]] 10 4294967295 0 0
+; CHECK-SPIRV: InBoundsPtrAccessChain [[#PtrTS]] [[#GEP:]]
+; CHECK-SPIRV: Store [[#GEP]] [[#CreateRes]]
+
+; CHECK-SPIRV: Function [[#IntTy]] [[#FuncId]] 0 [[#FuncTy]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -18,7 +31,9 @@ define weak_odr dso_local spir_kernel void @_ZTS8MyKernel(ptr addrspace(1) nound
 entry:
   %myMultTask.i = alloca %"class.task_sequence", align 8
   store i32 0, ptr %myMultTask.i, align 8
-  %call.i1 = call spir_func noundef target("spirv.TaskSequenceINTEL") @_Z31__spirv_TaskSequenceCreateINTEL(ptr noundef nonnull @_Z4multii, i32 noundef 10, i32 noundef -1, i32 noundef -1, i16 noundef zeroext 1) #3
+; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 10, i32 -1, i32 0, i32 0)
+; CHECK-LLVM: store target("spirv.TaskSequenceINTEL") %[[TSCreate]], ptr %id.i
+  %call.i1 = call spir_func noundef target("spirv.TaskSequenceINTEL") @_Z31__spirv_TaskSequenceCreateINTEL(ptr noundef nonnull @_Z4multii, i32 noundef 10, i32 noundef -1, i32 noundef 0, i16 noundef zeroext 0) #3
   %id.i = getelementptr inbounds %"class.task_sequence", ptr %myMultTask.i, i64 0, i32 0
   store target("spirv.TaskSequenceINTEL") %call.i1, ptr %id.i, align 8
   ret void

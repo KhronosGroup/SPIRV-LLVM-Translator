@@ -3938,7 +3938,7 @@ protected:
             ->getZExtIntValue();
     SPVErrLog.checkError(
         GetCapacity >= 0, SPIRVEC_InvalidInstruction,
-        InstName + "\nGetCapacity must be unsigned 32 bit integer.\n");
+        InstName + "\nGetCapacity must be an unsigned 32-bit integer.\n");
 
     const int AsyncCapacity =
         static_cast<SPIRVConstant *>(
@@ -3946,7 +3946,7 @@ protected:
             ->getZExtIntValue();
     SPVErrLog.checkError(
         AsyncCapacity >= 0, SPIRVEC_InvalidInstruction,
-        InstName + "\nAsyncCapacity must be unsigned 32 bit integer.\n");
+        InstName + "\nAsyncCapacity must be an unsigned 32-bit integer.\n");
   }
 };
 
