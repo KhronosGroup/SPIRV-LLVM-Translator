@@ -683,14 +683,14 @@ public:
     }
   }
 
-  llvm::Optional<ExtensionID> getRequiredExtension() const override {
+  SPIRVExtSet getRequiredExtensions() const override {
     switch (static_cast<unsigned>(ExecMode)) {
     case ExecutionModeMaximumRegistersINTEL:
     case ExecutionModeMaximumRegistersIdINTEL:
     case ExecutionModeNamedMaximumRegistersINTEL:
-      return ExtensionID::SPV_INTEL_maximum_registers;
+      return getSet(ExtensionID::SPV_INTEL_maximum_registers);
     default:
-      return {};
+      return SPIRVExtSet();
     }
   }
 
