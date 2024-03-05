@@ -3946,7 +3946,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           unsigned X;
           N.get(X);
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-              BF, static_cast<ExecutionMode>(EMode), X)));
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), X)));
           BM->addCapability(CapabilityFPGAKernelAttributesINTEL);
         }
       } break;
