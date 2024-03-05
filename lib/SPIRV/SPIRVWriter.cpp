@@ -865,9 +865,9 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
   for (unsigned I = 0; I < RegisterAllocModeMDs.size(); I++) {
     auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
-      const StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
+      const std::string Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
       const NamedMaximumNumberOfRegisters NamedValue =
-          SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
+          SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str);
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
           NamedValue)));
