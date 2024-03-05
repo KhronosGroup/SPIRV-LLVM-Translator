@@ -188,6 +188,8 @@ public:
     case DecorationMMHostInterfaceMaxBurstINTEL:
     case DecorationMMHostInterfaceWaitRequestINTEL:
       return ExtensionID::SPV_INTEL_fpga_argument_interfaces;
+    case DecorationFPMaxErrorDecorationINTEL:
+      return ExtensionID::SPV_INTEL_fp_max_error;
     case internal::DecorationCacheControlLoadINTEL:
     case internal::DecorationCacheControlStoreINTEL:
       return ExtensionID::SPV_INTEL_cache_controls;
