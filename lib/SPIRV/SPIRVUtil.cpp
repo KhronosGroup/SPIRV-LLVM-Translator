@@ -2186,7 +2186,18 @@ bool postProcessBuiltinReturningStruct(Function *F) {
                                      F->getReturnType());
       NewF->addParamAttr(0, SretAttr);
       NewF->setCallingConv(F->getCallingConv());
-      AllocaInst *A = Builder.CreateAlloca(F->getReturnType());
+      SmallVector<User *> Users(CI->users());
+      Value *A = nullptr;
+      for (auto *U : Users) {
+        if (auto *SI = dyn_cast<StoreInst>(U)) {
+          A = SI->getPointerOperand();
+          InstToRemove.push_back(SI);
+          break;
+        }
+      }
+      if (!A) {
+        A = Builder.CreateAlloca(F->getReturnType());
+      }
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), A);
       CallInst *NewCI = Builder.CreateCall(NewF, Args, CI->getName());

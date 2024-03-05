@@ -6387,16 +6387,18 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   case OpIAddCarry: {
     Function *F = CI->getCalledFunction();
     StructType *St = cast<StructType>(F->getParamStructRetType(0));
-    return BM->addBinaryInst(OpIAddCarry, transType(St),
-                             transValue(CI->getArgOperand(1), BB),
-                             transValue(CI->getArgOperand(2), BB), BB);
+    SPIRVValue *V = BM->addBinaryInst(OpIAddCarry, transType(St),
+                      transValue(CI->getArgOperand(1), BB),
+                      transValue(CI->getArgOperand(2), BB), BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), V, {}, BB);
   }
   case OpISubBorrow: {
     Function *F = CI->getCalledFunction();
     StructType *St = cast<StructType>(F->getParamStructRetType(0));
-    return BM->addBinaryInst(OpISubBorrow, transType(St),
+    SPIRVValue *V = BM->addBinaryInst(OpISubBorrow, transType(St),
                              transValue(CI->getArgOperand(1), BB),
                              transValue(CI->getArgOperand(2), BB), BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), V, {}, BB);
   }
   case OpGroupNonUniformShuffleDown: {
     Function *F = CI->getCalledFunction();
