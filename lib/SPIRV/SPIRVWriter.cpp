@@ -767,7 +767,7 @@ void LLVMToSPIRVBase::transVectorComputeMetadata(Function *F) {
 }
 
 void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
-                                                       Function *F) {
+                                                           Function *F) {
   SmallVector<MDNode *, 1> RegisterAllocModeMDs;
   F->getMetadata("RegisterAllocMode", RegisterAllocModeMDs);
 
