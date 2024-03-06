@@ -687,9 +687,7 @@ void LLVMToSPIRV::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
           OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
           NamedValue)));
     } else if (isa<MDNode>(RegisterAllocMode)) {
-      auto *RegisterAllocNodeMDOp =
-          getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
-      const int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
+      const int Num = getMDOperandAsInt(cast<MDNode>(RegisterAllocMode), 0);
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
       BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(

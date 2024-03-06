@@ -746,7 +746,7 @@ public:
       return IsDenorm(EMK) || IsRoundingMode(EMK) || IsFPMode(EMK) ||
              IsOtherFP(EMK);
     };
-    auto IsMaxRegisters = [&](auto EMK) {
+    auto IsMaxRegisters = [&](ExecutionMode EMK) {
       return EMK == ExecutionModeMaximumRegistersINTEL ||
              EMK == ExecutionModeMaximumRegistersIdINTEL ||
              EMK == ExecutionModeNamedMaximumRegistersINTEL;
