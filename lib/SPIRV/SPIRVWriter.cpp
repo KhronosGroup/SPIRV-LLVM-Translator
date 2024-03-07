@@ -65,7 +65,6 @@
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
 #include "VectorComputeUtil.h"
-#include "spirv/unified1/spirv.hpp"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"

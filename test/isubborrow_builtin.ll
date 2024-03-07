@@ -1,3 +1,4 @@
+; REQUIRES: spirv-dis
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-dis --raw-id %t.spv | FileCheck --check-prefix CHECK-SPIRV %s
@@ -12,29 +13,34 @@ target triple = "spir64-unknown-unknown"
 %i32struct = type {i32, i32}
 %i64struct = type {i64, i64}
 %vecstruct = type {<4 x i32>, <4 x i32>}
+%struct.anon = type { i32, i32 }
 
-; CHECK-SPIRV:                    [[uchar:%[a-z0-9_]+]] = OpTypeInt 8
-; CHECK-SPIRV:                   [[ushort:%[a-z0-9_]+]] = OpTypeInt 16
-; CHECK-SPIRV:                     [[uint:%[a-z0-9_]+]] = OpTypeInt 32
-; CHECK-SPIRV:                    [[ulong:%[a-z0-9_]+]] = OpTypeInt 64
-; CHECK-SPIRV:                     [[void:%[a-z0-9_]+]] = OpTypeVoid
-; CHECK-SPIRV:                 [[i8struct:%[a-z0-9_]+]] = OpTypeStruct [[uchar]] [[uchar]]
-; CHECK-SPIRV:   [[_ptr_Function_i8struct:%[a-z0-9_]+]] = OpTypePointer Function [[i8struct]]
-; CHECK-SPIRV:                [[i16struct:%[a-z0-9_]+]] = OpTypeStruct [[ushort]] [[ushort]]
-; CHECK-SPIRV:  [[_ptr_Function_i16struct:%[a-z0-9_]+]] = OpTypePointer Function [[i16struct]]
-; CHECK-SPIRV:                [[i32struct:%[a-z0-9_]+]] = OpTypeStruct [[uint]] [[uint]]
-; CHECK-SPIRV:  [[_ptr_Function_i32struct:%[a-z0-9_]+]] = OpTypePointer Function [[i32struct]]
-; CHECK-SPIRV:                [[i64struct:%[a-z0-9_]+]] = OpTypeStruct [[ulong]] [[ulong]]
-; CHECK-SPIRV:  [[_ptr_Function_i64struct:%[a-z0-9_]+]] = OpTypePointer Function [[i64struct]]
-; CHECK-SPIRV:                   [[v4uint:%[a-z0-9_]+]] = OpTypeVector [[uint]] 4
-; CHECK-SPIRV:                [[vecstruct:%[a-z0-9_]+]] = OpTypeStruct [[v4uint]] [[v4uint]]
-; CHECK-SPIRV:  [[_ptr_Function_vecstruct:%[a-z0-9_]+]] = OpTypePointer Function [[vecstruct]]
+; CHECK-SPIRV-DAG:                     [[uchar:%[a-z0-9_]+]] = OpTypeInt 8
+; CHECK-SPIRV-DAG:                    [[ushort:%[a-z0-9_]+]] = OpTypeInt 16
+; CHECK-SPIRV-DAG:                      [[uint:%[a-z0-9_]+]] = OpTypeInt 32
+; CHECK-SPIRV-DAG:                     [[ulong:%[a-z0-9_]+]] = OpTypeInt 64
+; CHECK-SPIRV-DAG:                      [[void:%[a-z0-9_]+]] = OpTypeVoid
+; CHECK-SPIRV-DAG:                  [[i8struct:%[a-z0-9_]+]] = OpTypeStruct [[uchar]] [[uchar]]
+; CHECK-SPIRV-DAG:    [[_ptr_Function_i8struct:%[a-z0-9_]+]] = OpTypePointer Function [[i8struct]]
+; CHECK-SPIRV-DAG:                 [[i16struct:%[a-z0-9_]+]] = OpTypeStruct [[ushort]] [[ushort]]
+; CHECK-SPIRV-DAG:   [[_ptr_Function_i16struct:%[a-z0-9_]+]] = OpTypePointer Function [[i16struct]]
+; CHECK-SPIRV-DAG:                 [[i32struct:%[a-z0-9_]+]] = OpTypeStruct [[uint]] [[uint]]
+; CHECK-SPIRV-DAG:   [[_ptr_Function_i32struct:%[a-z0-9_]+]] = OpTypePointer Function [[i32struct]]
+; CHECK-SPIRV-DAG:                 [[i64struct:%[a-z0-9_]+]] = OpTypeStruct [[ulong]] [[ulong]]
+; CHECK-SPIRV-DAG:   [[_ptr_Function_i64struct:%[a-z0-9_]+]] = OpTypePointer Function [[i64struct]]
+; CHECK-SPIRV-DAG:                    [[v4uint:%[a-z0-9_]+]] = OpTypeVector [[uint]] 4
+; CHECK-SPIRV-DAG:                 [[vecstruct:%[a-z0-9_]+]] = OpTypeStruct [[v4uint]] [[v4uint]]
+; CHECK-SPIRV-DAG:   [[_ptr_Function_vecstruct:%[a-z0-9_]+]] = OpTypePointer Function [[vecstruct]]
+; CHECK-SPIRV-DAG:              [[struct_anon:%[a-z0-9_.]+]] = OpTypeStruct [[uint]] [[uint]]
+; CHECK-SPIRV-DAG: [[_ptr_Function_struct_anon:%[a-z0-9_]+]] = OpTypePointer Function [[struct_anon]]
+; CHECK-SPIRV-DAG:  [[_ptr_Generic_struct_anon:%[a-z0-9_]+]] = OpTypePointer Generic [[struct_anon]]
 
 ; CHECK-LLVM-DAG: [[i8struct:%[a-z0-9_.]+]] = type { i8, i8 }
 ; CHECK-LLVM-DAG: [[i16struct:%[a-z0-9_.]+]] = type { i16, i16 }
 ; CHECK-LLVM-DAG: [[i32struct:%[a-z0-9_.]+]] = type { i32, i32 }
 ; CHECK-LLVM-DAG: [[i64struct:%[a-z0-9_.]+]] = type { i64, i64 }
 ; CHECK-LLVM-DAG: [[vecstruct:%[a-z0-9_.]+]] = type { <4 x i32>, <4 x i32> }
+; CHECK-LLVM-DAG: [[struct_anon:%[a-z0-9_.]+]] = type { i32, i32 }
 
 define spir_func void @test_builtin_isubborrowcc(i8 %a, i8 %b) {
   entry:
@@ -126,6 +132,29 @@ define spir_func void @test_builtin_isubborrowDv4_xS_(<4 x i32> %a, <4 x i32> %b
 ; CHECK-LLVM:   %0 = alloca [[vecstruct]]
 ; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowDv4_iS_(ptr sret([[vecstruct]]) %0, <4 x i32> %a, <4 x i32> %b)
 ; CHECK-LLVM:   ret void
+
+
+define spir_func void @test_builtin_isubborrow_anon(i32 %a, i32 %b) {
+  entry:
+  %0 = alloca %struct.anon
+  %1 = addrspacecast ptr %0 to ptr addrspace(4)
+  call spir_func void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4 %1, i32 %a, i32 %b)
+  ret void
+}
+; CHECK-SPIRV:        [[a_4:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
+; CHECK-SPIRV:        [[b_4:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
+; CHECK-SPIRV:    [[entry_4:%[a-z0-9_]+]] = OpLabel
+; CHECK-SPIRV:     [[var_59:%[a-z0-9_]+]] = OpVariable [[_ptr_Function_struct_anon]] Function
+; CHECK-SPIRV:     [[var_61:%[a-z0-9_]+]] = OpPtrCastToGeneric [[_ptr_Generic_struct_anon]] [[var_59]]
+; CHECK-SPIRV:     [[var_62:%[a-z0-9_]+]] = OpISubBorrow [[struct_anon]] [[a_4]] [[b_4]]
+; CHECK-SPIRV:                              OpStore [[var_61]] [[var_62]]
+
+; CHECK-LLVM:  %0 = alloca [[struct_anon]], align 8
+; CHECK-LLVM:  %1 = addrspacecast ptr %0 to ptr addrspace(4)
+; CHECK-LLVM:  call spir_func void @_Z18__spirv_ISubBorrowii.1(ptr addrspace(4) sret([[struct_anon]]) %1, i32 %a, i32 %b)
+; CHECK-LLVM:  ret void
+
+declare void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4, i32, i32)
 declare void @_Z18__spirv_ISubBorrowcc(ptr sret(%i8struct), i8, i8)
 declare void @_Z18__spirv_ISubBorrowss(ptr sret(%i16struct), i16, i16)
 declare void @_Z18__spirv_ISubBorrowii(ptr sret(%i32struct), i32, i32)

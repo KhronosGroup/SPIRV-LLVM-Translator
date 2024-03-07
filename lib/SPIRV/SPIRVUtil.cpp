@@ -2176,16 +2176,6 @@ bool postProcessBuiltinReturningStruct(Function *F) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
       IRBuilder<> Builder(CI->getParent());
       Builder.SetInsertPoint(CI);
-      SmallVector<Type *> ArgTys;
-      getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
-      ArgTys.insert(ArgTys.begin(),
-                    PointerType::get(F->getReturnType(), SPIRAS_Private));
-      auto *NewF =
-          getOrCreateFunction(M, Type::getVoidTy(*Context), ArgTys, Name);
-      auto SretAttr = Attribute::get(*Context, Attribute::AttrKind::StructRet,
-                                     F->getReturnType());
-      NewF->addParamAttr(0, SretAttr);
-      NewF->setCallingConv(F->getCallingConv());
       SmallVector<User *> Users(CI->users());
       Value *A = nullptr;
       for (auto *U : Users) {
@@ -2198,6 +2188,16 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       if (!A) {
         A = Builder.CreateAlloca(F->getReturnType());
       }
+      SmallVector<Type *> ArgTys;
+      getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
+      
+      ArgTys.insert(ArgTys.begin(), A->getType());
+      auto *NewF =
+          getOrCreateFunction(M, Type::getVoidTy(*Context), ArgTys, Name);
+      auto SretAttr = Attribute::get(*Context, Attribute::AttrKind::StructRet,
+                                     F->getReturnType());
+      NewF->addParamAttr(0, SretAttr);
+      NewF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), A);
       CallInst *NewCI = Builder.CreateCall(NewF, Args, CI->getName());
