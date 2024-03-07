@@ -548,8 +548,9 @@ None of the special requirements imposed from using the reserved names apply to
 using decoration identifiers directly.
 
 In cases when decoration parameter carried by ``llvm.ptr.annotation`` coalesces
-with a value carried by another LLVM attribute, ``llvm.ptr.annotation`` must be
-discarded. For example:
+with a value carried by another LLVM attribute, the translator is free to chose
+the value depending on the meaning of the annotation. For example for alignment
+we can chose the biggest alignment specified in LLVM IR:
 
 .. code-block:: llvm
   @.str.0 = private unnamed_addr addrspace(1) constant [16 x i8] c"{44:\221024\22}\00", section "llvm.metadata"
@@ -558,8 +559,9 @@ discarded. For example:
   %ann_ptr = call ptr @llvm.ptr.annotation.p4.p1(ptr %ptr, ptr addrspace(1) @.str.0, ptr addrspace(1) @.str.1)
 
 here ``llvm.ptr.annotation`` specifies a pointer with 1024 alignment conflicting
-with ``align 4`` alloca's parameter. In this case the translator must generate
-``OpDecorate Alignment 4``.
+with ``align 4`` alloca's parameter. In this case the translator can generate
+``OpDecorate Alignment 1024``. When no rules are set the translator must discard
+``llvm.ptr.annotation`` in favor of another LLVM IR construct.
 
 During reverse translation, the translator prioritizes reserved names over
 decoration identifiers, even if the member decoration was generated using the
