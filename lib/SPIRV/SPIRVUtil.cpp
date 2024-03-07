@@ -2190,7 +2190,6 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       }
       SmallVector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
-      
       ArgTys.insert(ArgTys.begin(), A->getType());
       auto *NewF =
           getOrCreateFunction(M, Type::getVoidTy(*Context), ArgTys, Name);
