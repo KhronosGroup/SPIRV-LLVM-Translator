@@ -4159,6 +4159,24 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addArbFloatPointIntelInst(OC, transType(ResTy), InA, InB,
                                          Literals, BB);
   }
+  case OpIAddCarry: {
+    Function *F = CI->getCalledFunction();
+    auto *RetTy = F->arg_begin()->getType()->getPointerElementType();
+    StructType *St = cast<StructType>(RetTy);
+    SPIRVValue *V = BM->addBinaryInst(OpIAddCarry, transType(St),
+                                      transValue(CI->getArgOperand(1), BB),
+                                      transValue(CI->getArgOperand(2), BB), BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), V, {}, BB);
+  }
+  case OpISubBorrow: {
+    Function *F = CI->getCalledFunction();
+    auto *RetTy = F->arg_begin()->getType()->getPointerElementType();
+    StructType *St = cast<StructType>(RetTy);
+    SPIRVValue *V = BM->addBinaryInst(OpISubBorrow, transType(St),
+                                      transValue(CI->getArgOperand(1), BB),
+                                      transValue(CI->getArgOperand(2), BB), BB);
+    return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), V, {}, BB);
+  }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transType(CI->getType()),
