@@ -766,6 +766,8 @@ CallInst *mutateCallInst(
   auto NewCI = addCallInst(M, NewName, CI->getType(), Args, Attrs, CI, Mangle,
                            InstName, TakeFuncName);
   NewCI->setDebugLoc(CI->getDebugLoc());
+  NewCI->copyMetadata(*CI);
+  NewCI->setAttributes(CI->getAttributes());  
   LLVM_DEBUG(dbgs() << " => " << *NewCI << '\n');
   CI->replaceAllUsesWith(NewCI);
   CI->eraseFromParent();
