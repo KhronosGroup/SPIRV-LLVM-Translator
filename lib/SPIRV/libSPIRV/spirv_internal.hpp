@@ -73,6 +73,7 @@ enum InternalCapability {
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityHWThreadQueryINTEL = 6134,
+  ICapRegisterLimitsINTEL = 6460
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -82,12 +83,22 @@ enum InternalMemoryAccessMask {
   IMemAccessNoAliasINTELMask = 0x20000
 };
 
+enum InternalExecutionMode {
+  IExecModeMaximumRegistersINTEL = 6461,
+  IExecModeMaximumRegistersIdINTEL = 6462,
+  IExecModeNamedMaximumRegistersINTEL = 6463
+};
+
 enum InternalExecutionMode { IExecModeFastCompositeKernelINTEL = 6088 };
 
 enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
 
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
+
+enum InternalNamedMaximumNumberOfRegisters {
+  NamedMaximumNumberOfRegistersAutoINTEL = 0,
+};
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, MaskedGatherScatterINTEL)
@@ -151,6 +162,8 @@ constexpr Capability CapabilityFPArithmeticFenceINTEL =
     static_cast<Capability>(ICapFPArithmeticFenceINTEL);
 constexpr Capability CapabilityBfloat16ConversionINTEL =
     static_cast<Capability>(ICapBfloat16ConversionINTEL);
+constexpr Capability CapabilityRegisterLimitsINTEL =
+    static_cast<Capability>(ICapRegisterLimitsINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
@@ -168,6 +181,12 @@ constexpr ExecutionMode ExecutionModeFastCompositeKernelINTEL =
 
 constexpr LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
+constexpr ExecutionMode ExecutionModeMaximumRegistersINTEL =
+    static_cast<ExecutionMode>(IExecModeMaximumRegistersINTEL);
+constexpr ExecutionMode ExecutionModeMaximumRegistersIdINTEL =
+    static_cast<ExecutionMode>(IExecModeMaximumRegistersIdINTEL);
+constexpr ExecutionMode ExecutionModeNamedMaximumRegistersINTEL =
+    static_cast<ExecutionMode>(IExecModeNamedMaximumRegistersINTEL);
 
 } // namespace internal
 } // namespace spv

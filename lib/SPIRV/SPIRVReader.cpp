@@ -3732,7 +3732,8 @@ bool SPIRVToLLVM::transMetadata() {
       F->setMetadata(kSPIR2MD::FmaxMhz,
                      getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
-    if (auto *EM = BF->getExecutionMode(ExecutionModeMaximumRegistersINTEL)) {
+    if (auto *EM = BF->getExecutionMode(
+            internal::ExecutionModeMaximumRegistersINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 
@@ -3744,7 +3745,8 @@ bool SPIRVToLLVM::transMetadata() {
           ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0])));
       ExecModeMD->addOperand(MDNode::get(*Context, ValueVec));
     }
-    if (auto *EM = BF->getExecutionMode(ExecutionModeMaximumRegistersIdINTEL)) {
+    if (auto *EM = BF->getExecutionMode(
+            internal::ExecutionModeMaximumRegistersIdINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 
@@ -3759,8 +3761,8 @@ bool SPIRVToLLVM::transMetadata() {
                                     transValue(ExecOp, nullptr, nullptr)))));
       ExecModeMD->addOperand(MDNode::get(*Context, ValueVec));
     }
-    if (auto *EM =
-            BF->getExecutionMode(ExecutionModeNamedMaximumRegistersINTEL)) {
+    if (auto *EM = BF->getExecutionMode(
+            internal::ExecutionModeNamedMaximumRegistersINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 

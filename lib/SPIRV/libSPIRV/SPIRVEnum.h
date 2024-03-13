@@ -263,12 +263,12 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {internal::CapabilityFastCompositeINTEL});
   ADD_VEC_INIT(ExecutionModeNamedBarrierCountINTEL,
                {CapabilityVectorComputeINTEL});
-  ADD_VEC_INIT(ExecutionModeMaximumRegistersINTEL,
-               {CapabilityRegisterLimitsINTEL});
-  ADD_VEC_INIT(ExecutionModeMaximumRegistersIdINTEL,
-               {CapabilityRegisterLimitsINTEL});
-  ADD_VEC_INIT(ExecutionModeNamedMaximumRegistersINTEL,
-               {CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeMaximumRegistersINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeMaximumRegistersIdINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeNamedMaximumRegistersINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
