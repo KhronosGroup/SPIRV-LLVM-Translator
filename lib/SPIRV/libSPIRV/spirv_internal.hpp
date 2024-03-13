@@ -119,7 +119,7 @@ enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 enum InternalExecutionMode {
   IExecModeFastCompositeKernelINTEL = 6088,
-  IExecModeStreamingInterfaceINTEL = 6154
+  IExecModeStreamingInterfaceINTEL = 6154,
   IExecModeMaximumRegistersINTEL = 6461,
   IExecModeMaximumRegistersIdINTEL = 6462,
   IExecModeNamedMaximumRegistersINTEL = 6463
