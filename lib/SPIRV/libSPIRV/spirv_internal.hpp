@@ -84,12 +84,11 @@ enum InternalMemoryAccessMask {
 };
 
 enum InternalExecutionMode {
+  IExecModeFastCompositeKernelINTEL = 6088,
   IExecModeMaximumRegistersINTEL = 6461,
   IExecModeMaximumRegistersIdINTEL = 6462,
   IExecModeNamedMaximumRegistersINTEL = 6463
 };
-
-enum InternalExecutionMode { IExecModeFastCompositeKernelINTEL = 6088 };
 
 enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
 
