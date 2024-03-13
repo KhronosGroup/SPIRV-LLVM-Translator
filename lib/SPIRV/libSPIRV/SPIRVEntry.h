@@ -693,9 +693,9 @@ public:
 
   std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<unsigned>(ExecMode)) {
-    case ExecutionModeMaximumRegistersINTEL:
-    case ExecutionModeMaximumRegistersIdINTEL:
-    case ExecutionModeNamedMaximumRegistersINTEL:
+    case internal::ExecutionModeMaximumRegistersINTEL:
+    case internal::ExecutionModeMaximumRegistersIdINTEL:
+    case internal::ExecutionModeNamedMaximumRegistersINTEL:
       return ExtensionID::SPV_INTEL_maximum_registers;
     default:
       return {};
@@ -764,9 +764,9 @@ public:
              IsOtherFP(EMK);
     };
     auto IsMaxRegisters = [&](auto EMK) {
-      return EMK == ExecutionModeMaximumRegistersINTEL ||
-             EMK == ExecutionModeMaximumRegistersIdINTEL ||
-             EMK == ExecutionModeNamedMaximumRegistersINTEL;
+      return EMK == internal::ExecutionModeMaximumRegistersINTEL ||
+             EMK == internal::ExecutionModeMaximumRegistersIdINTEL ||
+             EMK == internal::ExecutionModeNamedMaximumRegistersINTEL;
     };
     auto IsCompatible = [&](SPIRVExecutionMode *EM0, SPIRVExecutionMode *EM1) {
       if (EM0->getTargetId() != EM1->getTargetId())
