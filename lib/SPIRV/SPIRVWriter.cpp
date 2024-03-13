@@ -1041,11 +1041,11 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
     auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
       const StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
-      const NamedMaximumNumberOfRegisters NamedValue =
+      const internal::InternalNamedMaximumNumberOfRegisters NamedValue =
           SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-          OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
-          NamedValue)));
+          OpExecutionMode, BF,
+          internal::ExecutionModeNamedMaximumRegistersINTEL, NamedValue)));
     } else if (isa<MDNode>(RegisterAllocMode)) {
       auto *RegisterAllocNodeMDOp =
           getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
@@ -1053,12 +1053,12 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
       BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(
-          BF, ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
+          BF, internal::ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
     } else {
       const int64_t RegisterAllocVal =
           mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-          OpExecutionMode, BF, ExecutionModeMaximumRegistersINTEL,
+          OpExecutionMode, BF, internal::ExecutionModeMaximumRegistersINTEL,
           RegisterAllocVal)));
     }
   }
