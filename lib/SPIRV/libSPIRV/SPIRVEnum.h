@@ -149,7 +149,7 @@ template <typename K> SPIRVCapVec getCapability(K Key) {
 #define ADD_VEC_INIT(Cap, ...)                                                 \
   {                                                                            \
     SPIRVCapabilityKind C[] = __VA_ARGS__;                                     \
-    SPIRVCapVec V(C, C + sizeof(C) / sizeof(C[0]));                            \
+    const SPIRVCapVec V(C, C + sizeof(C) / sizeof(C[0]));                      \
     add(Cap, V);                                                               \
   }
 
