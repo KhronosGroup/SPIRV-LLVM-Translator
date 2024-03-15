@@ -455,16 +455,11 @@ public:
                 const std::string &TheName,
                 SPIRVStorageClassKind TheStorageClass, SPIRVBasicBlock *TheBB,
                 SPIRVModule *TheM)
-      : SPIRVInstruction(TheInitializer ? 5 : 4, OpVariable, TheType, TheId,
-                         TheBB, TheM),
+      : SPIRVInstruction(TheInitializer && !TheInitializer->isUndef() ? 5 : 4,
+                         OpVariable, TheType, TheId, TheBB, TheM),
         StorageClass(TheStorageClass) {
     if (TheInitializer && !TheInitializer->isUndef())
-      // SPIRVVariable has optional Initializer field
-      // WordCount is already 5 by default
       Initializer.push_back(TheInitializer->getId());
-    else
-      // No optional Initializer, so set WordCount to 4
-      setWordCount(4);
     Name = TheName;
     validate();
   }
