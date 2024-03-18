@@ -1,7 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv -spirv-text -o - %t.bc | FileCheck %s --check-prefix CHECK-SPV
 ; RUN: llvm-spirv -o %t.spv %t.bc
-; COM: spirv-val %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s --check-prefix CHECK-LLVM
 
 ; CHECK-SPV-DAG: Decorate [[#I64_CONST:]] SpecId [[#]]
@@ -44,23 +44,25 @@ define spir_kernel void @test() {
   %length2 = call i8 @_Z20__spirv_SpecConstantic(i32 2, i8 4), !SYCL_SPEC_CONST_SYM_ID !2
 
   ; CHECK-SPV: Variable [[#ARR_PTR_TY_0]] [[#SCLA_0]] [[#FUNCTION_SC]]
-  ; CHECK-SPV: Bitcast [[#FLOAT_PTR_TY]] [[#]] [[#SCLA_0]]
+  ; CHECK-SPV: Variable [[#ARR_PTR_TY_1]] [[#SCLA_1]] [[#FUNCTION_SC]]
+  ; CHECK-SPV: Variable [[#ARR_PTR_TY_2]] [[#SCLA_2]] [[#FUNCTION_SC]]
 
   ; CHECK-LLVM: %[[ALLOCA0:.*]] = alloca [1 x float], align 4
+  ; CHECK-LLVM: %[[ALLOCA1:.*]] = alloca [2 x i8], align 2
+  ; CHECK-LLVM: %[[ALLOCA2:.*]] = alloca [4 x %struct_type], align 16
+
+  ; CHECK-SPV: Bitcast [[#FLOAT_PTR_TY]] [[#]] [[#SCLA_0]]
+
   ; CHECK-LLVM: %[[VAR0:.*]] = bitcast ptr %[[ALLOCA0]] to ptr
   %scla0 = alloca float, i64 %length0, align 4
 
-  ; CHECK-SPV: Variable [[#ARR_PTR_TY_1]] [[#SCLA_1]] [[#FUNCTION_SC]]
   ; CHECK-SPV: Bitcast [[#I8_PTR_TY]] [[#]] [[#SCLA_1]]
 
-  ; CHECK-LLVM: %[[ALLOCA1:.*]] = alloca [2 x i8], align 2
   ; CHECK-LLVM: %[[VAR1:.*]] = bitcast ptr %[[ALLOCA1]] to ptr
   %scla1 = alloca i8, i32 %length1, align 2
 
-  ; CHECK-SPV: Variable [[#ARR_PTR_TY_2]] [[#SCLA_2]] [[#FUNCTION_SC]]
   ; CHECK-SPV: Bitcast [[#STR_PTR_TY]] [[#]] [[#SCLA_2]]
 
-  ; CHECK-LLVM: %[[ALLOCA2:.*]] = alloca [4 x %struct_type], align 16
   ; CHECK-LLVM: %[[VAR2:.*]] = bitcast ptr %[[ALLOCA2]] to ptr
   %scla2 = alloca %struct_type, i8 %length2, align 16
   ret void
