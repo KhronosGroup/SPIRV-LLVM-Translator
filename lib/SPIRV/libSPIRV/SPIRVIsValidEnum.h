@@ -55,7 +55,7 @@ using namespace spv;
 namespace SPIRV {
 
 inline bool isValid(spv::ExecutionModel V) {
-  switch (static_cast<uint32_t>(V)) {
+  switch (V) {
   case ExecutionModelVertex:
   case ExecutionModelTessellationControl:
   case ExecutionModelTessellationEvaluation:
