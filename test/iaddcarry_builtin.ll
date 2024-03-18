@@ -44,9 +44,10 @@ target triple = "spir64-unknown-unknown"
 define spir_func void @test_builtin_iaddcarrycc(i8 %a, i8 %b) {
   entry:
   %0 = alloca %i8struct
-  call void @_Z17__spirv_IAddCarrycc(ptr sret (%i8struct) %0, i8 %a, i8 %b)
+  call void @_Z17__spirv_IAddCarrycc(%i8struct* %0, i8 %a, i8 %b)
   ret void
 }
+
 ; CHECK-SPIRV:           [[a:%[a-z0-9_]+]] = OpFunctionParameter [[uchar]]
 ; CHECK-SPIRV:           [[b:%[a-z0-9_]+]] = OpFunctionParameter [[uchar]]
 ; CHECK-SPIRV:       [[entry:%[a-z0-9_]+]] = OpLabel
@@ -57,12 +58,12 @@ define spir_func void @test_builtin_iaddcarrycc(i8 %a, i8 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i8struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarrycc(ptr sret([[i8struct]]) %0, i8 %a, i8 %b)
+; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarrycc([[i8struct]]* sret %0, i8 %a, i8 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryss(i16 %a, i16 %b) {
   entry:
   %0 = alloca %i16struct
-  call void @_Z17__spirv_IAddCarryss(ptr sret (%i16struct) %0, i16 %a, i16 %b)
+  call void @_Z17__spirv_IAddCarryss(%i16struct* %0, i16 %a, i16 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_0:%[a-z0-9_]+]] = OpFunctionParameter [[ushort]]
@@ -75,12 +76,12 @@ define spir_func void @test_builtin_iaddcarryss(i16 %a, i16 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i16struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryss(ptr sret([[i16struct]]) %0, i16 %a, i16 %b)
+; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryss([[i16struct]]* sret %0, i16 %a, i16 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryii(i32 %a, i32 %b) {
   entry:
   %0 = alloca %i32struct
-  call void @_Z17__spirv_IAddCarryii(ptr sret (%i32struct) %0, i32 %a, i32 %b)
+  call void @_Z17__spirv_IAddCarryii(%i32struct* %0, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_1:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -93,12 +94,12 @@ define spir_func void @test_builtin_iaddcarryii(i32 %a, i32 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i32struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryii(ptr sret([[i32struct]]) %0, i32 %a, i32 %b)
+; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryii([[i32struct]]* sret %0, i32 %a, i32 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryll(i64 %a, i64 %b) {
   entry:
   %0 = alloca %i64struct
-  call void @_Z17__spirv_IAddCarryll(ptr sret (%i64struct) %0, i64 %a, i64 %b)
+  call void @_Z17__spirv_IAddCarryll(%i64struct* %0, i64 %a, i64 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_2:%[a-z0-9_]+]] = OpFunctionParameter [[ulong]]
@@ -111,12 +112,12 @@ define spir_func void @test_builtin_iaddcarryll(i64 %a, i64 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i64struct]]
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryll(ptr sret([[i64struct]]) %0, i64 %a, i64 %b)
+; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryll([[i64struct]]* sret %0, i64 %a, i64 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
   entry:
   %0 = alloca %vecstruct
-  call void @_Z17__spirv_IAddCarryDv4_iS_(ptr sret (%vecstruct) %0, <4 x i32> %a, <4 x i32> %b)
+  call void @_Z17__spirv_IAddCarryDv4_iS_(%vecstruct* %0, <4 x i32> %a, <4 x i32> %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_3:%[a-z0-9_]+]] = OpFunctionParameter [[v4uint]]
@@ -129,7 +130,7 @@ define spir_func void @test_builtin_iaddcarryDv4_xS_(<4 x i32> %a, <4 x i32> %b)
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[vecstruct]]
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryDv4_iS_(ptr sret([[vecstruct]]) %0, <4 x i32> %a, <4 x i32> %b)
+; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryDv4_iS_([[vecstruct]]* sret %0, <4 x i32> %a, <4 x i32> %b)
 ; CHECK-LLVM:   ret void
 
 %struct.anon = type { i32, i32 }
@@ -137,8 +138,8 @@ define spir_func void @test_builtin_iaddcarryDv4_xS_(<4 x i32> %a, <4 x i32> %b)
 define spir_func void @test_builtin_iaddcarry_anon(i32 %a, i32 %b) {
   entry:
   %0 = alloca %struct.anon
-  %1 = addrspacecast ptr %0 to ptr addrspace(4)
-  call spir_func void @_Z17__spirv_IAddCarryIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4 %1, i32 %a, i32 %b)
+  %1 = addrspacecast %struct.anon* %0 to %struct.anon addrspace(4)*
+  call spir_func void @_Z17__spirv_IAddCarryIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* %1, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:        [[a_4:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -150,13 +151,13 @@ define spir_func void @test_builtin_iaddcarry_anon(i32 %a, i32 %b) {
 ; CHECK-SPIRV:                              OpStore [[var_61]] [[var_62]]
 
 ; CHECK-LLVM:  %0 = alloca [[struct_anon]], align 8
-; CHECK-LLVM:  %1 = addrspacecast ptr %0 to ptr addrspace(4)
-; CHECK-LLVM:  call spir_func void @_Z17__spirv_IAddCarryii.1(ptr addrspace(4) sret([[struct_anon]]) %1, i32 %a, i32 %b)
+; CHECK-LLVM:  %1 = addrspacecast [[struct_anon]]* %0 to [[struct_anon]] addrspace(4)*
+; CHECK-LLVM:  call spir_func void @_Z17__spirv_IAddCarryii.1([[struct_anon]] addrspace(4)* sret %1, i32 %a, i32 %b)
 ; CHECK-LLVM:  ret void
 
-declare void @_Z17__spirv_IAddCarryIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4, i32, i32)
-declare void @_Z17__spirv_IAddCarrycc(ptr sret(%i8struct), i8, i8)
-declare void @_Z17__spirv_IAddCarryss(ptr sret(%i16struct), i16, i16)
-declare void @_Z17__spirv_IAddCarryii(ptr sret(%i32struct), i32, i32)
-declare void @_Z17__spirv_IAddCarryll(ptr sret(%i64struct), i64, i64)
-declare void @_Z17__spirv_IAddCarryDv4_iS_(ptr sret (%vecstruct), <4 x i32>, <4 x i32>)
+declare void @_Z17__spirv_IAddCarryIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* align 4, i32, i32)
+declare void @_Z17__spirv_IAddCarrycc(%i8struct*, i8, i8)
+declare void @_Z17__spirv_IAddCarryss(%i16struct*, i16, i16)
+declare void @_Z17__spirv_IAddCarryii(%i32struct*, i32, i32)
+declare void @_Z17__spirv_IAddCarryll(%i64struct*, i64, i64)
+declare void @_Z17__spirv_IAddCarryDv4_iS_(%vecstruct*, <4 x i32>, <4 x i32>)

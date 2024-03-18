@@ -4342,7 +4342,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   case OpIAddCarry: {
     Function *F = CI->getCalledFunction();
-    StructType *St = cast<StructType>(F->getType());
+    auto *RetTy = F->arg_begin()->getType()->getPointerElementType();
+    StructType *St = cast<StructType>(RetTy);
     SPIRVValue *V = BM->addBinaryInst(OpIAddCarry, transType(St),
                                       transValue(CI->getArgOperand(1), BB),
                                       transValue(CI->getArgOperand(2), BB), BB);
@@ -4350,7 +4351,8 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   case OpISubBorrow: {
     Function *F = CI->getCalledFunction();
-    StructType *St = cast<StructType>(F->getType());
+    auto *RetTy = F->arg_begin()->getType()->getPointerElementType();
+    StructType *St = cast<StructType>(RetTy);
     SPIRVValue *V = BM->addBinaryInst(OpISubBorrow, transType(St),
                                       transValue(CI->getArgOperand(1), BB),
                                       transValue(CI->getArgOperand(2), BB), BB);
