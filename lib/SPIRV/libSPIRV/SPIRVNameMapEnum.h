@@ -599,7 +599,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
-
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
@@ -623,8 +622,17 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(internal::CapabilityJointMatrixWIInstructionsINTEL,
       "JointMatrixWIInstructionsINTEL");
+  add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
+
+template <>
+inline void
+SPIRVMap<internal::InternalNamedMaximumNumberOfRegisters, std::string>::init() {
+  add(internal::NamedMaximumNumberOfRegistersAutoINTEL, "AutoINTEL");
+}
+SPIRV_DEF_NAMEMAP(internal::InternalNamedMaximumNumberOfRegisters,
+                  SPIRVNamedMaximumNumberOfRegistersNameMap);
 
 } /* namespace SPIRV */
 

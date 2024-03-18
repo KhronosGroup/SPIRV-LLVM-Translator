@@ -581,7 +581,7 @@ SPIRVEntryPoint::SPIRVEntryPoint(SPIRVModule *TheModule,
                                  SPIRVExecutionModelKind TheExecModel,
                                  SPIRVId TheId, const std::string &TheName,
                                  std::vector<SPIRVId> Variables)
-    : SPIRVAnnotation(TheModule->get<SPIRVFunction>(TheId),
+    : SPIRVAnnotation(OpEntryPoint, TheModule->get<SPIRVFunction>(TheId),
                       getSizeInWords(TheName) + Variables.size() + 3),
       ExecModel(TheExecModel), Name(TheName), Variables(Variables) {}
 
@@ -628,6 +628,9 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   case ExecutionModeNumSIMDWorkitemsINTEL:
   case ExecutionModeSchedulerTargetFmaxMhzINTEL:
   case internal::ExecutionModeStreamingInterfaceINTEL:
+  case internal::ExecutionModeMaximumRegistersINTEL:
+  case internal::ExecutionModeMaximumRegistersIdINTEL:
+  case internal::ExecutionModeNamedMaximumRegistersINTEL:
     WordLiterals.resize(1);
     break;
   default:
@@ -649,7 +652,8 @@ SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
 }
 
 SPIRVName::SPIRVName(const SPIRVEntry *TheTarget, const std::string &TheStr)
-    : SPIRVAnnotation(TheTarget, getSizeInWords(TheStr) + 2), Str(TheStr) {}
+    : SPIRVAnnotation(OpName, TheTarget, getSizeInWords(TheStr) + 2),
+      Str(TheStr) {}
 
 void SPIRVName::encode(spv_ostream &O) const { getEncoder(O) << Target << Str; }
 

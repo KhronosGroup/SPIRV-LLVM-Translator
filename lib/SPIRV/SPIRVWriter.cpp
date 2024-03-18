@@ -902,6 +902,9 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   transFPGAFunctionMetadata(BF, F);
 
+  if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
+    transFunctionMetadataAsExecutionMode(BF, F);
+
   transAuxDataInst(BF, F);
 
   SPIRVDBG(dbgs() << "[transFunction] " << *F << " => ";
@@ -1024,6 +1027,38 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
             ExtensionID::SPV_INTEL_fpga_invocation_pipelining_attributes)) {
       size_t Disable = getMDOperandAsInt(DisableLoopPipelining, 0);
       BF->addDecorate(new SPIRVDecoratePipelineEnableINTEL(BF, !Disable));
+    }
+  }
+}
+
+void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
+                                                           Function *F) {
+  SmallVector<MDNode *, 1> RegisterAllocModeMDs;
+  F->getMetadata("RegisterAllocMode", RegisterAllocModeMDs);
+
+  for (unsigned I = 0; I < RegisterAllocModeMDs.size(); I++) {
+    auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
+    if (isa<MDString>(RegisterAllocMode)) {
+      const StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
+      const internal::InternalNamedMaximumNumberOfRegisters NamedValue =
+          SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
+      BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+          OpExecutionMode, BF,
+          internal::ExecutionModeNamedMaximumRegistersINTEL, NamedValue)));
+    } else if (isa<MDNode>(RegisterAllocMode)) {
+      auto *RegisterAllocNodeMDOp =
+          getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
+      const int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
+      auto *Const =
+          BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
+      BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(
+          BF, internal::ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
+    } else {
+      const int64_t RegisterAllocVal =
+          mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
+      BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+          OpExecutionMode, BF, internal::ExecutionModeMaximumRegistersINTEL,
+          RegisterAllocVal)));
     }
   }
 }
@@ -4744,19 +4779,20 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       auto AddSingleArgExecutionMode = [&](ExecutionMode EMode) {
         uint32_t Arg = 0;
         N.get(Arg);
-        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(BF, EMode, Arg)));
+        BF->addExecutionMode(
+            BM->add(new SPIRVExecutionMode(OpExecutionMode, BF, EMode, Arg)));
       };
 
       switch (EMode) {
       case spv::ExecutionModeContractionOff:
-        BF->addExecutionMode(BM->add(
-            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
         break;
       case spv::ExecutionModeInitializer:
       case spv::ExecutionModeFinalizer:
         if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_1)) {
-          BF->addExecutionMode(BM->add(
-              new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
         } else {
           getErrorLog().checkError(false, SPIRVEC_Requires1_1,
                                    "Initializer/Finalizer Execution Mode");
@@ -4768,7 +4804,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         unsigned X = 0, Y = 0, Z = 0;
         N.get(X).get(Y).get(Z);
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
       } break;
       case spv::ExecutionModeMaxWorkgroupSizeINTEL: {
         if (BM->isAllowedToUseExtension(
@@ -4776,7 +4812,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           unsigned X = 0, Y = 0, Z = 0;
           N.get(X).get(Y).get(Z);
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-              BF, static_cast<ExecutionMode>(EMode), X, Y, Z)));
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode), X, Y,
+              Z)));
           BM->addExtension(ExtensionID::SPV_INTEL_kernel_attributes);
           BM->addCapability(CapabilityKernelAttributesINTEL);
         }
@@ -4785,8 +4822,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         if (!BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_kernel_attributes))
           break;
-        BF->addExecutionMode(BM->add(
-            new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
         BM->addExtension(ExtensionID::SPV_INTEL_kernel_attributes);
         BM->addCapability(CapabilityKernelAttributesINTEL);
       } break;
@@ -4816,8 +4853,9 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         unsigned NBarrierCnt = 0;
         N.get(NBarrierCnt);
-        BF->addExecutionMode(new SPIRVExecutionMode(
-            BF, static_cast<ExecutionMode>(EMode), NBarrierCnt));
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode),
+            NBarrierCnt)));
         BM->addExtension(ExtensionID::SPV_INTEL_vector_compute);
         BM->addCapability(CapabilityVectorComputeINTEL);
       } break;
@@ -4847,8 +4885,8 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       } break;
       case spv::internal::ExecutionModeFastCompositeKernelINTEL: {
         if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite))
-          BF->addExecutionMode(BM->add(
-              new SPIRVExecutionMode(BF, static_cast<ExecutionMode>(EMode))));
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
       } break;
       default:
         llvm_unreachable("invalid execution mode");
@@ -4893,8 +4931,8 @@ void LLVMToSPIRVBase::transFPContract() {
     }
 
     if (DisableContraction) {
-      BF->addExecutionMode(BF->getModule()->add(
-          new SPIRVExecutionMode(BF, spv::ExecutionModeContractionOff)));
+      BF->addExecutionMode(BF->getModule()->add(new SPIRVExecutionMode(
+          OpExecutionMode, BF, spv::ExecutionModeContractionOff)));
     }
   }
 }
