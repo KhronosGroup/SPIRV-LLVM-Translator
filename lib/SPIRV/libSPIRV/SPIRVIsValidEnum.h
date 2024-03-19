@@ -68,7 +68,7 @@ inline bool isValid(spv::SourceLanguage V) {
 }
 
 inline bool isValid(spv::ExecutionModel V) {
-  switch (V) {
+  switch (static_cast<uint32_t>(V)) {
   case ExecutionModelVertex:
   case ExecutionModelTessellationControl:
   case ExecutionModelTessellationEvaluation:
@@ -76,6 +76,9 @@ inline bool isValid(spv::ExecutionModel V) {
   case ExecutionModelFragment:
   case ExecutionModelGLCompute:
   case ExecutionModelKernel:
+  case ExecutionModeMaximumRegistersINTEL:
+  case ExecutionModeMaximumRegistersIdINTEL:
+  case ExecutionModeNamedMaximumRegistersINTEL:
     return true;
   default:
     return false;
