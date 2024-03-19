@@ -751,9 +751,9 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
     TargetTyName = TargetTyName.substr(0, FirstUnderscoreLoc);
 
   // Validate target type name
-  std::regex e("([a-z]+)([0-9]*)$");
+  std::regex Expr("([a-z]+)([0-9]*)$");
   std::smatch DestTyMatch;
-  if (!std::regex_match(TargetTyName, DestTyMatch, e))
+  if (!std::regex_match(TargetTyName, DestTyMatch, Expr))
     return;
 
   // The first sub_match is the whole string; the next
