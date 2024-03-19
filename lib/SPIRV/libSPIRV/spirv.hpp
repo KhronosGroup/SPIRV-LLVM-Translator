@@ -181,6 +181,9 @@ enum ExecutionMode {
     ExecutionModeSchedulerTargetFmaxMhzINTEL = 5903,
     ExecutionModeFastCompositeKernelINTEL = 6088,
     ExecutionModeNamedBarrierCountINTEL = 6417,
+    ExecutionModeMaximumRegistersINTEL = 6461,
+    ExecutionModeMaximumRegistersIdINTEL = 6462,
+    ExecutionModeNamedMaximumRegistersINTEL = 6463,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -1060,6 +1063,7 @@ enum Capability {
     CapabilityLongConstantCompositeINTEL = 6089,
     CapabilityFastCompositeINTEL = 6093,
     CapabilitySplitBarrierINTEL = 6141,
+    CapabilityRegisterLimitsINTEL = 6460,
     CapabilityMax = 0x7fffffff,
 };
 
@@ -1129,6 +1133,11 @@ enum FragmentShadingRateMask {
 enum PackedVectorFormat {
     PackedVectorFormatPackedVectorFormat4x8BitKHR = 0,
     PackedVectorFormatMax = 0x7fffffff,
+};
+
+enum NamedMaximumNumberOfRegisters {
+    NamedMaximumNumberOfRegistersAutoINTEL = 0,
+    NamedMaximumNumberOfRegistersMax = 0x7fffffff,
 };
 
 enum Op {
