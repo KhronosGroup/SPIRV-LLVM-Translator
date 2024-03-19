@@ -170,7 +170,6 @@ void PreprocessMetadataBase::visit(Module *M) {
       // A primary named subgroup size is encoded as
       // the metadata intel_reqd_sub_group_size with value -1.
       auto Val = getMDOperandAsInt(ReqdSubgroupSize, 0);
-      llvm::outs() << Val << "\n";
       if (Val == -1U)
         EM.addOp()
             .add(&Kernel)
