@@ -59,6 +59,7 @@ using namespace llvm;
 
 namespace llvm {
 class IntrinsicInst;
+class IRBuilderBase;
 }
 
 namespace SPIRV {
@@ -572,6 +573,10 @@ std::string mapSPIRVTypeToOCLType(SPIRVType *Ty, bool Signed);
 std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed,
                                  Type *PointerElementType = nullptr);
 SPIRVDecorate *mapPostfixToDecorate(StringRef Postfix, SPIRVEntry *Target);
+
+/// Return vector V extended with poison elements to match the number of
+/// components of NewType.
+Value *extendVector(Value *V, FixedVectorType *NewType, IRBuilderBase &Builder);
 
 /// Add decorations to a SPIR-V entry.
 /// \param Decs Each string is a postfix without _ at the beginning.

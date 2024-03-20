@@ -661,8 +661,10 @@ class SPIRVBinaryInst
 
 #define _SPIRV_OP(x) typedef SPIRVBinaryInst<Op##x> SPIRV##x;
 _SPIRV_OP(IAdd)
+_SPIRV_OP(IAddCarry)
 _SPIRV_OP(FAdd)
 _SPIRV_OP(ISub)
+_SPIRV_OP(ISubBorrow)
 _SPIRV_OP(FSub)
 _SPIRV_OP(IMul)
 _SPIRV_OP(FMul)
@@ -2199,15 +2201,11 @@ public:
 protected:
   void validate() const override {
     SPIRVInstruction::validate();
-    SPIRVId Vector1 = Ops[0];
-    SPIRVId Vector2 = Ops[1];
+    [[maybe_unused]] SPIRVId Vector1 = Ops[0];
     assert(OpCode == OpVectorShuffle);
     assert(Type->isTypeVector());
     assert(Type->getVectorComponentType() ==
            getValueType(Vector1)->getVectorComponentType());
-    if (getValue(Vector1)->isForward() || getValue(Vector2)->isForward())
-      return;
-    assert(getValueType(Vector1) == getValueType(Vector2));
     assert(Ops.size() - 2 == Type->getVectorComponentCount());
   }
 };

@@ -149,7 +149,7 @@ template <typename K> SPIRVCapVec getCapability(K Key) {
 #define ADD_VEC_INIT(Cap, ...)                                                 \
   {                                                                            \
     SPIRVCapabilityKind C[] = __VA_ARGS__;                                     \
-    SPIRVCapVec V(C, C + sizeof(C) / sizeof(C[0]));                            \
+    const SPIRVCapVec V(C, C + sizeof(C) / sizeof(C[0]));                      \
     add(Cap, V);                                                               \
   }
 
@@ -275,6 +275,12 @@ template <> inline void SPIRVMap<SPIRVExecutionModeKind, SPIRVCapVec>::init() {
                {CapabilityFPGAKernelAttributesINTEL});
   ADD_VEC_INIT(ExecutionModeNamedBarrierCountINTEL,
                {CapabilityVectorComputeINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeMaximumRegistersINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeMaximumRegistersIdINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
+  ADD_VEC_INIT(internal::ExecutionModeNamedMaximumRegistersINTEL,
+               {internal::CapabilityRegisterLimitsINTEL});
 }
 
 template <> inline void SPIRVMap<SPIRVMemoryModelKind, SPIRVCapVec>::init() {
