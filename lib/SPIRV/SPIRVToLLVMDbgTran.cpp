@@ -426,7 +426,7 @@ SPIRVToLLVMDbgTran::transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst) {
       auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
       // LLVM 15 - exclusive workaround, get from a pointer union seem to be
       // bugged
-      if (SR->getCount().is<ConstantInt *>())
+      if (isa<ConstantInt *>(SR->getCount()))
         if (auto *Count = SR->getCount().get<ConstantInt *>())
           TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
       Subscripts.push_back(SR);
@@ -452,7 +452,7 @@ SPIRVToLLVMDbgTran::transTypeArrayDynamic(const SPIRVExtInst *DebugInst) {
     auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
     // LLVM 15 - exclusive workaround, get from a pointer union seem to be
     // bugged
-    if (SR->getCount().is<ConstantInt *>())
+    if (isa<ConstantInt *>(SR->getCount()))
       if (auto *Count = SR->getCount().get<ConstantInt *>())
         TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
     Subscripts.push_back(SR);
