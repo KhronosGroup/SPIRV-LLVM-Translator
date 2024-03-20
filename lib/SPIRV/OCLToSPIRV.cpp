@@ -761,18 +761,11 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
   std::string DestTy = DestTyMatch[1].str();
 
   // check it's valid type name
-  SmallVector<StringRef, 11> ValidTypes = {"float", "double", "half",   "char",
-                                           "uchar", "short",  "ushort", "int",
-                                           "uint",  "long",   "ulong"};
-  bool IsValidType = false;
-  for (auto I : ValidTypes) {
-    auto Found = DestTy.find(I);
-    if (Found != std::string::npos) {
-      IsValidType = true;
-      break;
-    }
-  }
-  if (!IsValidType)
+  static std::unordered_set<std::string> ValidTypes = {
+      "float",  "double", "half", "char", "uchar", "short",
+      "ushort", "int",    "uint", "long", "ulong"};
+
+  if (auto It = ValidTypes.find(DestTy); It == ValidTypes.end())
     return;
 
   // check that it's allowed vector size
