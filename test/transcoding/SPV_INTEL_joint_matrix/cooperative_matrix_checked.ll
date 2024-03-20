@@ -9,6 +9,7 @@
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
+; CHECK-SPIRV-DAG: Capability CooperativeMatrixCheckedInstructionsINTEL
 ; CHECK-SPIRV-DAG: Extension "SPV_KHR_cooperative_matrix"
 ; CHECK-SPIRV-DAG: TypeInt [[#Int8Ty:]] 8 0
 ; CHECK-SPIRV-DAG: TypeInt [[#Int32Ty:]] 32 0
@@ -29,12 +30,12 @@
 ; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy2]]
 ; CHECK-SPIRV: CooperativeMatrixStoreCheckedINTEL
 
-; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4siiillli(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 12, i64 48, i64 %{{.*}}, i32 1)
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* @_Z95__spirv_CooperativeMatrixLoadCheckedINTEL_RPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS4siiiiili(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i32 12, i32 48, i64 %{{.*}}, i32 1)
 ; CHECK-LLVM: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)*
-; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTELiilli(i32 4, i32 4, i64 12, i64 12, i32 %{{.*}})
-; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4ciiilll(i8 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 48, i64 12, i64 1)
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTELiiiii(i32 4, i32 4, i32 12, i32 12, i32 %{{.*}})
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* @_Z95__spirv_CooperativeMatrixLoadCheckedINTEL_RPU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS4ciiiiil(i8 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i32 48, i32 12, i64 1)
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3i(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
-; CHECK-LLVM: call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTELPU3AS4siiPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3illli(i16 addrspace(4)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
+; CHECK-LLVM: call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTELPU3AS4siiPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3iiili(i16 addrspace(4)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z26__spirv_CompositeConstructi(i32 %zero)
 
 ; ModuleID = 'test-matrix-opaque.bc'
@@ -74,19 +75,19 @@ entry:
   %add.ptr.i51 = getelementptr inbounds i16, i16 addrspace(1)* %_arg_, i64 %mul6.i
   %add.ptr7.i52 = getelementptr inbounds i16, i16 addrspace(1)* %add.ptr.i51, i64 %sub5.i
   %add.ptr7.i = addrspacecast i16 addrspace(1)* %add.ptr7.i52 to i16 addrspace(4)*
-  %call8.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(i16 addrspace(4)* %add.ptr7.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 12, i64 noundef 48, i64 noundef %_arg_1, i32 noundef 1) #3
+  %call8.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(i16 addrspace(4)* %add.ptr7.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i32 noundef 12, i32 noundef 48, i64 noundef %_arg_1, i32 noundef 1) #3
   %add.ptr11.i53 = getelementptr inbounds i8, i8 addrspace(1)* %_arg_3, i64 %mul6.i
   %add.ptr16.i55 = getelementptr inbounds i8, i8 addrspace(1)* %_arg_5, i64 %sub5.i
   %len = tail call spir_func noundef i32 @_Z34__spirv_CooperativeMatrixLengthKHR(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* %call8.i)
 
-  %C.0.i = call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTEL(i32 noundef 4, i32 noundef 4, i64 noundef 12, i64 noundef 12, i32 noundef %_arg_6) #1
+  %C.0.i = call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTEL(i32 noundef 4, i32 noundef 4, i32 noundef 12, i32 noundef 12, i32 noundef %_arg_6) #1
   %add.ptr12.i54 = getelementptr inbounds i8, i8 addrspace(1)* %add.ptr11.i53, i64 0
   %add.ptr12.i = addrspacecast i8 addrspace(1)* %add.ptr12.i54 to i8 addrspace(4)*
-  %call13.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(i8 addrspace(4)* %add.ptr12.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i64 noundef 48, i64 noundef 12, i64 noundef 1) #3
+  %call13.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(i8 addrspace(4)* %add.ptr12.i, i32 noundef 0, i32 noundef 0, i32 noundef 0, i32 noundef 48, i32 noundef 12, i64 noundef 1) #3
   %add.ptr17.i56 = getelementptr inbounds i8, i8 addrspace(1)* %add.ptr16.i55, i64 0
   %add.ptr17.i = addrspacecast i8 addrspace(1)* %add.ptr17.i56 to i8 addrspace(4)*
   %call19.i = tail call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z34__spirv_CooperativeMatrixMulAddKHR(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* %call8.i, %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* %call13.i, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* %C.0.i, i32 3) #3
-  tail call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTEL(i16 addrspace(4)* %add.ptr7.i, i32 noundef 0, i32 noundef 0, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* %C.0.i, i32 noundef 0, i64 noundef 12, i64 noundef 12, i64 noundef %_arg_1, i32 noundef 1) #3
+  tail call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTEL(i16 addrspace(4)* %add.ptr7.i, i32 noundef 0, i32 noundef 0, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* %C.0.i, i32 noundef 0, i32 noundef 12, i32 noundef 12, i64 noundef %_arg_1, i32 noundef 1) #3
 
   %ref.tmp = alloca i32, align 4
   %ref.tmp.ascast = addrspacecast i32* %ref.tmp to i32 addrspace(4)*
@@ -101,22 +102,22 @@ entry:
 declare dso_local spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z26__spirv_CompositeConstruct(i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
-declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTEL(i32 noundef, i32 noundef, i64 noundef, i64 noundef, i32 noundef) local_unnamed_addr #2
+declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTEL(i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
 declare dso_local spir_func noundef i32 @_Z34__spirv_CooperativeMatrixLengthKHR(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* noundef)
 
 ; Function Attrs: convergent
-declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef, i64 noundef, i64 noundef, i32 noundef) local_unnamed_addr #2
+declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_1(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef, i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
-declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(i8 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef, i64 noundef, i64 noundef) local_unnamed_addr #2
+declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTEL_2(i8 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
 declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z34__spirv_CooperativeMatrixMulAddKHR(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* noundef, %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* noundef, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* noundef, i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: convergent
-declare dso_local spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTEL(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* noundef, i32 noundef, i64 noundef, i64 noundef, i64 noundef, i32 noundef) local_unnamed_addr #2
+declare dso_local spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTEL(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef, i32 noundef) local_unnamed_addr #2
 
 ; Function Attrs: inaccessiblememonly nofree nosync nounwind willreturn
 declare void @llvm.assume(i1 noundef) #2
