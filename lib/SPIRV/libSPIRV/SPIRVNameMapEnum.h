@@ -629,8 +629,17 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "JointMatrixWIInstructionsINTEL");
   add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
       "CooperativeMatrixPrefetchINTEL");
+  add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
+
+template <>
+inline void
+SPIRVMap<internal::InternalNamedMaximumNumberOfRegisters, std::string>::init() {
+  add(internal::NamedMaximumNumberOfRegistersAutoINTEL, "AutoINTEL");
+}
+SPIRV_DEF_NAMEMAP(internal::InternalNamedMaximumNumberOfRegisters,
+                  SPIRVNamedMaximumNumberOfRegistersNameMap);
 
 } /* namespace SPIRV */
 
