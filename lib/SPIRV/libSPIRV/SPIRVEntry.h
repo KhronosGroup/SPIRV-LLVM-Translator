@@ -666,9 +666,7 @@ public:
       : SPIRVAnnotation(OpExecutionMode), ExecMode(ExecutionModeInvocations) {}
   SPIRVExecutionModeKind getExecutionMode() const { return ExecMode; }
   const std::vector<SPIRVWord> &getLiterals() const { return WordLiterals; }
-  SPIRVCapVec getRequiredCapability() const override {
-    return getCapability(ExecMode);
-  }
+  SPIRVCapVec getRequiredCapability() const override;
 
   SPIRVWord getRequiredSPIRVVersion() const override {
     switch (ExecMode) {

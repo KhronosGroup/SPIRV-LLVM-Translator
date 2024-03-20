@@ -72,7 +72,9 @@ public:
   void setOwner(SPIRVDecorationGroup *Owner) { this->Owner = Owner; }
 
   SPIRVCapVec getRequiredCapability() const override {
-    return getCapability(Dec);
+    auto Caps = getAllEnablingCapabilities(Dec);
+    Module->chooseBestCapability(Caps);
+    return Caps;
   }
 
   SPIRVWord getRequiredSPIRVVersion() const override {
