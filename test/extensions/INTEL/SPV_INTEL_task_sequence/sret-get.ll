@@ -18,8 +18,8 @@
 
 ; CHECK-LLVM: %struct.FunctionPacket = type <{ float, i8, [3 x i8] }>
 
-; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 -1, i32 -1, i32 1, i32 32)
 ; CHECK-LLVM: %[[Var:[a-z0-9.]+]] = alloca %struct.FunctionPacket
+; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 -1, i32 -1, i32 1, i32 32)
 ; CHECK-LLVM: %[[Ptr:[a-z0-9.]+]] = addrspacecast ptr %[[Var]] to ptr addrspace(4)
 ; CHECK-LLVM: call spir_func void @_Z28__spirv_TaskSequenceGetINTEL{{.*}}(ptr addrspace(4) sret(%struct.FunctionPacket) %[[Ptr]], target("spirv.TaskSequenceINTEL") %[[TSCreate]])
 
@@ -34,18 +34,12 @@ $_ZTS8MyKernel = comdat any
 define weak_odr dso_local spir_kernel void @_ZTS8MyKernel(ptr addrspace(1) noundef align 4 %_arg_in, ptr addrspace(1) noundef align 4 %_arg_res) local_unnamed_addr #0 comdat !srcloc !5 !kernel_arg_buffer_location !6 !sycl_fixed_targets !7 !sycl_kernel_omit_args !8 !stall_enable !9 {
 entry:
   %call.i1 = call spir_func noundef target("spirv.TaskSequenceINTEL") @_Z31__spirv_TaskSequenceCreateINTELIN4sycl3_V13ext5intel12experimental13task_sequenceIL_Z4multiiENS2_6oneapi12experimental10propertiesISt5tupleIJNS7_14property_valueINS4_13pipelined_keyEJSt17integral_constantIiLin1EEEEENSA_INS4_16fpga_cluster_keyEJSC_INS4_25fpga_cluster_options_enumELSG_1EEEEENSA_INS4_12balanced_keyEJEEENSA_INS4_23invocation_capacity_keyEJSC_IjLj10EEEEENSA_INS4_21response_capacity_keyEJSC_IjLj17EEEEEEEEEEEiJiiEEmPT_PFT0_DpT1_Ejjit(ptr noundef nonnull @_Z4multii, i32 noundef -1, i32 noundef -1, i32 noundef 1, i32 noundef 32) #3
-  br label %for.body10.i
 
-for.body10.i:                                     ; preds = %entry, %for.body10.i
-  %i5.0.i9 = phi i32 [ 0, %entry ], [ %inc14.i, %for.body10.i ]
   %ref.tmp.i = alloca %struct.FunctionPacket, align 4
   %ref.tmp.ascast.i = addrspacecast ptr %ref.tmp.i to ptr addrspace(4)
   call spir_func void @_Z28__spirv_TaskSequenceGetINTELI14FunctionPacketET_PN5__spv25__spirv_TaskSequenceINTELE(ptr addrspace(4) dead_on_unwind writable sret(%struct.FunctionPacket) align 4 %ref.tmp.ascast.i, target("spirv.TaskSequenceINTEL") noundef %call.i1) #8
-  %inc14.i = add nuw nsw i32 %i5.0.i9, 1
+  %inc14.i = add nuw nsw i32 0, 1
   %exitcond.not = icmp eq i32 %inc14.i, 16384
-  br i1 %exitcond.not, label %_ZZ4mainENKUlvE_clEv.exit, label %for.body10.i, !llvm.loop !10
-
-_ZZ4mainENKUlvE_clEv.exit:                        ; preds = %for.body10.i
   ret void
 }
 
