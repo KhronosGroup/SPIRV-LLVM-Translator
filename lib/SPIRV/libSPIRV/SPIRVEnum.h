@@ -487,6 +487,8 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFPGAArgumentInterfacesINTEL});
   ADD_VEC_INIT(DecorationStableKernelArgumentINTEL,
                {CapabilityFPGAArgumentInterfacesINTEL});
+  ADD_VEC_INIT(DecorationFPMaxErrorDecorationINTEL,
+               {CapabilityFPMaxErrorINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
