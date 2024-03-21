@@ -424,8 +424,11 @@ SPIRVToLLVMDbgTran::transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst) {
   if (DebugInst->getExtOp() == SPIRVDebug::TypeArray) {
     for (size_t I = SubrangesIdx; I < Ops.size(); ++I) {
       auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
-      if (auto *Count = SR->getCount().get<ConstantInt *>())
-        TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
+      // LLVM 15 - exclusive workaround, get from a pointer union seem to be
+      // bugged
+      if (isa<ConstantInt *>(SR->getCount()))
+        if (auto *Count = SR->getCount().get<ConstantInt *>())
+          TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
       Subscripts.push_back(SR);
     }
   }
@@ -447,8 +450,11 @@ SPIRVToLLVMDbgTran::transTypeArrayDynamic(const SPIRVExtInst *DebugInst) {
   SmallVector<llvm::Metadata *, 8> Subscripts;
   for (size_t I = SubrangesIdx; I < Ops.size(); ++I) {
     auto *SR = transDebugInst<DISubrange>(BM->get<SPIRVExtInst>(Ops[I]));
-    if (auto *Count = SR->getCount().get<ConstantInt *>())
-      TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
+    // LLVM 15 - exclusive workaround, get from a pointer union seem to be
+    // bugged
+    if (isa<ConstantInt *>(SR->getCount()))
+      if (auto *Count = SR->getCount().get<ConstantInt *>())
+        TotalCount *= Count->getSExtValue() > 0 ? Count->getSExtValue() : 0;
     Subscripts.push_back(SR);
   }
   DINodeArray SubscriptArray =
