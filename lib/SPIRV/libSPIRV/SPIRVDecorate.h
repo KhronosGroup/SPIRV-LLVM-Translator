@@ -178,6 +178,8 @@ public:
     case internal::DecorationInitModeINTEL:
     case internal::DecorationImplementInCSRINTEL:
       return ExtensionID::SPV_INTEL_global_variable_decorations;
+    case DecorationFPMaxErrorDecorationINTEL:
+      return ExtensionID::SPV_INTEL_fp_max_error;
     case internal::DecorationCacheControlLoadINTEL:
     case internal::DecorationCacheControlStoreINTEL:
       return ExtensionID::SPV_INTEL_cache_controls;
