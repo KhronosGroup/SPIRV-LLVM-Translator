@@ -1,0 +1,20 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: SPIR-V LLVM Translator
+Upstream-Contact: The Khronos Group
+Source: https://github.com/khronosGroup/SPIRV-LLVM-Translator
+
+Files: lib/SPIRV/libSPIRV/SPIRVLLVMUtil.h
+Copyright: 2021 The Khronos Group
+License: Apache-2.0 WITH LLVM-exception
+
+Files: *.cpp *.cl *.h *.bash *.spt *.spvasm *.in *.py *.conf *.cfg *.yml
+Copyright: 2021 The Khronos Group
+License: Apache-2.0
+
+Files: *.ll
+Copyright: 2021 The Khronos Group
+License: Apache-2.0 WITH LLVM-exception
+
+Files: *.md *.rst *.txt .gitignore /docs
+Copyright: 2021 The Khronos Group
+License: CC-BY-4.0
