@@ -765,7 +765,7 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
       "float",  "double", "half", "char", "uchar", "short",
       "ushort", "int",    "uint", "long", "ulong"};
 
-  if (auto It = ValidTypes.find(DestTy); It == ValidTypes.end())
+  if (ValidTypes.find(DestTy) == ValidTypes.end())
     return;
 
   // check that it's allowed vector size
