@@ -52,6 +52,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace SPIRV {
@@ -821,6 +822,8 @@ public:
   // Incomplete constructor
   SPIRVExtInstImport() : SPIRVEntry(OC) {}
 
+  std::string_view getImportLiteral() { return Str; }
+
 protected:
   _SPIRV_DCL_ENCDEC
   void validate() const override;
@@ -910,6 +913,8 @@ public:
       return {};
     }
   }
+
+  SPIRVCapabilityKind getKind() { return Kind; }
 
 private:
   SPIRVCapabilityKind Kind;
