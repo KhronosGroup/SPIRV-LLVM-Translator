@@ -82,16 +82,18 @@ public:
   // instead.
   enum class FuncTransMode { Decl, Pointer };
 
-  SPIRVType *transType(Type *T);
-  SPIRVType *transPointerType(Type *PointeeTy, unsigned AddrSpace);
-  SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace);
+  SPIRVType *transType(Type *T, bool IsBuiltin = false);
+  SPIRVType *transPointerType(Type *PointeeTy, unsigned AddrSpace,
+                              bool IsBuiltin = false);
+  SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace,
+                              bool IsBuiltin = false);
   SPIRVType *transSPIRVOpaqueType(StringRef STName, unsigned AddrSpace);
   SPIRVType *
   transSPIRVJointMatrixINTELType(SmallVector<std::string, 8> Postfixes);
   /// Use the type scavenger to get the correct type for V. This is equivalent
   /// to transType(V->getType()) if V is not a pointer type; otherwise, it tries
   /// to pick an appropriate pointee type for V.
-  SPIRVType *transScavengedType(Value *V);
+  SPIRVType *transScavengedType(Value *V, bool IsBuiltin = false);
 
   SPIRVValue *getTranslatedValue(const Value *) const;
 

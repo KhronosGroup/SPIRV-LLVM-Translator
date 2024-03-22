@@ -1555,8 +1555,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     // Force SPIRV BuiltIn variable's name to be __spirv_BuiltInXXXX.
     // No matter what BV's linkage name is.
     SPIRVBuiltinVariableKind BVKind;
-    if (BVar->isBuiltin(&BVKind))
+    if (BVar->isBuiltin(&BVKind)) {
       BV->setName(prefixSPIRVName(SPIRVBuiltInNameMap::map(BVKind)));
+      // BuiltinVars are globals that reside in addrspace(1).
+      AddrSpace = SPIRSPIRVAddrSpaceMap::rmap(StorageClassCrossWorkgroup);
+    }
     auto *LVar = new GlobalVariable(*M, Ty, IsConst, LinkageTy,
                                     /*Initializer=*/nullptr, BV->getName(), 0,
                                     GlobalVariable::NotThreadLocal, AddrSpace);
