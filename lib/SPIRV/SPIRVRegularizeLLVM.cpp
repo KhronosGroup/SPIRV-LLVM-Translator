@@ -345,7 +345,11 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
   StructType *StructBuiltinTy;
   if (Builtin) {
     StructBuiltinTy = cast<StructType>(Builtin->getParamStructRetType(0));
-    A = Builder.CreateAlloca(Builtin->getParamStructRetType(0));
+    {
+      IRBuilderBase::InsertPointGuard Guard(Builder);
+      Builder.SetInsertPointPastAllocas(Call->getParent()->getParent());
+      A = Builder.CreateAlloca(StructBuiltinTy);
+    }
     CallInst *C = Builder.CreateCall(
         Builtin, {A, Call->getArgOperand(0), Call->getArgOperand(1)});
     auto SretAttr = Attribute::get(
@@ -355,7 +359,11 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
     StructBuiltinTy = StructType::create(
         Call->getContext(),
         {Call->getArgOperand(0)->getType(), Call->getArgOperand(1)->getType()});
-    A = Builder.CreateAlloca(StructBuiltinTy);
+    {
+      IRBuilderBase::InsertPointGuard Guard(Builder);
+      Builder.SetInsertPointPastAllocas(Call->getParent()->getParent());
+      A = Builder.CreateAlloca(StructBuiltinTy);
+    }
     FunctionType *FT =
         FunctionType::get(Builder.getVoidTy(),
                           {A->getType(), Call->getArgOperand(0)->getType(),
@@ -383,7 +391,7 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
   Value *Undef = UndefValue::get(StructI32I1Ty);
   Value *V3 = Builder.CreateInsertValue(Undef, V0, {0});
   Value *V4 = Builder.CreateInsertValue(V3, V2, {1});
-  SmallVector<User *, 8> Users(Call->users());
+  SmallVector<User *> Users(Call->users());
   for (User *U : Users) {
     U->replaceUsesOfWith(Call, V4);
   }
