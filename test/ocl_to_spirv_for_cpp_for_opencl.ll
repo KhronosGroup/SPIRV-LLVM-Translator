@@ -1,4 +1,4 @@
-;; This test checks if builtins in LLVM IR generated from OpenCL_CPP sources
+;; This test checks if builtins in LLVM IR generated from CPP_for_OpenCL sources
 ;; are correctly translated to SPIR-V builtin variables.
 
 ; RUN: llvm-as %s -o %t.bc
@@ -24,4 +24,4 @@ declare spir_func i32 @_Z12get_group_idj(i32)
 
 !spirv.Source = !{!0}
 
-!0 = !{i32 4, i32 100000}
+!0 = !{i32 6, i32 100000}
