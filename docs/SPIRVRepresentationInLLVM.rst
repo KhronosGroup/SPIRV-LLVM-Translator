@@ -483,24 +483,24 @@ extra operands ``i32 1`` and ``i32 2``.
 decorates the argument ``b`` of ``k`` with ``Restrict`` in SPIR-V while not
 adding any decoration to argument ``a``.
 
-Member decoration through pointer annotations
----------------------------------------------
+Decoration through pointer annotations
+--------------------------------------
 
-Class members can be decorated using the ``llvm.ptr.annotation`` LLVM IR
-intrinsic. Member decorations specified in ``llvm.ptr.annotation`` must be in
-the second argument and must have the format ``{X}`` or ``{X:Y}`` where ``X`` is
-either one of the reserved names or an integer literal representing the SPIR-V
-decoration identifier and ``Y`` is 1 or more arguments separated by ",", where
-each argument must be either a word (including numbers) or a string enclosed by
-quotation marks. The ``llvm.ptr.annotation`` can contain any number decorations
-following this format.
+Class members and instructions returning a pointer can be decorated using the
+``llvm.ptr.annotation`` LLVM IR intrinsic. Decorations and MemberDecorations
+specified in ``llvm.ptr.annotation`` must be in the second argument and must
+have the format ``{X}`` or ``{X:Y}`` where ``X`` is an integer literal
+representing the SPIR-V decoration identifier and ``Y`` is 1 or more arguments
+separated by ",", where each argument must be either a word (including numbers)
+or a string enclosed by quotation marks.
 
-For example, both ``{5835:1,2,3}`` and ``{bank_bits:1,2,3}`` will result in the
-``BankwidthINTEL`` decoration with literals 1, 2, and 3 attached to the
+Additionally to that ``{X}`` of a MemberDecoration can be one of the reserved
+names. For example, both ``{5835:1,2,3}`` and ``{bank_bits:1,2,3}`` will result
+in the ``BankwidthINTEL`` decoration with literals 1, 2, and 3 attached to the
 annotated member.
 
 The translator accepts a number of reserved names that correspond to SPIR-V
-member decorations.
+member decorations:
 
 +-----------------------+------------------+-----------------------------------+
 | Decoration            | Reserved Name    | Note                              |
@@ -546,6 +546,22 @@ member decorations.
 
 None of the special requirements imposed from using the reserved names apply to
 using decoration identifiers directly.
+
+In cases when decoration parameter carried by ``llvm.ptr.annotation`` coalesces
+with a value carried by another LLVM attribute, the translator is free to chose
+the value depending on the meaning of the annotation. For example for alignment
+we can chose the biggest alignment specified in LLVM IR:
+
+.. code-block:: llvm
+  @.str.0 = private unnamed_addr addrspace(1) constant [16 x i8] c"{44:\221024\22}\00", section "llvm.metadata"
+  ...
+  %ptr = alloca i32, align 4
+  %ann_ptr = call ptr @llvm.ptr.annotation.p4.p1(ptr %ptr, ptr addrspace(1) @.str.0, ptr addrspace(1) @.str.1)
+
+here ``llvm.ptr.annotation`` specifies a pointer with 1024 alignment conflicting
+with ``align 4`` alloca's parameter. In this case the translator can generate
+``OpDecorate Alignment 1024``. When no rules are set the translator must discard
+``llvm.ptr.annotation`` in favor of another LLVM IR construct.
 
 During reverse translation, the translator prioritizes reserved names over
 decoration identifiers, even if the member decoration was generated using the
