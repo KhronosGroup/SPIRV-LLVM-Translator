@@ -420,6 +420,59 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
   }
 }
 
+/// Move SPIRV builtin global variables to local memory
+/// Example: __spirv_BuiltInWorkgroupId is the builtin GV
+/// @__spirv_BuiltInWorkgroupId = external dso_local local_unnamed_addr
+///                               addrspace(1) constant <3 x i64>, align 32
+/// define weak_odr dso_local spir_kernel void @foo() {
+/// ...
+/// %0 = load i64, ptr addrspace(1) @__spirv_BuiltInWorkgroupId, align 32
+/// ret void
+/// }
+/// Transformed to --->
+/// @__spirv_BuiltInWorkgroupId = external dso_local local_unnamed_addr
+///                               addrspace(1) constant <3 x i64>, align 32
+/// define weak_odr dso_local spir_kernel void @foo() {
+/// ...
+/// %1 = load <3 x i64>, ptr addrspace(1) @__spirv_BuiltInWorkgroupId, align 32
+/// %__local_SPIRV_Builtin* = alloca <3 x i64> addrspace(0), align 32
+/// store <3 x i64> %1, ptr addrspace(0) %__local_SPIRV_Builtin*, align 32
+/// // Replace uses of __spirv_BuiltInWorkgroupId with %__local_SPIRV_Builtin*
+/// ret void
+/// }
+void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = &(*I++);
+    for (BasicBlock &BB : *F) {
+      for (Instruction &Inst : BB) {
+        int OpIndex = -1;
+        for (const auto &Op : Inst.operands()) {
+          OpIndex++;
+          if (GlobalVariable *GV = dyn_cast<GlobalVariable>(Op)) {
+            spv::BuiltIn Builtin = spv::BuiltInPosition;
+            if (!(GV->hasName() &&
+                  getSPIRVBuiltin(GV->getName().str(), Builtin)))
+              continue;
+            IRBuilder<> Builder(&Inst);
+            auto *LoadTy = GV->getValueType();
+            auto *LoadedVal = Builder.CreateLoad(LoadTy, GV);
+            LoadedVal->setAlignment(llvm::Align(GV->getAlignment()));
+            auto *NewVar =
+                Builder.CreateAlloca(LoadTy, nullptr, "__local_SPIRV_Builtin");
+            Builder.CreateStore(LoadedVal, NewVar);
+            GV->replaceUsesWithIf(NewVar, [F, LoadedVal](Use &U) {
+              if (Instruction *I = dyn_cast<Instruction>(U.getUser()))
+                return I != cast<Instruction>(LoadedVal) &&
+                       I->getFunction() == F;
+              return false;
+            });
+          } // if
+        } // for Op
+      } // for II
+    } // for BB
+  } // for I
+}
+
 bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
@@ -503,6 +556,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
+  copyBuiltinGVToLocalVar(M);
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);

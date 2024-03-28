@@ -95,6 +95,7 @@ public:
   void expandSYCLTypeUsing(llvm::Module *M);
   void expandVEDWithSYCLTypeSRetArg(llvm::Function *F);
   void expandVIDWithSYCLTypeByValComp(llvm::Function *F);
+  void copyBuiltinGVToLocalVar(llvm::Module *M);
 
   // It is possible that incoming LLVM IR conversion instructions convert
   // floating point to non-standard integer types. Such types are not supported

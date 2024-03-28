@@ -371,11 +371,9 @@ void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
   }
 }
 
-// IsBuiltin is set by caller to be true in two cases:
-// 1. Value associated with the type is a builtin variable.
-// 2. Value associated with the type is a GEPInst with address pointer as a
-//    builtin variable.
-// This variable is just passed onto transPointerType.
+// IsBuiltin is set by caller to be true if the Value associated with the type
+// is a builtin variable.
+// This argument is just passed onto transPointerType.
 SPIRVType *LLVMToSPIRVBase::transType(Type *T, bool IsBuiltin) {
   LLVMToSPIRVTypeMap::iterator Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
@@ -637,12 +635,11 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T, bool IsBuiltin) {
   return 0;
 }
 
-// In case of builtin variables and their users, the storage class function
-// should be StorageClassInput, irrespective of the incoming addrspace.
+// In case of builtin variables, the storage class should be StorageClassInput,
+// irrespective of the incoming addrspace.
 // Ref:
 // https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_Env.html
 // Sec 2.9. Built-in variables.
-// For such cases, we avoid read/writes to PointeeTypeMap.
 SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
                                              bool IsBuiltin) {
   Type *T = PointerType::get(ET, AddrSpc);
@@ -652,11 +649,9 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
     return nullptr;
 
   std::string TypeKey = (Twine((uintptr_t)ET) + Twine(AddrSpc)).str();
-  if (!IsBuiltin) {
-    auto Loc = PointeeTypeMap.find(TypeKey);
-    if (Loc != PointeeTypeMap.end())
-      return Loc->second;
-  }
+  auto Loc = PointeeTypeMap.find(TypeKey);
+  if (Loc != PointeeTypeMap.end())
+    return Loc->second;
 
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
@@ -685,8 +680,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
 
     auto SaveType = [&](SPIRVType *MappedTy) {
       OpaqueStructMap[Key] = MappedTy;
-      if (!IsBuiltin)
-        PointeeTypeMap[TypeKey] = MappedTy;
+      PointeeTypeMap[TypeKey] = MappedTy;
       return MappedTy;
     };
 
@@ -740,15 +734,12 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
     // may happen that after translation of ET we already have translated T,
     // added the translated pointer to the SPIR-V module and mapped T to this
     // pointer. Now we have to check PointeeTypeMap again.
-    if (!IsBuiltin) {
-      auto Loc = PointeeTypeMap.find(TypeKey);
-      if (Loc != PointeeTypeMap.end()) {
-        return Loc->second;
-      }
+    auto Loc = PointeeTypeMap.find(TypeKey);
+    if (Loc != PointeeTypeMap.end()) {
+      return Loc->second;
     }
     SPIRVType *TranslatedTy = transPointerType(ElementType, AddrSpc, IsBuiltin);
-    if (!IsBuiltin)
-      PointeeTypeMap[TypeKey] = TranslatedTy;
+    PointeeTypeMap[TypeKey] = TranslatedTy;
     return TranslatedTy;
   }
 
@@ -761,23 +752,19 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
 // Ref:
 // https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_Env.html
 // Sec 2.9. Built-in variables.
-// For such cases, we avoid read/writes to PointeeTypeMap.
 SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc,
                                              bool IsBuiltin) {
   std::string TypeKey = (Twine((uintptr_t)ET) + Twine(AddrSpc)).str();
-  if (!IsBuiltin) {
-    auto Loc = PointeeTypeMap.find(TypeKey);
-    if (Loc != PointeeTypeMap.end())
-      return Loc->second;
-  }
+  auto Loc = PointeeTypeMap.find(TypeKey);
+  if (Loc != PointeeTypeMap.end())
+    return Loc->second;
 
   auto TheStorageClass =
       (IsBuiltin)
           ? StorageClassInput
           : SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(AddrSpc));
   SPIRVType *TranslatedTy = BM->addPointerType(TheStorageClass, ET);
-  if (!IsBuiltin)
-    PointeeTypeMap[TypeKey] = TranslatedTy;
+  PointeeTypeMap[TypeKey] = TranslatedTy;
   return TranslatedTy;
 }
 
@@ -846,12 +833,7 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
         BM->addOpaqueGenericType(SPIRVOpaqueTypeOpCodeMap::map(TN)));
 }
 
-// In case of builtin variables and their users, the storage class function
-// should be StorageClassInput, irrespective of the incoming addrspace.
-// Ref:
-// https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_Env.html
-// Sec 2.9. Built-in variables.
-SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V, bool IsBuiltin) {
+SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
   if (auto *F = dyn_cast<Function>(V)) {
     FunctionType *FnTy = Scavenger->getFunctionType(F);
     SPIRVType *RT = transType(FnTy->getReturnType());
@@ -867,11 +849,7 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V, bool IsBuiltin) {
 
     return getSPIRVFunctionType(RT, PT);
   }
-  if (auto *GV = dyn_cast<GlobalVariable>(V)) {
-    spv::BuiltIn Builtin = spv::BuiltInPosition;
-    IsBuiltin |= GV->hasName() && getSPIRVBuiltin(GV->getName().str(), Builtin);
-  }
-  return transType(Scavenger->getScavengedType(V), IsBuiltin);
+  return transType(Scavenger->getScavengedType(V));
 }
 
 SPIRVType *
@@ -2459,8 +2437,6 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       Indices.push_back(transValue(GEP->getOperand(I + 1), BB));
     auto *PointerOperand = GEP->getPointerOperand();
     auto *TransPointerOperand = transValue(PointerOperand, BB);
-    auto IsBuiltin = TransPointerOperand->getType()->getPointerStorageClass() ==
-                     StorageClassInput;
 
     // Certain array-related optimization hints can be expressed via
     // LLVM metadata. For the purpose of linking this metadata with
@@ -2500,7 +2476,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     }
     // GEP can return a vector of pointers, in this case GEP will calculate
     // addresses for each pointer in the vector
-    SPIRVType *TranslatedTy = transScavengedType(GEP, IsBuiltin);
+    SPIRVType *TranslatedTy = transScavengedType(GEP);
     return mapValue(V,
                     BM->addPtrAccessChainInst(TranslatedTy, TransPointerOperand,
                                               Indices, BB, GEP->isInBounds()));

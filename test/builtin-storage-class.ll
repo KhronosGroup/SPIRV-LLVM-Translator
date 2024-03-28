@@ -1,3 +1,5 @@
+; Check that SPIRV Builtins in LLVM IR get mapped to Input Storage Class
+; in the SPIRV IR (enum=1).
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck --check-prefix=CHECK-SPIRV %s
 ; RUN: llvm-spirv %t.bc -o %t.spv

@@ -1167,15 +1167,30 @@ Value *SPIRVToLLVM::mapValue(SPIRVValue *BV, Value *V) {
   if (Loc != ValueMap.end()) {
     if (Loc->second == V)
       return V;
+
+    // Existing LLVM mapped value could be the local SPIRV Builtin variable
+    // created during forward translation. In this case, we are trying to
+    // replace with mapped value with the global SPIRV Builtin variable
+    // (passed via V here). In this case, we also need a AddrSpaceCast to cast
+    // between the new mapped value and the old.
+    if (Loc->second->hasName() &&
+        Loc->second->getName().starts_with("__local_SPIRV_Builtin")) {
+      auto *NewV = new AddrSpaceCastInst(V, Loc->second->getType(), "",
+                                         cast<Instruction>(Loc->second));
+      ValueMap[BV] = NewV;
+      return NewV;
+    }
     auto *LD = dyn_cast<LoadInst>(Loc->second);
-    auto *Placeholder = dyn_cast<GlobalVariable>(LD->getPointerOperand());
-    assert(LD && Placeholder &&
-           Placeholder->getName().starts_with(KPlaceholderPrefix) &&
-           "A value is translated twice");
-    // Replaces placeholders for PHI nodes
-    LD->replaceAllUsesWith(V);
-    LD->eraseFromParent();
-    Placeholder->eraseFromParent();
+    if (LD) {
+      auto *Placeholder = dyn_cast<GlobalVariable>(LD->getPointerOperand());
+      assert(LD && Placeholder &&
+             Placeholder->getName().starts_with(KPlaceholderPrefix) &&
+             "A value is translated twice");
+      // Replaces placeholders for PHI nodes
+      LD->replaceAllUsesWith(V);
+      LD->eraseFromParent();
+      Placeholder->eraseFromParent();
+    }
   }
   ValueMap[BV] = V;
   return V;
@@ -1754,6 +1769,26 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (BS->SPIRVMemoryAccess::isNonTemporal())
       transNonTemporalMetadata(SI);
     transAliasingMemAccess<SPIRVStore>(BS, SI);
+
+    // In SPIRV Writer pass, the SPIRV Builtin variables were processed
+    // in a unique way to ensure we adhered to OpenCL SPIRV Env Spec.
+    // The global variable was copied into a function-level storage.
+    // The following block of code identifies those changes and reverts them.
+    auto *StorePtr = SI->getPointerOperand();
+    if (StorePtr->hasName() &&
+        StorePtr->getName().starts_with("__local_SPIRV_Builtin")) {
+      if (auto *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
+        auto LoadPtr = LI->getPointerOperand();
+        spv::BuiltIn Builtin = spv::BuiltInPosition;
+        if (auto *GV = dyn_cast<GlobalVariable>(LoadPtr))
+          if (GV->hasName() && getSPIRVBuiltin(GV->getName().str(), Builtin)) {
+            mapValue(BS->getDst(), GV);
+            SI->eraseFromParent();
+            LI->eraseFromParent();
+            return nullptr;
+          }
+      }
+    }
     return mapValue(BV, SI);
   }
 

@@ -93,7 +93,7 @@ public:
   /// Use the type scavenger to get the correct type for V. This is equivalent
   /// to transType(V->getType()) if V is not a pointer type; otherwise, it tries
   /// to pick an appropriate pointee type for V.
-  SPIRVType *transScavengedType(Value *V, bool IsBuiltin = false);
+  SPIRVType *transScavengedType(Value *V);
 
   SPIRVValue *getTranslatedValue(const Value *) const;
 
