@@ -575,7 +575,7 @@ private:
 
   void layoutEntry(SPIRVEntry *Entry);
   std::istream &parseSPT(std::istream &I);
-  std::istream &parseSPIRV(std::istream &I);
+  template <bool IS_REPORT> std::istream &parseSPIRV(std::istream &I);
 };
 
 SPIRVModuleImpl::~SPIRVModuleImpl() {
@@ -785,6 +785,12 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
   }
   case OpAsmINTEL: {
     addTo(AsmVec, E);
+    break;
+  }
+  case OpExtInstImport: {
+    auto *EII = static_cast<SPIRVExtInstImport *>(E);
+    std::string_view IL = EII->getImportLiteral();
+    SrcExtension.emplace(IL);
     break;
   }
   default:
@@ -2321,6 +2327,7 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   return I;
 }
 
+template <bool IS_REPORT>
 std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
@@ -2387,6 +2394,11 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
       SPIRVDBG(spvdbgs() << "getWordCountAndOpCode EOF 0 0\n");
       break;
     }
+    if constexpr (IS_REPORT) {
+      if (OpCode == OpMemoryModel) {
+        break;
+      }
+    }
   }
   MI.resolveUnknownStructFields();
   return I;
@@ -2399,7 +2411,10 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
     return MI.parseSPT(I);
   }
 #endif
-  return MI.parseSPIRV(I);
+  if (!MI.TranslationOpts.isReport()) {
+    return MI.parseSPIRV<false>(I);
+  }
+  return MI.parseSPIRV<true>(I);
 }
 
 SPIRVModule *SPIRVModule::createSPIRVModule() { return new SPIRVModuleImpl(); }

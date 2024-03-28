@@ -1,5 +1,5 @@
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
-; RUN: llvm-spirv --spirv-print-report %t.spv | FileCheck %s --check-prefix=CHECK-DAG
+; RUN: llvm-spirv --spirv-print-report --spirv-ext=+SPV_INTEL_loop_fuse,+SPV_KHR_bit_instructions %t.spv | FileCheck %s --check-prefix=CHECK-DAG
 
 ; CHECK-DAG: Version: 1.0
 ; CHECK-DAG: Memory model: OpenCL
