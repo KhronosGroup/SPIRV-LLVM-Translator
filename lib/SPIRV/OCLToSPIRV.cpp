@@ -168,9 +168,10 @@ bool OCLToSPIRVBase::runOCLToSPIRV(Module &Module) {
   auto Src = getSPIRVSource(&Module);
   // This is a pre-processing pass, which transform LLVM IR module to a more
   // suitable form for the SPIR-V translation: it is specifically designed to
-  // handle OpenCL C built-in functions and shouldn't be launched for other
+  // handle OpenCL C/CPP built-in functions and shouldn't be launched for other
   // source languages
-  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C &&
+      std::get<0>(Src) != spv::SourceLanguageOpenCL_CPP)
     return false;
 
   CLVer = std::get<1>(Src);
