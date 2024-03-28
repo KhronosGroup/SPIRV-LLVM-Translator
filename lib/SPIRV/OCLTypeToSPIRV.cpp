@@ -87,7 +87,8 @@ bool OCLTypeToSPIRVBase::runOCLTypeToSPIRV(Module &Module) {
   AdaptedTy.clear();
   WorkSet.clear();
   auto Src = getSPIRVSource(&Module);
-  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
+  if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C &&
+      std::get<0>(Src) != spv::SourceLanguageOpenCL_CPP)
     return false;
 
   for (auto &F : Module.functions())
