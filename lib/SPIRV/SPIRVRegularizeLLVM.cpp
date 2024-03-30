@@ -457,8 +457,8 @@ void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
             auto *LoadedVal = Builder.CreateLoad(LoadTy, GV);
             if (GV->getAlignment())
               LoadedVal->setAlignment(llvm::Align(GV->getAlignment()));
-            auto *NewVar =
-                Builder.CreateAlloca(LoadTy, nullptr, "__local_SPIRV_Builtin");
+            auto *NewVar = Builder.CreateAlloca(GV->getType(), nullptr,
+                                                "__local_SPIRV_Builtin");
             Builder.CreateStore(LoadedVal, NewVar);
             GV->replaceUsesWithIf(NewVar, [F, LoadedVal](Use &U) {
               if (Instruction *I = dyn_cast<Instruction>(U.getUser()))
