@@ -445,9 +445,7 @@ void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
     Function *F = &(*I++);
     for (BasicBlock &BB : *F) {
       for (Instruction &Inst : BB) {
-        int OpIndex = -1;
         for (const auto &Op : Inst.operands()) {
-          OpIndex++;
           if (GlobalVariable *GV = dyn_cast<GlobalVariable>(Op)) {
             spv::BuiltIn Builtin = spv::BuiltInPosition;
             if (!(GV->hasName() &&

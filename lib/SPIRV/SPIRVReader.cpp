@@ -1778,7 +1778,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (StorePtr->hasName() &&
         StorePtr->getName().starts_with("__local_SPIRV_Builtin")) {
       if (auto *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
-        auto LoadPtr = LI->getPointerOperand();
+        auto *LoadPtr = LI->getPointerOperand();
         spv::BuiltIn Builtin = spv::BuiltInPosition;
         if (auto *GV = dyn_cast<GlobalVariable>(LoadPtr))
           if (GV->hasName() && getSPIRVBuiltin(GV->getName().str(), Builtin)) {
