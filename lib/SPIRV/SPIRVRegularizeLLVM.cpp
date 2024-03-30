@@ -445,8 +445,9 @@ void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
     Function *F = &(*I++);
     for (BasicBlock &BB : *F) {
       for (Instruction &Inst : BB) {
-        for (const auto &Op : Inst.operands()) {
-          if (GlobalVariable *GV = dyn_cast<GlobalVariable>(Op)) {
+        for (auto &Op : Inst.operands()) {
+          if (GlobalVariable *GV =
+                  dyn_cast<GlobalVariable>(Op->stripPointerCasts())) {
             spv::BuiltIn Builtin = spv::BuiltInPosition;
             if (!(GV->hasName() &&
                   getSPIRVBuiltin(GV->getName().str(), Builtin)))
@@ -454,12 +455,17 @@ void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
             IRBuilder<> Builder(&Inst);
             auto *LoadTy = GV->getValueType();
             auto *LoadedVal = Builder.CreateLoad(LoadTy, GV);
-            LoadedVal->setAlignment(llvm::Align(GV->getAlignment()));
+            if (GV->getAlignment())
+              LoadedVal->setAlignment(llvm::Align(GV->getAlignment()));
             auto *NewVar =
                 Builder.CreateAlloca(LoadTy, nullptr, "__local_SPIRV_Builtin");
             Builder.CreateStore(LoadedVal, NewVar);
             GV->replaceUsesWithIf(NewVar, [F, LoadedVal](Use &U) {
               if (Instruction *I = dyn_cast<Instruction>(U.getUser()))
+                return I != cast<Instruction>(LoadedVal) &&
+                       I->getFunction() == F;
+              else if (Instruction *I = dyn_cast<Instruction>(
+                           U.getUser()->getUniqueUndroppableUser()))
                 return I != cast<Instruction>(LoadedVal) &&
                        I->getFunction() == F;
               return false;

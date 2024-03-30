@@ -640,6 +640,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T, bool IsBuiltin) {
 // Ref:
 // https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_Env.html
 // Sec 2.9. Built-in variables.
+// Do not store the translated type into PointeeTypeMap for IsBuiltin = true.
 SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
                                              bool IsBuiltin) {
   Type *T = PointerType::get(ET, AddrSpc);
@@ -680,7 +681,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
 
     auto SaveType = [&](SPIRVType *MappedTy) {
       OpaqueStructMap[Key] = MappedTy;
-      PointeeTypeMap[TypeKey] = MappedTy;
+      if (!IsBuiltin)
+        PointeeTypeMap[TypeKey] = MappedTy;
       return MappedTy;
     };
 
@@ -739,7 +741,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
       return Loc->second;
     }
     SPIRVType *TranslatedTy = transPointerType(ElementType, AddrSpc, IsBuiltin);
-    PointeeTypeMap[TypeKey] = TranslatedTy;
+    if (!IsBuiltin)
+      PointeeTypeMap[TypeKey] = TranslatedTy;
     return TranslatedTy;
   }
 
@@ -752,6 +755,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc,
 // Ref:
 // https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_Env.html
 // Sec 2.9. Built-in variables.
+// Do not store the translated type into PointeeTypeMap for IsBuiltin = true.
 SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc,
                                              bool IsBuiltin) {
   std::string TypeKey = (Twine((uintptr_t)ET) + Twine(AddrSpc)).str();
@@ -764,7 +768,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc,
           ? StorageClassInput
           : SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(AddrSpc));
   SPIRVType *TranslatedTy = BM->addPointerType(TheStorageClass, ET);
-  PointeeTypeMap[TypeKey] = TranslatedTy;
+  if (!IsBuiltin)
+    PointeeTypeMap[TypeKey] = TranslatedTy;
   return TranslatedTy;
 }
 
