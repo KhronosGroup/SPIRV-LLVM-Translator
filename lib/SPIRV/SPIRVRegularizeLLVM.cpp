@@ -464,8 +464,8 @@ void SPIRVRegularizeLLVMBase::copyBuiltinGVToLocalVar(Module *M) {
               if (Instruction *I = dyn_cast<Instruction>(U.getUser()))
                 return I != cast<Instruction>(LoadedVal) &&
                        I->getFunction() == F;
-              else if (Instruction *I = dyn_cast<Instruction>(
-                           U.getUser()->getUniqueUndroppableUser()))
+              if (Instruction *I = dyn_cast<Instruction>(
+                      U.getUser()->getUniqueUndroppableUser()))
                 return I != cast<Instruction>(LoadedVal) &&
                        I->getFunction() == F;
               return false;
