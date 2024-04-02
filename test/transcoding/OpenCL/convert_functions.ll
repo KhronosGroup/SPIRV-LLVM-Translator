@@ -13,8 +13,8 @@
 ; CHECK-SPIRV: Name [[#Func:]] "_Z18convert_float_func"
 ; CHECK-SPIRV: Name [[#Func1:]] "_Z20convert_uint_satfunc"
 ; CHECK-SPIRV: Name [[#Func2:]] "_Z21convert_float_rtzfunc"
-; CHECK-SPIRV: TypeVoid [[#VoidTy:]]
-; CHECK-SPIRV: TypeFloat [[#FloatTy:]] 32
+; CHECK-SPIRV-DAG: TypeVoid [[#VoidTy:]]
+; CHECK-SPIRV-DAG: TypeFloat [[#FloatTy:]] 32
 
 ; CHECK-SPIRV: Function [[#VoidTy]] [[#Func]]
 ; CHECK-SPIRV: ConvertSToF [[#FloatTy]] [[#ConvertId:]] [[#]]

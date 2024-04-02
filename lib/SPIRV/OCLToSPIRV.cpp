@@ -743,27 +743,25 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
     SrcTy = VecTy->getElementType();
   auto IsTargetInt = isa<IntegerType>(TargetTy);
 
-  std::string ConversionFunc(
-      DemangledName.substr(strlen(kOCLBuiltinName::ConvertPrefix)));
-
-  // Validate target type name and vector size if present
-  std::regex Expr("(float|double|half|u?char|u?short|u?int|u?long)(2|3|4|8|16)*"
-                  "(_sat)*(_rt[ezpn])*$");
+  // Validate conversion function name and vector size if present
+  std::regex Expr(
+      "convert_(float|double|half|u?char|u?short|u?int|u?long)(2|3|4|8|16)*"
+      "(_sat)*(_rt[ezpn])*$");
   std::smatch DestTyMatch;
+  std::string ConversionFunc(DemangledName.str());
   if (!std::regex_match(ConversionFunc, DestTyMatch, Expr))
     return;
 
   // The first sub_match is the whole string; the next
-  // sub_match is the first parenthesized expression.
+  // sub_matches are the parenthesized expressions.
   enum { TypeIdx = 1, VecSizeIdx = 2, SatIdx = 3, RoundingIdx = 4 };
-
   std::string DestTy = DestTyMatch[TypeIdx].str();
   std::string VecSize = DestTyMatch[VecSizeIdx].str();
-  std::string TargetTyName = std::string("_R") + DestTy + VecSize;
+  std::string Sat = DestTyMatch[SatIdx].str();
+  std::string Rounding = DestTyMatch[RoundingIdx].str();
 
   bool TargetSigned = DestTy[0] != 'u';
 
-  std::string Sat = DestTyMatch[SatIdx].str();
   if (isa<IntegerType>(SrcTy)) {
     bool Signed = isLastFuncParamSigned(MangledName);
     if (IsTargetInt) {
@@ -781,12 +779,12 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
       OC = OpFConvert;
   }
 
-  std::string Rounding = DestTyMatch[RoundingIdx].str();
   if (!Rounding.empty() && (isa<IntegerType>(SrcTy) && IsTargetInt))
     return;
 
   assert(CI->getCalledFunction() && "Unexpected indirect call");
-  mutateCallInst(CI, getSPIRVFuncName(OC, TargetTyName + Sat + Rounding));
+  mutateCallInst(
+      CI, getSPIRVFuncName(OC, "_R" + DestTy + VecSize + Sat + Rounding));
 }
 
 void OCLToSPIRVBase::visitCallGroupBuiltin(CallInst *CI,
