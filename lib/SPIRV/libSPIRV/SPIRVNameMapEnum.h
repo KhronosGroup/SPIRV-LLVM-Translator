@@ -651,6 +651,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "JointMatrixPackedInt4ComponentTypeINTEL");
   add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(internal::CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
+  add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
+      "CooperativeMatrixPrefetchINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
