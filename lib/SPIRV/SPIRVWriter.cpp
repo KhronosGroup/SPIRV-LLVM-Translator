@@ -3953,13 +3953,17 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (DestAlignVal) {
       Align AlignVal = *DestAlignVal;
       MemoryAccess[0] |= MemoryAccessAlignedMask;
-      if (auto *MTI = dyn_cast<MemTransferInst>(MI)) {
+      if (auto *MTI = dyn_cast<MemCpyInst>(MI)) {
         MaybeAlign SourceAlignVal = MTI->getSourceAlign();
         assert(SourceAlignVal && "Missed Source alignment!");
 
         // In a case when alignment of source differs from dest one
-        // least value is guaranteed anyway.
-        AlignVal = std::min(*DestAlignVal, *SourceAlignVal);
+        // we preserve both.
+        if (*DestAlignVal != *SourceAlignVal) {
+          MemoryAccess.push_back(DestAlignVal.valueOrOne().value());
+          MemoryAccess.push_back(MemoryAccessAlignedMask);
+          AlignVal = *SourceAlignVal;
+        }
       }
       MemoryAccess.push_back(AlignVal.value());
     }
