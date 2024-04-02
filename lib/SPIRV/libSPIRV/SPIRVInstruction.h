@@ -2512,20 +2512,20 @@ public:
     return getVec(CapabilityGroupNonUniformBallot);
   }
 
-  SPIRVWord getRequiredSPIRVVersion() const override {
+  VersionNumber getRequiredSPIRVVersion() const override {
     switch (OpCode) {
     case OpGroupNonUniformBroadcast: {
       assert(Ops.size() == 3 && "Expecting (Execution, Value, Id) operands");
       if (!isConstantOpCode(getOperand(2)->getOpCode())) {
         // Before version 1.5, Id must come from a constant instruction.
-        return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_5);
+        return VersionNumber::SPIRV_1_5;
       }
       break;
     }
     default:
       break;
     }
-    return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_3);
+    return VersionNumber::SPIRV_1_3;
   }
 };
 
