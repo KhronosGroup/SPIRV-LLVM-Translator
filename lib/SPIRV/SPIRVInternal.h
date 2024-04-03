@@ -632,7 +632,7 @@ std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
 ///   otherwise return OpNop.
 /// \param Dec contains decorations decoded from function name if it is
 ///   not nullptr.
-Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr);
+Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr, bool IsCpp = false);
 
 /// Get SPIR-V builtin variable enum given the canonical builtin name
 /// Assume \param Name is in format __spirv_BuiltIn{Name}
@@ -951,7 +951,7 @@ bool hasLoopMetadata(const Module *M);
 
 // Check if CI is a call to instruction from OpenCL Extended Instruction Set.
 // If so, return it's extended opcode in ExtOp.
-bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp);
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp, bool IsCpp = false);
 
 /// Returns true if a function name corresponds to an OpenCL builtin that is not
 /// expected to have name mangling.
@@ -980,11 +980,11 @@ bool lowerBuiltinVariableToCall(GlobalVariable *GV,
 bool lowerBuiltinVariablesToCalls(Module *M);
 
 // Transform all builtin calls into variables
-bool lowerBuiltinCallsToVariables(Module *M);
+bool lowerBuiltinCallsToVariables(Module *M, bool IsCpp = false);
 
 //  Transform all builtins into variables or calls
 //  depending on user specification
-bool lowerBuiltins(SPIRVModule *BM, Module *M);
+bool lowerBuiltins(SPIRVModule *BM, Module *M, bool IsCpp = false);
 
 /// \brief Post-process OpenCL or SPIRV builtin function returning struct type.
 ///
@@ -1002,6 +1002,8 @@ bool postProcessBuiltinWithArrayArguments(Function *F, StringRef DemangledName);
 bool postProcessBuiltinsReturningStruct(Module *M, bool IsCpp = false);
 
 bool postProcessBuiltinsWithArrayArguments(Module *M, bool IsCpp = false);
+
+bool isCpp(unsigned SrcLang);
 
 } // namespace SPIRV
 

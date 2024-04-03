@@ -411,13 +411,13 @@ const static char TypePrefix[] = "opencl.intel_sub_group_avc_";
 ///   not empty.
 /// \return instruction index of extended instruction if the OpenCL builtin
 ///   function is translated to an extended instruction, otherwise ~0U.
-unsigned getExtOp(StringRef MangledName, StringRef DemangledName = "");
+unsigned getExtOp(StringRef MangledName, StringRef DemangledName = "", bool IsCpp = false);
 
 /// Get literal arguments of call of atomic_work_item_fence.
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst *CI);
 
 /// Get literal arguments of call of work_group_barrier or sub_group_barrier.
-BarrierLiterals getBarrierLiterals(CallInst *CI);
+BarrierLiterals getBarrierLiterals(CallInst *CI, bool IsCpp = false);
 
 /// Get number of memory order arguments for atomic builtin function.
 size_t getAtomicBuiltinNumMemoryOrderArgs(StringRef Name);

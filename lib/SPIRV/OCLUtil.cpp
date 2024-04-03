@@ -716,13 +716,13 @@ bool isComputeAtomicOCLBuiltin(StringRef DemangledName) {
       .Default(false);
 }
 
-BarrierLiterals getBarrierLiterals(CallInst *CI) {
+BarrierLiterals getBarrierLiterals(CallInst *CI, bool IsCpp) {
   auto N = CI->arg_size();
   assert(N == 1 || N == 2);
 
   StringRef DemangledName;
   assert(CI->getCalledFunction() && "Unexpected indirect call");
-  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName)) {
+  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName, IsCpp)) {
     assert(0 &&
            "call must a builtin (work_group_barrier or sub_group_barrier)");
   }
@@ -738,9 +738,9 @@ BarrierLiterals getBarrierLiterals(CallInst *CI) {
                          Scope);
 }
 
-unsigned getExtOp(StringRef OrigName, StringRef GivenDemangledName) {
+unsigned getExtOp(StringRef OrigName, StringRef GivenDemangledName, bool IsCpp) {
   std::string DemangledName{GivenDemangledName};
-  if (DemangledName.empty() || !oclIsBuiltin(OrigName, GivenDemangledName))
+  if (DemangledName.empty() || !oclIsBuiltin(OrigName, GivenDemangledName, IsCpp))
     return ~0U;
   LLVM_DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;

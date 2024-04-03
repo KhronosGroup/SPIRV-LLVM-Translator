@@ -57,7 +57,7 @@ class SPIRVToOCLBase : public InstVisitor<SPIRVToOCLBase>,
 public:
   SPIRVToOCLBase()
       : BuiltinCallHelper(ManglingRules::OpenCL, translateOpaqueType),
-        M(nullptr), Ctx(nullptr) {}
+        M(nullptr), Ctx(nullptr), SrcLang(0) {}
   virtual ~SPIRVToOCLBase() {}
 
   virtual bool runSPIRVToOCL(Module &M) = 0;
@@ -292,6 +292,7 @@ private:
 protected:
   Module *M;
   LLVMContext *Ctx;
+  unsigned SrcLang;
 };
 
 class SPIRVToOCLLegacy : public ModulePass {

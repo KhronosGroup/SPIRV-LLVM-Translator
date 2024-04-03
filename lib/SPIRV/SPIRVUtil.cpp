@@ -411,11 +411,11 @@ bool isNonMangledOCLBuiltin(StringRef Name) {
          isPipeOrAddressSpaceCastBI(Name.drop_front(2));
 }
 
-Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
+Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec, bool IsCpp) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
   StringRef Name;
-  if (!oclIsBuiltin(S, Name))
+  if (!oclIsBuiltin(S, Name, IsCpp))
     Name = S;
   StringRef R(Name);
   if ((!Name.starts_with(kSPIRVName::Prefix) && !isNonMangledOCLBuiltin(S)) ||
@@ -454,23 +454,23 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   // TODO: consider using 'St' abbriviation for cl namespace mangling.
   // Similar to ::std:: in C++.
   if (IsCpp) {
-    if (!Name.starts_with("_ZN"))
+    if (Name.starts_with("_ZN")) {
+      // Skip CV and ref qualifiers.
+      size_t NameSpaceStart = Name.find_first_not_of("rVKRO", 3);
+      // All built-ins are in the ::cl:: namespace.
+      if (Name.substr(NameSpaceStart, 11) != "2cl7__spirv")
+        return false;
+      size_t DemangledNameLenStart = NameSpaceStart + 11;
+      size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
+      size_t Len = 0;
+      if (!Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
+              .getAsInteger(10, Len)) {
+        DemangledName = Name.substr(Start, Len);
+        return true;
+      }
+      SPIRVDBG(errs() << "Error in extracting integer value");
       return false;
-    // Skip CV and ref qualifiers.
-    size_t NameSpaceStart = Name.find_first_not_of("rVKRO", 3);
-    // All built-ins are in the ::cl:: namespace.
-    if (Name.substr(NameSpaceStart, 11) != "2cl7__spirv")
-      return false;
-    size_t DemangledNameLenStart = NameSpaceStart + 11;
-    size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
-    size_t Len = 0;
-    if (!Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
-             .getAsInteger(10, Len)) {
-      DemangledName = Name.substr(Start, Len);
-      return true;
     }
-    SPIRVDBG(errs() << "Error in extracting integer value");
-    return false;
   }
   size_t Start = Name.find_first_not_of("0123456789", 2);
   size_t Len = 0;
@@ -1788,9 +1788,9 @@ bool hasLoopMetadata(const Module *M) {
   return false;
 }
 
-bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp) {
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp, bool IsCpp) {
   StringRef DemangledName;
-  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName))
+  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName, IsCpp))
     return false;
   StringRef S = DemangledName;
   if (!S.starts_with(kSPIRVName::Prefix))
@@ -2117,7 +2117,7 @@ bool lowerBuiltinVariablesToCalls(Module *M) {
 ///  SPV-IR: @_Z22__spirv_BuiltInWorkDim()
 ///    is transformed as:
 ///  load WorkDim
-bool lowerBuiltinCallsToVariables(Module *M) {
+bool lowerBuiltinCallsToVariables(Module *M, bool IsCpp) {
   LLVM_DEBUG(dbgs() << "Enter lowerBuiltinCallsToVariables\n");
   // Store instructions and functions that need to be removed.
   SmallVector<Value *, 16> ToRemove;
@@ -2126,7 +2126,7 @@ bool lowerBuiltinCallsToVariables(Module *M) {
     if (!F.isDeclaration())
       continue;
     StringRef DemangledName;
-    if (!oclIsBuiltin(F.getName(), DemangledName))
+    if (!oclIsBuiltin(F.getName(), DemangledName, IsCpp))
       continue;
     LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     SmallVector<StringRef, 2> Postfix;
@@ -2175,11 +2175,11 @@ bool lowerBuiltinCallsToVariables(Module *M) {
   return true;
 }
 
-bool lowerBuiltins(SPIRVModule *BM, Module *M) {
+bool lowerBuiltins(SPIRVModule *BM, Module *M, bool IsCpp) {
   auto Format = BM->getBuiltinFormat();
   if (Format == BuiltinFormat::Function && !lowerBuiltinVariablesToCalls(M))
     return false;
-  if (Format == BuiltinFormat::Global && !lowerBuiltinCallsToVariables(M))
+  if (Format == BuiltinFormat::Global && !lowerBuiltinCallsToVariables(M, IsCpp))
     return false;
   return true;
 }
@@ -2553,6 +2553,11 @@ std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
                                            ArrayRef<SPIRVValue *> Ops) {
   SPIRVFriendlyIRMangleInfo MangleInfo(OC, ArgTys, Ops);
   return mangleBuiltin(UniqName, ArgTys, &MangleInfo);
+}
+
+bool isCpp(unsigned SrcLang) {
+  return SrcLang == spv::SourceLanguageOpenCL_CPP ||
+         SrcLang == spv::SourceLanguageCPP_for_OpenCL;
 }
 
 } // namespace SPIRV

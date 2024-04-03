@@ -51,6 +51,8 @@ bool SPIRVToOCL20Legacy::runOnModule(Module &Module) {
 bool SPIRVToOCL20Base::runSPIRVToOCL(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
+  auto Src = getSPIRVSource(&Module);
+  SrcLang = std::get<0>(Src);
 
   // Lower builtin variables to builtin calls first.
   lowerBuiltinVariablesToCalls(M);

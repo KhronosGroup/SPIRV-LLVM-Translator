@@ -47,6 +47,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/ValueMap.h"
 
+#include "SPIRVInternal.h"
+
 using namespace llvm;
 
 /// This class allows for the recovery of typed pointer types from LLVM opaque
@@ -208,8 +210,12 @@ class SPIRVTypeScavenger {
   /// currently being investigated, to avoid the possibility of infinite cycles.
   std::vector<Value *> VisitStack;
 
+  /// Source language
+  unsigned SrcLang;
 public:
   explicit SPIRVTypeScavenger(Module &M) : UnifiedTypeVars(1024) {
+    auto Src = getSPIRVSource(&M);
+    SrcLang = std::get<0>(Src);
     typeModule(M);
   }
 
