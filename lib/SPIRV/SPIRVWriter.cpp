@@ -3948,7 +3948,8 @@ bool allowDecorateWithLatencyControlINTEL(IntrinsicInst *II) {
 SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                                                 SPIRVBasicBlock *BB) {
   auto GetMemoryAccess =
-      [](MemIntrinsic *MI, bool AllowedTwoMemAccess) -> std::vector<SPIRVWord> {
+      [](MemIntrinsic *MI,
+         bool AllowTwoMemAccessMasks) -> std::vector<SPIRVWord> {
     std::vector<SPIRVWord> MemoryAccess(1, MemoryAccessMaskNone);
     MaybeAlign DestAlignVal = MI->getDestAlign();
     if (DestAlignVal) {
@@ -3961,7 +3962,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         // In a case when alignment of source differs from dest one
         // we either preserve both (allowed since SPIR-V 1.4), or the least
         // value is guaranteed anyway.
-        if (AllowedTwoMemAccess) {
+        if (AllowTwoMemAccessMasks) {
           if (*DestAlignVal != *SourceAlignVal) {
             MemoryAccess.push_back(DestAlignVal.valueOrOne().value());
             MemoryAccess.push_back(MemoryAccessAlignedMask);
