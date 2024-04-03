@@ -461,10 +461,11 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
       if (Name.substr(NameSpaceStart, 11) != "2cl7__spirv")
         return false;
       size_t DemangledNameLenStart = NameSpaceStart + 11;
-      size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
+      size_t Start =
+          Name.find_first_not_of("0123456789", DemangledNameLenStart);
       size_t Len = 0;
       if (!Name.substr(DemangledNameLenStart, Start - DemangledNameLenStart)
-              .getAsInteger(10, Len)) {
+               .getAsInteger(10, Len)) {
         DemangledName = Name.substr(Start, Len);
         return true;
       }
@@ -2179,7 +2180,8 @@ bool lowerBuiltins(SPIRVModule *BM, Module *M, bool IsCpp) {
   auto Format = BM->getBuiltinFormat();
   if (Format == BuiltinFormat::Function && !lowerBuiltinVariablesToCalls(M))
     return false;
-  if (Format == BuiltinFormat::Global && !lowerBuiltinCallsToVariables(M, IsCpp))
+  if (Format == BuiltinFormat::Global &&
+      !lowerBuiltinCallsToVariables(M, IsCpp))
     return false;
   return true;
 }

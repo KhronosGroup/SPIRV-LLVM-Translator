@@ -411,7 +411,8 @@ const static char TypePrefix[] = "opencl.intel_sub_group_avc_";
 ///   not empty.
 /// \return instruction index of extended instruction if the OpenCL builtin
 ///   function is translated to an extended instruction, otherwise ~0U.
-unsigned getExtOp(StringRef MangledName, StringRef DemangledName = "", bool IsCpp = false);
+unsigned getExtOp(StringRef MangledName, StringRef DemangledName = "",
+                  bool IsCpp = false);
 
 /// Get literal arguments of call of atomic_work_item_fence.
 AtomicWorkItemFenceLiterals getAtomicWorkItemFenceLiterals(CallInst *CI);

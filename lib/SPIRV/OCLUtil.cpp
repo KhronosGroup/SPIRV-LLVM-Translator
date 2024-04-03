@@ -738,9 +738,11 @@ BarrierLiterals getBarrierLiterals(CallInst *CI, bool IsCpp) {
                          Scope);
 }
 
-unsigned getExtOp(StringRef OrigName, StringRef GivenDemangledName, bool IsCpp) {
+unsigned getExtOp(StringRef OrigName, StringRef GivenDemangledName,
+                  bool IsCpp) {
   std::string DemangledName{GivenDemangledName};
-  if (DemangledName.empty() || !oclIsBuiltin(OrigName, GivenDemangledName, IsCpp))
+  if (DemangledName.empty() ||
+      !oclIsBuiltin(OrigName, GivenDemangledName, IsCpp))
     return ~0U;
   LLVM_DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;

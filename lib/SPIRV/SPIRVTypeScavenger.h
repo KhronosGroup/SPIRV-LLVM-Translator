@@ -212,6 +212,7 @@ class SPIRVTypeScavenger {
 
   /// Source language
   unsigned SrcLang;
+
 public:
   explicit SPIRVTypeScavenger(Module &M) : UnifiedTypeVars(1024) {
     auto Src = getSPIRVSource(&M);

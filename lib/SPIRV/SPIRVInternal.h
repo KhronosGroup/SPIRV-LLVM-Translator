@@ -632,7 +632,8 @@ std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
 ///   otherwise return OpNop.
 /// \param Dec contains decorations decoded from function name if it is
 ///   not nullptr.
-Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr, bool IsCpp = false);
+Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr,
+                  bool IsCpp = false);
 
 /// Get SPIR-V builtin variable enum given the canonical builtin name
 /// Assume \param Name is in format __spirv_BuiltIn{Name}
@@ -951,7 +952,8 @@ bool hasLoopMetadata(const Module *M);
 
 // Check if CI is a call to instruction from OpenCL Extended Instruction Set.
 // If so, return it's extended opcode in ExtOp.
-bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp, bool IsCpp = false);
+bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp,
+                       bool IsCpp = false);
 
 /// Returns true if a function name corresponds to an OpenCL builtin that is not
 /// expected to have name mangling.
