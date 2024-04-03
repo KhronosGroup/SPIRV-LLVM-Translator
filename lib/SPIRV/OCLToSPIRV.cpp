@@ -174,7 +174,7 @@ bool OCLToSPIRVBase::runOCLToSPIRV(Module &Module) {
       std::get<0>(Src) != spv::SourceLanguageOpenCL_CPP &&
       std::get<0>(Src) != spv::SourceLanguageCPP_for_OpenCL)
     return false;
-
+  SrcLang = std::get<0>(Src);
   CLVer = std::get<1>(Src);
 
   LLVM_DEBUG(dbgs() << "Enter OCLToSPIRV:\n");
@@ -203,7 +203,9 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
 
   auto MangledName = F->getName();
   StringRef DemangledName;
-  if (!oclIsBuiltin(MangledName, DemangledName))
+
+  if (!oclIsBuiltin(MangledName, DemangledName,
+                    SrcLang != spv::SourceLanguageOpenCL_C))
     return;
 
   LLVM_DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');

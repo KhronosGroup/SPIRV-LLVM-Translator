@@ -77,7 +77,8 @@ OCLTypeToSPIRVBase &OCLTypeToSPIRVPass::run(llvm::Module &M,
 }
 
 OCLTypeToSPIRVBase::OCLTypeToSPIRVBase()
-    : BuiltinCallHelper(ManglingRules::None), M(nullptr), Ctx(nullptr) {}
+    : BuiltinCallHelper(ManglingRules::None), M(nullptr), Ctx(nullptr),
+      SrcLang(0) {}
 
 bool OCLTypeToSPIRVBase::runOCLTypeToSPIRV(Module &Module) {
   LLVM_DEBUG(dbgs() << "Enter OCLTypeToSPIRV:\n");
@@ -95,7 +96,7 @@ bool OCLTypeToSPIRVBase::runOCLTypeToSPIRV(Module &Module) {
       std::get<0>(Src) != spv::SourceLanguageOpenCL_CPP &&
       std::get<0>(Src) != spv::SourceLanguageCPP_for_OpenCL)
     return false;
-
+  SrcLang = std::get<0>(Src);
   for (auto &F : Module.functions())
     adaptArgumentsByMetadata(&F);
 

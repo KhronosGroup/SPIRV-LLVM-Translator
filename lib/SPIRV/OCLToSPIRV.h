@@ -54,8 +54,8 @@ class OCLTypeToSPIRVBase;
 class OCLToSPIRVBase : public InstVisitor<OCLToSPIRVBase>, BuiltinCallHelper {
 public:
   OCLToSPIRVBase()
-      : BuiltinCallHelper(ManglingRules::SPIRV), Ctx(nullptr), CLVer(0),
-        OCLTypeToSPIRVPtr(nullptr) {}
+      : BuiltinCallHelper(ManglingRules::SPIRV), Ctx(nullptr), SrcLang(0),
+        CLVer(0), OCLTypeToSPIRVPtr(nullptr) {}
   virtual ~OCLToSPIRVBase() {}
   bool runOCLToSPIRV(Module &M);
 
@@ -267,6 +267,7 @@ public:
 
 private:
   LLVMContext *Ctx;
+  unsigned SrcLang;
   unsigned CLVer; /// OpenCL version as major*10+minor
   std::set<Instruction *> ValuesToDelete;
   OCLTypeToSPIRVBase *OCLTypeToSPIRVPtr;
