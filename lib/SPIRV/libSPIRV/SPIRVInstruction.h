@@ -2047,6 +2047,30 @@ protected:
   SPIRVId Operand;
 };
 
+class SPIRVCopyLogical : public SPIRVInstruction {
+public:
+  const static Op OC = OpCopyLogical;
+
+  // Complete constructor
+  SPIRVCopyLogical(SPIRVType *TheType, SPIRVId TheId, SPIRVValue *TheOperand,
+                   SPIRVBasicBlock *TheBB)
+      : SPIRVInstruction(4, OC, TheType, TheId, TheBB),
+        Operand(TheOperand->getId()) {
+    validate();
+    assert(TheBB && "Invalid BB");
+  }
+  // Incomplete constructor
+  SPIRVCopyLogical() : SPIRVInstruction(OC), Operand(SPIRVID_INVALID) {}
+
+  SPIRVValue *getOperand() { return getValue(Operand); }
+
+protected:
+  _SPIRV_DEF_ENCDEC3(Type, Id, Operand)
+
+  void validate() const override { SPIRVInstruction::validate(); }
+  SPIRVId Operand;
+};
+
 class SPIRVCopyMemory : public SPIRVInstruction, public SPIRVMemoryAccess {
 public:
   const static Op OC = OpCopyMemory;
