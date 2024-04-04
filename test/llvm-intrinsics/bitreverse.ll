@@ -1,8 +1,8 @@
 ;; Check that llvm.bitreverse.* intrinsics are lowered to emulation functions
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv -spirv-ext=+SPV_INTEL_arbitrary_precision_integers -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv -spirv-ext=+SPV_INTEL_arbitrary_precision_integers %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
@@ -16,12 +16,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; call-sites
+; CHECK-LLVM: i2 @llvm_bitreverse_i2
+; CHECK-LLVM: i4 @llvm_bitreverse_i4
 ; CHECK-LLVM: i8 @llvm_bitreverse_i8
 ; CHECK-LLVM: i16 @llvm_bitreverse_i16
 ; CHECK-LLVM: i32 @llvm_bitreverse_i32
 ; CHECK-LLVM: i64 @llvm_bitreverse_i64
 
 ; definitions
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i2
+; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i4
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i8
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i16
 ; CHECK-LLVM: define spir_func {{.*}} @llvm_bitreverse_i32
@@ -113,6 +117,9 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: convergent nounwind writeonly
 define spir_kernel void @testBitRev(i8 %a, i16 %b, i32 %c, i64 %d, ptr addrspace(1) nocapture %res) {
 entry:
+  %call2 = call i2 @llvm.bitreverse.i2(i2 0)
+  %call4 = call i4 @llvm.bitreverse.i4(i4 0)
+
   %call8 = call i8 @llvm.bitreverse.i8(i8 %a)
   store i8 %call8, ptr addrspace(1) %res, align 2, !tbaa !7
 
@@ -213,6 +220,8 @@ entry:
   ret void
 }
 
+declare i2 @llvm.bitreverse.i2(i2)
+declare i4 @llvm.bitreverse.i4(i4)
 declare i8 @llvm.bitreverse.i8(i8)
 declare i16 @llvm.bitreverse.i16(i16)
 declare i32 @llvm.bitreverse.i32(i32)
