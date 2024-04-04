@@ -2156,9 +2156,10 @@ bool lowerBuiltinCallsToVariables(Module *M) {
     if (GlobalVariable *GV = M->getGlobalVariable(BuiltinVarName))
       BV = GV;
     else
-      BV = new GlobalVariable(
-        *M, GVType, /*isConstant=*/true, GlobalValue::ExternalLinkage, nullptr,
-        BuiltinVarName, 0, GlobalVariable::NotThreadLocal, SPIRAS_Input);
+      BV = new GlobalVariable(*M, GVType, /*isConstant=*/true,
+                              GlobalValue::ExternalLinkage, nullptr,
+                              BuiltinVarName, 0, GlobalVariable::NotThreadLocal,
+                              SPIRAS_Input);
     for (auto *U : F.users()) {
       auto *CI = dyn_cast<CallInst>(U);
       assert(CI && "invalid instruction");
