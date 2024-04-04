@@ -65,6 +65,8 @@ typedef struct {
 const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries= {
 //  LLVM Intrinsic Name             Supporting Extension                   Emulation Name                 Module with
 //                                                                                                        emulation function
+  { "llvm.bitreverse.i2",          {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i2",          LLVMBitreverseScalari2}},
+  { "llvm.bitreverse.i4",          {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i4",          LLVMBitreverseScalari4}},
   { "llvm.bitreverse.i8",          {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i8",          LLVMBitreverseScalari8}},
   { "llvm.bitreverse.i16",         {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i16",         LLVMBitreverseScalari16}},
   { "llvm.bitreverse.i32",         {ExtensionID::SPV_KHR_bit_instructions, "llvm_bitreverse_i32",         LLVMBitreverseScalari32}},

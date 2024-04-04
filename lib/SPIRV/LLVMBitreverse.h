@@ -37,6 +37,9 @@
 // from the C code in LLVMIntrinsicEmulation/bitreverse.c with a custom clang
 // that was modified to disable llvm.bitreverse.* intrinsic generation.
 //
+// A similar command was run on LLVMIntrinsicEmulation/small_bitreverse.c to
+// produce functions to reverse 2-bit and 4-bit types.
+//
 // Manual modification was done to avoid coercing vector types into scalar
 // types.  For example, the original LLVM IR:
 //
@@ -59,6 +62,31 @@
 //     ...
 //     ret <4 x i8> %or12
 //   }
+
+static const char LLVMBitreverseScalari2[]{R"(
+define zeroext i2 @llvm_bitreverse_i2(i2 zeroext %A) {
+entry:
+  %and = shl i2 %A, 1
+  %shr4 = lshr i2 %A, 1
+  %or = or disjoint i2 %and, %shr4
+  ret i2 %or
+}
+)"};
+
+static const char LLVMBitreverseScalari4[]{R"(
+define zeroext i4 @llvm_bitreverse_i4(i4 zeroext %A) {
+entry:
+  %and = shl i4 %A, 2
+  %shr = lshr i4 %A, 2
+  %or = or disjoint i4 %and, %shr
+  %and2 = shl i4 %or, 1
+  %shl3 = and i4 %and2, -6
+  %shr4 = lshr i4 %or, 1
+  %and5 = and i4 %shr4, 5
+  %or6 = or disjoint i4 %shl3, %and5
+  ret i4 %or6
+}
+)"};
 
 static const char LLVMBitreverseScalari8[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %A) {
