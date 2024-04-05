@@ -34,9 +34,13 @@ entry:
   %1 = alloca float, align 4
   store float %a, ptr %0, align 4
   store float %b, ptr %1, align 4
-; CHECK-LLVM: call spir_func i1 @_Z16__spirv_PtrEqualPfS_(ptr %[[#]], ptr %[[#]])
-; CHECK-LLVM: call spir_func i1 @_Z19__spirv_PtrNotEqualPfS_(ptr %[[#]], ptr %[[#]])
+; CHECK-LLVM: %[[#Arg1:]] = ptrtoint ptr %[[#]] to i64
+; CHECK-LLVM: %[[#Arg2:]] = ptrtoint ptr %[[#]] to i64
+; CHECK-LLVM: icmp eq i64 %[[#Arg1]], %[[#Arg2]]
   %2 = call spir_func noundef i1 @_Z16__spirv_PtrEqual(ptr %0, ptr %1)
+; CHECK-LLVM: %[[#Arg3:]] = ptrtoint ptr %[[#]] to i64
+; CHECK-LLVM: %[[#Arg4:]] = ptrtoint ptr %[[#]] to i64
+; CHECK-LLVM: icmp ne i64 %[[#Arg3]], %[[#Arg4]]
   %3 = call spir_func noundef i1 @_Z19__spirv_PtrNotEqual(ptr %0, ptr %1)
   ret void
 }
