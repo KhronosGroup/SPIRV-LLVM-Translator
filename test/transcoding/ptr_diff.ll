@@ -15,34 +15,27 @@
 
 ; SPIR-V 1.4
 ; CHECK-SPIRV: 66560
+; CHECK-SPIRV: TypeInt [[#TypeInt:]] 32 0
 ; CHECK-SPIRV: TypeFloat [[#TypeFloat:]] 32
 ; CHECK-SPIRV: TypePointer [[#TypePointer:]] [[#]] [[#TypeFloat]]
-; CHECK-SPIRV: TypeBool [[#TypeBool:]]
 
-; CHECK-SPIRV: Variable [[#TypePointer]] [[#Var1:]]
-; CHECK-SPIRV: Variable [[#TypePointer]] [[#Var2:]]
-; CHECK-SPIRV: PtrEqual [[#TypeBool]] [[#]] [[#Var1]] [[#Var2]]
-; CHECK-SPIRV: PtrNotEqual [[#TypeBool]] [[#]] [[#Var1]] [[#Var2]]
+; CHECK-SPIRV: Variable [[#TypePointer]] [[#Var:]]
+; CHECK-SPIRV: PtrDiff [[#TypeInt]] [[#]] [[#Var]] [[#Var]]
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
 
 ; Function Attrs: nounwind
-define spir_kernel void @test(float %a, float %b) local_unnamed_addr #0 {
+define spir_kernel void @test(float %a) local_unnamed_addr #0 {
 entry:
   %0 = alloca float, align 4
-  %1 = alloca float, align 4
   store float %a, ptr %0, align 4
-  store float %b, ptr %1, align 4
-; CHECK-LLVM: call spir_func i1 @_Z16__spirv_PtrEqualPfS_(ptr %[[#]], ptr %[[#]])
-; CHECK-LLVM: call spir_func i1 @_Z19__spirv_PtrNotEqualPfS_(ptr %[[#]], ptr %[[#]])
-  %2 = call spir_func noundef i1 @_Z16__spirv_PtrEqual(ptr %0, ptr %1)
-  %3 = call spir_func noundef i1 @_Z19__spirv_PtrNotEqual(ptr %0, ptr %1)
+; CHECK-LLVM: call spir_func i32 @_Z15__spirv_PtrDiffPfS_(ptr %[[#]], ptr %[[#]])
+  %2 = call spir_func noundef i32 @_Z15__spirv_PtrDiff(ptr %0, ptr %0)
   ret void
 }
 
-declare spir_func noundef i1 @_Z16__spirv_PtrEqual(ptr, ptr)
-declare spir_func noundef i1 @_Z19__spirv_PtrNotEqual(ptr, ptr)
+declare spir_func noundef i32 @_Z15__spirv_PtrDiff(ptr, ptr)
 
 attributes #0 = { convergent nounwind writeonly }
 
