@@ -1330,6 +1330,34 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
     return SPIR::RefParamType(new SPIR::UserDefinedType(Name.str()));
   }
 
+  if (auto *TargetTy = dyn_cast<TargetExtType>(Ty)) {
+    std::string FullName;
+    unsigned AS = 0;
+    {
+      raw_string_ostream OS(FullName);
+      StringRef Name = TargetTy->getName();
+      if (Name.consume_front(kSPIRVTypeName::PrefixAndDelim)) {
+        OS << "__spirv_" << Name;
+        AS = getOCLOpaqueTypeAddrSpace(
+            SPIRVOpaqueTypeOpCodeMap::map(Name.str()));
+      } else {
+        OS << Name;
+      }
+      if (!TargetTy->int_params().empty())
+        OS << "_";
+      for (Type *InnerTy : TargetTy->type_params())
+        OS << "_" << convertTypeToPostfix(InnerTy);
+      for (unsigned Param : TargetTy->int_params())
+        OS << "_" << Param;
+    }
+    // Translate as if it's a pointer to the named struct.
+    auto *Inner = new SPIR::UserDefinedType(FullName);
+    auto *PT = new SPIR::PointerType(Inner);
+    PT->setAddressSpace(static_cast<SPIR::TypeAttributeEnum>(
+        AS + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
+    return SPIR::RefParamType(PT);
+  }
+
   if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
     auto *ET = TPT->getElementType();
     SPIR::ParamType *EPT = nullptr;
