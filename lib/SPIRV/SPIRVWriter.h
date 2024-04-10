@@ -86,7 +86,9 @@ public:
   SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace);
   SPIRVType *transSPIRVOpaqueType(StringRef STName, unsigned AddrSpace);
   SPIRVType *
-  transSPIRVJointMatrixINTELType(SmallVector<std::string, 8> Postfixes);
+  transSPIRVJointOrCooperativeMatrixType(SmallVector<std::string, 8> Postfixes,
+                                         bool IsCooperative = false);
+  // SPIRVType* transSPIRVCooperativeMatrixKHRType();
   /// Use the type scavenger to get the correct type for V. This is equivalent
   /// to transType(V->getType()) if V is not a pointer type; otherwise, it tries
   /// to pick an appropriate pointee type for V.
