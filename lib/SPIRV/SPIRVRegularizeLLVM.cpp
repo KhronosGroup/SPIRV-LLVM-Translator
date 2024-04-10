@@ -345,8 +345,8 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
                     IID, {Inst->getType(), II->getOperand(0)->getType()},
                     II->getOperand(0));
                 Inst->replaceAllUsesWith(NewII);
-                ToErase.push_back(&I);
                 ToErase.push_back(Inst);
+                ToErase.push_back(&I);
               }
             }
           }
