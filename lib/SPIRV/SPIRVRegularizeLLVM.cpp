@@ -322,6 +322,44 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
     expandVIDWithSYCLTypeByValComp(F);
 }
 
+void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = &(*I++);
+    std::vector<Instruction *> ToErase;
+    for (BasicBlock &BB : *F) {
+      for (Instruction &I : BB) {
+        if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I)) {
+          auto IID = II->getIntrinsicID();
+          if (IID == Intrinsic::fptoui_sat || IID == Intrinsic::fptosi_sat) {
+            auto *User = I.getUniqueUndroppableUser();
+            if (User) {
+              auto *ZExtI = dyn_cast<ZExtInst>(User);
+              auto *SExtI = dyn_cast<SExtInst>(User);
+              Instruction *Inst =
+                  (IID == Intrinsic::fptoui_sat)
+                      ? (ZExtI ? cast<Instruction>(ZExtI) : nullptr)
+                      : (SExtI ? cast<Instruction>(SExtI) : nullptr);
+              if (Inst) {
+                IRBuilder<> IRB(&I);
+                auto *NewII = IRB.CreateIntrinsic(
+                    IID, {Inst->getType(), II->getOperand(0)->getType()},
+                    II->getOperand(0));
+                Inst->replaceAllUsesWith(NewII);
+                ToErase.push_back(&I);
+                ToErase.push_back(Inst);
+              }
+            }
+          }
+        }
+      }
+    }
+    for (Instruction *V : ToErase) {
+      assert(V->user_empty());
+      V->eraseFromParent();
+    }
+  }
+}
+
 bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
@@ -397,6 +435,7 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
   }
   ToErase.push_back(Call);
 }
+
 } // namespace
 
 /// Remove entities not representable by SPIR-V
@@ -404,7 +443,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
   addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
-
+  cleanupConversionToNonStdIntegers(M);
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
     if (F->isDeclaration() && F->use_empty()) {
