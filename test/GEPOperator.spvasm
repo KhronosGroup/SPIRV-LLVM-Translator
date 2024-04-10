@@ -46,6 +46,8 @@
                                 OpReturn
                                 OpFunctionEnd
 
+; CHECK-NOT: getelementptr
+; CHECK-NOT: load
 ; CHECK: %[[#V0:]] = call spir_func i64 @_Z14get_local_sizej(i32 0)
 ; CHECK: %[[#V1:]] = call spir_func i64 @_Z14get_local_sizej(i32 8)
 ; CHECK: %[[#Idx1:]] = mul i64 %[[#V0]], %[[#V1]]
