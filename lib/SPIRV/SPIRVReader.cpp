@@ -677,6 +677,25 @@ SPIRVToLLVM::getPointerElementTypes(ArrayRef<SPIRVType *> Tys) {
       PtrElemTy.setPointer(getOrCreateOpaqueStructType(M, Name));
       break;
     }
+    case OpTypeCooperativeMatrixKHR: {
+      auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(T);
+      auto R = static_cast<SPIRVConstant *>(MT->getRows())->getZExtIntValue();
+      auto C =
+          static_cast<SPIRVConstant *>(MT->getColumns())->getZExtIntValue();
+      std::stringstream SS;
+      SS << kSPIRVTypeName::PostfixDelim;
+      SS << transTypeToOCLTypeName(MT->getCompType());
+      auto S = static_cast<SPIRVConstant *>(MT->getScope())->getZExtIntValue();
+      SS << kSPIRVTypeName::PostfixDelim << S << kSPIRVTypeName::PostfixDelim
+         << R << kSPIRVTypeName::PostfixDelim << C;
+      if (auto *Use = MT->getUse())
+        SS << kSPIRVTypeName::PostfixDelim
+           << static_cast<SPIRVConstant *>(Use)->getZExtIntValue();
+      std::string Name =
+          getSPIRVTypeName(kSPIRVTypeName::CooperativeMatrixKHR, SS.str());
+      PtrElemTy.setPointer(getOrCreateOpaqueStructType(M, Name));
+      break;
+    }
     case OpTypeFunction: {
       // A function parameter will get converted into a function pointer later,
       // so make sure that the pointer element type gets the actual function
@@ -3353,6 +3372,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case OpSUDotAccSatKHR:
   case internal::OpJointMatrixLoadINTEL:
   case OpCooperativeMatrixLoadKHR:
+  case internal::OpCooperativeMatrixLoadCheckedINTEL:
     AddRetTypePostfix = true;
     break;
   default: {

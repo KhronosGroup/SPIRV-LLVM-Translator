@@ -582,8 +582,10 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
       if (STName.startswith(kSPIRVTypeName::PrefixAndDelim)) {
         SmallVector<std::string, 8> Postfixes;
         auto TN = decodeSPIRVTypeName(STName, Postfixes);
-        if (TN == kSPIRVTypeName::JointMatrixINTEL) {
-          SPIRVType *TranslatedTy = transSPIRVJointMatrixINTELType(Postfixes);
+        if (TN == kSPIRVTypeName::JointMatrixINTEL ||
+            TN == kSPIRVTypeName::CooperativeMatrixKHR) {
+          SPIRVType *TranslatedTy = transSPIRVJointOrCooperativeMatrixType(
+              Postfixes, TN == kSPIRVTypeName::CooperativeMatrixKHR);
           PointeeTypeMap[TypeKey] = TranslatedTy;
           return TranslatedTy;
         }
@@ -630,8 +632,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
 // register by OpCompositeConstruct. And we can't claim, that the Result type
 // of OpCompositeConstruct instruction is always the joint matrix type, it's
 // simply not true.
-SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
-    SmallVector<std::string, 8> Postfixes) {
+SPIRVType *LLVMToSPIRVBase::transSPIRVJointOrCooperativeMatrixType(
+    SmallVector<std::string, 8> Postfixes, bool IsCooperative) {
   Type *ElemTy = nullptr;
   StringRef Ty{Postfixes[0]};
   auto NumBits = llvm::StringSwitch<unsigned>(Ty)
@@ -661,6 +663,8 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
   std::vector<SPIRVValue *> Args;
   for (size_t I = 1; I != Postfixes.size(); ++I)
     Args.emplace_back(transConstant(ParseInteger(Postfixes[I])));
+  if (IsCooperative)
+    return BM->addCooperativeMatrixKHRType(transType(ElemTy), Args);
   return BM->addJointMatrixINTELType(transType(ElemTy), Args);
 }
 
@@ -722,8 +726,10 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
     return SaveType(BM->addQueueType());
   else if (TN == kSPIRVTypeName::PipeStorage)
     return SaveType(BM->addPipeStorageType());
-  else if (TN == kSPIRVTypeName::JointMatrixINTEL) {
-    return SaveType(transSPIRVJointMatrixINTELType(Postfixes));
+  else if (TN == kSPIRVTypeName::JointMatrixINTEL ||
+           TN == kSPIRVTypeName::CooperativeMatrixKHR) {
+    return SaveType(transSPIRVJointOrCooperativeMatrixType(
+        Postfixes, TN == kSPIRVTypeName::CooperativeMatrixKHR));
   } else
     return SaveType(
         BM->addOpaqueGenericType(SPIRVOpaqueTypeOpCodeMap::map(TN)));

@@ -29,12 +29,12 @@
 ; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy2]]
 ; CHECK-SPIRV: CooperativeMatrixStoreCheckedINTEL
 
-; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4siiillli(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 12, i64 48, i64 %{{.*}}, i32 1)
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* @_Z95__spirv_CooperativeMatrixLoadCheckedINTEL_RPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS4siiillli(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 12, i64 48, i64 %{{.*}}, i32 1)
 ; CHECK-LLVM: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)*
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z46__spirv_CooperativeMatrixConstructCheckedINTELiilli(i32 4, i32 4, i64 12, i64 12, i32 %{{.*}})
-; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* @_Z41__spirv_CooperativeMatrixLoadCheckedINTELPU3AS4ciiilll(i8 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 48, i64 12, i64 1)
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* @_Z95__spirv_CooperativeMatrixLoadCheckedINTEL_RPU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS4ciiilll(i8 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 0, i64 48, i64 12, i64 1)
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3i(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
-; CHECK-LLVM: call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTELPU3AS4siiPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3illli(i16 addrspace(4)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
+; CHECK-LLVM: call spir_func void @_Z42__spirv_CooperativeMatrixStoreCheckedINTELPU3AS4siiPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3illli(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z26__spirv_CompositeConstructi(i32 %zero)
 
 ; ModuleID = 'test-matrix-opaque.bc'
