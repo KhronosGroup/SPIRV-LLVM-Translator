@@ -6097,6 +6097,11 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   // Moreover, OpAtomicCompareExchangeWeak has been deprecated.
   if (OC == OpAtomicCompareExchangeWeak)
     OC = OpAtomicCompareExchange;
+
+  if (OC == OpLessOrGreater &&
+      BM->getSPIRVVersion() >= static_cast<SPIRVWord>(VersionNumber::SPIRV_1_5))
+    OC = OpFOrdNotEqual;
+
   if (isGroupOpCode(OC))
     BM->addCapability(CapabilityGroups);
   switch (static_cast<size_t>(OC)) {
