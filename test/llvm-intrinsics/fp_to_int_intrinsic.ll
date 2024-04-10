@@ -1,8 +1,8 @@
 ;; Ensure @llvm.fptosi.sat.* and @llvm.fptoui.sat.* intrinsics are translated
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_arbitrary_precision_integers -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_arbitrary_precision_integers -o %t.spv
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
@@ -27,10 +27,6 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Decorate [[SAT14:[0-9]+]] SaturatedConversion
 ; CHECK-SPIRV: Decorate [[SAT15:[0-9]+]] SaturatedConversion
 ; CHECK-SPIRV: Decorate [[SAT16:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT17:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT18:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT19:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT20:[0-9]+]] SaturatedConversion
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -42,19 +38,8 @@ target triple = "spir64-unknown-unknown"
 ; float input
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT1]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: llvm.fptosi.sat.i2.f32(float %input)
-define spir_kernel void @testfunction_float_to_signed_i2(float %input) {
-entry:
-   %0 = call i2 @llvm.fptosi.sat.i2.f32(float %input)
-   ret void
-}
-declare i2 @llvm.fptosi.sat.i2.f32(float)
-
 ;;;;;;; output i8
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT2]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT1]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_char_satf(float %input)
 define spir_kernel void @testfunction_float_to_signed_i8(float %input) {
@@ -65,7 +50,7 @@ entry:
 declare i8 @llvm.fptosi.sat.i8.f32(float)
 
 ;;;;;;; output i16
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT3]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT2]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_short_satf(float %input)
 define spir_kernel void @testfunction_float_to_signed_i16(float %input) {
@@ -76,7 +61,7 @@ entry:
 declare i16 @llvm.fptosi.sat.i16.f32(float)
 
 ;;;;;;; output i32
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT4]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT3]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_int_satf(float %input)
 define spir_kernel void @testfunction_float_to_signed_i32(float %input) {
@@ -87,7 +72,7 @@ entry:
 declare i32 @llvm.fptosi.sat.i32.f32(float)
 
 ;;;;;;; output i64
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT5]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT4]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_long_satf(float %input)
 define spir_kernel void @testfunction_float_to_signed_i64(float %input) {
@@ -101,19 +86,8 @@ declare i64 @llvm.fptosi.sat.i64.f32(float)
 ; double input
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT6]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: llvm.fptosi.sat.i2.f64(double %input)
-define spir_kernel void @testfunction_double_to_signed_i2(double %input) {
-entry:
-   %0 = call i2 @llvm.fptosi.sat.i2.f64(double %input)
-   ret void
-}
-declare i2 @llvm.fptosi.sat.i2.f64(double)
-
 ;;;;;;; output i8
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT7]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT5]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_char_satd(double %input)
 define spir_kernel void @testfunction_double_to_signed_i8(double %input) {
@@ -124,7 +98,7 @@ entry:
 declare i8 @llvm.fptosi.sat.i8.f64(double)
 
 ;;;;;;; output i16
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT8]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT6]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_short_satd(double %input)
 define spir_kernel void @testfunction_double_to_signed_i16(double %input) {
@@ -135,7 +109,7 @@ entry:
 declare i16 @llvm.fptosi.sat.i16.f64(double)
 
 ;;;;;;; output i32
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT9]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT7]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_int_satd(double %input)
 define spir_kernel void @testfunction_double_to_signed_i32(double %input) {
@@ -146,7 +120,7 @@ entry:
 declare i32 @llvm.fptosi.sat.i32.f64(double)
 
 ;;;;;;; output i64
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT10]]
+; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT8]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_long_satd(double %input)
 define spir_kernel void @testfunction_double_to_signed_i64(double %input) {
@@ -169,19 +143,8 @@ declare i64 @llvm.fptosi.sat.i64.f64(double)
 ; float input
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT11]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: llvm.fptoui.sat.i2.f32(float %input)
-define spir_kernel void @testfunction_float_to_unsigned_i2(float %input) {
-entry:
-   %0 = call i2 @llvm.fptoui.sat.i2.f32(float %input)
-   ret void
-}
-declare i2 @llvm.fptoui.sat.i2.f32(float)
-
 ;;;;;;; output i8
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT12]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT9]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_uchar_satf(float %input)
 define spir_kernel void @testfunction_float_to_unsigned_i8(float %input) {
@@ -192,7 +155,7 @@ entry:
 declare i8 @llvm.fptoui.sat.i8.f32(float)
 
 ;;;;;;; output i16
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT13]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT10]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_ushort_satf(float %input)
 define spir_kernel void @testfunction_float_to_unsigned_i16(float %input) {
@@ -203,7 +166,7 @@ entry:
 declare i16 @llvm.fptoui.sat.i16.f32(float)
 
 ;;;;;;; output i32
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT14]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT11]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_uint_satf(float %input)
 define spir_kernel void @testfunction_float_to_unsigned_i32(float %input) {
@@ -214,7 +177,7 @@ entry:
 declare i32 @llvm.fptoui.sat.i32.f32(float)
 
 ;;;;;;; output i64
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT15]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT12]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_ulong_satf(float %input)
 define spir_kernel void @testfunction_float_to_unsigned_i64(float %input) {
@@ -228,19 +191,8 @@ declare i64 @llvm.fptoui.sat.i64.f32(float)
 ; double input
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT16]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: llvm.fptoui.sat.i2.f64(double %input)
-define spir_kernel void @testfunction_double_to_unsigned_i2(double %input) {
-entry:
-   %0 = call i2 @llvm.fptoui.sat.i2.f64(double %input)
-   ret void
-}
-declare i2 @llvm.fptoui.sat.i2.f64(double)
-
 ;;;;;;; output i8
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT17]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT13]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_uchar_satd(double %input)
 define spir_kernel void @testfunction_double_to_unsigned_i8(double %input) {
@@ -251,7 +203,7 @@ entry:
 declare i8 @llvm.fptoui.sat.i8.f64(double)
 
 ;;;;;;; output i16
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT18]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT14]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_ushort_satd(double %input)
 define spir_kernel void @testfunction_double_to_unsigned_i16(double %input) {
@@ -262,7 +214,7 @@ entry:
 declare i16 @llvm.fptoui.sat.i16.f64(double)
 
 ;;;;;;; output i32
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT19]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT15]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_uint_satd(double %input)
 define spir_kernel void @testfunction_double_to_unsigned_i32(double %input) {
@@ -273,7 +225,7 @@ entry:
 declare i32 @llvm.fptoui.sat.i32.f64(double)
 
 ;;;;;;; output i64
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT20]]
+; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT16]]
 ; CHECK-LLVM: define spir_kernel
 ; CHECK-LLVM: convert_ulong_satd(double %input)
 define spir_kernel void @testfunction_double_to_unsigned_i64(double %input) {
