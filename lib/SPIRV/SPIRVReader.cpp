@@ -2666,6 +2666,33 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, Builder.CreateMaskedScatter(InputVector, PtrVector,
                                                     Align(Alignment), Mask));
   }
+  // Conversion instructions are typically converted to OCL builtins.
+  // However conversions involving arbitrary integers are not supported in OCL
+  // builtins. Hence, they are lowered to llvm. builtins.
+  // TODO: can ALL conversions be lowered to llvm. builtins?
+  case OpConvertFToS:
+  case OpConvertFToU: {
+    SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    Type *RetTy = transType(BC->getType());
+    Type *OpTy = transType(BC->getOperand(0)->getType());
+    Value *Val = transValue(BC->getOperand(0), F, BB);
+    auto getIntrinsicAndBitWidth = [BV, RetTy, OpTy](unsigned &Intrin,
+                                                     unsigned &BW) {
+      auto OC = BV->getOpCode();
+      BW = RetTy->getScalarSizeInBits();
+      Intrin =
+          (OC == OpConvertFToS) ? Intrinsic::fptosi_sat : Intrinsic::fptoui_sat;
+    };
+    unsigned BW = 0;
+    unsigned Intrin = 0;
+    getIntrinsicAndBitWidth(Intrin, BW);
+    if (BW != 0 && BW != 8 && BW != 16 && BW != 32 && BW != 64) {
+      IRBuilder<> Builder(BB);
+      return mapValue(BV,
+                      Builder.CreateIntrinsic(Intrin, {RetTy, OpTy}, {Val}));
+    }
+    [[fallthrough]];
+  }
 
   default: {
     auto OC = BV->getOpCode();
