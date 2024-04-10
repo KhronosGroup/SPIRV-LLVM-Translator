@@ -991,7 +991,10 @@ inline bool hasDbgInstParentScopeIdx(
     ParentScopeIdx = TypeMember::OpenCL::ParentIdx;
     return true;
   case SPIRVDebug::TypeInheritance:
-    ParentScopeIdx = TypeInheritance::ParentIdx;
+    if (ExtKind == SPIRV::SPIRVEIS_OpenCL_DebugInfo_100)
+      ParentScopeIdx = TypeInheritance::ParentIdx;
+    else
+      ParentScopeIdx = TypeInheritance::ChildIdx;
     return true;
   case SPIRVDebug::TypePtrToMember:
     ParentScopeIdx = TypePtrToMember::ParentIdx;
