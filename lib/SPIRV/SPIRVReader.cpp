@@ -2676,8 +2676,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Type *RetTy = transType(BC->getType());
     Type *OpTy = transType(BC->getOperand(0)->getType());
     Value *Val = transValue(BC->getOperand(0), F, BB);
-    auto getIntrinsicAndBitWidth = [BV, RetTy, OpTy](unsigned &Intrin,
-                                                     unsigned &BW) {
+    auto GetIntrinsicAndBitWidth = [BV, RetTy](unsigned &Intrin, unsigned &BW) {
       auto OC = BV->getOpCode();
       BW = RetTy->getScalarSizeInBits();
       Intrin =
@@ -2685,7 +2684,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     };
     unsigned BW = 0;
     unsigned Intrin = 0;
-    getIntrinsicAndBitWidth(Intrin, BW);
+    GetIntrinsicAndBitWidth(Intrin, BW);
     if (BW != 0 && BW != 8 && BW != 16 && BW != 32 && BW != 64) {
       IRBuilder<> Builder(BB);
       return mapValue(BV,
