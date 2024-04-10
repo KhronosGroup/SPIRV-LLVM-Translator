@@ -435,7 +435,6 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
   }
   ToErase.push_back(Call);
 }
-
 } // namespace
 
 /// Remove entities not representable by SPIR-V
@@ -444,6 +443,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
+
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
     if (F->isDeclaration() && F->use_empty()) {
