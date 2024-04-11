@@ -344,14 +344,14 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
 // original integer type (iX)
 // Example:
 // Input:
-// %0 = call i2 @llvm.fptoui.sat.i2.f32(float %input)
-// %1 = zext i32 %0
+// %0 = call i2 @llvm.fptosi.sat.i2.f32(float %input)
+// %1 = sext i32 %0
 // Output:
-// %0 = call i32 @_Z17convert_ulong_satf(float %input)
-// %1 = icmp uge i32 %0, 3 <Largest 2-bit unsigned integer>
-// %2 = icmp ule i32 %0, 0 <Smallest 2-bit unsigned integer>
-// %3 = select i1 %1, i32 3, i32 %0
-// %4 = select i1 %2, i32 0, i32 %3
+// %0 = call i32 @_Z17convert_long_satf(float %input)
+// %1 = icmp sge i32 %0, 1 <Largest 2-bit signed integer>
+// %2 = icmp sle i32 %0, -2 <Smallest 2-bit signed integer>
+// %3 = select i1 %1, i32 1, i32 %0
+// %4 = select i1 %2, i32 -2, i32 %3
 // Replace uses of %1 in Input with %4 in Output
 void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
   for (auto I = M->begin(), E = M->end(); I != E;) {
@@ -404,13 +404,9 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
                 II->getOperand(0));
             Constant *MaxVal = ConstantInt::get(
                 NewIType, APInt::getMaxValue(IntBitWidth).getZExtValue());
-            Constant *MinVal = ConstantInt::get(
-                NewIType, APInt::getZero(IntBitWidth).getZExtValue());
             auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_UGE, NewII, MaxVal);
-            auto *LTMin = IRB.CreateICmp(CmpInst::ICMP_ULE, NewII, MinVal);
             auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
-            auto *SatMin = IRB.CreateSelect(LTMin, MinVal, SatMax);
-            ZExtI->replaceAllUsesWith(SatMin);
+            ZExtI->replaceAllUsesWith(SatMax);
             ToErase.push_back(ZExtI);
             ToErase.push_back(II);
           }

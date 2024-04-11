@@ -39,19 +39,14 @@ entry:
 }
 declare i2 @llvm.fptosi.sat.i2.f32(float)
 
-; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2UMAX:[0-9]+]] 3
-; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2UMIN:[0-9]+]] 0 
+; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2UMAX:[0-9]+]] 3 
 ; CHECK-SPIRV-DAG: ConvertFToU [[INT64TY]] [[SAT2]]
 ; CHECK-SPIRV-DAG: UGreaterThanEqual [[BOOLTY]] [[UGERES:[0-9]+]] [[SAT2]] [[I2UMAX]]
-; CHECK-SPIRV-DAG: ULessThanEqual [[BOOLTY]] [[ULERES:[0-9]+]] [[SAT2]] [[I2UMIN]]
 ; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES1U:[0-9]+]] [[UGERES]] [[I2UMAX]] [[SAT2]]
-; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES2U:[0-9]+]] [[ULERES]] [[I2UMIN]] [[SELRES1U]]
 ; CHECK-LLVM-DAG: define spir_kernel
 ; CHECK-LLVM-DAG: %[[R1:[0-9]+]] = {{.*}} i64 {{.*}}convert_ulong_satf(float %input)
 ; CHECK-LLVM-DAG: %[[R2:[0-9]+]] = icmp uge i64 %[[R1]], 3
-; CHECK-LLVM-DAG: %[[R3:[0-9]+]] = icmp ule i64 %[[R1]], 0
-; CHECK-LLVM-DAG: %[[R4:[0-9]+]] = select i1 %[[R2]], i64 3, i64 %[[R1]]
-; CHECK-LLVM-DAG: %[[R5:[0-9]+]] = select i1 %[[R3]], i64 0, i64 %[[R4]]
+; CHECK-LLVM-DAG: %[[R3:[0-9]+]] = select i1 %[[R2]], i64 3, i64 %[[R1]]
 
 define spir_kernel void @testfunction_float_to_unsigned_i2(float %input) {
 entry:
