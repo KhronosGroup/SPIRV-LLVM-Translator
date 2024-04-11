@@ -1,3 +1,5 @@
+; Check support of OpPtrEqual and OpPtrNotEqual instructions that were added in SPIR-V 1.4
+
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: not llvm-spirv --spirv-max-version=1.3 %t.bc 2>&1 | FileCheck --check-prefix=CHECK-ERROR %s
 

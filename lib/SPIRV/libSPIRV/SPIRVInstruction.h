@@ -683,7 +683,7 @@ protected:
              "Inconsistent BitWidth");
     } else if (isBinaryPtrOpCode(OpCode)) {
       assert((Op1Ty->isTypePointer() && Op2Ty->isTypePointer()) &&
-             "Invalid type for PtrEqual, PtrNotEqual, or PtrDiff instruction");
+             "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
       assert(static_cast<SPIRVTypePointer *>(Op1Ty)->getElementType() ==
                  static_cast<SPIRVTypePointer *>(Op2Ty)->getElementType() &&
              "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
