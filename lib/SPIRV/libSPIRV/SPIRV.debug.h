@@ -503,17 +503,29 @@ enum {
 } // namespace TypeMember
 
 namespace TypeInheritance {
+namespace NonSemantic {
+enum {
+  ParentIdx       = 0,
+  OffsetIdx       = 1,
+  SizeIdx         = 2,
+  FlagsIdx        = 3,
+  MinOperandCount = 3,
+  OperandCount    = 4
+};
+}
+
+namespace OpenCL {
 enum {
   ChildIdx        = 0,
   ParentIdx       = 1,
   OffsetIdx       = 2,
   SizeIdx         = 3,
   FlagsIdx        = 4,
-  // NonSemantic
   MinOperandCount = 4,
   OperandCount    = 5
 };
 }
+} // namespace TypeInheritance
 
 namespace TypePtrToMember {
 enum {
@@ -992,9 +1004,9 @@ inline bool hasDbgInstParentScopeIdx(
     return true;
   case SPIRVDebug::TypeInheritance:
     if (ExtKind == SPIRV::SPIRVEIS_OpenCL_DebugInfo_100)
-      ParentScopeIdx = TypeInheritance::ParentIdx;
+      ParentScopeIdx = TypeInheritance::OpenCL::ParentIdx;
     else
-      ParentScopeIdx = TypeInheritance::ChildIdx;
+      ParentScopeIdx = TypeInheritance::NonSemantic::ParentIdx;
     return true;
   case SPIRVDebug::TypePtrToMember:
     ParentScopeIdx = TypePtrToMember::ParentIdx;

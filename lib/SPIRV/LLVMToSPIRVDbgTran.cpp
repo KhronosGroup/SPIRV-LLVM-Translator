@@ -1052,20 +1052,27 @@ LLVMToSPIRVDbgTran::transDbgMemberTypeNonSemantic(const DIDerivedType *MT) {
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgInheritance(const DIDerivedType *DT) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
-  const SPIRVWord Offset = isNonSemanticDebugInfo() ? 1 : 0;
-  SPIRVWordVec Ops(OperandCount - Offset);
-  // There is no Child operand in NonSemantic debug spec
-  if (!isNonSemanticDebugInfo())
-    Ops[ChildIdx] = transDbgEntry(DT->getScope())->getId();
-  Ops[ParentIdx - Offset] = transDbgEntry(DT->getBaseType())->getId();
+  if (isNonSemanticDebugInfo()) {
+    SPIRVWordVec Ops(NonSemantic::OperandCount);
+    Ops[NonSemantic::ParentIdx] = transDbgEntry(DT->getBaseType())->getId();
+    ConstantInt *OffsetInBits = getUInt(M, DT->getOffsetInBits());
+    Ops[NonSemantic::OffsetIdx] =
+        SPIRVWriter->transValue(OffsetInBits, nullptr)->getId();
+    ConstantInt *Size = getUInt(M, DT->getSizeInBits());
+    Ops[NonSemantic::SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
+    Ops[NonSemantic::FlagsIdx] = transDebugFlags(DT);
+    transformToConstant(Ops, {NonSemantic::FlagsIdx});
+    return BM->addDebugInfo(SPIRVDebug::TypeInheritance, getVoidTy(), Ops);
+  }
+  SPIRVWordVec Ops(OpenCL::OperandCount);
+  Ops[OpenCL::ChildIdx] = transDbgEntry(DT->getScope())->getId();
+  Ops[OpenCL::ParentIdx] = transDbgEntry(DT->getBaseType())->getId();
   ConstantInt *OffsetInBits = getUInt(M, DT->getOffsetInBits());
-  Ops[OffsetIdx - Offset] =
+  Ops[OpenCL::OffsetIdx] =
       SPIRVWriter->transValue(OffsetInBits, nullptr)->getId();
   ConstantInt *Size = getUInt(M, DT->getSizeInBits());
-  Ops[SizeIdx - Offset] = SPIRVWriter->transValue(Size, nullptr)->getId();
-  Ops[FlagsIdx - Offset] = transDebugFlags(DT);
-  if (isNonSemanticDebugInfo())
-    transformToConstant(Ops, {FlagsIdx - Offset});
+  Ops[OpenCL::SizeIdx] = SPIRVWriter->transValue(Size, nullptr)->getId();
+  Ops[OpenCL::FlagsIdx] = transDebugFlags(DT);
   return BM->addDebugInfo(SPIRVDebug::TypeInheritance, getVoidTy(), Ops);
 }
 
