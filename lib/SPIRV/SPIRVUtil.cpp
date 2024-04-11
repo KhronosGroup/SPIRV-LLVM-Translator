@@ -804,7 +804,7 @@ bool getParameterTypes(Function *F, SmallVectorImpl<Type *> &ArgTys,
       HasSret = true;
       unsigned AS = Arg.getType()->getPointerAddressSpace();
       if (auto *STy = dyn_cast<StructType>(Ty))
-        if (!STy->isLiteral())
+        if (STy->hasName())
           ArgTys.push_back(
               TypedPointerType::get(GetStructType(STy->getName()), AS));
         else
