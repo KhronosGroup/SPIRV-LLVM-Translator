@@ -1216,9 +1216,9 @@ DINode *SPIRVToLLVMDbgTran::transTypedef(const SPIRVExtInst *DebugInst) {
 DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
                                                  DIType *ChildClass) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
-  // The value is used when assertions are enabled 
-  [[maybe_unused]] unsigned MinOperandCount;  
-  unsigned  ParentIdx, OffsetIdx, FlagsIdx;
+  // The value is used when assertions are enabled
+  [[maybe_unused]] unsigned MinOperandCount;
+  unsigned ParentIdx, OffsetIdx, FlagsIdx;
   if (isNonSemanticDebugInfo(DebugInst->getExtSetKind())) {
     if (!ChildClass) {
       // Will be translated later when processing TypeMember's parent
