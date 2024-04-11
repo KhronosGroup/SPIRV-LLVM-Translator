@@ -360,6 +360,9 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
     for (BasicBlock &BB : *F) {
       for (Instruction &I : BB) {
         if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I)) {
+          // TODO: Vector type not supported yet.
+          if (isa<VectorType>(II->getType()))
+            continue;
           auto IID = II->getIntrinsicID();
           auto IntBitWidth = II->getType()->getScalarSizeInBits();
           if (IntBitWidth == 8 || IntBitWidth == 16 || IntBitWidth == 32 ||
