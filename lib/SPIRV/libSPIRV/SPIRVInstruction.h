@@ -2063,6 +2063,7 @@ public:
   SPIRVCopyLogical() : SPIRVInstruction(OC), Operand(SPIRVID_INVALID) {}
 
   SPIRVValue *getOperand() { return getValue(Operand); }
+  std::vector<SPIRVValue *> getOperands() override { return {getOperand()}; }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Type, Id, Operand)
