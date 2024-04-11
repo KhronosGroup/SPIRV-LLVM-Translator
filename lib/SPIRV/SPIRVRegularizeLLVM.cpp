@@ -343,14 +343,16 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
 // and Rule 3, we saturate the result of the promoted instruction based on
 // original integer type (iX)
 // Example:
-// Input: %0 = call i2 @llvm.fptoui.sat.i2.f32(float %input)
+// Input:
+// %0 = call i2 @llvm.fptoui.sat.i2.f32(float %input)
+// %1 = zext i32 %0
 // Output:
-// %0 = call i64 @_Z17convert_ulong_satf(float %input)
-// %1 = icmp uge i64 %0, 3 <Largest 2-bit unsigned integer>
-// %2 = icmp ule i64 %0, 0 <Smallest 2-bit unsigned integer>
-// %3 = select i1 %1, i64 3, i64 %0
-// %4 = select i1 %2, i64 0, i64 %3
-// Replace uses of %0 in Input with %4 in Output
+// %0 = call i32 @_Z17convert_ulong_satf(float %input)
+// %1 = icmp uge i32 %0, 3 <Largest 2-bit unsigned integer>
+// %2 = icmp ule i32 %0, 0 <Smallest 2-bit unsigned integer>
+// %3 = select i1 %1, i32 3, i32 %0
+// %4 = select i1 %2, i32 0, i32 %3
+// Replace uses of %1 in Input with %4 in Output
 void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
@@ -364,53 +366,49 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
               IntBitWidth == 64)
             continue;
           if (IID == Intrinsic::fptosi_sat) {
+            // Identify sext (user of I). Make sure that's the only use of I.
+            auto *User = I.getUniqueUndroppableUser();
+            if (!User || !isa<SExtInst>(User))
+              continue;
+            auto *SExtI = dyn_cast<SExtInst>(User);
+            auto *NewIType = SExtI->getType();
             IRBuilder<> IRB(&I);
-            auto *I64Type = IRB.getInt64Ty();
             auto *NewII = IRB.CreateIntrinsic(
-                IID, {I64Type, II->getOperand(0)->getType()},
+                IID, {NewIType, II->getOperand(0)->getType()},
                 II->getOperand(0));
             Constant *MaxVal = ConstantInt::get(
-                I64Type, APInt::getSignedMaxValue(IntBitWidth).getSExtValue());
+                NewIType, APInt::getSignedMaxValue(IntBitWidth).getSExtValue());
             Constant *MinVal = ConstantInt::get(
-                I64Type, APInt::getSignedMinValue(IntBitWidth).getSExtValue());
+                NewIType, APInt::getSignedMinValue(IntBitWidth).getSExtValue());
             auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_SGE, NewII, MaxVal);
             auto *LTMin = IRB.CreateICmp(CmpInst::ICMP_SLE, NewII, MinVal);
             auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
             auto *SatMin = IRB.CreateSelect(LTMin, MinVal, SatMax);
-            // Done to avoid sext from i64 to i64
-            for (User *U : II->users()) {
-              auto *SExtI = dyn_cast<SExtInst>(U);
-              if (SExtI && (SExtI->getType() == I64Type)) {
-                SExtI->replaceAllUsesWith(II);
-                ToErase.push_back(SExtI);
-              }
-            }
-            II->replaceAllUsesWith(SatMin);
+            SExtI->replaceAllUsesWith(SatMin);
+            ToErase.push_back(SExtI);
             ToErase.push_back(II);
           }
           if (IID == Intrinsic::fptoui_sat) {
+            // Identify zext (user of I). Make sure that's the only use of I.
+            auto *User = I.getUniqueUndroppableUser();
+            if (!User || !isa<ZExtInst>(User))
+              continue;
+            auto *ZExtI = dyn_cast<ZExtInst>(User);
+            auto *NewIType = ZExtI->getType();
             IRBuilder<> IRB(&I);
-            auto *I64Type = Type::getInt64Ty(M->getContext());
             auto *NewII = IRB.CreateIntrinsic(
-                IID, {I64Type, II->getOperand(0)->getType()},
+                IID, {NewIType, II->getOperand(0)->getType()},
                 II->getOperand(0));
             Constant *MaxVal = ConstantInt::get(
-                I64Type, APInt::getMaxValue(IntBitWidth).getZExtValue());
+                NewIType, APInt::getMaxValue(IntBitWidth).getZExtValue());
             Constant *MinVal = ConstantInt::get(
-                I64Type, APInt::getZero(IntBitWidth).getZExtValue());
+                NewIType, APInt::getZero(IntBitWidth).getZExtValue());
             auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_UGE, NewII, MaxVal);
             auto *LTMin = IRB.CreateICmp(CmpInst::ICMP_ULE, NewII, MinVal);
             auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
             auto *SatMin = IRB.CreateSelect(LTMin, MinVal, SatMax);
-            // Done to avoid zext from i64 to i64
-            for (User *U : II->users()) {
-              auto *ZExtI = dyn_cast<ZExtInst>(U);
-              if (ZExtI && (ZExtI->getType() == I64Type)) {
-                ZExtI->replaceAllUsesWith(II);
-                ToErase.push_back(ZExtI);
-              }
-            }
-            II->replaceAllUsesWith(SatMin);
+            ZExtI->replaceAllUsesWith(SatMin);
+            ToErase.push_back(ZExtI);
             ToErase.push_back(II);
           }
         }
