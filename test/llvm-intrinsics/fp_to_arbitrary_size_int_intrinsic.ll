@@ -10,26 +10,27 @@
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-; CHECK-SPIRV: Capability Kernel
-; CHECK-SPIRV: Decorate [[SAT1:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT2:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT3:[0-9]+]] SaturatedConversion
-; CHECK-SPIRV: Decorate [[SAT4:[0-9]+]] SaturatedConversion
+; CHECK-SPIRV-DAG: Capability Kernel
+; CHECK-SPIRV-DAG: Decorate [[SAT1:[0-9]+]] SaturatedConversion
+; CHECK-SPIRV-DAG: Decorate [[SAT2:[0-9]+]] SaturatedConversion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; signed output
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CHECK-SPIRV-DAG: TypeInt [[INT64TY:[0-9]+]] 64
+; CHECK-SPIRV-DAG: TypeBool [[BOOLTY:[0-9]+]]
+; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2SMAX:[0-9]+]] 1
+; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2SMIN:[0-9]+]] 4294967294 
+; CHECK-SPIRV-DAG: ConvertFToS [[INT64TY]] [[SAT1]]
+; CHECK-SPIRV-DAG: SGreaterThanEqual [[BOOLTY]] [[SGERES:[0-9]+]] [[SAT1]] [[I2SMAX]]
+; CHECK-SPIRV-DAG: SLessThanEqual [[BOOLTY]] [[SLERES:[0-9]+]] [[SAT1]] [[I2SMIN]]
+; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES1:[0-9]+]] [[SGERES]] [[I2SMAX]] [[SAT1]]
+; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES2:[0-9]+]] [[SLERES]] [[I2SMIN]] [[SELRES1]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; float input
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CHECK-LLVM-DAG: define spir_kernel
+; CHECK-LLVM-DAG: %[[R1:[0-9]+]] = {{.*}} i64 {{.*}}convert_long_satf(float %input)
+; CHECK-LLVM-DAG: %[[R2:[0-9]+]] = icmp sge i64 %[[R1]], 1
+; CHECK-LLVM-DAG: %[[R3:[0-9]+]] = icmp sle i64 %[[R1]], -2
+; CHECK-LLVM-DAG: %[[R4:[0-9]+]] = select i1 %[[R2]], i64 1, i64 %[[R1]]
+; CHECK-LLVM-DAG: %[[R5:[0-9]+]] = select i1 %[[R3]], i64 -2, i64 %[[R4]]
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT1]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: convert_long_satf(float %input)
 define spir_kernel void @testfunction_float_to_signed_i2(float %input) {
 entry:
    %0 = call i2 @llvm.fptosi.sat.i2.f32(float %input)
@@ -38,36 +39,20 @@ entry:
 }
 declare i2 @llvm.fptosi.sat.i2.f32(float)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; double input
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2UMAX:[0-9]+]] 3
+; CHECK-SPIRV-DAG: Constant [[INT64TY]] [[I2UMIN:[0-9]+]] 0 
+; CHECK-SPIRV-DAG: ConvertFToU [[INT64TY]] [[SAT2]]
+; CHECK-SPIRV-DAG: UGreaterThanEqual [[BOOLTY]] [[UGERES:[0-9]+]] [[SAT2]] [[I2UMAX]]
+; CHECK-SPIRV-DAG: ULessThanEqual [[BOOLTY]] [[ULERES:[0-9]+]] [[SAT2]] [[I2UMIN]]
+; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES1U:[0-9]+]] [[UGERES]] [[I2UMAX]] [[SAT2]]
+; CHECK-SPIRV-DAG: Select [[INT64TY]] [[SELRES2U:[0-9]+]] [[ULERES]] [[I2UMIN]] [[SELRES1U]]
+; CHECK-LLVM-DAG: define spir_kernel
+; CHECK-LLVM-DAG: %[[R1:[0-9]+]] = {{.*}} i64 {{.*}}convert_ulong_satf(float %input)
+; CHECK-LLVM-DAG: %[[R2:[0-9]+]] = icmp uge i64 %[[R1]], 3
+; CHECK-LLVM-DAG: %[[R3:[0-9]+]] = icmp ule i64 %[[R1]], 0
+; CHECK-LLVM-DAG: %[[R4:[0-9]+]] = select i1 %[[R2]], i64 3, i64 %[[R1]]
+; CHECK-LLVM-DAG: %[[R5:[0-9]+]] = select i1 %[[R3]], i64 0, i64 %[[R4]]
 
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToS {{[0-9]+}} [[SAT2]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: convert_long_satd(double %input)
-define spir_kernel void @testfunction_double_to_signed_i2(double %input) {
-entry:
-   %0 = call i2 @llvm.fptosi.sat.i2.f64(double %input)
-   %1 = sext i2 %0 to i64
-   ret void
-}
-declare i2 @llvm.fptosi.sat.i2.f64(double)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; unsigned output
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; float input
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT3]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: convert_ulong_satf(float %input)
 define spir_kernel void @testfunction_float_to_unsigned_i2(float %input) {
 entry:
    %0 = call i2 @llvm.fptoui.sat.i2.f32(float %input)
@@ -75,19 +60,3 @@ entry:
    ret void
 }
 declare i2 @llvm.fptoui.sat.i2.f32(float)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; double input
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;; output i2
-; CHECK-SPIRV: ConvertFToU {{[0-9]+}} [[SAT4]]
-; CHECK-LLVM: define spir_kernel
-; CHECK-LLVM: convert_ulong_satd(double %input)
-define spir_kernel void @testfunction_double_to_unsigned_i2(double %input) {
-entry:
-   %0 = call i2 @llvm.fptoui.sat.i2.f64(double %input)
-   %1 = zext i2 %0 to i64
-   ret void
-}
-declare i2 @llvm.fptoui.sat.i2.f64(double)
