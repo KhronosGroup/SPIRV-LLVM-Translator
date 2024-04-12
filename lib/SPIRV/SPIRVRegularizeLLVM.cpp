@@ -357,6 +357,8 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);
     std::vector<Instruction *> ToErase;
+    // TODO: Improve parsing logic by identifying all fptoui.sat and fptosi.sat
+    // intrinsics and then iterating over their users.
     for (BasicBlock &BB : *F) {
       for (Instruction &I : BB) {
         if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I)) {
@@ -415,6 +417,7 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
     }
     for (Instruction *V : ToErase) {
       assert(V->user_empty());
+      V->dropAllReferences();
       V->eraseFromParent();
     }
   }
