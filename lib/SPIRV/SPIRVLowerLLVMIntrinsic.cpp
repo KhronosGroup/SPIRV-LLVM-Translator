@@ -52,54 +52,56 @@ namespace SPIRV {
 namespace {
 
 typedef struct {
+  // Extension that is required for an emulation
+  const ExtensionID RequiredExtension;
   // Extension that supports the LLVM Intrinsic.
   // Thus, emulation is not needed if extension is enabled.
-  const ExtensionID SupportingExtension;
+  const ExtensionID ForbiddenExtension;
   const char *ModuleText;
 } LLVMIntrinsicMapValueType;
 
-#define NO_SUPPORTING_EXTENSION ExtensionID::Last
-
-
 // clang-format off
+#define NO_REQUIRED_EXTENSION  ExtensionID::Last
+#define NO_FORBIDDEN_EXTENSION ExtensionID::Last
+
 const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries= {
-//  LLVM Intrinsic Name             Supporting Extension                   Module with
-//                                                                         emulation function
-  { "llvm.bitreverse.i2",          {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari2}},
-  { "llvm.bitreverse.i4",          {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari4}},
-  { "llvm.bitreverse.i8",          {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari8}},
-  { "llvm.bitreverse.i16",         {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari16}},
-  { "llvm.bitreverse.i32",         {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari32}},
-  { "llvm.bitreverse.i64",         {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari64}},
+//  LLVM Intrinsic Name             Required Extension                                   Forbidden Extension                    Module with
+//                                                                                                                              emulation function
+  { "llvm.bitreverse.i2",          {ExtensionID::SPV_INTEL_arbitrary_precision_integers, ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari2}},
+  { "llvm.bitreverse.i4",          {ExtensionID::SPV_INTEL_arbitrary_precision_integers, ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari4}},
+  { "llvm.bitreverse.i8",          {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari8}},
+  { "llvm.bitreverse.i16",         {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari16}},
+  { "llvm.bitreverse.i32",         {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari32}},
+  { "llvm.bitreverse.i64",         {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseScalari64}},
 
-  { "llvm.bitreverse.v2i8",        {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i8}},
-  { "llvm.bitreverse.v2i16",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i16}},
-  { "llvm.bitreverse.v2i32",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i32}},
-  { "llvm.bitreverse.v2i64",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i64}},
+  { "llvm.bitreverse.v2i8",        {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i8}},
+  { "llvm.bitreverse.v2i16",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i16}},
+  { "llvm.bitreverse.v2i32",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i32}},
+  { "llvm.bitreverse.v2i64",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV2i64}},
 
-  { "llvm.bitreverse.v3i8",        {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i8}},
-  { "llvm.bitreverse.v3i16",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i16}},
-  { "llvm.bitreverse.v3i32",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i32}},
-  { "llvm.bitreverse.v3i64",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i64}},
+  { "llvm.bitreverse.v3i8",        {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i8}},
+  { "llvm.bitreverse.v3i16",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i16}},
+  { "llvm.bitreverse.v3i32",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i32}},
+  { "llvm.bitreverse.v3i64",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV3i64}},
 
-  { "llvm.bitreverse.v4i8",        {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i8}},
-  { "llvm.bitreverse.v4i16",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i16}},
-  { "llvm.bitreverse.v4i32",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i32}},
-  { "llvm.bitreverse.v4i64",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i64}},
+  { "llvm.bitreverse.v4i8",        {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i8}},
+  { "llvm.bitreverse.v4i16",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i16}},
+  { "llvm.bitreverse.v4i32",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i32}},
+  { "llvm.bitreverse.v4i64",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV4i64}},
 
-  { "llvm.bitreverse.v8i8",        {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i8}},
-  { "llvm.bitreverse.v8i16",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i16}},
-  { "llvm.bitreverse.v8i32",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i32}},
-  { "llvm.bitreverse.v8i64",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i64}},
+  { "llvm.bitreverse.v8i8",        {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i8}},
+  { "llvm.bitreverse.v8i16",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i16}},
+  { "llvm.bitreverse.v8i32",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i32}},
+  { "llvm.bitreverse.v8i64",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV8i64}},
 
-  { "llvm.bitreverse.v16i8",       {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i8}},
-  { "llvm.bitreverse.v16i16",      {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i16}},
-  { "llvm.bitreverse.v16i32",      {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i32}},
-  { "llvm.bitreverse.v16i64",      {ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i64}},
+  { "llvm.bitreverse.v16i8",       {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i8}},
+  { "llvm.bitreverse.v16i16",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i16}},
+  { "llvm.bitreverse.v16i32",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i32}},
+  { "llvm.bitreverse.v16i64",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreverseV16i64}},
 
-  { "llvm.sadd.with.overflow.i16", {NO_SUPPORTING_EXTENSION,               LLVMSaddWithOverflow}},
-  { "llvm.sadd.with.overflow.i32", {NO_SUPPORTING_EXTENSION,               LLVMSaddWithOverflow}},
-  { "llvm.sadd.with.overflow.i64", {NO_SUPPORTING_EXTENSION,               LLVMSaddWithOverflow}},
+  { "llvm.sadd.with.overflow.i16", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
+  { "llvm.sadd.with.overflow.i32", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
+  { "llvm.sadd.with.overflow.i64", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
 };
 // clang-format on
 
@@ -119,7 +121,10 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   auto It = LLVMIntrinsicMapEntries.find(IntrinsicName);
   if (It != LLVMIntrinsicMapEntries.end())
     MapEntry = &It->second;
-  if (!MapEntry || Opts.isAllowedToUseExtension(MapEntry->SupportingExtension))
+  if (!MapEntry ||
+      !(MapEntry->RequiredExtension == NO_REQUIRED_EXTENSION ||
+        Opts.isAllowedToUseExtension(MapEntry->RequiredExtension)) ||
+      Opts.isAllowedToUseExtension(MapEntry->ForbiddenExtension))
     return;
 
   // Redirect @llvm.* call to the function we have in
