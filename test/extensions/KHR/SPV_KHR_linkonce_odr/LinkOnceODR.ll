@@ -12,16 +12,18 @@
 ; CHECK-SPIRV: Extension "SPV_KHR_linkonce_odr"
 ; CHECK-SPIRV-DAG: Decorate {{[0-9]+}} LinkageAttributes "GV" LinkOnceODR 
 ; CHECK-SPIRV-DAG: Decorate {{[0-9]+}} LinkageAttributes "square" LinkOnceODR 
+; CHECK-SPIRV-DAG: Decorate {{[0-9]+}} LinkageAttributes "add1" LinkOnceODR
 
 ; CHECK-SPIRV-NOEXT-NOT: Extension "SPV_KHR_linkonce_odr"
 ; CHECK-SPIRV-NOEXT-NOT: Decorate {{[0-9]+}} LinkageAttributes "GV" LinkOnceODR 
 ; CHECK-SPIRV-NOEXT-NOT: Decorate {{[0-9]+}} LinkageAttributes "square" LinkOnceODR 
+; CHECK-SPIRV-NOEXT-NOT: Decorate {{[0-9]+}} LinkageAttributes "add1" LinkOnceODR
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
 
-; CHECK-LLVM: @GV = linkonce_odr addrspace(1) global [3 x i32] zeroinitializer, align 4
-@GV = linkonce_odr addrspace(1) global [3 x i32] zeroinitializer, align 4
+; CHECK-LLVM: @GV = weak_odr addrspace(1) global [3 x i32] zeroinitializer, align 4
+@GV = weak_odr addrspace(1) global [3 x i32] zeroinitializer, align 4
 
 define spir_kernel void @k() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
@@ -29,8 +31,8 @@ entry:
   ret void
 }
 
-; CHECK-LLVM: define linkonce_odr spir_func i32 @square(i32 %in)
-define linkonce_odr dso_local spir_func i32 @square(i32 %in) {
+; CHECK-LLVM: define weak_odr spir_func i32 @square(i32 %in)
+define weak_odr dso_local spir_func i32 @square(i32 %in) {
 entry:
   %in.addr = alloca i32, align 4
   store i32 %in, ptr %in.addr, align 4
@@ -38,6 +40,14 @@ entry:
   %1 = load i32, ptr %in.addr, align 4
   %mul = mul nsw i32 %0, %1
   ret i32 %mul
+}
+
+; Verify that linkonce_odr is mapped to LinkOnceODR too.
+; CHECK-LLVM: define weak_odr spir_func i32 @add1(i32 %in)
+define linkonce_odr dso_local spir_func i32 @add1(i32 %in) {
+entry:
+  %add = add nsw i32 %in, 1
+  ret i32 %add
 }
 
 !llvm.module.flags = !{!1}

@@ -6570,7 +6570,7 @@ LLVMToSPIRVBase::transLinkageType(const GlobalValue *GV) {
     return SPIRVLinkageTypeKind::LinkageTypeImport;
   if (GV->hasInternalLinkage() || GV->hasPrivateLinkage())
     return spv::internal::LinkageTypeInternal;
-  if (GV->hasLinkOnceODRLinkage())
+  if (GV->hasLinkOnceODRLinkage() || GV->hasWeakODRLinkage())
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_linkonce_odr))
       return SPIRVLinkageTypeKind::LinkageTypeLinkOnceODR;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
