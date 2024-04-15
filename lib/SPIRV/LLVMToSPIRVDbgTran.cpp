@@ -284,8 +284,12 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgEntryImpl(const MDNode *MDN) {
   if (!MDN)
     return BM->addDebugInfo(SPIRVDebug::DebugInfoNone, getVoidTy(),
                             SPIRVWordVec());
-  if (isNonSemanticDebugInfo())
-    BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+  if (isNonSemanticDebugInfo()) {
+    if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+      BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+    else
+      BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+  }
   if (const DINode *DIEntry = dyn_cast<DINode>(MDN)) {
     switch (DIEntry->getTag()) {
     // Types
