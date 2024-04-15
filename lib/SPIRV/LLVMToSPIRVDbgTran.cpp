@@ -662,7 +662,7 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgQualifiedType(const DIDerivedType *QT) {
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
   if (isNonSemanticDebugInfo() && AT->isVector())
     return transDbgVectorTypeNonSemantic(AT);
-  else if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+  if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
     if (isFortranArrayDynamic(AT))
       return transDbgArrayTypeDynamic(AT);
     return transDbgArrayTypeNonSemantic(AT);
