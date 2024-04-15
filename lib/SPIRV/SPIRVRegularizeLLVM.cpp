@@ -354,64 +354,61 @@ void SPIRVRegularizeLLVMBase::expandSYCLTypeUsing(Module *M) {
 // %4 = select i1 %2, i32 -2, i32 %3
 // Replace uses of %1 in Input with %4 in Output
 void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
-  for (auto I = M->begin(), E = M->end(); I != E;) {
-    Function *F = &(*I++);
+  for (auto FI = M->begin(), FE = M->end(); FI != FE;) {
+    Function *F = &(*FI++);
     std::vector<Instruction *> ToErase;
-    // TODO: Improve parsing logic by identifying all fptoui.sat and fptosi.sat
-    // intrinsics and then iterating over their users.
-    for (BasicBlock &BB : *F) {
-      for (Instruction &I : BB) {
-        if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I)) {
-          // TODO: Vector type not supported yet.
-          if (isa<VectorType>(II->getType()))
+    auto IID = F->getIntrinsicID();
+    if (IID != Intrinsic::fptosi_sat && IID != Intrinsic::fptoui_sat)
+      continue;
+    for (auto I : F->users()) {
+      if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(I)) {
+        // TODO: Vector type not supported yet.
+        if (isa<VectorType>(II->getType()))
+          continue;
+        auto IID = II->getIntrinsicID();
+        auto IntBitWidth = II->getType()->getScalarSizeInBits();
+        if (IntBitWidth == 8 || IntBitWidth == 16 || IntBitWidth == 32 ||
+            IntBitWidth == 64)
+          continue;
+        if (IID == Intrinsic::fptosi_sat) {
+          // Identify sext (user of II). Make sure that's the only use of II.
+          auto *User = II->getUniqueUndroppableUser();
+          if (!User || !isa<SExtInst>(User))
             continue;
-          auto IID = II->getIntrinsicID();
-          auto IntBitWidth = II->getType()->getScalarSizeInBits();
-          if (IntBitWidth == 8 || IntBitWidth == 16 || IntBitWidth == 32 ||
-              IntBitWidth == 64)
+          auto *SExtI = dyn_cast<SExtInst>(User);
+          auto *NewIType = SExtI->getType();
+          IRBuilder<> IRB(II);
+          auto *NewII = IRB.CreateIntrinsic(
+              IID, {NewIType, II->getOperand(0)->getType()}, II->getOperand(0));
+          Constant *MaxVal = ConstantInt::get(
+              NewIType, APInt::getSignedMaxValue(IntBitWidth).getSExtValue());
+          Constant *MinVal = ConstantInt::get(
+              NewIType, APInt::getSignedMinValue(IntBitWidth).getSExtValue());
+          auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_SGE, NewII, MaxVal);
+          auto *LTMin = IRB.CreateICmp(CmpInst::ICMP_SLE, NewII, MinVal);
+          auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
+          auto *SatMin = IRB.CreateSelect(LTMin, MinVal, SatMax);
+          SExtI->replaceAllUsesWith(SatMin);
+          ToErase.push_back(SExtI);
+          ToErase.push_back(II);
+        }
+        if (IID == Intrinsic::fptoui_sat) {
+          // Identify zext (user of II). Make sure that's the only use of II.
+          auto *User = II->getUniqueUndroppableUser();
+          if (!User || !isa<ZExtInst>(User))
             continue;
-          if (IID == Intrinsic::fptosi_sat) {
-            // Identify sext (user of I). Make sure that's the only use of I.
-            auto *User = I.getUniqueUndroppableUser();
-            if (!User || !isa<SExtInst>(User))
-              continue;
-            auto *SExtI = dyn_cast<SExtInst>(User);
-            auto *NewIType = SExtI->getType();
-            IRBuilder<> IRB(&I);
-            auto *NewII = IRB.CreateIntrinsic(
-                IID, {NewIType, II->getOperand(0)->getType()},
-                II->getOperand(0));
-            Constant *MaxVal = ConstantInt::get(
-                NewIType, APInt::getSignedMaxValue(IntBitWidth).getSExtValue());
-            Constant *MinVal = ConstantInt::get(
-                NewIType, APInt::getSignedMinValue(IntBitWidth).getSExtValue());
-            auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_SGE, NewII, MaxVal);
-            auto *LTMin = IRB.CreateICmp(CmpInst::ICMP_SLE, NewII, MinVal);
-            auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
-            auto *SatMin = IRB.CreateSelect(LTMin, MinVal, SatMax);
-            SExtI->replaceAllUsesWith(SatMin);
-            ToErase.push_back(SExtI);
-            ToErase.push_back(II);
-          }
-          if (IID == Intrinsic::fptoui_sat) {
-            // Identify zext (user of I). Make sure that's the only use of I.
-            auto *User = I.getUniqueUndroppableUser();
-            if (!User || !isa<ZExtInst>(User))
-              continue;
-            auto *ZExtI = dyn_cast<ZExtInst>(User);
-            auto *NewIType = ZExtI->getType();
-            IRBuilder<> IRB(&I);
-            auto *NewII = IRB.CreateIntrinsic(
-                IID, {NewIType, II->getOperand(0)->getType()},
-                II->getOperand(0));
-            Constant *MaxVal = ConstantInt::get(
-                NewIType, APInt::getMaxValue(IntBitWidth).getZExtValue());
-            auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_UGE, NewII, MaxVal);
-            auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
-            ZExtI->replaceAllUsesWith(SatMax);
-            ToErase.push_back(ZExtI);
-            ToErase.push_back(II);
-          }
+          auto *ZExtI = dyn_cast<ZExtInst>(User);
+          auto *NewIType = ZExtI->getType();
+          IRBuilder<> IRB(II);
+          auto *NewII = IRB.CreateIntrinsic(
+              IID, {NewIType, II->getOperand(0)->getType()}, II->getOperand(0));
+          Constant *MaxVal = ConstantInt::get(
+              NewIType, APInt::getMaxValue(IntBitWidth).getZExtValue());
+          auto *GTMax = IRB.CreateICmp(CmpInst::ICMP_UGE, NewII, MaxVal);
+          auto *SatMax = IRB.CreateSelect(GTMax, MaxVal, NewII);
+          ZExtI->replaceAllUsesWith(SatMax);
+          ToErase.push_back(ZExtI);
+          ToErase.push_back(II);
         }
       }
     }
