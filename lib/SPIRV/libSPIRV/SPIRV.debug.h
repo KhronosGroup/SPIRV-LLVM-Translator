@@ -376,7 +376,9 @@ enum {
   BaseTypeIdx       = 0,
   ComponentCountIdx = 1,
   SubrangesIdx      = 1,
-  MinOperandCount   = 2
+  MemorySizeIdx     = 2,
+  MinOperandCount   = 2,
+  MaxOperandCount   = 3
 };
 }
 
