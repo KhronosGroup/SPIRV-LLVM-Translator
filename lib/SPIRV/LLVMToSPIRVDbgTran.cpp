@@ -738,8 +738,7 @@ LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic(const DICompositeType *AT) {
   Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
 
   DINodeArray AR(AT->getElements());
-  const unsigned N = AR.size();
-  assert(N == 1 && "Multidimensional vector is not expected!");
+  assert(AR.size() == 1 && "Multidimensional vector is not expected!");
   DISubrange *SR = cast<DISubrange>(AR[0]);
   ConstantInt *Count = SR->getCount().get<ConstantInt *>();
   Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
