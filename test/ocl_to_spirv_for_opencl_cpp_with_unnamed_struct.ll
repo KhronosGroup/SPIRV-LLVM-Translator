@@ -1,5 +1,5 @@
-;; This test checks if builtins in LLVM IR generated from OpenCL_CPP sources
-;; including unnamed structs are correctly translated to SPIR-V builtin variables.
+;; This test checks if functions in LLVM IR generated from OpenCL_CPP sources
+;; including unnamed structs are correctly translated to SPIR-V.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
