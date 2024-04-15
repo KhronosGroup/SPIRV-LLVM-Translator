@@ -360,7 +360,7 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
     auto IID = F->getIntrinsicID();
     if (IID != Intrinsic::fptosi_sat && IID != Intrinsic::fptoui_sat)
       continue;
-    for (auto I : F->users()) {
+    for (auto *I : F->users()) {
       if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(I)) {
         // TODO: Vector type not supported yet.
         if (isa<VectorType>(II->getType()))
