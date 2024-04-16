@@ -509,7 +509,6 @@ enum {
   OffsetIdx       = 1,
   SizeIdx         = 2,
   FlagsIdx        = 3,
-  MinOperandCount = 3,
   OperandCount    = 4
 };
 }
@@ -521,7 +520,6 @@ enum {
   OffsetIdx       = 2,
   SizeIdx         = 3,
   FlagsIdx        = 4,
-  MinOperandCount = 4,
   OperandCount    = 5
 };
 }

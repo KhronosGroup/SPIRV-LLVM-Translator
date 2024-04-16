@@ -1217,25 +1217,25 @@ DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
                                                  DIType *ChildClass) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
   // The value is used when assertions are enabled
-  [[maybe_unused]] unsigned MinOperandCount;
+  [[maybe_unused]] unsigned OperandCount;
   unsigned ParentIdx, OffsetIdx, FlagsIdx;
   if (isNonSemanticDebugInfo(DebugInst->getExtSetKind())) {
     if (!ChildClass) {
       // Will be translated later when processing TypeMember's parent
       return nullptr;
     }
-    MinOperandCount = NonSemantic::MinOperandCount;
+    OperandCount = NonSemantic::OperandCount;
     ParentIdx = NonSemantic::ParentIdx;
     OffsetIdx = NonSemantic::OffsetIdx;
     FlagsIdx = NonSemantic::FlagsIdx;
   } else {
-    MinOperandCount = OpenCL::MinOperandCount;
+    OperandCount = NonSemantic::OperandCount;
     ParentIdx = OpenCL::ParentIdx;
     OffsetIdx = OpenCL::OffsetIdx;
     FlagsIdx = OpenCL::FlagsIdx;
   }
   const SPIRVWordVec &Ops = DebugInst->getArguments();
-  assert(Ops.size() >= MinOperandCount && "Invalid number of operands");
+  assert(Ops.size() >= OperandCount && "Invalid number of operands");
   DIType *Parent =
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ParentIdx]));
   DINode::DIFlags Flags = DINode::FlagZero;
