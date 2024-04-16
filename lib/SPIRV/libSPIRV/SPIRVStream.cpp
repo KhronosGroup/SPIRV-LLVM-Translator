@@ -145,6 +145,8 @@ SPIRV_DEF_ENCDEC(Decoration)
 SPIRV_DEF_ENCDEC(OCLExtOpKind)
 SPIRV_DEF_ENCDEC(SPIRVDebugExtOpKind)
 SPIRV_DEF_ENCDEC(NonSemanticAuxDataOpKind)
+SPIRV_DEF_ENCDEC(InitializationModeQualifier)
+SPIRV_DEF_ENCDEC(HostAccessQualifier)
 SPIRV_DEF_ENCDEC(internal::InternalNamedMaximumNumberOfRegisters)
 SPIRV_DEF_ENCDEC(LinkageType)
 
