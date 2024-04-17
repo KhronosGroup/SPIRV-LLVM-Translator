@@ -80,6 +80,9 @@ std::string to_string(uint32_t Version) {
   case static_cast<uint32_t>(VersionNumber::SPIRV_1_5):
     Res = "1.5";
     break;
+  case static_cast<uint32_t>(VersionNumber::SPIRV_1_6):
+    Res = "1.6";
+    break;
   default:
     Res = "unknown";
   }
