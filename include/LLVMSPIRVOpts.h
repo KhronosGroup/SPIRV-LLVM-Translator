@@ -64,8 +64,9 @@ enum class VersionNumber : uint32_t {
   SPIRV_1_3 = 0x00010300,
   SPIRV_1_4 = 0x00010400,
   SPIRV_1_5 = 0x00010500,
+  SPIRV_1_6 = 0x00010600,
   MinimumVersion = SPIRV_1_0,
-  MaximumVersion = SPIRV_1_5
+  MaximumVersion = SPIRV_1_6
 };
 
 enum class ExtensionID : uint32_t {
