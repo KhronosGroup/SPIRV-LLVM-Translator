@@ -2,15 +2,19 @@
 ;; 2/4-bit types.
 
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -spirv-ext=+SPV_INTEL_arbitrary_precision_integers -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; SPV_KHR_bit_instructions extension was not enabled so BitReverse must not be generated
+; RUN: llvm-spirv -spirv-ext=+SPV_INTEL_arbitrary_precision_integers -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not="BitReverse"
 ; RUN: llvm-spirv -spirv-ext=+SPV_INTEL_arbitrary_precision_integers %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; There is no validation for SPV_INTEL_arbitrary_precision_integers implemented in
 ; SPIRV-Tools. TODO: spirv-val %t.spv
 
-; SPV_KHR_bit_instructions extension was not enabled so BitReverse must not be generated
-; CHECK-SPIRV-NOT: BitReverse
+; Check that lowered function names appear in SPIR-V
+; CHECK-SPIRV: Name [[BR_2:[0-9]+]] "llvm_bitreverse_i2"
+; CHECK-SPIRV: Name [[BR_4:[0-9]+]] "llvm_bitreverse_i4"
+; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[BR_2]]
+; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[BR_4]]
 
 ; Check for expected bitreverse lowerings
 
