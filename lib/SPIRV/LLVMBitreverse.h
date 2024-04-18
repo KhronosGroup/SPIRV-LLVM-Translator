@@ -62,31 +62,68 @@
 //     ...
 //     ret <4 x i8> %or12
 //   }
+#define GEN_CONST1(BASE_TYPE, VAL) #VAL
+#define GEN_CONST2(BASE_TYPE, VAL)                                             \
+  "<" #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL ">"
+#define GEN_CONST3(BASE_TYPE, VAL)                                             \
+  "<" #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL ">"
+#define GEN_CONST4(BASE_TYPE, VAL)                                             \
+  "<" #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL ">"
+#define GEN_CONST8(BASE_TYPE, VAL)                                             \
+  "<" #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL ">"
+#define GEN_CONST16(BASE_TYPE, VAL)                                            \
+  "<" #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL "," #BASE_TYPE " " #VAL      \
+  "," #BASE_TYPE " " #VAL ">"
 
-static const char LLVMBitreverseScalari2[]{R"(
-define zeroext i2 @llvm_bitreverse_i2(i2 zeroext %A) {
-entry:
-  %and = shl i2 %A, 1
-  %shr4 = lshr i2 %A, 1
-  %or = or disjoint i2 %and, %shr4
-  ret i2 %or
-}
-)"};
+// clang-format off
+#define MAKE_BITREVERSE_2BIT(SUFFIX_A,SUFFIX_B,TYPE_STR,NUM_ELTS,BASE_TYPE)                                             \
+static const char LLVMBitreverse ## SUFFIX_A[]{"                                   \n\
+define " TYPE_STR " @llvm_bitreverse_" #SUFFIX_B "(" TYPE_STR " %A) { \n\
+entry:                                                                             \n\
+  %and  = shl         " TYPE_STR " %A, " GEN_CONST ## NUM_ELTS(BASE_TYPE,1) "      \n\
+  %shr4 = lshr        " TYPE_STR " %A, " GEN_CONST ## NUM_ELTS(BASE_TYPE,1) "      \n\
+  %or   = or disjoint " TYPE_STR " %and, %shr4                                     \n\
+  ret                 " TYPE_STR " %or                                             \n\
+}                                                                                  \n\
+"}
 
-static const char LLVMBitreverseScalari4[]{R"(
-define zeroext i4 @llvm_bitreverse_i4(i4 zeroext %A) {
-entry:
-  %and = shl i4 %A, 2
-  %shr = lshr i4 %A, 2
-  %or = or disjoint i4 %and, %shr
-  %and2 = shl i4 %or, 1
-  %shl3 = and i4 %and2, -6
-  %shr4 = lshr i4 %or, 1
-  %and5 = and i4 %shr4, 5
-  %or6 = or disjoint i4 %shl3, %and5
-  ret i4 %or6
-}
-)"};
+MAKE_BITREVERSE_2BIT(Scalari2, i2,    "i2",         1, i2);
+MAKE_BITREVERSE_2BIT(V2i2,     v2i2,  "<2 x i2>",   2, i2);
+MAKE_BITREVERSE_2BIT(V3i2,     v3i2,  "<3 x i2>",   3, i2);
+MAKE_BITREVERSE_2BIT(V4i2,     v4i2,  "<4 x i2>",   4, i2);
+MAKE_BITREVERSE_2BIT(V8i2,     v8i2,  "<8 x i2>",   8, i2);
+MAKE_BITREVERSE_2BIT(V16i2,    v16i2, "<16 x i2>", 16, i2);
+
+#define MAKE_BITREVERSE_4BIT(SUFFIX_A,SUFFIX_B,TYPE_STR,NUM_ELTS,BASE_TYPE)          \
+static const char LLVMBitreverse ## SUFFIX_A[]{"                                   \n\
+define " TYPE_STR " @llvm_bitreverse_" #SUFFIX_B "(" TYPE_STR " %A) {              \n\
+entry:                                                                             \n\
+  %and  = shl         " TYPE_STR " %A,    " GEN_CONST ## NUM_ELTS(BASE_TYPE, 2) "  \n\
+  %shr  = lshr        " TYPE_STR " %A,    " GEN_CONST ## NUM_ELTS(BASE_TYPE, 2) "  \n\
+  %or   = or disjoint " TYPE_STR " %and, %shr                                      \n\
+  %and2 = shl         " TYPE_STR " %or,   " GEN_CONST ## NUM_ELTS(BASE_TYPE, 1) "  \n\
+  %shl3 = and         " TYPE_STR " %and2, " GEN_CONST ## NUM_ELTS(BASE_TYPE,-6) "  \n\
+  %shr4 = lshr        " TYPE_STR " %or,   " GEN_CONST ## NUM_ELTS(BASE_TYPE, 1) "  \n\
+  %and5 = and         " TYPE_STR " %shr4, " GEN_CONST ## NUM_ELTS(BASE_TYPE, 5) "  \n\
+  %or6 = or disjoint  " TYPE_STR " %shl3, %and5                                    \n\
+  ret                 " TYPE_STR " %or6                                            \n\
+}                                                                                  \n\
+"}
+
+MAKE_BITREVERSE_4BIT(Scalari4, i4,    "i4",         1, i4);
+MAKE_BITREVERSE_4BIT(V2i4,     v2i4,  "<2 x i4>",   2, i4);
+MAKE_BITREVERSE_4BIT(V3i4,     v3i4,  "<3 x i4>",   3, i4);
+MAKE_BITREVERSE_4BIT(V4i4,     v4i4,  "<4 x i4>",   4, i4);
+MAKE_BITREVERSE_4BIT(V8i4,     v8i4,  "<8 x i4>",   8, i4);
+MAKE_BITREVERSE_4BIT(V16i4,    v16i4, "<16 x i4>", 16, i4);
+// clang-format on
 
 static const char LLVMBitreverseScalari8[]{R"(
 define zeroext i8 @llvm_bitreverse_i8(i8 %A) {
