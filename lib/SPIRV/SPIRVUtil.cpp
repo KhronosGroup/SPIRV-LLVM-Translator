@@ -412,11 +412,11 @@ bool isNonMangledOCLBuiltin(StringRef Name) {
          isPipeOrAddressSpaceCastBI(Name.drop_front(2));
 }
 
-Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
+Op getSPIRVFuncOC(StringRef S, Function *F, SmallVectorImpl<std::string> *Dec) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
   StringRef Name;
-  if (!oclIsBuiltin(S, Name))
+  if (!oclIsBuiltin(S, Name, F))
     Name = S;
   StringRef R(Name);
   if ((!Name.starts_with(kSPIRVName::Prefix) && !isNonMangledOCLBuiltin(S)) ||
@@ -440,7 +440,13 @@ bool getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
 
 // Demangled name is a substring of the name. The DemangledName is updated only
 // if true is returned
-bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
+bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, Function *F,
+                  bool IsCpp) {
+  // Avoid user defined functions from being wrongly identified as OpenCL
+  // builtins.
+  // TODO: Avoid identifying user-declared functions as OpenCL builtins.
+  if (!F->isDeclaration())
+    return false;
   if (Name == "printf") {
     DemangledName = Name;
     return true;
@@ -1794,7 +1800,8 @@ bool hasLoopMetadata(const Module *M) {
 
 bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp) {
   StringRef DemangledName;
-  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName))
+  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName,
+                    CI->getCalledFunction()))
     return false;
   StringRef S = DemangledName;
   if (!S.starts_with(kSPIRVName::Prefix))
@@ -2131,7 +2138,7 @@ bool lowerBuiltinCallsToVariables(Module *M) {
     if (!F.isDeclaration())
       continue;
     StringRef DemangledName;
-    if (!oclIsBuiltin(F.getName(), DemangledName))
+    if (!oclIsBuiltin(F.getName(), DemangledName, &F))
       continue;
     LLVM_DEBUG(dbgs() << "Function demangled name: " << DemangledName << '\n');
     SmallVector<StringRef, 2> Postfix;
@@ -2294,7 +2301,7 @@ bool postProcessBuiltinsReturningStruct(Module *M, bool IsCpp) {
     if (F.hasName() && F.isDeclaration()) {
       LLVM_DEBUG(dbgs() << "[postProcess sret] " << F << '\n');
       if (F.getReturnType()->isStructTy() &&
-          oclIsBuiltin(F.getName(), DemangledName, IsCpp)) {
+          oclIsBuiltin(F.getName(), DemangledName, &F, IsCpp)) {
         if (!postProcessBuiltinReturningStruct(&F))
           return false;
       }
@@ -2310,7 +2317,8 @@ bool postProcessBuiltinsWithArrayArguments(Module *M, bool IsCpp) {
   for (auto &F : make_early_inc_range(M->functions())) {
     if (F.hasName() && F.isDeclaration()) {
       LLVM_DEBUG(dbgs() << "[postProcess array arg] " << F << '\n');
-      if (hasArrayArg(&F) && oclIsBuiltin(F.getName(), DemangledName, IsCpp))
+      if (hasArrayArg(&F) &&
+          oclIsBuiltin(F.getName(), DemangledName, &F, IsCpp))
         if (!postProcessBuiltinWithArrayArguments(&F, DemangledName))
           return false;
     }
