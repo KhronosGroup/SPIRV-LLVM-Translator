@@ -1487,13 +1487,19 @@ SPIRVInstruction *LLVMToSPIRVBase::transCmpInst(CmpInst *Cmp,
   auto *Op0 = Cmp->getOperand(0);
   SPIRVValue *TOp0 = transValue(Op0, BB);
   SPIRVValue *TOp1 = transValue(Cmp->getOperand(1), BB);
-  // TODO: once the translator supports SPIR-V 1.4, update the condition below:
-  // if (/* */->isPointerTy() && /* it is not allowed to use SPIR-V 1.4 */)
   if (Op0->getType()->isPointerTy()) {
-    unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();
-    SPIRVType *Ty = transType(getSizetType(AS));
-    TOp0 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp0, BB);
-    TOp1 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp1, BB);
+    auto P = Cmp->getPredicate();
+    if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4) &&
+        (P == ICmpInst::ICMP_EQ || P == ICmpInst::ICMP_NE) &&
+        Cmp->getOperand(1)->getType()->isPointerTy()) {
+      Op OC = P == ICmpInst::ICMP_EQ ? OpPtrEqual : OpPtrNotEqual;
+      return BM->addBinaryInst(OC, transType(Cmp->getType()), TOp0, TOp1, BB);
+    } else {
+      unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();
+      SPIRVType *Ty = transType(getSizetType(AS));
+      TOp0 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp0, BB);
+      TOp1 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp1, BB);
+    }
   }
   SPIRVInstruction *BI =
       BM->addCmpInst(transBoolOpCode(TOp0, CmpMap::map(Cmp->getPredicate())),
