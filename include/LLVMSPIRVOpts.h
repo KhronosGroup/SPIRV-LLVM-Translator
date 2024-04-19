@@ -161,6 +161,10 @@ public:
 
   void setPreserveAuxData(bool ArgValue) { PreserveAuxData = ArgValue; }
 
+  void setIsReport(bool IsReport) { this->IsReport = IsReport; }
+
+  bool isReport() { return IsReport; }
+
   void setGenKernelArgNameMDEnabled(bool ArgNameMD) {
     GenKernelArgNameMD = ArgNameMD;
   }
@@ -284,6 +288,8 @@ private:
   bool PreserveAuxData = false;
 
   BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Function;
+
+  bool IsReport = false;
 };
 
 } // namespace SPIRV

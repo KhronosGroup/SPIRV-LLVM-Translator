@@ -4906,86 +4906,25 @@ Instruction *SPIRVToLLVM::transRelational(SPIRVInstruction *I, BasicBlock *BB) {
   return cast<Instruction>(Mutator.getMutated());
 }
 
-std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS) {
-  int IgnoreErrCode;
-  return getSpirvReport(IS, IgnoreErrCode);
-}
-
-std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS,
-                                                int &ErrCode) {
-  SPIRVWord Word;
-  std::string Name;
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
-  SPIRVDecoder D(IS, *BM);
-  D >> Word;
-  if (Word != MagicNumber) {
-    ErrCode = SPIRVEC_InvalidMagicNumber;
-    return {};
+void getSpirvReport(std::istream &IS, SPIRV::TranslatorOpts &Opts,
+                    SPIRVModuleReport &Report) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
+  IS >> *BM;
+  auto &CM = BM->getCapability();
+  for (auto &KV : CM) {
+    Report.Capabilities.emplace_back(KV.second->getKind());
   }
-  D >> Word;
-  if (!isSPIRVVersionKnown(Word)) {
-    ErrCode = SPIRVEC_InvalidVersionNumber;
-    return {};
+  auto &EM = BM->getExtension();
+  for (auto &K : EM) {
+    Report.Extensions.emplace_back(K);
   }
-  SPIRVModuleReport Report;
-  Report.Version = static_cast<SPIRV::VersionNumber>(Word);
-  // Skip: Generator’s magic number, Bound and Reserved word
-  D.ignore(3);
-
-  bool IsReportGenCompleted = false, IsMemoryModelDefined = false;
-  while (!IS.bad() && !IsReportGenCompleted && D.getWordCountAndOpCode()) {
-    switch (D.OpCode) {
-    case OpCapability:
-      D >> Word;
-      Report.Capabilities.push_back(Word);
-      break;
-    case OpExtension:
-      Name.clear();
-      D >> Name;
-      Report.Extensions.push_back(Name);
-      break;
-    case OpExtInstImport:
-      Name.clear();
-      D >> Word >> Name;
-      Report.ExtendedInstructionSets.push_back(Name);
-      break;
-    case OpMemoryModel:
-      if (IsMemoryModelDefined) {
-        ErrCode = SPIRVEC_RepeatedMemoryModel;
-        return {};
-      }
-      SPIRVAddressingModelKind AddrModel;
-      SPIRVMemoryModelKind MemoryModel;
-      D >> AddrModel >> MemoryModel;
-      if (!isValid(AddrModel)) {
-        ErrCode = SPIRVEC_InvalidAddressingModel;
-        return {};
-      }
-      if (!isValid(MemoryModel)) {
-        ErrCode = SPIRVEC_InvalidMemoryModel;
-        return {};
-      }
-      Report.MemoryModel = MemoryModel;
-      Report.AddrModel = AddrModel;
-      IsMemoryModelDefined = true;
-      // In this report we don't analyze instructions after OpMemoryModel
-      IsReportGenCompleted = true;
-      break;
-    default:
-      // No more instructions to gather information about
-      IsReportGenCompleted = true;
-    }
+  auto &SEM = BM->getSourceExtension();
+  for (auto &SE : SEM) {
+    Report.ExtendedInstructionSets.emplace_back(SE);
   }
-  if (IS.bad()) {
-    ErrCode = SPIRVEC_InvalidModule;
-    return {};
-  }
-  if (!IsMemoryModelDefined) {
-    ErrCode = SPIRVEC_UnspecifiedMemoryModel;
-    return {};
-  }
-  ErrCode = SPIRVEC_Success;
-  return std::make_optional(std::move(Report));
+  Report.MemoryModel = BM->getMemoryModel();
+  Report.Version = BM->getSPIRVVersion();
+  Report.AddrModel = BM->getAddressingModel();
 }
 
 constexpr std::string_view formatAddressingModel(uint32_t AddrModel) {
@@ -5018,8 +4957,8 @@ constexpr std::string_view formatMemoryModel(uint32_t MemoryModel) {
   }
 }
 
-SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
-  SPIRVModuleTextReport TextReport;
+void formatSpirvReport(const SPIRVModuleReport &Report,
+                       SPIRVModuleTextReport &TextReport) {
   TextReport.Version =
       formatVersionNumber(static_cast<uint32_t>(Report.Version));
   TextReport.AddrModel = formatAddressingModel(Report.AddrModel);
@@ -5034,7 +4973,6 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
   // other fields with string content can be copied as is
   TextReport.Extensions = Report.Extensions;
   TextReport.ExtendedInstructionSets = Report.ExtendedInstructionSets;
-  return TextReport;
 }
 
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,

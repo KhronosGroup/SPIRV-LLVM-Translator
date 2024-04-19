@@ -107,33 +107,34 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              std::string &ErrMsg);
 
 struct SPIRVModuleReport {
-  SPIRV::VersionNumber Version;
+  uint32_t Version;
   uint32_t MemoryModel;
   uint32_t AddrModel;
-  std::vector<std::string> Extensions;
-  std::vector<std::string> ExtendedInstructionSets;
-  std::vector<uint32_t> Capabilities;
+  llvm::SmallVector<std::string> Extensions;
+  llvm::SmallVector<std::string> ExtendedInstructionSets;
+  llvm::SmallVector<uint32_t> Capabilities;
 };
 /// \brief Partially load SPIR-V from the stream and decode only selected
 /// instructions that are needed to retrieve general information
 /// about the module. If this call fails, readSPIRVModule is
 /// expected to fail as well.
 /// \returns nullopt on failure.
-std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS);
-std::optional<SPIRVModuleReport> getSpirvReport(std::istream &IS, int &ErrCode);
+void getSpirvReport(std::istream &IS, SPIRV::TranslatorOpts &Opts,
+                    SPIRVModuleReport &Report);
 
 struct SPIRVModuleTextReport {
   std::string Version;
   std::string MemoryModel;
   std::string AddrModel;
-  std::vector<std::string> Extensions;
-  std::vector<std::string> ExtendedInstructionSets;
-  std::vector<std::string> Capabilities;
+  llvm::SmallVector<std::string> Extensions;
+  llvm::SmallVector<std::string> ExtendedInstructionSets;
+  llvm::SmallVector<std::string> Capabilities;
 };
 /// \brief Create a human-readable form of the report returned by a call to
 /// getSpirvReport by decoding its binary fields.
 /// \returns String with the human-readable report.
-SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report);
+void formatSpirvReport(const SPIRVModuleReport &Report,
+                       SPIRVModuleTextReport &TextReport);
 
 /// \brief Returns the message associated with the error code.
 /// \returns empty string if no known error code is found.

@@ -865,36 +865,32 @@ int main(int Ac, char **Av) {
 
   if (SPIRVPrintReport) {
     std::ifstream IFS(InputFile, std::ios::binary);
-    int ErrCode = 0;
-    std::optional<SPIRV::SPIRVModuleReport> BinReport =
-        SPIRV::getSpirvReport(IFS, ErrCode);
-    if (!BinReport) {
-      std::cerr << "Invalid SPIR-V binary: \"" << SPIRV::getErrorMessage(ErrCode) << "\"\n";
-      return -1;
-    }
+    Opts.setIsReport(true);
+    SPIRV::SPIRVModuleReport BinReport{};
+    SPIRV::SPIRVModuleTextReport TextReport{};
+    SPIRV::getSpirvReport(IFS, Opts, BinReport);
+    SPIRV::formatSpirvReport(BinReport, TextReport);
 
-    SPIRV::SPIRVModuleTextReport TextReport =
-        SPIRV::formatSpirvReport(BinReport.value());
-
-    std::cout << "SPIR-V module report:"
-              << "\n Version: " << TextReport.Version
+    std::cout << "SPIR-V module report:" << "\n Version: " << TextReport.Version
               << "\n Memory model: " << TextReport.MemoryModel
               << "\n Addressing model: " << TextReport.AddrModel << "\n";
 
     std::cout << " Number of capabilities: " << TextReport.Capabilities.size()
               << "\n";
-    for (auto &Capability : TextReport.Capabilities)
+    for (auto &Capability : TextReport.Capabilities) {
       std::cout << "  Capability: " << Capability << "\n";
-
+    }
     std::cout << " Number of extensions: " << TextReport.Extensions.size()
               << "\n";
-    for (auto &Extension : TextReport.Extensions)
+    for (auto &Extension : TextReport.Extensions) {
       std::cout << "  Extension: " << Extension << "\n";
-
+    }
     std::cout << " Number of extended instruction sets: "
               << TextReport.ExtendedInstructionSets.size() << "\n";
-    for (auto &ExtendedInstructionSet : TextReport.ExtendedInstructionSets)
-      std::cout << "  Extended Instruction Set: " << ExtendedInstructionSet << "\n";
+    for (auto &ExtendedInstructionSet : TextReport.ExtendedInstructionSets) {
+      std::cout << "  Extended Instruction Set: " << ExtendedInstructionSet
+                << "\n";
+    }
   }
   return 0;
 }
