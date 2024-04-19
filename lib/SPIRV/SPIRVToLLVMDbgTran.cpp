@@ -37,6 +37,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SPIRVToLLVMDbgTran.h"
+#include "SPIRV.debug.h"
 #include "SPIRVEntry.h"
 #include "SPIRVFunction.h"
 #include "SPIRVInstruction.h"
@@ -1016,14 +1017,31 @@ DINode *SPIRVToLLVMDbgTran::transTypedef(const SPIRVExtInst *DebugInst) {
   return getDIBuilder(DebugInst).createTypedef(Ty, Alias, File, LineNo, Scope);
 }
 
-DINode *
-SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst) {
+DINode *SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst,
+                                                 DIType *ChildClass) {
   using namespace SPIRVDebug::Operand::TypeInheritance;
+  // The value is used when assertions are enabled
+  [[maybe_unused]] unsigned OperandCount;
+  unsigned ParentIdx, OffsetIdx, FlagsIdx;
+  if (isNonSemanticDebugInfo(DebugInst->getExtSetKind())) {
+    if (!ChildClass) {
+      // Will be translated later when processing TypeMember's parent
+      return nullptr;
+    }
+    OperandCount = NonSemantic::OperandCount;
+    ParentIdx = NonSemantic::ParentIdx;
+    OffsetIdx = NonSemantic::OffsetIdx;
+    FlagsIdx = NonSemantic::FlagsIdx;
+  } else {
+    OperandCount = NonSemantic::OperandCount;
+    ParentIdx = OpenCL::ParentIdx;
+    OffsetIdx = OpenCL::OffsetIdx;
+    FlagsIdx = OpenCL::FlagsIdx;
+  }
   const SPIRVWordVec &Ops = DebugInst->getArguments();
   assert(Ops.size() >= OperandCount && "Invalid number of operands");
   DIType *Parent =
       transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ParentIdx]));
-  DIType *Child = transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[ChildIdx]));
   DINode::DIFlags Flags = DINode::FlagZero;
   SPIRVWord SPIRVFlags =
       getConstantValueOrLiteral(Ops, FlagsIdx, DebugInst->getExtSetKind());
@@ -1033,8 +1051,16 @@ SPIRVToLLVMDbgTran::transTypeInheritance(const SPIRVExtInst *DebugInst) {
     Flags |= llvm::DINode::FlagProtected;
   if ((SPIRVFlags & SPIRVDebug::FlagAccess) == SPIRVDebug::FlagIsPrivate)
     Flags |= llvm::DINode::FlagPrivate;
-  uint64_t Offset = BM->get<SPIRVConstant>(Ops[OffsetIdx])->getZExtIntValue();
-  return getDIBuilder(DebugInst).createInheritance(Child, Parent, Offset, 0,
+  uint64_t OffsetVal =
+      BM->get<SPIRVConstant>(Ops[OffsetIdx])->getZExtIntValue();
+  DIType *Child;
+  if (isNonSemanticDebugInfo(DebugInst->getExtSetKind())) {
+    Child = ChildClass;
+  } else {
+    Child =
+        transDebugInst<DIType>(BM->get<SPIRVExtInst>(Ops[OpenCL::ChildIdx]));
+  }
+  return getDIBuilder(DebugInst).createInheritance(Child, Parent, OffsetVal, 0,
                                                    Flags);
 }
 
@@ -1263,7 +1289,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
     return transDebugInlined(DebugInst);
 
   case SPIRVDebug::TypeInheritance:
-    return transTypeInheritance(DebugInst);
+    return transTypeInheritance(DebugInst, nullptr);
 
   case SPIRVDebug::TypeTemplateParameter:
     return transTypeTemplateParameter(DebugInst);
