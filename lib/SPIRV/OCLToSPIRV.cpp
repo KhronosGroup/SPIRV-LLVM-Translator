@@ -650,8 +650,10 @@ void OCLToSPIRVBase::visitCallAtomicCpp11(CallInst *CI, StringRef MangledName,
 void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
                                         OCLBuiltinTransInfo &Info) {
   llvm::Type *AtomicBuiltinsReturnType = CI->getType();
-  auto SPIRVFunctionName =
-      getSPIRVFuncName(OCLSPIRVBuiltinMap::map(Info.UniqName));
+  Op OC = OpNop;
+  if (!OCLSPIRVBuiltinMap::find(Info.UniqName, &OC))
+    return;
+  auto SPIRVFunctionName = getSPIRVFuncName(OC);
   bool NeedsNegate = false;
   if (AtomicBuiltinsReturnType->isFloatingPointTy()) {
     // Translate FP-typed atomic builtins. Currently we only need to
