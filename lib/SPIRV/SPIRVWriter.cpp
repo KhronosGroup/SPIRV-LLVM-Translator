@@ -1494,12 +1494,11 @@ SPIRVInstruction *LLVMToSPIRVBase::transCmpInst(CmpInst *Cmp,
         Cmp->getOperand(1)->getType()->isPointerTy()) {
       Op OC = P == ICmpInst::ICMP_EQ ? OpPtrEqual : OpPtrNotEqual;
       return BM->addBinaryInst(OC, transType(Cmp->getType()), TOp0, TOp1, BB);
-    } else {
-      unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();
-      SPIRVType *Ty = transType(getSizetType(AS));
-      TOp0 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp0, BB);
-      TOp1 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp1, BB);
     }
+    unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();
+    SPIRVType *Ty = transType(getSizetType(AS));
+    TOp0 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp0, BB);
+    TOp1 = BM->addUnaryInst(OpConvertPtrToU, Ty, TOp1, BB);
   }
   SPIRVInstruction *BI =
       BM->addCmpInst(transBoolOpCode(TOp0, CmpMap::map(Cmp->getPredicate())),
