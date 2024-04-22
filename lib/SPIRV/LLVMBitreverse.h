@@ -112,7 +112,7 @@ entry:                                                                          
   %shl3 = and         " TYPE_STR " %and2, " GEN_CONST ## NUM_ELTS(BASE_TYPE,-6) "  \n\
   %shr4 = lshr        " TYPE_STR " %or,   " GEN_CONST ## NUM_ELTS(BASE_TYPE, 1) "  \n\
   %and5 = and         " TYPE_STR " %shr4, " GEN_CONST ## NUM_ELTS(BASE_TYPE, 5) "  \n\
-  %or6 = or disjoint  " TYPE_STR " %shl3, %and5                                    \n\
+  %or6  = or disjoint " TYPE_STR " %shl3, %and5                                    \n\
   ret                 " TYPE_STR " %or6                                            \n\
 }                                                                                  \n\
 "}
