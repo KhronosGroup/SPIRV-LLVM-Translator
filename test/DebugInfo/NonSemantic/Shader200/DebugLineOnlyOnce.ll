@@ -48,7 +48,7 @@ attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memo
 !15 = !DIBasicType(name: "INTEGER*8", size: 64, encoding: DW_ATE_signed)
 
 !51 = distinct !DICompileUnit(language: DW_LANG_Fortran95, file: !52, producer: "Intel(R) Fortran 24.0-1652", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
-!52 = !DIFile(filename: "gpu_jtype1.F90", directory: "/iusers/asudarsa/jiras/57511/gfail")
+!52 = !DIFile(filename: "gpu_jtype1.F90", directory: "/tmp/bug")
 
 !3325 = !{i32 4, i32 200000}
 !3329 = !{i32 2, !"Debug Info Version", i32 3}
