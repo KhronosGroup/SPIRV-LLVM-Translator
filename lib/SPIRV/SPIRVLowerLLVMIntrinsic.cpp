@@ -57,6 +57,13 @@ typedef struct {
   // Extension that supports the LLVM Intrinsic.
   // Thus, emulation is not needed if extension is enabled.
   const ExtensionID ForbiddenExtension;
+
+  // A mapping is only applied if the RequiredExtension and the
+  // ForbiddenExtension tests are both met. Thus, llvm.bitreverse.i2
+  // will not be lowered even if its RequiredExtension,
+  // SPV_INTEL_arbitrary_precision_integers, is enabled if its
+  // ForbiddenExtension, SPV_KHR_bit_instructions, is also enabled.
+
   const char *ModuleText;
 } LLVMIntrinsicMapValueType;
 
@@ -64,7 +71,7 @@ typedef struct {
 #define NO_REQUIRED_EXTENSION  ExtensionID::Last
 #define NO_FORBIDDEN_EXTENSION ExtensionID::Last
 
-const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries= {
+const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries = {
 //  LLVM Intrinsic Name             Required Extension                                   Forbidden Extension                    Module with
 //                                                                                                                              emulation function
   { "llvm.bitreverse.i2",          {ExtensionID::SPV_INTEL_arbitrary_precision_integers, ExtensionID::SPV_KHR_bit_instructions, LLVMBitreversei2}},
