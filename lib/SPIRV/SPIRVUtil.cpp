@@ -2491,6 +2491,10 @@ public:
       }
       break;
     }
+    case internal::OpConvertHandleToImageINTEL:
+    case internal::OpConvertHandleToSamplerINTEL:
+      addUnsignedArg(0);
+      break;
     default:;
       // No special handling is needed
     }

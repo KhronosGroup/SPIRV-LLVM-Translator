@@ -25,8 +25,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: ConvertHandleToImageINTEL [[#IntImgTy]] [[#]] [[#Input]]
 ; CHECK-SPIRV: ConvertHandleToSamplerINTEL [[#SamplerTy]] [[#]] [[#Const42]]
 
-; CHECK-LLVM: call spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELi(i32 %{{.*}})
-; CHECK-LLVM: call spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELl(i64 42)
+; CHECK-LLVM: call spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z76__spirv_ConvertHandleToImageINTEL_RPU3AS133__spirv_Image__uint_2_0_0_0_0_0_0j(i32 %{{.*}})
+; CHECK-LLVM: call spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
 
 define spir_func void @foo(i32 %in) {
   %img = call spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELi(i32 %in)
