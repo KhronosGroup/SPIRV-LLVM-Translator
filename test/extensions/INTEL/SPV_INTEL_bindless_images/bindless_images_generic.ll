@@ -16,25 +16,24 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Capability BindlessImagesINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_bindless_images"
 ; CHECK-SPIRV-DAG: TypeVoid [[#VoidTy:]]
-; CHECK-SPIRV-DAG: TypeInt [[#Int32Ty:]] 32
 ; CHECK-SPIRV-DAG: TypeInt [[#Int64Ty:]] 64
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#Const42:]] 42 0
-; CHECK-SPIRV-DAG: TypeImage [[#IntImgTy:]] [[#Int32Ty]]
+; CHECK-SPIRV-DAG: TypeImage [[#IntImgTy:]] [[#Int64Ty]]
 ; CHECK-SPIRV-DAG: TypeSampler [[#SamplerTy:]]
-; CHECK-SPIRV: FunctionParameter [[#Int32Ty]] [[#Input:]]
+; CHECK-SPIRV: FunctionParameter [[#Int64Ty]] [[#Input:]]
 ; CHECK-SPIRV: ConvertHandleToImageINTEL [[#IntImgTy]] [[#]] [[#Input]]
 ; CHECK-SPIRV: ConvertHandleToSamplerINTEL [[#SamplerTy]] [[#]] [[#Const42]]
 
-; CHECK-LLVM: call spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z76__spirv_ConvertHandleToImageINTEL_RPU3AS133__spirv_Image__uint_2_0_0_0_0_0_0j(i32 %{{.*}})
+; CHECK-LLVM: call spir_func target("spirv.Image", i64, 2, 0, 0, 0, 0, 0, 0) @_Z76__spirv_ConvertHandleToImageINTEL_RPU3AS133__spirv_Image__long_2_0_0_0_0_0_0m(i64 %{{.*}})
 ; CHECK-LLVM: call spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
 
-define spir_func void @foo(i32 %in) {
-  %img = call spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELi(i32 %in)
+define spir_func void @foo(i64 %in) {
+  %img = call spir_func target("spirv.Image", i64, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELl(i64 %in)
   %samp = call spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELl(i64 42)
   ret void
 }
 
-declare spir_func target("spirv.Image", i32, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELi(i32)
+declare spir_func target("spirv.Image", i64, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELl(i64)
 
 declare spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELl(i64)
 

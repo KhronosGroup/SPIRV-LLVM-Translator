@@ -4042,13 +4042,27 @@ protected:
     SPIRVValue *Input =
         const_cast<SPVBindlessImagesInst *>(this)->getOperand(0);
     SPIRVType *InCompTy = Input->getType();
+
+    auto StringAddrMod = [](SPIRVAddressingModelKind Kind) -> std::string {
+      if (Kind == AddressingModelPhysical32)
+        return std::string("Physical32");
+      else if (Kind == AddressingModelPhysical64)
+        return std::string("Physical64");
+      return std::string("AddressingModel: ") + std::to_string(Kind);
+    };
+
     auto InstName = OpCodeNameMap::map(OC);
+    auto AddrMod = this->getModule()->getAddressingModel();
     SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
     SPVErrLog.checkError(
-        InCompTy->isTypeInt(32) || InCompTy->isTypeInt(64),
+        (InCompTy->isTypeInt(32) && AddrMod == AddressingModelPhysical32) ||
+        (InCompTy->isTypeInt(64) && AddrMod == AddressingModelPhysical64),
         SPIRVEC_InvalidInstruction,
-        InstName + "\nParameter value must be a scalar of 32-bit or 64-bit "
-                   "type\n");
+        InstName + "\nParameter value must be a 32-bit scalar in case of "
+                   "Physical32 addressing model or a 64-bit scalar in case of "
+                   "Physical64 addressing model\n"
+                   "Type size: " + std::to_string(InCompTy->getBitWidth()) +
+                   "\nAddressing model: " + StringAddrMod(AddrMod)) + "\n";
 
     SPIRVType *ResTy = this->getType();
     SPVErrLog.checkError(
@@ -4057,7 +4071,7 @@ protected:
              OC == internal::OpConvertHandleToSamplerINTEL),
         SPIRVEC_InvalidInstruction,
         InstName + "\nIncorrect return type of the instruction must be "
-                   "image/sampler/sampled image\n");
+                   "image/sampler\n");
   }
 };
 #define _SPIRV_OP(x)                                                           \

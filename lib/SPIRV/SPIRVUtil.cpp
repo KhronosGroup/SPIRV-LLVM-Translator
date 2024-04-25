@@ -1562,6 +1562,9 @@ Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
   if (Postfix == kSPIRVImageSampledTypeName::Int ||
       Postfix == kSPIRVImageSampledTypeName::UInt)
     return Type::getInt32Ty(Ctx);
+  if (Postfix == kSPIRVImageSampledTypeName::Long ||
+      Postfix == kSPIRVImageSampledTypeName::ULong)
+    return Type::getInt64Ty(Ctx);
   llvm_unreachable("Invalid sampled type postfix");
   return nullptr;
 }
