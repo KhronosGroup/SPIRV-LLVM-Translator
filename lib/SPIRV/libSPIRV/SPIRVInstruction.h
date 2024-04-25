@@ -4043,8 +4043,7 @@ protected:
         const_cast<SPVBindlessImagesInst *>(this)->getOperand(0);
     SPIRVType *InCompTy = Input->getType();
 
-    [[maybe_unused]] auto StringAddrMod = [](SPIRVAddressingModelKind Kind)
-      -> std::string {
+    auto StringAddrMod = [](SPIRVAddressingModelKind Kind) -> std::string {
       if (Kind == AddressingModelPhysical32)
         return std::string("Physical32");
       if (Kind == AddressingModelPhysical64)
@@ -4065,8 +4064,7 @@ protected:
             "Physical64 addressing model\n"
             "Type size: " +
             std::to_string(InCompTy->getBitWidth()) +
-            "\nAddressing model: " + StringAddrMod(AddrMod)) +
-        "\n";
+            "\nAddressing model: " + StringAddrMod(AddrMod) + "\n");
 
     SPIRVType *ResTy = this->getType();
     SPVErrLog.checkError(
