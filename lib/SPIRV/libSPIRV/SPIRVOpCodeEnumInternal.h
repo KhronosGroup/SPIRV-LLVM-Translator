@@ -29,3 +29,7 @@ _SPIRV_OP_INTERNAL(ComplexFDivINTEL, internal::ComplexFDivINTEL)
 _SPIRV_OP_INTERNAL(MaskedGatherINTEL, internal::OpMaskedGatherINTEL)
 _SPIRV_OP_INTERNAL(MaskedScatterINTEL, internal::OpMaskedScatterINTEL)
 _SPIRV_OP_INTERNAL(RoundFToTF32INTEL, internal::RoundFToTF32INTEL)
+_SPIRV_OP_INTERNAL(ConvertHandleToImageINTEL,
+                   internal::ConvertHandleToImageINTEL)
+_SPIRV_OP_INTERNAL(ConvertHandleToSamplerINTEL,
+                   internal::ConvertHandleToSamplerINTEL)
