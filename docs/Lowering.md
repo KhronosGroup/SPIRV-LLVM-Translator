@@ -21,11 +21,16 @@ in one of three ways:
                                   BB);
           }
 
-   When these ExtInst are reverse translated they are converted to calls:
+   When these ExtInst are reverse translated with (llvm-spirv -r) they are converted to calls:
 
         %0 = call spir_func i32 @_Z3clzi(i32 %x) #0
 
    Implementation of the spir_func is in an OpenCL library.  
+
+   If reverse translation is done with (llvm-spirv -r --spirv-target-env=SPV-IR) the calls are converted to
+   SPIR-V Friendly IR:
+
+        %0 = call spir_func i32 @_Z15__spirv_ocl_clzi(i32 %x)
 
 2. In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is created by LLVM API calls and will be translated to SPIRV. The calls to the emulation
