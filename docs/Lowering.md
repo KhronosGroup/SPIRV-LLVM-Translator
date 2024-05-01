@@ -32,6 +32,9 @@ in one of three ways:
 
         %0 = call spir_func i32 @_Z15__spirv_ocl_clzi(i32 %x)
 
+   This is the cleanest method of lowering.  If a LLVM intrinsic naturally maps to a SPIRV instruction, and if there is an
+   external library that supports the instructions this way should be chosen.
+
 2. In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is created by LLVM API calls and will be translated to SPIRV. The calls to the emulation
    functions and the emulation functions themselves will be translated to SPIRV.  After reverse translation, the calls to the emulation
@@ -88,7 +91,11 @@ in one of three ways:
         %ret = call i16 @llvm.bswap.i16(i16 %0)
 
    The emulation functions are deleted.
-   
+
+   This is the next best way of lowering a function.  The functionality of the intrinsic is created by a call to LLVM's CreateIntrinsic,
+   so the complexity within the translator is small.  However, this is effectively using the translator to insert a library
+   function at translation time.
+
 3. In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.   
    The emulation function is represented as a text string of LLVM assembly and is parsed and added to the LLVM IR
    to be translated.  The calls to the emulation functions and the emulation functions themselves will be translated
@@ -135,3 +142,8 @@ in one of three ways:
             { "llvm.bitreverse.i8",          {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreversei8}},
             ...
 
+
+   This is the least preferred way of lowering an intrinsic function, but it is also the most flexible.  The functionality of a
+   call is provided by LLVM IR supplied as text.  The complexity of the intrinsic functionality is inside the translator.
+   Each function signature variation for an intrinsic that needs to be lowered must be supplied by the developer.  As with #2
+   this method is effectively using the translator to insert a library function at translation time.
