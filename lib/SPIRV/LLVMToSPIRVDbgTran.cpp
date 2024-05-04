@@ -660,9 +660,9 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgQualifiedType(const DIDerivedType *QT) {
 }
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
-  if (isNonSemanticDebugInfo() && AT->isVector())
-    return transDbgVectorTypeNonSemantic(AT);
   if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
+    if (AT->isVector())
+      return transDbgVectorTypeNonSemantic200(AT);
     if (isFortranArrayDynamic(AT))
       return transDbgArrayTypeDynamic(AT);
     return transDbgArrayTypeNonSemantic(AT);
@@ -688,6 +688,8 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeOpenCL(const DICompositeType *AT) {
     if (AT->isVector()) {
       assert(N == 1 && "Multidimensional vector is not expected!");
       Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
+      if (isNonSemanticDebugInfo())
+        transformToConstant(Ops, {ComponentCountIdx});
       return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
     }
     if (Count) {
@@ -726,13 +728,21 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
   Ops.resize(SubrangesIdx + N);
   for (unsigned I = 0; I < N; ++I) {
     DISubrange *SR = cast<DISubrange>(AR[I]);
+    ConstantInt *Count = SR->getCount().get<ConstantInt *>();
+    if (AT->isVector()) {
+      assert(N == 1 && "Multidimensional vector is not expected!");
+      Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
+      if (isNonSemanticDebugInfo())
+        transformToConstant(Ops, {ComponentCountIdx});
+      return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
+    }
     Ops[SubrangesIdx + I] = transDbgEntry(SR)->getId();
   }
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
 }
 
 SPIRVEntry *
-LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic(const DICompositeType *AT) {
+LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic200(const DICompositeType *AT) {
   using namespace SPIRVDebug::Operand::TypeVector;
   SPIRVWordVec Ops(MaxOperandCount);
   Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();

@@ -1,4 +1,4 @@
-; Ensure that vector type's memory size is preserved even if
+; Ensure that vector type's memory size is preserved (with nonsemantic-shader-200) even if
 ; it does not equal BaseType*ComponentCount.
 ;
 ; This test was derived from DebugInfo/X86/sycl-vec-3.ll.
@@ -7,11 +7,11 @@
 
 ; RUN: llvm-spirv %t.bc -o %t.100.spv -spirv-debug-info-version=nonsemantic-shader-100 -spirv-ext=+SPV_INTEL_vector_compute,+SPV_KHR_non_semantic_info
 ; RUN: llvm-spirv -r %t.100.spv -o %t.100.bc
-; RUN: llvm-dis %t.100.bc -o - | FileCheck %s
+; RUN: llvm-dis %t.100.bc -o - | FileCheck %s --check-prefixes=CHECK,CHECK-100
 
 ; RUN: llvm-spirv %t.bc -o %t.200.spv -spirv-debug-info-version=nonsemantic-shader-200 -spirv-ext=+SPV_INTEL_vector_compute,+SPV_KHR_non_semantic_info
 ; RUN: llvm-spirv -r %t.200.spv -o %t.200.bc
-; RUN: llvm-dis %t.200.bc -o - | FileCheck %s
+; RUN: llvm-dis %t.200.bc -o - | FileCheck %s --check-prefixes=CHECK,CHECK-200
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -25,7 +25,10 @@ target triple = "spir64-unknown-unknown"
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "vector", scope: null, file: !2, line: 3, type: !3, isLocal: false, isDefinition: true)
 !2 = !DIFile(filename: "sycl-vec-3.cpp", directory: "/tmp")
-; CHECK: !DICompositeType(tag: DW_TAG_array_type, baseType: ![[BASE_TY:[0-9]+]],{{.*}} size: 32768, flags: DIFlagVector, elements: ![[ELEMS:[0-9]+]])
+; nonsemantic-shader-100 does not have 'Memory Size' field.  Memory size is estimated with (element size * number of elements).
+; CHECK-100: !DICompositeType(tag: DW_TAG_array_type, baseType: ![[BASE_TY:[0-9]+]],{{.*}} size: 26624, flags: DIFlagVector, elements: ![[ELEMS:[0-9]+]])
+; nonsemantic-shader-200 has 'Memory Size' field.  Memory size is accurately preserved.
+; CHECK-200: !DICompositeType(tag: DW_TAG_array_type, baseType: ![[BASE_TY:[0-9]+]],{{.*}} size: 32768, flags: DIFlagVector, elements: ![[ELEMS:[0-9]+]])
 !3 = distinct !DICompositeType(tag: DW_TAG_array_type, baseType: !6, file: !2, line: 3, size: 32768, flags: DIFlagVector, elements: !4, identifier: "_ZTSN2cl4sycl3vecIiLi3EEE")
 ; CHECK-DAG: ![[ELEMS]] = !{![[ELEMS_RANGE:[0-9]+]]}
 !4 = !{!5}
