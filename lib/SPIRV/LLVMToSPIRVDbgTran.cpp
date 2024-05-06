@@ -741,8 +741,8 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
 }
 
-SPIRVEntry *
-LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic200(const DICompositeType *AT) {
+SPIRVEntry *LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic200(
+    const DICompositeType *AT) {
   using namespace SPIRVDebug::Operand::TypeVector;
   SPIRVWordVec Ops(MaxOperandCount);
   Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
