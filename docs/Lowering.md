@@ -1,7 +1,9 @@
 The SPIRV-LLVM-Translator will "lower" some LLVM intrinsic calls to another function or implementation
-in one of three ways:
+in one of four ways:
 
-1. In transIntrinsicInst in SPIRVWriter.cpp, calls to LLVM intrinsics are replaced with a SPIRV ExtInst.
+1. A.
+
+   In transIntrinsicInst in SPIRVWriter.cpp, calls to LLVM intrinsics are replaced with a SPIRV ExtInst.
    For example:
 
         %0 = tail call i32 @llvm.ctlz.i32(i32 %x, i1 true)
@@ -28,14 +30,93 @@ in one of three ways:
    Implementation of the spir_func is in an OpenCL library.  
 
    If reverse translation is done with (llvm-spirv -r --spirv-target-env=SPV-IR) the calls are converted to
-   SPIR-V Friendly IR:
+   SPIRV Friendly IR:
 
         %0 = call spir_func i32 @_Z15__spirv_ocl_clzi(i32 %x)
 
    This is the cleanest method of lowering.  If a LLVM intrinsic naturally maps to a SPIRV instruction, and if there is an
    external library that supports the instructions this way should be chosen.
 
-2. In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
+   -----------------------------------------------------------------------------------------------------------------------------------
+   B.
+
+   Sometimes an intrinsic can be translated to an instruction that is only available with an extension.  For example translating:
+
+        %ret = call i8 @llvm.bitreverse.i8(i8 %a)
+
+   when llvm-spirv is invoked with:
+
+        llvm-spirv --spirv-ext=+SPV_KHR_bit_instructions
+
+   is translated into SPIRV:
+
+        4 BitReverse 51 66 58
+
+   The code in transIntrinsicInst to do this translation is:
+
+          case Intrinsic::bitreverse: {
+            if (!BM->getErrorLog().checkError(
+                    BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_bit_instructions),
+                    SPIRVEC_InvalidFunctionCall, II,
+                    "Translation of llvm.bitreverse intrinsic requires "
+                    "SPV_KHR_bit_instructions extension.")) {
+              return nullptr;
+            }
+            SPIRVType *Ty = transType(II->getType());
+            SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
+            return BM->addUnaryInst(OpBitReverse, Ty, Op, BB);
+          }
+
+2. Some intrinsics are emulated by basic operations in SPIRVWriter.cpp.  For example:
+
+        %0 = call float @llvm.vector.reduce.fadd.v4float(float %sp, <4 x float> %v)
+
+   is emulated in SPIRV with:
+
+        5 VectorExtractDynamic 2 11 7 10
+        5 VectorExtractDynamic 2 13 7 12
+        5 VectorExtractDynamic 2 15 7 14
+        5 VectorExtractDynamic 2 17 7 16
+        5 FAdd 2 18 6 11
+        5 FAdd 2 19 18 13
+        5 FAdd 2 20 19 15
+        5 FAdd 2 21 20
+
+   The code in transIntrinsicInst to do this emulation is:
+
+        case Intrinsic::vector_reduce_add: {
+          Op Op;
+          if (IID == Intrinsic::vector_reduce_add) {
+            Op = OpIAdd;
+          }
+          VectorType *VecTy = cast<VectorType>(II->getArgOperand(0)->getType());
+          SPIRVValue *VecSVal = transValue(II->getArgOperand(0), BB);
+          SPIRVTypeInt *ResultSType =
+              BM->addIntegerType(VecTy->getElementType()->getIntegerBitWidth());
+          SPIRVTypeInt *I32STy = BM->addIntegerType(32);
+          unsigned VecSize = VecTy->getElementCount().getFixedValue();
+          SmallVector<SPIRVValue *, 16> Extracts(VecSize);
+          for (unsigned Idx = 0; Idx < VecSize; ++Idx) {
+            Extracts[Idx] = BM->addVectorExtractDynamicInst(
+                VecSVal, BM->addIntegerConstant(I32STy, Idx), BB);
+          }
+          unsigned Counter = VecSize >> 1;
+          while (Counter != 0) {
+            for (unsigned Idx = 0; Idx < Counter; ++Idx) {
+              Extracts[Idx] = BM->addBinaryInst(Op, ResultSType, Extracts[Idx << 1],
+                                                Extracts[(Idx << 1) + 1], BB);
+            }
+            Counter >>= 1;
+          }
+          if ((VecSize & 1) != 0) {
+            Extracts[0] = BM->addBinaryInst(Op, ResultSType, Extracts[0],
+                                            Extracts[VecSize - 1], BB);
+          }
+          return Extracts[0];
+        }
+
+
+3. In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is created by LLVM API calls and will be translated to SPIRV. The calls to the emulation
    functions and the emulation functions themselves will be translated to SPIRV.  After reverse translation, the calls to the emulation
    functions and the emulation functions themselves will appear in the LLVM IR.
@@ -96,14 +177,14 @@ in one of three ways:
    so the complexity within the translator is small.  However, this is effectively using the translator to insert a library
    function at translation time.
 
-3. In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.   
+4. In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is represented as a text string of LLVM assembly and is parsed and added to the LLVM IR
    to be translated.  The calls to the emulation functions and the emulation functions themselves will be translated
    to SPIRV.  After reverse translation, the calls to the emulation functions and the emulation functions themselves will appear
    in the LLVM IR.
 
    For example if SPV_KHR_bit_instructions is not enabled then bit instructions are not supported and llvm.bitreverse.i8
-   will be emulated. Calls to it:
+   will be emulated (Note that this is the same intrinsic example used in section 1.B). Calls to it:
 
         %ret = call i8 @llvm.bitreverse.i8(i8 %a)
 
