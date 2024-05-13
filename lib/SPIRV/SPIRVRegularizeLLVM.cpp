@@ -52,6 +52,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
 
+#include "spirv/unified1/spirv.hpp"
+
 #include <set>
 #include <vector>
 
@@ -420,6 +422,68 @@ void SPIRVRegularizeLLVMBase::cleanupConversionToNonStdIntegers(Module *M) {
   }
 }
 
+void SPIRVRegularizeLLVMBase::promoteCacheControlBuiltin(Module *M) {
+  std::vector<Instruction *> ToErase;
+  for (auto FI = M->begin(), FE = M->end(); FI != FE;) {
+    Function *F = &(*FI++);
+    // For the prototype __translate_spirv_cache_control_*** is assumed to have
+    // 1st pointer argument
+    // 2nd and 3rd parameters specify cache controls following the spec
+    // TODO: handle mangling
+    auto FName = F->getName();
+    if (!FName.consume_front("__spirv_Decoration"))
+      continue;
+
+    for (auto *I : F->users()) {
+      // Only direct calls are expected
+      CallInst *CI = cast<CallInst>(I);
+      enum { PtrIdx = 0, LevelIdx = 1, ControlIdx = 2 };
+      auto *const PtrArg = CI->getOperand(PtrIdx);
+      auto *const LevelArg = CI->getOperand(LevelIdx);
+      auto *const ControlArg = CI->getOperand(ControlIdx);
+
+      SmallVector<Metadata *, 4> MDs;
+      assert(FName == "CacheControlLoadINTEL" ||
+             FName == "CacheControlStoreINTEL");
+      auto *const KindMD = ConstantAsMetadata::get(
+          ConstantInt::get(Type::getInt32Ty(M->getContext()),
+                           FName == "CacheControlLoadINTEL"
+                           ? DecorationCacheControlLoadINTEL
+                           : DecorationCacheControlStoreINTEL));
+
+      // If constant propagation doesn't happen with O0, just skip such cache
+      // control
+      if (!isa<ConstantInt>(LevelArg) || !isa<ConstantInt>(ControlArg)) {
+        CI->replaceAllUsesWith(PtrArg);
+        ToErase.emplace_back(CI);
+      }
+
+      auto *const LevelMD = ConstantAsMetadata::get(
+          cast<ConstantInt>(LevelArg));
+      auto *const ControlMD = ConstantAsMetadata::get(
+          cast<ConstantInt>(ControlArg));
+      std::vector<Metadata *> OPs = { KindMD, LevelMD, ControlMD };
+      MDs.push_back(MDNode::get(M->getContext(), OPs));
+
+      IRBuilder Builder(CI);
+      // Create dummy zero GEPs to make an SSA copy of a pointer
+      auto *PtrToDecorate = cast<Instruction>(
+          Builder.CreateConstGEP1_32(PtrArg->getType(), PtrArg, 0));
+      MDNode *MDList = MDNode::get(M->getContext(), MDs);
+      PtrToDecorate->setMetadata(SPIRV_MD_DECORATIONS, MDList);
+
+      CI->replaceAllUsesWith(PtrToDecorate);
+      ToErase.emplace_back(CI);
+    }
+  }
+
+  for (Instruction *I : ToErase) {
+    assert(I->user_empty());
+    I->dropAllReferences();
+    I->eraseFromParent();
+  }
+}
+
 bool SPIRVRegularizeLLVMBase::runRegularizeLLVM(Module &Module) {
   M = &Module;
   Ctx = &M->getContext();
@@ -503,6 +567,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
   addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
+  // TODO: we should have a common dispatcher interface to go through the module
+  // only once to gather functions
+  promoteCacheControlBuiltin(M);
 
   for (auto I = M->begin(), E = M->end(); I != E;) {
     Function *F = &(*I++);

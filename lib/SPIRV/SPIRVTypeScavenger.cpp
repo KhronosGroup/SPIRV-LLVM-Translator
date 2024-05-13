@@ -1025,6 +1025,14 @@ void SPIRVTypeScavenger::correctUseTypes(Instruction &I) {
       });
       Value *CastedValue =
           Builder.Insert(CastInst::CreatePointerCast(U, U->getType()));
+      if (isa<Instruction>(U)) {
+        if (auto *MDNode =
+            cast<Instruction>(U)->getMetadata("spirv.Decorations")) {
+          Instruction *BitCast = cast<Instruction>(CastedValue);
+          BitCast->setMetadata("spirv.Decorations", MDNode);
+          cast<Instruction>(U)->dropUnknownNonDebugMetadata();
+        }
+      }
       DeducedTypes[CastedValue] = UsedTy;
       U.set(CastedValue);
     }
