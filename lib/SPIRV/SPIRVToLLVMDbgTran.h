@@ -84,8 +84,7 @@ public:
     return static_cast<T *>(Res);
   }
 
-  Instruction *transDebugIntrinsic(const SPIRVExtInst *DebugInst,
-                                   BasicBlock *BB);
+  DbgInstPtr transDebugIntrinsic(const SPIRVExtInst *DebugInst, BasicBlock *BB);
   void finalize();
 
 private:

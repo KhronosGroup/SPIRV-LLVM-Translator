@@ -47,6 +47,7 @@
 
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/IR/DIBuilder.h"
+#include "llvm/IR/DebugProgramInstruction.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 
@@ -1547,7 +1548,7 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   }
 }
 
-Instruction *
+DbgInstPtr
 SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
                                         BasicBlock *BB) {
   auto GetLocalVar = [&](SPIRVId Id) -> std::pair<DILocalVariable *, DebugLoc> {
@@ -1585,12 +1586,13 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
           AI, LocalVar.first, GetExpression(Ops[ExpressionIdx]),
           LocalVar.second, BB);
       AI->eraseFromParent();
-      return DbgDeclare.get<Instruction *>();
+      return DbgDeclare;
     }
-    return getDIBuilder(DebugInst)
-        .insertDeclare(GetValue(Ops[VariableIdx]), LocalVar.first,
-                       GetExpression(Ops[ExpressionIdx]), LocalVar.second, BB)
-        .get<Instruction *>();
+    DIBuilder &DIB = getDIBuilder(DebugInst);
+    DbgInstPtr Tmp = DIB.insertDeclare(
+        GetValue(Ops[VariableIdx]), LocalVar.first,
+        GetExpression(Ops[ExpressionIdx]), LocalVar.second, BB);
+    return Tmp;
   }
   case SPIRVDebug::Value: {
     using namespace SPIRVDebug::Operand::DebugValue;
@@ -1609,7 +1611,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
       cast<DbgVariableIntrinsic>(DbgValIntr.get<Instruction *>())
           ->setRawLocation(AL);
     }
-    return DbgValIntr.get<Instruction *>();
+    return DbgValIntr;
   }
   default:
     llvm_unreachable("Unknown debug intrinsic!");
