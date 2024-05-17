@@ -2440,19 +2440,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       if (!M->IsNewDbgInfoFormat) {
-        auto *X = mapValue(
+        return mapValue(
             BV, DbgTran->transDebugIntrinsic(ExtInst, BB).get<Instruction *>());
-        return X;
-      }
-      {
+      } else {
         auto MaybeRecord = DbgTran->transDebugIntrinsic(ExtInst, BB);
         if (!MaybeRecord.isNull()) {
-          auto *Rcrd = MaybeRecord.get<DbgRecord *>();
-          Rcrd->setDebugLoc(
+          auto *Record = MaybeRecord.get<DbgRecord *>();
+          Record->setDebugLoc(
               DbgTran->transDebugScope(static_cast<SPIRVInstruction *>(BV)));
         }
+        return mapValue(BV, nullptr);
       }
-      return mapValue(BV, nullptr);
     default:
       llvm_unreachable("Unknown extended instruction set!");
     }
