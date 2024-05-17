@@ -2444,7 +2444,14 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
             BV, DbgTran->transDebugIntrinsic(ExtInst, BB).get<Instruction *>());
         return X;
       }
-      DbgTran->transDebugIntrinsic(ExtInst, BB);
+      {
+        auto MaybeRecord = DbgTran->transDebugIntrinsic(ExtInst, BB);
+        if (!MaybeRecord.isNull()) {
+          auto *Rcrd = MaybeRecord.get<DbgRecord *>();
+          Rcrd->setDebugLoc(
+              DbgTran->transDebugScope(static_cast<SPIRVInstruction *>(BV)));
+        }
+      }
       return mapValue(BV, nullptr);
     default:
       llvm_unreachable("Unknown extended instruction set!");
