@@ -18,27 +18,36 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-DAG: TypeVoid [[#VoidTy:]]
 ; CHECK-SPIRV-DAG: TypeInt [[#Int64Ty:]] 64
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#Const42:]] 42 0
+; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#Const43:]] 43 0
 ; CHECK-SPIRV-DAG: TypeImage [[#IntImgTy:]] [[#Int64Ty]]
 ; CHECK-SPIRV-DAG: TypeSampler [[#SamplerTy:]]
+; CHECK-SPIRV-DAG: TypeImage [[#IntSmpImgTy:]] [[#Int64Ty]]
+; CHECK-SPIRV-DAG: TypeSampledImage [[#SampImageTy:]] [[#IntSmpImgTy]]
 ; CHECK-SPIRV: FunctionParameter [[#Int64Ty]] [[#Input:]]
 ; CHECK-SPIRV: ConvertHandleToImageINTEL [[#IntImgTy]] [[#]] [[#Input]]
 ; CHECK-SPIRV: ConvertHandleToSamplerINTEL [[#SamplerTy]] [[#]] [[#Const42]]
+; CHECK-SPIRV: ConvertHandleToSampledImageINTEL [[#SampImageTy]] [[#]] [[#Const43]]
 
 ; CHECK-LLVM: call spir_func %spirv.Image._ulong_2_0_0_0_0_0_0 addrspace(1)* @_Z77__spirv_ConvertHandleToImageINTEL_RPU3AS134__spirv_Image__ulong_2_0_0_0_0_0_0m(i64 %{{.*}})
 ; CHECK-LLVM: call spir_func %spirv.Sampler addrspace(2)* @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
+; CHECK-LLVM: call spir_func %spirv.SampledImage._ulong_1_0_0_0_0_0_0
 
 %spirv.Image._long_2_0_0_0_0_0_0 = type opaque
 %spirv.Sampler = type opaque
+%spirv.SampledImage._ulong_1_0_0_0_0_0_0 = type opaque
 
 define spir_func void @foo(i64 %in) {
   %img = call spir_func %spirv.Image._long_2_0_0_0_0_0_0 addrspace(1)* @_Z33__spirv_ConvertHandleToImageINTELl(i64 %in)
   %samp = call spir_func %spirv.Sampler addrspace(2)* @_Z35__spirv_ConvertHandleToSamplerINTELl(i64 42)
+  %sampImage = call spir_func %spirv.SampledImage._ulong_1_0_0_0_0_0_0 addrspace(1)* @_Z40__spirv_ConvertHandleToSampledImageINTELl(i64 43)
   ret void
 }
 
 declare spir_func %spirv.Image._long_2_0_0_0_0_0_0 addrspace(1)* @_Z33__spirv_ConvertHandleToImageINTELl(i64)
 
 declare spir_func %spirv.Sampler addrspace(2)* @_Z35__spirv_ConvertHandleToSamplerINTELl(i64)
+
+declare spir_func %spirv.SampledImage._ulong_1_0_0_0_0_0_0 addrspace(1)* @_Z40__spirv_ConvertHandleToSampledImageINTELl(i64)
 
 !opencl.spir.version = !{!0}
 !spirv.Source = !{!1}

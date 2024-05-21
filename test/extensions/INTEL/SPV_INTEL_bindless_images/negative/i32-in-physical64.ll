@@ -11,16 +11,20 @@ target triple = "spir64-unknown-unknown"
 
 %spirv.Image._long_2_0_0_0_0_0_0 = type opaque
 %spirv.Sampler = type opaque
+%spirv.SampledImage._long_2_0_0_0_0_0_0 = type opaque
 
 define spir_func void @foo(i32 %in) {
   %img = call spir_func %spirv.Image._long_2_0_0_0_0_0_0 addrspace(1)* @_Z33__spirv_ConvertHandleToImageINTELi(i32 %in)
   %samp = call spir_func %spirv.Sampler addrspace(1)* @_Z35__spirv_ConvertHandleToSamplerINTELl(i64 42)
+  %sampImage = call spir_func %spirv.SampledImage._long_2_0_0_0_0_0_0 addrspace(1)* @_Z40__spirv_ConvertHandleToSampledImageINTELl(i64 43)
   ret void
 }
 
 declare spir_func %spirv.Image._long_2_0_0_0_0_0_0 addrspace(1)* @_Z33__spirv_ConvertHandleToImageINTELi(i32)
 
 declare spir_func %spirv.Sampler addrspace(1)* @_Z35__spirv_ConvertHandleToSamplerINTELl(i64)
+
+declare spir_func %spirv.SampledImage._long_2_0_0_0_0_0_0 addrspace(1)* @_Z40__spirv_ConvertHandleToSampledImageINTELl(i64)
 
 !opencl.spir.version = !{!0}
 !spirv.Source = !{!1}

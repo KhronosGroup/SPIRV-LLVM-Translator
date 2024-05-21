@@ -82,6 +82,7 @@ enum InternalOp {
   IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpConvertHandleToImageINTEL = 6529,
   IOpConvertHandleToSamplerINTEL = 6530,
+  IOpConvertHandleToSampledImageINTEL = 6531,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -216,6 +217,7 @@ _SPIRV_OP(Capability, CacheControlsINTEL)
 _SPIRV_OP(Capability, BindlessImagesINTEL)
 _SPIRV_OP(Op, ConvertHandleToImageINTEL)
 _SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
+_SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
