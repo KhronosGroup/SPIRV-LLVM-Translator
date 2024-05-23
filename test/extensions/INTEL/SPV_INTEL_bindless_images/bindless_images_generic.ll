@@ -30,7 +30,7 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-LLVM: call spir_func %spirv.Image._ulong_2_0_0_0_0_0_0 addrspace(1)* @_Z77__spirv_ConvertHandleToImageINTEL_RPU3AS134__spirv_Image__ulong_2_0_0_0_0_0_0m(i64 %{{.*}})
 ; CHECK-LLVM: call spir_func %spirv.Sampler addrspace(2)* @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
-; CHECK-LLVM: call spir_func %spirv.SampledImage._ulong_1_0_0_0_0_0_0
+; CHECK-LLVM: call spir_func %spirv.SampledImage._ulong_1_0_0_0_0_0_0 addrspace(1)* @_Z91__spirv_ConvertHandleToSampledImageINTEL_RPU3AS141__spirv_SampledImage__ulong_1_0_0_0_0_0_0m(i64 43)
 
 %spirv.Image._long_2_0_0_0_0_0_0 = type opaque
 %spirv.Sampler = type opaque
