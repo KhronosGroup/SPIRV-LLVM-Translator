@@ -74,8 +74,10 @@ class BuiltinCallMutator {
   // the new instruction is created.
   std::function<llvm::Value *(llvm::IRBuilder<> &, llvm::CallInst *)> MutateRet;
   typedef decltype(MutateRet) MutateRetFuncTy;
-  // The attribute list for the new call instruction.
+  // The attribute list for the new called function.
   llvm::AttributeList Attrs;
+  // The attribute list for the new call instruction.
+  llvm::AttributeList CallAttrs;
   // The return type for the new call instruction.
   llvm::Type *ReturnTy;
   // The arguments for the new call instruction.
@@ -252,6 +254,7 @@ class BuiltinCallHelper {
 
 protected:
   llvm::Module *M = nullptr;
+  bool UseTargetTypes = false;
 
 public:
   /// Initialize details about how to mangle and demangle builtins correctly.
@@ -265,7 +268,7 @@ public:
 
   /// Initialize the module that will be operated on. This method must be called
   /// before future methods.
-  void initialize(llvm::Module &M) { this->M = &M; }
+  void initialize(llvm::Module &M);
 
   /// Return a mutator that will replace the given call instruction with a call
   /// to the given function name. The function name will have its name mangled

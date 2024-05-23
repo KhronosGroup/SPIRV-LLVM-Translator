@@ -2,10 +2,10 @@
 ; RUN: llvm-spirv -preserve-ocl-kernel-arg-type-metadata-through-string %t.bc -o - -spirv-text | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o - -spirv-text | FileCheck %s --check-prefix=CHECK-SPIRV-NEGATIVE
 ; RUN: llvm-spirv -preserve-ocl-kernel-arg-type-metadata-through-string %t.bc -o %t.spv
-; RUN: llvm-spirv -r -emit-opaque-pointers -preserve-ocl-kernel-arg-type-metadata-through-string %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r -preserve-ocl-kernel-arg-type-metadata-through-string %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-WORKAROUND
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-WORKAROUND-NEGATIVE
 
 ; ModuleID = 'test.cl'
@@ -23,7 +23,7 @@ target triple = "spir64-unknown-unknown."
 ; CHECK-LLVM-WORKAROUND-NEGATIVE: !kernel_arg_type_qual
 
 ; Function Attrs: convergent noinline norecurse nounwind optnone
-define dso_local spir_kernel void @test(float addrspace(1)* %g, float addrspace(1)* %c, float addrspace(1)* %asd) #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !4 !kernel_arg_type !5 !kernel_arg_base_type !5 !kernel_arg_type_qual !6 {
+define dso_local spir_kernel void @test(ptr addrspace(1) %g, ptr addrspace(1) %c, ptr addrspace(1) %asd) #0 !kernel_arg_addr_space !3 !kernel_arg_access_qual !4 !kernel_arg_type !5 !kernel_arg_base_type !5 !kernel_arg_type_qual !6 {
 entry:
   ret void
 }

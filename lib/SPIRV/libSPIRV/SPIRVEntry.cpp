@@ -45,6 +45,7 @@
 #include "SPIRVFunction.h"
 #include "SPIRVInstruction.h"
 #include "SPIRVMemAliasingINTEL.h"
+#include "SPIRVNameMapEnum.h"
 #include "SPIRVStream.h"
 #include "SPIRVType.h"
 
@@ -80,9 +81,13 @@ SPIRVEntry *SPIRVEntry::create(Op OpCode) {
 #undef _SPIRV_OP
   };
 
-  typedef std::map<Op, SPIRVFactoryTy> OpToFactoryMapTy;
+  typedef std::unordered_map<Op, SPIRVFactoryTy> OpToFactoryMapTy;
   static const OpToFactoryMapTy OpToFactoryMap(std::begin(Table),
                                                std::end(Table));
+
+  // TODO: To remove this when we make a switch to new version
+  if (OpCode == internal::OpTypeJointMatrixINTELv2)
+    OpCode = internal::OpTypeJointMatrixINTEL;
 
   OpToFactoryMapTy::const_iterator Loc = OpToFactoryMap.find(OpCode);
   if (Loc != OpToFactoryMap.end())
@@ -175,7 +180,7 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
   if (!Module)
     return;
   const std::shared_ptr<const SPIRVLine> &CurrLine = Module->getCurrentLine();
-  if (Line && ((CurrLine && *Line != *CurrLine) || !CurrLine)) {
+  if (Line && (!CurrLine || *Line != *CurrLine)) {
     O << *Line;
     Module->setCurrentLine(Line);
   }
@@ -183,8 +188,43 @@ void SPIRVEntry::encodeLine(spv_ostream &O) const {
     Module->setCurrentLine(nullptr);
 }
 
+namespace {
+bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
+  std::vector<SPIRVWord> DL1Args = DL1.getArguments();
+  std::vector<SPIRVWord> DL2Args = DL2.getArguments();
+
+  using namespace SPIRVDebug::Operand::DebugLine;
+  assert(DL1Args.size() == OperandCount && DL2Args.size() == OperandCount &&
+         "Invalid number of operands");
+  return DL1Args[SourceIdx] == DL2Args[SourceIdx] &&
+         DL1Args[StartIdx] == DL2Args[StartIdx] &&
+         DL1Args[EndIdx] == DL2Args[EndIdx] &&
+         DL1Args[ColumnStartIdx] == DL2Args[ColumnStartIdx] &&
+         DL1Args[ColumnEndIdx] == DL2Args[ColumnEndIdx];
+}
+} // namespace
+
+void SPIRVEntry::encodeDebugLine(spv_ostream &O) const {
+  if (!Module)
+    return;
+  const std::shared_ptr<const SPIRVExtInst> &CurrDebugLine =
+      Module->getCurrentDebugLine();
+  if (DebugLine &&
+      (!CurrDebugLine || !isDebugLineEqual(*DebugLine, *CurrDebugLine))) {
+    O << *DebugLine;
+    Module->setCurrentDebugLine(DebugLine);
+  }
+  if (isEndOfBlock() ||
+      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_100,
+                SPIRVDebug::DebugNoLine) ||
+      isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
+                SPIRVDebug::DebugNoLine))
+    Module->setCurrentDebugLine(nullptr);
+}
+
 void SPIRVEntry::encodeAll(spv_ostream &O) const {
   encodeLine(O);
+  encodeDebugLine(O);
   encodeWordCountOpCode(O);
   encode(O);
   encodeChildren(O);
@@ -228,7 +268,7 @@ SPIRVEntry::getValueTypes(const std::vector<SPIRVId> &IdVec) const {
 std::vector<SPIRVId>
 SPIRVEntry::getIds(const std::vector<SPIRVValue *> ValueVec) const {
   std::vector<SPIRVId> IdVec;
-  for (auto I : ValueVec)
+  for (auto *I : ValueVec)
     IdVec.push_back(I->getId());
   return IdVec;
 }
@@ -260,13 +300,18 @@ void SPIRVEntry::addDecorate(SPIRVDecorate *Dec) {
     auto *LinkageAttr = static_cast<const SPIRVDecorateLinkageAttr *>(Dec);
     setName(LinkageAttr->getLinkageName());
   }
-  SPIRVDBG(spvdbgs() << "[addDecorate] " << *Dec << '\n';)
+  SPIRVDBG(spvdbgs() << "[addDecorate] Add "
+                     << SPIRVDecorationNameMap::map(Kind) << " to Id " << Id
+                     << '\n';)
 }
 
 void SPIRVEntry::addDecorate(SPIRVDecorateId *Dec) {
-  DecorateIds.insert(std::make_pair(Dec->getDecorateKind(), Dec));
+  auto Kind = Dec->getDecorateKind();
+  DecorateIds.insert(std::make_pair(Kind, Dec));
   Module->addDecorate(Dec);
-  SPIRVDBG(spvdbgs() << "[addDecorateId] " << *Dec << '\n';)
+  SPIRVDBG(spvdbgs() << "[addDecorateId] Add"
+                     << SPIRVDecorationNameMap::map(Kind) << " to Id " << Id
+                     << '\n';)
 }
 
 void SPIRVEntry::addDecorate(Decoration Kind) {
@@ -299,6 +344,11 @@ void SPIRVEntry::takeDecorateIds(SPIRVEntry *E) {
 void SPIRVEntry::setLine(const std::shared_ptr<const SPIRVLine> &L) {
   Line = L;
   SPIRVDBG(if (L) spvdbgs() << "[setLine] " << *L << '\n';)
+}
+
+void SPIRVEntry::setDebugLine(const std::shared_ptr<const SPIRVExtInst> &DL) {
+  DebugLine = DL;
+  SPIRVDBG(if (DL) spvdbgs() << "[setDebugLine] " << *DL << '\n';)
 }
 
 void SPIRVEntry::addMemberDecorate(SPIRVMemberDecorate *Dec) {
@@ -548,8 +598,7 @@ void SPIRVEntry::updateModuleVersion() const {
   if (!Module)
     return;
 
-  Module->setMinSPIRVVersion(
-      static_cast<VersionNumber>(getRequiredSPIRVVersion()));
+  Module->setMinSPIRVVersion(getRequiredSPIRVVersion());
 }
 
 spv_ostream &operator<<(spv_ostream &O, const SPIRVEntry &E) {
@@ -568,7 +617,7 @@ SPIRVEntryPoint::SPIRVEntryPoint(SPIRVModule *TheModule,
                                  SPIRVExecutionModelKind TheExecModel,
                                  SPIRVId TheId, const std::string &TheName,
                                  std::vector<SPIRVId> Variables)
-    : SPIRVAnnotation(TheModule->get<SPIRVFunction>(TheId),
+    : SPIRVAnnotation(OpEntryPoint, TheModule->get<SPIRVFunction>(TheId),
                       getSizeInWords(TheName) + Variables.size() + 3),
       ExecModel(TheExecModel), Name(TheName), Variables(Variables) {}
 
@@ -614,7 +663,12 @@ void SPIRVExecutionMode::decode(std::istream &I) {
   case ExecutionModeMaxWorkDimINTEL:
   case ExecutionModeNumSIMDWorkitemsINTEL:
   case ExecutionModeSchedulerTargetFmaxMhzINTEL:
+  case ExecutionModeRegisterMapInterfaceINTEL:
   case ExecutionModeStreamingInterfaceINTEL:
+  case spv::internal::ExecutionModeNamedSubgroupSizeINTEL:
+  case ExecutionModeMaximumRegistersINTEL:
+  case ExecutionModeMaximumRegistersIdINTEL:
+  case ExecutionModeNamedMaximumRegistersINTEL:
     WordLiterals.resize(1);
     break;
   default:
@@ -636,7 +690,8 @@ SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
 }
 
 SPIRVName::SPIRVName(const SPIRVEntry *TheTarget, const std::string &TheStr)
-    : SPIRVAnnotation(TheTarget, getSizeInWords(TheStr) + 2), Str(TheStr) {}
+    : SPIRVAnnotation(OpName, TheTarget, getSizeInWords(TheStr) + 2),
+      Str(TheStr) {}
 
 void SPIRVName::encode(spv_ostream &O) const { getEncoder(O) << Target << Str; }
 
@@ -658,8 +713,6 @@ void SPIRVLine::encode(spv_ostream &O) const {
 
 void SPIRVLine::decode(std::istream &I) {
   getDecoder(I) >> FileName >> Line >> Column;
-  std::shared_ptr<const SPIRVLine> L(this);
-  Module->setCurrentLine(L);
 }
 
 void SPIRVLine::validate() const {

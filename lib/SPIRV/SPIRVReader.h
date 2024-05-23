@@ -100,6 +100,7 @@ public:
   bool transDecoration(SPIRVValue *, Value *);
   bool transAlign(SPIRVValue *, Value *);
   Instruction *transOCLBuiltinFromExtInst(SPIRVExtInst *BC, BasicBlock *BB);
+  void transAuxDataInst(SPIRVExtInst *BC);
   std::vector<Value *> transValue(const std::vector<SPIRVValue *> &,
                                   Function *F, BasicBlock *);
   Function *transFunction(SPIRVFunction *F);
@@ -150,10 +151,19 @@ public:
   // A SPIRV value may be translated to a load instruction of a placeholder
   // global variable. This map records load instruction of these placeholders
   // which are supposed to be replaced by the real values later.
-  typedef std::map<SPIRVValue *, LoadInst *> SPIRVToLLVMPlaceholderMap;
+  typedef std::unordered_map<SPIRVValue *, LoadInst *>
+      SPIRVToLLVMPlaceholderMap;
 
-  typedef std::map<const BasicBlock *, const SPIRVValue *>
+  typedef std::unordered_map<const BasicBlock *, const SPIRVValue *>
       SPIRVToLLVMLoopMetadataMap;
+
+  // Store all the allocations to Struct Types that are further
+  // accessed inside GetElementPtr instruction or in ptr.annotation intrinsics.
+  // For every structure we save the accessed structure field index and the
+  // last corresponding translated LLVM instruction.
+  typedef std::unordered_map<Value *,
+                             std::unordered_map<SPIRVWord, Instruction *>>
+      TypeToGEPOrUseMap;
 
 private:
   Module *M;
@@ -185,6 +195,8 @@ private:
   SPIRVToLLVMMDAliasInstMap MDAliasDomainMap;
   SPIRVToLLVMMDAliasInstMap MDAliasScopeMap;
   SPIRVToLLVMMDAliasInstMap MDAliasListMap;
+
+  TypeToGEPOrUseMap GEPOrUseMap;
 
   Type *mapType(SPIRVType *BT, Type *T);
 
@@ -245,7 +257,7 @@ private:
                          SmallVectorImpl<Function *> &Funcs);
   void transIntelFPGADecorations(SPIRVValue *BV, Value *V);
   void transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V);
-  void transVarDecorationsToMetadata(SPIRVValue *BV, Value *V);
+  void transDecorationsToMetadata(SPIRVValue *BV, Value *V);
   void transFunctionDecorationsToMetadata(SPIRVFunction *BF, Function *F);
   void
   transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI,
