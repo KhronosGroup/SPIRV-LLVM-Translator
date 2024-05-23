@@ -1,4 +1,4 @@
-; RUN: llvm-spirv -spirv-text -r -emit-opaque-pointers %s -o %t.bc
+; RUN: llvm-spirv -spirv-text -r %s -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-LLVM: define spir_kernel void @test{{.*}} !kernel_arg_runtime_aligned ![[RTALIGN_MD:[0-9]+]] {{.*}}
