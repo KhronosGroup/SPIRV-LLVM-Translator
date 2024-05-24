@@ -1,0 +1,42 @@
+name: Automated release
+
+on:
+  push:
+    branches:
+        - llvm_release_*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+      - name: Get latest tag
+        run: |
+            echo "LATEST_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+            echo "LLVM_VERSION=$(git describe --tags --abbrev=0)" | \
+                sed -E 's/(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/' >> $GITHUB_ENV
+      - name: Get patch version
+        run: |
+            echo "PATCH=$(git rev-list ${LLVM_VERSION}..HEAD --count)" >> $GITHUB_ENV
+      - name: Get current version
+        run: |
+            echo "RELEASE_VERSION=${LLVM_VERSION}.${PATCH}" >> $GITHUB_ENV
+      - name: Get latest llvm_release branch
+        run: echo "LATEST_BRANCH=llvm_release_$(git branch -r | grep 'llvm_release_' | sed -E 's/.*\/llvm_release_([0-9]+)/\1/' | sort -n -r | head -1)" >> $GITHUB_ENV 
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+            # Setting tag to have format:
+            # %latest llvm version%.%number of commits since that tag%
+            tag_name: ${{ env.RELEASE_VERSION }}
+            # We have to set this so tag is set on the branch that triggered
+            # a PR
+            target_commitish: ${{ github.sha }}
+            # We don't want to mark patch releases latest unless it is latest
+            # major version
+            make_latest: ${{ env.LATEST_BRANCH == github.ref_name }}
+            name: SPIR-V LLVM translator based on LLVM ${{ env.LLVM_VERSION }}
+            body: 'Full Changelog: ${{ github.server_url }}/${{ github.repository }}/compare/${{ env.LATEST_VERSION }}...${{ env.RELEASE_VERSION }}'
