@@ -871,7 +871,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
       static_cast<SPIRVFunction *>(mapValue(F, BM->addFunction(BFT)));
   BF->setFunctionControlMask(transFunctionControlMask(F));
   if (F->hasName()) {
-    if (isKernel(F)) {
+    if (isKernel(F) && BM->getGenerateKernelEntryPoints()) {
       /* strip the prefix as the runtime will be looking for this name */
       std::string Prefix = kSPIRVName::EntrypointPrefix;
       std::string Name = F->getName().str();
@@ -5635,7 +5635,9 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
 
   if (isKernel(I)) {
     auto Interface = collectEntryPointInterfaces(BF, I);
-    BM->addEntryPoint(ExecutionModelKernel, BF->getId(), BF->getName(),
+    auto Name =
+        BM->getGenerateKernelEntryPoints() ? BF->getName() : I->getName().str();
+    BM->addEntryPoint(ExecutionModelKernel, BF->getId(), Name,
                       Interface);
   }
 }
@@ -5998,7 +6000,9 @@ bool LLVMToSPIRVBase::transMetadata() {
 static void transKernelArgTypeMD(SPIRVModule *BM, Function *F, MDNode *MD,
                                  std::string MDName) {
   std::string Prefix = kSPIRVName::EntrypointPrefix;
-  std::string Name = F->getName().str().substr(Prefix.size());
+  std::string Name = F->getName().str();
+  if (BM->getGenerateKernelEntryPoints())
+    Name = Name.substr(Prefix.size());
   std::string KernelArgTypesMDStr = std::string(MDName) + "." + Name + ".";
   for (const auto &TyOp : MD->operands())
     KernelArgTypesMDStr += cast<MDString>(TyOp)->getString().str() + ",";
@@ -6647,7 +6651,7 @@ void addPassesForSPIRV(ModulePassManager &PassMgr,
   PassMgr.addPass(PreprocessMetadataPass());
   PassMgr.addPass(SPIRVLowerOCLBlocksPass());
   PassMgr.addPass(OCLToSPIRVPass());
-  PassMgr.addPass(SPIRVRegularizeLLVMPass());
+  PassMgr.addPass(SPIRVRegularizeLLVMPass(Opts));
   PassMgr.addPass(SPIRVLowerConstExprPass());
   PassMgr.addPass(SPIRVLowerBoolPass());
   PassMgr.addPass(SPIRVLowerMemmovePass());

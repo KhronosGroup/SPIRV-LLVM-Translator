@@ -233,6 +233,14 @@ public:
     PreserveOCLKernelArgTypeMetadataThroughString = Value;
   }
 
+  void setGenerateKernelEntryPoints(bool Value) noexcept {
+    GenerateEntryPoints = Value;
+  }
+
+  bool getGenerateKernelEntryPoints() const noexcept {
+    return GenerateEntryPoints;
+  }
+
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
     SPIRVBuiltinFormat = Value;
   }
@@ -280,6 +288,8 @@ private:
   // Add a workaround to preserve OpenCL kernel_arg_type and
   // kernel_arg_type_qual metadata through OpString
   bool PreserveOCLKernelArgTypeMetadataThroughString = false;
+
+  bool GenerateEntryPoints = true;
 
   bool PreserveAuxData = false;
 

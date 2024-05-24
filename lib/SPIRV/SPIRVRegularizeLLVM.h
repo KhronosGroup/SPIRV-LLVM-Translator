@@ -45,7 +45,8 @@ namespace SPIRV {
 
 class SPIRVRegularizeLLVMBase {
 public:
-  SPIRVRegularizeLLVMBase() : M(nullptr), Ctx(nullptr) {}
+  SPIRVRegularizeLLVMBase(const TranslatorOpts& TOpts)
+      : M(nullptr), Ctx(nullptr), Opts(TOpts) {}
 
   bool runRegularizeLLVM(llvm::Module &M);
   // Lower functions
@@ -116,12 +117,15 @@ public:
 private:
   llvm::Module *M;
   llvm::LLVMContext *Ctx;
+  const TranslatorOpts &Opts;
 };
 
 class SPIRVRegularizeLLVMPass
     : public llvm::PassInfoMixin<SPIRVRegularizeLLVMPass>,
       public SPIRVRegularizeLLVMBase {
 public:
+  SPIRVRegularizeLLVMPass(const TranslatorOpts &TOpts)
+      : SPIRVRegularizeLLVMBase(TOpts) {}
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM) {
     return runRegularizeLLVM(M) ? llvm::PreservedAnalyses::none()
@@ -134,7 +138,8 @@ public:
 class SPIRVRegularizeLLVMLegacy : public llvm::ModulePass,
                                   public SPIRVRegularizeLLVMBase {
 public:
-  SPIRVRegularizeLLVMLegacy() : ModulePass(ID) {
+  SPIRVRegularizeLLVMLegacy(const TranslatorOpts &TOpts)
+      : ModulePass(ID), SPIRVRegularizeLLVMBase(TOpts) {
     initializeSPIRVRegularizeLLVMLegacyPass(*PassRegistry::getPassRegistry());
   }
 
