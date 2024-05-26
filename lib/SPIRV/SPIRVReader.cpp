@@ -3783,6 +3783,7 @@ transDecorationsToMetadataList(llvm::LLVMContext *Context,
       OPs.push_back(LinkTypeMD);
       break;
     }
+    case spv::internal::DecorationHostAccessINTEL:
     case DecorationHostAccessINTEL: {
       const auto *const HostAccDeco =
           static_cast<const SPIRVDecorateHostAccessINTEL *>(Deco);

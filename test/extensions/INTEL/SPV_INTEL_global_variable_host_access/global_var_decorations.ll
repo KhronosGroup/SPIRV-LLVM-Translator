@@ -9,11 +9,7 @@
 
 ; Expected to fail - the decorations require enabled extensions to be translated.
 ; RUN: not llvm-spirv %t.bc -o %t.spv
-
-; Expected to fail - the decorations require enabled extensions to be translated.
 ; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_global_variable_fpga_decorations -o %t.spv
-
-; Expected to fail - the decorations require enabled extensions to be translated.
 ; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_global_variable_host_access -o %t.spv
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
@@ -23,10 +19,10 @@ target triple = "spir64-unknown-unknown"
 @float_var = addrspace(1) global float 1.0, !spirv.Decorations !6
 @bool_var = addrspace(1) global i1 0, !spirv.Decorations !9
 
-; CHECK-SPIRV: Capability GlobalVariableHostAccessINTEL
-; CHECK-SPIRV: Capability GlobalVariableFPGADecorationsINTEL
-; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_fpga_decorations"
-; CHECK-SPIRV: Extension "SPV_INTEL_global_variable_host_access"
+; CHECK-SPIRV-DAG: Capability GlobalVariableFPGADecorationsINTEL
+; CHECK-SPIRV-DAG: Capability GlobalVariableHostAccessINTEL
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_global_variable_fpga_decorations"
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_global_variable_host_access"
 ; CHECK-SPIRV: Decorate [[#INT_VAR_ID:]] HostAccessINTEL ReadINTEL "IntVarName"
 ; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] ImplementInRegisterMapINTEL 1
 ; CHECK-SPIRV: Decorate [[#INT_VAR_ID]] InitModeINTEL InitOnDeviceReprogramINTEL
