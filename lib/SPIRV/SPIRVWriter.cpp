@@ -2523,6 +2523,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
 
+    case spv::internal::DecorationHostAccessINTEL:
     case DecorationHostAccessINTEL: {
       checkIsGlobalVar(Target, DecoKind);
 
@@ -2542,11 +2543,16 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
           Name, SPIRVEC_InvalidLlvmModule,
           "HostAccessINTEL requires second extra operand to be a string");
 
-      Target->addDecorate(
-          new SPIRVDecorateHostAccessINTEL(Target, Q, Name->getString().str()));
+      if (DecoKind == DecorationHostAccessINTEL)
+        Target->addDecorate(new SPIRVDecorateHostAccessINTEL(
+            Target, Q, Name->getString().str()));
+      else
+        Target->addDecorate(new SPIRVDecorateHostAccessINTELLegacy(
+            Target, Q, Name->getString().str()));
       break;
     }
 
+    case spv::internal::DecorationInitModeINTEL:
     case DecorationInitModeINTEL: {
       checkIsGlobalVar(Target, DecoKind);
       ErrLog.checkError(static_cast<SPIRVVariable *>(Target)->getInitializer(),
@@ -2563,8 +2569,24 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       const InitializationModeQualifier Q =
           static_cast<InitializationModeQualifier>(Trigger->getZExtValue());
 
-      Target->addDecorate(new SPIRVDecorateInitModeINTEL(Target, Q));
+      if (DecoKind == DecorationInitModeINTEL)
+        Target->addDecorate(new SPIRVDecorateInitModeINTEL(Target, Q));
+      else
+        Target->addDecorate(new SPIRVDecorateInitModeINTELLegacy(Target, Q));
 
+      break;
+    }
+    case spv::internal::DecorationImplementInCSRINTEL: {
+      checkIsGlobalVar(Target, DecoKind);
+      ErrLog.checkError(NumOperands == 2, SPIRVEC_InvalidLlvmModule,
+                        "ImplementInCSRINTEL requires exactly 1 extra operand");
+      auto *Value = mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      ErrLog.checkError(
+          Value, SPIRVEC_InvalidLlvmModule,
+          "ImplementInCSRINTEL requires extra operand to be an integer");
+
+      Target->addDecorate(
+          new SPIRVDecorateImplementInCSRINTEL(Target, Value->getZExtValue()));
       break;
     }
     case DecorationImplementInRegisterMapINTEL: {
