@@ -2990,7 +2990,9 @@ protected:
   }
 
   llvm::Optional<ExtensionID> getRequiredExtension() const override {
-    return ExtensionID::SPV_KHR_integer_dot_product;
+    if (!Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+      return ExtensionID::SPV_KHR_integer_dot_product;
+    return {};
   }
 
   void validate() const override {
@@ -3049,6 +3051,12 @@ private:
     }
 
     llvm_unreachable("No mapping for argument type to capability.");
+  }
+
+  SPIRVWord getRequiredSPIRVVersion() const override {
+    if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+      return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_6);
+    return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_0);
   }
 };
 
