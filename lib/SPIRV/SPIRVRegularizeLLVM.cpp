@@ -502,7 +502,7 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
 // !X = !{i32 %decoration_kind%, i32 %level%, i32 %control%,
 //        i32 %operand of the instruction to decorate%}
 // This function creates a dummy GEP accessing pointer operand of the
-// instruction a creates !spirv.Decorations metadata attached to it
+// instruction and creates !spirv.Decorations metadata attached to it.
 void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
   if (!Inst->mayReadOrWriteMemory())
     return;
@@ -574,9 +574,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     std::vector<Instruction *> ToErase;
     for (BasicBlock &BB : *F) {
       for (Instruction &II : BB) {
-        if (auto *MD = II.getMetadata(SPIRV_MD_INTEL_CACHE_DECORATIONS)) {
+        if (auto *MD = II.getMetadata(SPIRV_MD_INTEL_CACHE_DECORATIONS))
           prepareCacheControlsTranslation(MD, &II);
-        }
         if (auto *Call = dyn_cast<CallInst>(&II)) {
           Call->setTailCall(false);
           Function *CF = Call->getCalledFunction();
