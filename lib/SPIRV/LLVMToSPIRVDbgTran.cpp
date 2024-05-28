@@ -661,8 +661,6 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgQualifiedType(const DIDerivedType *QT) {
 
 SPIRVEntry *LLVMToSPIRVDbgTran::transDbgArrayType(const DICompositeType *AT) {
   if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
-    if (AT->isVector())
-      return transDbgVectorTypeNonSemantic200(AT);
     if (isFortranArrayDynamic(AT))
       return transDbgArrayTypeDynamic(AT);
     return transDbgArrayTypeNonSemantic(AT);
@@ -739,22 +737,6 @@ LLVMToSPIRVDbgTran::transDbgArrayTypeNonSemantic(const DICompositeType *AT) {
     Ops[SubrangesIdx + I] = transDbgEntry(SR)->getId();
   }
   return BM->addDebugInfo(SPIRVDebug::TypeArray, getVoidTy(), Ops);
-}
-
-SPIRVEntry *LLVMToSPIRVDbgTran::transDbgVectorTypeNonSemantic200(
-    const DICompositeType *AT) {
-  using namespace SPIRVDebug::Operand::TypeVector;
-  SPIRVWordVec Ops(MaxOperandCount);
-  Ops[BaseTypeIdx] = transDbgEntry(AT->getBaseType())->getId();
-
-  DINodeArray AR(AT->getElements());
-  assert(AR.size() == 1 && "Multidimensional vector is not expected!");
-  DISubrange *SR = cast<DISubrange>(AR[0]);
-  ConstantInt *Count = SR->getCount().get<ConstantInt *>();
-  Ops[ComponentCountIdx] = static_cast<SPIRVWord>(Count->getZExtValue());
-  Ops[MemorySizeIdx] = static_cast<SPIRVWord>(AT->getSizeInBits());
-  transformToConstant(Ops, {ComponentCountIdx, MemorySizeIdx});
-  return BM->addDebugInfo(SPIRVDebug::TypeVector, getVoidTy(), Ops);
 }
 
 // The function is used to translate Fortran's dynamic arrays

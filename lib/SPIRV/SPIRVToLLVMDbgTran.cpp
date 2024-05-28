@@ -49,6 +49,7 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
+#include <bit>
 
 using namespace std;
 using namespace SPIRVDebug::Operand;
@@ -483,13 +484,13 @@ SPIRVToLLVMDbgTran::transTypeVector(const SPIRVExtInst *DebugInst) {
       transNonNullDebugType(BM->get<SPIRVExtInst>(Ops[BaseTypeIdx]));
   SPIRVWord Count = getConstantValueOrLiteral(Ops, ComponentCountIdx,
                                               DebugInst->getExtSetKind());
-  SPIRVWord SizeCount = (Count == 3) ? 4 : Count;
-  uint64_t Size = getDerivedSizeInBits(BaseTy) * SizeCount;
-  // Memory size was recorded.  Do not use the above calculated memory size
-  // which cannot recover size needed for padding.
-  if (Ops.size() > MemorySizeIdx)
-    Size = getConstantValueOrLiteral(Ops, MemorySizeIdx,
-                                     DebugInst->getExtSetKind());
+  // Round up to a power of two.
+  // OpenCL/SYCL 3-element vectors
+  // occupy the same amount of memory as 4-element vectors
+  // Clang rounds up the memory size of vectors to a power of 2.
+  // Vulkan allows vec3 to have a memory size of 12, but in RenderDoc memory
+  // size is not derived from debug info.
+  uint64_t Size = getDerivedSizeInBits(BaseTy) * bit_ceil(Count);
 
   SmallVector<llvm::Metadata *, 8> Subscripts;
   Subscripts.push_back(getDIBuilder(DebugInst).getOrCreateSubrange(0, Count));
