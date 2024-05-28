@@ -5,10 +5,10 @@
 
 ; CHECK-SPIRV-DAG: TypeInt [[#Int32:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#Int32]] [[#Zero:]] 0
-; CHECK-SPIRV-DAG: Decorate [[#Load1Ptr:]] CacheControlLoadINTEL 0 1
-; CHECK-SPIRV-DAG: Decorate [[#Load2Ptr:]] CacheControlLoadINTEL 1 1
-; CHECK-SPIRV-DAG: Decorate [[#Store1Ptr:]] CacheControlStoreINTEL 0 1
-; CHECK-SPIRV-DAG: Decorate [[#Store2Ptr:]] CacheControlStoreINTEL 1 1
+; CHECK-SPIRV-DAG: Decorate [[#Load1GEPPtr:]] CacheControlLoadINTEL 0 1
+; CHECK-SPIRV-DAG: Decorate [[#Load2GEPPtr:]] CacheControlLoadINTEL 1 1
+; CHECK-SPIRV-DAG: Decorate [[#Store1GEPPtr:]] CacheControlStoreINTEL 0 1
+; CHECK-SPIRV-DAG: Decorate [[#Store2GEPPtr:]] CacheControlStoreINTEL 1 1
 
 ; CHECK-SPIRV: FunctionParameter [[#]] [[#Buffer:]]
 ; CHECK-SPIRV: PtrAccessChain [[#]] [[#Load1GEPPtr:]] [[#Buffer]] [[#Zero]]
