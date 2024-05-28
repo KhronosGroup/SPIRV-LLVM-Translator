@@ -4385,9 +4385,12 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       Extracts[Idx] = BM->addVectorExtractDynamicInst(
           VecSVal, BM->addIntegerConstant(I32STy, Idx), BB);
     }
+    assert(Extracts[0] && "Uninitialized Extracts of vector reduce lowering");
     SPIRVValue *V = BM->addBinaryInst(Op, StartingSVal->getType(), StartingSVal,
                                       Extracts[0], BB);
     for (unsigned Idx = 1; Idx < VecSize; ++Idx) {
+      assert(Extracts[Idx] &&
+             "Uninitialized Extracts of vector reduce lowering");
       V = BM->addBinaryInst(Op, StartingSVal->getType(), V, Extracts[Idx], BB);
     }
     return V;
