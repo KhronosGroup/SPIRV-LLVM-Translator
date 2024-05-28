@@ -184,7 +184,7 @@ The unmangled names of SPIR-V builtin BuildNDRange functions follow the conventi
   __spirv_{BuildNDRange}_{1|2|3}D
 
 SPIR-V 1.1 Builtin CreatePipeFromPipeStorage Function Name
-----------------------------------------
+----------------------------------------------------------
 
 The unmangled names of SPIR-V builtin CreatePipeFromPipeStorage function follow the convention:
 
@@ -213,7 +213,7 @@ starts with two underscores to facilitate identification since extended instruct
 may contain underscore. The remaining postfixes start with one underscore.
 
 OpenCL Extended Builtin Vector Load Function Names
-----------------------------------------
+--------------------------------------------------
 
 The unmangled names of OpenCL extended vector load functions follow the convention:
 
@@ -422,7 +422,7 @@ are translated for image types, but they should be encoded in LLVM IR type name
 rather than function metadata.
 
 Function parameter, instruction and global variable decoration through metadata
-------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Function parameters, instructions and global variables can be decorated using LLVM
 metadata through the metadata names ``spirv.ParameterDecorations`` and
@@ -482,6 +482,14 @@ extra operands ``i32 1`` and ``i32 2``.
 
 decorates the argument ``b`` of ``k`` with ``Restrict`` in SPIR-V while not
 adding any decoration to argument ``a``.
+
+Loop controls and loop metadata
+-------------------------------
+
+SPIR-V Loop controls that do not have a corresponding community LLVM metadata
+can be translated by creating a new loop metadata named
+``spirv.<LoopControlID>`` where `LoopControlID` is an identifier that represents
+the corresponding SPIR-V loop control. 
 
 Member decoration through pointer annotations
 ---------------------------------------------
