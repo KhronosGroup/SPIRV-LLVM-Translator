@@ -487,9 +487,8 @@ Loop controls and loop metadata
 -------------------------------
 
 SPIR-V Loop controls that do not have a corresponding community LLVM metadata
-can be translated by creating a new loop metadata named
-``spirv.<LoopControlID>`` where ``LoopControlID`` is an identifier that
-represents the corresponding SPIR-V loop control. 
+can be decorated using LLVM metadata through the names ``spirv.<LoopControlID>``
+where ``LoopControlID`` corresponds to the name of the SPIR-V loop control. 
 
 Member decoration through pointer annotations
 ---------------------------------------------
