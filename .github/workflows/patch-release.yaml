@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       latest_branch: ${{steps.latest_branch.outputs.latest_branch}}
-      branches_json: ${{steps.relase_branches.outputs.branches_json}}
+      branches_json: ${{steps.release_branches.outputs.branches_json}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
           | xargs printf "latest_branch=llvm_release_%s" \
           >> $GITHUB_OUTPUT
       - name: Get branch list
-        id: relase_branches
+        id: release_branches
         run: |
           git branch -r \
           | grep "origin/llvm_release_" \
@@ -71,10 +71,9 @@ jobs:
         if: ${{ steps.versions.outputs.commits_since_last_release != 0 }}
         with:
             # Setting tag to have format:
-            # %latest llvm version%.%number of commits since that tag%
+            # %latest llvm version%.%latest patch + 1%
             tag_name: ${{ steps.versions.outputs.release_version }}
-            # We have to set this so tag is set on the branch that triggered
-            # a PR
+            # We have to set this so tag is set on the branch we are releasing
             target_commitish: ${{ steps.versions.outputs.last_commit }}
             # We don't want to mark patch releases latest unless it is latest
             # major version
