@@ -495,6 +495,7 @@ branch instruction.
 An example with the ``DependencyAccessesINTEL`` loop control:
 
 .. code-block:: llvm
+  
   br i1 %cond, label %loop, label %exit !spirv.loop.dependency_accesses !4
   ...
   !1 = distinct !{}      ; metadata corresponding to distinct access group
