@@ -492,6 +492,16 @@ can be decorated using LLVM metadata through the names
 of the SPIR-V loop control. This metadata should be applied to the latch-block's
 branch instruction.
 
+An example with the ``DependencyAccessesINTEL`` loop control:
+
+.. code-block:: llvm
+  br i1 %cond, label %loop, label %exit !spirv.loop.dependency_accesses !4
+  ...
+  !1 = distinct !{}      ; metadata corresponding to distinct access group
+  !2 = distinct !{}      ; metadata corresponding to distinct access group
+  !3 = distinct !{}      ; metadata corresponding to distinct access group
+  !4 = !{!0, !1, !2, 0}  ; metadata node grouping access groups for the corresponding DepenencyAccessesINTEL instance
+
 Member decoration through pointer annotations
 ---------------------------------------------
 
