@@ -536,7 +536,28 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
 
     // Create dummy GEP for SSA copy of the pointer operand. Lets do our best
     // to guess pointee type here, but if we won't - just pointer is also fine,
-    // if necessary TypeScavenger will adjust types and create bitcasts.
+    // if necessary TypeScavenger will adjust types and create bitcasts. If
+    // memory instruction operand is already zero GEP - create nothing and use
+    // the old GEP.
+    SmallVector<Metadata *, 4> MDs;
+    std::vector<Metadata *> OPs = {KindMD, LevelMD, ControlMD};
+    if (auto *const GEP = dyn_cast<GetElementPtrInst>(PtrInstOp)) {
+      if (GEP->hasAllZeroIndices()) {
+        MDs.push_back(MDNode::get(Inst->getContext(), OPs));
+        // If the existing GEP has SPIRV_MD_DECORATIONS metadata - copy it
+        auto *OldMD = GEP->getMetadata(SPIRV_MD_DECORATIONS);
+        if (OldMD) {
+          for (unsigned I = 0, E = OldMD->getNumOperands(); I != E; ++I) {
+            auto *DecoMD = dyn_cast<MDNode>(OldMD->getOperand(I));
+            if (DecoMD)
+              MDs.push_back(DecoMD);
+          }
+        }
+        MDNode *MDList = MDNode::get(Inst->getContext(), MDs);
+        GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
+        return;
+      }
+    }
     IRBuilder Builder(Inst);
     Type *GEPTy = PtrInstOp->getType();
     if (auto *LI = dyn_cast<LoadInst>(Inst))
@@ -546,9 +567,6 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
     auto *GEP =
         cast<Instruction>(Builder.CreateConstGEP1_32(GEPTy, PtrInstOp, 0));
     Inst->setOperand(TargetArgNo, GEP);
-
-    SmallVector<Metadata *, 4> MDs;
-    std::vector<Metadata *> OPs = {KindMD, LevelMD, ControlMD};
     MDs.push_back(MDNode::get(Inst->getContext(), OPs));
     MDNode *MDList = MDNode::get(Inst->getContext(), MDs);
     GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
