@@ -545,14 +545,10 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       if (GEP->hasAllZeroIndices()) {
         MDs.push_back(MDNode::get(Inst->getContext(), OPs));
         // If the existing GEP has SPIRV_MD_DECORATIONS metadata - copy it
-        auto *OldMD = GEP->getMetadata(SPIRV_MD_DECORATIONS);
-        if (OldMD) {
-          for (unsigned I = 0, E = OldMD->getNumOperands(); I != E; ++I) {
-            auto *DecoMD = dyn_cast<MDNode>(OldMD->getOperand(I));
-            if (DecoMD)
+        if (auto *OldMD = GEP->getMetadata(SPIRV_MD_DECORATIONS))
+          for (unsigned I = 0, E = OldMD->getNumOperands(); I != E; ++I)
+            if (auto *DecoMD = dyn_cast<MDNode>(OldMD->getOperand(I)))
               MDs.push_back(DecoMD);
-          }
-        }
         MDNode *MDList = MDNode::get(Inst->getContext(), MDs);
         GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
         return;
