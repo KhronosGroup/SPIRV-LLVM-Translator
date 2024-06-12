@@ -20,16 +20,18 @@
 ; CHECK-SPIRV: Function [[#]] [[#FuncGEP]]
 ; CHECK-SPIRV: FunctionParameter [[#]] [[#Buffer:]]
 ; CHECK-SPIRV: PtrAccessChain [[#]] [[#GEP3:]] [[#Buffer]] [[#Zero]]
-; CHECK-SPIRV: PtrAccessChain [[#]] [[#GEP2]] [[#GEP3]] [[#Zero]]
+; CHECK-SPIRV: Bitcast [[#]] [[#BitCast:]] [[#GEP3]]
+; CHECK-SPIRV: PtrAccessChain [[#]] [[#GEP2]] [[#BitCast:]] [[#Zero]]
 ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[#]] [[#GEP2]]
 
-; CHECK-LLVM: define spir_kernel void @test(ptr addrspace(1) %[[Param:[a-z0-9_.]+]])
-; CHECK-LLVM: %[[#GEP:]] = getelementptr ptr addrspace(1), ptr addrspace(1) %[[Param]], i32 0, !spirv.Decorations ![[#MD:]]
+; CHECK-LLVM: define spir_kernel void @test(ptr addrspace(1) %[[Param1:[a-z0-9_.]+]])
+; CHECK-LLVM: %[[#GEP:]] = getelementptr i8, ptr addrspace(1) %[[Param1]], i32 0, !spirv.Decorations ![[#MD:]]
 ; CHECK-LLVM: call spir_func void @foo(ptr addrspace(1) %[[#GEP:]])
 
-; CHECK-LLVM: define spir_kernel void @test_gep(ptr addrspace(1) %[[Param:[a-z0-9_.]+]])
-; CHECK-LLVM: %[[#GEP1:]] = getelementptr ptr addrspace(1), ptr addrspace(1) %[[Param]], i32 0
-; CHECK-LLVM: %[[#GEP2:]] = getelementptr ptr addrspace(1), ptr addrspace(1) %[[#GEP1]], i32 0, !spirv.Decorations ![[#MD]]
+; CHECK-LLVM: define spir_kernel void @test_gep(ptr addrspace(1) %[[Param2:[a-z0-9_.]+]])
+; CHECK-LLVM: %[[#GEP1:]] = getelementptr ptr addrspace(1), ptr addrspace(1) %[[Param2]], i32 0
+; CHECK-LLVM: %[[#BitCast:]] = bitcast ptr addrspace(1) %[[#GEP1]] to ptr addrspace(1)
+; CHECK-LLVM: %[[#GEP2:]] = getelementptr i8, ptr addrspace(1) %[[#BitCast]], i32 0, !spirv.Decorations ![[#MD]]
 ; CHECK-LLVM: call spir_func void @foo(ptr addrspace(1) %[[#GEP2:]])
 
 ; CHECK-LLVM: ![[#MD]] = !{![[#Dec1:]], ![[#Dec2:]]}
