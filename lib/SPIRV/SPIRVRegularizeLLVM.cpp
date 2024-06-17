@@ -558,7 +558,7 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       }
     }
     IRBuilder Builder(Inst);
-    Type *GEPTy = Builder.getInt8Ty();;
+    Type *GEPTy = Builder.getInt8Ty();
     if (auto *LI = dyn_cast<LoadInst>(Inst))
       GEPTy = LI->getType();
     else if (auto *SI = dyn_cast<StoreInst>(Inst))
