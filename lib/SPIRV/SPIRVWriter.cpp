@@ -1338,7 +1338,7 @@ SPIRVInstruction *LLVMToSPIRVBase::transCmpInst(CmpInst *Cmp,
     if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4) &&
         (P == ICmpInst::ICMP_EQ || P == ICmpInst::ICMP_NE) &&
         Cmp->getOperand(1)->getType()->isPointerTy()) {
-      Op OC = P == ICmpInst::ICMP_EQ ? OpPtrEqual : OpPtrNotEqual;
+      const Op OC = P == ICmpInst::ICMP_EQ ? OpPtrEqual : OpPtrNotEqual;
       return BM->addBinaryInst(OC, transType(Cmp->getType()), TOp0, TOp1, BB);
     }
     unsigned AS = cast<PointerType>(Op0->getType())->getAddressSpace();

@@ -2253,7 +2253,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     IRBuilder<> Builder(BB);
     Value *Op1 = Builder.CreatePtrToInt(Ops[0], Type::getInt64Ty(*Context));
     Value *Op2 = Builder.CreatePtrToInt(Ops[1], Type::getInt64Ty(*Context));
-    CmpInst::Predicate P =
+    const CmpInst::Predicate P =
         OC == OpPtrEqual ? ICmpInst::ICMP_EQ : ICmpInst::ICMP_NE;
     Value *V = Builder.CreateICmp(P, Op1, Op2);
     return mapValue(BV, V);
