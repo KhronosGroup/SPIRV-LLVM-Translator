@@ -8,8 +8,8 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: spirv-val %t.spv
 
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc
+; RUN: llvm-spirv -r --opaque-pointers %t.spv -o %t.rev.bc
+; RUN: llvm-dis -opaque-pointers=1 %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-ERROR: RequiresVersion: Cannot fulfill SPIR-V version restriction:
@@ -32,10 +32,10 @@ define spir_kernel void @test(float %a) local_unnamed_addr #0 {
 entry:
   %0 = alloca float, align 4
   store float %a, float* %0, align 4
-; CHECK-LLVM: %[[#Arg1:]] = ptrtoint float* %[[#]] to i64
-; CHECK-LLVM: %[[#Arg2:]] = ptrtoint float* %[[#]] to i64
+; CHECK-LLVM: %[[#Arg1:]] = ptrtoint ptr %[[#]] to i64
+; CHECK-LLVM: %[[#Arg2:]] = ptrtoint ptr %[[#]] to i64
 ; CHECK-LLVM: %[[#Sub:]] = sub i64 %[[#Arg1]], %[[#Arg2]]
-; CHECK-LLVM: sdiv exact i64 %[[#Sub]], ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i64)
+; CHECK-LLVM: sdiv exact i64 %[[#Sub]], ptrtoint (ptr getelementptr (i32, ptr null, i32 1) to i64)
   %1 = call spir_func noundef i32 @_Z15__spirv_PtrDiff(float* %0, float* %0)
   ret void
 }
