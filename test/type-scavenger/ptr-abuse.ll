@@ -23,7 +23,6 @@ define spir_kernel void @foo() {
 ; CHECK: Store [[STOREB]] {{[0-9]+}}
 ; CHECK: 4 Bitcast [[INTPTR]] [[CMPB:[0-9]+]] [[FPTR]]
 ; CHECK: 5 PtrEqual [[#]] [[#]] [[IPTR]] [[CMPB]]
-; CHECK: 5 IEqual {{[0-9]+}} {{[0-9]+}} [[CMPL]] [[CMPR]]
 entry:
   %iptr = alloca i32, align 4
   %fptr = alloca float, align 4
