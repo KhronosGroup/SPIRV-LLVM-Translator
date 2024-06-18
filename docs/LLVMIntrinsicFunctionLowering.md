@@ -173,9 +173,9 @@ in one of four ways:
 
    The emulation functions are deleted.
 
-   This is the next best way of lowering a function.  The functionality of the intrinsic is created by a call to LLVM's CreateIntrinsic,
-   so the complexity within the translator is small.  However, this is effectively using the translator to insert a library
-   function at translation time.
+   The functionality of the intrinsic is created by a call to LLVM's CreateIntrinsic, so the complexity within the
+   translator is small.  However, this is effectively using the translator to insert a library function at translation
+   time.
 
 4. In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is represented as a text string of LLVM assembly and is parsed and added to the LLVM IR
@@ -224,7 +224,7 @@ in one of four ways:
             ...
 
 
-   This is the least preferred way of lowering an intrinsic function, but it is also the most flexible.  The functionality of a
-   call is provided by LLVM IR supplied as text.  The complexity of the intrinsic functionality is inside the translator.
+   This is the most flexible way of lowering, but it requires a lot of work to create emulation functions for all the necesary types.
+   The functionality of a call is provided by LLVM IR supplied as text.  The complexity of the intrinsic functionality is inside the translator.
    Each function signature variation for an intrinsic that needs to be lowered must be supplied by the developer.  As with #2
    this method is effectively using the translator to insert a library function at translation time.
