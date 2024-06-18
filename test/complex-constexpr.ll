@@ -1,11 +1,11 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: llvm-spirv %t.spv -o %t.spt --to-text
-; RUN: llvm-spirv -r %t.spv -o %t.bc
-; RUN: llvm-dis %t.bc -o %t.ll
-; RUN: FileCheck %s --input-file %t.spt -check-prefix=CHECK-SPIRV
-; RUN: FileCheck %s --input-file %t.ll  -check-prefix=CHECK-LLVM
+; RUN: llvm-spirv %t.bc --spirv-max-version=1.3 -o %t.spv
 ; RUN: spirv-val %t.spv
+; RUN: llvm-spirv %t.spv --spirv-max-version=1.3 -o %t.spt --to-text
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc
+; RUN: FileCheck %s --input-file %t.spt -check-prefix=CHECK-SPIRV
+; RUN: FileCheck %s --input-file %t.rev.ll  -check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64"
@@ -15,6 +15,12 @@ target triple = "spir64"
 ; CHECK-SPIRV: TypeFunction [[Func_Ty1:[0-9]+]] [[Void_Ty]]
 ; CHECK-SPIRV: TypePointer [[Ptr_Ty:[0-9]+]] 8 [[Int_Ty]]
 ; CHECK-SPIRV: TypeFunction [[Func_Ty2:[0-9]+]] [[Void_Ty]] [[Ptr_Ty]] [[Ptr_Ty]]
+
+; CHECK-SPIRV-14: TypeInt [[Int_Ty:[0-9]+]] 8 0
+; CHECK-SPIRV-14: TypeVoid [[Void_Ty:[0-9]+]]
+; CHECK-SPIRV-14: TypeFunction [[Func_Ty1:[0-9]+]] [[Void_Ty]]
+; CHECK-SPIRV-14: TypePointer [[Ptr_Ty:[0-9]+]] 8
+; CHECK-SPIRV-14: TypeFunction [[Func_Ty2:[0-9]+]] [[Void_Ty]] [[Ptr_Ty]] [[Ptr_Ty]]
 
 @.str.1 = private unnamed_addr addrspace(1) constant [1 x i8] zeroinitializer, align 1
 
