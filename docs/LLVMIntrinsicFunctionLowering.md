@@ -1,14 +1,16 @@
 The SPIRV-LLVM-Translator will "lower" some LLVM intrinsic calls to another function or implementation
-in one of four ways:
+using one of the following four methods:
 
-1. A.
+Method 1:
+
+   Variation A:
 
    In transIntrinsicInst in SPIRVWriter.cpp, calls to LLVM intrinsics are replaced with a SPIRV ExtInst.
    For example:
 
         %0 = tail call i32 @llvm.ctlz.i32(i32 %x, i1 true)
 
-   is translated into SPIRV with an SPIRV ExtInst clz:
+   is translated into SPIRV with an OpenCL ExtInst clz:
 
         6 ExtInst 2 7 1 clz 5
 
@@ -38,7 +40,7 @@ in one of four ways:
    external library that supports the instructions this way should be chosen.
 
    -----------------------------------------------------------------------------------------------------------------------------------
-   B.
+   Varation B:
 
    Sometimes an intrinsic can be translated to an instruction that is only available with an extension.  For example translating:
 
@@ -67,7 +69,9 @@ in one of four ways:
             return BM->addUnaryInst(OpBitReverse, Ty, Op, BB);
           }
 
-2. Some intrinsics are emulated by basic operations in SPIRVWriter.cpp.  For example:
+Method 2:
+
+   Some intrinsics are emulated by basic operations in SPIRVWriter.cpp.  For example:
 
         %0 = call float @llvm.vector.reduce.fadd.v4float(float %sp, <4 x float> %v)
 
@@ -116,7 +120,9 @@ in one of four ways:
         }
 
 
-3. In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
+Method 3:
+
+   In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is created by LLVM API calls and will be translated to SPIRV. The calls to the emulation
    functions and the emulation functions themselves will be translated to SPIRV.  After reverse translation, the calls to the emulation
    functions and the emulation functions themselves will appear in the LLVM IR.
@@ -177,7 +183,9 @@ in one of four ways:
    translator is small.  However, this is effectively using the translator to insert a library function at translation
    time.
 
-4. In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
+Method 4:
+
+   In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is represented as a text string of LLVM assembly and is parsed and added to the LLVM IR
    to be translated.  The calls to the emulation functions and the emulation functions themselves will be translated
    to SPIRV.  After reverse translation, the calls to the emulation functions and the emulation functions themselves will appear
