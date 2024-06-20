@@ -1596,6 +1596,9 @@ Type *getLLVMTypeForSPIRVImageSampledTypePostfix(StringRef Postfix,
   if (Postfix == kSPIRVImageSampledTypeName::Int ||
       Postfix == kSPIRVImageSampledTypeName::UInt)
     return Type::getInt32Ty(Ctx);
+  if (Postfix == kSPIRVImageSampledTypeName::Long ||
+      Postfix == kSPIRVImageSampledTypeName::ULong)
+    return Type::getInt64Ty(Ctx);
   llvm_unreachable("Invalid sampled type postfix");
   return nullptr;
 }
@@ -2355,7 +2358,7 @@ public:
 
   void init(StringRef UniqUnmangledName) override {
     UnmangledName = UniqUnmangledName.str();
-    switch (OC) {
+    switch (static_cast<unsigned>(OC)) {
     case OpConvertUToF:
     case OpUConvert:
     case OpSatConvertUToS:
@@ -2520,6 +2523,10 @@ public:
       }
       break;
     }
+    case internal::OpConvertHandleToImageINTEL:
+    case internal::OpConvertHandleToSamplerINTEL:
+      addUnsignedArg(0);
+      break;
     default:;
       // No special handling is needed
     }
