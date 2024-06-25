@@ -55,7 +55,7 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     return;
 
   OCLExtOpKind ExtOp;
-  if (isSPIRVOCLExtInst(&CI, &ExtOp)) {
+  if (isSPIRVOCLExtInst(&CI, &ExtOp, isCpp(SrcLang))) {
     switch (ExtOp) {
     case OpenCLLIB::Vloadn:
     case OpenCLLIB::Vloada_halfn:
@@ -89,8 +89,8 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   StringRef DemangledName;
   Op OC = OpNop;
   SPIRVBuiltinVariableKind BuiltinKind = SPIRVBuiltinVariableKind::BuiltInMax;
-  if (!oclIsBuiltin(MangledName, DemangledName) ||
-      ((OC = getSPIRVFuncOC(DemangledName)) == OpNop &&
+  if (!oclIsBuiltin(MangledName, DemangledName, isCpp(SrcLang)) ||
+      ((OC = getSPIRVFuncOC(DemangledName, nullptr, isCpp(SrcLang))) == OpNop &&
        !getSPIRVBuiltin(DemangledName.str(), BuiltinKind)))
     return;
   LLVM_DEBUG(dbgs() << "DemangledName = " << DemangledName.str() << '\n'
