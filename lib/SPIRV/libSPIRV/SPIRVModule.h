@@ -578,6 +578,10 @@ public:
     return TranslationOpts.getDesiredBIsRepresentation();
   }
 
+  bool getGenerateKernelEntryPoints() const {
+    return TranslationOpts.getGenerateKernelEntryPoints();
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);

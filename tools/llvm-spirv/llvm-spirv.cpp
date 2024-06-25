@@ -278,6 +278,10 @@ static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
         clEnumValN(SPIRV::BuiltinFormat::Global, "global",
                    "Use globals to represent SPIR-V builtin variables")));
 
+static cl::opt<bool>
+    NoEntry("no-entry", cl::init(false),
+                  cl::desc("Disable kernel entry point generation. This is a workaround for some OpenCL drivers that are incompatible with entry points, leading them to have twice the number of kernel arguments. See https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/1486 for more details."));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -819,6 +823,8 @@ int main(int Ac, char **Av) {
 
   if (PreserveOCLKernelArgTypeMetadataThroughString.getNumOccurrences() != 0)
     Opts.setPreserveOCLKernelArgTypeMetadataThroughString(true);
+
+  Opts.setGenerateKernelEntryPoints(!NoEntry);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
