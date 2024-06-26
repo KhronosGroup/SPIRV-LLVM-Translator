@@ -71,7 +71,9 @@ inline bool isAtomicOpCode(Op OpCode) {
 }
 inline bool isBinaryOpCode(Op OpCode) {
   return ((unsigned)OpCode >= OpIAdd && (unsigned)OpCode <= OpFMod) ||
-         OpCode == OpDot || OpCode == OpIAddCarry || OpCode == OpISubBorrow;
+         OpCode == OpDot ||
+         ((unsigned)OpCode >= OpIAddCarry &&
+          (unsigned)OpCode <= OpSMulExtended);
 }
 
 inline bool isBinaryPtrOpCode(Op OpCode) {
