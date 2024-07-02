@@ -981,6 +981,10 @@ protected:
       ResTy = Type;
     }
     assert(isCmpOpCode(OpCode) && "Invalid op code for cmp inst");
+    if (OpCode == OpLessOrGreater)
+      assert(this->getModule()->getSPIRVVersion() <=
+                 static_cast<SPIRVWord>(VersionNumber::SPIRV_1_5) &&
+             "OpLessOrGreater is removed starting from SPIR-V 1.6");
     assert((ResTy->isTypeBool() || ResTy->isTypeInt()) &&
            "Invalid type for compare instruction");
     assert(Op1Ty == Op2Ty && "Inconsistent types");
