@@ -16,7 +16,7 @@
 ; CHECK-FUNCTION-FORMAT-REV: declare spir_func i64 @_Z26__spirv_BuiltInWorkgroupIdi(i32)
 ; CHECK-FUNCTION-FORMAT-OCL-REV: declare spir_func i64 @_Z12get_group_idj(i32)
 
-; CHECK-GLOBAL-FORMAT-REV: @__spirv_BuiltInWorkgroupId = external addrspace(7) constant <3 x i64>
+; CHECK-GLOBAL-FORMAT-REV: @__spirv_BuiltInWorkgroupId = external addrspace(1) constant <3 x i64>
 
 ; ModuleID = 'test.bc'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
