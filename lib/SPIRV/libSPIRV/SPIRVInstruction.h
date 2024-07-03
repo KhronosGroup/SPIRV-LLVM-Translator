@@ -3461,7 +3461,7 @@ protected:
   }
 };
 
-#define _SPIRV_OP(x, ...)
+#define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVCooperativeMatrixPrefetchINTELInstBase,       \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;

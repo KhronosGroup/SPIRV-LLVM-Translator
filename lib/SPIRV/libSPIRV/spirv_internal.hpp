@@ -53,8 +53,8 @@ enum InternalSourceLanguageNonSemanticDI {
 };
 
 enum InternalLinkageType {
-    ILTPrev = LinkageTypeMax - 2,
-    ILTInternal
+  ILTPrev = LinkageTypeMax - 2,
+  ILTInternal
 };
 
 enum InternalOp {
@@ -182,15 +182,13 @@ _SPIRV_OP(Op, JointMatrixUUMadINTEL)
 _SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
 _SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
 
-<<<<<<< HEAD
+_SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
+_SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
+
 _SPIRV_OP(Capability, CooperativeMatrixCheckedInstructionsINTEL)
 _SPIRV_OP(Op, CooperativeMatrixLoadCheckedINTEL)
 _SPIRV_OP(Op, CooperativeMatrixStoreCheckedINTEL)
 _SPIRV_OP(Op, CooperativeMatrixConstructCheckedINTEL)
-=======
-_SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
-_SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
->>>>>>> 3cfffb29 (support joint matrix prefetch (#2212))
 
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
