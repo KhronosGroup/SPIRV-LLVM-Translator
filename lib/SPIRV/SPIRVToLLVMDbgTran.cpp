@@ -49,7 +49,6 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
-#include <bit>
 
 using namespace std;
 using namespace SPIRVDebug::Operand;
