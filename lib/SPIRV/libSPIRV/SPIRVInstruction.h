@@ -3453,7 +3453,7 @@ _SPIRV_OP(JointMatrixGetElementCoord, true, 5)
 class SPIRVCooperativeMatrixPrefetchINTELInstBase
     : public SPIRVInstTemplateBase {
 protected:
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_joint_matrix;
   }
   SPIRVCapVec getRequiredCapability() const override {
