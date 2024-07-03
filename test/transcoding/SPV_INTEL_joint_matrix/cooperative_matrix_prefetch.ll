@@ -33,11 +33,11 @@
 ; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy2]]
 ; CHECK-SPIRV: CooperativeMatrixStoreKHR
 
-; CHECK-LLVM: call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiiiil(i16 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 12, i32 48, i32 0, i32 0, i64 %_arg_1)
+; CHECK-LLVM: call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiil(i16 addrspace(4)* %{{.*}}, i32 12, i32 48, i32 0, i32 0, i64 %_arg_1)
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS4slii
 ; CHECK-LLVM: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)*
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z26__spirv_CompositeConstructi(i32 42)
-; CHECK-LLVM: call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiiiil(i8 addrspace(4)* %{{.*}}, i32 0, i32 0, i32 12, i32 48, i32 0, i32 0, i64 %_arg_1)
+; CHECK-LLVM: call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiil(i8 addrspace(4)* %{{.*}}, i32 12, i32 48, i32 0, i32 0, i64 %_arg_1)
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* @_Z86__spirv_CooperativeMatrixLoadKHR_RPU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS4cl
 ; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z34__spirv_CooperativeMatrixMulAddKHRPU3AS144__spirv_CooperativeMatrixKHR__char_0_12_48_3PU3AS144__spirv_CooperativeMatrixKHR__char_2_48_12_3PU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3i(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(1)* %{{.*}}, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
 ; CHECK-LLVM: call spir_func void @_Z33__spirv_CooperativeMatrixStoreKHRPU3AS4sPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3ili(i16 addrspace(4)* %add.ptr7.i, %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*
@@ -80,7 +80,7 @@ entry:
   %add.ptr.i51 = getelementptr inbounds i16, i16 addrspace(1)* %_arg_, i64 %mul6.i
   %add.ptr7.i52 = getelementptr inbounds i16, i16 addrspace(1)* %add.ptr.i51, i64 %sub5.i
   %add.ptr7.i = addrspacecast i16 addrspace(1)* %add.ptr7.i52 to i16 addrspace(4)*
-  tail call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiiiil(i16 addrspace(4)* noundef %add.ptr7.i, i32 noundef 0, i32 noundef 0, i32 noundef 12, i32 noundef 48, i32 noundef 0, i32 noundef 0, i64 noundef %_arg_1)
+  tail call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiil(i16 addrspace(4)* noundef %add.ptr7.i, i32 noundef 12, i32 noundef 48, i32 noundef 0, i32 noundef 0, i64 noundef %_arg_1)
   %call8.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z32__spirv_CooperativeMatrixLoadKHR_1(i16 addrspace(4)* %add.ptr7.i, i64 %_arg_1, i32 0, i32 3) #3
   %add.ptr11.i53 = getelementptr inbounds i8, i8 addrspace(1)* %_arg_3, i64 %mul6.i
   %add.ptr16.i55 = getelementptr inbounds i8, i8 addrspace(1)* %_arg_5, i64 %sub5.i
@@ -89,7 +89,7 @@ entry:
   %C.0.i = call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(4)* @_Z26__spirv_CompositeConstruct(i32 42) #1
   %add.ptr12.i54 = getelementptr inbounds i8, i8 addrspace(1)* %add.ptr11.i53, i64 0
   %add.ptr12.i = addrspacecast i8 addrspace(1)* %add.ptr12.i54 to i8 addrspace(4)*
-  tail call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiiiil(i8 addrspace(4)* noundef %add.ptr12.i, i32 noundef 0, i32 noundef 0, i32 noundef 12, i32 noundef 48, i32 noundef 0, i32 noundef 0, i64 noundef %_arg_1)
+  tail call spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiil(i8 addrspace(4)* noundef %add.ptr12.i, i32 noundef 12, i32 noundef 48, i32 noundef 0, i32 noundef 0, i64 noundef %_arg_1)
   %call13.i = tail call spir_func %spirv.CooperativeMatrixKHR._char_2_48_12_3 addrspace(4)* @_Z32__spirv_CooperativeMatrixLoadKHR_2(i8 addrspace(4)* %add.ptr12.i, i64 %_arg_1) #3
   %add.ptr17.i56 = getelementptr inbounds i8, i8 addrspace(1)* %add.ptr16.i55, i64 0
   %add.ptr17.i = addrspacecast i8 addrspace(1)* %add.ptr17.i56 to i8 addrspace(4)*
@@ -112,10 +112,10 @@ declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 a
 declare dso_local spir_func noundef i32 @_Z34__spirv_CooperativeMatrixLengthKHR(%spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* noundef)
 
 ; Function Attrs: convergent
-declare dso_local spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiiiil(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef) local_unnamed_addr
+declare dso_local spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4siiiil(i16 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef) local_unnamed_addr
 
 ; Function Attrs: convergent
-declare dso_local spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiiiil(i8 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef) local_unnamed_addr
+declare dso_local spir_func void @_Z38__spirv_CooperativeMatrixPrefetchINTELPU3AS4ciiiil(i8 addrspace(4)* noundef, i32 noundef, i32 noundef, i32 noundef, i32 noundef, i64 noundef) local_unnamed_addr
 
 ; Function Attrs: convergent
 declare dso_local spir_func noundef %spirv.CooperativeMatrixKHR._char_0_12_48_3 addrspace(4)* @_Z32__spirv_CooperativeMatrixLoadKHR_1(i16 addrspace(4)* noundef, i64 noundef, i32 noundef, i32 noundef) local_unnamed_addr #2
