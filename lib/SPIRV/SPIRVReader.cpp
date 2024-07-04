@@ -3497,7 +3497,8 @@ bool SPIRVToLLVM::translate() {
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
     BM->getSourceLanguage(&SrcLangVer);
-    bool IsCpp = SrcLangVer == kOCLVer::CL21;
+    bool IsCpp =
+        SrcLangVer == kOCLVer::CLCXX10 || SrcLangVer == kOCLVer::CLCXX2021;
     if (!postProcessBuiltinsReturningStruct(M, IsCpp))
       return false;
   }
@@ -4844,7 +4845,15 @@ void SPIRVToLLVM::transSourceLanguage() {
   else
     addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 2, 0);
 
-  addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
+  if (Lang == SourceLanguageOpenCL_C) {
+    addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
+    return;
+  }
+  if (Lang == SourceLanguageOpenCL_CPP) {
+    addOCLVersionMetadata(Context, M, kSPIR2MD::OCLCXXVer, Major, Minor);
+    addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer,
+                          Ver == kOCLVer::CLCXX10 ? 2 : 3, 0);
+  }
 }
 
 bool SPIRVToLLVM::transSourceExtension() {
