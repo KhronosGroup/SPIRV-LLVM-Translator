@@ -820,7 +820,7 @@ unsigned getOCLVersion(Module *M, bool AllowMulti) {
     report_fatal_error(llvm::Twine(
         "opencl cxx version is not compatible with opencl c version!"));
   }
-  return OCLVer ? OCLVer : OCLCXXVer;
+  return OCLVer;
 }
 
 SmallVector<unsigned, 3> decodeMDNode(MDNode *N) {
