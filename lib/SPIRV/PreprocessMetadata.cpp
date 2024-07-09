@@ -296,7 +296,7 @@ void PreprocessMetadataBase::preprocessOCLMetadata(Module *M, SPIRVMDBuilder *B,
       .addOp()
       .add(M->getNamedMetadata(kSPIR2MD::OCLCXXVer) &&
                    (CLVer == kOCLVer::CLCXX10 || CLVer == kOCLVer::CLCXX2021)
-               ? spv::SourceLanguageOpenCL_CPP
+               ? spv::SourceLanguageCPP_for_OpenCL
                : spv::SourceLanguageOpenCL_C)
       .add(CLVer)
       .done();

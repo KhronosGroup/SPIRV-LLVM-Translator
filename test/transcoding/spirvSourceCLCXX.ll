@@ -5,11 +5,11 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM
 
-; CHECK-SPIRV: Source 4 100000
+; CHECK-SPIRV: Source 6 100000
 ; CHECK-LLVM: !spirv.Source = !{[[SPVSource:![0-9]+]]}
 ; CHECK-LLVM: !opencl.cxx.version = !{[[OCLCXXVer:![0-9]+]]}
 ; CHECK-LLVM: !opencl.ocl.version = !{[[OCLVer:![0-9]+]]}
-; CHECK-LLVM: [[SPVSource]] = !{i32 4, i32 100000}
+; CHECK-LLVM: [[SPVSource]] = !{i32 6, i32 100000}
 ; CHECK-LLVM: [[OCLCXXVer]] = !{i32 1, i32 0}
 ; CHECK-LLVM: [[OCLVer]] = !{i32 2, i32 0}
 

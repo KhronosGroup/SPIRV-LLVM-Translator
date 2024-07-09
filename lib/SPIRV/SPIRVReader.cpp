@@ -4831,7 +4831,7 @@ void SPIRVToLLVM::transSourceLanguage() {
   SPIRVWord Ver = 0;
   SourceLanguage Lang = BM->getSourceLanguage(&Ver);
   if (Lang != SourceLanguageUnknown && // Allow unknown for debug info test
-      Lang != SourceLanguageOpenCL_C && Lang != SourceLanguageOpenCL_CPP)
+      Lang != SourceLanguageOpenCL_C && Lang != SourceLanguageCPP_for_OpenCL)
     return;
   unsigned short Major = 0;
   unsigned char Minor = 0;
@@ -4849,7 +4849,7 @@ void SPIRVToLLVM::transSourceLanguage() {
     addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
     return;
   }
-  if (Lang == SourceLanguageOpenCL_CPP) {
+  if (Lang == SourceLanguageCPP_for_OpenCL) {
     addOCLVersionMetadata(Context, M, kSPIR2MD::OCLCXXVer, Major, Minor);
     addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer,
                           Ver == kOCLVer::CLCXX10 ? 2 : 3, 0);
