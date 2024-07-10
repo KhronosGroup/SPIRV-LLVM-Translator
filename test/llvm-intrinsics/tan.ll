@@ -6,23 +6,51 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
 
-; CHECK: ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} tan 
+; CHECK: ExtInst [[Half]] {{[0-9]+}} [[ExtInstSetId]] tan [[HalfArg]]
+; CHECK: ExtInst [[Float]] {{[0-9]+}} [[ExtInstSetId]] tan [[FloatArg]]
+; CHECK: ExtInst [[Double]] {{[0-9]+}} [[ExtInstSetId]] tan [[DoubleArg]]
+; CHECK: ExtInst [[Half4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Half4Arg]]
+; CHECK: ExtInst [[Float4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Float4Arg]]
+; CHECK: ExtInst [[Double4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Double4Arg]]
+; CHECK: ExtInst [[Half]] {{[0-9]+}} [[ExtInstSetId]] tan [[HalfArg]]
+; CHECK: ExtInst [[Float]] {{[0-9]+}} [[ExtInstSetId]] native_tan [[FloatArg]]
+; CHECK: ExtInst [[Double]] {{[0-9]+}} [[ExtInstSetId]] tan [[DoubleArg]]
+; CHECK: ExtInst [[Half4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Half4Arg]]
+; CHECK: ExtInst [[Float4]] {{[0-9]+}} [[ExtInstSetId]] native_tan [[Float4Arg]]
+; CHECK: ExtInst [[Double4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Double4Arg]]
 
 ; Function Attrs: nounwind readnone
-define dso_local spir_func float @foo(float %x) local_unnamed_addr #0 {
+define dso_local spir_func void @foo(half %h, float %f, double %d) local_unnamed_addr {
 entry:
-  %0 = call float @llvm.tan.f32(float %x)
-  ret float %0
+  %0 = call half @llvm.tan.f16(half %h)
+  %1 = call float @llvm.tan.f32(float %f)
+  %2 = call double @llvm.tan.f64(double %d)
+  %3 = call <4 x half> @llvm.tan.v4f16(<4 x half> <half 5.000000e-01, half 10.000000e-01, half 15.000000e-01, half 20.000000e-01>)
+  %4 = call <4 x float> @llvm.tan.v4f32(<4 x float> <float 5.000000e-01, float 10.000000e-01, float 15.000000e-01, float 20.000000e-01>)
+  %5 = call <4 x double> @llvm.tan.v4f64(<4 x double> <double 5.000000e-01, double 2.000000e-01, double 3.000000e-01, double 4.000000e-01>)
+  %6 = call afn half @llvm.tan.f16(half %h)
+  %7 = call afn float @llvm.tan.f32(float %f)
+  %8 = call afn double @llvm.tan.f64(double %d)
+  %9 = call afn <4 x half> @llvm.tan.v4f16(<4 x half> <half 5.000000e-01, half 10.000000e-01, half 15.000000e-01, half 20.000000e-01>)
+  %10 = call afn <4 x float> @llvm.tan.v4f32(<4 x float> <float 5.000000e-01, float 10.000000e-01, float 15.000000e-01, float 20.000000e-01>)
+  %11 = call afn <4 x double> @llvm.tan.v4f64(<4 x double> <double 5.000000e-01, double 2.000000e-01, double 3.000000e-01, double 4.000000e-01>)
+  ret void
 }
 
 ; Function Attrs: nounwind readnone speculatable willreturn
-declare float @llvm.tan.f32(float) #1
+declare half @llvm.tan.f16(half)
 
-attributes #0 = { nounwind readnone "disable-tail-calls"="false" "frame-pointer"="all" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readnone speculatable willreturn }
+; Function Attrs: nounwind readnone speculatable willreturn
+declare float @llvm.tan.f32(float)
 
-!llvm.module.flags = !{!0}
-!llvm.ident = !{!1}
+; Function Attrs: nounwind readnone speculatable willreturn
+declare double @llvm.tan.f64(double)
 
-!0 = !{i32 1, !"wchar_size", i32 4}
-!1 = !{!"clang version 19.0.0git (https://github.com/maarquitos14/llvm.git c99522b08976c4a74bc06890ee46c158251feb46)"}
+; Function Attrs: nounwind readnone speculatable willreturn
+declare <4 x half> @llvm.tan.v4f16(<4 x half>)
+
+; Function Attrs: nounwind readnone speculatable willreturn
+declare <4 x float> @llvm.tan.v4f32(<4 x float>)
+
+; Function Attrs: nounwind readnone speculatable willreturn
+declare <4 x double> @llvm.tan.v4f64(<4 x double>)
