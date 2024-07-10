@@ -6,15 +6,36 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
 
+; CHECK: ExtInstImport [[ExtInstSetId:[0-9]+]] "OpenCL.std"
+
+; CHECK: Name [[HalfArg:[0-9]+]] "h"
+; CHECK: Name [[FloatArg:[0-9]+]] "f"
+; CHECK: Name [[DoubleArg:[0-9]+]] "d"
+
+; CHECK: TypeFloat [[Half:[0-9]+]] 16
+; CHECK: TypeFloat [[Float:[0-9]+]] 32
+; CHECK: TypeFloat [[Double:[0-9]+]] 64
+
+; CHECK: TypeVector [[Half4:[0-9]+]] [[Half]] 4
+; CHECK: TypeVector [[Float4:[0-9]+]] [[Float]] 4
+; CHECK: TypeVector [[Double4:[0-9]+]] [[Double]] 4
+
+; CHECK: ConstantComposite [[Half4]] [[Half4Arg:[0-9]+]]
+; CHECK: ConstantComposite [[Float4]] [[Float4Arg:[0-9]+]]
+; CHECK: ConstantComposite [[Double4]] [[Double4Arg:[0-9]+]]
+
 ; CHECK: ExtInst [[Half]] {{[0-9]+}} [[ExtInstSetId]] tan [[HalfArg]]
 ; CHECK: ExtInst [[Float]] {{[0-9]+}} [[ExtInstSetId]] tan [[FloatArg]]
 ; CHECK: ExtInst [[Double]] {{[0-9]+}} [[ExtInstSetId]] tan [[DoubleArg]]
+
 ; CHECK: ExtInst [[Half4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Half4Arg]]
 ; CHECK: ExtInst [[Float4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Float4Arg]]
 ; CHECK: ExtInst [[Double4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Double4Arg]]
+
 ; CHECK: ExtInst [[Half]] {{[0-9]+}} [[ExtInstSetId]] tan [[HalfArg]]
 ; CHECK: ExtInst [[Float]] {{[0-9]+}} [[ExtInstSetId]] native_tan [[FloatArg]]
 ; CHECK: ExtInst [[Double]] {{[0-9]+}} [[ExtInstSetId]] tan [[DoubleArg]]
+
 ; CHECK: ExtInst [[Half4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Half4Arg]]
 ; CHECK: ExtInst [[Float4]] {{[0-9]+}} [[ExtInstSetId]] native_tan [[Float4Arg]]
 ; CHECK: ExtInst [[Double4]] {{[0-9]+}} [[ExtInstSetId]] tan [[Double4Arg]]
