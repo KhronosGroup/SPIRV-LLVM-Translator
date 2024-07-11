@@ -5,7 +5,7 @@ Method 1:
 
    Variation A:
 
-   In transIntrinsicInst in SPIRVWriter.cpp, calls to LLVM intrinsics are replaced with a SPIRV ExtInst.
+   In transIntrinsicInst in SPIRVWriter, calls to LLVM intrinsics are replaced with a SPIRV ExtInst.
    For example:
 
         %0 = tail call i32 @llvm.ctlz.i32(i32 %x, i1 true)
@@ -71,7 +71,7 @@ Method 1:
 
 Method 2:
 
-   Some intrinsics are emulated by basic operations in SPIRVWriter.cpp.  For example:
+   Some intrinsics are emulated by basic operations in SPIRVWriter.  For example:
 
         %0 = call float @llvm.vector.reduce.fadd.v4float(float %sp, <4 x float> %v)
 
@@ -122,7 +122,7 @@ Method 2:
 
 Method 3:
 
-   In SPIRVRegularizeLLVMPass in SPIRVRegularizeLLVM.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
+   In SPIRVRegularizeLLVMPass, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is created by LLVM API calls and will be translated to SPIRV. The calls to the emulation
    functions and the emulation functions themselves will be translated to SPIRV.  After reverse translation, the calls to the emulation
    functions and the emulation functions themselves will appear in the LLVM IR.
@@ -135,7 +135,7 @@ Method 3:
 
         %ret = call i16 @spirv.llvm_bswap_i16(i16 %0)
 
-   The emulation function is constructed by the translator in SPIRVRegularizeLLVM.cpp (note that this code
+   The emulation function is constructed by the translator in SPIRVRegularizeLLVM (note that this code
    handles all types):
 
             case Intrinsic::bswap: {
@@ -185,7 +185,7 @@ Method 3:
 
 Method 4:
 
-   In SPIRVLowerLLVMIntrinsicPass in SPIRVLowerLLVMIntrinsic.cpp, calls to LLVM intrinsics are replaced with a call to an emulation function.
+   In SPIRVLowerLLVMIntrinsicPass, calls to LLVM intrinsics are replaced with a call to an emulation function.
    The emulation function is represented as a text string of LLVM assembly and is parsed and added to the LLVM IR
    to be translated.  The calls to the emulation functions and the emulation functions themselves will be translated
    to SPIRV.  After reverse translation, the calls to the emulation functions and the emulation functions themselves will appear
@@ -223,7 +223,7 @@ Method 4:
         }
         )"};
 
-   The supported lowerings are recorded in a table in SPIRVLowerLLVMIntrinsic.cpp:
+   The supported lowerings are recorded in a table in SPIRVLowerLLVMIntrinsic:
 
           //  LLVM Intrinsic Name             Required Extension                                   Forbidden Extension                    Module with
           //                                                                                                                              emulation function
