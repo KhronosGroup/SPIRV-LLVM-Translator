@@ -1,6 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc -opaque-pointers
 ; RUN: llvm-spirv %t.bc -o %t.spv -opaque-pointers
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc -opaque-pointers
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc -emit-opaque-pointers
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll -opaque-pointers
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix CHECK-LLVM
 
