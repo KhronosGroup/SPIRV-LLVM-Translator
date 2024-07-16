@@ -1159,7 +1159,7 @@ template <typename T> struct LeadingZerosCounter<T, 8> {
 /// Only unsigned integral types are allowed.
 ///
 /// Returns std::numeric_limits<T>::digits on an input of 0.
-template <typename T> [[nodiscard]] int countl_zero(T Val) {
+template <typename T> [[nodiscard]] int countlZero(T Val) {
   static_assert(std::is_unsigned<T>::value,
                 "Only unsigned integral types are allowed.");
   return detail::LeadingZerosCounter<T, sizeof(T)>::count(Val);
@@ -1169,10 +1169,10 @@ template <typename T> [[nodiscard]] int countl_zero(T Val) {
 /// Returns 0 otherwise.
 ///
 /// Ex. bit_width(5) == 3.
-template <typename T> [[nodiscard]] int bit_width(T Value) {
+template <typename T> [[nodiscard]] int bitWidth(T Value) {
   static_assert(std::is_unsigned<T>::value,
                 "Only unsigned integral types are allowed.");
-  return std::numeric_limits<T>::digits - countl_zero(Value);
+  return std::numeric_limits<T>::digits - countlZero(Value);
 }
 
 /// Returns the smallest integral power of two no smaller than Value if Value is
@@ -1182,12 +1182,12 @@ template <typename T> [[nodiscard]] int bit_width(T Value) {
 ///
 /// The return value is undefined if the input is larger than the largest power
 /// of two representable in T.
-template <typename T> [[nodiscard]] T bit_ceil(T Value) {
+template <typename T> [[nodiscard]] T bitCeil(T Value) {
   static_assert(std::is_unsigned<T>::value,
                 "Only unsigned integral types are allowed.");
   if (Value < 2)
     return 1;
-  return T(1) << bit_width<T>(Value - 1u);
+  return T(1) << bitWidth<T>(Value - 1u);
 }
 } // namespace SPIRV
 
