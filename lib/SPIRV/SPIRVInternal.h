@@ -1098,6 +1098,97 @@ bool postProcessBuiltinsWithArrayArguments(Module *M, bool IsCpp = false);
 
 template <typename T>
 MetadataAsValue *map2MDString(LLVMContext &C, SPIRVValue *V);
+
+namespace detail {
+template <typename T, std::size_t SizeOfT> struct LeadingZerosCounter {
+  static unsigned count(T Val) {
+    if (!Val)
+      return std::numeric_limits<T>::digits;
+
+    // Bisection method.
+    unsigned ZeroBits = 0;
+    for (T Shift = std::numeric_limits<T>::digits >> 1; Shift; Shift >>= 1) {
+      T Tmp = Val >> Shift;
+      if (Tmp)
+        Val = Tmp;
+      else
+        ZeroBits |= Shift;
+    }
+    return ZeroBits;
+  }
+};
+
+#if defined(__GNUC__) || defined(_MSC_VER)
+template <typename T> struct LeadingZerosCounter<T, 4> {
+  static unsigned count(T Val) {
+    if (Val == 0)
+      return 32;
+
+#if __has_builtin(__builtin_clz) || defined(__GNUC__)
+    return __builtin_clz(Val);
+#elif defined(_MSC_VER)
+    unsigned long Index;
+    _BitScanReverse(&Index, Val);
+    return Index ^ 31;
+#endif
+  }
+};
+
+#if !defined(_MSC_VER) || defined(_M_X64)
+template <typename T> struct LeadingZerosCounter<T, 8> {
+  static unsigned count(T Val) {
+    if (Val == 0)
+      return 64;
+
+#if __has_builtin(__builtin_clzll) || defined(__GNUC__)
+    return __builtin_clzll(Val);
+#elif defined(_MSC_VER)
+    unsigned long Index;
+    _BitScanReverse64(&Index, Val);
+    return Index ^ 63;
+#endif
+  }
+};
+#endif
+#endif
+} // namespace detail
+
+/// Count number of 0's from the most significant bit to the least
+///   stopping at the first 1.
+///
+/// Only unsigned integral types are allowed.
+///
+/// Returns std::numeric_limits<T>::digits on an input of 0.
+template <typename T> [[nodiscard]] int countl_zero(T Val) {
+  static_assert(std::is_unsigned<T>::value,
+                "Only unsigned integral types are allowed.");
+  return detail::LeadingZerosCounter<T, sizeof(T)>::count(Val);
+}
+
+/// Returns the number of bits needed to represent Value if Value is nonzero.
+/// Returns 0 otherwise.
+///
+/// Ex. bit_width(5) == 3.
+template <typename T> [[nodiscard]] int bit_width(T Value) {
+  static_assert(std::is_unsigned<T>::value,
+                "Only unsigned integral types are allowed.");
+  return std::numeric_limits<T>::digits - countl_zero(Value);
+}
+
+/// Returns the smallest integral power of two no smaller than Value if Value is
+/// nonzero.  Returns 1 otherwise.
+///
+/// Ex. bit_ceil(5) == 8.
+///
+/// The return value is undefined if the input is larger than the largest power
+/// of two representable in T.
+template <typename T> [[nodiscard]] T bit_ceil(T Value) {
+  static_assert(std::is_unsigned<T>::value,
+                "Only unsigned integral types are allowed.");
+  if (Value < 2)
+    return 1;
+  return T(1) << bit_width<T>(Value - 1u);
+}
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H
