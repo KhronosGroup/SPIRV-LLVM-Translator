@@ -1106,21 +1106,7 @@ MetadataAsValue *map2MDString(LLVMContext &C, SPIRVValue *V);
 ///
 /// The return value is undefined if the input is larger than the largest power
 /// of two representable in SPIRVWord.
-[[nodiscard]] SPIRVWord bitCeil(SPIRVWord Value) {
-  if (Value < 2)
-    return 1;
-
-  // If Value is already a power of 2, just return it.
-  if ((Value & (Value - 1)) == 0)
-    return Value;
-
-  Value--;
-  for (SPIRVWord Shift = std::numeric_limits<SPIRVWord>::digits >> 1; Shift;
-       Shift >>= 1) {
-    Value |= Value >> Shift;
-  }
-  return ++Value;
-}
+[[nodiscard]] SPIRVWord bitCeil(SPIRVWord Value);
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H
