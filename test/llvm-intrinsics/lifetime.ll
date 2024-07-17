@@ -9,6 +9,8 @@
 ; CHECK-SPIRV-DAG: Name [[#SimpleF:]] "lifetime_simple"
 ; CHECK-SPIRV-DAG: Name [[#SizedF:]] "lifetime_sized"
 ; CHECK-SPIRV-DAG: Name [[#GenericF:]] "lifetime_generic"
+; CHECK-SPIRV-DAG: TypeStruct [[#StructTy:]] [[#]]
+; CHECK-SPIRV-COUNT-1: TypePointer [[#PrivatePtrTy:]] [[#StructTy]]
 
 ; CHECK-SPIRV: Function [[#]] [[#SimpleF:]]
 ; CHECK-SPIRV: LifetimeStart [[#Tmp:]] 0
@@ -20,7 +22,7 @@
 ; CHECK-SPIRV: LifetimeStop [[#Cast]] 1
 
 ; CHECK-SPIRV: Function [[#]] [[#GenericF:]]
-; CHECK-SPIRV: Variable [[#]] [[#Var:]] 7
+; CHECK-SPIRV: Variable [[#PrivatePtrTy]] [[#Var:]] 7
 ; CHECK-SPIRV: PtrCastToGeneric [[#]] [[#Cast1:]] [[#Var]]
 ; CHECK-SPIRV: Bitcast [[#]] [[#Cast2:]] [[#Cast1]]
 ; CHECK-SPIRV: GenericCastToPtr [[#]] [[#Cast3:]] [[#Cast2]]
