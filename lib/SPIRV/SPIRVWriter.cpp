@@ -2270,11 +2270,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                           {Length->getId()}, BB, TranslatedTy));
     }
     SPIRVValue *Var = BM->addVariable(
-        TranslatedTy, false, spv::internal::LinkageTypeInternal,
-        nullptr, Alc->getName().str(), StorageClassFunction, BB);
+        TranslatedTy, false, spv::internal::LinkageTypeInternal, nullptr,
+        Alc->getName().str(), StorageClassFunction, BB);
     if (V->getType()->getPointerAddressSpace() == SPIRAS_Generic) {
-      SPIRVValue *Cast = BM->addUnaryInst(OpPtrCastToGeneric, TranslatedTy, Var,
-                                          BB);
+      SPIRVValue *Cast =
+          BM->addUnaryInst(OpPtrCastToGeneric, TranslatedTy, Var, BB);
       return mapValue(V, Cast);
     }
     return mapValue(V, Var);
@@ -4553,8 +4553,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         PtrAS == SPIRAS_Generic, SPIRVEC_InvalidInstruction, II,
         "lifetime intrinsic pointer operand must be in private or generic AS");
     auto *SrcTy = PtrOp->getType();
-    auto *DstTy = BM->addPointerType(
-        StorageClassFunction, SrcTy->getPointerElementType());
+    auto *DstTy = BM->addPointerType(StorageClassFunction,
+                                     SrcTy->getPointerElementType());
     PtrOp = BM->addUnaryInst(OpGenericCastToPtr, DstTy, PtrOp, BB);
     ValueMap[LLVMPtrOp] = PtrOp;
     return BM->addLifetimeInst(OC, PtrOp, Size, BB);
