@@ -2271,9 +2271,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     }
     SPIRVType *VarTy =
         V->getType()->getPointerAddressSpace() == SPIRAS_Generic
-        ? BM->addPointerType(StorageClassFunction,
-                             TranslatedTy->getPointerElementType())
-        : TranslatedTy;
+            ? BM->addPointerType(StorageClassFunction,
+                                 TranslatedTy->getPointerElementType())
+            : TranslatedTy;
     SPIRVValue *Var = BM->addVariable(
         VarTy, false, spv::internal::LinkageTypeInternal, nullptr,
         Alc->getName().str(), StorageClassFunction, BB);
