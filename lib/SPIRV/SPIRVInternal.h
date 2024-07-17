@@ -1111,7 +1111,7 @@ MetadataAsValue *map2MDString(LLVMContext &C, SPIRVValue *V);
     return 1;
 
   // If Value is already a power of 2, just return it.
-  if (Value & (Value - 1) == 0)
+  if ((Value & (Value - 1)) == 0)
     return Value;
 
   Value--;
