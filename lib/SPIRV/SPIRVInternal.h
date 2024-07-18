@@ -1098,6 +1098,15 @@ bool postProcessBuiltinsWithArrayArguments(Module *M, bool IsCpp = false);
 
 template <typename T>
 MetadataAsValue *map2MDString(LLVMContext &C, SPIRVValue *V);
+
+/// Returns the smallest integral power of two no smaller than Value if Value is
+/// nonzero.  Returns 1 otherwise.
+///
+/// Ex. bitCeil(5) == 8.
+///
+/// The return value is undefined if the input is larger than the largest power
+/// of two representable in SPIRVWord.
+[[nodiscard]] SPIRVWord bitCeil(SPIRVWord Value);
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H

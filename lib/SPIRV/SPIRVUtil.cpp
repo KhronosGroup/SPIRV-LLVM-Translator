@@ -2492,4 +2492,20 @@ template MetadataAsValue *
 map2MDString<internal::InternalJointMatrixLayout>(LLVMContext &, SPIRVValue *);
 template MetadataAsValue *map2MDString<spv::Scope>(LLVMContext &, SPIRVValue *);
 
+[[nodiscard]] SPIRVWord bitCeil(SPIRVWord Value) {
+  if (Value < 2)
+    return 1;
+
+  // If Value is already a power of 2, just return it.
+  if ((Value & (Value - 1)) == 0)
+    return Value;
+
+  Value--;
+  for (SPIRVWord Shift = std::numeric_limits<SPIRVWord>::digits >> 1; Shift;
+       Shift >>= 1) {
+    Value |= Value >> Shift;
+  }
+  return ++Value;
+}
+
 } // namespace SPIRV
