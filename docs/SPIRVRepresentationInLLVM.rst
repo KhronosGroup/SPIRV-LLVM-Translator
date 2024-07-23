@@ -486,7 +486,7 @@ adding any decoration to argument ``a``.
 Loop controls and loop metadata
 -------------------------------
 
-SPIR-V Loop controls that do not have a corresponding community LLVM metadata
+SPIR-V Loop controls that do not have corresponding `llvm.loop` metadata
 can be decorated using LLVM metadata through the names
 ``spirv.loop.<LoopControlID>`` where ``LoopControlID`` corresponds to the name
 of the SPIR-V loop control. This metadata should be applied to the latch-block's
