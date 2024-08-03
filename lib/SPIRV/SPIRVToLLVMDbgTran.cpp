@@ -1280,6 +1280,23 @@ SPIRVToLLVMDbgTran::transTypeTemplateParameter(const SPIRVExtInst *DebugInst) {
                                                              false);
 }
 
+// Workaround for the incorrect enum used for OpTypeTemplateTemplateParameter
+// and OpTypeTemplateParameterPack instructions previously. The W/A added
+// to enforce compatibility with previously generated SPIR-V modules.
+DINode *SPIRVToLLVMDbgTran::transTypeTemplateParameterInst(
+    const SPIRVExtInst *DebugInst) {
+  constexpr SPIRVWord IndexToCheck =
+      SPIRVDebug::Operand::TypeTemplateTemplateParameter::TemplateNameIdx;
+  const SPIRVWordVec &Ops = DebugInst->getArguments();
+  // We can't distinguish these 2 instructions by number of SPIR-V words which
+  // would be better. But we know, that the second parameter of
+  // OpTypeTemplateTemplateParameter is 'Template Name', which for
+  // OpTypeTemplateParameterPack it is 'Source'.
+  if (BM->get<SPIRVValue>(Ops[IndexToCheck])->getOpCode() == OpString)
+    return transTypeTemplateTemplateParameter(DebugInst);
+  return transTypeTemplateParameterPack(DebugInst);
+}
+
 DINode *SPIRVToLLVMDbgTran::transTypeTemplateTemplateParameter(
     const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::TypeTemplateTemplateParameter;
@@ -1513,10 +1530,8 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
     return transTypeTemplateParameter(DebugInst);
 
   case SPIRVDebug::TypeTemplateTemplateParameter:
-    return transTypeTemplateTemplateParameter(DebugInst);
-
   case SPIRVDebug::TypeTemplateParameterPack:
-    return transTypeTemplateParameterPack(DebugInst);
+    return transTypeTemplateParameterInst(DebugInst);
 
   case SPIRVDebug::TypeTemplate:
     return transTypeTemplate(DebugInst);
