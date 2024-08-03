@@ -2539,6 +2539,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                                           BV->getName()));
   }
 
+  case OpFreezeKHR: {
+    IRBuilder<> Builder(*Context);
+    if (BB) {
+      Builder.SetInsertPoint(BB);
+    }
+    SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    return mapValue(BV,
+                    Builder.CreateFreeze(transValue(BC->getOperand(0), F, BB),
+                                         BV->getName()));
+  }
+
   case OpAll:
   case OpAny:
     return mapValue(BV, transAllAny(static_cast<SPIRVInstruction *>(BV), BB));

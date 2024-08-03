@@ -2593,6 +2593,16 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, transCallInst(CI, BB));
   }
 
+  if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_freeze)) {
+    if (FreezeInst *FI = dyn_cast<FreezeInst>(V)) {
+      SPIRVType *Ty = transScavengedType(FI);
+      SPIRVValue *Operand = transValue(FI->getOperand(0), BB);
+
+      auto UI = BM->addUnaryInst(OpFreezeKHR, Ty, Operand, BB);
+      return mapValue(V, UI);
+    }
+  }
+
   if (Instruction *Inst = dyn_cast<Instruction>(V)) {
     BM->SPIRVCK(false, InvalidInstruction, toString(Inst));
   }
@@ -6711,7 +6721,7 @@ void addPassesForSPIRV(ModulePassManager &PassMgr,
   PassMgr.addPass(PreprocessMetadataPass());
   PassMgr.addPass(SPIRVLowerOCLBlocksPass());
   PassMgr.addPass(OCLToSPIRVPass());
-  PassMgr.addPass(SPIRVRegularizeLLVMPass());
+  PassMgr.addPass(SPIRVRegularizeLLVMPass(&Opts));
   PassMgr.addPass(SPIRVLowerConstExprPass());
   PassMgr.addPass(SPIRVLowerBoolPass());
   PassMgr.addPass(SPIRVLowerMemmovePass());
