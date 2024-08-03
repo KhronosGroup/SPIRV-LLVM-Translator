@@ -640,7 +640,8 @@ std::string getSPIRVExtFuncName(SPIRVExtInstSetKind Set, unsigned ExtOp,
 ///   otherwise return OpNop.
 /// \param Dec contains decorations decoded from function name if it is
 ///   not nullptr.
-Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr);
+Op getSPIRVFuncOC(StringRef Name, Function *F,
+                  SmallVectorImpl<std::string> *Dec = nullptr);
 
 /// Get SPIR-V builtin variable enum given the canonical builtin name
 /// Assume \param Name is in format __spirv_BuiltIn{Name}
@@ -651,7 +652,8 @@ bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 /// \param DemangledName demanged name of the OpenCL built-in function
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
-bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp = false);
+bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, Function *F,
+                  bool IsCpp = false);
 
 /// Check if a function returns void
 bool isVoidFuncTy(FunctionType *FT);
