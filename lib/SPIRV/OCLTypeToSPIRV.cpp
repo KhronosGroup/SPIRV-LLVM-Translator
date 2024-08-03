@@ -78,7 +78,8 @@ OCLTypeToSPIRVBase &OCLTypeToSPIRVPass::run(llvm::Module &M,
 }
 
 OCLTypeToSPIRVBase::OCLTypeToSPIRVBase()
-    : BuiltinCallHelper(ManglingRules::None), M(nullptr), Ctx(nullptr) {}
+    : BuiltinCallHelper(ManglingRules::None), M(nullptr), Ctx(nullptr),
+      SrcLang(0) {}
 
 bool OCLTypeToSPIRVBase::runOCLTypeToSPIRV(Module &Module) {
   LLVM_DEBUG(dbgs() << "Enter OCLTypeToSPIRV:\n");
@@ -90,7 +91,7 @@ bool OCLTypeToSPIRVBase::runOCLTypeToSPIRV(Module &Module) {
   auto Src = getSPIRVSource(&Module);
   if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
     return false;
-
+  SrcLang = std::get<0>(Src);
   for (auto &F : Module.functions())
     adaptArgumentsByMetadata(&F);
 
@@ -194,7 +195,7 @@ void OCLTypeToSPIRVBase::adaptArgumentsBySamplerUse(Module &M) {
       continue;
     auto MangledName = F.getName();
     StringRef DemangledName;
-    if (!oclIsBuiltin(MangledName, DemangledName, false))
+    if (!oclIsBuiltin(MangledName, DemangledName, isCpp(SrcLang)))
       continue;
     // Note: kSPIRVName::ConvertHandleToSampledImageINTEL contains
     // kSPIRVName::SampledImage as a substring, but we still want to continue in
