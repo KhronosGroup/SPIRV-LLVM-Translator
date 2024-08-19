@@ -355,6 +355,11 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
       return TypedPointerType::get(ElementTy, AS);
     return mapType(T, PointerType::get(ElementTy, AS));
   }
+  case OpTypeUntypedPointerKHR: {
+    const unsigned AS =
+        SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
+    return mapType(T, PointerType::get(*Context, AS));
+  }
   case OpTypeVector:
     return mapType(T,
                    FixedVectorType::get(transType(T->getVectorComponentType()),

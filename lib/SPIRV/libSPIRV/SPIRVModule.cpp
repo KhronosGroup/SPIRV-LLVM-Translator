@@ -252,6 +252,8 @@ public:
   SPIRVTypeInt *addIntegerType(unsigned BitWidth) override;
   SPIRVTypeOpaque *addOpaqueType(const std::string &) override;
   SPIRVTypePointer *addPointerType(SPIRVStorageClassKind, SPIRVType *) override;
+  SPIRVTypeUntypedPointerKHR *
+      addUntypedPointerKHRType(SPIRVStorageClassKind) override;
   SPIRVTypeImage *addImageType(SPIRVType *,
                                const SPIRVTypeImageDescriptor &) override;
   SPIRVTypeImage *addImageType(SPIRVType *, const SPIRVTypeImageDescriptor &,
@@ -563,6 +565,8 @@ private:
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   SPIRVTypeBool *BoolTy;
   SPIRVTypeVoid *VoidTy;
+  SmallDenseMap<SPIRVStorageClassKind, SPIRVTypeUntypedPointerKHR *>
+      UntypedPtrTyMap;
   SmallDenseMap<unsigned, SPIRVTypeInt *, 4> IntTypeMap;
   SmallDenseMap<unsigned, SPIRVTypeFloat *, 4> FloatTypeMap;
   SmallDenseMap<std::pair<unsigned, SPIRVType *>, SPIRVTypePointer *, 4>
@@ -1012,6 +1016,18 @@ SPIRVModuleImpl::addPointerType(SPIRVStorageClassKind StorageClass,
   auto *Ty = new SPIRVTypePointer(this, getId(), StorageClass, ElementType);
   PointerTypeMap[Desc] = Ty;
   return addType(Ty);
+}
+
+SPIRVTypeUntypedPointerKHR *
+SPIRVModuleImpl::addUntypedPointerKHRType(SPIRVStorageClassKind StorageClass) {
+  auto Loc = UntypedPtrTyMap.find(StorageClass);
+  if (Loc != UntypedPtrTyMap.end())
+    return Loc->second;
+
+  auto *Ty = new SPIRVTypeUntypedPointerKHR(this, getId(), StorageClass);
+  UntypedPtrTyMap[StorageClass] = Ty;
+  return addType(Ty);
+  return Ty;
 }
 
 SPIRVTypeFunction *SPIRVModuleImpl::addFunctionType(
@@ -1925,11 +1941,13 @@ class TopologicalSort {
         // We've found a recursive data type, e.g. a structure having a member
         // which is a pointer to the same structure.
         State = Unvisited; // Forget about it
-        if (E->getOpCode() == OpTypePointer) {
+        if (E->getOpCode() == OpTypePointer ||
+            E->getOpCode() == OpTypeUntypedPointerKHR) {
           // If we have a pointer in the recursive chain, we can break the
           // cyclic dependency by inserting a forward declaration of that
           // pointer.
-          SPIRVTypePointer *Ptr = static_cast<SPIRVTypePointer *>(E);
+          SPIRVTypePointerBase<> *Ptr =
+              static_cast<SPIRVTypePointerBase<> *>(E);
           SPIRVModule *BM = E->getModule();
           ForwardPointerSet.insert(BM->add(new SPIRVTypeForwardPointer(
               BM, Ptr->getId(), Ptr->getPointerStorageClass())));
