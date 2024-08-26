@@ -2,10 +2,10 @@
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
 
-; RUN: llvm-as -opaque-pointers=0 %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.bc
-; RUN: llvm-dis -opaque-pointers=0 < %t.bc | FileCheck %s
+; RUN: llvm-dis < %t.bc | FileCheck %s
 
 ; Check 'LLVM ==> SPIR-V ==> LLVM' conversion of atomic_compare_exchange_strong and atomic_compare_exchange_weak.
 
@@ -21,18 +21,54 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LABEL:   define spir_func void @test_strong
 ; CHECK-NEXT:    entry:
 ; CHECK:         [[PTR_STRONG:%expected[0-9]*]] = alloca i32, align 4
-; CHECK:         store i32 {{.*}}, i32* [[PTR_STRONG]]
-; CHECK:         [[PTR_STRONG]].as = addrspacecast i32* [[PTR_STRONG]] to i32 addrspace(4)*
-; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(i32 {{.*}}* %object, i32 {{.*}}* [[PTR_STRONG]].as, i32 %desired, i32 5, i32 5, i32 2)
-; CHECK:         load i32, i32 addrspace(4)* [[PTR_STRONG]].as
+; CHECK:         store i32 {{.*}}, ptr [[PTR_STRONG]]
+; CHECK:         [[PTR_STRONG]].as = addrspacecast ptr [[PTR_STRONG]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(ptr {{.*}} %object, ptr {{.*}} [[PTR_STRONG]].as, i32 %desired, i32 5, i32 5, i32 2)
+; CHECK:         load i32, ptr addrspace(4) [[PTR_STRONG]].as
+
+; CHECK-LABEL:   define spir_func void @test_strong_float
+; CHECK-NEXT:    entry:
+; CHECK:         [[PTR_STRONG:%expected[0-9]*]] = alloca i32, align 4
+; CHECK:         [[DESIRED_CAST:%[0-9]*]] = bitcast float %desired to i32
+; CHECK:         store i32 {{.*}}, ptr [[PTR_STRONG]]
+; CHECK:         [[PTR_STRONG]].as = addrspacecast ptr [[PTR_STRONG]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(ptr {{.*}} %object, ptr {{.*}} [[PTR_STRONG]].as, i32 [[DESIRED_CAST]], i32 5, i32 5, i32 2)
+; CHECK:         load i32, ptr addrspace(4) [[PTR_STRONG]].as
+
+; CHECK-LABEL:   define spir_func void @test_strong_double
+; CHECK-NEXT:    entry:
+; CHECK:         [[PTR_STRONG:%expected[0-9]*]] = alloca i64, align 8
+; CHECK:         [[DESIRED_CAST:%[0-9]*]] = bitcast double %desired to i64
+; CHECK:         store i64 {{.*}}, ptr [[PTR_STRONG]]
+; CHECK:         [[PTR_STRONG]].as = addrspacecast ptr [[PTR_STRONG]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(ptr {{.*}} %object, ptr {{.*}} [[PTR_STRONG]].as, i64 [[DESIRED_CAST]], i32 5, i32 5, i32 2)
+; CHECK:         load i64, ptr addrspace(4) [[PTR_STRONG]].as
 
 ; CHECK-LABEL:   define spir_func void @test_weak
 ; CHECK-NEXT:    entry:
 ; CHECK:         [[PTR_WEAK:%expected[0-9]*]] = alloca i32, align 4
-; CHECK:         store i32 {{.*}}, i32* [[PTR_WEAK]]
-; CHECK:         [[PTR_WEAK]].as = addrspacecast i32* [[PTR_WEAK]] to i32 addrspace(4)*
-; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicitPU3AS4VU7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope{{.*}}(i32 {{.*}}* %object, i32 {{.*}}* [[PTR_WEAK]].as, i32 %desired, i32 5, i32 5, i32 2)
-; CHECK:         load i32, i32 addrspace(4)* [[PTR_WEAK]].as
+; CHECK:         store i32 {{.*}}, ptr [[PTR_WEAK]]
+; CHECK:         [[PTR_WEAK]].as = addrspacecast ptr [[PTR_WEAK]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicitPU3AS4VU7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope{{.*}}(ptr {{.*}} %object, ptr {{.*}} [[PTR_WEAK]].as, i32 %desired, i32 5, i32 5, i32 2)
+; CHECK:         load i32, ptr addrspace(4) [[PTR_WEAK]].as
+
+; CHECK-LABEL:   define spir_func void @test_weak_float
+; CHECK-NEXT:    entry:
+; CHECK:         [[PTR_WEAK:%expected[0-9]*]] = alloca i32, align 4
+; CHECK:         [[DESIRED_CAST:%[0-9]*]] = bitcast float %desired to i32
+; CHECK:         store i32 {{.*}}, ptr [[PTR_WEAK]]
+; CHECK:         [[PTR_WEAK]].as = addrspacecast ptr [[PTR_WEAK]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicitPU3AS4VU7_AtomiciPU3AS4ii12memory_orderS4_12memory_scope(ptr {{.*}} %object, ptr {{.*}} [[PTR_WEAK]].as, i32 [[DESIRED_CAST]], i32 5, i32 5, i32 2)
+; CHECK:         load i32, ptr addrspace(4) [[PTR_WEAK]].as
+
+; CHECK-LABEL:   define spir_func void @test_weak_double
+; CHECK-NEXT:    entry:
+; CHECK:         [[PTR_WEAK:%expected[0-9]*]] = alloca i64, align 8
+; CHECK:         [[DESIRED_CAST:%[0-9]*]] = bitcast double %desired to i64
+; CHECK:         store i64 {{.*}}, ptr [[PTR_WEAK]]
+; CHECK:         [[PTR_WEAK]].as = addrspacecast ptr [[PTR_WEAK]] to ptr addrspace(4)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicitPU3AS4VU7_AtomiclPU3AS4ll12memory_orderS4_12memory_scope(ptr {{.*}} %object, ptr {{.*}} [[PTR_WEAK]].as, i64 [[DESIRED_CAST]], i32 5, i32 5, i32 2)
+; CHECK:         load i64, ptr addrspace(4) [[PTR_WEAK]].as
 
 ; Check that alloca for atomic_compare_exchange is being created in the entry block.
 
@@ -41,16 +77,32 @@ target triple = "spir-unknown-unknown"
 ; CHECK:         %expected{{[0-9]*}} = alloca i32
 ; CHECK-LABEL:   for.body:
 ; CHECK-NOT:     %expected{{[0-9]*}} = alloca i32
-; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(i32 {{.*}}* {{.*}}, i32 addrspace(4)* {{.*}}, i32 {{.*}}, i32 5, i32 5, i32 2)
+; CHECK:         call spir_func i1 @_Z39atomic_compare_exchange_strong_explicit{{.*}}(ptr {{.*}} {{.*}}, ptr addrspace(4) {{.*}}, i32 {{.*}}, i32 5, i32 5, i32 2)
 
 ; Function Attrs: nounwind
-define spir_func void @test_strong(i32 addrspace(4)* %object, i32 addrspace(4)* %expected, i32 %desired) #0 {
+define spir_func void @test_strong(ptr addrspace(4) %object, ptr addrspace(4) %expected, i32 %desired) #0 {
 entry:
-  %call = tail call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)* %object, i32 addrspace(4)* %expected, i32 %desired) #2
+  %call = tail call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(ptr addrspace(4) %object, ptr addrspace(4) %expected, i32 %desired) #2
   ret void
 }
 
-declare spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)*, i32 addrspace(4)*, i32) #1
+declare spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPVU3AS4U7_AtomiciPU3AS4ii(ptr addrspace(4), ptr addrspace(4), i32) #1
+
+define spir_func void @test_strong_float(ptr addrspace(4) %object, ptr addrspace(4) %expected, float %desired) #0 {
+entry:
+  %call = call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPU3AS1VU7_AtomicfPU3AS1ff(ptr addrspace(4) %object, ptr addrspace(4) %expected, float %desired) #2
+  ret void
+}
+
+declare spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPU3AS1VU7_AtomicfPU3AS1ff(ptr addrspace(4), ptr addrspace(4), float)
+
+define spir_func void @test_strong_double(ptr addrspace(4) %object, ptr addrspace(4) %expected, double %desired) #0 {
+entry:
+  %call = call spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPU3AS1VU7_AtomicdPU3AS1dd(ptr addrspace(4) %object, ptr addrspace(4) %expected, double %desired) #2
+  ret void
+}
+
+declare spir_func zeroext i1 @_Z30atomic_compare_exchange_strongPU3AS1VU7_AtomicdPU3AS1dd(ptr addrspace(4), ptr addrspace(4), double)
 
 ; Function Attrs: nounwind
 define spir_func void @test_weak(i32 addrspace(4)* %object, i32 addrspace(4)* %expected, i32 %desired) #0 {
@@ -60,6 +112,22 @@ entry:
 }
 
 declare spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPVU3AS4U7_AtomiciPU3AS4ii(i32 addrspace(4)*, i32 addrspace(4)*, i32) #1
+
+define spir_func void @test_weak_float(ptr addrspace(4) %object, ptr addrspace(4) %expected, float %desired) #0 {
+entry:
+  %call = call spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPU3AS1VU7_AtomicfPU3AS1ff(ptr addrspace(4) %object, ptr addrspace(4) %expected, float %desired) #2
+  ret void
+}
+
+declare spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPU3AS1VU7_AtomicfPU3AS1ff(ptr addrspace(4), ptr addrspace(4), float)
+
+define spir_func void @test_weak_double(ptr addrspace(4) %object, ptr addrspace(4) %expected, double %desired) #0 {
+entry:
+  %call = call spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPU3AS1VU7_AtomicdPU3AS1dd(ptr addrspace(4) %object, ptr addrspace(4) %expected, double %desired) #2
+  ret void
+}
+
+declare spir_func zeroext i1 @_Z28atomic_compare_exchange_weakPU3AS1VU7_AtomicdPU3AS1dd(ptr addrspace(4), ptr addrspace(4), double)
 
 ; Function Attrs: nounwind
 define spir_kernel void @atomic_in_loop(i32 addrspace(1)* %destMemory, i32 addrspace(1)* %oldValues) #0 {
