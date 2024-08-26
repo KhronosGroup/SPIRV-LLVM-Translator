@@ -1027,7 +1027,6 @@ SPIRVModuleImpl::addUntypedPointerKHRType(SPIRVStorageClassKind StorageClass) {
   auto *Ty = new SPIRVTypeUntypedPointerKHR(this, getId(), StorageClass);
   UntypedPtrTyMap[StorageClass] = Ty;
   return addType(Ty);
-  return Ty;
 }
 
 SPIRVTypeFunction *SPIRVModuleImpl::addFunctionType(
