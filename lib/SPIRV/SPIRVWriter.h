@@ -82,9 +82,11 @@ public:
   // instead.
   enum class FuncTransMode { Decl, Pointer };
 
-  SPIRVType *transType(Type *T);
-  SPIRVType *transPointerType(Type *PointeeTy, unsigned AddrSpace);
-  SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace);
+  SPIRVType *transType(Type *T, bool IsBuiltin = false);
+  SPIRVType *transPointerType(Type *PointeeTy, unsigned AddrSpace,
+                              bool IsBuiltin = false);
+  SPIRVType *transPointerType(SPIRVType *PointeeTy, unsigned AddrSpace,
+                              bool IsBuiltin = false);
   SPIRVType *transSPIRVOpaqueType(StringRef STName, unsigned AddrSpace);
   SPIRVType *
   transSPIRVJointMatrixINTELType(SmallVector<std::string, 8> Postfixes);
