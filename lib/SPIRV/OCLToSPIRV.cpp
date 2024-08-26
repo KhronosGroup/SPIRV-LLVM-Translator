@@ -493,8 +493,23 @@ CallInst *OCLToSPIRVBase::visitCallAtomicCmpXchg(CallInst *CI) {
   mutateCallInstOCL(
       M, CI,
       [&](CallInst *CI, std::vector<Value *> &Args, Type *&RetTy) {
-        Expected = Args[1]; // temporary save second argument.
         RetTy = Args[2]->getType();
+        if (RetTy->isFloatTy() || RetTy->isDoubleTy()) {
+          RetTy = RetTy->isFloatTy() ? Type::getInt32Ty(*Ctx)
+                                     : Type::getInt64Ty(*Ctx);
+          Args[0] = new BitCastInst(
+              Args[0],
+              PointerType::get(RetTy,
+                               Args[0]->getType()->getPointerAddressSpace()),
+              "", CI);
+          Args[1] = new BitCastInst(
+              Args[1],
+              PointerType::get(RetTy,
+                               Args[1]->getType()->getPointerAddressSpace()),
+              "", CI);
+          Args[2] = new BitCastInst(Args[2], RetTy, "", CI);
+        }
+        Expected = Args[1]; // temporary save second argument.
         Args[1] = new LoadInst(RetTy, Args[1], "exp", false, CI);
         assert(Args[1]->getType()->isIntegerTy() &&
                Args[2]->getType()->isIntegerTy() &&
