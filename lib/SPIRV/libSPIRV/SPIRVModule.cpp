@@ -355,7 +355,7 @@ public:
   SPIRVInstruction *addCmpInst(Op, SPIRVType *, SPIRVValue *, SPIRVValue *,
                                SPIRVBasicBlock *) override;
   SPIRVInstruction *addLoadInst(SPIRVValue *, const std::vector<SPIRVWord> &,
-                                SPIRVBasicBlock *) override;
+                                SPIRVBasicBlock *, SPIRVType *) override;
   SPIRVInstruction *addPhiInst(SPIRVType *, std::vector<SPIRVValue *>,
                                SPIRVBasicBlock *) override;
   SPIRVInstruction *addCompositeConstructInst(SPIRVType *,
@@ -1445,9 +1445,10 @@ SPIRVModuleImpl::addInstruction(SPIRVInstruction *Inst, SPIRVBasicBlock *BB,
 SPIRVInstruction *
 SPIRVModuleImpl::addLoadInst(SPIRVValue *Source,
                              const std::vector<SPIRVWord> &TheMemoryAccess,
-                             SPIRVBasicBlock *BB) {
+                             SPIRVBasicBlock *BB, SPIRVType *TheType) {
   return addInstruction(
-      new SPIRVLoad(getId(), Source->getId(), TheMemoryAccess, BB), BB);
+      new SPIRVLoad(getId(), Source->getId(), TheMemoryAccess, BB, TheType),
+      BB);
 }
 
 SPIRVInstruction *

@@ -92,6 +92,7 @@ public:
   bool isTypeInt(unsigned Bits = 0) const;
   bool isTypeOpaque() const;
   bool isTypePointer() const;
+  bool isTypeUntypedPointerKHR() const;
   bool isTypeSampler() const;
   bool isTypeSampledImage() const;
   bool isTypeStruct() const;

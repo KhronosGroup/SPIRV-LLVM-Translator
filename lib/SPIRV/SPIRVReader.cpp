@@ -563,6 +563,8 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
     }
     return transTypeToOCLTypeName(ET) + "*";
   }
+  case OpTypeUntypedPointerKHR:
+    return "int*";
   case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
            T->getVectorComponentCount();

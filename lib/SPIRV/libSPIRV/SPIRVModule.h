@@ -399,7 +399,8 @@ public:
                                SPIRVBasicBlock *BB, SPIRVType *Ty) = 0;
   virtual SPIRVInstruction *addLoadInst(SPIRVValue *,
                                         const std::vector<SPIRVWord> &,
-                                        SPIRVBasicBlock *) = 0;
+                                        SPIRVBasicBlock *,
+                                        SPIRVType *TheType = nullptr) = 0;
   virtual SPIRVInstruction *addLifetimeInst(Op OC, SPIRVValue *Object,
                                             SPIRVWord Size,
                                             SPIRVBasicBlock *BB) = 0;

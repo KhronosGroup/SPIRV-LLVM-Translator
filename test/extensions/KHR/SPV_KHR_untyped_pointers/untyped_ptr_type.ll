@@ -14,7 +14,7 @@
 ; CHECK-SPIRV: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Extension "SPV_KHR_untyped_pointers"
 ; CHECK-SPIRV: TypeUntypedPointerKHR [[#UntypedPtrTy:]] 7
-; CHECK-SPIRV: TypeFunction [[#FuncTy:]] 2 [[#UntypedPtrTy]]
+; CHECK-SPIRV: TypeFunction [[#FuncTy:]] [[#UntypedPtrTy]] [[#UntypedPtrTy]]
 
 ; CHECK-SPIRV: Function [[#UntypedPtrTy]] [[#ProcessFuncId:]] 0 [[#FuncTy]]
 ; CHECK-SPIRV: FunctionParameter [[#UntypedPtrTy]]
