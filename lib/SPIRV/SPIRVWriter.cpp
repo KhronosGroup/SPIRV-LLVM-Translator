@@ -815,9 +815,14 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
   if (auto *F = dyn_cast<Function>(V)) {
     FunctionType *FnTy = Scavenger->getFunctionType(F);
     // VarArg functions other than printf are not supported in SPIR-V.
-    BM->getErrorLog().checkError(
-        !(FnTy->isVarArg() && F->getName() != "printf"),
-        SPIRVEC_UnsupportedVarArgFunction);
+    if (FnTy->isVarArg()) {
+      StringRef DemangledName;
+      oclIsBuiltin(F->getName(), DemangledName);
+      BM->getErrorLog().checkError(
+          (DemangledName.starts_with("printf(") ||
+           DemangledName.starts_with("__spirv_ocl_printf(")),
+          SPIRVEC_UnsupportedVarArgFunction);
+    }
 
     SPIRVType *RT = transType(FnTy->getReturnType());
     std::vector<SPIRVType *> PT;
