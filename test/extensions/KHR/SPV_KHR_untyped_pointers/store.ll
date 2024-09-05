@@ -19,16 +19,18 @@
 ; CHECK-SPIRV-DAG: TypeInt [[#IntTy:]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[#IntTy]] [[#Constant0:]] 0
 ; CHECK-SPIRV-DAG: TypeUntypedPointerKHR [[#UntypedPtrTy:]] 5
-; CHECK-SPIRV-DAG: TypeFunction [[#FuncTy:]] [[#]] [[#UntypedPtrTy]]
 ; CHECK-SPIRV-DAG: TypeUntypedPointerKHR [[#UntypedPtrTyFunc:]] 7
 
-; CHECK-SPIRV: Function [[#]] [[#]] 0 [[#FuncTy]]
 ; CHECK-SPIRV: FunctionParameter [[#UntypedPtrTy]] [[#FuncParam:]]
-
 ; CHECK-SPIRV: Variable [[#UntypedPtrTyFunc]] [[#VarBId:]] 7
 ; CHECK-SPIRV: Store [[#VarBId]] [[#FuncParam]] 2 4
 ; CHECK-SPIRV: Load [[#UntypedPtrTy]] [[#LoadId:]] [[#VarBId]] 2 4
 ; CHECK-SPIRV: Store [[#LoadId]] [[#Constant0]] 2 4
+
+; CHECK-SPIRV: FunctionParameter [[#UntypedPtrTy]] [[#FuncParam0:]]
+; CHECK-SPIRV: FunctionParameter [[#UntypedPtrTy]] [[#FuncParam1:]]
+; CHECK-SPIRV: Load [[#IntTy]] [[#LoadId:]] [[#FuncParam1]] 2 4
+; CHECK-SPIRV: Store [[#FuncParam0]] [[#LoadId]] 2 4
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
@@ -38,12 +40,20 @@ target triple = "spir-unknown-unknown"
 ; CHECK-LLVM:   store ptr addrspace(1) %a, ptr %b, align 4
 ; CHECK-LLVM:   %0 = load ptr addrspace(1), ptr %b, align 4
 ; CHECK-LLVM:   store i32 0, ptr addrspace(1) %0, align 4
-
 define spir_func void @foo(ptr addrspace(1) %a) {
 entry:
   %b = alloca ptr addrspace(1), align 4
   store ptr addrspace(1) %a, ptr %b, align 4
   %0 = load ptr addrspace(1), ptr %b, align 4
   store i32 0, ptr addrspace(1) %0, align 4
+  ret void
+}
+
+; CHECK-LLVM: define spir_func void @boo(ptr addrspace(1) %0, ptr addrspace(1) %1)
+; CHECK-LLVM:   %3 = load i32, ptr addrspace(1) %1, align 4
+; CHECK-LLVM:   store i32 %3, ptr addrspace(1) %0, align 4
+define dso_local void @boo(ptr addrspace(1) %0, ptr addrspace(1) %1) {
+  %3 = load i32, ptr addrspace(1) %1, align 4
+  store i32 %3, ptr addrspace(1) %0, align 4
   ret void
 }
