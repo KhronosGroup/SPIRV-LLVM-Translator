@@ -578,7 +578,8 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
-  addKernelEntryPoint(M);
+  if (Opts.getGenerateKernelEntryPoints())
+    addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
 
@@ -848,6 +849,6 @@ void SPIRVRegularizeLLVMBase::addKernelEntryPoint(Module *M) {
 INITIALIZE_PASS(SPIRVRegularizeLLVMLegacy, "spvregular",
                 "Regularize LLVM for SPIR-V", false, false)
 
-ModulePass *llvm::createSPIRVRegularizeLLVMLegacy() {
-  return new SPIRVRegularizeLLVMLegacy();
+ModulePass *llvm::createSPIRVRegularizeLLVMLegacy(const TranslatorOpts &Opts) {
+  return new SPIRVRegularizeLLVMLegacy(Opts);
 }

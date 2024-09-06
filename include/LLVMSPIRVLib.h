@@ -227,7 +227,7 @@ ModulePass *
 createSPIRVLowerLLVMIntrinsicLegacy(const SPIRV::TranslatorOpts &Opts);
 
 /// Create a pass for regularize LLVM module to be translated to SPIR-V.
-ModulePass *createSPIRVRegularizeLLVMLegacy();
+ModulePass *createSPIRVRegularizeLLVMLegacy(const SPIRV::TranslatorOpts &Opts);
 
 /// Create a pass for translating SPIR-V Instructions to desired
 /// representation in LLVM IR (OpenCL built-ins, SPIR-V Friendly IR, etc.)
