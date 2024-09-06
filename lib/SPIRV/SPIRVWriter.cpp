@@ -751,8 +751,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
 
   SPIRVType *TranslatedTy = nullptr;
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
-      !(ET->isTypeArray() || ET->isTypeVector() || ET->isTypeImage() ||
-        ET->isTypeSampler() || ET->isTypePipe())) {
+      !(ET->isTypeArray() || ET->isTypeVector() || ET->isTypeStruct() ||
+        ET->isTypeImage() || ET->isTypeSampler() || ET->isTypePipe())) {
     TranslatedTy = BM->addUntypedPointerKHRType(
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(AddrSpc)));
   } else {
@@ -2081,9 +2081,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     }
 
     SPIRVType *TranslatedTy = transType(Ty);
-    auto *BVar = static_cast<SPIRVVariable *>(
-        BM->addVariable(TranslatedTy, GV->isConstant(), transLinkageType(GV),
-                        BVarInit, GV->getName().str(), StorageClass, nullptr));
+    auto *BVar = static_cast<SPIRVVariableBase *>(BM->addVariable(
+        TranslatedTy, nullptr, GV->isConstant(), transLinkageType(GV), BVarInit,
+        GV->getName().str(), StorageClass, nullptr));
 
     if (IsVectorCompute) {
       BVar->addDecorate(DecorationVectorComputeVariableINTEL);
@@ -2272,8 +2272,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
             StorageClassFunction,
             BM->addArrayType(transType(Alc->getAllocatedType()), Length));
         SPIRVValue *Arr = BM->addVariable(
-            AllocationType, false, spv::internal::LinkageTypeInternal, nullptr,
-            Alc->getName().str() + "_alloca", StorageClassFunction, BB);
+            AllocationType, nullptr, false, spv::internal::LinkageTypeInternal,
+            nullptr, Alc->getName().str() + "_alloca", StorageClassFunction,
+            BB);
         // Manually set alignment. OpBitcast created below will be decorated as
         // that's the SPIR-V value mapped to the original LLVM one.
         transAlign(Alc, Arr);
@@ -2297,7 +2298,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                  TranslatedTy->getPointerElementType())
             : TranslatedTy;
     SPIRVValue *Var = BM->addVariable(
-        VarTy, false, spv::internal::LinkageTypeInternal, nullptr,
+        VarTy,
+        VarTy->isTypeUntypedPointerKHR() ? transType(Alc->getAllocatedType())
+                                         : nullptr,
+        false, spv::internal::LinkageTypeInternal, nullptr,
         Alc->getName().str(), StorageClassFunction, BB);
     if (V->getType()->getPointerAddressSpace() == SPIRAS_Generic) {
       SPIRVValue *Cast =
@@ -2742,7 +2746,7 @@ void checkIsGlobalVar(SPIRVEntry *E, Decoration Dec) {
   E->getErrorLog().checkError(E->isVariable(), SPIRVEC_InvalidModule, ErrStr);
 
   auto AddrSpace = SPIRSPIRVAddrSpaceMap::rmap(
-      static_cast<SPIRVVariable *>(E)->getStorageClass());
+      static_cast<SPIRVVariableBase *>(E)->getStorageClass());
   ErrStr += " in a global (module) scope";
   E->getErrorLog().checkError(AddrSpace == SPIRAS_Global, SPIRVEC_InvalidModule,
                               ErrStr);
@@ -2890,10 +2894,11 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
     case spv::internal::DecorationInitModeINTEL:
     case DecorationInitModeINTEL: {
       checkIsGlobalVar(Target, DecoKind);
-      ErrLog.checkError(static_cast<SPIRVVariable *>(Target)->getInitializer(),
-                        SPIRVEC_InvalidLlvmModule,
-                        "InitModeINTEL only be applied to a global (module "
-                        "scope) variable which has an Initializer operand");
+      ErrLog.checkError(
+          static_cast<SPIRVVariableBase *>(Target)->getInitializer(),
+          SPIRVEC_InvalidLlvmModule,
+          "InitModeINTEL only be applied to a global (module "
+          "scope) variable which has an Initializer operand");
 
       ErrLog.checkError(NumOperands == 2, SPIRVEC_InvalidLlvmModule,
                         "InitModeINTEL requires exactly 1 extra operand");
@@ -4140,8 +4145,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                                  std::to_string(BitWidth));
 
     SPIRVValue *IntVal =
-        BM->addVariable(ITy, false, spv::internal::LinkageTypeInternal, nullptr,
-                        "", ITy->getStorageClass(), BB);
+        BM->addVariable(ITy, nullptr, false, spv::internal::LinkageTypeInternal,
+                        nullptr, "", ITy->getStorageClass(), BB);
 
     std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB), IntVal};
 
@@ -4563,7 +4568,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       Init = BM->addCompositeConstant(CompositeTy, Elts);
     }
     SPIRVType *VarTy = transPointerType(AT, SPIRV::SPIRAS_Constant);
-    SPIRVValue *Var = BM->addVariable(VarTy, /*isConstant*/ true,
+    SPIRVValue *Var = BM->addVariable(VarTy, nullptr, /*isConstant*/ true,
                                       spv::internal::LinkageTypeInternal, Init,
                                       "", StorageClassUniformConstant, nullptr);
     SPIRVType *SourceTy =
