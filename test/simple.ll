@@ -126,6 +126,57 @@ entry:
   ret void
 }
 
+; CHECK: "test_array_alloca"
+; Function Attrs: nounwind
+define dso_local void @test_array_alloca(ptr noundef %0, ptr noundef %1) #0 {
+  %3 = alloca ptr, align 8
+  %4 = alloca ptr, align 8
+  %5 = alloca i32, i64 4, align 4
+  store ptr %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %6 = load ptr, ptr %3, align 8
+  %7 = getelementptr inbounds i32, ptr %6, i64 0
+  %8 = load i32, ptr %7, align 4
+  %9 = getelementptr inbounds i32, ptr %5, i64 0
+  store i32 %8, ptr %9, align 16
+  %10 = load ptr, ptr %3, align 8
+  %11 = getelementptr inbounds i32, ptr %10, i64 1
+  %12 = load i32, ptr %11, align 4
+  %13 = getelementptr inbounds i32, ptr %5, i64 1
+  store i32 %12, ptr %13, align 4
+  %14 = load ptr, ptr %3, align 8
+  %15 = getelementptr inbounds i32, ptr %14, i64 2
+  %16 = load i32, ptr %15, align 4
+  %17 = getelementptr inbounds i32, ptr %5, i64 2
+  store i32 %16, ptr %17, align 8
+  %18 = load ptr, ptr %3, align 8
+  %19 = getelementptr inbounds i32, ptr %18, i64 3
+  %20 = load i32, ptr %19, align 4
+  %21 = getelementptr inbounds i32, ptr %5, i64 3
+  store i32 %20, ptr %21, align 4
+  %22 = getelementptr inbounds i32, ptr %5, i64 0
+  %23 = load i32, ptr %22, align 16
+  %24 = load ptr, ptr %4, align 8
+  %25 = getelementptr inbounds i32, ptr %24, i64 0
+  store i32 %23, ptr %25, align 4
+  %26 = getelementptr inbounds i32, ptr %5, i64 1
+  %27 = load i32, ptr %26, align 4
+  %28 = load ptr, ptr %4, align 8
+  %29 = getelementptr inbounds i32, ptr %28, i64 1
+  store i32 %27, ptr %29, align 4
+  %30 = getelementptr inbounds i32, ptr %5, i64 2
+  %31 = load i32, ptr %30, align 8
+  %32 = load ptr, ptr %4, align 8
+  %33 = getelementptr inbounds i32, ptr %32, i64 2
+  store i32 %31, ptr %33, align 4
+  %34 = getelementptr inbounds i32, ptr %5, i64 3
+  %35 = load i32, ptr %34, align 4
+  %36 = load ptr, ptr %4, align 8
+  %37 = getelementptr inbounds i32, ptr %36, i64 3
+  store i32 %35, ptr %37, align 4
+  ret void
+}
+
 attributes #0 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
