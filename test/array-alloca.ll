@@ -29,6 +29,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Variable [[#ARRPTRTY]] [[#ARR]] [[#FUNCSTORAGE]]
 ; CHECK-SPIRV: Bitcast [[#PTRTY]] [[#BITARR]] [[#ARR]]
 
+; Generated LLVM is different, but equivalent as an array type is allocated.
 ; CHECK-LLVM:  define spir_func void @test_array_alloca()
 ; CHECK-LLVM:    %[[#ALLOC:]] = alloca [4 x i32], align 4
 ; CHECK-LLVM:    %{{.*}} = bitcast ptr %[[#ALLOC]] to ptr
