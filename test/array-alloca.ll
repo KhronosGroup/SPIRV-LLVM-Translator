@@ -27,7 +27,7 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Function [[#VOID]] {{.*}} [[#FUNCTY]]
 ; CHECK-SPIRV: Variable [[#ARRPTRTY]] [[#ARR]] [[#FUNCSTORAGE]]
-; CHECK-SPIRV: Bitcast [[#PTRTY]] {{.*}} [[#ARR]]
+; CHECK-SPIRV: Bitcast [[#PTRTY]] [[#BITARR]] [[#ARR]]
 
 ; CHECK-LLVM:  define spir_func void @test_array_alloca()
 ; CHECK-LLVM:    %[[#ALLOC:]] = alloca [4 x i32], align 4
