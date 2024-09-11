@@ -149,6 +149,9 @@ public:
       ExtStatusMap[Extension] = Allow;
   }
 
+  std::vector<std::string>
+  getAllowedSPIRVExtensionNames(std::function<bool(ExtensionID)> &Filter) const;
+
   VersionNumber getMaxVersion() const { return MaxVersion; }
 
   bool isGenArgNameMDEnabled() const { return GenKernelArgNameMD; }
