@@ -6934,6 +6934,12 @@ bool llvm::writeSpirv(Module *M, std::ostream &OS, std::string &ErrMsg) {
 
 bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
                       std::ostream &OS, std::string &ErrMsg) {
+#if defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
+  // Check if a user asks to convert LLVM to SPIR-V using the LLVM SPIR-V
+  // Backend target
+  if (Opts.getUseLLVMSPIRVBackendTarget())
+    return runSpirvBackend(M, &OS, ErrMsg, Opts);
+#endif
   return runSpirvWriterPasses(M, &OS, ErrMsg, Opts);
 }
 

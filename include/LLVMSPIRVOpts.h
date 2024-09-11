@@ -241,6 +241,13 @@ public:
   }
   BuiltinFormat getBuiltinFormat() const noexcept { return SPIRVBuiltinFormat; }
 
+  void useLLVMSPIRVBackendTarget(bool Flag) noexcept {
+    UseLLVMSPIRVBackendTarget = Flag;
+  }
+  bool getUseLLVMSPIRVBackendTarget() const noexcept {
+    return UseLLVMSPIRVBackendTarget;
+  }
+
 private:
   // Common translation options
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
@@ -287,6 +294,9 @@ private:
   bool PreserveAuxData = false;
 
   BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Function;
+
+  // Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target
+  bool UseLLVMSPIRVBackendTarget = false;
 };
 
 } // namespace SPIRV
