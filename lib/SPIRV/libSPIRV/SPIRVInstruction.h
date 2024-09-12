@@ -570,7 +570,6 @@ public:
     assert(DataType.size() == 1);
     return get<SPIRVType>(DataType[0]);
   }
-  // bool hasDataType() const { return DataType; }
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVEntry *> Vec;
     if (SPIRVType *T = getDataType())
@@ -708,6 +707,7 @@ protected:
             getValueType(PtrId)
                 ->getPointerElementType()
                 ->isTypeUntypedPointerKHR() ||
+            Type->isTypeUntypedPointerKHR() ||
             Type == getValueType(PtrId)->getPointerElementType()) &&
            "Inconsistent types");
   }
