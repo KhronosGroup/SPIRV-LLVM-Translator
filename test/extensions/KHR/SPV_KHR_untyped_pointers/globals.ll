@@ -17,18 +17,22 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV-DAG: Constant [[#I16]] [[#CONST0:]] 0
 ; CHECK-SPIRV-DAG: TypeInt [[#I32:]] 32 0
 ; CHECK-SPIRV-DAG: TypeUntypedPointerKHR [[#PTRTY:]] 5
+; CHECK-SPIRV-DAG: TypeUntypedPointerKHR [[#LOCALPTRTY:]] 4
 
 ; CHECK-SPIRV: UntypedVariableKHR [[#PTRTY]] [[#VARA:]] 5 [[#I16]] [[#CONST0]]
 ; CHECK-SPIRV: UntypedVariableKHR [[#PTRTY]] [[#VARB:]] 5 [[#I32]]
 ; CHECK-SPIRV: UntypedVariableKHR [[#PTRTY]] [[#VARC:]] 5 [[#PTRTY]] [[#VARA]]
+; CHECK-SPIRV: UntypedVariableKHR [[#LOCALPTRTY]] [[#VARD:]] 4 [[#PTRTY]]
 
 ; CHECK-LLVM: @a = addrspace(1) global i16 0
 ; CHECK-LLVM: @b = external addrspace(1) global i32
 ; CHECK-LLVM: @c = addrspace(1) global ptr addrspace(1) @a
+; CHECK-LLVM: @d = external addrspace(3) global ptr addrspace(1)
 
 @a = addrspace(1) global i16 0
 @b = external addrspace(1) global i32
 @c = addrspace(1) global ptr addrspace(1) @a
+@d = external addrspace(3) global ptr addrspace(1)
 
 ; Function Attrs: nounwind
 define spir_func void @foo() {

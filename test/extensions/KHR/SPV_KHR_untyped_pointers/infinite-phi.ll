@@ -19,6 +19,9 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-SPIRV: UntypedVariableKHR [[#PTRTY]] [[#IPTR:]] 7 [[#INT]]
 ; CHECK-SPIRV: UntypedVariableKHR [[#PTRTY]] [[#FPTR:]] 7 [[#FLOAT]]
+
+; This bitcast seems redundant, it appears because of the Type Scavenger.
+; TODO: Investigate and fix if possible.
 ; CHECK-SPIRV: Bitcast [[#PTRTY]] [[#IPTRI:]] [[#IPTR]]
 ; CHECK-SPIRV: Phi [[#PTRTY]] [[#PTR1:]] [[#PTR2:]] [[#]] [[#IPTRI]]
 ; CHECK-SPIRV: Phi [[#PTRTY]] [[#PTR2]] [[#PTR1]] [[#]] [[#FPTR]]
