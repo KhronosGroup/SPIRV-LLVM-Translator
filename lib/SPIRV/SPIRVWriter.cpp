@@ -6707,7 +6707,6 @@ bool LLVMToSPIRVBase::joinFPContract(Function *F, FPContract C) {
   }
   llvm_unreachable("Unhandled FPContract value.");
 }
-
 } // namespace SPIRV
 
 char LLVMToSPIRVLegacy::ID = 0;
@@ -6760,7 +6759,13 @@ SPIRVTranslateModule(Module *M, std::string &SpirvObj, std::string &ErrMsg,
                      const std::vector<std::string> &AllowExtNames,
                      const std::vector<std::string> &Opts);
 } // namespace llvm
-#endif
+#if defined(_SPIRV_SUPPORT_TEXT_FMT)
+namespace SPIRV {
+bool convertSpirv(std::istream &IS, std::ostream &OS, std::string &ErrMsg,
+                  bool FromText, bool ToText);
+} // namespace SPIRV
+#endif // _SPIRV_SUPPORT_TEXT_FMT
+#endif // LLVM_SPIRV_BACKEND_TARGET_PRESENT
 
 namespace {
 
@@ -6785,8 +6790,10 @@ static inline Triple::SubArchType spirvVersionToSubArch(VersionNumber VN) {
   return Triple::NoSubArch;
 }
 
-bool runSpirvBackend(Module *M, std::ostream *OS, std::string &ErrMsg,
+bool runSpirvBackend(Module *M, std::string &Result, std::string &ErrMsg,
                      const SPIRV::TranslatorOpts &TranslatorOpts) {
+  // A list of known extensions supported by SPIR-V Backend: it's to be updated
+  // each time when SPIR-V Backend introduces support for a new extension.
   static const std::set<ExtensionID> ImplementedBySpirvBE{
       SPIRV::ExtensionID::SPV_EXT_shader_atomic_float_add,
       SPIRV::ExtensionID::SPV_EXT_shader_atomic_float16_add,
@@ -6812,8 +6819,14 @@ bool runSpirvBackend(Module *M, std::ostream *OS, std::string &ErrMsg,
       SPIRV::ExtensionID::SPV_KHR_shader_clock,
       SPIRV::ExtensionID::SPV_KHR_cooperative_matrix,
       SPIRV::ExtensionID::SPV_KHR_non_semantic_info};
+  // The fallback for the Triple value.
   static const std::string DefaultTriple = "spirv64-unknown-unknown";
+  // SPIR-V BE uses the following command line options to conform with
+  // Translator's way to generate SPIR-V or with requirements of the Compute
+  // flavor of SPIR-V. This list is subject to changes and may become empty
+  // eventually.
   static const std::vector<std::string> Opts{"--avoid-spirv-capabilities",
+                                             "Shader",
                                              "--translator-compatibility-mode"};
 
   std::function<bool(SPIRV::ExtensionID)> Filter =
@@ -6823,8 +6836,18 @@ bool runSpirvBackend(Module *M, std::ostream *OS, std::string &ErrMsg,
   const std::vector<std::string> AllowExtNames =
       TranslatorOpts.getAllowedSPIRVExtensionNames(Filter);
 
+  // Correct the Triple value if needed
+  Triple TargetTriple(M->getTargetTriple());
+  if (TargetTriple.isSPIR()) {
+    TargetTriple.setArch(TargetTriple.getArch() == Triple::spir64
+                             ? Triple::spirv64
+                             : Triple::spirv32,
+                         TargetTriple.getSubArch());
+    M->setTargetTriple(TargetTriple.str());
+    // We need to reset Data Layout to conform with the TargetMachine
+    M->setDataLayout("");
+  }
   if (TranslatorOpts.getMaxVersion() != VersionNumber::MaximumVersion) {
-    Triple TargetTriple(M->getTargetTriple());
     if (TargetTriple.getTriple().empty())
       TargetTriple.setTriple(DefaultTriple);
     TargetTriple.setArch(TargetTriple.getArch(),
@@ -6832,14 +6855,19 @@ bool runSpirvBackend(Module *M, std::ostream *OS, std::string &ErrMsg,
     M->setTargetTriple(TargetTriple.str());
   }
 
+  // Translate the Module into SPIR-V
+  return llvm::SPIRVTranslateModule(M, Result, ErrMsg, AllowExtNames, Opts);
+}
+
+bool runSpirvBackend(Module *M, std::ostream *OS, std::string &ErrMsg,
+                     const SPIRV::TranslatorOpts &TranslatorOpts) {
   std::string Result;
-  bool Status =
-      llvm::SPIRVTranslateModule(M, Result, ErrMsg, AllowExtNames, Opts);
+  bool Status = runSpirvBackend(M, Result, ErrMsg, TranslatorOpts);
   if (Status && OS)
     *OS << Result;
   return Status;
 }
-#endif
+#endif // LLVM_SPIRV_BACKEND_TARGET_PRESENT
 
 VersionNumber getVersionFromTriple(const Triple &TT, SPIRVErrorLog &ErrorLog) {
   switch (TT.getSubArch()) {
@@ -6937,9 +6965,25 @@ bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
 #if defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
   // Check if a user asks to convert LLVM to SPIR-V using the LLVM SPIR-V
   // Backend target
-  if (Opts.getUseLLVMSPIRVBackendTarget())
+  if (Opts.getUseLLVMSPIRVBackendTarget()) {
+#if !defined(_SPIRV_SUPPORT_TEXT_FMT)
     return runSpirvBackend(M, &OS, ErrMsg, Opts);
-#endif
+#else
+    if (!SPIRVUseTextFormat)
+      return runSpirvBackend(M, &OS, ErrMsg, Opts);
+
+    // SPIR-V Backend always returns a binary: let's use temporary buffers to
+    // store the binary representation and convert it later into Translator's
+    // textual representation
+    std::string BinResult;
+    if (!runSpirvBackend(M, BinResult, ErrMsg, Opts))
+      return false;
+    std::istringstream IS(BinResult);
+    return SPIRV::convertSpirv(IS, OS, ErrMsg, false /*FromText*/,
+                               true /*ToText*/);
+#endif // _SPIRV_SUPPORT_TEXT_FMT
+  }
+#endif // LLVM_SPIRV_BACKEND_TARGET_PRESENT
   return runSpirvWriterPasses(M, &OS, ErrMsg, Opts);
 }
 
