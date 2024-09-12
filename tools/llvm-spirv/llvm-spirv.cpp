@@ -116,22 +116,6 @@ static cl::opt<VersionNumber> MaxSPIRVVersion(
                clEnumValN(VersionNumber::SPIRV_1_6, "1.6", "SPIR-V 1.6")),
     cl::init(VersionNumber::MaximumVersion));
 
-#if !defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
-// There is one conflict in command line argument names between SPIR-V Backend
-// and LLVM/SPIRV Translator: "spirv-ext". In order to avoid the inconsistency
-// in registered CommandLine options we register this command line option
-// globally only if SPIR-V Backend is unavailable and so the conflict doesn't
-// materialize. Otherwise we address the conflict in main() before parsing
-// command line options by renaming the instance of "spirv-ext" inserted in
-// SPIR-V Backend, and then adding the instance of "spirv-ext" required by
-// LLVM/SPIRV Translator from the corresponding auto variable.
-static cl::list<std::string>
-    SPVExt("spirv-ext", cl::CommaSeparated,
-           cl::desc("Specify list of allowed/disallowed extensions"),
-           cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
-           cl::ValueRequired);
-#endif
-
 static cl::list<std::string> SPIRVAllowUnknownIntrinsics(
     "spirv-allow-unknown-intrinsics", cl::CommaSeparated,
     cl::desc("Unknown intrinsics that begin with any prefix from the "
@@ -734,12 +718,12 @@ int main(int Ac, char **Av) {
     OptToDisable->setArgStr("spirv-ext-coming-from-spirv-backend");
     OptToDisable->setHiddenFlag(cl::Hidden);
   }
+#endif
   cl::list<std::string> SPVExt(
       "spirv-ext", cl::CommaSeparated,
       cl::desc("Specify list of allowed/disallowed extensions"),
       cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
       cl::ValueRequired);
-#endif
 
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
@@ -757,7 +741,7 @@ int main(int Ac, char **Av) {
 
   SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, ExtensionsStatus);
 #if defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
-  Opts.useLLVMSPIRVBackendTarget(SPIRVUseLLVMSPIRVBackendTarget);
+  Opts.useLLVMTarget(SPIRVUseLLVMSPIRVBackendTarget);
 #endif
 
   if (ExtInst.getNumOccurrences() != 0) {

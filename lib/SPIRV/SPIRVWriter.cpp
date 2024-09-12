@@ -6821,7 +6821,7 @@ bool runSpirvBackend(Module *M, std::string &Result, std::string &ErrMsg,
       SPIRV::ExtensionID::SPV_KHR_non_semantic_info};
   // The fallback for the Triple value.
   static const std::string DefaultTriple = "spirv64-unknown-unknown";
-  // SPIR-V BE uses the following command line options to conform with
+  // SPIR-V backend uses the following command line options to conform with
   // Translator's way to generate SPIR-V or with requirements of the Compute
   // flavor of SPIR-V. This list is subject to changes and may become empty
   // eventually.

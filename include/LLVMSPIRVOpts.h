@@ -241,11 +241,11 @@ public:
   }
   BuiltinFormat getBuiltinFormat() const noexcept { return SPIRVBuiltinFormat; }
 
-  void useLLVMSPIRVBackendTarget(bool Flag) noexcept {
-    UseLLVMSPIRVBackendTarget = Flag;
+  void useLLVMTarget(bool Flag) noexcept {
+    UseLLVMTarget = Flag;
   }
   bool getUseLLVMSPIRVBackendTarget() const noexcept {
-    return UseLLVMSPIRVBackendTarget;
+    return UseLLVMTarget;
   }
 
 private:
@@ -296,7 +296,7 @@ private:
   BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Function;
 
   // Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target
-  bool UseLLVMSPIRVBackendTarget = false;
+  bool UseLLVMTarget = false;
 };
 
 } // namespace SPIRV
