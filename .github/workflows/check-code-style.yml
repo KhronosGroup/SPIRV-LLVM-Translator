@@ -132,7 +132,7 @@ jobs:
         fi
 
     - name: Upload patch with clang-format fixes
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ failure() && steps.run-clang-format.outcome == 'failure' }}
       with:
         name: clang-format.patch
@@ -140,7 +140,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Upload clang-tidy log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ failure() && steps.run-clang-tidy.outcome == 'failure' }}
       with:
         name: clang-tidy.log
