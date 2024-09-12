@@ -241,12 +241,8 @@ public:
   }
   BuiltinFormat getBuiltinFormat() const noexcept { return SPIRVBuiltinFormat; }
 
-  void useLLVMTarget(bool Flag) noexcept {
-    UseLLVMTarget = Flag;
-  }
-  bool getUseLLVMSPIRVBackendTarget() const noexcept {
-    return UseLLVMTarget;
-  }
+  void useLLVMTarget(bool Flag) noexcept { UseLLVMTarget = Flag; }
+  bool getUseLLVMSPIRVBackendTarget() const noexcept { return UseLLVMTarget; }
 
 private:
   // Common translation options
