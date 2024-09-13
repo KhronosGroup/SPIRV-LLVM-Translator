@@ -1480,7 +1480,7 @@ std::string getIntelSubgroupBlockDataPostfix(unsigned ElementBitSize,
     break;
   case 16:
     assert((ElementBitSize == 8 || ElementBitSize == 16) &&
-           "16 elements vector allowed only for char builtins");
+           "16 elements vector allowed only for char and short builtins");
     OSS << VectorNumElements;
     break;
   default:
