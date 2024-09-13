@@ -6965,7 +6965,7 @@ bool llvm::writeSpirv(Module *M, const SPIRV::TranslatorOpts &Opts,
 #if defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
   // Check if a user asks to convert LLVM to SPIR-V using the LLVM SPIR-V
   // Backend target
-  if (Opts.getUseLLVMSPIRVBackendTarget()) {
+  if (Opts.getUseLLVMTarget()) {
 #if !defined(_SPIRV_SUPPORT_TEXT_FMT)
     return runSpirvBackend(M, &OS, ErrMsg, Opts);
 #else
