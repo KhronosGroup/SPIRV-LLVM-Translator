@@ -273,7 +273,9 @@ static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
 
 static cl::opt<bool> SPIRVUseLLVMSPIRVBackendTarget(
     "spirv-use-llvm-backend-target",
-    cl::desc("Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target"),
+    cl::desc("Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target if "
+             "it's available. Otherwise has no effect. Default behavior is to "
+             "don't use the LLVM SPIR-V Backend target."),
     cl::init(false));
 
 static std::string removeExt(const std::string &FileName) {
@@ -741,7 +743,7 @@ int main(int Ac, char **Av) {
 
   SPIRV::TranslatorOpts Opts(MaxSPIRVVersion, ExtensionsStatus);
 #if defined(LLVM_SPIRV_BACKEND_TARGET_PRESENT)
-  Opts.useLLVMTarget(SPIRVUseLLVMSPIRVBackendTarget);
+  Opts.setUseLLVMTarget(SPIRVUseLLVMSPIRVBackendTarget);
 #endif
 
   if (ExtInst.getNumOccurrences() != 0) {
