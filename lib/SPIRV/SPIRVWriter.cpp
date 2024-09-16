@@ -814,15 +814,17 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
 SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
   if (auto *F = dyn_cast<Function>(V)) {
     FunctionType *FnTy = Scavenger->getFunctionType(F);
-    // VarArg functions other than printf are not supported in SPIR-V.
-    if (FnTy->isVarArg()) {
-      StringRef DemangledName;
-      oclIsBuiltin(F->getName(), DemangledName);
-      BM->getErrorLog().checkError(
-          (DemangledName.starts_with("printf(") ||
-           DemangledName.starts_with("__spirv_ocl_printf(")),
-          SPIRVEC_UnsupportedVarArgFunction);
-    }
+    // VarArg functions other than printf are not supported in SPIR-V. None of
+    // printf variants can actually reach this point because they're skipped in
+    // 'LLVMToSPIRVBase::translate()'. Specifically,
+    // 'isBuiltinTransToExtInst(&F)' returns true for printf and its variants,
+    // and so they are never added to 'Decls' and 'Defs'. Therefore, it's safe
+    // to only check here if we're dealing with a variadic function to report an
+    // error. To be on the safe side, an assertion is added to check printf
+    // never reaches this point.
+    assert(!F->getName() != "printf");
+    BM->getErrorLog().checkError(FnTy->isVarArg(),
+                                 SPIRVEC_UnsupportedVarArgFunction);
 
     SPIRVType *RT = transType(FnTy->getReturnType());
     std::vector<SPIRVType *> PT;
