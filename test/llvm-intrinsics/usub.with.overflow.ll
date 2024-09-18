@@ -72,17 +72,18 @@ entry:
 ; CHECK-SPIRV:          [[var_23:%[a-z0-9_.]+]] = OpCompositeExtract [[bool]] [[var_21]] 1
 ; CHECK-SPIRV:                                    OpReturnValue [[var_23]]
 
-; CHECK-LLVM:   %0 = alloca [[structtype]], align 8
-; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowss(ptr sret([[structtype]]) %0, i16 %a, i16 %b)
-; CHECK-LLVM:   %1 = load [[structtype]], ptr %0, align 2
-; CHECK-LLVM:   %2 = extractvalue [[structtype]] %1, 0
-; CHECK-LLVM:   %3 = extractvalue [[structtype]] %1, 1
-; CHECK-LLVM:   %4 = icmp ne i16 %3, 0
-; CHECK-LLVM:   %5 = insertvalue [[structtype_0]] undef, i16 %2, 0
-; CHECK-LLVM:   %6 = insertvalue [[structtype_0]] %5, i1 %4, 1
-; CHECK-LLVM:   %7 = extractvalue [[structtype_0]] %6, 0
-; CHECK-LLVM:   %8 = extractvalue [[structtype_0]] %6, 1
-; CHECK-LLVM:   ret i1 %8
+; CHECK-LLVM:   %0 = alloca %structtype, align 8
+; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowss(ptr sret(%structtype) %0, i16 %a, i16 %b)
+; CHECK-LLVM:   %1 = load %structtype, ptr %0, align 2
+; CHECK-LLVM:   %2 = load %structtype, ptr %0, align 2
+; CHECK-LLVM:   %3 = extractvalue %structtype %2, 0
+; CHECK-LLVM:   %4 = extractvalue %structtype %2, 1
+; CHECK-LLVM:   %5 = icmp ne i16 %4, 0
+; CHECK-LLVM:   %6 = insertvalue %structtype.0 undef, i16 %3, 0
+; CHECK-LLVM:   %7 = insertvalue %structtype.0 %6, i1 %5, 1
+; CHECK-LLVM:   %8 = extractvalue %structtype.0 %7, 0
+; CHECK-LLVM:   %9 = extractvalue %structtype.0 %7, 1
+; CHECK-LLVM:   ret i1 %9
 define spir_func i1 @test_usub_with_overflow_i32(i32 %a, i32 %b) {
 entry:
   %res = call {i32, i1} @llvm.usub.with.overflow.i32(i32 %a, i32 %b)
@@ -108,17 +109,18 @@ entry:
 ; CHECK-SPIRV:                                    OpReturnValue [[var_44]]
 
 
-; CHECK-LLVM:   %0 = alloca [[structtype_1]], align 8
-; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowii(ptr sret([[structtype_1]]) %0, i32 %a, i32 %b)
-; CHECK-LLVM:   %1 = load [[structtype_1]], ptr %0, align 4
-; CHECK-LLVM:   %2 = extractvalue [[structtype_1]] %1, 0
-; CHECK-LLVM:   %3 = extractvalue [[structtype_1]] %1, 1
-; CHECK-LLVM:   %4 = icmp ne i32 %3, 0
-; CHECK-LLVM:   %5 = insertvalue [[structtype_2]] undef, i32 %2, 0
-; CHECK-LLVM:   %6 = insertvalue [[structtype_2]] %5, i1 %4, 1
-; CHECK-LLVM:   %7 = extractvalue [[structtype_2]] %6, 0
-; CHECK-LLVM:   %8 = extractvalue [[structtype_2]] %6, 1
-; CHECK-LLVM:   ret i1 %8
+; CHECK-LLVM:   %0 = alloca %structtype.1, align 8
+; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowii(ptr sret(%structtype.1) %0, i32 %a, i32 %b)
+; CHECK-LLVM:   %1 = load %structtype.1, ptr %0, align 4
+; CHECK-LLVM:   %2 = load %structtype.1, ptr %0, align 4
+; CHECK-LLVM:   %3 = extractvalue %structtype.1 %2, 0
+; CHECK-LLVM:   %4 = extractvalue %structtype.1 %2, 1
+; CHECK-LLVM:   %5 = icmp ne i32 %4, 0
+; CHECK-LLVM:   %6 = insertvalue %structtype.2 undef, i32 %3, 0
+; CHECK-LLVM:   %7 = insertvalue %structtype.2 %6, i1 %5, 1
+; CHECK-LLVM:   %8 = extractvalue %structtype.2 %7, 0
+; CHECK-LLVM:   %9 = extractvalue %structtype.2 %7, 1
+; CHECK-LLVM:   ret i1 %9
 define spir_func i1 @test_usub_with_overflow_i64(i64 %a, i64 %b) {
 entry:
   %res = call {i64, i1} @llvm.usub.with.overflow.i64(i64 %a, i64 %b)
@@ -143,17 +145,18 @@ entry:
 ; CHECK-SPIRV:          [[var_65:%[a-z0-9_.]+]] = OpCompositeExtract [[bool]] [[var_63]] 1
 ; CHECK-SPIRV:                                    OpReturnValue [[var_65]]
 
-; CHECK-LLVM:   %0 = alloca [[structtype_3]], align 8
-; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowll(ptr sret([[structtype_3]]) %0, i64 %a, i64 %b)
-; CHECK-LLVM:   %1 = load [[structtype_3]], ptr %0, align 4
-; CHECK-LLVM:   %2 = extractvalue [[structtype_3]] %1, 0
-; CHECK-LLVM:   %3 = extractvalue [[structtype_3]] %1, 1
-; CHECK-LLVM:   %4 = icmp ne i64 %3, 0
-; CHECK-LLVM:   %5 = insertvalue [[structtype_4]] undef, i64 %2, 0
-; CHECK-LLVM:   %6 = insertvalue [[structtype_4]] %5, i1 %4, 1
-; CHECK-LLVM:   %7 = extractvalue [[structtype_4]] %6, 0
-; CHECK-LLVM:   %8 = extractvalue [[structtype_4]] %6, 1
-; CHECK-LLVM:   ret i1 %8
+; CHECK-LLVM:   %0 = alloca %structtype.3, align 8
+; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowll(ptr sret(%structtype.3) %0, i64 %a, i64 %b)
+; CHECK-LLVM:   %1 = load %structtype.3, ptr %0, align 8
+; CHECK-LLVM:   %2 = load %structtype.3, ptr %0, align 4
+; CHECK-LLVM:   %3 = extractvalue %structtype.3 %2, 0
+; CHECK-LLVM:   %4 = extractvalue %structtype.3 %2, 1
+; CHECK-LLVM:   %5 = icmp ne i64 %4, 0
+; CHECK-LLVM:   %6 = insertvalue %structtype.4 undef, i64 %3, 0
+; CHECK-LLVM:   %7 = insertvalue %structtype.4 %6, i1 %5, 1
+; CHECK-LLVM:   %8 = extractvalue %structtype.4 %7, 0
+; CHECK-LLVM:   %9 = extractvalue %structtype.4 %7, 1
+; CHECK-LLVM:   ret i1 %9
 define spir_func <4 x i1> @test_usub_with_overflow_v4i32(<4 x i32> %a, <4 x i32> %b) {
 entry:
   %res = call {<4 x i32>, <4 x i1>} @llvm.usub.with.overflow.v4i32(<4 x i32> %a, <4 x i32> %b) 
@@ -178,17 +181,18 @@ entry:
 ; CHECK-SPIRV:          [[var_87:%[a-z0-9_.]+]] = OpCompositeExtract [[v4bool]] [[var_85]] 1
 ; CHECK-SPIRV:                                    OpReturnValue [[var_87]]
 
-; CHECK-LLVM:   %0 = alloca [[structtype_5]], align 16
-; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowDv4_iS_(ptr sret([[structtype_5]]) %0, <4 x i32> %a, <4 x i32> %b)
-; CHECK-LLVM:   %1 = load [[structtype_5]], ptr %0, align 16
-; CHECK-LLVM:   %2 = extractvalue [[structtype_5]] %1, 0
-; CHECK-LLVM:   %3 = extractvalue [[structtype_5]] %1, 1
-; CHECK-LLVM:   %4 = icmp ne <4 x i32> %3, zeroinitializer
-; CHECK-LLVM:   %5 = insertvalue [[structtype_6]] undef, <4 x i32> %2, 0
-; CHECK-LLVM:   %6 = insertvalue [[structtype_6]] %5, <4 x i1> %4, 1
-; CHECK-LLVM:   %7 = extractvalue [[structtype_6]] %6, 0
-; CHECK-LLVM:   %8 = extractvalue [[structtype_6]] %6, 1
-; CHECK-LLVM:   ret <4 x i1> %8
+; CHECK-LLVM:   %0 = alloca %structtype.5, align 16
+; CHECK-LLVM:   call spir_func void @_Z18__spirv_ISubBorrowDv4_iS_(ptr sret(%structtype.5) %0, <4 x i32> %a, <4 x i32> %b)
+; CHECK-LLVM:   %1 = load %structtype.5, ptr %0, align 16
+; CHECK-LLVM:   %2 = load %structtype.5, ptr %0, align 16
+; CHECK-LLVM:   %3 = extractvalue %structtype.5 %2, 0
+; CHECK-LLVM:   %4 = extractvalue %structtype.5 %2, 1
+; CHECK-LLVM:   %5 = icmp ne <4 x i32> %4, zeroinitializer
+; CHECK-LLVM:   %6 = insertvalue %structtype.6 undef, <4 x i32> %3, 0
+; CHECK-LLVM:   %7 = insertvalue %structtype.6 %6, <4 x i1> %5, 1
+; CHECK-LLVM:   %8 = extractvalue %structtype.6 %7, 0
+; CHECK-LLVM:   %9 = extractvalue %structtype.6 %7, 1
+; CHECK-LLVM:   ret <4 x i1> %9
 declare {i16, i1} @llvm.usub.with.overflow.i16(i16 %a, i16 %b)
 declare {i32, i1} @llvm.usub.with.overflow.i32(i32 %a, i32 %b)
 declare {i64, i1} @llvm.usub.with.overflow.i64(i64 %a, i64 %b)

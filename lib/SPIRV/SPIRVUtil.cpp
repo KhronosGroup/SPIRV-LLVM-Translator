@@ -2253,7 +2253,8 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       NewCI->setCallingConv(CI->getCallingConv());
       SmallVector<User *> CIUsers(CI->users());
       for (auto *CIUser : CIUsers) {
-        CIUser->replaceUsesOfWith(CI, A);
+        CIUser->replaceUsesOfWith(CI,
+                                  Builder.CreateLoad(F->getReturnType(), A));
       }
       InstToRemove.push_back(CI);
     }
