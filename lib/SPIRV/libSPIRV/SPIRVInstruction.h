@@ -2003,6 +2003,12 @@ public:
     }
     return VArgs;
   }
+  SPIRVValue *getArg(SPIRVWord I) {
+    if (isOperandLiteral(I))
+      return Module->getLiteralAsConstant(Args[I]);
+    return getValue(Args[I]);
+  }
+
   std::vector<SPIRVType *> getArgTypes() {
     std::vector<SPIRVType *> ArgTypes;
     auto VArgs = getArgValues();
