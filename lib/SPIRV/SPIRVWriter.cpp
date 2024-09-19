@@ -822,7 +822,7 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
     // to only check here if we're dealing with a variadic function to report an
     // error. To be on the safe side, an assertion is added to check printf
     // never reaches this point.
-    assert(F->getName().str() != "printf");
+    assert(F->getName() != "printf");
     BM->getErrorLog().checkError(!FnTy->isVarArg(),
                                  SPIRVEC_UnsupportedVarArgFunction);
 
