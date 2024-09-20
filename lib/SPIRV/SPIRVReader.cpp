@@ -4760,8 +4760,9 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   for (unsigned I = 0; I < ArgTypes.size(); I++) {
     // Special handling for "truly" untyped pointers to preserve correct OCL
     // bultin mangling.
-    if (isa<PointerType>(ArgTypes[I]) && BC->getArg(I)->isUntypedVariable()) {
-      auto *BVar = static_cast<SPIRVUntypedVariableKHR *>(BC->getArg(I));
+    if (isa<PointerType>(ArgTypes[I]) &&
+        BC->getArgValue(I)->isUntypedVariable()) {
+      auto *BVar = static_cast<SPIRVUntypedVariableKHR *>(BC->getArgValue(I));
       ArgTypes[I] = TypedPointerType::get(
           transType(BVar->getDataType()),
           SPIRSPIRVAddrSpaceMap::rmap(BVar->getStorageClass()));

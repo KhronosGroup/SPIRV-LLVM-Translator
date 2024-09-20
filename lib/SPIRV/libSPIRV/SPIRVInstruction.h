@@ -1995,15 +1995,11 @@ public:
   }
   std::vector<SPIRVValue *> getArgValues() {
     std::vector<SPIRVValue *> VArgs;
-    for (size_t I = 0; I < Args.size(); ++I) {
-      if (isOperandLiteral(I))
-        VArgs.push_back(Module->getLiteralAsConstant(Args[I]));
-      else
-        VArgs.push_back(getValue(Args[I]));
-    }
+    for (size_t I = 0; I < Args.size(); ++I)
+      VArgs.push_back(getArgValue(I));
     return VArgs;
   }
-  SPIRVValue *getArg(SPIRVWord I) {
+  SPIRVValue *getArgValue(SPIRVWord I) {
     if (isOperandLiteral(I))
       return Module->getLiteralAsConstant(Args[I]);
     return getValue(Args[I]);
