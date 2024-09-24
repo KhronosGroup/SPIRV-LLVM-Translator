@@ -1011,8 +1011,12 @@ CallInst *addCallInst(Module *M, StringRef FuncName, Type *RetTy,
 
   auto *F = getOrCreateFunction(M, RetTy, getTypes(Args), FuncName, Mangle,
                                Attrs, TakeFuncName);
+  InsertPosition InsertPos(nullptr);
+  if (Pos)
+    InsertPos = Pos->getIterator();
   // Cannot assign a Name to void typed values
-  auto *CI = CallInst::Create(F, Args, RetTy->isVoidTy() ? "" : InstName, Pos);
+  auto *CI =
+      CallInst::Create(F, Args, RetTy->isVoidTy() ? "" : InstName, InsertPos);
   CI->setCallingConv(F->getCallingConv());
   CI->setAttributes(F->getAttributes());
   return CI;
@@ -1061,7 +1065,7 @@ PointerType *getInt8PtrTy(PointerType *T) {
   return PointerType::get(T->getContext(), T->getAddressSpace());
 }
 
-Value *castToInt8Ptr(Value *V, Instruction *Pos) {
+Value *castToInt8Ptr(Value *V, BasicBlock::iterator Pos) {
   return CastInst::CreatePointerCast(
       V, getInt8PtrTy(cast<PointerType>(V->getType())), "", Pos);
 }
@@ -1453,7 +1457,7 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
   return SPIR::RefParamType(new SPIR::PrimitiveType(SPIR::PRIMITIVE_INT));
 }
 
-Value *getScalarOrArray(Value *V, unsigned Size, Instruction *Pos) {
+Value *getScalarOrArray(Value *V, unsigned Size, BasicBlock::iterator Pos) {
   if (!V->getType()->isPointerTy())
     return V;
   Type *SourceTy;
@@ -1492,8 +1496,8 @@ Constant *getScalarOrVectorConstantInt(Type *T, uint64_t V, bool IsSigned) {
   return nullptr;
 }
 
-Value *getScalarOrArrayConstantInt(Instruction *Pos, Type *T, unsigned Len,
-                                   uint64_t V, bool IsSigned) {
+Value *getScalarOrArrayConstantInt(BasicBlock::iterator Pos, Type *T,
+                                   unsigned Len, uint64_t V, bool IsSigned) {
   if (auto *IT = dyn_cast<IntegerType>(T)) {
     assert(Len == 1 && "Invalid length");
     return ConstantInt::get(IT, V, IsSigned);
