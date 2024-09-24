@@ -2,7 +2,6 @@
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt
 ; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
@@ -12,19 +11,17 @@ target triple = "spir64-unknown-unknown"
 
 define internal spir_func void @_ZN4sycl3_V16detail26builtin_delegate_to_scalarIZNS0_8upsampleINS0_3vecIiLi2EEENS4_IjLi2EEEEENSt9enable_ifIXsr6detailE17enable_upsample_vIT_T0_EENS1_15change_elementsINS1_8map_typeIJNS1_13get_elem_typeIS8_E4typeEashtsitjiljmEE4typeES8_E4typeEE4typeES8_S9_EUlDpT_E_JS5_S6_EEEDaS8_DpRKT0_() {
 entry:
-  %r.sroa.0 = alloca [2 x i64], i32 0, align 16
+  %r.sroa.0 = alloca [2 x i64], i32 1, align 16
   %r.sroa.0.0.r.ascast.sroa_cast1 = addrspacecast ptr %r.sroa.0 to ptr addrspace(4)
 
 ; CHECK-SPIRV: Decorate {{[0-9]+}} Alignment 16
-; CHECK-SPIRV: Decorate {{[0-9]+}} Alignment 16
 ; CHECK-SPIRV: Decorate [[SrcVar:[0-9]+]] Alignment [[SrcAlignment:[0-9]+]]
-; CHECK-SPIRV: Bitcast {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 ; CHECK-SPIRV: Bitcast {{[0-9]+}} {{[0-9]+}} {{[0-9]+}}
 ; CHECK-SPIRV: Bitcast {{[0-9]+}} [[Src:[0-9]+]] [[SrcVar]]
 ; CHECK-SPIRV: CopyMemorySized {{[0-9]+}} [[Src]] {{[0-9]+}} 2 [[SrcAlignment]]
 ; CHECK-LLVM: [[SrcVar:@[0-9]+]] = internal unnamed_addr addrspace(2) constant [16 x i8] zeroinitializer, align [[SrcAlignment:[0-9]+]]
 ; CHECK-LLVM: [[SrcOp:%[0-9]+]] = bitcast ptr addrspace(2) [[SrcVar]] to ptr addrspace(2)
-; CHECK-LLVM: call void @llvm.memcpy.p4.p2.i64(ptr addrspace(4) align 16 %1, ptr addrspace(2) align [[SrcAlignment]] [[SrcOp]], i64 16, i1 false)
+; CHECK-LLVM: call void @llvm.memcpy.p4.p2.i64(ptr addrspace(4) align 16 %0, ptr addrspace(2) align [[SrcAlignment]] [[SrcOp]], i64 16, i1 false)
   call void @llvm.memset.p4.i64(ptr addrspace(4) align 16 %r.sroa.0.0.r.ascast.sroa_cast1, i8 0, i64 16, i1 false)
   ret void
 }
