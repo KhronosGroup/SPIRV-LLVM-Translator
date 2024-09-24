@@ -2601,7 +2601,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Value *UndefInt8Ptr = UndefValue::get(Int8PtrTyPrivate);
     Value *UndefInt32 = UndefValue::get(Int32Ty);
 
-    Constant *GS = Builder.CreateGlobalStringPtr(kOCLBuiltinName::FPGARegIntel);
+    Constant *GS = Builder.CreateGlobalString(kOCLBuiltinName::FPGARegIntel);
 
     Type *Ty = transType(BC->getType());
     Value *Val = transValue(BC->getOperand(0), F, BB);
@@ -3751,7 +3751,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         generateIntelFPGAAnnotationForStructMember(ST, I, AnnotStrVec);
         CallInst *AnnotationCall = nullptr;
         for (const auto &AnnotStr : AnnotStrVec) {
-          auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
+          auto *GS = Builder.CreateGlobalString(AnnotStr);
 
           Instruction *PtrAnnFirstArg = nullptr;
 
@@ -3802,7 +3802,7 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       if (AnnotItr != AnnotationsMap.end()) {
         GS = AnnotItr->second;
       } else {
-        GS = Builder.CreateGlobalStringPtr(AnnotStr);
+        GS = Builder.CreateGlobalString(AnnotStr);
         AnnotationsMap.emplace(std::move(StringAnnotStr), GS);
       }
 
