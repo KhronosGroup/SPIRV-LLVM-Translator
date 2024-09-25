@@ -726,8 +726,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           // cmpxchg.
           Value *Ptr = Cmpxchg->getPointerOperand();
 
-          spv::Scope S = toSPIRVScope(Cmpxchg->getContext(),
-                                      Cmpxchg->getSyncScopeID());
+          spv::Scope S =
+              toSPIRVScope(Cmpxchg->getContext(), Cmpxchg->getSyncScopeID());
           Value *MemoryScope = getInt32(M, S);
           auto SuccessOrder = static_cast<OCLMemOrderKind>(
               llvm::toCABI(Cmpxchg->getSuccessOrdering()));
