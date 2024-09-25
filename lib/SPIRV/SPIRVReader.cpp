@@ -360,8 +360,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     return mapType(T, PointerType::get(ElementTy, AS));
   }
   case OpTypeUntypedPointerKHR: {
-    unsigned AS =
-        SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
+    unsigned AS = SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
     if (AS == SPIRAS_CodeSectionINTEL && !BM->shouldEmitFunctionPtrAddrSpace())
       AS = SPIRAS_Private;
     return mapType(T, PointerType::get(*Context, AS));
@@ -1504,8 +1503,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
           if (cast<PointerType>(CV[I]->getType())->getAddressSpace() !=
               cast<PointerType>(BCCTy->getElementType(I))->getAddressSpace())
-            CV[I] = ConstantExpr::getAddrSpaceCast(CV[I],
-                                                   BCCTy->getElementType(I));
+            CV[I] =
+                ConstantExpr::getAddrSpaceCast(CV[I], BCCTy->getElementType(I));
           else
             CV[I] = ConstantExpr::getBitCast(CV[I], BCCTy->getElementType(I));
         }
@@ -1544,7 +1543,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVFunction *F = BC->getFunction();
     BV->setName(F->getName());
     const unsigned AS = BM->shouldEmitFunctionPtrAddrSpace()
-      ? SPIRAS_CodeSectionINTEL : SPIRAS_Private;
+                            ? SPIRAS_CodeSectionINTEL
+                            : SPIRAS_Private;
     return mapValue(BV, transFunction(F, AS));
   }
 
@@ -3525,7 +3525,8 @@ bool SPIRVToLLVM::translate() {
     SPIRVFunction *F = BC->getFunction();
     FP->setName(F->getName());
     const unsigned AS = BM->shouldEmitFunctionPtrAddrSpace()
-      ? SPIRAS_CodeSectionINTEL : SPIRAS_Private;
+                            ? SPIRAS_CodeSectionINTEL
+                            : SPIRAS_Private;
     mapValue(FP, transFunction(F, AS));
   }
 
