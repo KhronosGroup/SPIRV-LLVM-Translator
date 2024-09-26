@@ -4,7 +4,7 @@
 ; No option is passed to the forward translation stage - no CodeSectionINTEL storage class in SPIR-V
 ; The option is passed to the forward translation stage - CodeSectionINTEL storage class is generated
 ; No option is passed to the reverse translation stage - function pointers are in private address space
-; The option is passed to the reverse tranlsation stage - function pointers are in addrspace(9)
+; The option is passed to the reverse translation stage - function pointers are in addrspace(9)
 ;
 ; Overall IR generation is tested elsewhere, here checks are very simple
 
@@ -40,8 +40,13 @@
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM-AS
 
-; CHECK-SPIRV-AS: TypePointer [[#PtrTy:]] 5605 [[#]]
-; CHECK-SPIRV-AS: ConstantFunctionPointerINTEL [[#PtrTy]]
+; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrCodeTy:]] 5605 [[#]]
+; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrPrivTy:]] 7 [[#PtrCodeTy]]
+; CHECK-SPIRV-AS-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
+; CHECK-SPIRV-AS: Variable [[#PtrPrivTy]] [[#Var:]] 7
+; CHECK-SPIRV-AS: Store [[#Var]] [[#FunPtr]]
+; CHECK-SPIRV-AS: Load [[#PtrCodeTy]] [[#Load:]] [[#Var]]
+; CHECK-SPIRV-AS: FunctionPointerCallINTEL [[#]] [[#]] [[#Load]] [[#]]
 
 ; CHECK-SPIRV-NO-AS-NOT: TypePointer [[#]] 5605 [[#]]
 
