@@ -162,6 +162,10 @@ static cl::opt<bool>
                                 "for the translation from SPIR-V."),
                        cl::Hidden);
 
+static cl::opt<bool> SPIRVEmitFunctionPtrAddrSpace(
+    "spirv-emit-function-ptr-addr-space", cl::init(false),
+    cl::desc("Emit and consume CodeSectionINTEL for function pointers"));
+
 using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -795,6 +799,9 @@ int main(int Ac, char **Av) {
 
   if (PreserveOCLKernelArgTypeMetadataThroughString.getNumOccurrences() != 0)
     Opts.setPreserveOCLKernelArgTypeMetadataThroughString(true);
+
+  if (SPIRVEmitFunctionPtrAddrSpace.getNumOccurrences() != 0)
+    Opts.setEmitFunctionPtrAddrSpace(true);
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
