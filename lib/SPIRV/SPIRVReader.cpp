@@ -348,8 +348,12 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   case internal::OpTypeTokenINTEL:
     return mapType(T, Type::getTokenTy(*Context));
   case OpTypePointer: {
-    const unsigned AS =
-        SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
+    unsigned AS = SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
+    if (AS == SPIRAS_CodeSectionINTEL && !BM->shouldEmitFunctionPtrAddrSpace())
+      AS = SPIRAS_Private;
+    if (BM->shouldEmitFunctionPtrAddrSpace() &&
+        T->getPointerElementType()->getOpCode() == OpTypeFunction)
+      AS = SPIRAS_CodeSectionINTEL;
     Type *ElementTy = transType(T->getPointerElementType(), UseTPT);
     if (UseTPT)
       return TypedPointerType::get(ElementTy, AS);
@@ -1462,6 +1466,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case OpTypeMatrix:
     case OpTypeArray: {
       auto *AT = cast<ArrayType>(transType(BCC->getType()));
+      for (size_t I = 0; I != AT->getNumElements(); ++I) {
+        auto *ElemTy = AT->getElementType();
+        if (auto *ElemPtrTy = dyn_cast<PointerType>(ElemTy)) {
+          assert(isa<PointerType>(CV[I]->getType()) &&
+                 "Constant type doesn't match constexpr array element type");
+          if (ElemPtrTy->getAddressSpace() !=
+              cast<PointerType>(CV[I]->getType())->getAddressSpace())
+            CV[I] = ConstantExpr::getAddrSpaceCast(CV[I], AT->getElementType());
+        }
+      }
+
       return mapValue(BV, ConstantArray::get(AT, CV));
     }
     case OpTypeStruct: {
@@ -1478,7 +1493,12 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
               !BCCTy->getElementType(I)->isPointerTy())
             continue;
 
-          CV[I] = ConstantExpr::getBitCast(CV[I], BCCTy->getElementType(I));
+          if (cast<PointerType>(CV[I]->getType())->getAddressSpace() !=
+              cast<PointerType>(BCCTy->getElementType(I))->getAddressSpace())
+            CV[I] =
+                ConstantExpr::getAddrSpaceCast(CV[I], BCCTy->getElementType(I));
+          else
+            CV[I] = ConstantExpr::getBitCast(CV[I], BCCTy->getElementType(I));
         }
       }
 
@@ -1514,7 +1534,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         static_cast<SPIRVConstantFunctionPointerINTEL *>(BV);
     SPIRVFunction *F = BC->getFunction();
     BV->setName(F->getName());
-    return mapValue(BV, transFunction(F));
+    const unsigned AS = BM->shouldEmitFunctionPtrAddrSpace()
+                            ? SPIRAS_CodeSectionINTEL
+                            : SPIRAS_Private;
+    return mapValue(BV, transFunction(F, AS));
   }
 
   case OpUndef:
@@ -3033,7 +3056,7 @@ void SPIRVToLLVM::transFunctionAttrs(SPIRVFunction *BF, Function *F) {
   });
 }
 
-Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
+Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
   auto Loc = FuncMap.find(BF);
   if (Loc != FuncMap.end())
     return Loc->second;
@@ -3081,7 +3104,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF) {
   }
   Function *F = M->getFunction(FuncName);
   if (!F)
-    F = Function::Create(FT, Linkage, FuncName, M);
+    F = Function::Create(FT, Linkage, AS, FuncName, M);
   F = cast<Function>(mapValue(BF, F));
   mapFunction(BF, F);
 
@@ -3486,6 +3509,17 @@ bool SPIRVToLLVM::translate() {
   // Then translate all debug instructions.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     DbgTran->transDebugInst(EI);
+  }
+
+  for (auto *FP : BM->getFunctionPointers()) {
+    SPIRVConstantFunctionPointerINTEL *BC =
+        static_cast<SPIRVConstantFunctionPointerINTEL *>(FP);
+    SPIRVFunction *F = BC->getFunction();
+    FP->setName(F->getName());
+    const unsigned AS = BM->shouldEmitFunctionPtrAddrSpace()
+                            ? SPIRAS_CodeSectionINTEL
+                            : SPIRAS_Private;
+    mapValue(FP, transFunction(F, AS));
   }
 
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
