@@ -3070,6 +3070,7 @@ void SPIRVToLLVM::transFunctionAttrs(SPIRVFunction *BF, Function *F) {
   });
 }
 
+namespace {
 // One basic block can be a predecessor to another basic block more than
 // once (https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/2702).
 // This function checks if created PHI's require a fix wrt. this rule.
@@ -3089,8 +3090,8 @@ static void validatePhiPredecessors(Function *F) {
     // `phi` requires an incoming value per each predecessor instance, even
     // it's the same basic block that has been already inserted as an incoming
     // value of the `phi`.
-    for (Instruction &I : BB) {
-      PHINode *Phi = dyn_cast<PHINode>(&I);
+    for (Instruction &Instr : BB) {
+      PHINode *Phi = dyn_cast<PHINode>(&Instr);
       if (!Phi)
         continue;
       SmallVector<Value *> Vs;
@@ -3100,16 +3101,17 @@ static void validatePhiPredecessors(Function *F) {
         Vs.insert(Vs.end(), N, V);
         Bs.insert(Bs.end(), N, B);
       }
-      unsigned i = 0;
-      for (unsigned N = Phi->getNumIncomingValues(); i < N; ++i) {
-        Phi->setIncomingValue(i, Vs[i]);
-        Phi->setIncomingBlock(i, Bs[i]);
+      unsigned I = 0;
+      for (unsigned N = Phi->getNumIncomingValues(); I < N; ++I) {
+        Phi->setIncomingValue(I, Vs[I]);
+        Phi->setIncomingBlock(I, Bs[I]);
       }
-      for (unsigned N = Vs.size(); i < N; ++i)
-        Phi->addIncoming(Vs[i], Bs[i]);
+      for (unsigned N = Vs.size(); I < N; ++I)
+        Phi->addIncoming(Vs[I], Bs[I]);
     }
   }
 }
+} // namespace
 
 Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
   auto Loc = FuncMap.find(BF);
