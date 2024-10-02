@@ -116,12 +116,6 @@ static cl::opt<VersionNumber> MaxSPIRVVersion(
                clEnumValN(VersionNumber::SPIRV_1_6, "1.6", "SPIR-V 1.6")),
     cl::init(VersionNumber::MaximumVersion));
 
-static cl::list<std::string>
-    SPVExt("spirv-ext", cl::CommaSeparated,
-           cl::desc("Specify list of allowed/disallowed extensions"),
-           cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
-           cl::ValueRequired);
-
 static cl::list<std::string> SPIRVAllowUnknownIntrinsics(
     "spirv-allow-unknown-intrinsics", cl::CommaSeparated,
     cl::desc("Unknown intrinsics that begin with any prefix from the "
@@ -509,6 +503,7 @@ static int regularizeLLVM(SPIRV::TranslatorOpts &Opts) {
 }
 
 static int parseSPVExtOption(
+    cl::list<std::string> &SPVExtList,
     SPIRV::TranslatorOpts::ExtensionsStatusMap &ExtensionsStatus) {
   // Map name -> id for known extensions
   std::map<std::string, ExtensionID> ExtensionNamesMap;
@@ -531,11 +526,11 @@ static int parseSPVExtOption(
   for (const auto &It : ExtensionNamesMap)
     ExtensionsStatus[It.second] = DefaultVal;
 
-  if (SPVExt.empty())
+  if (SPVExtList.empty())
     return 0; // Nothing to do
 
-  for (unsigned i = 0; i < SPVExt.size(); ++i) {
-    const std::string &ExtString = SPVExt[i];
+  for (unsigned i = 0; i < SPVExtList.size(); ++i) {
+    const std::string &ExtString = SPVExtList[i];
     if (ExtString.empty() ||
         ('+' != ExtString.front() && '-' != ExtString.front())) {
       errs() << "Invalid value of --spirv-ext, expected format is:\n"
@@ -704,6 +699,25 @@ int main(int Ac, char **Av) {
   sys::PrintStackTraceOnErrorSignal(Av[0]);
   PrettyStackTraceProgram X(Ac, Av);
 
+  // SPIR-V Backend might be available, and so we have a clash of command line
+  // argument names, because both products use "spirv-ext" name. Let's rename
+  // the command line option coming from SPIR-V Backend, as it's not supposed to
+  // be used by a user anyway. After that we may safely add the instance of
+  // "spirv-ext" required by LLVM/SPIRV Translator from the corresponding auto
+  // variable (SPVExt).
+  StringMap<llvm::cl::Option *> &RegisteredOptions =
+      llvm::cl::getRegisteredOptions();
+  if (RegisteredOptions.count("spirv-ext") == 1) {
+    llvm::cl::Option *OptToDisable = RegisteredOptions["spirv-ext"];
+    OptToDisable->setArgStr("spirv-ext-coming-from-spirv-backend");
+    OptToDisable->setHiddenFlag(cl::Hidden);
+  }
+  cl::list<std::string> SPVExt(
+      "spirv-ext", cl::CommaSeparated,
+      cl::desc("Specify list of allowed/disallowed extensions"),
+      cl::value_desc("+SPV_extenstion1_name,-SPV_extension2_name"),
+      cl::ValueRequired);
+
   cl::ParseCommandLineOptions(Ac, Av, "LLVM/SPIR-V translator");
 
   if (InputFile != "-" && isFileEmpty(InputFile)) {
@@ -714,7 +728,7 @@ int main(int Ac, char **Av) {
   SPIRV::TranslatorOpts::ExtensionsStatusMap ExtensionsStatus;
   // ExtensionsStatus will be properly initialized and update according to
   // values passed via --spirv-ext option in parseSPVExtOption function.
-  int Ret = parseSPVExtOption(ExtensionsStatus);
+  int Ret = parseSPVExtOption(SPVExt, ExtensionsStatus);
   if (0 != Ret)
     return Ret;
 
