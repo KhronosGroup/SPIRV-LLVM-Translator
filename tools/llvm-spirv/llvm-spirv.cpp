@@ -297,6 +297,7 @@ private:
 
 static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
+  Context.setOpaquePointers(EmitOpaquePointers);
 
   std::unique_ptr<MemoryBuffer> MB =
       ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
