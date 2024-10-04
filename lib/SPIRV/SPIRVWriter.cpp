@@ -4209,7 +4209,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVValue *Zero = nullptr;
     SPIRVValue *MinusOne = nullptr;
     if (auto *VecTy = dyn_cast<VectorType>(II->getType())) {
-      auto ElemTy = transType(VecTy->getElementType());
+      auto *ElemTy = transType(VecTy->getElementType());
       APInt MinusOneValue(ElemTy->getIntegerBitWidth(), 0, 1);
       MinusOneValue.setAllBits();
       unsigned VecSize = VecTy->getElementCount().getFixedValue();
