@@ -1321,6 +1321,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
   // mode, but the value may have a different "natural" type. If that is the
   // case, we need to adjust the type of the constant.
   SPIRVValue *Trans = transValue(C, nullptr, true, FuncTransMode::Pointer);
+  std::vector<SPIRVWord> Ops = {Trans->getId()};
   if (Trans->getType() == ExpectedType || Trans->getType()->isTypePipeStorage())
     return Trans;
 
@@ -1333,9 +1334,17 @@ SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
     if (GV->getValueType()->isArrayTy() &&
         GV->getValueType()->getArrayElementType()->isIntegerTy(8)) {
       SPIRVWord Offset = transValue(getUInt32(M, 0), nullptr)->getId();
-      return BM->addPtrAccessChainInst(ExpectedType,
-                                       getVec(Trans->getId(), {Offset, Offset}),
-                                       nullptr, true);
+      Ops.push_back(Offset);
+      Ops.push_back(Offset);
+      if (ExpectedType->isTypeUntypedPointerKHR()) {
+        llvm::Type *Ty = Scavenger->getScavengedType(C);
+        SPIRVType *PtrTy = nullptr;
+        if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
+          PtrTy = transType(TPT->getElementType());
+          Ops = getVec(PtrTy->getId(), Ops);
+        }
+      }
+      return BM->addPtrAccessChainInst(ExpectedType, Ops, nullptr, true);
     }
   }
 
@@ -1455,14 +1464,20 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
 
   if (auto *ConstUE = dyn_cast<ConstantExpr>(V)) {
     if (auto *GEP = dyn_cast<GEPOperator>(ConstUE)) {
-      std::vector<SPIRVWord> Indices;
-      for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
-        Indices.push_back(transValue(GEP->getOperand(I + 1), nullptr)->getId());
       auto *TransPointerOperand = transValue(GEP->getPointerOperand(), nullptr);
+      std::vector<SPIRVWord> Ops = {TransPointerOperand->getId()};
+      for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
+        Ops.push_back(transValue(GEP->getOperand(I + 1), nullptr)->getId());
       SPIRVType *TranslatedTy = transScavengedType(GEP);
-      return BM->addPtrAccessChainInst(
-          TranslatedTy, getVec(TransPointerOperand->getId(), Indices), nullptr,
-          GEP->isInBounds());
+      if (TranslatedTy->isTypeUntypedPointerKHR()) {
+        llvm::Type *Ty = Scavenger->getScavengedType(GEP->getPointerOperand());
+        if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
+          SPIRVType *PtrTy = transType(TPT->getElementType());
+          Ops = getVec(PtrTy->getId(), Ops);
+        }
+      }
+      return BM->addPtrAccessChainInst(TranslatedTy, Ops, nullptr,
+                                       GEP->isInBounds());
     }
     auto *Inst = ConstUE->getAsInstruction();
     SPIRVDBG(dbgs() << "ConstantExpr: " << *ConstUE << '\n';
