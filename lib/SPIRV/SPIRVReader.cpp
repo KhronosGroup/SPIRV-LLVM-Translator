@@ -3911,6 +3911,13 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     if (AnnotationCall && !AnnotationCall->getType()->isVoidTy())
       ValueMap[BV] = AnnotationCall;
   } else if (auto *GV = dyn_cast<GlobalVariable>(V)) {
+    // Do not add annotations for builtin variables if they will be translated
+    // to function calls.
+    SPIRVBuiltinVariableKind Kind;
+    if (BM->getBuiltinFormat() == BuiltinFormat::Function &&
+        isSPIRVBuiltinVariable(GV, &Kind))
+      return;
+
     std::vector<SmallString<256>> AnnotStrVec;
     generateIntelFPGAAnnotation(BV, AnnotStrVec);
 
@@ -4732,7 +4739,8 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     F->addFnAttr(Attr);
   }
 
-  if (auto *EM = BF->getExecutionMode(ExecutionModeSharedLocalMemorySizeINTEL)) {
+  if (auto *EM =
+          BF->getExecutionMode(ExecutionModeSharedLocalMemorySizeINTEL)) {
     unsigned int SLMSize = EM->getLiterals()[0];
     Attribute Attr = Attribute::get(*Context, kVCMetadata::VCSLMSize,
                                     std::to_string(SLMSize));
@@ -4833,6 +4841,18 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
          "Not OpenCL extended instruction");
 
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes(), true);
+  for (unsigned I = 0; I < ArgTypes.size(); I++) {
+    // Special handling for "truly" untyped pointers to preserve correct OCL
+    // bultin mangling.
+    if (isa<PointerType>(ArgTypes[I]) &&
+        BC->getArgValue(I)->isUntypedVariable()) {
+      auto *BVar = static_cast<SPIRVUntypedVariableKHR *>(BC->getArgValue(I));
+      ArgTypes[I] = TypedPointerType::get(
+          transType(BVar->getDataType()),
+          SPIRSPIRVAddrSpaceMap::rmap(BVar->getStorageClass()));
+    }
+  }
+
   Type *RetTy = transType(BC->getType());
   std::string MangledName =
       getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, RetTy);
@@ -4855,10 +4875,7 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   auto Args = transValue(BC->getArgValues(), F, BB);
   SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F
                   << ", Args: ";
-           for (auto &I
-                : Args) dbgs()
-           << *I << ", ";
-           dbgs() << '\n');
+           for (auto &I : Args) dbgs() << *I << ", "; dbgs() << '\n');
   CallInst *CI = CallInst::Create(F, Args, BC->getName(), BB);
   setCallingConv(CI);
   addFnAttr(CI, Attribute::NoUnwind);
