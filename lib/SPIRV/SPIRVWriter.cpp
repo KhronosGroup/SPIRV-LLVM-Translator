@@ -1650,7 +1650,7 @@ class LLVMParallelAccessIndices {
 public:
   LLVMParallelAccessIndices(
       MDNode *Node, LLVMToSPIRVBase::LLVMToSPIRVMetadataMap &IndexGroupArrayMap)
-      : Node(Node), IndexGroupArrayMap(IndexGroupArrayMap) {
+      : Node(Node) {
 
     assert(isValid() &&
            "LLVMParallelAccessIndices initialized from an invalid MDNode");
@@ -1694,7 +1694,6 @@ public:
 
 private:
   MDNode *Node;
-  LLVMToSPIRVBase::LLVMToSPIRVMetadataMap &IndexGroupArrayMap;
   const std::string ExpectedName = "llvm.loop.parallel_access_indices";
   std::vector<SPIRVId> ArrayVariablesVec;
   unsigned SafeLen;
