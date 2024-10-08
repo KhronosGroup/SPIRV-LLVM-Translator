@@ -4732,7 +4732,8 @@ bool SPIRVToLLVM::transVectorComputeMetadata(SPIRVFunction *BF) {
     F->addFnAttr(Attr);
   }
 
-  if (auto *EM = BF->getExecutionMode(ExecutionModeSharedLocalMemorySizeINTEL)) {
+  if (auto *EM =
+          BF->getExecutionMode(ExecutionModeSharedLocalMemorySizeINTEL)) {
     unsigned int SLMSize = EM->getLiterals()[0];
     Attribute Attr = Attribute::get(*Context, kVCMetadata::VCSLMSize,
                                     std::to_string(SLMSize));
@@ -4855,10 +4856,7 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   auto Args = transValue(BC->getArgValues(), F, BB);
   SPIRVDBG(dbgs() << "[transOCLBuiltinFromExtInst] Function: " << *F
                   << ", Args: ";
-           for (auto &I
-                : Args) dbgs()
-           << *I << ", ";
-           dbgs() << '\n');
+           for (auto &I : Args) dbgs() << *I << ", "; dbgs() << '\n');
   CallInst *CI = CallInst::Create(F, Args, BC->getName(), BB);
   setCallingConv(CI);
   addFnAttr(CI, Attribute::NoUnwind);
