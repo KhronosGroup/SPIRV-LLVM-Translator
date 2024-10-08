@@ -256,19 +256,19 @@ bool LLVMToSPIRVBase::isKernel(Function *F) {
 
 bool LLVMToSPIRVBase::isBuiltinTransToInst(Function *F) {
   StringRef DemangledName;
-  if (!oclIsBuiltin(F->getName(), DemangledName) &&
+  if (!oclIsBuiltin(F->getName(), DemangledName, isCpp(SrcLang)) &&
       !isDecoratedSPIRVFunc(F, DemangledName))
     return false;
   SPIRVDBG(spvdbgs() << "CallInst: demangled name: " << DemangledName.str()
                      << '\n');
-  return getSPIRVFuncOC(DemangledName) != OpNop;
+  return getSPIRVFuncOC(DemangledName, nullptr, isCpp(SrcLang)) != OpNop;
 }
 
 bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
     Function *F, SPIRVExtInstSetKind *ExtSet, SPIRVWord *ExtOp,
     SmallVectorImpl<std::string> *Dec) {
   StringRef DemangledName;
-  if (!oclIsBuiltin(F->getName(), DemangledName))
+  if (!oclIsBuiltin(F->getName(), DemangledName, isCpp(SrcLang)))
     return false;
   LLVM_DEBUG(dbgs() << "[oclIsBuiltinTransToExtInst] CallInst: demangled name: "
                     << DemangledName << '\n');
@@ -5282,7 +5282,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
   if (MangledName.starts_with(SPCV_CAST) || MangledName == SAMPLER_INIT)
     return oclTransSpvcCastSampler(CI, BB);
 
-  if (oclIsBuiltin(MangledName, DemangledName) ||
+  if (oclIsBuiltin(MangledName, DemangledName, isCpp(SrcLang)) ||
       isDecoratedSPIRVFunc(F, DemangledName)) {
     if (auto *BV = transBuiltinToConstant(DemangledName, CI))
       return BV;
@@ -5812,7 +5812,7 @@ bool LLVMToSPIRVBase::translate() {
   if (isEmptyLLVMModule(M))
     BM->addCapability(CapabilityLinkage);
 
-  if (!lowerBuiltinCallsToVariables(M))
+  if (!lowerBuiltinCallsToVariables(M, isCpp(SrcLang)))
     return false;
 
   // Use the type scavenger to recover pointer element types.
@@ -5874,7 +5874,7 @@ void LLVMToSPIRVBase::oclGetMutatedArgumentTypesByBuiltin(
     llvm::FunctionType *FT, std::unordered_map<unsigned, Type *> &ChangedType,
     Function *F) {
   StringRef Demangled;
-  if (!oclIsBuiltin(F->getName(), Demangled))
+  if (!oclIsBuiltin(F->getName(), Demangled, isCpp(SrcLang)))
     return;
   // Note: kSPIRVName::ConvertHandleToSampledImageINTEL contains
   // kSPIRVName::SampledImage as a substring, but we still want to return in
@@ -5889,7 +5889,7 @@ void LLVMToSPIRVBase::oclGetMutatedArgumentTypesByBuiltin(
 
 SPIRVValue *LLVMToSPIRVBase::transBuiltinToConstant(StringRef DemangledName,
                                                     CallInst *CI) {
-  Op OC = getSPIRVFuncOC(DemangledName);
+  Op OC = getSPIRVFuncOC(DemangledName, nullptr, isCpp(SrcLang));
   if (!isSpecConstantOpCode(OC))
     return nullptr;
   if (OC == spv::OpSpecConstantComposite) {
@@ -5921,7 +5921,7 @@ SPIRVInstruction *LLVMToSPIRVBase::transBuiltinToInst(StringRef DemangledName,
                                                       CallInst *CI,
                                                       SPIRVBasicBlock *BB) {
   SmallVector<std::string, 2> Dec;
-  auto OC = getSPIRVFuncOC(DemangledName, &Dec);
+  auto OC = getSPIRVFuncOC(DemangledName, &Dec, isCpp(SrcLang));
 
   if (OC == OpNop)
     return nullptr;
