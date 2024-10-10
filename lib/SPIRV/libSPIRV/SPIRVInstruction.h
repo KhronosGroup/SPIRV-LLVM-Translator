@@ -4225,5 +4225,44 @@ _SPIRV_OP(ConvertHandleToSamplerINTEL)
 _SPIRV_OP(ConvertHandleToSampledImageINTEL)
 #undef _SPIRV_OP
 
+class SPIRVSubgroup2DBlockIOINTELInstBase : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_2d_block_io;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::Subgroup2DBlockIOINTEL);
+  }
+};
+
+class SPIRVSubgroup2DBlockLoadINTELInst : public SPIRVSubgroup2DBlockIOINTELInstBase {
+protected:
+  void validate() const override {
+    SPIRVInstruction::validate();
+    std::string InstName = "Subgroup2DBlockLoadINTEL";
+    SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
+
+    SPVErrLog.checkError(
+        this->isOperandLiteral(0), SPIRVEC_InvalidInstruction,
+        InstName + "\nElement Size must be a constant instructions with scalar 32-bit integer type\n");
+    SPVErrLog.checkError(
+        this->isOperandLiteral(1), SPIRVEC_InvalidInstruction,
+        InstName + "\nBlock Width must be a constant instructions with scalar 32-bit integer type\n");
+    SPVErrLog.checkError(
+        this->isOperandLiteral(2), SPIRVEC_InvalidInstruction,
+        InstName + "\nBlock Height must be a constant instructions with scalar 32-bit integer type\n");
+    SPVErrLog.checkError(
+        this->isOperandLiteral(3), SPIRVEC_InvalidInstruction,
+        InstName + "\nElement Size must be a constant instructions with scalar 32-bit integer type\n");
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                      \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadINTELInst,                 \
+                            internal::Op##x##INTEL, __VA_ARGS__>               \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoad, true, 11)
+#undef _SPIRV_OP
+
 } // namespace SPIRV
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H

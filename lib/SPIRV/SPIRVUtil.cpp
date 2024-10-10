@@ -2518,6 +2518,30 @@ public:
     case internal::OpConvertHandleToSampledImageINTEL:
       addUnsignedArg(0);
       break;
+    case internal::OpSubgroup2DBlockLoadINTEL:
+    case internal::OpSubgroup2DBlockLoadTransposeINTEL:
+    case internal::OpSubgroup2DBlockLoadTransformINTEL:
+      addUnsignedArgs(0, 3);
+      setArgAttr(4, SPIR::ATTR_GLOBAL);
+      addVoidPtrArg(4);
+      addUnsignedArgs(5, 8);
+      setArgAttr(9, SPIR::ATTR_PRIVATE);
+      addVoidPtrArg(9);
+      break;
+    case internal::OpSubgroup2DBlockPrefetchINTEL:
+      addUnsignedArgs(0, 3);
+      setArgAttr(4, SPIR::ATTR_GLOBAL);
+      addVoidPtrArg(4);
+      addUnsignedArgs(5, 8);
+      break;
+    case internal::OpSubgroup2DBlockStoreINTEL:
+      addUnsignedArgs(0, 3);
+      setArgAttr(4, SPIR::ATTR_PRIVATE);
+      addVoidPtrArg(4);
+      setArgAttr(5, SPIR::ATTR_GLOBAL);
+      addVoidPtrArg(5);
+      addUnsignedArgs(6, 9);
+      break;
     default:;
       // No special handling is needed
     }
