@@ -4231,19 +4231,19 @@ public:
     return ExtensionID::SPV_INTEL_2d_block_io;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::Subgroup2DBlockIOINTEL);
+    return getVec(internal::CapabilitySubgroup2DBlockIOINTEL);
   }
 };
 
 class SPIRVSubgroup2DBlockLoadTransposeINTELInst : public SPIRVSubgroup2DBlockIOINTELInst {
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::Subgroup2DBlockTransposeINTEL);
+    return getVec(internal::CapabilitySubgroup2DBlockTransposeINTEL);
   }
 };
 
 class SPIRVSubgroup2DBlockLoadTransformINTELInst : public SPIRVSubgroup2DBlockIOINTELInst {
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::Subgroup2DBlockTransformINTEL);
+    return getVec(internal::CapabilitySubgroup2DBlockTransformINTEL);
   }
 };
 
