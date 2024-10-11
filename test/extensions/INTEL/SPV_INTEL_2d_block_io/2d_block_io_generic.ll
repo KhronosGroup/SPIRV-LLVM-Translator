@@ -39,27 +39,27 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: Subgroup2DBlockPrefetchINTEL [[#Const42]] [[#Const42]] [[#Const42]] [[#Const42]] [[#BaseSrc]] [[#Width]] [[#Height]] [[#Pitch]] [[#Coord]]
 ; CHECK-SPIRV: Subgroup2DBlockStoreINTEL [[#Const42]] [[#Const42]] [[#Const42]] [[#Const42]] [[#Src]] [[#BaseDst]] [[#Width]] [[#Height]] [[#Pitch]] [[#Coord]]
 
-; CHECK-LLVM: call spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, <2 x i32> noundef %{{.*}}, ptr noundef %{{.*}})
-; CHECK-LLVM: call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, <2 x i32> noundef %{{.*}}, ptr noundef %{{.*}})
-; CHECK-LLVM: call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, <2 x i32> noundef %{{.*}}, ptr noundef %{{.*}})
-; CHECK-LLVM: call spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELjjjjPU3AS1KvjjjDv2_j(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, <2 x i32> noundef %{{.*}})
-; CHECK-LLVM: call spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELjjjjPKvPU3AS1vjjjDv2_j(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr noundef %{{.*}}, ptr addrspace(1) noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, i32 noundef %{{.*}}, <2 x i32> noundef %{{.*}})
+; CHECK-LLVM: call spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELiiiiPU3AS1ciiiDv2_iPc(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, <2 x i32> %{{.*}}, ptr %{{.*}})
+; CHECK-LLVM: call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELiiiiPU3AS1ciiiDv2_iPc(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, <2 x i32> %{{.*}}, ptr %{{.*}})
+; CHECK-LLVM: call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELiiiiPU3AS1ciiiDv2_iPc(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, <2 x i32> %{{.*}}, ptr %{{.*}})
+; CHECK-LLVM: call spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELiiiiPU3AS1ciiiDv2_i(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, <2 x i32> %{{.*}})
+; CHECK-LLVM: call spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELiiiiPcPU3AS1ciiiDv2_i(i32 42, i32 42, i32 42, i32 42, ptr %{{.*}}, ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, <2 x i32> %{{.*}})
 
-define spir_func void @foo(ptr addrspace(1) noundef %base_address, ptr addrspace(1) noundef %dst_base_pointer, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord, ptr noundef %dst_pointer, ptr noundef %src_pointer) {
+define spir_func void @foo(ptr addrspace(1) %base_address, ptr addrspace(1) %dst_base_pointer, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord, ptr %dst_pointer, ptr %src_pointer) {
 entry:
-  call spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %base_address, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord, ptr noundef %dst_pointer)
-  call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %base_address, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord, ptr noundef %dst_pointer)
-  call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %base_address, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord, ptr noundef %dst_pointer)
-  call spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELjjjjPU3AS1KvjjjDv2_j(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr addrspace(1) noundef %base_address, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord)
-  call spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELjjjjPKvPU3AS1vjjjDv2_j(i32 noundef 42, i32 noundef 42, i32 noundef 42, i32 noundef 42, ptr noundef %src_pointer, ptr addrspace(1) noundef %dst_base_pointer, i32 noundef %width, i32 noundef %height, i32 noundef %pitch, <2 x i32> noundef %coord)
+  call spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELjjjjPU3AS1KvjjjDv2_jPv(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %base_address, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord, ptr %dst_pointer)
+  call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELjjjjPU3AS1KvjjjDv2_jPv(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %base_address, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord, ptr %dst_pointer)
+  call spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELjjjjPU3AS1KvjjjDv2_jPv(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %base_address, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord, ptr %dst_pointer)
+  call spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELjjjjPU3AS1KvjjjDv2_j(i32 42, i32 42, i32 42, i32 42, ptr addrspace(1) %base_address, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord)
+  call spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELjjjjPKvPU3AS1vjjjDv2_j(i32 42, i32 42, i32 42, i32 42, ptr %src_pointer, ptr addrspace(1) %dst_base_pointer, i32 %width, i32 %height, i32 %pitch, <2 x i32> %coord)
   ret void
 }
 
-declare spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef, i32 noundef, i32 noundef, i32 noundef, ptr addrspace(1) noundef, i32 noundef, i32 noundef, i32 noundef, <2 x i32> noundef, ptr noundef)
-declare spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef, i32 noundef, i32 noundef, i32 noundef, ptr addrspace(1) noundef, i32 noundef, i32 noundef, i32 noundef, <2 x i32> noundef, ptr noundef)
-declare spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELjjjjPU3AS1KvjjjDv2_jPv(i32 noundef, i32 noundef, i32 noundef, i32 noundef, ptr addrspace(1) noundef, i32 noundef, i32 noundef, i32 noundef, <2 x i32> noundef, ptr noundef)
-declare spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELjjjjPU3AS1KvjjjDv2_j(i32 noundef, i32 noundef, i32 noundef, i32 noundef, ptr addrspace(1) noundef, i32 noundef, i32 noundef, i32 noundef, <2 x i32> noundef)
-declare spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELjjjjPKvPU3AS1vjjjDv2_j(i32 noundef, i32 noundef, i32 noundef, i32 noundef, ptr noundef, ptr addrspace(1) noundef, i32 noundef, i32 noundef, i32 noundef, <2 x i32> noundef)
+declare spir_func void @_Z32__spirv_Subgroup2DBlockLoadINTELjjjjPU3AS1KvjjjDv2_jPv(i32, i32, i32, i32, ptr addrspace(1), i32, i32, i32, <2 x i32>, ptr)
+declare spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransformINTELjjjjPU3AS1KvjjjDv2_jPv(i32, i32, i32, i32, ptr addrspace(1), i32, i32, i32, <2 x i32>, ptr)
+declare spir_func void @_Z41__spirv_Subgroup2DBlockLoadTransposeINTELjjjjPU3AS1KvjjjDv2_jPv(i32, i32, i32, i32, ptr addrspace(1), i32, i32, i32, <2 x i32>, ptr)
+declare spir_func void @_Z36__spirv_Subgroup2DBlockPrefetchINTELjjjjPU3AS1KvjjjDv2_j(i32, i32, i32, i32, ptr addrspace(1), i32, i32, i32, <2 x i32>)
+declare spir_func void @_Z33__spirv_Subgroup2DBlockStoreINTELjjjjPKvPU3AS1vjjjDv2_j(i32, i32, i32, i32, ptr, ptr addrspace(1), i32, i32, i32, <2 x i32>)
 
 !opencl.spir.version = !{!0}
 !spirv.Source = !{!1}
