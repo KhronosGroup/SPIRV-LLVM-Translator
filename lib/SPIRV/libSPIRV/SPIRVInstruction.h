@@ -4225,5 +4225,82 @@ _SPIRV_OP(ConvertHandleToSamplerINTEL)
 _SPIRV_OP(ConvertHandleToSampledImageINTEL)
 #undef _SPIRV_OP
 
+class SPIRVUntypedPrefetchKHR : public SPIRVInstruction {
+public:
+  static const Op OC = OpUntypedPrefetchKHR;
+  static const SPIRVWord FixedWordCount = 3;
+
+  SPIRVUntypedPrefetchKHR(SPIRVType *Ty, std::vector<SPIRVWord> &TheArgs,
+                          SPIRVBasicBlock *BB)
+      : SPIRVInstruction(FixedWordCount, OC, BB) {
+    setHasNoId();
+    setHasNoType();
+    PtrTy = TheArgs[0];
+    NumBytes = TheArgs[1];
+    if (TheArgs.size() > 2)
+      RW.push_back(TheArgs[2]);
+    if (TheArgs.size() > 3)
+      Locality.push_back(TheArgs[3]);
+    if (TheArgs.size() > 4)
+      CacheTy.push_back(TheArgs[4]);
+    assert(BB && "Invalid BB");
+    validate();
+  }
+
+  SPIRVUntypedPrefetchKHR() : SPIRVInstruction(OC) {
+    setHasNoId();
+    setHasNoType();
+  }
+
+  void validate() const override {
+    SPIRVInstruction::validate();
+    assert(getValueType(PtrTy)->isTypePointer());
+    assert(getValueType(PtrTy)->getPointerStorageClass() ==
+           StorageClassCrossWorkgroup);
+    assert(getValueType(NumBytes)->isTypeInt());
+    assert(RW.empty() || (RW.size() == 1 && getValueType(RW[0])->isTypeInt()));
+    assert(Locality.empty() ||
+           (Locality.size() == 1 && getValueType(Locality[0])->isTypeInt()));
+    assert(CacheTy.empty() ||
+           (CacheTy.size() == 1 && getValueType(CacheTy[0])->isTypeInt()));
+  }
+
+  void setWordCount(SPIRVWord TheWordCount) override {
+    SPIRVEntry::setWordCount(TheWordCount);
+    if (TheWordCount > 3)
+      RW.resize(1);
+    if (TheWordCount > 4)
+      Locality.resize(1);
+    if (TheWordCount > 5)
+      CacheTy.resize(1);
+  }
+  const std::vector<SPIRVWord> getArguments() const {
+    std::vector<SPIRVWord> Args;
+    Args.push_back(PtrTy);
+    Args.push_back(NumBytes);
+    if (!RW.empty())
+      Args.push_back(RW[0]);
+    if (!Locality.empty())
+      Args.push_back(Locality[0]);
+    if (!CacheTy.empty())
+      Args.push_back(CacheTy[0]);
+    return Args;
+  }
+
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityUntypedPointersKHR);
+  }
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_KHR_untyped_pointers;
+  }
+  _SPIRV_DEF_ENCDEC5(PtrTy, NumBytes, RW, Locality, CacheTy)
+protected:
+  SPIRVId PtrTy;
+  SPIRVId NumBytes;
+  std::vector<SPIRVId> RW;
+  std::vector<SPIRVId> Locality;
+  std::vector<SPIRVId> CacheTy;
+};
+
 } // namespace SPIRV
 #endif // SPIRV_LIBSPIRV_SPIRVINSTRUCTION_H
