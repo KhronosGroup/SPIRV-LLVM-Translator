@@ -90,6 +90,11 @@ enum InternalOp {
   IOpConvertHandleToImageINTEL = 6529,
   IOpConvertHandleToSamplerINTEL = 6530,
   IOpConvertHandleToSampledImageINTEL = 6531,
+  IOpSubgroup2DBlockLoadINTEL = 7775,
+  IOpSubgroup2DBlockLoadTransposeINTEL = 7776,
+  IOpSubgroup2DBlockLoadTransformINTEL = 7777,
+  IOpSubgroup2DBlockPrefetchINTEL = 7778,
+  IOpSubgroup2DBlockStoreINTEL = 7779,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -126,7 +131,10 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilityCacheControlsINTEL = 6441,
   ICapabilitySubgroupRequirementsINTEL = 6445,
-  ICapabilityBindlessImagesINTEL = 6528
+  ICapabilityBindlessImagesINTEL = 6528,
+  ICapabilitySubgroup2DBlockIOINTEL = 8887,
+  ICapabilitySubgroup2DBlockTransformINTEL = 8888,
+  ICapabilitySubgroup2DBlockTransposeINTEL = 8889,
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -220,6 +228,17 @@ _SPIRV_OP(Capability, BindlessImagesINTEL)
 _SPIRV_OP(Op, ConvertHandleToImageINTEL)
 _SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
+
+_SPIRV_OP(Capability, Subgroup2DBlockIOINTEL)
+_SPIRV_OP(Op, Subgroup2DBlockLoadINTEL)
+_SPIRV_OP(Op, Subgroup2DBlockPrefetchINTEL)
+_SPIRV_OP(Op, Subgroup2DBlockStoreINTEL)
+
+_SPIRV_OP(Capability, Subgroup2DBlockTransformINTEL)
+_SPIRV_OP(Op, Subgroup2DBlockLoadTransformINTEL)
+
+_SPIRV_OP(Capability, Subgroup2DBlockTransposeINTEL)
+_SPIRV_OP(Op, Subgroup2DBlockLoadTransposeINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
