@@ -1,3 +1,21 @@
+; Generated with:
+; source.cl:
+; void __spirv_Subgroup2DBlockLoadINTEL(         uint element_size, uint block_width, uint block_height, uint block_count, const __global void* src_base_pointer, uint memory_width,               uint memory_height, uint memory_pitch,  uint2 coordinate,  private void* dst_pointer);
+; void __spirv_Subgroup2DBlockLoadTransposeINTEL(uint element_size, uint block_width, uint block_height, uint block_count, const __global void* src_base_pointer, uint memory_width,               uint memory_height, uint memory_pitch,  uint2 coordinate,  private void* dst_pointer);
+; void __spirv_Subgroup2DBlockLoadTransformINTEL(uint element_size, uint block_width, uint block_height, uint block_count, const __global void* src_base_pointer, uint memory_width,               uint memory_height, uint memory_pitch,  uint2 coordinate,  private void* dst_pointer);
+; void __spirv_Subgroup2DBlockPrefetchINTEL(     uint element_size, uint block_width, uint block_height, uint block_count, const __global void* src_base_pointer, uint memory_width,               uint memory_height, uint memory_pitch,  uint2 coordinate                            );
+; void __spirv_Subgroup2DBlockStoreINTEL(        uint element_size, uint block_width, uint block_height, uint block_count, const private void*  src_pointer,      __global void* dst_base_pointer, uint memory_width,  uint memory_height, uint memory_pitch, uint2 coordinate         );
+;
+; void foo(const __global void* base_address, __global void* dst_base_pointer, uint width, uint height, uint pitch, uint2 coord, private void* dst_pointer, const private void* src_pointer) {
+;     const int i = 42;
+;     __spirv_Subgroup2DBlockLoadINTEL(i, i, i, i, base_address, width, height, pitch, coord, dst_pointer);
+;     __spirv_Subgroup2DBlockLoadTransformINTEL(i, i, i, i, base_address, width, height, pitch, coord, dst_pointer);
+;     __spirv_Subgroup2DBlockLoadTransposeINTEL(i, i, i, i, base_address, width, height, pitch, coord, dst_pointer);
+;     __spirv_Subgroup2DBlockPrefetchINTEL(i, i, i, i, base_address, width, height, pitch, coord);
+;     __spirv_Subgroup2DBlockStoreINTEL(i, i, i, i, src_pointer, dst_base_pointer, width, height, pitch, coord);
+;   }
+; clang -cc1 -cl-std=clc++2021 -triple spir64-unknown-unknown -emit-llvm -finclude-default-header source.cl -o tmp.ll
+
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_2d_block_io
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
