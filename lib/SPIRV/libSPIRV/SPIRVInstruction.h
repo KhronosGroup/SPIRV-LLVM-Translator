@@ -4384,7 +4384,7 @@ protected:
   std::vector<SPIRVId> CacheTy;
 };
 
-class SPIRVSubgroup2DBlockIOINTELInstBase : public SPIRVInstTemplateBase {
+class SPIRVSubgroup2DBlockIOINTELInst : public SPIRVInstTemplateBase {
 public:
   std::optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_2d_block_io;
@@ -4394,33 +4394,37 @@ public:
   }
 };
 
-class SPIRVSubgroup2DBlockLoadINTELInst : public SPIRVSubgroup2DBlockIOINTELInstBase {
-protected:
-  void validate() const override {
-    SPIRVInstruction::validate();
-    std::string InstName = "Subgroup2DBlockLoadINTEL";
-    SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
-
-    SPVErrLog.checkError(
-        this->isOperandLiteral(0), SPIRVEC_InvalidInstruction,
-        InstName + "\nElement Size must be a constant instructions with scalar 32-bit integer type\n");
-    SPVErrLog.checkError(
-        this->isOperandLiteral(1), SPIRVEC_InvalidInstruction,
-        InstName + "\nBlock Width must be a constant instructions with scalar 32-bit integer type\n");
-    SPVErrLog.checkError(
-        this->isOperandLiteral(2), SPIRVEC_InvalidInstruction,
-        InstName + "\nBlock Height must be a constant instructions with scalar 32-bit integer type\n");
-    SPVErrLog.checkError(
-        this->isOperandLiteral(3), SPIRVEC_InvalidInstruction,
-        InstName + "\nElement Size must be a constant instructions with scalar 32-bit integer type\n");
+class SPIRVSubgroup2DBlockLoadTransposeINTELInst : public SPIRVSubgroup2DBlockIOINTELInst {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::Subgroup2DBlockTransposeINTEL);
   }
 };
 
-#define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadINTELInst,                 \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+class SPIRVSubgroup2DBlockLoadTransformINTELInst : public SPIRVSubgroup2DBlockIOINTELInst {
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::Subgroup2DBlockTransformINTEL);
+  }
+};
+
+#define _SPIRV_OP(x, ...)                                                    \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockIOINTELInst,                 \
+                            internal::Op##x##INTEL, __VA_ARGS__>             \
       SPIRV##x##INTEL;
-_SPIRV_OP(Subgroup2DBlockLoad, true, 11)
+_SPIRV_OP(Subgroup2DBlockLoad, false, 11)
+_SPIRV_OP(Subgroup2DBlockPrefetch, false, 10)
+_SPIRV_OP(Subgroup2DBlockStore, false, 11)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x, ...)                                                    \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransposeINTELInst,      \
+                            internal::Op##x##INTEL, __VA_ARGS__>             \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoadTranspose, false, 11)
+#undef _SPIRV_OP
+#define _SPIRV_OP(x, ...)                                                    \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransformINTELInst,      \
+                            internal::Op##x##INTEL, __VA_ARGS__>             \
+      SPIRV##x##INTEL;
+_SPIRV_OP(Subgroup2DBlockLoadTransform, false, 11)
 #undef _SPIRV_OP
 
 } // namespace SPIRV
