@@ -4254,15 +4254,34 @@ public:
 
   void validate() const override {
     SPIRVInstruction::validate();
-    assert(getValueType(PtrTy)->isTypePointer());
-    assert(getValueType(PtrTy)->getPointerStorageClass() ==
-           StorageClassCrossWorkgroup);
-    assert(getValueType(NumBytes)->isTypeInt());
-    assert(RW.empty() || (RW.size() == 1 && getValueType(RW[0])->isTypeInt()));
-    assert(Locality.empty() ||
-           (Locality.size() == 1 && getValueType(Locality[0])->isTypeInt()));
-    assert(CacheTy.empty() ||
-           (CacheTy.size() == 1 && getValueType(CacheTy[0])->isTypeInt()));
+    SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
+    std::string InstName = "OpUntypedPrefetchKHR";
+    SPVErrLog.checkError(getValueType(PtrTy)->isTypePointer(),
+                         SPIRVEC_InvalidInstruction,
+                         InstName + "\nFirst argument must be a pointer\n");
+    SPVErrLog.checkError(
+        getValueType(PtrTy)->getPointerStorageClass() ==
+            StorageClassCrossWorkgroup,
+        SPIRVEC_InvalidInstruction,
+        InstName + "\nFirst argument must be a pointer in CrossWorkgroup "
+                   "storage class\n");
+    SPVErrLog.checkError(
+        getValueType(NumBytes)->isTypeInt(), SPIRVEC_InvalidInstruction,
+        InstName + "\nSecond argument (Num Bytes) must be an integer\n");
+    SPVErrLog.checkError(
+        RW.empty() || (RW.size() == 1 && getValueType(RW[0])->isTypeInt()),
+        SPIRVEC_InvalidInstruction,
+        InstName + "\nThird argument (RW) must be an integer\n");
+    SPVErrLog.checkError(
+        Locality.empty() ||
+            (Locality.size() == 1 && getValueType(Locality[0])->isTypeInt()),
+        SPIRVEC_InvalidInstruction,
+        InstName + "\nFourth argument (Locality) must be an integer\n");
+    SPVErrLog.checkError(
+        CacheTy.empty() ||
+            (CacheTy.size() == 1 && getValueType(CacheTy[0])->isTypeInt()),
+        SPIRVEC_InvalidInstruction,
+        InstName + "\nFifth argument (Cache Type) must be an integer\n");
   }
 
   void setWordCount(SPIRVWord TheWordCount) override {
