@@ -61,7 +61,7 @@
 ; llvm-spirv tmp.bc --spirv-ext=+all,-SPV_KHR_untyped_pointers -o tmp.spv
 ; spirv-dis tmp.spv -o llvm-spirv/test/GroupAndSubgroupInstructions.spvasm
 
-; REQUIRES: spirv-as
+; REQUIRES: spirv-as, spirv-val
 ; RUN: spirv-as %s --target-env spv1.3 -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=CL1.2 -o %t.bc

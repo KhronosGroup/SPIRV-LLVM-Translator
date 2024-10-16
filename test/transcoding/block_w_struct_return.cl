@@ -1,5 +1,6 @@
 // RUN: %clang_cc1 -triple spir -cl-std=cl2.0 -disable-llvm-passes -fdeclare-opencl-builtins -finclude-default-header %s -emit-llvm-bc -o %t.bc
 
+// REQUIRES: spirv-val
 // RUN: llvm-spirv --spirv-max-version=1.1 %t.bc -spirv-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV1_1,CHECK-SPIRV
 // RUN: llvm-spirv --spirv-max-version=1.1 %t.bc -o %t.spirv1.1.spv
 // RUN: spirv-val --target-env spv1.1 %t.spirv1.1.spv

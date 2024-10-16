@@ -21,6 +21,7 @@
 
 1 FunctionEnd
 
+; REQUIRES: spirv-val
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: spirv-val %t.spv
 ; Reverse translation shouldn't crash:

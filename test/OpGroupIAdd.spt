@@ -30,6 +30,7 @@
 ; to _Z21work_group_reduce_addj, instead.  Remove this test and update
 ; test/transcoding/group_ops.cl when fixing this.
 ; XFAIL: *
+; REQUIRES: spirv-val
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc

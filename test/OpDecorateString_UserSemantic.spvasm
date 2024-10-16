@@ -1,4 +1,4 @@
-; REQUIRES: spirv-as
+; REQUIRES: spirv-as, spirv-val
 ; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s

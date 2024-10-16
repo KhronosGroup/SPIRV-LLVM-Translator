@@ -1,4 +1,4 @@
-; REQUIRES: spirv-as
+; REQUIRES: spirv-as, spirv-val
 ; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o - | llvm-dis | FileCheck --check-prefix=CHECK-OCL %s

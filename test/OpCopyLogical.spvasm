@@ -1,6 +1,6 @@
 ; Check support of OpCopyLogical instruction that was added in SPIR-V 1.4
 
-; REQUIRES: spirv-as
+; REQUIRES: spirv-as, spirv-val
 ; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc

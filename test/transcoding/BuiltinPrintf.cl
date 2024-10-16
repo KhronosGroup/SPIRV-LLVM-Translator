@@ -1,5 +1,6 @@
 // Ensure __builtin_printf is translated to a SPIRV printf instruction
 
+// REQUIRES: spirv-val
 // RUN: %clang_cc1 -triple spir-unknown-unknown -emit-llvm-bc %s -o %t.bc
 // RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.bc -o %t.spv
