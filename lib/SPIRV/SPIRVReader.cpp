@@ -2476,7 +2476,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     switch (ExtInst->getExtSetKind()) {
     case SPIRVEIS_OpenCL: {
       auto *V = mapValue(BV, transOCLBuiltinFromExtInst(ExtInst, BB));
-      applyFPFastMathModeDecorations(BV, static_cast<Instruction*>(V));
+      applyFPFastMathModeDecorations(BV, static_cast<Instruction *>(V));
       return V;
     }
     case SPIRVEIS_Debug:

@@ -3068,16 +3068,17 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       }
       // Handle nofpclass attribute. Nothing to do if fast math flag is already
       // set.
-      if ((BV->isExtInst() && static_cast<SPIRVExtInst *>(
-              BV)->getExtSetKind() == SPIRVEIS_OpenCL) &&
+      if ((BV->isExtInst() &&
+           static_cast<SPIRVExtInst *>(BV)->getExtSetKind() ==
+               SPIRVEIS_OpenCL) &&
           BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6) &&
           !(M & FPFastMathModeFastMask)) {
         auto *F = cast<CallInst>(V)->getCalledFunction();
         auto FAttrs = F->getAttributes();
         AttributeSet RetAttrs = FAttrs.getRetAttrs();
         if (RetAttrs.hasAttribute(Attribute::NoFPClass)) {
-          FPClassTest RetTest = RetAttrs.getAttribute(
-              Attribute::NoFPClass).getNoFPClass();
+          FPClassTest RetTest =
+              RetAttrs.getAttribute(Attribute::NoFPClass).getNoFPClass();
           AttributeSet RetAttrs = FAttrs.getRetAttrs();
           // Only Nan and Inf tests are representable in SPIR-V now.
           bool ToAddNoNan = RetTest & fcNan;
