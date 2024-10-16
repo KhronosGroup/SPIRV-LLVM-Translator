@@ -85,7 +85,7 @@ std::vector<std::string> TranslatorOpts::getAllowedSPIRVExtensionNames(
       continue;
     std::string ExtName;
     SPIRVMap<ExtensionID, std::string>::find(It.first, &ExtName);
-    AllowExtNames.push_back(ExtName);
+    AllowExtNames.push_back(std::move(ExtName));
   }
   return AllowExtNames;
 }
