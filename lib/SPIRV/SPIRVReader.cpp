@@ -3335,6 +3335,21 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   transOCLBuiltinFromInstPreproc(BI, RetTy, Ops);
   std::vector<Type *> ArgTys =
       transTypeVector(SPIRVInstruction::getOperandTypes(Ops), true);
+
+  // Special handling for "truly" untyped pointers to preserve correct
+  // bultin mangling of atomic operations.
+  auto Ptr = findFirstPtrType(ArgTys);
+  if (Ptr < ArgTys.size() &&
+      BI->getValueType(Ops[Ptr]->getId())->isTypeUntypedPointerKHR()) {
+    auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
+    if (AI) {
+      ArgTys[Ptr] = TypedPointerType::get(
+          transType(AI->getSematicType()),
+          SPIRSPIRVAddrSpaceMap::rmap(
+              BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+    }
+  }
+
   for (auto &I : ArgTys) {
     if (isa<FunctionType>(I)) {
       I = TypedPointerType::get(I, SPIRAS_Private);
