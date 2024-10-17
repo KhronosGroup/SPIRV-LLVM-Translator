@@ -1,4 +1,4 @@
-; REQUIRES: spirv-as
+; REQUIRES: spirv-as, spirv-val
 ; RUN: spirv-as --target-env spv1.6 -o %t.spv %s
 ; RUN: spirv-val %t.spv
 

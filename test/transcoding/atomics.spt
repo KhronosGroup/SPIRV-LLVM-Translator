@@ -50,7 +50,7 @@
 
 1 FunctionEnd 
 
-
+; REQUIRES: spirv-val
 ; RUN: llvm-spirv %s -to-binary -o %t1.spv
 ; RUN: spirv-val %t1.spv
 ; RUN: llvm-spirv -r %t1.spv -o %t1.bc --spirv-target-env="CL1.2"

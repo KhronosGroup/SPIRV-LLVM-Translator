@@ -39,6 +39,7 @@
 
 1 FunctionEnd
 
+; REQUIRES: spirv-val
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: spirv-val %t.spv
 ; The purpose of this test is to check that SPIR-V file that uses extensions is

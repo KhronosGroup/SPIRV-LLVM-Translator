@@ -1,3 +1,4 @@
+// REQUIRES: spirv-val
 // RUN: %clang_cc1 %s -triple spir -cl-std=CL1.2 -fdeclare-opencl-builtins -finclude-default-header -emit-llvm-bc -o %t.bc
 // RUN: llvm-spirv %t.bc -o %t.spv
 // RUN: spirv-val %t.spv
