@@ -43,3 +43,13 @@ _SPIRV_OP_INTERNAL(ConvertHandleToSamplerINTEL,
                    internal::ConvertHandleToSamplerINTEL)
 _SPIRV_OP_INTERNAL(ConvertHandleToSampledImageINTEL,
                    internal::ConvertHandleToSampledImageINTEL)
+_SPIRV_OP_INTERNAL(Subgroup2DBlockLoadINTEL,
+                   internal::Subgroup2DBlockLoadINTEL)
+_SPIRV_OP_INTERNAL(Subgroup2DBlockLoadTransposeINTEL,
+                   internal::Subgroup2DBlockLoadTransposeINTEL)
+_SPIRV_OP_INTERNAL(Subgroup2DBlockLoadTransformINTEL,
+                   internal::Subgroup2DBlockLoadTransformINTEL)
+_SPIRV_OP_INTERNAL(Subgroup2DBlockPrefetchINTEL,
+                   internal::Subgroup2DBlockPrefetchINTEL)
+_SPIRV_OP_INTERNAL(Subgroup2DBlockStoreINTEL,
+                   internal::Subgroup2DBlockStoreINTEL)
