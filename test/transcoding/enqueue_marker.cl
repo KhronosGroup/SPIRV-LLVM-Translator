@@ -1,3 +1,4 @@
+// REQUIRES: spirv-val
 // RUN: %clang_cc1 -triple spir-unknown-unknown -fdeclare-opencl-builtins -finclude-default-header -O0 -cl-std=CL2.0 -emit-llvm-bc %s -o %t.bc
 // RUN: llvm-spirv %t.bc -spirv-text -o %t.spv.txt
 // RUN: FileCheck < %t.spv.txt %s --check-prefix=CHECK-SPIRV

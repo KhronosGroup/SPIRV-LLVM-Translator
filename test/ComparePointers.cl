@@ -8,6 +8,7 @@ kernel void test(int global *in, int global *in2) {
   if (in < in2)
     return;
 }
+// REQUIRES: spirv-val
 // RUN: %clang_cc1 -triple spir64 -x cl -cl-std=CL2.0 -O0 -emit-llvm-bc %s -o %t.bc
 // RUN: llvm-spirv %t.bc --spirv-max-version=1.3 -o %t.spv
 // RUN: spirv-val %t.spv
