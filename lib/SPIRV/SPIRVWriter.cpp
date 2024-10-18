@@ -3084,8 +3084,11 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
           bool ToAddNoNan = RetTest & fcNan;
           bool ToAddNoInf = RetTest & fcInf;
           if (ToAddNoNan || ToAddNoInf) {
-            const size_t NumParams = F->getFunctionType()->getNumParams();
+            const auto *FT = F->getFunctionType();
+            const size_t NumParams = FT->getNumParams();
             for (size_t I = 0; I != NumParams; ++I) {
+              if (!FT->getParamType(I)->isFloatTy())
+                continue;
               if (!F->hasParamAttribute(I, Attribute::NoFPClass)) {
                 ToAddNoNan = false;
                 ToAddNoInf = false;
