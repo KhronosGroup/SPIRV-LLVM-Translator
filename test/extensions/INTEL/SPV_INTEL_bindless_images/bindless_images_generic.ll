@@ -2,8 +2,8 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_bindless_images
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
-; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: llvm-spirv %t.spv -o %t.rev.bc -r -opaque-pointers=0 --spirv-target-env=SPV-IR
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll -opaque-pointers=0
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
@@ -24,8 +24,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: ConvertHandleToImageINTEL [[#IntImgTy]] [[#]] [[#Input]]
 ; CHECK-SPIRV: ConvertHandleToSamplerINTEL [[#SamplerTy]] [[#]] [[#Const42]]
 
-; CHECK-LLVM: call spir_func target("spirv.Image", i64, 2, 0, 0, 0, 0, 0, 0) @_Z76__spirv_ConvertHandleToImageINTEL_RPU3AS133__spirv_Image__long_2_0_0_0_0_0_0m(i64 %{{.*}})
-; CHECK-LLVM: call spir_func target("spirv.Sampler") @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
+; CHECK-LLVM: call spir_func %spirv.Image._long_2_0_0_0_0_0_0 addrspace(1)* @_Z76__spirv_ConvertHandleToImageINTEL_RPU3AS133__spirv_Image__long_2_0_0_0_0_0_0m(i64 %{{.*}})
+; CHECK-LLVM: call spir_func %spirv.Sampler addrspace(2)* @_Z35__spirv_ConvertHandleToSamplerINTELm(i64 42)
 
 define spir_func void @foo(i64 %in) {
   %img = call spir_func target("spirv.Image", i64, 2, 0, 0, 0, 0, 0, 0) @_Z33__spirv_ConvertHandleToImageINTELl(i64 %in)
