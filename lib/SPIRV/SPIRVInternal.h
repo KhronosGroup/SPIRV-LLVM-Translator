@@ -559,7 +559,7 @@ inline unsigned findFirstPtr(const Container &Args) {
 
 // Utility function to check if a type is a TypedPointerType
 inline bool isTypedPointerType(llvm::Type *Ty) {
-  return llvm::dyn_cast<llvm::TypedPointerType>(Ty) != nullptr;
+  return llvm::isa<llvm::TypedPointerType>(Ty);
 }
 
 template <typename Container>

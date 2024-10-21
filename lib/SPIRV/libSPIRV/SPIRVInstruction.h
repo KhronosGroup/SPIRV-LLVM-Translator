@@ -2954,7 +2954,7 @@ public:
   // The interpreted data type for untyped pointers is specified by the Result
   // Type if it exists, or from the type of the object being stored in other
   // case.
-  SPIRVType *getSematicType() {
+  SPIRVType *getSemanticType() {
     switch (OpCode) {
     case OpAtomicStore:
       // Get type of Value operand
