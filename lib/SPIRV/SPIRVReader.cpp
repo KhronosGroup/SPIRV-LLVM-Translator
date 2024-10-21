@@ -3341,8 +3341,8 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   auto Ptr = findFirstPtrType(ArgTys);
   if (Ptr < ArgTys.size() &&
       BI->getValueType(Ops[Ptr]->getId())->isTypeUntypedPointerKHR()) {
-    auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
-    if (AI) {
+    if (isAtomicOpCodeUntypedPtrSupported(BI->getOpCode())) {
+      auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
       ArgTys[Ptr] = TypedPointerType::get(
           transType(AI->getSemanticType()),
           SPIRSPIRVAddrSpaceMap::rmap(
