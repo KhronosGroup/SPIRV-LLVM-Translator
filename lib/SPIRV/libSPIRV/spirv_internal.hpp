@@ -82,6 +82,8 @@ enum InternalOp {
   IOpJointMatrixGetElementCoordINTEL = 6440,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
   IOpCooperativeMatrixPrefetchINTEL = 6449,
+  IOpConvertHandleToImageINTEL = 6529,
+  IOpConvertHandleToSamplerINTEL = 6530,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -118,7 +120,8 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilityCacheControlsINTEL = 6441,
-  ICapRegisterLimitsINTEL = 6460
+  ICapRegisterLimitsINTEL = 6460,
+  ICapabilityBindlessImagesINTEL = 6528
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -219,6 +222,10 @@ _SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
 _SPIRV_OP(Op, RoundFToTF32INTEL)
 
 _SPIRV_OP(Capability, CacheControlsINTEL)
+
+_SPIRV_OP(Capability, BindlessImagesINTEL)
+_SPIRV_OP(Op, ConvertHandleToImageINTEL)
+_SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
