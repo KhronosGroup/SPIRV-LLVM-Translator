@@ -1814,38 +1814,38 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     return mapValue(BV, LI);
   }
 
-  case OpCopyMemory:
-  case OpCopyMemorySized: {
-    llvm::Value *Src = nullptr;
-    llvm::Value *Dst = nullptr;
-    llvm::Value *Size = nullptr;
-    SPIRVMemoryAccess *MA = nullptr;
-    if (OC == OpCopyMemory) {
-      auto *BC = static_cast<SPIRVCopyMemory *>(BV);
-      Src = transValue(BC->getSource(), F, BB);
-      Dst = transValue(BC->getTarget(), F, BB);
-      Type *EltTy =
-          transType(BC->getSource()->getType()->getPointerElementType());
-      Size = ConstantExpr::getSizeOf(EltTy);
-      MA = static_cast<SPIRVMemoryAccess *>(BC);
-    } else {
-      assert(OC == OpCopyMemorySized);
-      auto *BC = static_cast<SPIRVCopyMemorySized *>(BV);
-      Src = transValue(BC->getSource(), F, BB);
-      Dst = transValue(BC->getTarget(), F, BB);
-      Size = transValue(BC->getSize(), F, BB);
-      MA = static_cast<SPIRVMemoryAccess *>(BC);
-    }
-    assert(Src);
-    assert(Dst);
-    assert(Size);
-    assert(MA);
-    MaybeAlign Align(MA->getAlignment());
+  case OpCopyMemory: {
+    auto *BC = static_cast<SPIRVCopyMemory *>(BV);
+    llvm::Value *Dst = transValue(BC->getTarget(), F, BB);
+    MaybeAlign Align(BC->getAlignment());
     MaybeAlign SrcAlign =
-        MA->getSrcAlignment() ? MaybeAlign(MA->getSrcAlignment()) : Align;
-    bool IsVolatile = MA->SPIRVMemoryAccess::isVolatile();
-
+        BC->getSrcAlignment() ? MaybeAlign(BC->getSrcAlignment()) : Align;
+    Type *EltTy =
+        transType(BC->getSource()->getType()->getPointerElementType());
+    uint64_t Size =
+        M->getDataLayout().getTypeSizeInBits(EltTy).getFixedValue() / 8;
+    bool IsVolatile = BC->SPIRVMemoryAccess::isVolatile();
     IRBuilder<> Builder(BB);
+
+    llvm::Value *Src = transValue(BC->getSource(), F, BB);
+    CallInst *CI =
+        Builder.CreateMemCpy(Dst, Align, Src, SrcAlign, Size, IsVolatile);
+    if (isFuncNoUnwind())
+      CI->getFunction()->addFnAttr(Attribute::NoUnwind);
+    return mapValue(BV, CI);
+  }
+
+  case OpCopyMemorySized: {
+    SPIRVCopyMemorySized *BC = static_cast<SPIRVCopyMemorySized *>(BV);
+    llvm::Value *Dst = transValue(BC->getTarget(), F, BB);
+    MaybeAlign Align(BC->getAlignment());
+    MaybeAlign SrcAlign =
+        BC->getSrcAlignment() ? MaybeAlign(BC->getSrcAlignment()) : Align;
+    llvm::Value *Size = transValue(BC->getSize(), F, BB);
+    bool IsVolatile = BC->SPIRVMemoryAccess::isVolatile();
+    IRBuilder<> Builder(BB);
+
+    llvm::Value *Src = transValue(BC->getSource(), F, BB);
     CallInst *CI =
         Builder.CreateMemCpy(Dst, Align, Src, SrcAlign, Size, IsVolatile);
     if (isFuncNoUnwind())
