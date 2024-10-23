@@ -26,6 +26,8 @@
 ;   intel_sub_group_block_read(image, coord);
 ;   intel_sub_group_block_write(image, coord, c);
 ; }
+
+; REQUIRES: spirv-dis
 ; clang -cc1 -O2 -triple spir -cl-std=cl2.0 -finclude-default-header -cl-ext=+all source.cl -emit-llvm-bc -o tmp.bc
 ; llvm-spirv tmp.bc --spirv-ext=+all -o tmp.spv
 ; spirv-dis tmp.spv -o llvm-spirv/test/GroupAndSubgroupInstructions.spvasm
