@@ -1822,8 +1822,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         BC->getSrcAlignment() ? MaybeAlign(BC->getSrcAlignment()) : Align;
     Type *EltTy =
         transType(BC->getSource()->getType()->getPointerElementType());
-    uint64_t Size =
-        M->getDataLayout().getTypeSizeInBits(EltTy).getFixedValue() / 8;
+    uint64_t Size = M->getDataLayout().getTypeStoreSize(EltTy).getFixedValue();
     bool IsVolatile = BC->SPIRVMemoryAccess::isVolatile();
     IRBuilder<> Builder(BB);
 
