@@ -1335,6 +1335,21 @@ public:
     } else if (NameRef.starts_with("bitfield_extract_signed") ||
                NameRef.starts_with("bitfield_extract_unsigned")) {
       addUnsignedArgs(1, 2);
+    } else if (NameRef.starts_with("dot_unpacked_") ||
+               NameRef.starts_with("dot_acc_sat_unpacked_")) {
+      if (NameRef.ends_with("_uu")) {
+        addUnsignedArgs(0, 1);
+        if (NameRef.starts_with("dot_acc_sat_unpacked_"))
+          addUnsignedArg(2);
+      }
+      else if (NameRef.ends_with("_su") || NameRef.ends_with("_su"))
+        addUnsignedArg(1);
+      NameRef = NameRef.drop_back(std::string("_unpacked_uu").length());
+    } else if (NameRef.starts_with("dot_4x8packed_") ||
+               NameRef.starts_with("dot_acc_sat_4x8packed_")) {
+        addUnsignedArgs(0, 1);
+      if (NameRef == "dot_acc_sat_4x8packed_uu_uint")
+        addUnsignedArg(2);
     }
 
     // Store the final version of a function name
