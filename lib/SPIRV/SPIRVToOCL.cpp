@@ -224,6 +224,12 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVBFloat16Conversions(&CI, OC);
     return;
   }
+  if (OC == OpSDotKHR || OC == OpUDotKHR || OC == OpSUDotKHR ||
+      OC == OpSDotAccSatKHR || OC == OpUDotAccSatKHR ||
+      OC == OpSUDotAccSatKHR) {
+    visitCallSPIRVDot(&CI, OC, DemangledName);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 }
@@ -933,6 +939,60 @@ void SPIRVToOCLBase::visitCallSPIRVBFloat16Conversions(CallInst *CI, Op OC) {
     break; // do nothing
   }
   mutateCallInst(CI, Name);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVDot(CallInst *CI, Op OC,
+                                       StringRef DemangledName) {
+  // OpenCL only supports integer dot product builtins that have return types
+  // of int and uint.
+  if (!(DemangledName.contains("_Rint") || DemangledName.contains("_Ruint")))
+    return;
+
+  bool IsPacked = !CI->getOperand(0)->getType()->isVectorTy();
+  std::stringstream Name;
+  switch (OC) {
+  case OpSDotKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::Dot4x8PackedPrefix << "ss_int";
+    else
+      Name << kOCLBuiltinName::Dot << "_unpacked_ss";
+    break;
+  case OpUDotKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::Dot4x8PackedPrefix << "uu_uint";
+    else
+      Name << kOCLBuiltinName::Dot << "_unpacked_uu";
+    break;
+  case OpSUDotKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::Dot4x8PackedPrefix << "su_int";
+    else
+      Name << kOCLBuiltinName::Dot << "_unpacked_su";
+    break;
+  case OpSDotAccSatKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "ss_int";
+    else
+      Name << kOCLBuiltinName::DotAccSat << "_unpacked_ss";
+    break;
+  case OpUDotAccSatKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "uu_uint";
+    else
+      Name << kOCLBuiltinName::DotAccSat << "_unpacked_uu";
+    break;
+  case OpSUDotAccSatKHR:
+    if (IsPacked)
+      Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "su_int";
+    else
+      Name << kOCLBuiltinName::DotAccSat << "_unpacked_su";
+    break;
+  default:
+    break; // do nothing
+  }
+  auto Mutator = mutateCallInst(CI, Name.str());
+  if (IsPacked)
+    Mutator.removeArg(CI->arg_size() - 1);
 }
 
 void SPIRVToOCLBase::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {
