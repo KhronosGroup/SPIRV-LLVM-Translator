@@ -3891,6 +3891,13 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       Builder.CreateCall(AnnotationFn, Args);
     }
   } else if (auto *GV = dyn_cast<GlobalVariable>(V)) {
+    // Do not add annotations for builtin variables if they will be translated
+    // to function calls.
+    SPIRVBuiltinVariableKind Kind;
+    if (BM->getBuiltinFormat() == BuiltinFormat::Function &&
+        isSPIRVBuiltinVariable(GV, &Kind))
+      return;
+
     std::vector<SmallString<256>> AnnotStrVec;
     generateIntelFPGAAnnotation(BV, AnnotStrVec);
 
