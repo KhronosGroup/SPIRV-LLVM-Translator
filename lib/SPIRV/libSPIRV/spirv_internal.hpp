@@ -78,6 +78,8 @@ enum InternalOp {
   IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
+  IOpConvertHandleToImageINTEL = 6529,
+  IOpConvertHandleToSamplerINTEL = 6530,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -107,7 +109,8 @@ enum InternalCapability {
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityCacheControlsINTEL = 6441,
-  ICapRegisterLimitsINTEL = 6460
+  ICapRegisterLimitsINTEL = 6460,
+  ICapabilityBindlessImagesINTEL = 6528
 };
 
 enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
@@ -187,6 +190,10 @@ _SPIRV_OP(Capability, TensorFloat32RoundingINTEL)
 _SPIRV_OP(Op, RoundFToTF32INTEL)
 
 _SPIRV_OP(Capability, CacheControlsINTEL)
+
+_SPIRV_OP(Capability, BindlessImagesINTEL)
+_SPIRV_OP(Op, ConvertHandleToImageINTEL)
+_SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =

@@ -3332,6 +3332,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case internal::OpJointMatrixLoadINTEL:
   case OpCooperativeMatrixLoadKHR:
   case internal::OpCooperativeMatrixLoadCheckedINTEL:
+  case internal::OpConvertHandleToImageINTEL:
     AddRetTypePostfix = true;
     break;
   default: {
