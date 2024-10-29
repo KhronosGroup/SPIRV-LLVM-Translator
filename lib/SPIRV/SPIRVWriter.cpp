@@ -2243,17 +2243,15 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
           auto *FrexpResult = transValue(RV, BB);
           SPIRVValue *IntFromFrexpResult =
               static_cast<SPIRVExtInst *>(FrexpResult)->getArgValues()[1];
+          SPIRVType *LoadTy = nullptr;
 
-          if (BM->isAllowedToUseExtension(
-                  ExtensionID::SPV_KHR_untyped_pointers) &&
-              IntFromFrexpResult->isUntypedVariable()) {
+          if (IntFromFrexpResult->isUntypedVariable()) {
             auto *BV =
                 static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult);
-            IntFromFrexpResult =
-                BM->addLoadInst(IntFromFrexpResult, {}, BB, BV->getDataType());
-          } else {
-            IntFromFrexpResult = BM->addLoadInst(IntFromFrexpResult, {}, BB);
+            LoadTy = BV->getDataType();
           }
+          IntFromFrexpResult =
+              BM->addLoadInst(IntFromFrexpResult, {}, BB, LoadTy);
 
           std::vector<SPIRVId> Operands = {FrexpResult->getId(),
                                            IntFromFrexpResult->getId()};
@@ -2472,16 +2470,13 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         // Idx = 1
         SPIRVValue *IntFromFrexpResult =
             static_cast<SPIRVExtInst *>(Val)->getArgValues()[1];
-
-        if (BM->isAllowedToUseExtension(
-                ExtensionID::SPV_KHR_untyped_pointers) &&
-            IntFromFrexpResult->isUntypedVariable()) {
+        SPIRVType *LoadTy = nullptr;
+        if (IntFromFrexpResult->isUntypedVariable()) {
           auto *BV = static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult);
-          IntFromFrexpResult =
-              BM->addLoadInst(IntFromFrexpResult, {}, BB, BV->getDataType());
-        } else {
-          IntFromFrexpResult = BM->addLoadInst(IntFromFrexpResult, {}, BB);
+          LoadTy = BV->getDataType();
         }
+        IntFromFrexpResult =
+            BM->addLoadInst(IntFromFrexpResult, {}, BB, LoadTy);
         return mapValue(V, IntFromFrexpResult);
       }
     }
