@@ -224,9 +224,8 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVBFloat16Conversions(&CI, OC);
     return;
   }
-  if (OC == OpSDotKHR || OC == OpUDotKHR || OC == OpSUDotKHR ||
-      OC == OpSDotAccSatKHR || OC == OpUDotAccSatKHR ||
-      OC == OpSUDotAccSatKHR) {
+  if (OC == OpSDot || OC == OpUDot || OC == OpSUDot || OC == OpSDotAccSat ||
+      OC == OpUDotAccSat || OC == OpSUDotAccSat) {
     visitCallSPIRVDot(&CI, OC, DemangledName);
     return;
   }
@@ -951,37 +950,37 @@ void SPIRVToOCLBase::visitCallSPIRVDot(CallInst *CI, Op OC,
   bool IsPacked = !CI->getOperand(0)->getType()->isVectorTy();
   std::stringstream Name;
   switch (OC) {
-  case OpSDotKHR:
+  case OpSDot:
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "ss_int";
     else
       Name << kOCLBuiltinName::Dot << "_unpacked_ss";
     break;
-  case OpUDotKHR:
+  case OpUDot:
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "uu_uint";
     else
       Name << kOCLBuiltinName::Dot << "_unpacked_uu";
     break;
-  case OpSUDotKHR:
+  case OpSUDot:
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "su_int";
     else
       Name << kOCLBuiltinName::Dot << "_unpacked_su";
     break;
-  case OpSDotAccSatKHR:
+  case OpSDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "ss_int";
     else
       Name << kOCLBuiltinName::DotAccSat << "_unpacked_ss";
     break;
-  case OpUDotAccSatKHR:
+  case OpUDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "uu_uint";
     else
       Name << kOCLBuiltinName::DotAccSat << "_unpacked_uu";
     break;
-  case OpSUDotAccSatKHR:
+  case OpSUDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "su_int";
     else
