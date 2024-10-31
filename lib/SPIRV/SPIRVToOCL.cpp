@@ -954,37 +954,38 @@ void SPIRVToOCLBase::visitCallSPIRVDot(CallInst *CI, Op OC,
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "ss_int";
     else
-      Name << kOCLBuiltinName::Dot << "_unpacked_ss";
+      // Add an extra suffix to help determine signed/unsigned arguments
+      Name << kOCLBuiltinName::Dot << "_ss";
     break;
   case OpUDot:
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "uu_uint";
     else
-      Name << kOCLBuiltinName::Dot << "_unpacked_uu";
+      Name << kOCLBuiltinName::Dot << "_uu";
     break;
   case OpSUDot:
     if (IsPacked)
       Name << kOCLBuiltinName::Dot4x8PackedPrefix << "su_int";
     else
-      Name << kOCLBuiltinName::Dot << "_unpacked_su";
+      Name << kOCLBuiltinName::Dot << "_su";
     break;
   case OpSDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "ss_int";
     else
-      Name << kOCLBuiltinName::DotAccSat << "_unpacked_ss";
+      Name << kOCLBuiltinName::DotAccSat << "_ss";
     break;
   case OpUDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "uu_uint";
     else
-      Name << kOCLBuiltinName::DotAccSat << "_unpacked_uu";
+      Name << kOCLBuiltinName::DotAccSat << "_uu";
     break;
   case OpSUDotAccSat:
     if (IsPacked)
       Name << kOCLBuiltinName::DotAccSat4x8PackedPrefix << "su_int";
     else
-      Name << kOCLBuiltinName::DotAccSat << "_unpacked_su";
+      Name << kOCLBuiltinName::DotAccSat << "_su";
     break;
   default:
     break; // do nothing
