@@ -755,7 +755,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
     return transPointerType(ET, SPIRAS_Private);
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
       !(ET->isTypeArray() || ET->isTypeVector() || ET->isTypeStruct() ||
-        ET->isTypeImage() || ET->isTypeSampler() || ET->isTypePipe())) {
+        ET->isTypeImage() || ET->isTypeSampler() || ET->isTypePipe() ||
+        ET->isTypeEvent())) {
     TranslatedTy = BM->addUntypedPointerKHRType(
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(AddrSpc)));
   } else {
@@ -2506,7 +2507,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
   if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(V)) {
     auto *PointerOperand = GEP->getPointerOperand();
-    std::vector<SPIRVWord> Ops = {transValue(PointerOperand, BB)->getId()};
+    auto *SPVPointerOperand = transValue(PointerOperand, BB);
+    std::vector<SPIRVWord> Ops = {SPVPointerOperand->getId()};
     for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
       Ops.push_back(transValue(GEP->getOperand(I + 1), BB)->getId());
 
@@ -2556,7 +2558,15 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         PtrTy = transType(TPT->getElementType());
         Ops = getVec(PtrTy->getId(), Ops);
       }
+    } else if (SPVPointerOperand->getType()->isTypeUntypedPointerKHR()) {
+      // TranslatedTy defines whether ptr access chain instruction would be
+      // typed or untyped.
+      // Ensure that we don't create typed ptr access chain instruction with
+      // untyped pointer as an operand.
+      Ops[0] = BM->addUnaryInst(OpBitcast, TranslatedTy, SPVPointerOperand, BB)
+                   ->getId();
     }
+
     return mapValue(
         V, BM->addPtrAccessChainInst(TranslatedTy, Ops, BB, GEP->isInBounds()));
   }
@@ -6383,6 +6393,18 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   } break;
   case OpGroupAsyncCopy: {
     auto BArgs = transValue(getArguments(CI), BB);
+    // Check that type of Source and Destination are the same, bitcast if not
+    // (this mostly needed for untyped pointers)
+    SPIRVType *SrcTy = BArgs[1]->getType();
+    SPIRVType *DstTy = BArgs[2]->getType();
+    if (SrcTy->getPointerElementType() != DstTy->getPointerElementType()) {
+      llvm::Type *Ty = Scavenger->getScavengedType(CI->getOperand(2));
+      if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
+        SPIRVType *PtrTy =
+            transPointerType(TPT->getElementType(), TPT->getAddressSpace());
+        BArgs[2] = BM->addUnaryInst(OpBitcast, PtrTy, BArgs[2], BB);
+      }
+    }
     return BM->addAsyncGroupCopy(BArgs[0], BArgs[1], BArgs[2], BArgs[3],
                                  BArgs[4], BArgs[5], BB);
   } break;
