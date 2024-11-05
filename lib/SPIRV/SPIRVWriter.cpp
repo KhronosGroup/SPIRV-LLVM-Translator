@@ -754,8 +754,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
       !BM->shouldEmitFunctionPtrAddrSpace())
     return transPointerType(ET, SPIRAS_Private);
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
-      !(ET->isTypeArray() || ET->isTypeVector() || ET->isTypeStruct() ||
-        ET->isSPIRVOpaqueType())) {
+      !(ET->isTypeArray() || ET->isTypeVector() || ET->isSPIRVOpaqueType())) {
     TranslatedTy = BM->addUntypedPointerKHRType(
         SPIRSPIRVAddrSpaceMap::map(static_cast<SPIRAddressSpace>(AddrSpc)));
   } else {
@@ -2331,11 +2330,17 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                       BM->addInstTemplate(OpVariableLengthArrayINTEL,
                                           {Length->getId()}, BB, TranslatedTy));
     }
-    SPIRVType *VarTy =
-        V->getType()->getPointerAddressSpace() == SPIRAS_Generic
-            ? BM->addPointerType(StorageClassFunction,
-                                 TranslatedTy->getPointerElementType())
-            : TranslatedTy;
+    SPIRVType *VarTy = TranslatedTy;
+    if (V->getType()->getPointerAddressSpace() == SPIRAS_Generic) {
+      // TODO: refactor addPointerType and addUntypedPointerKHRType in one
+      // method if possible.
+      if (TranslatedTy->isTypeUntypedPointerKHR())
+        VarTy = BM->addUntypedPointerKHRType(StorageClassFunction);
+      else
+        VarTy = BM->addPointerType(StorageClassFunction,
+                                   TranslatedTy->getPointerElementType());
+    }
+
     SPIRVValue *Var = BM->addVariable(
         VarTy,
         VarTy->isTypeUntypedPointerKHR() ? transType(Alc->getAllocatedType())
@@ -2506,7 +2511,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
   if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(V)) {
     auto *PointerOperand = GEP->getPointerOperand();
-    std::vector<SPIRVWord> Ops = {transValue(PointerOperand, BB)->getId()};
+    auto *SPVPointerOperand = transValue(PointerOperand, BB);
+    std::vector<SPIRVWord> Ops = {SPVPointerOperand->getId()};
     for (unsigned I = 0, E = GEP->getNumIndices(); I != E; ++I)
       Ops.push_back(transValue(GEP->getOperand(I + 1), BB)->getId());
 
@@ -2549,7 +2555,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // GEP can return a vector of pointers, in this case GEP will calculate
     // addresses for each pointer in the vector
     SPIRVType *TranslatedTy = transScavengedType(GEP);
-    if (TranslatedTy->isTypeUntypedPointerKHR()) {
+    if (TranslatedTy->isTypeUntypedPointerKHR() ||
+        SPVPointerOperand->getType()->isTypeUntypedPointerKHR()) {
       llvm::Type *Ty = Scavenger->getScavengedType(PointerOperand);
       SPIRVType *PtrTy = nullptr;
       if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
@@ -2557,6 +2564,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         Ops = getVec(PtrTy->getId(), Ops);
       }
     }
+    if (SPVPointerOperand->getType()->isTypeUntypedPointerKHR())
+      // Untyped pointer as an input operand implies we should use untyped
+      // access chain instructions. Replace return type to do that.
+      TranslatedTy = SPVPointerOperand->getType();
+
     return mapValue(
         V, BM->addPtrAccessChainInst(TranslatedTy, Ops, BB, GEP->isInBounds()));
   }
