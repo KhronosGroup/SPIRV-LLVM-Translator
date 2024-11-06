@@ -2163,22 +2163,22 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
   case OpCopyLogical: {
     SPIRVCopyLogical *CL = static_cast<SPIRVCopyLogical *>(BV);
+    IRBuilder<> Builder(BB);
 
     auto *SrcTy = transType(CL->getOperand()->getType());
-    auto *SrcAI = new AllocaInst(SrcTy, 0, "", BB);
-    new StoreInst(transValue(CL->getOperand(), F, BB), SrcAI, BB);
+    auto *SrcAI = Builder.CreateAlloca(SrcTy);
+    Builder.CreateStore(transValue(CL->getOperand(), F, BB), SrcAI);
 
     auto *DstTy = transType(CL->getType());
-    auto *DstAI = new AllocaInst(DstTy, 0, "", BB);
+    auto *DstAI = Builder.CreateAlloca(DstTy);
 
-    IRBuilder<> Builder(BB);
     uint64_t Size = M->getDataLayout().getTypeStoreSize(SrcTy).getFixedValue();
     assert(Size == M->getDataLayout().getTypeStoreSize(DstTy).getFixedValue() &&
            "Size mismatch in OpCopyLogical");
     Builder.CreateMemCpy(DstAI, DstAI->getAlign(), SrcAI, SrcAI->getAlign(),
                          Size);
 
-    auto *LI = new LoadInst(DstTy, DstAI, "", BB);
+    auto *LI = Builder.CreateLoad(DstTy, DstAI);
     return mapValue(BV, LI);
   }
 
