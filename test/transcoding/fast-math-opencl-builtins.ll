@@ -25,13 +25,14 @@ target triple = "spir64-unknown-unknown"
 
 declare dso_local spir_func noundef float @_Z16__spirv_ocl_fmaxff(float noundef, float noundef) local_unnamed_addr
 
-define weak_odr dso_local spir_kernel void @nofpclass_fast(i32 addrspace(1)* noundef align 4 %_arg_data, i32 addrspace(1)* noundef align 4 %_arg_dat1, i32 addrspace(1)* noundef align 4 %_arg_dat2) local_unnamed_addr  {
+define weak_odr dso_local spir_kernel void @nofpclass_fast(float addrspace(1)* noundef align 4 %_arg_data, float addrspace(1)* noundef align 4 %_arg_dat1, float addrspace(1)* noundef align 4 %_arg_dat2) local_unnamed_addr  {
 entry:
-  %0 = load i64, i64 addrspace(1)* @__spirv_BuiltInGlobalInvocationId, align 32
-  %arrayidx.i = getelementptr inbounds float, i32 addrspace(1)* %_arg_data, i64 %0
-  %arrayidx3.i = getelementptr inbounds float, i32 addrspace(1)* %_arg_dat1, i64 %0
-  %cmp.i = icmp ult i64 %0, 2147483648
-  %arrayidx5.i = getelementptr inbounds float, i32 addrspace(1)* %_arg_dat2, i64 %0
+  %0 = load <3 x i64>, <3 x i64> addrspace(1)* @__spirv_BuiltInGlobalInvocationId, align 32
+  %elem = extractelement <3 x i64> %0, i32 2
+  %arrayidx.i = getelementptr inbounds float, float addrspace(1)* %_arg_data, i64 %elem
+  %arrayidx3.i = getelementptr inbounds float, float addrspace(1)* %_arg_dat1, i64 %elem
+  %cmp.i = icmp ult i64 %elem, 2147483648
+  %arrayidx5.i = getelementptr inbounds float, float addrspace(1)* %_arg_dat2, i64 %elem
   %1 = load float, float addrspace(1)* %arrayidx3.i, align 4
   %2 = load float, float addrspace(1)* %arrayidx5.i, align 4
   %call.i.i = tail call fast spir_func noundef float @_Z16__spirv_ocl_fmaxff(float noundef %1, float noundef %2)
