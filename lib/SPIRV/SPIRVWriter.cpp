@@ -2747,7 +2747,8 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
         BV->setFPFastMathMode(M);
         if (Opcode == Instruction::FNeg || Opcode == Instruction::FCmp ||
             BV->isExtInst())
-          BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+          BM->setMinSPIRVVersion(
+              static_cast<SPIRVWord>(VersionNumber::SPIRV_1_6));
       }
     }
   }
