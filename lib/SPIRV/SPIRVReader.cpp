@@ -3062,12 +3062,15 @@ static void validatePhiPredecessors(Function *F) {
     for (PHINode &Phi : BB.phis()) {
       SmallVector<Value *> Vs;
       SmallVector<BasicBlock *> Bs;
+      SmallPtrSet<BasicBlock *, 8> UsedB;
       auto Vals = Phi.incoming_values();
       auto Blocks = Phi.blocks();
       auto *VIt = Vals.begin();
       auto *BIt = Blocks.begin();
       for (; VIt != Vals.end() && BIt != Blocks.end(); ++VIt, ++BIt) {
         const unsigned N = PredsCnt[*BIt];
+        if (!UsedB.insert(*BIt).second)
+          continue;
         Vs.insert(Vs.end(), N, *VIt);
         Bs.insert(Bs.end(), N, *BIt);
       }
