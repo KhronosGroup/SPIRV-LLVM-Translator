@@ -2163,22 +2163,21 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
   case OpCopyLogical: {
     SPIRVCopyLogical *CL = static_cast<SPIRVCopyLogical *>(BV);
-    IRBuilder<> Builder(BB);
 
     auto *SrcTy = transType(CL->getOperand()->getType());
-    auto *SrcAI = Builder.CreateAlloca(SrcTy);
-    Builder.CreateStore(transValue(CL->getOperand(), F, BB), SrcAI);
-
     auto *DstTy = transType(CL->getType());
-    auto *DstAI = Builder.CreateAlloca(DstTy);
 
-    uint64_t Size = M->getDataLayout().getTypeStoreSize(SrcTy).getFixedValue();
-    assert(Size == M->getDataLayout().getTypeStoreSize(DstTy).getFixedValue() &&
+    assert(M->getDataLayout().getTypeStoreSize(SrcTy).getFixedValue() ==
+               M->getDataLayout().getTypeStoreSize(DstTy).getFixedValue() &&
            "Size mismatch in OpCopyLogical");
-    Builder.CreateMemCpy(DstAI, DstAI->getAlign(), SrcAI, SrcAI->getAlign(),
-                         Size);
 
-    auto *LI = Builder.CreateLoad(DstTy, DstAI);
+    IRBuilder<> Builder(BB);
+
+    auto *SrcAI = Builder.CreateAlloca(SrcTy);
+    Builder.CreateAlignedStore(transValue(CL->getOperand(), F, BB), SrcAI,
+                               SrcAI->getAlign());
+
+    auto *LI = Builder.CreateAlignedLoad(DstTy, SrcAI, SrcAI->getAlign());
     return mapValue(BV, LI);
   }
 

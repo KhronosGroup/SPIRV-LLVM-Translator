@@ -22,6 +22,6 @@
                OpReturn
                OpFunctionEnd
 
-; CHECK-LLVM: [[SRC_ALLOCA:%[a-z0-9.]+]] = alloca [[SRC_TYPE:%[a-z0-9.]+]], align 8
-; CHECK-LLVM: [[DST_ALLOCA:%[a-z0-9.]+]] = alloca [[DST_TYPE:%[a-z0-9.]+]], align 8
-; CHECK-LLVM: call void @llvm.memcpy.p0.p0.i64(ptr align 8 [[DST_ALLOCA]], ptr align 8 [[SRC_ALLOCA]], i64 0, i1 false)
+; CHECK-LLVM: [[ALLOCA:%[a-z0-9.]+]] = alloca [[SRC_TYPE:%[a-z0-9.]+]], align 8
+; CHECK-LLVM: store [[SRC_TYPE]] zeroinitializer, ptr [[ALLOCA]], align 8
+; CHECK-LLVM: [[DST:%[a-z0-9.]+]] = load [[DST_TYPE:%[a-z0-9.]+]], ptr [[ALLOCA]], align 8
