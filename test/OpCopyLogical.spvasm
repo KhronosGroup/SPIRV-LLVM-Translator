@@ -3,7 +3,7 @@
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
                OpCapability Addresses
@@ -22,4 +22,6 @@
                OpReturn
                OpFunctionEnd
 
-; CHECK-LLVM: @_Z19__spirv_CopyLogical12structtype.0(ptr sret(%structtype) %[[#]], %structtype.0 zeroinitializer)
+; CHECK-LLVM: [[ALLOCA:%[a-z0-9.]+]] = alloca [[SRC_TYPE:%[a-z0-9.]+]], align 8
+; CHECK-LLVM: store [[SRC_TYPE]] zeroinitializer, ptr [[ALLOCA]], align 8
+; CHECK-LLVM: [[DST:%[a-z0-9.]+]] = load [[DST_TYPE:%[a-z0-9.]+]], ptr [[ALLOCA]], align 8
