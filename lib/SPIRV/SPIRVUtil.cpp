@@ -813,6 +813,9 @@ CallInst *mutateCallInst(
   NewCI->copyMetadata(*CI);
   NewCI->setAttributes(CI->getAttributes());
   NewCI->setTailCall(CI->isTailCall());
+  if (isa<FPMathOperator>(CI))
+    NewCI->setFastMathFlags(CI->getFastMathFlags());
+
   if (CI->hasFnAttr("fpbuiltin-max-error")) {
     auto Attr = CI->getFnAttr("fpbuiltin-max-error");
     NewCI->addFnAttr(Attr);
