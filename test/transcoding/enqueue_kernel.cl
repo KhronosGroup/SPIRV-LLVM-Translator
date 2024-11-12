@@ -27,10 +27,10 @@
 // CHECK-SPIRV: TypeInt [[Int8Ty:[0-9]+]] 8
 // CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt12:[0-9]+]] 12
 // CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt0:[0-9]+]] 0
-// CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt21:[0-9]+]] 21
+// CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt17:[0-9]+]] 21
 // CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt2:[0-9]+]] 2
 // CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt8:[0-9]+]] 8
-// CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt24:[0-9]+]] 24
+// CHECK-SPIRV: Constant [[Int32Ty]] [[ConstInt20:[0-9]+]] 24
 
 // CHECK-SPIRV: TypePointer [[Int8PtrGenTy:[0-9]+]] 8 [[Int8Ty]]
 // CHECK-SPIRV: TypeVoid [[VoidTy:[0-9]+]]
@@ -65,7 +65,7 @@ kernel void device_side_enqueue(global int *a, global int *b, int i, char c0) {
   // CHECK-SPIRV: Bitcast [[Int8PtrGenTy]] [[BlockLit1:[0-9]+]]
   // CHECK-SPIRV: EnqueueKernel [[Int32Ty]] [[#]] [[#]] [[#]] [[#]]
   // CHECK-SPIRV-SAME: [[ConstInt0]] [[EventNull]] [[#]]
-  // CHECK-SPIRV-SAME: [[#InvokeFunc1]] [[BlockLit1]] [[ConstInt21]] [[ConstInt8]]
+  // CHECK-SPIRV-SAME: [[#InvokeFunc1]] [[BlockLit1]] [[ConstInt17]] [[ConstInt8]]
 
   // CHECK-LLVM: [[Block2:%[0-9]+]] = addrspacecast ptr %block to ptr addrspace(4)
   // CHECK-LLVM: [[Block2Ptr:%[0-9]+]] = bitcast ptr addrspace(4) [[Block2]] to ptr addrspace(4)
@@ -85,7 +85,7 @@ kernel void device_side_enqueue(global int *a, global int *b, int i, char c0) {
   // CHECK-SPIRV: Bitcast [[Int8PtrGenTy]] [[BlockLit2:[0-9]+]]
   // CHECK-SPIRV: EnqueueKernel [[Int32Ty]] [[#]] [[#]] [[#]] [[#]]
   // CHECK-SPIRV-SAME: [[ConstInt2]] [[Event1]] [[Event2]]
-  // CHECK-SPIRV-SAME: [[#InvokeFunc2]] [[BlockLit2]] [[ConstInt24]] [[ConstInt8]]
+  // CHECK-SPIRV-SAME: [[#InvokeFunc2]] [[BlockLit2]] [[ConstInt20]] [[ConstInt8]]
 
   // CHECK-LLVM: [[Block3:%[0-9]+]] = addrspacecast ptr %block4 to ptr addrspace(4)
   // CHECK-LLVM: [[Block3Ptr:%[0-9]+]] = bitcast ptr addrspace(4) [[Block3]] to ptr addrspace(4)
@@ -150,7 +150,7 @@ kernel void device_side_enqueue(global int *a, global int *b, int i, char c0) {
   // CHECK-SPIRV: Bitcast [[Int8PtrGenTy]] [[BlockLit5:[0-9]+]]
   // CHECK-SPIRV: EnqueueKernel [[Int32Ty]] [[#]] [[#]] [[#]] [[#]]
   // CHECK-SPIRV-SAME: [[ConstInt0]] [[#]] [[Event1]]
-  // CHECK-SPIRV-SAME: [[#InvokeFunc5]] [[BlockLit5]] [[ConstInt24]] [[ConstInt8]]
+  // CHECK-SPIRV-SAME: [[#InvokeFunc5]] [[BlockLit5]] [[ConstInt20]] [[ConstInt8]]
 
   // CHECK-LLVM: [[Block5:%[0-9]+]] = addrspacecast ptr %block15 to ptr addrspace(4)
   // CHECK-LLVM: [[Block5Ptr:%[0-9]+]] = bitcast ptr addrspace(4) [[Block5]] to ptr addrspace(4)
