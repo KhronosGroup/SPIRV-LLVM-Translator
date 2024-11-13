@@ -2284,8 +2284,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *BC = static_cast<SPIRVBinary *>(BV);
     auto Ops = transValue(BC->getOperands(), F, BB);
     IRBuilder<> Builder(BB);
-    Type *ElemTy =
-        transType(BC->getOperands()[0]->getType()->getPointerElementType());
+    Value *Operand1 = Ops[0]->stripPointerCasts();
+
+    Type *ElemTy = nullptr;
+    // Should we better get the type info from alloca instruction or from the
+    // OpUntypedVariableKHR DataType field?
+    if (auto *AI = dyn_cast<AllocaInst>(Operand1))
+      ElemTy = AI->getAllocatedType();
+    else
+      ElemTy =
+          transType(BC->getOperands()[0]->getType()->getPointerElementType());
+
     Value *V = Builder.CreatePtrDiff(ElemTy, Ops[0], Ops[1]);
     return mapValue(BV, V);
   }
