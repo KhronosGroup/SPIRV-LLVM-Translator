@@ -3443,8 +3443,8 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   auto Ptr = findFirstPtrType(ArgTys);
   if (Ptr < ArgTys.size() &&
       BI->getValueType(Ops[Ptr]->getId())->isTypeUntypedPointerKHR()) {
-  // Special handling for "truly" untyped pointers to preserve correct
-  // builtin mangling of atomic and matrix operations.
+    // Special handling for "truly" untyped pointers to preserve correct
+    // builtin mangling of atomic and matrix operations.
     if (isAtomicOpCodeUntypedPtrSupported(OC)) {
       auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
       ArgTys[Ptr] = TypedPointerType::get(
@@ -3499,8 +3499,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
     mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
   else
-    MangledName =
-        getSPIRVFriendlyIRFunctionName(FuncName, OC, ArgTys, Ops);
+    MangledName = getSPIRVFriendlyIRFunctionName(FuncName, OC, ArgTys, Ops);
 
   opaquifyTypedPointers(ArgTys);
 
