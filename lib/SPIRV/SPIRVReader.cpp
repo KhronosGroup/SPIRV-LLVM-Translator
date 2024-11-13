@@ -3428,7 +3428,8 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
                                                BasicBlock *BB) {
   std::string MangledName;
   auto Ops = BI->getOperands();
-  if (isUntypedAccessChainOpCode(BI->getOpCode())) {
+  Op OC = BI->getOpCode();
+  if (isUntypedAccessChainOpCode(OC)) {
     auto *AC = static_cast<SPIRVAccessChainBase *>(BI);
     if (AC->getBaseType()->isTypeCooperativeMatrixKHR())
       Ops.erase(Ops.begin());
@@ -3439,17 +3440,53 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   std::vector<Type *> ArgTys =
       transTypeVector(SPIRVInstruction::getOperandTypes(Ops), true);
 
-  // Special handling for "truly" untyped pointers to preserve correct
-  // builtin mangling of atomic operations.
   auto Ptr = findFirstPtrType(ArgTys);
   if (Ptr < ArgTys.size() &&
       BI->getValueType(Ops[Ptr]->getId())->isTypeUntypedPointerKHR()) {
-    if (isAtomicOpCodeUntypedPtrSupported(BI->getOpCode())) {
+  // Special handling for "truly" untyped pointers to preserve correct
+  // builtin mangling of atomic and matrix operations.
+    if (isAtomicOpCodeUntypedPtrSupported(OC)) {
       auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
       ArgTys[Ptr] = TypedPointerType::get(
           transType(AI->getSemanticType()),
           SPIRSPIRVAddrSpaceMap::rmap(
               BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+    } else if (OC == spv::OpCooperativeMatrixStoreKHR ||
+               OC == spv::internal::OpJointMatrixStoreINTEL ||
+               OC == spv::internal::OpCooperativeMatrixStoreCheckedINTEL ||
+               OC == spv::internal::OpJointMatrixLoadINTEL ||
+               OC == spv::OpCompositeConstruct ||
+               OC == spv::internal::OpCooperativeMatrixApplyFunctionINTEL) {
+      // It will work but it'd be strange
+      auto *Val = transValue(Ops[Ptr], BB->getParent(), BB);
+      Val = Val->stripPointerCasts();
+      if (auto *GEP = dyn_cast<GetElementPtrInst>(Val))
+        ArgTys[Ptr] = TypedPointerType::get(
+            GEP->getSourceElementType(),
+            SPIRSPIRVAddrSpaceMap::rmap(
+                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+      else if (auto *AI = dyn_cast<AllocaInst>(Val))
+        ArgTys[Ptr] = TypedPointerType::get(
+            AI->getAllocatedType(),
+            SPIRSPIRVAddrSpaceMap::rmap(
+                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+      else if (isa<Argument>(Val) && RetTy) {
+        // Pointer could be a function parameter. Assume that the type of the
+        // pointer is the same as the return type.
+        Type *Ty = nullptr;
+        // it return type is array type, assign its element type to Ty
+        if (RetTy->isArrayTy())
+          Ty = RetTy->getArrayElementType();
+        else if (RetTy->isVectorTy())
+          Ty = cast<VectorType>(RetTy)->getElementType();
+        else
+          Ty = RetTy;
+
+        ArgTys[Ptr] = TypedPointerType::get(
+            Ty,
+            SPIRSPIRVAddrSpaceMap::rmap(
+                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+      }
     }
   }
 
@@ -3463,7 +3500,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
   else
     MangledName =
-        getSPIRVFriendlyIRFunctionName(FuncName, BI->getOpCode(), ArgTys, Ops);
+        getSPIRVFriendlyIRFunctionName(FuncName, OC, ArgTys, Ops);
 
   opaquifyTypedPointers(ArgTys);
 
@@ -3486,14 +3523,13 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
     Func->setCallingConv(CallingConv::SPIR_FUNC);
     if (isFuncNoUnwind())
       Func->addFnAttr(Attribute::NoUnwind);
-    auto OC = BI->getOpCode();
     if (isGroupOpCode(OC) || isGroupNonUniformOpcode(OC) ||
         isIntelSubgroupOpCode(OC) || isSplitBarrierINTELOpCode(OC) ||
         OC == OpControlBarrier)
       Func->addFnAttr(Attribute::Convergent);
   }
   CallInst *Call;
-  if (BI->getOpCode() == OpCooperativeMatrixLengthKHR &&
+  if (OC == OpCooperativeMatrixLengthKHR &&
       Ops[0]->getOpCode() == OpTypeCooperativeMatrixKHR) {
     // OpCooperativeMatrixLengthKHR needs special handling as its operand is
     // a Type instead of a Value.
