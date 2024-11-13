@@ -2216,8 +2216,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *AC = static_cast<SPIRVAccessChainBase *>(BV);
     auto *Base = transValue(AC->getBase(), F, BB);
     SPIRVType *BaseSPVTy = AC->getBaseType();
-    if (BaseSPVTy->isTypePointer() &&
-        BaseSPVTy->getPointerElementType()->isTypeCooperativeMatrixKHR()) {
+    if ((BaseSPVTy->isTypePointer() &&
+         BaseSPVTy->getPointerElementType()->isTypeCooperativeMatrixKHR()) ||
+        (isUntypedAccessChainOpCode(OC) &&
+         BaseSPVTy->isTypeCooperativeMatrixKHR())) {
       return mapValue(BV, transSPIRVBuiltinFromInst(AC, BB));
     }
     Type *BaseTy =
@@ -3426,6 +3428,11 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
                                                BasicBlock *BB) {
   std::string MangledName;
   auto Ops = BI->getOperands();
+  if (isUntypedAccessChainOpCode(BI->getOpCode())) {
+    auto *AC = static_cast<SPIRVAccessChainBase *>(BI);
+    if (AC->getBaseType()->isTypeCooperativeMatrixKHR())
+      Ops.erase(Ops.begin());
+  }
   Type *RetTy =
       BI->hasType() ? transType(BI->getType()) : Type::getVoidTy(*Context);
   transOCLBuiltinFromInstPreproc(BI, RetTy, Ops);
