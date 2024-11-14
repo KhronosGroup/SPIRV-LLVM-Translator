@@ -3220,7 +3220,7 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
     // search for a previous function with the same name
     // upgrade it to a kernel and drop this if it's found
     for (auto &I : FuncMap) {
-      auto BFName = I.getFirst()->getName();
+      const auto &BFName = I.getFirst()->getName();
       if (BF->getName() == BFName) {
         auto *F = I.getSecond();
         F->setCallingConv(CallingConv::SPIR_KERNEL);
