@@ -74,6 +74,8 @@ public:
   LLVMToSPIRVBase(SPIRVModule *SMod);
   LLVMToSPIRVBase(const LLVMToSPIRVBase &Other) = delete;
   LLVMToSPIRVBase &operator=(const LLVMToSPIRVBase &Other) = delete;
+  LLVMToSPIRVBase(LLVMToSPIRVBase &&Other) = delete;
+  LLVMToSPIRVBase &operator=(LLVMToSPIRVBase &&Other) = delete;
   bool runLLVMToSPIRV(Module &Mod);
 
   // This enum sets the mode used to translate the value which is
