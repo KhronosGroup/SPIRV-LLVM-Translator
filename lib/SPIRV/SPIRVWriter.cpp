@@ -2251,11 +2251,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
               static_cast<SPIRVExtInst *>(FrexpResult)->getArgValues()[1];
           SPIRVType *LoadTy = nullptr;
 
-          if (IntFromFrexpResult->isUntypedVariable()) {
-            auto *BV =
-                static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult);
-            LoadTy = BV->getDataType();
-          }
+          if (IntFromFrexpResult->isUntypedVariable())
+            LoadTy = static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult)
+                         ->getDataType();
+
           IntFromFrexpResult =
               BM->addLoadInst(IntFromFrexpResult, {}, BB, LoadTy);
 
@@ -2483,10 +2482,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         SPIRVValue *IntFromFrexpResult =
             static_cast<SPIRVExtInst *>(Val)->getArgValues()[1];
         SPIRVType *LoadTy = nullptr;
-        if (IntFromFrexpResult->isUntypedVariable()) {
-          auto *BV = static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult);
-          LoadTy = BV->getDataType();
-        }
+        if (IntFromFrexpResult->isUntypedVariable())
+          LoadTy = static_cast<SPIRVUntypedVariableKHR *>(IntFromFrexpResult)
+                       ->getDataType();
+
         IntFromFrexpResult =
             BM->addLoadInst(IntFromFrexpResult, {}, BB, LoadTy);
         return mapValue(V, IntFromFrexpResult);
@@ -6499,8 +6498,11 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // Input - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *Input = transValue(*OpItr, BB);
+    SPIRVType *LoadTy = nullptr;
+    if (Input->isUntypedVariable())
+      LoadTy = static_cast<SPIRVUntypedVariableKHR *>(Input)->getDataType();
     if (OpItr->getType()->isPointerTy())
-      Input = BM->addLoadInst(Input, {}, BB);
+      Input = BM->addLoadInst(Input, {}, BB, LoadTy);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -6590,8 +6592,11 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // Input - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *Input = transValue(*OpItr, BB);
+    SPIRVType *LoadTy = nullptr;
+    if (Input->isUntypedVariable())
+      LoadTy = static_cast<SPIRVUntypedVariableKHR *>(Input)->getDataType();
     if (OpItr->getType()->isPointerTy())
-      Input = BM->addLoadInst(Input, {}, BB);
+      Input = BM->addLoadInst(Input, {}, BB, LoadTy);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -6667,8 +6672,11 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // InA - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InA = transValue(*OpItr, BB);
+    SPIRVType *LoadTy = nullptr;
+    if (InA->isUntypedVariable())
+      LoadTy = static_cast<SPIRVUntypedVariableKHR *>(InA)->getDataType();
     if (OpItr->getType()->isPointerTy())
-      InA = BM->addLoadInst(InA, {}, BB);
+      InA = BM->addLoadInst(InA, {}, BB, LoadTy);
     OpItr++;
 
     std::vector<SPIRVWord> Literals;
@@ -6676,9 +6684,12 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
     // InB - integer input of any width or 'byval' pointer to this integer
     SPIRVValue *InB = transValue(*OpItr, BB);
+    LoadTy = nullptr;
+    if (InB->isUntypedVariable())
+      LoadTy = static_cast<SPIRVUntypedVariableKHR *>(InB)->getDataType();
     if (OpItr->getType()->isPointerTy()) {
       std::vector<SPIRVWord> Mem;
-      InB = BM->addLoadInst(InB, Mem, BB);
+      InB = BM->addLoadInst(InB, Mem, BB, LoadTy);
     }
     OpItr++;
 
@@ -6758,7 +6769,10 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
           transValue(CI->getArgOperand(0)->stripPointerCasts(), BB);
       SPIRVId ScopeId = transValue(CI->getArgOperand(1), BB)->getId();
       SPIRVValue *Delta = transValue(CI->getArgOperand(3), BB);
-      SPIRVValue *Composite0 = BM->addLoadInst(InValue, {}, BB);
+      SPIRVType *LoadTy = nullptr;
+      if (InValue->isUntypedVariable())
+        LoadTy = static_cast<SPIRVUntypedVariableKHR *>(InValue)->getDataType();
+      SPIRVValue *Composite0 = BM->addLoadInst(InValue, {}, BB, LoadTy);
       Type *MemberTy = St->getElementType(0);
       SPIRVType *ElementTy = transType(MemberTy);
       SPIRVValue *Element0 =
