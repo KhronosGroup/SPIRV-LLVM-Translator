@@ -3685,6 +3685,11 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
                                                     BasicBlock *BB) {
   assert(BB && "Invalid BB");
   const auto OC = BI->getOpCode();
+  int i = 1;
+  // if(static_cast<size_t>(OC) == internal::OpCooperativeMatrixLoadOffsetINTEL) {
+  //   i ++;
+  // }
+  // i++;
 
   bool AddRetTypePostfix = false;
   switch (static_cast<size_t>(OC)) {

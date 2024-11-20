@@ -25,7 +25,7 @@
 ; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy1]]
 ; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy2]]
 ; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy3]]
-; CHECK-SPIRV: JointMatrixMadINTEL [[#MatTy1]]
+; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy1]]
 ; CHECK-SPIRV: CooperativeMatrixStoreOffsetINTEL
 
 ; CHECK-LLVM: call spir_func target("spirv.JointMatrixINTEL", float, 16, 16, 3, 3, 2) @_Z93__spirv_CooperativeMatrixLoadOffsetINTEL_RPU3AS143__spirv_JointMatrixINTEL__float_16_16_3_3_2PU3AS1fiiili(ptr addrspace(1) %add.ptr.i.i, i32 %conv.i, i32 %conv2.i, i32 0, i64 32, i32 0)
