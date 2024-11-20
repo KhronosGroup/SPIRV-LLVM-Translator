@@ -3744,7 +3744,7 @@ protected:
 
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<                                                   \
-      SPIRVCooperativeMatrixOffsetInstructionsINTELInstBase,                         \
+      SPIRVCooperativeMatrixOffsetInstructionsINTELInstBase,                   \
       internal::Op##x##INTEL, __VA_ARGS__>                                     \
       SPIRV##x##INTEL;
 _SPIRV_OP(CooperativeMatrixLoadOffset, true, 8, true, 6)
