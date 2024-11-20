@@ -1,4 +1,4 @@
-; This is an adapted copy of test/extensions/INTEL/SPV_INTEL_joint_matrix/joint_matrix.ll
+; This is an adapted copy of test/extensions/KHR/SPV_KHR_cooperative_matrix/cooperative_matrix.ll
 
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_cooperative_matrix,+SPV_INTEL_joint_matrix -o %t.spv
