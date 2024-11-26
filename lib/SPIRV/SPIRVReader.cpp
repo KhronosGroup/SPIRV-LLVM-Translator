@@ -3457,7 +3457,6 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
                OC == spv::internal::OpJointMatrixLoadINTEL ||
                OC == spv::OpCompositeConstruct ||
                OC == spv::internal::OpCooperativeMatrixApplyFunctionINTEL) {
-      // It will work but it'd be strange
       auto *Val = transValue(Ops[Ptr], BB->getParent(), BB);
       Val = Val->stripPointerCasts();
       if (auto *GEP = dyn_cast<GetElementPtrInst>(Val))
@@ -3470,7 +3469,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
             AI->getAllocatedType(),
             SPIRSPIRVAddrSpaceMap::rmap(
                 BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
-      else if (isa<Argument>(Val) && RetTy) {
+      else if (isa<Argument>(Val) && !RetTy->isVoidTy()) {
         // Pointer could be a function parameter. Assume that the type of the
         // pointer is the same as the return type.
         Type *Ty = nullptr;
