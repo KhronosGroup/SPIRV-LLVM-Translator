@@ -2694,11 +2694,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         Builder.CreateBinaryIntrinsic(ID, transValue(BC->getOperand(0), F, BB),
                                       transValue(BC->getOperand(1), F, BB));
 
-    // Extract components of the result
+    // Extract components of the result.
     auto *Result = Builder.CreateExtractValue(Inst, 0); // iN result
     auto *Carry = Builder.CreateExtractValue(Inst, 1);  // i1 overflow
 
-    // Convert {iN, i1} into {iN, iN} for SPIR-V compatibility
+    // Convert {iN, i1} into {iN, iN} for SPIR-V compatibility.
     Value *CarryInt;
     if (Carry->getType()->isVectorTy()) {
       CarryInt = Builder.CreateZExt(
