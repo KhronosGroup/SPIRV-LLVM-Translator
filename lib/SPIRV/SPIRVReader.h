@@ -199,6 +199,13 @@ private:
 
   bool isDirectlyTranslatedToOCL(Op OpCode) const;
   MDString *transOCLKernelArgTypeName(SPIRVFunctionParameter *);
+
+  // Attempt to translate Id as a (specialization) constant.
+  llvm::Optional<uint64_t> transIdAsConstant(SPIRVId Id);
+
+  // Return the value of an Alignment or AlignmentId decoration for V.
+  llvm::Optional<uint64_t> getAlignment(SPIRVValue *V);
+
   Value *mapFunction(SPIRVFunction *BF, Function *F);
   Value *getTranslatedValue(SPIRVValue *BV);
   IntrinsicInst *getLifetimeStartIntrinsic(Instruction *I);
