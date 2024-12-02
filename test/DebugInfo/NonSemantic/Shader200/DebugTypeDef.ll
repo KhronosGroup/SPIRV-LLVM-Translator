@@ -4,7 +4,7 @@
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-debug-info-version=nonsemantic-shader-200 -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-debug-info-version=nonsemantic-shader-200
-; RUN: llvm-spirv -r -emit-opaque-pointers %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
@@ -50,3 +50,7 @@ attributes #0 = { convergent mustprogress norecurse nounwind }
 !14 = distinct !DISubprogram(name: "_ZTSZ4mainEUlvE_", scope: !1, file: !1, line: 24, type: !15, flags: DIFlagArtificial | DIFlagPrototyped | DIFlagAllCallsDescribed, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !0, retainedNodes: !2)
 !15 = !DISubroutineType(cc: DW_CC_nocall, types: !16)
 !16 = !{null}
+!17 = !DIImportedEntity(tag: DW_TAG_imported_declaration, scope: !18, entity: !19, file: !1, line: 58)
+!18 = !DINamespace(name: "std", scope: null)
+!19 = !DIDerivedType(tag: DW_TAG_typedef, name: "max_align_t", file: !1, baseType: !20)
+!20 = !DICompositeType(tag: DW_TAG_structure_type, file: !8, line: 19, size: 256, flags: DIFlagFwdDecl, elements: !2, identifier: "_ZTS11max_align_t")
