@@ -211,7 +211,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // Do nothing in case we have already translated the CU (e.g. during
   // DebugEntryPoint translation)
   if (BuilderMap[DebugInst->getId()])
-    return nullptr;
+    return cast<DICompileUnit>(DebugInstCache[DebugInst]);
 
   const SPIRVWordVec &Ops = DebugInst->getArguments();
 
@@ -607,8 +607,9 @@ DISubrange *
 SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
   using namespace SPIRVDebug::Operand::TypeSubrange;
   const SPIRVWordVec &Ops = DebugInst->getArguments();
-  assert(Ops.size() == OperandCount && "Invalid number of operands");
-  std::vector<Metadata *> TranslatedOps(OperandCount, nullptr);
+  assert((Ops.size() == MinOperandCount || Ops.size() == MaxOperandCount) &&
+         "Invalid number of operands");
+  std::vector<Metadata *> TranslatedOps(MaxOperandCount, nullptr);
   auto TransOperand = [&Ops, &TranslatedOps, this](int Idx) -> void {
     if (!getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[Idx])) {
       if (auto *GlobalVar = getDbgInst<SPIRVDebug::GlobalVariable>(Ops[Idx])) {
@@ -627,10 +628,11 @@ SPIRVToLLVMDbgTran::transTypeSubrange(const SPIRVExtInst *DebugInst) {
       }
     }
   };
-  for (int Idx = CountIdx; Idx < OperandCount; ++Idx)
+  for (size_t Idx = 0; Idx < Ops.size(); ++Idx)
     TransOperand(Idx);
   return getDIBuilder(DebugInst).getOrCreateSubrange(
-      TranslatedOps[0], TranslatedOps[1], TranslatedOps[2], TranslatedOps[3]);
+      TranslatedOps[CountIdx], TranslatedOps[LowerBoundIdx],
+      TranslatedOps[UpperBoundIdx], TranslatedOps[StrideIdx]);
 }
 
 DIStringType *
@@ -1102,8 +1104,8 @@ MDNode *SPIRVToLLVMDbgTran::transEntryPoint(const SPIRVExtInst *DebugInst) {
   std::string Producer = getString(Ops[CompilerSignatureIdx]);
   std::string CLArgs = getString(Ops[CommandLineArgsIdx]);
 
-  [[maybe_unused]] DICompileUnit *C =
-      transCompilationUnit(CU, Producer, CLArgs);
+  DICompileUnit *C = transCompilationUnit(CU, Producer, CLArgs); // NOLINT
+  DebugInstCache[CU] = C;
 
   return transFunction(EP, true /*IsMainSubprogram*/);
 }
