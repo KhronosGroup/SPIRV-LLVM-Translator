@@ -1350,12 +1350,12 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
   assert(Ops.size() == (OpenCL::OperandCount - OffsetIdx) &&
          "Invalid number of operands");
   DIScope *Scope = getScope(BM->getEntry(Ops[OpenCL::ParentIdx - OffsetIdx]));
-  SPIRVWord Line = getConstantValueOrLiteral(Ops, OpenCL::LineIdx - OffsetIdx,
+  const SPIRVWord Line = getConstantValueOrLiteral(Ops, OpenCL::LineIdx - OffsetIdx,
                                              DebugInst->getExtSetKind());
   DIFile *File = getFile(Ops[OpenCL::SourceIdx - OffsetIdx]);
   auto *Entity = transDebugInst<DINode>(
       BM->get<SPIRVExtInst>(Ops[OpenCL::EntityIdx - OffsetIdx]));
-  SPIRVWord Tag = getConstantValueOrLiteral(Ops, OpenCL::TagIdx,
+  const SPIRVWord Tag = getConstantValueOrLiteral(Ops, OpenCL::TagIdx,
                                             DebugInst->getExtSetKind());
   if (Tag == SPIRVDebug::ImportedModule) {
     if (!Entity)
@@ -1372,7 +1372,7 @@ DINode *SPIRVToLLVMDbgTran::transImportedEntry(const SPIRVExtInst *DebugInst) {
                                                           Line);
   }
   if (Tag == SPIRVDebug::ImportedDeclaration) {
-    StringRef Name = getString(Ops[OpenCL::NameIdx]);
+    const StringRef Name = getString(Ops[OpenCL::NameIdx]);
     if (DIGlobalVariableExpression *GVE =
             dyn_cast<DIGlobalVariableExpression>(Entity))
       return getDIBuilder(DebugInst).createImportedDeclaration(
