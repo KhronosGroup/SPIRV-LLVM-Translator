@@ -224,6 +224,16 @@ Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   return nullptr;
 }
 
+SPIRVValue* SPIRVToLLVM::getSPIRVValue(Value *V) {
+// This function should find "key" by "value" in ValueMap
+  for (auto &I : ValueMap) {
+    if (I.second == V)
+      return I.first;
+  }
+  return nullptr;
+}
+
+
 static std::optional<llvm::Attribute>
 translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext &Context) {
   std::optional<llvm::Attribute> RetAttr;
@@ -3513,47 +3523,6 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
           transType(AI->getSemanticType()),
           SPIRSPIRVAddrSpaceMap::rmap(
               BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
-    } else if (OC == spv::OpCooperativeMatrixStoreKHR ||
-               OC == spv::internal::OpJointMatrixStoreINTEL ||
-               OC == spv::internal::OpCooperativeMatrixStoreCheckedINTEL ||
-               OC == spv::internal::OpJointMatrixLoadINTEL ||
-               OC == spv::OpCompositeConstruct ||
-               OC == spv::internal::OpCooperativeMatrixApplyFunctionINTEL) {
-      auto *Val = transValue(Ops[Ptr], BB->getParent(), BB);
-      Val = Val->stripPointerCasts();
-      if (auto *GEP = dyn_cast<GetElementPtrInst>(Val))
-        ArgTys[Ptr] = TypedPointerType::get(
-            GEP->getSourceElementType(),
-            SPIRSPIRVAddrSpaceMap::rmap(
-                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
-      else if (auto *AI = dyn_cast<AllocaInst>(Val))
-        ArgTys[Ptr] = TypedPointerType::get(
-            AI->getAllocatedType(),
-            SPIRSPIRVAddrSpaceMap::rmap(
-                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
-      else if (isa<Argument>(Val) && !RetTy->isVoidTy()) {
-        // Pointer could be a function parameter. Assume that the type of the
-        // pointer is the same as the return type.
-        Type *Ty = nullptr;
-        // it return type is array type, assign its element type to Ty
-        if (RetTy->isArrayTy())
-          Ty = RetTy->getArrayElementType();
-        else if (RetTy->isVectorTy())
-          Ty = cast<VectorType>(RetTy)->getElementType();
-        else
-          Ty = RetTy;
-
-        ArgTys[Ptr] = TypedPointerType::get(
-            Ty,
-            SPIRSPIRVAddrSpaceMap::rmap(
-                BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
-      }
-    }
-  }
-
-  for (auto &I : ArgTys) {
-    if (isa<FunctionType>(I)) {
-      I = TypedPointerType::get(I, SPIRAS_Private);
     }
   }
 
@@ -3563,7 +3532,6 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
       if (OpTy->isTypeUntypedPointerKHR()) {
         auto *Val = transValue(Ops[I], BB->getParent(), BB);
         Val = Val->stripPointerCasts();
-
         if (isUntypedAccessChainOpCode(Ops[I]->getOpCode())) {
           SPIRVType *BaseTy =
               reinterpret_cast<SPIRVAccessChainBase *>(Ops[I])->getBaseType();
@@ -3575,23 +3543,62 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
             Ty = transType(BaseTy->getVectorComponentType());
           else
             Ty = transType(BaseTy);
-          // else if (BaseTy->isTypeStruct())
-          //   Ty =
-          // auto *Val = transValue(Ops[I], BB->getParent(), BB);
-          auto *Ptr = TypedPointerType::get(
-              Ty, SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
-          ArgTys[I] = Ptr;
+          ArgTys[I] = TypedPointerType::get(
+              Ty,
+              SPIRSPIRVAddrSpaceMap::rmap(
+                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
+        } else if (auto *GEP = dyn_cast<GetElementPtrInst>(Val)) {
+          ArgTys[I] = TypedPointerType::get(
+              GEP->getSourceElementType(),
+              SPIRSPIRVAddrSpaceMap::rmap(
+                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
         } else if (Ops[I]->getOpCode() == OpUntypedVariableKHR) {
           SPIRVUntypedVariableKHR *UV =
               static_cast<SPIRVUntypedVariableKHR *>(Ops[I]);
           Type *Ty = transType(UV->getDataType());
-          auto *Ptr = TypedPointerType::get(
-              Ty, SPIRSPIRVAddrSpaceMap::rmap(UV->getStorageClass()));
-          ArgTys[I] = Ptr;
+          ArgTys[I] = TypedPointerType::get(
+              Ty,
+              SPIRSPIRVAddrSpaceMap::rmap(
+                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
+        // } else if (auto *AI = dyn_cast<AllocaInst>(Val)) {
+        //   SPIRVValue* BV = getSPIRVValue(AI);
+        //   if (BV && BV->isVariable()) {
+        //     SPIRVVariableBase *Var = static_cast<SPIRVVariableBase *>(BV);
+        //     ArgTys[I] = TypedPointerType::get(
+        //         AI->getAllocatedType(),
+        //         SPIRSPIRVAddrSpaceMap::rmap(Var->getStorageClass()));
+        //     // AI->getAddressSpace());
+        //   }
+        } else if (Ops[I]->getOpCode() == OpFunctionParameter &&
+                   !RetTy->isVoidTy()) {
+          // else if (isa<Argument>(Val) && !RetTy->isVoidTy()) {
+          // Pointer could be a function parameter. Assume that the type of
+          // the
+          // pointer is the same as the return type.
+          Type *Ty = nullptr;
+          // it return type is array type, assign its element type to Ty
+          if (RetTy->isArrayTy())
+            Ty = RetTy->getArrayElementType();
+          else if (RetTy->isVectorTy())
+            Ty = cast<VectorType>(RetTy)->getElementType();
+          else
+            Ty = RetTy;
+
+          ArgTys[I] = TypedPointerType::get(
+              Ty,
+              SPIRSPIRVAddrSpaceMap::rmap(BI->getValueType(Ops[I]->getId())
+                                              ->getPointerStorageClass()));
         }
       }
     }
   }
+
+  for (auto &I : ArgTys) {
+    if (isa<FunctionType>(I)) {
+      I = TypedPointerType::get(I, SPIRAS_Private);
+    }
+  }
+
 
   if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
     mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
