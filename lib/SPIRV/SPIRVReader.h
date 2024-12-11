@@ -224,7 +224,6 @@ private:
 
   Value *mapFunction(SPIRVFunction *BF, Function *F);
   Value *getTranslatedValue(SPIRVValue *BV);
-  SPIRVValue *getSPIRVValue(Value *V);
   IntrinsicInst *getLifetimeStartIntrinsic(Instruction *I);
   SPIRVErrorLog &getErrorLog();
   void setCallingConv(CallInst *Call);

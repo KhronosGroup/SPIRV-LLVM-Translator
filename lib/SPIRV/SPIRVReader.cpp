@@ -224,16 +224,6 @@ Value *SPIRVToLLVM::getTranslatedValue(SPIRVValue *BV) {
   return nullptr;
 }
 
-SPIRVValue* SPIRVToLLVM::getSPIRVValue(Value *V) {
-// This function should find "key" by "value" in ValueMap
-  for (auto &I : ValueMap) {
-    if (I.second == V)
-      return I.first;
-  }
-  return nullptr;
-}
-
-
 static std::optional<llvm::Attribute>
 translateSEVMetadata(SPIRVValue *BV, llvm::LLVMContext &Context) {
   std::optional<llvm::Attribute> RetAttr;
@@ -3529,6 +3519,13 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   for (unsigned I = 0; I < ArgTys.size(); I++) {
     if (isa<PointerType>(ArgTys[I])) {
       SPIRVType *OpTy = BI->getValueType(Ops[I]->getId());
+      // `Param` must be a pointer to an 8-bit integer type scalar.
+      // Avoid demangling for this argument if it's a pointer to get `Pc`
+      // mangling.
+      if (OC == OpEnqueueKernel && I == 7) {
+        if (ArgTys[I]->isPointerTy())
+          continue;
+      }
       if (OpTy->isTypeUntypedPointerKHR()) {
         auto *Val = transValue(Ops[I], BB->getParent(), BB);
         Val = Val->stripPointerCasts();
@@ -3544,37 +3541,25 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
           else
             Ty = transType(BaseTy);
           ArgTys[I] = TypedPointerType::get(
-              Ty,
-              SPIRSPIRVAddrSpaceMap::rmap(
-                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
+              Ty, SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
         } else if (auto *GEP = dyn_cast<GetElementPtrInst>(Val)) {
           ArgTys[I] = TypedPointerType::get(
               GEP->getSourceElementType(),
-              SPIRSPIRVAddrSpaceMap::rmap(
-                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
+              SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
         } else if (Ops[I]->getOpCode() == OpUntypedVariableKHR) {
           SPIRVUntypedVariableKHR *UV =
               static_cast<SPIRVUntypedVariableKHR *>(Ops[I]);
           Type *Ty = transType(UV->getDataType());
           ArgTys[I] = TypedPointerType::get(
-              Ty,
-              SPIRSPIRVAddrSpaceMap::rmap(
-                  BI->getValueType(Ops[I]->getId())->getPointerStorageClass()));
-        // } else if (auto *AI = dyn_cast<AllocaInst>(Val)) {
-        //   SPIRVValue* BV = getSPIRVValue(AI);
-        //   if (BV && BV->isVariable()) {
-        //     SPIRVVariableBase *Var = static_cast<SPIRVVariableBase *>(BV);
-        //     ArgTys[I] = TypedPointerType::get(
-        //         AI->getAllocatedType(),
-        //         SPIRSPIRVAddrSpaceMap::rmap(Var->getStorageClass()));
-        //     // AI->getAddressSpace());
-        //   }
+              Ty, SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
+        } else if (auto *AI = dyn_cast<AllocaInst>(Val)) {
+          ArgTys[I] = TypedPointerType::get(
+              AI->getAllocatedType(),
+              SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
         } else if (Ops[I]->getOpCode() == OpFunctionParameter &&
                    !RetTy->isVoidTy()) {
-          // else if (isa<Argument>(Val) && !RetTy->isVoidTy()) {
           // Pointer could be a function parameter. Assume that the type of
-          // the
-          // pointer is the same as the return type.
+          // the pointer is the same as the return type.
           Type *Ty = nullptr;
           // it return type is array type, assign its element type to Ty
           if (RetTy->isArrayTy())
@@ -3585,9 +3570,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
             Ty = RetTy;
 
           ArgTys[I] = TypedPointerType::get(
-              Ty,
-              SPIRSPIRVAddrSpaceMap::rmap(BI->getValueType(Ops[I]->getId())
-                                              ->getPointerStorageClass()));
+              Ty, SPIRSPIRVAddrSpaceMap::rmap(OpTy->getPointerStorageClass()));
         }
       }
     }
@@ -3598,7 +3581,6 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
       I = TypedPointerType::get(I, SPIRAS_Private);
     }
   }
-
 
   if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
     mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
