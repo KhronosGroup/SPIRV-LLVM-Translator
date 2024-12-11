@@ -85,7 +85,8 @@ kernel void device_side_enqueue(global int *a, global int *b, int i, char c0) {
   // CHECK-LLVM: [[BlockInv2:%[0-9]+]] = addrspacecast ptr @__device_side_enqueue_block_invoke_kernel to ptr addrspace(4)
   // CHECK-LLVM: call spir_func i32 @__enqueue_kernel_basic(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr addrspace(4) [[BlockInv2]], ptr addrspace(4) [[Block2Ptr]])
   // CHECK-SPV-IR: call spir_func i32 @_Z21__spirv_EnqueueKernelP13__spirv_Queuei9ndrange_tiPU3AS4P19__spirv_DeviceEventS5_U13block_pointerFvvEPU3AS4cii(target("spirv.Queue") {{.*}}, i32 {{.*}}, ptr {{.*}}, i32 0, ptr addrspace(4) null, ptr addrspace(4) null, ptr @__device_side_enqueue_block_invoke_kernel, ptr addrspace(4) {{.*}}, i32 {{.*}}, i32 {{.*}})
-  //                                   _Z21__spirv_EnqueueKernelP13__spirv_Queuei9ndrange_tiPU3AS4P19__spirv_DeviceEventS5_U13block_pointerFvvEPU3AS412structtype
+  //                                   _Z21__spirv_EnqueueKernelP13__spirv_Queuei9ndrange_tiPU3AS4P19__spirv_DeviceEventS5_U13block_pointerFvvEPU3AS412structtype.0ii
+  // Actuallly the second mangling seems correct because the pointer really points to the structure, not to char. However, SPIR-V spec says this arg should be a pointer to char.
   enqueue_kernel(default_queue, flags, ndrange,
                  ^(void) {
                    a[i] = c0;
