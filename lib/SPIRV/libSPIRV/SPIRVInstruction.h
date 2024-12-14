@@ -3737,8 +3737,7 @@ protected:
     return ExtensionID::SPV_INTEL_joint_matrix;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(
-        internal::CapabilityCooperativeMatrixOffsetInstructionsINTEL);
+    return getVec(internal::CapabilityCooperativeMatrixOffsetInstructionsINTEL);
   }
 };
 
