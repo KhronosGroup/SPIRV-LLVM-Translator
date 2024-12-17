@@ -3746,8 +3746,8 @@ protected:
       SPIRVCooperativeMatrixOffsetInstructionsINTELInstBase,                   \
       internal::Op##x##INTEL, __VA_ARGS__>                                     \
       SPIRV##x##INTEL;
-_SPIRV_OP(CooperativeMatrixLoadOffset, true, 8, true, 6)
-_SPIRV_OP(CooperativeMatrixStoreOffset, false, 7, true, 7)
+_SPIRV_OP(CooperativeMatrixLoadOffset, true, 8, true, 5)
+_SPIRV_OP(CooperativeMatrixStoreOffset, false, 7, true, 6)
 #undef _SPIRV_OP
 
 class SPIRVCooperativeMatrixInvocationInstructionsINTELInstBase
