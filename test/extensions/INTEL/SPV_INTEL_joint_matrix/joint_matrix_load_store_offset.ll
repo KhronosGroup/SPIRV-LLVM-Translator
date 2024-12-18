@@ -26,9 +26,9 @@
 ; CHECK-SPIRV-DAG: TypeCooperativeMatrixKHR [[#MatTy2:]] [[#Int16Ty]] [[#Const3]] [[#Const1]] [[#Const16]] [[#Const0:]]
 ; CHECK-SPIRV-DAG: TypeCooperativeMatrixKHR [[#MatTy3:]] [[#Int16Ty]] [[#Const3]] [[#Const16]] [[#Const16]] [[#Const1]]
 ; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy1]] [[#]] [[#Ptr1:]] [[#]] [[#Index1:]] [[#Const0]] [[#Const128]] 0
-; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy2]] [[#Ptr2:]] [[#]] [[#Index2:]] [[#]] [[#Const0]] [[#Const128]] 0
-; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy3]] [[#Ptr3:]] [[#]] [[#]] [[#]] [[#Const2:]] [[#Const256:]] 0
-; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy1]] [[#]] [[#Ptr2]] [[#Ptr3]] [[#Result:]] [[#]]
+; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy2]] [[#Load2:]] [[#]] [[#Index2:]] [[#]] [[#Const0]] [[#Const128]] 0
+; CHECK-SPIRV: CooperativeMatrixLoadOffsetINTEL [[#MatTy3]] [[#Load3:]] [[#]] [[#]] [[#]] [[#Const2:]] [[#Const256:]] 0
+; CHECK-SPIRV: CooperativeMatrixMulAddKHR [[#MatTy1]] [[#]] [[#Load2]] [[#Load3]] [[#Result:]] 64
 ; CHECK-SPIRV: CooperativeMatrixStoreOffsetINTEL [[#Ptr1]] [[#Index2]] [[#Index1]] [[#Result]] [[#Const0]] [[#Const128]] 0 
 
 ; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", float, 3, 1, 16, 2) @_Z94__spirv_CooperativeMatrixLoadOffsetINTEL_RPU3AS144__spirv_CooperativeMatrixKHR__float_3_1_16_2PU3AS1fiiili(ptr addrspace(1) %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, i32 0, i64 128, i32 0) 
