@@ -671,6 +671,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "CooperativeMatrixInvocationInstructionsINTEL");
   add(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL,
       "CooperativeMatrixCheckedInstructionsINTEL");
+  add(internal::CapabilityCooperativeMatrixOffsetInstructionsINTEL,
+      "CooperativeMatrixOffsetInstructionsINTEL");
   add(internal::CapabilitySubgroupRequirementsINTEL,
       "SubgroupRequirementsINTEL");
   add(internal::CapabilityTaskSequenceINTEL, "TaskSequenceINTEL");
