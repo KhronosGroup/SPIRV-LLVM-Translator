@@ -1086,12 +1086,34 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
     break;
   case OpBitcast:
+    CO = Instruction::BitCast;
     if (Src->getType()->isPointerTy() && !Dst->isPointerTy()) {
-      CO = Instruction::PtrToInt;
+      if (auto* DstVecTy = dyn_cast<FixedVectorType>(Dst)) {
+        assert(DstVecTy->getElementType()->isIntegerTy(32) &&
+               DstVecTy->getNumElements() == 2 &&
+               "Expected vector of two 32-bit integer components");
+        auto *Int64Ty = Type::getInt64Ty(BB->getContext());
+        if (BB) {
+          Src = CastInst::CreatePointerCast(Src, Int64Ty, "", BB);
+        } else {
+          Src = ConstantExpr::getPointerCast(dyn_cast<Constant>(Src), Int64Ty);
+        }
+      } else {
+        CO = Instruction::PtrToInt;
+      }
     } else if (!Src->getType()->isPointerTy() && Dst->isPointerTy()) {
+      if (auto* SrcVecTy = dyn_cast<FixedVectorType>(Src->getType())) {
+        assert(SrcVecTy->getElementType()->isIntegerTy(32) &&
+               SrcVecTy->getNumElements() == 2 &&
+               "Expected vector of two 32-bit integer components");
+        auto *Int64Ty = Type::getInt64Ty(BB->getContext());
+        if (BB) {
+          Src = CastInst::Create(Instruction::BitCast, Src, Int64Ty, "", BB);
+        } else {
+          Src = ConstantExpr::getBitCast(dyn_cast<Constant>(Src), Int64Ty);
+        }
+      }
       CO = Instruction::IntToPtr;
-    } else {
-      CO = Instruction::BitCast;
     }
     break;
   default:
