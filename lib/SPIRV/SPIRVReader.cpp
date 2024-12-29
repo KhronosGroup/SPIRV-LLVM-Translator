@@ -1089,28 +1089,28 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     CO = Instruction::BitCast;
     if (Src->getType()->isPointerTy() && !Dst->isPointerTy()) {
       if (auto *DstVecTy = dyn_cast<FixedVectorType>(Dst)) {
-        assert(DstVecTy->getElementType()->isIntegerTy(32) &&
-               DstVecTy->getNumElements() == 2 &&
-               "Expected vector of two 32-bit integer components");
-        auto *Int64Ty = Type::getInt64Ty(BB->getContext());
+        unsigned TotalBitWidth =
+            DstVecTy->getElementType()->getIntegerBitWidth() *
+            DstVecTy->getNumElements();
+        auto *IntTy = Type::getIntNTy(BB->getContext(), TotalBitWidth);
         if (BB) {
-          Src = CastInst::CreatePointerCast(Src, Int64Ty, "", BB);
+          Src = CastInst::CreatePointerCast(Src, IntTy, "", BB);
         } else {
-          Src = ConstantExpr::getPointerCast(dyn_cast<Constant>(Src), Int64Ty);
+          Src = ConstantExpr::getPointerCast(dyn_cast<Constant>(Src), IntTy);
         }
       } else {
         CO = Instruction::PtrToInt;
       }
     } else if (!Src->getType()->isPointerTy() && Dst->isPointerTy()) {
       if (auto *SrcVecTy = dyn_cast<FixedVectorType>(Src->getType())) {
-        assert(SrcVecTy->getElementType()->isIntegerTy(32) &&
-               SrcVecTy->getNumElements() == 2 &&
-               "Expected vector of two 32-bit integer components");
-        auto *Int64Ty = Type::getInt64Ty(BB->getContext());
+        unsigned TotalBitWidth =
+            SrcVecTy->getElementType()->getIntegerBitWidth() *
+            SrcVecTy->getNumElements();
+        auto *IntTy = Type::getIntNTy(BB->getContext(), TotalBitWidth);
         if (BB) {
-          Src = CastInst::Create(Instruction::BitCast, Src, Int64Ty, "", BB);
+          Src = CastInst::Create(Instruction::BitCast, Src, IntTy, "", BB);
         } else {
-          Src = ConstantExpr::getBitCast(dyn_cast<Constant>(Src), Int64Ty);
+          Src = ConstantExpr::getBitCast(dyn_cast<Constant>(Src), IntTy);
         }
       }
       CO = Instruction::IntToPtr;
