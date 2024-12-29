@@ -1088,7 +1088,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   case OpBitcast:
     CO = Instruction::BitCast;
     if (Src->getType()->isPointerTy() && !Dst->isPointerTy()) {
-      if (auto* DstVecTy = dyn_cast<FixedVectorType>(Dst)) {
+      if (auto *DstVecTy = dyn_cast<FixedVectorType>(Dst)) {
         assert(DstVecTy->getElementType()->isIntegerTy(32) &&
                DstVecTy->getNumElements() == 2 &&
                "Expected vector of two 32-bit integer components");
@@ -1102,7 +1102,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         CO = Instruction::PtrToInt;
       }
     } else if (!Src->getType()->isPointerTy() && Dst->isPointerTy()) {
-      if (auto* SrcVecTy = dyn_cast<FixedVectorType>(Src->getType())) {
+      if (auto *SrcVecTy = dyn_cast<FixedVectorType>(Src->getType())) {
         assert(SrcVecTy->getElementType()->isIntegerTy(32) &&
                SrcVecTy->getNumElements() == 2 &&
                "Expected vector of two 32-bit integer components");
