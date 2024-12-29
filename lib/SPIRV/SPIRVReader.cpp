@@ -1085,6 +1085,15 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   case OpFConvert:
     CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
     break;
+  case OpBitcast:
+    if (Src->getType()->isPointerTy() && !Dst->isPointerTy()) {
+      CO = Instruction::PtrToInt;
+    } else if (!Src->getType()->isPointerTy() && Dst->isPointerTy()) {
+      CO = Instruction::IntToPtr;
+    } else {
+      CO = Instruction::BitCast;
+    }
+    break;
   default:
     CO = static_cast<CastInst::CastOps>(OpCodeMap::rmap(BC->getOpCode()));
   }
