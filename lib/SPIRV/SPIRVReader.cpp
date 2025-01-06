@@ -1086,6 +1086,10 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
     break;
   case OpBitcast:
+    // OpBitcast need to be handled as a special-case when the source is a
+    // pointer and the destination is not a pointer, and where the source is not
+    // a pointer and the destination is a pointer. This is supported by the
+    // SPIR-V bitcast, but not by the LLVM bitcast.
     CO = Instruction::BitCast;
     if (Src->getType()->isPointerTy() && !Dst->isPointerTy()) {
       if (auto *DstVecTy = dyn_cast<FixedVectorType>(Dst)) {
