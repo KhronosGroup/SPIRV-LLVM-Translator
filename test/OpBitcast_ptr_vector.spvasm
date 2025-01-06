@@ -13,7 +13,6 @@
                OpMemoryModel Physical64 OpenCL
                OpEntryPoint Kernel %kernel "test"
        %uint = OpTypeInt 32 0
-      %ulong = OpTypeInt 64 0
       %uint2 = OpTypeVector %uint 2
        %void = OpTypeVoid
    %pptr_int = OpTypePointer Function %uint
