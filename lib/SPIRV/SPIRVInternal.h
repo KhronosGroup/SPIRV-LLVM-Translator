@@ -257,7 +257,7 @@ SPIRVMap<Attribute::AttrKind, SPIRVFunctionControlMaskKind>::init() {
   add(Attribute::ReadOnly, FunctionControlConstMask);
   add(Attribute::AlwaysInline, FunctionControlInlineMask);
   add(Attribute::NoInline, FunctionControlDontInlineMask);
-  add(Attribute::OptimizeNone, internal::FunctionControlOptNoneINTELMask);
+  add(Attribute::OptimizeNone, FunctionControlOptNoneEXTMask);
 }
 typedef SPIRVMap<Attribute::AttrKind, SPIRVFunctionControlMaskKind>
     SPIRSPIRVFuncCtlMaskMap;
