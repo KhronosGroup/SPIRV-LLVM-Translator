@@ -107,7 +107,6 @@ enum InternalCapability {
   ICapFPGAInvocationPipeliningAttributesINTEL = 5916,
   ICapRuntimeAlignedAttributeINTEL = 5939,
   ICapFastCompositeINTEL = 6093,
-  ICapOptNoneINTEL = 6094,
   ICapTokenTypeINTEL = 6112,
   ICapBfloat16ConversionINTEL = 6115,
   ICapabilityJointMatrixINTEL = 6118,
@@ -124,8 +123,6 @@ enum InternalCapability {
   ICapRegisterLimitsINTEL = 6460,
   ICapabilityBindlessImagesINTEL = 6528
 };
-
-enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 enum InternalExecutionMode {
   IExecModeFastCompositeKernelINTEL = 6088,
@@ -289,8 +286,6 @@ constexpr Decoration DecorationCacheControlStoreINTEL =
 
 constexpr Capability CapabilityFastCompositeINTEL =
     static_cast<Capability>(ICapFastCompositeINTEL);
-constexpr Capability CapabilityOptNoneINTEL =
-    static_cast<Capability>(ICapOptNoneINTEL);
 constexpr Capability CapabilityFPGADSPControlINTEL =
     static_cast<Capability>(ICapFPGADSPControlINTEL);
 constexpr Capability CapabilityFPGAInvocationPipeliningAttributesINTEL =
@@ -307,9 +302,6 @@ constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
 constexpr Capability CapabilityRegisterLimitsINTEL =
     static_cast<Capability>(ICapRegisterLimitsINTEL);
-
-constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
-    static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
 
 constexpr Decoration DecorationMathOpDSPModeINTEL =
     static_cast<Decoration>(IDecMathOpDSPModeINTEL);
