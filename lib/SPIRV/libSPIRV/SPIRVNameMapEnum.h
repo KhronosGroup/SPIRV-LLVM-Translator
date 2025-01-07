@@ -600,7 +600,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityAtomicFloat32AddEXT, "AtomicFloat32AddEXT");
   add(CapabilityAtomicFloat64AddEXT, "AtomicFloat64AddEXT");
   add(CapabilityLongCompositesINTEL, "LongCompositesINTEL");
-  add(CapabilityOptNoneINTEL, "OptNoneINTEL");
+  add(CapabilityOptNoneEXT, "OptNoneEXT");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
@@ -617,7 +617,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
-  add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
