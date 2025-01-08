@@ -29,7 +29,6 @@ enum Instruction {
   FunctionMetadata = 0,
   FunctionAttribute = 1,
   GlobalVariableMetadata = 2,
-  GlobalVariableAttribute = 3,
-  PreserveCount = 4
+  GlobalVariableAttribute = 3
 };
 } // namespace NonSemanticAuxData
