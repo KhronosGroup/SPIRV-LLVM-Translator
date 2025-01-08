@@ -5144,8 +5144,8 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   // 0 is the global object, 1 is the name of the attribute/metadata as a string
   auto *Arg0 = BC->getModule()->getValue(Args[0]);
   auto *GO = cast<GlobalObject>(getTranslatedValue(Arg0));
-  auto *F = dyn_cast_or_null<Function>(GO);
-  auto *GV = dyn_cast_or_null<GlobalVariable>(GO);
+  auto *F = dyn_cast<Function>(GO);
+  auto *GV = dyn_cast<GlobalVariable>(GO);
   assert((F || GV) && "Value should already have been translated!");
   auto AttrOrMDName = BC->getModule()->get<SPIRVString>(Args[1])->getStr();
   switch (BC->getExtOp()) {

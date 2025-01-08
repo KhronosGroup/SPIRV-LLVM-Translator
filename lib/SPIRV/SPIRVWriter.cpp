@@ -1232,8 +1232,8 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
 
 void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
   auto *GO = cast<GlobalObject>(V);
-  auto *F = dyn_cast_or_null<Function>(GO);
-  auto *GV = dyn_cast_or_null<GlobalVariable>(GO);
+  auto *F = dyn_cast<Function>(GO);
+  auto *GV = dyn_cast<GlobalVariable>(GO);
   assert((F || GV) && "Invalid value type");
   auto *BM = BV->getModule();
   if (!BM->preserveAuxData())
