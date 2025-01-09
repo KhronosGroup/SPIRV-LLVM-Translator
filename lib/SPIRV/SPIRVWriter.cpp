@@ -4934,8 +4934,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       BM->addCapability(CapabilityArithmeticFenceEXT);
       BM->addExtension(ExtensionID::SPV_EXT_arithmetic_fence);
       return BM->addUnaryInst(OpArithmeticFenceEXT, Ty, Op, BB);
-    } else if (BM->isAllowedToUseExtension(
-                   ExtensionID::SPV_INTEL_arithmetic_fence)) {
+    }
+    if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_arithmetic_fence)) {
       // Note: SPV_INTEL_arithmetic_fence was unpublished and superseded by
       // SPV_EXT_arithmetic_fence.
       BM->addCapability(CapabilityArithmeticFenceEXT);
