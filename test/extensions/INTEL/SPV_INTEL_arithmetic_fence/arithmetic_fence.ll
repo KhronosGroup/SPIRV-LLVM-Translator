@@ -4,6 +4,7 @@
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_EXT_arithmetic_fence,+SPV_INTEL_arithmetic_fence -spirv-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV-EXT,CHECK-SPIRV
 
 
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_EXT_arithmetic_fence -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
