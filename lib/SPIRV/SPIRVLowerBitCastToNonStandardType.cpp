@@ -95,7 +95,7 @@ static Value *removeBitCasts(Value *OldValue, Type *NewTy, NFIRBuilder &Builder,
   if (auto *BC = dyn_cast<BitCastInst>(OldValue)) {
     if (BC->getSrcTy() == NewTy) {
       if (BC->hasOneUse()) {
-        BC->replaceAllUsesWith(UndefValue::get(BC->getType()));
+        BC->replaceAllUsesWith(PoisonValue::get(BC->getType()));
         InstsToErase.push_back(BC);
       }
       return BC->getOperand(0);
