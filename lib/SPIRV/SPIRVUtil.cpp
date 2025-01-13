@@ -1853,6 +1853,7 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
   case Intrinsic::acos:
   case Intrinsic::asin:
   case Intrinsic::atan:
+  case Intrinsic::atan2:
   case Intrinsic::ceil:
   case Intrinsic::copysign:
   case Intrinsic::cos:

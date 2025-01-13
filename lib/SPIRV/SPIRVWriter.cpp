@@ -1230,23 +1230,27 @@ void LLVMToSPIRVBase::transFunctionMetadataAsUserSemanticDecoration(
   }
 }
 
-void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
-  auto *BM = BF->getModule();
+void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
+  auto *GO = cast<GlobalObject>(V);
+  auto *F = dyn_cast<Function>(GO);
+  auto *GV = dyn_cast<GlobalVariable>(GO);
+  assert((F || GV) && "Invalid value type");
+  auto *BM = BV->getModule();
   if (!BM->preserveAuxData())
     return;
   if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
     BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
   else
     BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
-  const auto &FnAttrs = F->getAttributes().getFnAttrs();
-  for (const auto &Attr : FnAttrs) {
+  const auto &Attrs = F ? F->getAttributes().getFnAttrs() : GV->getAttributes();
+  for (const auto &Attr : Attrs) {
     std::vector<SPIRVWord> Ops;
-    Ops.push_back(BF->getId());
+    Ops.push_back(BV->getId());
     if (Attr.isStringAttribute()) {
       // Format for String attributes is:
-      // NonSemanticAuxDataFunctionAttribute Fcn AttrName AttrValue
+      // NonSemanticAuxData*Attribute ValueName AttrName AttrValue
       // or, if no value:
-      // NonSemanticAuxDataFunctionAttribute Fcn AttrName
+      // NonSemanticAuxData*Attribute ValueName AttrName
       //
       // AttrName and AttrValue are always Strings
       StringRef AttrKind = Attr.getKindAsString();
@@ -1259,19 +1263,20 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
       }
     } else {
       // Format for other types is:
-      // NonSemanticAuxDataFunctionAttribute Fcn AttrStr
+      // NonSemanticAuxData*Attribute ValueName AttrStr
       // AttrStr is always a String.
       std::string AttrStr = Attr.getAsString();
       auto *AttrSpvString = BM->getString(AttrStr);
       Ops.push_back(AttrSpvString->getId());
     }
-    BM->addAuxData(NonSemanticAuxData::FunctionAttribute,
-                   transType(Type::getVoidTy(F->getContext())), Ops);
+    BM->addAuxData(F ? NonSemanticAuxData::FunctionAttribute
+                     : NonSemanticAuxData::GlobalVariableAttribute,
+                   transType(Type::getVoidTy(V->getContext())), Ops);
   }
   SmallVector<std::pair<unsigned, MDNode *>> AllMD;
   SmallVector<StringRef> MDNames;
-  F->getContext().getMDKindNames(MDNames);
-  F->getAllMetadata(AllMD);
+  V->getContext().getMDKindNames(MDNames);
+  GO->getAllMetadata(AllMD);
   for (const auto &MD : AllMD) {
     std::string MDName = MDNames[MD.first].str();
 
@@ -1284,11 +1289,11 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
       continue;
 
     // Format for metadata is:
-    // NonSemanticAuxDataFunctionMetadata Fcn MDName MDVals...
+    // NonSemanticAuxData*Metadata ValueName MDName MDVals...
     // MDName is always a String, MDVals have different types as explained
     // below. Also note this instruction has a variable number of operands
     std::vector<SPIRVWord> Ops;
-    Ops.push_back(BF->getId());
+    Ops.push_back(BV->getId());
     Ops.push_back(BM->getString(MDName)->getId());
     for (unsigned int OpIdx = 0; OpIdx < MD.second->getNumOperands(); OpIdx++) {
       const auto &CurOp = MD.second->getOperand(OpIdx);
@@ -1304,8 +1309,9 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVFunction *BF, Function *F) {
         assert(false && "Unsupported metadata type");
       }
     }
-    BM->addAuxData(NonSemanticAuxData::FunctionMetadata,
-                   transType(Type::getVoidTy(F->getContext())), Ops);
+    BM->addAuxData(F ? NonSemanticAuxData::FunctionMetadata
+                     : NonSemanticAuxData::GlobalVariableMetadata,
+                   transType(Type::getVoidTy(V->getContext())), Ops);
   }
 }
 
@@ -2028,6 +2034,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (ST && ST->hasName() && isSPIRVConstantName(ST->getName())) {
       auto *BV = transConstant(Init);
       assert(BV);
+      transAuxDataInst(BV, V);
       return mapValue(V, BV);
     }
     if (isa_and_nonnull<ConstantExpr>(Init)) {
@@ -2126,6 +2133,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         translateSEVDecoration(
             GV->getAttribute(kVCMetadata::VCSingleElementVector), BVar);
     }
+
+    transAuxDataInst(BVar, V);
 
     mapValue(V, BVar);
     spv::BuiltIn Builtin = spv::BuiltInPosition;
@@ -4004,6 +4013,8 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
     return OpenCLLIB::Asin;
   case Intrinsic::atan:
     return OpenCLLIB::Atan;
+  case Intrinsic::atan2:
+    return OpenCLLIB::Atan2;
   case Intrinsic::ceil:
     return OpenCLLIB::Ceil;
   case Intrinsic::copysign:
@@ -4260,6 +4271,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                           BB);
   }
   // Binary FP intrinsics
+  case Intrinsic::atan2:
   case Intrinsic::copysign:
   case Intrinsic::pow:
   case Intrinsic::powi:
@@ -4316,7 +4328,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           static_cast<std::vector<SPIRVValue *>::size_type>(VecSize);
       auto *ElemOne = BM->addConstant(ElemTy, 1);
       auto *ElemZero = BM->addConstant(ElemTy, 0);
-      auto *ElemMinusOne = BM->addConstant(ElemTy, MinusOneValue);
+      auto *ElemMinusOne = BM->addConstant(ElemTy, std::move(MinusOneValue));
       std::vector<SPIRVValue *> ElemsOne(ElemCount, ElemOne);
       std::vector<SPIRVValue *> ElemsZero(ElemCount, ElemZero);
       std::vector<SPIRVValue *> ElemsMinusOne(ElemCount, ElemMinusOne);
@@ -4918,10 +4930,17 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::arithmetic_fence: {
     SPIRVType *Ty = transType(II->getType());
     SPIRVValue *Op = transValue(II->getArgOperand(0), BB);
+    if (BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_arithmetic_fence)) {
+      BM->addCapability(CapabilityArithmeticFenceEXT);
+      BM->addExtension(ExtensionID::SPV_EXT_arithmetic_fence);
+      return BM->addUnaryInst(OpArithmeticFenceEXT, Ty, Op, BB);
+    }
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_arithmetic_fence)) {
-      BM->addCapability(internal::CapabilityFPArithmeticFenceINTEL);
+      // Note: SPV_INTEL_arithmetic_fence was unpublished and superseded by
+      // SPV_EXT_arithmetic_fence.
+      BM->addCapability(CapabilityArithmeticFenceEXT);
       BM->addExtension(ExtensionID::SPV_INTEL_arithmetic_fence);
-      return BM->addUnaryInst(internal::OpArithmeticFenceINTEL, Ty, Op, BB);
+      return BM->addUnaryInst(OpArithmeticFenceEXT, Ty, Op, BB);
     }
     return Op;
   }
@@ -5535,10 +5554,15 @@ SPIRVWord LLVMToSPIRVBase::transFunctionControlMask(Function *F) {
       [&](Attribute::AttrKind Attr, SPIRVFunctionControlMaskKind Mask) {
         if (F->hasFnAttribute(Attr)) {
           if (Attr == Attribute::OptimizeNone) {
-            if (!BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_optnone))
+            if (BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_optnone)) {
+              BM->addExtension(ExtensionID::SPV_EXT_optnone);
+              BM->addCapability(CapabilityOptNoneEXT);
+            } else if (BM->isAllowedToUseExtension(
+                           ExtensionID::SPV_INTEL_optnone)) {
+              BM->addExtension(ExtensionID::SPV_INTEL_optnone);
+              BM->addCapability(CapabilityOptNoneINTEL);
+            } else
               return;
-            BM->addExtension(ExtensionID::SPV_INTEL_optnone);
-            BM->addCapability(internal::CapabilityOptNoneINTEL);
           }
           FCM |= Mask;
         }
@@ -7028,6 +7052,7 @@ bool runSpirvBackend(Module *M, std::string &Result, std::string &ErrMsg,
       SPIRV::ExtensionID::SPV_INTEL_cache_controls,
       SPIRV::ExtensionID::SPV_INTEL_global_variable_fpga_decorations,
       SPIRV::ExtensionID::SPV_INTEL_global_variable_host_access,
+      SPIRV::ExtensionID::SPV_EXT_optnone,
       SPIRV::ExtensionID::SPV_INTEL_optnone,
       SPIRV::ExtensionID::SPV_INTEL_usm_storage_classes,
       SPIRV::ExtensionID::SPV_INTEL_subgroups,
