@@ -630,6 +630,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGAArgumentInterfacesINTEL, "FPGAArgumentInterfacesINTEL");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
+  add(CapabilityArithmeticFenceEXT, "ArithmeticFenceEXT");
   add(CapabilitySubgroup2DBlockIOINTEL, "Subgroup2DBlockIOINTEL");
   add(CapabilitySubgroup2DBlockTransformINTEL, "Subgroup2DBlockTransformINTEL");
   add(CapabilitySubgroup2DBlockTransposeINTEL, "Subgroup2DBlockTransposeINTEL");
@@ -639,7 +640,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   // From spirv_internal.hpp
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
-  add(internal::CapabilityFPArithmeticFenceINTEL, "FPArithmeticFenceINTEL");
   add(internal::CapabilityBfloat16ConversionINTEL, "Bfloat16ConversionINTEL");
   add(internal::CapabilityJointMatrixINTEL, "JointMatrixINTEL");
   add(internal::CapabilityHWThreadQueryINTEL, "HWThreadQueryINTEL");
