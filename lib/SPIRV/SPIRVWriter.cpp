@@ -6490,6 +6490,10 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addCompositeConstructInst(transType(CI->getType()), Operands,
                                          BB);
   }
+  case OpCooperativeMatrixLengthKHR: {
+    return BM->addCooperativeMatrixLengthKHRInst(
+        transScavengedType(CI), transType(CI->getArgOperand(0)->getType()), BB);
+  }
   default: {
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       return BM->addUnaryInst(OC, transScavengedType(CI),
