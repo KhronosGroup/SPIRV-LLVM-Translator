@@ -251,6 +251,9 @@ public:
   addJointMatrixINTELType(SPIRVType *, std::vector<SPIRVValue *>) = 0;
   virtual SPIRVTypeCooperativeMatrixKHR *
   addCooperativeMatrixKHRType(SPIRVType *, std::vector<SPIRVValue *>) = 0;
+  virtual SPIRVInstruction *
+  addCooperativeMatrixLengthKHRInst(SPIRVType *, SPIRVType *,
+                                    SPIRVBasicBlock *) = 0;
   virtual SPIRVTypeVoid *addVoidType() = 0;
   virtual SPIRVType *addOpaqueGenericType(Op) = 0;
   virtual SPIRVTypeDeviceEvent *addDeviceEventType() = 0;
