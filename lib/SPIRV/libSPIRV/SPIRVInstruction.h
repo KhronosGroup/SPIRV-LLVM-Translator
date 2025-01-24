@@ -4390,27 +4390,27 @@ public:
     return ExtensionID::SPV_INTEL_2d_block_io;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilitySubgroup2DBlockIOINTEL);
+    return getVec(CapabilitySubgroup2DBlockIOINTEL);
   }
 };
 
 class SPIRVSubgroup2DBlockLoadTransposeINTELInst
     : public SPIRVSubgroup2DBlockIOINTELInst {
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilitySubgroup2DBlockTransposeINTEL);
+    return getVec(CapabilitySubgroup2DBlockTransposeINTEL);
   }
 };
 
 class SPIRVSubgroup2DBlockLoadTransformINTELInst
     : public SPIRVSubgroup2DBlockIOINTELInst {
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilitySubgroup2DBlockTransformINTEL);
+    return getVec(CapabilitySubgroup2DBlockTransformINTEL);
   }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockIOINTELInst,                   \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+  typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockIOINTELInst, Op##x##INTEL,     \
+                            __VA_ARGS__>                                       \
       SPIRV##x##INTEL;
 _SPIRV_OP(Subgroup2DBlockLoad, false, 11)
 _SPIRV_OP(Subgroup2DBlockPrefetch, false, 10)
@@ -4418,13 +4418,13 @@ _SPIRV_OP(Subgroup2DBlockStore, false, 11)
 #undef _SPIRV_OP
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransposeINTELInst,        \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+                            Op##x##INTEL, __VA_ARGS__>                         \
       SPIRV##x##INTEL;
 _SPIRV_OP(Subgroup2DBlockLoadTranspose, false, 11)
 #undef _SPIRV_OP
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVSubgroup2DBlockLoadTransformINTELInst,        \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+                            Op##x##INTEL, __VA_ARGS__>                         \
       SPIRV##x##INTEL;
 _SPIRV_OP(Subgroup2DBlockLoadTransform, false, 11)
 #undef _SPIRV_OP

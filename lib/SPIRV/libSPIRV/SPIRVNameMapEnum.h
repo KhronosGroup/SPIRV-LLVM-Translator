@@ -641,6 +641,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(CapabilityArithmeticFenceEXT, "ArithmeticFenceEXT");
+  add(CapabilitySubgroup2DBlockIOINTEL, "Subgroup2DBlockIOINTEL");
+  add(CapabilitySubgroup2DBlockTransformINTEL, "Subgroup2DBlockTransformINTEL");
+  add(CapabilitySubgroup2DBlockTransposeINTEL, "Subgroup2DBlockTransposeINTEL");
   // From spirv_internal.hpp
   add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
@@ -676,11 +679,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "SubgroupRequirementsINTEL");
   add(internal::CapabilityTaskSequenceINTEL, "TaskSequenceINTEL");
   add(internal::CapabilityBindlessImagesINTEL, "BindlessImagesINTEL");
-  add(internal::CapabilitySubgroup2DBlockIOINTEL, "Subgroup2DBlockIOINTEL");
-  add(internal::CapabilitySubgroup2DBlockTransformINTEL,
-      "Subgroup2DBlockTransformINTEL");
-  add(internal::CapabilitySubgroup2DBlockTransposeINTEL,
-      "Subgroup2DBlockTransposeINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
