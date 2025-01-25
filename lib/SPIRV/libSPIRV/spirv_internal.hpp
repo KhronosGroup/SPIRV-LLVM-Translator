@@ -59,8 +59,6 @@ enum InternalLinkageType {
 
 enum InternalOp {
   IOpTypeTokenINTEL = 6113,
-  IOpConvertFToBF16INTEL = 6116,
-  IOpConvertBF16ToFINTEL = 6117,
   IOpTypeJointMatrixINTEL = 6119,
   IOpJointMatrixLoadINTEL = 6120,
   IOpJointMatrixStoreINTEL = 6121,
@@ -107,7 +105,6 @@ enum InternalDecoration {
 enum InternalCapability {
   ICapFastCompositeINTEL = 6093,
   ICapTokenTypeINTEL = 6112,
-  ICapBfloat16ConversionINTEL = 6115,
   ICapabilityJointMatrixINTEL = 6118,
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapGlobalVariableDecorationsINTEL = 6146,
@@ -267,8 +264,6 @@ constexpr SourceLanguage SourceLanguageCPP20 =
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);
 constexpr Op OpTypeTokenINTEL = static_cast<Op>(IOpTypeTokenINTEL);
-constexpr Op OpConvertFToBF16INTEL = static_cast<Op>(IOpConvertFToBF16INTEL);
-constexpr Op OpConvertBF16ToFINTEL = static_cast<Op>(IOpConvertBF16ToFINTEL);
 
 constexpr Decoration DecorationCallableFunctionINTEL =
     static_cast<Decoration>(IDecCallableFunctionINTEL);
@@ -287,8 +282,6 @@ constexpr Capability CapabilityFastCompositeINTEL =
     static_cast<Capability>(ICapFastCompositeINTEL);
 constexpr Capability CapabilityTokenTypeINTEL =
     static_cast<Capability>(ICapTokenTypeINTEL);
-constexpr Capability CapabilityBfloat16ConversionINTEL =
-    static_cast<Capability>(ICapBfloat16ConversionINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
 
