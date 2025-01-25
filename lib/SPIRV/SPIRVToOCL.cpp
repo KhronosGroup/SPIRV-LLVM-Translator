@@ -219,8 +219,7 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVReadClockKHR(&CI);
     return;
   }
-  if (OC == OpConvertFToBF16INTEL ||
-      OC == OpConvertBF16ToFINTEL) {
+  if (OC == OpConvertFToBF16INTEL || OC == OpConvertBF16ToFINTEL) {
     visitCallSPIRVBFloat16Conversions(&CI, OC);
     return;
   }
