@@ -492,11 +492,10 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     const size_t NumElements = ST->getNumElements();
     size_t SPIRVStructNumElements = NumElements;
     // In case number of elements is greater than maximum WordCount and
-    // SPV_INTEL_long_constant_composite is not enabled, the error will be
+    // SPV_INTEL_long_composites is not enabled, the error will be
     // emitted by validate functionality of SPIRVTypeStruct class.
     if (NumElements > MaxNumElements &&
-        BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_long_constant_composite)) {
+        BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_composites)) {
       SPIRVStructNumElements = MaxNumElements;
     }
 
@@ -504,8 +503,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     mapType(T, Struct);
 
     if (NumElements > MaxNumElements &&
-        BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_long_constant_composite)) {
+        BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_long_composites)) {
       uint64_t NumOfContinuedInstructions = NumElements / MaxNumElements - 1;
       for (uint64_t J = 0; J < NumOfContinuedInstructions; J++) {
         auto *Continued = BM->addTypeStructContinuedINTEL(MaxNumElements);
@@ -2053,7 +2051,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         BVarInit = I->second;
     } else if (Init && !isa<UndefValue>(Init)) {
       if (!BM->isAllowedToUseExtension(
-              ExtensionID::SPV_INTEL_long_constant_composite)) {
+              ExtensionID::SPV_INTEL_long_composites)) {
         if (auto *ArrTy = dyn_cast_or_null<ArrayType>(Init->getType())) {
           // First 3 words of OpConstantComposite encode: 1) word count &
           // opcode, 2) Result Type and 3) Result Id. Max length of SPIRV
