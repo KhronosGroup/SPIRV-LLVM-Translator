@@ -2740,6 +2740,10 @@ bool LLVMToSPIRVBase::shouldTryToAddMemAliasingDecoration(Instruction *Inst) {
 void addFuncPointerCallArgumentAttributes(CallInst *CI,
                                           SPIRVValue *FuncPtrCall) {
   for (unsigned ArgNo = 0; ArgNo < CI->arg_size(); ++ArgNo) {
+    if (CI->doesNotCapture(ArgNo))
+      FuncPtrCall->addDecorate(new SPIRVDecorate(
+          spv::internal::DecorationArgumentAttributeINTEL, FuncPtrCall, ArgNo,
+          FunctionParameterAttributeNoCapture));
     for (const auto &I : CI->getAttributes().getParamAttrs(ArgNo)) {
       spv::FunctionParameterAttribute Attr = spv::FunctionParameterAttributeMax;
       SPIRSPIRVFuncParamAttrMap::find(I.getKindAsEnum(), &Attr);
