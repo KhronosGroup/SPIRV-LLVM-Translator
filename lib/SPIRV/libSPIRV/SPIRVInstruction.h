@@ -4013,7 +4013,7 @@ _SPIRV_OP(Subgroup2DBlockLoadTransform, false, 11)
 class SPIRVSubgroupMatrixMultiplyAccumulateINTELInst
     : public SPIRVInstTemplateBase {
 public:
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_subgroup_matrix_multiply_accumulate;
   }
   SPIRVCapVec getRequiredCapability() const override {
