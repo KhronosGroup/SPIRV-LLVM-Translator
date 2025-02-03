@@ -1,6 +1,3 @@
-; TODO: update for nocapture -> captures(none) LLVM change.
-; XFAIL: *
-
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers
 ; RUN: FileCheck < %t.spt %s --check-prefix CHECK-SPIRV
