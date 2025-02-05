@@ -277,6 +277,9 @@ public:
   SPIRVTypeTaskSequenceINTEL *addTaskSequenceINTELType() override;
   SPIRVInstruction *addTaskSequenceGetINTELInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVBasicBlock *) override;
+  SPIRVInstruction *
+  addCooperativeMatrixLengthKHRInst(SPIRVType *, SPIRVType *,
+                                    SPIRVBasicBlock *) override;
   SPIRVType *addOpaqueGenericType(Op) override;
   SPIRVTypeDeviceEvent *addDeviceEventType() override;
   SPIRVTypeQueue *addQueueType() override;
@@ -1073,6 +1076,14 @@ SPIRVInstruction *SPIRVModuleImpl::addTaskSequenceGetINTELInst(
   return addInstruction(
       SPIRVInstTemplateBase::create(internal::OpTaskSequenceGetINTEL, RetTy,
                                     getId(), getVec(ObjPtr->getId()), BB, this),
+      BB);
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addCooperativeMatrixLengthKHRInst(
+    SPIRVType *RetTy, SPIRVType *MatTy, SPIRVBasicBlock *BB) {
+  return addInstruction(
+      SPIRVInstTemplateBase::create(OpCooperativeMatrixLengthKHR, RetTy,
+                                    getId(), getVec(MatTy->getId()), BB, this),
       BB);
 }
 
