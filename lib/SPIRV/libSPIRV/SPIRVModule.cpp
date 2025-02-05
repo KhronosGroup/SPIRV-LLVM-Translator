@@ -293,6 +293,9 @@ public:
   addJointMatrixINTELType(SPIRVType *, std::vector<SPIRVValue *>) override;
   SPIRVTypeCooperativeMatrixKHR *
   addCooperativeMatrixKHRType(SPIRVType *, std::vector<SPIRVValue *>) override;
+  SPIRVInstruction *
+  addCooperativeMatrixLengthKHRInst(SPIRVType *, SPIRVType *,
+                                    SPIRVBasicBlock *) override;
   SPIRVType *addOpaqueGenericType(Op) override;
   SPIRVTypeDeviceEvent *addDeviceEventType() override;
   SPIRVTypeQueue *addQueueType() override;
@@ -990,6 +993,14 @@ SPIRVModuleImpl::addCooperativeMatrixKHRType(SPIRVType *CompType,
                                              std::vector<SPIRVValue *> Args) {
   return addType(
       new SPIRVTypeCooperativeMatrixKHR(this, getId(), CompType, Args));
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addCooperativeMatrixLengthKHRInst(
+    SPIRVType *RetTy, SPIRVType *MatTy, SPIRVBasicBlock *BB) {
+  return addInstruction(
+      SPIRVInstTemplateBase::create(OpCooperativeMatrixLengthKHR, RetTy,
+                                    getId(), getVec(MatTy->getId()), BB, this),
+      BB);
 }
 
 SPIRVType *SPIRVModuleImpl::addOpaqueGenericType(Op TheOpCode) {
