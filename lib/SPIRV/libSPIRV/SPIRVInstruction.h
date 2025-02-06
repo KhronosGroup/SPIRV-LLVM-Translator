@@ -3957,7 +3957,7 @@ _SPIRV_OP(ConvertHandleToSamplerINTEL)
 
 class SPIRVSubgroup2DBlockIOINTELInst : public SPIRVInstTemplateBase {
 public:
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_2d_block_io;
   }
   SPIRVCapVec getRequiredCapability() const override {
