@@ -1777,9 +1777,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *VLA = static_cast<SPIRVVariableLengthArrayINTEL *>(BV);
     llvm::Type *Ty = transType(BV->getType()->getPointerElementType());
     llvm::Value *ArrSize = transValue(VLA->getOperand(0), F, BB);
-    return mapValue(
-        BV, new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(), ArrSize,
-                           BV->getName(), BB));
+    return mapValue(BV,
+                    new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(),
+                                   ArrSize, BV->getName(), BB));
   }
 
   case OpRestoreMemoryINTEL: {
@@ -2248,8 +2248,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     auto *Ty = transType(CO->getOperand()->getType());
-    AllocaInst *AI = new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(),
-                                    "", BB);
+    AllocaInst *AI =
+        new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     new StoreInst(transValue(CO->getOperand(), F, BB), AI, BB);
     LoadInst *LI = new LoadInst(Ty, AI, "", BB);
     return mapValue(BV, LI);

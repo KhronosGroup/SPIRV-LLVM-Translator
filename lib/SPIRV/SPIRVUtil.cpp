@@ -2295,8 +2295,8 @@ bool postProcessBuiltinWithArrayArguments(Function *F,
           if (!T->isArrayTy())
             continue;
           auto *Alloca = new AllocaInst(
-            T, F->getParent()->getDataLayout().getAllocaAddrSpace(), "",
-            FBegin);
+              T, F->getParent()->getDataLayout().getAllocaAddrSpace(), "",
+              FBegin);
           new StoreInst(I, Alloca, false, CI->getIterator());
           auto *Zero =
               ConstantInt::getNullValue(Type::getInt32Ty(T->getContext()));
