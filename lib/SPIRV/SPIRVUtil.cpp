@@ -2464,6 +2464,7 @@ public:
     }
     case internal::OpConvertHandleToImageINTEL:
     case internal::OpConvertHandleToSamplerINTEL:
+    case internal::OpConvertHandleToSampledImageINTEL:
       addUnsignedArg(0);
       break;
     default:;
