@@ -1663,7 +1663,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       // execution instance, so emit an alloca instead of a global.
       assert(BB && "OpVariable with Function storage class requires BB");
       IRBuilder<> Builder(BB);
-      AllocaInst *AI = Builder.CreateAlloca(Ty, 0, BV->getName());
+      AllocaInst *AI = Builder.CreateAlloca(Ty, nullptr, BV->getName());
       if (Init) {
         auto *Src = transValue(Init, F, BB);
         const bool IsVolatile = BVar->hasDecorate(DecorationVolatile);
@@ -1777,8 +1777,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *VLA = static_cast<SPIRVVariableLengthArrayINTEL *>(BV);
     llvm::Type *Ty = transType(BV->getType()->getPointerElementType());
     llvm::Value *ArrSize = transValue(VLA->getOperand(0), F, BB);
-    return mapValue(
-        BV, new AllocaInst(Ty, SPIRAS_Private, ArrSize, BV->getName(), BB));
+    return mapValue(BV,
+                    new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(),
+                                   ArrSize, BV->getName(), BB));
   }
 
   case OpRestoreMemoryINTEL: {
@@ -2247,7 +2248,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpCopyObject: {
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     auto *Ty = transType(CO->getOperand()->getType());
-    AllocaInst *AI = new AllocaInst(Ty, 0, "", BB);
+    AllocaInst *AI =
+        new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     new StoreInst(transValue(CO->getOperand(), F, BB), AI, BB);
     LoadInst *LI = new LoadInst(Ty, AI, "", BB);
     return mapValue(BV, LI);
@@ -2398,7 +2400,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       if (!HasRtValues)
         return mapValue(BV, ConstantArray::get(AT, CV));
 
-      AllocaInst *Alloca = new AllocaInst(AT, SPIRAS_Private, "", BB);
+      AllocaInst *Alloca =
+          new AllocaInst(AT, M->getDataLayout().getAllocaAddrSpace(), "", BB);
 
       // get pointer to the element of the array
       // store the result of argument
@@ -2417,7 +2420,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       if (!HasRtValues)
         return mapValue(BV, ConstantStruct::get(ST, CV));
 
-      AllocaInst *Alloca = new AllocaInst(ST, SPIRAS_Private, "", BB);
+      AllocaInst *Alloca =
+          new AllocaInst(ST, M->getDataLayout().getAllocaAddrSpace(), "", BB);
 
       // get pointer to the element of structure
       // store the result of argument
@@ -3017,7 +3021,8 @@ Value *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB) {
   Args.reserve(8);
   if (RetTy->getIntegerBitWidth() > 64) {
     llvm::PointerType *RetPtrTy = llvm::PointerType::get(RetTy, SPIRAS_Generic);
-    Value *Alloca = new AllocaInst(RetTy, SPIRAS_Private, "", BB);
+    Value *Alloca =
+        new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = new AddrSpaceCastInst(Alloca, RetPtrTy, "", BB);
     ArgTys.emplace_back(RetPtrTy);
     Args.emplace_back(RetValPtr);
@@ -3141,7 +3146,8 @@ Value *SPIRVToLLVM::transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
   if (RetTy->getIntegerBitWidth() > 64) {
     llvm::PointerType *RetPtrTy = llvm::PointerType::get(RetTy, SPIRAS_Generic);
     ArgTys.push_back(RetPtrTy);
-    Value *Alloca = new AllocaInst(RetTy, SPIRAS_Private, "", BB);
+    Value *Alloca =
+        new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = new AddrSpaceCastInst(Alloca, RetPtrTy, "", BB);
     Args.push_back(RetValPtr);
   }
