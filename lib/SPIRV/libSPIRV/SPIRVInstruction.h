@@ -3943,7 +3943,9 @@ protected:
     SPVErrLog.checkError(
         (ResTy->isTypeImage() && OC == internal::OpConvertHandleToImageINTEL) ||
             (ResTy->isTypeSampler() &&
-             OC == internal::OpConvertHandleToSamplerINTEL),
+             OC == internal::OpConvertHandleToSamplerINTEL) ||
+            (ResTy->isTypeSampledImage() &&
+             OC == internal::OpConvertHandleToSampledImageINTEL),
         SPIRVEC_InvalidInstruction,
         InstName + "\nIncorrect return type of the instruction must be "
                    "image/sampler\n");
@@ -3953,6 +3955,7 @@ protected:
   typedef SPIRVBindlessImagesInstBase<internal::Op##x> SPIRV##x;
 _SPIRV_OP(ConvertHandleToImageINTEL)
 _SPIRV_OP(ConvertHandleToSamplerINTEL)
+_SPIRV_OP(ConvertHandleToSampledImageINTEL)
 #undef _SPIRV_OP
 
 class SPIRVSubgroup2DBlockIOINTELInst : public SPIRVInstTemplateBase {
