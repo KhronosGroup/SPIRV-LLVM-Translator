@@ -415,6 +415,10 @@ protected:
   void validate() const override {
     assert(OpCode == OC);
     assert(WordCount == WC);
+    getModule()->getErrorLog().checkError(
+        getModule()->getSPIRVVersion() < VersionNumber::SPIRV_1_4,
+        SPIRVEC_InvalidModule,
+        "OpDecorationGroup is deprecated starting from SPIR-V 1.4");
   }
 };
 
@@ -437,6 +441,13 @@ public:
   }
   virtual void decorateTargets() = 0;
   _SPIRV_DCL_ENCDEC
+  void validate() const override {
+    getModule()->getErrorLog().checkError(
+        this->getModule()->getSPIRVVersion() < VersionNumber::SPIRV_1_4,
+        SPIRVEC_InvalidModule,
+        "OpGroup(Member)Decorate is deprecated starting from SPIR-V 1.4");
+  }
+
 protected:
   SPIRVDecorationGroup *DecorationGroup;
   std::vector<SPIRVId> Targets;
