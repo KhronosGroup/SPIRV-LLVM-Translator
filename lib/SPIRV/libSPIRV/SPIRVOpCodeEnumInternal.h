@@ -35,3 +35,5 @@ _SPIRV_OP_INTERNAL(ConvertHandleToImageINTEL,
                    internal::ConvertHandleToImageINTEL)
 _SPIRV_OP_INTERNAL(ConvertHandleToSamplerINTEL,
                    internal::ConvertHandleToSamplerINTEL)
+_SPIRV_OP_INTERNAL(ConvertHandleToSampledImageINTEL,
+                   internal::ConvertHandleToSampledImageINTEL)
