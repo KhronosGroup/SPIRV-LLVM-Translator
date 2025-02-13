@@ -5,7 +5,7 @@
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.ll
 ; RUN: FileCheck %s --input-file %t.ll
 
-; CHECK: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_48_0(target("spirv.CooperativeMatrixKHR", i32, 3, 12, 48, 0)
+; CHECK: call spir_func i32 @_Z34__spirv_CooperativeMatrixLengthKHRPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_48_0(%spirv.CooperativeMatrixKHR._int_3_12_48_0
 
 119734787 65536 393230 21 0 
 2 Capability Addresses 
