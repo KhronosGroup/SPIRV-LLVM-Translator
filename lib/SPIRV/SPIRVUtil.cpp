@@ -2203,7 +2203,7 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       if (!A) {
         A = Builder.CreateAlloca(F->getReturnType());
       }
-      SmallVector<Type *> ArgTys;
+      std::vector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(), A->getType());
       auto *NewF =
