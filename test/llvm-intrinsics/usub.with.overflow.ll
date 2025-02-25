@@ -23,10 +23,19 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: ISubBorrow [[#S1TYPE]]
 ; CHECK-SPIRV: ISubBorrow [[#S2TYPE]]
 ; CHECK-SPIRV: ISubBorrow [[#S3TYPE]]
-; CHECK-LLVM: call { i16, i1 } @llvm.usub.with.overflow.i16(i16 %a, i16 %b)
-; CHECK-LLVM: call { i32, i1 } @llvm.usub.with.overflow.i32(i32 %a, i32 %b)
-; CHECK-LLVM: call { i64, i1 } @llvm.usub.with.overflow.i64(i64 %a, i64 %b)
-; CHECK-LLVM: call { <4 x i32>, <4 x i1> } @llvm.usub.with.overflow.v4i32(<4 x i32> %a, <4 x i32> %b)
+
+; CHECK-LLVM: %structtype = type { i16, i1 }
+; CHECK-LLVM: %structtype.0 = type { i32, i1 }
+; CHECK-LLVM: %structtype.1 = type { i64, i1 }
+; CHECK-LLVM: %structtype.2 = type { <4 x i32>, <4 x i1> }
+; CHECK-LLVM: %0 = alloca %structtype, align 8
+; CHECK-LLVM: call spir_func void @_Z18__spirv_ISubBorrowss(ptr sret(%structtype) %0, i16 %a, i16 %b)
+; CHECK-LLVM: %0 = alloca %structtype.0, align 8
+; CHECK-LLVM: call spir_func void @_Z18__spirv_ISubBorrowii(ptr sret(%structtype.0) %0, i32 %a, i32 %b)
+; CHECK-LLVM: %0 = alloca %structtype.1, align 8
+; CHECK-LLVM: call spir_func void @_Z18__spirv_ISubBorrowll(ptr sret(%structtype.1) %0, i64 %a, i64 %b)
+; CHECK-LLVM: %0 = alloca %structtype.2, align 16
+; CHECK-LLVM: call spir_func void @_Z18__spirv_ISubBorrowDv4_iS_(ptr sret(%structtype.2) %0, <4 x i32> %a, <4 x i32> %b)
 
 define spir_func void @test_usub_with_overflow_i16(i16 %a, i16 %b) {
 entry:

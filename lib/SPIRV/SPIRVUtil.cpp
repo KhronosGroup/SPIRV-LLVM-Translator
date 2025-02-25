@@ -2214,7 +2214,8 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       NewF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), A);
-      CallInst *NewCI = Builder.CreateCall(NewF, Args, CI->getName());
+      CallInst *NewCI = Builder.CreateCall(
+          NewF, Args, NewF->getReturnType()->isVoidTy() ? "" : CI->getName());
       NewCI->addParamAttr(0, SretAttr);
       NewCI->setCallingConv(CI->getCallingConv());
       SmallVector<User *, 32> UsersToReplace;
