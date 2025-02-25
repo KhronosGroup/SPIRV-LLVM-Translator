@@ -185,7 +185,7 @@ StructType *getOrCreateOpaqueStructType(Module *M, StringRef Name) {
 }
 
 void getFunctionTypeParameterTypes(llvm::FunctionType *FT,
-                                   std::vector<Type *> &ArgTys) {
+                                   SmallVector<Type *> &ArgTys) {
   for (auto I = FT->param_begin(), E = FT->param_end(); I != E; ++I) {
     ArgTys.push_back(*I);
   }
@@ -2203,7 +2203,7 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       if (!A) {
         A = Builder.CreateAlloca(F->getReturnType());
       }
-      std::vector<Type *> ArgTys;
+      SmallVector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(), A->getType());
       auto *NewF =
