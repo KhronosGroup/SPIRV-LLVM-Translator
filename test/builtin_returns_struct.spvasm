@@ -26,7 +26,7 @@
   %_struct_7 = OpTypeStruct %uint %uint
      %uint_1 = OpConstant %uint 1
    %uchar_42 = OpConstant %uchar 42
-         %10 = OpConstantNull %bool
+         %10 = OpConstantNull %uint
         %foo = OpFunction %uint None %5
           %a = OpFunctionParameter %uint
           %p = OpFunctionParameter %_ptr_Generic_uchar
