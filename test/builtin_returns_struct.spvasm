@@ -48,5 +48,5 @@
 
 ; CHECK: %[[#Var:]] = alloca %structtype, align 8
 ; CHECK: call spir_func void @_Z17__spirv_IAddCarryii(%structtype* sret(%structtype) %[[#Var:]]
-; CHECK: %[[#Load:]] = load %structtype, ptr %[[#Var]], align 4
+; CHECK: %[[#Load:]] = load %structtype, %structtype* %[[#Var]], align 4
 ; CHECK-2: extractvalue %structtype %[[#Load:]]
