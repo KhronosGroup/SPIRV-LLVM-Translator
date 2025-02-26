@@ -251,7 +251,7 @@ PointerType *getSPIRVOpaquePtrType(Module *M, Op OC) {
 }
 
 void getFunctionTypeParameterTypes(llvm::FunctionType *FT,
-                                   std::vector<Type *> &ArgTys) {
+                                   SmallVector<Type *> &ArgTys) {
   for (auto I = FT->param_begin(), E = FT->param_end(); I != E; ++I) {
     ArgTys.push_back(*I);
   }
@@ -2072,10 +2072,11 @@ bool postProcessBuiltinReturningStruct(Function *F) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
       IRBuilder<> Builder(CI->getParent());
       Builder.SetInsertPoint(CI);
-      SmallVector<User *, 5> Users(CI->users());
+      SmallVector<User *> Users(CI->users());
       Value *A = nullptr;
+      StoreInst *SI = nullptr;
       for (auto *U : Users) {
-        if (auto *SI = dyn_cast<StoreInst>(U)) {
+        if ((SI = dyn_cast<StoreInst>(U)) != nullptr) {
           A = SI->getPointerOperand();
           InstToRemove.push_back(SI);
           break;
@@ -2084,22 +2085,29 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       if (!A) {
         A = Builder.CreateAlloca(F->getReturnType());
       }
-      std::vector<Type *> ArgTys;
+      SmallVector<Type *> ArgTys;
       getFunctionTypeParameterTypes(F->getFunctionType(), ArgTys);
       ArgTys.insert(ArgTys.begin(), A->getType());
       auto *NewF =
           getOrCreateFunction(M, Type::getVoidTy(*Context), ArgTys, Name);
-      NewF->addParamAttr(0, Attribute::get(*Context,
-                                           Attribute::AttrKind::StructRet,
-                                           F->getReturnType()));
+      auto SretAttr = Attribute::get(*Context, Attribute::AttrKind::StructRet,
+                                     F->getReturnType());
+      NewF->addParamAttr(0, SretAttr);
       NewF->setCallingConv(F->getCallingConv());
       auto Args = getArguments(CI);
       Args.insert(Args.begin(), A);
-      CallInst *NewCI = Builder.CreateCall(NewF, Args, CI->getName());
+      CallInst *NewCI = Builder.CreateCall(
+          NewF, Args, NewF->getReturnType()->isVoidTy() ? "" : CI->getName());
+      NewCI->addParamAttr(0, SretAttr);
       NewCI->setCallingConv(CI->getCallingConv());
-      SmallVector<User *, 5> CIUsers(CI->users());
-      for (auto *CIUser : CIUsers) {
-        CIUser->replaceUsesOfWith(CI, A);
+      SmallVector<User *, 32> UsersToReplace;
+      for (auto *U : Users)
+        if (U != SI)
+          UsersToReplace.push_back(U);
+      if (UsersToReplace.size() > 0) {
+        auto *LI = Builder.CreateLoad(F->getReturnType(), A);
+        for (auto *U : UsersToReplace)
+          U->replaceUsesOfWith(CI, LI);
       }
       InstToRemove.push_back(CI);
     }
