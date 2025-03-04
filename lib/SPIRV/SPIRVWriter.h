@@ -105,7 +105,6 @@ public:
   bool transSourceLanguage();
   bool transExtension();
   bool transBuiltinSet();
-  bool transWorkItemBuiltinCallsToVariables();
   bool isKnownIntrinsic(Intrinsic::ID Id);
   SPIRVValue *transIntrinsicInst(IntrinsicInst *Intrinsic, SPIRVBasicBlock *BB);
   enum class FPBuiltinType {

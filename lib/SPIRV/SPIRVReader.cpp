@@ -3677,7 +3677,7 @@ bool SPIRVToLLVM::translate() {
   //   e.g. load i32, i32* @__spirv_BuiltInGlobalLinearId, align 4
   // If the desired format is global variables, we don't have to lower them
   // as calls.
-  if (!lowerBuiltinVariablesToCalls(M))
+  if (!lowerBuiltins(BM, M))
     return false;
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
