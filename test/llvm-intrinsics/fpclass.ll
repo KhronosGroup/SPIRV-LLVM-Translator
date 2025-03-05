@@ -29,7 +29,6 @@
 ; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#QNanBitConst16:]] 32256
 ; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#MantissaConst16:]] 1023 
 ; CHECK-SPIRV-DAG: Constant [[#DoubleTy]] [[#DoubleConst:]] 0 1072693248
-
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#const32One:]] 1
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#const64One:]] 1 0 
 ; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#const16One:]] 1

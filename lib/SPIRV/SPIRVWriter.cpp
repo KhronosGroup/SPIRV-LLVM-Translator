@@ -5145,11 +5145,11 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           BM->addUnaryInst(OpBitcast, OpSPIRVTy, InputFloat, BB);
       auto *MantissaConst = transValue(
           Constant::getIntegerValue(IntOpLLVMTy, AllOneMantissa), BB);
-      auto *constOne = transValue(
+      auto *ConstOne = transValue(
             Constant::getIntegerValue(IntOpLLVMTy, OneValue), BB);
 
       auto *MinusOne =
-          BM->addBinaryInst(OpISub, OpSPIRVTy, BitCastToInt, constOne, BB);
+          BM->addBinaryInst(OpISub, OpSPIRVTy, BitCastToInt, ConstOne, BB);
 
       auto *TestIsSubnormal =
           BM->addCmpInst(OpULessThan, ResTy, MinusOne, MantissaConst, BB);
