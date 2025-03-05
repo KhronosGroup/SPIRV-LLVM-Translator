@@ -5147,7 +5147,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           Constant::getIntegerValue(IntOpLLVMTy, AllOneMantissa), BB);
       auto *ConstOne = transValue(
             Constant::getIntegerValue(IntOpLLVMTy, OneValue), BB);
-
       auto *MinusOne =
           BM->addBinaryInst(OpISub, OpSPIRVTy, BitCastToInt, ConstOne, BB);
 
