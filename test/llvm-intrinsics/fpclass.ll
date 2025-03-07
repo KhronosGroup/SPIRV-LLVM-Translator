@@ -27,10 +27,10 @@
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#MantissaConst64:]] 4294967295 1048575
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#ZeroConst64:]] 0 0
 ; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#QNanBitConst16:]] 32256
-; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#MantissaConst16:]] 1023 
+; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#MantissaConst16:]] 1023
 ; CHECK-SPIRV-DAG: Constant [[#DoubleTy]] [[#DoubleConst:]] 0 1072693248
 ; CHECK-SPIRV-DAG: Constant [[#Int32Ty]] [[#const32One:]] 1
-; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#const64One:]] 1 0 
+; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#const64One:]] 1 0
 ; CHECK-SPIRV-DAG: Constant [[#Int16Ty]] [[#const16One:]] 1
 ; CHECK-SPIRV-DAG: ConstantComposite [[#Int16VecTy]] [[#const16vecOne:]] [[#const16One]] [[#const16One]]
 ; CHECK-SPIRV-DAG: ConstantComposite [[#Int16VecTy]] [[#QNanBitConstVec16:]] [[#QNanBitConst16]] [[#QNanBitConst16]]
