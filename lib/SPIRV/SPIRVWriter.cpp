@@ -4203,9 +4203,8 @@ LLVMToSPIRV::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   case OpUMulExtended:
   case OpSMulExtended: {
     Function *F = CI->getCalledFunction();
-    auto *RetTy = F->arg_begin()->getType()->getPointerElementType();
-    StructType *St = cast<StructType>(RetTy);
-    SPIRVValue *V = BM->addBinaryInst(OpIAddCarry, transType(St),
+    StructType *St = cast<StructType>(F->getParamStructRetType(0));
+    SPIRVValue *V = BM->addBinaryInst(OC, transType(St),
                                       transValue(CI->getArgOperand(1), BB),
                                       transValue(CI->getArgOperand(2), BB), BB);
     return BM->addStoreInst(transValue(CI->getArgOperand(0), BB), V, {}, BB);
