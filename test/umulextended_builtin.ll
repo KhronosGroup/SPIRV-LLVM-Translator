@@ -46,7 +46,7 @@ target triple = "spir64-unknown-unknown"
 define spir_func void @test_builtin_umulextcc(i8 %a, i8 %b) {
   entry:
   %0 = alloca %i8struct
-  call void @_Z20__spirv_UMulExtendedcc(ptr sret (%i8struct) %0, i8 %a, i8 %b)
+  call void @_Z20__spirv_UMulExtendedcc(%i8struct* sret (%i8struct) %0, i8 %a, i8 %b)
   ret void
 }
 ; CHECK-SPIRV:           [[a:%[a-z0-9_]+]] = OpFunctionParameter [[uchar]]
@@ -59,12 +59,12 @@ define spir_func void @test_builtin_umulextcc(i8 %a, i8 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i8struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedcc(ptr sret([[i8struct]]) %0, i8 %a, i8 %b)
+; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedcc(%i8struct* sret([[i8struct]]) %0, i8 %a, i8 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_umulextss(i16 %a, i16 %b) {
   entry:
   %0 = alloca %i16struct
-  call void @_Z20__spirv_UMulExtendedss(ptr sret (%i16struct) %0, i16 %a, i16 %b)
+  call void @_Z20__spirv_UMulExtendedss(%i16struct* sret (%i16struct) %0, i16 %a, i16 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_0:%[a-z0-9_]+]] = OpFunctionParameter [[ushort]]
@@ -77,12 +77,12 @@ define spir_func void @test_builtin_umulextss(i16 %a, i16 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i16struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedss(ptr sret([[i16struct]]) %0, i16 %a, i16 %b)
+; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedss(%i16struct* sret([[i16struct]]) %0, i16 %a, i16 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_umulextii(i32 %a, i32 %b) {
   entry:
   %0 = alloca %i32struct
-  call void @_Z20__spirv_UMulExtendedii(ptr sret (%i32struct) %0, i32 %a, i32 %b)
+  call void @_Z20__spirv_UMulExtendedii(%i32struct* sret (%i32struct) %0, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_1:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -95,12 +95,12 @@ define spir_func void @test_builtin_umulextii(i32 %a, i32 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i32struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedii(ptr sret([[i32struct]]) %0, i32 %a, i32 %b)
+; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedii(%i32struct* sret([[i32struct]]) %0, i32 %a, i32 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_umulextll(i64 %a, i64 %b) {
   entry:
   %0 = alloca %i64struct
-  call void @_Z20__spirv_UMulExtendedll(ptr sret (%i64struct) %0, i64 %a, i64 %b)
+  call void @_Z20__spirv_UMulExtendedll(%i64struct* sret (%i64struct) %0, i64 %a, i64 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_2:%[a-z0-9_]+]] = OpFunctionParameter [[ulong]]
@@ -113,12 +113,12 @@ define spir_func void @test_builtin_umulextll(i64 %a, i64 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i64struct]]
-; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedll(ptr sret([[i64struct]]) %0, i64 %a, i64 %b)
+; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedll(%i64struct* sret([[i64struct]]) %0, i64 %a, i64 %b)
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_umulextDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
   entry:
   %0 = alloca %vecstruct
-  call void @_Z20__spirv_UMulExtendedDv4_iS_(ptr sret (%vecstruct) %0, <4 x i32> %a, <4 x i32> %b)
+  call void @_Z20__spirv_UMulExtendedDv4_iS_(%vecstruct* sret (%vecstruct) %0, <4 x i32> %a, <4 x i32> %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_3:%[a-z0-9_]+]] = OpFunctionParameter [[v4uint]]
@@ -131,15 +131,15 @@ define spir_func void @test_builtin_umulextDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[vecstruct]]
-; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedDv4_iS_(ptr sret([[vecstruct]]) %0, <4 x i32> %a, <4 x i32> %b)
+; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedDv4_iS_(%vecstruct* sret([[vecstruct]]) %0, <4 x i32> %a, <4 x i32> %b)
 ; CHECK-LLVM:   ret void
 
 
 define spir_func void @test_builtin_umulext_anon(i32 %a, i32 %b) {
   entry:
   %0 = alloca %struct.anon
-  %1 = addrspacecast ptr %0 to ptr addrspace(4)
-  call spir_func void @_Z20__spirv_UMulExtendedIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4 %1, i32 %a, i32 %b)
+  %1 = addrspacecast %struct.anon* %0 to %struct.anon addrspace(4)*
+  call spir_func void @_Z20__spirv_UMulExtendedIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* sret(%struct.anon) align 4 %1, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:        [[a_4:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -151,13 +151,13 @@ define spir_func void @test_builtin_umulext_anon(i32 %a, i32 %b) {
 ; CHECK-SPIRV:                              OpStore [[var_61]] [[var_62]]
 
 ; CHECK-LLVM:  %0 = alloca [[struct_anon]], align 8
-; CHECK-LLVM:  %1 = addrspacecast ptr %0 to ptr addrspace(4)
-; CHECK-LLVM:  call spir_func void @_Z20__spirv_UMulExtendedii.1(ptr addrspace(4) sret([[struct_anon]]) %1, i32 %a, i32 %b)
+; CHECK-LLVM:  %1 = addrspacecast %struct.anon* %0 to %struct.anon addrspace(4)*
+; CHECK-LLVM:  call spir_func void @_Z20__spirv_UMulExtendedii.1(%struct.anon addrspace(4)* sret([[struct_anon]]) %1, i32 %a, i32 %b)
 ; CHECK-LLVM:  ret void
 
-declare void @_Z20__spirv_UMulExtendedIiiE4anonIT_T0_ES1_S2_(ptr addrspace(4) sret(%struct.anon) align 4, i32, i32)
-declare void @_Z20__spirv_UMulExtendedcc(ptr sret(%i8struct), i8, i8)
-declare void @_Z20__spirv_UMulExtendedss(ptr sret(%i16struct), i16, i16)
-declare void @_Z20__spirv_UMulExtendedii(ptr sret(%i32struct), i32, i32)
-declare void @_Z20__spirv_UMulExtendedll(ptr sret(%i64struct), i64, i64)
-declare void @_Z20__spirv_UMulExtendedDv4_iS_(ptr sret (%vecstruct), <4 x i32>, <4 x i32>)
+declare void @_Z20__spirv_UMulExtendedIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* sret(%struct.anon) align 4, i32, i32)
+declare void @_Z20__spirv_UMulExtendedcc(%i8struct* sret(%i8struct), i8, i8)
+declare void @_Z20__spirv_UMulExtendedss(%i16struct* sret(%i16struct), i16, i16)
+declare void @_Z20__spirv_UMulExtendedii(%i32struct* sret(%i32struct), i32, i32)
+declare void @_Z20__spirv_UMulExtendedll(%i64struct* sret(%i64struct), i64, i64)
+declare void @_Z20__spirv_UMulExtendedDv4_iS_(%vecstruct* sret (%vecstruct), <4 x i32>, <4 x i32>)
