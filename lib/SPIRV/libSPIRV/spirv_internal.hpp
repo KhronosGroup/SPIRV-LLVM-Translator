@@ -66,15 +66,6 @@ enum InternalCapability {
   ICapGlobalVariableDecorationsINTEL = 6146
 };
 
-enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
-
-enum InternalLoopControlMask { ILoopControlLoopCountINTELMask = 0x1000000 };
-
-enum InternalMemoryAccessMask {
-  IMemAccessAliasScopeINTELMask = 0x10000,
-  IMemAccessNoAliasINTELMask = 0x20000
-};
-
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
@@ -127,16 +118,6 @@ constexpr Capability CapabilityDebugInfoModuleINTEL =
     static_cast<Capability>(ICapDebugInfoModuleINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
-
-constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
-    static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
-
-constexpr LoopControlMask LoopControlLoopCountINTELMask =
-    static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
-constexpr MemoryAccessMask MemoryAccessAliasScopeINTELMask =
-    static_cast<MemoryAccessMask>(IMemAccessAliasScopeINTELMask);
-constexpr MemoryAccessMask MemoryAccessNoAliasINTELMask =
-    static_cast<MemoryAccessMask>(IMemAccessNoAliasINTELMask);
 
 } // namespace internal
 } // namespace spv
