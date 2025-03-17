@@ -8,13 +8,13 @@
 
 target triple = "spir"
 
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_rw_t(target("spirv.BufferSurfaceINTEL", 2))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.image1d_rw_t(target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.image1d_buffer_wo_t(target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.image2d_wo_t(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1))
-; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1.image3d_ro_t(target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_rw_t(target("spirv.BufferSurfaceINTEL", 2))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image1d_rw_t(target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image1d_buffer_wo_t(target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image2d_wo_t(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1))
+; LLVM-DAG: declare i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image3d_ro_t(target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0))
 
 declare i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0))
 declare i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1))
@@ -45,13 +45,13 @@ declare i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image3d_ro_t(target("spirv
 ; LLVM-DAG: define spir_kernel void @test(target("spirv.BufferSurfaceINTEL", 0) %buf_ro, target("spirv.BufferSurfaceINTEL", 1) %buf_wo, target("spirv.BufferSurfaceINTEL", 2) %buf_rw, target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2) %im1d, target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1) %im1db, target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1) %im2d, target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0) %im3d)
 define spir_kernel void @test(target("spirv.BufferSurfaceINTEL", 0) %buf_ro, target("spirv.BufferSurfaceINTEL", 1) %buf_wo, target("spirv.BufferSurfaceINTEL", 2) %buf_rw, target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2) %im1d, target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1) %im1db, target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1) %im2d, target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0) %im3d) #0 {
 entry:
-; LLVM: %0 = call i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0) %buf_ro)
-; LLVM: %1 = call i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1) %buf_wo)
-; LLVM: %2 = call i32 @llvm.some.unknown.intrinsic.i32.p1.buffer_rw_t(target("spirv.BufferSurfaceINTEL", 2) %buf_rw)
-; LLVM: %3 = call i32 @llvm.some.unknown.intrinsic.i32.p1.image1d_rw_t(target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2) %im1d)
-; LLVM: %4 = call i32 @llvm.some.unknown.intrinsic.i32.p1.image1d_buffer_wo_t(target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1) %im1db)
-; LLVM: %5 = call i32 @llvm.some.unknown.intrinsic.i32.p1.image2d_wo_t(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1) %im2d)
-; LLVM: %6 = call i32 @llvm.some.unknown.intrinsic.i32.p1.image3d_ro_t(target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0) %im3d)
+; LLVM: %0 = call i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0) %buf_ro)
+; LLVM: %1 = call i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1) %buf_wo)
+; LLVM: %2 = call i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_rw_t(target("spirv.BufferSurfaceINTEL", 2) %buf_rw)
+; LLVM: %3 = call i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image1d_rw_t(target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2) %im1d)
+; LLVM: %4 = call i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image1d_buffer_wo_t(target("spirv.Image", void, 5, 0, 0, 0, 0, 0, 1) %im1db)
+; LLVM: %5 = call i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image2d_wo_t(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 1) %im2d)
+; LLVM: %6 = call i32 @llvm.some.unknown.intrinsic.i32.p1opencl.image3d_ro_t(target("spirv.Image", void, 2, 0, 0, 0, 0, 0, 0) %im3d)
 ; LLVM: ret void
   %0 = call i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_ro_t(target("spirv.BufferSurfaceINTEL", 0) %buf_ro)
   %1 = call i32 @llvm.some.unknown.intrinsic.i32.p1intel.buffer_wo_t(target("spirv.BufferSurfaceINTEL", 1) %buf_wo)
