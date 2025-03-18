@@ -2199,7 +2199,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       }
     }
     return mapValue(V, BM->addCompositeExtractInst(
-                           transScavengedType(Ext),
+                           transType(Ext->getType()),
                            transValue(Ext->getAggregateOperand(), BB),
                            Ext->getIndices(), BB));
   }
