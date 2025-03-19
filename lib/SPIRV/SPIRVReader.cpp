@@ -2424,6 +2424,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       if (!HasRtValues && C == nullptr)
         HasRtValues = true;
     }
+
     switch (static_cast<size_t>(BV->getType()->getOpCode())) {
     case OpTypeVector: {
       if (!HasRtValues)
@@ -2450,7 +2451,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       // store the result of argument
       for (size_t I = 0; I < Constituents.size(); I++) {
         auto *GEP = GetElementPtrInst::Create(
-            Constituents[I]->getType(), Alloca, {getInt32(M, I)}, "gep", BB);
+            AT, Alloca, {getInt32(M, 0), getInt32(M, I)}, "gep", BB);
         GEP->setIsInBounds(true);
         new StoreInst(Constituents[I], GEP, false, BB);
       }
@@ -2469,7 +2470,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       // store the result of argument
       for (size_t I = 0; I < Constituents.size(); I++) {
         auto *GEP = GetElementPtrInst::Create(
-            Constituents[I]->getType(), Alloca, {getInt32(M, I)}, "gep", BB);
+            ST, Alloca, {getInt32(M, 0), getInt32(M, I)}, "gep", BB);
         GEP->setIsInBounds(true);
         new StoreInst(Constituents[I], GEP, false, BB);
       }
