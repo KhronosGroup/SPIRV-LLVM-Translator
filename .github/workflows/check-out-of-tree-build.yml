@@ -48,9 +48,9 @@ jobs:
           echo "deb https://packages.lunarg.com/vulkan jammy main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           sudo apt-get -yq --no-install-suggests --no-install-recommends install \
-            clang-${{ env.LLVM_VERSION }} \
-            clang-tools-${{ env.LLVM_VERSION }} \
-            llvm-${{ env.LLVM_VERSION }}-dev \
+            clang \
+            clang-tools \
+            llvm-dev \
             libllvmlibc-${{ env.LLVM_VERSION }}-dev \
             libomp-${{ env.LLVM_VERSION }}-dev \
             llvm-${{ env.LLVM_VERSION }}-tools \
