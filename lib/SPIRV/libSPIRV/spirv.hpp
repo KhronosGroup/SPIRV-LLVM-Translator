@@ -721,6 +721,7 @@ enum LoopControlMask {
     LoopControlMaxInterleavingINTELMask = 0x00200000,
     LoopControlSpeculatedIterationsINTELMask = 0x00400000,
     LoopControlNoFusionINTELMask = 0x00800000,
+    LoopControlLoopCountINTELMask = 0x1000000,
 };
 
 enum FunctionControlShift {
@@ -737,6 +738,7 @@ enum FunctionControlMask {
     FunctionControlDontInlineMask = 0x00000002,
     FunctionControlPureMask = 0x00000004,
     FunctionControlConstMask = 0x00000008,
+    FunctionControlOptNoneINTELMask = 0x10000,
 };
 
 enum MemorySemanticsShift {
@@ -805,6 +807,8 @@ enum MemoryAccessMask {
     MemoryAccessMakePointerVisibleKHRMask = 0x00000010,
     MemoryAccessNonPrivatePointerMask = 0x00000020,
     MemoryAccessNonPrivatePointerKHRMask = 0x00000020,
+    MemoryAccessAliasScopeINTELMask = 0x10000,
+    MemoryAccessNoAliasINTELMask = 0x20000,
 };
 
 enum Scope {
