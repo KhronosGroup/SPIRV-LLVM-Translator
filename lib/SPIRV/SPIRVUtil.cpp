@@ -2412,6 +2412,7 @@ public:
       break;
     case OpGroupUMax:
     case OpGroupUMin:
+    case OpGroupBroadcast:
     case OpGroupNonUniformBroadcast:
     case OpGroupNonUniformBallotBitCount:
     case OpGroupNonUniformShuffle:
