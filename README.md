@@ -276,7 +276,7 @@ Meanwhile support reverse translation for the extension should be continued
   * Addition of deprecation warning for the extension is not required.
   * We encourage backporting the changes to other branches to speed up removal, but this is not required.
 
-In at least one release cycle one should remove support for reverse translation in the main branch as well,
+After at least one release cycle one may remove support for reverse translation in the main branch as well,
 at which point support for the "preview extension" is considered removed.
 
 These are guidelines, not requirements, and we will consider exceptions on a case-by-case basis.
