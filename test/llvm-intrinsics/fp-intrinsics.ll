@@ -436,3 +436,16 @@ entry:
 }
 
 declare float @llvm.atan2.f32(float, float)
+
+; CHECK: Function
+; CHECK: FunctionParameter {{[0-9]+}} [[x:[0-9]+]]
+; CHECK: ExtInst [[var2]] {{[0-9]+}} [[extinst_id]] modf [[x]] [[ptr:[0-9]+]]
+; CHECK: FunctionEnd
+
+define spir_func {double, double} @TestModf(double %x) {
+entry:
+  %t = tail call {double, double} @llvm.modf.f64(double %x)
+  ret {double, double} %t
+}
+
+declare {double, double} @llvm.modf.f64(double)
