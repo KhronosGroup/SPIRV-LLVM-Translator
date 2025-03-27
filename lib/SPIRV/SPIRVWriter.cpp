@@ -4297,9 +4297,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     // that we can pass to OpenCLLIB::modf to store the integral part.
     SPIRVTypePointer *IntegralPtrTy =
         BM->addPointerType(StorageClassFunction, IntegralTy);
-    SPIRVValue *Ptr = BM->addVariable(IntegralPtrTy, nullptr, false,
-                                      spv::internal::LinkageTypeInternal,
-                                      nullptr, "", StorageClassFunction, BB);
+    // We need to use the entry BB of the function calling llvm.modf.*, instead
+    // of the current BB. For that, we'll find current BB's parent and get its
+    // first BB, which is the entry BB of the function.
+    SPIRVBasicBlock *EntryBB = BB->getParent()->getBasicBlock(0);
+    SPIRVValue *Ptr = BM->addVariable(
+        IntegralPtrTy, nullptr, false, spv::internal::LinkageTypeInternal,
+        nullptr, "", StorageClassFunction, EntryBB);
 
     // Create the OpenCLLIB::modf instruction.
     SPIRVType *FTy = transType(II->getType()->getStructElementType(0));

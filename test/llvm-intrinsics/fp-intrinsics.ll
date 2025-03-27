@@ -437,10 +437,15 @@ entry:
 
 declare float @llvm.atan2.f32(float, float)
 
-; CHECK: Function
+; CHECK: Function [[ResTy:[0-9]+]]
 ; CHECK: FunctionParameter {{[0-9]+}} [[x:[0-9]+]]
-; CHECK: ExtInst [[var2]] {{[0-9]+}} [[extinst_id]] modf [[x]] [[ptr:[0-9]+]]
+; CHECK: Variable [[PtrTy:[0-9]+]] [[Ptr:[0-9]+]] 7
+; CHECK: ExtInst [[var2]] [[ResFirstElem:[0-9]+]] [[extinst_id]] modf [[x]] [[Ptr]]
+; CHECK: Load [[var2]] [[ResSecondElem:[0-9]+]] [[Ptr]]
+; CHECK: CompositeConstruct [[ResTy]] [[RetVal:[0-9]+]] [[ResFirstElem]] [[ResSecondElem]]
+; CHECK: ReturnValue [[RetVal]]
 ; CHECK: FunctionEnd
+
 
 define spir_func {double, double} @TestModf(double %x) {
 entry:
