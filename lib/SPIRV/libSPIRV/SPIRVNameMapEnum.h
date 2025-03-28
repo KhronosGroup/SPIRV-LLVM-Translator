@@ -609,6 +609,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityGlobalVariableHostAccessINTEL, "GlobalVariableHostAccessINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
+  add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
+  add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
+  add(CapabilityBFloat16CooperativeMatrixKHR, "BFloat16CooperativeMatrixKHR");
   add(CapabilitySubgroup2DBlockIOINTEL, "Subgroup2DBlockIOINTEL");
   add(CapabilitySubgroup2DBlockTransformINTEL, "Subgroup2DBlockTransformINTEL");
   add(CapabilitySubgroup2DBlockTransposeINTEL, "Subgroup2DBlockTransposeINTEL");
