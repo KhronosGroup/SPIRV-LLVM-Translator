@@ -1,4 +1,4 @@
-; Check if the translator handles #dbg_declare(ptr null ... correctly
+; Check if the translator handles #dbg_declare(ptr null ...) correctly
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
