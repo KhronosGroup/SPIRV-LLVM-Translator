@@ -2614,6 +2614,15 @@ public:
     case OpenCLLIB::S_Upsample:
       addUnsignedArg(1);
       break;
+    case OpenCLLIB::Nan:
+      addUnsignedArg(0);
+      break;
+    case OpenCLLIB::Shuffle:
+      addUnsignedArg(1);
+      break;
+    case OpenCLLIB::Shuffle2:
+      addUnsignedArg(2);
+      break;
     default:;
       // No special handling is needed
     }
