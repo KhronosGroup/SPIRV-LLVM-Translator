@@ -86,7 +86,6 @@ enum InternalOp {
   IOpConvertHandleToImageINTEL = 6529,
   IOpConvertHandleToSamplerINTEL = 6530,
   IOpConvertHandleToSampledImageINTEL = 6531,
-  IOpBitwiseFunctionINTEL = 6242,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -120,7 +119,6 @@ enum InternalCapability {
   ICapabilityCacheControlsINTEL = 6441,
   ICapabilitySubgroupRequirementsINTEL = 6445,
   ICapabilityBindlessImagesINTEL = 6528,
-  ICapabilityTernaryBitwiseFunctionINTEL = 6241
 };
 
 enum InternalExecutionMode {
@@ -209,9 +207,6 @@ _SPIRV_OP(Capability, BindlessImagesINTEL)
 _SPIRV_OP(Op, ConvertHandleToImageINTEL)
 _SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
-
-_SPIRV_OP(Capability, TernaryBitwiseFunctionINTEL)
-_SPIRV_OP(Op, BitwiseFunctionINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =

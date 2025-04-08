@@ -4425,12 +4425,12 @@ public:
     const SPIRVType *ResTy = this->getType();
     SPVErrLog.checkError(
         ResTy->isTypeInt() || (ResTy->isTypeVector() &&
-                                ResTy->getVectorComponentType()->isTypeInt()),
+                               ResTy->getVectorComponentType()->isTypeInt()),
         SPIRVEC_InvalidInstruction,
         InstName + "\nResult type must be an integer scalar or vector.\n");
 
     auto CommonArgCheck = [this, ResTy, &InstName,
-                            &SPVErrLog](size_t ArgI, const char *ArgPlacement) {
+                           &SPVErrLog](size_t ArgI, const char *ArgPlacement) {
       SPIRVValue *Arg =
           const_cast<SPIRVTernaryBitwiseFunctionINTELInst *>(this)->getOperand(
               ArgI);
@@ -4459,13 +4459,13 @@ public:
     return ExtensionID::SPV_INTEL_ternary_bitwise_function;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityTernaryBitwiseFunctionINTEL);
+    return getVec(CapabilityTernaryBitwiseFunctionINTEL);
   }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
   typedef SPIRVInstTemplate<SPIRVTernaryBitwiseFunctionINTELInst,              \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+                            Op##x##INTEL, __VA_ARGS__>                         \
       SPIRV##x##INTEL;
 _SPIRV_OP(BitwiseFunction, true, 7)
 #undef _SPIRV_OP
