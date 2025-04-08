@@ -2666,6 +2666,9 @@ public:
     case OpenCLLIB::S_Upsample:
       addUnsignedArg(1);
       break;
+    case OpenCLLIB::Nan:
+      addUnsignedArg(0);
+      break;
     case OpenCLLIB::Vloadn:
     case OpenCLLIB::Vload_half:
     case OpenCLLIB::Vload_halfn:
