@@ -99,17 +99,11 @@ SPIRVInstruction *SPIRVBasicBlock::getVariableInsertionPoint() const {
         // There are debug instructions that could describe OpVariable - they
         // can be in the first block in the function as well.
         if (Inst->isExtInst()) {
-          const SPIRVExtInst *EI = static_cast<const SPIRVExtInst *>(Inst);
-          auto ExtSetKind = EI->getExtSetKind();
-          auto ExtOp = EI->getExtOp();
-          if ((ExtSetKind == SPIRVEIS_Debug ||
-               ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100 ||
-               ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
-               ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
-              (ExtOp == SPIRVDebug::Declare || ExtOp == SPIRVDebug::Value ||
+          auto ExtOp = static_cast<const SPIRVExtInst *>(Inst)->getExtOp();
+          if (ExtOp == SPIRVDebug::Declare || ExtOp == SPIRVDebug::Value ||
                ExtOp == SPIRVDebug::Scope || ExtOp == SPIRVDebug::NoScope ||
                ExtOp == SPIRVDebug::DebugLine ||
-               ExtOp == SPIRVDebug::DebugNoLine)) {
+               ExtOp == SPIRVDebug::DebugNoLine) {
             return false;
           }
         }
