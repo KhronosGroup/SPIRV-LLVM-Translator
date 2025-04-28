@@ -2154,7 +2154,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       std::string ErrorStr = "SPV_INTEL_hw_thread_queries\n"
                              "Please report to "
                              "https://github.com/intel/llvm in case if you see "
-                             "this error.\nRef LLVM Value: ";
+                             "this error.\nRef LLVM Value:";
       getErrorLog().checkError(false, SPIRVEC_DeprecatedExtension, V, ErrorStr);
     }
 
