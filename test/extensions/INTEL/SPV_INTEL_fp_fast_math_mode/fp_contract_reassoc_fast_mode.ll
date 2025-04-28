@@ -5,6 +5,7 @@
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
  
 ; CHECK-SPIRV-ON: 2 Capability FPFastMathModeINTEL
+; CHECK-SPIRV-ON: 8 Extension "SPV_INTEL_fp_fast_math_mode"
 ; CHECK-SPIRV-ON: 3 Name [[mu:[0-9]+]] "mul"
 ; CHECK-SPIRV-ON: 3 Name [[su:[0-9]+]] "sub"
 ; CHECK-SPIRV-ON-DAG: 4 Decorate [[mu]] FPFastMathMode 65536
