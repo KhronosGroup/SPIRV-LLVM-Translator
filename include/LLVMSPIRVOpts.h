@@ -66,7 +66,7 @@ enum class VersionNumber : uint32_t {
   SPIRV_1_5 = 0x00010500,
   SPIRV_1_6 = 0x00010600,
   MinimumVersion = SPIRV_1_0,
-  MaximumVersion = SPIRV_1_6
+  MaximumVersion = SPIRV_1_4
 };
 
 inline constexpr std::string_view formatVersionNumber(uint32_t Version) {
