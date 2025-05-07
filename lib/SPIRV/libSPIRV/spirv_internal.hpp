@@ -53,8 +53,8 @@ enum InternalSourceLanguageNonSemanticDI {
 };
 
 enum InternalLinkageType {
-  ILTPrev = LinkageTypeMax - 2,
-  ILTInternal
+    ILTPrev = LinkageTypeMax - 2,
+    ILTInternal
 };
 
 enum InternalOp {
@@ -78,6 +78,8 @@ enum InternalOp {
   IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
+  IOpJointMatrixGetElementCoordINTEL = 6440,
+  IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpConvertHandleToImageINTEL = 6529,
   IOpConvertHandleToSamplerINTEL = 6530,
   IOpConvertHandleToSampledImageINTEL = 6531,
@@ -106,9 +108,11 @@ enum InternalCapability {
   ICapFPArithmeticFenceINTEL = 6144,
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
+  ICapabilityJointMatrixWIInstructionsINTEL = 6435,
   ICapabilityCacheControlsINTEL = 6441,
   ICapRegisterLimitsINTEL = 6460,
   ICapabilityBindlessImagesINTEL = 6528
@@ -155,12 +159,9 @@ enum class StoreCacheControlINTEL {
   Streaming = 3
 };
 
-enum InternalNamedMaximumNumberOfRegisters {
-  NamedMaximumNumberOfRegistersAutoINTEL = 0,
-};
-
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, JointMatrixINTEL)
+_SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
@@ -169,11 +170,14 @@ _SPIRV_OP(Op, JointMatrixSUMadINTEL)
 _SPIRV_OP(Op, JointMatrixUSMadINTEL)
 _SPIRV_OP(Op, JointMatrixUUMadINTEL)
 _SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
+_SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixCheckedInstructionsINTEL)
 _SPIRV_OP(Op, CooperativeMatrixLoadCheckedINTEL)
 _SPIRV_OP(Op, CooperativeMatrixStoreCheckedINTEL)
 _SPIRV_OP(Op, CooperativeMatrixConstructCheckedINTEL)
+_SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
+_SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
 
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)

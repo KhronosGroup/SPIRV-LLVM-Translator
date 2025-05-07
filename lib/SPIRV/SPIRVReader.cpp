@@ -1141,6 +1141,9 @@ static void applyFPFastMathModeDecorations(const SPIRVValue *BV,
 Value *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV, BasicBlock *BB,
                                                  Function *F) {
   SPIRVBinary *BBN = static_cast<SPIRVBinary *>(BV);
+  if (BV->getType()->isTypeCooperativeMatrixKHR()) {
+    return mapValue(BV, transSPIRVBuiltinFromInst(BBN, BB));
+  }
   Instruction::BinaryOps BO;
   auto OP = BBN->getOpCode();
   if (isLogicalOpCode(OP))
@@ -2248,6 +2251,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto AC = static_cast<SPIRVAccessChainBase *>(BV);
     auto Base = transValue(AC->getBase(), F, BB);
     SPIRVType *BaseSPVTy = AC->getBase()->getType();
+    if (BaseSPVTy->isTypePointer() &&
+        BaseSPVTy->getPointerElementType()->isTypeCooperativeMatrixKHR()) {
+      return mapValue(BV, transSPIRVBuiltinFromInst(AC, BB));
+    }
     Type *BaseTy =
         BaseSPVTy->isTypeVector()
             ? transType(
@@ -2320,20 +2327,67 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto CC = static_cast<SPIRVCompositeConstruct *>(BV);
     auto Constituents = transValue(CC->getOperands(), F, BB);
     std::vector<Constant *> CV;
+    bool HasRtValues = false;
     for (const auto &I : Constituents) {
-      CV.push_back(dyn_cast<Constant>(I));
+      auto *C = dyn_cast<Constant>(I);
+      CV.push_back(C);
+      if (!HasRtValues && C == nullptr)
+        HasRtValues = true;
     }
+
     switch (static_cast<size_t>(BV->getType()->getOpCode())) {
-    case OpTypeVector:
-      return mapValue(BV, ConstantVector::get(CV));
-    case OpTypeArray:
-      return mapValue(
-          BV, ConstantArray::get(dyn_cast<ArrayType>(transType(CC->getType())),
-                                 CV));
-    case OpTypeStruct:
-      return mapValue(BV,
-                      ConstantStruct::get(
-                          dyn_cast<StructType>(transType(CC->getType())), CV));
+    case OpTypeVector: {
+      if (!HasRtValues)
+        return mapValue(BV, ConstantVector::get(CV));
+
+      auto *VT = cast<FixedVectorType>(transType(CC->getType()));
+      Value *NewVec = ConstantVector::getSplat(
+          VT->getElementCount(), PoisonValue::get(VT->getElementType()));
+
+      for (size_t I = 0; I < Constituents.size(); I++) {
+        NewVec = InsertElementInst::Create(NewVec, Constituents[I],
+                                           getInt32(M, I), "", BB);
+      }
+      return mapValue(BV, NewVec);
+    }
+    case OpTypeArray: {
+      auto *AT = cast<ArrayType>(transType(CC->getType()));
+      if (!HasRtValues)
+        return mapValue(BV, ConstantArray::get(AT, CV));
+
+      AllocaInst *Alloca = new AllocaInst(AT, SPIRAS_Private, "", BB);
+
+      // get pointer to the element of the array
+      // store the result of argument
+      for (size_t I = 0; I < Constituents.size(); I++) {
+        auto *GEP = GetElementPtrInst::Create(
+            AT, Alloca, {getInt32(M, 0), getInt32(M, I)}, "gep", BB);
+        GEP->setIsInBounds(true);
+        new StoreInst(Constituents[I], GEP, false, BB);
+      }
+
+      auto *Load = new LoadInst(AT, Alloca, "load", false, BB);
+      return mapValue(BV, Load);
+    }
+    case OpTypeStruct: {
+      auto *ST = cast<StructType>(transType(CC->getType()));
+      if (!HasRtValues)
+        return mapValue(BV, ConstantStruct::get(ST, CV));
+
+      AllocaInst *Alloca = new AllocaInst(ST, SPIRAS_Private, "", BB);
+
+      // get pointer to the element of structure
+      // store the result of argument
+      for (size_t I = 0; I < Constituents.size(); I++) {
+        auto *GEP = GetElementPtrInst::Create(
+            ST, Alloca, {getInt32(M, 0), getInt32(M, I)}, "gep", BB);
+        GEP->setIsInBounds(true);
+        new StoreInst(Constituents[I], GEP, false, BB);
+      }
+
+      auto *Load = new LoadInst(ST, Alloca, "load", false, BB);
+      return mapValue(BV, Load);
+    }
     case internal::OpTypeJointMatrixINTEL:
     case OpTypeCooperativeMatrixKHR:
       return mapValue(BV, transSPIRVBuiltinFromInst(CC, BB));
@@ -2521,6 +2575,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
     case SPIRVEIS_Debug:
     case SPIRVEIS_OpenCL_DebugInfo_100:
+    case SPIRVEIS_NonSemantic_Shader_DebugInfo_100:
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       return mapValue(BV, DbgTran->transDebugIntrinsic(ExtInst, BB));
     default:
@@ -2534,6 +2589,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       Builder.SetInsertPoint(BB);
     }
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    if (BV->getType()->isTypeCooperativeMatrixKHR()) {
+      return mapValue(BV, transSPIRVBuiltinFromInst(BC, BB));
+    }
     auto Neg =
         Builder.CreateNeg(transValue(BC->getOperand(0), F, BB), BV->getName());
     if (auto *NegInst = dyn_cast<Instruction>(Neg)) {
@@ -2586,6 +2644,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpFNegate: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
+    if (BV->getType()->isTypeCooperativeMatrixKHR()) {
+      return mapValue(BV, transSPIRVBuiltinFromInst(BC, BB));
+    }
     auto Neg = UnaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
                                          BV->getName(), BB);
     applyFPFastMathModeDecorations(BV, Neg);
@@ -3579,12 +3640,10 @@ bool SPIRVToLLVM::translate() {
   if (!transAddressingModel())
     return false;
 
-  for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
-    auto BV = BM->getVariable(I);
-    if (BV->getStorageClass() != StorageClassFunction)
-      transValue(BV, nullptr, nullptr);
-    else
-      transGlobalCtorDtors(BV);
+  // Entry Points should be translated before all debug intrinsics.
+  for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    if (EI->getExtOp() == SPIRVDebug::EntryPoint)
+      DbgTran->transDebugInst(EI);
   }
 
   // Compile unit might be needed during translation of debug intrinsics.
@@ -3593,6 +3652,15 @@ bool SPIRVToLLVM::translate() {
     if (EI->getExtOp() == SPIRVDebug::CompilationUnit)
       DbgTran->transDebugInst(EI);
   }
+
+  for (unsigned I = 0, E = BM->getNumVariables(); I != E; ++I) {
+    auto *BV = BM->getVariable(I);
+    if (BV->getStorageClass() != StorageClassFunction)
+      transValue(BV, nullptr, nullptr);
+    else
+      transGlobalCtorDtors(BV);
+  }
+
   // Then translate all debug instructions.
   for (SPIRVExtInst *EI : BM->getDebugInstVec()) {
     DbgTran->transDebugInst(EI);
@@ -4445,8 +4513,7 @@ bool SPIRVToLLVM::transMetadata() {
       F->setMetadata(kSPIR2MD::IntelFPGAIPInterface,
                      MDNode::get(*Context, InterfaceMDVec));
     }
-    if (auto *EM = BF->getExecutionMode(
-            internal::ExecutionModeMaximumRegistersINTEL)) {
+    if (auto *EM = BF->getExecutionMode(ExecutionModeMaximumRegistersINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 
@@ -4458,8 +4525,7 @@ bool SPIRVToLLVM::transMetadata() {
           ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0])));
       ExecModeMD->addOperand(MDNode::get(*Context, ValueVec));
     }
-    if (auto *EM = BF->getExecutionMode(
-            internal::ExecutionModeMaximumRegistersIdINTEL)) {
+    if (auto *EM = BF->getExecutionMode(ExecutionModeMaximumRegistersIdINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 
@@ -4474,8 +4540,8 @@ bool SPIRVToLLVM::transMetadata() {
                                     transValue(ExecOp, nullptr, nullptr)))));
       ExecModeMD->addOperand(MDNode::get(*Context, ValueVec));
     }
-    if (auto *EM = BF->getExecutionMode(
-            internal::ExecutionModeNamedMaximumRegistersINTEL)) {
+    if (auto *EM =
+            BF->getExecutionMode(ExecutionModeNamedMaximumRegistersINTEL)) {
       NamedMDNode *ExecModeMD =
           M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
 

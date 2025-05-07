@@ -288,6 +288,7 @@ public:
     return Id;
   }
   std::shared_ptr<const SPIRVLine> getLine() const { return Line; }
+  std::shared_ptr<const SPIRVExtInst> getDebugLine() const { return DebugLine; }
   SPIRVLinkageTypeKind getLinkageType() const;
   Op getOpCode() const { return OpCode; }
   SPIRVModule *getModule() const { return Module; }
@@ -360,6 +361,7 @@ public:
   void setHasNoId() { Attrib |= SPIRVEA_NOID; }
   void setId(SPIRVId TheId) { Id = TheId; }
   void setLine(const std::shared_ptr<const SPIRVLine> &L);
+  void setDebugLine(const std::shared_ptr<const SPIRVExtInst> &DL);
   void setLinkageType(SPIRVLinkageTypeKind);
   void setModule(SPIRVModule *TheModule);
   void setName(const std::string &TheName);
@@ -387,6 +389,7 @@ public:
   friend spv_ostream &operator<<(spv_ostream &O, const SPIRVEntry &E);
   friend std::istream &operator>>(std::istream &I, SPIRVEntry &E);
   virtual void encodeLine(spv_ostream &O) const;
+  virtual void encodeDebugLine(spv_ostream &O) const;
   virtual void encodeAll(spv_ostream &O) const;
   virtual void encodeName(spv_ostream &O) const;
   virtual void encodeChildren(spv_ostream &O) const;
@@ -451,6 +454,7 @@ protected:
   DecorateIdMapType DecorateIds;
   MemberDecorateMapType MemberDecorates;
   std::shared_ptr<const SPIRVLine> Line;
+  std::shared_ptr<const SPIRVExtInst> DebugLine;
 };
 
 class SPIRVEntryNoIdGeneric : public SPIRVEntry {
@@ -694,9 +698,9 @@ public:
 
   std::optional<ExtensionID> getRequiredExtension() const override {
     switch (static_cast<unsigned>(ExecMode)) {
-    case internal::ExecutionModeMaximumRegistersINTEL:
-    case internal::ExecutionModeMaximumRegistersIdINTEL:
-    case internal::ExecutionModeNamedMaximumRegistersINTEL:
+    case ExecutionModeMaximumRegistersINTEL:
+    case ExecutionModeMaximumRegistersIdINTEL:
+    case ExecutionModeNamedMaximumRegistersINTEL:
       return ExtensionID::SPV_INTEL_maximum_registers;
     default:
       return {};
@@ -765,9 +769,9 @@ public:
              IsOtherFP(EMK);
     };
     auto IsMaxRegisters = [&](auto EMK) {
-      return EMK == internal::ExecutionModeMaximumRegistersINTEL ||
-             EMK == internal::ExecutionModeMaximumRegistersIdINTEL ||
-             EMK == internal::ExecutionModeNamedMaximumRegistersINTEL;
+      return EMK == ExecutionModeMaximumRegistersINTEL ||
+             EMK == ExecutionModeMaximumRegistersIdINTEL ||
+             EMK == ExecutionModeNamedMaximumRegistersINTEL;
     };
     auto IsCompatible = [&](SPIRVExecutionMode *EM0, SPIRVExecutionMode *EM1) {
       if (EM0->getTargetId() != EM1->getTargetId())
