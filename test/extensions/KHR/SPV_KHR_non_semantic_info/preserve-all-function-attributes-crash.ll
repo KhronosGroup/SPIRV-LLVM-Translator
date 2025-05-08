@@ -1,5 +1,5 @@
-; RUN: llvm-as -opaque-pointers=0 %s -o %t.bc
-; RUN: llvm-spirv -opaque-pointers=0 %t.bc --spirv-preserve-auxdata --spirv-text -spirv-allow-unknown-intrinsics=llvm.genx. -o %t.txt
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc --spirv-preserve-auxdata --spirv-text -spirv-allow-unknown-intrinsics=llvm.genx. -o %t.txt
 ; RUN: llvm-spirv --spirv-preserve-auxdata --spirv-target-env=SPV-IR --spirv-text -r %t.txt -o %t.bc
 ; RUN: llvm-dis %t.bc -o %t.ll
 ; RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
@@ -9,14 +9,14 @@ target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:2
 target triple = "spir-unknown-unknown"
 
 ; CHECK-LLVM: define spir_kernel void @test_array
-define spir_kernel void @test_array(i8 addrspace(1)* %in, i8 addrspace(1)* %out) {
-  call void @llvm.memmove.p1i8.p1i8.i32(i8 addrspace(1)* %out, i8 addrspace(1)* %in, i32 72, i1 false)
+define spir_kernel void @test_array(ptr addrspace(1) %in, ptr addrspace(1) %out) {
+  call void @llvm.memmove.p1.p1.i32(ptr addrspace(1) %out, ptr addrspace(1) %in, i32 72, i1 false)
   ret void
 }
 
 ; Function Attrs: nounwind
-declare void @llvm.memmove.p1i8.p1i8.i32(i8 addrspace(1)* nocapture, i8 addrspace(1)* nocapture readonly, i32, i1) #0
-; CHECK-SPIRV: Name [[#ID:]] "llvm.memmove.p1i8.p1i8.i32"
+declare void @llvm.memmove.p1.p1.i32(ptr addrspace(1) nocapture, ptr addrspace(1) nocapture readonly, i32, i1) #0
+; CHECK-SPIRV: Name [[#ID:]] "llvm.memmove.p1.p1.i32"
 ; CHECK-LLVM-NOT: llvm.memmove
 
 ; CHECK-LLVM: attributes #0 = { nounwind }

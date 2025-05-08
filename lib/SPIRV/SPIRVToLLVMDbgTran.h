@@ -83,30 +83,37 @@ public:
     DebugInstCache[DebugInst] = Res;
     return static_cast<T *>(Res);
   }
+
   Instruction *transDebugIntrinsic(const SPIRVExtInst *DebugInst,
                                    BasicBlock *BB);
   void finalize();
 
 private:
   DIFile *getFile(const SPIRVId SourceId);
-  DIFile *
-  getDIFile(const std::string &FileName,
-            std::optional<DIFile::ChecksumInfo<StringRef>> CS = std::nullopt);
+
+  DIFile *getDIFile(const std::string &FileName,
+                    std::optional<DIFile::ChecksumInfo<StringRef>> CS = std::nullopt,
+                    std::optional<std::string> Source = std::nullopt);
   DIFile *getDIFile(const SPIRVEntry *E);
   unsigned getLineNo(const SPIRVEntry *E);
 
   MDNode *transDebugInstImpl(const SPIRVExtInst *DebugInst);
+
+  DIType *transNonNullDebugType(const SPIRVExtInst *DebugInst);
 
   llvm::DebugLoc transDebugLocation(const SPIRVExtInst *DebugInst);
 
   llvm::DebugLoc transDebugScope(const SPIRVInstruction *Inst);
 
   MDNode *transDebugInlined(const SPIRVExtInst *Inst);
-
-  DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst);
+  MDNode *transDebugInlinedNonSemanticShader200(const SPIRVExtInst *Inst);
 
   void appendToSourceLangLiteral(DICompileUnit *CompileUnit,
                                  SPIRVWord SourceLang);
+
+  DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst,
+                                      const std::string CompilerVersion = "",
+                                      const std::string Flags = "");
 
   DIBasicType *transTypeBasic(const SPIRVExtInst *DebugInst);
 
@@ -127,7 +134,13 @@ private:
 
   DIStringType *transTypeString(const SPIRVExtInst *DebugInst);
 
-  DINode *transTypeMember(const SPIRVExtInst *DebugInst);
+  DINode *transTypeMember(const SPIRVExtInst *DebugInst,
+                          const SPIRVExtInst *ParentInst = nullptr,
+                          DIScope *Scope = nullptr);
+  DINode *transTypeMemberOpenCL(const SPIRVExtInst *DebugInst);
+  DINode *transTypeMemberNonSemantic(const SPIRVExtInst *DebugInst,
+                                     const SPIRVExtInst *ParentInst,
+                                     DIScope *Scope);
 
   DINode *transTypeEnum(const SPIRVExtInst *DebugInst);
 
@@ -144,9 +157,14 @@ private:
   DINode *transLexicalBlock(const SPIRVExtInst *DebugInst);
   DINode *transLexicalBlockDiscriminator(const SPIRVExtInst *DebugInst);
 
-  DINode *transFunction(const SPIRVExtInst *DebugInst);
+  DINode *transFunction(const SPIRVExtInst *DebugInst,
+                        bool IsMainSubprogram = false);
+  DINode *transFunctionDefinition(const SPIRVExtInst *DebugInst);
+  void transFunctionBody(DISubprogram *DIS, SPIRVId FuncId);
 
   DINode *transFunctionDecl(const SPIRVExtInst *DebugInst);
+
+  MDNode *transEntryPoint(const SPIRVExtInst *DebugInst);
 
   MDNode *transGlobalVariable(const SPIRVExtInst *DebugInst);
 
@@ -155,7 +173,7 @@ private:
   DINode *transTypedef(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeInheritance(const SPIRVExtInst *DebugInst,
-                               DIType *ChildClass);
+                               DIType *ChildClass = nullptr);
 
   DINode *transImportedEntry(const SPIRVExtInst *DebugInst);
 
@@ -192,11 +210,19 @@ private:
     return nullptr;
   }
   const std::string &getString(const SPIRVId Id);
+  std::optional<std::string> getStringSourceContinued(const SPIRVId Id,
+                                                      SPIRVExtInst *DebugInst);
   SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
                                       const SPIRVWord,
                                       const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
+
+  // BuildIdentifier and StoragePath must both be set or both unset.
+  // If StoragePath is empty both variables are unset and not valid.
+  uint64_t BuildIdentifier{0};
+  std::string StoragePath{};
+  void setBuildIdentifierAndStoragePath();
 };
 } // namespace SPIRV
 
