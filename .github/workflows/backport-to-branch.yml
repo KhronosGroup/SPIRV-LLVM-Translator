@@ -1,0 +1,115 @@
+name: Backport on Comment
+
+# Example use: /backport llvm_release_190
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  backport:
+    if: >
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/backport ')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure PR is merged
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            if (!pr.data.merged) {
+              core.setFailed('PR #' + context.issue.number + ' is not merged.');
+            }
+
+      - name: Parse target branch
+        id: parse
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          TARGET=$(echo "$COMMENT" | cut -d' ' -f2)
+          echo "TARGET=$TARGET" >> $GITHUB_ENV
+
+      - name: Create backport branch
+        run: |
+          git fetch origin $TARGET:$TARGET
+          get checkout -b backport/pr-${{ github.event.issue.number }}-to-${{ env.TARGET }} origin/${{ env.TARGET }}
+
+      - name: Get list of PR commits
+        id: commits
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const { data } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            return data.map(c => c.sha).join(' ');
+
+      - name: Cherry-pick commits
+        id: cherry
+        run: |
+          conflict=false
+          for sha in ${{ steps.commits.outputs.result }}; do
+            echo "Cherry-picking $sha"
+            if git cherry-pick "$sha"; then
+              echo "$sha"
+            else
+              echo "Conflict on $sha"
+              conflict=true
+              echo "$sha" > conflict-sha.txt
+              git add -A
+              git commit --message "cherry-pick $sha has conflicts"
+              break
+            fi
+          done
+          echo "CONFLICT=$conflict" >> $GITHUB_ENV
+
+      - name: Push backport branch
+        run: git push --set-upstream origin HEAD
+
+      - name: Prepare PR
+        id: prinfo
+        run: |
+          if [ "${{ env.CONFLICT }}" = "true" ]; then
+            SHA=$(cat conflict-sha.txt)
+            echo "BODY<<EOF" >> $GITHUB_ENV
+            echo "Backport of PR #${{ github.event.issue.number }} into \`${{ env.TARGET }}\`." >> $GITHUB_ENV
+            echo "" >> $GITHUB_ENV
+            echo "**Conflict detected on commit \`$SHA\`.**" >> $GITHUB_ENV
+            echo "Please resolve the conflicts by pushing to this branch." >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "LABELS=backport,conflict" >> $GITHUB_ENV
+          else
+            echo "BODY<<EOF" >> $GITHUB_ENV
+            echo "Backport of PR #${{ github.event.issue.number }} into \`${{ env.TARGET }}\`." >> $GITHUB_ENV
+            echo "" >> $GITHUB_ENV
+            echo "All commits applied cleanly." >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "LABELS=backport" >> $GITHUB_ENV
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: backport/pr-${{ github.event.issue.number }}-to-${{ env.TARGET }}
+          base: ${{ env.TARGET }}
+          title: "[Backport to ${{ env.TARGET }}] ${{ github.event.issue.title }}"
+          body: ${{ env.BODY }}
+          labels: ${{ env.LABELS }}
