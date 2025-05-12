@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure Git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
       - name: Ensure PR is merged
         uses: actions/github-script@v7
         with:
@@ -43,10 +48,22 @@ jobs:
           TARGET=$(echo "$COMMENT" | cut -d' ' -f2)
           echo "TARGET=$TARGET" >> $GITHUB_ENV
 
+      - name: Notify
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const target = process.env.TARGET;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Creating backport to \`${target}\``
+            });
+
       - name: Create backport branch
         run: |
-          git fetch origin $TARGET:$TARGET
-          get checkout -b backport/pr-${{ github.event.issue.number }}-to-${{ env.TARGET }} origin/${{ env.TARGET }}
+          git fetch origin ${{ env.TARGET }}:${{ env.TARGET }}
+          git checkout -b backport/pr-${{ github.event.issue.number }}-to-${{ env.TARGET }} origin/${{ env.TARGET }}
 
       - name: Get list of PR commits
         id: commits
@@ -105,11 +122,17 @@ jobs:
           fi
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: backport/pr-${{ github.event.issue.number }}-to-${{ env.TARGET }}
-          base: ${{ env.TARGET }}
-          title: "[Backport to ${{ env.TARGET }}] ${{ github.event.issue.title }}"
-          body: ${{ env.BODY }}
-          labels: ${{ env.LABELS }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `[Backport to ${process.env.TARGET}] ${context.payload.issue.title}`;
+            const body  = process.env.BODY;
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `backport/pr-${context.issue.number}-to-${process.env.TARGET}`,
+              base: process.env.TARGET,
+              title,
+              body
+            });
