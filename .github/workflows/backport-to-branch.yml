@@ -41,12 +41,24 @@ jobs:
               core.setFailed('PR #' + context.issue.number + ' is not merged.');
             }
 
-      - name: Parse target branch
-        id: parse
-        run: |
-          COMMENT="${{ github.event.comment.body }}"
-          TARGET=$(echo "$COMMENT" | cut -d' ' -f2)
-          echo "TARGET=$TARGET" >> $GITHUB_ENV
+      - name: Parse backport command
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const body = context.payload.comment.body.trim();
+            const msg = body.match(/^\/backport\s+(llvm_release_[0-9]+)$/);
+            if (!msg) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                issue_number: context.issue.number,
+                body: 'Invalid backport command. Expected `/backport llvm_release_<digits>`'
+              });
+              throw new Error('Invalid backport command.');
+            }
+            core.exportVariable('TARGET', msg[1]);
 
       - name: Notify attempt
         uses: actions/github-script@v7
@@ -89,9 +101,7 @@ jobs:
             else
               echo "Conflict on $sha"
               conflict=true
-              echo "$sha" > conflict-sha.txt
-              git add -A
-              git commit --message "cherry-pick $sha has conflicts"
+              echo "CONFLICT_SHA=$sha" >> $GITHUB_ENV
               break
             fi
           done
