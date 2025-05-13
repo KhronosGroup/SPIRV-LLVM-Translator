@@ -255,3 +255,19 @@ LLVM/Clang release and there are no objections from the maintainer(s). There
 is no guarantee that older release branches are proactively kept up to date
 with main, but you can request specific commits on older release branches by
 creating a pull request or raising an issue on GitHub.
+
+## Deprecation of "preview extensions"
+
+In a case if a "preview extension" has to be deprecated, as the first step one
+should disable support for forward translation of the extension in the main branch
+(this will prevent new SPIR-V modules from being generated using the extension).
+Meanwhile support reverse translation for the extension should be continued
+(this retains compatibility with existing SPIR-V modules).
+  * Addition of deprecation warning for the extension is not required, yet recommended for extensions adding
+    instructions representable in LLVM IR only via SPIR-V friendly LLVM IR.
+  * We encourage backporting the changes to other branches to speed up removal, but this is not required.
+
+After at least one release cycle one may remove support for reverse translation in the main branch as well,
+at which point support for the "preview extension" is considered removed.
+
+These are guidelines, not requirements, and we will consider exceptions on a case-by-case basis.
