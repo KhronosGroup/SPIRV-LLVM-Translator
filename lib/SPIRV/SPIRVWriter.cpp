@@ -397,6 +397,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     }
   }
 
+#if 0
   if (T->isBFloatTy()) {
     BM->getErrorLog().checkError(
         BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_bfloat16),
@@ -406,6 +407,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
         "requires this extension");
     return mapType(T, BM->addFloatType(16, FPEncodingBFloat16KHR));
   }
+#endif
 
   if (T->isFloatingPointTy())
     return mapType(T, BM->addFloatType(T->getPrimitiveSizeInBits()));
