@@ -393,7 +393,8 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
         BM->getErrorLog().checkError(
             (BitWidth == 4 &&
              BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_int4)) ||
-            BitWidth == 8 || BitWidth == 16 || BitWidth == 32 || BitWidth == 64,
+                BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
+                BitWidth == 64,
             SPIRVEC_InvalidBitWidth, std::to_string(BitWidth))) {
       return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
     }
