@@ -13,10 +13,10 @@
 ; CHECK-SPIRV: TypeInt [[#Int4:]] 4 0
 ; CHECK-SPIRV: Constant [[#Int4]] [[#Const:]] 1
 ; CHECK-SPIRV: TypeFunction [[#]] [[#]] [[#Int4]]
-; CHECK-SPIRV: TypePointer [[#Int3PtrTy:]] [[#]] [[#Int4]]
-; CHECK-SPIRV: Variable [[#Int3PtrTy]] [[#Int3Ptr:]]
-; CHECK-SPIRV: Store [[#Int3Ptr]] [[#Const]]
-; CHECK-SPIRV: Load [[#Int4]] [[#Load:]] [[#Int3Ptr]]
+; CHECK-SPIRV: TypePointer [[#Int4PtrTy:]] [[#]] [[#Int4]]
+; CHECK-SPIRV: Variable [[#Int4PtrTy]] [[#Int4Ptr:]]
+; CHECK-SPIRV: Store [[#Int4Ptr]] [[#Const]]
+; CHECK-SPIRV: Load [[#Int4]] [[#Load:]] [[#Int4Ptr]]
 ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[#]] [[#Load]]
 
 ; CHECK-LLVM: %[[#Alloc:]] = alloca i4, align 1
