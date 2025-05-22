@@ -206,7 +206,8 @@ bool SPIRVType::isTypeStruct() const { return OpCode == OpTypeStruct; }
 bool SPIRVType::isTypeVector() const { return OpCode == OpTypeVector; }
 
 bool SPIRVType::isTypeJointMatrixINTEL() const {
-  return OpCode == internal::OpTypeJointMatrixINTEL;
+  return OpCode == internal::OpTypeJointMatrixINTEL ||
+         OpCode == internal::OpTypeJointMatrixINTELv2;
 }
 
 bool SPIRVType::isTypeCooperativeMatrixKHR() const {
@@ -290,13 +291,20 @@ void SPIRVTypeForwardPointer::decode(std::istream &I) {
 }
 
 SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL(
-    SPIRVModule *M, SPIRVId TheId, SPIRVType *CompType,
+    SPIRVModule *M, SPIRVId TheId, Op OC, SPIRVType *CompType,
     std::vector<SPIRVValue *> Args)
     : SPIRVType(M, FixedWC + Args.size(), OC, TheId), CompType(CompType),
-      Args(Args) {}
+      Args(std::move(Args)) {}
+
+SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL(
+    SPIRVModule *M, SPIRVId TheId, SPIRVType *CompType,
+    std::vector<SPIRVValue *> Args)
+    : SPIRVType(M, FixedWC + Args.size(), internal::OpTypeJointMatrixINTEL,
+                TheId),
+      CompType(CompType), Args(std::move(Args)) {}
 
 SPIRVTypeJointMatrixINTEL::SPIRVTypeJointMatrixINTEL()
-    : SPIRVType(OC), CompType(nullptr),
+    : SPIRVType(internal::OpTypeJointMatrixINTEL), CompType(nullptr),
       Args({nullptr, nullptr, nullptr, nullptr}) {}
 
 void SPIRVTypeJointMatrixINTEL::encode(spv_ostream &O) const {
@@ -327,6 +335,24 @@ void SPIRVTypeCooperativeMatrixKHR::encode(spv_ostream &O) const {
 void SPIRVTypeCooperativeMatrixKHR::decode(std::istream &I) {
   auto Decoder = getDecoder(I);
   Decoder >> Id >> CompType >> Args;
+}
+
+void SPIRVTypeCooperativeMatrixKHR::validate() const {
+  SPIRVEntry::validate();
+  SPIRVErrorLog &SPVErrLog = this->getModule()->getErrorLog();
+  SPIRVConstant *UseConst = static_cast<SPIRVConstant *>(this->getUse());
+  auto InstName = OpCodeNameMap::map(OC);
+  uint64_t UseValue = UseConst->getZExtIntValue();
+  SPVErrLog.checkError(
+      (UseValue <= CooperativeMatrixUseMatrixAccumulatorKHR),
+      SPIRVEC_InvalidInstruction,
+      InstName + "\nIncorrect Use parameter, should be MatrixA, MatrixB or "
+                 "Accumulator\n");
+  SPIRVConstant *ScopeConst = static_cast<SPIRVConstant *>(this->getScope());
+  uint64_t ScopeValue = ScopeConst->getZExtIntValue();
+  SPVErrLog.checkError((ScopeValue <= ScopeInvocation),
+                       SPIRVEC_InvalidInstruction,
+                       InstName + "\nUnsupported Scope parameter\n");
 }
 
 } // namespace SPIRV
