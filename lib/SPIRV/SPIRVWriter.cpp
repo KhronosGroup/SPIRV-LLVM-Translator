@@ -2696,8 +2696,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
 SPIRVType *LLVMToSPIRVBase::mapType(Type *T, SPIRVType *BT) {
   assert(!T->isPointerTy() && "Pointer types cannot be stored in the type map");
-  [[maybe_unused]] auto EmplaceStatus = TypeMap.try_emplace(T, BT);
-  assert(EmplaceStatus.second && "The type was already added to the map");
+  TypeMap.try_emplace(T, BT);
   SPIRVDBG(dbgs() << "[mapType] " << *T << " => "; spvdbgs() << *BT << '\n');
   return BT;
 }
