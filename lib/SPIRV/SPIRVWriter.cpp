@@ -461,7 +461,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
             ConstantInt::get(getSizetType(), ArraySize, false), nullptr)));
     mapType(T, TransType);
     if (ElTy->isPointerTy()) {
-      auto ArrTy =
+      Type *ArrTy =
           ArrayType::get(TypedPointerType::get(Type::getInt8Ty(*Ctx),
                                                ElTy->getPointerAddressSpace()),
                          ArraySize);
