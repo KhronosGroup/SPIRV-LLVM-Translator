@@ -461,11 +461,13 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
             ConstantInt::get(getSizetType(), ArraySize, false), nullptr)));
     mapType(T, TransType);
     if (ElTy->isPointerTy()) {
-      mapType(
+      auto ArrTy =
           ArrayType::get(TypedPointerType::get(Type::getInt8Ty(*Ctx),
                                                ElTy->getPointerAddressSpace()),
-                         ArraySize),
-          TransType);
+                         ArraySize);
+      LLVMToSPIRVTypeMap::iterator Loc = TypeMap.find(ArrTy);
+      if (Loc == TypeMap.end())
+        mapType(ArrTy, TransType);
     }
     return TransType;
   }
@@ -2696,7 +2698,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
 
 SPIRVType *LLVMToSPIRVBase::mapType(Type *T, SPIRVType *BT) {
   assert(!T->isPointerTy() && "Pointer types cannot be stored in the type map");
-  TypeMap.try_emplace(T, BT);
+  [[maybe_unused]] auto EmplaceStatus = TypeMap.try_emplace(T, BT);
+  assert(EmplaceStatus.second && "The type was already added to the map");
   SPIRVDBG(dbgs() << "[mapType] " << *T << " => "; spvdbgs() << *BT << '\n');
   return BT;
 }
