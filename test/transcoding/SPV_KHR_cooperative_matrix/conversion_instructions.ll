@@ -43,6 +43,19 @@ entry:
 }
 
 ; CHECK-SPIRV: CompositeConstruct [[#MatrixTypeFloat]] [[#MatrixIn:]] [[#]] {{$}}
+; CHECK-SPIRV: ConvertFToU [[#MatrixTypeInt32]] [[#]] [[#MatrixIn]]
+
+; CHECK-LLVM: %[[#Matrix:]] = call spir_func %spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)* @_Z26__spirv_CompositeConstructf(float 0.000000e+00)
+; CHECK-LLVM: call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z72__spirv_ConvertFToU_RPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3PU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_3(%spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)* %0)
+
+define void @convert_f_to_u_no_fproundingmode() {
+entry:
+  %0 = tail call spir_func noundef %spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)* @_Z26__spirv_CompositeConstructFloat(float 0.000000e+00)
+  %call = call spir_func %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)* @_Z73__spirv_ConvertFToU_RPU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_2PU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_2(%spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)* %0)
+  ret void
+}
+
+; CHECK-SPIRV: CompositeConstruct [[#MatrixTypeFloat]] [[#MatrixIn:]] [[#]] {{$}}
 ; CHECK-SPIRV: ConvertFToS [[#MatrixTypeInt32]] [[#]] [[#MatrixIn]]
 
 ; CHECK-LLVM: %[[#Matrix:]] = call spir_func %spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)*  @_Z26__spirv_CompositeConstructf(float 0.000000e+00)
@@ -131,6 +144,8 @@ declare spir_func noundef %spirv.CooperativeMatrixKHR._short_3_12_12_3 addrspace
 declare spir_func noundef %spirv.CooperativeMatrixKHR._char_3_12_12_3 addrspace(1)*  @_Z26__spirv_CompositeConstructInt8(i8 noundef)
 
 declare spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*  @_Z76__spirv_ConvertFToU_RPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3_rtpPU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_3(%spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)*  noundef)
+
+declare spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*  @_Z73__spirv_ConvertFToU_RPU3AS144__spirv_CooperativeMatrixKHR__uint_3_12_12_2PU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_2(%spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)*  noundef)
 
 declare spir_func noundef %spirv.CooperativeMatrixKHR._int_3_12_12_3 addrspace(1)*  @_Z76__spirv_ConvertFToS_RPU3AS143__spirv_CooperativeMatrixKHR__int_3_12_12_3_rtpPU3AS145__spirv_CooperativeMatrixKHR__float_3_12_12_3(%spirv.CooperativeMatrixKHR._float_3_12_12_3 addrspace(1)*  noundef)
 
