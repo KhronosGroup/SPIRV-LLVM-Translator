@@ -29,13 +29,13 @@ $_ZTSZ4mainEUlvE_ = comdat any
 
 ; CHECK-LLVM: %[[CALL1:.*]] = call spir_func i8 addrspace(1)* @_Z41__spirv_GenericCastToPtrExplicit_ToGlobal{{.*}}
 ; CHECK-LLVM: %[[CALL1P4:.*]] = addrspacecast i8 addrspace(1)* %[[CALL1]] to i8 addrspace(4)*
-; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetch{{.*}}(i8 addrspace(4)* %[[CALL1P4]], i64 1)
+; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetchPU3AS4Kcm(i8 addrspace(4)* %[[CALL1P4]], i64 1)
 ; CHECK-LLVM: %[[CALL2:.*]] = call spir_func i8 addrspace(1)* @_Z41__spirv_GenericCastToPtrExplicit_ToGlobal{{.*}}
 ; CHECK-LLVM: %[[CALL2P4:.*]] = addrspacecast i8 addrspace(1)* %[[CALL2]] to i8 addrspace(4)*
-; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetch{{.*}}(i8 addrspace(4)* %[[CALL2P4]], i64 1)
+; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetchPU3AS4Kcm(i8 addrspace(4)* %[[CALL2P4]], i64 1)
 ; CHECK-LLVM: %[[CALL3:.*]] = call spir_func i8 addrspace(1)* @_Z41__spirv_GenericCastToPtrExplicit_ToGlobal{{.*}}
 ; CHECK-LLVM: %[[CALL3P4:.*]] = addrspacecast i8 addrspace(1)* %[[CALL3]] to i8 addrspace(4)*
-; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetch{{.*}}(i8 addrspace(4)* %[[CALL3P4]], i64 2)
+; CHECK-LLVM: call spir_func void @_Z20__spirv_ocl_prefetchPU3AS4Kcm(i8 addrspace(4)* %[[CALL3P4]], i64 2)
 
 
 ; Function Attrs: convergent norecurse nounwind
