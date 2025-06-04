@@ -119,7 +119,6 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilityCacheControlsINTEL = 6441,
-  ICapRegisterLimitsINTEL = 6460,
   ICapabilityBindlessImagesINTEL = 6528
 };
 
@@ -127,9 +126,6 @@ enum InternalFunctionControlMask { IFunctionControlOptNoneINTELMask = 0x10000 };
 
 enum InternalExecutionMode {
   IExecModeFastCompositeKernelINTEL = 6088,
-  IExecModeMaximumRegistersINTEL = 6461,
-  IExecModeMaximumRegistersIdINTEL = 6462,
-  IExecModeNamedMaximumRegistersINTEL = 6463
 };
 
 constexpr LinkageType LinkageTypeInternal =
@@ -170,10 +166,6 @@ enum class StoreCacheControlINTEL {
   WriteThrough = 1,
   WriteBack = 2,
   Streaming = 3
-};
-
-enum InternalNamedMaximumNumberOfRegisters {
-  NamedMaximumNumberOfRegistersAutoINTEL = 0,
 };
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
@@ -301,20 +293,12 @@ constexpr Capability CapabilityBfloat16ConversionINTEL =
     static_cast<Capability>(ICapBfloat16ConversionINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
-constexpr Capability CapabilityRegisterLimitsINTEL =
-    static_cast<Capability>(ICapRegisterLimitsINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
 
 constexpr ExecutionMode ExecutionModeFastCompositeKernelINTEL =
     static_cast<ExecutionMode>(IExecModeFastCompositeKernelINTEL);
-constexpr ExecutionMode ExecutionModeMaximumRegistersINTEL =
-    static_cast<ExecutionMode>(IExecModeMaximumRegistersINTEL);
-constexpr ExecutionMode ExecutionModeMaximumRegistersIdINTEL =
-    static_cast<ExecutionMode>(IExecModeMaximumRegistersIdINTEL);
-constexpr ExecutionMode ExecutionModeNamedMaximumRegistersINTEL =
-    static_cast<ExecutionMode>(IExecModeNamedMaximumRegistersINTEL);
 
 } // namespace internal
 } // namespace spv
