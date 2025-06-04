@@ -204,6 +204,9 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationInitModeINTEL, "InitModeINTEL");
   add(DecorationImplementInRegisterMapINTEL, "ImplementInRegisterMapINTEL");
 
+  add(DecorationCacheControlLoadINTEL, "CacheControlLoadINTEL");
+  add(DecorationCacheControlStoreINTEL, "CacheControlStoreINTEL");
+
   // From spirv_internal.hpp
   add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
   add(internal::DecorationRuntimeAlignedINTEL, "RuntimeAlignedINTEL");
@@ -211,8 +214,6 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(internal::DecorationInitModeINTEL, "InitModeINTEL");
   add(internal::DecorationImplementInCSRINTEL, "ImplementInCSRINTEL");
   add(internal::DecorationArgumentAttributeINTEL, "ArgumentAttributeINTEL");
-  add(internal::DecorationCacheControlLoadINTEL, "CacheControlLoadINTEL");
-  add(internal::DecorationCacheControlStoreINTEL, "CacheControlStoreINTEL");
 
   add(DecorationMax, "Max");
 }
