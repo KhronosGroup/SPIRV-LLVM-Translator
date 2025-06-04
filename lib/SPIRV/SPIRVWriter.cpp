@@ -1073,11 +1073,11 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
     auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
     if (isa<MDString>(RegisterAllocMode)) {
       const StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
-      const internal::InternalNamedMaximumNumberOfRegisters NamedValue =
+      const NamedMaximumNumberOfRegisters NamedValue =
           SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-          OpExecutionMode, BF,
-          internal::ExecutionModeNamedMaximumRegistersINTEL, NamedValue)));
+          OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
+          NamedValue)));
     } else if (isa<MDNode>(RegisterAllocMode)) {
       auto *RegisterAllocNodeMDOp =
           getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
@@ -1085,12 +1085,12 @@ void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
       BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(
-          BF, internal::ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
+          BF, ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
     } else {
       const int64_t RegisterAllocVal =
           mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-          OpExecutionMode, BF, internal::ExecutionModeMaximumRegistersINTEL,
+          OpExecutionMode, BF, ExecutionModeMaximumRegistersINTEL,
           RegisterAllocVal)));
     }
   }
@@ -2627,7 +2627,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
 
-    case spv::internal::DecorationCacheControlLoadINTEL: {
+    case DecorationCacheControlLoadINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlLoadINTEL requires exactly 2 extra operands");
@@ -2644,11 +2644,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::LoadCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<LoadCacheControl>(CacheControl->getZExtValue())));
       break;
     }
-    case spv::internal::DecorationCacheControlStoreINTEL: {
+    case DecorationCacheControlStoreINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlStoreINTEL requires exactly 2 extra operands");
@@ -2665,8 +2664,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlStoreINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::StoreCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<StoreCacheControl>(CacheControl->getZExtValue())));
       break;
     }
     default: {
@@ -5024,7 +5022,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       case spv::ExecutionModeNumSIMDWorkitemsINTEL:
       case spv::ExecutionModeSchedulerTargetFmaxMhzINTEL:
       case spv::ExecutionModeMaxWorkDimINTEL:
-      case spv::internal::ExecutionModeStreamingInterfaceINTEL: {
+      case spv::ExecutionModeStreamingInterfaceINTEL: {
         if (!BM->isAllowedToUseExtension(
                 ExtensionID::SPV_INTEL_kernel_attributes))
           break;
