@@ -2807,7 +2807,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
 
-    case spv::internal::DecorationCacheControlLoadINTEL: {
+    case DecorationCacheControlLoadINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlLoadINTEL requires exactly 2 extra operands");
@@ -2824,11 +2824,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlLoadINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::LoadCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<LoadCacheControl>(CacheControl->getZExtValue())));
       break;
     }
-    case spv::internal::DecorationCacheControlStoreINTEL: {
+    case DecorationCacheControlStoreINTEL: {
       ErrLog.checkError(
           NumOperands == 3, SPIRVEC_InvalidLlvmModule,
           "CacheControlStoreINTEL requires exactly 2 extra operands");
@@ -2845,8 +2844,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
 
       Target->addDecorate(new SPIRVDecorateCacheControlStoreINTEL(
           Target, CacheLevel->getZExtValue(),
-          static_cast<internal::StoreCacheControlINTEL>(
-              CacheControl->getZExtValue())));
+          static_cast<StoreCacheControl>(CacheControl->getZExtValue())));
       break;
     }
     default: {
