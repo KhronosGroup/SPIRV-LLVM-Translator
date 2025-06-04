@@ -640,6 +640,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityFPGAArgumentInterfacesINTEL, "FPGAArgumentInterfacesINTEL");
   add(CapabilityFPGALatencyControlINTEL, "FPGALatencyControlINTEL");
   add(CapabilityFPMaxErrorINTEL, "FPMaxErrorINTEL");
+  add(CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
   add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
@@ -671,7 +672,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "JointMatrixPackedInt2ComponentTypeINTEL");
   add(internal::CapabilityJointMatrixPackedInt4ComponentTypeINTEL,
       "JointMatrixPackedInt4ComponentTypeINTEL");
-  add(internal::CapabilityCacheControlsINTEL, "CacheControlsINTEL");
   add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
       "CooperativeMatrixPrefetchINTEL");
   add(internal::CapabilityCooperativeMatrixInvocationInstructionsINTEL,
