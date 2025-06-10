@@ -478,19 +478,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
                                        (unsigned)S};
     if (auto *Use = MT->getUse())
       Params.push_back(static_cast<SPIRVConstant *>(Use)->getZExtIntValue());
-    auto *CTI = MT->getComponentTypeInterpretation();
-    if (!CTI)
-      return mapType(
-          T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
-                                      transType(MT->getCompType()), Params));
-    const unsigned CTIValue =
-        static_cast<SPIRVConstant *>(CTI)->getZExtIntValue();
-    assert(CTIValue <= internal::InternalJointMatrixCTI::PackedInt4 &&
-           "Unknown matrix component type interpretation");
-    Params.push_back(CTIValue);
-    return mapType(
-        T, llvm::TargetExtType::get(*Context, "spirv.JointMatrixINTEL",
-                                    transType(MT->getCompType()), Params));
+    return mapType(T, getSPIRVType(internal::OpTypeJointMatrixINTEL,
+                                   transTypeToOCLTypeName(MT->getCompType()),
+                                   Params, !UseTPT));
   }
   case OpTypeCooperativeMatrixKHR: {
     auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(T);
