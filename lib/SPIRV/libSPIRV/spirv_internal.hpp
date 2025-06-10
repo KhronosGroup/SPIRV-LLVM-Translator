@@ -68,7 +68,6 @@ enum InternalOp {
   IOpJointMatrixSUMadINTEL = 6128,
   IOpJointMatrixUSMadINTEL = 6129,
   IOpJointMatrixUUMadINTEL = 6130,
-  IOpTypeJointMatrixINTELv2 = 6184,
   IOpArithmeticFenceINTEL = 6145,
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
@@ -180,7 +179,6 @@ _SPIRV_OP(Capability, JointMatrixBF16ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt2ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt4ComponentTypeINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
-_SPIRV_OP(Op, TypeJointMatrixINTELv2)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
 _SPIRV_OP(Op, JointMatrixMadINTEL)
