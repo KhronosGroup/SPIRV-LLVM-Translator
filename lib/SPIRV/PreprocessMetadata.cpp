@@ -353,12 +353,6 @@ void PreprocessMetadataBase::preprocessVectorComputeMetadata(Module *M,
           .add(SLMSize)
           .done();
     }
-    if (Attrs.hasFnAttribute(kVCMetadata::VCFCEntry)) {
-      EM.addOp()
-          .add(&F)
-          .add(spv::internal::ExecutionModeFastCompositeKernelINTEL)
-          .done();
-    }
 
     if (Attrs.hasFnAttribute(kVCMetadata::VCNamedBarrierCount)) {
       SPIRVWord NBarrierCnt = 0;

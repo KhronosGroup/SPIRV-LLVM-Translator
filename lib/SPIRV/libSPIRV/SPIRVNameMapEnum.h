@@ -172,7 +172,6 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationMediaBlockIOINTEL, "MediaBlockIOINTEL");
 
   // From spirv_internal.hpp
-  add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
   add(internal::DecorationMathOpDSPModeINTEL, "MathOpDSPModeINTEL");
   add(internal::DecorationAliasScopeINTEL, "AliasScopeINTEL");
   add(internal::DecorationNoAliasINTEL, "NoAliasINTEL");
@@ -569,7 +568,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
-  add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");

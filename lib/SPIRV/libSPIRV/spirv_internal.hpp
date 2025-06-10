@@ -65,7 +65,6 @@ enum InternalCapability {
   ICapMemoryAccessAliasingINTEL = 5910,
   ICapFPGAInvocationPipeliningAttributesINTEL = 5916,
   ICapRuntimeAlignedAttributeINTEL = 5939,
-  ICapFastCompositeINTEL = 6093,
   ICapOptNoneINTEL = 6094,
   ICapTokenTypeINTEL = 6112,
   ICapBfloat16ConversionINTEL = 6115,
@@ -84,7 +83,6 @@ enum InternalMemoryAccessMask {
 };
 
 enum InternalExecutionMode {
-  IExecModeFastCompositeKernelINTEL = 6088,
   IExecModeMaximumRegistersINTEL = 6461,
   IExecModeMaximumRegistersIdINTEL = 6462,
   IExecModeNamedMaximumRegistersINTEL = 6463
@@ -138,13 +136,9 @@ constexpr Decoration DecorationMaxConcurrencyINTEL =
     static_cast<Decoration>(IDecMaxConcurrencyINTEL);
 constexpr Decoration DecorationPipelineEnableINTEL =
     static_cast<Decoration>(IDecPipelineEnableINTEL);
-constexpr Decoration DecorationCallableFunctionINTEL =
-    static_cast<Decoration>(IDecCallableFunctionINTEL);
 constexpr Decoration DecorationRuntimeAlignedINTEL =
     static_cast<Decoration>(IDecRuntimeAlignedINTEL);
 
-constexpr Capability CapabilityFastCompositeINTEL =
-    static_cast<Capability>(ICapFastCompositeINTEL);
 constexpr Capability CapabilityOptNoneINTEL =
     static_cast<Capability>(ICapOptNoneINTEL);
 constexpr Capability CapabilityFPGADSPControlINTEL =
@@ -174,9 +168,6 @@ constexpr MemoryAccessMask MemoryAccessAliasScopeINTELMask =
     static_cast<MemoryAccessMask>(IMemAccessAliasScopeINTELMask);
 constexpr MemoryAccessMask MemoryAccessNoAliasINTELMask =
     static_cast<MemoryAccessMask>(IMemAccessNoAliasINTELMask);
-
-constexpr ExecutionMode ExecutionModeFastCompositeKernelINTEL =
-    static_cast<ExecutionMode>(IExecModeFastCompositeKernelINTEL);
 
 constexpr LoopControlMask LoopControlLoopCountINTELMask =
     static_cast<LoopControlMask>(ILoopControlLoopCountINTELMask);
