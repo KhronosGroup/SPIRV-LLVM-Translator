@@ -993,11 +993,6 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
     BF->addDecorate(DecorationReferencedIndirectlyINTEL);
   }
 
-  if (Attrs.hasFnAttr(kVCMetadata::VCCallable) &&
-      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite)) {
-    BF->addDecorate(internal::DecorationCallableFunctionINTEL);
-  }
-
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
     transVectorComputeMetadata(F);
 
@@ -6082,11 +6077,6 @@ bool LLVMToSPIRVBase::transExecutionMode() {
                 ExtensionID::SPV_INTEL_float_controls2))
           break;
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
-      } break;
-      case spv::internal::ExecutionModeFastCompositeKernelINTEL: {
-        if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fast_composite))
-          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
       } break;
       case spv::internal::ExecutionModeNamedSubgroupSizeINTEL: {
         if (!BM->isAllowedToUseExtension(
