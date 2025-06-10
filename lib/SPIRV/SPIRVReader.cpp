@@ -4397,12 +4397,6 @@ bool SPIRVToLLVM::transMetadata() {
     if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR)
       transFunctionDecorationsToMetadata(BF, F);
 
-    if (BF->hasDecorate(internal::DecorationCallableFunctionINTEL))
-      F->addFnAttr(kVCMetadata::VCCallable);
-    if (isKernel(BF) &&
-        BF->getExecutionMode(internal::ExecutionModeFastCompositeKernelINTEL))
-      F->addFnAttr(kVCMetadata::VCFCEntry);
-
     if (F->getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
 

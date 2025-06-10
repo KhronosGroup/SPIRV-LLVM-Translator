@@ -906,8 +906,6 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
-    case internal::CapabilityFastCompositeINTEL:
-      return ExtensionID::SPV_INTEL_fast_composite;
     default:
       return {};
     }
