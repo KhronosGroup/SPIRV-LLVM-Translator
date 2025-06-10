@@ -105,7 +105,6 @@ enum InternalCapability {
   ICapFPGADSPControlINTEL = 5908,
   ICapFPGAInvocationPipeliningAttributesINTEL = 5916,
   ICapRuntimeAlignedAttributeINTEL = 5939,
-  ICapFastCompositeINTEL = 6093,
   ICapTokenTypeINTEL = 6112,
   ICapBfloat16ConversionINTEL = 6115,
   ICapabilityJointMatrixINTEL = 6118,
@@ -123,7 +122,6 @@ enum InternalCapability {
 };
 
 enum InternalExecutionMode {
-  IExecModeFastCompositeKernelINTEL = 6088,
   IExecModeStreamingInterfaceINTEL = 6154,
   IExecModeMaximumRegistersINTEL = 6461,
   IExecModeMaximumRegistersIdINTEL = 6462,
@@ -264,8 +262,6 @@ constexpr Decoration DecorationMaxConcurrencyINTEL =
     static_cast<Decoration>(IDecMaxConcurrencyINTEL);
 constexpr Decoration DecorationPipelineEnableINTEL =
     static_cast<Decoration>(IDecPipelineEnableINTEL);
-constexpr Decoration DecorationCallableFunctionINTEL =
-    static_cast<Decoration>(IDecCallableFunctionINTEL);
 constexpr Decoration DecorationRuntimeAlignedINTEL =
     static_cast<Decoration>(IDecRuntimeAlignedINTEL);
 constexpr Decoration DecorationHostAccessINTEL =
@@ -281,8 +277,6 @@ constexpr Decoration DecorationCacheControlLoadINTEL =
 constexpr Decoration DecorationCacheControlStoreINTEL =
     static_cast<Decoration>(IDecCacheControlStoreINTEL);
 
-constexpr Capability CapabilityFastCompositeINTEL =
-    static_cast<Capability>(ICapFastCompositeINTEL);
 constexpr Capability CapabilityFPGADSPControlINTEL =
     static_cast<Capability>(ICapFPGADSPControlINTEL);
 constexpr Capability CapabilityFPGAInvocationPipeliningAttributesINTEL =
@@ -301,8 +295,6 @@ constexpr Capability CapabilityRegisterLimitsINTEL =
 constexpr Decoration DecorationMathOpDSPModeINTEL =
     static_cast<Decoration>(IDecMathOpDSPModeINTEL);
 
-constexpr ExecutionMode ExecutionModeFastCompositeKernelINTEL =
-    static_cast<ExecutionMode>(IExecModeFastCompositeKernelINTEL);
 constexpr ExecutionMode ExecutionModeStreamingInterfaceINTEL =
     static_cast<ExecutionMode>(IExecModeStreamingInterfaceINTEL);
 
