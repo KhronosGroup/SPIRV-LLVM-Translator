@@ -186,7 +186,6 @@ template <> inline void SPIRVMap<Decoration, std::string>::init() {
   add(DecorationImplementInRegisterMapINTEL, "ImplementInRegisterMapINTEL");
 
   // From spirv_internal.hpp
-  add(internal::DecorationCallableFunctionINTEL, "CallableFunctionINTEL");
   add(internal::DecorationMathOpDSPModeINTEL, "MathOpDSPModeINTEL");
   add(internal::DecorationInitiationIntervalINTEL, "InitiationIntervalINTEL");
   add(internal::DecorationMaxConcurrencyINTEL, "MaxConcurrencyINTEL");
@@ -618,7 +617,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
 
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
-  add(internal::CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
       "FPGAInvocationPipeliningAttributesINTEL");
