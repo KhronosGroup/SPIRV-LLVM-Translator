@@ -569,7 +569,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
 
   // From spirv_internal.hpp
-  add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");
