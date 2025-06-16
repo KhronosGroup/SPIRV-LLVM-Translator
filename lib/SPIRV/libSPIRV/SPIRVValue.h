@@ -180,6 +180,8 @@ protected:
 
   // Common method for getting values of size less or equal to 64 bits.
   template <typename T> T getValue() const {
+    if (OpCode == OpConstantNull)
+      return 0;
     constexpr auto ValueSize = static_cast<unsigned>(sizeof(T));
     assert((ValueSize <= 8) && "Incorrect result type of requested value");
     T TheValue{};
