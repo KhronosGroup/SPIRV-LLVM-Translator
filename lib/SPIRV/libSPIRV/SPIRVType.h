@@ -1157,6 +1157,10 @@ public:
   SPIRVValue *getRows() const { return Args[1]; }
   SPIRVValue *getColumns() const { return Args[2]; }
   SPIRVValue *getUse() const { return Args[3]; }
+
+  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+    return std::vector<SPIRVEntry *>(1, CompType);
+  }
 };
 
 } // namespace SPIRV
