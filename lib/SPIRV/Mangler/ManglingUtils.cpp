@@ -28,6 +28,7 @@ static const char *PrimitiveNames[PRIMITIVE_NUM] = {
     "half",
     "float",
     "double",
+    "__bf16",
     "void",
     "...",
     "image1d_ro_t",
@@ -89,8 +90,7 @@ static const char *PrimitiveNames[PRIMITIVE_NUM] = {
     "intel_sub_group_avc_ime_result_single_reference_streamout_t",
     "intel_sub_group_avc_ime_result_dual_reference_streamout_t",
     "intel_sub_group_avc_ime_result_single_reference_streamin_t",
-    "intel_sub_group_avc_ime_result_dual_reference_streamin_t"
-};
+    "intel_sub_group_avc_ime_result_dual_reference_streamin_t"};
 
 const char *MangledTypes[PRIMITIVE_NUM] = {
     "b",                                 // BOOL
@@ -105,6 +105,7 @@ const char *MangledTypes[PRIMITIVE_NUM] = {
     "Dh",                                // HALF
     "f",                                 // FLOAT
     "d",                                 // DOUBLE
+    "u6__bf16",                          // __BF16
     "v",                                 // VOID
     "z",                                 // VarArg
     "14ocl_image1d_ro",                  // PRIMITIVE_IMAGE1D_RO_T
@@ -157,21 +158,21 @@ const char *MangledTypes[PRIMITIVE_NUM] = {
     "i", // PRIMITIVE_MEMORY_ORDER
     "i", // PRIMITIVE_MEMORY_SCOPE
 #else
-    "12memory_order",  // PRIMITIVE_MEMORY_ORDER
-    "12memory_scope",  // PRIMITIVE_MEMORY_SCOPE
+    "12memory_order", // PRIMITIVE_MEMORY_ORDER
+    "12memory_scope", // PRIMITIVE_MEMORY_SCOPE
 #endif
     "37ocl_intel_sub_group_avc_mce_payload_t", // PRIMITIVE_SUB_GROUP_AVC_MCE_PAYLOAD_T
     "37ocl_intel_sub_group_avc_ime_payload_t", // PRIMITIVE_SUB_GROUP_AVC_IME_PAYLOAD_T
     "37ocl_intel_sub_group_avc_ref_payload_t", // PRIMITIVE_SUB_GROUP_AVC_REF_PAYLOAD_T
     "37ocl_intel_sub_group_avc_sic_payload_t", // PRIMITIVE_SUB_GROUP_AVC_SIC_PAYLOAD_T
-    "36ocl_intel_sub_group_avc_mce_result_t",  // PRIMITIVE_SUB_GROUP_AVC_MCE_RESULT_T
-    "36ocl_intel_sub_group_avc_ime_result_t",  // PRIMITIVE_SUB_GROUP_AVC_IME_RESULT_T
-    "36ocl_intel_sub_group_avc_ref_result_t",  // PRIMITIVE_SUB_GROUP_AVC_REF_RESULT_T
-    "36ocl_intel_sub_group_avc_sic_result_t",  // PRIMITIVE_SUB_GROUP_AVC_REF_RESULT_T
-    "63ocl_intel_sub_group_avc_ime_result_single_reference_streamout_t",  // PRIMITIVE_SUB_GROUP_AVC_IME_SINGLE_REF_STREAMOUT_T
-    "61ocl_intel_sub_group_avc_ime_result_dual_reference_streamout_t",    // PRIMITIVE_SUB_GROUP_AVC_IME_DUAL_REF_STREAMOUT_T
-    "55ocl_intel_sub_group_avc_ime_single_reference_streamin_t",          // PRIMITIVE_SUB_GROUP_AVC_IME_SINGLE_REF_STREAMIN_T
-    "53ocl_intel_sub_group_avc_ime_dual_reference_streamin_t"             // PRIMITIVE_SUB_GROUP_AVC_IME_DUAL_REF_STREAMIN_T
+    "36ocl_intel_sub_group_avc_mce_result_t", // PRIMITIVE_SUB_GROUP_AVC_MCE_RESULT_T
+    "36ocl_intel_sub_group_avc_ime_result_t", // PRIMITIVE_SUB_GROUP_AVC_IME_RESULT_T
+    "36ocl_intel_sub_group_avc_ref_result_t", // PRIMITIVE_SUB_GROUP_AVC_REF_RESULT_T
+    "36ocl_intel_sub_group_avc_sic_result_t", // PRIMITIVE_SUB_GROUP_AVC_REF_RESULT_T
+    "63ocl_intel_sub_group_avc_ime_result_single_reference_streamout_t", // PRIMITIVE_SUB_GROUP_AVC_IME_SINGLE_REF_STREAMOUT_T
+    "61ocl_intel_sub_group_avc_ime_result_dual_reference_streamout_t", // PRIMITIVE_SUB_GROUP_AVC_IME_DUAL_REF_STREAMOUT_T
+    "55ocl_intel_sub_group_avc_ime_single_reference_streamin_t", // PRIMITIVE_SUB_GROUP_AVC_IME_SINGLE_REF_STREAMIN_T
+    "53ocl_intel_sub_group_avc_ime_dual_reference_streamin_t" // PRIMITIVE_SUB_GROUP_AVC_IME_DUAL_REF_STREAMIN_T
 };
 
 const char *ReadableAttribute[ATTR_NUM] = {
@@ -197,6 +198,7 @@ static const SPIRversion PrimitiveSupportedVersions[PRIMITIVE_NUM] = {
     SPIR12, // HALF
     SPIR12, // FLOAT
     SPIR12, // DOUBLE
+    SPIR12, // __BF16
     SPIR12, // VOID
     SPIR12, // VarArg
     SPIR12, // PRIMITIVE_IMAGE1D_RO_T
