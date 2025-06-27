@@ -652,6 +652,23 @@ protected:
       assert(0 && "Invalid op code!");
     }
   }
+  SPIRVWord getRequiredSPIRVVersion() const override {
+    if (isBinaryOpCode(OpCode))
+      return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_4);
+    return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_0);
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    if (OpCode == OpDot) {
+      const SPIRVType *OpTy = getValueType(Ops[0]);
+      if (OpTy && OpTy->isTypeVector()) {
+        OpTy = OpTy->getVectorComponentType();
+        if (OpTy && OpTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
+          return getVec(CapabilityBFloat16DotProductKHR);
+        }
+      }
+    }
+    return SPIRVInstruction::getRequiredCapability();
+  }
 };
 
 template <Op OC>

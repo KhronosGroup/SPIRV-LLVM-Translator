@@ -566,6 +566,9 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongCompositesINTEL, "LongCompositesINTEL");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
+  add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
+  add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
+
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
