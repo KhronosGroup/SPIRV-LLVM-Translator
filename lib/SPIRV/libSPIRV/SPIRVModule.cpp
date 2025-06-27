@@ -228,7 +228,8 @@ public:
   template <class T> T *addType(T *Ty);
   SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *) override;
   SPIRVTypeBool *addBoolType() override;
-  SPIRVTypeFloat *addFloatType(unsigned BitWidth) override;
+  SPIRVTypeFloat *addFloatType(unsigned BitWidth,
+                               unsigned FloatingPointEncoding) override;
   SPIRVTypeFunction *addFunctionType(SPIRVType *,
                                      const std::vector<SPIRVType *> &) override;
   SPIRVTypeInt *addIntegerType(unsigned BitWidth) override;
@@ -530,6 +531,8 @@ private:
   SPIRVCapMap CapMap;
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   std::map<unsigned, SPIRVTypeInt *> IntTypeMap;
+  SmallDenseMap<std::pair<unsigned, unsigned>, SPIRVTypeFloat *, 4>
+      FloatTypeMap;
   std::map<unsigned, SPIRVConstant *> LiteralMap;
   std::vector<SPIRVExtInst *> DebugInstVec;
   std::vector<SPIRVModuleProcessed *> ModuleProcessedVec;
@@ -857,9 +860,15 @@ SPIRVTypeInt *SPIRVModuleImpl::addIntegerType(unsigned BitWidth) {
   return addType(Ty);
 }
 
-SPIRVTypeFloat *SPIRVModuleImpl::addFloatType(unsigned BitWidth) {
-  SPIRVTypeFloat *T = addType(new SPIRVTypeFloat(this, getId(), BitWidth));
-  return T;
+SPIRVTypeFloat *SPIRVModuleImpl::addFloatType(unsigned BitWidth,
+                                              unsigned FloatingPointEncoding) {
+  auto Desc = std::make_pair(BitWidth, FloatingPointEncoding);
+  auto Loc = FloatTypeMap.find(Desc);
+  if (Loc != FloatTypeMap.end())
+    return Loc->second;
+  auto *Ty = new SPIRVTypeFloat(this, getId(), BitWidth, FloatingPointEncoding);
+  FloatTypeMap[Desc] = Ty;
+  return addType(Ty);
 }
 
 SPIRVTypePointer *

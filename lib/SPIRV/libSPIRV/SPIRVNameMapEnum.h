@@ -528,6 +528,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongConstantCompositeINTEL, "LongConstantCompositeINTEL");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
   add(CapabilityFastCompositeINTEL, "FastCompositeINTEL");
+  add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
+  add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
   add(internal::CapabilityMemoryAccessAliasingINTEL,
       "MemoryAccessAliasingINTEL");
