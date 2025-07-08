@@ -1476,11 +1476,14 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
       auto *TransPointerOperand = transValue(GEP->getPointerOperand(), nullptr);
       // Determine the expected pointer type from the GEP source element type.
       Type *GepSourceElemTy = GEP->getSourceElementType();
-      SPIRVType *ExpectedPtrTy = transPointerType(GepSourceElemTy, GEP->getPointerAddressSpace());
+      SPIRVType *ExpectedPtrTy =
+          transPointerType(GepSourceElemTy, GEP->getPointerAddressSpace());
 
-      // Ensure the base pointer's type matches the GEP's effective source element type.
+      // Ensure the base pointer's type matches the GEP's effective source
+      // element type.
       if (TransPointerOperand->getType() != ExpectedPtrTy) {
-        TransPointerOperand = BM->addUnaryInst(OpBitcast, ExpectedPtrTy, TransPointerOperand, nullptr);
+        TransPointerOperand = BM->addUnaryInst(OpBitcast, ExpectedPtrTy,
+                                               TransPointerOperand, nullptr);
       }
 
       std::vector<SPIRVWord> Ops = {TransPointerOperand->getId()};
