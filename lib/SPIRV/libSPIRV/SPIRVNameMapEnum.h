@@ -567,6 +567,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilityGroupUniformArithmeticKHR, "GroupUniformArithmeticKHR");
   add(CapabilityRegisterLimitsINTEL, "RegisterLimitsINTEL");
+  add(CapabilityBFloat16TypeKHR, "BFloat16TypeKHR");
+  add(CapabilityBFloat16DotProductKHR, "BFloat16DotProductKHR");
 
   // From spirv_internal.hpp
   add(internal::CapabilityOptNoneINTEL, "OptNoneINTEL");
