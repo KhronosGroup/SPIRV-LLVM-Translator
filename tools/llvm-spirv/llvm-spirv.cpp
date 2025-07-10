@@ -296,7 +296,7 @@ static cl::opt<uint32_t> FnVarCategory(
 static cl::opt<uint32_t> FnVarFamily(
     "fnvar-family",
     cl::desc("Specify architecture family of the target device (omitting this "
-             "flag denotes that the target device can be of any familyy). Used "
+             "flag denotes that the target device can be of any family). Used "
              "only with -r and --fnvar-spec-enable."),
     cl::value_desc("family"), cl::ValueRequired);
 
