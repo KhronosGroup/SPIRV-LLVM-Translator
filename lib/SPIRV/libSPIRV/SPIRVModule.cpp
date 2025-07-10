@@ -1314,11 +1314,12 @@ void SPIRVModuleImpl::addConditionalEntryPoint(
 
 void SPIRVModuleImpl::specializeConditionalEntryPoints(SPIRVId Condition,
                                                        bool ShouldKeep) {
-  std::vector<std::pair<int, SPIRVId>> ToRemove;
-  for (unsigned It = 0; It < ConditionalEntryPointVec.size(); ++It) {
-    if (ConditionalEntryPointVec[It]->getCondition() == Condition) {
-      const auto *const EP = ConditionalEntryPointVec[It];
-      ToRemove.push_back(std::make_pair(It, EP->getTargetId()));
+  std::vector<const SPIRVConditionalEntryPointINTEL *> EPsToRemove;
+  std::vector<SPIRVId> EPIdsToRemove;
+  for (const auto* EP : ConditionalEntryPointVec) {
+    if (EP->getCondition() == Condition) {
+      EPsToRemove.push_back(EP);
+      EPIdsToRemove.push_back(EP->getTargetId());
       if (ShouldKeep) {
         // add the removed conditional entry point as a normal entry point
         addEntryPoint(EP->getExecModel(), EP->getTargetId(), EP->getName(),
@@ -1327,10 +1328,12 @@ void SPIRVModuleImpl::specializeConditionalEntryPoints(SPIRVId Condition,
     }
   }
 
-  for (const auto &It : ToRemove) {
-    const auto IRemove = It.first;
-    const auto Id = It.second;
-    ConditionalEntryPointVec.erase(ConditionalEntryPointVec.begin() + IRemove);
+  erase_if(ConditionalEntryPointVec, [&EPsToRemove](const auto *EP) {
+    return std::find(EPsToRemove.begin(), EPsToRemove.end(), EP) !=
+           EPsToRemove.end();
+  });
+
+  for (const auto &Id : EPIdsToRemove) {
     for (auto &[ExecMode, EPSet] : ConditionalEntryPointSet) {
       EPSet.erase(Id);
     }
