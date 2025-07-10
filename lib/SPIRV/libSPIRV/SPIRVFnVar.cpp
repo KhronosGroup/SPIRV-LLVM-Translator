@@ -174,7 +174,7 @@ bool specializeFnVariants(SPIRVModule *BM, std::string &ErrMsg) {
     if (!evaluateConstant(BM, Entry->getCondition(), ShouldKeep, ErrMsg)) {
       return false;
     }
-    CondCapabilities.push_back(
+    CondCapabilities.emplace_back(
         std::make_pair(std::make_pair(Condition, Cap), ShouldKeep));
   }
 
@@ -200,7 +200,7 @@ bool specializeFnVariants(SPIRVModule *BM, std::string &ErrMsg) {
     if (!evaluateConstant(BM, Cond, ShouldKeep, ErrMsg)) {
       return false;
     }
-    CondExtensions.push_back(
+    CondExtensions.emplace_back(
         std::make_pair(std::make_pair(Cond, Ext), ShouldKeep));
   }
 
@@ -224,7 +224,7 @@ bool specializeFnVariants(SPIRVModule *BM, std::string &ErrMsg) {
     if (!evaluateConstant(BM, Cond, ShouldKeep, ErrMsg)) {
       return false;
     }
-    CondEPs.push_back(std::make_pair(Cond, ShouldKeep));
+    CondEPs.emplace_back(std::make_pair(Cond, ShouldKeep));
   }
 
   for (const auto &CondEP : CondEPs) {
@@ -264,7 +264,7 @@ bool specializeFnVariants(SPIRVModule *BM, std::string &ErrMsg) {
                      "have been removed.";
             return false;
           }
-          ToReplace.push_back(
+          ToReplace.emplace_back(
               std::make_pair(Inst, OperandIds[ITrue.value() + 1]));
         }
       }
