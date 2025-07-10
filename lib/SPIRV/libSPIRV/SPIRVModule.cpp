@@ -1316,7 +1316,7 @@ void SPIRVModuleImpl::specializeConditionalEntryPoints(SPIRVId Condition,
                                                        bool ShouldKeep) {
   std::vector<const SPIRVConditionalEntryPointINTEL *> EPsToRemove;
   std::vector<SPIRVId> EPIdsToRemove;
-  for (const auto* EP : ConditionalEntryPointVec) {
+  for (const auto *EP : ConditionalEntryPointVec) {
     if (EP->getCondition() == Condition) {
       EPsToRemove.push_back(EP);
       EPIdsToRemove.push_back(EP->getTargetId());

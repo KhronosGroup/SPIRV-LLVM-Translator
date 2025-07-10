@@ -238,9 +238,8 @@ public:
         } else {
           spvdbgs() << std::setw(4) << DeviceTarget.value();
         } spvdbgs() << ", Features:";
-        for (const auto &Feat : DeviceFeatures) {
-          spvdbgs() << " " << Feat;
-        } spvdbgs()
+        for (const auto &Feat
+             : DeviceFeatures) { spvdbgs() << " " << Feat; } spvdbgs()
         << std::endl;
         spvdbgs() << "[FnVar]       result: " << Res << std::endl;);
 
@@ -401,9 +400,8 @@ public:
         } spvdbgs()
         << " | ID: %" << getId() << std::endl;
         spvdbgs() << "[FnVar]       device Capabilities: ";
-        for (const auto &Cap : DeviceCapabilities) {
-          spvdbgs() << " " << Cap;
-        } spvdbgs()
+        for (const auto &Cap
+             : DeviceCapabilities) { spvdbgs() << " " << Cap; } spvdbgs()
         << std::endl;
         spvdbgs() << "[FnVar]       result: " << Res << std::endl;);
 
