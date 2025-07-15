@@ -37,6 +37,7 @@ set(SRC_LIST
   libSPIRV/SPIRVStream.cpp
   libSPIRV/SPIRVType.cpp
   libSPIRV/SPIRVValue.cpp
+  libSPIRV/SPIRVFnVar.cpp
 )
 add_llvm_library(LLVMSPIRVLib
   ${SRC_LIST}

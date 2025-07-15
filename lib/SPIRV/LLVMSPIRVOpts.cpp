@@ -43,6 +43,7 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <optional>
 
 using namespace llvm;
 using namespace SPIRV;
@@ -67,4 +68,26 @@ bool TranslatorOpts::isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept {
 void TranslatorOpts::setSPIRVAllowUnknownIntrinsics(
     TranslatorOpts::ArgList IntrinsicPrefixList) noexcept {
   SPIRVAllowUnknownIntrinsics = IntrinsicPrefixList;
+}
+
+bool TranslatorOpts::validateFnVarOpts() const {
+  if (getFnVarCategory() == std::nullopt &&
+      (getFnVarFamily() != std::nullopt || getFnVarArch() != std::nullopt)) {
+    errs() << "FnVar: Device category must be specified if the family or "
+              "architecture are specified.";
+    return false;
+  }
+
+  if (getFnVarFamily() == std::nullopt && getFnVarArch() != std::nullopt) {
+    errs() << "FnVar: Device family must be specified if the architecture is "
+              "specified.";
+    return false;
+  }
+
+  if (getFnVarTarget() == std::nullopt && !getFnVarFeatures().empty()) {
+    errs() << "Device target must be specified if the features are specified.";
+    return false;
+  }
+
+  return true;
 }

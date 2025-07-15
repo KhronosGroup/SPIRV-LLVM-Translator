@@ -803,6 +803,56 @@ int main(int Ac, char **Av) {
   if (SPIRVEmitFunctionPtrAddrSpace.getNumOccurrences() != 0)
     Opts.setEmitFunctionPtrAddrSpace(true);
 
+  Opts.setFnVarSpecEnable(FnVarSpecEnable);
+
+  if (!IsReverse &&
+      (FnVarSpecEnable || FnVarCategory != 0 || FnVarFamily != 0 ||
+       FnVarArch != 0 || FnVarTarget != 0 || !FnVarFeatures.empty() ||
+       !FnVarCapabilities.empty() || !FnVarSpvOut.empty())) {
+    errs() << "--fnvar-xxx flags can be used only with -r\n";
+    return -1;
+  }
+
+  if (!FnVarSpecEnable &&
+      (FnVarCategory != 0 || FnVarFamily != 0 || FnVarArch != 0 ||
+       FnVarTarget != 0 || !FnVarFeatures.empty() ||
+       !FnVarCapabilities.empty() || !FnVarSpvOut.empty())) {
+    errs() << "--fnvar-xxx flags need to be enabled with --fnvar-spec-enable\n";
+    return -1;
+  }
+
+  if (FnVarCategory.getNumOccurrences() > 0) {
+    Opts.setFnVarCategory(FnVarCategory);
+  }
+
+  if (FnVarFamily.getNumOccurrences() > 0) {
+    Opts.setFnVarFamily(FnVarFamily);
+  }
+
+  if (FnVarArch.getNumOccurrences() > 0) {
+    Opts.setFnVarArch(FnVarArch);
+  }
+
+  if (FnVarTarget.getNumOccurrences() > 0) {
+    Opts.setFnVarTarget(FnVarTarget);
+  }
+
+  if (!FnVarFeatures.empty()) {
+    Opts.setFnVarFeatures(FnVarFeatures);
+  }
+
+  if (!FnVarCapabilities.empty()) {
+    Opts.setFnVarCapabilities(FnVarCapabilities);
+  }
+
+  if (!FnVarSpvOut.empty()) {
+    Opts.setFnVarSpvOut(FnVarSpvOut);
+  }
+
+  if (!Opts.validateFnVarOpts()) {
+    return -1;
+  }
+
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
     errs() << "Cannot use -to-text with -to-binary, -r, -s\n";
