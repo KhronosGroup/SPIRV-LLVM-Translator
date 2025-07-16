@@ -2379,6 +2379,18 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
 }
 
 namespace {
+  // Check that remaining input stream size is at least as large as the expected WordCount.
+  bool validateWordCount(std::istream &IS, SPIRVWord WordCount) {
+    std::streampos currentPos = IS.tellg();
+    IS.seekg(0, std::ios::end);
+    std::streampos endPos = IS.tellg();
+    IS.seekg(currentPos);
+
+    std::streamoff remainingBytes = endPos - currentPos;
+    std::streamoff expectedBytes = static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
+    return remainingBytes >= expectedBytes;
+  }
+
 SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                                      SPIRVEntry *Scope, SPIRVModuleImpl &M,
                                      std::istream &IS) {
@@ -2387,10 +2399,12 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   }
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
   assert(Entry);
+
   Entry->setModule(&M);
   if (Scope && !isModuleScopeAllowedOpCode(OpCode)) {
     Entry->setScope(Scope);
   }
+
   Entry->setWordCount(WordCount);
   if (OpCode != OpLine)
     Entry->setLine(M.getCurrentLine());
@@ -2400,6 +2414,14 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                         SPIRVDebug::DebugLine)) {
     Entry->setDebugLine(M.getCurrentDebugLine());
   }
+
+  if (!validateWordCount(IS, WordCount)) {
+    M.getErrorLog().checkError(
+      false, SPIRVEC_InvalidWordCount,
+      "WordCount exceeds remaining input stream size");
+    M.setInvalid();
+  }
+
   IS >> *Entry;
   if (Entry->isEndOfBlock() || OpCode == OpNoLine) {
     M.setCurrentLine(nullptr);
