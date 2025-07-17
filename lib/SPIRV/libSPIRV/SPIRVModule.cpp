@@ -2379,20 +2379,6 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
 }
 
 namespace {
-// Check that remaining input stream size is at least as large as the expected
-// WordCount.
-bool validateWordCount(std::istream &IS, SPIRVWord WordCount) {
-  std::streampos CurrentPos = IS.tellg();
-  IS.seekg(0, std::ios::end);
-  std::streampos EndPos = IS.tellg();
-  IS.seekg(CurrentPos);
-
-  std::streamoff RemainingBytes = EndPos - CurrentPos;
-  std::streamoff ExpectedBytes =
-      static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
-  return RemainingBytes >= ExpectedBytes;
-}
-
 SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                                      SPIRVEntry *Scope, SPIRVModuleImpl &M,
                                      std::istream &IS) {
@@ -2413,11 +2399,6 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
       !Entry->isExtInst(SPIRVEIS_NonSemantic_Shader_DebugInfo_200,
                         SPIRVDebug::DebugLine)) {
     Entry->setDebugLine(M.getCurrentDebugLine());
-  }
-  if (!validateWordCount(IS, WordCount)) {
-    M.getErrorLog().checkError(false, SPIRVEC_InvalidWordCount,
-                               "WordCount exceeds remaining input stream size");
-    M.setInvalid();
   }
   IS >> *Entry;
   if (Entry->isEndOfBlock() || OpCode == OpNoLine) {
@@ -2583,6 +2564,21 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   return I;
 }
 
+// Check that remaining input stream size is at least as large as the expected
+// WordCount.
+bool validateWordCount(std::istream &IS, SPIRVWord WordCount) {
+  std::streampos CurrentPos = IS.tellg();
+  IS.seekg(0, std::ios::end);
+  std::streampos EndPos = IS.tellg();
+  IS.seekg(CurrentPos);
+
+  std::streamoff RemainingBytes = EndPos - CurrentPos;
+  std::streamoff ExpectedBytes =
+      static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
+  return RemainingBytes >= ExpectedBytes;
+}
+
+
 std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
@@ -2641,6 +2637,11 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
     if (!MI.isModuleValid()) {
       break;
     }
+    if (!validateWordCount(I, WordCount)) {
+      MI.getErrorLog().checkError(false, SPIRVEC_InvalidWordCount,
+                                "WordCount exceeds remaining input stream size");
+      MI.setInvalid();
+    }
     SPIRVEntry *Entry =
         parseAndCreateSPIRVEntry(WordCount, OpCode, Scope, MI, I);
     if (Entry != nullptr) {
@@ -2659,6 +2660,7 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
+    // M.getErrorLog().checkError(false, SPIRVEC_InvalidWordCount, "call parseSPT");
     return MI.parseSPT(I);
   }
 #endif
