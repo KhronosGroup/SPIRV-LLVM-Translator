@@ -2660,7 +2660,6 @@ std::istream &operator>>(std::istream &I, SPIRVModule &M) {
   SPIRVModuleImpl &MI = *static_cast<SPIRVModuleImpl *>(&M);
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
-    // M.getErrorLog().checkError(false, SPIRVEC_InvalidWordCount, "call parseSPT");
     return MI.parseSPT(I);
   }
 #endif
