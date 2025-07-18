@@ -2382,22 +2382,17 @@ namespace {
 // Check that remaining input stream size is at least as large as the expected
 // WordCount.
 void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
-                       SPIRVWord WordCount) {
-  std::streampos CurrentPos = IS.tellg();
-  IS.seekg(0, std::ios::end);
-  std::streampos EndPos = IS.tellg();
-  std::streamoff RemainingBytes = EndPos - CurrentPos;
-
+                              SPIRVWord WordCount) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
-    std::string word;
-    RemainingBytes = 0;
-    while (IS >> word) {
-      RemainingBytes += sizeof(SPIRVWord);
-    }
-    IS.clear();
+    return;
   }
 #endif
+
+  std::streampos CurrentPos = IS.tellg();
+  IS.seekg(0, std::ios::end);
+  std::streamoff RemainingBytes = IS.tellg() - CurrentPos;
+  IS.clear();
   IS.seekg(CurrentPos);
 
   std::streamoff ExpectedBytes =
@@ -2419,6 +2414,7 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   if (WordCount == 0 || OpCode == OpNop) {
     return nullptr;
   }
+  validateWordCount(M, IS, WordCount);
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
   assert(Entry);
   Entry->setModule(&M);
@@ -2434,7 +2430,6 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                         SPIRVDebug::DebugLine)) {
     Entry->setDebugLine(M.getCurrentDebugLine());
   }
-  validateWordCount(M, IS, WordCount);
   IS >> *Entry;
   if (Entry->isEndOfBlock() || OpCode == OpNoLine) {
     M.setCurrentLine(nullptr);
