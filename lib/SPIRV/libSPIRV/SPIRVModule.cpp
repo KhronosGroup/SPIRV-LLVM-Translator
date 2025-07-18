@@ -2384,20 +2384,22 @@ namespace {
 void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
                        SPIRVWord WordCount) {
   std::streampos CurrentPos = IS.tellg();
-  IS.seekg(0, std::ios::end);
-  std::streampos EndPos = IS.tellg();
-  std::streamoff RemainingBytes = EndPos - CurrentPos;
+  std::streamoff RemainingBytes = 0;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     std::string word;
-    RemainingBytes = 0;
     while (IS >> word) {
       RemainingBytes += sizeof(SPIRVWord);
     }
-    IS.clear();
-  }
+  } else
 #endif
+  {
+    IS.seekg(0, std::ios::end);
+    RemainingBytes = IS.tellg() - CurrentPos;
+  }
+
+  IS.clear();
   IS.seekg(CurrentPos);
 
   std::streamoff ExpectedBytes =
