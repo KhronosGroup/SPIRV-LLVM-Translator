@@ -2388,8 +2388,8 @@ void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
-    std::string word;
-    while (IS >> word) {
+    std::string Word;
+    while (IS >> Word) {
       RemainingBytes += sizeof(SPIRVWord);
     }
   } else
