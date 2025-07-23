@@ -88,6 +88,7 @@ private:
   // Helper methods
   SPIRVType *getVoidTy();
   SPIRVType *getInt32Ty();
+  SPIRVEntry *getVoidDebugType();
   SPIRVEntry *getScope(DIScope *SR);
   SPIRVEntry *getGlobalVariable(const DIGlobalVariable *GV);
   inline bool isNonSemanticDebugInfo();
