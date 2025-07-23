@@ -1872,8 +1872,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       auto *AllocaCand = transValue(LTStart->getObject(), F, BB);
       if (auto *Alloca = dyn_cast<AllocaInst>(AllocaCand)) {
         if (Alloca->getAllocatedType()->isSized())
-          Size = M->getDataLayout().getTypeAllocSize(
-              Alloca->getAllocatedType());
+          Size =
+              M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
         else
           Size = static_cast<SPIRVWord>(-1);
       }

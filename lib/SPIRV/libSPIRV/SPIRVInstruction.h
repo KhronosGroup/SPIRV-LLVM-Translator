@@ -2534,7 +2534,7 @@ public:
 
 protected:
   void validate() const override {
-    auto ObjType = getValue(Object)->getType();
+    [[maybe_unused]] auto ObjType = getValue(Object)->getType();
     // Type must be an OpTypePointer with Storage Class Function.
     assert(ObjType->isTypePointer() && "Objects type must be a pointer");
     assert(static_cast<SPIRVTypePointer *>(ObjType)->getStorageClass() ==
