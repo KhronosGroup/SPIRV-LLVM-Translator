@@ -253,16 +253,6 @@ IntrinsicInst *SPIRVToLLVM::getLifetimeStartIntrinsic(Instruction *I) {
   auto *II = dyn_cast<IntrinsicInst>(I);
   if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
     return II;
-  // Bitcast might be inserted during translation of OpLifetimeStart
-  auto *BC = dyn_cast<BitCastInst>(I);
-  if (BC) {
-    for (const auto &U : BC->users()) {
-      II = dyn_cast<IntrinsicInst>(U);
-      if (II && II->getIntrinsicID() == Intrinsic::lifetime_start)
-        return II;
-      ;
-    }
-  }
   return nullptr;
 }
 
@@ -1878,6 +1868,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     ConstantInt *S = nullptr;
     if (Size)
       S = Builder.getInt64(Size);
+    if (Size == 0) {
+      auto *AllocaCand = transValue(LTStart->getObject(), F, BB);
+      if (auto *Alloca = dyn_cast<AllocaInst>(AllocaCand)) {
+        if (Alloca->getAllocatedType()->isSized())
+          Size = M->getDataLayout().getTypeAllocSize(
+              Alloca->getAllocatedType());
+        else
+          Size = static_cast<SPIRVWord>(-1);
+      }
+    }
     Value *Var = transValue(LTStart->getObject(), F, BB);
     CallInst *Start = Builder.CreateLifetimeStart(Var, S);
     return mapValue(BV, Start);
@@ -1890,6 +1890,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     ConstantInt *S = nullptr;
     if (Size)
       S = Builder.getInt64(Size);
+    if (Size == 0) {
+      auto *AllocaCand = transValue(LTStop->getObject(), F, BB);
+      if (auto *Alloca = dyn_cast<AllocaInst>(AllocaCand)) {
+        if (Alloca->getAllocatedType()->isSized())
+          Size = M->getDataLayout().getTypeAllocSize(
+              Alloca->getAllocatedType());
+        else
+          Size = static_cast<SPIRVWord>(-1);
+      }
+    }
     auto *Var = transValue(LTStop->getObject(), F, BB);
     for (const auto &I : Var->users())
       if (auto *II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))

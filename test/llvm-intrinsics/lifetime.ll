@@ -23,22 +23,20 @@
 ; CHECK-SPIRV: LifetimeStop [[#Tmp]] 0
 
 ; CHECK-SPIRV: Function [[#]] [[#SizedF:]]
-; CHECK-SPIRV: LifetimeStart [[#Tmp:]] 1
-; CHECK-SPIRV: Bitcast [[#]] [[#Cast:]]
-; CHECK-SPIRV: LifetimeStop [[#Cast]] 1
+; CHECK-SPIRV: LifetimeStart [[#Tmp:]] 0
+; CHECK-SPIRV: LifetimeStop [[#Tmp]] 0
 
 ; CHECK-SPIRV: Function [[#]] [[#GenericF:]]
 ; CHECK-SPIRV: Variable [[#PrivatePtrTy]] [[#Var:]] 7
 ; CHECK-SPIRV: PtrCastToGeneric [[#]] [[#Cast1:]] [[#Var]]
 ; CHECK-SPIRV: Bitcast [[#]] [[#Cast2:]] [[#Cast1]]
 ; CHECK-SPIRV: GenericCastToPtr [[#]] [[#Cast3:]] [[#Cast2]]
-; CHECK-SPIRV: LifetimeStart [[#Cast3]] 1
+; CHECK-SPIRV: LifetimeStart [[#Cast3]] 0
 ; CHECK-SPIRV: GenericCastToPtr [[#]] [[#Cast4:]]
-; CHECK-SPIRV: LifetimeStop [[#Cast4]] 1
+; CHECK-SPIRV: LifetimeStop [[#Cast4]] 0
 
 ; CHECK-LLVM-LABEL: lifetime_simple
-; CHECK-LLVM: %[[tmp1:[0-9]+]] = bitcast ptr %{{[0-9]+}} to ptr
-; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[tmp1]])
+; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[tmp1:]])
 ; CHECK-LLVM: call void @llvm.lifetime.end.p0(i64 -1, ptr %[[tmp1]])
 
 ; CHECK-LLVM-LABEL: lifetime_sized
