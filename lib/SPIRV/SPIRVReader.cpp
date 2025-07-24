@@ -1883,8 +1883,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (Size == 0) {
       auto *Alloca = cast<AllocaInst>(Var);
       if (Alloca->getAllocatedType()->isSized())
-        Size =
-            M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
+        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
       else
         Size = static_cast<SPIRVWord>(-1);
     }
@@ -1904,8 +1903,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (Size == 0) {
       auto *Alloca = cast<AllocaInst>(Var);
       if (Alloca->getAllocatedType()->isSized())
-        Size =
-            M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
+        Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
       else
         Size = static_cast<SPIRVWord>(-1);
     }
