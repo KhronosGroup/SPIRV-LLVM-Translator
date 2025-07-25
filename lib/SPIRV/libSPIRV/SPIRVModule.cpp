@@ -2378,13 +2378,40 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
   UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
 }
 
-namespace {
+inline void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
+                              SPIRVWord WordCount) {
+#ifdef _SPIRV_SUPPORT_TEXT_FMT
+  if (SPIRVUseTextFormat) {
+    return;
+  }
+#endif
+
+  std::streampos CurrentPos = IS.tellg();
+  IS.seekg(0, std::ios::end);
+  std::streamoff RemainingBytes = IS.tellg() - CurrentPos;
+  IS.clear();
+  IS.seekg(CurrentPos);
+
+  std::streamoff ExpectedBytes =
+      static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
+
+  if (RemainingBytes < ExpectedBytes) {
+    M.getErrorLog().checkError(
+        false, SPIRVEC_InvalidWordCount,
+        "WordCount exceeds remaining input stream size: expected size = " +
+            std::to_string(ExpectedBytes) + " bytes, remaining size = " +
+            std::to_string(RemainingBytes) + " bytes");
+    M.setInvalid();
+  }
+}
+
 SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                                      SPIRVEntry *Scope, SPIRVModuleImpl &M,
                                      std::istream &IS) {
   if (WordCount == 0 || OpCode == OpNop) {
     return nullptr;
   }
+  validateWordCount(M, IS, WordCount);
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
   assert(Entry);
   Entry->setModule(&M);
@@ -2441,7 +2468,6 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   assert(!IS.bad() && !IS.fail() && "SPIRV stream fails");
   return Entry;
 }
-} // namespace
 
 std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
