@@ -2378,9 +2378,8 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
   UnknownStructFieldMap[Struct].push_back(std::make_pair(I, ID));
 }
 
+
 namespace {
-// Check that remaining input stream size is at least as large as the expected
-// WordCount.
 void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
                               SPIRVWord WordCount) {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -2407,7 +2406,9 @@ void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
     M.setInvalid();
   }
 }
+}  // namespace
 
+namespace {
 SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                                      SPIRVEntry *Scope, SPIRVModuleImpl &M,
                                      std::istream &IS) {
