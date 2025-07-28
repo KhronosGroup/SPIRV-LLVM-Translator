@@ -2409,6 +2409,7 @@ void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
 }
 } // namespace
 
+namespace {
 SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
                                      SPIRVEntry *Scope, SPIRVModuleImpl &M,
                                      std::istream &IS) {
@@ -2472,6 +2473,7 @@ SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   assert(!IS.bad() && !IS.fail() && "SPIRV stream fails");
   return Entry;
 }
+} // namespace
 
 std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
