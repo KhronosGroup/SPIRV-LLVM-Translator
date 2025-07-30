@@ -637,7 +637,7 @@ private:
   SPIRVUnknownStructFieldMap UnknownStructFieldMap;
   SPIRVTypeBool *BoolTy;
   SPIRVTypeVoid *VoidTy;
-  SmallDenseMap<SPIRVStorageClassKind, SPIRVTypeUntypedPointerKHR *>
+  std::unordered_map<SPIRVStorageClassKind, SPIRVTypeUntypedPointerKHR *>
       UntypedPtrTyMap;
   SmallDenseMap<unsigned, SPIRVTypeInt *, 4> IntTypeMap;
   SmallDenseMap<std::pair<unsigned, unsigned>, SPIRVTypeFloat *, 4>
