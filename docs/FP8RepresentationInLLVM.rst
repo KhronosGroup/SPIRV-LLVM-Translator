@@ -8,7 +8,7 @@ Overview
 ========
 
 Open Compute and other projects are adding various new data-types and SPIR-V
-(starting from SPV_EXT_fp8) is now adopting them. None of these data-types
+(starting from SPV_EXT_float8) is now adopting them. None of these data-types
 have appropriate LLVM IR counterparts. This document describes the proposed
 LLVM IR input format for *FP8* types, the translation flow, and the
 expected LLVM IR output from the consumer.
@@ -30,57 +30,56 @@ The 'type resolution' instruction can be either a conversion instruction or *OpC
 SPIR-V conversion instructions
 ==============================
 
-There is limited number of conversions that will be supported now. Most of them will be represented by *FConvert* instruction
+There is limited number of conversions that will be supported now. Most of them will be represented by *OpFConvert* instruction
 in SPIR-V, which itself doesn't carry information about floating-point value's width and encoding, so there is nothing to expose
 in SPIR-V friendly LLVM IR call. This document adds a new set of external function calls
 each of which has a name that is formed from encoding a specific conversion that it performs.
-This name has a *__builtin_spirv_* prefix and *EXT* postfix (from SPV_EXT_fp8). These calls will
+This name has a *__builtin_spirv_* prefix and *EXT* postfix (from SPV_EXT_float8). These calls will
 be translated to SPIR-V conversion instruction operating over the appropriate types. These functions are expected to
 be mangled following Itanium C++ ABI. SPIR-V consumer will apply Itanium mangling during
 translation to LLVM IR as well.
 
-SPIR-V generator will support *scalar*, *vector* and *packed* (*packed* is for *Int4*, it's tentitive and a subject of removal,
-since clang now supports vectors of sub-byte integers) for the conversion builtin functions as LLVM IR input;
+SPIR-V generator will support *scalar*, *vector* and *packed* for the conversion builtin functions as LLVM IR input;
 *packed* format is translated to a *vector*. Meanwhile SPIR-V consumer
 will never pack a *vector* back to *packed* format.
 
 Following list of function calls will be handled by the translator:
-Translated to *FConvert*
+Translated to *OpFConvert*
 
 .. code-block:: C
 
-  __builtin_spirv_ConvertHF16ToHF8EXT, __builtin_spirv_ConvertBF16ToHF8EXT,
-  __builtin_spirv_ConvertHF16ToBF8EXT, __builtin_spirv_ConvertBF16ToBF8EXT,
-  __builtin_spirv_ConvertHF8ToHF16EXT, __builtin_spirv_ConvertBF8ToHF16EXT,
-  __builtin_spirv_ConvertHF8ToBF16EXT, __builtin_spirv_ConvertBF8ToBF16EXT
+  __builtin_spirv_ConvertFP16ToE4M3EXT, __builtin_spirv_ConvertBF16ToE4M3EXT,
+  __builtin_spirv_ConvertFP16ToE5M2EXT, __builtin_spirv_ConvertBF16ToE5M2EXT,
+  __builtin_spirv_ConvertE4M3ToFP16EXT, __builtin_spirv_ConvertE5M2ToFP16EXT,
+  __builtin_spirv_ConvertE4M3ToBF16EXT, __builtin_spirv_ConvertE5M2ToBF16EXT
 
 Translated to *OpConvertSToF*
 
 .. code-block:: C
 
-  __builtin_spirv_ConvertInt4ToHF8EXT, __builtin_spirv_ConvertInt4ToBF8EXT,
-  __builtin_spirv_ConvertInt4ToHF16EXT, __builtin_spirv_ConvertInt4ToBF16EXT
+  __builtin_spirv_ConvertInt4ToE4M3EXT, __builtin_spirv_ConvertInt4ToE5M2EXT,
+  __builtin_spirv_ConvertInt4ToFP16EXT, __builtin_spirv_ConvertInt4ToBF16EXT
 
 
 Translated to *OpConvertFToS*
 
 .. code-block:: C
 
-  __builtin_spirv_ConvertHF16ToInt4EXT, __builtin_spirv_ConvertBF16ToInt4EXT
+  __builtin_spirv_ConvertFP16ToInt4EXT, __builtin_spirv_ConvertBF16ToInt4EXT
 
 Translated to *OpConvertUToF*
 
 .. code-block:: C
 
-  __builtin_spirv_ConvertUInt4ToHF8EXT, __builtin_spirv_ConvertUInt4ToBF8EXT,
-  __builtin_spirv_ConvertUInt4ToHF16EXT, __builtin_spirv_ConvertUInt4ToBF16EXT
+  __builtin_spirv_ConvertUInt4ToE4M3EXT, __builtin_spirv_ConvertUInt4ToE5M2EXT,
+  __builtin_spirv_ConvertUInt4ToFP16EXT, __builtin_spirv_ConvertUInt4ToBF16EXT
 
 
 Translated to *OpConvertFToU*
 
 .. code-block:: C
 
-  __builtin_spirv_ConvertHF16ToUInt4EXT, __builtin_spirv_ConvertBF16ToUInt4EXT
+  __builtin_spirv_ConvertFP16ToUInt4EXT, __builtin_spirv_ConvertBF16ToUInt4EXT
 
 
 Example LLVM IR to SPIR-V translation:
@@ -89,8 +88,8 @@ Input LLVM IR
 .. code-block:: C
 
    %alloc = alloca half
-   %hf16_val = call half __builtin_spirv_ConvertHF8ToHF16EXT(i8 1)
-   store half %hf16_val, ptr %alloc
+   %FP16_val = call half __builtin_spirv_ConvertE4M3ToFP16EXT(i8 1)
+   store half %FP16_val, ptr %alloc
 
 Output SPIR-V
 
@@ -112,8 +111,8 @@ Output LLVM IR
 .. code-block:: C
 
    %alloc = alloca half
-   %hf16_val = call half __builtin_spirv_ConvertHF8ToHF16EXT(i8 1)
-   store half %hf16_val, ptr %alloc
+   %fp16_val = call half __builtin_spirv_ConvertE4M3ToFP16EXT(i8 1)
+   store half %fp16_val, ptr %alloc
 
 SPIR-V cooperative matrix instructions
 ======================================
