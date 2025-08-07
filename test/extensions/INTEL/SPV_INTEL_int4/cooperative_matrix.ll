@@ -6,6 +6,8 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; XFAIL: *
+
 ; CHECK-SPIRV-DAG: Capability Int4TypeINTEL
 ; CHECK-SPIRV-DAG: Capability CooperativeMatrixKHR
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_int4"

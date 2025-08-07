@@ -17,8 +17,8 @@
 ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[#]] [[#Load]]
 
 ; CHECK-LLVM: %[[#Alloc:]] = alloca i4, align 1
-; CHECK-LLVM: store i4 1, ptr %[[#Alloc:]], align 1
-; CHECK-LLVM: %[[#Load:]] = load i4, ptr %[[#Alloc]], align 1
+; CHECK-LLVM: store i4 1, i4* %[[#Alloc:]], align 1
+; CHECK-LLVM: %[[#Load:]] = load i4, i4* %[[#Alloc]], align 1
 ; CHECK-LLVM: call spir_func void @boo(i4 %[[#Load]])
 
 
@@ -29,8 +29,8 @@ target triple = "spir-unknown-unknown"
 define spir_kernel void @foo() {
 entry:
   %0 = alloca i4
-  store i4 1, ptr %0
-  %1 = load i4, ptr %0
+  store i4 1, i4* %0
+  %1 = load i4, i4* %0
   call spir_func void @boo(i4 %1)
   ret void
 }
