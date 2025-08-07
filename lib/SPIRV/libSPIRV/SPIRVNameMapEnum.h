@@ -677,6 +677,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityCooperativeMatrixCheckedInstructionsINTEL,
       "CooperativeMatrixCheckedInstructionsINTEL");
   add(internal::CapabilityBindlessImagesINTEL, "BindlessImagesINTEL");
+  add(CapabilityInt4TypeINTEL, "Int4TypeINTEL");
+  add(CapabilityInt4CooperativeMatrixINTEL, "Int4CooperativeMatrixINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
