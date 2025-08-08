@@ -4832,10 +4832,12 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     Op OC = (II->getIntrinsicID() == Intrinsic::lifetime_start)
                 ? OpLifetimeStart
                 : OpLifetimeStop;
-    int64_t Size = dyn_cast<ConstantInt>(II->getOperand(0))->getSExtValue();
-    if (Size == -1)
-      Size = 0;
-    Value *LLVMPtrOp = II->getOperand(1);
+    int64_t Size = 0;
+    Value *LLVMPtrOp = II->getOperand(0);
+    auto *Alloca = cast<AllocaInst>(LLVMPtrOp->stripPointerCasts());
+    if (Alloca->getAllocatedType()->isSized())
+      Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
+
     unsigned PtrAS = cast<PointerType>(LLVMPtrOp->getType())->getAddressSpace();
     auto *PtrOp = transValue(LLVMPtrOp, BB);
     if (PtrAS == SPIRAS_Private)
