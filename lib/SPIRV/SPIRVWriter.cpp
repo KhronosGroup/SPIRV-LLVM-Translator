@@ -4834,7 +4834,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                 : OpLifetimeStop;
     int64_t Size = 0;
     Value *LLVMPtrOp = II->getOperand(0);
-    auto *Alloca = cast<AllocaInst>(LLVMPtrOp->stripPointerCasts());
+    auto *Alloca = cast<AllocaInst>(LLVMPtrOp);
     if (Alloca->getAllocatedType()->isSized())
       Size = M->getDataLayout().getTypeAllocSize(Alloca->getAllocatedType());
 
