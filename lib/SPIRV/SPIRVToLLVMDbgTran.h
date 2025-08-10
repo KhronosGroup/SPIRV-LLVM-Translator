@@ -146,6 +146,7 @@ private:
   DINode *transTypeTemplateParameter(const SPIRVExtInst *DebugInst);
   DINode *transTypeTemplateTemplateParameter(const SPIRVExtInst *DebugInst);
   DINode *transTypeTemplateParameterPack(const SPIRVExtInst *DebugInst);
+  DINode *transTypeTemplateParameterInst(const SPIRVExtInst *DebugInst);
 
   MDNode *transTypeTemplate(const SPIRVExtInst *DebugInst);
 
