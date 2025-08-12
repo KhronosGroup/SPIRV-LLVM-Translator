@@ -46,7 +46,6 @@ define i64 @getLargeConstantI64() {
 ; For 34359738368 = 0x00000008 00000000, so represented as 0 8
 ; CHECK: Constant [[#I64_TY]] [[#LARGE_I64_CONST:]] 0 8
 
-
 ; CHECK: Function [[#I8_TY]] [[#I8_FUNC]] 0 [[#]]
 ; CHECK: ReturnValue [[#I8_CONST]]
 ; CHECK: FunctionEnd
