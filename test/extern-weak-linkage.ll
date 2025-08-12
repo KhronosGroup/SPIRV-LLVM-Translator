@@ -15,7 +15,7 @@ target triple = "spir64-unknown-unknown"
 
 define weak dso_local spir_func i32 @abs(i32 noundef %x) {
 entry:
-  %call = tail call spir_func i32 @__devicelib_abs(i32 noundef %x) #11
+  %call = tail call spir_func i32 @__devicelib_abs(i32 noundef %x)
   ret i32 %call
 }
 

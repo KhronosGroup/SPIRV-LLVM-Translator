@@ -1,22 +1,25 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o - -spirv-text | FileCheck %s
+; RUN: llvm-spirv %t.bc -o - -spirv-text | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir-unknown-unknown"
 
-; CHECK-DAG: TypeEvent [[#EventTy:]]
-; CHECK-DAG: TypeStruct [[#StructEventTy:]] [[#EventTy]]
-; CHECK-DAG: TypePointer [[#FunPtrStructEventTy:]] 7 [[#StructEventTy]]
-; CHECK-DAG: TypePointer [[#GenPtrEventTy:]] 8 [[#StructEventTy]]
-; CHECK-DAG: TypePointer [[#FunPtrEventTy:]] 8 [[#EventTy]]
-; CHECK: Function
-; CHECK: Variable [[#FunPtrStructEventTy]] [[#Var:]] 7
-; CHECK-NEXT:  PtrCastToGeneric [[#GenPtrEventTy]] [[#GenEvent:]] [[#Var]]
-; CHECK-NEXT:  Bitcast [[#FunPtrEventTy]] [[#FunEvent:]] [[#GenEvent]]
-; CHECK-NEXT:  GroupWaitEvents [[#]] [[#]] [[#FunEvent]]
+; CHECK-SPIRV-DAG: TypeEvent [[#EventTy:]]
+; CHECK-SPIRV-DAG: TypeStruct [[#StructEventTy:]] [[#EventTy]]
+; CHECK-SPIRV-DAG: TypePointer [[#FunPtrStructEventTy:]] 7 [[#StructEventTy]]
+; CHECK-SPIRV-DAG: TypePointer [[#GenPtrEventTy:]] 8 [[#StructEventTy]]
+; CHECK-SPIRV-DAG: TypePointer [[#FunPtrEventTy:]] 8 [[#EventTy]]
+; CHECK-SPIRV: Function
+; CHECK-SPIRV: Variable [[#FunPtrStructEventTy]] [[#Var:]] 7
+; CHECK-SPIRV-NEXT:  PtrCastToGeneric [[#GenPtrEventTy]] [[#GenEvent:]] [[#Var]]
+; CHECK-SPIRV-NEXT:  Bitcast [[#FunPtrEventTy]] [[#FunEvent:]] [[#GenEvent]]
+; CHECK-SPIRV-NEXT:  GroupWaitEvents [[#]] [[#]] [[#FunEvent]]
 
+; CHECK-SPV-IR: __spirv_GroupWaitEvents
 %"class.sycl::_V1::device_event" = type { target("spirv.Event") }
 
 define weak_odr dso_local spir_kernel void @foo() {
