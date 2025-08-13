@@ -4,6 +4,8 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+; RUN: llvm-spirv -r  %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-OCL-IR
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir-unknown-unknown"
@@ -20,6 +22,8 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV-NEXT:  GroupWaitEvents [[#]] [[#]] [[#FunEvent]]
 
 ; CHECK-SPV-IR: __spirv_GroupWaitEvents
+; CHECK-OCL-IR: spir_func void @_Z17wait_group_events
+;; The call @_Z17wait_group_events is not correctly mapped to SPIRV. It remains as functioncall in SPIRV generation.
 %"class.sycl::_V1::device_event" = type { target("spirv.Event") }
 
 define weak_odr dso_local spir_kernel void @foo() {
