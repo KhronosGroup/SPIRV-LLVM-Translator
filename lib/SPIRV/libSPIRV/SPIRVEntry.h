@@ -914,6 +914,9 @@ public:
       return ExtensionID::SPV_INTEL_subgroup_requirements;
     case CapabilityFPFastMathModeINTEL:
       return ExtensionID::SPV_INTEL_fp_fast_math_mode;
+    case CapabilityFunctionVariantsINTEL:
+    case CapabilitySpecConditionalINTEL:
+      return ExtensionID::SPV_INTEL_function_variants;
     default:
       return {};
     }
