@@ -270,6 +270,59 @@ static cl::opt<SPIRV::BuiltinFormat> SPIRVBuiltinFormat(
         clEnumValN(SPIRV::BuiltinFormat::Global, "global",
                    "Use globals to represent SPIR-V builtin variables")));
 
+static cl::opt<uint32_t> FnVarCategory(
+    "fnvar-category",
+    cl::desc("Specify architecture category of the target device (omitting "
+             "this flag denotes that the target device can be of any "
+             "category). Used only with -r and --fnvar-spec-enable."),
+    cl::value_desc("category"), cl::ValueRequired);
+
+static cl::opt<uint32_t> FnVarFamily(
+    "fnvar-family",
+    cl::desc("Specify architecture family of the target device (omitting this "
+             "flag denotes that the target device can be of any family). Used "
+             "only with -r and --fnvar-spec-enable."),
+    cl::value_desc("family"), cl::ValueRequired);
+
+static cl::opt<uint32_t> FnVarArch(
+    "fnvar-arch",
+    cl::desc("Specify architecture of the target device (omitting this flag "
+             "denotes that the target device can be of any architecture). Used "
+             "only with -r and --fnvar-spec-enable."),
+    cl::value_desc("architecture"), cl::ValueRequired);
+
+static cl::opt<uint32_t>
+    FnVarTarget("fnvar-target",
+                cl::desc("Specify target of the target device (omitting this "
+                         "flag denotes that the target device can be any "
+                         "target). Used only with -r and --fnvar-spec-enable."),
+                cl::value_desc("target"), cl::ValueRequired);
+
+static cl::list<uint32_t> FnVarFeatures(
+    "fnvar-features", cl::CommaSeparated,
+    cl::desc("Specify features of the target device (omitting this flag "
+             "denotes that the target device supports all features). Used only "
+             "with -r and --fnvar-spec-enable."),
+    cl::value_desc("feature0,feature1,..."), cl::ValueRequired);
+
+static cl::list<uint32_t> FnVarCapabilities(
+    "fnvar-capabilities", cl::CommaSeparated,
+    cl::desc("Specify capabilities of the target device (omitting this flag "
+             "denotes that the target device supports all features). Used only "
+             "with -r and --fnvar-spec-enable."),
+    cl::value_desc("capability0,capability1,..."), cl::ValueRequired);
+
+static cl::opt<std::string> FnVarSpvOut(
+    "fnvar-spv-out",
+    cl::desc("Save the specialized target-specific SPIR-V module to this file. "
+             "Used only with -r and --fnvar-spec-enable."),
+    cl::value_desc("file"), cl::ValueRequired);
+
+static cl::opt<bool> FnVarSpecEnable(
+    "fnvar-spec-enable", cl::init(false),
+    cl::desc("Enable specialization of function variants according to "
+             "SPV_INTEL_function_variants. Requires -r flag."));
+
 static std::string removeExt(const std::string &FileName) {
   size_t Pos = FileName.find_last_of(".");
   if (Pos != std::string::npos)
@@ -796,6 +849,56 @@ int main(int Ac, char **Av) {
 
   if (SPIRVEmitFunctionPtrAddrSpace.getNumOccurrences() != 0)
     Opts.setEmitFunctionPtrAddrSpace(true);
+
+  Opts.setFnVarSpecEnable(FnVarSpecEnable);
+
+  if (!IsReverse &&
+      (FnVarSpecEnable || FnVarCategory != 0 || FnVarFamily != 0 ||
+       FnVarArch != 0 || FnVarTarget != 0 || !FnVarFeatures.empty() ||
+       !FnVarCapabilities.empty() || !FnVarSpvOut.empty())) {
+    errs() << "--fnvar-xxx flags can be used only with -r\n";
+    return -1;
+  }
+
+  if (!FnVarSpecEnable &&
+      (FnVarCategory != 0 || FnVarFamily != 0 || FnVarArch != 0 ||
+       FnVarTarget != 0 || !FnVarFeatures.empty() ||
+       !FnVarCapabilities.empty() || !FnVarSpvOut.empty())) {
+    errs() << "--fnvar-xxx flags need to be enabled with --fnvar-spec-enable\n";
+    return -1;
+  }
+
+  if (FnVarCategory.getNumOccurrences() > 0) {
+    Opts.setFnVarCategory(FnVarCategory);
+  }
+
+  if (FnVarFamily.getNumOccurrences() > 0) {
+    Opts.setFnVarFamily(FnVarFamily);
+  }
+
+  if (FnVarArch.getNumOccurrences() > 0) {
+    Opts.setFnVarArch(FnVarArch);
+  }
+
+  if (FnVarTarget.getNumOccurrences() > 0) {
+    Opts.setFnVarTarget(FnVarTarget);
+  }
+
+  if (!FnVarFeatures.empty()) {
+    Opts.setFnVarFeatures(FnVarFeatures);
+  }
+
+  if (!FnVarCapabilities.empty()) {
+    Opts.setFnVarCapabilities(FnVarCapabilities);
+  }
+
+  if (!FnVarSpvOut.empty()) {
+    Opts.setFnVarSpvOut(FnVarSpvOut);
+  }
+
+  if (!Opts.validateFnVarOpts()) {
+    return -1;
+  }
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (ToText && (ToBinary || IsReverse || IsRegularization)) {
