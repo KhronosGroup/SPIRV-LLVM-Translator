@@ -1,18 +1,29 @@
-; RUN: llvm-as < %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-p:64:64"
 target triple = "spir64-unknown-unknown"
 
-; CHECK:     EntryPoint 6 [[#]] "global_check" [[#var0:]] [[#var1:]] [[#var2:]] [[#var3:]]
-; CHECK:     EntryPoint 6 [[#]] "writer" [[#var0]] [[#var1]] [[#var2]] [[#var3]]
-; CHECK:     EntryPoint 6 [[#]] "reader" [[#var0]] [[#var1]] [[#var2]] [[#var3]]
-; CHECK-DAG: Name [[#var0]] "var"
-; CHECK-DAG: Name [[#var1]] "g_var"
-; CHECK-DAG: Name [[#var2]] "a_var"
-; CHECK-DAG: Name [[#var3]] "p_var"
+; CHECK-SPIRV:     EntryPoint 6 [[#]] "global_check" [[#var0:]] [[#var1:]] [[#var2:]] [[#var3:]]
+; CHECK-SPIRV:     EntryPoint 6 [[#]] "writer" [[#var0]] [[#var1]] [[#var2]] [[#var3]]
+; CHECK-SPIRV:     EntryPoint 6 [[#]] "reader" [[#var0]] [[#var1]] [[#var2]] [[#var3]]
+; CHECK-SPIRV-DAG: Name [[#var0]] "var"
+; CHECK-SPIRV-DAG: Name [[#var1]] "g_var"
+; CHECK-SPIRV-DAG: Name [[#var2]] "a_var"
+; CHECK-SPIRV-DAG: Name [[#var3]] "p_var" 
+
+; CHECK-LLVM: @var = addrspace(1) global <2 x i8> zeroinitializer, align 2
+; CHECK-LLVM: @g_var = addrspace(1) global <2 x i8> zeroinitializer, align 2
+; CHECK-LLVM: @a_var = addrspace(1) global [2 x <2 x i8>] zeroinitializer, align 2
+; CHECK-LLVM: @p_var = addrspace(1) global ptr addrspace(1) null, align 8
+; CHECK-LLVM: define spir_kernel void @global_check()
+; CHECK-LLVM: define spir_kernel void @writer()
+; CHECK-LLVM: define spir_kernel void @reader()
 
 @var = addrspace(1) global <2 x i8> zeroinitializer, align 2
 @g_var = addrspace(1) global <2 x i8> zeroinitializer, align 2
