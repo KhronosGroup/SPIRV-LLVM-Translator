@@ -44,12 +44,13 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <optional>
 
 using namespace llvm;
 using namespace SPIRV;
 
-bool TranslatorOpts::isUnknownIntrinsicAllowed(IntrinsicInst *II) const
-    noexcept {
+bool TranslatorOpts::isUnknownIntrinsicAllowed(
+    IntrinsicInst *II) const noexcept {
   if (!SPIRVAllowUnknownIntrinsics.hasValue())
     return false;
   const auto &IntrinsicPrefixList = SPIRVAllowUnknownIntrinsics.getValue();
@@ -68,4 +69,26 @@ bool TranslatorOpts::isSPIRVAllowUnknownIntrinsicsEnabled() const noexcept {
 void TranslatorOpts::setSPIRVAllowUnknownIntrinsics(
     TranslatorOpts::ArgList IntrinsicPrefixList) noexcept {
   SPIRVAllowUnknownIntrinsics = IntrinsicPrefixList;
+}
+
+bool TranslatorOpts::validateFnVarOpts() const {
+  if (!getFnVarCategory().has_value() &&
+      (getFnVarFamily().has_value() || getFnVarArch().has_value())) {
+    errs() << "FnVar: Device category must be specified if the family or "
+              "architecture are specified.";
+    return false;
+  }
+
+  if (!getFnVarFamily().has_value() && getFnVarArch().has_value()) {
+    errs() << "FnVar: Device family must be specified if the architecture is "
+              "specified.";
+    return false;
+  }
+
+  if (!getFnVarTarget().has_value() && !getFnVarFeatures().empty()) {
+    errs() << "Device target must be specified if the features are specified.";
+    return false;
+  }
+
+  return true;
 }

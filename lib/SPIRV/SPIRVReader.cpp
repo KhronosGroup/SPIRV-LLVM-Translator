@@ -41,6 +41,7 @@
 #include "SPIRVAsm.h"
 #include "SPIRVBasicBlock.h"
 #include "SPIRVExtInst.h"
+#include "SPIRVFnVar.h"
 #include "SPIRVFunction.h"
 #include "SPIRVInstruction.h"
 #include "SPIRVInternal.h"
@@ -1450,7 +1451,7 @@ static void replaceOperandWithAnnotationIntrinsicCallResult(Value *&V) {
 template <typename SPIRVInstType>
 void SPIRVToLLVM::transAliasingMemAccess(SPIRVInstType *BI, Instruction *I) {
   static_assert(std::is_same<SPIRVInstType, SPIRVStore>::value ||
-                std::is_same<SPIRVInstType, SPIRVLoad>::value,
+                    std::is_same<SPIRVInstType, SPIRVLoad>::value,
                 "Only stores and loads can be aliased by memory access mask");
   if (BI->SPIRVMemoryAccess::isNoAlias())
     addMemAliasMetadata(I, BI->SPIRVMemoryAccess::getNoAliasInstID(),
@@ -1841,6 +1842,20 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpLabel:
     return mapValue(BV, BasicBlock::Create(*Context, BV->getName(), F));
+
+  case OpSpecConstantArchitectureINTEL:
+    llvm_unreachable(
+        "Encountered non-specialized OpSpecConstantArchitectureINTEL");
+    return nullptr;
+
+  case OpSpecConstantTargetINTEL:
+    llvm_unreachable("Encountered non-specialized OpSpecConstantTargetINTEL");
+    return nullptr;
+
+  case OpSpecConstantCapabilitiesINTEL:
+    llvm_unreachable(
+        "Encountered non-specialized OpSpecConstantCapabilitiesINTEL");
+    return nullptr;
 
   default:
     // do nothing
@@ -2311,10 +2326,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
       case 4: {
         for (int Idx = 0; Idx < 4; ++Idx) {
-          Value *V1 = Builder.CreateShuffleVector(
-              MCache[0], MCache[1], ArrayRef<int>{Idx, Idx + 4});
-          Value *V2 = Builder.CreateShuffleVector(
-              MCache[2], MCache[3], ArrayRef<int>{Idx, Idx + 4});
+          Value *V1 = Builder.CreateShuffleVector(MCache[0], MCache[1],
+                                                  ArrayRef<int>{Idx, Idx + 4});
+          Value *V2 = Builder.CreateShuffleVector(MCache[2], MCache[3],
+                                                  ArrayRef<int>{Idx, Idx + 4});
           Value *V3 =
               Builder.CreateShuffleVector(V1, V2, ArrayRef<int>{0, 1, 2, 3});
           V = Builder.CreateInsertValue(V, V3, Idx);
@@ -5363,6 +5378,31 @@ bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
 
   if (!BM)
     return false;
+
+  if (Opts.getFnVarSpecEnable()) {
+    if (!specializeFnVariants(BM.get(), ErrMsg)) {
+      return false;
+    }
+
+    // Write out the specialized/targeted module
+    if (!BM->getFnVarSpvOut().empty()) {
+      auto SaveOpt = SPIRVUseTextFormat;
+      auto OFSSpv = std::ofstream(BM->getFnVarSpvOut(), std::ios::binary);
+      SPIRVUseTextFormat = false;
+      OFSSpv << *BM;
+      if (BM->getError(ErrMsg) != SPIRVEC_Success) {
+        return false;
+      }
+      SPIRVUseTextFormat = SaveOpt;
+    }
+  }
+
+  if (BM->getExtension().find("SPV_INTEL_function_variants") !=
+      BM->getExtension().end()) {
+    ErrMsg = "Instructions from SPV_INTEL_function_variants are not "
+             "convertible to LLVM IR.";
+    return false;
+  }
 
   M = convertSpirvToLLVM(C, *BM, Opts, ErrMsg).release();
 

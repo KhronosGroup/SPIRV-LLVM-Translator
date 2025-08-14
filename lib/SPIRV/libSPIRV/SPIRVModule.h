@@ -97,6 +97,10 @@ class SPIRVTypeBufferSurfaceINTEL;
 class SPIRVTypeTokenINTEL;
 class SPIRVTypeJointMatrixINTEL;
 class SPIRVTypeCooperativeMatrixKHR;
+class SPIRVConditionalCapabilityINTEL;
+class SPIRVConditionalExtensionINTEL;
+class SPIRVConditionalEntryPointINTEL;
+class SPIRVConditionalCopyObjectINTEL;
 
 typedef SPIRVBasicBlock SPIRVLabel;
 struct SPIRVTypeImageDescriptor;
@@ -104,6 +108,13 @@ struct SPIRVTypeImageDescriptor;
 class SPIRVModule {
 public:
   typedef std::map<SPIRVCapabilityKind, SPIRVCapability *> SPIRVCapMap;
+  typedef std::map<std::pair<SPIRVId, SPIRVCapabilityKind>,
+                   SPIRVConditionalCapabilityINTEL *>
+      SPIRVConditionalCapMap;
+  typedef std::vector<SPIRVConditionalEntryPointINTEL *>
+      SPIRVConditionalEntryPointVec;
+  typedef std::set<std::pair<SPIRVId, std::string>>
+      SPIRVConditionalExtensionSet;
 
   static SPIRVModule *createSPIRVModule();
   static SPIRVModule *createSPIRVModule(const SPIRV::TranslatorOpts &);
@@ -132,14 +143,22 @@ public:
   // Module query functions
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
   virtual const SPIRVCapMap &getCapability() const = 0;
+  virtual const SPIRVConditionalCapMap &getConditionalCapabilities() const = 0;
+  virtual const SPIRVConditionalEntryPointVec &
+  getConditionalEntryPoints() const = 0;
   virtual bool hasCapability(SPIRVCapabilityKind) const = 0;
   virtual SPIRVExtInstSetKind getBuiltinSet(SPIRVId) const = 0;
   virtual std::set<std::string> &getExtension() = 0;
+  virtual SPIRVConditionalExtensionSet &getConditionalExtensions() = 0;
   virtual SPIRVFunction *getFunction(unsigned) const = 0;
   virtual SPIRVVariable *getVariable(unsigned) const = 0;
+  virtual SPIRVValue *getConst(unsigned) const = 0;
+  virtual std::vector<SPIRVDecorateGeneric *> *getDecorateVec() = 0;
+  virtual std::vector<SPIRVFunction *> *getFuncVec() = 0;
   virtual SPIRVMemoryModelKind getMemoryModel() const = 0;
   virtual unsigned getNumFunctions() const = 0;
   virtual unsigned getNumVariables() const = 0;
+  virtual unsigned getNumConsts() const = 0;
   virtual std::vector<SPIRVValue *> getFunctionPointers() const = 0;
   virtual SourceLanguage getSourceLanguage(SPIRVWord *) const = 0;
   virtual std::set<std::string> &getSourceExtension() = 0;
@@ -179,6 +198,8 @@ public:
   virtual void resolveUnknownStructFields() = 0;
   virtual void setSPIRVVersion(SPIRVWord) = 0;
   virtual void insertEntryNoId(SPIRVEntry *Entry) = 0;
+  virtual bool eraseReferencesOfInst(SPIRVId Id) = 0;
+  virtual void eraseCapability(SPIRVCapabilityKind CapKind) = 0;
 
   void setMinSPIRVVersion(VersionNumber Ver) {
     setSPIRVVersion(std::max(static_cast<SPIRVWord>(Ver), getSPIRVVersion()));
@@ -225,6 +246,10 @@ public:
   virtual void addEntryPoint(SPIRVExecutionModelKind, SPIRVId,
                              const std::string &,
                              const std::vector<SPIRVId> &) = 0;
+  virtual void addConditionalEntryPoint(SPIRVId, SPIRVExecutionModelKind,
+                                        SPIRVId, const std::string &,
+                                        const std::vector<SPIRVId> &) = 0;
+  virtual void specializeConditionalEntryPoints(SPIRVId, bool) = 0;
   virtual SPIRVForward *addForward(SPIRVType *Ty) = 0;
   virtual SPIRVForward *addForward(SPIRVId, SPIRVType *Ty) = 0;
   virtual SPIRVFunction *addFunction(SPIRVFunction *) = 0;
@@ -232,6 +257,7 @@ public:
                                      SPIRVId Id = SPIRVID_INVALID) = 0;
   virtual SPIRVEntry *replaceForward(SPIRVForward *, SPIRVEntry *) = 0;
   virtual void eraseInstruction(SPIRVInstruction *, SPIRVBasicBlock *) = 0;
+  virtual bool eraseValue(SPIRVValue *) = 0;
 
   // Type creation functions
   virtual SPIRVTypeArray *addArrayType(SPIRVType *, SPIRVConstant *) = 0;
@@ -336,6 +362,13 @@ public:
     for (auto I : Caps)
       addCapability(I);
   }
+  virtual void addConditionalCapability(SPIRVId, SPIRVCapabilityKind) = 0;
+  template <typename T>
+  void addConditionalCapabilities(SPIRVId Condition, const T &Caps) {
+    for (auto I : Caps)
+      addConditionalCapability(Condition, I);
+  }
+  virtual void eraseConditionalCapability(SPIRVId, SPIRVCapabilityKind) = 0;
   virtual void addExtension(ExtensionID) = 0;
   /// Used by SPIRV entries to add required capability internally.
   /// Should not be used by users directly.
@@ -474,12 +507,14 @@ public:
   virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVValue *,
                                                 SPIRVBasicBlock *) = 0;
-  virtual SPIRVEntry *getOrAddAliasDomainDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeListDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                   llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                                      llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                      llvm::MDNode *MD) = 0;
   virtual SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
                                                  SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy,
@@ -516,6 +551,10 @@ public:
 
   bool getSpecializationConstant(SPIRVWord SpecId, uint64_t &ConstValue) {
     return TranslationOpts.getSpecializationConstant(SpecId, ConstValue);
+  }
+
+  void setSpecializationConstant(SPIRVWord SpecId, uint64_t ConstValue) {
+    TranslationOpts.setSpecConst(SpecId, ConstValue);
   }
 
   FPContractMode getFPContractMode() const {
@@ -574,6 +613,29 @@ public:
     return TranslationOpts.getDesiredBIsRepresentation();
   }
 
+  llvm::Optional<uint32_t> getFnVarCategory() const {
+    return TranslationOpts.getFnVarCategory();
+  }
+  llvm::Optional<uint32_t> getFnVarFamily() const {
+    return TranslationOpts.getFnVarFamily();
+  }
+  llvm::Optional<uint32_t> getFnVarArch() const {
+    return TranslationOpts.getFnVarArch();
+  }
+  llvm::Optional<uint32_t> getFnVarTarget() const {
+    return TranslationOpts.getFnVarTarget();
+  }
+  std::vector<uint32_t> getFnVarFeatures() const {
+    return TranslationOpts.getFnVarFeatures();
+  }
+  std::vector<uint32_t> getFnVarCapabilities() const {
+    return TranslationOpts.getFnVarCapabilities();
+  }
+
+  std::string getFnVarSpvOut() const {
+    return TranslationOpts.getFnVarSpvOut();
+  }
+
   // I/O functions
   friend spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M);
   friend std::istream &operator>>(std::istream &I, SPIRVModule &M);
@@ -587,7 +649,6 @@ protected:
 private:
   bool IsValid;
 };
-
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 

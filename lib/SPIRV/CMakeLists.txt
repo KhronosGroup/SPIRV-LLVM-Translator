@@ -36,6 +36,7 @@ add_llvm_library(LLVMSPIRVLib
   libSPIRV/SPIRVStream.cpp
   libSPIRV/SPIRVType.cpp
   libSPIRV/SPIRVValue.cpp
+  libSPIRV/SPIRVFnVar.cpp
   LINK_COMPONENTS
     Analysis
     BitWriter
