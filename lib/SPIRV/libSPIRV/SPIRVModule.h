@@ -198,6 +198,8 @@ public:
   virtual void resolveUnknownStructFields() = 0;
   virtual void setSPIRVVersion(SPIRVWord) = 0;
   virtual void insertEntryNoId(SPIRVEntry *Entry) = 0;
+  virtual bool eraseReferencesOfInst(SPIRVId Id) = 0;
+  virtual void eraseCapability(SPIRVCapabilityKind CapKind) = 0;
 
   void setMinSPIRVVersion(VersionNumber Ver) {
     setSPIRVVersion(std::max(static_cast<SPIRVWord>(Ver), getSPIRVVersion()));
