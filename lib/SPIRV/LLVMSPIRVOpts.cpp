@@ -85,7 +85,7 @@ bool TranslatorOpts::validateFnVarOpts() const {
     return false;
   }
 
-  if (!getFnVarTarget().has_value() && getFnVarFeatures().has_value()) {
+  if (!getFnVarTarget().has_value() && !getFnVarFeatures().empty()) {
     errs() << "Device target must be specified if the features are specified.";
     return false;
   }
