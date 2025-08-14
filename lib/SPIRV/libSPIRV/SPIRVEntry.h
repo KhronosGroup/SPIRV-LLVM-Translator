@@ -906,6 +906,9 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
+    case CapabilityFunctionVariantsINTEL:
+    case CapabilitySpecConditionalINTEL:
+      return ExtensionID::SPV_INTEL_function_variants;
     default:
       return {};
     }
