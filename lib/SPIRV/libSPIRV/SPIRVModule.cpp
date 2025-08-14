@@ -1302,8 +1302,8 @@ void SPIRVModuleImpl::specializeConditionalEntryPoints(SPIRVId Condition,
   });
 
   for (const auto &Id : EPIdsToRemove) {
-    for (auto &[ExecMode, EPSet] : ConditionalEntryPointSet) {
-      EPSet.erase(Id);
+    for (auto &It : ConditionalEntryPointSet) {
+      It.second.erase(Id);
     }
   }
 }
