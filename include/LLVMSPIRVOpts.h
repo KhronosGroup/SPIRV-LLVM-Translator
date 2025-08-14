@@ -47,6 +47,7 @@
 #include <cstdint>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 namespace llvm {
 class IntrinsicInst;
