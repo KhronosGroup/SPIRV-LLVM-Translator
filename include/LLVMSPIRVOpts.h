@@ -328,6 +328,15 @@ private:
 
   bool PreserveAuxData = false;
 
+  llvm::Optional<uint32_t> FnVarCategory;
+  llvm::Optional<uint32_t> FnVarFamily;
+  llvm::Optional<uint32_t> FnVarArch;
+  llvm::Optional<uint32_t> FnVarTarget;
+  std::vector<uint32_t> FnVarFeatures = {};
+  std::vector<uint32_t> FnVarCapabilities = {};
+  std::string FnVarSpvOut = "";
+  bool FnVarSpecEnable = false;
+
   BuiltinFormat SPIRVBuiltinFormat = BuiltinFormat::Function;
 };
 
