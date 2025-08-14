@@ -239,20 +239,20 @@ public:
   void setFnVarCategory(uint32_t Category) noexcept {
     FnVarCategory = Category;
   }
-  std::optional<uint32_t> getFnVarCategory() const noexcept {
+  llvm::Optional<uint32_t> getFnVarCategory() const noexcept {
     return FnVarCategory;
   }
 
   void setFnVarFamily(uint32_t Family) noexcept { FnVarFamily = Family; }
-  std::optional<uint32_t> getFnVarFamily() const noexcept {
+  llvm::Optional<uint32_t> getFnVarFamily() const noexcept {
     return FnVarFamily;
   }
 
   void setFnVarArch(uint32_t Arch) noexcept { FnVarArch = Arch; }
-  std::optional<uint32_t> getFnVarArch() const noexcept { return FnVarArch; }
+  llvm::Optional<uint32_t> getFnVarArch() const noexcept { return FnVarArch; }
 
   void setFnVarTarget(uint32_t Target) noexcept { FnVarTarget = Target; }
-  std::optional<uint32_t> getFnVarTarget() const noexcept {
+  llvm::Optional<uint32_t> getFnVarTarget() const noexcept {
     return FnVarTarget;
   }
 

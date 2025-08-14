@@ -245,7 +245,7 @@ bool specializeFnVariants(SPIRVModule *BM, std::string &ErrMsg) {
           const auto OperandIds =
               static_cast<SPIRVConditionalCopyObjectINTEL *>(Inst)
                   ->getOperandIds();
-          std::optional<unsigned> ITrue = std::nullopt;
+          llvm::Optional<unsigned> ITrue;
           for (unsigned IO = 0; IO < OperandIds.size(); IO += 2) {
             const auto CondId = OperandIds[IO];
             bool Res;

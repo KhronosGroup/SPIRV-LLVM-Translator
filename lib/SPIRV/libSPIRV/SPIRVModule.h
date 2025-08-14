@@ -505,12 +505,14 @@ public:
   virtual SPIRVInstruction *addSampledImageInst(SPIRVType *, SPIRVValue *,
                                                 SPIRVValue *,
                                                 SPIRVBasicBlock *) = 0;
-  virtual SPIRVEntry *getOrAddAliasDomainDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
-  virtual SPIRVEntry *getOrAddAliasScopeListDeclINTELInst(
-      std::vector<SPIRVId> Args, llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasDomainDeclINTELInst(std::vector<SPIRVId> Args,
+                                   llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *getOrAddAliasScopeDeclINTELInst(std::vector<SPIRVId> Args,
+                                                      llvm::MDNode *MD) = 0;
+  virtual SPIRVEntry *
+  getOrAddAliasScopeListDeclINTELInst(std::vector<SPIRVId> Args,
+                                      llvm::MDNode *MD) = 0;
   virtual SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
                                                  SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy,
@@ -609,16 +611,16 @@ public:
     return TranslationOpts.getDesiredBIsRepresentation();
   }
 
-  std::optional<uint32_t> getFnVarCategory() const {
+  llvm::Optional<uint32_t> getFnVarCategory() const {
     return TranslationOpts.getFnVarCategory();
   }
-  std::optional<uint32_t> getFnVarFamily() const {
+  llvm::Optional<uint32_t> getFnVarFamily() const {
     return TranslationOpts.getFnVarFamily();
   }
-  std::optional<uint32_t> getFnVarArch() const {
+  llvm::Optional<uint32_t> getFnVarArch() const {
     return TranslationOpts.getFnVarArch();
   }
-  std::optional<uint32_t> getFnVarTarget() const {
+  llvm::Optional<uint32_t> getFnVarTarget() const {
     return TranslationOpts.getFnVarTarget();
   }
   std::vector<uint32_t> getFnVarFeatures() const {
@@ -645,7 +647,6 @@ protected:
 private:
   bool IsValid;
 };
-
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
 

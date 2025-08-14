@@ -206,10 +206,10 @@ public:
 
   SPIRVWord getTarget() const { return Target; }
   bool matchesDevice() {
-    std::optional<SPIRVWord> DeviceTarget = getModule()->getFnVarTarget();
+    llvm::Optional<SPIRVWord> DeviceTarget = getModule()->getFnVarTarget();
     std::vector<SPIRVWord> DeviceFeatures = getModule()->getFnVarFeatures();
     bool Res = true;
-    if (DeviceTarget != std::nullopt && DeviceTarget.value() != Target) {
+    if (DeviceTarget.has_value() && DeviceTarget.value() != Target) {
       Res = false;
     }
     if (!DeviceFeatures.empty()) {
@@ -232,12 +232,11 @@ public:
           }
         } spvdbgs() << " | ID: %"
                     << getId() << std::endl;
-        spvdbgs() << "[FnVar]       device Target: "; if (DeviceTarget ==
-                                                          std::nullopt) {
-          spvdbgs() << "none";
-        } else {
+        spvdbgs() << "[FnVar]       device Target: ";
+        if (!DeviceTarget.has_value()) { spvdbgs() << "none"; } else {
           spvdbgs() << std::setw(4) << DeviceTarget.value();
-        } spvdbgs() << ", Features:";
+        } spvdbgs()
+        << ", Features:";
         for (const auto &Feat
              : DeviceFeatures) { spvdbgs() << " " << Feat; } spvdbgs()
         << std::endl;
@@ -285,18 +284,20 @@ public:
   spv::Op getCmpOp() { return CmpOp; }
   SPIRVWord getArchitecture() { return Architecture; }
   bool matchesDevice() {
-    std::optional<SPIRVWord> DeviceCategory = getModule()->getFnVarCategory();
-    std::optional<SPIRVWord> DeviceFamily = getModule()->getFnVarFamily();
-    std::optional<SPIRVWord> DeviceArchitecture = getModule()->getFnVarArch();
+    llvm::Optional<SPIRVWord> DeviceCategory = getModule()->getFnVarCategory();
+    llvm::Optional<SPIRVWord> DeviceFamily = getModule()->getFnVarFamily();
+    llvm::Optional<SPIRVWord> DeviceArchitecture = getModule()->getFnVarArch();
     bool Res = true;
 
-    if (DeviceCategory != std::nullopt && DeviceCategory.value() != Category) {
+    if (DeviceCategory.!has_value().has_value() &&
+        DeviceCategory.value() != Category) {
       Res = false;
     }
-    if (DeviceFamily != std::nullopt && DeviceFamily.value() != Family) {
+    if (DeviceFamily.!has_value().has_value() &&
+        DeviceFamily.value() != Family) {
       Res = false;
     }
-    if (DeviceArchitecture != std::nullopt) {
+    if (DeviceArchitecture.has_value()) {
       switch (CmpOp) {
       case OpIEqual:
         Res = DeviceArchitecture == Architecture;
@@ -330,17 +331,16 @@ public:
                   << ", Family: " << std::setw(4) << Family << ", CmpOp: "
                   << std::setw(4) << CmpOp << ", Architecture: " << std::setw(4)
                   << Architecture << " | ID: %" << getId() << std::endl;
-        spvdbgs() << "[FnVar]       device Category: "; if (DeviceCategory ==
-                                                            std::nullopt) {
-          spvdbgs() << "none";
-        } else {
+        spvdbgs() << "[FnVar]       device Category: ";
+        if (!DeviceCategory.has_value()) { spvdbgs() << "none"; } else {
           spvdbgs() << std::setw(4) << DeviceCategory.value();
-        } spvdbgs() << ", Family: ";
-        if (DeviceFamily == std::nullopt) { spvdbgs() << "none"; } else {
+        } spvdbgs()
+        << ", Family: ";
+        if (!DeviceFamily.has_value()) { spvdbgs() << "none"; } else {
           spvdbgs() << std::setw(4) << DeviceFamily.value();
         } spvdbgs()
         << ",              Architecture: ";
-        if (DeviceArchitecture == std::nullopt) { spvdbgs() << "none"; } else {
+        if (!DeviceArchitecture.has_value()) { spvdbgs() << "none"; } else {
           spvdbgs() << std::setw(4) << DeviceArchitecture.value();
         } spvdbgs()
         << std::endl;

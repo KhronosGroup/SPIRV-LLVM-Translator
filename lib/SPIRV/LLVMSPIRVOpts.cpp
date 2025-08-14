@@ -49,8 +49,8 @@
 using namespace llvm;
 using namespace SPIRV;
 
-bool TranslatorOpts::isUnknownIntrinsicAllowed(IntrinsicInst *II) const
-    noexcept {
+bool TranslatorOpts::isUnknownIntrinsicAllowed(
+    IntrinsicInst *II) const noexcept {
   if (!SPIRVAllowUnknownIntrinsics.hasValue())
     return false;
   const auto &IntrinsicPrefixList = SPIRVAllowUnknownIntrinsics.getValue();
@@ -72,20 +72,20 @@ void TranslatorOpts::setSPIRVAllowUnknownIntrinsics(
 }
 
 bool TranslatorOpts::validateFnVarOpts() const {
-  if (getFnVarCategory() == std::nullopt &&
-      (getFnVarFamily() != std::nullopt || getFnVarArch() != std::nullopt)) {
+  if (!getFnVarCategory().has_value() &&
+      (getFnVarFamily().has_value() || getFnVarArch().has_value())) {
     errs() << "FnVar: Device category must be specified if the family or "
               "architecture are specified.";
     return false;
   }
 
-  if (getFnVarFamily() == std::nullopt && getFnVarArch() != std::nullopt) {
+  if (!getFnVarFamily().has_value() && getFnVarArch().has_value()) {
     errs() << "FnVar: Device family must be specified if the architecture is "
               "specified.";
     return false;
   }
 
-  if (getFnVarTarget() == std::nullopt && !getFnVarFeatures().empty()) {
+  if (!getFnVarTarget().has_value() && getFnVarFeatures().has_value()) {
     errs() << "Device target must be specified if the features are specified.";
     return false;
   }
