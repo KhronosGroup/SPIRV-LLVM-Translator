@@ -234,7 +234,7 @@ inline bool isTypeOpCode(Op OpCode) {
 }
 
 inline bool isFnVarSpecConstINTEL(Op OpCode) {
-  unsigned OC = OpCode;
+  const unsigned OC = OpCode;
   return OC == OpSpecConstantArchitectureINTEL ||
          OC == OpSpecConstantTargetINTEL ||
          OC == OpSpecConstantCapabilitiesINTEL;

@@ -175,7 +175,7 @@ protected:
   _SPIRV_DEF_ENCDEC3(Type, Id, Constituents)
   void validate() const override {
     SPIRVInstruction::validate();
-    size_t TypeOpCode = this->getType()->getOpCode();
+    const size_t TypeOpCode = this->getType()->getOpCode();
     assert(TypeOpCode != OpTypeVoid && "Conditional copy type cannot be void");
     (void)(TypeOpCode);
     assert(Constituents.size() % 2 == 0 &&
@@ -183,6 +183,8 @@ protected:
     assert(Constituents.size() >= 2 &&
            "Conditional copy requires at least one condition-operand pair");
   }
+
+private:
   std::vector<SPIRVId> Constituents;
 };
 
@@ -207,7 +209,8 @@ public:
   SPIRVWord getTarget() const { return Target; }
   bool matchesDevice() {
     llvm::Optional<SPIRVWord> DeviceTarget = getModule()->getFnVarTarget();
-    std::vector<SPIRVWord> DeviceFeatures = getModule()->getFnVarFeatures();
+    const std::vector<SPIRVWord> DeviceFeatures =
+        getModule()->getFnVarFeatures();
     bool Res = true;
     if (DeviceTarget.has_value() && DeviceTarget.value() != Target) {
       Res = false;
@@ -286,7 +289,8 @@ public:
   bool matchesDevice() {
     llvm::Optional<SPIRVWord> DeviceCategory = getModule()->getFnVarCategory();
     llvm::Optional<SPIRVWord> DeviceFamily = getModule()->getFnVarFamily();
-    llvm::Optional<SPIRVWord> DeviceArchitecture = getModule()->getFnVarArch();
+    const llvm::Optional<SPIRVWord> DeviceArchitecture =
+        getModule()->getFnVarArch();
     bool Res = true;
 
     if (!DeviceCategory.has_value() && DeviceCategory.value() != Category) {
@@ -376,7 +380,7 @@ public:
 
   std::vector<SPIRVWord> getCapabilities() const { return Capabilities; }
   bool matchesDevice() {
-    std::vector<SPIRVWord> DeviceCapabilities =
+    const std::vector<SPIRVWord> DeviceCapabilities =
         getModule()->getFnVarCapabilities();
     bool Res = true;
 

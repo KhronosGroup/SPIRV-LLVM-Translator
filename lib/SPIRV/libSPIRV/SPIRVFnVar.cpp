@@ -37,7 +37,7 @@ void replaceWithBoolConst(SPIRVModule *BM, SPIRVValue *&OldVal, bool Val) {
                 new SPIRVConstantTrue(BM, OldVal->getType(), OldVal->getId()))
           : static_cast<SPIRVValue *>(
                 new SPIRVConstantFalse(BM, OldVal->getType(), OldVal->getId()));
-  [[maybe_unused]] bool IsSuccess = BM->eraseValue(OldVal);
+  [[maybe_unused]] const bool IsSuccess = BM->eraseValue(OldVal);
   assert(IsSuccess);
   OldVal = BM->addConstant(NewVal);
 }

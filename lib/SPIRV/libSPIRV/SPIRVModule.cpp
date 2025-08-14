@@ -1348,7 +1348,7 @@ void SPIRVModuleImpl::eraseInstruction(SPIRVInstruction *I,
 }
 
 bool SPIRVModuleImpl::eraseValue(SPIRVValue *V) {
-  Op OpCode = V->getOpCode();
+  const Op OpCode = V->getOpCode();
   SPIRVId Id = V->getId();
 
   if (isTypeOpCode(OpCode)) {
