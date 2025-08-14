@@ -293,10 +293,10 @@ public:
         getModule()->getFnVarArch();
     bool Res = true;
 
-    if (!DeviceCategory.has_value() && DeviceCategory.value() != Category) {
+    if (DeviceCategory.has_value() && DeviceCategory.value() != Category) {
       Res = false;
     }
-    if (!DeviceFamily.has_value() && DeviceFamily.value() != Family) {
+    if (DeviceFamily.has_value() && DeviceFamily.value() != Family) {
       Res = false;
     }
     if (DeviceArchitecture.has_value()) {
