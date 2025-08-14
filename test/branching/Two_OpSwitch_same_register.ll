@@ -1,13 +1,18 @@
-; RUN: llvm-as < %s -o %t.bc
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
 
 define spir_kernel void @test_two_switch_same_register(i32 %value) {
-; CHECK: Switch [[#REGISTER:]] [[#DEFAULT1:]] 1 [[#CASE1:]] 0 [[#CASE2:]]
+; CHECK-SPIRV: Switch [[#REGISTER:]] [[#DEFAULT1:]] 1 [[#CASE1:]] 0 [[#CASE2:]]
+; CHECK-LLVM: switch i32 %[[value:[^, ]+]], label %[[default1:[^ ]+]]
+
   switch i32 %value, label %default1 [
     i32 1, label %case1
     i32 0, label %case2
@@ -34,21 +39,26 @@ case4:
 default2:
   ret void
 
-; CHECK:      Label [[#CASE1]]
-; CHECK-NEXT: Branch [[#DEFAULT1]]
+; CHECK-SPIRV:      Label [[#CASE1]]
+; CHECK-SPIRV-NEXT: Branch [[#DEFAULT1]]
 
-; CHECK:      Label [[#CASE2]]
-; CHECK-NEXT: Branch [[#DEFAULT1]]
+; CHECK-SPIRV:      Label [[#CASE2]]
+; CHECK-SPIRV-NEXT: Branch [[#DEFAULT1]]
 
-; CHECK:      Label [[#DEFAULT1]]
-; CHECK-NEXT: Switch [[#REGISTER]] [[#DEFAULT2:]] 0 [[#CASE3:]] 1 [[#CASE4:]]
+; CHECK-SPIRV:      Label [[#DEFAULT1]]
+; CHECK-SPIRV-NEXT: Switch [[#REGISTER]] [[#DEFAULT2:]] 0 [[#CASE3:]] 1 [[#CASE4:]]
 
-; CHECK:      Label [[#CASE3]]
-; CHECK-NEXT: Branch [[#DEFAULT2]]
+; CHECK-SPIRV:      Label [[#CASE3]]
+; CHECK-SPIRV-NEXT: Branch [[#DEFAULT2]]
 
-; CHECK:      Label [[#CASE4]]
-; CHECK-NEXT: Branch [[#DEFAULT2]]
+; CHECK-SPIRV:      Label [[#CASE4]]
+; CHECK-SPIRV-NEXT: Branch [[#DEFAULT2]]
 
-; CHECK:      Label [[#DEFAULT2]]
-; CHECK-NEXT: Return
+; CHECK-SPIRV:      Label [[#DEFAULT2]]
+; CHECK-SPIRV-NEXT: Return
+
+; CHECK-LLVM: [[default1]]:
+; CHECK-LLVM: switch i32 %[[value]], label %[[default2:[^ ]+]]
+; CHECK-LLVM: [[default2]]:
+
 }
