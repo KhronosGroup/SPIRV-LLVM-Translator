@@ -23,7 +23,8 @@ target triple = "spir-unknown-unknown"
 
 ; CHECK-SPV-IR: __spirv_GroupWaitEvents
 ; CHECK-OCL-IR: spir_func void @_Z17wait_group_events
-;; The call @_Z17wait_group_events is not correctly mapped to SPIRV. It remains as functioncall in SPIRV generation.
+; TODO: The call to @_Z17wait_group_events is not yet lowered to the corresponding SPIR-V instruction.
+;       It currently remains as a plain function call during SPIR-V generation.
 %"class.sycl::_V1::device_event" = type { target("spirv.Event") }
 
 define weak_odr dso_local spir_kernel void @foo() {
