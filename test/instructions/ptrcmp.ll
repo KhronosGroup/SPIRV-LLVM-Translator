@@ -30,8 +30,8 @@ target triple = "spir"
 ; CHECK-LLVM: %[[R:.*]] = icmp eq
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_eq(i16* %a, i16* %b) {
-  %r = icmp eq i16* %a, %b
+define i1 @test_eq(ptr %a, ptr %b) {
+  %r = icmp eq ptr %a, %b
   ret i1 %r
 }
 
@@ -46,8 +46,8 @@ define i1 @test_eq(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp ne
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_ne(i16* %a, i16* %b) {
-  %r = icmp ne i16* %a, %b
+define i1 @test_ne(ptr %a, ptr %b) {
+  %r = icmp ne ptr %a, %b
   ret i1 %r
 }
 
@@ -64,8 +64,8 @@ define i1 @test_ne(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp slt
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_slt(i16* %a, i16* %b) {
-  %r = icmp slt i16* %a, %b
+define i1 @test_slt(ptr %a, ptr %b) {
+  %r = icmp slt ptr %a, %b
   ret i1 %r
 }
 
@@ -82,8 +82,8 @@ define i1 @test_slt(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp ult
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_ult(i16* %a, i16* %b) {
-  %r = icmp ult i16* %a, %b
+define i1 @test_ult(ptr %a, ptr %b) {
+  %r = icmp ult ptr %a, %b
   ret i1 %r
 }
 
@@ -100,8 +100,8 @@ define i1 @test_ult(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp ule
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_ule(i16* %a, i16* %b) {
-  %r = icmp ule i16* %a, %b
+define i1 @test_ule(ptr %a, ptr %b) {
+  %r = icmp ule ptr %a, %b
   ret i1 %r
 }
 
@@ -118,8 +118,8 @@ define i1 @test_ule(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp sle
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_sle(i16* %a, i16* %b) {
-  %r = icmp sle i16* %a, %b
+define i1 @test_sle(ptr %a, ptr %b) {
+  %r = icmp sle ptr %a, %b
   ret i1 %r
 }
 
@@ -136,8 +136,8 @@ define i1 @test_sle(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp ugt
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_ugt(i16* %a, i16* %b) {
-  %r = icmp ugt i16* %a, %b
+define i1 @test_ugt(ptr %a, ptr %b) {
+  %r = icmp ugt ptr %a, %b
   ret i1 %r
 }
 
@@ -154,8 +154,8 @@ define i1 @test_ugt(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp sgt
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_sgt(i16* %a, i16* %b) {
-  %r = icmp sgt i16* %a, %b
+define i1 @test_sgt(ptr %a, ptr %b) {
+  %r = icmp sgt ptr %a, %b
   ret i1 %r
 }
 
@@ -172,8 +172,8 @@ define i1 @test_sgt(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp uge
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_uge(i16* %a, i16* %b) {
-  %r = icmp uge i16* %a, %b
+define i1 @test_uge(ptr %a, ptr %b) {
+  %r = icmp uge ptr %a, %b
   ret i1 %r
 }
 
@@ -190,7 +190,7 @@ define i1 @test_uge(i16* %a, i16* %b) {
 ; CHECK-LLVM: %[[R:.*]] = icmp sge
 ; CHECK-LLVM: ret i1 %[[R]]
 
-define i1 @test_sge(i16* %a, i16* %b) {
-  %r = icmp sge i16* %a, %b
+define i1 @test_sge(ptr %a, ptr %b) {
+  %r = icmp sge ptr %a, %b
   ret i1 %r
 }
