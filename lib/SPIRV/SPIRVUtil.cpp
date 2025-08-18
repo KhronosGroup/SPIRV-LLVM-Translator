@@ -525,6 +525,11 @@ ParamType lastFuncParamType(StringRef MangledName) {
   char Mangled = Copy.back();
   std::string Mangled2 = Copy.substr(Copy.size() - 2);
 
+  std::string Mangled6 = Copy.substr(Copy.size() - 6);
+  if (Mangled6 == "__bf16") {
+    return ParamType::FLOAT;
+  }
+
   if (isMangledTypeFP(Mangled) || isMangledTypeHalf(Mangled2)) {
     return ParamType::FLOAT;
   } else if (isMangledTypeUnsigned(Mangled)) {
@@ -1906,6 +1911,9 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
       NumElems = VecTy->getNumElements();
       Ty = VecTy->getElementType();
     }
+    if (Ty->isBFloatTy() &&
+        BM->hasCapability(internal::CapabilityBFloat16ArithmeticINTEL))
+      return true;
     if ((!Ty->isFloatTy() && !Ty->isDoubleTy() && !Ty->isHalfTy()) ||
         (!BM->hasCapability(CapabilityVectorAnyINTEL) &&
          ((NumElems > 4) && (NumElems != 8) && (NumElems != 16)))) {
@@ -1922,6 +1930,9 @@ bool checkTypeForSPIRVExtendedInstLowering(IntrinsicInst *II, SPIRVModule *BM) {
       NumElems = VecTy->getNumElements();
       Ty = VecTy->getElementType();
     }
+    if (Ty->isBFloatTy() &&
+        BM->hasCapability(internal::CapabilityBFloat16ArithmeticINTEL))
+      return true;
     if ((!Ty->isIntegerTy()) ||
         (!BM->hasCapability(CapabilityVectorAnyINTEL) &&
          ((NumElems > 4) && (NumElems != 8) && (NumElems != 16)))) {
