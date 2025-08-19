@@ -22,8 +22,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-LLVM:   [[shr:%.*]] = lshr i64 [[bc]], 32
 ; CHECK-LLVM:   store i64 [[shr]], ptr [[arg]], align 8
 
-
-define void @foo(i64* %arg) {
+define void @foo(ptr %arg) {
 entry:
   %0 = lshr i64 bitcast (<2 x i32> <i32 1, i32 1> to i64), 32
   store i64 %0, i64* %arg
