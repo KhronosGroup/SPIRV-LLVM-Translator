@@ -18,8 +18,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: ReturnValue [[#]] 
 ; CHECK-SPIRV: FunctionEnd
 
-; CHECK-LLVM: define spir_func i32 @identity(i32 %[[value:]])
-; CHECK-LLVM:   ret i32 %[[value]]
+; CHECK-LLVM: define spir_func i32 @identity(i32 [[value:%.*]])
+; CHECK-LLVM:   ret i32 [[value]]
 
 define i32 @identity(i32 %value) {
   ret i32 %value
