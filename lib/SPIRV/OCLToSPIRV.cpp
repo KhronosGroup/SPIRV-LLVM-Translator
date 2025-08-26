@@ -485,6 +485,22 @@ CallInst *OCLToSPIRVBase::visitCallAtomicCmpXchg(CallInst *CI) {
     if (MemTy->isFloatTy() || MemTy->isDoubleTy()) {
       MemTy =
           MemTy->isFloatTy() ? Type::getInt32Ty(*Ctx) : Type::getInt64Ty(*Ctx);
+
+      if (!Mutator.getArg(0)->getType()->isOpaquePointerTy()) {
+        TypedPointerType *Arg0PtrType = TypedPointerType::get(
+            MemTy, Mutator.getArg(0)->getType()->getPointerAddressSpace());
+        TypedPointerType *Arg1PtrType = TypedPointerType::get(
+            MemTy, Mutator.getArg(1)->getType()->getPointerAddressSpace());
+
+        Mutator.mapArg(0, [=](IRBuilder<> &Builder, Value *V) {
+          return Builder.CreateBitCast(V, Arg0PtrType);
+        });
+
+        Mutator.mapArg(1, [=](IRBuilder<> &Builder, Value *V) {
+          return Builder.CreateBitCast(V, Arg1PtrType);
+        });
+      }
+
       Mutator.replaceArg(
           0,
           {Mutator.getArg(0),
