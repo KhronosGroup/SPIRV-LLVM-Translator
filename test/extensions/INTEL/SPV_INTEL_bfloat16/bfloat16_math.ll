@@ -258,6 +258,18 @@ entry:
   ret void
 }
 
+declare i1 @llvm.is.fpclass.bfloat(bfloat, i32)
+
+declare bfloat @llvm.fabs.bfloat(bfloat)
+
+declare bfloat @llvm.fma.bfloat(bfloat, bfloat, bfloat)
+
+declare bfloat @llvm.maxnum.bfloat(bfloat, bfloat)
+
+declare bfloat @llvm.minnum.bfloat(bfloat, bfloat)
+
+declare bfloat @llvm.fmuladd.bfloat(bfloat, bfloat, bfloat)
+
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!0}
 !opencl.ocl.version = !{!1}
