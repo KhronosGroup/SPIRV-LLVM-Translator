@@ -2,6 +2,8 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -65,3 +67,9 @@ define i64 @getLargeConstantI64() {
 ; CHECK: Function [[#I64_TY]] [[#LARGE_I64_FUNC]] 0 [[#]]
 ; CHECK: ReturnValue [[#LARGE_I64_CONST]]
 ; CHECK: FunctionEnd
+
+; CHECK-LLVM: ret i8 2 
+; CHECK-LLVM: ret i16 -58
+; CHECK-LLVM: ret i32 42
+; CHECK-LLVM: ret i64 123456789
+; CHECK-LLVM: ret i64 34359738368

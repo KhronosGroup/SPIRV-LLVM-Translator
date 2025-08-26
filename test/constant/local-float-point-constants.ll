@@ -2,6 +2,8 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -42,3 +44,7 @@ define double @getConstantFP64() {
 ; CHECK: Function [[#FP64_TY]] [[#FUNC_FP64]] 0 [[#]]
 ; CHECK: ReturnValue [[#FP64_CONST]]
 ; CHECK: FunctionEnd
+
+; CHECK-LLVM: ret half 0xH3C4D
+; CHECK-LLVM: ret float 0x3FD27C8BE0000000
+; CHECK-LLVM: ret double 0x4F2DE42B8C68F3F1

@@ -2,6 +2,8 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -11,17 +13,17 @@ target triple = "spir64-unknown-unknown"
 @local    = addrspace(3) constant i32 3 ; OpenCL local memory
 
 define i32 @getGlobal1() {
-  %g = load i32, i32 addrspace(1)* @global
+  %g = load i32, ptr addrspace(1) @global
   ret i32 %g
 }
 
 define i32 @getGlobal2() {
-  %g = load i32, i32 addrspace(2)* @constant
+  %g = load i32, ptr addrspace(2) @constant
   ret i32 %g
 }
 
 define i32 @getGlobal3() {
-  %g = load i32, i32 addrspace(3)* @local
+  %g = load i32, ptr addrspace(3) @local
   ret i32 %g
 }
 
@@ -39,3 +41,7 @@ define i32 @getGlobal3() {
 ; CHECK: Load [[#INT]] [[#]] [[#GV1]]
 ; CHECK: Load [[#INT]] [[#]] [[#GV2]]
 ; CHECK: Load [[#INT]] [[#]] [[#GV3]]
+
+; CHECK-LLVM: @{{.*}} = addrspace(1) constant i32 1
+; CHECK-LLVM: @{{.*}} = addrspace(2) constant i32 2
+; CHECK-LLVM: @{{.*}} = addrspace(3) constant i32 3
