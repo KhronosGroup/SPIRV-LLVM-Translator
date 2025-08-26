@@ -17,8 +17,8 @@ target triple = "spir64-unknown-unknown"
 
 define i32 @bar(i32 %a) {
   %p = alloca i32
-  store i32 %a, i32* %p
-  %b = load i32, i32* %p
+  store i32 %a, ptr %p
+  %b = load i32, ptr %p
   ret i32 %b
 }
 ; CHECK-SPIRV: Function [[#I32]] [[#]] 0 [[#FTY_BARFOO]] 
@@ -37,8 +37,8 @@ define i32 @bar(i32 %a) {
 
 define i32 @foo(i32 %a) {
   %p = alloca i32
-  store volatile i32 %a, i32* %p
-  %b = load volatile i32, i32* %p
+  store volatile i32 %a, ptr %p
+  %b = load volatile i32, ptr %p
   ret i32 %b
 }
 
