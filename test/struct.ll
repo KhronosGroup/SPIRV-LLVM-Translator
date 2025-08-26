@@ -49,18 +49,18 @@ define dso_local spir_func i32 @func() {
 entry:
 
   %st = alloca %struct.ST, align 4
-  %a = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 0
+  %a = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 0
   store i32 1, ptr %a, align 4
-  %b = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 1
+  %b = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 1
   store i32 2, ptr %b, align 4
-  %c = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 2
+  %c = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 2
   store i32 3, ptr %c, align 4
-  %a1 = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 0
+  %a1 = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 0
   %0 = load i32, ptr %a1, align 4
-  %b2 = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 1
+  %b2 = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 1
   %1 = load i32, ptr %b2, align 4
   %add = add nsw i32 %0, %1
-  %c3 = getelementptr inbounds %struct.ST, %struct.ST* %st, i32 0, i32 2
+  %c3 = getelementptr inbounds %struct.ST, ptr %st, i32 0, i32 2
   %2 = load i32, ptr %c3, align 4
   %add4 = add nsw i32 %add, %2
   ret i32 %add4
