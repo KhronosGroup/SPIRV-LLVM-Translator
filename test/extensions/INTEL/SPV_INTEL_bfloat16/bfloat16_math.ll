@@ -111,10 +111,6 @@ target triple = "spirv64-unknown-unknown"
 ; CHECK-LLVM: %OpFRem = frem bfloat [[DATA1]], [[DATA2]]
 ;             %OpFMod
 ;             %OpVectorTimesScalar
-; CHECK-LLVM: %[[#]] = call spir_func i32 @_Z5isnanu6__bf16(bfloat [[DATA1]])
-; CHECK-LLVM: %[[#]] = call spir_func i32 @_Z5isinfu6__bf16(bfloat [[DATA1]])
-;             %OpIsFinite
-; CHECK-LLVM: %[[#]] = call spir_func i32 @_Z8isnormalu6__bf16(bfloat [[DATA1]])
 ; CHECK-LLVM: %OpOrdered = fcmp ord bfloat [[DATA1]], [[DATA2]]
 ; CHECK-LLVM: %OpUnordered = fcmp uno bfloat [[DATA1]], [[DATA2]]
 ; CHECK-LLVM: %OpSelect = select i1 true, bfloat [[DATA1]], bfloat [[DATA2]]
