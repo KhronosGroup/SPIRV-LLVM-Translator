@@ -89,9 +89,9 @@ target triple = "spirv64-unknown-unknown"
 ; CHECK-LLVM: [[ADDR1:[%a-z0-9]+]] = alloca bfloat
 ; CHECK-LLVM: [[ADDR2:[%a-z0-9]+]] = alloca bfloat
 ; CHECK-LLVM: [[ADDR3:[%a-z0-9]+]] = alloca bfloat
-; CHECK-LLVM: [[DATA1:[%a-z0-9]+]] = load bfloat, ptr [[ADDR1]]
-; CHECK-LLVM: [[DATA2:[%a-z0-9]+]] = load bfloat, ptr [[ADDR2]]
-; CHECK-LLVM: [[DATA3:[%a-z0-9]+]] = load bfloat, ptr [[ADDR3]]
+; CHECK-LLVM: [[DATA1:[%a-z0-9]+]] = load bfloat, bfloat* [[ADDR1]]
+; CHECK-LLVM: [[DATA2:[%a-z0-9]+]] = load bfloat, bfloat* [[ADDR2]]
+; CHECK-LLVM: [[DATA3:[%a-z0-9]+]] = load bfloat, bfloat* [[ADDR3]]
 ;             %OpUndef
 ;             %OpConstant
 ;             %OpConstantComposite
@@ -185,9 +185,9 @@ entry:
   %addr1 = alloca bfloat
   %addr2 = alloca bfloat
   %addr3 = alloca bfloat
-  %data1 = load bfloat, ptr %addr1
-  %data2 = load bfloat, ptr %addr2
-  %data3 = load bfloat, ptr %addr3
+  %data1 = load bfloat, bfloat* %addr1
+  %data2 = load bfloat, bfloat* %addr2
+  %data3 = load bfloat, bfloat* %addr3
   ; %OpUndef
   ; %OpConstant
   ; %OpConstantComposite
