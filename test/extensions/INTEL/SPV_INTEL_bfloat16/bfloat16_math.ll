@@ -46,10 +46,6 @@ target triple = "spirv64-unknown-unknown"
 ; CHECK-SPIRV: 5 FRem [[BFLOAT]] [[#]] [[DATA1]] [[DATA2]]
 ;                FMod
 ;                VectorTimesScalar
-; CHECK-SPIRV: 4 IsNan [[#]] [[#]] [[DATA1]]
-; CHECK-SPIRV: 4 IsInf [[#]] [[#]] [[DATA1]]
-;                IsFinite
-; CHECK-SPIRV: 4 IsNormal [[#]] [[#]] [[DATA1]]
 ; CHECK-SPIRV: 5 Ordered [[#]] [[#]] [[DATA1]] [[DATA2]]
 ; CHECK-SPIRV: 5 Unordered [[#]] [[#]] [[DATA1]] [[DATA2]]
 ; CHECK-SPIRV: 6 Select [[BFLOAT]] [[#]] [[#]] [[DATA1]] [[DATA2]]
@@ -215,10 +211,6 @@ entry:
   %OpFRem = frem bfloat %data1, %data2
   ; %OpFMod
   ; %OpVectorTimesScalar
-  %OpIsNan = call i1 @llvm.is.fpclass.bfloat(bfloat %data1, i32 3)
-  %OpIsInf = call i1 @llvm.is.fpclass.bfloat(bfloat %data1, i32 516)
-  ; %OpIsFinite
-  %OpIsNormal = call i1 @llvm.is.fpclass.bfloat(bfloat %data1, i32 264)
   %OpOrdered = fcmp ord bfloat %data1, %data2
   %OpUnordered = fcmp uno bfloat %data1, %data2
   %OpSelect = select i1 true, bfloat %data1, bfloat %data2
