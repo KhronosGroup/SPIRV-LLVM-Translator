@@ -214,6 +214,8 @@ template <> inline void SPIRVMap<SPIRVCapabilityKind, SPIRVCapVec>::init() {
   ADD_VEC_INIT(CapabilityBFloat16DotProductKHR, {CapabilityBFloat16TypeKHR});
   ADD_VEC_INIT(CapabilityBFloat16CooperativeMatrixKHR,
                {CapabilityBFloat16TypeKHR, CapabilityCooperativeMatrixKHR});
+  ADD_VEC_INIT(internal::CapabilityBFloat16ArithmeticINTEL,
+               {CapabilityBFloat16TypeKHR});
 }
 
 template <> inline void SPIRVMap<SPIRVExecutionModelKind, SPIRVCapVec>::init() {
