@@ -3060,8 +3060,8 @@ public:
       return {CapabilityAtomicFloat32MinMaxEXT};
     if (getType()->isTypeFloat(64))
       return {CapabilityAtomicFloat64MinMaxEXT};
-    llvm_unreachable(
-        "AtomicF(Min|Max)EXT can only be generated for bf16, f16, f32, f64 types");
+    llvm_unreachable("AtomicF(Min|Max)EXT can only be generated for bf16, f16, "
+                     "f32, f64 types");
   }
 };
 

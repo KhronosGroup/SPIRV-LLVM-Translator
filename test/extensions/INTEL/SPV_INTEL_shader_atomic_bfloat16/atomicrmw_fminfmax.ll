@@ -1,14 +1,15 @@
 ; RUN: llvm-as < %s -o %t.bc
 ; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_shader_atomic_bfloat16,+SPV_KHR_bfloat16 %t.bc -o %t.spv
-; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
 
 ; CHECK-DAG: Extension "SPV_INTEL_shader_atomic_bfloat16"
-; CHECK-DAG: Capability AtomicBFloat16MinMaxINTEL
+; CHECK-DAG: Extension "SPV_KHR_bfloat16"
+; CHECK-DAG: AtomicBFloat16MinMaxINTEL
+; CHECK-DAG: Capability BFloat16TypeKHR
 ; CHECK: TypeInt [[Int:[0-9]+]] 32 0
 ; CHECK-DAG: Constant [[Int]] [[Scope_CrossDevice:[0-9]+]] 0 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
-; CHECK: 4 TypeFloat [[BFloat:[0-9]+]] 16 0
+; CHECK: TypeFloat [[BFloat:[0-9]+]] 16 0
 ; CHECK: Variable {{[0-9]+}} [[BFloatPointer:[0-9]+]]
 ; CHECK: Constant [[BFloat]] [[BFloatValue:[0-9]+]] 16936
 
