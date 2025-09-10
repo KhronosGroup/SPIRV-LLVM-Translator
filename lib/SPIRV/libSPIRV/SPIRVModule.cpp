@@ -781,6 +781,11 @@ void SPIRVModuleImpl::addExtension(ExtensionID Ext) {
         ExtensionID::SPV_EXT_shader_atomic_float_add, &ExtName);
     SPIRVExt.insert(ExtName);
   }
+  if (Ext == ExtensionID::SPV_INTEL_shader_atomic_bfloat16) {
+    SPIRVMap<ExtensionID, std::string>::find(ExtensionID::SPV_KHR_bfloat16,
+                                             &ExtName);
+    SPIRVExt.insert(ExtName);
+  }
 }
 
 void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
