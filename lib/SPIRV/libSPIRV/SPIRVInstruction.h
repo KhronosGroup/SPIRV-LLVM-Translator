@@ -3030,7 +3030,7 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return {CapabilityAtomicBFloat16AddINTEL};
+      return {internal::CapabilityAtomicBFloat16AddINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16AddEXT};
     if (getType()->isTypeFloat(32))
@@ -3053,7 +3053,7 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return {CapabilityAtomicBFloat16MinMaxINTEL};
+      return {internal::CapabilityAtomicBFloat16MinMaxINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16MinMaxEXT};
     if (getType()->isTypeFloat(32))
