@@ -20,7 +20,7 @@ target triple = "spir64-unknown-unknown"
 define dso_local spir_func bfloat @test_AtomicFAddEXT_bfloat(ptr addrspace(4) align 2 dereferenceable(4) %Arg) {
 entry:
   %0 = addrspacecast ptr addrspace(4) %Arg to ptr addrspace(1)
-  ; CHECK-SPIRV: 7 AtomicFAddEXT [[BFLOAT]]
+  ; CHECK-SPIRV: AtomicFAddEXT [[BFLOAT]]
   ; CHECK-LLVM-SPV: call spir_func bfloat @_Z21__spirv_AtomicFAddEXTPU3AS1u6__bf16iiu6__bf16({{.*}}bfloat
   %ret = tail call spir_func bfloat @_Z21__spirv_AtomicFAddEXTPU3AS1u6__bf16iiu6__bf16(ptr addrspace(1) %0, i32 1, i32 896, bfloat 1.000000e+00)
   ret bfloat %ret
