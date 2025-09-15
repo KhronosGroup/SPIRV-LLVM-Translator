@@ -7,7 +7,7 @@
 ; CHECK-DAG: AtomicBFloat16MinMaxINTEL
 ; CHECK-DAG: Capability BFloat16TypeKHR
 ; CHECK: TypeInt [[Int:[0-9]+]] 32 0
-; CHECK-DAG: Constant [[Int]] [[Scope_CrossDevice:[0-9]+]] 0 {{$}}
+; CHECK-DAG: Constant [[Int]] [[Device:[0-9]+]] 1 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
 ; CHECK: TypeFloat [[BFloat:[0-9]+]] 16 0
 ; CHECK: Variable {{[0-9]+}} [[BFloatPointer:[0-9]+]]
@@ -22,9 +22,9 @@ target triple = "spir64"
 define dso_local spir_func void @test_atomicrmw_fadd() local_unnamed_addr #0 {
 entry:
  %0 = atomicrmw fmin ptr addrspace(1) @f, bfloat 42.000000e+00 seq_cst
-; CHECK: AtomicFMinEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Scope_CrossDevice]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
+; CHECK: AtomicFMinEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Device]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
  %1 = atomicrmw fmax ptr addrspace(1) @f, bfloat 42.000000e+00 seq_cst
-; CHECK: AtomicFMaxEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Scope_CrossDevice]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
+; CHECK: AtomicFMaxEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Device]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
 
   ret void
 }
