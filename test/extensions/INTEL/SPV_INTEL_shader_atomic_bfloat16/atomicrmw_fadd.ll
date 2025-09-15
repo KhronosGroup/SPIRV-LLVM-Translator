@@ -7,7 +7,7 @@
 ; CHECK-DAG: Capability AtomicBFloat16AddINTEL
 ; CHECK-DAG: Capability BFloat16TypeKHR
 ; CHECK: TypeInt [[Int:[0-9]+]] 32 0
-; CHECK-DAG: Constant [[Int]] [[Scope_CrossDevice:[0-9]+]] 0 {{$}}
+; CHECK-DAG: Constant [[Int]] [[Device:[0-9]+]] 1 {{$}}
 ; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
 ; CHECK: TypeFloat [[BFloat:[0-9]+]] 16 0
 ; CHECK: Variable {{[0-9]+}} [[BFloatPointer:[0-9]+]]
@@ -22,7 +22,7 @@ target triple = "spir64"
 define dso_local spir_func void @test_atomicrmw_fadd() local_unnamed_addr #0 {
 entry:
  %0 = atomicrmw fadd ptr addrspace(1) @f, bfloat 42.000000e+00 seq_cst
-; CHECK: AtomicFAddEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Scope_CrossDevice]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
+; CHECK: AtomicFAddEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Device]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
 
   ret void
 }
