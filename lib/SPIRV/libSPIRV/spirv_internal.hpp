@@ -105,6 +105,8 @@ enum InternalCapability {
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
+  ICapabilityAtomicBFloat16AddINTEL = 6255,
+  ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
@@ -191,6 +193,9 @@ _SPIRV_OP(Capability, BindlessImagesINTEL)
 _SPIRV_OP(Op, ConvertHandleToImageINTEL)
 _SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
+
+_SPIRV_OP(Capability, AtomicBFloat16AddINTEL)
+_SPIRV_OP(Capability, AtomicBFloat16MinMaxINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
