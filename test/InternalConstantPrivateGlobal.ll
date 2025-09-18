@@ -27,7 +27,7 @@ define spir_func i32 @foo(i32 %i) {
   %p_1 = getelementptr [8 x i32], ptr @g_var_1, i32 0, i32 %i
   %v = load i32, ptr %p_1, align 4
 
-  ; CaHECK: %p2 = getelementptr [8 x i32], ptr [[alloca]], i32 0, i32 %i
+  ; CHECK: %p2 = getelementptr [8 x i32], ptr [[alloca]], i32 0, i32 %i
   %p2 = getelementptr [8 x i32], ptr @g_var_1, i32 0, i32 %i
   %v2 = load i32, ptr %p2, align 4
   %v3 = add i32 %v, %v2
