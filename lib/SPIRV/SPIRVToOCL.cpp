@@ -1244,30 +1244,31 @@ void SPIRVToOCLBase::visitCallSPIRVRelational(CallInst *CI, Op OC) {
 }
 
 void SPIRVToOCLBase::visitCallSPIRVReadClockKHR(CallInst *CI) {
-  std::ostringstream Name;
-  Name << "clock_read_";
+  std::string Name("clock_read_");
 
   if (CI->getType()->isVectorTy())
-    Name << "hilo_";
+    Name += "hilo_";
 
   // Encode the scope (taken from the argument) in the function name.
   ConstantInt *ScopeOp = cast<ConstantInt>(CI->getArgOperand(0));
   switch (static_cast<Scope>(ScopeOp->getZExtValue())) {
   case ScopeDevice:
-    Name << "device";
+    Name += "device";
     break;
   case ScopeWorkgroup:
-    Name << "work_group";
+    Name += "work_group";
     break;
   case ScopeSubgroup:
-    Name << "sub_group";
+    Name += "sub_group";
     break;
   default:
     break;
   }
 
-  auto Mutator = mutateCallInst(CI, Name.str());
-  Mutator.removeArg(0);
+  mutateCallInstOCL(M, CI, [=](CallInst *Call, std::vector<Value *> &Args) {
+    Args.pop_back();
+    return Name;
+  });
 }
 
 std::string SPIRVToOCLBase::getGroupBuiltinPrefix(CallInst *CI) {

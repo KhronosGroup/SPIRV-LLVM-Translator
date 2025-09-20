@@ -341,7 +341,7 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     visitCallDot(&CI, MangledName, DemangledName);
     return;
   }
-  if (DemangledName.starts_with(kOCLBuiltinName::ClockReadPrefix)) {
+  if (DemangledName.startswith(kOCLBuiltinName::ClockReadPrefix)) {
     visitCallClockRead(&CI, MangledName, DemangledName);
     return;
   }
@@ -1462,8 +1462,10 @@ void OCLToSPIRVBase::visitCallClockRead(CallInst *CI, StringRef MangledName,
                        .EndsWith("sub_group", ScopeSubgroup)
                        .Default(ScopeMax);
 
-  auto Mutator = mutateCallInst(CI, OpName);
-  Mutator.appendArg(getInt32(M, ScopeArg));
+  mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
+    Args.push_back(getInt32(M, ScopeArg));
+    return OpName;
+  });
 }
 
 void OCLToSPIRVBase::visitCallScalToVec(CallInst *CI, StringRef MangledName,
