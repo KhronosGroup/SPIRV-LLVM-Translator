@@ -1453,14 +1453,14 @@ void OCLToSPIRVBase::visitCallClockRead(CallInst *CI, StringRef MangledName,
                                         StringRef DemangledName) {
   // The builtin returns i64 or <2 x i32>, but both variants are mapped to the
   // same instruction; hence include the return type.
-  std::string OpName = getSPIRVFuncName(OpReadClockKHR, CI->getType());
+  const std::string OpName = getSPIRVFuncName(OpReadClockKHR, CI->getType());
 
   // Scope is part of the OpenCL builtin name.
-  Scope ScopeArg = StringSwitch<Scope>(DemangledName)
-                       .EndsWith("device", ScopeDevice)
-                       .EndsWith("work_group", ScopeWorkgroup)
-                       .EndsWith("sub_group", ScopeSubgroup)
-                       .Default(ScopeMax);
+  const Scope ScopeArg = StringSwitch<Scope>(DemangledName)
+                             .EndsWith("device", ScopeDevice)
+                             .EndsWith("work_group", ScopeWorkgroup)
+                             .EndsWith("sub_group", ScopeSubgroup)
+                             .Default(ScopeMax);
 
   mutateCallInstSPIRV(M, CI, [=](CallInst *, std::vector<Value *> &Args) {
     Args.push_back(getInt32(M, ScopeArg));
