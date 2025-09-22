@@ -11,6 +11,11 @@ if(SPIRV_TOOLS_FOUND)
     set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
   endif()
 
+  find_program(SPIRV_TOOLS_SPIRV_DIS NAMES spirv-dis PATHS ${SPIRV_TOOLS_PREFIX}/bin)
+  if(SPIRV_TOOLS_SPIRV_DIS)
+    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
+  endif()
+
   find_program(SPIRV_TOOLS_SPIRV_LINK NAMES spirv-link PATHS ${SPIRV_TOOLS_PREFIX}/bin)
   if(SPIRV_TOOLS_SPIRV_LINK)
     set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
@@ -27,6 +32,11 @@ endif()
 if(NOT SPIRV_TOOLS_SPIRV_AS)
   message(WARNING "spirv-as not found! SPIR-V assembly tests will not be run.")
   set(SPIRV_TOOLS_SPIRV_AS_FOUND False)
+endif()
+
+if(NOT SPIRV_TOOLS_SPIRV_DIS)
+  message(WARNING "spirv-dis not found! SPIR-V disassembly tests will not be run.")
+  set(SPIRV_TOOLS_SPIRV_DIS_FOUND False)
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_LINK)
