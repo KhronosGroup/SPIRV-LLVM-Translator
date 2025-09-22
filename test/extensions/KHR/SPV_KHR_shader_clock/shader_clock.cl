@@ -1,3 +1,5 @@
+// This test will fail if Clang does not support the cl_khr_shader_clock extension:
+// XFAIL: *
 // REQUIRES: spirv-dis
 // RUN: %clang_cc1 -triple spir-unknown-unknown -O1 -cl-std=CL2.0 -fdeclare-opencl-builtins -finclude-default-header -emit-llvm-bc %s -o %t.bc
 // RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_shader_clock -o %t.spv
