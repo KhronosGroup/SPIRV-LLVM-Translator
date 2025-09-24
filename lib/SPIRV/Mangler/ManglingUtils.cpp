@@ -106,7 +106,7 @@ const char *MangledTypes[PRIMITIVE_NUM] = {
     "Dh",                                // HALF
     "f",                                 // FLOAT
     "d",                                 // DOUBLE
-    "u6__bf16",                          // __BF16
+    "DF16b",                             // __BF16
     "v",                                 // VOID
     "z",                                 // VarArg
     "14ocl_image1d_ro",                  // PRIMITIVE_IMAGE1D_RO_T
