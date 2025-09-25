@@ -21,10 +21,10 @@ define dso_local spir_func bfloat @test_AtomicFMinEXT_bfloat(bfloat addrspace(4)
 entry:
   %0 = addrspacecast bfloat addrspace(4)* %Arg to bfloat addrspace(1)*
   ; CHECK-SPIRV: AtomicFMinEXT [[BFLOAT]]
-  ; CHECK-LLVM-SPV: call spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1u6__bf16iiu6__bf16({{.*}}bfloat
-  %ret = tail call spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1u6__bf16iiu6__bf16(bfloat addrspace(1)* %0, i32 1, i32 896, bfloat 1.000000e+00)
+  ; CHECK-LLVM-SPV: call spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1DF16biiDF16b({{.*}}bfloat
+  %ret = tail call spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1DF16biiDF16b(bfloat addrspace(1)* %0, i32 1, i32 896, bfloat 1.000000e+00)
   ret bfloat %ret
 }
 
 ; Function Attrs: convergent
-declare dso_local spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1u6__bf16iiu6__bf16(bfloat addrspace(1)*, i32, i32, bfloat)
+declare dso_local spir_func bfloat @_Z21__spirv_AtomicFMinEXTPU3AS1DF16biiDF16b(bfloat addrspace(1)*, i32, i32, bfloat)
