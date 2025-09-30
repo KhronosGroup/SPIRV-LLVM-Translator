@@ -7,4 +7,4 @@
 
 ; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV-TEXT
 ; CHECK-SPIRV-TEXT: LoopMerge
-; CHECK-SPIRV-TEXT: BranchConditional 
+; CHECK-SPIRV-TEXT-NEXT: BranchConditional 
