@@ -40,6 +40,7 @@
 
 // This file needs to be included before anything that declares
 // llvm::PointerType to avoid a compilation bug on MSVC.
+#include "llvm/Demangle/Demangle.h"
 #include "llvm/Demangle/ItaniumDemangle.h"
 
 #include "FunctionDescriptor.h"
@@ -267,6 +268,12 @@ bool isSYCLBfloat16Type(llvm::Type *Ty) {
   return false;
 }
 
+bool isLLVMCooperativeMatrixType(llvm::Type *Ty) {
+  if (auto *TargetTy = dyn_cast<TargetExtType>(Ty))
+    return TargetTy->getName() == "spirv.CooperativeMatrixKHR";
+  return false;
+}
+
 Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
                               StringRef Name, BuiltinFuncMangleInfo *Mangle,
                               AttributeList *Attrs, bool TakeName) {
@@ -482,6 +489,21 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   }
   SPIRVDBG(errs() << "Error in extracting integer value");
   return false;
+}
+
+// Demangled name is a substring of the name. The DemangledName is updated only
+// if true is returned
+bool isInternalSPIRVBuiltin(StringRef Name, StringRef &DemangledName) {
+  if (!Name.starts_with("_Z"))
+    return false;
+  constexpr unsigned DemangledNameLenStart = 2;
+  size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
+  if (!Name.substr(Start, Name.size() - 1)
+           .starts_with(kSPIRVName::InternalPrefix))
+    return false;
+  DemangledName = llvm::itaniumDemangle(Name.data(), false);
+  DemangledName.consume_front(kSPIRVName::InternalPrefix);
+  return true;
 }
 
 // Check if a mangled type Name is unsigned
