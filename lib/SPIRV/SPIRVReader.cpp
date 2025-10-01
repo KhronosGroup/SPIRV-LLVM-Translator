@@ -1884,9 +1884,6 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     IRBuilder<> Builder(BB);
     auto *Var = transValue(LTStop->getObject(), F, BB);
     Var = Var->stripPointerCasts();
-    for (const auto &I : Var->users())
-      if (auto *II = getLifetimeStartIntrinsic(dyn_cast<Instruction>(I)))
-        return mapValue(BV, Builder.CreateLifetimeEnd(II->getOperand(0)));
     return mapValue(BV, Builder.CreateLifetimeEnd(Var));
   }
 
