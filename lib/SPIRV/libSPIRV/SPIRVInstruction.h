@@ -4491,7 +4491,8 @@ public:
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVPredicatedIOINTELInst, internal::Op##x##INTEL, __VA_ARGS__> \
+  typedef SPIRVInstTemplate<SPIRVPredicatedIOINTELInst,                        \
+                            internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
 _SPIRV_OP(PredicatedLoad, true, 6, true)
 _SPIRV_OP(PredicatedStore, false, 4, true)

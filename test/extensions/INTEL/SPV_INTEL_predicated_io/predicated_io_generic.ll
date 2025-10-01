@@ -55,10 +55,10 @@ target triple = "spir64-unknown-unknown"
 
 define spir_func void @foo(ptr addrspace(1) %load_pointer, ptr addrspace(1) %store_pointer, i32  %default_value, i32 %store_object, i1 zeroext %predicate) {
 entry:
-  %1 = call spir_func i32 @_Z27__spirv_PredicatedLoadINTELPU3AS1Kvbi(ptr addrspace(1)%load_pointer, i1 %predicate, i32 %default_value)
-  %2 = call spir_func i32 @_Z27__spirv_PredicatedLoadINTELPU3AS1Kvbii(ptr addrspace(1)%load_pointer, i1 %predicate, i32 %default_value, i32 0)
-  call spir_func void @_Z28__spirv_PredicatedStoreINTELPU3AS1Kvib(ptr addrspace(1)%store_pointer, i32 %store_object, i1 %predicate)
-  call spir_func void @_Z28__spirv_PredicatedStoreINTELPU3AS1Kvibi(ptr addrspace(1)%store_pointer, i32 %store_object, i1 %predicate, i32 0)
+  %1 = call spir_func i32 @_Z27__spirv_PredicatedLoadINTELPU3AS1Kvbi(ptr addrspace(1) %load_pointer, i1 %predicate, i32 %default_value)
+  %2 = call spir_func i32 @_Z27__spirv_PredicatedLoadINTELPU3AS1Kvbii(ptr addrspace(1) %load_pointer, i1 %predicate, i32 %default_value, i32 0)
+  call spir_func void @_Z28__spirv_PredicatedStoreINTELPU3AS1Kvib(ptr addrspace(1) %store_pointer, i32 %store_object, i1 %predicate)
+  call spir_func void @_Z28__spirv_PredicatedStoreINTELPU3AS1Kvibi(ptr addrspace(1) %store_pointer, i32 %store_object, i1 %predicate, i32 0)
   ret void
 }
 
