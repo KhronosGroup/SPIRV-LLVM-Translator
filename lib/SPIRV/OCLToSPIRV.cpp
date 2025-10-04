@@ -42,15 +42,21 @@
 #include "SPIRVInternal.h"
 #include "libSPIRV/SPIRVDebug.h"
 
+#include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Analysis/ValueTracking.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Operator.h"
+#include "llvm/IR/TypedPointerType.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Support/Debug.h"
 
 #include <algorithm>
+#include <optional>
 #include <regex>
 #include <set>
 
@@ -62,6 +68,91 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
+namespace {
+
+static std::optional<unsigned> getAddressSpaceFromType(Type *Ty) {
+  if (!Ty)
+    return std::nullopt;
+  if (auto *TypedPtr = dyn_cast<TypedPointerType>(Ty))
+    return TypedPtr->getAddressSpace();
+  if (auto *Ptr = dyn_cast<PointerType>(Ty))
+    return Ptr->getAddressSpace();
+  return std::nullopt;
+}
+
+static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
+  if (!Ptr)
+    return std::nullopt;
+
+  SmallPtrSet<Value *, 8> Visited;
+  SmallVector<Value *, 8> Worklist;
+  Worklist.push_back(Ptr);
+  std::optional<unsigned> GenericAS;
+
+  while (!Worklist.empty()) {
+    Value *Current = Worklist.pop_back_val();
+    if (!Visited.insert(Current).second)
+      continue;
+
+    if (auto MaybeAS = getAddressSpaceFromType(Current->getType())) {
+      if (*MaybeAS != SPIRAS_Generic)
+        return MaybeAS;
+      GenericAS = MaybeAS;
+    }
+
+    if (auto *Op = dyn_cast<Operator>(Current)) {
+      switch (Op->getOpcode()) {
+      case Instruction::AddrSpaceCast:
+      case Instruction::BitCast:
+      case Instruction::GetElementPtr:
+        Worklist.push_back(Op->getOperand(0));
+        break;
+      case Instruction::Select:
+        Worklist.push_back(Op->getOperand(1));
+        Worklist.push_back(Op->getOperand(2));
+        break;
+      case Instruction::PHI: {
+        auto *Phi = cast<PHINode>(Op);
+        for (Value *Incoming : Phi->incoming_values())
+          Worklist.push_back(Incoming);
+        break;
+      }
+      default:
+        break;
+      }
+    }
+  }
+
+  return GenericAS;
+}
+
+static unsigned getAtomicPointerMemorySemantics(Value *Ptr, Type *RecordedType) {
+  std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
+  if ((!AddrSpace || *AddrSpace == SPIRAS_Generic) && Ptr)
+    if (auto MaybeAS = getAddressSpaceFromValue(Ptr))
+      AddrSpace = MaybeAS;
+
+  if (!AddrSpace)
+    return MemorySemanticsMaskNone;
+
+  switch (*AddrSpace) {
+  case SPIRAS_Global:
+  case SPIRAS_GlobalDevice:
+  case SPIRAS_GlobalHost:
+    return MemorySemanticsCrossWorkgroupMemoryMask;
+  case SPIRAS_Local:
+    return MemorySemanticsWorkgroupMemoryMask;
+  case SPIRAS_Generic:
+    return MemorySemanticsCrossWorkgroupMemoryMask |
+           MemorySemanticsWorkgroupMemoryMask |
+           MemorySemanticsSubgroupMemoryMask;
+  default:
+    return MemorySemanticsMaskNone;
+  }
+}
+
+} // namespace
+
 static size_t getOCLCpp11AtomicMaxNumOps(StringRef Name) {
   return StringSwitch<size_t>(Name)
       .Cases({"load", "flag_test_and_set", "flag_clear"}, 3)
@@ -700,6 +791,11 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
   const size_t ScopeIdx = ArgsCount - 1;
   const size_t OrderIdx = ScopeIdx - NumOrder;
 
+  unsigned PtrMemSemantics = MemorySemanticsMaskNone;
+  if (Mutator.arg_size() > 0)
+    PtrMemSemantics =
+        getAtomicPointerMemorySemantics(Mutator.getArg(0), Mutator.getType(0));
+
   if (NeedsNegate) {
     Mutator.mapArg(1, [=](Value *V) {
       IRBuilder<> IRB(CI);
@@ -710,8 +806,19 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
     return transOCLMemScopeIntoSPIRVScope(V, OCLMS_device, CI);
   });
   for (size_t I = 0; I < NumOrder; ++I) {
-    Mutator.mapArg(OrderIdx + I, [=](Value *V) {
-      return transOCLMemOrderIntoSPIRVMemorySemantics(V, OCLMO_seq_cst, CI);
+    Mutator.mapArg(OrderIdx + I,
+                   [=](IRBuilder<> &Builder, Value *V) -> Value * {
+      Value *MemSem =
+          transOCLMemOrderIntoSPIRVMemorySemantics(V, OCLMO_seq_cst, CI);
+      if (!PtrMemSemantics)
+        return MemSem;
+
+      auto *MemSemTy = cast<IntegerType>(MemSem->getType());
+      auto *Mask = ConstantInt::get(MemSemTy, PtrMemSemantics);
+      if (auto *Const = dyn_cast<ConstantInt>(MemSem))
+        return static_cast<Value *>(ConstantInt::get(
+            MemSemTy, Const->getZExtValue() | PtrMemSemantics));
+      return Builder.CreateOr(MemSem, Mask);
     });
   }
 
