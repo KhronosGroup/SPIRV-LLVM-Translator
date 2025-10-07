@@ -1100,8 +1100,8 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       auto *SPVSrcTy = SPVOps[0]->getType();
       auto *SPVDstTy = BC->getType();
 
-      auto GetEncodingAndUpdateType = [GetFPEncoding](
-          SPIRVType *&SPVTy) -> FPEncodingWrap {
+      auto GetEncodingAndUpdateType =
+          [GetFPEncoding](SPIRVType *&SPVTy) -> FPEncodingWrap {
         if (SPVTy->isTypeVector()) {
           SPVTy = SPVTy->getVectorComponentType();
         } else if (SPVTy->isTypeCooperativeMatrixKHR()) {
