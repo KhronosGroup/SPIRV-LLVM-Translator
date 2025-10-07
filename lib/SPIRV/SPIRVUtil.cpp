@@ -446,7 +446,7 @@ bool getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   return getByName(R.str(), B);
 }
 
-// Demangled name is a substring of the name. The DemangledName is updated only
+// DemangledName is a substring of Name. The DemangledName is updated only
 // if true is returned
 bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   if (Name == "printf") {

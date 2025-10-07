@@ -1116,20 +1116,20 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       auto SPVOps = BC->getOperands();
       auto *SPVSrcTy = SPVOps[0]->getType();
       auto *SPVDstTy = BC->getType();
-      if (SPVSrcTy->isTypeVector()) {
-        SPVSrcTy = SPVSrcTy->getVectorComponentType();
-      } else if (SPVSrcTy->isTypeCooperativeMatrixKHR()) {
-        auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(SPVSrcTy);
-        SPVSrcTy = MT->getCompType();
-      }
-      if (SPVDstTy->isTypeVector()) {
-        SPVDstTy = SPVDstTy->getVectorComponentType();
-      } else if (SPVDstTy->isTypeCooperativeMatrixKHR()) {
-        auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(SPVDstTy);
-        SPVDstTy = MT->getCompType();
-      }
-      FPEncodingWrap SrcEnc = GetFPEncoding(SPVSrcTy);
-      FPEncodingWrap DstEnc = GetFPEncoding(SPVDstTy);
+
+      auto GetEncodingAndUpdateType = [GetFPEncoding](
+          SPIRVType *&SPVTy) -> FPEncodingWrap {
+        if (SPVTy->isTypeVector()) {
+          SPVTy = SPVTy->getVectorComponentType();
+        } else if (SPVTy->isTypeCooperativeMatrixKHR()) {
+          auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(SPVTy);
+          SPVTy = MT->getCompType();
+        }
+        return GetFPEncoding(SPVTy);
+      };
+
+      FPEncodingWrap SrcEnc = GetEncodingAndUpdateType(SPVSrcTy);
+      FPEncodingWrap DstEnc = GetEncodingAndUpdateType(SPVDstTy);
       if (IsFP8Encoding(SrcEnc) || IsFP8Encoding(DstEnc) ||
           SPVSrcTy->isTypeInt(4) || SPVDstTy->isTypeInt(4)) {
         FPConversionDesc FPDesc = {SrcEnc, DstEnc, BC->getOpCode()};
@@ -1140,10 +1140,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         std::string BuiltinName =
             kSPIRVName::InternalPrefix + std::string(Conv);
         BuiltinFuncMangleInfo Info;
-        std::string MangledName;
-
-        if (MangledName.empty())
-          MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+        std::string MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
 
         FunctionType *FTy = FunctionType::get(Dst, OpsTys, false);
         FunctionCallee Func = M->getOrInsertFunction(MangledName, FTy);

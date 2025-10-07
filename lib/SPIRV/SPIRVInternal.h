@@ -666,7 +666,7 @@ Op getSPIRVFuncOC(StringRef Name, SmallVectorImpl<std::string> *Dec = nullptr);
 bool getSPIRVBuiltin(const std::string &Name, spv::BuiltIn &Builtin);
 
 /// \param Name LLVM function name
-/// \param DemangledName demanged name of the OpenCL built-in function
+/// \param DemangledName demangled name of the OpenCL built-in function
 /// \returns true if Name is the name of the OpenCL built-in function,
 /// false for other functions
 bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp = false);
@@ -1033,13 +1033,13 @@ bool postProcessBuiltinsReturningStruct(Module *M, bool IsCpp = false);
 
 bool postProcessBuiltinsWithArrayArguments(Module *M, bool IsCpp = false);
 
-/// \param Name LLVM function name
-/// \param DemangledName demanged name of the translator's internal built-in
-/// function.
-/// \returns true if Name is the name of the translator's internal built-in
-/// function, false for other functions
+/// \param MangledName LLVM function name.
+/// \param DemangledName demangled name of the input function if it is the
+/// translator's internal built-in function.
+/// \returns true if MangledName is the name of the translator's internal
+/// built-in function, false for other functions.
 /// Used for 'mini'-floats conversion functions
-bool isInternalSPIRVBuiltin(StringRef Name, StringRef &DemangledName);
+bool isInternalSPIRVBuiltin(StringRef MangledName, StringRef &DemangledName);
 
 // Wrapper around SPIR-V 1.6.4 FP Encoding to be used in the conversion
 // descriptor
@@ -1076,7 +1076,6 @@ struct FPConversionDesc {
 typedef SPIRVMap<llvm::StringRef, FPConversionDesc> FPConvertToEncodingMap;
 
 // clang-format off
-typedef SPIRVMap<llvm::StringRef, FPConversionDesc> FPConvertToEncodingMap;
 template <> inline void FPConvertToEncodingMap::init() {
    // 8-bit conversions
    add("ConvertE4M3ToFP16EXT",

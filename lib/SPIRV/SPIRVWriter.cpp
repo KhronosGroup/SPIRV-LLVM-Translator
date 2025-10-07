@@ -911,9 +911,9 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   // Don't translate FP conversion translator builtins as function declarations
   auto MangledName = F->getName();
-  StringRef BuiltinName;
-  if (isInternalSPIRVBuiltin(MangledName, BuiltinName)) {
-    if (SPIRV::FPConvertToEncodingMap::find(BuiltinName)) {
+  StringRef DemangledName;
+  if (isInternalSPIRVBuiltin(MangledName, DemangledName)) {
+    if (SPIRV::FPConvertToEncodingMap::find(DemangledName)) {
       // Create an early exit here if none of the extensions are enabled.
       // Proper checks for the required extensions will be done during TypeFloat
       // generation.
@@ -5552,7 +5552,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       };
 
       // FP types representable in LLVM IR, no need for special handling
-      // Also int4 matrices remain to be the same.
+      // Also, int4 matrices remain the same.
       if (FPDesc.SrcEncoding == FPEncodingWrap::IEEE754 ||
           FPDesc.SrcEncoding == FPEncodingWrap::BF16 ||
           (FPDesc.SrcEncoding == FPEncodingWrap::Integer &&
