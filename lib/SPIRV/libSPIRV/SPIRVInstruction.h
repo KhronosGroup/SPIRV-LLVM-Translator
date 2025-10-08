@@ -4103,7 +4103,7 @@ _SPIRV_OP(BitwiseFunction, true, 7)
 
 class SPIRVPredicatedIOINTELInst : public SPIRVInstTemplateBase {
 public:
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_INTEL_predicated_io;
   }
   SPIRVCapVec getRequiredCapability() const override {
