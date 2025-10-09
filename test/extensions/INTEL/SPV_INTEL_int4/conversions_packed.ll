@@ -1,5 +1,5 @@
 ; This test checks if Int4 packed conversions specified by
-; __builtin_spirv_* external function calls translated correctly.
+; __builtin_spirv_* external function calls are translated correctly.
 ; Not all of the instructions are tested here, only one per the following
 ; case:
 ; 1. from packed Int4 to ... :

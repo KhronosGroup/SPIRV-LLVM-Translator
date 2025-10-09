@@ -1,5 +1,5 @@
 ; This test checks, that function with __builtin_spirv placed in the middle of
-; the name are translated correctly
+; the name is not translated as internal builtin.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv

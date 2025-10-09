@@ -491,18 +491,18 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   return false;
 }
 
-// Demangled name is a substring of the name. The DemangledName is updated only
-// if true is returned
+// DemangledName is a substring of Name. The DemangledName is updated only
+// if true is returned.
 bool isInternalSPIRVBuiltin(StringRef Name, StringRef &DemangledName) {
   if (!Name.starts_with("_Z"))
     return false;
   constexpr unsigned DemangledNameLenStart = 2;
   size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
   if (!Name.substr(Start, Name.size() - 1)
-           .starts_with(kSPIRVName::InternalPrefix))
+           .starts_with(kSPIRVName::InternalBuiltinPrefix))
     return false;
   DemangledName = llvm::itaniumDemangle(Name.data(), false);
-  DemangledName.consume_front(kSPIRVName::InternalPrefix);
+  DemangledName.consume_front(kSPIRVName::InternalBuiltinPrefix);
   return true;
 }
 

@@ -1121,7 +1121,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         std::vector<Type *> OpsTys = {Src->getType()};
 
         std::string BuiltinName =
-            kSPIRVName::InternalPrefix + std::string(Conv);
+            kSPIRVName::InternalBuiltinPrefix + std::string(Conv);
         BuiltinFuncMangleInfo Info;
         std::string MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
 

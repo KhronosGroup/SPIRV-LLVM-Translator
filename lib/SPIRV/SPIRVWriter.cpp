@@ -909,7 +909,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
     return nullptr;
   }
 
-  // Don't translate FP conversion translator builtins as function declarations
+  // Don't translate FP conversion translator builtins as function declarations.
   auto MangledName = F->getName();
   StringRef DemangledName;
   if (isInternalSPIRVBuiltin(MangledName, DemangledName)) {
@@ -5567,6 +5567,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
 
       SPIRVValue *SrcOp = transValue(Src, BB);
 
+      // TODO: unify SrcTy and DstTy processing into a single routine.
       if (!SrcTy) {
         // Src type is 'mini' float or int4
         Type *SrcScalarTy = GetScalarTy(LLVMSrcTy);
@@ -5659,22 +5660,22 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       std::vector<SPIRVValue *> Ops = {SrcOp};
       const auto OC = static_cast<Op>(FPDesc.ConvOpCode);
 
-      // Translate operands for stochastic roundings
+      // Translate operands for stochastic roundings.
       for (size_t I = 1; I != CI->arg_size(); ++I)
         Ops.push_back(transValue(CI->getOperand(I), BB));
 
       SPIRVValue *Conv = BM->addInstTemplate(OC, BM->getIds(Ops), BB, DstTy);
 
-      // Representable in LLVM FP types: bitcast is not needed
+      // Representable in LLVM FP types: bitcast is not needed.
       if (FPDesc.DstEncoding == FPEncodingWrap::IEEE754 ||
           FPDesc.DstEncoding == FPEncodingWrap::BF16)
         return Conv;
-      // Originally not-packed integer
+      // Originally not-packed integer.
       if (FPDesc.DstEncoding == FPEncodingWrap::Integer &&
           (DstTy->isTypeVector() == LLVMDstTy->isVectorTy() ||
            isLLVMCooperativeMatrixType(LLVMDstTy)))
         return Conv;
-      // Need to adjust types: create bitcast for FP8 and packed Int4
+      // Need to adjust types: create bitcast for FP8 and packed Int4.
       SPIRVValue *BitCast =
           BM->addUnaryInst(OpBitcast, transType(CI->getType()), Conv, BB);
       return BitCast;
