@@ -76,6 +76,8 @@ enum InternalOp {
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
+  IOpPredicatedLoadINTEL = 6258,
+  IOpPredicatedStoreINTEL = 6259,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpTypeTaskSequenceINTEL = 6199,
   IOpComplexFMulINTEL = 6415,
@@ -113,6 +115,7 @@ enum InternalCapability {
   ICapabilityCooperativeMatrixOffsetInstructionsINTEL = 6238,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
+  ICapabilityPredicatedIOINTEL = 6257,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
@@ -220,6 +223,11 @@ _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
 
 _SPIRV_OP(Capability, AtomicBFloat16AddINTEL)
 _SPIRV_OP(Capability, AtomicBFloat16MinMaxINTEL)
+
+_SPIRV_OP(Capability, PredicatedIOINTEL)
+_SPIRV_OP(Op, PredicatedLoadINTEL)
+_SPIRV_OP(Op, PredicatedStoreINTEL)
+
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
