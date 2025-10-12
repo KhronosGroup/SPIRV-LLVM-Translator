@@ -9,6 +9,8 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
+; TODO: RUNx: spirv-val
+
 ; CHECK-SPIRV-DAG: Capability Float8EXT
 
 ; CHECK-SPIRV-DAG: Extension "SPV_EXT_float8"

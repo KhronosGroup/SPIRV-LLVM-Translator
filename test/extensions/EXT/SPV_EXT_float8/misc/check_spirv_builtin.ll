@@ -9,8 +9,8 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: _Z18boo__spirv_builtinfs
-; CHECK-LLVM: _Z18boo__spirv_builtinfs
+; CHECK-SPIRV: _Z19boo__spirv_builtin_fs
+; CHECK-LLVM: _Z19boo__spirv_builtin_fs
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
@@ -18,8 +18,8 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind readnone
 define spir_func void @foo() {
 entry:
-  %0 = call spir_func half @_Z18boo__spirv_builtinfs(float 1.0, i16 4)
+  %0 = call spir_func half @_Z19boo__spirv_builtin_fs(float 1.0, i16 4)
   ret void
 }
 
-declare dso_local spir_func half @_Z18boo__spirv_builtinfs(float, i16)
+declare dso_local spir_func half @_Z19boo__spirv_builtin_fs(float, i16)
