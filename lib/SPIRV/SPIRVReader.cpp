@@ -3894,7 +3894,9 @@ bool SPIRVToLLVM::translate() {
   if (!transSourceExtension())
     return false;
   transGeneratorMD();
-  if (!lowerBuiltins(BM, M))
+  SPIRVWord Ver = 0;
+  SourceLanguage SrcLang = BM->getSourceLanguage(&Ver);
+  if (!lowerBuiltins(BM, M, isCpp(SrcLang)))
     return false;
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
