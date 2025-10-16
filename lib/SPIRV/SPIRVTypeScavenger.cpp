@@ -448,6 +448,7 @@ bool SPIRVTypeScavenger::typeIntrinsicCall(
     case OpAtomicLoad:
     case OpAtomicExchange:
     case OpAtomicCompareExchange:
+    case OpAtomicCompareExchangeWeak:
     case OpAtomicIAdd:
     case OpAtomicISub:
     case OpAtomicFAddEXT:
