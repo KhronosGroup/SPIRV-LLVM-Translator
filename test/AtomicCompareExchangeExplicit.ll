@@ -18,7 +18,7 @@ entry:
 
 ; CHECK: PtrAccessChain [[#int_ptr]] [[#Pointer:]] [[#]] [[#]] 
 ; CHECK: Load [[#int]] [[#Comparator:]] [[#]]
-; CHECK-NEXT: AtomicCompareExchange [[#int]] [[#Result:]] [[#Pointer]] [[#DeviceScope]] [[#SequentiallyConsistent_MS]] [[#SequentiallyConsistent_MS]] [[#]] [[#Comparator]]
+; CHECK-NEXT: AtomicCompareExchangeWeak [[#int]] [[#Result:]] [[#Pointer]] [[#DeviceScope]] [[#SequentiallyConsistent_MS]] [[#SequentiallyConsistent_MS]] [[#]] [[#Comparator]]
 ; CHECK-NEXT: Store [[#]] [[#Result]]
 ; CHECK-NEXT: IEqual [[#bool]] [[#]] [[#Result]] [[#Comparator]]
   %call10 = call spir_func i1 @_Z37atomic_compare_exchange_weak_explicitPU3AS3VU7_AtomiciPii12memory_orderS4_12memory_scope(ptr addrspace(3) %arrayidx7, ptr null, i32 14, i32 0, i32 0, i32 0)
