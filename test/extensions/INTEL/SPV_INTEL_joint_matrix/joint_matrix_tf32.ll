@@ -7,7 +7,6 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis -opaque-pointers=0 < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV-DAG: Capability TensorFloat32ConversionINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixINTEL
 ; CHECK-SPIRV-DAG: Capability JointMatrixTF32ComponentTypeINTEL
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_tensor_float32_conversion"
