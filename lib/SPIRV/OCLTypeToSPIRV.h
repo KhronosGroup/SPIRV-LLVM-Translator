@@ -67,6 +67,7 @@ public:
 private:
   llvm::Module *M;
   llvm::LLVMContext *Ctx;
+  unsigned SrcLang;
   // Map of argument/Function -> adapted type (probably TypedPointerType)
   std::unordered_map<llvm::Value *, llvm::Type *> AdaptedTy;
   std::set<llvm::Function *> WorkSet; // Functions to be adapted

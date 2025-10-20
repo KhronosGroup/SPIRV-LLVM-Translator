@@ -173,7 +173,7 @@ bool OCLToSPIRVBase::runOCLToSPIRV(Module &Module) {
   // source languages
   if (std::get<0>(Src) != spv::SourceLanguageOpenCL_C)
     return false;
-
+  SrcLang = std::get<0>(Src);
   CLVer = std::get<1>(Src);
 
   LLVM_DEBUG(dbgs() << "Enter OCLToSPIRV:\n");
@@ -202,7 +202,8 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
 
   auto MangledName = F->getName();
   StringRef DemangledName;
-  if (!oclIsBuiltin(MangledName, DemangledName))
+
+  if (!oclIsBuiltin(MangledName, DemangledName, isCpp(SrcLang)))
     return;
 
   LLVM_DEBUG(dbgs() << "DemangledName: " << DemangledName << '\n');
@@ -729,7 +730,7 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
 }
 
 void OCLToSPIRVBase::visitCallBarrier(CallInst *CI) {
-  auto Lit = getBarrierLiterals(CI);
+  auto Lit = getBarrierLiterals(CI, isCpp(SrcLang));
   // Use sequential consistent memory order by default.
   // But if the flags argument is set to 0, we use
   // None(Relaxed) memory order.
@@ -941,7 +942,8 @@ void OCLToSPIRVBase::transBuiltin(CallInst *CI, OCLBuiltinTransInfo &Info) {
     } else {
       Info.UniqName = getSPIRVFuncName(OC);
     }
-  } else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName)) != ~0U)
+  } else if ((ExtOp = getExtOp(Info.MangledName, Info.UniqName,
+                               isCpp(SrcLang))) != ~0U)
     Info.UniqName = getSPIRVExtFuncName(SPIRVEIS_OpenCL, ExtOp);
   else if (SPIRSPIRVBuiltinVariableMap::find(Info.UniqName, &BVKind)) {
     // Map OCL work item builtins to SPV-IR work item builtins.
@@ -1402,8 +1404,9 @@ void OCLToSPIRVBase::visitCallScalToVec(CallInst *CI, StringRef MangledName,
   Type *VecTy = CI->getOperand(VecPos[0])->getType();
   auto VecElemCount = cast<VectorType>(VecTy)->getElementCount();
   auto Mutator = mutateCallInst(
-      CI, getSPIRVExtFuncName(SPIRVEIS_OpenCL,
-                              getExtOp(MangledName, DemangledName)));
+      CI,
+      getSPIRVExtFuncName(SPIRVEIS_OpenCL, getExtOp(MangledName, DemangledName,
+                                                    isCpp(SrcLang))));
   for (auto I : ScalarPos)
     Mutator.mapArg(I, [&](Value *V) {
       Instruction *Inst = InsertElementInst::Create(
@@ -1841,7 +1844,7 @@ void OCLToSPIRVBase::visitSubgroupAVCBuiltinCallWithSampler(
 
 void OCLToSPIRVBase::visitCallSplitBarrierINTEL(CallInst *CI,
                                                 StringRef DemangledName) {
-  auto Lit = getBarrierLiterals(CI);
+  auto Lit = getBarrierLiterals(CI, isCpp(SrcLang));
   Op OpCode =
       StringSwitch<Op>(DemangledName)
           .Case("intel_work_group_barrier_arrive", OpControlBarrierArriveINTEL)
