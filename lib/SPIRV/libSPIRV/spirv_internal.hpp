@@ -73,6 +73,7 @@ enum InternalOp {
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
   IOpPredicatedLoadINTEL = 6258,
   IOpPredicatedStoreINTEL = 6259,
+  IOpTypeJointMatrixINTELv2 = 6184,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
@@ -116,7 +117,7 @@ enum InternalCapability {
   ICapabilityJointMatrixTF32ComponentTypeINTEL = 6436,
   ICapabilityJointMatrixBF16ComponentTypeINTEL = 6437,
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
-  ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439
+  ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilityCacheControlsINTEL = 6441,
   ICapabilityBindlessImagesINTEL = 6528
 };
@@ -154,6 +155,7 @@ _SPIRV_OP(Capability, JointMatrixBF16ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt2ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt4ComponentTypeINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
+_SPIRV_OP(Op, TypeJointMatrixINTELv2)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
 _SPIRV_OP(Op, JointMatrixStoreINTEL)
 _SPIRV_OP(Op, JointMatrixMadINTEL)
