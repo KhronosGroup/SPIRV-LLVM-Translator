@@ -784,7 +784,7 @@ void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
   SPIRVDBG(spvdbgs() << "addCapability: " << SPIRVCapabilityNameMap::map(Cap)
                      << '\n');
 
-  auto [It, Inserted] = CapMap.insert(std::make_pair(Cap, nullptr));
+  auto [It, Inserted] = CapMap.try_emplace(Cap);
   if (!Inserted)
     return;
 
@@ -802,10 +802,11 @@ void SPIRVModuleImpl::addCapability(SPIRVCapabilityKind Cap) {
 
 void SPIRVModuleImpl::addCapabilityInternal(SPIRVCapabilityKind Cap) {
   if (AutoAddCapability) {
-    if (hasCapability(Cap))
+    auto [It, Inserted] = CapMap.try_emplace(Cap);
+    if (!Inserted)
       return;
 
-    CapMap.insert(std::make_pair(Cap, new SPIRVCapability(this, Cap)));
+    It->second = std::make_unique<SPIRVCapability>(this, Cap);
   }
 }
 
@@ -815,7 +816,7 @@ void SPIRVModuleImpl::addConditionalCapability(SPIRVId Condition,
                      << SPIRVCapabilityNameMap::map(Cap)
                      << ", condition: " << Condition << '\n');
   auto Key = std::make_pair(Condition, Cap);
-  auto [It, Inserted] = ConditionalCapMap.insert({Key, nullptr});
+  auto [It, Inserted] = ConditionalCapMap.try_emplace(Key);
   if (!Inserted) {
     return;
   }
