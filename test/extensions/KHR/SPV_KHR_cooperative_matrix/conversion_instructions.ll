@@ -6,9 +6,13 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc 
+; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
+; Ensure cooperative matrix conversions are mapped to SPIR-V friendly IR calls.
+; RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc
+; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 ; CHECK-SPIRV: TypeInt [[#TypeInt32:]] 32 0
 ; CHECK-SPIRV: TypeInt [[#TypeInt16:]] 16 0
 ; CHECK-SPIRV: TypeInt [[#TypeInt8:]] 8 0
