@@ -13,7 +13,6 @@ target triple = "spir64-unknown-unknown"
 ; CHECK: OpPtrEqual %bool %[[CAST]]
 
 define spir_kernel void @bar_generic_null(ptr addrspace(3) %arg) {
-pass26:
   %expr = icmp eq ptr addrspace(3) addrspacecast (ptr addrspace(4) null to ptr addrspace(3)), %arg
   ret void
 }
