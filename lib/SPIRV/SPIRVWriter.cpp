@@ -51,6 +51,7 @@
 #include "SPIRVInstruction.h"
 #include "SPIRVInternal.h"
 #include "SPIRVLLVMUtil.h"
+#include "SPIRVLowerAlloca.h"
 #include "SPIRVLowerBitCastToNonStandardType.h"
 #include "SPIRVLowerBool.h"
 #include "SPIRVLowerConstExpr.h"
@@ -7253,6 +7254,7 @@ void addPassesForSPIRV(ModulePassManager &PassMgr,
   PassMgr.addPass(SPIRVLowerOCLBlocksPass());
   PassMgr.addPass(OCLToSPIRVPass());
   PassMgr.addPass(SPIRVRegularizeLLVMPass());
+  PassMgr.addPass(SPIRVLowerAllocaPass());
   PassMgr.addPass(SPIRVLowerConstExprPass());
   PassMgr.addPass(SPIRVLowerBoolPass());
   PassMgr.addPass(SPIRVLowerMemmovePass());

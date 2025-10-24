@@ -10,6 +10,7 @@ set(SRC_LIST
   OCLUtil.cpp
   VectorComputeUtil.cpp
   SPIRVBuiltinHelper.cpp
+  SPIRVLowerAlloca.cpp
   SPIRVLowerBitCastToNonStandardType.cpp
   SPIRVLowerBool.cpp
   SPIRVLowerConstExpr.cpp
