@@ -297,6 +297,9 @@ std::optional<uint64_t> SPIRVToLLVM::getAlignment(SPIRVValue *V) {
 
 Type *SPIRVToLLVM::transFPType(SPIRVType *T) {
   switch (T->getFloatBitWidth()) {
+  case 4:
+    // No LLVM IR counter part for FP4 - map it on i4
+    return Type::getIntNTy(*Context, 4);
   case 8:
     // No LLVM IR counter part for FP8 - map it on i8
     return Type::getIntNTy(*Context, 8);
@@ -1064,11 +1067,13 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     return FPEncodingWrap::IEEE754;
   };
 
-  auto IsFP8Encoding = [](FPEncodingWrap Encoding) -> bool {
-    return Encoding == FPEncodingWrap::E4M3 || Encoding == FPEncodingWrap::E5M2;
+  auto IsFP4OrFP8Encoding = [](FPEncodingWrap Encoding) -> bool {
+    return Encoding == FPEncodingWrap::E4M3 ||
+           Encoding == FPEncodingWrap::E5M2 ||
+           Encoding == FPEncodingWrap::E2M1;
   };
 
-  switch (BC->getOpCode()) {
+  switch (static_cast<unsigned>(BC->getOpCode())) {
   case OpPtrCastToGeneric:
   case OpGenericCastToPtr:
   case OpPtrCastToCrossWorkgroupINTEL:
@@ -1089,6 +1094,11 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   case OpUConvert:
     CO = IsExt ? Instruction::ZExt : Instruction::Trunc;
     break;
+  case internal::OpClampConvertFToFINTEL:
+  case internal::OpClampConvertFToSINTEL:
+  case internal::OpStochasticRoundFToFINTEL:
+  case internal::OpClampStochasticRoundFToFINTEL:
+  case internal::OpClampStochasticRoundFToSINTEL:
   case OpConvertSToF:
   case OpConvertFToS:
   case OpConvertUToF:
@@ -1113,7 +1123,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
       FPEncodingWrap SrcEnc = GetEncodingAndUpdateType(SPVSrcTy);
       FPEncodingWrap DstEnc = GetEncodingAndUpdateType(SPVDstTy);
-      if (IsFP8Encoding(SrcEnc) || IsFP8Encoding(DstEnc) ||
+      if (IsFP4OrFP8Encoding(SrcEnc) || IsFP4OrFP8Encoding(DstEnc) ||
           SPVSrcTy->isTypeInt(4) || SPVDstTy->isTypeInt(4)) {
         FPConversionDesc FPDesc = {SrcEnc, DstEnc, BC->getOpCode()};
         auto Conv = SPIRV::FPConvertToEncodingMap::rmap(FPDesc);
@@ -1124,6 +1134,33 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
             kSPIRVName::InternalBuiltinPrefix + std::string(Conv);
         BuiltinFuncMangleInfo Info;
         std::string MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+        // Translate additional Ops for stochastic conversions.
+        if (OC == internal::OpStochasticRoundFToFINTEL ||
+            OC == internal::OpClampStochasticRoundFToFINTEL ||
+            OC == internal::OpClampStochasticRoundFToSINTEL) {
+          // Seed.
+          Ops.emplace_back(transValue(SPVOps[1], F, BB, true));
+          OpsTys.emplace_back(Ops[1]->getType());
+          constexpr unsigned MaxOpsSize = 3;
+          if (SPVOps.size() == MaxOpsSize) {
+            // New Seed.
+            Ops.emplace_back(transValue(SPVOps[2], F, BB, true));
+
+            // The following mess is needed to create a function with correct
+            // mangling.
+            SPIRVType *PtrTy = SPVOps[2]->getType();
+            const unsigned AS =
+                SPIRSPIRVAddrSpaceMap::rmap(PtrTy->getPointerStorageClass());
+            Type *ElementTy = transType(PtrTy->getPointerElementType());
+            OpsTys.emplace_back(TypedPointerType::get(ElementTy, AS));
+            MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+            // But to create function itself we need untyped pointer type.
+            OpsTys[2] = opaquifyType(OpsTys[2]);
+          }
+        }
+
+        if (MangledName.empty())
+          MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
 
         FunctionType *FTy = FunctionType::get(Dst, OpsTys, false);
         FunctionCallee Func = M->getOrInsertFunction(MangledName, FTy);
@@ -3053,7 +3090,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         if (OutMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
             OutMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E5M2EXT) ||
             InMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
-            InMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E5M2EXT))
+            InMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E5M2EXT) ||
+            OutMatrixElementTy->isTypeFloat(
+              4, internal::FPEncodingFloat4E2M1INTEL) ||
+            InMatrixElementTy->isTypeFloat(
+              4, internal::FPEncodingFloat4E2M1INTEL))
           Inst = transConvertInst(BV, F, BB);
         else
           Inst = transSPIRVBuiltinFromInst(BI, BB);
