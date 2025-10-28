@@ -18,8 +18,8 @@ int load (volatile atomic_int* obj, memory_order order, memory_scope scope) {
 // CHECK-SPIRV: Name [[TRANS_MEM_ORDER:[0-9]+]] "__translate_ocl_memory_order"
 
 // CHECK-SPIRV: TypeInt [[int:[0-9]+]] 32 0
-// Memory semantics for generic AS: 896 = CrossWorkgroupMemory | WorkgroupMemory | SubgroupMemory = 512+256+128
-// CHECK-SPIRV-DAG: Constant [[int]] [[GENERIC_STORAGE_MASK:[0-9]+]] 896
+// Memory semantics for generic AS: 768 = CrossWorkgroupMemory | WorkgroupMemory
+// CHECK-SPIRV-DAG: Constant [[int]] [[GENERIC_STORAGE_MASK:[0-9]+]] 768
 // CHECK-SPIRV-DAG: Constant [[int]] [[ZERO:[0-9]+]] 0
 // CHECK-SPIRV-DAG: Constant [[int]] [[ONE:[0-9]+]] 1
 // CHECK-SPIRV-DAG: Constant [[int]] [[TWO:[0-9]+]] 2
@@ -91,7 +91,6 @@ int load (volatile atomic_int* obj, memory_order order, memory_scope scope) {
 
 // CHECK-LLVM: define spir_func i32 @load(ptr addrspace(4) %[[obj:[0-9a-zA-Z._]+]], i32 %[[order:[0-9a-zA-Z._]+]], i32 %[[scope:[0-9a-zA-Z._]+]]) #0 {
 // CHECK-LLVM: entry:
-// With the patch, memory order is ORed with storage class bits (896) and translated back
-// CHECK-LLVM:  %[[#]] = or i32 %{{[0-9a-zA-Z._]+}}, 896
+// CHECK-LLVM:  %[[#]] = or i32 %{{[0-9a-zA-Z._]+}}, 768
 // CHECK-LLVM:  call spir_func i32 @_Z20atomic_load_explicitPU3AS4VU7_Atomici12memory_order12memory_scope(ptr addrspace(4) %[[obj]], i32 %{{[0-9a-zA-Z._]+}}, i32 %[[scope]])
 // CHECK-LLVM: }

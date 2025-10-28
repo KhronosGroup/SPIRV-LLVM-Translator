@@ -98,11 +98,6 @@ static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
       GenericAS = MaybeAS;
     }
 
-    if (isa<AllocaInst>(Current))
-      // It's safe to assume, that generic alloca is actually a function
-      // storage allocation.
-      return SPIRAS_Private;
-
     // Find origins of the pointer and add to the worklist.
     if (auto *Op = dyn_cast<Operator>(Current)) {
       switch (Op->getOpcode()) {
@@ -134,13 +129,13 @@ static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
 // address space.
 static unsigned getAtomicPointerMemorySemanticsMemoryMask(Value *Ptr,
                                                           Type *RecordedType) {
+  assert((Ptr && RecordedType) &&
+         "Can't evaluate atomic builtin's memory semantic");
   std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
-  if ((!AddrSpace || *AddrSpace == SPIRAS_Generic) && Ptr)
+  assert(AddrSpace && "Can't evaluate atomic builtin's memory semantic");
+  if (*AddrSpace == SPIRAS_Generic)
     if (auto MaybeAS = getAddressSpaceFromValue(Ptr))
       AddrSpace = MaybeAS;
-
-  if (!AddrSpace)
-    return MemorySemanticsMaskNone;
 
   switch (*AddrSpace) {
   case SPIRAS_Global:
@@ -151,8 +146,7 @@ static unsigned getAtomicPointerMemorySemanticsMemoryMask(Value *Ptr,
     return MemorySemanticsWorkgroupMemoryMask;
   case SPIRAS_Generic:
     return MemorySemanticsCrossWorkgroupMemoryMask |
-           MemorySemanticsWorkgroupMemoryMask |
-           MemorySemanticsSubgroupMemoryMask;
+           MemorySemanticsWorkgroupMemoryMask;
   default:
     return MemorySemanticsMaskNone;
   }
