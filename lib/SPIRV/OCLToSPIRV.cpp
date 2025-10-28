@@ -127,8 +127,9 @@ static std::optional<unsigned> getAddressSpaceFromValue(const Value *Ptr) {
 
 // Sets memory semantic mask of an atomic depending on a pointer argument
 // address space.
-static unsigned getAtomicPointerMemorySemanticsMemoryMask(
-    const Value *Ptr, const Type *RecordedType) {
+static unsigned
+getAtomicPointerMemorySemanticsMemoryMask(const Value *Ptr,
+                                          const Type *RecordedType) {
   assert((Ptr && RecordedType) &&
          "Can't evaluate atomic builtin's memory semantic");
   std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
