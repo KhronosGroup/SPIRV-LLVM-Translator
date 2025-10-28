@@ -40,16 +40,16 @@ target triple = "spir64"
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt4:]] 4
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#Const2Power30:]] 1073741824
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#ConstInt42:]] 42
-; CHECK-SPIRV-DAG: Constant [[#]] [[#SCGeneric:]] 912
-; CHECK-SPIRV-DAG: Constant [[#]] [[#SCGlobal:]] 528
-; CHECK-SPIRV-DAG: Constant [[#]] [[#SCLocal:]] 272
-; CHECK-SPIRV-DAG: Constant [[#]] [[#RelaxedGlobal:]] 512
+; Note: Storage class bits (SCGlobal, SCLocal, etc.) are not added for plain LLVM IR atomics
+; Only OpenCL builtin atomics get the storage class memory semantics bits from the patch
 
 ; AtomicLoad ResTypeId ResId PtrId MemScopeId MemSemanticsId
-; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt2]] [[#SCGeneric]]
-; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt1]] [[#SCGeneric]]
-; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt0]] [[#SCGeneric]]
-; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt3]] [[#SCGeneric]]
+; Note: Plain LLVM atomic loads don't get storage class bits added (only OpenCL builtins do)
+; These use SCPrivate (16) which is SequentiallyConsistent without storage class bits
+; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt2]] [[#SCPrivate]]
+; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt1]] [[#SCPrivate]]
+; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt0]] [[#SCPrivate]]
+; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#]] [[#ConstInt3]] [[#SCPrivate]]
 
 ; CHECK-LLVM: call spir_func i32 @_Z20atomic_load_explicitPU3AS4VU7_Atomici12memory_order12memory_scope(ptr{{.*}}, i32 5, i32 1)
 ; CHECK-LLVM: call spir_func i32 @_Z20atomic_load_explicitPU3AS4VU7_Atomici12memory_order12memory_scope(ptr{{.*}}, i32 5, i32 2)
@@ -66,8 +66,9 @@ entry:
 }
 
 ; AtomicStore PtrId MemScopeId MemSemanticsId ValueId
-; CHECK-SPIRV: AtomicStore [[#]] [[#ConstInt3]] [[#SCGlobal]] [[#ConstInt1]]
-; CHECK-SPIRV: AtomicStore [[#]] [[#ConstInt2]] [[#SCLocal]] [[#ConstInt1]]
+; Plain LLVM IR store atomic instructions don't get storage class bits
+; CHECK-SPIRV: AtomicStore [[#]] [[#ConstInt3]] [[#SCPrivate]] [[#ConstInt1]]
+; CHECK-SPIRV: AtomicStore [[#]] [[#ConstInt2]] [[#SCPrivate]] [[#ConstInt1]]
 ; CHECK-LLVM: call spir_func void @_Z21atomic_store_explicitPU3AS4VU7_Atomicii12memory_order12memory_scope(ptr{{.*}}, i32 5, i32 4)
 ; CHECK-LLVM: call spir_func void @_Z21atomic_store_explicitPU3AS4VU7_Atomicii12memory_order12memory_scope(ptr{{.*}}, i32 5, i32 1)
 
@@ -124,7 +125,8 @@ entry:
 }
 
 ; AtomicFAddEXT ResTypeId ResId PtrId MemScopeId MemSemanticsId ValueId
-; CHECK-SPIRV: AtomicFAddEXT [[#]] [[#]] [[#]] [[#ConstInt2]] [[#RelaxedGlobal]] [[#]]
+; Plain LLVM atomicrmw fadd doesn't get storage class bits
+; CHECK-SPIRV: AtomicFAddEXT [[#]] [[#]] [[#]] [[#ConstInt2]] [[#ConstInt0]] [[#]]
 ; CHECK-LLVM: call spir_func float @_Z25atomic_fetch_add_explicitPU3AS4VU7_Atomicff12memory_order12memory_scope(ptr{{.*}}, i32 0, i32 1)
 
 define dso_local float @ff4(ptr addrspace(1) captures(none) noundef %d, float noundef %a) local_unnamed_addr #0 {

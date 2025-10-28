@@ -51,8 +51,8 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
-#include "llvm/IR/TypedPointerType.h"
 #include "llvm/IR/PatternMatch.h"
+#include "llvm/IR/TypedPointerType.h"
 #include "llvm/Support/Debug.h"
 
 #include <algorithm>
@@ -68,11 +68,9 @@ using namespace SPIRV;
 using namespace OCLUtil;
 
 namespace SPIRV {
-namespace {
 
 static std::optional<unsigned> getAddressSpaceFromType(Type *Ty) {
-  if (!Ty)
-    return std::nullopt;
+  assert(Ty && "Can't deduce pointer AS");
   if (auto *TypedPtr = dyn_cast<TypedPointerType>(Ty))
     return TypedPtr->getAddressSpace();
   if (auto *Ptr = dyn_cast<PointerType>(Ty))
@@ -80,9 +78,9 @@ static std::optional<unsigned> getAddressSpaceFromType(Type *Ty) {
   return std::nullopt;
 }
 
+// Performs an address space inference analysis.
 static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
-  if (!Ptr)
-    return std::nullopt;
+  assert(Ptr && "Can't deduce pointer AS");
 
   SmallPtrSet<Value *, 8> Visited;
   SmallVector<Value *, 8> Worklist;
@@ -100,6 +98,12 @@ static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
       GenericAS = MaybeAS;
     }
 
+    if (isa<AllocaInst>(Current))
+      // It's safe to assume, that generic alloca is actually a function
+      // storage allocation.
+      return SPIRAS_Private;
+
+    // Find origins of the pointer and add to the worklist.
     if (auto *Op = dyn_cast<Operator>(Current)) {
       switch (Op->getOpcode()) {
       case Instruction::AddrSpaceCast:
@@ -126,7 +130,10 @@ static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
   return GenericAS;
 }
 
-static unsigned getAtomicPointerMemorySemantics(Value *Ptr, Type *RecordedType) {
+// Sets memory semantic mask of an atomic depending on a pointer argument
+// address space.
+static unsigned getAtomicPointerMemorySemanticsMemoryMask(Value *Ptr,
+                                                          Type *RecordedType) {
   std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
   if ((!AddrSpace || *AddrSpace == SPIRAS_Generic) && Ptr)
     if (auto MaybeAS = getAddressSpaceFromValue(Ptr))
@@ -150,8 +157,6 @@ static unsigned getAtomicPointerMemorySemantics(Value *Ptr, Type *RecordedType) 
     return MemorySemanticsMaskNone;
   }
 }
-
-} // namespace
 
 static size_t getOCLCpp11AtomicMaxNumOps(StringRef Name) {
   return StringSwitch<size_t>(Name)
@@ -793,8 +798,8 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
 
   unsigned PtrMemSemantics = MemorySemanticsMaskNone;
   if (Mutator.arg_size() > 0)
-    PtrMemSemantics =
-        getAtomicPointerMemorySemantics(Mutator.getArg(0), Mutator.getType(0));
+    PtrMemSemantics = getAtomicPointerMemorySemanticsMemoryMask(
+        Mutator.getArg(0), Mutator.getType(0));
 
   if (NeedsNegate) {
     Mutator.mapArg(1, [=](Value *V) {
@@ -806,20 +811,20 @@ void OCLToSPIRVBase::transAtomicBuiltin(CallInst *CI,
     return transOCLMemScopeIntoSPIRVScope(V, OCLMS_device, CI);
   });
   for (size_t I = 0; I < NumOrder; ++I) {
-    Mutator.mapArg(OrderIdx + I,
-                   [=](IRBuilder<> &Builder, Value *V) -> Value * {
-      Value *MemSem =
-          transOCLMemOrderIntoSPIRVMemorySemantics(V, OCLMO_seq_cst, CI);
-      if (!PtrMemSemantics)
-        return MemSem;
+    Mutator.mapArg(
+        OrderIdx + I, [=](IRBuilder<> &Builder, Value *V) -> Value * {
+          Value *MemSem =
+              transOCLMemOrderIntoSPIRVMemorySemantics(V, OCLMO_seq_cst, CI);
+          if (PtrMemSemantics == MemorySemanticsMaskNone)
+            return MemSem;
 
-      auto *MemSemTy = cast<IntegerType>(MemSem->getType());
-      auto *Mask = ConstantInt::get(MemSemTy, PtrMemSemantics);
-      if (auto *Const = dyn_cast<ConstantInt>(MemSem))
-        return static_cast<Value *>(ConstantInt::get(
-            MemSemTy, Const->getZExtValue() | PtrMemSemantics));
-      return Builder.CreateOr(MemSem, Mask);
-    });
+          auto *MemSemTy = cast<IntegerType>(MemSem->getType());
+          auto *Mask = ConstantInt::get(MemSemTy, PtrMemSemantics);
+          if (auto *Const = dyn_cast<ConstantInt>(MemSem))
+            return static_cast<Value *>(ConstantInt::get(
+                MemSemTy, Const->getZExtValue() | PtrMemSemantics));
+          return Builder.CreateOr(MemSem, Mask);
+        });
   }
 
   // Order of args in SPIR-V:
