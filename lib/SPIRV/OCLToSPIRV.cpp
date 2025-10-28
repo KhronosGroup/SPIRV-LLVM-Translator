@@ -69,34 +69,33 @@ using namespace OCLUtil;
 
 namespace SPIRV {
 
-static std::optional<unsigned> getAddressSpaceFromType(const Type *Ty) {
+static unsigned getAddressSpaceFromType(const Type *Ty) {
   assert(Ty && "Can't deduce pointer AS");
   if (auto *TypedPtr = dyn_cast<TypedPointerType>(Ty))
     return TypedPtr->getAddressSpace();
   if (auto *Ptr = dyn_cast<PointerType>(Ty))
     return Ptr->getAddressSpace();
-  return std::nullopt;
+  llvm_unreachable("Can't deduce pointer AS");
 }
 
 // Performs an address space inference analysis.
-static std::optional<unsigned> getAddressSpaceFromValue(const Value *Ptr) {
+static unsigned getAddressSpaceFromValue(const Value *Ptr) {
   assert(Ptr && "Can't deduce pointer AS");
 
   SmallPtrSet<const Value *, 8> Visited;
   SmallVector<const Value *, 8> Worklist;
   Worklist.push_back(Ptr);
-  std::optional<unsigned> GenericAS;
+  unsigned AS = SPIRAS_Generic;
 
   while (!Worklist.empty()) {
     const Value *Current = Worklist.pop_back_val();
     if (!Visited.insert(Current).second)
       continue;
 
-    if (auto MaybeAS = getAddressSpaceFromType(Current->getType())) {
-      if (*MaybeAS != SPIRAS_Generic)
-        return MaybeAS;
-      GenericAS = MaybeAS;
-    }
+    unsigned DeducedAS = getAddressSpaceFromType(Current->getType());
+    if (DeducedAS != SPIRAS_Generic)
+      return DeducedAS;
+    AS = DeducedAS;
 
     // Find origins of the pointer and add to the worklist.
     if (auto *Op = dyn_cast<Operator>(Current)) {
@@ -122,7 +121,7 @@ static std::optional<unsigned> getAddressSpaceFromValue(const Value *Ptr) {
     }
   }
 
-  return GenericAS;
+  return AS;
 }
 
 // Sets memory semantic mask of an atomic depending on a pointer argument
@@ -132,13 +131,11 @@ getAtomicPointerMemorySemanticsMemoryMask(const Value *Ptr,
                                           const Type *RecordedType) {
   assert((Ptr && RecordedType) &&
          "Can't evaluate atomic builtin's memory semantic");
-  std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
-  assert(AddrSpace && "Can't evaluate atomic builtin's memory semantic");
-  if (*AddrSpace == SPIRAS_Generic)
-    if (auto MaybeAS = getAddressSpaceFromValue(Ptr))
-      AddrSpace = MaybeAS;
+  unsigned AddrSpace = getAddressSpaceFromType(RecordedType);
+  if (AddrSpace == SPIRAS_Generic)
+    AddrSpace = getAddressSpaceFromValue(Ptr);
 
-  switch (*AddrSpace) {
+  switch (AddrSpace) {
   case SPIRAS_Global:
   case SPIRAS_GlobalDevice:
   case SPIRAS_GlobalHost:
