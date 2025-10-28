@@ -16,8 +16,8 @@
 ; CHECK-SPIRV: Constant {{[0-9]+}} [[Lenmemset21:[0-9]+]] 4
 ; CHECK-SPIRV: Constant {{[0-9]+}} [[Lenmemset0:[0-9]+]] 12
 ; CHECK-SPIRV: Constant {{[0-9]+}} [[Const21:[0-9]+]] 21
-; CHECK-SPIRV-UNTYPED-PTR: TypeUntypedPointerKHR [[Int8Ptr:[0-9]+]] 8
 ; CHECK-SPIRV: TypeArray [[Int8x4:[0-9]+]] [[Int8]] [[Lenmemset21]]
+; CHECK-SPIRV-UNTYPED-PTR: TypeUntypedPointerKHR [[Int8Ptr:[0-9]+]] 8
 ; CHECK-SPIRV-TYPED-PTR: TypePointer [[Int8Ptr:[0-9]+]] 8 [[Int8]]
 ; CHECK-SPIRV: TypeArray [[Int8x12:[0-9]+]] [[Int8]] [[Lenmemset0]]
 ; CHECK-SPIRV-TYPED-PTR: TypePointer [[Int8PtrConst:[0-9]+]] 0 [[Int8]]
@@ -29,6 +29,7 @@
 ; CHECK-SPIRV: Variable {{[0-9]+}} [[ValComp:[0-9]+]] 0 [[InitComp]]
 ; CHECK-SPIRV: ConstantFalse [[#]] [[#False:]]
 
+; CHECK-SPIRV-UNTYPED-PTR: Bitcast
 ; CHECK-SPIRV: Bitcast [[Int8Ptr]] [[Target:[0-9]+]] {{[0-9]+}}
 ; CHECK-SPIRV: Bitcast [[Int8PtrConst]] [[Source:[0-9]+]] [[Val]]
 ; CHECK-SPIRV: CopyMemorySized [[Target]] [[Source]] [[Lenmemset0]] 2 4
