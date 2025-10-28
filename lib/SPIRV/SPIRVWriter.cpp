@@ -866,6 +866,21 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
       if (!Ty) {
         Ty = FnTy->getParamType(Arg.getArgNo());
       }
+      // Preserve element type for byval/sret arguments even when
+      // SPV_KHR_untyped_pointers is enabled. Losing pointee type would make it
+      // impossible to reconstruct the original parameter and will lead to
+      // OpenCL runtime failure due to mismatched memory object semantics.
+      if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
+          isa<TypedPointerType>(Ty) &&
+          (Arg.hasByValAttr() || Arg.hasStructRetAttr())) {
+        TypedPointerType *TPT = cast<TypedPointerType>(Ty);
+        auto NewType = BM->addPointerType(
+            SPIRSPIRVAddrSpaceMap::map(
+                static_cast<SPIRAddressSpace>(TPT->getAddressSpace())),
+            transType(TPT->getElementType()));
+        PT.push_back(NewType);
+        continue;
+      }
       PT.push_back(transType(Ty));
     }
 
@@ -2214,7 +2229,33 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     unsigned ArgNo = Arg->getArgNo();
     SPIRVFunction *BF = BB->getParent();
     // assert(BF->existArgument(ArgNo));
-    return mapValue(V, BF->getArgument(ArgNo));
+    auto *SPVArg = BF->getArgument(ArgNo);
+
+    if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
+        SPVArg->getType()->isTypePointer() &&
+        !SPVArg->getType()->isTypeUntypedPointerKHR()) {
+      // When SPV_KHR_untyped_pointers extension is enabled, bitcast typed
+      // pointer function arguments to untyped pointers for further usage in the
+      // untyped pointers paradigm.
+      // Don't do this if the argument is further used in function calls as it
+      // breaks SPIR-V validity.
+      for (auto *U : V->users()) {
+        if (isa<CallInst>(U) || isa<InvokeInst>(U) || isa<PHINode>(U))
+          return mapValue(V, SPVArg);
+      }
+
+      // Position to insert bitcast should be right after variable insertion
+      // point in the entry basic block.
+      auto *InsertBB = BF->getBasicBlock(0);
+      auto *InsertPoint = InsertBB->getVariableInsertionPoint();
+      auto *UntypedPtrType = BM->addPointerType(
+          SPVArg->getType()->getPointerStorageClass(), nullptr);
+
+      auto *Bitcast = BM->addUnaryInst(OpBitcast, UntypedPtrType, SPVArg,
+                                       InsertBB, InsertPoint);
+      return mapValue(V, Bitcast);
+    }
+    return mapValue(V, SPVArg);
   }
 
   if (CreateForward)
