@@ -69,7 +69,7 @@ using namespace OCLUtil;
 
 namespace SPIRV {
 
-static std::optional<unsigned> getAddressSpaceFromType(Type *Ty) {
+static std::optional<unsigned> getAddressSpaceFromType(const Type *Ty) {
   assert(Ty && "Can't deduce pointer AS");
   if (auto *TypedPtr = dyn_cast<TypedPointerType>(Ty))
     return TypedPtr->getAddressSpace();
@@ -79,16 +79,16 @@ static std::optional<unsigned> getAddressSpaceFromType(Type *Ty) {
 }
 
 // Performs an address space inference analysis.
-static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
+static std::optional<unsigned> getAddressSpaceFromValue(const Value *Ptr) {
   assert(Ptr && "Can't deduce pointer AS");
 
-  SmallPtrSet<Value *, 8> Visited;
-  SmallVector<Value *, 8> Worklist;
+  SmallPtrSet<const Value *, 8> Visited;
+  SmallVector<const Value *, 8> Worklist;
   Worklist.push_back(Ptr);
   std::optional<unsigned> GenericAS;
 
   while (!Worklist.empty()) {
-    Value *Current = Worklist.pop_back_val();
+    const Value *Current = Worklist.pop_back_val();
     if (!Visited.insert(Current).second)
       continue;
 
@@ -127,8 +127,8 @@ static std::optional<unsigned> getAddressSpaceFromValue(Value *Ptr) {
 
 // Sets memory semantic mask of an atomic depending on a pointer argument
 // address space.
-static unsigned getAtomicPointerMemorySemanticsMemoryMask(Value *Ptr,
-                                                          Type *RecordedType) {
+static unsigned getAtomicPointerMemorySemanticsMemoryMask(
+    const Value *Ptr, const Type *RecordedType) {
   assert((Ptr && RecordedType) &&
          "Can't evaluate atomic builtin's memory semantic");
   std::optional<unsigned> AddrSpace = getAddressSpaceFromType(RecordedType);
