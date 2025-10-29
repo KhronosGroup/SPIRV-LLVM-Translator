@@ -874,7 +874,7 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
           isa<TypedPointerType>(Ty) &&
           (Arg.hasByValAttr() || Arg.hasStructRetAttr())) {
         TypedPointerType *TPT = cast<TypedPointerType>(Ty);
-        auto NewType = BM->addPointerType(
+        auto *NewType = BM->addPointerType(
             SPIRSPIRVAddrSpaceMap::map(
                 static_cast<SPIRAddressSpace>(TPT->getAddressSpace())),
             transType(TPT->getElementType()));
