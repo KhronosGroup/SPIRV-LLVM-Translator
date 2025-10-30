@@ -68,7 +68,8 @@ static bool hasLifetimeStart(AllocaInst *AI) {
   return false;
 }
 
-// Find all basic blocks that use the alloca (directly or through bitcasts/GEPs).
+// Find all basic blocks that use the alloca (directly or through
+// bitcasts/GEPs).
 static void findAllocaUsers(Value *V, SmallPtrSetImpl<BasicBlock *> &UserBlocks,
                             SmallPtrSetImpl<Value *> &Visited) {
   if (!Visited.insert(V).second)
@@ -89,9 +90,8 @@ static void findAllocaUsers(Value *V, SmallPtrSetImpl<BasicBlock *> &UserBlocks,
 
 // Find the best location to insert lifetime.end.
 // This should be a block that post-dominates all uses of the alloca.
-static BasicBlock *findLifetimeEndLocation(AllocaInst *AI,
-                                          BasicBlock *AllocaBB,
-                                          Function &F) {
+static BasicBlock *findLifetimeEndLocation(AllocaInst *AI, BasicBlock *AllocaBB,
+                                           Function &F) {
   SmallPtrSet<BasicBlock *, 8> UserBlocks;
   SmallPtrSet<Value *, 8> Visited;
 
@@ -140,8 +140,8 @@ static bool processFunction(Function &F, LLVMContext *Context) {
 
     for (Instruction &I : BB) {
       if (auto *AI = dyn_cast<AllocaInst>(&I)) {
-	// Skip VLA.
-	if (isa<ConstantInt>(AI->getArraySize()))
+        // Skip VLA.
+        if (isa<ConstantInt>(AI->getArraySize()))
           AllocasToMove.push_back(AI);
       }
     }
@@ -285,7 +285,8 @@ char SPIRVLowerAllocaLegacy::ID = 0;
 using namespace SPIRV;
 
 INITIALIZE_PASS(SPIRVLowerAllocaLegacy, "spvalloca",
-                "Hoist allocas to entry block with lifetime intrinsics", false, false)
+                "Hoist allocas to entry block with lifetime intrinsics", false,
+                false)
 
 ModulePass *llvm::createSPIRVLowerAllocaLegacy() {
   return new SPIRVLowerAllocaLegacy();

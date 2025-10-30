@@ -57,7 +57,7 @@ private:
 };
 
 class SPIRVLowerAllocaPass : public llvm::PassInfoMixin<SPIRVLowerAllocaPass>,
-                              public SPIRVLowerAllocaBase {
+                             public SPIRVLowerAllocaBase {
 public:
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
@@ -66,7 +66,7 @@ public:
 };
 
 class SPIRVLowerAllocaLegacy : public llvm::ModulePass,
-                                public SPIRVLowerAllocaBase {
+                               public SPIRVLowerAllocaBase {
 public:
   SPIRVLowerAllocaLegacy();
   bool runOnModule(llvm::Module &M) override;
