@@ -615,7 +615,6 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
   eraseUselessFunctions(M);
-  addKernelEntryPoint(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
   replacePrivateConstGlobalsWithAllocas(M);
