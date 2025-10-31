@@ -871,7 +871,6 @@ SPIRVType *LLVMToSPIRVBase::transScavengedType(Value *V) {
       // impossible to reconstruct the original parameter and will lead to
       // OpenCL runtime failure due to mismatched memory object semantics.
       if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
-          isa<TypedPointerType>(Ty) &&
           (Arg.hasByValAttr() || Arg.hasStructRetAttr())) {
         TypedPointerType *TPT = cast<TypedPointerType>(Ty);
         auto *NewType = BM->addPointerType(
@@ -2243,7 +2242,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       // typed pointer argument to avoid complex transformations later that may
       // break SPIR-V validity.
 
-      auto performBitcastForArg =
+      auto PerformBitcastForArg =
           [&](SPIRVFunctionParameter *BA) -> SPIRVValue * {
         // Position to insert bitcast should be right after variable insertion
         // point in the entry basic block.
@@ -2261,7 +2260,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         auto *Inst = U->stripPointerCasts();
         if (isa<LoadInst>(Inst) || isa<StoreInst>(Inst) ||
             isa<MemCpyInst>(Inst)) {
-          return mapValue(V, performBitcastForArg(SPVArg));
+          return mapValue(V, PerformBitcastForArg(SPVArg));
         }
       }
     }
