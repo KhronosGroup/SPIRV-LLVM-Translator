@@ -2232,6 +2232,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     auto *SPVArg = BF->getArgument(ArgNo);
 
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
+        (Arg->hasByValAttr() || Arg->hasStructRetAttr()) &&
         SPVArg->getType()->isTypePointer() &&
         !SPVArg->getType()->isTypeUntypedPointerKHR()) {
       // When SPV_KHR_untyped_pointers extension is enabled, bitcast typed
