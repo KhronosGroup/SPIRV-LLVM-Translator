@@ -29,7 +29,6 @@
 ; CHECK-SPIRV: Variable {{[0-9]+}} [[ValComp:[0-9]+]] 0 [[InitComp]]
 ; CHECK-SPIRV: ConstantFalse [[#]] [[#False:]]
 
-; CHECK-SPIRV-UNTYPED-PTR: Bitcast
 ; CHECK-SPIRV: Bitcast [[Int8Ptr]] [[Target:[0-9]+]] {{[0-9]+}}
 ; CHECK-SPIRV: Bitcast [[Int8PtrConst]] [[Source:[0-9]+]] [[Val]]
 ; CHECK-SPIRV: CopyMemorySized [[Target]] [[Source]] [[Lenmemset0]] 2 4

@@ -2238,23 +2238,32 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       // When SPV_KHR_untyped_pointers extension is enabled, bitcast typed
       // pointer function arguments to untyped pointers for further usage in the
       // untyped pointers paradigm.
-      // Don't do this if the argument is further used in function calls as it
-      // breaks SPIR-V validity.
+      // Do this only for safe cases where it would not require tracking uses of
+      // the original typed pointer argument. Otherwise, just keep the original
+      // typed pointer argument to avoid complex transformations later that may
+      // break SPIR-V validity.
+
+      auto performBitcastForArg =
+          [&](SPIRVFunctionParameter *BA) -> SPIRVValue * {
+        // Position to insert bitcast should be right after variable insertion
+        // point in the entry basic block.
+        auto *InsertBB = BF->getBasicBlock(0);
+        auto *InsertPoint = InsertBB->getVariableInsertionPoint();
+        auto *UntypedPtrType = BM->addPointerType(
+            BA->getType()->getPointerStorageClass(), nullptr);
+
+        auto *Bitcast = BM->addUnaryInst(OpBitcast, UntypedPtrType, BA,
+                                         InsertBB, InsertPoint);
+        return Bitcast;
+      };
+
       for (auto *U : V->users()) {
-        if (isa<CallInst>(U) || isa<InvokeInst>(U) || isa<PHINode>(U))
-          return mapValue(V, SPVArg);
+        auto *Inst = U->stripPointerCasts();
+        if (isa<LoadInst>(Inst) || isa<StoreInst>(Inst) ||
+            isa<MemCpyInst>(Inst)) {
+          return mapValue(V, performBitcastForArg(SPVArg));
+        }
       }
-
-      // Position to insert bitcast should be right after variable insertion
-      // point in the entry basic block.
-      auto *InsertBB = BF->getBasicBlock(0);
-      auto *InsertPoint = InsertBB->getVariableInsertionPoint();
-      auto *UntypedPtrType = BM->addPointerType(
-          SPVArg->getType()->getPointerStorageClass(), nullptr);
-
-      auto *Bitcast = BM->addUnaryInst(OpBitcast, UntypedPtrType, SPVArg,
-                                       InsertBB, InsertPoint);
-      return mapValue(V, Bitcast);
     }
     return mapValue(V, SPVArg);
   }
