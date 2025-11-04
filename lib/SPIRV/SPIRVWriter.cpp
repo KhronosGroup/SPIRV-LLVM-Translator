@@ -5975,9 +5975,10 @@ bool LLVMToSPIRVBase::isAnyFunctionReachableFromFunction(
 std::vector<SPIRVId>
 LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
   std::vector<SPIRVId> Interface;
+  SPIRVModule *BM = SF->getModule();
+
   for (auto &GV : M->globals()) {
     const auto AS = GV.getAddressSpace();
-    SPIRVModule *BM = SF->getModule();
     if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4))
       if (AS != SPIRAS_Input && AS != SPIRAS_Output)
         continue;
@@ -5999,6 +6000,17 @@ LLVMToSPIRVBase::collectEntryPointInterfaces(SPIRVFunction *SF, Function *F) {
       Interface.push_back(ValueMap[&GV]->getId());
     }
   }
+
+  // Translating `memset` may create additional SPIR-V variables, add those too
+  for (unsigned I = 0; I < BM->getNumVariables(); ++I) {
+    SPIRVVariableBase *Var = BM->getVariable(I);
+    if (Var->getStorageClass() == StorageClassUniformConstant) {
+      SPIRVId VarId = Var->getId();
+      if (std::find(Interface.begin(), Interface.end(), VarId) == Interface.end())
+        Interface.push_back(VarId);
+    }
+  }
+
   return Interface;
 }
 
