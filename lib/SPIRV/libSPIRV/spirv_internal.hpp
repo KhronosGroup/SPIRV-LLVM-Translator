@@ -124,7 +124,10 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilitySubgroupRequirementsINTEL = 6445,
-  ICapabilityBindlessImagesINTEL = 6528
+  ICapabilityBindlessImagesINTEL = 6528,
+  ICapabilityAtomicInt16CompareExchangeINTEL = 6666,
+  ICapabilityInt16AtomicsINTEL = 6667,
+  ICapabilityAtomicBFloat16LoadStoreINTEL = 6668,
 };
 
 enum InternalExecutionMode {
@@ -286,6 +289,13 @@ constexpr Capability CapabilityBFloat16ArithmeticINTEL =
 
 constexpr ExecutionMode ExecutionModeNamedSubgroupSizeINTEL =
     static_cast<ExecutionMode>(IExecModeNamedSubgroupSizeINTEL);
+
+constexpr Capability CapabilityAtomicInt16CompareExchangeINTEL =
+    static_cast<Capability>(ICapabilityAtomicInt16CompareExchangeINTEL);
+constexpr Capability CapabilityInt16AtomicsINTEL =
+    static_cast<Capability>(ICapabilityInt16AtomicsINTEL);
+constexpr Capability CapabilityAtomicBFloat16LoadStoreINTEL =
+    static_cast<Capability>(ICapabilityAtomicBFloat16LoadStoreINTEL);
 
 } // namespace internal
 } // namespace spv
