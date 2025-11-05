@@ -38,3 +38,4 @@ _SPIRV_OP_INTERNAL(PredicatedLoadINTEL,
                    internal::OpPredicatedLoadINTEL)
 _SPIRV_OP_INTERNAL(PredicatedStoreINTEL,
                    internal::OpPredicatedStoreINTEL)
+_SPIRV_OP_INTERNAL(FSigmoidINTEL, internal::FSigmoidINTEL)
