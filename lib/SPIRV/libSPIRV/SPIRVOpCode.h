@@ -121,10 +121,7 @@ inline bool isCvtOpCode(Op OpCode) {
          OpCode == OpPtrCastToCrossWorkgroupINTEL ||
          OpCode == OpCrossWorkgroupCastToPtrINTEL ||
          OpCode == internal::OpClampConvertFToFINTEL ||
-         OpCode == internal::OpClampConvertFToSINTEL ||
-         OpCode == internal::OpStochasticRoundFToFINTEL ||
-         OpCode == internal::OpClampStochasticRoundFToFINTEL ||
-         OpCode == internal::OpClampStochasticRoundFToSINTEL;
+         OpCode == internal::OpClampConvertFToSINTEL;
 }
 
 inline bool isCvtToUnsignedOpCode(Op OpCode) {
