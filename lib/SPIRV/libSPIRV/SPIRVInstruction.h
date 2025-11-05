@@ -2488,6 +2488,19 @@ public:
     return getValues(Operands);
   }
 
+  SPIRVCapVec getRequiredCapability() const override {
+    if (isDeviceBarrier()) {
+      return getVec(internal::CapabilityDeviceBarrierINTEL);
+    }
+    return SPIRVInstruction::getRequiredCapability();
+  }
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (isDeviceBarrier()) {
+      return ExtensionID::SPV_INTEL_device_barrier;
+    }
+    return std::nullopt;
+  }
+
 protected:
   _SPIRV_DEF_ENCDEC3(ExecScope, MemScope, MemSema)
   void validate() const override {
@@ -2495,6 +2508,25 @@ protected:
     assert(WordCount == 4);
     SPIRVInstruction::validate();
   }
+
+  bool isDeviceBarrier() const {
+    bool CanUseDeviceBarrier = getModule()->isAllowedToUseExtension(
+        ExtensionID::SPV_INTEL_device_barrier);
+    SPIRVValue *ESV = getValue(ExecScope);
+    if (ESV && ESV->getOpCode() == OpConstant) {
+      if (static_cast<SPIRVConstant *>(ESV)->getZExtIntValue() == ScopeDevice) {
+        getModule()->getErrorLog().checkError(CanUseDeviceBarrier,
+                                              SPIRVEC_RequiresExtension,
+                                              "SPV_INTEL_device_barrier\n");
+        return true;
+      }
+      return false;
+    }
+    // If we cannot determine the execution scope, assume that it can be a
+    // device barrier, if the device barrier extension is enabled.
+    return CanUseDeviceBarrier;
+  }
+
   SPIRVId ExecScope;
   SPIRVId MemScope = SPIRVID_INVALID;
   SPIRVId MemSema = SPIRVID_INVALID;
