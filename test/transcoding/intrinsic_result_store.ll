@@ -2,6 +2,7 @@
 ; with subsequent store instructions.
 
 ; RUN: llvm-spirv %s -o %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
