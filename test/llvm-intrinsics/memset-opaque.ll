@@ -8,7 +8,13 @@
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_untyped_pointers
 ; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED-PTR
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
+
+; TODO: run validator once it's fixed or once we relax type scavenger for untyped pointers.
+; Now it fails with the following error, which does not contradict the extension specification:
+; error: line 116: Expected input and Result Type to point to the same type: GenericCastToPtr
+;   %a = OpGenericCastToPtr %_ptr_Workgroup %agg_result
 ; RUNx: spirv-val %t.spv
+
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-OPAQUE
 
 ; CHECK-SPIRV: Decorate [[#NonConstMemset:]] LinkageAttributes "spirv.llvm_memset_p3_i32"
