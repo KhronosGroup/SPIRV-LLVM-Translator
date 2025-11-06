@@ -30,12 +30,12 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind readnone
 define spir_kernel void @f() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
-  %0 = call spir_func i32 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv()
-  ; CHECK-SPV-IR: %0 = call spir_func i32 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv() #1
+  %0 = call spir_func i1 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv()
+  ; CHECK-SPV-IR: %0 = call spir_func i1 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv() #1
   ret void
 }
 
-declare spir_func i32 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv()
+declare spir_func i1 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv()
 
 attributes #0 = { alwaysinline nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-realign-stack" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
