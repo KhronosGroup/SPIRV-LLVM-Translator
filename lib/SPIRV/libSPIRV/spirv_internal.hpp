@@ -127,7 +127,7 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilitySubgroupRequirementsINTEL = 6445,
-  ICapabilityBindlessImagesINTEL = 6528,
+  ICapabilityBindlessImagesINTEL = 6528
 };
 
 enum InternalExecutionMode {
