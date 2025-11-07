@@ -2965,8 +2965,18 @@ public:
     // Besides, OpAtomicCompareExchangeWeak, OpAtomicFlagTestAndSet and
     // OpAtomicFlagClear instructions require the "kernel" capability. But this
     // capability should be added by setting the OpenCL memory model.
-    if (hasType() && getType()->isTypeInt(64))
-      return {CapabilityInt64Atomics};
+    if (hasType()) {
+      if (getType()->isTypeInt(64))
+        return {CapabilityInt64Atomics};
+      if (getType()->isTypeInt(16))
+        return {internal::CapabilityInt16AtomicsINTEL};
+    }
+    return {};
+  }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (hasType() && getType()->isTypeInt(16))
+      return ExtensionID::SPV_INTEL_16bit_atomics;
     return {};
   }
 
@@ -3004,7 +3014,20 @@ public:
   }
 };
 
-class SPIRVAtomicStoreInst : public SPIRVAtomicInstBase {
+// This specialization will handle smaller set of compare-and-swap instructions
+// that require only one capability. The instructions are: OpAtomicLoad,
+// OpAtomicStore, OpAtomicExchange, OpAtomicCompareExchange and
+// OpAtomicCompareExchangeWeak.
+class SPIRVAtomicCompareExchangeInstructions : public SPIRVAtomicInstBase {
+public:
+  SPIRVCapVec getRequiredCapability() const override {
+    if (hasType() && getType()->isTypeInt(16))
+      return {internal::CapabilityAtomicInt16CompareExchangeINTEL};
+    return {};
+  }
+};
+
+class SPIRVAtomicStoreInst : public SPIRVAtomicCompareExchangeInstructions {
 public:
   // Overriding the following method because of 'const'-related
   // issues with overriding getRequiredCapability(). TODO: Resolve.
@@ -3070,10 +3093,6 @@ public:
 // Atomic builtins
 _SPIRV_OP(AtomicFlagTestAndSet, true, 6)
 _SPIRV_OP(AtomicFlagClear, false, 4)
-_SPIRV_OP(AtomicLoad, true, 6)
-_SPIRV_OP(AtomicExchange, true, 7)
-_SPIRV_OP(AtomicCompareExchange, true, 9)
-_SPIRV_OP(AtomicCompareExchangeWeak, true, 9)
 _SPIRV_OP(AtomicIIncrement, true, 6)
 _SPIRV_OP(AtomicIDecrement, true, 6)
 _SPIRV_OP(AtomicIAdd, true, 7)
@@ -3090,7 +3109,11 @@ _SPIRV_OP(MemoryBarrier, false, 3)
 #define _SPIRV_OP(x, BaseClass, ...)                                           \
   typedef SPIRVInstTemplate<SPIRV##BaseClass, Op##x, __VA_ARGS__> SPIRV##x;
 // Specialized atomic builtins
+_SPIRV_OP(AtomicLoad, AtomicCompareExchangeInstructions, true, 6)
 _SPIRV_OP(AtomicStore, AtomicStoreInst, false, 5)
+_SPIRV_OP(AtomicExchange, AtomicCompareExchangeInstructions, true, 7)
+_SPIRV_OP(AtomicCompareExchange, AtomicCompareExchangeInstructions, true, 9)
+_SPIRV_OP(AtomicCompareExchangeWeak, AtomicCompareExchangeInstructions, true, 9)
 _SPIRV_OP(AtomicFAddEXT, AtomicFAddEXTInst, true, 7)
 _SPIRV_OP(AtomicFMinEXT, AtomicFMinMaxEXTBase, true, 7)
 _SPIRV_OP(AtomicFMaxEXT, AtomicFMinMaxEXTBase, true, 7)
