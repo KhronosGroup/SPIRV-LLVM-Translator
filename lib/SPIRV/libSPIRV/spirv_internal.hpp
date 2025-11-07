@@ -115,6 +115,9 @@ enum InternalCapability {
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
   ICapabilityPredicatedIOINTEL = 6257,
+  ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
+  ICapabilityInt16AtomicsINTEL = 6261,
+  ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
@@ -125,9 +128,6 @@ enum InternalCapability {
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilitySubgroupRequirementsINTEL = 6445,
   ICapabilityBindlessImagesINTEL = 6528,
-  ICapabilityAtomicInt16CompareExchangeINTEL = 6666,
-  ICapabilityInt16AtomicsINTEL = 6667,
-  ICapabilityAtomicBFloat16LoadStoreINTEL = 6668,
 };
 
 enum InternalExecutionMode {
