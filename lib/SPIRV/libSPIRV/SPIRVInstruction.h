@@ -2127,8 +2127,6 @@ protected:
       break;
     case OpTypeArray:
     case OpTypeStruct:
-    case internal::OpTypeJointMatrixINTEL:
-    case internal::OpTypeJointMatrixINTELv2:
     case OpTypeCooperativeMatrixKHR:
       break;
     default:
@@ -2388,8 +2386,7 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+    assert(getValueType(VectorId)->isTypeVector());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2426,8 +2423,7 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+    assert(getValueType(VectorId)->isTypeVector());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -3581,7 +3577,7 @@ protected:
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
       return getVec(CapabilityBFloat16ConversionINTEL,
-                    internal::CapabilityJointMatrixBF16ComponentTypeINTEL);
+                    internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL);
     return getVec(CapabilityBFloat16ConversionINTEL);
   }
 
@@ -3676,26 +3672,6 @@ protected:
   }
 };
 
-class SPIRVJointMatrixINTELInst : public SPIRVJointMatrixINTELInstBase {
-  SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityJointMatrixINTEL);
-  }
-};
-
-#define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVJointMatrixINTELInst, internal::Op##x##INTEL, \
-                            __VA_ARGS__>                                       \
-      SPIRV##x##INTEL;
-_SPIRV_OP(JointMatrixLoad, true, 6, true)
-_SPIRV_OP(JointMatrixStore, false, 5, true)
-_SPIRV_OP(JointMatrixMad, true, 6, true)
-_SPIRV_OP(JointMatrixSUMad, true, 6, true)
-_SPIRV_OP(JointMatrixUSMad, true, 6, true)
-_SPIRV_OP(JointMatrixUUMad, true, 6, true)
-// TODO: move to SPIRVJointMatrixINTELWorkItemInst
-_SPIRV_OP(JointMatrixWorkItemLength, true, 4)
-#undef _SPIRV_OP
-
 class SPIRVJointMatrixINTELWorkItemInst : public SPIRVJointMatrixINTELInstBase {
 protected:
   SPIRVCapVec getRequiredCapability() const override {
@@ -3707,6 +3683,7 @@ protected:
   typedef SPIRVInstTemplate<SPIRVJointMatrixINTELWorkItemInst,                 \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
+_SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 _SPIRV_OP(JointMatrixGetElementCoord, true, 5)
 #undef _SPIRV_OP
 
@@ -4008,7 +3985,7 @@ protected:
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
       return getVec(CapabilityTensorFloat32RoundingINTEL,
-                    internal::CapabilityJointMatrixTF32ComponentTypeINTEL);
+                    internal::CapabilityCooperativeMatrixTF32ComponentTypeINTEL);
     return getVec(CapabilityTensorFloat32RoundingINTEL);
   }
 
