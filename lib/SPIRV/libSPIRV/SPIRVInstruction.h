@@ -3576,8 +3576,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(CapabilityBFloat16ConversionINTEL,
-                    internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL);
+      return getVec(
+          CapabilityBFloat16ConversionINTEL,
+          internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL);
     return getVec(CapabilityBFloat16ConversionINTEL);
   }
 
@@ -3984,8 +3985,9 @@ protected:
   SPIRVCapVec getRequiredCapability() const override {
     SPIRVType *ResCompTy = this->getType();
     if (ResCompTy->isTypeCooperativeMatrixKHR())
-      return getVec(CapabilityTensorFloat32RoundingINTEL,
-                    internal::CapabilityCooperativeMatrixTF32ComponentTypeINTEL);
+      return getVec(
+          CapabilityTensorFloat32RoundingINTEL,
+          internal::CapabilityCooperativeMatrixTF32ComponentTypeINTEL);
     return getVec(CapabilityTensorFloat32RoundingINTEL);
   }
 

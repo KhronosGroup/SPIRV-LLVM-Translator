@@ -120,7 +120,8 @@ SPIRVType *SPIRVType::getVectorComponentType() const {
   if (OpCode == OpTypeCooperativeMatrixKHR)
     return static_cast<const SPIRVTypeCooperativeMatrixKHR *>(this)
         ->getCompType();
-  assert(0 && "getVectorComponentType(): Not a vector or cooperative matrix type");
+  assert(0 &&
+         "getVectorComponentType(): Not a vector or cooperative matrix type");
   return nullptr;
 }
 
@@ -270,8 +271,7 @@ bool SPIRVType::isSPIRVOpaqueType() const {
   return isTypeDeviceEvent() || isTypeEvent() || isTypeImage() ||
          isTypePipe() || isTypeReserveId() || isTypeSampler() ||
          isTypeSampledImage() || isTypePipeStorage() ||
-         isTypeCooperativeMatrixKHR() ||
-         isTypeTaskSequenceINTEL();
+         isTypeCooperativeMatrixKHR() || isTypeTaskSequenceINTEL();
 }
 
 bool SPIRVTypeStruct::isPacked() const {

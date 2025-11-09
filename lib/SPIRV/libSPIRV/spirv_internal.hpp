@@ -132,11 +132,7 @@ enum InternalJointMatrixLayout {
 
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
 
-enum InternalJointMatrixCTI {
-  None = 0,
-  TF32 = 1,
-  Bfloat16 = 2
-};
+enum InternalJointMatrixCTI { None = 0, TF32 = 1, Bfloat16 = 2 };
 
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
