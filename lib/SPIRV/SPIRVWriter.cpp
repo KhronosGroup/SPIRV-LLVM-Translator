@@ -5510,10 +5510,10 @@ SPIRVValue *LLVMToSPIRVBase::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 // Helper function to process mini-float or int4 types for FP conversions.
 // Processes type width, packing, and creates the appropriate SPIRV type.
 // Returns the SPIRV type and outputs vector size information.
-static SPIRVType *processMiniFPOrInt4Type(
-    Type *LLVMTy, FPEncodingWrap Encoding,
-    std::function<Type *(Type *)> GetScalarTy, SPIRVModule *BM,
-    unsigned &OutVecSize) {
+static SPIRVType *
+processMiniFPOrInt4Type(Type *LLVMTy, FPEncodingWrap Encoding,
+                        std::function<Type *(Type *)> GetScalarTy,
+                        SPIRVModule *BM, unsigned &OutVecSize) {
   Type *ScalarTy = GetScalarTy(LLVMTy);
   unsigned TyWidth = cast<IntegerType>(ScalarTy)->getBitWidth();
   unsigned VecSize = 0;
@@ -5527,9 +5527,8 @@ static SPIRVType *processMiniFPOrInt4Type(
            "FP4 and Int4 matrices must not be packed");
     VecSize = 8;
     TyWidth = 4;
-  } else if (TyWidth == 8 &&
-             (Encoding == FPEncodingWrap::E2M1 ||
-              Encoding == FPEncodingWrap::Integer)) {
+  } else if (TyWidth == 8 && (Encoding == FPEncodingWrap::E2M1 ||
+                              Encoding == FPEncodingWrap::Integer)) {
     assert(!isLLVMCooperativeMatrixType(LLVMTy) &&
            "FP4 and Int4 matrices must not be packed");
     // Int4 or FP4 packed in 8-bit integer, change type and vector size.

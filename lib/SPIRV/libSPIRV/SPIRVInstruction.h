@@ -4499,7 +4499,7 @@ _SPIRV_OP(PredicatedStore, false, 4, true)
 #undef _SPIRV_OP
 
 template <Op OC> class SPIRVFSigmoidINTELInstBase : public SPIRVUnaryInst<OC> {
-protected:
+public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(internal::CapabilitySigmoidINTEL);
   }
@@ -4557,8 +4557,8 @@ protected:
 _SPIRV_OP(FSigmoidINTEL)
 #undef _SPIRV_OP
 
-  class SPIRVFPConversionINTELInstBase : public SPIRVInstTemplateBase {
-protected:
+class SPIRVFPConversionINTELInstBase : public SPIRVInstTemplateBase {
+public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(internal::CapabilityFloatConversionsINTEL);
   }

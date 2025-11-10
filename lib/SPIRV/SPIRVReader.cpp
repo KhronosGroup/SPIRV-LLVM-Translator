@@ -1069,8 +1069,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
   auto IsFP4OrFP8Encoding = [](FPEncodingWrap Encoding) -> bool {
     return Encoding == FPEncodingWrap::E4M3 ||
-           Encoding == FPEncodingWrap::E5M2 ||
-           Encoding == FPEncodingWrap::E2M1;
+           Encoding == FPEncodingWrap::E5M2 || Encoding == FPEncodingWrap::E2M1;
   };
 
   switch (static_cast<unsigned>(BC->getOpCode())) {
@@ -3099,9 +3098,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
             InMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
             InMatrixElementTy->isTypeFloat(8, FPEncodingFloat8E5M2EXT) ||
             OutMatrixElementTy->isTypeFloat(
-              4, internal::FPEncodingFloat4E2M1INTEL) ||
-            InMatrixElementTy->isTypeFloat(
-              4, internal::FPEncodingFloat4E2M1INTEL))
+                4, internal::FPEncodingFloat4E2M1INTEL) ||
+            InMatrixElementTy->isTypeFloat(4,
+                                           internal::FPEncodingFloat4E2M1INTEL))
           Inst = transConvertInst(BV, F, BB);
         else
           Inst = transSPIRVBuiltinFromInst(BI, BB);

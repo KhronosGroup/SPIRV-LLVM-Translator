@@ -285,9 +285,9 @@ protected:
 
   void validate() const override {
     SPIRVEntry::validate();
-    assert(
-        (BitWidth == 4 || BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
-         BitWidth == 64) && "Invalid bit width");
+    assert((BitWidth == 4 || BitWidth == 8 || BitWidth == 16 ||
+            BitWidth == 32 || BitWidth == 64) &&
+           "Invalid bit width");
     assert(
         (FloatingPointEncoding == FPEncodingMax ||
          (BitWidth == 16 && FloatingPointEncoding == FPEncodingBFloat16KHR) ||
