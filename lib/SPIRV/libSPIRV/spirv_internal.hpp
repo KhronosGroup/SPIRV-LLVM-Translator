@@ -43,6 +43,7 @@ enum InternalOp {
   IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
+  IOpFSigmoidINTEL = 6168,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -61,6 +62,7 @@ enum InternalCapability {
   ICapDebugInfoModuleINTEL = 6114,
   ICapBfloat16ConversionINTEL = 6115,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
+  ICapabilitySigmoidINTEL = 6167,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityHWThreadQueryINTEL = 6134,
@@ -87,6 +89,8 @@ enum InternalBuiltIn {
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
 _SPIRV_OP(BuiltIn, GlobalHWThreadIDINTEL)
+_SPIRV_OP(Capability, SigmoidINTEL)
+_SPIRV_OP(Op, FSigmoidINTEL)
 #undef _SPIRV_OP
 
 constexpr Op OpForward = static_cast<Op>(IOpForward);

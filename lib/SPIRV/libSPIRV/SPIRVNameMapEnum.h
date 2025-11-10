@@ -586,6 +586,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityGlobalVariableDecorationsINTEL,
       "GlobalVariableDecorationsINTEL");
   add(internal::CapabilityBFloat16ArithmeticINTEL, "BFloat16ArithmeticINTEL");
+  add(internal::CapabilitySigmoidINTEL, "SigmoidINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
