@@ -3023,7 +3023,7 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     if (hasType() && getType()->isTypeInt(16))
       return {internal::CapabilityAtomicInt16CompareExchangeINTEL};
-    return {};
+    return SPIRVAtomicInstBase::getRequiredCapability();
   }
 };
 
