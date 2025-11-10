@@ -21,8 +21,6 @@
 // RUN: llvm-dis %t.rev.bc
 // RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-SPV-IR
 
-// TODO: review the test
-
 // CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer1:[0-9]+]] "__device_side_enqueue_block_invoke_kernel"
 // CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer2:[0-9]+]] "__device_side_enqueue_block_invoke_2_kernel"
 // CHECK-SPIRV: EntryPoint {{[0-9]+}} [[BlockKer3:[0-9]+]] "__device_side_enqueue_block_invoke_3_kernel"
