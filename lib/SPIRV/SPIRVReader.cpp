@@ -1133,7 +1133,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         std::string BuiltinName =
             kSPIRVName::InternalBuiltinPrefix + std::string(Conv);
         BuiltinFuncMangleInfo Info;
-        std::string MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+        std::string MangledName;
         // Translate additional Ops for stochastic conversions.
         if (OC == internal::OpStochasticRoundFToFINTEL ||
             OC == internal::OpClampStochasticRoundFToFINTEL ||
@@ -1167,6 +1167,13 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         return CallInst::Create(Func, Ops, "", BB);
       }
     }
+    // These conversions can be done without __builtin_spirv prefixed functions
+    // as their operand and result types have native representation in LLVM IR.
+    if (OC == internal::OpClampConvertFToFINTEL ||
+        OC == internal::OpStochasticRoundFToFINTEL ||
+        OC == internal::OpClampStochasticRoundFToFINTEL)
+      return mapValue(BV, transSPIRVBuiltinFromInst(
+                              static_cast<SPIRVInstruction *>(BV), BB));
 
     if (OC == OpFConvert) {
       CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
@@ -3103,6 +3110,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       }
       return mapValue(BV, Inst);
     }
+    if (isIntelCvtOpCode(OC))
+      return mapValue(BV, transConvertInst(BV, F, BB));
     return mapValue(
         BV, transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB));
   }
@@ -3919,6 +3928,11 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case internal::OpTaskSequenceCreateINTEL:
   case internal::OpConvertHandleToImageINTEL:
   case internal::OpConvertHandleToSampledImageINTEL:
+  case internal::OpClampConvertFToFINTEL:
+  case internal::OpClampConvertFToSINTEL:
+  case internal::OpStochasticRoundFToFINTEL:
+  case internal::OpClampStochasticRoundFToFINTEL:
+  case internal::OpClampStochasticRoundFToSINTEL:
     AddRetTypePostfix = true;
     break;
   default: {

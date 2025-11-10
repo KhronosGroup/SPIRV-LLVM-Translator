@@ -18,17 +18,15 @@
 ; CHECK-SPIRV-DAG: TypeInt [[#Int4Ty:]] 4 0
 ; CHECK-SPIRV-DAG: Constant [[#ShortTy]] [[#IntConst:]] 4
 ; CHECK-SPIRV-DAG: Constant [[#FloatTy]] [[#FPConst:]] 1065353216
+; CHECK-SPIRV-DAG: Constant [[#HalfTy]] [[#HalfConst:]] 15360
 
+; CHECK-SPIRV: ClampConvertFToFINTEL [[#HalfTy]] [[#]] [[#FPConst]]
+; CHECK-SPIRV: ClampConvertFToSINTEL [[#Int4Ty]] [[#]] [[#HalfConst]]
 ; CHECK-SPIRV: StochasticRoundFToFINTEL [[#HalfTy]] [[#]] [[#FPConst]] [[#IntConst]]
 ; CHECK-SPIRV: ClampStochasticRoundFToFINTEL [[#HalfTy]] [[#]] [[#FPConst]] [[#IntConst]]
-
- 36 4 ClampConvertFToFINTEL 8 9 7
- 37 4 ClampConvertFToSINTEL 11 12 10
- 38 5 StochasticRoundFToFINTEL 8 15 7 14
- 39 5 ClampStochasticRoundFToFINTEL 8 16 7 14
- 40 5 ClampStochasticRoundFToSINTEL 11 17 10 14
- 41 6 ClampStochasticRoundFToFINTEL 8 20 7 14 19
- 42 6 ClampStochasticRoundFToSINTEL 11 22 10 14 21
+; CHECK-SPIRV: ClampStochasticRoundFToSINTEL [[#Int4Ty]] [[#]] [[#HalfConst]] [[#IntConst]]
+; CHECK-SPIRV: ClampStochasticRoundFToFINTEL [[#HalfTy]] [[#]] [[#FPConst]] [[#IntConst]] [[#]]
+; CHECK-SPIRV: ClampStochasticRoundFToSINTEL [[#Int4Ty]] [[#]] [[#HalfConst]] [[#IntConst]] [[#]]
 
 ; CHECK-LLVM: %[[#]] = call spir_func half @_Z38__spirv_StochasticRoundFToFINTEL_Rhalffs(float 1.000000e+00, i16 4)
 ; CHECK-LLVM: %[[#]] = call spir_func half @_Z43__spirv_ClampStochasticRoundFToFINTEL_Rhalffs(float 1.000000e+00, i16 4)

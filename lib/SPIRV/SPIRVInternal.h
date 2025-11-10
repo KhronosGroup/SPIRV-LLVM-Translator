@@ -1133,16 +1133,16 @@ template <> inline void FPConvertToEncodingMap::init() {
   add("ClampConvertBF16ToE2M1INTEL",
       {FPEncodingWrap::BF16,         FPEncodingWrap::E2M1,
        internal::OpClampConvertFToFINTEL});
-  add("ClampConvertFP16ToE4M3EXT",
+  add("ClampConvertFP16ToE4M3INTEL",
       {FPEncodingWrap::IEEE754,      FPEncodingWrap::E4M3,
        internal::OpClampConvertFToFINTEL});
-  add("ClampConvertBF16ToE4M3EXT",
+  add("ClampConvertBF16ToE4M3INTEL",
       {FPEncodingWrap::BF16,         FPEncodingWrap::E4M3,
        internal::OpClampConvertFToFINTEL});
-  add("ClampConvertFP16ToE5M2EXT",
+  add("ClampConvertFP16ToE5M2INTEL",
       {FPEncodingWrap::IEEE754,      FPEncodingWrap::E5M2,
        internal::OpClampConvertFToFINTEL});
-  add("ClampConvertBF16ToE5M2EXT",
+  add("ClampConvertBF16ToE5M2INTEL",
       {FPEncodingWrap::BF16,         FPEncodingWrap::E5M2,
        internal::OpClampConvertFToFINTEL});
   add("ClampConvertFP16ToInt4INTEL",

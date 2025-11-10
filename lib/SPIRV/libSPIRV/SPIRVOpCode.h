@@ -119,9 +119,15 @@ inline bool isCvtOpCode(Op OpCode) {
   return ((unsigned)OpCode >= OpConvertFToU && (unsigned)OpCode <= OpBitcast) ||
          OpCode == OpSatConvertSToU || OpCode == OpSatConvertUToS ||
          OpCode == OpPtrCastToCrossWorkgroupINTEL ||
-         OpCode == OpCrossWorkgroupCastToPtrINTEL ||
-         OpCode == internal::OpClampConvertFToFINTEL ||
-         OpCode == internal::OpClampConvertFToSINTEL;
+         OpCode == OpCrossWorkgroupCastToPtrINTEL;
+}
+
+inline bool isIntelCvtOpCode(Op OpCode) {
+  return OpCode == internal::OpClampConvertFToFINTEL ||
+         OpCode == internal::OpClampConvertFToSINTEL ||
+         OpCode == internal::OpStochasticRoundFToFINTEL ||
+         OpCode == internal::OpClampStochasticRoundFToFINTEL ||
+         OpCode == internal::OpClampStochasticRoundFToSINTEL;
 }
 
 inline bool isCvtToUnsignedOpCode(Op OpCode) {
