@@ -1865,10 +1865,22 @@ SPIRVInstruction *SPIRVModuleImpl::addSelectionMergeInst(
 SPIRVInstruction *SPIRVModuleImpl::addLoopMergeInst(
     SPIRVId MergeBlock, SPIRVId ContinueTarget, SPIRVWord LoopControl,
     std::vector<SPIRVWord> LoopControlParameters, SPIRVBasicBlock *BB) {
-  return addInstruction(
-      new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
-                         LoopControlParameters, BB),
-      BB, const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
+  SPIRVInstruction *TermInst = const_cast<SPIRVInstruction *>(BB->getTerminateInstr());
+  // OpLoopMerge must be the second-to-last instruction in the block,
+  // immediately preceding the branch instruction (OpBranch or OpBranchConditional)
+  if (TermInst && (TermInst->getOpCode() == OpBranch || 
+                   TermInst->getOpCode() == OpBranchConditional)) {
+    return addInstruction(
+        new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
+                           LoopControlParameters, BB),
+        BB, TermInst);
+  } else {
+    // If there's no proper terminator, add at the end
+    return addInstruction(
+        new SPIRVLoopMerge(MergeBlock, ContinueTarget, LoopControl,
+                           LoopControlParameters, BB),
+        BB);
+  }
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addLoopControlINTELInst(
@@ -1876,9 +1888,19 @@ SPIRVInstruction *SPIRVModuleImpl::addLoopControlINTELInst(
     SPIRVBasicBlock *BB) {
   addCapability(CapabilityUnstructuredLoopControlsINTEL);
   addExtension(ExtensionID::SPV_INTEL_unstructured_loop_controls);
-  return addInstruction(
-      new SPIRVLoopControlINTEL(LoopControl, LoopControlParameters, BB), BB,
-      const_cast<SPIRVInstruction *>(BB->getTerminateInstr()));
+  SPIRVInstruction *TermInst = const_cast<SPIRVInstruction *>(BB->getTerminateInstr());
+  // OpLoopControlINTEL must be the second-to-last instruction in the block,
+  // immediately preceding the branch instruction (OpBranch or OpBranchConditional)
+  if (TermInst && (TermInst->getOpCode() == OpBranch || 
+                   TermInst->getOpCode() == OpBranchConditional)) {
+    return addInstruction(
+        new SPIRVLoopControlINTEL(LoopControl, LoopControlParameters, BB), BB,
+        TermInst);
+  } else {
+    // If there's no proper terminator, add at the end
+    return addInstruction(
+        new SPIRVLoopControlINTEL(LoopControl, LoopControlParameters, BB), BB);
+  }
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addFixedPointIntelInst(
