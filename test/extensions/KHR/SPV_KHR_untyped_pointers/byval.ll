@@ -1,3 +1,5 @@
+; Ensure that a typed pointer passed by value is converted to an untyped pointer prior usage.
+
 ; RUN: llvm-spirv %s -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_untyped_pointers
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
