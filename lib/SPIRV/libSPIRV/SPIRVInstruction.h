@@ -3046,7 +3046,7 @@ public:
   std::optional<ExtensionID> getRequiredExtension() const override {
     assert(hasType());
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return ExtensionID::SPV_INTEL_16bit_atomics;
+      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     if (getType()->isTypeFloat(16))
       return ExtensionID::SPV_EXT_shader_atomic_float16_add;
     return ExtensionID::SPV_EXT_shader_atomic_float_add;
@@ -3071,7 +3071,7 @@ class SPIRVAtomicFMinMaxEXTBase : public SPIRVAtomicInstBase {
 public:
   std::optional<ExtensionID> getRequiredExtension() const override {
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return ExtensionID::SPV_INTEL_16bit_atomics;
+      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     return ExtensionID::SPV_EXT_shader_atomic_float_min_max;
   }
 

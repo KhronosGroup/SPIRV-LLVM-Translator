@@ -1,5 +1,5 @@
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16 %t.bc -o %t.spv
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_min_max %t.bc -o %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
 
 ; CHECK-DAG: Extension "SPV_INTEL_16bit_atomics"

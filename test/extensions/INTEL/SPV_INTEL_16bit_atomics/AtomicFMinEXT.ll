@@ -1,4 +1,4 @@
-; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16 -o %t.spv
+; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_min_max -o %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
