@@ -1,7 +1,6 @@
 ; Test for conversions, that don't require special type interpretation.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_fp_conversions
+; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_fp_conversions
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR

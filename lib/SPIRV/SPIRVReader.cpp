@@ -298,10 +298,10 @@ std::optional<uint64_t> SPIRVToLLVM::getAlignment(SPIRVValue *V) {
 Type *SPIRVToLLVM::transFPType(SPIRVType *T) {
   switch (T->getFloatBitWidth()) {
   case 4:
-    // No LLVM IR counter part for FP4 - map it on i4
+    // No LLVM IR counter part for FP4 - map it on i4.
     return Type::getIntNTy(*Context, 4);
   case 8:
-    // No LLVM IR counter part for FP8 - map it on i8
+    // No LLVM IR counter part for FP8 - map it on i8.
     return Type::getIntNTy(*Context, 8);
   case 16:
     if (T->isTypeFloat(16, FPEncodingBFloat16KHR))
