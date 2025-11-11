@@ -3684,7 +3684,6 @@ protected:
   typedef SPIRVInstTemplate<SPIRVJointMatrixINTELWorkItemInst,                 \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
-_SPIRV_OP(JointMatrixWorkItemLength, true, 4)
 _SPIRV_OP(JointMatrixGetElementCoord, true, 5)
 #undef _SPIRV_OP
 

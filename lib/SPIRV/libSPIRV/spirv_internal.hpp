@@ -70,7 +70,6 @@ enum InternalOp {
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
   IOpPredicatedLoadINTEL = 6258,
   IOpPredicatedStoreINTEL = 6259,
-  IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpTypeTaskSequenceINTEL = 6199,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
@@ -132,8 +131,6 @@ enum InternalJointMatrixLayout {
 
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
 
-enum InternalJointMatrixCTI { None = 0, TF32 = 1, Bfloat16 = 2 };
-
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
   IBuiltInGlobalHWThreadIDINTEL = 6136,
@@ -143,7 +140,6 @@ enum InternalBuiltIn {
 _SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
 _SPIRV_OP(Capability, CooperativeMatrixTF32ComponentTypeINTEL)
 _SPIRV_OP(Capability, CooperativeMatrixBFloat16ComponentTypeINTEL)
-_SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
 _SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)

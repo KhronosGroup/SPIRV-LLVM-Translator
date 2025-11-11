@@ -2,8 +2,6 @@
 
 _SPIRV_OP_INTERNAL(Forward, internal::OpForward)
 _SPIRV_OP_INTERNAL(TypeTokenINTEL, internal::OpTypeTokenINTEL)
-_SPIRV_OP_INTERNAL(JointMatrixWorkItemLengthINTEL,
-                   internal::OpJointMatrixWorkItemLengthINTEL)
 _SPIRV_OP_INTERNAL(JointMatrixGetElementCoordINTEL,
                    internal::OpJointMatrixGetElementCoordINTEL)
 _SPIRV_OP_INTERNAL(CooperativeMatrixPrefetchINTEL,
