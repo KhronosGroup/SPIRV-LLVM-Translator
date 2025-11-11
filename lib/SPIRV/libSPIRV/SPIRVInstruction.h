@@ -2968,15 +2968,13 @@ public:
     if (hasType()) {
       if (getType()->isTypeInt(64))
         return {CapabilityInt64Atomics};
-      if (getType()->isTypeInt(16))
+      if (getType()->isTypeInt(16) &&
+          Module->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_16bit_atomics)) {
+        Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
         return {internal::CapabilityInt16AtomicsINTEL};
+      }
     }
-    return {};
-  }
-
-  std::optional<ExtensionID> getRequiredExtension() const override {
-    if (hasType() && getType()->isTypeInt(16))
-      return ExtensionID::SPV_INTEL_16bit_atomics;
     return {};
   }
 
@@ -3021,8 +3019,12 @@ public:
 class SPIRVAtomicCompareExchangeInstructions : public SPIRVAtomicInstBase {
 public:
   SPIRVCapVec getRequiredCapability() const override {
-    if (hasType() && getType()->isTypeInt(16))
+    if (hasType() && getType()->isTypeInt(16) &&
+        this->getModule()->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_16bit_atomics)) {
+      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
       return {internal::CapabilityAtomicInt16CompareExchangeINTEL};
+    }
     return SPIRVAtomicInstBase::getRequiredCapability();
   }
 };

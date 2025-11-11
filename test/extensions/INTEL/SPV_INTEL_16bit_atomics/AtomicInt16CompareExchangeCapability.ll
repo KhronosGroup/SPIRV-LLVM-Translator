@@ -6,9 +6,22 @@
 ; RUN: llvm-dis %t.rev.bc 
 ; RUN: FileCheck < %t.rev.ll %s --check-prefixes=CHECK-LLVM
 
+; Check that without extension we don't use its capabilities - there is no
+; limitation on using i16 with atomic instruction in the core specification.
+; RUN: llvm-spirv %s -o %t.noext.spv
+; RUN: spirv-val %t.noext.spv
+; RUN: llvm-spirv -to-text %t.noext.spv -o %t.noext.spt
+; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-SPIRV-NOEXT
+
 ; CHECK-SPIRV: Capability Int16
 ; CHECK-SPIRV: Capability AtomicInt16CompareExchangeINTEL
 ; CHECK-SPIRV-NOT: Capability Int16AtomicsINTEL
+; CHECK-SPIRV: Extension "SPV_INTEL_16bit_atomics"
+
+; CHECK-SPIRV-NOEXT: Capability Int16
+; CHECK-SPIRV-NOEXT-NOT: Capability AtomicInt16CompareExchangeINTEL
+; CHECK-SPIRV-NOEXT-NOT: Capability Int16AtomicsINTEL
+; CHECK-SPIRV-NOEXT-NOT: Extension "SPV_INTEL_16bit_atomics"
 
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#CrossDeviceScope:]] 0
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#Release:]] 4
