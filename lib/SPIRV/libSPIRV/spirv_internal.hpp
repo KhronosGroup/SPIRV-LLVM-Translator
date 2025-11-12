@@ -71,11 +71,16 @@ enum InternalOp {
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
+  IOpClampConvertFToFINTEL = 6216,
+  IOpStochasticRoundFToFINTEL = 6217,
+  IOpClampStochasticRoundFToFINTEL = 6218,
+  IOpClampStochasticRoundFToSINTEL = 6219,
   IOpPredicatedLoadINTEL = 6258,
   IOpPredicatedStoreINTEL = 6259,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
+  IOpClampConvertFToSINTEL = 6424,
   IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
@@ -106,6 +111,9 @@ enum InternalCapability {
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilitySigmoidINTEL = 6167,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilityFloat4E2M1INTEL = 6212,
+  ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
+  ICapabilityFloatConversionsINTEL = 6215,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
@@ -130,6 +138,11 @@ enum InternalJointMatrixLayout {
 };
 
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
+
+enum InternalFPEncoding {
+  FPEncodingFloat4E2M1INTEL = 6214,
+  FPEncodingMax = 0x7fffffff,
+};
 
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
@@ -187,6 +200,15 @@ _SPIRV_OP(Op, PredicatedStoreINTEL)
 
 _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
+_SPIRV_OP(Capability, Float4E2M1INTEL)
+_SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
+
+_SPIRV_OP(Capability, FloatConversionsINTEL)
+_SPIRV_OP(Op, ClampConvertFToFINTEL)
+_SPIRV_OP(Op, ClampConvertFToSINTEL)
+_SPIRV_OP(Op, StochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
