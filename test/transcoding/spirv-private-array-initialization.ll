@@ -3,6 +3,10 @@
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o %t_4mspirv.bc
 ; RUN: llvm-dis %t_4mspirv.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ;
 ; CHECK-SPIRV-DAG: TypeInt [[i32:[0-9]+]] 32 0
 ; CHECK-SPIRV-DAG: Constant [[i32]] [[one:[0-9]+]] 1

@@ -4,8 +4,16 @@
 // RUN: llvm-spirv %t.bc -o %t.spv
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 
 // CHECK-SPIRV: TypeVoid [[VOID_TY:[0-9]+]]
 // CHECK-SPIRV: TypeImage [[IMG2D_WO_TY:[0-9]+]] [[VOID_TY]] 1 0 0 0 0 0 1

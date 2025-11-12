@@ -4,6 +4,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; CHECK-SPIRV: Name [[#FUNC0:]] "main_l3"
 ; CHECK-SPIRV: Name [[#FUNC1:]] "main_l6"
 ; CHECK-SPIRV: Name [[#FUNC2:]] "main_l9"

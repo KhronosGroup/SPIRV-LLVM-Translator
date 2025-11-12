@@ -4,8 +4,16 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -spirv-text %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_untyped_pointers -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
@@ -13,8 +21,16 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.rev.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc --spirv-target-env=SPV-IR
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.rev.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -spirv-text %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
 ; Generated from the following OpenCL C code:

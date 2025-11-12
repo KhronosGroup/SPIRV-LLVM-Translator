@@ -6,12 +6,20 @@
 // RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=CL2.0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 // RUN: llvm-spirv %t.bc -spirv-text -o %t.txt --spirv-ext=+SPV_KHR_untyped_pointers
 // RUN: FileCheck < %t.txt %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=CL2.0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 #define DEFINE_KERNEL(TYPE)                                                            \
 __kernel void testAtomicCompareExchangeExplicit_cl20_##TYPE(                           \

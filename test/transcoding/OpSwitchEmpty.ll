@@ -14,6 +14,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; CHECK-SPIRV: FunctionParameter {{[0-9]+}} [[X:[0-9]+]]
 ; CHECK-SPIRV: Switch [[X]] [[DEFAULT:[0-9]+]] {{$}}
 ; CHECK-SPIRV: Label [[DEFAULT]]

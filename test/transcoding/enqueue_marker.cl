@@ -5,8 +5,16 @@
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 // RUN: llvm-spirv -r -spirv-target-env="SPV-IR" %t.spv -o %t.rev.bc
 // RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 
 // Check that SPIR-V friendly IR is correctly recognized
 // RUN: llvm-spirv %t.rev.bc -spirv-text -o %t.spv.txt
@@ -18,8 +26,16 @@
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.rev.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 // RUN: llvm-spirv -r -spirv-target-env="SPV-IR" %t.spv -o %t.rev.bc
 // RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+// TODO: SPIR-V backend test disabled due to failures
+// RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.rev.bc -o %t.llc.spv -filetype=obj
+// RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 
 // Check that SPIR-V friendly IR is correctly recognized
 // RUN: llvm-spirv --spirv-ext=+SPV_KHR_untyped_pointers %t.rev.bc -spirv-text -o %t.spv.txt

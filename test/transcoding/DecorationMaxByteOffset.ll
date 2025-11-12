@@ -4,6 +4,10 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-max-version=1.0 -o - | FileCheck %s --check-prefix=CHECK-SPIRV_1_0
 
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.txt --spirv-ext=+SPV_KHR_untyped_pointers
@@ -11,6 +15,10 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-max-version=1.0 --spirv-ext=+SPV_KHR_untyped_pointers -o - | FileCheck %s --check-prefix=CHECK-SPIRV_1_0
 
 

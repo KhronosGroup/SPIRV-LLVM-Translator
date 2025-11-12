@@ -6,6 +6,10 @@
 ; RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=CL2.0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; CHECK-SPIRV-NOT: 6 Store {{[0-9]+}} {{[0-9]+}} 1 2 8
 ; CHECK-SPIRV: 5 Store {{[0-9]+}} {{[0-9]+}} 3 8
 ; CHECK-SPIRV-NOT: 7 Load {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} 1 2 8

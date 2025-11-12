@@ -18,6 +18,10 @@
 ; RUN: llvm-spirv -to-text %t.spv -o -| FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; XFAIL: *
 ; This is requires debug metadata update.
 ; We also should remove checks for LLVM IR stuff like labels, names, etc.

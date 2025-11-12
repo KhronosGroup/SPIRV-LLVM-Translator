@@ -5,8 +5,16 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+; TODO: SPIR-V backend test disabled due to failures
+; RUNx: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUNx: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: 4 GenericPtrMemSemantics {{[0-9]+}} [[ResID:[0-9]+]] {{[0-9]+}}
 ; CHECK-SPIRV-NEXT: 5 ShiftRightLogical {{[0-9]+}} {{[0-9]+}} [[ResID]] {{[0-9]+}}

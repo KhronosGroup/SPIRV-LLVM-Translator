@@ -10,10 +10,18 @@
 // RUN: spirv-val --target-env spv1.1 %t.spirv1.1.spv
 // RUN: llvm-spirv -r %t.spirv1.1.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
+// Test SPIR-V backend:
+// RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 // RUN: llvm-spirv --spirv-max-version=1.4 %t.bc -spirv-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV1_4,CHECK-SPIRV
 // RUN: llvm-spirv --spirv-max-version=1.4 %t.bc -o %t.spirv1.4.spv
 // RUN: spirv-val --target-env spv1.4 %t.spirv1.4.spv
 // RUN: llvm-spirv -r %t.spirv1.4.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
+// Test SPIR-V backend:
+// RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 kernel void block_kernel(__global int* res) {
   typedef int (^block_t)(int);

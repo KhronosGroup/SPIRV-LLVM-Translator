@@ -4,6 +4,10 @@
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+
+// Test SPIR-V backend:
+// RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUN: llvm-spirv -r %t.llc.spv --spirv-target-env=CL2.0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 kernel void testAtomicFlag(global int *res) {
   atomic_flag f;
 
