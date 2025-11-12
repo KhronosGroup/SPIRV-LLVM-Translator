@@ -74,14 +74,19 @@ enum InternalOp {
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
+  IOpTypeTaskSequenceINTEL = 6199,
+  IOpClampConvertFToFINTEL = 6216,
+  IOpStochasticRoundFToFINTEL = 6217,
+  IOpClampStochasticRoundFToFINTEL = 6218,
+  IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
   IOpPredicatedLoadINTEL = 6258,
   IOpPredicatedStoreINTEL = 6259,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
-  IOpTypeTaskSequenceINTEL = 6199,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
+  IOpClampConvertFToSINTEL = 6424,
   IOpRoundFToTF32INTEL = 6426,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
@@ -113,6 +118,9 @@ enum InternalCapability {
   ICapabilityTaskSequenceINTEL = 6162,
   ICapabilitySigmoidINTEL = 6167,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilityFloat4E2M1INTEL = 6212,
+  ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
+  ICapabilityFloatConversionsINTEL = 6215,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityCooperativeMatrixOffsetInstructionsINTEL = 6238,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
@@ -154,6 +162,11 @@ enum InternalJointMatrixCTI {
   Bfloat16 = 2,
   PackedInt2 = 3,
   PackedInt4 = 4
+};
+
+enum InternalFPEncoding {
+  FPEncodingFloat4E2M1INTEL = 6214,
+  FPEncodingMax = 0x7fffffff,
 };
 
 enum InternalBuiltIn {
@@ -232,6 +245,15 @@ _SPIRV_OP(Op, PredicatedStoreINTEL)
 
 _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
+_SPIRV_OP(Capability, Float4E2M1INTEL)
+_SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
+
+_SPIRV_OP(Capability, FloatConversionsINTEL)
+_SPIRV_OP(Op, ClampConvertFToFINTEL)
+_SPIRV_OP(Op, ClampConvertFToSINTEL)
+_SPIRV_OP(Op, StochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
