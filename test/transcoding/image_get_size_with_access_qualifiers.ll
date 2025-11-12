@@ -6,6 +6,10 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; CHECK-SPIRV: TypeInt [[IntTyID:[0-9]+]]
 ; CHECK-SPIRV: TypeVoid [[VoidTyID:[0-9]+]]
 ; CHECK-SPIRV: TypeImage [[ImageTyID:[0-9]+]] [[VoidTyID]] 1 0 1 0 0 0 0

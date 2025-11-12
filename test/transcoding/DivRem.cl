@@ -5,6 +5,10 @@
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+// Test SPIR-V backend:
+// RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 // CHECK-SPIRV-DAG: Name [[#__clang_ocl_kern_imp_testSDiv:]] "__clang_ocl_kern_imp_testSDiv"
 // CHECK-SPIRV-DAG: Name [[#__clang_ocl_kern_imp_testUDiv:]] "__clang_ocl_kern_imp_testUDiv"
 // CHECK-SPIRV-DAG: Name [[#__clang_ocl_kern_imp_testFDiv:]] "__clang_ocl_kern_imp_testFDiv"

@@ -5,6 +5,10 @@
 // RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 // RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
+// Test SPIR-V backend:
+// RUN: llc -O0 -mtriple=spirv64-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+// RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 // Before SPIR-V 1.5, the Id operand of OpGroupNonUniformBroadcast must come from a constant instruction.
 // CHECK-ERROR: RequiresVersion: Cannot fulfill SPIR-V version restriction:
 // CHECK-ERROR-NEXT: SPIR-V version was restricted to at most 1.4 (66560) but a construct from the input requires SPIR-V version 1.5 (66816) or above

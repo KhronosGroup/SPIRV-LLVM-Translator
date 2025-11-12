@@ -4,6 +4,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; RUN: llvm-spirv -spirv-text %t.bc --spirv-max-version=1.6
 ; FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-16
 ; RUN: llvm-spirv %t.bc --spirv-max-version=1.6 -o %t.spv

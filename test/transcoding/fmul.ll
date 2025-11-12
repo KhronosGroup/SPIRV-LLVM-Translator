@@ -4,6 +4,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
+; Test SPIR-V backend:
+; RUN: llc -O0 -mtriple=spirv32-unknown-unknown %t.bc -o %t.llc.spv -filetype=obj
+; RUN: llvm-spirv -r %t.llc.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
 ; CHECK-SPIRV: 3 Name [[#r1:]] "r1"
 ; CHECK-SPIRV: 3 Name [[#r2:]] "r2"
 ; CHECK-SPIRV: 3 Name [[#r3:]] "r3"
