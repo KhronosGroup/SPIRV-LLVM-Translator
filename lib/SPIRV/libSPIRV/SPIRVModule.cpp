@@ -520,7 +520,8 @@ public:
   SPIRVInstruction *addTransposeInst(SPIRVType *TheType, SPIRVId TheMatrix,
                                      SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
-                                 SPIRVBasicBlock *) override;
+                                 SPIRVBasicBlock *,
+                                 SPIRVInstruction * = nullptr) override;
   SPIRVInstruction *addVariable(SPIRVType *, SPIRVType *, bool,
                                 SPIRVLinkageTypeKind, SPIRVValue *,
                                 const std::string &, SPIRVStorageClassKind,
@@ -1759,16 +1760,16 @@ SPIRVInstruction *SPIRVModuleImpl::addReturnValueInst(SPIRVValue *ReturnValue,
   return addInstruction(new SPIRVReturnValue(ReturnValue, BB), BB);
 }
 
-SPIRVInstruction *SPIRVModuleImpl::addUnaryInst(Op TheOpCode,
-                                                SPIRVType *TheType,
-                                                SPIRVValue *Op,
-                                                SPIRVBasicBlock *BB) {
+SPIRVInstruction *
+SPIRVModuleImpl::addUnaryInst(Op TheOpCode, SPIRVType *TheType, SPIRVValue *Op,
+                              SPIRVBasicBlock *BB,
+                              SPIRVInstruction *InsertBefore) {
   if (TheType->isTypeFloat(16, FPEncodingBFloat16KHR) && TheOpCode != OpDot)
     addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
   return addInstruction(
       SPIRVInstTemplateBase::create(TheOpCode, TheType, getId(),
                                     getVec(Op->getId()), BB, this),
-      BB);
+      BB, InsertBefore);
 }
 
 SPIRVInstruction *SPIRVModuleImpl::addVectorExtractDynamicInst(
