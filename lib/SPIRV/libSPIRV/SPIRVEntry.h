@@ -893,6 +893,9 @@ public:
     case CapabilityGroupNonUniformClustered:
       return VersionNumber::SPIRV_1_3;
 
+    case CapabilityFloatControls2:
+      return VersionNumber::SPIRV_1_2;
+
     case CapabilityNamedBarrier:
     case CapabilitySubgroupDispatch:
     case CapabilityPipeStorage:
@@ -923,6 +926,8 @@ public:
       return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
     case internal::CapabilityDeviceBarrierINTEL:
       return ExtensionID::SPV_INTEL_device_barrier;
+    case CapabilityFloatControls2:
+      return ExtensionID::SPV_KHR_float_controls2;
     default:
       return {};
     }

@@ -3179,11 +3179,26 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
         ((Opcode == Instruction::FNeg || Opcode == Instruction::FCmp ||
           BV->isExtInst()) &&
          BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))) {
+      bool AllowFloatControls2 =
+          BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2);
+      bool AllowIntelFpFastMathMode =
+          BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_fast_math_mode);
       FastMathFlags FMF = BVF->getFastMathFlags();
       SPIRVWord M{0};
-      if (FMF.isFast())
-        M |= FPFastMathModeFastMask;
-      else {
+      if (FMF.isFast()) {
+        if (AllowFloatControls2) {
+          // When SPV_KHR_float_controls2 is used, setting the fast math flag
+          // bit is deprecated. Set the rest of the bits instead.
+          M |= FPFastMathModeNotNaNMask | FPFastMathModeNotInfMask |
+               FPFastMathModeNSZMask | FPFastMathModeAllowRecipMask |
+               FPFastMathModeAllowTransformMask |
+               FPFastMathModeAllowReassocMask | FPFastMathModeAllowContractMask;
+          BM->addCapability(CapabilityFloatControls2);
+          BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+        } else {
+          M |= FPFastMathModeFastMask;
+        }
+      } else {
         if (FMF.noNaNs())
           M |= FPFastMathModeNotNaNMask;
         if (FMF.noInfs())
@@ -3192,14 +3207,31 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
           M |= FPFastMathModeNSZMask;
         if (FMF.allowReciprocal())
           M |= FPFastMathModeAllowRecipMask;
-        if (BM->isAllowedToUseExtension(
-                ExtensionID::SPV_INTEL_fp_fast_math_mode)) {
-          if (FMF.allowContract()) {
-            M |= FPFastMathModeAllowContractFastINTELMask;
-            BM->addCapability(CapabilityFPFastMathModeINTEL);
-            BM->addExtension(ExtensionID::SPV_INTEL_fp_fast_math_mode);
+        if (FMF.allowContract()) {
+          if (AllowFloatControls2 || AllowIntelFpFastMathMode) {
+            static_assert(FPFastMathModeAllowContractFastINTELMask ==
+                          FPFastMathModeAllowContractMask);
+            M |= FPFastMathModeAllowContractMask;
+            BM->addCapability(AllowFloatControls2
+                                  ? CapabilityFloatControls2
+                                  : CapabilityFPFastMathModeINTEL);
+            BM->addExtension(AllowFloatControls2
+                                 ? ExtensionID::SPV_KHR_float_controls2
+                                 : ExtensionID::SPV_INTEL_fp_fast_math_mode);
           }
-          if (FMF.allowReassoc()) {
+        }
+        if (FMF.allowReassoc()) {
+          if (AllowFloatControls2) {
+            // LLVM reassoc maps to SPIRV transform, see
+            // https://github.com/KhronosGroup/SPIRV-Registry/issues/326 for
+            // details. Because we are enabling AllowTransform, we must enable
+            // AllowReassoc and AllowContract too, as required by SPIRV spec.
+            M |= FPFastMathModeAllowTransformMask |
+                 FPFastMathModeAllowReassocMask |
+                 FPFastMathModeAllowContractMask;
+            BM->addCapability(CapabilityFloatControls2);
+            BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+          } else if (AllowIntelFpFastMathMode) {
             M |= FPFastMathModeAllowReassocINTELMask;
             BM->addCapability(CapabilityFPFastMathModeINTEL);
             BM->addExtension(ExtensionID::SPV_INTEL_fp_fast_math_mode);
@@ -6421,8 +6453,10 @@ bool LLVMToSPIRVBase::transExecutionMode() {
 
       switch (EMode) {
       case spv::ExecutionModeContractionOff:
-        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
-            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
+        // With SPV_KHR_float_controls2 this is deprecated
+        if (!BM->hasCapability(CapabilityFloatControls2))
+          BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+              OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
         break;
       case spv::ExecutionModeInitializer:
       case spv::ExecutionModeFinalizer:
@@ -6509,9 +6543,13 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         BM->addCapability(CapabilityVectorComputeINTEL);
       } break;
 
+      case spv::ExecutionModeSignedZeroInfNanPreserve:
+        // With SPV_KHR_float_controls2 this is deprecated
+        if (BM->hasCapability(CapabilityFloatControls2))
+          break;
+        [[fallthrough]];
       case spv::ExecutionModeDenormPreserve:
       case spv::ExecutionModeDenormFlushToZero:
-      case spv::ExecutionModeSignedZeroInfNanPreserve:
       case spv::ExecutionModeRoundingModeRTE:
       case spv::ExecutionModeRoundingModeRTZ: {
         if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)) {
@@ -6550,6 +6588,10 @@ bool LLVMToSPIRVBase::transExecutionMode() {
 }
 
 void LLVMToSPIRVBase::transFPContract() {
+  // SPV_KHR_float_controls2 deprecates ContractionOff.
+  if (BM->hasCapability(CapabilityFloatControls2))
+    return;
+
   FPContractMode Mode = BM->getFPContractMode();
 
   for (Function &F : *M) {

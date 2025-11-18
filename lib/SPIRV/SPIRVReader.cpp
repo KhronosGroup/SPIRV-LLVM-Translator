@@ -1218,26 +1218,22 @@ static void applyNoIntegerWrapDecorations(const SPIRVValue *BV,
   }
 }
 
-static void applyFPFastMathModeDecorations(const SPIRVValue *BV,
-                                           Instruction *Inst) {
-  SPIRVWord V;
-  FastMathFlags FMF;
+void SPIRVToLLVM::applyFPFastMathModeDecorations(const SPIRVValue *BV,
+                                                 Instruction *Inst) {
+  if (!isa<FPMathOperator>(Inst))
+    return;
+
+  SPIRVWord V{0};
   if (BV->hasDecorate(DecorationFPFastMathMode, 0, &V)) {
-    if (V & FPFastMathModeNotNaNMask)
-      FMF.setNoNaNs();
-    if (V & FPFastMathModeNotInfMask)
-      FMF.setNoInfs();
-    if (V & FPFastMathModeNSZMask)
-      FMF.setNoSignedZeros();
-    if (V & FPFastMathModeAllowRecipMask)
-      FMF.setAllowReciprocal();
-    if (V & FPFastMathModeAllowContractFastINTELMask)
-      FMF.setAllowContract();
-    if (V & FPFastMathModeAllowReassocINTELMask)
-      FMF.setAllowReassoc();
-    if (V & FPFastMathModeFastMask)
-      FMF.setFast();
+    FastMathFlags FMF = translateFastMathFlags(V);
     Inst->setFastMathFlags(FMF);
+    return;
+  }
+
+  SPIRVWord TypeId = BV->getType()->getId();
+  auto Func2FMF = Func2FastMathFlags.find({Inst->getFunction(), TypeId});
+  if (Func2FMF != Func2FastMathFlags.end()) {
+    Inst->setFastMathFlags(Func2FMF->second);
   }
 }
 
@@ -3443,6 +3439,58 @@ static void validatePhiPredecessors(Function *F) {
 }
 } // namespace
 
+FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
+  FastMathFlags FMF;
+  if (V & FPFastMathModeNotNaNMask)
+    FMF.setNoNaNs();
+  if (V & FPFastMathModeNotInfMask)
+    FMF.setNoInfs();
+  if (V & FPFastMathModeNSZMask)
+    FMF.setNoSignedZeros();
+  if (V & FPFastMathModeAllowRecipMask)
+    FMF.setAllowReciprocal();
+  static_assert(FPFastMathModeAllowContractFastINTELMask ==
+                FPFastMathModeAllowContractMask);
+  if (V & FPFastMathModeAllowContractFastINTELMask)
+    FMF.setAllowContract();
+  static_assert(FPFastMathModeAllowReassocINTELMask ==
+                FPFastMathModeAllowReassocMask);
+  if (V & FPFastMathModeAllowReassocINTELMask)
+    FMF.setAllowReassoc();
+  // There is no FPFastMathMode flag that represents LLVM approxiamte functions
+  // flag `afn`. Even the FPFastMathMode Fast flag should not imply it, but to
+  // avoid changing the previous behaviour we make it equivalent to LLVM's.
+  if (V & FPFastMathModeFastMask)
+    FMF.setFast();
+  if (V & FPFastMathModeAllowTransformMask) {
+    // AllowTransform requires the AllowContract and AllowReassoc bits to be
+    // set.
+    assert(FMF.allowContract() && FMF.allowReassoc() &&
+           "The FPFastMathMode AllowTransform requires AllowContract and "
+           "AllowReassoc to be set");
+  }
+
+  return FMF;
+}
+
+void SPIRVToLLVM::parseFloatControls2ExecutionModeId(SPIRVFunction *BF,
+                                                     Function *F) {
+
+  auto [Begin, End] =
+      BF->getExecutionModeRange(spv::ExecutionModeFPFastMathDefault);
+  if (Begin == End)
+    return;
+
+  for (auto [_, EM] : make_range(Begin, End)) {
+    const auto &Literals = EM->getLiterals();
+    assert(Literals.size() == 2);
+    SPIRVWord FloatTyId = Literals[0];
+    SPIRVWord FlagsId = *transIdAsConstant(Literals[1]);
+    Func2FastMathFlags.try_emplace({F, FloatTyId},
+                                   translateFastMathFlags(FlagsId));
+  }
+}
+
 Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
   auto Loc = FuncMap.find(BF);
   if (Loc != FuncMap.end())
@@ -3493,6 +3541,8 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
   F->setCallingConv(IsKernel ? CallingConv::SPIR_KERNEL
                              : CallingConv::SPIR_FUNC);
   transFunctionAttrs(BF, F);
+
+  parseFloatControls2ExecutionModeId(BF, F);
 
   // Creating all basic blocks before creating instructions.
   for (size_t I = 0, E = BF->getNumBasicBlock(); I != E; ++I) {
