@@ -1,4 +1,5 @@
-; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_16bit_atomics
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_16bit_atomics
 ; RUN: llvm-spirv -to-text %t.spv -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
@@ -8,7 +9,7 @@
 
 ; Check that without extension we don't use its capabilities - there is no
 ; limitation on using i16 with atomic instruction in the core specification.
-; RUN: llvm-spirv %s -o %t.noext.spv
+; RUN: llvm-spirv %t.bc -o %t.noext.spv
 ; RUN: spirv-val %t.noext.spv
 ; RUN: llvm-spirv -to-text %t.noext.spv -o %t.noext.spt
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-SPIRV-NOEXT
