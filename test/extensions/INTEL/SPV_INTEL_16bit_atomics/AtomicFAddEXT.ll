@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_shader_atomic_bfloat16,+SPV_KHR_bfloat16 -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_add -o %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
@@ -11,7 +11,7 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV-DAG: Capability AtomicBFloat16AddINTEL
 ; CHECK-SPIRV-DAG: Capability BFloat16TypeKHR
-; CHECK-SPIRV-DAG: Extension "SPV_INTEL_shader_atomic_bfloat16"
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_16bit_atomics"
 ; CHECK-SPIRV-DAG: Extension "SPV_KHR_bfloat16"
 
 ; CHECK-SPIRV: TypeFloat [[BFLOAT:[0-9]+]] 16 0

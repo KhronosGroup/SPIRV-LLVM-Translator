@@ -1,13 +1,17 @@
 ; RUN: llvm-as < %s -o %t.bc
-; RUN: not llvm-spirv --spirv-ext=+SPV_INTEL_shader_atomic_bfloat16 %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-NO-BF
-; RUN: not llvm-spirv --spirv-ext=+SPV_KHR_bfloat16 %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-NO-ATOM
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_add %t.bc -o %t.spv
+; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s
 
-; CHECK-NO-BF: RequiresExtension: Feature requires the following SPIR-V extension:
-; CHECK-NO-BF-NEXT: SPV_KHR_bfloat16
-; CHECK-NO-BF-NEXT: NOTE: LLVM module contains bfloat type, translation of which requires this extension
-
-; CHECK-NO-ATOM: RequiresExtension: Feature requires the following SPIR-V extension:
-; CHECK-NO-ATOM-NEXT: SPV_INTEL_shader_atomic_bfloat16
+; CHECK-DAG: Extension "SPV_INTEL_16bit_atomics"
+; CHECK-DAG: Extension "SPV_KHR_bfloat16"
+; CHECK-DAG: Capability AtomicBFloat16AddINTEL
+; CHECK-DAG: Capability BFloat16TypeKHR
+; CHECK: TypeInt [[Int:[0-9]+]] 32 0
+; CHECK-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1 {{$}}
+; CHECK-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 16
+; CHECK: TypeFloat [[BFloat:[0-9]+]] 16 0
+; CHECK: Variable {{[0-9]+}} [[BFloatPointer:[0-9]+]]
+; CHECK: Constant [[BFloat]] [[BFloatValue:[0-9]+]] 16936
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64"
@@ -18,6 +22,7 @@ target triple = "spir64"
 define dso_local spir_func void @test_atomicrmw_fadd() local_unnamed_addr #0 {
 entry:
  %0 = atomicrmw fadd bfloat addrspace(1)* @f, bfloat 42.000000e+00 seq_cst
+; CHECK: AtomicFAddEXT [[BFloat]] {{[0-9]+}} [[BFloatPointer]] [[Scope_Device]] [[MemSem_SequentiallyConsistent]] [[BFloatValue]]
 
   ret void
 }
