@@ -7170,7 +7170,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
       if (Ptr->getType()->getPointerElementType() != RetTy &&
           Ptr->getType()->getPointerElementType()->isTypeUntypedPointerKHR()) {
-        // bitcast untyped pointer to typed pointer
+        // Bitcast untyped pointer to typed pointer.
         SPIRVType *ExpectedType = BM->addPointerType(
             Ptr->getType()->getPointerStorageClass(), RetTy->getScalarType());
         Ptr = BM->addUnaryInst(OpBitcast, ExpectedType, Ptr, BB);
