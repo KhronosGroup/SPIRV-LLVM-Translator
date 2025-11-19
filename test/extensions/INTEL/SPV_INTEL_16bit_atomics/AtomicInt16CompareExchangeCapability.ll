@@ -24,7 +24,7 @@
 ; CHECK-SPIRV-NOEXT-NOT: Capability Int16AtomicsINTEL
 ; CHECK-SPIRV-NOEXT-NOT: Extension "SPV_INTEL_16bit_atomics"
 
-; CHECK-SPIRV-DAG: Constant [[#]] [[#CrossDeviceScope:]] 0
+; CHECK-SPIRV-DAG: Constant [[#]] [[#DeviceScope:]] 1
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#Release:]] 4
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#SequentiallyConsistent:]] 16
 ; CHECK-SPIRV-DAG: Constant [[#]] [[#Acquire:]] 2
@@ -41,15 +41,15 @@ target triple = "spir64"
 ; Function Attrs: nounwind
 define dso_local spir_func void @test() {
 entry:
-; CHECK-SPIRV: {{(Variable|UntypedVariableKHR)}} [[#]] [[#PTR:]] 7
+; CHECK-SPIRV: Variable [[#]] [[#PTR:]] 7
   %0 = alloca i16
-; CHECK-SPIRV: AtomicStore [[#PTR]] [[#CrossDeviceScope]] [[#Release]] [[#]]
+; CHECK-SPIRV: AtomicStore [[#PTR]] [[#DeviceScope]] [[#Release]] [[#]]
   store atomic i16 0, ptr %0 release, align 4
-; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#PTR]] [[#CrossDeviceScope]] [[#Acquire]]
+; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#PTR]] [[#DeviceScope]] [[#Acquire]]
   %2 = load atomic i16, ptr %0 acquire, align 4
-; CHECK-SPIRV: AtomicExchange [[#]] [[#]] [[#]] [[#CrossDeviceScope]] [[#]] {{.+}}
+; CHECK-SPIRV: AtomicExchange [[#]] [[#]] [[#]] [[#DeviceScope]] [[#]] {{.+}}
   %4 = atomicrmw xchg ptr addrspace(1) @ui, i16 42 acq_rel
-; CHECK-SPIRV: AtomicCompareExchange [[#]] [[#]] [[#]] [[#CrossDeviceScope]] [[#SequentiallyConsistent]] [[#Acquire]] {{.+}}
+; CHECK-SPIRV: AtomicCompareExchange [[#]] [[#]] [[#]] [[#DeviceScope]] [[#SequentiallyConsistent]] [[#Acquire]] {{.+}}
   %5 = cmpxchg ptr %0, i16 128, i16 456 seq_cst acquire
 
   ret void
