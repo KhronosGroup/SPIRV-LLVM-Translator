@@ -46,11 +46,10 @@ entry:
 ; CHECK-SPIRV: AtomicStore [[#PTR]] [[#DeviceScope]] [[#Release]] [[#]]
   store atomic i16 0, ptr %0 release, align 4
 ; CHECK-SPIRV: AtomicLoad [[#]] [[#]] [[#PTR]] [[#DeviceScope]] [[#Acquire]]
-  %2 = load atomic i16, ptr %0 acquire, align 4
+  %1 = load atomic i16, ptr %0 acquire, align 4
 ; CHECK-SPIRV: AtomicExchange [[#]] [[#]] [[#]] [[#DeviceScope]] [[#]] {{.+}}
-  %4 = atomicrmw xchg ptr addrspace(1) @ui, i16 42 acq_rel
+  %2 = atomicrmw xchg ptr addrspace(1) @ui, i16 42 acq_rel
 ; CHECK-SPIRV: AtomicCompareExchange [[#]] [[#]] [[#]] [[#DeviceScope]] [[#SequentiallyConsistent]] [[#Acquire]] {{.+}}
-  %5 = cmpxchg ptr %0, i16 128, i16 456 seq_cst acquire
-
+  %3 = cmpxchg ptr %0, i16 128, i16 456 seq_cst acquire
   ret void
 }
