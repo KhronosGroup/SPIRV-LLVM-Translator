@@ -2110,7 +2110,7 @@ static void replaceUsesOfBuiltinVar(Value *V, const APInt &AccumulatedOffset,
       if (!ScalarTy->isIntegerTy(1)) {
         uint64_t Remainder;
         APInt::udivrem(AccumulatedOffset, ScalarTy->getScalarSizeInBits() / 8,
-                      Index, Remainder);
+                       Index, Remainder);
         if (Remainder != 0)
           llvm_unreachable("Illegal GEP of a SPIR-V builtin variable");
       }
