@@ -74,12 +74,17 @@ enum InternalOp {
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
+  IOpTypeTaskSequenceINTEL = 6199,
+  IOpClampConvertFToFINTEL = 6216,
+  IOpStochasticRoundFToFINTEL = 6217,
+  IOpClampStochasticRoundFToFINTEL = 6218,
+  IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
   IOpPredicatedLoadINTEL = 6258,
   IOpPredicatedStoreINTEL = 6259,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
-  IOpTypeTaskSequenceINTEL = 6199,
+  IOpClampConvertFToSINTEL = 6424,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
   IOpJointMatrixGetElementCoordINTEL = 6440,
@@ -88,6 +93,7 @@ enum InternalOp {
   IOpConvertHandleToImageINTEL = 6529,
   IOpConvertHandleToSamplerINTEL = 6530,
   IOpConvertHandleToSampledImageINTEL = 6531,
+  IOpFSigmoidINTEL = 6168,
   IOpPrev = OpMax - 2,
   IOpForward
 };
@@ -107,12 +113,19 @@ enum InternalCapability {
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilityTaskSequenceINTEL = 6162,
+  ICapabilitySigmoidINTEL = 6167,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilityFloat4E2M1INTEL = 6212,
+  ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
+  ICapabilityFloatConversionsINTEL = 6215,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityCooperativeMatrixOffsetInstructionsINTEL = 6238,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
   ICapabilityPredicatedIOINTEL = 6257,
+  ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
+  ICapabilityInt16AtomicsINTEL = 6261,
+  ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
@@ -147,6 +160,11 @@ enum InternalJointMatrixCTI {
   Bfloat16 = 2,
   PackedInt2 = 3,
   PackedInt4 = 4
+};
+
+enum InternalFPEncoding {
+  FPEncodingFloat4E2M1INTEL = 6214,
+  FPEncodingMax = 0x7fffffff,
 };
 
 enum InternalBuiltIn {
@@ -216,6 +234,17 @@ _SPIRV_OP(Capability, PredicatedIOINTEL)
 _SPIRV_OP(Op, PredicatedLoadINTEL)
 _SPIRV_OP(Op, PredicatedStoreINTEL)
 
+_SPIRV_OP(Capability, SigmoidINTEL)
+_SPIRV_OP(Op, FSigmoidINTEL)
+_SPIRV_OP(Capability, Float4E2M1INTEL)
+_SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
+
+_SPIRV_OP(Capability, FloatConversionsINTEL)
+_SPIRV_OP(Op, ClampConvertFToFINTEL)
+_SPIRV_OP(Op, ClampConvertFToSINTEL)
+_SPIRV_OP(Op, StochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
@@ -282,6 +311,13 @@ constexpr Capability CapabilityBFloat16ArithmeticINTEL =
 
 constexpr ExecutionMode ExecutionModeNamedSubgroupSizeINTEL =
     static_cast<ExecutionMode>(IExecModeNamedSubgroupSizeINTEL);
+
+constexpr Capability CapabilityAtomicInt16CompareExchangeINTEL =
+    static_cast<Capability>(ICapabilityAtomicInt16CompareExchangeINTEL);
+constexpr Capability CapabilityInt16AtomicsINTEL =
+    static_cast<Capability>(ICapabilityInt16AtomicsINTEL);
+constexpr Capability CapabilityAtomicBFloat16LoadStoreINTEL =
+    static_cast<Capability>(ICapabilityAtomicBFloat16LoadStoreINTEL);
 
 } // namespace internal
 } // namespace spv

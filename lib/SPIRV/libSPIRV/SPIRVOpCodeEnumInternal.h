@@ -45,3 +45,14 @@ _SPIRV_OP_INTERNAL(PredicatedLoadINTEL,
                    internal::OpPredicatedLoadINTEL)
 _SPIRV_OP_INTERNAL(PredicatedStoreINTEL,
                    internal::OpPredicatedStoreINTEL)
+_SPIRV_OP_INTERNAL(FSigmoidINTEL, internal::FSigmoidINTEL)
+_SPIRV_OP_INTERNAL(ClampConvertFToFINTEL,
+                   internal::OpClampConvertFToFINTEL)
+_SPIRV_OP_INTERNAL(StochasticRoundFToFINTEL,
+                   internal::OpStochasticRoundFToFINTEL)
+_SPIRV_OP_INTERNAL(ClampStochasticRoundFToFINTEL,
+                   internal::OpClampStochasticRoundFToFINTEL)
+_SPIRV_OP_INTERNAL(ClampConvertFToSINTEL,
+                   internal::OpClampConvertFToSINTEL)
+_SPIRV_OP_INTERNAL(ClampStochasticRoundFToSINTEL,
+                   internal::OpClampStochasticRoundFToSINTEL)
