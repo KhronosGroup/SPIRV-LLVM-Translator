@@ -122,6 +122,9 @@ enum InternalCapability {
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
   ICapabilityPredicatedIOINTEL = 6257,
+  ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
+  ICapabilityInt16AtomicsINTEL = 6261,
+  ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
@@ -324,6 +327,12 @@ constexpr Capability CapabilityRegisterLimitsINTEL =
     static_cast<Capability>(ICapRegisterLimitsINTEL);
 constexpr Capability CapabilityBFloat16ArithmeticINTEL =
     static_cast<Capability>(ICapabilityBFloat16ArithmeticINTEL);
+constexpr Capability CapabilityAtomicInt16CompareExchangeINTEL =
+    static_cast<Capability>(ICapabilityAtomicInt16CompareExchangeINTEL);
+constexpr Capability CapabilityInt16AtomicsINTEL =
+    static_cast<Capability>(ICapabilityInt16AtomicsINTEL);
+constexpr Capability CapabilityAtomicBFloat16LoadStoreINTEL =
+    static_cast<Capability>(ICapabilityAtomicBFloat16LoadStoreINTEL);
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
