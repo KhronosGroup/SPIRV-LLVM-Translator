@@ -1739,8 +1739,6 @@ SPIRVInstruction *SPIRVModuleImpl::addBinaryInst(Op TheOpCode, SPIRVType *Type,
                                                  SPIRVValue *Op1,
                                                  SPIRVValue *Op2,
                                                  SPIRVBasicBlock *BB) {
-  if (Type->isTypeFloat(16, FPEncodingBFloat16KHR) && TheOpCode != OpDot)
-    addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
   return addInstruction(SPIRVInstTemplateBase::create(
                             TheOpCode, Type, getId(),
                             getVec(Op1->getId(), Op2->getId()), BB, this),
@@ -1764,8 +1762,6 @@ SPIRVInstruction *
 SPIRVModuleImpl::addUnaryInst(Op TheOpCode, SPIRVType *TheType, SPIRVValue *Op,
                               SPIRVBasicBlock *BB,
                               SPIRVInstruction *InsertBefore) {
-  if (TheType->isTypeFloat(16, FPEncodingBFloat16KHR) && TheOpCode != OpDot)
-    addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
   return addInstruction(
       SPIRVInstTemplateBase::create(TheOpCode, TheType, getId(),
                                     getVec(Op->getId()), BB, this),
