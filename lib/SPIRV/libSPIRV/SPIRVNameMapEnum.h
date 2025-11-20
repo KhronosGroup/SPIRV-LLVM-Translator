@@ -616,9 +616,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityLongCompositesINTEL, "LongCompositesINTEL");
   add(CapabilityOptNoneEXT, "OptNoneEXT");
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
-  add(internal::CapabilityAtomicBFloat16AddINTEL, "AtomicBFloat16AddINTEL");
-  add(internal::CapabilityAtomicBFloat16MinMaxINTEL,
-      "AtomicBFloat16MinMaxINTEL");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
   add(CapabilityGlobalVariableFPGADecorationsINTEL,
@@ -676,6 +673,14 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityFloat4E2M1CooperativeMatrixINTEL,
       "Float4E2M1CooperativeMatrixINTEL");
   add(internal::CapabilityFloatConversionsINTEL, "FloatConversionsINTEL");
+  add(internal::CapabilityAtomicBFloat16AddINTEL, "AtomicBFloat16AddINTEL");
+  add(internal::CapabilityAtomicBFloat16MinMaxINTEL,
+      "AtomicBFloat16MinMaxINTEL");
+  add(internal::CapabilityAtomicInt16CompareExchangeINTEL,
+      "AtomicInt16CompareExchangeINTEL");
+  add(internal::CapabilityInt16AtomicsINTEL, "Int16AtomicsINTEL");
+  add(internal::CapabilityAtomicBFloat16LoadStoreINTEL,
+      "AtomicBFloat16LoadStoreINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
 
