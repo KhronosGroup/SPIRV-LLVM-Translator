@@ -2,7 +2,8 @@
 
 ; Test with typed pointers:
 ; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_device_barrier --spirv-max-version=1.0
-; RUN: spirv-val %t.spv
+;; TODO: Enable validation when SPV_INTEL_device_barrier supported.
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
@@ -12,7 +13,8 @@
 
 ; Test with untyped pointers
 ; RUN: llvm-spirv %t.bc -o %t.up.spv --spirv-ext=+SPV_KHR_untyped_pointers,+SPV_INTEL_device_barrier --spirv-max-version=1.0
-; RUN: spirv-val %t.up.spv
+;; TODO: Enable validation when SPV_INTEL_device_barrier supported.
+; RUNx: spirv-val %t.up.spv
 ; RUN: llvm-spirv %t.up.spv -o %t.up.spt --to-text 
 ; RUN: FileCheck < %t.up.spt %s --check-prefix=CHECK-SPIRV
 
