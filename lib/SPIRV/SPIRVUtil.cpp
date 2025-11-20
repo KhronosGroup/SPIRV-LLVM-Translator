@@ -40,6 +40,7 @@
 
 // This file needs to be included before anything that declares
 // llvm::PointerType to avoid a compilation bug on MSVC.
+#include "llvm/Demangle/Demangle.h"
 #include "llvm/Demangle/ItaniumDemangle.h"
 
 #include "FunctionDescriptor.h"
@@ -268,6 +269,12 @@ bool isSYCLBfloat16Type(llvm::Type *Ty) {
   return false;
 }
 
+bool isLLVMCooperativeMatrixType(llvm::Type *Ty) {
+  if (auto *TargetTy = dyn_cast<TargetExtType>(Ty))
+    return TargetTy->getName() == "spirv.CooperativeMatrixKHR";
+  return false;
+}
+
 Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
                               StringRef Name, BuiltinFuncMangleInfo *Mangle,
                               AttributeList *Attrs, bool TakeName) {
@@ -467,7 +474,7 @@ bool getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   return getByName(R.str(), B);
 }
 
-// Demangled name is a substring of the name. The DemangledName is updated only
+// DemangledName is a substring of Name. The DemangledName is updated only
 // if true is returned
 bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
   if (Name == "printf") {
@@ -506,6 +513,61 @@ bool oclIsBuiltin(StringRef Name, StringRef &DemangledName, bool IsCpp) {
     Name.substr(2, Start - 2).getAsInteger(10, Len);
     DemangledName = Name.substr(Start, Len);
   }
+  return true;
+}
+
+// DemangledName is a substring of Name. The DemangledName is updated only
+// if true is returned.
+bool isInternalSPIRVBuiltin(StringRef Name, std::string &DemangledName) {
+  if (!Name.starts_with("_Z"))
+    return false;
+  constexpr unsigned DemangledNameLenStart = 2;
+  size_t Start = Name.find_first_not_of("0123456789", DemangledNameLenStart);
+  if (!Name.substr(Start).starts_with(kSPIRVName::InternalBuiltinPrefix))
+    return false;
+  // LLVM 16 doesn't have itaniumDemangle(const char*, bool) overload
+  // Try using the C-style API first, but it may fail for types like bfloat (DF16b)
+  // that LLVM 16's demangler doesn't recognize
+  char *Demangled = llvm::itaniumDemangle(Name.data(), nullptr, nullptr, nullptr);
+
+  if (Demangled) {
+    // Demangling succeeded - extract function name from demangled string
+    std::string FullDemangled(Demangled);
+    std::free(Demangled);
+    if (!StringRef(FullDemangled).starts_with(kSPIRVName::InternalBuiltinPrefix))
+      return false;
+    // Remove the __builtin_spirv_ prefix
+    std::string WithoutPrefix = FullDemangled.substr(strlen(kSPIRVName::InternalBuiltinPrefix));
+    // Extract just the function name (before the opening parenthesis)
+    size_t ParenPos = WithoutPrefix.find('(');
+    if (ParenPos != std::string::npos)
+      DemangledName = WithoutPrefix.substr(0, ParenPos);
+    else
+      DemangledName = WithoutPrefix;
+  } else {
+    // Demangling failed (e.g., for bfloat types in LLVM 16)
+    // Fall back to extracting function name directly from the mangled name
+    // Format: _Z<len>__builtin_spirv_<FunctionName><TypeEncoding>
+    // All conversion function names end with "EXT" or "INTEL"
+    StringRef AfterPrefix = Name.substr(Start + strlen(kSPIRVName::InternalBuiltinPrefix));
+
+    size_t ExtPos = AfterPrefix.find("EXT");
+    size_t IntelPos = AfterPrefix.find("INTEL");
+    size_t FuncNameEnd = StringRef::npos;
+
+    if (ExtPos != StringRef::npos && IntelPos != StringRef::npos)
+      FuncNameEnd = std::min(ExtPos + 3, IntelPos + 5);  // +3 for "EXT", +5 for "INTEL"
+    else if (ExtPos != StringRef::npos)
+      FuncNameEnd = ExtPos + 3;
+    else if (IntelPos != StringRef::npos)
+      FuncNameEnd = IntelPos + 5;
+
+    if (FuncNameEnd == StringRef::npos)
+      DemangledName = AfterPrefix.str();
+    else
+      DemangledName = AfterPrefix.substr(0, FuncNameEnd).str();
+  }
+
   return true;
 }
 
