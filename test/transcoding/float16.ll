@@ -24,16 +24,21 @@ target triple = "spirv64-unknown-unknown"
 ; CHECK-SPIRV: TypeVector [[HALFV2:[0-9]+]] [[HALF]] 2
 ; CHECK-SPIRV: TypePointer [[HALFV2PTR:[0-9]+]] 7 [[HALFV2]]
 ; CHECK-SPIRV: Constant [[HALF]] [[CONST:[0-9]+]] 14788
+
 ; CHECK-SPIRV-NOEXT: Variable [[HALFPTR]] [[ADDR:[0-9]+]] 7
 ; CHECK-SPIRV-EXT: UntypedVariableKHR [[HALFPTR]] [[ADDR:[0-9]+]] 7 [[HALF]]
 ; CHECK-SPIRV: Variable [[HALFV2PTR]] [[ADDR2:[0-9]+]] 7
 ; CHECK-SPIRV: ExtInst [[HALF]] [[#]] 1 fract [[CONST]] [[ADDR]]
 ; CHECK-SPIRV: ExtInst [[HALFV2]] [[#]] 1 fract [[#]] [[ADDR2]]
 
+; CHECK-SPIRV: Bitcast [[HALFPTR]] [[BITCAST_ADDR:[0-9]+]] [[ADDR]]
+; CHECK-SPIRV: ExtInst [[HALF]] [[#]] 1 fract [[CONST]] [[BITCAST_ADDR]]
+
 ; CHECK-LLVM: %addr = alloca half
 ; CHECK-LLVM: %addr2 = alloca <2 x half>
 ; CHECK-LLVM: %res = call spir_func half @_Z5fractDhPDh(half 0xH39C4, ptr %addr)
 ; CHECK-LLVM: %res2 = call spir_func <2 x half> @_Z5fractDv2_DhPS_(<2 x half> <half 0xH39C4, half 0xH0000>, ptr %addr2)
+; CHECK-LLVM: %res3 = call spir_func half @_Z5fractDhPDh(half 0xH39C4, ptr %p)
 
 define spir_kernel void @test() {
 entry:
@@ -41,6 +46,10 @@ entry:
   %addr2 = alloca <2 x half>
   %res = call spir_func noundef half @_Z17__spirv_ocl_fractDF16_PU3AS0DF16_(half noundef 0xH39C4, ptr noundef %addr)
   %res2 = call spir_func noundef <2 x half> @_Z17__spirv_ocl_fractDv2_DF16_PU3AS0S_(<2 x half> noundef <half 0xH39C4, half 0xH0000>, ptr noundef %addr2)
+
+  ; Fortify pointer argument to test more complicated real-life case.
+  %p = bitcast ptr %addr to ptr
+  %res3 = call spir_func noundef half @_Z17__spirv_ocl_fractDF16_PU3AS0DF16_(half noundef 0xH39C4, ptr noundef %p)
   ret void
 }
 

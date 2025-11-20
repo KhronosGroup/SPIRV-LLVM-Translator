@@ -5290,6 +5290,7 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   assert(BM->getBuiltinSet(BC->getExtSetId()) == SPIRVEIS_OpenCL &&
          "Not OpenCL extended instruction");
 
+  Type *RetTy = transType(BC->getType());
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes(), true);
   for (unsigned I = 0; I < ArgTypes.size(); I++) {
     // Special handling for "truly" untyped pointers to preserve correct OCL
@@ -5300,10 +5301,19 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
       ArgTypes[I] = TypedPointerType::get(
           transType(BVar->getDataType()),
           SPIRSPIRVAddrSpaceMap::rmap(BVar->getStorageClass()));
+    } else if (ArgTypes[I]->isPointerTy() &&
+               BC->getArgValue(I)->getType()->isTypeUntypedPointerKHR()) {
+      // Argument could be a function parameter or the result of any other
+      // operation. In this case the type should be a typed pointer to a data
+      // type (calculation from the result type works for most of OCL builtins).
+      auto *PtrType = cast<PointerType>(ArgTypes[I]);
+      Type *DataType = RetTy;
+      if (!DataType->isVoidTy())
+        ArgTypes[I] =
+            TypedPointerType::get(DataType, PtrType->getAddressSpace());
     }
   }
 
-  Type *RetTy = transType(BC->getType());
   std::string MangledName =
       getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, RetTy);
   opaquifyTypedPointers(ArgTypes);
