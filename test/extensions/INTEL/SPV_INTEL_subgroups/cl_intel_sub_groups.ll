@@ -52,7 +52,7 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-SPIRV
 ; RUN: llvm-spirv %t.rev.bc -o - -spirv-text --spirv-ext=+SPV_INTEL_subgroups | FileCheck %s --check-prefix=CHECK-SPIRV
 
-; Verify the mangling works correctly with the untyped pointers enabled
+; Verify the mangling works correctly with the untyped pointers enabled.
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_subgroups,+SPV_KHR_untyped_pointers
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-UNTYPED
