@@ -3817,6 +3817,8 @@ Type *SPIRVToLLVM::getTypedPtrFromUntypedOperand(SPIRVValue *Val, Type *RetTy) {
 
   if (Ty)
     return TypedPointerType::get(Ty, AddrSpace);
+  if (!RetTy->isVoidTy())
+    return TypedPointerType::get(RetTy, AddrSpace);
   return nullptr;
 }
 
@@ -5315,17 +5317,11 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
       ArgTypes[Ptr] = TypedPointerType::get(
           Type::getInt8Ty(*Context),
           cast<PointerType>(ArgTypes[Ptr])->getAddressSpace());
-    } else if (BC->getArgValue(Ptr)->isUntypedVariable()) {
-      auto *BVar = static_cast<SPIRVUntypedVariableKHR *>(BC->getArgValue(Ptr));
-      ArgTypes[Ptr] = TypedPointerType::get(
-          transType(BVar->getDataType()),
-          SPIRSPIRVAddrSpaceMap::rmap(BVar->getStorageClass()));
     } else {
-      auto *PtrType = cast<PointerType>(ArgTypes[Ptr]);
-      Type *DataType = RetTy;
-      if (!DataType->isVoidTy())
-        ArgTypes[Ptr] =
-            TypedPointerType::get(DataType, PtrType->getAddressSpace());
+      Type *NewPtrTy =
+          getTypedPtrFromUntypedOperand(BC->getArgValue(Ptr), RetTy);
+      if (NewPtrTy)
+        ArgTypes[Ptr] = NewPtrTy;
     }
   }
 
