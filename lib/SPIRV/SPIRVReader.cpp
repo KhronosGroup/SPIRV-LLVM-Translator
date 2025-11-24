@@ -5296,16 +5296,37 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
 
   Type *RetTy = transType(BC->getType());
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes(), true);
-  for (unsigned I = 0; I < ArgTypes.size(); I++) {
-    // Special handling for "truly" untyped pointers to preserve correct OCL
-    // bultin mangling.
-    if (!isa<PointerType>(ArgTypes[I]) ||
-        !BC->getArgValue(I)->getType()->isTypeUntypedPointerKHR())
-      continue;
-
-    Type *NewPtrTy = getTypedPtrFromUntypedOperand(BC->getArgValue(I), RetTy);
-    if (NewPtrTy)
-      ArgTypes[I] = NewPtrTy;
+  // Special handling for "truly" untyped pointers to preserve correct
+  // OCL builtin mangling.
+  auto Ptr = findFirstPtrType(ArgTypes);
+  if (Ptr < ArgTypes.size() && isa<PointerType>(ArgTypes[Ptr])) {
+    if (ExtOp == OpenCLLIB::Frexp || ExtOp == OpenCLLIB::Remquo ||
+        ExtOp == OpenCLLIB::Lgamma_r) {
+      // These builtins require their pointer arguments to point to i32 or
+      // vector of i32 values.
+      Type *DataType = Type::getInt32Ty(*Context);
+      if (RetTy->isVectorTy())
+        DataType = VectorType::get(DataType,
+                                   cast<VectorType>(RetTy)->getElementCount());
+      ArgTypes[Ptr] = TypedPointerType::get(
+          DataType, cast<PointerType>(ArgTypes[Ptr])->getAddressSpace());
+    } else if (ExtOp == OpenCLLIB::Printf) {
+      // Printf's format argument type is always i8*.
+      ArgTypes[Ptr] = TypedPointerType::get(
+          Type::getInt8Ty(*Context),
+          cast<PointerType>(ArgTypes[Ptr])->getAddressSpace());
+    } else if (BC->getArgValue(Ptr)->isUntypedVariable()) {
+      auto *BVar = static_cast<SPIRVUntypedVariableKHR *>(BC->getArgValue(Ptr));
+      ArgTypes[Ptr] = TypedPointerType::get(
+          transType(BVar->getDataType()),
+          SPIRSPIRVAddrSpaceMap::rmap(BVar->getStorageClass()));
+    } else {
+      auto *PtrType = cast<PointerType>(ArgTypes[Ptr]);
+      Type *DataType = RetTy;
+      if (!DataType->isVoidTy())
+        ArgTypes[Ptr] =
+            TypedPointerType::get(DataType, PtrType->getAddressSpace());
+    }
   }
 
   std::string MangledName =
