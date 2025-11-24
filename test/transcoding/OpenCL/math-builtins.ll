@@ -29,13 +29,13 @@ entry:
   %ptr = alloca float
   %p = bitcast ptr %ptr to ptr
   %p2 = bitcast ptr %arg to ptr
-  %res = call spir_func float @_Z17__spirv_ocl_fractfPU3AS1f(float 1.250000e+00, ptr %ptr)
-  %res1 = call spir_func float @_Z17__spirv_ocl_fractfPU3AS1f(float 1.250000e+00, ptr %p)
-  %res2 = call spir_func float @_Z17__spirv_ocl_fractfPU3AS1f(float 1.250000e+00, ptr %p2)
+  %res = call spir_func float @_Z17__spirv_ocl_fractfPf(float 1.250000e+00, ptr %ptr)
+  %res1 = call spir_func float @_Z17__spirv_ocl_fractfPf(float 1.250000e+00, ptr %p)
+  %res2 = call spir_func float @_Z17__spirv_ocl_fractfPf(float 1.250000e+00, ptr %p2)
   ret void
 }
 
-declare spir_func float @_Z17__spirv_ocl_fractfPU3AS1f(float, ptr)
+declare spir_func float @_Z17__spirv_ocl_fractfPf(float, ptr)
 
 ; CHECK-LLVM-LABEL: define spir_func void @modf
 ; CHECK-LLVM-COUNT-3: @_Z4modffPf
@@ -61,13 +61,13 @@ entry:
   %cosval = alloca float
   %p = bitcast ptr %cosval to ptr
   %p2 = bitcast ptr %arg to ptr
-  %res = call spir_func float @_Z18__spirv_ocl_sincosfPU3AS1f(float 1.250000e+00, ptr %cosval)
-  %res1 = call spir_func float @_Z18__spirv_ocl_sincosfPU3AS1f(float 1.250000e+00, ptr %p)
-  %res2 = call spir_func float @_Z18__spirv_ocl_sincosfPU3AS1f(float 1.250000e+00, ptr %p2)
+  %res = call spir_func float @_Z18__spirv_ocl_sincosfPf(float 1.250000e+00, ptr %cosval)
+  %res1 = call spir_func float @_Z18__spirv_ocl_sincosfPf(float 1.250000e+00, ptr %p)
+  %res2 = call spir_func float @_Z18__spirv_ocl_sincosfPf(float 1.250000e+00, ptr %p2)
   ret void
 }
 
-declare spir_func float @_Z18__spirv_ocl_sincosfPU3AS1f(float, ptr)
+declare spir_func float @_Z18__spirv_ocl_sincosfPf(float, ptr)
 
 ; CHECK-LLVM-LABEL: define spir_func void @frexp
 ; CHECK-LLVM-COUNT-3: @_Z5frexpfPi
@@ -77,13 +77,13 @@ entry:
   %exp = alloca i32
   %p = bitcast ptr %exp to ptr
   %p2 = bitcast ptr %arg to ptr
-  %res = call spir_func float @_Z17__spirv_ocl_frexpfPU3AS1i(float 1.250000e+00, ptr %exp)
-  %res1 = call spir_func float @_Z17__spirv_ocl_frexpfPU3AS1i(float 1.250000e+00, ptr %p)
-  %res2 = call spir_func float @_Z17__spirv_ocl_frexpfPU3AS1i(float 1.250000e+00, ptr %p2)
+  %res = call spir_func float @_Z17__spirv_ocl_frexpfPi(float 1.250000e+00, ptr %exp)
+  %res1 = call spir_func float @_Z17__spirv_ocl_frexpfPi(float 1.250000e+00, ptr %p)
+  %res2 = call spir_func float @_Z17__spirv_ocl_frexpfPi(float 1.250000e+00, ptr %p2)
   ret void
 }
 
-declare spir_func float @_Z17__spirv_ocl_frexpfPU3AS1i(float, ptr)
+declare spir_func float @_Z17__spirv_ocl_frexpfPi(float, ptr)
 
 ; CHECK-LLVM-LABEL: define spir_func void @lgamma_r
 ; CHECK-LLVM-COUNT-3: @_Z8lgamma_rfPi
@@ -93,13 +93,13 @@ entry:
   %signp = alloca i32
   %p = bitcast ptr %signp to ptr
   %p2 = bitcast ptr %arg to ptr
-  %res = call spir_func float @_Z20__spirv_ocl_lgamma_rfPU3AS1i(float 1.250000e+00, ptr %signp)
-  %res1 = call spir_func float @_Z20__spirv_ocl_lgamma_rfPU3AS1i(float 1.250000e+00, ptr %p)
-  %res2 = call spir_func float @_Z20__spirv_ocl_lgamma_rfPU3AS1i(float 1.250000e+00, ptr %p2)
+  %res = call spir_func float @_Z20__spirv_ocl_lgamma_rfPi(float 1.250000e+00, ptr %signp)
+  %res1 = call spir_func float @_Z20__spirv_ocl_lgamma_rfPi(float 1.250000e+00, ptr %p)
+  %res2 = call spir_func float @_Z20__spirv_ocl_lgamma_rfPi(float 1.250000e+00, ptr %p2)
   ret void
 }
 
-declare spir_func float @_Z20__spirv_ocl_lgamma_rfPU3AS1i(float, ptr)
+declare spir_func float @_Z20__spirv_ocl_lgamma_rfPi(float, ptr)
 
 ; CHECK-LLVM-LABEL: define spir_func void @remquo
 ; CHECK-LLVM-COUNT-3: @_Z6remquoffPi
@@ -109,10 +109,10 @@ entry:
   %quo = alloca i32
   %p = bitcast ptr %quo to ptr
   %p2 = bitcast ptr %arg to ptr
-  %res = call spir_func float @_Z18__spirv_ocl_remquoffPU3AS1i(float 1.250000e+00, float 1.250000e+00, ptr %quo)
-  %res1 = call spir_func float @_Z18__spirv_ocl_remquoffPU3AS1i(float 1.250000e+00, float 1.250000e+00, ptr %p)
-  %res2 = call spir_func float @_Z18__spirv_ocl_remquoffPU3AS1i(float 1.250000e+00, float 1.250000e+00, ptr %p2)
+  %res = call spir_func float @_Z18__spirv_ocl_remquoffPi(float 1.250000e+00, float 1.250000e+00, ptr %quo)
+  %res1 = call spir_func float @_Z18__spirv_ocl_remquoffPi(float 1.250000e+00, float 1.250000e+00, ptr %p)
+  %res2 = call spir_func float @_Z18__spirv_ocl_remquoffPi(float 1.250000e+00, float 1.250000e+00, ptr %p2)
   ret void
 }
 
-declare spir_func float @_Z18__spirv_ocl_remquoffPU3AS1i(float, float, ptr)
+declare spir_func float @_Z18__spirv_ocl_remquoffPi(float, float, ptr)
