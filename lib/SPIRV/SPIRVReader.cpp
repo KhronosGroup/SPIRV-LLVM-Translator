@@ -3675,17 +3675,17 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   std::vector<Type *> ArgTys =
       transTypeVector(SPIRVInstruction::getOperandTypes(Ops), true);
 
-  auto Ptr = findFirstPtrType(ArgTys);
-  if (Ptr < ArgTys.size() &&
-      BI->getValueType(Ops[Ptr]->getId())->isTypeUntypedPointerKHR()) {
+  unsigned PtrIdx = findFirstPtrType(ArgTys);
+  if (PtrIdx < ArgTys.size() &&
+      BI->getValueType(Ops[PtrIdx]->getId())->isTypeUntypedPointerKHR()) {
     // Special handling for "truly" untyped pointers to preserve correct
     // builtin mangling of atomic and matrix operations.
     if (isAtomicOpCodeUntypedPtrSupported(OC)) {
       auto *AI = static_cast<SPIRVAtomicInstBase *>(BI);
-      ArgTys[Ptr] = TypedPointerType::get(
+      ArgTys[PtrIdx] = TypedPointerType::get(
           transType(AI->getSemanticType()),
-          SPIRSPIRVAddrSpaceMap::rmap(
-              BI->getValueType(Ops[Ptr]->getId())->getPointerStorageClass()));
+          SPIRSPIRVAddrSpaceMap::rmap(BI->getValueType(Ops[PtrIdx]->getId())
+                                          ->getPointerStorageClass()));
     }
   }
 
@@ -5300,28 +5300,34 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes(), true);
   // Special handling for "truly" untyped pointers to preserve correct
   // OCL builtin mangling.
-  auto Ptr = findFirstPtrType(ArgTypes);
-  if (Ptr < ArgTypes.size() && isa<PointerType>(ArgTypes[Ptr])) {
-    if (ExtOp == OpenCLLIB::Frexp || ExtOp == OpenCLLIB::Remquo ||
-        ExtOp == OpenCLLIB::Lgamma_r) {
+  unsigned PtrIdx = findFirstPtrType(ArgTypes);
+  if (PtrIdx < ArgTypes.size() &&
+      BC->getArgValue(PtrIdx)->getType()->isTypeUntypedPointerKHR()) {
+    switch (ExtOp) {
+    case OpenCLLIB::Frexp:
+    case OpenCLLIB::Remquo:
+    case OpenCLLIB::Lgamma_r: {
       // These builtins require their pointer arguments to point to i32 or
       // vector of i32 values.
       Type *DataType = Type::getInt32Ty(*Context);
       if (RetTy->isVectorTy())
         DataType = VectorType::get(DataType,
                                    cast<VectorType>(RetTy)->getElementCount());
-      ArgTypes[Ptr] = TypedPointerType::get(
-          DataType, cast<PointerType>(ArgTypes[Ptr])->getAddressSpace());
-    } else if (ExtOp == OpenCLLIB::Printf) {
+      ArgTypes[PtrIdx] = TypedPointerType::get(
+          DataType, cast<PointerType>(ArgTypes[PtrIdx])->getAddressSpace());
+    } break;
+    case OpenCLLIB::Printf: {
       // Printf's format argument type is always i8*.
-      ArgTypes[Ptr] = TypedPointerType::get(
+      ArgTypes[PtrIdx] = TypedPointerType::get(
           Type::getInt8Ty(*Context),
-          cast<PointerType>(ArgTypes[Ptr])->getAddressSpace());
-    } else {
+          cast<PointerType>(ArgTypes[PtrIdx])->getAddressSpace());
+    } break;
+    default: {
       Type *NewPtrTy =
-          getTypedPtrFromUntypedOperand(BC->getArgValue(Ptr), RetTy);
+          getTypedPtrFromUntypedOperand(BC->getArgValue(PtrIdx), RetTy);
       if (NewPtrTy)
-        ArgTypes[Ptr] = NewPtrTy;
+        ArgTypes[PtrIdx] = NewPtrTy;
+    }
     }
   }
 
