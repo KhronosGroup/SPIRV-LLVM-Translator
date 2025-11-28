@@ -1260,6 +1260,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
             Type *ElementTy = transType(PtrTy->getPointerElementType());
             // LLVM 15 uses typed pointers natively
             OpsTys.emplace_back(PointerType::get(ElementTy, AS));
+            Info.getTypeMangleInfo(2).PointerElementType.setPointer(ElementTy);
             MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
           }
         }
