@@ -88,6 +88,7 @@ enum InternalOp {
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
   IOpJointMatrixGetElementCoordINTEL = 6440,
+  IOpCooperativeMatrixGetElementCoordINTEL = 6440,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
   IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpConvertHandleToImageINTEL = 6529,
@@ -212,6 +213,7 @@ _SPIRV_OP(Op, JointMatrixUSMadINTEL)
 _SPIRV_OP(Op, JointMatrixUUMadINTEL)
 _SPIRV_OP(Op, JointMatrixWorkItemLengthINTEL)
 _SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
+_SPIRV_OP(Op, CooperativeMatrixGetElementCoordINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
 _SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
