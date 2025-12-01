@@ -21,9 +21,10 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
-; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
-; CHECK-ERROR-NEXT: SPV_INTEL_device_barrier
+;; TODO: Consider adding an error check when the extension is not enabled in the future.
+; RUNx: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+; CHECK-ERRORx: RequiresExtension: Feature requires the following SPIR-V extension:
+; CHECK-ERROR-NEXTx: SPV_INTEL_device_barrier
 
 ; ModuleID = 'device_barrier_spirv.cl'
 source_filename = "device_barrier_spirv.cl"

@@ -2510,21 +2510,16 @@ protected:
   }
 
   bool isDeviceBarrier() const {
-    bool CanUseDeviceBarrier = getModule()->isAllowedToUseExtension(
-        ExtensionID::SPV_INTEL_device_barrier);
+    if (!getModule()->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_device_barrier))
+      return false;
     SPIRVValue *ESV = getValue(ExecScope);
     if (ESV && ESV->getOpCode() == OpConstant) {
-      if (static_cast<SPIRVConstant *>(ESV)->getZExtIntValue() == ScopeDevice) {
-        getModule()->getErrorLog().checkError(CanUseDeviceBarrier,
-                                              SPIRVEC_RequiresExtension,
-                                              "SPV_INTEL_device_barrier\n");
-        return true;
+      if (static_cast<SPIRVConstant *>(ESV)->getZExtIntValue() != ScopeDevice) {
+        return false;
       }
-      return false;
     }
-    // If we cannot determine the execution scope, assume that it can be a
-    // device barrier, if the device barrier extension is enabled.
-    return CanUseDeviceBarrier;
+    return true;
   }
 
   SPIRVId ExecScope;
