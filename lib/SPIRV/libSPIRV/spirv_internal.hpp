@@ -157,7 +157,12 @@ enum InternalJointMatrixLayout {
 };
 
 // Cooperative Matrix Layout for SPV_INTEL_joint_matrix extension
-// Note: PackedINTEL (0x2) is the same value as PackedA in InternalJointMatrixLayout
+// These values match the SPIR-V spec 3.X "Cooperative Matrix Layout" table:
+// - RowMajorKHR = 0, ColumnMajorKHR = 1, PackedINTEL = 2
+// The value 2 (PackedINTEL) matches InternalJointMatrixLayout::PackedA because
+// PackedINTEL is the cooperative matrix layout used for VNNI format, which
+// corresponds to the joint matrix packed layout. This intentional overlap
+// ensures binary compatibility between both APIs.
 enum InternalCooperativeMatrixLayout {
   CooperativeMatrixLayoutRowMajorKHR = 0,
   CooperativeMatrixLayoutColumnMajorKHR = 1,
