@@ -128,10 +128,13 @@ enum InternalCapability {
   ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
+  ICapabilityPackedCooperativeMatrixINTEL = 6434,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
   ICapabilityCooperativeMatrixInvocationInstructionsINTEL = 6435,
   ICapabilityJointMatrixTF32ComponentTypeINTEL = 6436,
+  ICapabilityCooperativeMatrixTF32ComponentTypeINTEL = 6436,
   ICapabilityJointMatrixBF16ComponentTypeINTEL = 6437,
+  ICapabilityCooperativeMatrixBFloat16ComponentTypeINTEL = 6437,
   ICapabilityJointMatrixPackedInt2ComponentTypeINTEL = 6438,
   ICapabilityJointMatrixPackedInt4ComponentTypeINTEL = 6439,
   ICapabilitySubgroupRequirementsINTEL = 6445,
@@ -150,6 +153,23 @@ enum InternalJointMatrixLayout {
   ColumnMajor = 1,
   PackedA = 2,
   PackedB = 3
+};
+
+// Cooperative Matrix Layout for SPV_INTEL_joint_matrix extension
+// Note: PackedINTEL (0x2) is the same value as PackedA in InternalJointMatrixLayout
+enum InternalCooperativeMatrixLayout {
+  CooperativeMatrixLayoutRowMajorKHR = 0,
+  CooperativeMatrixLayoutColumnMajorKHR = 1,
+  CooperativeMatrixLayoutPackedINTEL = 2
+};
+
+// Cooperative Matrix Operands for SPV_INTEL_joint_matrix extension
+// These are bit flags for component type interpretation in OpCooperativeMatrixMulAddKHR
+enum InternalCooperativeMatrixOperands {
+  CooperativeMatrixOperandsMatrixAAndBTF32ComponentsINTELMask = 0x20,
+  CooperativeMatrixOperandsMatrixAAndBBFloat16ComponentsINTELMask = 0x40,
+  CooperativeMatrixOperandsMatrixCBFloat16ComponentsINTELMask = 0x80,
+  CooperativeMatrixOperandsMatrixResultBFloat16ComponentsINTELMask = 0x100
 };
 
 enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
@@ -179,6 +199,9 @@ _SPIRV_OP(Capability, JointMatrixTF32ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixBF16ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt2ComponentTypeINTEL)
 _SPIRV_OP(Capability, JointMatrixPackedInt4ComponentTypeINTEL)
+_SPIRV_OP(Capability, PackedCooperativeMatrixINTEL)
+_SPIRV_OP(Capability, CooperativeMatrixTF32ComponentTypeINTEL)
+_SPIRV_OP(Capability, CooperativeMatrixBFloat16ComponentTypeINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTELv2)
 _SPIRV_OP(Op, JointMatrixLoadINTEL)
