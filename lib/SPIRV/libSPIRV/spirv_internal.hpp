@@ -140,8 +140,6 @@ enum InternalJointMatrixLayout {
   PackedB = 3
 };
 
-enum InternalJointMatrixUse { MatrixA = 0, MatrixB = 1, Accumulator = 2 };
-
 enum InternalFPEncoding {
   FPEncodingFloat4E2M1INTEL = 6214,
   FPEncodingMax = 0x7fffffff,
