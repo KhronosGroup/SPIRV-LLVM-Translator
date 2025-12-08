@@ -1,4 +1,6 @@
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_KHR_fma -o %t.spv
+; TODO: enable once spirv-val supports the extension.
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
@@ -45,7 +47,7 @@ entry:
   ret <4 x float> %result
 }
 
-; case to test fma called via OCL builtins
+; Case to test fma translation via OCL builtins.
 define spir_func float @test_fma_ocl_scalar(float %a, float %b, float %c) {
 entry:
   %result = call spir_func float @_Z15__spirv_ocl_fmafff(float %a, float %b, float %c)
