@@ -3819,14 +3819,12 @@ protected:
         Module->addExtension(ExtensionID::SPV_INTEL_joint_matrix);
       }
       if (CoopOperands &
-              internal::
-                  CooperativeMatrixOperandsMatrixAAndBBFloat16ComponentsINTELMask ||
-          CoopOperands &
-              internal::
-                  CooperativeMatrixOperandsMatrixCBFloat16ComponentsINTELMask ||
-          CoopOperands &
-              internal::
-                  CooperativeMatrixOperandsMatrixResultBFloat16ComponentsINTELMask) {
+          (internal::
+               CooperativeMatrixOperandsMatrixAAndBBFloat16ComponentsINTELMask |
+           internal::
+               CooperativeMatrixOperandsMatrixCBFloat16ComponentsINTELMask |
+           internal::
+               CooperativeMatrixOperandsMatrixResultBFloat16ComponentsINTELMask)) {
         CV.push_back(
             internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL);
         Module->addExtension(ExtensionID::SPV_INTEL_joint_matrix);
