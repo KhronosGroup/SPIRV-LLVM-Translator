@@ -98,6 +98,11 @@ jobs:
           repository: KhronosGroup/SPIRV-Headers
           ref: ${{ env.spirv_headers_tag }}
           path: llvm-project/llvm/projects/SPIRV-Headers
+      - name: DebugTmp0
+        run: |
+          echo "TMPDIR=$TMPDIR"
+          df -h /tmp
+          df -h "$GITHUB_WORKSPACE"
       - name: Configure
         run: |
           mkdir build && cd build
@@ -116,6 +121,11 @@ jobs:
             -DSPIRV_SKIP_DEBUG_INFO_TESTS=ON \
             -DLLVM_LIT_ARGS="-sv --no-progress-bar" \
             -G "Unix Makefiles"
+      - name: DebugTmp1
+        run: |
+          echo "TMPDIR=$TMPDIR"
+          df -h /tmp
+          df -h "$GITHUB_WORKSPACE"
       - name: Build
         run: |
           cd build
@@ -124,6 +134,11 @@ jobs:
         run: |
           cd build
           make check-llvm-spirv -j2
+      - name: DebugTmp2
+        run: |
+          echo "TMPDIR=$TMPDIR"
+          df -h /tmp
+          df -h "$GITHUB_WORKSPACE"
 
   build_windows:
     name: Windows
