@@ -1,6 +1,10 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s
+
+; CHECK: LoopMerge
+; CHECK-NEXT: BranchConditional
 
 target triple = "spir64"
 
