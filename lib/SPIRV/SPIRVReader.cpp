@@ -1204,6 +1204,12 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       CO = Instruction::IntToPtr;
     }
     break;
+  // TODO: remove this as it's invalid SPIR-V.
+  case OpConvertPtrToU: {
+    if (Src->getType()->isTargetExtTy())
+      return transSPIRVBuiltinFromInst(BC, BB);
+    [[fallthrough]];
+  }
   default:
     CO = static_cast<CastInst::CastOps>(OpCodeMap::rmap(BC->getOpCode()));
   }
