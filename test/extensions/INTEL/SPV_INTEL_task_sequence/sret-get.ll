@@ -8,8 +8,8 @@
 ; RUN: llvm-dis %t.rev.bc
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: TypeTaskSequenceINTEL [[#TypeTS:]]
-; CHECK-SPIRV: TypeStruct [[#TypeStruct:]]
+; CHECK-SPIRV-DAG: TypeTaskSequenceINTEL [[#TypeTS:]]
+; CHECK-SPIRV-DAG: TypeStruct [[#TypeStruct:]]
 
 ; CHECK-SPIRV: TaskSequenceCreateINTEL [[#TypeTS]] [[#TSCreateId:]]
 ; CHECK-SPIRV: TaskSequenceGetINTEL [[#TypeStruct]] [[#Get:]] [[#TSCreateId]]
@@ -17,10 +17,15 @@
 
 ; CHECK-LLVM: %struct.FunctionPacket = type <{ float, i8, [3 x i8] }>
 
-; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 -1, i32 -1, i32 1, i32 32)
+; Alloca is moved to entry block by SPIRVLowerAlloca pass
+; CHECK-LLVM: entry:
 ; CHECK-LLVM: %[[Var:[a-z0-9.]+]] = alloca %struct.FunctionPacket
+; CHECK-LLVM: %[[TSCreate:[a-z0-9.]+]] = call spir_func target("spirv.TaskSequenceINTEL") @_Z66__spirv_TaskSequenceCreateINTEL_RPU3AS125__spirv_TaskSequenceINTELPiiiii(ptr @_Z4multii, i32 -1, i32 -1, i32 1, i32 32)
+; Lifetime intrinsics wrap usage in the loop
+; CHECK-LLVM: call void @llvm.lifetime.start.p0(ptr %[[Var]])
 ; CHECK-LLVM: %[[Ptr:[a-z0-9.]+]] = addrspacecast ptr %[[Var]] to ptr addrspace(4)
 ; CHECK-LLVM: call spir_func void @_Z28__spirv_TaskSequenceGetINTEL{{.*}}(ptr addrspace(4) sret(%struct.FunctionPacket) %[[Ptr]], target("spirv.TaskSequenceINTEL") %[[TSCreate]])
+; CHECK-LLVM: call void @llvm.lifetime.end.p0(ptr %[[Var]])
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"

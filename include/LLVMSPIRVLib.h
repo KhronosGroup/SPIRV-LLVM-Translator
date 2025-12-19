@@ -59,6 +59,7 @@ void initializeOCLTypeToSPIRVLegacyPass(PassRegistry &);
 void initializeSPIRVLowerBoolLegacyPass(PassRegistry &);
 void initializeSPIRVLowerConstExprLegacyPass(PassRegistry &);
 void initializeSPIRVLowerOCLBlocksLegacyPass(PassRegistry &);
+void initializeSPIRVLowerAllocaLegacyPass(PassRegistry &);
 void initializeSPIRVLowerMemmoveLegacyPass(PassRegistry &);
 void initializeSPIRVLowerLLVMIntrinsicLegacyPass(PassRegistry &);
 void initializeSPIRVRegularizeLLVMLegacyPass(PassRegistry &);
@@ -220,6 +221,9 @@ ModulePass *createSPIRVLowerConstExprLegacy();
 
 /// Create a pass for removing function pointers related to OCL 2.0 blocks
 ModulePass *createSPIRVLowerOCLBlocksLegacy();
+
+/// Create a pass for hoisting allocas to entry block with lifetime intrinsics.
+ModulePass *createSPIRVLowerAllocaLegacy();
 
 /// Create a pass for lowering llvm.memmove to llvm.memcpys with a temporary
 /// variable.
