@@ -6583,8 +6583,43 @@ bool LLVMToSPIRVBase::transExecutionMode() {
   }
 
   transFPContract();
+  transFPFastMathDefault();
 
   return true;
+}
+
+void LLVMToSPIRVBase::transFPFastMathDefault() {
+  if (!BM->hasCapability(CapabilityFloatControls2))
+    return;
+
+  SmallVector<SPIRVType *> AllFPTypes;
+  for (auto [_, SPVTy] : TypeMap) {
+    if (!SPVTy->isTypeFloat())
+      continue;
+    AllFPTypes.push_back(SPVTy);
+  }
+
+  // We encode an fp-operaiton with no FPFastMathMode flags set as an
+  // fp-operation with all the flags set to 0. Instead of setting the flag for
+  // every individual operation, we set it once, for the entry-point.
+  SPIRVConstant *AllFlagsZero = BM->getLiteralAsConstant(0);
+  for (Function &F : *M) {
+    SPIRVValue *TranslatedF = getTranslatedValue(&F);
+    if (!TranslatedF)
+      continue;
+
+    SPIRVFunction *BF = static_cast<SPIRVFunction *>(TranslatedF);
+    bool IsKernelEntryPoint =
+        BM->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
+    if (!IsKernelEntryPoint)
+      continue;
+
+    for (SPIRVType *FPTy : AllFPTypes) {
+      BF->addExecutionMode(
+          new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
+                                   FPTy->getId(), AllFlagsZero->getId()));
+    }
+  }
 }
 
 void LLVMToSPIRVBase::transFPContract() {
