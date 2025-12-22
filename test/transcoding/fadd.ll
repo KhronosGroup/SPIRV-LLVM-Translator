@@ -16,6 +16,7 @@
 ; CHECK-SPIRV: 3 Name [[#r6:]] "r6"
 ; CHECK-SPIRV: 3 Name [[#r7:]] "r7"
 ; CHECK-SPIRV: 3 Name [[#r8:]] "r8"
+; CHECK-SPIRV: 3 Name [[#r9:]] "r9"
 ; CHECK-SPIRV-NOT: 4 Decorate [[#r1]] FPFastMathMode
 ; CHECK-SPIRV-DAG: 4 Decorate [[#r2]] FPFastMathMode 1
 ; CHECK-SPIRV-DAG: 4 Decorate [[#r3]] FPFastMathMode 2
@@ -26,6 +27,8 @@
 ; CHECK-SPIRV-DAG: 4 Decorate [[#r7]] FPFastMathMode 3
 ; CHECK-SPIRV-DEFAULT-NOT: 4 Decorate [[#r8]] FPFastMathMode
 ; CHECK-SPIRV-FC2-DAG: 4 Decorate [[#r8]] FPFastMathMode 65536
+; CHECK-SPIRV-DEFAULT-NOT: 4 Decorate [[#r9]] FPFastMathMode
+; CHECK-SPIRV-FC2-DAG: 4 Decorate [[#r9]] FPFastMathMode 458752
 ; CHECK-SPIRV: 3 TypeFloat [[float:[0-9]+]] 32
 ; CHECK-SPIRV: 5 FAdd [[float]] [[#r1]]
 ; CHECK-SPIRV: 5 FAdd [[float]] [[#r2]]
@@ -35,6 +38,7 @@
 ; CHECK-SPIRV: 5 FAdd [[float]] [[#r6]]
 ; CHECK-SPIRV: 5 FAdd [[float]] [[#r7]]
 ; CHECK-SPIRV: 5 FAdd [[float]] [[#r8]]
+; CHECK-SPIRV: 5 FAdd [[float]] [[#r9]]
 
 ; CHECK-LLVM: %r1 = fadd float %a, %b
 ; CHECK-LLVM: %r2 = fadd nnan float %a, %b
@@ -46,6 +50,8 @@
 ; CHECK-LLVM: %r7 = fadd nnan ninf float %a, %b
 ; CHECK-LLVM-DEFAULT: %r8 = fadd float %a, %b
 ; CHECK-LLVM-FC2: %r8 = fadd contract float %a, %b
+; CHECK-LLVM-DEFAULT: %r9 = fadd float %a, %b
+; CHECK-LLVM-FC2: %r9 = fadd reassoc contract float %a, %b
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
@@ -61,6 +67,7 @@ entry:
   %r6 = fadd fast float %a, %b
   %r7 = fadd nnan ninf float %a, %b
   %r8 = fadd contract float %a, %b
+  %r9 = fadd reassoc float %a, %b
   ret void
 }
 
