@@ -786,9 +786,12 @@ public:
     auto IsOtherFP = [](auto EMK) {
       return EMK == ExecutionModeSignedZeroInfNanPreserve;
     };
+    auto IsFastMathDefault = [](auto EMK) {
+      return EMK == ExecutionModeFPFastMathDefault;
+    };
     auto IsFloatControl = [&](auto EMK) {
       return IsDenorm(EMK) || IsRoundingMode(EMK) || IsFPMode(EMK) ||
-             IsOtherFP(EMK);
+             IsOtherFP(EMK) || IsFastMathDefault(EMK);
     };
     auto IsMaxRegisters = [&](auto EMK) {
       return EMK == ExecutionModeMaximumRegistersINTEL ||
