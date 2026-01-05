@@ -3123,9 +3123,9 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
     case DecorationFPFastMathMode: {
-      // Ignore this decoration. FPFastMathMode is set through the fast-math flags associated with the instruction.
-      // It should not be set through metadata.
-      // See https://github.com/KhronosGroup/SPIRV-LLVM-Translator/issues/3410
+      // Ignore this decoration. FPFastMathMode is set through the fast-math
+      // flags associated with the instruction. It should not be set through
+      // metadata, since LLVM passes are free to ignore it.
       break;
     }
     default: {
