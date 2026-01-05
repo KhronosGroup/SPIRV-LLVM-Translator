@@ -3,9 +3,19 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=IR
 
-; SPIRV-NOT: Capability FloatControls2
-; SPIRV-NOT: Extension "SPV_KHR_float_controls2"
-; SPIRV-NOT: ExecutionModeId {{[0-9+]}} 6028
+; SPIRV: Capability FloatControls2
+; SPIRV: Extension "SPV_KHR_float_controls2"
+;
+; SPIRV: EntryPoint {{[0-9]+}} [[#foo:]] "foo"
+; SPIRV-DAG: Name [[#bar:]] "bar"
+;
+; SPIRV-DAG: Constant {{[0-9]+}} [[#zero:]] 0
+;
+; SPIRV-DAG: TypeFloat [[#float:]] 32
+;
+; 6028 is FPFastMathDefault 
+; SPIRV-DAG: ExecutionModeId [[#foo]] 6028 [[#float]] [[#zero]]
+; SPIRV-NOT: ExecutionModeId [[#bar]] 6028
 
 target triple = "spirv-unknown-unknown"
 

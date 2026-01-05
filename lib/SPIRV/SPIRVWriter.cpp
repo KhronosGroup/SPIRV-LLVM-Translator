@@ -6442,6 +6442,10 @@ SPIRVInstruction *LLVMToSPIRVBase::transBuiltinToInst(StringRef DemangledName,
 }
 
 bool LLVMToSPIRVBase::transExecutionMode() {
+  // Execute first, to ensure FloatControls2capability is added before
+  // ContractionOff and SignedZeroInfNanPreserve.
+  transFPFastMathDefault();
+
   if (auto NMD = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::ExecutionMode)) {
     while (!NMD.atEnd()) {
       unsigned EMode = ~0U;
@@ -6593,13 +6597,12 @@ bool LLVMToSPIRVBase::transExecutionMode() {
   }
 
   transFPContract();
-  transFPFastMathDefault();
 
   return true;
 }
 
 void LLVMToSPIRVBase::transFPFastMathDefault() {
-  if (!BM->hasCapability(CapabilityFloatControls2))
+  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2))
     return;
 
   SmallVector<SPIRVType *> AllFPTypes;
@@ -6608,6 +6611,12 @@ void LLVMToSPIRVBase::transFPFastMathDefault() {
       continue;
     AllFPTypes.push_back(SPVTy);
   }
+
+  if (AllFPTypes.empty())
+    return;
+
+  BM->addCapability(CapabilityFloatControls2);
+  BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
 
   // We encode an fp-operaiton with no FPFastMathMode flags set as an
   // fp-operation with all the flags set to 0. Instead of setting the flag for
