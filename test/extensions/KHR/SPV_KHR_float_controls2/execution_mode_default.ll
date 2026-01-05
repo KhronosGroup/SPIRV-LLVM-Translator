@@ -1,21 +1,21 @@
-; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 -spirv-text %s -o - | FileCheck %s
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 -spirv-text %s -o - | FileCheck %s --check-prefix=SPIRV
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; CHECK: 4 EntryPoint {{[0-9]+}} [[#foo:]] "foo"
-; CHECK-DAG: 3 Name [[#bar:]] "bar"
+; SPIRV: 4 EntryPoint {{[0-9]+}} [[#foo:]] "foo"
+; SPIRV-DAG: 3 Name [[#bar:]] "bar"
 ;
-; CHECK-DAG: 4 Constant {{[0-9]+}} [[#zero:]] 0
+; SPIRV-DAG: 4 Constant {{[0-9]+}} [[#zero:]] 0
 ;
-; CHECK-DAG: 3 TypeFloat [[#half:]] 16 
-; CHECK-DAG: 3 TypeFloat [[#float:]] 32
-; CHECK-DAG: 3 TypeFloat [[#double:]] 64 
+; SPIRV-DAG: 3 TypeFloat [[#half:]] 16
+; SPIRV-DAG: 3 TypeFloat [[#float:]] 32
+; SPIRV-DAG: 3 TypeFloat [[#double:]] 64
 ;
 ; 6028 is FPFastMathDefault 
-; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#half]] [[#zero]] 
-; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#float]] [[#zero]] 
-; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#double]] [[#zero]] 
-; CHECK-NOT: 5 ExecutionModeId [[#bar]] 6028
+; SPIRV-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#half]] [[#zero]]
+; SPIRV-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#float]] [[#zero]]
+; SPIRV-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#double]] [[#zero]]
+; SPIRV-NOT: 5 ExecutionModeId [[#bar]] 6028
 
 target triple = "spirv-unknown-unknown"
 
