@@ -2,10 +2,10 @@
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
 ;
-; CHECK: 4 Name [[#CMP:]] "oltRes"
-; CHECK-DAG: 5 FOrdLessThan [[#BOOL:]] [[#CMP]]
-; CHECK-DAG: 4 Decorate [[#CMP]] FPFastMathMode 1
-; CHECK-NOT: 4 Decorate [[#CMP]] FPFastMathMode 16
+; CHECK: Name [[#CMP:]] "oltRes"
+; CHECK-DAG: FOrdLessThan [[#BOOL:]] [[#CMP]]
+; CHECK-DAG: Decorate [[#CMP]] FPFastMathMode 1
+; CHECK-NOT: Decorate [[#CMP]] FPFastMathMode 16
 
 target triple = "spirv-unknown-unknown"
 
