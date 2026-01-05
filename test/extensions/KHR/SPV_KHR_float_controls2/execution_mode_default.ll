@@ -12,10 +12,10 @@
 ; CHECK-DAG: 3 TypeFloat [[#double:]] 64 
 ;
 ; 6028 is FPFastMathDefault 
-; CHEKC-NOT: 5 ExecutionModeId [[#bar]] 6028
 ; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#half]] [[#zero]] 
 ; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#float]] [[#zero]] 
 ; CHECK-DAG: 5 ExecutionModeId [[#foo]] 6028 [[#double]] [[#zero]] 
+; CHECK-NOT: 5 ExecutionModeId [[#bar]] 6028
 
 target triple = "spirv-unknown-unknown"
 
