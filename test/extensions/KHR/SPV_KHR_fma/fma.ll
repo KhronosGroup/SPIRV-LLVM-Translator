@@ -1,4 +1,5 @@
-; RUN: llvm-spirv %s --spirv-ext=+SPV_KHR_fma -o %t.spv
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_fma -o %t.spv
 ; TODO: enable once spirv-val supports the extension.
 ; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
@@ -6,9 +7,9 @@
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; RUN: llvm-spirv %s -spirv-text -o %t.spt
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV-NO-EXT
-; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
