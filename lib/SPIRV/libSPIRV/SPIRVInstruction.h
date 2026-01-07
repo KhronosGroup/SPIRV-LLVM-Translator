@@ -4181,7 +4181,7 @@ public:
     return getVec(CapabilityFMAKHR);
   }
 
-  std::optional<ExtensionID> getRequiredExtension() const override {
+  llvm::Optional<ExtensionID> getRequiredExtension() const override {
     return ExtensionID::SPV_KHR_fma;
   }
 };
