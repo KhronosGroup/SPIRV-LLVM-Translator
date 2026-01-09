@@ -673,6 +673,8 @@ public:
                      SPIRVExecutionModeKind TheExecMode, SPIRVWord TargetType,
                      SPIRVWord FastMathMode)
       : SPIRVAnnotation(OC, TheTarget, 5), ExecMode(TheExecMode) {
+    assert(OC == OpExecutionModeId);
+    assert(TheExecMode == ExecutionModeFPFastMathDefault);
     WordLiterals.push_back(TargetType);
     WordLiterals.push_back(FastMathMode);
     updateModuleVersion();
@@ -743,6 +745,7 @@ public:
                        SPIRVWord FastMathMode)
       : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode,
                            TargetType, FastMathMode) {
+    assert(TheExecMode == ExecutionModeFPFastMathDefault);
     updateModuleVersion();
   }
   // Complete constructor for SubgroupsPerWorkgroupId
