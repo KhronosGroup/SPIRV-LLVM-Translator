@@ -1230,7 +1230,11 @@ void SPIRVToLLVM::applyFPFastMathModeDecorations(const SPIRVValue *BV,
     return;
   }
 
-  SPIRVWord TypeId = BV->getType()->getId();
+  SPIRVType *Type = BV->getType();
+  // FPFastMathDefault affects instructions resulting in the 'target-type', or
+  // an OpTypeVector or OpTypeMatrix derived from it.
+  SPIRVType *ScalarType = Type->getScalarType();
+  SPIRVWord TypeId = ScalarType->getId();
   auto Func2FMF = FuncToFastMathFlags.find({Inst->getFunction(), TypeId});
   if (Func2FMF != FuncToFastMathFlags.end()) {
     Inst->setFastMathFlags(Func2FMF->second);
