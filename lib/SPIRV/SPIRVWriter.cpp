@@ -3123,9 +3123,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       break;
     }
     case DecorationFPFastMathMode: {
-      // Ignore this decoration. FPFastMathMode is set through the fast-math
-      // flags associated with the instruction. It should not be set through
-      // metadata, since LLVM passes are free to ignore it.
+      // Ignore this decoration. FPFastMathMode is set through the LLVM-IR
+      // fast-math flags (e.g. reassoc, contract) associated with the
+      // instruction. It should not be set through metadata, since LLVM passes
+      // are free to ignore it.
       break;
     }
     default: {
@@ -6467,7 +6468,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
 
       switch (EMode) {
       case spv::ExecutionModeContractionOff:
-        // With SPV_KHR_float_controls2 this is deprecated
+        // With SPV_KHR_float_controls2 this is deprecated.
         if (!BM->hasCapability(CapabilityFloatControls2))
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
               OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
@@ -6558,7 +6559,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       } break;
 
       case spv::ExecutionModeSignedZeroInfNanPreserve:
-        // With SPV_KHR_float_controls2 this is deprecated
+        // With SPV_KHR_float_controls2 this is deprecated.
         if (BM->hasCapability(CapabilityFloatControls2))
           break;
         [[fallthrough]];

@@ -668,13 +668,13 @@ public:
     WordLiterals.push_back(Z);
     updateModuleVersion();
   }
-  // Complete constructor for FPFastMathDefault
+  // Complete constructor for FPFastMathDefault.
   SPIRVExecutionMode(Op OC, SPIRVEntry *TheTarget,
-                     SPIRVExecutionModeKind TheExecMode, SPIRVWord X,
-                     SPIRVWord Y)
+                     SPIRVExecutionModeKind TheExecMode, SPIRVWord TargetType,
+                     SPIRVWord FastMathMode)
       : SPIRVAnnotation(OC, TheTarget, 5), ExecMode(TheExecMode) {
-    WordLiterals.push_back(X);
-    WordLiterals.push_back(Y);
+    WordLiterals.push_back(TargetType);
+    WordLiterals.push_back(FastMathMode);
     updateModuleVersion();
   }
   // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
@@ -737,11 +737,12 @@ public:
       : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode, X, Y, Z) {
     updateModuleVersion();
   }
-  // Complete constructor for FPFastMathDefault
+  // Complete constructor for FPFastMathDefault.
   SPIRVExecutionModeId(SPIRVEntry *TheTarget,
-                       SPIRVExecutionModeKind TheExecMode, SPIRVWord X,
-                       SPIRVWord Y)
-      : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode, X, Y) {
+                       SPIRVExecutionModeKind TheExecMode, SPIRVWord TargetType,
+                       SPIRVWord FastMathMode)
+      : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode,
+                           TargetType, FastMathMode) {
     updateModuleVersion();
   }
   // Complete constructor for SubgroupsPerWorkgroupId

@@ -1231,8 +1231,8 @@ void SPIRVToLLVM::applyFPFastMathModeDecorations(const SPIRVValue *BV,
   }
 
   SPIRVWord TypeId = BV->getType()->getId();
-  auto Func2FMF = Func2FastMathFlags.find({Inst->getFunction(), TypeId});
-  if (Func2FMF != Func2FastMathFlags.end()) {
+  auto Func2FMF = FuncToFastMathFlags.find({Inst->getFunction(), TypeId});
+  if (Func2FMF != FuncToFastMathFlags.end()) {
     Inst->setFastMathFlags(Func2FMF->second);
   }
 }
@@ -3457,7 +3457,7 @@ FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
                 FPFastMathModeAllowReassocMask);
   if (V & FPFastMathModeAllowReassocINTELMask)
     FMF.setAllowReassoc();
-  // There is no FPFastMathMode flag that represents LLVM approxiamte functions
+  // There is no FPFastMathMode flag that represents LLVM approximate functions
   // flag `afn`. Even the FPFastMathMode Fast flag should not imply it, but to
   // avoid changing the previous behaviour we make it equivalent to LLVM's.
   if (V & FPFastMathModeFastMask)
@@ -3486,8 +3486,8 @@ void SPIRVToLLVM::parseFloatControls2ExecutionModeId(SPIRVFunction *BF,
     assert(Literals.size() == 2);
     SPIRVWord FloatTyId = Literals[0];
     SPIRVWord FlagsId = *transIdAsConstant(Literals[1]);
-    Func2FastMathFlags.try_emplace({F, FloatTyId},
-                                   translateFastMathFlags(FlagsId));
+    FuncToFastMathFlags.try_emplace({F, FloatTyId},
+                                    translateFastMathFlags(FlagsId));
   }
 }
 

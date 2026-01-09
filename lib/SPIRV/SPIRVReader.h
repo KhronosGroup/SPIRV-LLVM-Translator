@@ -278,7 +278,7 @@ private:
   using FunctionAndTypeIdPair = std::pair<Function *, SPIRVWord>;
   using FunctionToFastMathFlagsMap =
       DenseMap<FunctionAndTypeIdPair, FastMathFlags>;
-  FunctionToFastMathFlagsMap Func2FastMathFlags;
+  FunctionToFastMathFlagsMap FuncToFastMathFlags;
   FastMathFlags translateFastMathFlags(SPIRVWord V) const;
   void parseFloatControls2ExecutionModeId(SPIRVFunction *BF, Function *F);
   void applyFPFastMathModeDecorations(const SPIRVValue *BV, Instruction *Inst);
