@@ -8,7 +8,7 @@
 ; RUN: spirv-val %t.back.spv
 ;
 ; Check that the FPFastMathDefault set to "contract" on a function is honored
-; when translating from SPIRV to LLVM-IR
+; when translating from SPIRV to LLVM-IR.
 ;
 ; However, when generating SPIRV back again from LLVM-IR set FPFastMathMode
 ; decorations on the instructions.
