@@ -6619,7 +6619,7 @@ void LLVMToSPIRVBase::transFPFastMathDefault() {
   BM->addCapability(CapabilityFloatControls2);
   BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
 
-  // We encode an fp-operaiton with no FPFastMathMode flags set as an
+  // We encode an fp-operation with no FPFastMathMode flags set as an
   // fp-operation with all the flags set to 0. Instead of setting the flag for
   // every individual operation, we set it once, for the entry-point.
   SPIRVConstant *AllFlagsZero = BM->getLiteralAsConstant(0);
