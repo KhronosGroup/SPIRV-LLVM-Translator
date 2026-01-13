@@ -6443,7 +6443,7 @@ SPIRVInstruction *LLVMToSPIRVBase::transBuiltinToInst(StringRef DemangledName,
 }
 
 bool LLVMToSPIRVBase::transExecutionMode() {
-  // Execute first, to ensure FloatControls2capability is added before
+  // Execute first, to ensure FloatControls2 capability is added before
   // ContractionOff and SignedZeroInfNanPreserve.
   transFPFastMathDefault();
 
