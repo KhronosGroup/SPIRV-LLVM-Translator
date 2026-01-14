@@ -4618,7 +4618,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
         BM->addExtension(
             ExtensionID::SPV_EXT_relaxed_printf_string_address_space);
       }
-    } else if (DemangledName.find("__spirv_ocl_fma") != StringRef::npos) {
+    } else if (DemangledName == "__spirv_ocl_fma") {
       if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_fma))
         return BM->addInstTemplate(OpFmaKHR,
                                    BM->getIds(transValue(getArguments(CI), BB)),
