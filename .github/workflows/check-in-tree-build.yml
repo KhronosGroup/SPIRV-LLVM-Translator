@@ -168,7 +168,7 @@ jobs:
         shell: bash
         run: |
           cd build
-          cmake --build . --config ${{ matrix.build_type }} --target llvm-spirv -j2
+          cmake --build . --config ${{ matrix.build_type }} --target llvm-spirv -j $NUMBER_OF_PROCESSORS
           # FIXME: Testing is disabled at the moment as it requires clang to be present
           #       - name: Build tests & test
           #         shell: bash
