@@ -148,7 +148,9 @@ public:
   bool translate();
   bool transExecutionMode();
   void transFPContract();
-  void transFPFastMathDefault();
+  void setExecutionModeFPFastMathDefault(SPIRVFunction *BF,
+                                         SPIRVType *FloatSPIRVType,
+                                         SPIRVWord FlagsLiteral);
   SPIRVValue *transConstant(Value *V);
   /// Translate a reference to a constant in a constant expression. This may
   /// involve inserting extra bitcasts to correct type issues.

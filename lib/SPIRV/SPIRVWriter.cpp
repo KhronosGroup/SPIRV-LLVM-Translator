@@ -6442,10 +6442,21 @@ SPIRVInstruction *LLVMToSPIRVBase::transBuiltinToInst(StringRef DemangledName,
   return Inst;
 }
 
+void LLVMToSPIRVBase::setExecutionModeFPFastMathDefault(
+    SPIRVFunction *BF, SPIRVType *FloatSPIRVType, SPIRVWord FlagsLiteral) {
+  assert(BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2));
+
+  SPIRVConstant *Flags = BM->getLiteralAsConstant(FlagsLiteral);
+  BF->addExecutionMode(
+      new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
+                               FloatSPIRVType->getId(), Flags->getId()));
+
+  BM->addCapability(CapabilityFloatControls2);
+  BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+}
+
 bool LLVMToSPIRVBase::transExecutionMode() {
-  // Execute first, to ensure FloatControls2 capability is added before
-  // ContractionOff and SignedZeroInfNanPreserve.
-  transFPFastMathDefault();
+  transFPContract();
 
   if (auto NMD = SPIRVMDWalker(*M).getNamedMD(kSPIRVMD::ExecutionMode)) {
     while (!NMD.atEnd()) {
@@ -6468,10 +6479,18 @@ bool LLVMToSPIRVBase::transExecutionMode() {
 
       switch (EMode) {
       case spv::ExecutionModeContractionOff:
-        // With SPV_KHR_float_controls2 this is deprecated.
-        if (!BM->hasCapability(CapabilityFloatControls2))
+        // With SPV_KHR_float_controls2 this execution mode is deprecated.
+        // We cannot set only the contract flag to 0, so we set all flags to 0.
+        if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2)) {
+          for (auto [_, FloatSPIRVType] : TypeMap) {
+            if (FloatSPIRVType->isTypeFloat()) {
+              setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, 0);
+            }
+          }
+        } else {
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
               OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
+        }
         break;
       case spv::ExecutionModeInitializer:
       case spv::ExecutionModeFinalizer:
@@ -6559,9 +6578,17 @@ bool LLVMToSPIRVBase::transExecutionMode() {
       } break;
 
       case spv::ExecutionModeSignedZeroInfNanPreserve:
-        // With SPV_KHR_float_controls2 this is deprecated.
-        if (BM->hasCapability(CapabilityFloatControls2))
+        // With SPV_KHR_float_controls2 this execution mode is deprecated.
+        // Map this execution mode to the FPFastMathDefault with all flags set
+        // to 0.
+        if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2)) {
+          unsigned BitWidth;
+          N.get(BitWidth);
+
+          SPIRVType *FloatSPIRVType = BM->addFloatType(BitWidth);
+          setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, 0);
           break;
+        }
         [[fallthrough]];
       case spv::ExecutionModeDenormPreserve:
       case spv::ExecutionModeDenormFlushToZero:
@@ -6591,64 +6618,32 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           break;
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
       } break;
+      case spv::ExecutionModeFPFastMathDefault: {
+        if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2))
+          break;
+        assert(F);
+        BM->addCapability(CapabilityFloatControls2);
+        BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+        PoisonValue *V;
+        unsigned FlagsLiteral;
+        N.get(V).get(FlagsLiteral);
+        SPIRVType *FloatSPIRVType = transType(V->getType());
+        setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, FlagsLiteral);
+        break;
+      }
       default:
         llvm_unreachable("invalid execution mode");
       }
     }
   }
 
-  transFPContract();
-
   return true;
 }
 
-void LLVMToSPIRVBase::transFPFastMathDefault() {
-  if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2))
-    return;
-
-  SmallVector<SPIRVType *> AllFPTypes;
-  for (auto [_, SPVTy] : TypeMap) {
-    if (!SPVTy->isTypeFloat())
-      continue;
-    AllFPTypes.push_back(SPVTy);
-  }
-
-  if (AllFPTypes.empty())
-    return;
-
-  BM->addCapability(CapabilityFloatControls2);
-  BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
-
-  // We encode an fp-operation with no FPFastMathMode flags set as an
-  // fp-operation with all the flags set to 0. Instead of setting the flag for
-  // every individual operation, we set it once, for the entry-point.
-  SPIRVConstant *AllFlagsZero = BM->getLiteralAsConstant(0);
-  for (Function &F : *M) {
-    SPIRVValue *TranslatedF = getTranslatedValue(&F);
-    if (!TranslatedF)
-      continue;
-
-    SPIRVFunction *BF = static_cast<SPIRVFunction *>(TranslatedF);
-    bool IsKernelEntryPoint =
-        BM->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
-    if (!IsKernelEntryPoint)
-      continue;
-
-    for (SPIRVType *FPTy : AllFPTypes) {
-      BF->addExecutionMode(
-          new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
-                                   FPTy->getId(), AllFlagsZero->getId()));
-    }
-  }
-}
-
 void LLVMToSPIRVBase::transFPContract() {
-  // SPV_KHR_float_controls2 deprecates ContractionOff.
-  if (BM->hasCapability(CapabilityFloatControls2))
-    return;
-
   FPContractMode Mode = BM->getFPContractMode();
 
+  LLVMContext &C = M->getContext();
   for (Function &F : *M) {
     SPIRVValue *TranslatedF = getTranslatedValue(&F);
     if (!TranslatedF) {
@@ -6657,7 +6652,7 @@ void LLVMToSPIRVBase::transFPContract() {
     SPIRVFunction *BF = static_cast<SPIRVFunction *>(TranslatedF);
 
     bool IsKernelEntryPoint =
-        BF->getModule()->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
+        BM->isEntryPoint(spv::ExecutionModelKernel, BF->getId());
     if (!IsKernelEntryPoint)
       continue;
 
@@ -6678,8 +6673,12 @@ void LLVMToSPIRVBase::transFPContract() {
     }
 
     if (DisableContraction) {
-      BF->addExecutionMode(BF->getModule()->add(new SPIRVExecutionMode(
-          OpExecutionMode, BF, spv::ExecutionModeContractionOff)));
+      NamedMDNode *ExecModeMD =
+          M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
+      Metadata *ContractionOff[2] = {ConstantAsMetadata::get(&F),
+                                     ConstantAsMetadata::get(getUInt32(
+                                         M, spv::ExecutionModeContractionOff))};
+      ExecModeMD->addOperand(MDNode::get(C, ContractionOff));
     }
   }
 }

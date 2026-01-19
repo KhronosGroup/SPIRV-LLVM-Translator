@@ -3,20 +3,14 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=IR
 
-; SPIRV: EntryPoint {{[0-9]+}} [[#foo:]] "foo"
-; SPIRV-DAG: Name [[#bar:]] "bar"
-;
-; SPIRV-DAG: Constant {{[0-9]+}} [[#zero:]] 0
-;
-; SPIRV-DAG: TypeFloat [[#half:]] 16
-; SPIRV-DAG: TypeFloat [[#float:]] 32
-; SPIRV-DAG: TypeFloat [[#double:]] 64
-;
+; By default, do not set the execution-mode when the extension is used.
+; This test doesn't verify directly that the instructions have the SPIRV
+; 'contract' flag (this is done in another test).
+; As a sanity check, we still reverse-translate and check the IR.
 ; 6028 is FPFastMathDefault 
-; SPIRV-DAG: ExecutionModeId [[#foo]] 6028 [[#half]] [[#zero]]
-; SPIRV-DAG: ExecutionModeId [[#foo]] 6028 [[#float]] [[#zero]]
-; SPIRV-DAG: ExecutionModeId [[#foo]] 6028 [[#double]] [[#zero]]
-; SPIRV-NOT: ExecutionModeId [[#bar]] 6028
+; SPIRV: Capability FloatControls2
+; SPIRV: Extension "SPV_KHR_float_controls2"
+; SPIRV-NOT: ExecutionModeId {{[0-9]+}} 6028
 
 target triple = "spirv-unknown-unknown"
 

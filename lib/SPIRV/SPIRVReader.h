@@ -275,7 +275,7 @@ private:
   transFunctionPointerCallArgumentAttributes(SPIRVValue *BV, CallInst *CI,
                                              SPIRVTypeFunction *CalledFnTy);
 
-  using FunctionAndTypeIdPair = std::pair<Function *, SPIRVWord>;
+  using FunctionAndTypeIdPair = std::pair<Function *, Type *>;
   using FunctionToFastMathFlagsMap =
       DenseMap<FunctionAndTypeIdPair, FastMathFlags>;
   FunctionToFastMathFlagsMap FuncToFastMathFlags;

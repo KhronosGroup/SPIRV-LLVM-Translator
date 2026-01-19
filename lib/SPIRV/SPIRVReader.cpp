@@ -1230,12 +1230,10 @@ void SPIRVToLLVM::applyFPFastMathModeDecorations(const SPIRVValue *BV,
     return;
   }
 
-  SPIRVType *Type = BV->getType();
-  // FPFastMathDefault affects instructions resulting in the 'target-type', or
-  // an OpTypeVector or OpTypeMatrix derived from it.
-  SPIRVType *ScalarType = Type->getScalarType();
-  SPIRVWord TypeId = ScalarType->getId();
-  auto Func2FMF = FuncToFastMathFlags.find({Inst->getFunction(), TypeId});
+  // Get the scalar type to handle vector operands. And get the first operand
+  // type (instead of the result) due to fcmp instructions.
+  Type *FloatType = Inst->getOperand(0)->getType()->getScalarType();
+  auto Func2FMF = FuncToFastMathFlags.find({Inst->getFunction(), FloatType});
   if (Func2FMF != FuncToFastMathFlags.end()) {
     Inst->setFastMathFlags(Func2FMF->second);
   }
@@ -3485,13 +3483,28 @@ void SPIRVToLLVM::parseFloatControls2ExecutionModeId(SPIRVFunction *BF,
   if (Begin == End)
     return;
 
+  LLVMContext &C = F->getContext();
+  NamedMDNode *ExecModeMD =
+      M->getOrInsertNamedMetadata(kSPIRVMD::ExecutionMode);
+
+  Metadata *FPFastMathMode[4] = {ConstantAsMetadata::get(F),
+                                 ConstantAsMetadata::get(getUInt32(
+                                     M, spv::ExecutionModeFPFastMathDefault)),
+                                 nullptr, nullptr};
+
   for (auto [_, EM] : make_range(Begin, End)) {
     const auto &Literals = EM->getLiterals();
     assert(Literals.size() == 2);
     SPIRVWord FloatTyId = Literals[0];
-    SPIRVWord FlagsId = *transIdAsConstant(Literals[1]);
-    FuncToFastMathFlags.try_emplace({F, FloatTyId},
-                                    translateFastMathFlags(FlagsId));
+    SPIRVType *FloatSPIRVType = BM->get<SPIRVType>(FloatTyId);
+    Type *FloatType = transFPType(FloatSPIRVType);
+    SPIRVWord Flags = *transIdAsConstant(Literals[1]);
+    FuncToFastMathFlags.try_emplace({F, FloatType},
+                                    translateFastMathFlags(Flags));
+
+    FPFastMathMode[2] = ConstantAsMetadata::get(PoisonValue::get(FloatType));
+    FPFastMathMode[3] = ConstantAsMetadata::get(getUInt32(M, Flags));
+    ExecModeMD->addOperand(MDNode::get(C, FPFastMathMode));
   }
 }
 
