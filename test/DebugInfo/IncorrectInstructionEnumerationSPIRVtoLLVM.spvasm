@@ -1,0 +1,49 @@
+; This test checks that the decoding of DebugTypeTemplateParameterPack and
+; DebugTypeTemplateTemplateParameter is correct.
+
+; REQUIRES: spirv-as
+
+; RUN: spirv-as --target-env spv1.3 %s -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s
+
+; SPIR-V
+; Version: 1.1
+; Generator: Khronos LLVM/SPIR-V Translator; 14
+; Bound: 16
+; Schema: 0
+               OpCapability Addresses
+               OpCapability Kernel
+          %1 = OpExtInstImport "OpenCL.std"
+          %2 = OpExtInstImport "OpenCL.DebugInfo.100"
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %5 "func"
+          %8 = OpString "/tmp/test.cpp"
+          %9 = OpString "//__CSK_MD5:18aa9ce738eaafc7b7b7181c19092815"
+         %12 = OpString "func"
+         %14 = OpString ""
+         %15 = OpString "T"
+         %16 = OpString "U"
+         %17 = OpString "Foo"
+               OpSource OpenCL_CPP 100000
+               OpName %entry "entry"
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+         %10 = OpExtInst %void %2 DebugSource %8 %9
+         %11 = OpExtInst %void %2 DebugCompilationUnit 65536 5 %10 OpenCL_CPP
+         %13 = OpExtInst %void %2 DebugInfoNone
+         %20 = OpExtInst %void %2 DebugFunction %12 %13 %10 1 0 %11 %14 FlagIsDefinition|FlagPrototyped|FlagIsOptimized 2 %5 %13
+         %18 = OpExtInst %void %2 DebugTypeTemplateParameterPack %15 %10 0 0 %13 %13
+         %19 = OpExtInst %void %2 DebugTypeTemplateTemplateParameter %16 %17 %10 0 0
+         %21 = OpExtInst %void %2 DebugTypeTemplate %20 %18 %19
+          %5 = OpFunction %void None %4
+      %entry = OpLabel
+               OpReturn
+               OpFunctionEnd
+
+; CHECK: = distinct !DISubprogram(name: "func",
+; CHECK-SAME:  templateParams: [[TPARAMS:![0-9]+]]{{[,)]}}
+
+; CHECK-DAG: [[TPARAMS]] = !{[[PACKPARAM:![0-9]+]], [[TTPARAM:![0-9]+]]}
+; CHECK-DAG: [[PACKPARAM]] = !DITemplateValueParameter(tag: DW_TAG_GNU_template_parameter_pack, name: "T", value: [[PACK:![0-9]+]])
+; CHECK-DAG: [[PACK]] = !{null, null}
+; CHECK-DAG: [[TTPARAM]] = !DITemplateValueParameter(tag: DW_TAG_GNU_template_template_param, name: "U", value: !"Foo")
