@@ -194,7 +194,7 @@ void OCLTypeToSPIRVBase::adaptArgumentsBySamplerUse(Module &M) {
       continue;
     auto MangledName = F.getName();
     StringRef DemangledName;
-    if (!oclIsBuiltin(MangledName, DemangledName, false))
+    if (!oclIsBuiltin(MangledName, DemangledName, &F, false))
       continue;
     // Note: kSPIRVName::ConvertHandleToSampledImageINTEL contains
     // kSPIRVName::SampledImage as a substring, but we still want to continue in
