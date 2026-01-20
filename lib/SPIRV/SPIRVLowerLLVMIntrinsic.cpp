@@ -36,6 +36,7 @@
 #include "SPIRVError.h"
 #include "libSPIRV/SPIRVDebug.h"
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
@@ -125,6 +126,32 @@ const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMa
 
 } // namespace
 
+static void handleFmuladdIntrinsic(IntrinsicInst *II) {
+  assert(II->arg_size() == 3 && "llvm.fmuladd.* intrinsics has 3 operands");
+  IRBuilder<> Builder(II);
+  // Extract elements from the vector operands
+  Value *VecA = II->getArgOperand(0);
+  Value *VecB = II->getArgOperand(1);
+  Value *VecC = II->getArgOperand(2);
+
+  Value *ScalarA = Builder.CreateExtractElement(VecA, Builder.getInt64(0));
+  Value *ScalarB = Builder.CreateExtractElement(VecB, Builder.getInt64(0));
+  Value *ScalarC = Builder.CreateExtractElement(VecC, Builder.getInt64(0));
+
+  // Perform the fmuladd operation on the scalar values
+  Function *FmulAdd = Intrinsic::getOrInsertDeclaration(
+      II->getModule(), Intrinsic::fmuladd, ScalarA->getType());
+  Value *ScalarD = Builder.CreateCall(FmulAdd, {ScalarA, ScalarB, ScalarC});
+
+  // Insert the result back into a vector
+  Value *VecIns = Builder.CreateInsertElement(UndefValue::get(VecA->getType()),
+                                              ScalarD, Builder.getInt64(0));
+
+  // Replace the original intrinsic call with the new vector
+  II->replaceAllUsesWith(VecIns);
+  II->eraseFromParent();
+}
+
 void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
 
@@ -134,6 +161,15 @@ void SPIRVLowerLLVMIntrinsicBase::visitIntrinsicInst(CallInst &I) {
   Function *IntrinsicFunc = I.getCalledFunction();
   assert(IntrinsicFunc && "Missing function");
   StringRef IntrinsicName = IntrinsicFunc->getName();
+
+  // Replace llvm.fmuladd.v1f* with llvm.fmuladd.f* since OpenCL doesn't support
+  // length-1 vector.
+  if (II->getIntrinsicID() == Intrinsic::fmuladd &&
+      (IntrinsicName.ends_with(".v1f32") ||
+       IntrinsicName.ends_with(".v1f64"))) {
+    handleFmuladdIntrinsic(II);
+    return;
+  }
 
   const LLVMIntrinsicMapValueType *MapEntry{nullptr};
   auto It = LLVMIntrinsicMapEntries.find(IntrinsicName);
