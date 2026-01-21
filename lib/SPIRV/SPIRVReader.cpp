@@ -3445,8 +3445,8 @@ Function *SPIRVToLLVM::transFunction(SPIRVFunction *BF, unsigned AS) {
   // During reverse translation, we replace them with intrinsic calls.
   if (FuncNameRef.starts_with("spirv.llvm_umul_with_overflow_")) {
     Type *OverloadTy = FT->getParamType(0);
-    Function *F = Intrinsic::getOrInsertDeclaration(
-        M, Intrinsic::umul_with_overflow, {OverloadTy});
+    Function *F = Intrinsic::getDeclaration(M, Intrinsic::umul_with_overflow,
+                                            {OverloadTy});
     F = cast<Function>(mapValue(BF, F));
     mapFunction(BF, F);
     return F; // Skip body translation - intrinsic will be used instead
