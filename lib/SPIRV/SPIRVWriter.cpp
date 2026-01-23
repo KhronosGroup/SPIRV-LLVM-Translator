@@ -6443,13 +6443,16 @@ SPIRVInstruction *LLVMToSPIRVBase::transBuiltinToInst(StringRef DemangledName,
 }
 
 void LLVMToSPIRVBase::setExecutionModeFPFastMathDefault(
-    SPIRVFunction *BF, SPIRVType *FloatSPIRVType, SPIRVWord FlagsLiteral) {
+    SPIRVFunction *BF, ArrayRef<SPIRVTypeFloat *> FloatSPIRVTypes,
+    SPIRVWord FlagsLiteral) {
   assert(BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2));
 
   SPIRVConstant *Flags = BM->getLiteralAsConstant(FlagsLiteral);
-  BF->addExecutionMode(
-      new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
-                               FloatSPIRVType->getId(), Flags->getId()));
+  for (SPIRVTypeFloat *FloatSPIRVType : FloatSPIRVTypes) {
+    BF->addExecutionMode(
+        new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
+                                 FloatSPIRVType->getId(), Flags->getId()));
+  }
 
   BM->addCapability(CapabilityFloatControls2);
   BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
@@ -6482,11 +6485,28 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         // With SPV_KHR_float_controls2 this execution mode is deprecated.
         // We cannot set only the contract flag to 0, so we set all flags to 0.
         if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2)) {
-          for (auto [_, FloatSPIRVType] : TypeMap) {
-            if (FloatSPIRVType->isTypeFloat()) {
-              setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, 0);
-            }
-          }
+          SmallVector<SPIRVTypeFloat *> FloatSPIRVTypes;
+          for (auto [_, FloatSPIRVType] : TypeMap)
+            if (FloatSPIRVType->isTypeFloat())
+              FloatSPIRVTypes.push_back(
+                  static_cast<SPIRVTypeFloat *>(FloatSPIRVType));
+
+          // Sort the types to ensure they are always emited in a consistent
+          // order.
+          auto SortByFloatBitWidthAndEncoding = [](SPIRVTypeFloat *A,
+                                                   SPIRVTypeFloat *B) {
+            unsigned BitWidthA = A->getFloatBitWidth();
+            unsigned BitWidthB = B->getFloatBitWidth();
+            if (BitWidthA < BitWidthB)
+              return true;
+            if (BitWidthA > BitWidthB)
+              return false;
+            return A->getFloatingPointEncoding() <
+                   B->getFloatingPointEncoding();
+          };
+          llvm::sort(FloatSPIRVTypes, SortByFloatBitWidthAndEncoding);
+
+          setExecutionModeFPFastMathDefault(BF, FloatSPIRVTypes, 0);
         } else {
           BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
               OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
@@ -6585,7 +6605,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
           unsigned BitWidth;
           N.get(BitWidth);
 
-          SPIRVType *FloatSPIRVType = BM->addFloatType(BitWidth);
+          SPIRVTypeFloat *FloatSPIRVType = BM->addFloatType(BitWidth);
           setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, 0);
           break;
         }
@@ -6627,7 +6647,9 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         PoisonValue *V;
         unsigned FlagsLiteral;
         N.get(V).get(FlagsLiteral);
-        SPIRVType *FloatSPIRVType = transType(V->getType());
+        assert(V->getType()->isFloatingPointTy());
+        SPIRVTypeFloat *FloatSPIRVType =
+            static_cast<SPIRVTypeFloat *>(transType(V->getType()));
         setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, FlagsLiteral);
         break;
       }
