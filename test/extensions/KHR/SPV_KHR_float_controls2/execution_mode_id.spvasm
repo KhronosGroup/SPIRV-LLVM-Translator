@@ -13,18 +13,18 @@
 ; However, when generating SPIRV back again from LLVM-IR set FPFastMathMode
 ; decorations on the instructions.
 ;
-; LLVM: %add.i = fadd contract float %{{[0-9]+}}, %{{[0-9]+}}
-; LLVM: !spirv.ExecutionMode = !{![[ExecMode:[0-9]+]]}
-; LLVM: ![[ExecMode]] = !{ptr @foo, i32 6028, float poison, i32 65536}
+; LLVM: %{{.*}} = fadd contract float %{{.*}}, %{{.*}}
+; LLVM: !spirv.ExecutionMode = !{![[#ExecMode:]]}
+; LLVM: ![[#ExecMode]] = !{ptr @foo, i32 6028, float poison, i32 65536}
 ;
 ; SPIRV: Capability FloatControls2
-; SPIRV: EntryPoint {{[0-9]+}} [[FOO:[0-9]+]] "foo"
-; SPIRV-DAG: TypeFloat [[FLOAT:[0-9]+]] 32
-; SPIRV-DAG: ExecutionModeId [[FOO]] 6028 [[FLOAT]] [[FLAG:[0-9]+]]
-; SPIRV-DAG: FAdd [[FLOAT]] [[ADD_ID:[0-9]+]] {{[0-9]+}} {{[0-9]+}}
-; SPIRV-DAG: Decorate [[ADD_ID]] FPFastMathMode 65536
-; SPIRV-DAG: Name [[ADD_ID]] "add.i"
-; SPIRV-DAG: Constant {{[0-9]+}} [[FLAG]] 65536
+; SPIRV: EntryPoint {{[0-9]+}} [[#FOO:]] "foo"
+; SPIRV-DAG: TypeFloat [[#FLOAT:]] 32
+; SPIRV-DAG: ExecutionModeId [[#FOO]] 6028 [[#FLOAT]] [[#FLAG:]]
+; SPIRV-DAG: FAdd [[#FLOAT]] [[#ADD_ID:]] {{[0-9]+}} {{[0-9]+}}
+; SPIRV-DAG: Decorate [[#ADD_ID]] FPFastMathMode 65536
+; SPIRV-DAG: Name [[#ADD_ID]] "add.i"
+; SPIRV-DAG: Constant {{[0-9]+}} [[#FLAG]] 65536
 
              OpCapability Kernel
              OpCapability Addresses

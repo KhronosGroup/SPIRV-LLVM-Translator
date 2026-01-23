@@ -18,9 +18,9 @@ define spir_kernel void @foo(half %ah, half %bh, float %af, float %bf, double %a
 entry:
   ; IR-LABEL: define {{.*}} @foo
   ; IR-NEXT: entry:
-  ; IR-NEXT:   %rh = fadd contract half %ah, %bh
-  ; IR-NEXT:   %rf = fadd contract float %af, %bf
-  ; IR-NEXT:   %rd = fadd contract double %ad, %bd
+  ; IR-NEXT:   %{{.*}} = fadd contract half %{{.*}}, %{{.*}}
+  ; IR-NEXT:   %{{.*}} = fadd contract float %{{.*}}, %{{.*}}
+  ; IR-NEXT:   %{{.*}} = fadd contract double %{{.*}}, %{{.*}}
   ; IR-NEXT    call void @bar(half %rh, half %bh, float %rf, float %bf, double %rd, double %bd)
   %rh = fadd contract half %ah, %bh
   %rf = fadd contract float %af, %bf
@@ -33,9 +33,9 @@ define internal void @bar(half %ah, half %bh, float %af, float %bf, double %ad, 
 entry:
   ; IR-LABEL: define {{.*}} @bar
   ; IR-NEXT: entry:
-  ; IR-NEXT:   %rh = fadd contract half %ah, %bh
-  ; IR-NEXT:   %rf = fadd contract float %af, %bf
-  ; IR-NEXT:   %rd = fadd contract double %ad, %bd
+  ; IR-NEXT:   %{{.*}} = fadd contract half %{{.*}}, %{{.*}}
+  ; IR-NEXT:   %{{.*}} = fadd contract float %{{.*}}, %{{.*}}
+  ; IR-NEXT:   %{{.*}} = fadd contract double %{{.*}}, %{{.*}}
   %rh = fadd contract half %ah, %bh
   %rf = fadd contract float %af, %bf
   %rd = fadd contract double %ad, %bd

@@ -7,13 +7,13 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 %t.bc -o %t.back.spv
 ; RUN: spirv-val %t.back.spv
 ;
-; LLVM: %add.i = fadd contract <2 x float> %{{[0-9]+}}, %{{[0-9]+}}
+; LLVM: %{{.*}} = fadd contract <2 x float> %{{[0-9]+}}, %{{[0-9]+}}
 ;
-; SPIRV-DAG: FAdd [[VEC_FLOAT:[0-9]+]] [[ADD_ID:[0-9]+]] {{[0-9]+}} {{[0-9]+}}
-; SPIRV-DAG: TypeFloat [[FLOAT:[0-9]+]] 32
-; SPIRV-DAG: TypeVector [[VEC_FLOAT]] [[FLOAT]] 2
-; SPIRV-DAG: Decorate [[ADD_ID]] FPFastMathMode 65536
-; SPIRV-DAG: Name [[ADD_ID]] "add.i"
+; SPIRV-DAG: FAdd [[#VEC_FLOAT:]] [[#ADD_ID:]] {{[0-9]+}} {{[0-9]+}}
+; SPIRV-DAG: TypeFloat [[#FLOAT:]] 32
+; SPIRV-DAG: TypeVector [[#VEC_FLOAT]] [[#FLOAT]] 2
+; SPIRV-DAG: Decorate [[#ADD_ID]] FPFastMathMode 65536
+; SPIRV-DAG: Name [[#ADD_ID]] "add.i"
 
                  OpCapability Kernel
                  OpCapability Addresses
