@@ -102,8 +102,7 @@ bool SPIRVLowerMemmoveBase::expandMemMoveIntrinsicUses(Function &F) {
   for (User *U : make_early_inc_range(F.users())) {
     MemMoveInst *Inst = cast<MemMoveInst>(U);
     if (!isa<ConstantInt>(Inst->getLength())) {
-      expandMemMoveAsLoop(Inst,
-                          TargetTransformInfo(F.getParent()->getDataLayout()));
+      expandMemMoveAsLoop(Inst);
       Inst->eraseFromParent();
     } else {
       LowerMemMoveInst(*Inst);
