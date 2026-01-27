@@ -371,6 +371,29 @@ void addFPBuiltinDecoration(SPIRVModule *BM, Instruction *Inst,
   }
 }
 
+unsigned adjustOpTypeIntWidth(SPIRVModule *BM, unsigned Width) {
+  bool HasExtArbitraryPrecision = BM->isAllowedToUseExtension(
+      ExtensionID::SPV_INTEL_arbitrary_precision_integers);
+  if (HasExtArbitraryPrecision)
+    return Width;
+  if (Width == 4 && BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_int4))
+    Width = 4;
+  else if (Width <= 8)
+    Width = 8;
+  else if (Width <= 16)
+    Width = 16;
+  else if (Width <= 32)
+    Width = 32;
+  else if (Width <= 64)
+    Width = 64;
+  else
+    // for width > 64
+    BM->getErrorLog().checkError(HasExtArbitraryPrecision,
+                                 SPIRVEC_InvalidBitWidth,
+                                 std::to_string(Width));
+  return Width;
+}
+
 SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   LLVMToSPIRVTypeMap::iterator Loc = TypeMap.find(T);
   if (Loc != TypeMap.end())
@@ -384,20 +407,7 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     return mapType(T, BM->addBoolType());
 
   if (T->isIntegerTy()) {
-    unsigned BitWidth = T->getIntegerBitWidth();
-    // SPIR-V 2.16.1. Universal Validation Rules: Scalar integer types can be
-    // parameterized only as 32 bit, plus any additional sizes enabled by
-    // capabilities.
-    if (BM->isAllowedToUseExtension(
-            ExtensionID::SPV_INTEL_arbitrary_precision_integers) ||
-        BM->getErrorLog().checkError(
-            (BitWidth == 4 &&
-             BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_int4)) ||
-                BitWidth == 8 || BitWidth == 16 || BitWidth == 32 ||
-                BitWidth == 64,
-            SPIRVEC_InvalidBitWidth, std::to_string(BitWidth))) {
-      return mapType(T, BM->addIntegerType(T->getIntegerBitWidth()));
-    }
+    return mapType(T, adjustOpTypeIntWidth(BM, T->getIntegerBitWidth()));
   }
 
   if (T->isBFloatTy()) {
