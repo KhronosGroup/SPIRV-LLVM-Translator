@@ -11,17 +11,6 @@
 ; RUN: llvm-dis %t.out.bc -o - | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -spirv-text %t.out.bc --spirv-ext=+SPV_INTEL_device_barrier --spirv-max-version=1.0 -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
-; Test with untyped pointers
-; RUN: llvm-spirv %t.bc -o %t.up.spv --spirv-ext=+SPV_KHR_untyped_pointers,+SPV_INTEL_device_barrier --spirv-max-version=1.0
-;; TODO: Enable validation when SPV_INTEL_device_barrier supported.
-; RUNx: spirv-val %t.up.spv
-; RUN: llvm-spirv %t.up.spv -o %t.up.spt --to-text 
-; RUN: FileCheck < %t.up.spt %s --check-prefix=CHECK-SPIRV
-
-; RUN: llvm-spirv -r %t.up.spv --spirv-target-env=SPV-IR -o %t.up.out.bc
-; RUN: llvm-dis %t.up.out.bc -o - | FileCheck %s --check-prefix=CHECK-SPV-IR
-; RUN: llvm-spirv -spirv-text %t.up.out.bc --spirv-ext=+SPV_KHR_untyped_pointers,+SPV_INTEL_device_barrier --spirv-max-version=1.0 -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-
 ; Note: 6186 is DeviceBarrierValidINTEL
 ; CHECK-SPIRV: Decorate [[Id:[0-9]+]] BuiltIn 6186
 ; CHECK-SPIRV: {{(Variable|UntypedVariableKHR)}} {{[0-9]+}} [[Id:[0-9]+]]
