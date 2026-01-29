@@ -281,6 +281,7 @@ inline bool isValid(spv::BuiltIn V) {
   case BuiltInCullMaskKHR:
   case internal::BuiltInSubDeviceIDINTEL:
   case internal::BuiltInGlobalHWThreadIDINTEL:
+  case internal::BuiltInDeviceBarrierValidINTEL:
     return true;
   default:
     return false;
