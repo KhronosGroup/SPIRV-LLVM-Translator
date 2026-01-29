@@ -23,7 +23,7 @@ target triple = "spir-unknown-unknown"
 ; Function Attrs: nounwind readnone
 define spir_kernel void @f() #0 !kernel_arg_addr_space !0 !kernel_arg_access_qual !0 !kernel_arg_type !0 !kernel_arg_base_type !0 !kernel_arg_type_qual !0 {
 entry:
-  %0 = load i1, ptr addrspace(1) @__spirv_BuiltInDeviceBarrierValidINTEL, align 4
+  %0 = load i1, i1 addrspace(1)* @__spirv_BuiltInDeviceBarrierValidINTEL, align 4
   ; CHECK-SPV-IR: %0 = call spir_func i1 @_Z38__spirv_BuiltInDeviceBarrierValidINTELv() #1
   ret void
 }
