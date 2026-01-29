@@ -115,6 +115,7 @@ enum InternalCapability {
   ICapabilityHWThreadQueryINTEL = 6134,
   ICapGlobalVariableDecorationsINTEL = 6146,
   ICapabilitySigmoidINTEL = 6167,
+  ICapabilityDeviceBarrierINTEL = 6185,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
   ICapabilityFloat4E2M1INTEL = 6212,
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
@@ -167,6 +168,7 @@ enum InternalFPEncoding {
 enum InternalBuiltIn {
   IBuiltInSubDeviceIDINTEL = 6135,
   IBuiltInGlobalHWThreadIDINTEL = 6136,
+  IBuiltInDeviceBarrierValidINTEL = 6186,
 };
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
@@ -197,6 +199,9 @@ _SPIRV_OP(Op, CooperativeMatrixConstructCheckedINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixInvocationInstructionsINTEL)
 _SPIRV_OP(Op, CooperativeMatrixApplyFunctionINTEL)
+
+_SPIRV_OP(Capability, DeviceBarrierINTEL)
+_SPIRV_OP(BuiltIn, DeviceBarrierValidINTEL)
 
 _SPIRV_OP(Capability, HWThreadQueryINTEL)
 _SPIRV_OP(BuiltIn, SubDeviceIDINTEL)
