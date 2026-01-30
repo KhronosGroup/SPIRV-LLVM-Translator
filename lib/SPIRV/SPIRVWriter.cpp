@@ -286,6 +286,9 @@ bool LLVMToSPIRVBase::isBuiltinTransToExtInst(
 
   auto ExtOpName = S.substr(Loc + 1);
   auto Splited = ExtOpName.split(kSPIRVPostfix::ExtDivider);
+  if (Splited.second.empty())
+    Splited = ExtOpName.split("_R");
+
   OCLExtOpKind EOC;
   if (!OCLExtOpMap::rfind(Splited.first.str(), &EOC))
     return false;

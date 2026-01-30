@@ -2670,6 +2670,7 @@ public:
     case OpenCLLIB::Vload_halfn:
     case OpenCLLIB::Vloada_halfn:
     case OpenCLLIB::Vloadn:
+    case OpenCLLIB::Nan:
       return true;
     default:
       return false;

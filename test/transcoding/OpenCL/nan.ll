@@ -16,7 +16,7 @@ target triple = "spir64"
 
 ; CHECK-LLVM: call spir_func float @_Z3nanj(
 
-; CHECK-SPV-IR: call spir_func float @_Z15__spirv_ocl_nanj(
+; CHECK-SPV-IR: call spir_func float @_Z22__spirv_ocl_nan_Rfloatj(
 
 define dso_local spir_kernel void @test(ptr addrspace(1) align 4 %a, i32 %b) {
 entry:
