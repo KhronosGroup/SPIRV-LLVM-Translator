@@ -21,13 +21,13 @@ target triple = "spir64"
 
 define dso_local spir_kernel void @test_bfloat(ptr addrspace(1) align 2 %a, i16 %b) {
 entry:
-  %call = tail call spir_func bfloat @_Z22__spirv_ocl_nan_RDF16bt(i16 %b)
-  %call2 = tail call spir_func half @_Z21__spirv_ocl_nan_Rhalft(i16 %b)
+  %call = tail call spir_func bfloat @_Z23__spirv_ocl_nan__RDF16bt(i16 %b)
+  %call2 = tail call spir_func half @_Z22__spirv_ocl_nan__Rhalft(i16 %b)
   ret void
 }
 
-declare spir_func bfloat @_Z22__spirv_ocl_nan_RDF16bt(i16)
-declare spir_func half @_Z21__spirv_ocl_nan_Rhalft(i16)
+declare spir_func bfloat @_Z23__spirv_ocl_nan__RDF16bt(i16)
+declare spir_func half @_Z22__spirv_ocl_nan__Rhalft(i16)
 
 
 !opencl.ocl.version = !{!0}
