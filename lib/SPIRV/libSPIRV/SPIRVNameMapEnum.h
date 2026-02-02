@@ -672,6 +672,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "CooperativeMatrixTF32ComponentTypeINTEL");
   add(internal::CapabilityCooperativeMatrixBFloat16ComponentTypeINTEL,
       "CooperativeMatrixBFloat16ComponentTypeINTEL");
+  add(internal::CapabilityPackedCooperativeMatrixINTEL,
+      "PackedCooperativeMatrixINTEL");
   add(internal::CapabilityCooperativeMatrixPrefetchINTEL,
       "CooperativeMatrixPrefetchINTEL");
   add(internal::CapabilityCooperativeMatrixInvocationInstructionsINTEL,

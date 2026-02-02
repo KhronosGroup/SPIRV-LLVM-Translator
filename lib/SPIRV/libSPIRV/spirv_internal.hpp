@@ -78,7 +78,7 @@ enum InternalOp {
   IOpClampConvertFToSINTEL = 6424,
   IOpMaskedGatherINTEL = 6428,
   IOpMaskedScatterINTEL = 6429,
-  IOpJointMatrixGetElementCoordINTEL = 6440,
+  IOpCooperativeMatrixGetElementCoordINTEL = 6440,
   IOpCooperativeMatrixApplyFunctionINTEL = 6448,
   IOpCooperativeMatrixPrefetchINTEL = 6449,
   IOpConvertHandleToImageINTEL = 6529,
@@ -119,6 +119,7 @@ enum InternalCapability {
   ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
+  ICapabilityPackedCooperativeMatrixINTEL = 6434,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
   ICapabilityCooperativeMatrixInvocationInstructionsINTEL = 6435,
   ICapabilityCooperativeMatrixTF32ComponentTypeINTEL = 6436,
@@ -134,11 +135,16 @@ enum InternalExecutionMode {
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
-enum InternalJointMatrixLayout {
-  RowMajor = 0,
-  ColumnMajor = 1,
-  PackedA = 2,
-  PackedB = 3
+// Cooperative Matrix Layout for SPV_INTEL_joint_matrix extension.
+enum InternalCooperativeMatrixLayout { CooperativeMatrixLayoutPackedINTEL = 2 };
+
+// Cooperative Matrix Operands for SPV_INTEL_joint_matrix extension
+// These are bit flags for component type interpretation.
+enum InternalCooperativeMatrixOperandsMask {
+  CooperativeMatrixOperandsMatrixAAndBTF32ComponentsINTELMask = 0x20,
+  CooperativeMatrixOperandsMatrixAAndBBFloat16ComponentsINTELMask = 0x40,
+  CooperativeMatrixOperandsMatrixCBFloat16ComponentsINTELMask = 0x80,
+  CooperativeMatrixOperandsMatrixResultBFloat16ComponentsINTELMask = 0x100
 };
 
 enum InternalFPEncoding {
@@ -156,7 +162,8 @@ enum InternalBuiltIn {
 _SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
 _SPIRV_OP(Capability, CooperativeMatrixTF32ComponentTypeINTEL)
 _SPIRV_OP(Capability, CooperativeMatrixBFloat16ComponentTypeINTEL)
-_SPIRV_OP(Op, JointMatrixGetElementCoordINTEL)
+_SPIRV_OP(Capability, PackedCooperativeMatrixINTEL)
+_SPIRV_OP(Op, CooperativeMatrixGetElementCoordINTEL)
 
 _SPIRV_OP(Capability, CooperativeMatrixPrefetchINTEL)
 _SPIRV_OP(Op, CooperativeMatrixPrefetchINTEL)
