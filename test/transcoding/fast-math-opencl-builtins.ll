@@ -6,6 +6,7 @@
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-SPV
 
 ; RUN: llvm-spirv -spirv-text --spirv-max-version=1.5 %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NEG
+; FIXME: FILECHECK_FAIL during llvm-spirv -r in llc compilation flow
 
 ; CHECK-SPIRV: Decorate [[#FPDec1:]] FPFastMathMode 3
 ; CHECK-SPIRV: Decorate [[#FPDec2:]] FPFastMathMode 2

@@ -10,6 +10,8 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM-16
+; FIXME: FILECHECK_FAIL during llvm-spirv -r in llc compilation flow
+; TODO: rewrite the test as currently DCE removes IR through llc compilation flow
 
 ; CHECK-SPIRV: 3 Name [[#r1:]] "r1"
 ; CHECK-SPIRV: 3 Name [[#r2:]] "r2"

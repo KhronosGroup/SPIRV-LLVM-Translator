@@ -5,6 +5,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
+; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
+; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
+; RUN: FileCheck %s --check-prefix=CHECK-LLVM < %t.llc.rev.ll
 
 ; CHECK-LLVM: extractelement <2 x float> %vec, i32 %index
 
