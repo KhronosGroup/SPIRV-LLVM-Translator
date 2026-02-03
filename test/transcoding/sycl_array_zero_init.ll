@@ -1,6 +1,10 @@
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s
+; RUN: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
+; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
+; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
+; RUN: FileCheck %s < %t.llc.rev.ll
 
 ; ModuleID = 'sycl_array_zero_init.cpp'
 source_filename = "sycl_array_zero_init.cpp"

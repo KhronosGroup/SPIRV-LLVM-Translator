@@ -67,6 +67,10 @@
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
+; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
+; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
+; RUN: FileCheck %s --check-prefix=CHECK-LLVM < %t.llc.rev.ll
 
 ; ModuleID = 'sub_group_non_uniform_vote.cl'
 source_filename = "sub_group_non_uniform_vote.cl"
