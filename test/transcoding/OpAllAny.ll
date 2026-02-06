@@ -7,6 +7,7 @@
 ; RUN: llvm-dis < %t.rev.spv.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
+; FIXME: llvm-spirv -r has failed for llc compilation flow
 
 ; This test checks SYCL relational builtin any and all with vector input types.
 
