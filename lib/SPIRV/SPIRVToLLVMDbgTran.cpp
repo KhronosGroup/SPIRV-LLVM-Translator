@@ -1407,6 +1407,76 @@ DINode *SPIRVToLLVMDbgTran::transModule(const SPIRVExtInst *DebugInst) {
       Scope, Name, ConfigMacros, IncludePath, ApiNotes, File, Line, IsDecl);
 }
 
+DIMacroFile *
+SPIRVToLLVMDbgTran::getOrCreateMacroFile(DIFile *File,
+                                         const SPIRVExtInst *DebugInst) {
+  auto It = MacroFileMap.find(File);
+  if (It != MacroFileMap.end())
+    return It->second;
+
+  // Use nullptr parent (top-level) since SPIR-V DebugMacroDef doesn't preserve
+  // include hierarchy. All macro files are treated as root files.
+  DIMacroFile *MacroFile =
+      getDIBuilder(DebugInst).createTempMacroFile(nullptr, 0, File);
+  MacroFileMap[File] = MacroFile;
+  return MacroFile;
+}
+
+DIMacro *SPIRVToLLVMDbgTran::transMacroDef(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::MacroDef;
+  const SPIRVWordVec &Ops = DebugInst->getArguments();
+  assert(Ops.size() >= OperandCount && "Invalid number of operands");
+
+  const std::string &SourceFileName = getString(Ops[SourceIdx]);
+  DIFile *File = getDIFile(SourceFileName);
+
+  DIMacroFile *MacroFile =
+      !File ? nullptr : getOrCreateMacroFile(File, DebugInst);
+
+  SPIRVWord Line =
+      getConstantValueOrLiteral(Ops, LineIdx, DebugInst->getExtSetKind());
+  StringRef Name = getString(Ops[NameIdx]);
+  StringRef Value = getString(Ops[ValueIdx]);
+
+  return getDIBuilder(DebugInst).createMacro(
+      MacroFile, Line, dwarf::DW_MACINFO_define, Name, Value);
+}
+
+DIMacro *SPIRVToLLVMDbgTran::transMacroUndef(const SPIRVExtInst *DebugInst) {
+  using namespace SPIRVDebug::Operand::MacroUndef;
+  const SPIRVWordVec &Ops = DebugInst->getArguments();
+  assert(Ops.size() >= OperandCount && "Invalid number of operands");
+
+  const std::string &SourceFileName = getString(Ops[SourceIdx]);
+  DIFile *File = getDIFile(SourceFileName);
+
+  DIMacroFile *MacroFile =
+      !File ? nullptr : getOrCreateMacroFile(File, DebugInst);
+
+  SPIRVWord Line =
+      getConstantValueOrLiteral(Ops, LineIdx, DebugInst->getExtSetKind());
+
+  DIMacro *ReferencedMacro =
+      transDebugInst<DIMacro>(BM->get<SPIRVExtInst>(Ops[MacroIdx]));
+
+  // Handle edge case: LLVM IR allows DW_MACINFO_undef without a prior
+  // DW_MACINFO_def (i.e., undefining a macro that was never defined).
+  // Example: !DIMacro(type: DW_MACINFO_undef, line: 1, name: "SIZE")
+  //          with no corresponding DW_MACINFO_def for "SIZE"
+  //
+  // When translated to SPIR-V, this becomes:
+  //   DebugMacroUndef <source> <line> DebugInfoNone
+  //
+  // This results in ReferencedMacro being nullptr. We must use a non-empty
+  // fallback name because DIBuilder::createMacro() in LLVM rejects empty
+  // strings.
+  StringRef Name =
+      ReferencedMacro ? ReferencedMacro->getName() : "<UNAVAILABLE_MACRO_NAME>";
+
+  return getDIBuilder(DebugInst).createMacro(MacroFile, Line,
+                                             dwarf::DW_MACINFO_undef, Name);
+}
+
 MDNode *SPIRVToLLVMDbgTran::transExpression(const SPIRVExtInst *DebugInst) {
   const SPIRVWordVec &Args = DebugInst->getArguments();
   std::vector<uint64_t> Ops;
@@ -1529,6 +1599,12 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
   case SPIRVDebug::Module:
   case SPIRVDebug::ModuleINTEL:
     return transModule(DebugInst);
+
+  case SPIRVDebug::MacroDef:
+    return transMacroDef(DebugInst);
+
+  case SPIRVDebug::MacroUndef:
+    return transMacroUndef(DebugInst);
 
   case SPIRVDebug::Operation: // To be translated with transExpression
   case SPIRVDebug::Source:    // To be used by other instructions
