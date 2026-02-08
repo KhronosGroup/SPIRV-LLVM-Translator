@@ -446,9 +446,9 @@ bool SPIRVTypeScavenger::typeIntrinsicCall(
   };
 
   StringRef DemangledName;
-  if (oclIsBuiltin(TargetFn->getName(), DemangledName) ||
+  if (oclIsBuiltin(TargetFn->getName(), DemangledName, TargetFn) ||
       isDecoratedSPIRVFunc(TargetFn, DemangledName)) {
-    Op OC = getSPIRVFuncOC(DemangledName);
+    Op OC = getSPIRVFuncOC(DemangledName, TargetFn);
     switch (OC) {
     case OpAtomicLoad:
     case OpAtomicExchange:
