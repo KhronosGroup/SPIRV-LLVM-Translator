@@ -7,6 +7,8 @@
 ; Check that we do not lower to SignedZeroInfNanPreserve when the FloatControls2 extension is available.
 ; Instead, we set FPFastMathDefault to 0.
 ;
+; FLOAT_CONTROLS-OFF-NOT: Capability FloatControls2
+; FLOAT_CONTROLS-ON-NOT: Capability SignedZeroInfNanPreserve
 ; FLOAT_CONTROLS-OFF: Capability SignedZeroInfNanPreserve
 ; FLOAT_CONTROLS-ON: Capability FloatControls2
 ; FLOAT_CONTROLS: EntryPoint {{[0-9]+}} [[#FOO:]] "foo"
