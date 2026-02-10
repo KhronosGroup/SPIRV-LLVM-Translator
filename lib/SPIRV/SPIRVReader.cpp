@@ -3464,11 +3464,15 @@ FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
                 FPFastMathModeAllowReassocMask);
   if (V & FPFastMathModeAllowReassocINTELMask)
     FMF.setAllowReassoc();
-  // There is no FPFastMathMode flag that represents LLVM approximate functions
-  // flag `afn`. Even the FPFastMathMode Fast flag should not imply it, but to
-  // avoid changing the previous behaviour we make it equivalent to LLVM's.
-  if (V & FPFastMathModeFastMask)
+  if (V & FPFastMathModeFastMask) {
+    // There is no FPFastMathMode flag that represents LLVM approximate
+    // functions flag `afn`. Even the FPFastMathMode Fast flag should not imply
+    // it, but to avoid changing the previous behaviour we make it equivalent to
+    // LLVM's.
+    assert(!BM->hasCapability(CapabilityFloatControls2) &&
+           "FloatControls2 deprecates FPFastMathModeFast.");
     FMF.setFast();
+  }
   if (V & FPFastMathModeAllowTransformMask) {
     // AllowTransform requires the AllowContract and AllowReassoc bits to be
     // set.
