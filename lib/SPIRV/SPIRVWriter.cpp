@@ -5793,9 +5793,35 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
                                    BB, transScavengedType(CI));
     }
 
+    SPIRVType *Ty = transScavengedType(CI);
+    SPIRVId ExtSetId = BM->getExtInstSetId(ExtSetKind);
+
+    bool IsFMinMaxCommon =
+        ExtSetKind == SPIRVEIS_OpenCL &&
+        (ExtOp == OpenCLLIB::FMin_common || ExtOp == OpenCLLIB::FMax_common);
+    if (IsFMinMaxCommon &&
+        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2)) {
+      // Acording to float_controls2 spec:
+      // This extension deprecates the following features: [...]
+      // * The OpenCL.std instructions fmin_common, fmax_common. Use fmin, fmax
+      // with NInf and NNaN instead.
+      BM->addCapability(CapabilityFloatControls2);
+      BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+      ExtOp =
+          ExtOp == OpenCLLIB::FMin_common ? OpenCLLIB::Fmin : OpenCLLIB::Fmax;
+      SPIRVInstruction *ExtInst = BM->addExtInst(
+          Ty, ExtSetId, ExtOp,
+          transArguments(CI, BB,
+                         SPIRVEntry::createUnique(ExtSetKind, ExtOp).get()),
+          BB);
+      ExtInst->setFPFastMathMode(FPFastMathModeNotInfMask |
+                                 FPFastMathModeNotNaNMask);
+      return addDecorations(ExtInst, Dec);
+    }
+
     return addDecorations(
         BM->addExtInst(
-            transScavengedType(CI), BM->getExtInstSetId(ExtSetKind), ExtOp,
+            Ty, ExtSetId, ExtOp,
             transArguments(CI, BB,
                            SPIRVEntry::createUnique(ExtSetKind, ExtOp).get()),
             BB),

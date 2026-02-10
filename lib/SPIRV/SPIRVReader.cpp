@@ -5376,6 +5376,26 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   assert(BM->getBuiltinSet(BC->getExtSetId()) == SPIRVEIS_OpenCL &&
          "Not OpenCL extended instruction");
 
+  if (ExtOp == OpenCLLIB::FMin_common || ExtOp == OpenCLLIB::FMax_common) {
+    if (BM->getDesiredBIsRepresentation() !=
+        BIsRepresentation::SPIRVFriendlyIR) {
+      // If the target environment is not SPIRVFriendlyIR, we need to lower the
+      // fmin_common/fmax_common to llvm.minnum/llvm.maxnum with the fast-math
+      // flags set appropiately.
+      IRBuilder<> IRB(BB);
+      Intrinsic::ID IntrinsicID = ExtOp == OpenCLLIB::FMin_common
+                                      ? Intrinsic::minnum
+                                      : Intrinsic::maxnum;
+      auto Args = transValue(BC->getArgValues(), BB->getParent(), BB);
+      FastMathFlags FMF;
+      FMF.setNoInfs();
+      FMF.setNoNaNs();
+      CallInst *MinMax = IRB.CreateIntrinsic(
+          IntrinsicID, {Args.front()->getType()}, Args, FMF);
+      return MinMax;
+    }
+  }
+
   Type *RetTy = transType(BC->getType());
   std::vector<Type *> ArgTypes = transTypeVector(BC->getArgTypes(), true);
   // Special handling for "truly" untyped pointers to preserve correct
