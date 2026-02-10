@@ -3,6 +3,9 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=IR
 
+; Verifies translation of contract fast-math on vectors types and preservation
+; during round-trip back to LLVM-IR.
+
 ; SPIRV-DAG: TypeFloat [[#half:]] 16
 ; SPIRV-DAG: TypeFloat [[#float:]] 32
 ; SPIRV-DAG: TypeFloat [[#double:]] 64
