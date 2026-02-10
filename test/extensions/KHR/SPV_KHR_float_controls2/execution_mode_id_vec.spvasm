@@ -7,13 +7,23 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 %t.bc -o %t.back.spv
 ; RUN: spirv-val %t.back.spv
 ;
+; Verifies translation from SPIRV->LLVM->SPIRV with SPV_KHR_float_controls2 when using
+; OpExecutionModeId FPFastMathDefault "contract" on float vectors.
+; Checks that the contract fast-math flag (65536) is preserved in the LLVM-IR and in SPIRV.
+; Check also that the execution mode is preserved in the final SPIRV.
+;
 ; LLVM: %{{.*}} = fadd contract <2 x float> %{{[0-9]+}}, %{{[0-9]+}}
 ;
-; SPIRV-DAG: FAdd [[#VEC_FLOAT:]] [[#ADD_ID:]] {{[0-9]+}} {{[0-9]+}}
 ; SPIRV-DAG: TypeFloat [[#FLOAT:]] 32
-; SPIRV-DAG: TypeVector [[#VEC_FLOAT]] [[#FLOAT]] 2
+; SPIRV-DAG: TypeVector [[#VEC_FLOAT:]] [[#FLOAT]] 2
+;
+; SPIRV-DAG: EntryPoint {{[0-9]+}} [[#FOO:]] "foo"
+; SPIRV-DAG: Constant {{[0-9]+}} [[#CONTRACT:]] 65536
+; SPIRV-DAG: ExecutionModeId [[#FOO]] 6028 [[#FLOAT]] [[#CONTRACT]]
+;
+; SPIRV-DAG: Name [[#ADD_ID:]] "add.i"
+; SPIRV-DAG: FAdd [[#VEC_FLOAT]] [[#ADD_ID]] {{[0-9]+}} {{[0-9]+}}
 ; SPIRV-DAG: Decorate [[#ADD_ID]] FPFastMathMode 65536
-; SPIRV-DAG: Name [[#ADD_ID]] "add.i"
 
                  OpCapability Kernel
                  OpCapability Addresses
