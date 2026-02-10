@@ -948,6 +948,8 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   if (!isKernel(F) && F->getLinkage() != GlobalValue::InternalLinkage)
     BF->setLinkageType(transLinkageType(F));
 
+  transLinkageAsUserSemantic(BF, F);
+
   // Translate OpenCL/SYCL buffer_location metadata if it's attached to the
   // translated function declaration
   MDNode *BufferLocation = nullptr;
@@ -2176,6 +2178,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
         translateSEVDecoration(
             GV->getAttribute(kVCMetadata::VCSingleElementVector), BVar);
     }
+
+    transLinkageAsUserSemantic(BVar, GV);
 
     transAuxDataInst(BVar, V);
 
@@ -7257,6 +7261,44 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   }
   }
   return nullptr;
+}
+
+void LLVMToSPIRVBase::transLinkageAsUserSemantic(SPIRVEntry *BE,
+                                                 const GlobalValue *GV) {
+  if (!BM->shouldEmitLinkageUserSemantic())
+    return;
+  // Emit a UserSemantic decoration to preserve LLVM linkage types that have
+  // no native SPIR-V representation. The string format is "linkage:<type>".
+  // Linkage types that map natively (External/Internal/Private/LinkOnceODR)
+  // are not emitted.
+  const char *LinkageName = nullptr;
+  switch (GV->getLinkage()) {
+  case GlobalValue::WeakAnyLinkage:
+    LinkageName = "weak";
+    break;
+  case GlobalValue::WeakODRLinkage:
+    LinkageName = "weak_odr";
+    break;
+  case GlobalValue::LinkOnceAnyLinkage:
+    LinkageName = "linkonce";
+    break;
+  case GlobalValue::AvailableExternallyLinkage:
+    LinkageName = "available_externally";
+    break;
+  case GlobalValue::CommonLinkage:
+    LinkageName = "common";
+    break;
+  case GlobalValue::AppendingLinkage:
+    LinkageName = "appending";
+    break;
+  case GlobalValue::ExternalWeakLinkage:
+    LinkageName = "extern_weak";
+    break;
+  default:
+    return;
+  }
+  BE->addDecorate(new SPIRVDecorateUserSemanticAttr(
+      BE, std::string("linkage:") + LinkageName));
 }
 
 SPIRV::SPIRVLinkageTypeKind

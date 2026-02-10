@@ -169,6 +169,18 @@ static cl::opt<bool> SPIRVEmitFunctionPtrAddrSpace(
     "spirv-emit-function-ptr-addr-space", cl::init(false),
     cl::desc("Emit and consume CodeSectionINTEL for function pointers"));
 
+static cl::opt<bool> SPIRVEmitLinkageUserSemantic(
+    "spirv-emit-linkage-user-semantic", cl::init(false),
+    cl::desc("Emit UserSemantic decoration with \"linkage:<type>\" string on "
+             "functions and globals whose linkage has no native SPIR-V "
+             "representation."));
+
+static cl::opt<bool> SPIRVConsumeLinkageUserSemantic(
+    "spirv-consume-linkage-user-semantic", cl::init(false),
+    cl::desc("Interpret UserSemantic decoration with \"linkage:<type>\" "
+             "string as the corresponding LLVM linkage on functions and "
+             "globals."));
+
 using SPIRV::ExtensionID;
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
@@ -911,6 +923,24 @@ int main(int Ac, char **Av) {
 
   if (SPIRVEmitFunctionPtrAddrSpace.getNumOccurrences() != 0)
     Opts.setEmitFunctionPtrAddrSpace(true);
+
+  if (SPIRVEmitLinkageUserSemantic.getNumOccurrences() != 0) {
+    if (IsReverse) {
+      errs() << "Note: --spirv-emit-linkage-user-semantic option ignored "
+                "as it only affects translation from LLVM IR to SPIR-V";
+    } else {
+      Opts.setEmitLinkageUserSemantic(true);
+    }
+  }
+
+  if (SPIRVConsumeLinkageUserSemantic.getNumOccurrences() != 0) {
+    if (!IsReverse) {
+      errs() << "Note: --spirv-consume-linkage-user-semantic option "
+                "ignored as it only affects translation from SPIR-V to LLVM IR";
+    } else {
+      Opts.setConsumeLinkageUserSemantic(true);
+    }
+  }
 
   Opts.setFnVarSpecEnable(FnVarSpecEnable);
 

@@ -605,6 +605,14 @@ public:
     return TranslationOpts.preserveAuxData();
   }
 
+  bool shouldEmitLinkageUserSemantic() const noexcept {
+    return TranslationOpts.shouldEmitLinkageUserSemantic();
+  }
+
+  bool shouldConsumeLinkageUserSemantic() const noexcept {
+    return TranslationOpts.shouldConsumeLinkageUserSemantic();
+  }
+
   BuiltinFormat getBuiltinFormat() const noexcept {
     return TranslationOpts.getBuiltinFormat();
   }
