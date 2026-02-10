@@ -58,6 +58,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/IR/AttributeMask.h"
@@ -96,6 +97,23 @@
 using namespace llvm;
 using namespace SPIRV;
 using namespace OCLUtil;
+
+// Parse a "linkage:<type>" UserSemantic string into an LLVM linkage type.
+static std::optional<GlobalValue::LinkageTypes>
+parseLinkageUserSemantic(StringRef UsSem) {
+  if (!UsSem.starts_with("linkage:"))
+    return std::nullopt;
+  StringRef LinkageName = UsSem.drop_front(strlen("linkage:"));
+  return StringSwitch<std::optional<GlobalValue::LinkageTypes>>(LinkageName)
+      .Case("weak", GlobalValue::WeakAnyLinkage)
+      .Case("weak_odr", GlobalValue::WeakODRLinkage)
+      .Case("linkonce", GlobalValue::LinkOnceAnyLinkage)
+      .Case("available_externally", GlobalValue::AvailableExternallyLinkage)
+      .Case("common", GlobalValue::CommonLinkage)
+      .Case("appending", GlobalValue::AppendingLinkage)
+      .Case("extern_weak", GlobalValue::ExternalWeakLinkage)
+      .Default(std::nullopt);
+}
 
 namespace SPIRV {
 
@@ -1792,6 +1810,17 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
                              ? GlobalValue::UnnamedAddr::Global
                              : GlobalValue::UnnamedAddr::None);
     LVar->setInitializer(Initializer);
+
+    // Override linkage from UserSemantic decoration if the flag is enabled.
+    if (BM->shouldConsumeLinkageUserSemantic()) {
+      for (const auto &UsSem :
+           BVar->getDecorationStringLiteral(DecorationUserSemantic)) {
+        if (auto LT = parseLinkageUserSemantic(UsSem)) {
+          LVar->setLinkage(*LT);
+          break;
+        }
+      }
+    }
 
     if (IsVectorCompute) {
       LVar->addAttribute(kVCMetadata::VCGlobalVariable);
@@ -4358,6 +4387,14 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     std::vector<SmallString<256>> AnnotStrVec;
     generateIntelFPGAAnnotation(BV, AnnotStrVec);
 
+    // Filter out "linkage:..." annotations that were consumed for linkage
+    // override, so they don't become spurious global annotations.
+    if (BM->shouldConsumeLinkageUserSemantic()) {
+      llvm::erase_if(AnnotStrVec, [](const SmallString<256> &S) {
+        return StringRef(S).starts_with("linkage:");
+      });
+    }
+
     if (AnnotStrVec.empty()) {
       // Check if IO pipe decoration is applied to the global
       SPIRVWord ID;
@@ -4431,6 +4468,15 @@ void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
   auto *TransFun = transFunction(Fun);
   for (const auto &UsSem :
        Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
+    // If the reverse-translation flag is enabled, interpret "linkage:<type>"
+    // UserSemantic as the corresponding LLVM linkage on the function.
+    if (BM->shouldConsumeLinkageUserSemantic()) {
+      if (auto LT = parseLinkageUserSemantic(UsSem)) {
+        TransFun->setLinkage(*LT);
+        continue;
+      }
+    }
+
     auto *V = cast<Value>(TransFun);
     Constant *StrConstant =
         ConstantDataArray::getString(*Context, StringRef(UsSem));
