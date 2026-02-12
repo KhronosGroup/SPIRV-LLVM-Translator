@@ -1719,8 +1719,12 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgMacroDefine(const DIMacro *Macro,
   using namespace SPIRVDebug::Operand::MacroDef;
   Ops.resize(OperandCount);
   Ops[SourceIdx] = FileName->getId();
-  Ops[LineIdx] =
-      SPIRVWriter->transValue(getUInt(M, Macro->getLine()), nullptr)->getId();
+  Ops[LineIdx] = Macro->getLine();
+
+  if (isNonSemanticDebugInfo()){
+    transformToConstant(Ops, {LineIdx});
+  }
+
   Ops[NameIdx] = BM->getString(Macro->getName().str())->getId();
   Ops[ValueIdx] = BM->getString(Macro->getValue().str())->getId();
 
@@ -1737,13 +1741,16 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgMacroUndef(const DIMacro *Macro,
   using namespace SPIRVDebug::Operand::MacroUndef;
   Ops.resize(OperandCount);
   Ops[SourceIdx] = FileName->getId();
-  Ops[LineIdx] =
-      SPIRVWriter->transValue(getUInt(M, Macro->getLine()), nullptr)->getId();
+  Ops[LineIdx] = Macro->getLine();
+
+  if (isNonSemanticDebugInfo()){
+    transformToConstant(Ops, {LineIdx});
+  }
 
   SPIRVId MacroDefId = getDebugInfoNoneId();
 
   // transDbgMacroDefine is processed first so MacroDefMap is already populated
-  // at this point
+  // at this point.
   auto It = MacroDefMap.find(Macro->getName().str());
   if (It != MacroDefMap.end()) {
     MacroDefId = It->second->getId();

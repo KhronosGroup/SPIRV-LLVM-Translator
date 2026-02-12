@@ -3,7 +3,21 @@
 ; Test round-trip translation of debug macro information:
 ; LLVM IR -> SPIR-V -> LLVM IR
 
-; RUN: llvm-spirv --spirv-debug-info-version=nonsemantic-shader-100 %s -o %t.spv
+; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %s -o %t.spv
+; RUN: spirv-val %t.spv
+
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll
+
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %s -o %t.spv
+; RUN: spirv-val %t.spv
+
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
+; RUN: FileCheck %s --input-file %t.rev.ll
+
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-200 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
