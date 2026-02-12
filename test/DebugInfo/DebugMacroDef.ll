@@ -1,32 +1,53 @@
 ; Test round-trip translation of debug macro information:
 ; LLVM IR -> SPIR-V -> LLVM IR
 
+; Also test that the macro's line is properly encoded as a literal or register.
+
 ; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
+; RUN: spirv-dis %t.spv -o %t.spvasm
+; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-OCL
+
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK
+; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LL
 
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
+; RUN: spirv-dis %t.spv -o %t.spvasm
+; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-100
+
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK
+; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LL
 
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-200 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
+; RUN: spirv-dis %t.spv -o %t.spvasm
+; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-200
+
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc 
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
-; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK
+; RUN: FileCheck %s --input-file %t.rev.ll --check-prefix CHECK-LL
 
-; CHECK-DAG: ![[#r1:]] = !DIFile(filename: "def.c", directory: ".")
-; CHECK-DAG: ![[#r2:]] = !DIMacroFile(file: ![[#r1]], nodes: ![[#r3:]])
-; CHECK-DAG: ![[#r3]] = !{![[#r4:]], ![[#r5:]]}
-; CHECK-DAG: ![[#r4]] = !DIMacro(type: DW_MACINFO_define, line: 1, name: "SIZE", value: "5")
-; CHECK-DAG: ![[#r5]] = !DIMacro(type: DW_MACINFO_undef, line: 1, name: "SIZE")
+; CHECK-LL-DAG: ![[#r1:]] = !DIFile(filename: "def.c", directory: ".")
+; CHECK-LL-DAG: ![[#r2:]] = !DIMacroFile(file: ![[#r1]], nodes: ![[#r3:]])
+; CHECK-LL-DAG: ![[#r3]] = !{![[#r4:]], ![[#r5:]]}
+; CHECK-LL-DAG: ![[#r4]] = !DIMacro(type: DW_MACINFO_define, line: 1, name: "SIZE", value: "5")
+; CHECK-LL-DAG: ![[#r5]] = !DIMacro(type: DW_MACINFO_undef, line: 1, name: "SIZE")
+
+; CHECK-SPIRV-OCL: %[[#]] = OpExtInst %void %[[#]] DebugMacroDef %[[#]] 1 %[[#]] %[[#]]
+
+; CHECK-SPIRV-NON-SEMANTIC-100-DAG: %[[type:.*]] = OpTypeInt 32 0
+; CHECK-SPIRV-NON-SEMANTIC-100-DAG: %[[uint_1_reg:.*]] = OpConstant %[[type]] 1
+; CHECK-SPIRV-NON-SEMANTIC-100-DAG: %[[#]] = OpExtInst %void %[[#]] DebugMacroDef %[[#]] %[[uint_1_reg]] %[[#]] %[[#]]
+
+; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[type:.*]] = OpTypeInt 32 0
+; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[uint_1_reg:.*]] = OpConstant %[[type]] 1
+; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[#]] = OpExtInst %void %[[#]] 32 %[[#]] %[[uint_1_reg]] %[[#]] %[[#]]
 
 target triple = "spir64-unknown-unknown"
 
