@@ -906,6 +906,8 @@ public:
       return ExtensionID::SPV_INTEL_vector_compute;
     case internal::CapabilityBFloat16ArithmeticINTEL:
       return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
+    case internal::CapabilityDeviceBarrierINTEL:
+      return ExtensionID::SPV_INTEL_device_barrier;
     default:
       return {};
     }
