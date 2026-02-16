@@ -4461,8 +4461,9 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
   auto *TransFun = transFunction(Fun);
 
-  // If spirv-use-user-semantic-for-linkage is enabled, interpret "linkage:<type>"
-  // UserSemantic as the corresponding LLVM linkage on the function.
+  // If spirv-use-user-semantic-for-linkage is enabled, interpret
+  // "linkage:<type>" UserSemantic as the corresponding LLVM linkage on the
+  // function.
   if (BM->shouldUseUserSemanticForLinkage()) {
     for (const auto &UsSem :
          Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
