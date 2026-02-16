@@ -74,7 +74,7 @@
 #define _SPIRV_SUPPORT_TEXT_FMT
 #endif
 
-#include "LLVMSPIRVLib.h"
+#include "LLVMSPIRVLib/LLVMSPIRVLib.h"
 
 #include <fstream>
 #include <iostream>
@@ -582,7 +582,7 @@ static int parseSPVExtOption(
 #define _STRINGIFY(X) #X
 #define STRINGIFY(X) _STRINGIFY(X)
 #define EXT(X) ExtensionNamesMap[STRINGIFY(X)] = ExtensionID::X;
-#include "LLVMSPIRVExtensions.inc"
+#include "LLVMSPIRVLib/LLVMSPIRVExtensions.inc"
 #undef EXT
 #undef STRINGIFY
 #undef _STRINGIFY

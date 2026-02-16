@@ -32,7 +32,7 @@
 #include "LLVMBitreverse.h"
 #include "LLVMSaddWithOverflow.h"
 
-#include "LLVMSPIRVLib.h"
+#include "LLVMSPIRVLib/LLVMSPIRVLib.h"
 #include "SPIRVError.h"
 #include "libSPIRV/SPIRVDebug.h"
 

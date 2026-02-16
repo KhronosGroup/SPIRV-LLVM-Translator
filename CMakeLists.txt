@@ -151,6 +151,11 @@ if (NOT SPIRV_TOOLS_FOUND AND LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
           "--spirv-tools-dis support.")
 endif()
 
+set(LLVM_SPIRV_HEADERS
+  ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVLib.h
+  ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVOpts.h
+  ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVExtensions.inc
+)
 
 add_subdirectory(lib/SPIRV)
 add_subdirectory(tools/llvm-spirv)
@@ -160,9 +165,7 @@ endif(LLVM_SPIRV_INCLUDE_TESTS)
 
 install(
   FILES
-    ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVLib.h
-    ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVOpts.h
-    ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVExtensions.inc
+    ${LLVM_SPIRV_HEADERS}
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/LLVMSPIRVLib
 )
