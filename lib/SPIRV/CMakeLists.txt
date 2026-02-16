@@ -1,18 +1,3 @@
-# Copy headers into build directory.
-set(LLVM_SPIRV_HEADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/include/LLVMSPIRVLib")
-file(MAKE_DIRECTORY ${LLVM_SPIRV_HEADER_OUTPUT_DIR})
-foreach(HEADER ${LLVM_SPIRV_HEADERS})
-  cmake_path(GET HEADER FILENAME HEADER_FILENAME)
-  cmake_path(APPEND COPIED_HEADER ${LLVM_SPIRV_HEADER_OUTPUT_DIR} ${HEADER_FILENAME})
-  add_custom_command(OUTPUT ${COPIED_HEADER}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${HEADER} ${COPIED_HEADER}
-    DEPENDS ${HEADER}
-    COMMENT "Copying SPIRV-LLVM-Translator header: ${HEADER}"
-  )
-  list(APPEND COPIED_HEADERS ${COPIED_HEADER})
-endforeach()
-add_custom_target(CopyLLVMSPIRVHeaders DEPENDS ${COPIED_HEADERS})
-
 set(SRC_LIST
   LLVMSPIRVOpts.cpp
   LLVMToSPIRVDbgTran.cpp
@@ -83,11 +68,9 @@ add_llvm_library(LLVMSPIRVLib
     intrinsics_gen
   )
 
-add_dependencies(LLVMSPIRVLib CopyLLVMSPIRVHeaders)
-
 target_include_directories(LLVMSPIRVLib
   PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${LLVM_SPIRV_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
   PRIVATE
     ${LLVM_INCLUDE_DIRS}
