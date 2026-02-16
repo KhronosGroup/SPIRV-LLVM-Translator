@@ -40,7 +40,7 @@
 #ifndef SPIRV_LIBSPIRV_SPIRVENUM_H
 #define SPIRV_LIBSPIRV_SPIRVENUM_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 #include "SPIRVOpCode.h"
 #include "spirv/unified1/spirv.hpp"
 #include "spirv_internal.hpp"
@@ -122,7 +122,7 @@ template <> inline void SPIRVMap<ExtensionID, std::string>::init() {
 #define _STRINGIFY(X) #X
 #define STRINGIFY(X) _STRINGIFY(X)
 #define EXT(X) add(ExtensionID::X, STRINGIFY(X));
-#include "LLVMSPIRVExtensions.inc"
+#include "LLVMSPIRVLib/LLVMSPIRVExtensions.inc"
 #undef EXT
 #undef STRINGIFY
 #undef _STRINGIFY
