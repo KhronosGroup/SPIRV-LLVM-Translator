@@ -6670,10 +6670,10 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         assert(F);
         BM->addCapability(CapabilityFloatControls2);
         BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
-        PoisonValue *V;
+        PoisonValue *V = nullptr;
         unsigned FlagsLiteral;
         N.get(V).get(FlagsLiteral);
-        assert(V->getType()->isFloatingPointTy());
+        assert(V && V->getType()->isFloatingPointTy());
         SPIRVTypeFloat *FloatSPIRVType =
             static_cast<SPIRVTypeFloat *>(transType(V->getType()));
         setExecutionModeFPFastMathDefault(BF, FloatSPIRVType, FlagsLiteral);
