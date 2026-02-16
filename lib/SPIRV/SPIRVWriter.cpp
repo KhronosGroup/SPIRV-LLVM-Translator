@@ -7269,8 +7269,8 @@ void LLVMToSPIRVBase::transLinkageAsUserSemantic(SPIRVEntry *BE,
     return;
   // Emit a UserSemantic decoration to preserve LLVM linkage types that have
   // no native SPIR-V representation. The string format is "linkage:<type>".
-  // Linkage types that map natively (External/Internal/Private/LinkOnceODR)
-  // are not emitted.
+  // Linkage types that map natively (Export/Import/LinkOnceODR) are not
+  // emitted.
   const char *LinkageName = nullptr;
   switch (GV->getLinkage()) {
   case GlobalValue::WeakAnyLinkage:
@@ -7281,9 +7281,6 @@ void LLVMToSPIRVBase::transLinkageAsUserSemantic(SPIRVEntry *BE,
     break;
   case GlobalValue::LinkOnceAnyLinkage:
     LinkageName = "linkonce";
-    break;
-  case GlobalValue::AvailableExternallyLinkage:
-    LinkageName = "available_externally";
     break;
   case GlobalValue::CommonLinkage:
     LinkageName = "common";
