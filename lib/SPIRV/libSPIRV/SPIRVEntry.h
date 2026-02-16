@@ -356,6 +356,7 @@ public:
   void addDecorate(Decoration Kind, SPIRVWord Literal);
   void eraseDecorate(Decoration);
   void eraseDecorateId(Decoration);
+  void eraseDecorateStringAttr(Decoration Dec, const std::string &Prefix);
   void addMemberDecorate(SPIRVMemberDecorate *);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind);
   void addMemberDecorate(SPIRVWord MemberNumber, Decoration Kind,

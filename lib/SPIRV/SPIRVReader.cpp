@@ -1812,7 +1812,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     LVar->setInitializer(Initializer);
 
     // Override linkage from UserSemantic decoration if the flag is enabled.
-    if (BM->shouldConsumeLinkageUserSemantic()) {
+    // Erase consumed decorations so they don't appear as spurious annotations.
+    if (BM->shouldUseUserSemanticForLinkage()) {
       for (const auto &UsSem :
            BVar->getDecorationStringLiteral(DecorationUserSemantic)) {
         if (auto LT = parseLinkageUserSemantic(UsSem)) {
@@ -1820,6 +1821,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
           break;
         }
       }
+      BVar->eraseDecorateStringAttr(DecorationUserSemantic, "linkage:");
     }
 
     if (IsVectorCompute) {
@@ -4387,14 +4389,6 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
     std::vector<SmallString<256>> AnnotStrVec;
     generateIntelFPGAAnnotation(BV, AnnotStrVec);
 
-    // Filter out "linkage:..." annotations that were consumed for linkage
-    // override, so they don't become spurious global annotations.
-    if (BM->shouldConsumeLinkageUserSemantic()) {
-      llvm::erase_if(AnnotStrVec, [](const SmallString<256> &S) {
-        return StringRef(S).starts_with("linkage:");
-      });
-    }
-
     if (AnnotStrVec.empty()) {
       // Check if IO pipe decoration is applied to the global
       SPIRVWord ID;
@@ -4466,17 +4460,22 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 // ect.)
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
   auto *TransFun = transFunction(Fun);
-  for (const auto &UsSem :
-       Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
-    // If the reverse-translation flag is enabled, interpret "linkage:<type>"
-    // UserSemantic as the corresponding LLVM linkage on the function.
-    if (BM->shouldConsumeLinkageUserSemantic()) {
+
+  // If spirv-use-user-semantic-for-linkage is enabled, interpret "linkage:<type>"
+  // UserSemantic as the corresponding LLVM linkage on the function.
+  if (BM->shouldUseUserSemanticForLinkage()) {
+    for (const auto &UsSem :
+         Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
       if (auto LT = parseLinkageUserSemantic(UsSem)) {
         TransFun->setLinkage(*LT);
-        continue;
+        break;
       }
     }
+    Fun->eraseDecorateStringAttr(DecorationUserSemantic, "linkage:");
+  }
 
+  for (const auto &UsSem :
+       Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
     auto *V = cast<Value>(TransFun);
     Constant *StrConstant =
         ConstantDataArray::getString(*Context, StringRef(UsSem));

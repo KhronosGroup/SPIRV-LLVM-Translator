@@ -1,22 +1,27 @@
 ; Test that LLVM linkage types not natively supported in SPIR-V are preserved
 ; through UserSemantic decorations when the experimental flags are enabled.
 
-; RUN: llvm-spirv --spirv-emit-linkage-user-semantic %s -o %t.spv
+; RUN: llvm-spirv --spirv-use-user-semantic-for-linkage %s -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv %s -o %t.noflg.spv
+; RUN: spirv-val %t.noflg.spv
 ; RUN: llvm-spirv %t.noflg.spv -to-text -o %t.noflg.spt
 ; RUN: FileCheck < %t.noflg.spt %s --check-prefix=CHECK-SPIRV-NOFLG
 
-; RUN: llvm-spirv -r --spirv-consume-linkage-user-semantic %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r --spirv-use-user-semantic-for-linkage %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.noflg.bc
 ; RUN: llvm-dis %t.rev.noflg.bc -o %t.rev.noflg.ll
 ; RUN: FileCheck < %t.rev.noflg.ll %s --check-prefix=CHECK-LLVM-NOFLG
+
+; RUN: llvm-spirv -r --spirv-use-user-semantic-for-linkage %t.noflg.spv -o %t.rev.noflg2.bc
+; RUN: llvm-dis %t.rev.noflg2.bc -o %t.rev.noflg2.ll
+; RUN: FileCheck < %t.rev.noflg2.ll %s --check-prefix=CHECK-LLVM-NOFLG
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"

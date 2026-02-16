@@ -332,6 +332,19 @@ void SPIRVEntry::addDecorate(Decoration Kind, SPIRVWord Literal) {
 
 void SPIRVEntry::eraseDecorate(Decoration Dec) { Decorates.erase(Dec); }
 
+// Erase all decorations of Dec kind whose string literal starts with Prefix.
+void SPIRVEntry::eraseDecorateStringAttr(Decoration Dec,
+                                         const std::string &Prefix) {
+  auto Range = Decorates.equal_range(Dec);
+  for (auto It = Range.first; It != Range.second;) {
+    auto Strs = getVecString(It->second->getVecLiteral());
+    if (!Strs.empty() && Strs[0].compare(0, Prefix.size(), Prefix) == 0)
+      It = Decorates.erase(It);
+    else
+      ++It;
+  }
+}
+
 void SPIRVEntry::takeDecorates(SPIRVEntry *E) {
   Decorates = std::move(E->Decorates);
   SPIRVDBG(spvdbgs() << "[takeDecorates] " << Id << '\n';)

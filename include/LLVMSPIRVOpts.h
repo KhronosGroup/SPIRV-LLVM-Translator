@@ -253,18 +253,11 @@ public:
   void setUseLLVMTarget(bool Flag) noexcept { UseLLVMTarget = Flag; }
   bool getUseLLVMTarget() const noexcept { return UseLLVMTarget; }
 
-  void setEmitLinkageUserSemantic(bool Flag) noexcept {
-    EmitLinkageUserSemantic = Flag;
+  void setUseUserSemanticForLinkage(bool Flag) noexcept {
+    UseUserSemanticForLinkage = Flag;
   }
-  bool shouldEmitLinkageUserSemantic() const noexcept {
-    return EmitLinkageUserSemantic;
-  }
-
-  void setConsumeLinkageUserSemantic(bool Flag) noexcept {
-    ConsumeLinkageUserSemantic = Flag;
-  }
-  bool shouldConsumeLinkageUserSemantic() const noexcept {
-    return ConsumeLinkageUserSemantic;
+  bool shouldUseUserSemanticForLinkage() const noexcept {
+    return UseUserSemanticForLinkage;
   }
 
   void setFnVarCategory(uint32_t Category) noexcept {
@@ -379,11 +372,9 @@ private:
   // When translating LLVM IR to SPIR-V, emit a UserSemantic decoration with
   // "linkage:<type>" string on globals/functions whose linkage has no native
   // SPIR-V representation.
-  bool EmitLinkageUserSemantic = false;
-
   // When translating SPIR-V to LLVM IR, interpret a UserSemantic decoration
   // with "linkage:<type>" string as the corresponding LLVM linkage.
-  bool ConsumeLinkageUserSemantic = false;
+  bool UseUserSemanticForLinkage = false;
 };
 
 } // namespace SPIRV

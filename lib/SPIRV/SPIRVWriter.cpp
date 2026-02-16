@@ -7265,7 +7265,7 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
 
 void LLVMToSPIRVBase::transLinkageAsUserSemantic(SPIRVEntry *BE,
                                                  const GlobalValue *GV) {
-  if (!BM->shouldEmitLinkageUserSemantic())
+  if (!BM->shouldUseUserSemanticForLinkage())
     return;
   // Emit a UserSemantic decoration to preserve LLVM linkage types that have
   // no native SPIR-V representation. The string format is "linkage:<type>".
