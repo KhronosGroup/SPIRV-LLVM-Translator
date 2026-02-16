@@ -35,7 +35,7 @@ target triple = "spirv64-unknown-unknown"
 define spir_kernel void @testConversions() {
 entry:
   %addr1 = alloca bfloat
-  %data1 = load bfloat, ptr %addr1
+  %data1 = load bfloat, bfloat* %addr1
   %OpConvertFToU = fptoui bfloat %data1 to i32
   %OpConvertFToS = fptosi bfloat %data1 to i32
   %OpConvertSToF = sitofp i32 0 to bfloat
