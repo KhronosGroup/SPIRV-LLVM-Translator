@@ -71,7 +71,6 @@ add_llvm_library(LLVMSPIRVLib
 target_include_directories(LLVMSPIRVLib
   PUBLIC
     $<BUILD_INTERFACE:${LLVM_SPIRV_INCLUDE_DIRS}>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
   PRIVATE
     ${LLVM_INCLUDE_DIRS}
     # TODO: Consider using SPIRV-Headers' as a header-only INTERFACE
