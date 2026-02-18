@@ -2641,6 +2641,7 @@ public:
     case OpenCLLIB::Vload_halfn:
     case OpenCLLIB::Vloada_halfn:
       addUnsignedArg(0);
+      setArgAttr(1, SPIR::ATTR_CONST);
       break;
     case OpenCLLIB::Vstoren:
     case OpenCLLIB::Vstore_half:
