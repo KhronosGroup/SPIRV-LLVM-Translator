@@ -140,6 +140,10 @@ public:
   bool translate();
   bool transExecutionMode();
   void transFPContract();
+  void
+  setExecutionModeFPFastMathDefault(SPIRVFunction *BF,
+                                    ArrayRef<SPIRVTypeFloat *> FloatSPIRVTypes,
+                                    SPIRVWord FlagsLiteral);
   SPIRVValue *transConstant(Value *V);
   SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
                          bool CreateForward = true,
