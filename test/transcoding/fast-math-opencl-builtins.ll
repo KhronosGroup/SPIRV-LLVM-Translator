@@ -1,20 +1,28 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv -spirv-text %t.bc -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-DEFAULT
+; RUN: llvm-spirv -spirv-text %t.bc --spirv-ext=+SPV_KHR_float_controls2 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-FC2
 ; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_float_controls2 -o %t.fc2.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-OCL
-; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-SPV
+; RUN: spirv-val %t.fc2.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-OCL-DEFAULT
+; RUN: llvm-spirv -r %t.fc2.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-OCL-FC2
+; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-SPV-DEFAULT
+; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.fc2.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-SPV-FC2
 
 ; RUN: llvm-spirv -spirv-text --spirv-max-version=1.5 %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NEG
 
-; CHECK-SPIRV: Decorate [[#FPDec4:]] FPFastMathMode 16
+; CHECK-SPIRV-DEFAULT: Decorate [[#FPDec4:]] FPFastMathMode 16
+; CHECK-SPIRV-FC2: Decorate [[#FPDec4:]] FPFastMathMode 458767
 ; CHECK-SPIRV: ExtInst [[#]] [[#FPDec4]] [[#]] fmax [[#]] [[#]]
 
 ; CHECK-SPIRV-NEG-NOT: Decorate [[#]] FPFastMathMode [[#]]
 
-; CHECK-LLVM-OCL: call fast spir_func float @_Z4fmaxff(float %[[#]], float %[[#]])
+; CHECK-LLVM-OCL-DEFAULT: call fast spir_func float @_Z4fmaxff(float %[[#]], float %[[#]])
+; CHECK-LLVM-OCL-FC2: call reassoc nnan ninf nsz arcp contract spir_func float @_Z4fmaxff(float %[[#]], float %[[#]])
 
-; CHECK-LLVM-SPV: call fast spir_func float @_Z16__spirv_ocl_fmaxff(float %[[#]], float %[[#]])
+; CHECK-LLVM-SPV-DEFAULT: call fast spir_func float @_Z16__spirv_ocl_fmaxff(float %[[#]], float %[[#]])
+; CHECK-LLVM-SPV-FC2: call reassoc nnan ninf nsz arcp contract spir_func float @_Z16__spirv_ocl_fmaxff(float %[[#]], float %[[#]])
 
 ; ModuleID = 'test.bc'
 source_filename = "test.cpp"
