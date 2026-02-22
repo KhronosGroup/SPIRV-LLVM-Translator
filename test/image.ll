@@ -7,10 +7,10 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv %t.rev.bc -o %t.rev.spv
 ; RUN: spirv-val %t.rev.spv
-; RUN: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
-; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
-; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
-; RUN: FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll %}
 
 ; CHECK-SPIRV: 2 TypeVoid [[VOID_TY:[0-9]+]]
 ; CHECK-SPIRV-DAG: 10 TypeImage {{[0-9]*}} [[VOID_TY]] 1 0 0 0 0 0 0

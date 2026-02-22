@@ -7,10 +7,10 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-SPV-IR
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
-; RUN: llc -O0 -mtriple=spirv32-unknown-unknown -filetype=obj %s -o %t.llc.spv
-; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
-; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
-; RUN: FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv32-unknown-unknown -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll %}
 
 ; CHECK-SPIRV: 4 GenericPtrMemSemantics {{[0-9]+}} [[ResID:[0-9]+]] {{[0-9]+}}
 ; CHECK-SPIRV-NEXT: 5 ShiftRightLogical {{[0-9]+}} {{[0-9]+}} [[ResID]] {{[0-9]+}}

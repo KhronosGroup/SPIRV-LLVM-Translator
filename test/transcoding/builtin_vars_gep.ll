@@ -8,10 +8,10 @@
 
 ; Check that produced builtin-call-based SPV-IR is recognized by the translator
 ; RUN: llvm-spirv -spirv-text %t.out.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llc -O0 -mtriple=spirv32-unknown-unknown -filetype=obj %s -o %t.llc.spv
-; RUN: llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc
-; RUN: llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll
-; RUN: FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv32-unknown-unknown -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLC < %t.llc.rev.ll %}
 ; TODO: rewrite the test as currently DCE removes IR through llc compilation flow
 
 ; CHECK-SPIRV: Decorate [[Id:[0-9]+]] BuiltIn 28
