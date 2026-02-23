@@ -58,6 +58,7 @@ template <> inline void SPIRVMap<LinkageType, std::string>::init() {
   add(LinkageTypeExport, "Export");
   add(LinkageTypeImport, "Import");
   add(LinkageTypeLinkOnceODR, "LinkOnceODR");
+  add(internal::LinkageTypeWeak, "Weak");
   add(internal::LinkageTypeInternal, "Internal");
   add(LinkageTypeMax, "Max");
 }
