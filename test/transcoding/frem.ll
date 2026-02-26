@@ -4,7 +4,9 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_float_controls2 -o %t.fc2.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: spirv-val %t.fc2.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-DEFAULT
+; RUN: llvm-spirv -r %t.fc2.spv -o - | llvm-dis -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-FC2
 ; FIXME: FILECHECK_FAIL during llvm-spirv -r in llc compilation flow
 ; TODO: rewrite the test as currently DCE removes IR through llc compilation flow
 

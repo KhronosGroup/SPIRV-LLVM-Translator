@@ -5,7 +5,7 @@
 ; RUN: llvm-dis %t.bc -o %t.ll
 ; RUN: FileCheck %s --input-file %t.ll  -check-prefix=LLVM
 ; RUN: FileCheck %s --input-file %t.spt -check-prefix=SPV
-; FIXME: llc run results in a failure
+; FIXME: LLC_FAIL
 ; RUNx: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
 
 ; ModuleID = 'float_control_empty.bc'

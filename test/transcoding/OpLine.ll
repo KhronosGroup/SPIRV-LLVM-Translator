@@ -17,7 +17,7 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o -| FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
-; FIXME: llc run results in a failure
+; FIXME: LLC_FAIL
 ; RUNx: llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv
 
 ; XFAIL: *
