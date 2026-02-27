@@ -38,7 +38,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 
 #include "SPIRVEnum.h"
 #include <llvm/ADT/SmallVector.h>
@@ -51,7 +51,7 @@ using namespace SPIRV;
 
 void TranslatorOpts::enableAllExtensions() {
 #define EXT(X) ExtStatusMap[ExtensionID::X] = true;
-#include "LLVMSPIRVExtensions.inc"
+#include "LLVMSPIRVLib/LLVMSPIRVExtensions.inc"
 #undef EXT
 }
 
