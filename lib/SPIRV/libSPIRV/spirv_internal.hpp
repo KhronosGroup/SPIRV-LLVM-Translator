@@ -178,6 +178,17 @@ enum InternalBuiltIn {
   IBuiltInDeviceBarrierValidINTEL = 6186,
 };
 
+enum InternalMatrixMultiplyAccumulateOperandsMask {
+  // FP8 matrix operands
+  IMatrixMultiplyAccumulateOperandsMatrixAPackedFloat8E4M3INTELMask = 0x4000,
+  IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat8E4M3INTELMask = 0x8000,
+  IMatrixMultiplyAccumulateOperandsMatrixAPackedFloat8E5M2INTELMask = 0x10000,
+  IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat8E5M2INTELMask = 0x20000,
+  // FP4 matrix operands
+  IMatrixMultiplyAccumulateOperandsMatrixAPackedFloat4E2M1INTELMask = 0x40000,
+  IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat4E2M1INTELMask = 0x80000,
+};
+
 enum class LoadCacheControlINTEL {
   Uncached = 0,
   Cached = 1,
