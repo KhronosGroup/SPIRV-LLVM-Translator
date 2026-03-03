@@ -1511,11 +1511,8 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
         Ops.push_back(transValue(GEP->getOperand(I + 1), nullptr)->getId());
       SPIRVType *TranslatedTy = transScavengedType(GEP);
       if (TranslatedTy->isTypeUntypedPointerKHR()) {
-        llvm::Type *Ty = Scavenger->getScavengedType(GEP->getPointerOperand());
-        if (auto *TPT = dyn_cast<TypedPointerType>(Ty)) {
-          SPIRVType *PtrTy = transType(TPT->getElementType());
-          Ops = getVec(PtrTy->getId(), Ops);
-        }
+        SPIRVType *PtrTy = transType(GepSourceElemTy);
+        Ops = getVec(PtrTy->getId(), Ops);
       }
       return BM->addPtrAccessChainInst(TranslatedTy, std::move(Ops), nullptr,
                                        GEP->isInBounds());
