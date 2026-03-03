@@ -1,6 +1,8 @@
 ; Check "support" of ptrtoaddr instruction translation to SPIR-V.
 ; ptrtoaddr -> OpConvertPtrToU -> ptrtoint
 
+; FIXME: add llc compilation flow when ptrtoaddr is supported in SPIR-V backend
+
 ; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv

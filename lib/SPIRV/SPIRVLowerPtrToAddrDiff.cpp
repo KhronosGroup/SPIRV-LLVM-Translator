@@ -57,7 +57,7 @@ using namespace SPIRV;
 
 namespace SPIRV {
 
-bool SPIRVLowerPtrToAddrDiffBase::lowerPtrToAddrDiffPattern(Function &F) {
+bool SPIRVLowerPtrToAddrDiffPass::lowerPtrToAddrDiffPattern(Function &F) {
   bool Changed = false;
 
   // Collect candidate sub instructions.
@@ -116,7 +116,7 @@ bool SPIRVLowerPtrToAddrDiffBase::lowerPtrToAddrDiffPattern(Function &F) {
   return Changed;
 }
 
-bool SPIRVLowerPtrToAddrDiffBase::runLowerPtrToAddrDiff(Module &M) {
+bool SPIRVLowerPtrToAddrDiffPass::runLowerPtrToAddrDiff(Module &M) {
   Mod = &M;
   bool Changed = false;
 
@@ -132,7 +132,7 @@ bool SPIRVLowerPtrToAddrDiffBase::runLowerPtrToAddrDiff(Module &M) {
 
 llvm::PreservedAnalyses
 SPIRVLowerPtrToAddrDiffPass::run(llvm::Module &M,
-                                  llvm::ModuleAnalysisManager &MAM) {
+                                 llvm::ModuleAnalysisManager &MAM) {
   return runLowerPtrToAddrDiff(M) ? llvm::PreservedAnalyses::none()
                                   : llvm::PreservedAnalyses::all();
 }

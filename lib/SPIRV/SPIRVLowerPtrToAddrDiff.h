@@ -44,26 +44,19 @@
 
 namespace SPIRV {
 
-class SPIRVLowerPtrToAddrDiffBase {
-public:
-  SPIRVLowerPtrToAddrDiffBase() : Mod(nullptr) {}
-
-  bool runLowerPtrToAddrDiff(llvm::Module &M);
-
-private:
-  bool lowerPtrToAddrDiffPattern(llvm::Function &F);
-
-  llvm::Module *Mod;
-};
-
 class SPIRVLowerPtrToAddrDiffPass
-    : public llvm::PassInfoMixin<SPIRVLowerPtrToAddrDiffPass>,
-      public SPIRVLowerPtrToAddrDiffBase {
+    : public llvm::PassInfoMixin<SPIRVLowerPtrToAddrDiffPass> {
 public:
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
 
   static bool isRequired() { return true; }
+
+private:
+  bool runLowerPtrToAddrDiff(llvm::Module &M);
+  bool lowerPtrToAddrDiffPattern(llvm::Function &F);
+
+  llvm::Module *Mod = nullptr;
 };
 
 } // namespace SPIRV
