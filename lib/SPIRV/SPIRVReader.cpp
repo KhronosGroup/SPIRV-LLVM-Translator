@@ -1062,9 +1062,6 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     CO = Instruction::AddrSpaceCast;
     break;
   }
-  case OpSConvert:
-    CO = IsExt ? Instruction::SExt : Instruction::Trunc;
-    break;
   case OpUConvert:
     CO = IsExt ? Instruction::ZExt : Instruction::Trunc;
     break;
@@ -1073,6 +1070,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   case internal::OpStochasticRoundFToFINTEL:
   case internal::OpClampStochasticRoundFToFINTEL:
   case internal::OpClampStochasticRoundFToSINTEL:
+  case OpSConvert:
   case OpConvertSToF:
   case OpConvertFToS:
   case OpConvertUToF:
@@ -1152,6 +1150,10 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
     if (OC == OpFConvert) {
       CO = IsExt ? Instruction::FPExt : Instruction::FPTrunc;
+      break;
+    }
+    if (OC == OpSConvert) {
+      CO = IsExt ? Instruction::SExt : Instruction::Trunc;
       break;
     }
     CO = static_cast<CastInst::CastOps>(OpCodeMap::rmap(OC));
