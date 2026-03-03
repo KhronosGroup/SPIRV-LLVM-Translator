@@ -98,7 +98,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_CXX_FLAGS="-Werror" \
             -DLLVM_INCLUDE_TESTS=ON \
-            -DLLVM_EXTERNAL_LIT="$(which llvm-lit-${{ env.LLVM_VERSION }} || which llvm-lit)" \
+            -DLLVM_EXTERNAL_LIT=/usr/bin/llvm-lit-${{ env.LLVM_VERSION }} \
             -DLLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR=${{ github.workspace }}/SPIRV-Headers \
             -G "Unix Makefiles"
       - name: Build
