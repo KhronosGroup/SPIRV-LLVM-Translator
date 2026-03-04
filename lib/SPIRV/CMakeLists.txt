@@ -15,7 +15,6 @@ set(SRC_LIST
   SPIRVLowerConstExpr.cpp
   SPIRVLowerMemmove.cpp
   SPIRVLowerOCLBlocks.cpp
-  SPIRVLowerPtrToAddrDiff.cpp
   SPIRVLowerLLVMIntrinsic.cpp
   SPIRVReader.cpp
   SPIRVRegularizeLLVM.cpp

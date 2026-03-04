@@ -57,7 +57,6 @@
 #include "SPIRVLowerLLVMIntrinsic.h"
 #include "SPIRVLowerMemmove.h"
 #include "SPIRVLowerOCLBlocks.h"
-#include "SPIRVLowerPtrToAddrDiff.h"
 #include "SPIRVMDWalker.h"
 #include "SPIRVMemAliasingINTEL.h"
 #include "SPIRVModule.h"
@@ -7474,9 +7473,6 @@ void addPassesForSPIRV(ModulePassManager &PassMgr,
   PassMgr.addPass(PreprocessMetadataPass());
   PassMgr.addPass(SPIRVLowerOCLBlocksPass());
   PassMgr.addPass(OCLToSPIRVPass());
-  // OpPtrDiff requires SPIR-V 1.4 or above.
-  if (Opts.getMaxVersion() >= VersionNumber::SPIRV_1_4)
-    PassMgr.addPass(SPIRVLowerPtrToAddrDiffPass());
   PassMgr.addPass(SPIRVRegularizeLLVMPass());
   PassMgr.addPass(SPIRVLowerConstExprPass());
   PassMgr.addPass(SPIRVLowerBoolPass());
