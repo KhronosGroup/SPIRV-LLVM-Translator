@@ -2601,7 +2601,7 @@ class OpenCLStdToSPIRVFriendlyIRMangleInfo : public BuiltinFuncMangleInfo {
 public:
   OpenCLStdToSPIRVFriendlyIRMangleInfo(OCLExtOpKind ExtOpId,
                                        ArrayRef<Type *> ArgTys, Type *RetTy)
-      : ExtOpId(ExtOpId), ArgTys(ArgTys) {
+      : ExtOpId(ExtOpId), ArgTys(ArgTys), RetTy(RetTy) {
 
     std::string Postfix = "";
     if (needRetTypePostfix())
@@ -2617,6 +2617,11 @@ public:
     case OpenCLLIB::Vloada_halfn:
     case OpenCLLIB::Vloadn:
       return true;
+    case OpenCLLIB::Nan:
+      // Only add return type mangling for bfloat16 to disambiguate from half
+      // (both are represented as i16 in LLVM). Float and half use traditional
+      // naming for backward compatibility.
+      return RetTy->getScalarType()->isBFloatTy();
     default:
       return false;
     }
@@ -2669,6 +2674,7 @@ public:
 private:
   OCLExtOpKind ExtOpId;
   ArrayRef<Type *> ArgTys;
+  Type *RetTy;
 };
 } // namespace
 
