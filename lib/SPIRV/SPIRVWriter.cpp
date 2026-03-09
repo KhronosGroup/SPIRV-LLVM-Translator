@@ -5676,9 +5676,15 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     if (SPIRV::FPConvertToEncodingMap::find(DemangledName)) {
       FPConversionDesc FPDesc =
           SPIRV::FPConvertToEncodingMap::map(DemangledName);
-      Value *Src = CI->getOperand(0);
+
+      // Handle both direct return and sret cases
+      // sret: void @func(ptr sret(...) %result, i8 %source)
+      // direct: half @func(i8 %source)
+      bool HasSRet = CI->hasStructRetAttr();
+      unsigned SrcOperandIdx = HasSRet ? 1 : 0;
+      Value *Src = CI->getOperand(SrcOperandIdx);
       Type *LLVMSrcTy = Src->getType();
-      Type *LLVMDstTy = CI->getType();
+      Type *LLVMDstTy = HasSRet ? CI->getParamStructRetType(0) : CI->getType();
       SPIRVType *SrcTy = nullptr;
       SPIRVType *DstTy = nullptr;
 
@@ -5747,7 +5753,8 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       const auto OC = static_cast<Op>(FPDesc.ConvOpCode);
 
       // Translate operands for stochastic roundings.
-      for (size_t I = 1; I != CI->arg_size(); ++I)
+      // Skip sret parameter (if present) and value operand.
+      for (size_t I = SrcOperandIdx + 1; I != CI->arg_size(); ++I)
         Ops.push_back(transValue(CI->getOperand(I), BB));
 
       SPIRVValue *Conv = BM->addInstTemplate(OC, BM->getIds(Ops), BB, DstTy);
@@ -5763,7 +5770,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
         return Conv;
       // Need to adjust types: create bitcast for FP8 and packed Int4.
       SPIRVValue *BitCast =
-          BM->addUnaryInst(OpBitcast, transType(CI->getType()), Conv, BB);
+          BM->addUnaryInst(OpBitcast, transType(LLVMDstTy), Conv, BB);
       return BitCast;
     }
   }

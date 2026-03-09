@@ -16,6 +16,7 @@
 ; CHECK-SPIRV-DAG: Extension "SPV_EXT_float8"
 
 ; CHECK-SPIRV-DAG: Name [[#e4m3_hf16_scalar:]] "e4m3_hf16_scalar"
+; CHECK-SPIRV-DAG: Name [[#e4m3_sycl_half_scalar:]] "e4m3_sycl_half_scalar"
 ; CHECK-SPIRV-DAG: Name [[#e4m3_hf16_vector:]] "e4m3_hf16_vector"
 ; CHECK-SPIRV-DAG: Name [[#e5m2_hf16_scalar:]] "e5m2_hf16_scalar"
 ; CHECK-SPIRV-DAG: Name [[#e5m2_hf16_vector:]] "e5m2_hf16_vector"
@@ -45,6 +46,7 @@
 
 ; CHECK-SPIRV-DAG: TypeFloat [[#HFloat16Ty:]] 16 {{$}}
 ; CHECK-SPIRV-DAG: TypeVector [[#HFloat16VecTy:]] [[#HFloat16Ty]] 8
+; CHECK-SPIRV-DAG: TypeStruct [[#S_HALF:]] [[#HFloat16Ty]] {{$}}
 ; CHECK-SPIRV-DAG: Constant [[#HFloat16Ty]] [[#HalfConst:]] 15360
 ; CHECK-SPIRV-DAG: ConstantComposite [[#HFloat16VecTy]] [[#HalfVecConst:]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]] [[#HalfConst]]
 
@@ -72,6 +74,23 @@ entry:
 }
 
 declare dso_local spir_func half @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTc(i8)
+
+; CHECK-SPIRV: Function [[#]] [[#e4m3_sycl_half_scalar]]
+; CHECK-SPIRV: Bitcast [[#E4M3Ty]] [[#Cast1:]] [[#Int8Const]]
+; CHECK-SPIRV: FConvert [[#S_HALF]] [[#Conv:]] [[#Cast1]]
+
+; CHECK-LLVM-LABEL: e4m3_sycl_half_scalar
+; CHECK-LLVM: %[[#Call:]] = call %"class.sycl::_V1::detail::half_impl::half" @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTc(i8 1)
+
+%"class.sycl::_V1::detail::half_impl::half" = type { half }
+define spir_func void @e4m3_sycl_half_scalar() {
+entry:
+  %hi = alloca %"class.sycl::_V1::detail::half_impl::half", align 2
+  call spir_func void @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTh(ptr sret(%"class.sycl::_V1::detail::half_impl::half") align 2 %hi, i8 1) #5
+  ret void
+}
+
+declare dso_local spir_func void @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTh(ptr sret(%"class.sycl::_V1::detail::half_impl::half") align 2, i8)
 
 ; CHECK-SPIRV: Function [[#]] [[#e4m3_hf16_vector]] [[#]]
 ; CHECK-SPIRV: Bitcast [[#E4M3VecTy]] [[#Cast1:]] [[#Int8VecConst]]
