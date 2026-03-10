@@ -5611,21 +5611,19 @@ processMiniFPOrInt4Type(Type *LLVMTy, FPEncodingWrap Encoding,
   unsigned TyWidth = cast<IntegerType>(ScalarTy)->getBitWidth();
   unsigned VecSize = 0;
 
-  if (TyWidth == 32) {
-    // Int4 or FP4 packed in 32-bit integer, change type and vector size.
-    assert((Encoding == FPEncodingWrap::E2M1 ||
-            Encoding == FPEncodingWrap::Integer) &&
-           "Unknown FP encoding");
+  if ((Encoding == FPEncodingWrap::E2M1 ||
+       Encoding == FPEncodingWrap::Integer) &&
+      TyWidth > 4) {
+    // 4-bit types packed in a wider integer container: each TyWidth-bit
+    // element holds (TyWidth / 4) 4-bit values. For vector containers,
+    // multiply by the element count. Handles i8/i16/i32/i64 and <N x iK>.
     assert(!isLLVMCooperativeMatrixType(LLVMTy) &&
            "FP4 and Int4 matrices must not be packed");
-    VecSize = 8;
-    TyWidth = 4;
-  } else if (TyWidth == 8 && (Encoding == FPEncodingWrap::E2M1 ||
-                              Encoding == FPEncodingWrap::Integer)) {
-    assert(!isLLVMCooperativeMatrixType(LLVMTy) &&
-           "FP4 and Int4 matrices must not be packed");
-    // Int4 or FP4 packed in 8-bit integer, change type and vector size.
-    VecSize = 2;
+    unsigned NumElements =
+        LLVMTy->isVectorTy()
+            ? cast<VectorType>(LLVMTy)->getElementCount().getFixedValue()
+            : 1;
+    VecSize = (TyWidth / 4) * NumElements;
     TyWidth = 4;
   } else {
     if (LLVMTy->isVectorTy())
@@ -5721,7 +5719,12 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
                   ->getArgs());
           SrcOp = BM->addUnaryInst(OpBitcast, SrcTy, SrcOp, BB);
         } else if (FPDesc.SrcEncoding != FPEncodingWrap::Integer ||
-                   (SrcTy->isTypeVector() && !LLVMSrcTy->isVectorTy())) {
+                   (SrcTy->isTypeVector() &&
+                    (!LLVMSrcTy->isVectorTy() ||
+                     cast<VectorType>(LLVMSrcTy)
+                             ->getElementCount()
+                             .getFixedValue() !=
+                         SrcTy->getVectorComponentCount()))) {
           // Create bitcast for FP4, FP8 and packed Int4.
           SrcOp = BM->addUnaryInst(OpBitcast, SrcTy, SrcOp, BB);
         }
