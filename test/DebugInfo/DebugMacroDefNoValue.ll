@@ -1,4 +1,3 @@
-; REQUIRES: spirv-dis
 ; This test exercises the case where the DICompileUnit has as !DIMacro with and without a value.
 ; It is not possible to distinguish the case between the macro with an empty value and without one.
 
@@ -8,8 +7,8 @@
 ; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-OCL
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o %t.spvasm %}
+; RUN: %if spirv-dis %{ FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-OCL %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -18,8 +17,8 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-100
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o %t.spvasm %}
+; RUN: %if spirv-dis %{ FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-100 %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -28,8 +27,8 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-200 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-200
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o %t.spvasm %}
+; RUN: %if spirv-dis %{ FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-200 %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
