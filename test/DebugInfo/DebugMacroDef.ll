@@ -1,3 +1,4 @@
+; REQUIRES: spirv-dis
 ; Test round-trip translation of debug macro information:
 ; LLVM IR -> SPIR-V -> LLVM IR
 

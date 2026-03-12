@@ -1,3 +1,4 @@
+; REQUIRES: spirv-dis
 ; This test exercises the case where the DICompileUnit has as !DIMacro without a DIMacroFile
 
 ; Test round-trip translation of debug macro information:

@@ -1,3 +1,4 @@
+; REQUIRES: spirv-dis
 ; This test exercises the case where the DICompileUnit has as !DIMacro with and without a value.
 ; It is not possible to distinguish the case between the macro with an empty value and without one.
 
