@@ -696,6 +696,7 @@ static Type *parsePrimitiveType(LLVMContext &Ctx, StringRef Name) {
       .Cases("long", "unsigned long", Type::getInt64Ty(Ctx))
       .Cases("long long", "unsigned long long", Type::getInt64Ty(Ctx))
       .Case("half", Type::getHalfTy(Ctx))
+      .Cases("std::bfloat16_t", "__bf16", Type::getBFloatTy(Ctx))
       .Case("float", Type::getFloatTy(Ctx))
       .Case("double", Type::getDoubleTy(Ctx))
       .Case("void", Type::getInt8Ty(Ctx))
@@ -876,6 +877,11 @@ parseNode(Module *M, const llvm::itanium_demangle::Node *ParamType,
       // struct types were are looking for here.
     }
   } else if (auto *VendorTy = dyn_cast<VendorExtQualType>(ParamType)) {
+    if (auto *NameTy = dyn_cast<NameType>(VendorTy->getTy())) {
+      if (NameTy->getName() == "std::bfloat16_t" ||
+          NameTy->getName() == "__bf16")
+        PointeeTy = llvm::Type::getBFloatTy(M->getContext());
+    }
     // This is a block parameter. Decode the pointee type as if it were a
     // void (*)(void) function pointer type.
     if (VendorTy->getExt() == "block_pointer") {
@@ -933,13 +939,32 @@ bool getParameterTypes(Function *F, SmallVectorImpl<Type *> &ArgTys,
   if (HasSret)
     ++ArgIter;
 
+  // "DF<N>b" mangling for bfloat<N> types (e.g. DF16b for bfloat16) is
+  // recognized by the demangler only starting from LLVM 20. Replace "DF16b"
+  // in the parameter section with the vendor-extended-type encoding "u6__bf16",
+  // which all known demangler versions parse correctly as NameType("__bf16").
+  std::string PatchedName;
+  StringRef MangledName(F->getName());
+  if (MangledName.contains("DF16b")) {
+    PatchedName = MangledName.str();
+    // Skip "_Z<N><name>" to search only in the parameter section.
+    size_t Start = PatchedName.find_first_not_of("0123456789", 2);
+    size_t Len = 0;
+    StringRef(PatchedName).substr(2, Start - 2).getAsInteger(10, Len);
+    size_t Pos = Start + Len;
+    while ((Pos = PatchedName.find("DF16b", Pos)) != std::string::npos) {
+      PatchedName.replace(Pos, 5, "u6__bf16");
+      Pos += 8;
+    }
+    MangledName = PatchedName;
+  }
+
   // Demangle the function arguments. If we get an input name of
   // "_Z12write_imagei20ocl_image1d_array_woDv2_iiDv4_i", then we expect
   // that Demangler.getFunctionParameters will return
   // "(ocl_image1d_array_wo, int __vector(2), int, int __vector(4))" (in other
   // words, the stuff between the parentheses if you ran C++ filt, including
   // the parentheses itself).
-  const StringRef MangledName(F->getName());
   ManglingParser<DefaultAllocator> Demangler(MangledName.begin(),
                                              MangledName.end());
   // We expect to see only function name encodings here. If it's not a function
@@ -2537,8 +2562,14 @@ public:
       addUnsignedArg(0);
       addUnsignedArg(3);
       break;
+    case OpGroupAsyncCopy:
+      setArgAttr(2, SPIR::ATTR_CONST);
+      addUnsignedArg(3);
+      addUnsignedArg(4);
+      break;
     case OpGroupUMax:
     case OpGroupUMin:
+    case OpGroupBroadcast:
     case OpGroupNonUniformBroadcast:
     case OpGroupNonUniformBallotBitCount:
     case OpGroupNonUniformShuffle:
@@ -2676,6 +2707,9 @@ public:
     case internal::OpConvertHandleToSampledImageINTEL:
       addUnsignedArg(0);
       break;
+    case OpGenericPtrMemSemantics:
+      setArgAttr(0, SPIR::ATTR_CONST);
+      break;
     default:;
       // No special handling is needed
     }
@@ -2690,7 +2724,7 @@ class OpenCLStdToSPIRVFriendlyIRMangleInfo : public BuiltinFuncMangleInfo {
 public:
   OpenCLStdToSPIRVFriendlyIRMangleInfo(OCLExtOpKind ExtOpId,
                                        ArrayRef<Type *> ArgTys, Type *RetTy)
-      : ExtOpId(ExtOpId), ArgTys(ArgTys) {
+      : ExtOpId(ExtOpId), ArgTys(ArgTys), RetTy(RetTy) {
 
     std::string Postfix = "";
     if (needRetTypePostfix())
@@ -2706,6 +2740,11 @@ public:
     case OpenCLLIB::Vloada_halfn:
     case OpenCLLIB::Vloadn:
       return true;
+    case OpenCLLIB::Nan:
+      // Only add return type mangling for bfloat16 to disambiguate from half
+      // (both are represented as i16 in LLVM). Float and half use traditional
+      // naming for backward compatibility.
+      return RetTy->getScalarType()->isBFloatTy();
     default:
       return false;
     }
@@ -2734,6 +2773,31 @@ public:
     case OpenCLLIB::S_Upsample:
       addUnsignedArg(1);
       break;
+    case OpenCLLIB::Nan:
+      addUnsignedArg(0);
+      break;
+    case OpenCLLIB::Shuffle:
+      addUnsignedArg(1);
+      break;
+    case OpenCLLIB::Shuffle2:
+      addUnsignedArg(2);
+      break;
+    case OpenCLLIB::Vloadn:
+    case OpenCLLIB::Vload_half:
+    case OpenCLLIB::Vload_halfn:
+    case OpenCLLIB::Vloada_halfn:
+      addUnsignedArg(0);
+      setArgAttr(1, SPIR::ATTR_CONST);
+      break;
+    case OpenCLLIB::Vstoren:
+    case OpenCLLIB::Vstore_half:
+    case OpenCLLIB::Vstore_half_r:
+    case OpenCLLIB::Vstore_halfn:
+    case OpenCLLIB::Vstore_halfn_r:
+    case OpenCLLIB::Vstorea_halfn:
+    case OpenCLLIB::Vstorea_halfn_r:
+      addUnsignedArg(1);
+      break;
     default:;
       // No special handling is needed
     }
@@ -2742,6 +2806,7 @@ public:
 private:
   OCLExtOpKind ExtOpId;
   ArrayRef<Type *> ArgTys;
+  Type *RetTy;
 };
 } // namespace
 
