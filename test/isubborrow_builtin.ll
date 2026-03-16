@@ -45,7 +45,7 @@ target triple = "spir64-unknown-unknown"
 define spir_func void @test_builtin_isubborrowcc(i8 %a, i8 %b) {
   entry:
   %0 = alloca %i8struct
-  call void @_Z18__spirv_ISubBorrowcc(%i8struct* %0, i8 %a, i8 %b)
+  call void @_Z18__spirv_ISubBorrowcc(%i8struct* sret(%i8struct) %0, i8 %a, i8 %b)
   ret void
 }
 ; CHECK-SPIRV:           [[a:%[a-z0-9_]+]] = OpFunctionParameter [[uchar]]
@@ -63,7 +63,7 @@ define spir_func void @test_builtin_isubborrowcc(i8 %a, i8 %b) {
 define spir_func void @test_builtin_isubborrowss(i16 %a, i16 %b) {
   entry:
   %0 = alloca %i16struct
-  call void @_Z18__spirv_ISubBorrowss(%i16struct* %0, i16 %a, i16 %b)
+  call void @_Z18__spirv_ISubBorrowss(%i16struct* sret(%i16struct) %0, i16 %a, i16 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_0:%[a-z0-9_]+]] = OpFunctionParameter [[ushort]]
@@ -81,7 +81,7 @@ define spir_func void @test_builtin_isubborrowss(i16 %a, i16 %b) {
 define spir_func void @test_builtin_isubborrowii(i32 %a, i32 %b) {
   entry:
   %0 = alloca %i32struct
-  call void @_Z18__spirv_ISubBorrowii(%i32struct* %0, i32 %a, i32 %b)
+  call void @_Z18__spirv_ISubBorrowii(%i32struct* sret(%i32struct) %0, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_1:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -99,7 +99,7 @@ define spir_func void @test_builtin_isubborrowii(i32 %a, i32 %b) {
 define spir_func void @test_builtin_isubborrowll(i64 %a, i64 %b) {
   entry:
   %0 = alloca %i64struct
-  call void @_Z18__spirv_ISubBorrowll(%i64struct* %0, i64 %a, i64 %b)
+  call void @_Z18__spirv_ISubBorrowll(%i64struct* sret(%i64struct) %0, i64 %a, i64 %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_2:%[a-z0-9_]+]] = OpFunctionParameter [[ulong]]
@@ -117,7 +117,7 @@ define spir_func void @test_builtin_isubborrowll(i64 %a, i64 %b) {
 define spir_func void @test_builtin_isubborrowDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
   entry:
   %0 = alloca %vecstruct
-  call void @_Z18__spirv_ISubBorrowDv4_iS_(%vecstruct* %0, <4 x i32> %a, <4 x i32> %b)
+  call void @_Z18__spirv_ISubBorrowDv4_iS_(%vecstruct* sret(%vecstruct) %0, <4 x i32> %a, <4 x i32> %b)
   ret void
 }
 ; CHECK-SPIRV:         [[a_3:%[a-z0-9_]+]] = OpFunctionParameter [[v4uint]]
@@ -138,7 +138,7 @@ define spir_func void @test_builtin_isubborrow_anon(i32 %a, i32 %b) {
   entry:
   %0 = alloca %struct.anon
   %1 = addrspacecast %struct.anon* %0 to %struct.anon addrspace(4)*
-  call spir_func void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* %1, i32 %a, i32 %b)
+  call spir_func void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* sret(%struct.anon) %1, i32 %a, i32 %b)
   ret void
 }
 ; CHECK-SPIRV:        [[a_4:%[a-z0-9_]+]] = OpFunctionParameter [[uint]]
@@ -154,9 +154,9 @@ define spir_func void @test_builtin_isubborrow_anon(i32 %a, i32 %b) {
 ; CHECK-LLVM:  call spir_func void @_Z18__spirv_ISubBorrowii.1([[struct_anon]] addrspace(4)* sret([[struct_anon]]) %1, i32 %a, i32 %b)
 ; CHECK-LLVM:  ret void
 
-declare void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* align 4, i32, i32)
-declare void @_Z18__spirv_ISubBorrowcc(%i8struct*, i8, i8)
-declare void @_Z18__spirv_ISubBorrowss(%i16struct*, i16, i16)
-declare void @_Z18__spirv_ISubBorrowii(%i32struct*, i32, i32)
-declare void @_Z18__spirv_ISubBorrowll(%i64struct*, i64, i64)
-declare void @_Z18__spirv_ISubBorrowDv4_iS_(%vecstruct*, <4 x i32>, <4 x i32>)
+declare void @_Z18__spirv_ISubBorrowIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* sret(%struct.anon), i32, i32)
+declare void @_Z18__spirv_ISubBorrowcc(%i8struct* sret(%i8struct), i8, i8)
+declare void @_Z18__spirv_ISubBorrowss(%i16struct* sret(%i16struct), i16, i16)
+declare void @_Z18__spirv_ISubBorrowii(%i32struct* sret(%i32struct), i32, i32)
+declare void @_Z18__spirv_ISubBorrowll(%i64struct* sret(%i64struct), i64, i64)
+declare void @_Z18__spirv_ISubBorrowDv4_iS_(%vecstruct* sret(%vecstruct), <4 x i32>, <4 x i32>)
