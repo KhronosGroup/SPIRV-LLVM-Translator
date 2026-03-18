@@ -805,6 +805,26 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
   if (HasSret)
     ++ArgIter;
 
+  // "DF<N>b" mangling for bfloat<N> types (e.g. DF16b for bfloat16) is
+  // recognized by the demangler only starting from LLVM 20. Replace "DF16b"
+  // in the parameter section with the vendor-extended-type encoding "u6__bf16",
+  // which all known demangler versions parse correctly as NameType("__bf16").
+  std::string PatchedName;
+  StringRef MangledName(F->getName());
+  if (MangledName.contains("DF16b")) {
+    PatchedName = MangledName.str();
+    // Skip "_Z<N><name>" to search only in the parameter section.
+    size_t Start = PatchedName.find_first_not_of("0123456789", 2);
+    size_t Len = 0;
+    StringRef(PatchedName).substr(2, Start - 2).getAsInteger(10, Len);
+    size_t Pos = Start + Len;
+    while ((Pos = PatchedName.find("DF16b", Pos)) != std::string::npos) {
+      PatchedName.replace(Pos, 5, "u6__bf16");
+      Pos += 8;
+    }
+    MangledName = PatchedName;
+  }
+
   // Demangle the function arguments. If we get an input name of
   // "_Z12write_imagei20ocl_image1d_array_woDv2_iiDv4_i", then we expect
   // that Demangler.getFunctionParameters will return
@@ -812,8 +832,7 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
   // words, the stuff between the parentheses if you ran C++ filt, including
   // the parentheses itself).
   ItaniumPartialDemangler Demangler;
-  std::string MangledName = F->getName().str();
-  if (Demangler.partialDemangle(MangledName.c_str()))
+  if (Demangler.partialDemangle(MangledName.data()))
     return;
   char *Buf = nullptr;
   size_t BufLen = 0;
@@ -857,6 +876,8 @@ void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys) {
           Pointee = getOrCreateOpaqueStructType(M, StructName);
         } else if (MangledStructName.startswith("opencl.")) {
           Pointee = getOrCreateOpaqueStructType(M, MangledStructName);
+        } else if (MangledStructName == "__bf16") {
+          Pointee = Type::getBFloatTy(M->getContext());
         }
       } else if (!Arg.contains(' ') && Arg.startswith("ocl_")) {
         std::string StructName = demangleBuiltinOpenCLTypeName(Arg);
