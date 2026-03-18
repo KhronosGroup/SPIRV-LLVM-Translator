@@ -998,9 +998,12 @@ bool containsUnsignedAtomicType(StringRef Name);
 std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
                           BuiltinFuncMangleInfo *BtnInfo);
 
-/// Extract the pointee types of arguments from a mangled function name. If the
-/// corresponding type is not a pointer to a struct type, its value will be a
-/// nullptr instead.
+/// Extract the pointee types of arguments from a mangled function name,
+/// including non-struct types such as bfloat16. Unknown types are nullptr.
+void getParameterTypes(Function *F, SmallVectorImpl<Type *> &ArgTys);
+
+/// Struct-typed variant of getParameterTypes. Non-struct pointee types (e.g.
+/// bfloat) are returned as nullptr.
 void getParameterTypes(Function *F, SmallVectorImpl<StructType *> &ArgTys);
 inline void getParameterTypes(CallInst *CI,
                               SmallVectorImpl<StructType *> &ArgTys) {
