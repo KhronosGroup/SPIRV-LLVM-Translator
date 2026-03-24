@@ -1187,6 +1187,12 @@ template <> inline void FPConvertToEncodingMap::init() {
   add("ClampStochasticRoundBF16ToE4M3INTEL",
       {FPEncodingWrap::BF16,         FPEncodingWrap::E4M3,
        internal::OpClampStochasticRoundFToFINTEL});
+  add("ClampStochasticRoundFP16ToE2M1INTEL",
+      {FPEncodingWrap::IEEE754,      FPEncodingWrap::E2M1,
+       internal::OpClampStochasticRoundFToFINTEL});
+  add("ClampStochasticRoundBF16ToE2M1INTEL",
+      {FPEncodingWrap::BF16,         FPEncodingWrap::E2M1,
+       internal::OpClampStochasticRoundFToFINTEL});
 }
 
 // clang-format on

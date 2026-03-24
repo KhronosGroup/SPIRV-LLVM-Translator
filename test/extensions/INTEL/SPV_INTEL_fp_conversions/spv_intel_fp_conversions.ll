@@ -35,10 +35,13 @@
 ; CHECK-SPIRV-DAG: Name [[#bf16_int4_stochastic:]] "bf16_int4_stochastic"
 ; CHECK-SPIRV-DAG: Name [[#hf16_bf8_clamp_stochastic:]] "hf16_bf8_clamp_stochastic"
 ; CHECK-SPIRV-DAG: Name [[#bf16_bf8_clamp_stochastic:]] "bf16_bf8_clamp_stochastic"
+; CHECK-SPIRV-DAG: Name [[#hf16_fp4e2m1_clamp_stochastic:]] "hf16_fp4e2m1_clamp_stochastic"
+; CHECK-SPIRV-DAG: Name [[#bf16_fp4e2m1_clamp_stochastic:]] "bf16_fp4e2m1_clamp_stochastic"
 
 ; CHECK-SPIRV-DAG: Name [[#hf16_bf8_stochastic_last_seed:]] "hf16_bf8_stochastic_last_seed"
 ; CHECK-SPIRV-DAG: Name [[#hf16_int4_stochastic_last_seed:]] "hf16_int4_stochastic_last_seed"
 ; CHECK-SPIRV-DAG: Name [[#hf16_bf8_clamp_stochastic_last_seed:]] "hf16_bf8_clamp_stochastic_last_seed"
+; CHECK-SPIRV-DAG: Name [[#hf16_fp4e2m1_clamp_stochastic_last_seed:]] "hf16_fp4e2m1_clamp_stochastic_last_seed"
 
 ; CHECK-SPIRV-DAG: TypeInt [[#Int8Ty:]] 8 0
 ; CHECK-SPIRV-DAG: TypeInt [[#Int32Ty:]] 32 0
@@ -354,3 +357,57 @@ entry:
 }
 
 declare dso_local spir_func i8 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE5M2INTELDhiPi(half, i32, ptr)
+
+; CHECK-SPIRV: Function [[#]] [[#hf16_fp4e2m1_clamp_stochastic]] [[#]]
+; CHECK-SPIRV: ClampStochasticRoundFToFINTEL [[#E2M1Ty]] [[#Conv:]] [[#HalfConst]] [[#Int32Const]]
+; CHECK-SPIRV: Bitcast [[#Int4Ty]] [[#Cast:]] [[#Conv]]
+; CHECK-SPIRV: ReturnValue [[#Cast]]
+
+; CHECK-LLVM-LABEL: hf16_fp4e2m1_clamp_stochastic
+; CHECK-LLVM: %[[#Call:]] = call i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhi(half 0xH3C00, i32 1)
+; CHECK-LLVM: ret i4 %[[#Call]]
+
+define spir_func i4 @hf16_fp4e2m1_clamp_stochastic() {
+entry:
+  %0 = call i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhi(half 1.0, i32 1)
+  ret i4 %0
+}
+
+declare dso_local spir_func i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhi(half, i32)
+
+; CHECK-SPIRV: Function [[#]] [[#bf16_fp4e2m1_clamp_stochastic]] [[#]]
+; CHECK-SPIRV: ClampStochasticRoundFToFINTEL [[#E2M1Ty]] [[#Conv:]] [[#BfloatConst]] [[#Int32Const]]
+; CHECK-SPIRV: Bitcast [[#Int4Ty]] [[#Cast:]] [[#Conv]]
+; CHECK-SPIRV: ReturnValue [[#Cast]]
+
+; CHECK-LLVM-LABEL: bf16_fp4e2m1_clamp_stochastic
+; CHECK-LLVM: %[[#Call:]] = call i4 @_Z51__builtin_spirv_ClampStochasticRoundBF16ToE2M1INTELDF16bi(bfloat 0xR3F80, i32 1)
+; CHECK-LLVM: ret i4 %[[#Call]]
+
+define spir_func i4 @bf16_fp4e2m1_clamp_stochastic() {
+entry:
+  %0 = call i4 @_Z51__builtin_spirv_ClampStochasticRoundBF16ToE2M1INTELDF16bi(bfloat 1.0, i32 1)
+  ret i4 %0
+}
+
+declare dso_local spir_func i4 @_Z51__builtin_spirv_ClampStochasticRoundBF16ToE2M1INTELDF16bi(bfloat, i32)
+
+; CHECK-SPIRV: Function [[#]] [[#hf16_fp4e2m1_clamp_stochastic_last_seed]] [[#]]
+; CHECK-SPIRV: Variable [[#]] [[#Ptr:]]
+; CHECK-SPIRV: ClampStochasticRoundFToFINTEL [[#E2M1Ty]] [[#Conv:]] [[#HalfConst]] [[#Int32Const]] [[#Ptr]]
+; CHECK-SPIRV: Bitcast [[#Int4Ty]] [[#Cast:]] [[#Conv]]
+; CHECK-SPIRV: ReturnValue [[#Cast]]
+
+; CHECK-LLVM-LABEL: hf16_fp4e2m1_clamp_stochastic_last_seed
+; CHECK-LLVM: %[[#Ptr:]] = alloca i32
+; CHECK-LLVM: %[[#Call:]] = call i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhiPi(half 0xH3C00, i32 1, ptr %[[#Ptr]])
+; CHECK-LLVM: ret i4 %[[#Call]]
+
+define spir_func i4 @hf16_fp4e2m1_clamp_stochastic_last_seed() {
+entry:
+  %0 = alloca i32
+  %1 = call i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhiPi(half 1.0, i32 1, ptr %0)
+  ret i4 %1
+}
+
+declare dso_local spir_func i4 @_Z51__builtin_spirv_ClampStochasticRoundFP16ToE2M1INTELDhiPi(half, i32, ptr)
