@@ -2,10 +2,6 @@
 ; malformed.
 ; Test that malformed input is rejected early rather than silently causing
 ; integer underflow and potential process hang.
-;
-; With the fix, SPIRVCK exits immediately before any allocation.
-; ulimit is not required but can be added as a safety net on non-Windows platforms:
-;   RUNx: %if !system-windows %{ ulimit -v 1048576 %}
 
 ; RUN: not llvm-spirv %s -to-binary -o %t.spv 2>&1 | FileCheck %s
 ; CHECK: InvalidWordCount:
