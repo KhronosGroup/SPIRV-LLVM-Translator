@@ -179,19 +179,6 @@ typedef SPIRVMap<Op, Op, IntBoolOpMapId> IntBoolOpMap;
   "-v128:128:128-v192:256:256-v256:256:256"                                    \
   "-v512:512:512-v1024:1024:1024"
 
-enum SPIRAddressSpace {
-  SPIRAS_Private,
-  SPIRAS_Global,
-  SPIRAS_Constant,
-  SPIRAS_Local,
-  SPIRAS_Generic,
-  SPIRAS_GlobalDevice,
-  SPIRAS_GlobalHost,
-  SPIRAS_Input,
-  SPIRAS_Output,
-  SPIRAS_CodeSectionINTEL,
-  SPIRAS_Count,
-};
 
 template <> inline void SPIRVMap<SPIRAddressSpace, std::string>::init() {
   add(SPIRAS_Private, "Private");
