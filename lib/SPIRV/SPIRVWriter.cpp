@@ -806,6 +806,8 @@ SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
     return SaveType(BM->addQueueType());
   else if (TN == kSPIRVTypeName::PipeStorage)
     return SaveType(BM->addPipeStorageType());
+  else if (TN == kSPIRVTypeName::JointMatrixINTEL)
+    return SaveType(transSPIRVJointMatrixINTELType(Postfixes));
   else if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute) &&
            TN == kSPIRVTypeName::BufferSurfaceINTEL) {
     auto Access = getAccessQualifier(STName);
