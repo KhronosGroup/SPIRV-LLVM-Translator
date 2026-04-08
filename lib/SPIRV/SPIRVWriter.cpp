@@ -700,6 +700,56 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
   return TranslatedTy;
 }
 
+// Representation in LLVM IR before the translator is a pointer to an opaque
+// structure:
+// %spirv.JointMatrixINTEL._%element_type%_%rows%_%cols%_%scope%_%use%
+// Here we check the structure name yet again. Another option would be to
+// check SPIR-V friendly function calls (by their name) and obtain return
+// or their parameter types, assuming, that the appropriate types are Matrix
+// structure type. But in the near future, we will reuse Composite
+// instructions to do, for example, matrix initialization directly on AMX
+// register by OpCompositeConstruct. And we can't claim, that the Result type
+// of OpCompositeConstruct instruction is always the joint matrix type, it's
+// simply not true.
+SPIRVType *LLVMToSPIRVBase::transSPIRVJointMatrixINTELType(
+    SmallVector<std::string, 8> Postfixes) {
+  Type *ElemTy = nullptr;
+  StringRef Ty{Postfixes[0]};
+  auto NumBits = llvm::StringSwitch<unsigned>(Ty)
+                     .Case("char", 8)
+                     .Case("short", 16)
+                     .Case("int", 32)
+                     .Case("long", 64)
+                     .Default(0);
+  if (NumBits)
+    ElemTy = IntegerType::get(M->getContext(), NumBits);
+  else if (Ty == "half")
+    ElemTy = Type::getHalfTy(M->getContext());
+  else if (Ty == "float")
+    ElemTy = Type::getFloatTy(M->getContext());
+  else if (Ty == "double")
+    ElemTy = Type::getDoubleTy(M->getContext());
+  else if (Ty == "bfloat16")
+    ElemTy = Type::getInt16Ty(M->getContext());
+  else
+    llvm_unreachable("Unexpected type for matrix!");
+
+  auto ParseInteger = [this](StringRef Postfix) -> ConstantInt * {
+    unsigned long long N = 0;
+    if (consumeUnsignedInteger(Postfix, 10, N)) {
+      BM->getErrorLog().checkError(
+          false, SPIRVEC_InvalidLlvmModule,
+          "TypeJointMatrixINTEL expects integer parameters");
+      return 0;
+    }
+    return getUInt32(M, N);
+  };
+  std::vector<SPIRVValue *> Args;
+  for (size_t I = 1; I != Postfixes.size(); ++I)
+    Args.emplace_back(transConstant(ParseInteger(Postfixes[I])));
+  return BM->addJointMatrixINTELType(transType(ElemTy), Args);
+}
+
 SPIRVType *LLVMToSPIRVBase::transSPIRVOpaqueType(StringRef STName,
                                                  unsigned AddrSpace) {
   std::pair<StringRef, unsigned> Key = {STName, AddrSpace};
