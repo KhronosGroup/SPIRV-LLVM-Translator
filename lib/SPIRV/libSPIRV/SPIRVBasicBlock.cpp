@@ -90,12 +90,26 @@ _SPIRV_IMP_ENCDEC1(SPIRVBasicBlock, Id)
 SPIRVInstruction *SPIRVBasicBlock::getVariableInsertionPoint() const {
   auto IP =
       std::find_if(InstVec.begin(), InstVec.end(), [](SPIRVInstruction *Inst) {
-        return !(isa<OpVariable>(Inst) || isa<OpLine>(Inst) ||
-                 isa<OpNoLine>(Inst) ||
-                 // Note: OpVariable and OpPhi instructions do not belong to the
-                 // same block in a valid SPIR-V module.
-                 isa<OpPhi>(Inst) || isa<OpUntypedVariableKHR>(Inst));
+        if (isa<OpVariable>(Inst) || isa<OpLine>(Inst) || isa<OpNoLine>(Inst) ||
+            // Note: OpVariable and OpPhi instructions do not belong to the
+            // same block in a valid SPIR-V module.
+            isa<OpPhi>(Inst) || isa<OpUntypedVariableKHR>(Inst)) {
+          return false;
+        }
+        // There are debug instructions that could describe OpVariable - they
+        // can be in the first block in the function as well.
+        if (Inst->isExtInst()) {
+          auto ExtOp = static_cast<const SPIRVExtInst *>(Inst)->getExtOp();
+          if (ExtOp == SPIRVDebug::Declare || ExtOp == SPIRVDebug::Value ||
+               ExtOp == SPIRVDebug::Scope || ExtOp == SPIRVDebug::NoScope ||
+               ExtOp == SPIRVDebug::DebugLine ||
+               ExtOp == SPIRVDebug::DebugNoLine) {
+            return false;
+          }
+        }
+        return true;
       });
+
   if (IP == InstVec.end())
     return nullptr;
   return *IP;
