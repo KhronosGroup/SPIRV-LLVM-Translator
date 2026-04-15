@@ -1238,7 +1238,6 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       return transSPIRVBuiltinFromInst(BC, BB);
     [[fallthrough]];
   }
-  
   default:
     CO = static_cast<CastInst::CastOps>(OpCodeMap::rmap(BC->getOpCode()));
   }
