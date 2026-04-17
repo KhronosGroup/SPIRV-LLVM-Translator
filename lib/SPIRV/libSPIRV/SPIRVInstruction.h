@@ -4417,6 +4417,7 @@ public:
   // Operand 2, if present, is the Memory Operands bitmask (literal).
   bool isOperandLiteral(unsigned I) const override { return I == 2; }
 
+protected:
   void validate() const override {
     SPIRVInstruction::validate();
     if (getValue(Ops[0])->isForward())
@@ -4432,10 +4433,10 @@ public:
         SPIRVEC_InvalidInstruction,
         InstName + "\nPtr must be in CrossWorkgroup storage class\n");
     if (!PtrType->getPointerElementType()->isTypeUntypedPointerKHR())
-      SPVErrLog.checkError(
-          PtrType->getPointerElementType()->isTypeInt(),
-          SPIRVEC_InvalidInstruction,
-          InstName + "\nPtr must point to a scalar integer type\n");
+      SPVErrLog.checkError(PtrType->getPointerElementType()->isTypeInt(),
+                           SPIRVEC_InvalidInstruction,
+                           InstName +
+                               "\nPtr must point to a scalar integer type\n");
     SPVErrLog.checkError(
         getValueType(Ops[1])->isTypeInt(32), SPIRVEC_InvalidInstruction,
         InstName + "\nNumBytes must be a 32-bit integer scalar\n");
