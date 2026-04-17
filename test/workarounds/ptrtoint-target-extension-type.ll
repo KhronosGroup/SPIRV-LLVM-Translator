@@ -1,4 +1,4 @@
-; RUN: llvm-spirv -spirv-text -r %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -spirv-text -r -spirv-target-env=SPV-IR %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; The purpose of this test is to validate whether this workaround works fine:
 
@@ -10,7 +10,7 @@
 ; extension for image-handle-to-index conversion, or redesigning ESIMD
 ; accessor storage.
 
-; CHECK-LLVM: = ptrtoint ptr addrspace(1) %0 to i32
+; CHECK-LLVM: = call spir_func i32 @_Z26__spirv_ConvertPtrToU_RintPU3AS133__spirv_Image__void_1_0_0_0_0_0_0(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 0) %0)
 
 119734787 65792 393230 118 0
 2 Capability Addresses
