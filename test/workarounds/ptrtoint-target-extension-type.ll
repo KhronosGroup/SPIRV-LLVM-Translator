@@ -1,6 +1,4 @@
-; RUN: llvm-spirv -spirv-text -r %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
-
-; CHECK-LLVM: = call spir_func i32 @_Z11convert_int14ocl_image2d_ro(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 0) %0)
+; RUN: llvm-spirv -spirv-text -r -spirv-target-env=SPV-IR %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; The purpose of this test is to validate whether this workaround works fine:
 
@@ -11,6 +9,8 @@
 ; IR). Removing this requires fixing the root cause: either a new SPIR-V
 ; extension for image-handle-to-index conversion, or redesigning ESIMD
 ; accessor storage.
+
+; CHECK-LLVM: = call spir_func i32 @_Z26__spirv_ConvertPtrToU_RintPU3AS133__spirv_Image__void_1_0_0_0_0_0_0(target("spirv.Image", void, 1, 0, 0, 0, 0, 0, 0) %0)
 
 119734787 65792 393230 118 0
 2 Capability Addresses
