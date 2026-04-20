@@ -2333,10 +2333,21 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
-  if (dyn_cast<UnreachableInst>(V))
+  if (dyn_cast<UnreachableInst>(V)) {
+    // SPV_KHR_abort: OpAbortKHR is itself a block terminator. If the LLVM IR
+    // appends a trailing 'unreachable' after the abort call (the canonical
+    // pattern for noreturn calls), do not emit a second SPIR-V terminator.
+    if (auto *Last = BB->getTerminateInstr())
+      if (Last->getOpCode() == OpAbortKHR)
+        return mapValue(V, const_cast<SPIRVInstruction *>(Last));
     return mapValue(V, BM->addUnreachableInst(BB));
+  }
 
   if (auto *RI = dyn_cast<ReturnInst>(V)) {
+    // SPV_KHR_abort: same suppression as for UnreachableInst above.
+    if (auto *Last = BB->getTerminateInstr())
+      if (Last->getOpCode() == OpAbortKHR)
+        return mapValue(V, const_cast<SPIRVInstruction *>(Last));
     if (auto *RV = RI->getReturnValue()) {
       if (auto *II = dyn_cast<IntrinsicInst>(RV)) {
         if (II->getIntrinsicID() == Intrinsic::frexp) {
@@ -6902,6 +6913,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     auto BArgs = transValue(getArguments(CI), BB);
     return BM->addControlBarrierInst(BArgs[0], BArgs[1], BArgs[2], BB);
   } break;
+  case OpAbortKHR: {
+    BM->getErrorLog().checkError(
+        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_abort),
+        SPIRVEC_RequiresExtension, "SPV_KHR_abort\n");
+    auto *Msg = transValue(CI->getArgOperand(0), BB);
+    return BM->addAbortKHRInst(Msg, BB);
+  } break;
   case OpGroupAsyncCopy: {
     auto BArgs = transValue(getArguments(CI), BB);
     return BM->addAsyncGroupCopy(BArgs[0], BArgs[1], BArgs[2], BArgs[3],
@@ -7592,7 +7610,8 @@ bool runSpirvBackend(Module *M, std::string &Result, std::string &ErrMsg,
       SPIRV::ExtensionID::SPV_INTEL_function_pointers,
       SPIRV::ExtensionID::SPV_KHR_shader_clock,
       SPIRV::ExtensionID::SPV_KHR_cooperative_matrix,
-      SPIRV::ExtensionID::SPV_KHR_non_semantic_info};
+      SPIRV::ExtensionID::SPV_KHR_non_semantic_info,
+      SPIRV::ExtensionID::SPV_KHR_abort};
   // The fallback for the Triple value.
   static const std::string DefaultTriple = "spirv64-unknown-unknown";
 
