@@ -1,8 +1,10 @@
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_subgroup_buffer_prefetch
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED-PTRS
 ; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_subgroup_buffer_prefetch,+SPV_KHR_untyped_pointers
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o -| FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED-PTRS
 ; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
@@ -27,7 +29,7 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV: FunctionParameter [[#Int32Ty]] [[#NumBytes:]]
 ; CHECK-SPIRV: SubgroupBlockPrefetchINTEL [[#Ptr]] [[#NumBytes]]
 
-; CHECK-LLVM: call spir_func void @_Z34__spirv_SubgroupBlockPrefetchINTELPU3AS1Khj(ptr addrspace(1) %ptr, i32 %num_bytes)
+; CHECK-LLVM: call spir_func void @_Z34__spirv_SubgroupBlockPrefetchINTELPU3AS1Khj(ptr addrspace(1) %{{.*}}, i32 %{{.*}})
 
 define spir_kernel void @test(ptr addrspace(1) %ptr, i32 %num_bytes) {
 entry:

@@ -4414,7 +4414,7 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilitySubgroupBufferPrefetchINTEL);
   }
-  // Operand 2, if present, is the Memory Operands bitmask (literal).
+  // Operand 2, if present, is the Memory Operands bitmask.
   bool isOperandLiteral(unsigned I) const override { return I == 2; }
 
 protected:
@@ -4432,7 +4432,7 @@ protected:
         PtrType->getPointerStorageClass() == StorageClassCrossWorkgroup,
         SPIRVEC_InvalidInstruction,
         InstName + "\nPtr must be in CrossWorkgroup storage class\n");
-    if (!PtrType->getPointerElementType()->isTypeUntypedPointerKHR())
+    if (!PtrType->isTypeUntypedPointerKHR())
       SPVErrLog.checkError(PtrType->getPointerElementType()->isTypeInt(),
                            SPIRVEC_InvalidInstruction,
                            InstName +
