@@ -2333,7 +2333,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
-  if (dyn_cast<UnreachableInst>(V)) {
+  if (isa<UnreachableInst>(V)) {
     // SPV_KHR_abort: OpAbortKHR is itself a block terminator. If the LLVM IR
     // appends a trailing 'unreachable' after the abort call (the canonical
     // pattern for noreturn calls), do not emit a second SPIR-V terminator.
