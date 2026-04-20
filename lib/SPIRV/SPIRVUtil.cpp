@@ -1911,7 +1911,7 @@ bool isSPIRVOCLExtInst(const CallInst *CI, OCLExtOpKind *ExtOp) {
     return false;
 
   auto ExtOpName = S.substr(Loc + 1);
-  auto PostFixPos = ExtOpName.find("_R");
+  auto PostFixPos = ExtOpName.find("__R");
   ExtOpName = ExtOpName.substr(0, PostFixPos);
 
   OCLExtOpKind EOC;
@@ -2665,7 +2665,8 @@ public:
 
     std::string Postfix = "";
     if (needRetTypePostfix())
-      Postfix = kSPIRVPostfix::Divider + getPostfixForReturnType(RetTy, true);
+      Postfix =
+          kSPIRVPostfix::ExtDivider + getPostfixForReturnType(RetTy, true);
 
     UnmangledName = getSPIRVExtFuncName(SPIRVEIS_OpenCL, ExtOpId, Postfix);
   }
