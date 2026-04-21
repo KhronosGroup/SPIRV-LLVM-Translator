@@ -1,4 +1,5 @@
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_AMD_weak_linkage -o %t.spv
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
@@ -29,11 +30,7 @@ entry:
 ; CHECK-LLVM: define weak spir_func i32 @square(i32 %in)
 define weak dso_local spir_func i32 @square(i32 %in) {
 entry:
-  %in.addr = alloca i32, align 4
-  store i32 %in, ptr %in.addr, align 4
-  %0 = load i32, ptr %in.addr, align 4
-  %1 = load i32, ptr %in.addr, align 4
-  %mul = mul nsw i32 %0, %1
+  %mul = mul nsw i32 %in, %in
   ret i32 %mul
 }
 
