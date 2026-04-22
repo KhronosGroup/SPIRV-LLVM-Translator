@@ -2344,10 +2344,16 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   }
 
   if (auto *RI = dyn_cast<ReturnInst>(V)) {
-    // SPV_KHR_abort: same suppression as for UnreachableInst above.
-    if (auto *Last = BB->getTerminateInstr())
-      if (Last->getOpCode() == OpAbortKHR)
-        return mapValue(V, const_cast<SPIRVInstruction *>(Last));
+    // SPV_KHR_abort: OpAbortKHR is itself a SPIR-V block terminator. If the
+    // LLVM IR appends a trailing `ret void` after the abort call, do not emit
+    // a second SPIR-V terminator. We deliberately limit this suppression to
+    // `ret void`: if a non-void function ends with `ret <value>` after
+    // OpAbortKHR, fall through so that the value is still translated and the
+    // user sees a normal SPIR-V validation error rather than silently
+    // dropping the return value.
+    if (auto *Last = BB->getTerminateInstr();
+        !RI->getReturnValue() && Last && Last->getOpCode() == OpAbortKHR)
+      return mapValue(V, const_cast<SPIRVInstruction *>(Last));
     if (auto *RV = RI->getReturnValue()) {
       if (auto *II = dyn_cast<IntrinsicInst>(RV)) {
         if (II->getIntrinsicID() == Intrinsic::frexp) {
@@ -5142,9 +5148,10 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
-  // llvm.trap and llvm.debugtrap intrinsics are not implemented. But for now
-  // don't crash. This change is pending the trap/abort intrinsic
-  // implementation.
+  // TODO: lower llvm.trap / llvm.ubsantrap / llvm.debugtrap to OpAbortKHR
+  // (with a null/undefined Message) when the SPV_KHR_abort extension is
+  // enabled. For now we silently drop these intrinsics so that the translator
+  // doesn't crash on input that contains them.
   case Intrinsic::trap:
   case Intrinsic::ubsantrap:
   case Intrinsic::debugtrap:
@@ -6917,6 +6924,9 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     BM->getErrorLog().checkError(
         BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_abort),
         SPIRVEC_RequiresExtension, "SPV_KHR_abort\n");
+    BM->getErrorLog().checkError(
+        CI->arg_size() == 1, SPIRVEC_InvalidInstruction,
+        "__spirv_AbortKHR must be called with exactly one Message argument\n");
     auto *Msg = transValue(CI->getArgOperand(0), BB);
     return BM->addAbortKHRInst(Msg, BB);
   } break;

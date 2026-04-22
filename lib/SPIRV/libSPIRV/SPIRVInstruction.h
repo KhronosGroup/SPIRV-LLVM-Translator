@@ -886,15 +886,6 @@ public:
     return ExtensionID::SPV_KHR_abort;
   }
 
-  SPIRVValue *getMessage() const { return getValue(MessageId); }
-  SPIRVType *getMessageType() const {
-    return reinterpret_cast<SPIRVType *>(getEntry(MessageTypeId));
-  }
-
-  std::vector<SPIRVValue *> getOperands() override {
-    return std::vector<SPIRVValue *>(1, getMessage());
-  }
-
 protected:
   void setAttr() {
     setHasNoId();

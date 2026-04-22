@@ -5,6 +5,7 @@
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
+; RUN: spirv-val %t.spv
 
 ; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 ; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
@@ -27,6 +28,15 @@ define spir_func void @test_abort(i32 %msg) {
 entry:
   call spir_func void @_Z16__spirv_AbortKHRIiEvT_(i32 %msg)
   ret void
+}
+
+; Same as @test_abort, but with an explicit `unreachable` terminator instead of
+; `ret void`. Both forms must lower to a single OpAbortKHR with no trailing
+; OpUnreachable / OpReturn.
+define spir_func void @test_abort_unreachable(i32 %msg) {
+entry:
+  call spir_func void @_Z16__spirv_AbortKHRIiEvT_(i32 %msg)
+  unreachable
 }
 
 declare spir_func void @_Z16__spirv_AbortKHRIiEvT_(i32)
