@@ -133,6 +133,8 @@ enum InternalExecutionMode {
 constexpr LinkageType LinkageTypeInternal =
     static_cast<LinkageType>(ILTInternal);
 
+constexpr LinkageType LinkageTypeWeak = static_cast<LinkageType>(3);
+
 enum InternalJointMatrixLayout {
   RowMajor = 0,
   ColumnMajor = 1,
