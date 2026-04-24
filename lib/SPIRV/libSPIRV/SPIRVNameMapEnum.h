@@ -543,6 +543,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityBindlessTextureNV, "BindlessTextureNV");
   add(CapabilitySubgroupShuffleINTEL, "SubgroupShuffleINTEL");
   add(CapabilitySubgroupBufferBlockIOINTEL, "SubgroupBufferBlockIOINTEL");
+  add(CapabilitySubgroupBufferPrefetchINTEL, "SubgroupBufferPrefetchINTEL");
   add(CapabilitySubgroupImageBlockIOINTEL, "SubgroupImageBlockIOINTEL");
   add(CapabilitySubgroupImageMediaBlockIOINTEL,
       "SubgroupImageMediaBlockIOINTEL");
