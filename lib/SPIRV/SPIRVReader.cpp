@@ -4593,8 +4593,13 @@ void SPIRVToLLVM::transFunctionDecorationsToMetadata(SPIRVFunction *BF,
   BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
     TotalParameterDecorations += Arg->getNumDecorations();
   });
-  if (TotalParameterDecorations == 0)
-    return;
+  // In the entry-point wrapper pattern two SPIR-V functions map to the same
+  // LLVM function; only one carries decorated parameters.  Skip the
+  // undecorated function so it cannot overwrite the decorated one.
+  if (TotalParameterDecorations == 0) {
+    if (F->hasMetadata(SPIRV_MD_PARAMETER_DECORATIONS))
+      return;
+  }
 
   // Generate metadata for spirv.ParameterDecorations
   addKernelArgumentMetadata(Context, SPIRV_MD_PARAMETER_DECORATIONS, BF, F,
