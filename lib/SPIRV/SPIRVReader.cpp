@@ -4940,12 +4940,20 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
     return ConstantAsMetadata::get(
         ConstantInt::get(Type::getInt1Ty(*Context), 1));
   });
-  // Generate metadata for spirv.ParameterDecorations
-  addKernelArgumentMetadata(Context, SPIRV_MD_PARAMETER_DECORATIONS, BF, F,
-                            [=](SPIRVFunctionParameter *Arg) {
-                              return transDecorationsToMetadataList(
-                                  Context, Arg->getDecorations());
-                            });
+  // Generate metadata for spirv.ParameterDecorations.
+  // In the entry-point wrapper pattern two SPIR-V functions map to the same
+  // LLVM function; only one carries decorated parameters.  Skip the
+  // undecorated function so it cannot overwrite the decorated one.
+  bool HasDecorations = false;
+  BF->foreachArgument([&](SPIRVFunctionParameter *Arg) {
+    HasDecorations |= Arg->getNumDecorations() > 0;
+  });
+  if (HasDecorations || !F->hasMetadata(SPIRV_MD_PARAMETER_DECORATIONS))
+    addKernelArgumentMetadata(Context, SPIRV_MD_PARAMETER_DECORATIONS, BF, F,
+                              [=](SPIRVFunctionParameter *Arg) {
+                                return transDecorationsToMetadataList(
+                                    Context, Arg->getDecorations());
+                              });
   return true;
 }
 
