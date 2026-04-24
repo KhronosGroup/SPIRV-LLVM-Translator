@@ -1,0 +1,42 @@
+; Verify that CacheControlLoadINTEL decoration on a FunctionParameter
+; survives reverse translation of the entry-point wrapper pattern.
+
+; RUN: llvm-spirv -spirv-text --to-binary %s -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -spirv-text -r --spirv-target-env=SPV-IR %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
+; CHECK-LLVM: spirv.ParameterDecorations ![[#ParamDecs:]]
+; CHECK-LLVM: ![[#ParamDecs]] = !{![[#FirstParam:]]}
+; CHECK-LLVM: ![[#FirstParam]] = !{![[#DecoNode:]]}
+; CHECK-LLVM: ![[#DecoNode]] = !{i32 6442, i32 0, i32 1}
+
+119734787 66560 393230 14 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability CacheControlsINTEL
+8 Extension "SPV_INTEL_cache_controls"
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 2 2
+5 EntryPoint 6 9 "test"
+3 Source 4 100000
+4 TypeInt 2 32 0
+2 TypeVoid 3
+4 TypePointer 5 5 2
+4 TypeFunction 6 3 5
+6 Decorate 4 LinkageAttributes "test" Export
+5 Decorate 7 CacheControlLoadINTEL 0 1
+
+5 Function 3 4 0 6
+3 FunctionParameter 5 7
+2 Label 8
+4 Load 2 13 7
+1 Return
+1 FunctionEnd
+
+5 Function 3 9 0 6
+3 FunctionParameter 5 10
+2 Label 11
+5 FunctionCall 3 12 4 10
+1 Return
+1 FunctionEnd
