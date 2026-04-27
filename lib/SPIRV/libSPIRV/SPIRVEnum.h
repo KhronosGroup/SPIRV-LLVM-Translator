@@ -492,6 +492,9 @@ template <> inline void SPIRVMap<Decoration, SPIRVCapVec>::init() {
                {CapabilityFunctionPointersINTEL});
   ADD_VEC_INIT(DecorationFPMaxErrorDecorationINTEL,
                {CapabilityFPMaxErrorINTEL});
+  ADD_VEC_INIT(DecorationCacheControlLoadINTEL, {CapabilityCacheControlsINTEL});
+  ADD_VEC_INIT(DecorationCacheControlStoreINTEL,
+               {CapabilityCacheControlsINTEL});
 }
 
 template <> inline void SPIRVMap<BuiltIn, SPIRVCapVec>::init() {
