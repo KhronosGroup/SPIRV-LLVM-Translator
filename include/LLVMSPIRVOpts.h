@@ -264,6 +264,10 @@ public:
 
   void setAddrSpaceMap(AddrSpaceMap Map) noexcept { ASMap = std::move(Map); }
 
+  const AddrSpaceMap *getAddrSpaceMap() const noexcept {
+    return ASMap ? &*ASMap : nullptr;
+  }
+
   uint32_t mapAddrSpace(uint32_t SPIRAS) const noexcept {
     if (ASMap && SPIRAS < SPIRAS_Count)
       return (*ASMap)[SPIRAS];

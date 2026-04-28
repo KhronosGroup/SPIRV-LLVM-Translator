@@ -1131,14 +1131,16 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
                 SPIRSPIRVAddrSpaceMap::rmap(PtrTy->getPointerStorageClass());
             Type *ElementTy = transType(PtrTy->getPointerElementType());
             OpsTys.emplace_back(TypedPointerType::get(ElementTy, AS));
-            MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+            MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info,
+                                        BM->getAddrSpaceMap());
             // But to create function itself we need untyped pointer type.
             OpsTys[2] = opaquifyType(OpsTys[2]);
           }
         }
 
         if (MangledName.empty())
-          MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
+          MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info,
+                                      BM->getAddrSpaceMap());
 
         FunctionType *FTy = FunctionType::get(Dst, OpsTys, false);
         FunctionCallee Func = M->getOrInsertFunction(MangledName, FTy);
@@ -2728,7 +2730,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     Type *RetTy = Type::getVoidTy(*Context);
 
     std::string MangledName =
-        getSPIRVFriendlyIRFunctionName(OpenCLLIB::Prefetch, ArgTypes, RetTy);
+        getSPIRVFriendlyIRFunctionName(OpenCLLIB::Prefetch, ArgTypes, RetTy,
+                                       BM->getAddrSpaceMap());
     opaquifyTypedPointers(ArgTypes);
 
     FunctionType *FT = FunctionType::get(RetTy, ArgTypes, false);
@@ -3825,9 +3828,10 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   }
 
   if (BM->getDesiredBIsRepresentation() != BIsRepresentation::SPIRVFriendlyIR)
-    mangleOpenClBuiltin(FuncName, ArgTys, MangledName);
+    mangleOpenClBuiltin(FuncName, ArgTys, MangledName, BM->getAddrSpaceMap());
   else
-    MangledName = getSPIRVFriendlyIRFunctionName(FuncName, OC, ArgTys, Ops);
+    MangledName = getSPIRVFriendlyIRFunctionName(FuncName, OC, ArgTys, Ops,
+                                                 BM->getAddrSpaceMap());
 
   opaquifyTypedPointers(ArgTys);
 
@@ -3875,8 +3879,9 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
 }
 
 SPIRVToLLVM::SPIRVToLLVM(Module *LLVMModule, SPIRVModule *TheSPIRVModule)
-    : BuiltinCallHelper(ManglingRules::OpenCL), M(LLVMModule),
-      BM(TheSPIRVModule) {
+    : BuiltinCallHelper(ManglingRules::OpenCL, nullptr,
+                        TheSPIRVModule->getAddrSpaceMap()),
+      M(LLVMModule), BM(TheSPIRVModule) {
   assert(M && "Initialization without an LLVM module is not allowed");
   initialize(*M);
   Context = &M->getContext();
@@ -5479,7 +5484,8 @@ Instruction *SPIRVToLLVM::transOCLBuiltinFromExtInst(SPIRVExtInst *BC,
   }
 
   std::string MangledName =
-      getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, RetTy);
+      getSPIRVFriendlyIRFunctionName(ExtOp, ArgTypes, RetTy,
+                                     BM->getAddrSpaceMap());
   opaquifyTypedPointers(ArgTypes);
 
   SPIRVDBG(spvdbgs() << "[transOCLBuiltinFromExtInst] UnmangledName: "

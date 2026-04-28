@@ -885,7 +885,8 @@ bool containsUnsignedAtomicType(StringRef Name);
 /// \return \param UniqName if \param BtnInfo is null pointer, otherwise
 ///    return IA64 mangled name.
 std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
-                          BuiltinFuncMangleInfo *BtnInfo);
+                          BuiltinFuncMangleInfo *BtnInfo,
+                          const SPIRV::AddrSpaceMap *Map = nullptr);
 
 /// Extract the true pointer types, expressed as a TypedPointerType, of
 /// arguments from a mangled function name. If the corresponding type is not a
@@ -909,7 +910,8 @@ bool getRetParamSignedness(Function *F, ParamSignedness &RetSignedness,
 /// manner
 std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
                                            ArrayRef<Type *> ArgTys,
-                                           Type *RetTy = nullptr);
+                                           Type *RetTy = nullptr,
+                                           const SPIRV::AddrSpaceMap *Map = nullptr);
 
 /// Mangle a function in SPIR-V friendly IR manner
 /// \param UniqName full unmangled name of the SPIR-V built-in function that
@@ -922,7 +924,8 @@ std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
 /// \return IA64 mangled name.
 std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
                                            spv::Op OC, ArrayRef<Type *> ArgTys,
-                                           ArrayRef<SPIRVValue *> Ops);
+                                           ArrayRef<SPIRVValue *> Ops,
+                                           const SPIRV::AddrSpaceMap *Map = nullptr);
 
 /// Get i8* with the same address space.
 PointerType *getInt8PtrTy(PointerType *T);

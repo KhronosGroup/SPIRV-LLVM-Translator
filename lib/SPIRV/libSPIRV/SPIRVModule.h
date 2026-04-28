@@ -605,6 +605,10 @@ public:
     return TranslationOpts.mapAddrSpace(SPIRAS);
   }
 
+  const SPIRV::AddrSpaceMap *getAddrSpaceMap() const noexcept {
+    return TranslationOpts.getAddrSpaceMap();
+  }
+
   unsigned getFunctionProgramAddrSpace() const noexcept {
     return TranslationOpts.getFunctionProgramAddrSpace();
   }
