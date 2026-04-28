@@ -5,7 +5,11 @@
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-; RUN: spirv-val %t.spv
+
+; FIXME: enable the following run when the translator CI is updated to a new
+; verion of the SPIR-V Tools that includes the support for the SPV_KHR_abort
+; extension.
+; RUN: not spirv-val %t.spv
 
 ; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 ; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:

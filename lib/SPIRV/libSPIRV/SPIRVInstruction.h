@@ -862,7 +862,7 @@ class SPIRVAbortKHR : public SPIRVInstruction {
 public:
   static const Op OC = OpAbortKHR;
   static const SPIRVWord FixedWordCount = 3;
-  // Complete constructor
+  // Complete constructor.
   SPIRVAbortKHR(SPIRVValue *TheMessage, SPIRVBasicBlock *TheBB)
       : SPIRVInstruction(FixedWordCount, OC, TheBB),
         MessageTypeId(TheMessage->getType()->getId()),
@@ -871,7 +871,7 @@ public:
     validate();
     assert(TheBB && "Invalid BB");
   }
-  // Incomplete constructor
+  // Incomplete constructor.
   SPIRVAbortKHR()
       : SPIRVInstruction(OC), MessageTypeId(SPIRVID_INVALID),
         MessageId(SPIRVID_INVALID) {
@@ -890,12 +890,13 @@ public:
     return std::vector<SPIRVValue *>(1, getValue(MessageId));
   }
 
+  _SPIRV_DEF_ENCDEC2(MessageTypeId, MessageId)
+
 protected:
   void setAttr() {
     setHasNoId();
     setHasNoType();
   }
-  _SPIRV_DEF_ENCDEC2(MessageTypeId, MessageId)
   void validate() const override { SPIRVInstruction::validate(); }
   SPIRVId MessageTypeId;
   SPIRVId MessageId;

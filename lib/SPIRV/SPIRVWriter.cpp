@@ -2333,27 +2333,10 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
-  if (isa<UnreachableInst>(V)) {
-    // SPV_KHR_abort: OpAbortKHR is itself a block terminator. If the LLVM IR
-    // appends a trailing 'unreachable' after the abort call (the canonical
-    // pattern for noreturn calls), do not emit a second SPIR-V terminator.
-    if (auto *Last = BB->getTerminateInstr())
-      if (Last->getOpCode() == OpAbortKHR)
-        return mapValue(V, const_cast<SPIRVInstruction *>(Last));
+  if (isa<UnreachableInst>(V))
     return mapValue(V, BM->addUnreachableInst(BB));
-  }
 
   if (auto *RI = dyn_cast<ReturnInst>(V)) {
-    // SPV_KHR_abort: OpAbortKHR is itself a SPIR-V block terminator. If the
-    // LLVM IR appends a trailing `ret void` after the abort call, do not emit
-    // a second SPIR-V terminator. We deliberately limit this suppression to
-    // `ret void`: if a non-void function ends with `ret <value>` after
-    // OpAbortKHR, fall through so that the value is still translated and the
-    // user sees a normal SPIR-V validation error rather than silently
-    // dropping the return value.
-    if (auto *Last = BB->getTerminateInstr();
-        !RI->getReturnValue() && Last && Last->getOpCode() == OpAbortKHR)
-      return mapValue(V, const_cast<SPIRVInstruction *>(Last));
     if (auto *RV = RI->getReturnValue()) {
       if (auto *II = dyn_cast<IntrinsicInst>(RV)) {
         if (II->getIntrinsicID() == Intrinsic::frexp) {
@@ -6347,6 +6330,15 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
     SPIRVBasicBlock *BB =
         static_cast<SPIRVBasicBlock *>(transValue(&FI, nullptr));
     for (auto &BI : FI) {
+      // SPV_KHR_abort: OpAbortKHR is itself a SPIR-V block terminator. Once a
+      // basic block has been terminated by OpAbortKHR, any subsequent LLVM IR
+      // instructions in the same block (typically lifetime intrinsics, a
+      // trailing `unreachable`, or a `ret`) must not be emitted, otherwise
+      // the resulting SPIR-V would have instructions after a block terminator
+      // and fail validation.
+      if (auto *Last = BB->getTerminateInstr();
+          Last && Last->getOpCode() == OpAbortKHR)
+        break;
       transValue(&BI, BB, false);
     }
   }
@@ -6921,9 +6913,9 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
     return BM->addControlBarrierInst(BArgs[0], BArgs[1], BArgs[2], BB);
   } break;
   case OpAbortKHR: {
-    BM->getErrorLog().checkError(
-        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_abort),
-        SPIRVEC_RequiresExtension, "SPV_KHR_abort\n");
+    if (!BM->checkExtension(ExtensionID::SPV_KHR_abort,
+                            SPIRVEC_RequiresExtension, "SPV_KHR_abort\n"))
+      return nullptr;
     BM->getErrorLog().checkError(
         CI->arg_size() == 1, SPIRVEC_InvalidInstruction,
         "__spirv_AbortKHR must be called with exactly one Message argument\n");
