@@ -5126,17 +5126,34 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         "-spirv-allow-unknown-intrinsics option.");
     break;
   }
+  case Intrinsic::trap:
+  case Intrinsic::ubsantrap: {
+    // When the SPV_KHR_abort extension is disabled, ignore/drop the llvm.trap
+    // and llvm.ubsantrap intrinsics to not break the translator.
+    if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_abort))
+      return nullptr;
+
+    // For llvm.trap use the constant 32-bit "all ones" value, because there is
+    // no message present in the intrinsic.
+    uint64_t MsgVal = ~0u;
+    if (IID == Intrinsic::ubsantrap) {
+      // For llvm.ubsan intrinsic propagate the operand value.
+      auto *Arg = cast<ConstantInt>(II->getArgOperand(0));
+      MsgVal = Arg->getZExtValue();
+    }
+
+    auto *I32Ty = transType(Type::getInt32Ty(II->getContext()));
+    auto *Msg = BM->addConstant(I32Ty, MsgVal);
+    return BM->addAbortKHRInst(Msg, BB);
+  }
   // We can just ignore/drop some intrinsics, like optimizations hint.
   case Intrinsic::experimental_noalias_scope_decl:
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
-  // TODO: lower llvm.trap / llvm.ubsantrap / llvm.debugtrap to OpAbortKHR
-  // (with a null/undefined Message) when the SPV_KHR_abort extension is
-  // enabled. For now we silently drop these intrinsics so that the translator
-  // doesn't crash on input that contains them.
-  case Intrinsic::trap:
-  case Intrinsic::ubsantrap:
+  // llvm.debugtrap is silently dropped: it has no direct SPIR-V counterpart
+  // and cannot be lowered into the OpAbortKHR, because it doesn't terminate
+  // the execution.
   case Intrinsic::debugtrap:
   // Just ignore llvm.fake.use intrinsic, as it has no translation in SPIRV.
   case Intrinsic::fake_use:
