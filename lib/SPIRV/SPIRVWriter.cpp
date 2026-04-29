@@ -2343,7 +2343,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     return mapValue(V, BI);
   }
 
-  if (dyn_cast<UnreachableInst>(V))
+  if (isa<UnreachableInst>(V))
     return mapValue(V, BM->addUnreachableInst(BB));
 
   if (auto *RI = dyn_cast<ReturnInst>(V)) {
@@ -5136,16 +5136,34 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         "-spirv-allow-unknown-intrinsics option.");
     break;
   }
+  case Intrinsic::trap:
+  case Intrinsic::ubsantrap: {
+    // When the SPV_KHR_abort extension is disabled, ignore/drop the llvm.trap
+    // and llvm.ubsantrap intrinsics to not break the translator.
+    if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_abort))
+      return nullptr;
+
+    // For llvm.trap use the constant 32-bit "all ones" value, because there is
+    // no message present in the intrinsic.
+    uint64_t MsgVal = ~0u;
+    if (IID == Intrinsic::ubsantrap) {
+      // For llvm.ubsan intrinsic propagate the operand value.
+      auto *Arg = cast<ConstantInt>(II->getArgOperand(0));
+      MsgVal = Arg->getZExtValue();
+    }
+
+    auto *I32Ty = transType(Type::getInt32Ty(II->getContext()));
+    auto *Msg = BM->addConstant(I32Ty, MsgVal);
+    return BM->addAbortKHRInst(Msg, BB);
+  }
   // We can just ignore/drop some intrinsics, like optimizations hint.
   case Intrinsic::experimental_noalias_scope_decl:
   case Intrinsic::invariant_start:
   case Intrinsic::invariant_end:
   case Intrinsic::dbg_label:
-  // llvm.trap and llvm.debugtrap intrinsics are not implemented. But for now
-  // don't crash. This change is pending the trap/abort intrinsic
-  // implementation.
-  case Intrinsic::trap:
-  case Intrinsic::ubsantrap:
+  // llvm.debugtrap is silently dropped: it has no direct SPIR-V counterpart
+  // and cannot be lowered into the OpAbortKHR, because it doesn't terminate
+  // the execution.
   case Intrinsic::debugtrap:
   // Just ignore llvm.fake.use intrinsic, as it has no translation in SPIRV.
   case Intrinsic::fake_use:
@@ -6337,6 +6355,15 @@ void LLVMToSPIRVBase::transFunction(Function *I) {
     SPIRVBasicBlock *BB =
         static_cast<SPIRVBasicBlock *>(transValue(&FI, nullptr));
     for (auto &BI : FI) {
+      // SPV_KHR_abort: OpAbortKHR is itself a SPIR-V block terminator. Once a
+      // basic block has been terminated by OpAbortKHR, any subsequent LLVM IR
+      // instructions in the same block (typically lifetime intrinsics, a
+      // trailing `unreachable`, or a `ret`) must not be emitted, otherwise
+      // the resulting SPIR-V would have instructions after a block terminator
+      // and fail validation.
+      if (auto *Last = BB->getTerminateInstr();
+          Last && Last->getOpCode() == OpAbortKHR)
+        break;
       transValue(&BI, BB, false);
     }
   }
@@ -6909,6 +6936,16 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
   case OpControlBarrier: {
     auto BArgs = transValue(getArguments(CI), BB);
     return BM->addControlBarrierInst(BArgs[0], BArgs[1], BArgs[2], BB);
+  } break;
+  case OpAbortKHR: {
+    if (!BM->checkExtension(ExtensionID::SPV_KHR_abort,
+                            SPIRVEC_RequiresExtension, "SPV_KHR_abort\n"))
+      return nullptr;
+    BM->getErrorLog().checkError(
+        CI->arg_size() == 1, SPIRVEC_InvalidInstruction,
+        "__spirv_AbortKHR must be called with exactly one Message argument\n");
+    auto *Msg = transValue(CI->getArgOperand(0), BB);
+    return BM->addAbortKHRInst(Msg, BB);
   } break;
   case OpGroupAsyncCopy: {
     auto BArgs = transValue(getArguments(CI), BB);
@@ -7600,7 +7637,8 @@ bool runSpirvBackend(Module *M, std::string &Result, std::string &ErrMsg,
       SPIRV::ExtensionID::SPV_INTEL_function_pointers,
       SPIRV::ExtensionID::SPV_KHR_shader_clock,
       SPIRV::ExtensionID::SPV_KHR_cooperative_matrix,
-      SPIRV::ExtensionID::SPV_KHR_non_semantic_info};
+      SPIRV::ExtensionID::SPV_KHR_non_semantic_info,
+      SPIRV::ExtensionID::SPV_KHR_abort};
   // The fallback for the Triple value.
   static const std::string DefaultTriple = "spirv64-unknown-unknown";
 
