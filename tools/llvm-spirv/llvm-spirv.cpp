@@ -382,6 +382,7 @@ static int convertLLVMToSPIRV(const SPIRV::TranslatorOpts &Opts) {
   if (!M) {
     ExitOnErr(
         createStringError(inconvertibleErrorCode(), GetIRErr.getMessage()));
+    return -1; // unreachable, suppresses coverity regarding further use of M.
   }
 
   ExitOnErr(M->materializeAll());
