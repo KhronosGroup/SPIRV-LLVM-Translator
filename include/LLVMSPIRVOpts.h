@@ -42,6 +42,7 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <map>
@@ -117,6 +118,22 @@ enum class DebugInfoEIS : uint32_t {
 };
 
 enum class BuiltinFormat : uint32_t { Function, Global };
+
+enum SPIRAddressSpace : uint32_t {
+  SPIRAS_Private,
+  SPIRAS_Global,
+  SPIRAS_Constant,
+  SPIRAS_Local,
+  SPIRAS_Generic,
+  SPIRAS_GlobalDevice,
+  SPIRAS_GlobalHost,
+  SPIRAS_Input,
+  SPIRAS_Output,
+  SPIRAS_CodeSectionINTEL,
+  SPIRAS_Count,
+};
+
+using AddrSpaceMap = std::array<uint32_t, SPIRAS_Count>;
 
 /// \brief Helper class to manage SPIR-V translation
 class TranslatorOpts {
@@ -245,6 +262,26 @@ public:
     EmitFunctionPtrAddrSpace = Value;
   }
 
+  void setAddrSpaceMap(AddrSpaceMap Map) noexcept { ASMap = std::move(Map); }
+
+  const AddrSpaceMap *getAddrSpaceMap() const noexcept {
+    return ASMap ? &*ASMap : nullptr;
+  }
+
+  uint32_t mapAddrSpace(uint32_t SPIRAS) const noexcept {
+    if (ASMap && SPIRAS < SPIRAS_Count)
+      return (*ASMap)[SPIRAS];
+    return SPIRAS;
+  }
+
+  void setFunctionProgramAddrSpace(uint32_t AS) noexcept {
+    FunctionProgramAS = AS;
+  }
+
+  uint32_t getFunctionProgramAddrSpace() const noexcept {
+    return FunctionProgramAS;
+  }
+
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
     SPIRVBuiltinFormat = Value;
   }
@@ -345,6 +382,12 @@ private:
   // Controls if CodeSectionINTEL can be emitted and consumed with a dedicated
   // address space
   bool EmitFunctionPtrAddrSpace = false;
+
+  // Optional per-target mapping from SPIRAddressSpace values to LLVM AS numbers
+  std::optional<AddrSpaceMap> ASMap;
+
+  // Address space for function definitions; independent of the data-pointer map
+  uint32_t FunctionProgramAS = SPIRAS_Private;
 
   bool PreserveAuxData = false;
 
