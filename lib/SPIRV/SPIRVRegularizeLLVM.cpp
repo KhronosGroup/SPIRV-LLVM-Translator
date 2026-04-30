@@ -798,6 +798,16 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     }
   }
 
+  // Remove intrinsic declarations that became unused after lowering.
+  // During the loop above, intrinsic calls are replaced with calls to lowered
+  // functions. The original intrinsic declarations may still remain in the
+  // module with no uses.
+  for (auto I = M->begin(), E = M->end(); I != E;) {
+    Function *F = &(*I++);
+    if (F->isDeclaration() && F->use_empty())
+      F->eraseFromParent();
+  }
+
   if (SPIRVDbgSaveRegularizedModule)
     saveLLVMModule(M, RegularizedModuleTmpFile);
   return true;
