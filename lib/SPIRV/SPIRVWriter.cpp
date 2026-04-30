@@ -3986,6 +3986,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::floor:
   case Intrinsic::fma:
   case Intrinsic::frexp:
+  case Intrinsic::ldexp:
   case Intrinsic::log:
   case Intrinsic::log10:
   case Intrinsic::log2:
@@ -4118,6 +4119,8 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
     return OpenCLLIB::Fma;
   case Intrinsic::frexp:
     return OpenCLLIB::Frexp;
+  case Intrinsic::ldexp:
+    return OpenCLLIB::Ldexp;
   case Intrinsic::log:
     return OpenCLLIB::Log;
   case Intrinsic::log10:
@@ -4416,6 +4419,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   // Binary FP intrinsics
   case Intrinsic::atan2:
   case Intrinsic::copysign:
+  case Intrinsic::ldexp:
   case Intrinsic::pow:
   case Intrinsic::powi:
   case Intrinsic::maximumnum:
