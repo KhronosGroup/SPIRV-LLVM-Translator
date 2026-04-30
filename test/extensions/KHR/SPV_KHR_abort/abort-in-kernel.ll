@@ -14,7 +14,7 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; FIXME: enable the following run when the translator CI is updated to a new
-; verion of the SPIR-V Tools that includes the support for the SPV_KHR_abort
+; version of the SPIR-V Tools that includes the support for the SPV_KHR_abort
 ; extension.
 ; RUN: not spirv-val %t.spv
 
@@ -25,7 +25,7 @@
 ; ---- SPIR-V ----
 ; CHECK-SPIRV-DAG: Capability AbortKHR
 ; CHECK-SPIRV-DAG: Extension "SPV_KHR_abort"
-; CHECK-SPIRV-DAG: EntryPoint 6 {{[0-9]+}} "test_kernel"
+; CHECK-SPIRV-DAG: EntryPoint 6 [[#KernelId:]] "test_kernel"
 
 ; __assert_fail_internal: contains the abort -> OpAbortKHR
 ; CHECK-SPIRV: Function
@@ -33,7 +33,7 @@
 ; CHECK-SPIRV: FunctionEnd
 
 ; test_kernel: calls __assert_fail_internal, then unreachable (in caller)
-; CHECK-SPIRV: Function
+; CHECK-SPIRV: Function {{.*}} [[#KernelId]]
 ; CHECK-SPIRV: BranchConditional
 ; CHECK-SPIRV: Return
 ; CHECK-SPIRV: FunctionCall

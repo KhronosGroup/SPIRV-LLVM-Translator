@@ -14,7 +14,7 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; FIXME: enable the following run when the translator CI is updated to a new
-; verion of the SPIR-V Tools that includes the support for the SPV_KHR_abort
+; version of the SPIR-V Tools that includes the support for the SPV_KHR_abort
 ; extension.
 ; RUN: not spirv-val %t.spv
 

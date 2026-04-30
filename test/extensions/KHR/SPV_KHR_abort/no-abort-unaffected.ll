@@ -5,7 +5,7 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_abort -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV --implicit-check-not AbortKHR
 
 ; Validate SPIR-V
 ; RUN: spirv-val %t.spv
@@ -13,9 +13,6 @@
 ; Round-trip must be lossless for non-abort code
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
-
-; No AbortKHR anywhere — only non-abort functions
-; CHECK-SPIRV-NOT: AbortKHR
 
 ; Normal void return preserved
 ; CHECK-SPIRV: Function

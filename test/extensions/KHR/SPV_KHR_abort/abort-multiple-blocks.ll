@@ -10,7 +10,7 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
 ; FIXME: enable the following run when the translator CI is updated to a new
-; verion of the SPIR-V Tools that includes the support for the SPV_KHR_abort
+; version of the SPIR-V Tools that includes the support for the SPV_KHR_abort
 ; extension.
 ; RUN: not spirv-val %t.spv
 
@@ -22,22 +22,33 @@
 ; CHECK-SPIRV-DAG: Capability AbortKHR
 ; CHECK-SPIRV-DAG: Extension "SPV_KHR_abort"
 
+; CHECK-SPIRV: Name [[#LabelEntry:]] "entry"
+; CHECK-SPIRV: Name [[#LabelWork:]] "work"
+; CHECK-SPIRV: Name [[#LabelRet:]] "ret"
+; CHECK-SPIRV: Name [[#LabelErr1:]] "err1"
+; CHECK-SPIRV: Name [[#LabelErr2:]] "err2"
+
 ; Function with multiple paths
 ; CHECK-SPIRV: Function
 ;
-; Entry: conditional branch
-; CHECK-SPIRV: BranchConditional
+; Entry: conditional branch to %work / %err1
+; CHECK-SPIRV: Label [[#LabelEntry]]
+; CHECK-SPIRV: BranchConditional [[#]] [[#LabelWork]] [[#LabelErr1]]
 ;
-; Work block: second conditional branch
-; CHECK-SPIRV: BranchConditional
+; Work block: second conditional branch to %ret / %err2
+; CHECK-SPIRV: Label [[#LabelWork]]
+; CHECK-SPIRV: BranchConditional [[#]] [[#LabelRet]] [[#LabelErr2]]
 ;
 ; Return block: normal return
+; CHECK-SPIRV: Label [[#LabelRet]]
 ; CHECK-SPIRV: ReturnValue
 ;
 ; First abort block
+; CHECK-SPIRV: Label [[#LabelErr1]]
 ; CHECK-SPIRV: AbortKHR
 ;
 ; Second abort block
+; CHECK-SPIRV: Label [[#LabelErr2]]
 ; CHECK-SPIRV: AbortKHR
 ; CHECK-SPIRV: FunctionEnd
 

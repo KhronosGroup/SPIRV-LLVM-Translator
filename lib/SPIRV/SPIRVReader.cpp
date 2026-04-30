@@ -1944,7 +1944,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     // to the SPIR-V friendly builtin __spirv_AbortKHR followed by an
     // 'unreachable' terminator.
     auto *AbortInst =
-        transSPIRVBuiltinFromInst(static_cast<SPIRVInstruction *>(BV), BB);
+        transSPIRVBuiltinFromInst(static_cast<SPIRVAbortKHR *>(BV), BB);
     if (auto *Call = dyn_cast<CallInst>(AbortInst)) {
       Call->setDoesNotReturn();
       if (auto *Callee = Call->getCalledFunction())
