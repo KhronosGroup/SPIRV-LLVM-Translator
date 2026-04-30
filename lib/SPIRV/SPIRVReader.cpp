@@ -3847,6 +3847,18 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   } else {
     Call = CallInst::Create(Func, transValue(Ops, BB->getParent(), BB), "", BB);
   }
+  auto HasImageOperandNonTemporal = [](SPIRVInstruction *Inst) -> bool {
+    size_t Idx = getImageOperandsIndex(Inst->getOpCode());
+    if (Idx == ~0U)
+      return false;
+    auto Ops = Inst->getOperands();
+    if (Ops.size() <= Idx)
+      return false;
+    auto ImOp = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
+    return ImOp & ImageOperandsMask::ImageOperandsNontemporalMask;
+  };
+  if (HasImageOperandNonTemporal(BI))
+    transNonTemporalMetadata(Call);
   setName(Call, BI);
   setAttrByCalledFunc(Call);
   SPIRVDBG(spvdbgs() << "[transInstToBuiltinCall] " << *BI << " -> ";
@@ -4765,7 +4777,10 @@ SPIRVToLLVM::transOCLImageTypeAccessQualifier(SPIRV::SPIRVTypeImage *ST) {
 bool SPIRVToLLVM::transNonTemporalMetadata(Instruction *I) {
   Constant *One = ConstantInt::get(Type::getInt32Ty(*Context), 1);
   MDNode *Node = MDNode::get(*Context, ConstantAsMetadata::get(One));
-  I->setMetadata(M->getMDKindID("nontemporal"), Node);
+  if (isa<LoadInst>(I) || isa<StoreInst>(I))
+    I->setMetadata(LLVMContext::MD_nontemporal, Node);
+  else
+    I->setMetadata("spirv.nontemporal", Node);
   return true;
 }
 
