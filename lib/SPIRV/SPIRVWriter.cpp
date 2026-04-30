@@ -4429,14 +4429,14 @@ processMiniFPOrInt4Type(Type *LLVMTy, FPEncodingWrap Encoding,
   unsigned TyWidth = cast<IntegerType>(ScalarTy)->getBitWidth();
   unsigned VecSize = 0;
 
-  bool IsPacked =
+  const bool IsPacked =
       Encoding == FPEncodingWrap::E2M1 || Encoding == FPEncodingWrap::Integer;
   if (IsPacked &&
       (TyWidth == 8 || TyWidth == 16 || TyWidth == 32 || TyWidth == 64)) {
     // Int4 or FP4 packed in an integer: each N-bit integer holds N/4 values.
     assert(!isLLVMCooperativeMatrixType(LLVMTy) &&
            "FP4 and Int4 matrices must not be packed");
-    unsigned OuterVecLen =
+    const unsigned OuterVecLen =
         LLVMTy->isVectorTy()
             ? cast<VectorType>(LLVMTy)->getElementCount().getFixedValue()
             : 1;
