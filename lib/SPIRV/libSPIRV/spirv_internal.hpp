@@ -83,8 +83,6 @@ enum InternalOp {
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
-  IOpPredicatedLoadINTEL = 6258,
-  IOpPredicatedStoreINTEL = 6259,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
@@ -128,7 +126,6 @@ enum InternalCapability {
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
-  ICapabilityPredicatedIOINTEL = 6257,
   ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
   ICapabilityInt16AtomicsINTEL = 6261,
   ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
@@ -255,10 +252,6 @@ _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
 
 _SPIRV_OP(Capability, AtomicBFloat16AddINTEL)
 _SPIRV_OP(Capability, AtomicBFloat16MinMaxINTEL)
-
-_SPIRV_OP(Capability, PredicatedIOINTEL)
-_SPIRV_OP(Op, PredicatedLoadINTEL)
-_SPIRV_OP(Op, PredicatedStoreINTEL)
 
 _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
