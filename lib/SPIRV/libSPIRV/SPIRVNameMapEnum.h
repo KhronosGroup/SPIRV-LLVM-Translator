@@ -626,7 +626,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityArithmeticFenceEXT, "ArithmeticFenceEXT");
   add(CapabilityTernaryBitwiseFunctionINTEL, "TernaryBitwiseFunctionINTEL");
   add(CapabilityFMAKHR, "FMAKHR");
-
+  add(CapabilityPredicatedIOINTEL, "PredicatedIOINTEL");
   // From spirv_internal.hpp
   add(internal::CapabilityFPGADSPControlINTEL, "FPGADSPControlINTEL");
   add(internal::CapabilityFPGAInvocationPipeliningAttributesINTEL,
@@ -658,7 +658,6 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(internal::CapabilityBFloat16ArithmeticINTEL, "BFloat16ArithmeticINTEL");
   add(CapabilityFloat8EXT, "Float8EXT");
   add(CapabilityFloat8CooperativeMatrixEXT, "Float8CooperativeMatrixEXT");
-  add(internal::CapabilityPredicatedIOINTEL, "PredicatedIOINTEL");
   add(internal::CapabilitySigmoidINTEL, "SigmoidINTEL");
   add(internal::CapabilityDeviceBarrierINTEL, "DeviceBarrierINTEL");
   add(internal::CapabilityAtomicBFloat16AddINTEL, "AtomicBFloat16AddINTEL");
