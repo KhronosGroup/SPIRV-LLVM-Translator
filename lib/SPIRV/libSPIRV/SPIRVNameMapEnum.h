@@ -660,6 +660,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityTernaryBitwiseFunctionINTEL, "TernaryBitwiseFunctionINTEL");
   add(CapabilityFMAKHR, "FMAKHR");
   add(CapabilityPredicatedIOINTEL, "PredicatedIOINTEL");
+  add(CapabilityAbortKHR, "AbortKHR");
   // From spirv_internal.hpp
   add(internal::CapabilityTokenTypeINTEL, "TokenTypeINTEL");
   add(internal::CapabilityJointMatrixINTEL, "JointMatrixINTEL");
