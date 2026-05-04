@@ -4450,6 +4450,46 @@ protected:
   std::vector<SPIRVId> CacheTy;
 };
 
+class SPIRVSubgroupBlockPrefetchINTELInst : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_subgroup_buffer_prefetch;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroupBufferPrefetchINTEL);
+  }
+  // Operand 2, if present, is the Memory Operands bitmask.
+  bool isOperandLiteral(unsigned I) const override { return I == 2; }
+
+protected:
+  void validate() const override {
+    SPIRVInstruction::validate();
+    if (getValue(Ops[0])->isForward())
+      return;
+    SPIRVErrorLog &SPVErrLog = getModule()->getErrorLog();
+    SPIRVType *PtrType = getValueType(Ops[0]);
+    std::string InstName = "OpSubgroupBlockPrefetchINTEL";
+    SPVErrLog.checkError(
+        PtrType->isTypePointer() || PtrType->isTypeUntypedPointerKHR(),
+        SPIRVEC_InvalidInstruction, InstName + "\nPtr must be a pointer\n");
+    SPVErrLog.checkError(
+        PtrType->getPointerStorageClass() == StorageClassCrossWorkgroup,
+        SPIRVEC_InvalidInstruction,
+        InstName + "\nPtr must be in CrossWorkgroup storage class\n");
+    if (!PtrType->isTypeUntypedPointerKHR())
+      SPVErrLog.checkError(PtrType->getPointerElementType()->isTypeInt(),
+                           SPIRVEC_InvalidInstruction,
+                           InstName +
+                               "\nPtr must point to a scalar integer type\n");
+    SPVErrLog.checkError(
+        getValueType(Ops[1])->isTypeInt(32), SPIRVEC_InvalidInstruction,
+        InstName + "\nNumBytes must be a 32-bit integer scalar\n");
+  }
+};
+typedef SPIRVInstTemplate<SPIRVSubgroupBlockPrefetchINTELInst,
+                          OpSubgroupBlockPrefetchINTEL, false, 3, true>
+    SPIRVSubgroupBlockPrefetchINTEL;
+
 class SPIRVSubgroup2DBlockIOINTELInst : public SPIRVInstTemplateBase {
 public:
   std::optional<ExtensionID> getRequiredExtension() const override {
@@ -4634,13 +4674,13 @@ public:
     return ExtensionID::SPV_INTEL_predicated_io;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilityPredicatedIOINTEL);
+    return getVec(CapabilityPredicatedIOINTEL);
   }
 };
 
 #define _SPIRV_OP(x, ...)                                                      \
-  typedef SPIRVInstTemplate<SPIRVPredicatedIOINTELInst,                        \
-                            internal::Op##x##INTEL, __VA_ARGS__>               \
+  typedef SPIRVInstTemplate<SPIRVPredicatedIOINTELInst, Op##x##INTEL,          \
+                            __VA_ARGS__>                                       \
       SPIRV##x##INTEL;
 _SPIRV_OP(PredicatedLoad, true, 6, true)
 _SPIRV_OP(PredicatedStore, false, 4, true)
