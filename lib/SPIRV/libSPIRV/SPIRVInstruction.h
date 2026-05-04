@@ -3163,6 +3163,7 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     return getVec(CapabilityImageBasic);
   }
+  bool hasImageOperand(ImageOperandsMask Mask) const;
 
 protected:
   void setOpWords(const std::vector<SPIRVWord> &OpsArg) override;

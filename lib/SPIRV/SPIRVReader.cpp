@@ -3847,17 +3847,9 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
   } else {
     Call = CallInst::Create(Func, transValue(Ops, BB->getParent(), BB), "", BB);
   }
-  auto HasImageOperandNonTemporal = [](SPIRVInstruction *Inst) -> bool {
-    size_t Idx = getImageOperandsIndex(Inst->getOpCode());
-    if (Idx == ~0U)
-      return false;
-    auto Ops = Inst->getOperands();
-    if (Ops.size() <= Idx)
-      return false;
-    auto ImOp = static_cast<SPIRVConstant *>(Ops[Idx])->getZExtIntValue();
-    return ImOp & ImageOperandsMask::ImageOperandsNontemporalMask;
-  };
-  if (HasImageOperandNonTemporal(BI))
+  if (getImageOperandsIndex(OC) != ~0U &&
+      static_cast<SPIRVImageInstBase *>(BI)->hasImageOperand(
+          ImageOperandsMask::ImageOperandsNontemporalMask))
     transNonTemporalMetadata(Call);
   setName(Call, BI);
   setAttrByCalledFunc(Call);
