@@ -1356,11 +1356,10 @@ static SPIR::TypePrimitiveEnum getOCLTypePrimitiveEnum(TargetExtType *Ty) {
 /// Translates LLVM type to descriptor for mangler.
 /// \param Signed indicates integer type should be translated as signed.
 /// \param VoidPtr indicates i8* should be translated as void*.
-static SPIR::RefParamType transTypeDesc(Type *Ty,
-                                        const BuiltinArgTypeMangleInfo &Info,
-                                        bool IsOpenCL,
-                                        StringRef InstName = "",
-                                        const SPIRV::AddrSpaceMap *Map = nullptr) {
+static SPIR::RefParamType
+transTypeDesc(Type *Ty, const BuiltinArgTypeMangleInfo &Info, bool IsOpenCL,
+              StringRef InstName = "",
+              const SPIRV::AddrSpaceMap *Map = nullptr) {
   bool Signed = Info.IsSigned;
   unsigned Attr = Info.Attr;
   bool VoidPtr = Info.IsVoidPtr;
@@ -1538,7 +1537,8 @@ static SPIR::RefParamType transTypeDesc(Type *Ty,
 
     if (VoidPtr && ET->isIntegerTy(8))
       ET = Type::getVoidTy(ET->getContext());
-    auto *PT = new SPIR::PointerType(transTypeDesc(ET, Info, IsOpenCL, "", Map));
+    auto *PT =
+        new SPIR::PointerType(transTypeDesc(ET, Info, IsOpenCL, "", Map));
     PT->setAddressSpace(static_cast<SPIR::TypeAttributeEnum>(
         TPT->getAddressSpace() + (unsigned)SPIR::ATTR_ADDR_SPACE_FIRST));
     for (unsigned I = SPIR::ATTR_QUALIFIER_FIRST, E = SPIR::ATTR_QUALIFIER_LAST;
@@ -2756,8 +2756,7 @@ private:
 
 namespace SPIRV {
 std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
-                                           ArrayRef<Type *> ArgTys,
-                                           Type *RetTy,
+                                           ArrayRef<Type *> ArgTys, Type *RetTy,
                                            const SPIRV::AddrSpaceMap *Map) {
   OpenCLStdToSPIRVFriendlyIRMangleInfo MangleInfo(ExtOpId, ArgTys, RetTy);
   return mangleBuiltin(MangleInfo.getUnmangledName(), ArgTys, &MangleInfo, Map);

@@ -478,10 +478,11 @@ unsigned transVecTypeHint(MDNode *Node);
 /// Decode SPIR-V encoding of vector type hint execution mode.
 Type *decodeVecTypeHint(LLVMContext &C, unsigned Code);
 
-SPIRAddressSpace getOCLOpaqueTypeAddrSpace(
-    Op OpCode, const SPIRV::AddrSpaceMap *Map = nullptr);
-SPIR::TypeAttributeEnum getOCLOpaqueTypeAddrSpace(
-    SPIR::TypePrimitiveEnum Prim, const SPIRV::AddrSpaceMap *Map = nullptr);
+SPIRAddressSpace
+getOCLOpaqueTypeAddrSpace(Op OpCode, const SPIRV::AddrSpaceMap *Map = nullptr);
+SPIR::TypeAttributeEnum
+getOCLOpaqueTypeAddrSpace(SPIR::TypePrimitiveEnum Prim,
+                          const SPIRV::AddrSpaceMap *Map = nullptr);
 
 inline unsigned mapOCLMemSemanticToSPIRV(unsigned MemFenceFlag,
                                          OCLMemOrderKind Order) {

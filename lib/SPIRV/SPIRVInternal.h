@@ -179,7 +179,6 @@ typedef SPIRVMap<Op, Op, IntBoolOpMapId> IntBoolOpMap;
   "-v128:128:128-v192:256:256-v256:256:256"                                    \
   "-v512:512:512-v1024:1024:1024"
 
-
 template <> inline void SPIRVMap<SPIRAddressSpace, std::string>::init() {
   add(SPIRAS_Private, "Private");
   add(SPIRAS_Global, "Global");
@@ -908,10 +907,10 @@ bool getRetParamSignedness(Function *F, ParamSignedness &RetSignedness,
 
 /// Mangle a function from OpenCL extended instruction set in SPIR-V friendly IR
 /// manner
-std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
-                                           ArrayRef<Type *> ArgTys,
-                                           Type *RetTy = nullptr,
-                                           const SPIRV::AddrSpaceMap *Map = nullptr);
+std::string
+getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId, ArrayRef<Type *> ArgTys,
+                               Type *RetTy = nullptr,
+                               const SPIRV::AddrSpaceMap *Map = nullptr);
 
 /// Mangle a function in SPIR-V friendly IR manner
 /// \param UniqName full unmangled name of the SPIR-V built-in function that
@@ -922,10 +921,9 @@ std::string getSPIRVFriendlyIRFunctionName(OCLExtOpKind ExtOpId,
 /// \param Types of arguments of SPIR-V built-in function
 /// \param Ops Operands of SPIRVInstruction
 /// \return IA64 mangled name.
-std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
-                                           spv::Op OC, ArrayRef<Type *> ArgTys,
-                                           ArrayRef<SPIRVValue *> Ops,
-                                           const SPIRV::AddrSpaceMap *Map = nullptr);
+std::string getSPIRVFriendlyIRFunctionName(
+    const std::string &UniqName, spv::Op OC, ArrayRef<Type *> ArgTys,
+    ArrayRef<SPIRVValue *> Ops, const SPIRV::AddrSpaceMap *Map = nullptr);
 
 /// Get i8* with the same address space.
 PointerType *getInt8PtrTy(PointerType *T);
