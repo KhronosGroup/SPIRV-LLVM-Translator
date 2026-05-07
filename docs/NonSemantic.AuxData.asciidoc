@@ -43,7 +43,7 @@ Dependencies
 This extension is written against the SPIR-V Specification,
 Version 1.6 Revision 7.
 
-This instruction set requires either SPIR-V 1.6 *SPV_KHR_non_semantic_info* extension.
+This instruction set requires either SPIR-V 1.6 or *SPV_KHR_non_semantic_info* extension.
 
 Overview
 --------
@@ -72,12 +72,10 @@ Terminology
 The terms below are used as defined in the LLVM Language Reference
 Manual (https://llvm.org/docs/LangRef.html):
 
-- *Function attribute* - an attribute attached to an LLVM `Function`.
-  May be either an enum-kind attribute (e.g. `nounwind`, `readonly`)
-  or a string attribute, with or without a string value;
-
-- *Global variable attribute* - an attribute attached to an LLVM
-  `GlobalVariable`, of the same forms as a function attribute.
+- *Function attribute* / *Global variable attribute* - an attribute
+  attached to an LLVM `Function` or `GlobalVariable`. May be either
+  an enum-kind attribute (e.g. `nounwind`, `readonly`) or a string
+  attribute, with or without a string value;
 
 - *Function metadata* / *global variable metadata* - a named LLVM
   `MDNode` attached to a `Function` or `GlobalVariable`. The node's
@@ -167,7 +165,7 @@ Instructions
 
 [cols="2*1,3*2,1,3,3,3"]
 |======
-8+|[[NonSemanticAuxDataFunctionAttribute]]*NonSemanticAuxDataFunctionAttribute* +
+9+a|[[NonSemanticAuxDataFunctionAttribute]]*NonSemanticAuxDataFunctionAttribute* +
  +
 Record one LLVM-IR function attribute attached to an `OpFunction`. +
  +
@@ -179,7 +177,7 @@ to. The same 'Target' may be referenced by any number of
 attribute). +
  +
 'Attribute Name' is the '<id>' of an *OpString*. For LLVM string-kind
-attributes ('AttributeImpl::isStringAttribute()' is true) it contains
+attributes (`AttributeImpl::isStringAttribute()` is true) it contains
 the attribute key exactly as it appears in the LLVM module
 (for example `"sycl-unique-id"`, `"foo"`). For LLVM enum-kind
 attributes (for example `nounwind`, `readonly`) it contains the
@@ -211,7 +209,7 @@ should treat the entire string as an opaque attribute spelling.
 
 [cols="2*1,3*2,1,3,3,3"]
 |======
-8+|[[NonSemanticAuxDataGlobalVariableAttribute]]*NonSemanticAuxDataGlobalVariableAttribute* +
+9+a|[[NonSemanticAuxDataGlobalVariableAttribute]]*NonSemanticAuxDataGlobalVariableAttribute* +
  +
 Record one LLVM-IR attribute attached to a global variable. +
  +
@@ -235,7 +233,7 @@ operands of <<NonSemanticAuxDataFunctionAttribute,*NonSemanticAuxDataFunctionAtt
 
 [cols="2*1,3*2,1,3,3,3"]
 |======
-8+|[[NonSemanticAuxDataFunctionMetadata]]*NonSemanticAuxDataFunctionMetadata* +
+9+a|[[NonSemanticAuxDataFunctionMetadata]]*NonSemanticAuxDataFunctionMetadata* +
  +
 Record one named LLVM-IR metadata attachment on an `OpFunction`. +
  +
@@ -265,7 +263,7 @@ shall be one of: +
 The number of 'Metadata Value' operands MAY be zero (for an empty
 `MDNode`). It is unbounded otherwise.
 
-A consumer should skip a *NonSemanticAuxDataFunctionMetadata*
+A consumer must skip a *NonSemanticAuxDataFunctionMetadata*
 instruction whose 'Metadata Name' is already attached to 'Target'
 through some other reverse-translation path, to avoid creating
 duplicate metadata attachments.
@@ -280,7 +278,7 @@ duplicate metadata attachments.
 
 [cols="2*1,3*2,1,3,3,3"]
 |======
-8+|[[NonSemanticAuxDataGlobalVariableMetadata]]*NonSemanticAuxDataGlobalVariableMetadata* +
+9+a|[[NonSemanticAuxDataGlobalVariableMetadata]]*NonSemanticAuxDataGlobalVariableMetadata* +
  +
 Record one named LLVM-IR metadata attachment on a global variable. +
  +
@@ -304,7 +302,7 @@ duplicate-skip recommendation as the corresponding operands of
 
 [cols="2*1,3*2,1,3,3"]
 |======
-7+|[[NonSemanticAuxDataFunctionLinkage]]*NonSemanticAuxDataFunctionLinkage* +
+8+a|[[NonSemanticAuxDataFunctionLinkage]]*NonSemanticAuxDataFunctionLinkage* +
  +
 Record the LLVM-IR linkage type of an `OpFunction`. +
  +
@@ -333,7 +331,7 @@ value it does not recognize must silently ignore the instruction.
 
 [cols="2*1,3*2,1,3,3"]
 |======
-7+|[[NonSemanticAuxDataGlobalVariableLinkage]]*NonSemanticAuxDataGlobalVariableLinkage* +
+8+a|[[NonSemanticAuxDataGlobalVariableLinkage]]*NonSemanticAuxDataGlobalVariableLinkage* +
  +
 Record the LLVM-IR linkage type of a global variable. +
  +
@@ -365,12 +363,18 @@ The set is designed to be lossless on a producer/consumer pair that
 both opt in to its use. For each global object the SPIRV-LLVM-Translator
 walks `Function::getAttributes().getFnAttrs()` (or
 `GlobalVariable::getAttributes()`) once and emits one
-*...Attribute* instruction per attribute, then walks
-`GlobalObject::getAllMetadata()` once and emits one *...Metadata*
+`...Attribute` instruction per attribute, then walks
+`GlobalObject::getAllMetadata()` once and emits one `...Metadata`
 instruction per metadata attachment, in the order the LLVM data
 structures yield them. The reverse path performs the inverse
 operation, calling the LLVM API that adds an attribute or sets a
 metadata kind on the corresponding global object.
+
+The specification sets no restrictions regarding how much
+`NonSemanticAuxData` instructions can annotate a single 'Target' nor
+it forbids a case of duplicated information being attached to the
+'Target'. It is SPIR-V consumer duty to ensure LLVM module validity
+after the round-trip.
 
 Interaction with attribute-kind translation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,7 +382,7 @@ Interaction with attribute-kind translation
 Some LLVM enum-kind attributes are also produced as a side effect of
 unrelated reverse translation (for example, `nounwind` is set on
 intrinsic-like callees regardless of *NonSemantic.AuxData*). When the
-reverse translator processes a *...Attribute* instruction whose
+reverse translator processes a `...Attribute` instruction whose
 'Attribute Name' resolves to an `Attribute::AttrKind` already present
 on the target, it must skip the instruction so as not to duplicate
 the attribute. The same skip rule applies for string-kind attributes
