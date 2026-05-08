@@ -172,9 +172,7 @@ Record one LLVM-IR function attribute attached to an `OpFunction`. +
 'Result Type' must be *OpTypeVoid*. +
  +
 'Target' is the '<id>' of the *OpFunction* the attribute is attached
-to. The same 'Target' may be referenced by any number of
-*NonSemanticAuxDataFunctionAttribute* instructions (one per recorded
-attribute). +
+to. +
  +
 'Attribute Name' is the '<id>' of an *OpString*. For LLVM string-kind
 attributes (`AttributeImpl::isStringAttribute()` is true) it contains
@@ -240,9 +238,7 @@ Record one named LLVM-IR metadata attachment on an `OpFunction`. +
 'Result Type' must be *OpTypeVoid*. +
  +
 'Target' is the '<id>' of the *OpFunction* the metadata is attached
-to. The same 'Target' may be referenced by any number of
-*NonSemanticAuxDataFunctionMetadata* instructions (one per attached
-metadata kind). +
+to. +
  +
 'Metadata Name' is the '<id>' of an *OpString* containing the metadata
 kind name, exactly as it appears in the LLVM module (for example
