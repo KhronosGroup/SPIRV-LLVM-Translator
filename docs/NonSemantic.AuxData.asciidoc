@@ -139,20 +139,20 @@ extended instruction set:
 |  1 | <<NonSemanticAuxDataFunctionAttribute,*NonSemanticAuxDataFunctionAttribute*>>
 |  2 | <<NonSemanticAuxDataGlobalVariableMetadata,*NonSemanticAuxDataGlobalVariableMetadata*>>
 |  3 | <<NonSemanticAuxDataGlobalVariableAttribute,*NonSemanticAuxDataGlobalVariableAttribute*>>
-|  4 | <<NonSemanticAuxDataFunctionLinkage,*NonSemanticAuxDataFunctionLinkage*>>
-|  5 | <<NonSemanticAuxDataGlobalVariableLinkage,*NonSemanticAuxDataGlobalVariableLinkage*>>
+|  4 | <<NonSemanticAuxDataLinkage,*NonSemanticAuxDataLinkage*>>
 |========================================
 
 [[LinkageType]]
 Linkage Type
 ^^^^^^^^^^^^
 
-The 'Linkage Type' operand of the linkage instructions is the '<id>'
-of a 32-bit integer *OpConstant* whose value is one of the entries
-in the table below. The set of recognized values may grow in future
-revisions of this specification; values not listed here are reserved.
-A consumer that does not recognize a 'Linkage Type' value must ignore
-the enclosing instruction.
+The 'Linkage Type' operand of the
+<<NonSemanticAuxDataLinkage,*NonSemanticAuxDataLinkage*>> instruction
+is the '<id>' of a 32-bit integer *OpConstant* whose value is one of
+the entries in the table below. The set of recognized values may grow
+in future revisions of this specification; values not listed here are
+reserved. A consumer that does not recognize a 'Linkage Type' value
+must ignore the enclosing instruction.
 
 [width="80%",cols="1,3,4"]
 |========================================
@@ -302,50 +302,33 @@ duplicate-skip recommendation as the corresponding operands of
 
 [cols="2*1,3*2,1,3,3"]
 |======
-8+a|[[NonSemanticAuxDataFunctionLinkage]]*NonSemanticAuxDataFunctionLinkage* +
+8+a|[[NonSemanticAuxDataLinkage]]*NonSemanticAuxDataLinkage* +
  +
-Record the LLVM-IR linkage type of an `OpFunction`. +
+Record the LLVM-IR linkage type of a global object. +
  +
 'Result Type' must be *OpTypeVoid*. +
  +
-'Target' is the '<id>' of the *OpFunction* whose linkage is being
-recorded. At most one *NonSemanticAuxDataFunctionLinkage* instruction
-should reference any given 'Target'; if a producer emits more than
-one, a consumer must honor only the last one in module order. +
+'Target' is the '<id>' of the *OpFunction* or of the module-scope
+*OpVariable* whose linkage is being recorded. Linkage is a property
+of the LLVM `GlobalValue` base class, so the same instruction is used
+regardless of which kind of global object 'Target' refers to. +
+ +
+At most one *NonSemanticAuxDataLinkage* instruction should reference
+any given 'Target'; if a producer emits more than one, a consumer
+must honor only the last one in module order. +
  +
 'Linkage Type' is the '<id>' of a 32-bit integer *OpConstant* whose
 value is taken from the <<LinkageType,*Linkage Type*>> table. +
  +
 A producer must not emit this instruction for the default LLVM
-linkage (`external`); the absence of a *NonSemanticAuxDataFunctionLinkage*
-record on a function means the function carries the linkage that the
-SPIR-V module otherwise implies. A consumer that sees a 'Linkage Type'
-value it does not recognize must silently ignore the instruction.
+linkage (`external`); the absence of a *NonSemanticAuxDataLinkage*
+record on a global object means the object carries the linkage that
+the SPIR-V module otherwise implies. A consumer that sees a
+'Linkage Type' value it does not recognize must silently ignore the
+instruction.
 
 | 7 | 12 | '<id>' +
 'Result Type' | 'Result <id>' | '<id> Set' | 4
-| '<id>' 'Target'
-| '<id>' 'Linkage Type'
-|======
-
-
-[cols="2*1,3*2,1,3,3"]
-|======
-8+a|[[NonSemanticAuxDataGlobalVariableLinkage]]*NonSemanticAuxDataGlobalVariableLinkage* +
- +
-Record the LLVM-IR linkage type of a global variable. +
- +
-'Result Type' must be *OpTypeVoid*. +
- +
-'Target' is the '<id>' of the *OpVariable* (declared at module scope)
-whose linkage is being recorded. +
- +
-'Linkage Type' has the same form, the same encoding rules, and the
-same default-and-uniqueness rules as the corresponding operand of
-<<NonSemanticAuxDataFunctionLinkage,*NonSemanticAuxDataFunctionLinkage*>>.
-
-| 7 | 12 | '<id>' +
-'Result Type' | 'Result <id>' | '<id> Set' | 5
 | '<id>' 'Target'
 | '<id>' 'Linkage Type'
 |======
