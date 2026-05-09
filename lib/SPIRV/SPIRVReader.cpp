@@ -5553,6 +5553,9 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
       GO->setLinkage(GlobalValue::AvailableExternallyLinkage);
       break;
     default:
+      LLVM_DEBUG(dbgs() << "Unknown NonSemanticAuxDataLinkage value '"
+                        << LinkageConst->getZExtIntValue() << "' on '"
+                        << GO->getName() << "'; ignoring instruction.\n");
       break;
     }
     break;
