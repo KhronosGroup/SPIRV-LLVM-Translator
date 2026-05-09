@@ -2777,6 +2777,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     case SPIRVEIS_NonSemantic_Shader_DebugInfo_200:
       DbgTran->transDebugIntrinsic(ExtInst, BB);
       return mapValue(BV, nullptr);
+    case SPIRVEIS_NonSemantic_Unknown:
+      // Non-semantic instruction sets unknown to the translator are
+      // silently skipped.
+      return mapValue(BV, nullptr);
     default:
       llvm_unreachable("Unknown extended instruction set!");
     }
@@ -5498,6 +5502,15 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_NonSemantic_AuxData);
   if (!BC->getModule()->preserveAuxData())
     return;
+  switch (BC->getExtOp()) {
+  case NonSemanticAuxData::FunctionAttribute:
+  case NonSemanticAuxData::GlobalVariableAttribute:
+  case NonSemanticAuxData::FunctionMetadata:
+  case NonSemanticAuxData::GlobalVariableMetadata:
+    break;
+  default:
+    return;
+  }
   auto Args = BC->getArguments();
   // Arg 0 is common to all instructions in this set: it identifies the
   // global object the auxiliary data is attached to.
@@ -5583,7 +5596,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     break;
   }
   default:
-    llvm_unreachable("Invalid op");
+    break;
   }
 }
 

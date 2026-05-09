@@ -1631,6 +1631,14 @@ MDNode *SPIRVToLLVMDbgTran::transDebugInstImpl(const SPIRVExtInst *DebugInst) {
     return transTypeArrayDynamic(DebugInst);
 
   default:
+    // Non-semantic shader debug info opcodes that are unknown to this
+    // translator are silently ignored to avoid crashing on modules produced
+    // by newer producers. The semantic OpenCL/SPIRV.debug paths still
+    // require every opcode to be implemented.
+    if (DebugInst->getExtSetKind() ==
+            SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
+        DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+      return nullptr;
     llvm_unreachable("Not implemented SPIR-V debug instruction!");
   }
 }
@@ -1696,6 +1704,10 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
     return DbgValIntr;
   }
   default:
+    if (DebugInst->getExtSetKind() ==
+            SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
+        DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200)
+      return nullptr;
     llvm_unreachable("Unknown debug intrinsic!");
   }
 }
