@@ -1140,7 +1140,11 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
         FunctionType *FTy = FunctionType::get(Dst, OpsTys, false);
         FunctionCallee Func = M->getOrInsertFunction(MangledName, FTy);
-        return CallInst::Create(Func, Ops, "", BB);
+        if (auto *F = dyn_cast<Function>(Func.getCallee()))
+          F->setCallingConv(CallingConv::SPIR_FUNC);
+        auto *CI = CallInst::Create(Func, Ops, "", BB);
+        CI->setCallingConv(CallingConv::SPIR_FUNC);
+        return CI;
       }
     }
     // These conversions can be done without __builtin_spirv prefixed functions
