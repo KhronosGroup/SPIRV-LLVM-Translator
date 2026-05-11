@@ -223,6 +223,10 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVBFloat16Conversions(&CI, OC);
     return;
   }
+  if (OC == internal::OpFSigmoidINTEL) {
+    mutateCallInst(&CI, kOCLBuiltinName::IntelSigmoid);
+    return;
+  }
   if (OC == OpSDot || OC == OpUDot || OC == OpSUDot || OC == OpSDotAccSat ||
       OC == OpUDotAccSat || OC == OpSUDotAccSat) {
     visitCallSPIRVDot(&CI, OC, DemangledName);

@@ -509,6 +509,10 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
     visitCallConvertAsBFloat16Float(&CI, DemangledName);
     return;
   }
+  if (DemangledName == kOCLBuiltinName::IntelSigmoid) {
+    mutateCallInst(&CI, internal::OpFSigmoidINTEL);
+    return;
+  }
   visitCallBuiltinSimple(&CI, MangledName, DemangledName);
 }
 

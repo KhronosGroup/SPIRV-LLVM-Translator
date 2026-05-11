@@ -342,6 +342,7 @@ _SPIRV_OP(4)
 _SPIRV_OP(8)
 _SPIRV_OP(16)
 #undef _SPIRV_OP
+const static char IntelSigmoid[] = "intel_sigmoid";
 } // namespace kOCLBuiltinName
 
 /// Offset for OpenCL image channel order enumeration values.
