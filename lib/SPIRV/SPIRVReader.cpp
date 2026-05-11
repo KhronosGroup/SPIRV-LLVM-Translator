@@ -5507,6 +5507,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   case NonSemanticAuxData::GlobalVariableAttribute:
   case NonSemanticAuxData::FunctionMetadata:
   case NonSemanticAuxData::GlobalVariableMetadata:
+  case NonSemanticAuxData::Linkage:
     break;
   default:
     return;

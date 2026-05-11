@@ -17,9 +17,13 @@
                OpDecorate %fn LinkageAttributes "f" Export
        %void = OpTypeVoid
        %uint = OpTypeInt 32 0
-        %u7  = OpConstant %uint 7
+     %u_lang = OpConstant %uint 6
+     %u_ver  = OpConstant %uint 65536
+     %u_dwv  = OpConstant %uint 4
+       %file = OpString "test.cpp"
        %fnTy = OpTypeFunction %void
-        %nop = OpExtInst %void %dbg 100 %u7
+        %src = OpExtInst %void %dbg 35 %file
+         %cu = OpExtInst %void %dbg 1 %u_ver %u_dwv %src %u_lang
          %fn = OpFunction %void None %fnTy
         %ent = OpLabel
                 OpReturn
@@ -27,4 +31,5 @@
 
 ; CHECK-LABEL: define spir_func void @f()
 ; CHECK-NEXT:    ret void
-; CHECK-NOT: NonSemantic.Shader.DebugInfo.300
+; CHECK-NOT: !DICompileUnit
+; CHECK-NOT: !llvm.dbg.cu
