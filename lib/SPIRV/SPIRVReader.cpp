@@ -1138,10 +1138,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         if (MangledName.empty())
           MangledName = mangleBuiltin(BuiltinName, OpsTys, &Info);
 
-        FunctionType *FTy = FunctionType::get(Dst, OpsTys, false);
-        FunctionCallee Func = M->getOrInsertFunction(MangledName, FTy);
-        if (auto *F = dyn_cast<Function>(Func.getCallee()))
-          F->setCallingConv(CallingConv::SPIR_FUNC);
+        Function *Func = getOrCreateFunction(M, Dst, OpsTys, MangledName);
         auto *CI = CallInst::Create(Func, Ops, "", BB);
         CI->setCallingConv(CallingConv::SPIR_FUNC);
         return CI;
