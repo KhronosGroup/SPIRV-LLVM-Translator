@@ -1,11 +1,9 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv --spirv-ext=+SPV_AMD_weak_linkage %t.bc -o %t.spv
+; RUN: llvm-spirv --spirv-ext=+SPV_AMD_weak_linkage %s -o %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NOEXT
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NOEXT
 
 ; CHECK-SPIRV-DAG: Capability Linkage
 ; CHECK-SPIRV-DAG: Capability WeakLinkageAMD
