@@ -7477,7 +7477,7 @@ LLVMToSPIRVBase::transLinkageType(const GlobalValue *GV) {
       return SPIRVLinkageTypeKind::LinkageTypeLinkOnceODR;
   if (GV->hasWeakAnyLinkage())
     if (BM->isAllowedToUseExtension(ExtensionID::SPV_AMD_weak_linkage))
-      return spv::internal::LinkageTypeWeak;
+      return SPIRVLinkageTypeKind::LinkageTypeWeakAMD;
   return SPIRVLinkageTypeKind::LinkageTypeExport;
 }
 

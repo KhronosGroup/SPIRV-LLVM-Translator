@@ -5689,7 +5689,7 @@ SPIRVToLLVM::transLinkageType(const SPIRVValue *V) {
     return GlobalValue::ExternalLinkage;
   case LinkageTypeLinkOnceODR:
     return GlobalValue::LinkOnceODRLinkage;
-  case internal::LinkageTypeWeak:
+  case LinkageTypeWeakAMD:
     return GlobalValue::WeakAnyLinkage;
   default:
     llvm_unreachable("Invalid linkage type");
