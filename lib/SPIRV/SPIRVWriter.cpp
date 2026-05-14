@@ -1547,6 +1547,9 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   }
 
   if (isa<UndefValue>(V)) {
+    if (isa<PoisonValue>(V) &&
+        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_poison_freeze))
+      return BM->addPoisonKHR(ExpectedType);
     return BM->addUndef(ExpectedType);
   }
 
@@ -1638,6 +1641,19 @@ SPIRVValue *LLVMToSPIRVBase::transUnaryInst(UnaryInstruction *U,
       SPIRVType *ExpectedTy = transScavengedType(U);
       return BM->addUndef(ExpectedTy);
     }
+  }
+
+  if (isa<FreezeInst>(U)) {
+    if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_poison_freeze)) {
+      auto *Op = transValue(U->getOperand(0), BB);
+      SPIRVType *TransTy = transScavengedType(U);
+      return BM->addFreezeKHRInst(TransTy, Op, BB);
+    }
+    // Without the extension, move the freeze away.
+    Value *Operand = U->getOperand(0);
+    if (isa<UndefValue>(Operand))
+      return BM->addNullConstant(transScavengedType(U));
+    return transValue(Operand, BB);
   }
 
   Op BOC = OpNop;
@@ -6711,6 +6727,13 @@ bool LLVMToSPIRVBase::transExecutionMode() {
                 ExtensionID::SPV_INTEL_subgroup_requirements))
           break;
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
+      } break;
+      case spv::ExecutionModeArithmeticPoisonKHR: {
+        if (!BM->isAllowedToUseExtension(
+                ExtensionID::SPV_KHR_poison_freeze))
+          break;
+        BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+            OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
       } break;
       case spv::ExecutionModeFPFastMathDefault: {
         if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2))
