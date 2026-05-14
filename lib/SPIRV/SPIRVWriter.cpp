@@ -6755,6 +6755,20 @@ bool LLVMToSPIRVBase::transExecutionMode() {
     }
   }
 
+  // Per SPV_KHR_poison_freeze: "If PoisonFreezeKHR capability is declared, all
+  // entry points must use the ArithmeticPoisonKHR execution mode".
+  if (BM->hasCapability(CapabilityPoisonFreezeKHR)) {
+    for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
+      SPIRVFunction *EntryBF = BM->getFunction(I);
+      if (!BM->isEntryPoint(ExecutionModelKernel, EntryBF->getId()))
+        continue;
+      if (EntryBF->getExecutionMode(ExecutionModeArithmeticPoisonKHR))
+        continue;
+      EntryBF->addExecutionMode(BM->add(new SPIRVExecutionMode(
+          OpExecutionMode, EntryBF, ExecutionModeArithmeticPoisonKHR)));
+    }
+  }
+
   return true;
 }
 
