@@ -6729,8 +6729,7 @@ bool LLVMToSPIRVBase::transExecutionMode() {
         AddSingleArgExecutionMode(static_cast<ExecutionMode>(EMode));
       } break;
       case spv::ExecutionModeArithmeticPoisonKHR: {
-        if (!BM->isAllowedToUseExtension(
-                ExtensionID::SPV_KHR_poison_freeze))
+        if (!BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_poison_freeze))
           break;
         BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
             OpExecutionMode, BF, static_cast<ExecutionMode>(EMode))));
