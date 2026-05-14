@@ -265,7 +265,7 @@ public:
   void setAddrSpaceMap(AddrSpaceMap Map) noexcept { ASMap = std::move(Map); }
 
   const AddrSpaceMap *getAddrSpaceMap() const noexcept {
-    return ASMap ? &*ASMap : nullptr;
+    return ASMap ? &ASMap.value() : nullptr;
   }
 
   uint32_t mapAddrSpace(uint32_t SPIRAS) const noexcept {
@@ -279,7 +279,9 @@ public:
   }
 
   uint32_t getFunctionProgramAddrSpace() const noexcept {
-    return FunctionProgramAS;
+    if (FunctionProgramAS)
+      return *FunctionProgramAS;
+    return mapAddrSpace(SPIRAS_Private);
   }
 
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
@@ -380,14 +382,19 @@ private:
   bool PreserveOCLKernelArgTypeMetadataThroughString = false;
 
   // Controls if CodeSectionINTEL can be emitted and consumed with a dedicated
-  // address space
+  // address space. This option overrides address space set in
+  // FunctionProgramAS for functions that have their address taken with
+  // SPIRAS_CodeSectionINTEL.
   bool EmitFunctionPtrAddrSpace = false;
 
-  // Optional per-target mapping from SPIRAddressSpace values to LLVM AS numbers
+  // Optional per-target mapping from SPIRAddressSpace values to LLVM AS
+  // numbers.
   std::optional<AddrSpaceMap> ASMap;
 
-  // Address space for function definitions; independent of the data-pointer map
-  uint32_t FunctionProgramAS = SPIRAS_Private;
+  // Address space for function definitions. When set, overrides the address
+  // space map. Otherwise getFunctionProgramAddrSpace() falls back to
+  // SPIRAS_Private, which may be resolved unsign ASMap if set.
+  std::optional<uint32_t> FunctionProgramAS;
 
   bool PreserveAuxData = false;
 

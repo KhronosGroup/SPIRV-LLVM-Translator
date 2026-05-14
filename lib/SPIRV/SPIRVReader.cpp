@@ -1832,7 +1832,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpFunction:
-    return mapValue(BV, transFunction(static_cast<SPIRVFunction *>(BV)));
+    return mapValue(BV, transFunction(static_cast<SPIRVFunction *>(BV),
+                                      BM->getFunctionProgramAddrSpace()));
 
   case OpAsmINTEL:
     return mapValue(BV, transAsmINTEL(static_cast<SPIRVAsmINTEL *>(BV)));
@@ -2675,8 +2676,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   case OpFunctionCall: {
     SPIRVFunctionCall *BC = static_cast<SPIRVFunctionCall *>(BV);
     std::vector<Value *> Args = transValue(BC->getArgumentValues(), F, BB);
-    auto *Call = CallInst::Create(transFunction(BC->getFunction()), Args,
-                                  BC->getName(), BB);
+    auto *Call = CallInst::Create(
+        transFunction(BC->getFunction(), BM->getFunctionProgramAddrSpace()),
+        Args, BC->getName(), BB);
     setCallingConv(Call);
     setAttrByCalledFunc(Call);
     return mapValue(BV, Call);
@@ -3709,7 +3711,8 @@ SPIRVToLLVM::transOCLBuiltinPostproc(SPIRVInstruction *BI, CallInst *CI,
 }
 
 Value *SPIRVToLLVM::transBlockInvoke(SPIRVValue *Invoke, BasicBlock *BB) {
-  auto *TranslatedInvoke = transFunction(static_cast<SPIRVFunction *>(Invoke));
+  auto *TranslatedInvoke = transFunction(static_cast<SPIRVFunction *>(Invoke),
+                                         BM->getFunctionProgramAddrSpace());
   auto *Int8PtrTyGen =
       PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Generic));
   return CastInst::CreatePointerBitCastOrAddrSpaceCast(TranslatedInvoke,
@@ -4130,7 +4133,7 @@ bool SPIRVToLLVM::translate() {
   }
 
   for (unsigned I = 0, E = BM->getNumFunctions(); I != E; ++I) {
-    transFunction(BM->getFunction(I));
+    transFunction(BM->getFunction(I), BM->getFunctionProgramAddrSpace());
     transUserSemantic(BM->getFunction(I));
   }
 
@@ -4556,7 +4559,7 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 // attach some information on function and propagate that through SPIR-V and
 // ect.)
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
-  auto *TransFun = transFunction(Fun);
+  auto *TransFun = transFunction(Fun, BM->getFunctionProgramAddrSpace());
   for (const auto &UsSem :
        Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
     auto *V = cast<Value>(TransFun);

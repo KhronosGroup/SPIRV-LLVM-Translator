@@ -1007,7 +1007,8 @@ void SPIRVToLLVMDbgTran::transFunctionBody(DISubprogram *DIS, SPIRVId FuncId) {
   SPIRVEntry *E = BM->getEntry(FuncId);
   if (E->getOpCode() == OpFunction) {
     SPIRVFunction *BF = static_cast<SPIRVFunction *>(E);
-    llvm::Function *F = SPIRVReader->transFunction(BF);
+    llvm::Function *F = SPIRVReader->transFunction(
+        BF, BM->getFunctionProgramAddrSpace());
     assert(F && "Translation of function failed!");
     if (!F->hasMetadata("dbg"))
       F->setMetadata("dbg", DIS);
