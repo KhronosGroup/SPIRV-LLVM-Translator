@@ -1,11 +1,10 @@
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
+; RUN: llvm-spirv %t.spv -o %t.rev.bc -r
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-
-; RUN: spirv-val %t.spv
 
 ; RUN: llvm-spirv %s -o %t.noext.spv
 ; RUN: llvm-spirv %t.noext.spv -o %t.noext.spt --to-text

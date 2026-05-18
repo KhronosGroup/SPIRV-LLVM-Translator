@@ -302,12 +302,10 @@ protected:
 
 class SPIRVPoisonKHR : public SPIRVConstantEmpty<OpPoisonKHR> {
 public:
-  // Complete constructor
   SPIRVPoisonKHR(SPIRVModule *M, SPIRVType *TheType, SPIRVId TheId)
       : SPIRVConstantEmpty(M, TheType, TheId) {
     validate();
   }
-  // Incomplete constructor
   SPIRVPoisonKHR() {}
 
   SPIRVCapVec getRequiredCapability() const override {

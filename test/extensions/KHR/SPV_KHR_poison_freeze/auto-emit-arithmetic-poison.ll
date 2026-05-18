@@ -1,10 +1,10 @@
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
+; RUN: llvm-spirv %t.spv -o %t.rev.bc -r
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-; RUN: spirv-val %t.spv
 
 ; Per SPV_KHR_poison_freeze, declaring the PoisonFreezeKHR capability requires
 ; every entry point to use the ArithmeticPoisonKHR execution mode.
@@ -14,19 +14,29 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability PoisonFreezeKHR
 ; CHECK-SPIRV: Extension "SPV_KHR_poison_freeze"
-; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[#KFreeze:]] "kernel_uses_freeze"
-; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[#KPoison:]] "kernel_uses_poison"
-; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[#KPlain:]] "kernel_plain"
+; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KFreeze:]] "kernel_uses_freeze"
+; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KPoison:]] "kernel_uses_poison"
+; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KPlain:]] "kernel_plain"
+; CHECK-SPIRV-NOT: EntryPoint [[#]] [[#]] "helper"
 ; ArithmeticPoisonKHR (5157) must be present on every entry point, including
-; the one that does not itself emit any poison/freeze op.
+; the one that does not itself emit any poison/freeze op. Non-entry-point
+; functions must not receive it.
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KFreeze]] 5157
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KPoison]] 5157
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KPlain]] 5157
+; CHECK-SPIRV-NOT: ExecutionMode {{[0-9]+}} 5157{{$}}
 
 ; The reverse-translated metadata must mention every kernel.
 ; CHECK-LLVM-DAG: !{ptr @kernel_uses_freeze, i32 5157}
 ; CHECK-LLVM-DAG: !{ptr @kernel_uses_poison, i32 5157}
 ; CHECK-LLVM-DAG: !{ptr @kernel_plain, i32 5157}
+; CHECK-LLVM-NOT: !{ptr @helper, i32 5157}
+
+define spir_func i32 @helper(i32 %x) {
+entry:
+  %frozen = freeze i32 %x
+  ret i32 %frozen
+}
 
 define spir_kernel void @kernel_uses_freeze(i32 %x, ptr addrspace(1) %out) {
 entry:
@@ -43,7 +53,8 @@ entry:
 
 define spir_kernel void @kernel_plain(ptr addrspace(1) %out) {
 entry:
-  store i32 0, ptr addrspace(1) %out
+  %r = call i32 @helper(i32 7)
+  store i32 %r, ptr addrspace(1) %out
   ret void
 }
 

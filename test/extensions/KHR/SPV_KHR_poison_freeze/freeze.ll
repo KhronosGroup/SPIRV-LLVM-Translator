@@ -1,15 +1,17 @@
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
+; RUN: llvm-spirv %t.spv -o %t.rev.bc -r
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-
-; RUN: spirv-val %t.spv
 
 ; RUN: llvm-spirv %s -o %t.noext.spv
 ; RUN: llvm-spirv %t.noext.spv -o %t.noext.spt --to-text
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-NOEXT
+; RUN: llvm-spirv %t.noext.spv -o %t.noext.rev.bc -r
+; RUN: llvm-dis %t.noext.rev.bc -o %t.noext.rev.ll
+; RUN: FileCheck < %t.noext.rev.ll %s --check-prefix=CHECK-NOEXT-LLVM
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
@@ -27,6 +29,9 @@ target triple = "spir64-unknown-unknown"
 
 ; CHECK-LLVM: %[[FROZEN:[a-zA-Z0-9_.]+]] = freeze i32 %{{.*}}
 ; CHECK-LLVM: ret i32 %[[FROZEN]]
+
+; CHECK-NOEXT-LLVM-NOT: %{{.*}} = freeze
+; CHECK-NOEXT-LLVM: ret i32 %{{.*}}
 
 define spir_func i32 @test_freeze(i32 %x) {
 entry:

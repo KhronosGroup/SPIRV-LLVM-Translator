@@ -1,23 +1,24 @@
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
+; RUN: llvm-spirv %t.spv -o %t.rev.bc -r
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; RUN: spirv-val %t.spv
-
-; RUN: llvm-spirv %s -o %t.noext.spv
-; RUN: llvm-spirv %t.noext.spv -o %t.noext.spt --to-text
+; RUN: llvm-spirv %s -spirv-text -o %t.noext.spt
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-NOEXT
+
+; Test that we emit ExecutionModeArithmeticPoisonKHR exactly once.
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability PoisonFreezeKHR
 ; CHECK-SPIRV: Extension "SPV_KHR_poison_freeze"
-; CHECK-SPIRV: EntryPoint {{[0-9]+}} [[#Kernel:]] "test_kernel"
-; CHECK-SPIRV: ExecutionMode [[#Kernel]] 5157
+; CHECK-SPIRV: EntryPoint [[#]] [[#Kernel:]] "test_kernel"
+; CHECK-SPIRV-COUNT-1: ExecutionMode [[#Kernel]] 5157
+; CHECK-SPIRV-NOT: ExecutionMode [[#Kernel]] 5157
 
 ; CHECK-NOEXT-NOT: Capability PoisonFreezeKHR
 ; CHECK-NOEXT-NOT: Extension "SPV_KHR_poison_freeze"
