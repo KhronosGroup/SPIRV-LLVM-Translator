@@ -1,4 +1,4 @@
-; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_vector_compute -spirv-text -r -spirv-target-env=SPV-IR %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -spirv-text -r -spirv-target-env=SPV-IR %s -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; The purpose of this test is to validate whether this workaround works fine:
 
@@ -16,6 +16,8 @@
 2 Capability Addresses
 2 Capability Linkage
 2 Capability Kernel
+
+11 Extension "SPV_INTEL_vector_compute"
 
 5 ExtInstImport 1 "OpenCL.std"
 3 MemoryModel 2 2
