@@ -17,14 +17,14 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KFreeze:]] "kernel_uses_freeze"
 ; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KPoison:]] "kernel_uses_poison"
 ; CHECK-SPIRV-DAG: EntryPoint [[#]] [[#KPlain:]] "kernel_plain"
-; CHECK-SPIRV-NOT: EntryPoint [[#]] [[#]] "helper"
+; CHECK-SPIRV-NOT: EntryPoint [[#]] [[#Helper:]] "helper"
 ; ArithmeticPoisonKHR (5157) must be present on every entry point, including
 ; the one that does not itself emit any poison/freeze op. Non-entry-point
 ; functions must not receive it.
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KFreeze]] 5157
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KPoison]] 5157
 ; CHECK-SPIRV-DAG: ExecutionMode [[#KPlain]] 5157
-; CHECK-SPIRV-NOT: ExecutionMode {{[0-9]+}} 5157{{$}}
+; CHECK-SPIRV-NOT: ExecutionMode [[#Helper:]] 5157{{$}}
 
 ; The reverse-translated metadata must mention every kernel.
 ; CHECK-LLVM-DAG: !{ptr @kernel_uses_freeze, i32 5157}
