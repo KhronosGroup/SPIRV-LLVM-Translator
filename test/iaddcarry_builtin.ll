@@ -58,7 +58,13 @@ define spir_func void @test_builtin_iaddcarrycc(i8 %a, i8 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i8struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarrycc([[i8struct]]* sret([[i8struct]]) %0, i8 %a, i8 %b)
+; CHECK-LLVM:   %1 = call { i8, i1 } @llvm.uadd.with.overflow.i8(i8 %a, i8 %b)
+; CHECK-LLVM:   %2 = extractvalue { i8, i1 } %1, 0
+; CHECK-LLVM:   %3 = extractvalue { i8, i1 } %1, 1
+; CHECK-LLVM:   %4 = zext i1 %3 to i8
+; CHECK-LLVM:   %5 = insertvalue [[i8struct]] undef, i8 %2, 0
+; CHECK-LLVM:   %6 = insertvalue [[i8struct]] %5, i8 %4, 1
+; CHECK-LLVM:   store [[i8struct]] %6, [[i8struct]]* %0, align 1
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryss(i16 %a, i16 %b) {
   entry:
@@ -76,7 +82,13 @@ define spir_func void @test_builtin_iaddcarryss(i16 %a, i16 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i16struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryss([[i16struct]]* sret([[i16struct]]) %0, i16 %a, i16 %b)
+; CHECK-LLVM:   %1 = call { i16, i1 } @llvm.uadd.with.overflow.i16(i16 %a, i16 %b)
+; CHECK-LLVM:   %2 = extractvalue { i16, i1 } %1, 0
+; CHECK-LLVM:   %3 = extractvalue { i16, i1 } %1, 1
+; CHECK-LLVM:   %4 = zext i1 %3 to i16
+; CHECK-LLVM:   %5 = insertvalue [[i16struct]] undef, i16 %2, 0
+; CHECK-LLVM:   %6 = insertvalue [[i16struct]] %5, i16 %4, 1
+; CHECK-LLVM:   store [[i16struct]] %6, [[i16struct]]* %0, align 2
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryii(i32 %a, i32 %b) {
   entry:
@@ -94,7 +106,13 @@ define spir_func void @test_builtin_iaddcarryii(i32 %a, i32 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i32struct]], align 8
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryii([[i32struct]]* sret([[i32struct]]) %0, i32 %a, i32 %b)
+; CHECK-LLVM:   %1 = call { i32, i1 } @llvm.uadd.with.overflow.i32(i32 %a, i32 %b)
+; CHECK-LLVM:   %2 = extractvalue { i32, i1 } %1, 0
+; CHECK-LLVM:   %3 = extractvalue { i32, i1 } %1, 1
+; CHECK-LLVM:   %4 = zext i1 %3 to i32
+; CHECK-LLVM:   %5 = insertvalue [[i32struct]] undef, i32 %2, 0
+; CHECK-LLVM:   %6 = insertvalue [[i32struct]] %5, i32 %4, 1
+; CHECK-LLVM:   store [[i32struct]] %6, [[i32struct]]* %0, align 4
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryll(i64 %a, i64 %b) {
   entry:
@@ -112,7 +130,13 @@ define spir_func void @test_builtin_iaddcarryll(i64 %a, i64 %b) {
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[i64struct]]
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryll([[i64struct]]* sret([[i64struct]]) %0, i64 %a, i64 %b)
+; CHECK-LLVM:   %1 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %a, i64 %b)
+; CHECK-LLVM:   %2 = extractvalue { i64, i1 } %1, 0
+; CHECK-LLVM:   %3 = extractvalue { i64, i1 } %1, 1
+; CHECK-LLVM:   %4 = zext i1 %3 to i64
+; CHECK-LLVM:   %5 = insertvalue [[i64struct]] undef, i64 %2, 0
+; CHECK-LLVM:   %6 = insertvalue [[i64struct]] %5, i64 %4, 1
+; CHECK-LLVM:   store [[i64struct]] %6, [[i64struct]]* %0, align 8
 ; CHECK-LLVM:   ret void
 define spir_func void @test_builtin_iaddcarryDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
   entry:
@@ -130,7 +154,13 @@ define spir_func void @test_builtin_iaddcarryDv4_xS_(<4 x i32> %a, <4 x i32> %b)
 ; CHECK-SPIRV:                               OpFunctionEnd
 
 ; CHECK-LLVM:   %0 = alloca [[vecstruct]]
-; CHECK-LLVM:   call spir_func void @_Z17__spirv_IAddCarryDv4_iS_([[vecstruct]]* sret([[vecstruct]]) %0, <4 x i32> %a, <4 x i32> %b)
+; CHECK-LLVM:   %1 = call { <4 x i32>, <4 x i1> } @llvm.uadd.with.overflow.v4i32(<4 x i32> %a, <4 x i32> %b)
+; CHECK-LLVM:   %2 = extractvalue { <4 x i32>, <4 x i1> } %1, 0
+; CHECK-LLVM:   %3 = extractvalue { <4 x i32>, <4 x i1> } %1, 1
+; CHECK-LLVM:   %4 = zext <4 x i1> %3 to <4 x i32>
+; CHECK-LLVM:   %5 = insertvalue [[vecstruct]] undef, <4 x i32> %2, 0
+; CHECK-LLVM:   %6 = insertvalue [[vecstruct]] %5, <4 x i32> %4, 1
+; CHECK-LLVM:   store [[vecstruct]] %6, [[vecstruct]]* %0, align 16
 ; CHECK-LLVM:   ret void
 
 %struct.anon = type { i32, i32 }
@@ -152,7 +182,13 @@ define spir_func void @test_builtin_iaddcarry_anon(i32 %a, i32 %b) {
 
 ; CHECK-LLVM:  %0 = alloca [[struct_anon]], align 8
 ; CHECK-LLVM:  %1 = addrspacecast [[struct_anon]]* %0 to [[struct_anon]] addrspace(4)*
-; CHECK-LLVM:  call spir_func void @_Z17__spirv_IAddCarryii.1([[struct_anon]] addrspace(4)* sret([[struct_anon]]) %1, i32 %a, i32 %b)
+; CHECK-LLVM:  %2 = call { i32, i1 } @llvm.uadd.with.overflow.i32(i32 %a, i32 %b)
+; CHECK-LLVM:  %3 = extractvalue { i32, i1 } %2, 0
+; CHECK-LLVM:  %4 = extractvalue { i32, i1 } %2, 1
+; CHECK-LLVM:  %5 = zext i1 %4 to i32
+; CHECK-LLVM:  %6 = insertvalue [[struct_anon]] undef, i32 %3, 0
+; CHECK-LLVM:  %7 = insertvalue [[struct_anon]] %6, i32 %5, 1
+; CHECK-LLVM:  store [[struct_anon]] %7, [[struct_anon]] addrspace(4)* %1, align 4
 ; CHECK-LLVM:  ret void
 
 declare void @_Z17__spirv_IAddCarryIiiE4anonIT_T0_ES1_S2_(%struct.anon addrspace(4)* sret(%struct.anon), i32, i32)
