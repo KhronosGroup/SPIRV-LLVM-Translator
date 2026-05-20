@@ -1756,8 +1756,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       // execution instance, so emit an alloca instead of a global.
       assert(BB && "OpVariable with Function storage class requires BB");
       IRBuilder<> Builder(BB);
-      AllocaInst *AI = Builder.CreateAlloca(
-          Ty, BM->mapAddrSpace(SPIRAS_Private), nullptr, BV->getName());
+      AllocaInst *AI = Builder.CreateAlloca(Ty, nullptr, BV->getName());
       if (Init) {
         auto *Src = transValue(Init, F, BB);
         const bool IsVolatile = BVar->hasDecorate(DecorationVolatile);
@@ -1782,7 +1781,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       BV->setName(prefixSPIRVName(SPIRVBuiltInNameMap::map(BVKind)));
     auto *LVar = new GlobalVariable(*M, Ty, IsConst, LinkageTy,
                                     /*Initializer=*/nullptr, BV->getName(), 0,
-                                    GlobalVariable::NotThreadLocal, AddrSpace);
+                                    GlobalVariable::NotThreadLocal,
+                                    BM->mapAddrSpace(AddrSpace));
     auto *Res = mapValue(BV, LVar);
     if (Init)
       Initializer = dyn_cast<Constant>(transValue(Init, F, BB, false));
@@ -1886,27 +1886,21 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     auto *VLA = static_cast<SPIRVVariableLengthArrayINTEL *>(BV);
     llvm::Type *Ty = transType(BV->getType()->getPointerElementType());
     llvm::Value *ArrSize = transValue(VLA->getOperand(0), F, BB);
-    return mapValue(BV, new AllocaInst(Ty, BM->mapAddrSpace(SPIRAS_Private),
-                                       ArrSize, BV->getName(), BB));
+    return mapValue(BV,
+                    new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(),
+                                   ArrSize, BV->getName(), BB));
   }
 
   case OpRestoreMemoryINTEL: {
     IRBuilder<> Builder(BB);
     auto *Restore = static_cast<SPIRVRestoreMemoryINTEL *>(BV);
     llvm::Value *Ptr = transValue(Restore->getOperand(0), F, BB);
-    unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
-    auto *Ty = PointerType::get(Builder.getContext(), PrivateAS);
-    auto *StackRestore =
-        Builder.CreateIntrinsic(Intrinsic::stackrestore, {Ty}, {Ptr});
-    return mapValue(BV, StackRestore);
+    return mapValue(BV, Builder.CreateStackRestore(Ptr));
   }
 
   case OpSaveMemoryINTEL: {
     IRBuilder<> Builder(BB);
-    unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
-    auto *Ty = PointerType::get(Builder.getContext(), PrivateAS);
-    auto *StackSave = Builder.CreateIntrinsic(Intrinsic::stacksave, {Ty}, {});
-    return mapValue(BV, StackSave);
+    return mapValue(BV, Builder.CreateStackSave());
   }
 
   case OpBranch: {
@@ -2352,7 +2346,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVCopyObject *CO = static_cast<SPIRVCopyObject *>(BV);
     auto *Ty = transType(CO->getOperand()->getType());
     AllocaInst *AI =
-        new AllocaInst(Ty, BM->mapAddrSpace(SPIRAS_Private), "", BB);
+        new AllocaInst(Ty, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     new StoreInst(transValue(CO->getOperand(), F, BB), AI, BB);
     LoadInst *LI = new LoadInst(Ty, AI, "", BB);
     return mapValue(BV, LI);
@@ -2369,7 +2363,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
     IRBuilder<> Builder(BB);
 
-    auto *SrcAI = Builder.CreateAlloca(SrcTy, BM->mapAddrSpace(SPIRAS_Private));
+    auto *SrcAI = Builder.CreateAlloca(SrcTy);
     Builder.CreateAlignedStore(transValue(CL->getOperand(), F, BB), SrcAI,
                                SrcAI->getAlign());
 
@@ -2516,7 +2510,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         return mapValue(BV, ConstantArray::get(AT, CV));
 
       AllocaInst *Alloca =
-          new AllocaInst(AT, BM->mapAddrSpace(SPIRAS_Private), "", BB);
+          new AllocaInst(AT, M->getDataLayout().getAllocaAddrSpace(), "", BB);
 
       // get pointer to the element of the array
       // store the result of argument
@@ -2536,7 +2530,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         return mapValue(BV, ConstantStruct::get(ST, CV));
 
       AllocaInst *Alloca =
-          new AllocaInst(ST, BM->mapAddrSpace(SPIRAS_Private), "", BB);
+          new AllocaInst(ST, M->getDataLayout().getAllocaAddrSpace(), "", BB);
 
       // get pointer to the element of structure
       // store the result of argument
@@ -3157,7 +3151,7 @@ Value *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB) {
     llvm::PointerType *RetPtrTy =
         llvm::PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Generic));
     Value *Alloca =
-        new AllocaInst(RetTy, BM->mapAddrSpace(SPIRAS_Private), "", BB);
+        new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = (Alloca->getType() == RetPtrTy)
                            ? Alloca
                            : static_cast<Value *>(new AddrSpaceCastInst(
@@ -3286,7 +3280,7 @@ Value *SPIRVToLLVM::transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
         llvm::PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Generic));
     ArgTys.push_back(RetPtrTy);
     Value *Alloca =
-        new AllocaInst(RetTy, BM->mapAddrSpace(SPIRAS_Private), "", BB);
+        new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = (Alloca->getType() == RetPtrTy)
                            ? Alloca
                            : static_cast<Value *>(new AddrSpaceCastInst(
@@ -4171,22 +4165,30 @@ bool SPIRVToLLVM::translate() {
 }
 
 bool SPIRVToLLVM::transAddressingModel() {
+  // No -G: LLVM auto-injects -G1 for spir triples, and emitting our own
+  // would shift getDefaultGlobalsAddressSpace() away from AS 0 (the LLVM
+  // convention for llvm.global.annotations / llvm.metadata fields).
+  auto AppendAddrSpaceModifiers = [this](std::string &DL) {
+    unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
+    if (PrivateAS != SPIRAS_Private)
+      DL += "-A" + std::to_string(PrivateAS);
+    unsigned ProgramAS = BM->getFunctionProgramAddrSpace();
+    if (ProgramAS != 0)
+      DL += "-P" + std::to_string(ProgramAS);
+  };
+
   switch (BM->getAddressingModel()) {
   case AddressingModelPhysical64: {
     M->setTargetTriple(Triple(SPIR_TARGETTRIPLE64));
     std::string DL = SPIR_DATALAYOUT64;
-    unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
-    if (PrivateAS != SPIRAS_Private)
-      DL += "-A" + std::to_string(PrivateAS);
+    AppendAddrSpaceModifiers(DL);
     M->setDataLayout(DL);
     break;
   }
   case AddressingModelPhysical32: {
     M->setTargetTriple(Triple(SPIR_TARGETTRIPLE32));
     std::string DL = SPIR_DATALAYOUT32;
-    unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
-    if (PrivateAS != SPIRAS_Private)
-      DL += "-A" + std::to_string(PrivateAS);
+    AppendAddrSpaceModifiers(DL);
     M->setDataLayout(DL);
     break;
   }
@@ -4500,13 +4502,19 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
       return;
     }
 
+    Type *Int8PtrTyPrivate =
+        PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Private));
     for (const auto &AnnotStr : AnnotStrVec) {
       Constant *StrConstant =
           ConstantDataArray::getString(*Context, StringRef(AnnotStr));
 
+      // The annotation string is placed in the same address space as the i8*
+      // fields below so that the bitcast is in-AS and valid.
       auto *GS = new GlobalVariable(
           *GV->getParent(), StrConstant->getType(),
-          /*IsConstant*/ true, GlobalValue::PrivateLinkage, StrConstant, "");
+          /*IsConstant*/ true, GlobalValue::PrivateLinkage, StrConstant, "",
+          /*InsertBefore=*/nullptr, GlobalVariable::NotThreadLocal,
+          Int8PtrTyPrivate->getPointerAddressSpace());
 
       GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
       GS->setSection("llvm.metadata");
@@ -4515,8 +4523,6 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           GV->getContext(), M->getDataLayout().getDefaultGlobalsAddressSpace());
       Constant *C = ConstantExpr::getPointerBitCastOrAddrSpaceCast(GV, ResType);
 
-      Type *Int8PtrTyPrivate =
-          PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Private));
       IntegerType *Int32Ty = Type::getInt32Ty(*Context);
 
       llvm::Constant *Fields[5] = {
@@ -4560,14 +4566,20 @@ void SPIRVToLLVM::transMemAliasingINTELDecorations(SPIRVValue *BV, Value *V) {
 // ect.)
 void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
   auto *TransFun = transFunction(Fun, BM->getFunctionProgramAddrSpace());
+  Type *Int8PtrTyPrivate =
+      PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Private));
   for (const auto &UsSem :
        Fun->getDecorationStringLiteral(DecorationUserSemantic)) {
     auto *V = cast<Value>(TransFun);
     Constant *StrConstant =
         ConstantDataArray::getString(*Context, StringRef(UsSem));
+    // The annotation string is placed in the same address space as the i8*
+    // fields below so that the bitcast is in-AS and valid.
     auto *GS = new GlobalVariable(
         *TransFun->getParent(), StrConstant->getType(),
-        /*IsConstant*/ true, GlobalValue::PrivateLinkage, StrConstant, "");
+        /*IsConstant*/ true, GlobalValue::PrivateLinkage, StrConstant, "",
+        /*InsertBefore=*/nullptr, GlobalVariable::NotThreadLocal,
+        Int8PtrTyPrivate->getPointerAddressSpace());
 
     GS->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
     GS->setSection("llvm.metadata");
@@ -4577,8 +4589,6 @@ void SPIRVToLLVM::transUserSemantic(SPIRV::SPIRVFunction *Fun) {
     Constant *C =
         ConstantExpr::getPointerBitCastOrAddrSpaceCast(TransFun, ResType);
 
-    Type *Int8PtrTyPrivate =
-        PointerType::get(*Context, BM->mapAddrSpace(SPIRAS_Private));
     IntegerType *Int32Ty = Type::getInt32Ty(*Context);
 
     llvm::Constant *Fields[5] = {

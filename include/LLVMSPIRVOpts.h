@@ -262,7 +262,7 @@ public:
     EmitFunctionPtrAddrSpace = Value;
   }
 
-  void setAddrSpaceMap(AddrSpaceMap Map) noexcept { ASMap = std::move(Map); }
+  void setAddrSpaceMap(AddrSpaceMap Map) noexcept { ASMap = Map; }
 
   const AddrSpaceMap *getAddrSpaceMap() const noexcept {
     return ASMap ? &ASMap.value() : nullptr;
@@ -393,7 +393,7 @@ private:
 
   // Address space for function definitions. When set, overrides the address
   // space map. Otherwise getFunctionProgramAddrSpace() falls back to
-  // SPIRAS_Private, which may be resolved unsign ASMap if set.
+  // SPIRAS_Private, which may be resolved using ASMap if set.
   std::optional<uint32_t> FunctionProgramAS;
 
   bool PreserveAuxData = false;

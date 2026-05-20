@@ -776,9 +776,9 @@ bool parseSpecConstOpt(llvm::StringRef SpecConstStr,
 
 // Returns true on error.
 static bool parseAddrSpaceMapOpt(SPIRV::TranslatorOpts &Opts) {
-  SPIRV::AddrSpaceMap ASMap;
+  SPIRV::AddrSpaceMap ParsedMap;
   for (unsigned I = 0; I < SPIRV::SPIRAS_Count; ++I)
-    ASMap[I] = I;
+    ParsedMap[I] = I;
 
   SmallVector<StringRef, 16> Pairs;
   StringRef(SPIRVAddrSpaceMap).split(Pairs, ',', -1, false);
@@ -802,9 +802,9 @@ static bool parseAddrSpaceMapOpt(SPIRV::TranslatorOpts &Opts) {
              << "\" is not a valid unsigned address space number.\n";
       return true;
     }
-    ASMap[From] = To;
+    ParsedMap[From] = To;
   }
-  Opts.setAddrSpaceMap(ASMap);
+  Opts.setAddrSpaceMap(ParsedMap);
   return false;
 }
 

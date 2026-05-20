@@ -15,17 +15,17 @@ target triple = "spir64-unknown-unknown"
 ; triggers generation of alloca and @llvm.stacksave/restore which need to be
 ; emitted with correct addess space.
 ; CHECK-MAPPED: define{{.*}} @test_stack_save_restore(
-; CHECK-MAPPED: call ptr addrspace(4) @llvm.stacksave.p4()
+; CHECK-MAPPED: call addrspace(4) ptr addrspace(4) @llvm.stacksave.p4()
 ; CHECK-MAPPED: alloca i32, i64 %n, align 4, addrspace(4)
-; CHECK-MAPPED: call void @llvm.stackrestore.p4(ptr addrspace(4)
+; CHECK-MAPPED: call addrspace(4) void @llvm.stackrestore.p4(ptr addrspace(4)
 ; CHECK-IDENTITY: define{{.*}} @test_stack_save_restore(
 ; CHECK-IDENTITY: call ptr @llvm.stacksave.p0()
 ; CHECK-IDENTITY: alloca i32, i64 %n, align 4{{$}}
 ; CHECK-IDENTITY: call void @llvm.stackrestore.p0(ptr
 ; CHECK-PARTIAL: define{{.*}} @test_stack_save_restore(
-; CHECK-PARTIAL: call ptr addrspace(4) @llvm.stacksave.p4()
+; CHECK-PARTIAL: call addrspace(4) ptr addrspace(4) @llvm.stacksave.p4()
 ; CHECK-PARTIAL: alloca i32, i64 %n, align 4, addrspace(4)
-; CHECK-PARTIAL: call void @llvm.stackrestore.p4(ptr addrspace(4)
+; CHECK-PARTIAL: call addrspace(4) void @llvm.stackrestore.p4(ptr addrspace(4)
 define spir_func void @test_stack_save_restore(i64 %n) {
   %saved = call ptr @llvm.stacksave.p0()
   %vla = alloca i32, i64 %n, align 4

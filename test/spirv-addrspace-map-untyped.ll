@@ -13,7 +13,7 @@ target triple = "spir64-unknown-unknown"
 
 ; With mapping 4->0, the generic AS4 pointer remaps to AS0 (printed as bare ptr).
 ; CHECK-MAPPED: define{{.*}} @test_generic_atomic(
-; CHECK-MAPPED: call spir_func i32 @_Z10atomic_addPVii(ptr
+; CHECK-MAPPED: call spir_func addrspace(4) i32 @_Z10atomic_addPVii(ptr
 
 ; Without mapping, generic stays at AS4.
 ; CHECK-IDENTITY: define{{.*}} @test_generic_atomic(
