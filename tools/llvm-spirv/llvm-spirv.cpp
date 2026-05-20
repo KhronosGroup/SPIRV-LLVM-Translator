@@ -182,7 +182,8 @@ static cl::opt<unsigned> SPIRVFunctionProgramAddrSpace(
     "spirv-function-program-addrspace",
     cl::desc("Address space to assign to function definitions when translating "
              "SPIR-V to LLVM IR (used for OpConstantFunctionPointerINTEL). "
-             "Defaults to 0 (SPIRAS_Private)."),
+             "Defaults to 0 (SPIRAS_Private). Please note that this flag is not"
+             "supported by SPIR-V generator (writer). "),
     cl::value_desc("address-space"));
 
 using SPIRV::ExtensionID;
