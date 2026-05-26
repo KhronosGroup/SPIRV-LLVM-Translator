@@ -6887,7 +6887,7 @@ bool LLVMToSPIRVBase::transOCLMetadata() {
     if (auto *KernelArgName = F.getMetadata(SPIR_MD_KERNEL_ARG_NAME)) {
       foreachKernelArgMD(
           KernelArgName, BF,
-          [=](const std::string &Str, SPIRVFunctionParameter *BA) {
+          [this](const std::string &Str, SPIRVFunctionParameter *BA) {
             BM->setName(BA, Str);
           });
     }
