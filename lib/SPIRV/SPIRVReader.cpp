@@ -3156,8 +3156,7 @@ Value *SPIRVToLLVM::transFixedPointInst(SPIRVInstruction *BI, BasicBlock *BB) {
         new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = (Alloca->getType() == RetPtrTy)
                            ? Alloca
-                           : static_cast<Value *>(new AddrSpaceCastInst(
-                                 Alloca, RetPtrTy, "", BB));
+                           : new AddrSpaceCastInst(Alloca, RetPtrTy, "", BB);
     ArgTys.emplace_back(RetPtrTy);
     Args.emplace_back(RetValPtr);
   }
@@ -3285,8 +3284,7 @@ Value *SPIRVToLLVM::transArbFloatInst(SPIRVInstruction *BI, BasicBlock *BB,
         new AllocaInst(RetTy, M->getDataLayout().getAllocaAddrSpace(), "", BB);
     Value *RetValPtr = (Alloca->getType() == RetPtrTy)
                            ? Alloca
-                           : static_cast<Value *>(new AddrSpaceCastInst(
-                                 Alloca, RetPtrTy, "", BB));
+                           : new AddrSpaceCastInst(Alloca, RetPtrTy, "", BB);
     Args.push_back(RetValPtr);
   }
 
