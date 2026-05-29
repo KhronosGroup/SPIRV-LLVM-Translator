@@ -1110,6 +1110,9 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
         std::string BuiltinName =
             kSPIRVName::InternalBuiltinPrefix + std::string(Conv);
+        if (BC->hasDecorate(
+                DecorationSaturatedToLargestFloat8NormalConversionEXT))
+          BuiltinName += "_sat";
         BuiltinFuncMangleInfo Info;
         std::string MangledName;
         // Translate additional Ops for stochastic conversions.
