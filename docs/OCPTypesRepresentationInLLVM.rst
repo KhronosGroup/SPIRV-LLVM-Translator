@@ -134,7 +134,8 @@ for storing the last seed value.
 .. code-block:: C
 
   __builtin_spirv_ClampStochasticRoundFP16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundFP16ToE4M3INTEL,
-  __builtin_spirv_ClampStochasticRoundBF16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundBF16ToE4M3INTEL
+  __builtin_spirv_ClampStochasticRoundBF16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundBF16ToE4M3INTEL,
+  __builtin_spirv_ClampStochasticRoundFP16ToE2M1INTEL, __builtin_spirv_ClampStochasticRoundBF16ToE2M1INTEL
 
 
 Example LLVM IR to SPIR-V translation:
