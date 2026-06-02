@@ -917,9 +917,7 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
   auto MangledName = F->getName();
   StringRef DemangledName;
   if (isInternalSPIRVBuiltin(MangledName, DemangledName)) {
-    StringRef LookupName = DemangledName;
-    LookupName.consume_back("_sat");
-    if (SPIRV::FPConvertToEncodingMap::find(LookupName)) {
+    if (SPIRV::FPConvertToEncodingMap::find(DemangledName)) {
       // Create an early exit here if none of the extensions are enabled.
       // Proper checks for the required extensions will be done during TypeFloat
       // generation.
@@ -5729,10 +5727,20 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     // generation. Since in LLVM IR FP8 types are represented by
     // integer type, we have to insert bitcasts for dependent values that expect
     // integer inputs or produces integer output that is used in the conversion.
-    StringRef LookupName = DemangledName;
-    bool IsSaturated = LookupName.consume_back("_sat");
-    if (SPIRV::FPConvertToEncodingMap::find(LookupName)) {
-      FPConversionDesc FPDesc = SPIRV::FPConvertToEncodingMap::map(LookupName);
+    if (SPIRV::FPConvertToEncodingMap::find(DemangledName)) {
+      FPConversionDesc FPDesc =
+          SPIRV::FPConvertToEncodingMap::map(DemangledName);
+      // SPV_EXT_float8: when SPV_EXT_float8 is enabled, the
+      // ClampConvert<Src>To<E4M3|E5M2>INTEL builtin maps to OpFConvert
+      // decorated with SaturatedToLargestFloat8NormalConversionEXT instead of
+      // the SPV_INTEL_fp_conversions OpClampConvertFToFINTEL opcode.
+      bool IsSaturatedFP8 =
+          FPDesc.ConvOpCode == internal::OpClampConvertFToFINTEL &&
+          (FPDesc.DstEncoding == FPEncodingWrap::E4M3 ||
+           FPDesc.DstEncoding == FPEncodingWrap::E5M2) &&
+          BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_float8);
+      if (IsSaturatedFP8)
+        FPDesc.ConvOpCode = OpFConvert;
       Value *Src = CI->getOperand(0);
       Type *LLVMSrcTy = Src->getType();
       Type *LLVMDstTy = CI->getType();
@@ -5811,22 +5819,9 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
 
       SPIRVValue *Conv = BM->addInstTemplate(OC, BM->getIds(Ops), BB, DstTy);
 
-      if (IsSaturated) {
-        // SaturatedToLargestFloat8NormalConversionEXT may only decorate
-        // OpFConvert/OpConvertSToF/OpConvertUToF whose Result Type uses an
-        // Float8E4M3EXT or Float8E5M2EXT FP encoding.
-        BM->getErrorLog().checkError(
-            (FPDesc.DstEncoding == FPEncodingWrap::E4M3 ||
-             FPDesc.DstEncoding == FPEncodingWrap::E5M2) &&
-                (OC == OpFConvert || OC == OpConvertSToF ||
-                 OC == OpConvertUToF),
-            SPIRVEC_InvalidInstruction,
-            CI->getCalledOperand()->getName().str() +
-                "\n_sat suffix is only valid on conversions whose result is "
-                "Float8E4M3EXT or Float8E5M2EXT.\n");
+      if (IsSaturatedFP8)
         Conv->addDecorate(new SPIRVDecorate(
             DecorationSaturatedToLargestFloat8NormalConversionEXT, Conv));
-      }
 
       // Representable in LLVM FP types: bitcast is not needed.
       if (FPDesc.DstEncoding == FPEncodingWrap::IEEE754 ||
