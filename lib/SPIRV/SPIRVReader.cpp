@@ -1107,8 +1107,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         // OpFConvert/OpConvertSToF/OpConvertUToF whose Result Type uses an
         // Float8E4M3EXT or Float8E5M2EXT FP encoding.
         BM->getErrorLog().checkError(
-            (OC == OpFConvert || OC == OpConvertSToF ||
-             OC == OpConvertUToF) &&
+            (OC == OpFConvert || OC == OpConvertSToF || OC == OpConvertUToF) &&
                 (DstEnc == FPEncodingWrap::E4M3 ||
                  DstEnc == FPEncodingWrap::E5M2),
             SPIRVEC_InvalidInstruction,
