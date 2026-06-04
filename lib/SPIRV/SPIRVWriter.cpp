@@ -65,6 +65,8 @@
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
 #include "VectorComputeUtil.h"
+#include "libSPIRV/SPIRVDecorate.h"
+#include "libSPIRV/SPIRVError.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -2971,6 +2973,36 @@ void checkIsGlobalVar(SPIRVEntry *E, Decoration Dec) {
                               ErrStr);
 }
 
+static bool isIEEE754FPType(SPIRVType *Ty) {
+  if (Ty->isTypeVector())
+    Ty = Ty->getVectorComponentType();
+  return Ty->isTypeFloat(16) || Ty->isTypeFloat(32) || Ty->isTypeFloat(64);
+}
+
+static bool isDivOrSqrt(SPIRVInstruction *I) {
+  Op Code = I->getOpCode();
+  if (Code == OpFDiv)
+    return true;
+
+  if (Code == OpExtInst) {
+    auto *EI = static_cast<SPIRVExtInst *>(I);
+    if (EI->getExtSetKind() == SPIRVEIS_OpenCL &&
+        EI->getExtOp() == OpenCLLIB::Sqrt)
+      return true;
+  }
+  return false;
+}
+
+// Check whether a SPIRV value can legally be decorated with FPRoundingMode
+static bool isApplicableForRoundingModeINTEL(SPIRVInstruction *I) {
+  if (!I)
+    return false;
+  SPIRVModule *BM = I->getModule();
+  bool AllowExt =
+      BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_rounded_divide_sqrt);
+  return AllowExt && isIEEE754FPType(I->getType()) && isDivOrSqrt(I);
+}
+
 static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
   SPIRVErrorLog &ErrLog = Target->getErrorLog();
 
@@ -3211,6 +3243,32 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       // are free to ignore it.
       break;
     }
+    case DecorationFPRoundingMode: {
+      ErrLog.checkError(
+          NumOperands == 2, SPIRVEC_InvalidLlvmModule,
+          "DecorationFPRoundingMode requires exactly 1 extra operand!");
+
+      auto *RoundingMode =
+          mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      ErrLog.checkError(RoundingMode, SPIRVEC_InvalidLlvmModule,
+                        "DecorationFPRoundingMode FP rounding mode operand "
+                        "must be an integer!");
+
+      int64_t Mode = RoundingMode->getSExtValue();
+      ErrLog.checkError(0 <= Mode && Mode <= 3, SPIRVEC_InvalidLlvmModule,
+                        "DecorationFPRoundingMode FP rounding mode operand "
+                        "must be in range [0, 3]!");
+
+      // only a certain set of instructions are allowed to have FPRoundingMode
+      // decoration under SPV_INTEL_rounded_divide_sqrt extension
+      if (!Target->isInst() ||
+          (Target->isInst() && isApplicableForRoundingModeINTEL(
+                                   static_cast<SPIRVInstruction *>(Target)))) {
+        Target->addDecorate(DecorationFPRoundingMode,
+                            static_cast<FPRoundingMode>(Mode));
+      }
+      break;
+    }
     default: {
       if (NumOperands == 1) {
         Target->addDecorate(new SPIRVDecorate(DecoKind, Target));
@@ -3383,8 +3441,13 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       transMemAliasingINTELDecorations(Inst, BV);
     if (auto *IDecoMD = Inst->getMetadata(SPIRV_MD_DECORATIONS))
       transMetadataDecorations(IDecoMD, BV);
-    if (BV->isInst())
-      addFPBuiltinDecoration(BM, Inst, static_cast<SPIRVInstruction *>(BV));
+    if (BV->isInst()) {
+      auto *BI = static_cast<SPIRVInstruction *>(BV);
+      addFPBuiltinDecoration(BM, Inst, BI);
+      if (BI->hasFPRoundingMode() && isDivOrSqrt(BI)) {
+        BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
+      }
+    }
   }
 
   if (auto *CI = dyn_cast<CallInst>(V)) {
@@ -4704,11 +4767,16 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                              transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_fdiv: {
-    SPIRVDBG(dbgs() << "WARNING: Rounding Mode of constrained intrinsic "
-                       "\"fdiv\" not supported by SPIR-V, dropping it.\n");
-    return BM->addBinaryInst(OpFDiv, transType(II->getType()),
-                             transValue(II->getArgOperand(0), BB),
-                             transValue(II->getArgOperand(1), BB), BB);
+    auto *BI = BM->addBinaryInst(OpFDiv, transType(II->getType()),
+                                 transValue(II->getArgOperand(0), BB),
+                                 transValue(II->getArgOperand(1), BB), BB);
+    // TODO: we should prevent other constrained instructions having
+    // FPRoundingMode decoration (except for those conversion insts) as they
+    // violate the spec
+    if (isApplicableForRoundingModeINTEL(BI)) {
+      return applyRoundingModeConstraint(II->getOperand(2), BI);
+    }
+    return BI;
   }
   case Intrinsic::experimental_constrained_frem: {
     SPIRVDBG(dbgs() << "WARNING: Rounding Mode of constrained intrinsic "
