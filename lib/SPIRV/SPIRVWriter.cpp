@@ -4670,34 +4670,29 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return Value;
   }
   case Intrinsic::experimental_constrained_fadd: {
-    auto *BI = BM->addBinaryInst(OpFAdd, transType(II->getType()),
-                                 transValue(II->getArgOperand(0), BB),
-                                 transValue(II->getArgOperand(1), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(2), BI);
+    return BM->addBinaryInst(OpFAdd, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_fsub: {
-    auto *BI = BM->addBinaryInst(OpFSub, transType(II->getType()),
-                                 transValue(II->getArgOperand(0), BB),
-                                 transValue(II->getArgOperand(1), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(2), BI);
+    return BM->addBinaryInst(OpFSub, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_fmul: {
-    auto *BI = BM->addBinaryInst(OpFMul, transType(II->getType()),
-                                 transValue(II->getArgOperand(0), BB),
-                                 transValue(II->getArgOperand(1), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(2), BI);
+    return BM->addBinaryInst(OpFMul, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_fdiv: {
-    auto *BI = BM->addBinaryInst(OpFDiv, transType(II->getType()),
-                                 transValue(II->getArgOperand(0), BB),
-                                 transValue(II->getArgOperand(1), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(2), BI);
+    return BM->addBinaryInst(OpFDiv, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_frem: {
-    auto *BI = BM->addBinaryInst(OpFRem, transType(II->getType()),
-                                 transValue(II->getArgOperand(0), BB),
-                                 transValue(II->getArgOperand(1), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(2), BI);
+    return BM->addBinaryInst(OpFRem, transType(II->getType()),
+                             transValue(II->getArgOperand(0), BB),
+                             transValue(II->getArgOperand(1), BB), BB);
   }
   case Intrinsic::experimental_constrained_fma: {
     std::vector<SPIRVValue *> Args{transValue(II->getArgOperand(0), BB),
@@ -4711,7 +4706,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       BI = BM->addExtInst(transType(II->getType()),
                           BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Fma,
                           Args, BB);
-    return applyRoundingModeConstraint(II->getOperand(3), BI);
+    return BI;
   }
   case Intrinsic::experimental_constrained_fptoui: {
     return BM->addUnaryInst(OpConvertFToU, transType(II->getType()),
@@ -4769,9 +4764,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     SPIRVValue *Mul =
         BM->addBinaryInst(OpFMul, Ty, transValue(II->getArgOperand(0), BB),
                           transValue(II->getArgOperand(1), BB), BB);
-    auto *BI = BM->addBinaryInst(OpFAdd, Ty, Mul,
-                                 transValue(II->getArgOperand(2), BB), BB);
-    return applyRoundingModeConstraint(II->getOperand(3), BI);
+    return BM->addBinaryInst(OpFAdd, Ty, Mul,
+                             transValue(II->getArgOperand(2), BB), BB);
   }
   case Intrinsic::fmuladd: {
     // For llvm.fmuladd.* fusion is not guaranteed. If a fused multiply-add

@@ -1,8 +1,7 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
 ; RUN: llvm-spirv %t.bc -o %t.spv
-; TODO: re-enable validation
-; RUNx: spirv-val %t.spv
+; RUN: spirv-val %t.spv
 
 
 ; CHECK: Name [[ad:[0-9]+]] "add"
@@ -12,10 +11,10 @@
 
 ; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
 
-; CHECK-DAG: Decorate [[ad]] FPRoundingMode 0
-; CHECK-DAG: Decorate [[di]] FPRoundingMode 1
-; CHECK-DAG: Decorate [[su]] FPRoundingMode 2
-; CHECK-DAG: Decorate [[mu]] FPRoundingMode 3
+; CHECK-NOT: Decorate [[ad]] FPRoundingMode 0
+; CHECK-NOT: Decorate [[di]] FPRoundingMode 1
+; CHECK-NOT: Decorate [[su]] FPRoundingMode 2
+; CHECK-NOT: Decorate [[mu]] FPRoundingMode 3
 
 ; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
 
