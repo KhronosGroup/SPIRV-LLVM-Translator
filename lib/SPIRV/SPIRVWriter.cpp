@@ -2979,7 +2979,7 @@ static bool isIEEE754FPType(SPIRVType *Ty) {
   return Ty->isTypeFloat(16) || Ty->isTypeFloat(32) || Ty->isTypeFloat(64);
 }
 
-static bool isDivOrSqrt(SPIRVInstruction *I) {
+static bool isDivOrOCLSqrt(SPIRVInstruction *I) {
   Op Code = I->getOpCode();
   if (Code == OpFDiv)
     return true;
@@ -3000,7 +3000,7 @@ static bool isApplicableForRoundingModeINTEL(SPIRVInstruction *I) {
   SPIRVModule *BM = I->getModule();
   bool AllowExt =
       BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_rounded_divide_sqrt);
-  return AllowExt && isIEEE754FPType(I->getType()) && isDivOrSqrt(I);
+  return AllowExt && isIEEE754FPType(I->getType()) && isDivOrOCLSqrt(I);
 }
 
 static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
@@ -3444,7 +3444,7 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
     if (BV->isInst()) {
       auto *BI = static_cast<SPIRVInstruction *>(BV);
       addFPBuiltinDecoration(BM, Inst, BI);
-      if (BI->hasFPRoundingMode() && isDivOrSqrt(BI)) {
+      if (BI->hasFPRoundingMode() && isDivOrOCLSqrt(BI)) {
         BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       }
     }
