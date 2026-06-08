@@ -2979,7 +2979,7 @@ static bool isIEEE754FPType(SPIRVType *Ty) {
   return Ty->isTypeFloat(16) || Ty->isTypeFloat(32) || Ty->isTypeFloat(64);
 }
 
-static bool isDivOrOCLSqrt(SPIRVInstruction *I) {
+static bool isRoundingModeCapableINTEL(SPIRVInstruction *I) {
   Op Code = I->getOpCode();
   if (Code == OpFDiv)
     return true;
@@ -3408,7 +3408,7 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
     if (BV->isInst()) {
       auto *BI = static_cast<SPIRVInstruction *>(BV);
       addFPBuiltinDecoration(BM, Inst, BI);
-      if (BI->hasFPRoundingMode() && isDivOrOCLSqrt(BI)) {
+      if (BI->hasFPRoundingMode() && isRoundingModeCapableINTEL(BI)) {
         BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       }
     }
@@ -4735,9 +4735,6 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     auto *BI = BM->addBinaryInst(OpFDiv, transType(II->getType()),
                                  transValue(II->getArgOperand(0), BB),
                                  transValue(II->getArgOperand(1), BB), BB);
-    // TODO: we should prevent other constrained instructions having
-    // FPRoundingMode decoration (except for those conversion insts) as they
-    // violate the spec
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_rounded_divide_sqrt) &&
         isIEEE754FPType(BI->getType())) {
