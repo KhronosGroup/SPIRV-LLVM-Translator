@@ -3135,6 +3135,9 @@ class SPIRVAtomicFAddEXTInst : public SPIRVAtomicInstBase {
 public:
   std::optional<ExtensionID> getRequiredExtension() const override {
     assert(hasType());
+    if (getType()->isTypeVector() &&
+        getType()->getVectorComponentType()->isTypeFloat(16))
+      return ExtensionID::SPV_NV_shader_atomic_fp16_vector;
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     if (getType()->isTypeFloat(16))
@@ -3144,6 +3147,9 @@ public:
 
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
+    if (getType()->isTypeVector() &&
+        getType()->getVectorComponentType()->isTypeFloat(16))
+      return {CapabilityAtomicFloat16VectorNV};
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       return {internal::CapabilityAtomicBFloat16AddINTEL};
     if (getType()->isTypeFloat(16))
@@ -3160,6 +3166,9 @@ public:
 class SPIRVAtomicFMinMaxEXTBase : public SPIRVAtomicInstBase {
 public:
   std::optional<ExtensionID> getRequiredExtension() const override {
+    if (getType()->isTypeVector() &&
+        getType()->getVectorComponentType()->isTypeFloat(16))
+      return ExtensionID::SPV_NV_shader_atomic_fp16_vector;
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     return ExtensionID::SPV_EXT_shader_atomic_float_min_max;
@@ -3167,6 +3176,9 @@ public:
 
   SPIRVCapVec getRequiredCapability() const override {
     assert(hasType());
+    if (getType()->isTypeVector() &&
+        getType()->getVectorComponentType()->isTypeFloat(16))
+      return {CapabilityAtomicFloat16VectorNV};
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       return {internal::CapabilityAtomicBFloat16MinMaxINTEL};
     if (getType()->isTypeFloat(16))
