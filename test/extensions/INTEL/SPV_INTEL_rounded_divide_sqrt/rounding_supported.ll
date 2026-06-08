@@ -2,8 +2,7 @@
 ; extended instruction) trigger the RoundedDivideSqrtINTEL capability and the
 ; SPV_INTEL_rounded_divide_sqrt extension.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
+; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck %s --input-file %t.spt --check-prefix=CHECK-SPIRV
@@ -58,83 +57,7 @@ entry:
   ret void
 }
 
-; All four rounding modes on regular fdiv instructions carrying an
-; FPRoundingMode (decoration 39) via spirv.Decorations metadata.
-; CHECK-SPIRV-DAG: Decorate [[#M_RTE:]] FPRoundingMode 0
-; CHECK-SPIRV-DAG: Decorate [[#M_RTZ:]] FPRoundingMode 1
-; CHECK-SPIRV-DAG: Decorate [[#M_RTP:]] FPRoundingMode 2
-; CHECK-SPIRV-DAG: Decorate [[#M_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: FDiv [[#HALF]] [[#M_RTE]]
-; CHECK-SPIRV-DAG: FDiv [[#FLOAT]] [[#M_RTZ]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#M_RTP]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#M_RTN]]
-define spir_kernel void @test_fdiv_metadata(half %h0, half %h1, float %f0, float %f1, double %d0, double %d1) {
-entry:
-  %h_rte = fdiv half %h0, %h1, !spirv.Decorations !0
-  %f_rtz = fdiv float %f0, %f1, !spirv.Decorations !1
-  %d_rtp = fdiv double %d0, %d1, !spirv.Decorations !2
-  %d_rtn = fdiv double %d0, %d1, !spirv.Decorations !3
-  ret void
-}
-
-; All four rounding modes on vector-typed fdiv instructions carrying an
-; FPRoundingMode (decoration 39) via spirv.Decorations metadata.
-; CHECK-SPIRV-DAG: Decorate [[#MV_RTE:]] FPRoundingMode 0
-; CHECK-SPIRV-DAG: Decorate [[#MV_RTZ:]] FPRoundingMode 1
-; CHECK-SPIRV-DAG: Decorate [[#MV_RTP:]] FPRoundingMode 2
-; CHECK-SPIRV-DAG: Decorate [[#MV_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: FDiv [[#HALFV]] [[#MV_RTE]]
-; CHECK-SPIRV-DAG: FDiv [[#FLOATV]] [[#MV_RTZ]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#MV_RTP]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#MV_RTN]]
-define spir_kernel void @test_fdiv_metadata_vector(<2 x half> %h0, <2 x half> %h1, <4 x float> %f0, <4 x float> %f1, <3 x double> %d0, <3 x double> %d1) {
-entry:
-  %h_rte = fdiv <2 x half> %h0, %h1, !spirv.Decorations !0
-  %f_rtz = fdiv <4 x float> %f0, %f1, !spirv.Decorations !1
-  %d_rtp = fdiv <3 x double> %d0, %d1, !spirv.Decorations !2
-  %d_rtn = fdiv <3 x double> %d0, %d1, !spirv.Decorations !3
-  ret void
-}
-
-; All four rounding modes on llvm.fpbuiltin.fdiv intrinsics carrying an
-; FPRoundingMode (decoration 39) via spirv.Decorations metadata.
-; CHECK-SPIRV-DAG: Decorate [[#B_RTE:]] FPRoundingMode 0
-; CHECK-SPIRV-DAG: Decorate [[#B_RTZ:]] FPRoundingMode 1
-; CHECK-SPIRV-DAG: Decorate [[#B_RTP:]] FPRoundingMode 2
-; CHECK-SPIRV-DAG: Decorate [[#B_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: FDiv [[#HALF]] [[#B_RTE]]
-; CHECK-SPIRV-DAG: FDiv [[#FLOAT]] [[#B_RTZ]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#B_RTP]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#B_RTN]]
-define spir_kernel void @test_fdiv_fpbuiltin(half %h0, half %h1, float %f0, float %f1, double %d0, double %d1) {
-entry:
-  %h_rte = call half @llvm.fpbuiltin.fdiv.f16(half %h0, half %h1), !spirv.Decorations !0
-  %f_rtz = call float @llvm.fpbuiltin.fdiv.f32(float %f0, float %f1), !spirv.Decorations !1
-  %d_rtp = call double @llvm.fpbuiltin.fdiv.f64(double %d0, double %d1), !spirv.Decorations !2
-  %d_rtn = call double @llvm.fpbuiltin.fdiv.f64(double %d0, double %d1), !spirv.Decorations !3
-  ret void
-}
-
-; All four rounding modes on vector-typed llvm.fpbuiltin.fdiv intrinsics
-; carrying an FPRoundingMode (decoration 39) via spirv.Decorations metadata.
-; CHECK-SPIRV-DAG: Decorate [[#BV_RTE:]] FPRoundingMode 0
-; CHECK-SPIRV-DAG: Decorate [[#BV_RTZ:]] FPRoundingMode 1
-; CHECK-SPIRV-DAG: Decorate [[#BV_RTP:]] FPRoundingMode 2
-; CHECK-SPIRV-DAG: Decorate [[#BV_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: FDiv [[#HALFV]] [[#BV_RTE]]
-; CHECK-SPIRV-DAG: FDiv [[#FLOATV]] [[#BV_RTZ]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#BV_RTP]]
-; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#BV_RTN]]
-define spir_kernel void @test_fdiv_fpbuiltin_vector(<2 x half> %h0, <2 x half> %h1, <4 x float> %f0, <4 x float> %f1, <3 x double> %d0, <3 x double> %d1) {
-entry:
-  %h_rte = call <2 x half> @llvm.fpbuiltin.fdiv.v2f16(<2 x half> %h0, <2 x half> %h1), !spirv.Decorations !0
-  %f_rtz = call <4 x float> @llvm.fpbuiltin.fdiv.v4f32(<4 x float> %f0, <4 x float> %f1), !spirv.Decorations !1
-  %d_rtp = call <3 x double> @llvm.fpbuiltin.fdiv.v3f64(<3 x double> %d0, <3 x double> %d1), !spirv.Decorations !2
-  %d_rtn = call <3 x double> @llvm.fpbuiltin.fdiv.v3f64(<3 x double> %d0, <3 x double> %d1), !spirv.Decorations !3
-  ret void
-}
-
-; One rounding mode per FP type (covers all four modes across the three types).
+; All four rounding modes on the scalar-typed constrained sqrts.
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTE:]] FPRoundingMode 0
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTZ:]] FPRoundingMode 1
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTP:]] FPRoundingMode 2
@@ -145,13 +68,14 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTN]] {{[0-9]+}} sqrt
 define spir_kernel void @test_sqrt_scalar(half %h, float %f, double %d) {
 entry:
-  %h_rte = call half   @llvm.sqrt.f16(half %h),     !spirv.Decorations !0
-  %f_rtz = call float  @llvm.sqrt.f32(float %f),    !spirv.Decorations !1
-  %d_rtp = call double @llvm.sqrt.f64(double %d),   !spirv.Decorations !2
-  %d_rtn = call double @llvm.sqrt.f64(double %d),   !spirv.Decorations !3
+  %h_rte = call half   @llvm.experimental.constrained.sqrt.f16(half %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
+  %f_rtz = call float  @llvm.experimental.constrained.sqrt.f32(float %f,  metadata !"round.towardzero", metadata !"fpexcept.strict")
+  %d_rtp = call double @llvm.experimental.constrained.sqrt.f64(double %d, metadata !"round.upward",     metadata !"fpexcept.strict")
+  %d_rtn = call double @llvm.experimental.constrained.sqrt.f64(double %d, metadata !"round.downward",   metadata !"fpexcept.strict")
   ret void
 }
 
+; All four rounding modes on vector-typed constrained sqrts.
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTE:]] FPRoundingMode 0
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTZ:]] FPRoundingMode 1
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTP:]] FPRoundingMode 2
@@ -162,20 +86,12 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTN]] {{[0-9]+}} sqrt
 define spir_kernel void @test_sqrt_vector(<2 x half> %h, <4 x float> %f, <3 x double> %d) {
 entry:
-  %h_rte = call <2 x half>   @llvm.sqrt.v2f16(<2 x half> %h),     !spirv.Decorations !0
-  %f_rtz = call <4 x float>  @llvm.sqrt.v4f32(<4 x float> %f),    !spirv.Decorations !1
-  %d_rtp = call <3 x double> @llvm.sqrt.v3f64(<3 x double> %d),   !spirv.Decorations !2
-  %d_rtn = call <3 x double> @llvm.sqrt.v3f64(<3 x double> %d),   !spirv.Decorations !3
+  %h_rte = call <2 x half>   @llvm.experimental.constrained.sqrt.v2f16(<2 x half> %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
+  %f_rtz = call <4 x float>  @llvm.experimental.constrained.sqrt.v4f32(<4 x float> %f,  metadata !"round.towardzero", metadata !"fpexcept.strict")
+  %d_rtp = call <3 x double> @llvm.experimental.constrained.sqrt.v3f64(<3 x double> %d, metadata !"round.upward",     metadata !"fpexcept.strict")
+  %d_rtn = call <3 x double> @llvm.experimental.constrained.sqrt.v3f64(<3 x double> %d, metadata !"round.downward",   metadata !"fpexcept.strict")
   ret void
 }
-
-declare half @llvm.fpbuiltin.fdiv.f16(half, half)
-declare float @llvm.fpbuiltin.fdiv.f32(float, float)
-declare double @llvm.fpbuiltin.fdiv.f64(double, double)
-
-declare <2 x half> @llvm.fpbuiltin.fdiv.v2f16(<2 x half>, <2 x half>)
-declare <4 x float> @llvm.fpbuiltin.fdiv.v4f32(<4 x float>, <4 x float>)
-declare <3 x double> @llvm.fpbuiltin.fdiv.v3f64(<3 x double>, <3 x double>)
 
 declare half @llvm.experimental.constrained.fdiv.f16(half, half, metadata, metadata)
 declare float @llvm.experimental.constrained.fdiv.f32(float, float, metadata, metadata)
@@ -185,15 +101,10 @@ declare <2 x half> @llvm.experimental.constrained.fdiv.v2f16(<2 x half>, <2 x ha
 declare <4 x float> @llvm.experimental.constrained.fdiv.v4f32(<4 x float>, <4 x float>, metadata, metadata)
 declare <3 x double> @llvm.experimental.constrained.fdiv.v3f64(<3 x double>, <3 x double>, metadata, metadata)
 
-declare half   @llvm.sqrt.f16(half)
-declare float  @llvm.sqrt.f32(float)
-declare double @llvm.sqrt.f64(double)
+declare half   @llvm.experimental.constrained.sqrt.f16(half, metadata, metadata)
+declare float  @llvm.experimental.constrained.sqrt.f32(float, metadata, metadata)
+declare double @llvm.experimental.constrained.sqrt.f64(double, metadata, metadata)
 
-declare <2 x half>   @llvm.sqrt.v2f16(<2 x half>)
-declare <4 x float>  @llvm.sqrt.v4f32(<4 x float>)
-declare <3 x double> @llvm.sqrt.v3f64(<3 x double>)
-
-!0 = !{!{i32 39, i32 0}}
-!1 = !{!{i32 39, i32 1}}
-!2 = !{!{i32 39, i32 2}}
-!3 = !{!{i32 39, i32 3}}
+declare <2 x half>   @llvm.experimental.constrained.sqrt.v2f16(<2 x half>, metadata, metadata)
+declare <4 x float>  @llvm.experimental.constrained.sqrt.v4f32(<4 x float>, metadata, metadata)
+declare <3 x double> @llvm.experimental.constrained.sqrt.v3f64(<3 x double>, metadata, metadata)

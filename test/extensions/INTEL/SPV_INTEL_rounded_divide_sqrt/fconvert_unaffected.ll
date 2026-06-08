@@ -4,8 +4,7 @@
 ; that lands on an OpFConvert (here from llvm.experimental.constrained.fptrunc)
 ; must NOT pull in the RoundedDivideSqrtINTEL capability or the extension.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
+; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck %s --input-file %t.spt --check-prefix=CHECK-SPIRV

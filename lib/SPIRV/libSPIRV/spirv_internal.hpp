@@ -113,7 +113,6 @@ enum InternalCapability {
   ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
   ICapabilityInt16AtomicsINTEL = 6261,
   ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
-  ICapabilityRoundedDivideSqrtINTEL = 6265,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityJointMatrixWIInstructionsINTEL = 6435,
@@ -213,8 +212,6 @@ _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
 _SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
-
-_SPIRV_OP(Capability, RoundedDivideSqrtINTEL)
 
 _SPIRV_OP(Capability, FloatConversionsINTEL)
 _SPIRV_OP(Op, ClampConvertFToFINTEL)
