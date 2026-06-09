@@ -1103,9 +1103,6 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       bool IsSaturatedFP8 = BC->hasDecorate(
           DecorationSaturatedToLargestFloat8NormalConversionEXT);
       if (IsSaturatedFP8) {
-        // Per SPV_EXT_float8, this decoration may only target
-        // OpFConvert/OpConvertSToF/OpConvertUToF whose Result Type uses an
-        // Float8E4M3EXT or Float8E5M2EXT FP encoding.
         BM->getErrorLog().checkError(
             (OC == OpFConvert || OC == OpConvertSToF || OC == OpConvertUToF) &&
                 (DstEnc == FPEncodingWrap::E4M3 ||
@@ -1119,9 +1116,12 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
           SPVSrcTy->isTypeInt(4) || SPVDstTy->isTypeInt(4)) {
         // SPV_EXT_float8: an OpFConvert to E4M3/E5M2 decorated with
         // SaturatedToLargestFloat8NormalConversionEXT round-trips through the
-        // ClampConvert<Src>To<E4M3|E5M2>INTEL builtin name.
-        SPIRV::SPIRVWord LookupOp =
-            IsSaturatedFP8 ? internal::OpClampConvertFToFINTEL : OC;
+        // ClampConvert<Src>To<E4M3|E5M2>INTEL builtin name. Only the FToF
+        // variant has a corresponding SPV_INTEL_fp_conversions builtin name;
+        // for OpConvertSToF/OpConvertUToF the standard mapping is preserved.
+        SPIRV::SPIRVWord LookupOp = (IsSaturatedFP8 && OC == OpFConvert)
+                                        ? internal::OpClampConvertFToFINTEL
+                                        : OC;
         FPConversionDesc FPDesc = {SrcEnc, DstEnc, LookupOp};
         auto Conv = SPIRV::FPConvertToEncodingMap::rmap(FPDesc);
         std::vector<Value *> Ops = {Src};

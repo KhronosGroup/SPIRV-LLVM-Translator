@@ -5730,15 +5730,19 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     if (SPIRV::FPConvertToEncodingMap::find(DemangledName)) {
       FPConversionDesc FPDesc =
           SPIRV::FPConvertToEncodingMap::map(DemangledName);
-      // SPV_EXT_float8: when SPV_EXT_float8 is enabled, the
+      // SPV_EXT_float8: when SPV_EXT_float8 is enabled and
+      // SPV_INTEL_fp_conversions is not, the
       // ClampConvert<Src>To<E4M3|E5M2>INTEL builtin maps to OpFConvert
       // decorated with SaturatedToLargestFloat8NormalConversionEXT instead of
-      // the SPV_INTEL_fp_conversions OpClampConvertFToFINTEL opcode.
+      // the SPV_INTEL_fp_conversions OpClampConvertFToFINTEL opcode. When both
+      // extensions are enabled, SPV_INTEL_fp_conversions wins to preserve the
+      // pre-existing encoding.
       bool IsSaturatedFP8 =
           FPDesc.ConvOpCode == internal::OpClampConvertFToFINTEL &&
           (FPDesc.DstEncoding == FPEncodingWrap::E4M3 ||
            FPDesc.DstEncoding == FPEncodingWrap::E5M2) &&
-          BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_float8);
+          BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_float8) &&
+          !BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_fp_conversions);
       if (IsSaturatedFP8)
         FPDesc.ConvOpCode = OpFConvert;
       Value *Src = CI->getOperand(0);

@@ -15,6 +15,11 @@
 ; CHECK-SPIRV-DAG: Capability Float8EXT
 ; CHECK-SPIRV-DAG: Capability FloatConversionsINTEL
 
+; When SPV_INTEL_fp_conversions is enabled, ClampConvert<Src>To<E4M3|E5M2>INTEL
+; must use the OpClampConvertFToFINTEL encoding, not the SPV_EXT_float8
+; OpFConvert + SaturatedToLargestFloat8NormalConversionEXT form.
+; CHECK-SPIRV-NOT: SaturatedToLargestFloat8NormalConversionEXT
+
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_int4"
 ; CHECK-SPIRV-DAG: Extension "SPV_EXT_float8"
 ; CHECK-SPIRV-DAG: Extension "SPV_INTEL_float4"
@@ -61,7 +66,7 @@ target triple = "spir-unknown-unknown"
 ; Followings tests are for clamp rounding
 
 ; CHECK-SPIRV: Function [[#]] [[#hf16_hf8_clamp]] [[#]]
-; CHECK-SPIRV: FConvert [[#HFloat8Ty]] [[#Conv:]] [[#HalfConst]]
+; CHECK-SPIRV: ClampConvertFToFINTEL [[#HFloat8Ty]] [[#Conv:]] [[#HalfConst]]
 ; CHECK-SPIRV: Bitcast [[#Int8Ty]] [[#Cast:]] [[#Conv]]
 ; CHECK-SPIRV: ReturnValue [[#Cast]]
 
@@ -78,7 +83,7 @@ entry:
 declare dso_local spir_func i8 @_Z43__builtin_spirv_ClampConvertFP16ToE4M3INTELDh(half)
 
 ; CHECK-SPIRV: Function [[#]] [[#hf16_bf8_clamp]] [[#]]
-; CHECK-SPIRV: FConvert [[#BFloat8Ty]] [[#Conv:]] [[#HalfConst]]
+; CHECK-SPIRV: ClampConvertFToFINTEL [[#BFloat8Ty]] [[#Conv:]] [[#HalfConst]]
 ; CHECK-SPIRV: Bitcast [[#Int8Ty]] [[#Cast:]] [[#Conv]]
 ; CHECK-SPIRV: ReturnValue [[#Cast]]
 
@@ -95,7 +100,7 @@ entry:
 declare dso_local spir_func i8 @_Z43__builtin_spirv_ClampConvertFP16ToE5M2INTELDh(half)
 
 ; CHECK-SPIRV: Function [[#]] [[#bf16_hf8_clamp]] [[#]]
-; CHECK-SPIRV: FConvert [[#HFloat8Ty]] [[#Conv:]] [[#BfloatConst]]
+; CHECK-SPIRV: ClampConvertFToFINTEL [[#HFloat8Ty]] [[#Conv:]] [[#BfloatConst]]
 ; CHECK-SPIRV: Bitcast [[#Int8Ty]] [[#Cast:]] [[#Conv]]
 ; CHECK-SPIRV: ReturnValue [[#Cast]]
 
@@ -112,7 +117,7 @@ entry:
 declare dso_local spir_func i8 @_Z43__builtin_spirv_ClampConvertBF16ToE4M3INTELDF16b(bfloat)
 
 ; CHECK-SPIRV: Function [[#]] [[#bf16_bf8_clamp]] [[#]]
-; CHECK-SPIRV: FConvert [[#BFloat8Ty]] [[#Conv:]] [[#BfloatConst]]
+; CHECK-SPIRV: ClampConvertFToFINTEL [[#BFloat8Ty]] [[#Conv:]] [[#BfloatConst]]
 ; CHECK-SPIRV: Bitcast [[#Int8Ty]] [[#Cast:]] [[#Conv]]
 ; CHECK-SPIRV: ReturnValue [[#Cast]]
 
