@@ -645,6 +645,8 @@ public:
       CV.push_back(CapabilityImageReadWrite);
     if (Desc.MS)
       CV.push_back(CapabilityImageMipmap);
+    if (getSampledType()->isTypeInt(64))
+      CV.push_back(CapabilityInt64ImageEXT);
     return CV;
   }
   SPIRVType *getSampledType() const { return get<SPIRVType>(SampledType); }

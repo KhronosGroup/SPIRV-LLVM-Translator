@@ -1,20 +1,25 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_bindless_images
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_bindless_images,+SPV_EXT_shader_image_int64
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 
-; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_EXT_shader_image_int64 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
 ; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
 ; CHECK-ERROR-NEXT: SPV_INTEL_bindless_images
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-; CHECK-SPIRV: Capability BindlessImagesINTEL
-; CHECK-SPIRV: Extension "SPV_INTEL_bindless_images"
+; CHECK-SPIRV-DAG: Capability BindlessImagesINTEL
+; A 64-bit integer sampled image type requires the Int64ImageEXT capability and
+; the SPV_EXT_shader_image_int64 extension.
+; CHECK-SPIRV-DAG: Capability Int64ImageEXT
+; CHECK-SPIRV-DAG: Extension "SPV_INTEL_bindless_images"
+; CHECK-SPIRV-DAG: Extension "SPV_EXT_shader_image_int64"
 ; CHECK-SPIRV-DAG: TypeVoid [[#VoidTy:]]
 ; CHECK-SPIRV-DAG: TypeInt [[#Int64Ty:]] 64
 ; CHECK-SPIRV-DAG: Constant [[#Int64Ty]] [[#Const42:]] 42 0
