@@ -428,6 +428,15 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   }
 
   if (auto *VecTy = dyn_cast<FixedVectorType>(T)) {
+    if (VecTy->getNumElements() == 1 &&
+        !BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_long_vector)) {
+      BM->getErrorLog().checkError(false, SPIRVEC_RequiresExtension,
+                                   "SPV_EXT_long_vector\n"
+                                   "NOTE: LLVM module contains a 1-element "
+                                   "vector, translation of which requires "
+                                   "this extension");
+      return nullptr;
+    }
     if (VecTy->getElementType()->isPointerTy() ||
         isa<TypedPointerType>(VecTy->getElementType())) {
       // SPV_INTEL_masked_gather_scatter extension changes 2.16.1. Universal
