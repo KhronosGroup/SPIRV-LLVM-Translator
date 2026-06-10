@@ -663,7 +663,7 @@ protected:
     assert(WordCount == FixedWC + Acc.size());
     assert(SampledType != SPIRVID_INVALID && "Invalid sampled type");
     assert(Desc.Dim <= 5);
-    assert(Desc.Depth <= 1);
+    assert(Desc.Depth <= 2);
     assert(Desc.Arrayed <= 1);
     assert(Desc.MS <= 1);
     assert(Desc.Sampled <= 2);
