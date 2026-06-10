@@ -1,8 +1,7 @@
 ; An OpTypeImage with an R64ui/R64i Image Format requires the Int64ImageEXT
 ; capability and the SPV_EXT_shader_image_int64 extension.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_EXT_shader_image_int64
+; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_EXT_shader_image_int64
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: spirv-val %t.spv
