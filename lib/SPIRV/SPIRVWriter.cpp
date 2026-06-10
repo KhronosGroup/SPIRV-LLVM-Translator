@@ -2132,15 +2132,23 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     }
     if (isa_and_nonnull<ConstantExpr>(Init)) {
       BVarInit = transValue(Init, nullptr);
-    } else if (ST && isa<UndefValue>(Init)) {
-      // Undef initializer for LLVM structure be can translated to
+    } else if (isa_and_nonnull<UndefValue>(Init) &&
+               Init->getType()->isAggregateType()) {
+      // Undef initializer for LLVM struct or array can be translated to
       // OpConstantComposite with OpUndef constituents.
       auto I = ValueMap.find(Init);
       if (I == ValueMap.end()) {
+        Type *AggTy = Init->getType();
         std::vector<SPIRVValue *> Elements;
-        for (Type *E : ST->elements())
-          Elements.push_back(transValue(UndefValue::get(E), nullptr));
-        BVarInit = BM->addCompositeConstant(transType(ST), Elements);
+        if (auto *ArrTy = dyn_cast<ArrayType>(AggTy)) {
+          SPIRVValue *EltUndef =
+              transValue(UndefValue::get(ArrTy->getElementType()), nullptr);
+          Elements.assign(ArrTy->getNumElements(), EltUndef);
+        } else {
+          for (Type *E : cast<StructType>(AggTy)->elements())
+            Elements.push_back(transValue(UndefValue::get(E), nullptr));
+        }
+        BVarInit = BM->addCompositeConstant(transType(AggTy), Elements);
         ValueMap[Init] = BVarInit;
       } else
         BVarInit = I->second;
