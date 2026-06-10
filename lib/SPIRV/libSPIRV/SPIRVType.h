@@ -645,7 +645,7 @@ public:
       CV.push_back(CapabilityImageReadWrite);
     if (Desc.MS)
       CV.push_back(CapabilityImageMipmap);
-    if (getSampledType()->isTypeInt(64))
+    if (Desc.Format == ImageFormatR64ui || Desc.Format == ImageFormatR64i)
       CV.push_back(CapabilityInt64ImageEXT);
     return CV;
   }
@@ -658,7 +658,6 @@ public:
 protected:
   _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth, Desc.Arrayed,
                      Desc.MS, Desc.Sampled, Desc.Format, Acc)
-  // The validation assumes OpenCL image or sampler type.
   void validate() const override {
     assert(OpCode == OC);
     assert(WordCount == FixedWC + Acc.size());
@@ -667,8 +666,8 @@ protected:
     assert(Desc.Depth <= 1);
     assert(Desc.Arrayed <= 1);
     assert(Desc.MS <= 1);
-    assert(Desc.Sampled == 0); // For OCL only
-    assert(Desc.Format == 0);  // For OCL only
+    assert(Desc.Sampled <= 2);
+    assert(Desc.Format <= ImageFormatR64i);
     assert(Acc.size() <= 1);
   }
   void setWordCount(SPIRVWord TheWC) override {
