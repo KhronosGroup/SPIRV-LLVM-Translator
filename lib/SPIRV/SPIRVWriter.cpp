@@ -65,8 +65,6 @@
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
 #include "VectorComputeUtil.h"
-#include "libSPIRV/SPIRVDecorate.h"
-#include "libSPIRV/SPIRVError.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSwitch.h"
@@ -2979,20 +2977,6 @@ static bool isIEEE754FPType(SPIRVType *Ty) {
   return Ty->isTypeFloat(16) || Ty->isTypeFloat(32) || Ty->isTypeFloat(64);
 }
 
-static bool isRoundingModeCapableINTEL(SPIRVInstruction *I) {
-  Op Code = I->getOpCode();
-  if (Code == OpFDiv)
-    return true;
-
-  if (Code == OpExtInst) {
-    auto *EI = static_cast<SPIRVExtInst *>(I);
-    if (EI->getExtSetKind() == SPIRVEIS_OpenCL &&
-        EI->getExtOp() == OpenCLLIB::Sqrt)
-      return true;
-  }
-  return false;
-}
-
 static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
   SPIRVErrorLog &ErrLog = Target->getErrorLog();
 
@@ -3405,13 +3389,8 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       transMemAliasingINTELDecorations(Inst, BV);
     if (auto *IDecoMD = Inst->getMetadata(SPIRV_MD_DECORATIONS))
       transMetadataDecorations(IDecoMD, BV);
-    if (BV->isInst()) {
-      auto *BI = static_cast<SPIRVInstruction *>(BV);
-      addFPBuiltinDecoration(BM, Inst, BI);
-      if (BI->hasFPRoundingMode() && isRoundingModeCapableINTEL(BI)) {
-        BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
-      }
-    }
+    if (BV->isInst())
+      addFPBuiltinDecoration(BM, Inst, static_cast<SPIRVInstruction *>(BV));
   }
 
   if (auto *CI = dyn_cast<CallInst>(V)) {
@@ -4738,6 +4717,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_rounded_divide_sqrt) &&
         isIEEE754FPType(BI->getType())) {
+      BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       return applyRoundingModeConstraint(II->getOperand(2), BI);
     }
     return BI;
@@ -4750,6 +4730,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_rounded_divide_sqrt) &&
         isIEEE754FPType(BI->getType())) {
+      BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       return applyRoundingModeConstraint(II->getOperand(1), BI);
     }
     return BI;

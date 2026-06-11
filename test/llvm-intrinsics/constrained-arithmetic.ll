@@ -1,5 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o - --spirv-ext=+SPV_INTEL_rounded_divide_sqrt | FileCheck %s
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NOEXT
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 
@@ -8,6 +9,24 @@
 ; CHECK: Name [[di:[0-9]+]] "div"
 ; CHECK: Name [[su:[0-9]+]] "sub"
 ; CHECK: Name [[mu:[0-9]+]] "mul"
+
+; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
+
+; CHECK-NOT: Decorate [[ad]] FPRoundingMode 0
+; CHECK-DAG: Decorate [[di]] FPRoundingMode 1
+; CHECK-NOT: Decorate [[su]] FPRoundingMode 2
+; CHECK-NOT: Decorate [[mu]] FPRoundingMode 3
+; CHECK-DAG: Decorate [[sq]] FPRoundingMode 3
+
+; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
+
+; Without SPV_INTEL_rounded_divide_sqrt enabled, neither the capability nor the
+; extension is emitted, and the FPRoundingMode decoration is dropped from the
+; FDiv ("div", the only towardzero/mode-1 user here).
+; CHECK-NOEXT-NOT: Capability RoundedDivideSqrtINTEL
+; CHECK-NOEXT-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
+; CHECK-NOEXT: Name [[di:[0-9]+]] "div"
+; CHECK-NOEXT-NOT: Decorate [[di]] FPRoundingMode
 
 ; CHECK: FAdd {{[0-9]+}} [[ad]]
 ; CHECK: FDiv {{[0-9]+}} [[di]]
@@ -28,6 +47,7 @@ entry:
   %div = tail call float @llvm.experimental.constrained.fdiv.f32(float %add, float %add, metadata !"round.towardzero", metadata !"fpexcept.strict") #2, !fpmath !10
   %sub = tail call float @llvm.experimental.constrained.fsub.f32(float %div, float %div, metadata !"round.upward", metadata !"fpexcept.strict") #2
   %mul = tail call float @llvm.experimental.constrained.fmul.f32(float %sub, float %sub, metadata !"round.downward", metadata !"fpexcept.strict") #2
+  %sqrt = tail call float @llvm.experimental.constrained.sqrt.f32(float %mul, metadata !"round.downward", metadata !"fpexcept.strict") #2
   %0 = tail call float @llvm.experimental.constrained.fmuladd.f32(float %mul, float %mul, float %mul, metadata !"round.tonearestaway", metadata !"fpexcept.strict") #2
   %1 = tail call float @llvm.experimental.constrained.fma.f32(float %0, float %0, float %0, metadata !"round.dynamic", metadata !"fpexcept.strict") #2
   %2 = tail call float @llvm.experimental.constrained.frem.f32(float %1, float %1, metadata !"round.dynamic", metadata !"fpexcept.strict") #2
