@@ -7595,7 +7595,7 @@ void addPassesForSPIRV(ModulePassManager &PassMgr,
   PassMgr.addPass(PreprocessMetadataPass());
   PassMgr.addPass(SPIRVLowerOCLBlocksPass());
   PassMgr.addPass(OCLToSPIRVPass());
-  PassMgr.addPass(SPIRVRegularizeLLVMPass());
+  PassMgr.addPass(SPIRVRegularizeLLVMPass(Opts));
   PassMgr.addPass(SPIRVLowerConstExprPass());
   PassMgr.addPass(SPIRVLowerBoolPass());
   PassMgr.addPass(SPIRVLowerMemmovePass());
