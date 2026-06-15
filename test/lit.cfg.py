@@ -13,9 +13,6 @@ from lit.llvm.subst import FindTool
 config.name = 'LLVM_SPIRV'
 
 # testFormat: The test format to use to interpret tests.
-# Use lit's internal shell. ShTest(execute_external=True) is rejected
-# starting with LLVM-23 (commit 57109befac92, "[lit] Deprecate
-# execute_external=True in ShTest").
 config.test_format = lit.formats.ShTest()
 
 # suffixes: A list of file extensions to treat as test files.
