@@ -9,6 +9,7 @@
 ; CHECK: Name [[di:[0-9]+]] "div"
 ; CHECK: Name [[su:[0-9]+]] "sub"
 ; CHECK: Name [[mu:[0-9]+]] "mul"
+; CHECK: Name [[sq:[0-9]+]] "sqrt"
 
 ; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
 
@@ -22,16 +23,19 @@
 
 ; Without SPV_INTEL_rounded_divide_sqrt enabled, neither the capability nor the
 ; extension is emitted, and the FPRoundingMode decoration is dropped from the
-; FDiv ("div", the only towardzero/mode-1 user here).
+; FDiv and sqrt here
 ; CHECK-NOEXT-NOT: Capability RoundedDivideSqrtINTEL
 ; CHECK-NOEXT-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
-; CHECK-NOEXT: Name [[di:[0-9]+]] "div"
-; CHECK-NOEXT-NOT: Decorate [[di]] FPRoundingMode
+; CHECK-NOEXT: Name [[#di:]] "div"
+; CHECK-NOEXT-NOT: Decorate [[#di]] FPRoundingMode
+; CHECK-NOEXT: Name [[#sq:]] "sqrt"
+; CHECK-NOEXT-NOT: Decorate [[#sq]] FPRoundingMode
 
 ; CHECK: FAdd {{[0-9]+}} [[ad]]
 ; CHECK: FDiv {{[0-9]+}} [[di]]
 ; CHECK: FSub {{[0-9]+}} [[su]]
 ; CHECK: FMul {{[0-9]+}} [[mu]]
+; CHECK: ExtInst {{[0-9]+}} [[sq]] {{[0-9]+}} sqrt
 ; CHECK: FMul
 ; CHECK: FAdd
 ; CHECK: ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} fma
@@ -74,6 +78,9 @@ declare float @llvm.experimental.constrained.fma.f32(float, float, float, metada
 
 ; Function Attrs: inaccessiblememonly nounwind willreturn
 declare float @llvm.experimental.constrained.frem.f32(float, float, metadata, metadata) #1
+
+; Function Attrs: inaccessiblememonly nounwind willreturn
+declare float @llvm.experimental.constrained.sqrt.f32(float, metadata, metadata) #1
 
 attributes #0 = { norecurse nounwind strictfp "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="all" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "sycl-module-id"="test2.cl" "uniform-work-group-size"="true" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { inaccessiblememonly nounwind willreturn }

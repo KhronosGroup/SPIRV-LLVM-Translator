@@ -16,7 +16,7 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
 ; The conversion still carries its rounding-mode decoration (core SPIR-V).
 ; CHECK-SPIRV: Decorate [[#CVT:]] FPRoundingMode 1
-; CHECK-SPIRV: FConvert {{[0-9]+}} [[#CVT]]
+; CHECK-SPIRV: FConvert [[#]] [[#CVT]]
 
 define spir_kernel void @test(double %a) {
 entry:

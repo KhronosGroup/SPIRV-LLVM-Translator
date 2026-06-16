@@ -103,10 +103,10 @@ entry:
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTZ:]] FPRoundingMode 1
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTP:]] FPRoundingMode 2
 ; CHECK-SPIRV-DAG: Decorate [[#S_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: ExtInst [[#HALF]]   [[#S_RTE]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#FLOAT]]  [[#S_RTZ]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTP]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTN]] {{[0-9]+}} sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#HALF]]   [[#S_RTE]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#FLOAT]]  [[#S_RTZ]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTP]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTN]] [[#]] sqrt
 
 ; CHECK-LLVM-OCL-LABEL: @test_sqrt_scalar
 ; CHECK-LLVM-OCL: call spir_func half @_Z4sqrtDh(
@@ -133,10 +133,10 @@ entry:
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTZ:]] FPRoundingMode 1
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTP:]] FPRoundingMode 2
 ; CHECK-SPIRV-DAG: Decorate [[#SV_RTN:]] FPRoundingMode 3
-; CHECK-SPIRV-DAG: ExtInst [[#HALFV]]   [[#SV_RTE]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#FLOATV]]  [[#SV_RTZ]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTP]] {{[0-9]+}} sqrt
-; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTN]] {{[0-9]+}} sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#HALFV]]   [[#SV_RTE]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#FLOATV]]  [[#SV_RTZ]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTP]] [[#]] sqrt
+; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTN]] [[#]] sqrt
 
 ; CHECK-LLVM-OCL-LABEL: @test_sqrt_vector
 ; CHECK-LLVM-OCL: call spir_func <2 x half> @_Z4sqrtDv2_Dh(
