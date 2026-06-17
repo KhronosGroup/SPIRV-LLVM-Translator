@@ -138,7 +138,7 @@ void SPIRVRegularizeLLVMBase::lowerIntrinsicToFunction(
                                       F->getArg(0));
     IRB.CreateRet(BSwap);
     IntrinsicLowering IL(M->getDataLayout());
-    IL.LowerIntrinsicCall(BSwap);
+    IL.LowerIntrinsicCall(cast<CallInst>(BSwap));
     break;
   }
   default:
