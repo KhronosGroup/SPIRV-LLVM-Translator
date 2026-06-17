@@ -12,13 +12,13 @@
 ; rounding mode on fdiv/sqrt, so it is dropped (plain fdiv, plain sqrt builtin).
 ; The --implicit-check-not flags assert no rounding info leaks anywhere.
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM-OCL \
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM \
 ; RUN:   --implicit-check-not=FPRoundingMode --implicit-check-not=spirv.Decorations
 
 ; Reverse translation, SPV-IR path: the rounding mode is preserved as an
 ; !spirv.Decorations FPRoundingMode (Decoration 39) attached to the fdiv/sqrt.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.spvir.bc
-; RUN: llvm-dis %t.rev.spvir.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM-SPV
+; RUN: llvm-dis %t.rev.spvir.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-SPV
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
@@ -44,21 +44,19 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#D_RTP]]
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#D_RTN]]
 
-; CHECK-LLVM-OCL-LABEL: @test_fdiv_scalar
-; CHECK-LLVM-OCL: fdiv half
-; CHECK-LLVM-OCL: fdiv float
-; CHECK-LLVM-OCL: fdiv double
-; CHECK-LLVM-OCL: fdiv double
-
 ; In SPV-IR mode the FPRoundingMode decoration (Decoration 39) is preserved as
 ; an !spirv.Decorations metadata node, captured per rounding mode at its first
 ; use below and verified at the end. The same node is shared across every
 ; fdiv/sqrt of that mode (scalar and vector alike).
-; CHECK-LLVM-SPV-LABEL: @test_fdiv_scalar
-; CHECK-LLVM-SPV: fdiv half %{{.*}}, !spirv.Decorations [[RTE:![0-9]+]]
-; CHECK-LLVM-SPV: fdiv float %{{.*}}, !spirv.Decorations [[RTZ:![0-9]+]]
-; CHECK-LLVM-SPV: fdiv double %{{.*}}, !spirv.Decorations [[RTP:![0-9]+]]
-; CHECK-LLVM-SPV: fdiv double %{{.*}}, !spirv.Decorations [[RTN:![0-9]+]]
+; CHECK-LLVM-LABEL: @test_fdiv_scalar
+; CHECK-LLVM: fdiv half
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE:]]
+; CHECK-LLVM: fdiv float
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ:]]
+; CHECK-LLVM: fdiv double
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP:]]
+; CHECK-LLVM: fdiv double
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN:]]
 define spir_kernel void @test_fdiv_scalar(half %h0, half %h1, float %f0, float %f1, double %d0, double %d1) {
 entry:
   %h_rte = call half @llvm.experimental.constrained.fdiv.f16(half %h0, half %h1, metadata !"round.tonearest", metadata !"fpexcept.strict")
@@ -78,17 +76,15 @@ entry:
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#DV_RTP]]
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLEV]] [[#DV_RTN]]
 
-; CHECK-LLVM-OCL-LABEL: @test_fdiv_vector
-; CHECK-LLVM-OCL: fdiv <2 x half>
-; CHECK-LLVM-OCL: fdiv <4 x float>
-; CHECK-LLVM-OCL: fdiv <3 x double>
-; CHECK-LLVM-OCL: fdiv <3 x double>
-
-; CHECK-LLVM-SPV-LABEL: @test_fdiv_vector
-; CHECK-LLVM-SPV: fdiv <2 x half> %{{.*}}, !spirv.Decorations [[RTE]]
-; CHECK-LLVM-SPV: fdiv <4 x float> %{{.*}}, !spirv.Decorations [[RTZ]]
-; CHECK-LLVM-SPV: fdiv <3 x double> %{{.*}}, !spirv.Decorations [[RTP]]
-; CHECK-LLVM-SPV: fdiv <3 x double> %{{.*}}, !spirv.Decorations [[RTN]]
+; CHECK-LLVM-LABEL: @test_fdiv_vector
+; CHECK-LLVM: fdiv <2 x half>
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE]]
+; CHECK-LLVM: fdiv <4 x float>
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ]]
+; CHECK-LLVM: fdiv <3 x double>
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP]]
+; CHECK-LLVM: fdiv <3 x double>
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN]]
 define spir_kernel void @test_fdiv_vector(<2 x half> %h0, <2 x half> %h1, <4 x float> %f0, <4 x float> %f1, <3 x double> %d0, <3 x double> %d1) {
 entry:
   %h_rte = call <2 x half> @llvm.experimental.constrained.fdiv.v2f16(<2 x half> %h0, <2 x half> %h1, metadata !"round.tonearest", metadata !"fpexcept.strict")
@@ -108,17 +104,17 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTP]] [[#]] sqrt
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTN]] [[#]] sqrt
 
-; CHECK-LLVM-OCL-LABEL: @test_sqrt_scalar
-; CHECK-LLVM-OCL: call spir_func half @_Z4sqrtDh(
-; CHECK-LLVM-OCL: call spir_func float @_Z4sqrtf(
-; CHECK-LLVM-OCL: call spir_func double @_Z4sqrtd(
-; CHECK-LLVM-OCL: call spir_func double @_Z4sqrtd(
-
-; CHECK-LLVM-SPV-LABEL: @test_sqrt_scalar
-; CHECK-LLVM-SPV: call spir_func half @_Z16__spirv_ocl_sqrtDh(half %{{.*}}!spirv.Decorations [[RTE]]
-; CHECK-LLVM-SPV: call spir_func float @_Z16__spirv_ocl_sqrtf(float %{{.*}}!spirv.Decorations [[RTZ]]
-; CHECK-LLVM-SPV: call spir_func double @_Z16__spirv_ocl_sqrtd(double %{{.*}}!spirv.Decorations [[RTP]]
-; CHECK-LLVM-SPV: call spir_func double @_Z16__spirv_ocl_sqrtd(double %{{.*}}!spirv.Decorations [[RTN]]
+; The sqrt builtin is mangled differently per mode (plain "sqrt" for OCL,
+; "__spirv_ocl_sqrt" for SPV-IR), so the shared line matches the common prefix.
+; CHECK-LLVM-LABEL: @test_sqrt_scalar
+; CHECK-LLVM: call spir_func half @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE]]
+; CHECK-LLVM: call spir_func float @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ]]
+; CHECK-LLVM: call spir_func double @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP]]
+; CHECK-LLVM: call spir_func double @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN]]
 define spir_kernel void @test_sqrt_scalar(half %h, float %f, double %d) {
 entry:
   %h_rte = call half   @llvm.experimental.constrained.sqrt.f16(half %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
@@ -138,17 +134,15 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTP]] [[#]] sqrt
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTN]] [[#]] sqrt
 
-; CHECK-LLVM-OCL-LABEL: @test_sqrt_vector
-; CHECK-LLVM-OCL: call spir_func <2 x half> @_Z4sqrtDv2_Dh(
-; CHECK-LLVM-OCL: call spir_func <4 x float> @_Z4sqrtDv4_f(
-; CHECK-LLVM-OCL: call spir_func <3 x double> @_Z4sqrtDv3_d(
-; CHECK-LLVM-OCL: call spir_func <3 x double> @_Z4sqrtDv3_d(
-
-; CHECK-LLVM-SPV-LABEL: @test_sqrt_vector
-; CHECK-LLVM-SPV: call spir_func <2 x half> @_Z16__spirv_ocl_sqrtDv2_Dh(<2 x half> %{{.*}}!spirv.Decorations [[RTE]]
-; CHECK-LLVM-SPV: call spir_func <4 x float> @_Z16__spirv_ocl_sqrtDv4_f(<4 x float> %{{.*}}!spirv.Decorations [[RTZ]]
-; CHECK-LLVM-SPV: call spir_func <3 x double> @_Z16__spirv_ocl_sqrtDv3_d(<3 x double> %{{.*}}!spirv.Decorations [[RTP]]
-; CHECK-LLVM-SPV: call spir_func <3 x double> @_Z16__spirv_ocl_sqrtDv3_d(<3 x double> %{{.*}}!spirv.Decorations [[RTN]]
+; CHECK-LLVM-LABEL: @test_sqrt_vector
+; CHECK-LLVM: call spir_func <2 x half> @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE]]
+; CHECK-LLVM: call spir_func <4 x float> @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ]]
+; CHECK-LLVM: call spir_func <3 x double> @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP]]
+; CHECK-LLVM: call spir_func <3 x double> @{{.*}}sqrt
+; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN]]
 define spir_kernel void @test_sqrt_vector(<2 x half> %h, <4 x float> %f, <3 x double> %d) {
 entry:
   %h_rte = call <2 x half>   @llvm.experimental.constrained.sqrt.v2f16(<2 x half> %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
@@ -176,11 +170,11 @@ declare <3 x double> @llvm.experimental.constrained.sqrt.v3f64(<3 x double>, met
 
 ; Verify the FPRoundingMode (Decoration 39) metadata nodes captured above:
 ; mode 0 = RTE, 1 = RTZ, 2 = RTP, 3 = RTN.
-; CHECK-LLVM-SPV-DAG: [[RTE]] = !{[[RTEX:![0-9]+]]}
-; CHECK-LLVM-SPV-DAG: [[RTEX]] = !{i32 39, i32 0}
-; CHECK-LLVM-SPV-DAG: [[RTZ]] = !{[[RTZX:![0-9]+]]}
-; CHECK-LLVM-SPV-DAG: [[RTZX]] = !{i32 39, i32 1}
-; CHECK-LLVM-SPV-DAG: [[RTP]] = !{[[RTPX:![0-9]+]]}
-; CHECK-LLVM-SPV-DAG: [[RTPX]] = !{i32 39, i32 2}
-; CHECK-LLVM-SPV-DAG: [[RTN]] = !{[[RTNX:![0-9]+]]}
-; CHECK-LLVM-SPV-DAG: [[RTNX]] = !{i32 39, i32 3}
+; CHECK-LLVM-SPV-DAG: ![[#RTE]] = !{![[#RTEX:]]}
+; CHECK-LLVM-SPV-DAG: ![[#RTEX]] = !{i32 39, i32 0}
+; CHECK-LLVM-SPV-DAG: ![[#RTZ]] = !{![[#RTZX:]]}
+; CHECK-LLVM-SPV-DAG: ![[#RTZX]] = !{i32 39, i32 1}
+; CHECK-LLVM-SPV-DAG: ![[#RTP]] = !{![[#RTPX:]]}
+; CHECK-LLVM-SPV-DAG: ![[#RTPX]] = !{i32 39, i32 2}
+; CHECK-LLVM-SPV-DAG: ![[#RTN]] = !{![[#RTNX:]]}
+; CHECK-LLVM-SPV-DAG: ![[#RTNX]] = !{i32 39, i32 3}

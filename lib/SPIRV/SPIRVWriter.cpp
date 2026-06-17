@@ -2971,12 +2971,6 @@ void checkIsGlobalVar(SPIRVEntry *E, Decoration Dec) {
                               ErrStr);
 }
 
-static bool isIEEE754FPType(SPIRVType *Ty) {
-  if (Ty->isTypeVector())
-    Ty = Ty->getVectorComponentType();
-  return Ty->isTypeFloat(16) || Ty->isTypeFloat(32) || Ty->isTypeFloat(64);
-}
-
 static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
   SPIRVErrorLog &ErrLog = Target->getErrorLog();
 
@@ -4716,10 +4710,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                                  transValue(II->getArgOperand(1), BB), BB);
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_rounded_divide_sqrt) &&
-        isIEEE754FPType(BI->getType())) {
+        BI->getType()->isTypeIEEE754Float()) {
       BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       return applyRoundingModeConstraint(II->getOperand(2), BI);
     }
+    SPIRVDBG(dbgs() << "WARNING: Rounding Mode of constrained intrinsic "
+                       "\"fdiv\" not supported by SPIR-V without "
+                       "SPV_INTEL_rounded_divide_sqrt, dropping it.\n");
     return BI;
   }
   case Intrinsic::experimental_constrained_sqrt: {
@@ -4729,10 +4726,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                               OpenCLLIB::Sqrt, Ops, BB);
     if (BM->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_rounded_divide_sqrt) &&
-        isIEEE754FPType(BI->getType())) {
+        BI->getType()->isTypeIEEE754Float()) {
       BM->addCapability(CapabilityRoundedDivideSqrtINTEL);
       return applyRoundingModeConstraint(II->getOperand(1), BI);
     }
+    SPIRVDBG(dbgs() << "WARNING: Rounding Mode of constrained intrinsic "
+                       "\"sqrt\" not supported by SPIR-V without "
+                       "SPV_INTEL_rounded_divide_sqrt, dropping it.\n");
     return BI;
   }
   case Intrinsic::experimental_constrained_frem: {

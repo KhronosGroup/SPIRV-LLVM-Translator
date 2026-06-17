@@ -1,6 +1,8 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - --spirv-ext=+SPV_INTEL_rounded_divide_sqrt | FileCheck %s
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NOEXT
+; RUN: llvm-spirv %t.bc -spirv-text -o - --spirv-ext=+SPV_INTEL_rounded_divide_sqrt | FileCheck %s --implicit-check-not FPRoundingMode
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NOEXT --implicit-check-not FPRoundingMode
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 
@@ -11,34 +13,23 @@
 ; CHECK: Name [[mu:[0-9]+]] "mul"
 ; CHECK: Name [[sq:[0-9]+]] "sqrt"
 
-; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
-
-; CHECK-NOT: Decorate [[ad]] FPRoundingMode 0
 ; CHECK-DAG: Decorate [[di]] FPRoundingMode 1
-; CHECK-NOT: Decorate [[su]] FPRoundingMode 2
-; CHECK-NOT: Decorate [[mu]] FPRoundingMode 3
 ; CHECK-DAG: Decorate [[sq]] FPRoundingMode 3
-
-; CHECK-NOT: Decorate {{[0-9]+}} FPRoundingMode
 
 ; Without SPV_INTEL_rounded_divide_sqrt enabled, neither the capability nor the
 ; extension is emitted, and the FPRoundingMode decoration is dropped from the
 ; FDiv and sqrt here
 ; CHECK-NOEXT-NOT: Capability RoundedDivideSqrtINTEL
 ; CHECK-NOEXT-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
-; CHECK-NOEXT: Name [[#di:]] "div"
-; CHECK-NOEXT-NOT: Decorate [[#di]] FPRoundingMode
-; CHECK-NOEXT: Name [[#sq:]] "sqrt"
-; CHECK-NOEXT-NOT: Decorate [[#sq]] FPRoundingMode
 
 ; CHECK: FAdd {{[0-9]+}} [[ad]]
 ; CHECK: FDiv {{[0-9]+}} [[di]]
 ; CHECK: FSub {{[0-9]+}} [[su]]
 ; CHECK: FMul {{[0-9]+}} [[mu]]
-; CHECK: ExtInst {{[0-9]+}} [[sq]] {{[0-9]+}} sqrt
+; CHECK: ExtInst {{[0-9]+}} [[sq]] [[#]] sqrt
 ; CHECK: FMul
 ; CHECK: FAdd
-; CHECK: ExtInst {{[0-9]+}} {{[0-9]+}} {{[0-9]+}} fma
+; CHECK: ExtInst {{[0-9]+}} {{[0-9]+}} [[#]] fma
 ; CHECK: FRem
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
