@@ -84,9 +84,6 @@ SPIRVToLLVMDbgTran::getDIFile(const std::string &FileName,
     SplitFileName Split(FileName);
     // Use the first builder from the map to create DIFile since it's
     // relations with other debug metadata is not going through DICompileUnit
-    // Pass nullopt (not an empty string) when the SPIR-V has no Source
-    // operand: LLVM/DWARF preserve "absent" and "present-but-empty"
-    // distinctly.
     if (!Split.BaseName.empty())
       return BuilderMap.begin()->second->createFile(Split.BaseName, Split.Path,
                                                     CS, Source);
