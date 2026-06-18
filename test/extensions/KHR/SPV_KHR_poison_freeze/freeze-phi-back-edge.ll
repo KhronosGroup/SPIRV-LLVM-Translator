@@ -1,11 +1,13 @@
-; Regression for assertion `Id is not in map' in SPIRVModuleImpl::getEntry
-; (https://github.com/intel/llvm/issues/22308): when SPV_KHR_poison_freeze
-; is disabled, the writer ignores `freeze` by reusing its operand without
-; rewriting IR users of the FreezeInst. If a phi back-edge references the
-; freeze result (the freeze is defined after the phi in program order),
-; the SPIR-V phi forward-references an unmapped id and the writer hits
-; the assert at module serialization. The freeze must be stripped (and
-; users rewritten) in regularize before SPIR-V emission.
+; When SPV_KHR_poison_freeze is disabled, the Writer won't translate `FreezeInst`
+; itself but its operand.
+; As a consequence, if a phi back-edge references the freeze result (a forward
+; reference at this point), the id of its operand will be replaced by
+; the forward-reference-Id of `freeze`, but the original id of this operand
+; remains in NamedId set while the same id is gone in IdEntryMap, resulting in
+; assertion failure "Id is not in map" during getEntry() when writing the Module.
+; With explicit bookkeeping of NamedId in replaceForward(),
+; the assertion failure should never occur; this test serves as regression
+; to ensure exactly this.
 ;
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
@@ -20,8 +22,8 @@
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
 
-; Without the extension, regularize strips the freeze from the IR and
-; rewrites its users (the phi below), so no FreezeKHR is emitted.
+; Without the extension, the Writer won't translate `FreezeInst` itself
+; so no FreezeKHR is emitted.
 ; CHECK-NOEXT-NOT: Capability PoisonFreezeKHR
 ; CHECK-NOEXT-NOT: Extension "SPV_KHR_poison_freeze"
 ; CHECK-NOEXT-NOT: FreezeKHR
