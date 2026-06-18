@@ -1,22 +1,19 @@
-; Guards target-sensitivity: FPRoundingMode is valid on conversion
-; instructions (OpFConvert) in core SPIR-V, so even with
-; SPV_INTEL_rounded_divide_sqrt enabled on the command line, an FPRoundingMode
-; that lands on an OpFConvert (here from llvm.experimental.constrained.fptrunc)
-; must NOT pull in the RoundedDivideSqrtINTEL capability or the extension.
+; Enabling SPV_INTEL_rounded_divide_sqrt shouldn't add RoundedDivideSqrtINTEL,
+; as FPRoundingMode on conversion instructions is supported in core SPIR-V
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_rounded_divide_sqrt
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
-; RUN: FileCheck %s --input-file %t.spt --check-prefix=CHECK-SPIRV
+; RUN: FileCheck %s --input-file %t.spt
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir-unknown-unknown"
 
-; CHECK-SPIRV-NOT: Capability RoundedDivideSqrtINTEL
-; CHECK-SPIRV-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
+; CHECK-NOT: Capability RoundedDivideSqrtINTEL
+; CHECK-NOT: Extension "SPV_INTEL_rounded_divide_sqrt"
 ; The conversion still carries its rounding-mode decoration (core SPIR-V).
-; CHECK-SPIRV: Decorate [[#CVT:]] FPRoundingMode 1
-; CHECK-SPIRV: FConvert [[#]] [[#CVT]]
+; CHECK: Decorate [[#CVT:]] FPRoundingMode 1
+; CHECK: FConvert [[#]] [[#CVT]]
 
 define spir_kernel void @test(double %a) {
 entry:

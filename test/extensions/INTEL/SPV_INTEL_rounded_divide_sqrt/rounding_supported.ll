@@ -8,15 +8,13 @@
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck %s --input-file %t.spt --check-prefix=CHECK-SPIRV
 
-; Reverse translation, OCL/default path: there is no OCL representation for the
-; rounding mode on fdiv/sqrt, so it is dropped (plain fdiv, plain sqrt builtin).
-; The --implicit-check-not flags assert no rounding info leaks anywhere.
+; OCL path: there is no OCL representation for the rounding mode on fdiv/sqrt, so it is dropped.
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM \
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-OCL \
 ; RUN:   --implicit-check-not=FPRoundingMode --implicit-check-not=spirv.Decorations
 
-; Reverse translation, SPV-IR path: the rounding mode is preserved as an
-; !spirv.Decorations FPRoundingMode (Decoration 39) attached to the fdiv/sqrt.
+; SPV-IR path: the rounding mode is preserved as an
+; !spirv.Decorations FPRoundingMode metadata attached to the fdiv/sqrt.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o %t.rev.spvir.bc
 ; RUN: llvm-dis %t.rev.spvir.bc -o - | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-SPV
 
@@ -104,17 +102,17 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTP]] [[#]] sqrt
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLE]] [[#S_RTN]] [[#]] sqrt
 
-; The sqrt builtin is mangled differently per mode (plain "sqrt" for OCL,
-; "__spirv_ocl_sqrt" for SPV-IR), so the shared line matches the common prefix.
-; CHECK-LLVM-LABEL: @test_sqrt_scalar
-; CHECK-LLVM: call spir_func half @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE]]
-; CHECK-LLVM: call spir_func float @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ]]
-; CHECK-LLVM: call spir_func double @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP]]
-; CHECK-LLVM: call spir_func double @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN]]
+; CHECK-LLVM-OCL-LABEL: @test_sqrt_scalar
+; CHECK-LLVM-OCL: call spir_func half @_Z4sqrtDh
+; CHECK-LLVM-OCL: call spir_func float @_Z4sqrtf
+; CHECK-LLVM-OCL: call spir_func double @_Z4sqrtd
+; CHECK-LLVM-OCL: call spir_func double @_Z4sqrtd
+
+; CHECK-LLVM-SPV-LABEL: @test_sqrt_scalar
+; CHECK-LLVM-SPV: call spir_func half @_Z16__spirv_ocl_sqrtDh(half %{{.*}}, !spirv.Decorations ![[#RTE]]
+; CHECK-LLVM-SPV: call spir_func float @_Z16__spirv_ocl_sqrtf(float %{{.*}}, !spirv.Decorations ![[#RTZ]]
+; CHECK-LLVM-SPV: call spir_func double @_Z16__spirv_ocl_sqrtd(double %{{.*}}, !spirv.Decorations ![[#RTP]]
+; CHECK-LLVM-SPV: call spir_func double @_Z16__spirv_ocl_sqrtd(double %{{.*}}, !spirv.Decorations ![[#RTN]]
 define spir_kernel void @test_sqrt_scalar(half %h, float %f, double %d) {
 entry:
   %h_rte = call half   @llvm.experimental.constrained.sqrt.f16(half %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
@@ -134,15 +132,17 @@ entry:
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTP]] [[#]] sqrt
 ; CHECK-SPIRV-DAG: ExtInst [[#DOUBLEV]] [[#SV_RTN]] [[#]] sqrt
 
-; CHECK-LLVM-LABEL: @test_sqrt_vector
-; CHECK-LLVM: call spir_func <2 x half> @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE]]
-; CHECK-LLVM: call spir_func <4 x float> @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTZ]]
-; CHECK-LLVM: call spir_func <3 x double> @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTP]]
-; CHECK-LLVM: call spir_func <3 x double> @{{.*}}sqrt
-; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTN]]
+; CHECK-LLVM-OCL-LABEL: @test_sqrt_vector
+; CHECK-LLVM-OCL: call spir_func <2 x half> @_Z4sqrtDv2_Dh
+; CHECK-LLVM-OCL: call spir_func <4 x float> @_Z4sqrtDv4_f
+; CHECK-LLVM-OCL: call spir_func <3 x double> @_Z4sqrtDv3_d
+; CHECK-LLVM-OCL: call spir_func <3 x double> @_Z4sqrtDv3_d
+
+; CHECK-LLVM-SPV-LABEL: @test_sqrt_vector
+; CHECK-LLVM-SPV: call spir_func <2 x half> @_Z16__spirv_ocl_sqrtDv2_Dh(<2 x half> %{{.*}}, !spirv.Decorations ![[#RTE]]
+; CHECK-LLVM-SPV: call spir_func <4 x float> @_Z16__spirv_ocl_sqrtDv4_f(<4 x float> %{{.*}}, !spirv.Decorations ![[#RTZ]]
+; CHECK-LLVM-SPV: call spir_func <3 x double> @_Z16__spirv_ocl_sqrtDv3_d(<3 x double> %{{.*}}, !spirv.Decorations ![[#RTP]]
+; CHECK-LLVM-SPV: call spir_func <3 x double> @_Z16__spirv_ocl_sqrtDv3_d(<3 x double> %{{.*}}, !spirv.Decorations ![[#RTN]]
 define spir_kernel void @test_sqrt_vector(<2 x half> %h, <4 x float> %f, <3 x double> %d) {
 entry:
   %h_rte = call <2 x half>   @llvm.experimental.constrained.sqrt.v2f16(<2 x half> %h,   metadata !"round.tonearest", metadata !"fpexcept.strict")
