@@ -41,11 +41,6 @@ target triple = "spir-unknown-unknown"
 ; CHECK-SPIRV-DAG: FDiv [[#FLOAT]] [[#F_RTZ]]
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#D_RTP]]
 ; CHECK-SPIRV-DAG: FDiv [[#DOUBLE]] [[#D_RTN]]
-
-; In SPV-IR mode the FPRoundingMode decoration (Decoration 39) is preserved as
-; an !spirv.Decorations metadata node, captured per rounding mode at its first
-; use below and verified at the end. The same node is shared across every
-; fdiv/sqrt of that mode (scalar and vector alike).
 ; CHECK-LLVM-LABEL: @test_fdiv_scalar
 ; CHECK-LLVM: fdiv half
 ; CHECK-LLVM-SPV-SAME: !spirv.Decorations ![[#RTE:]]
