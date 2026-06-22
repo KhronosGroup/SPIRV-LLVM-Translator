@@ -1717,8 +1717,7 @@ SPIRVValue *LLVMToSPIRVBase::transUnaryInst(UnaryInstruction *U,
       return BM->addNullConstant(bcast<SPIRVTypePointer>(TransTy));
     } else if (SrcAddrSpace == SPIRAS_CodeSectionINTEL) {
       getErrorLog().checkError(
-          BM->isAllowedToUseExtension(
-              ExtensionID::SPV_INTEL_function_pointers),
+          BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_function_pointers),
           SPIRVEC_InvalidModule, U,
           "Casts from CodeSectionINTEL address space require "
           "SPV_INTEL_function_pointers extension\n");
