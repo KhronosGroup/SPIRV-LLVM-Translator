@@ -2,12 +2,11 @@
 ; freeze in a phi loop without SPV_KHR_poison_freeze (llvm-reduce from device
 ; bitcode; debug info is not required).
 ;
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc -o %t.noext.spv
+; RUN: llvm-spirv %s -o %t.noext.spv
 ; RUN: llvm-spirv %t.noext.spv -to-text -o %t.noext.spt
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-NOEXT
 ;
-; RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
+; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_KHR_poison_freeze
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 
