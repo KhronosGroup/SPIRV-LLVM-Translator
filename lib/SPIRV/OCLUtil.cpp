@@ -723,7 +723,8 @@ BarrierLiterals getBarrierLiterals(CallInst *CI) {
 
   StringRef DemangledName;
   assert(CI->getCalledFunction() && "Unexpected indirect call");
-  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName)) {
+  if (!oclIsBuiltin(CI->getCalledFunction()->getName(), DemangledName,
+                    CI->getCalledFunction())) {
     assert(0 &&
            "call must a builtin (work_group_barrier or sub_group_barrier)");
   }
@@ -739,9 +740,10 @@ BarrierLiterals getBarrierLiterals(CallInst *CI) {
                          Scope);
 }
 
-unsigned getExtOp(StringRef OrigName, StringRef GivenDemangledName) {
+unsigned getExtOp(StringRef OrigName, Function *F,
+                  StringRef GivenDemangledName) {
   std::string DemangledName{GivenDemangledName};
-  if (DemangledName.empty() || !oclIsBuiltin(OrigName, GivenDemangledName))
+  if (DemangledName.empty() || !oclIsBuiltin(OrigName, GivenDemangledName, F))
     return ~0U;
   LLVM_DEBUG(dbgs() << "getExtOp: demangled name: " << DemangledName << '\n');
   OCLExtOpKind EOC;
