@@ -1018,13 +1018,9 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
           !isa<MDNode>(RuntimeAligned->getOperand(ArgNo)))
         IsRuntimeAligned = getMDOperandAsInt(RuntimeAligned, ArgNo);
       if (IsRuntimeAligned == 1) {
-        // TODO: to replace non-conformant to the spec decoration generation
-        // with:
-        // BM->addExtension(ExtensionID::SPV_INTEL_runtime_aligned);
-        // BM->addCapability(CapabilityRuntimeAlignedAttributeINTEL);
-        // BA->addAttr(FunctionParameterAttributeRuntimeAlignedINTEL);
-        BA->addDecorate(internal::DecorationRuntimeAlignedINTEL,
-                        IsRuntimeAligned);
+        BM->addExtension(ExtensionID::SPV_INTEL_runtime_aligned);
+        BM->addCapability(CapabilityRuntimeAlignedAttributeINTEL);
+        BA->addAttr(FunctionParameterAttributeRuntimeAlignedINTEL);
       }
     }
   }
