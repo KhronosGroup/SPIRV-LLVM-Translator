@@ -676,6 +676,7 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Acc.resize(WordCount - FixedWC);
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 private:
   SPIRVId SampledType;
@@ -800,6 +801,8 @@ public:
     MemberTypeIdVec.resize(WordCount - FixedWC);
   }
 
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
+
   // TODO: Should we attach operands of continued instructions as well?
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVEntry *> Operands(MemberTypeIdVec.size());
@@ -880,6 +883,7 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     ParamTypeIdVec.resize(WordCount - FixedWC);
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   void validate() const override {
     SPIRVEntry::validate();
     ReturnType->validate();
