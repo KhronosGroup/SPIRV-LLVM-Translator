@@ -77,9 +77,7 @@ enum InternalOp {
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
   IOpTypeTaskSequenceINTEL = 6199,
-  IOpClampConvertFToFINTEL = 6216,
   IOpStochasticRoundFToFINTEL = 6217,
-  IOpClampStochasticRoundFToFINTEL = 6218,
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
@@ -122,7 +120,8 @@ enum InternalCapability {
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
   ICapabilityFloat4E2M1INTEL = 6212,
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
-  ICapabilityFloatConversionsINTEL = 6215,
+  ICapabilityFloatConversionsFtoFINTEL = 6215,
+  ICapabilityFloatConversionsFtoSINTEL = 6216,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
@@ -258,11 +257,10 @@ _SPIRV_OP(Op, FSigmoidINTEL)
 _SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
 
-_SPIRV_OP(Capability, FloatConversionsINTEL)
-_SPIRV_OP(Op, ClampConvertFToFINTEL)
-_SPIRV_OP(Op, ClampConvertFToSINTEL)
+_SPIRV_OP(Capability, FloatConversionsFtoFINTEL)
 _SPIRV_OP(Op, StochasticRoundFToFINTEL)
-_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
+_SPIRV_OP(Capability, FloatConversionsFtoSINTEL)
+_SPIRV_OP(Op, ClampConvertFToSINTEL)
 _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 
