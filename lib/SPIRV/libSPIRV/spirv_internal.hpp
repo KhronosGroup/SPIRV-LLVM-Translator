@@ -71,9 +71,7 @@ enum InternalOp {
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
-  IOpClampConvertFToFINTEL = 6216,
   IOpStochasticRoundFToFINTEL = 6217,
-  IOpClampStochasticRoundFToFINTEL = 6218,
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
@@ -119,7 +117,8 @@ enum InternalCapability {
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
   ICapabilityFloat4E2M1INTEL = 6212,
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
-  ICapabilityFloatConversionsINTEL = 6215,
+  ICapabilityFloatConversionsFtoFINTEL = 6215,
+  ICapabilityFloatConversionsFtoSINTEL = 6216,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
@@ -172,7 +171,8 @@ enum InternalMatrixMultiplyAccumulateOperandsMask {
   IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat4E2M1INTELMask = 0x80000,
 };
 
-#define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
+#define _SPIRV_OP(x, y)                                                        \
+  [[maybe_unused]] constexpr x x##y = static_cast<x>(I##x##y);
 _SPIRV_OP(Capability, JointMatrixINTEL)
 _SPIRV_OP(Capability, JointMatrixWIInstructionsINTEL)
 _SPIRV_OP(Op, TypeJointMatrixINTEL)
@@ -224,11 +224,10 @@ _SPIRV_OP(Op, FSigmoidINTEL)
 _SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
 
-_SPIRV_OP(Capability, FloatConversionsINTEL)
-_SPIRV_OP(Op, ClampConvertFToFINTEL)
-_SPIRV_OP(Op, ClampConvertFToSINTEL)
+_SPIRV_OP(Capability, FloatConversionsFtoFINTEL)
 _SPIRV_OP(Op, StochasticRoundFToFINTEL)
-_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
+_SPIRV_OP(Capability, FloatConversionsFtoSINTEL)
+_SPIRV_OP(Op, ClampConvertFToSINTEL)
 _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 
