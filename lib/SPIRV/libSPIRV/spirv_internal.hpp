@@ -213,9 +213,9 @@ _SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
 
 _SPIRV_OP(Capability, FloatConversionsFtoFINTEL)
+_SPIRV_OP(Op, StochasticRoundFToFINTEL)
 _SPIRV_OP(Capability, FloatConversionsFtoSINTEL)
 _SPIRV_OP(Op, ClampConvertFToSINTEL)
-_SPIRV_OP(Op, StochasticRoundFToFINTEL)
 _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 #undef _SPIRV_OP
 

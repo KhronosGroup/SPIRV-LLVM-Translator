@@ -1154,9 +1154,10 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         return CI;
       }
     }
-    // OpStochasticRoundFToFINTEL has no native LLVM cast equivalent. For
-    // non-fp4/fp8/int4 types (handled via the __builtin_spirv path above) it
-    // is emitted as an __spirv_StochasticRoundFToFINTEL_R<type> builtin call.
+    // OpStochasticRoundFToFINTEL has no native LLVM cast equivalent.
+    // For fp4/fp8/int4 types, it is handled via the __builtin_spirv path above.
+    // For the remaining types it is emitted as an
+    // __spirv_StochasticRoundFToFINTEL_R<type> builtin call.
     if (OC == internal::OpStochasticRoundFToFINTEL)
       return mapValue(BV, transSPIRVBuiltinFromInst(
                               static_cast<SPIRVInstruction *>(BV), BB));

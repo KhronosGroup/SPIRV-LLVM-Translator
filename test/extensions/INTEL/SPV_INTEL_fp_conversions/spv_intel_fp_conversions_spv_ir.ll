@@ -2,7 +2,7 @@
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_fp_conversions
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV --implicit-check-not="Capability FloatConversionsFtoSINTEL"
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
