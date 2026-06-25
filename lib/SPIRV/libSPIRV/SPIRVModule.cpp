@@ -995,13 +995,23 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
   if (LocFwd != IdTypeForwardMap.end()) {
     return LocFwd->second;
   }
-  assert(false && "Id is not in map");
+  const_cast<SPIRVModuleImpl *>(this)->getErrorLog().checkError(
+      false, SPIRVEC_InvalidModule,
+      "input SPIR-V module references an id that is not defined: " +
+          std::to_string(Id));
   return nullptr;
 }
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {
   auto Loc = IdToInstSetMap.find(SetId);
-  assert(Loc != IdToInstSetMap.end() && "Invalid builtin set id");
+  if (Loc == IdToInstSetMap.end()) {
+    const_cast<SPIRVModuleImpl *>(this)->getErrorLog().checkError(
+        false, SPIRVEC_InvalidModule,
+        "input SPIR-V module references an unknown extended instruction set "
+        "id " +
+            std::to_string(SetId));
+    return SPIRVEIS_Count;
+  }
   return Loc->second;
 }
 
@@ -2479,7 +2489,13 @@ static SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   }
   validateWordCount(M, IS, WordCount);
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
-  assert(Entry);
+  if (!M.getErrorLog().checkError(
+          Entry != nullptr, SPIRVEC_InvalidInstruction,
+          "input SPIR-V module has an invalid or unknown opcode " +
+              std::to_string(OpCode))) {
+    M.setInvalid();
+    return nullptr;
+  }
   Entry->setModule(&M);
   if (Scope && !isModuleScopeAllowedOpCode(OpCode)) {
     Entry->setScope(Scope);

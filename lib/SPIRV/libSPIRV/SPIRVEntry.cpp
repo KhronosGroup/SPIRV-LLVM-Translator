@@ -704,8 +704,8 @@ void SPIRVExecutionMode::decode(std::istream &I) {
 SPIRVForward *SPIRVAnnotationGeneric::getOrCreateTarget() const {
   SPIRVEntry *Entry = nullptr;
   bool Found = Module->exist(Target, &Entry);
-  assert((!Found || Entry->getOpCode() == internal::OpForward) &&
-         "Annotations only allowed on forward");
+  SPIRVCK(!Found || (Entry && Entry->getOpCode() == internal::OpForward),
+          InvalidInstruction, "Annotations only allowed on forward");
   if (!Found)
     Entry = Module->addForward(Target, nullptr);
   return static_cast<SPIRVForward *>(Entry);
@@ -740,7 +740,9 @@ void SPIRVLine::decode(std::istream &I) {
 void SPIRVLine::validate() const {
   assert(OpCode == OpLine);
   assert(WordCount == 4);
-  assert(get<SPIRVEntry>(FileName)->getOpCode() == OpString);
+  SPIRVCK(get<SPIRVEntry>(FileName) &&
+              get<SPIRVEntry>(FileName)->getOpCode() == OpString,
+          InvalidInstruction, "OpLine file operand is not an OpString");
   assert(Line != SPIRVWORD_MAX);
   assert(Column != SPIRVWORD_MAX);
   assert(!hasId());
@@ -749,7 +751,10 @@ void SPIRVLine::validate() const {
 void SPIRVMemberName::validate() const {
   assert(OpCode == OpMemberName);
   assert(WordCount == getSizeInWords(Str) + FixedWC);
-  assert(get<SPIRVEntry>(Target)->getOpCode() == OpTypeStruct);
+  SPIRVCK(get<SPIRVEntry>(Target) &&
+              get<SPIRVEntry>(Target)->getOpCode() == OpTypeStruct,
+          InvalidInstruction,
+          "OpMemberName target is not an OpTypeStruct");
   assert(MemberNumber < get<SPIRVTypeStruct>(Target)->getStructMemberCount());
 }
 

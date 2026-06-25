@@ -241,7 +241,11 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
   if (WordCount == 0 || OpCode == OpNop)
     return nullptr;
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
-  assert(Entry);
+  if (!M.getErrorLog().checkError(
+          Entry != nullptr, SPIRVEC_InvalidInstruction,
+          "input SPIR-V module has an invalid or unknown opcode " +
+              std::to_string(OpCode)))
+    return nullptr;
   Entry->setModule(&M);
   if (isModuleScopeAllowedOpCode(OpCode) && !Scope) {
   } else
@@ -338,7 +342,10 @@ SPIRVDecoder::getContinuedInstructions(const spv::Op ContinuedOpCode) {
   getWordCountAndOpCode();
   while (OpCode == ContinuedOpCode) {
     SPIRVEntry *Entry = getEntry();
-    assert(Entry && "Failed to decode entry! Invalid instruction!");
+    if (!M.getErrorLog().checkError(
+            Entry != nullptr, SPIRVEC_InvalidInstruction,
+            "Failed to decode entry! Invalid instruction!"))
+      break;
     M.add(Entry);
     ContinuedInst.push_back(Entry);
     Pos = IS.tellg();
@@ -354,7 +361,10 @@ std::vector<SPIRVEntry *> SPIRVDecoder::getSourceContinuedInstructions() {
   getWordCountAndOpCode();
   while (OpCode == OpExtInst) {
     SPIRVEntry *Entry = getEntry();
-    assert(Entry && "Failed to decode entry! Invalid instruction!");
+    if (!M.getErrorLog().checkError(
+            Entry != nullptr, SPIRVEC_InvalidInstruction,
+            "Failed to decode entry! Invalid instruction!"))
+      break;
     SPIRVExtInst *Inst = static_cast<SPIRVExtInst *>(Entry);
     if (Inst->getExtOp() != SPIRVDebug::Instruction::SourceContinued) {
       IS.seekg(Pos); // restore position
