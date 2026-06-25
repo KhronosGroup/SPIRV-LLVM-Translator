@@ -725,7 +725,8 @@ protected:
   void validate() const override {
     assert(OpCode == OC);
     assert(WordCount == FixedWC);
-    assert(ImgTy && ImgTy->isTypeImage());
+    SPIRVCK(ImgTy && ImgTy->isTypeImage(), InvalidInstruction,
+            "Sampled image type must reference an image type");
   }
 };
 
@@ -1088,7 +1089,8 @@ protected:
   void validate() const override {
     assert(OpCode == OC);
     assert(WordCount == FixedWC);
-    assert(ImgTy && ImgTy->isTypeImage());
+    SPIRVCK(ImgTy && ImgTy->isTypeImage(), InvalidInstruction,
+            "VME image type must reference an image type");
   }
 };
 

@@ -300,7 +300,8 @@ SPIRVTypeArray::SPIRVTypeArray(SPIRVModule *M, SPIRVId TheId,
 void SPIRVTypeArray::validate() const {
   SPIRVEntry::validate();
   ElemType->validate();
-  assert(getValue(Length)->getType()->isTypeInt());
+  SPIRVCK(getValue(Length)->getType()->isTypeInt(), InvalidInstruction,
+          "Array length must be of integer type");
   assert(isConstantOpCode(getValue(Length)->getOpCode()));
 }
 

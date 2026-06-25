@@ -257,7 +257,9 @@ void SPIRVGroupDecorate::decorateTargets() {
   for (auto &I : Targets) {
     auto *Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
-      assert(Dec->isDecorate());
+      if (!SPIRVCK(Dec->isDecorate(), InvalidInstruction,
+                   "Expected a Decorate in the decoration group"))
+        continue;
       Target->addDecorate(static_cast<SPIRVDecorate *>(Dec));
     }
   }
@@ -267,7 +269,9 @@ void SPIRVGroupMemberDecorate::decorateTargets() {
   for (auto &I : Targets) {
     auto *Target = getOrCreate(I);
     for (auto &Dec : DecorationGroup->getDecorations()) {
-      assert(Dec->isMemberDecorate());
+      if (!SPIRVCK(Dec->isMemberDecorate(), InvalidInstruction,
+                   "Expected a MemberDecorate in the decoration group"))
+        continue;
       Target->addMemberDecorate(static_cast<SPIRVMemberDecorate *>(Dec));
     }
   }

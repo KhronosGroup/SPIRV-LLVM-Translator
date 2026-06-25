@@ -518,7 +518,8 @@ protected:
     SPIRVValue::validate();
     assert(isValid(StorageClass));
     assert(Initializer.size() == 1 || Initializer.empty());
-    assert(getType()->isTypePointer());
+    SPIRVCK(getType()->isTypePointer(), InvalidInstruction,
+            "Variable type must be a pointer");
   }
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);
@@ -650,12 +651,12 @@ protected:
     SPIRVInstruction::validate();
     if (getSrc()->isForward() || getDst()->isForward())
       return;
-    assert(
+    SPIRVCK(
         (getValueType(PtrId)
              ->getPointerElementType()
              ->isTypeUntypedPointerKHR() ||
-         getValueType(PtrId)->getPointerElementType() == getValueType(ValId)) &&
-        "Inconsistent operand types");
+         getValueType(PtrId)->getPointerElementType() == getValueType(ValId)),
+        InvalidInstruction, "Inconsistent operand types");
   }
 
 private:
@@ -705,13 +706,13 @@ protected:
 
   void validate() const override {
     SPIRVInstruction::validate();
-    assert((getValue(PtrId)->isForward() ||
-            getValueType(PtrId)
-                ->getPointerElementType()
-                ->isTypeUntypedPointerKHR() ||
-            Type->isTypeUntypedPointerKHR() ||
-            Type == getValueType(PtrId)->getPointerElementType()) &&
-           "Inconsistent types");
+    SPIRVCK((getValue(PtrId)->isForward() ||
+             getValueType(PtrId)
+                 ->getPointerElementType()
+                 ->isTypeUntypedPointerKHR() ||
+             Type->isTypeUntypedPointerKHR() ||
+             Type == getValueType(PtrId)->getPointerElementType()),
+            InvalidInstruction, "Inconsistent types");
   }
 
 private:
@@ -748,29 +749,31 @@ protected:
     if (isBinaryOpCode(OpCode)) {
       assert(getValueType(Op1) == getValueType(Op2) &&
              "Invalid type for binary instruction");
-      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
-             "Invalid type for Binary instruction");
+      SPIRVCK((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()), InvalidInstruction,
+              "Invalid type for Binary instruction");
       assert((Op1Ty->getBitWidth() == Op2Ty->getBitWidth()) &&
              "Inconsistent BitWidth");
     } else if (isShiftOpCode(OpCode)) {
-      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
-             "Invalid type for shift instruction");
+      SPIRVCK((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()), InvalidInstruction,
+              "Invalid type for shift instruction");
     } else if (isLogicalOpCode(OpCode)) {
-      assert((Op1Ty->isTypeBool() || Op2Ty->isTypeBool()) &&
-             "Invalid type for logical instruction");
+      SPIRVCK((Op1Ty->isTypeBool() || Op2Ty->isTypeBool()), InvalidInstruction,
+              "Invalid type for logical instruction");
     } else if (isBitwiseOpCode(OpCode)) {
-      assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
-             "Invalid type for bitwise instruction");
+      SPIRVCK((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()), InvalidInstruction,
+              "Invalid type for bitwise instruction");
       assert((Op1Ty->getIntegerBitWidth() == Op2Ty->getIntegerBitWidth()) &&
              "Inconsistent BitWidth");
     } else if (isBinaryPtrOpCode(OpCode)) {
-      assert((Op1Ty->isTypePointer() && Op2Ty->isTypePointer()) &&
-             "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
+      SPIRVCK((Op1Ty->isTypePointer() && Op2Ty->isTypePointer()),
+              InvalidInstruction,
+              "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
       if (!Op1Ty->isTypeUntypedPointerKHR() ||
           !Op2Ty->isTypeUntypedPointerKHR())
-        assert(
+        SPIRVCK(
             static_cast<SPIRVTypePointer *>(Op1Ty)->getElementType() ==
-                static_cast<SPIRVTypePointer *>(Op2Ty)->getElementType() &&
+                static_cast<SPIRVTypePointer *>(Op2Ty)->getElementType(),
+            InvalidInstruction,
             "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
       else if (OpCode == OpPtrDiff)
         assert(Op1Ty == Op2Ty && "Invalid types for PtrDiff instruction");
@@ -1002,8 +1005,9 @@ protected:
     assert(WordCount == FixedWC || WordCount == FixedWC + 2);
     assert(WordCount == BranchWeights.size() + FixedWC);
     assert(OpCode == OC);
-    assert(getCondition()->isForward() ||
-           getCondition()->getType()->isTypeBool());
+    SPIRVCK(getCondition()->isForward() ||
+                getCondition()->getType()->isTypeBool(),
+            InvalidInstruction, "Condition must be of boolean type");
     assert(getTrueLabel()->isForward() || getTrueLabel()->isLabel());
     assert(getFalseLabel()->isForward() || getFalseLabel()->isLabel());
     if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
@@ -1135,8 +1139,8 @@ protected:
     if (OpCode == OpLessOrGreater)
       assert(this->getModule()->getSPIRVVersion() <= VersionNumber::SPIRV_1_5 &&
              "OpLessOrGreater is removed starting from SPIR-V 1.6");
-    assert((ResTy->isTypeBool() || ResTy->isTypeInt()) &&
-           "Invalid type for compare instruction");
+    SPIRVCK((ResTy->isTypeBool() || ResTy->isTypeInt()), InvalidInstruction,
+            "Invalid type for compare instruction");
     assert(Op1Ty == Op2Ty && "Inconsistent types");
   }
 };
@@ -1194,7 +1198,7 @@ protected:
                            ? getValueType(Condition)->getVectorComponentType()
                            : getValueType(Condition);
     (void)ConTy;
-    assert(ConTy->isTypeBool() && "Invalid type");
+    SPIRVCK(ConTy->isTypeBool(), InvalidInstruction, "Invalid type");
     assert(getType() == getValueType(Op1) && getType() == getValueType(Op2) &&
            "Inconsistent type");
   }
@@ -1392,12 +1396,14 @@ public:
     if (getValue(Vector)->isForward() || getValue(Scalar)->isForward())
       return;
 
-    assert(getValueType(Vector)->isTypeVector() &&
-           getValueType(Vector)->getVectorComponentType()->isTypeFloat() &&
-           "First operand must be a vector of floating-point type");
-    assert(getValueType(getId())->isTypeVector() &&
-           getValueType(getId())->getVectorComponentType()->isTypeFloat() &&
-           "Result type must be a vector of floating-point type");
+    SPIRVCK(getValueType(Vector)->isTypeVector() &&
+                getValueType(Vector)->getVectorComponentType()->isTypeFloat(),
+            InvalidInstruction,
+            "First operand must be a vector of floating-point type");
+    SPIRVCK(getValueType(getId())->isTypeVector() &&
+                getValueType(getId())->getVectorComponentType()->isTypeFloat(),
+            InvalidInstruction,
+            "Result type must be a vector of floating-point type");
     assert(
         getValueType(Vector)->getVectorComponentType() ==
             getValueType(getId())->getVectorComponentType() &&
@@ -1457,9 +1463,12 @@ public:
     (void)Ty;
     (void)MTy;
     (void)VTy;
-    assert(Ty->isTypeFloat() && "Invalid result type for OpVectorTimesMatrix");
-    assert(VTy->isTypeFloat() && "Invalid Vector type for OpVectorTimesMatrix");
-    assert(MTy->isTypeFloat() && "Invalid Matrix type for OpVectorTimesMatrix");
+    SPIRVCK(Ty->isTypeFloat(), InvalidInstruction,
+            "Invalid result type for OpVectorTimesMatrix");
+    SPIRVCK(VTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Vector type for OpVectorTimesMatrix");
+    SPIRVCK(MTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Matrix type for OpVectorTimesMatrix");
 
     assert(Ty == MTy && Ty == VTy && "Mismatch float type");
   }
@@ -1513,11 +1522,12 @@ public:
     (void)Ty;
     (void)MTy;
     (void)STy;
-    assert(Ty && Ty->isTypeFloat() &&
-           "Invalid result type for OpMatrixTimesScalar");
-    assert(MTy && MTy->isTypeFloat() &&
-           "Invalid Matrix type for OpMatrixTimesScalar");
-    assert(STy->isTypeFloat() && "Invalid Scalar type for OpMatrixTimesScalar");
+    SPIRVCK(Ty && Ty->isTypeFloat(), InvalidInstruction,
+            "Invalid result type for OpMatrixTimesScalar");
+    SPIRVCK(MTy && MTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Matrix type for OpMatrixTimesScalar");
+    SPIRVCK(STy->isTypeFloat(), InvalidInstruction,
+            "Invalid Scalar type for OpMatrixTimesScalar");
     assert(Ty == MTy && Ty == STy && "Mismatch float type");
   }
 
@@ -1573,9 +1583,12 @@ public:
     (void)Ty;
     (void)MTy;
     (void)VTy;
-    assert(Ty->isTypeFloat() && "Invalid result type for OpMatrixTimesVector");
-    assert(MTy->isTypeFloat() && "Invalid Matrix type for OpMatrixTimesVector");
-    assert(VTy->isTypeFloat() && "Invalid Vector type for OpMatrixTimesVector");
+    SPIRVCK(Ty->isTypeFloat(), InvalidInstruction,
+            "Invalid result type for OpMatrixTimesVector");
+    SPIRVCK(MTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Matrix type for OpMatrixTimesVector");
+    SPIRVCK(VTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Vector type for OpMatrixTimesVector");
 
     assert(Ty == MTy && Ty == VTy && "Mismatch float type");
   }
@@ -1633,11 +1646,12 @@ public:
     (void)Ty;
     (void)LMTy;
     (void)RMTy;
-    assert(Ty->isTypeFloat() && "Invalid result type for OpMatrixTimesMatrix");
-    assert(LMTy->isTypeFloat() &&
-           "Invalid Matrix type for OpMatrixTimesMatrix");
-    assert(RMTy->isTypeFloat() &&
-           "Invalid Matrix type for OpMatrixTimesMatrix");
+    SPIRVCK(Ty->isTypeFloat(), InvalidInstruction,
+            "Invalid result type for OpMatrixTimesMatrix");
+    SPIRVCK(LMTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Matrix type for OpMatrixTimesMatrix");
+    SPIRVCK(RMTy->isTypeFloat(), InvalidInstruction,
+            "Invalid Matrix type for OpMatrixTimesMatrix");
 
     assert(Ty == LMTy && Ty == RMTy && "Mismatch float type");
   }
@@ -1688,7 +1702,8 @@ public:
     (void)Ty;
     (void)MTy;
 
-    assert(Ty->isTypeFloat() && "Invalid result type for OpTranspose");
+    SPIRVCK(Ty->isTypeFloat(), InvalidInstruction,
+            "Invalid result type for OpTranspose");
     assert(Ty == MTy && "Mismatch float type");
   }
 
@@ -1726,8 +1741,8 @@ protected:
       (void)ResTy;
       (void)OpTy;
       assert(getType() == getValueType(Op) && "Inconsistent type");
-      assert((ResTy->isTypeInt() || ResTy->isTypeFloat()) &&
-             "Invalid type for Generic Negate instruction");
+      SPIRVCK((ResTy->isTypeInt() || ResTy->isTypeFloat()), InvalidInstruction,
+              "Invalid type for Generic Negate instruction");
       assert((ResTy->getBitWidth() == OpTy->getBitWidth()) &&
              "Invalid bitwidth for Generic Negate instruction");
       assert((Type->isTypeVector()
@@ -2216,10 +2231,11 @@ protected:
     assert(OpCode == OpCompositeExtract);
     SPIRVId Composite = Ops[0];
     (void)Composite;
-    assert(getValueType(Composite)->isTypeArray() ||
-           getValueType(Composite)->isTypeStruct() ||
-           getValueType(Composite)->isTypeVector() ||
-           getValueType(Composite)->isTypeUntypedPointerKHR());
+    SPIRVCK(getValueType(Composite)->isTypeArray() ||
+                getValueType(Composite)->isTypeStruct() ||
+                getValueType(Composite)->isTypeVector() ||
+                getValueType(Composite)->isTypeUntypedPointerKHR(),
+            InvalidInstruction, "Invalid Composite type");
   }
 };
 
@@ -2243,10 +2259,11 @@ protected:
     assert(OpCode == OpCompositeInsert);
     SPIRVId Composite = Ops[1];
     (void)Composite;
-    assert(getValueType(Composite)->isTypeArray() ||
-           getValueType(Composite)->isTypeStruct() ||
-           getValueType(Composite)->isTypeVector() ||
-           getValueType(Composite)->isTypeUntypedPointerKHR());
+    SPIRVCK(getValueType(Composite)->isTypeArray() ||
+                getValueType(Composite)->isTypeStruct() ||
+                getValueType(Composite)->isTypeVector() ||
+                getValueType(Composite)->isTypeUntypedPointerKHR(),
+            InvalidInstruction, "Invalid Composite type");
     assert(Type == getValueType(Composite));
   }
 };
@@ -2347,12 +2364,14 @@ protected:
   }
 
   void validate() const override {
-    assert(getValueType(Target)->isTypePointer() && "Invalid Target type");
-    assert(getValueType(Source)->isTypePointer() && "Invalid Source type");
-    assert(!(getValueType(Target)->getPointerElementType()->isTypeVoid()) &&
-           "Invalid Target element type");
-    assert(!(getValueType(Source)->getPointerElementType()->isTypeVoid()) &&
-           "Invalid Source element type");
+    SPIRVCK(getValueType(Target)->isTypePointer(), InvalidInstruction,
+            "Invalid Target type");
+    SPIRVCK(getValueType(Source)->isTypePointer(), InvalidInstruction,
+            "Invalid Source type");
+    SPIRVCK(!(getValueType(Target)->getPointerElementType()->isTypeVoid()),
+            InvalidInstruction, "Invalid Target element type");
+    SPIRVCK(!(getValueType(Source)->getPointerElementType()->isTypeVoid()),
+            InvalidInstruction, "Invalid Source element type");
     assert(getValueType(Target)->getPointerElementType() ==
                getValueType(Source)->getPointerElementType() &&
            "Mismatching Target and Source element types");
@@ -2453,7 +2472,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    SPIRVCK(getValueType(VectorId)->isTypeVector(), InvalidInstruction,
+            "Operand must be a vector");
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2490,7 +2510,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    SPIRVCK(getValueType(VectorId)->isTypeVector(), InvalidInstruction,
+            "Operand must be a vector");
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2510,9 +2531,11 @@ protected:
     SPIRVInstruction::validate();
     [[maybe_unused]] SPIRVId Vector1 = Ops[0];
     assert(OpCode == OpVectorShuffle);
-    assert(Type->isTypeVector());
-    assert(Type->getVectorComponentType() ==
-           getValueType(Vector1)->getVectorComponentType());
+    SPIRVCK(Type->isTypeVector(), InvalidInstruction,
+            "Result type must be a vector");
+    SPIRVCK(Type->getVectorComponentType() ==
+                getValueType(Vector1)->getVectorComponentType(),
+            InvalidInstruction, "Inconsistent vector component type");
     assert(Ops.size() - 2 == Type->getVectorComponentCount());
   }
 };
@@ -2624,12 +2647,13 @@ public:
 
 protected:
   void validate() const override {
-    [[maybe_unused]] auto ObjType = getValue(Object)->getType();
+    auto ObjType = getValue(Object)->getType();
     // Type must be an OpTypePointer with Storage Class Function.
-    assert(ObjType->isTypePointer() && "Objects type must be a pointer");
-    assert(static_cast<SPIRVTypePointer *>(ObjType)->getStorageClass() ==
-               StorageClassFunction &&
-           "Invalid storage class");
+    SPIRVCK(ObjType->isTypePointer(), InvalidInstruction,
+            "Objects type must be a pointer");
+    SPIRVCK(static_cast<SPIRVTypePointer *>(ObjType)->getStorageClass() ==
+                StorageClassFunction,
+            InvalidInstruction, "Invalid storage class");
   }
   _SPIRV_DEF_ENCDEC2(Object, Size)
   SPIRVId Object;
@@ -3356,8 +3380,10 @@ protected:
 
     assert(getValueType(Vec1) == getValueType(Vec2) &&
            "Input vectors must have the same type");
-    assert(getType()->isTypeInt() && "Result type must be an integer type");
-    assert(!getType()->isTypeVector() && "Result type must be scalar");
+    SPIRVCK(getType()->isTypeInt(), InvalidInstruction,
+            "Result type must be an integer type");
+    SPIRVCK(!getType()->isTypeVector(), InvalidInstruction,
+            "Result type must be scalar");
   }
 
 private:
@@ -3384,8 +3410,8 @@ private:
     if (auto PackFmt = getPackedVectorFormat()) {
       switch (*PackFmt) {
       case PackedVectorFormatPackedVectorFormat4x8BitKHR:
-        assert(!T->isTypeVector() && T->isTypeInt() && T->getBitWidth() == 32 &&
-               "Type does not match pack format");
+        SPIRVCK(!T->isTypeVector() && T->isTypeInt() && T->getBitWidth() == 32,
+                InvalidInstruction, "Type does not match pack format");
         return CapabilityDotProductInput4x8BitPackedKHR;
       case PackedVectorFormatMax:
         break;
@@ -3758,8 +3784,9 @@ protected:
           InstName + "\nCan be used with "
                      "cooperative matrices only when SPV_INTEL_joint_matrix is "
                      "enabled\n");
-      assert(InCompTy->isTypeCooperativeMatrixKHR() &&
-             "Input must also be a cooperative matrix");
+      SPVErrLog.checkError(
+          InCompTy->isTypeCooperativeMatrixKHR(), SPIRVEC_InvalidInstruction,
+          InstName + "\nInput must also be a cooperative matrix\n");
       ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
                       ->getCompType();
       InCompTy =
@@ -4166,8 +4193,9 @@ protected:
           InstName + "\nCan be used with "
                      "cooperative matrices only when SPV_INTEL_joint_matrix is "
                      "enabled\n");
-      assert(InCompTy->isTypeCooperativeMatrixKHR() &&
-             "Input must also be a cooperative matrix");
+      SPVErrLog.checkError(
+          InCompTy->isTypeCooperativeMatrixKHR(), SPIRVEC_InvalidInstruction,
+          InstName + "\nInput must also be a cooperative matrix\n");
       ResCompTy = static_cast<SPIRVTypeCooperativeMatrixKHR *>(ResCompTy)
                       ->getCompType();
       InCompTy =

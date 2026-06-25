@@ -254,7 +254,7 @@ public:
 protected:
   void validate() const override {
     SPIRVConstantEmpty<OC>::validate();
-    assert(this->Type->isTypeBool() && "Invalid type");
+    SPIRVCK(this->Type->isTypeBool(), InvalidInstruction, "Invalid type");
   }
 };
 
@@ -276,13 +276,13 @@ public:
 protected:
   void validate() const override {
     SPIRVConstantEmpty::validate();
-    assert((Type->isTypeBool() || Type->isTypeInt() || Type->isTypeFloat() ||
-            Type->isTypeComposite() || Type->isTypeOpaque() ||
-            Type->isTypeEvent() || Type->isTypePointer() ||
-            Type->isTypeReserveId() || Type->isTypeDeviceEvent() ||
-            (Type->isTypeSubgroupAvcINTEL() &&
-             !Type->isTypeSubgroupAvcMceINTEL())) &&
-           "Invalid type");
+    SPIRVCK((Type->isTypeBool() || Type->isTypeInt() || Type->isTypeFloat() ||
+             Type->isTypeComposite() || Type->isTypeOpaque() ||
+             Type->isTypeEvent() || Type->isTypePointer() ||
+             Type->isTypeReserveId() || Type->isTypeDeviceEvent() ||
+             (Type->isTypeSubgroupAvcINTEL() &&
+              !Type->isTypeSubgroupAvcMceINTEL())),
+            InvalidInstruction, "Invalid type");
   }
 };
 
@@ -428,7 +428,8 @@ protected:
     SPIRVValue::validate();
     assert(OpCode == OC);
     assert(WordCount == WC);
-    assert(Type->isTypeSampler());
+    SPIRVCK(Type->isTypeSampler(), InvalidInstruction,
+            "Constant sampler type must be a sampler");
   }
   _SPIRV_DEF_ENCDEC5(Type, Id, AddrMode, Normalized, FilterMode)
 };
@@ -466,7 +467,8 @@ protected:
     SPIRVValue::validate();
     assert(OpCode == OC);
     assert(WordCount == WC);
-    assert(Type->isTypePipeStorage());
+    SPIRVCK(Type->isTypePipeStorage(), InvalidInstruction,
+            "Constant pipe storage type must be a pipe storage");
   }
   _SPIRV_DEF_ENCDEC5(Type, Id, PacketSize, PacketAlign, Capacity)
 };
