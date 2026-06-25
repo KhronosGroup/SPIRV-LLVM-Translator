@@ -171,7 +171,9 @@ const SPIRVDecoder &operator>>(const SPIRVDecoder &I, std::string &Str) {
   Count = Count ? 4 - Count : 0;
   for (; Count; --Count) {
     I.IS >> Ch;
-    assert(Ch == '\0' && "Invalid string in SPIRV");
+    const_cast<SPIRVModule &>(I.M).getErrorLog().checkError(
+        Ch == '\0', SPIRVEC_InvalidModule, "Invalid string in SPIRV",
+        "Ch == '\\0'");
   }
   SPIRVDBG(spvdbgs() << "Read string: \"" << Str << "\"\n");
   return I;
@@ -206,7 +208,9 @@ bool SPIRVDecoder::getWordCountAndOpCode() {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   if (SPIRVUseTextFormat) {
     *this >> WordCount;
-    assert(!IS.bad() && "SPIRV stream is bad");
+    if (!M.getErrorLog().checkError(!IS.bad(), SPIRVEC_InvalidModule,
+                                    "SPIRV stream is bad", "!IS.bad()"))
+      return false;
     if (IS.fail()) {
       WordCount = 0;
       OpCode = OpNop;
@@ -224,7 +228,9 @@ bool SPIRVDecoder::getWordCountAndOpCode() {
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
   }
 #endif
-  assert(!IS.bad() && "SPIRV stream is bad");
+  if (!M.getErrorLog().checkError(!IS.bad(), SPIRVEC_InvalidModule,
+                                  "SPIRV stream is bad", "!IS.bad()"))
+    return false;
   if (IS.fail()) {
     WordCount = 0;
     OpCode = OpNop;
@@ -291,14 +297,20 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
     M.setInvalid();
   }
 
-  assert(!IS.bad() && !IS.fail() && "SPIRV stream fails");
+  if (!M.getErrorLog().checkError(!IS.bad() && !IS.fail(),
+                                  SPIRVEC_InvalidModule, "SPIRV stream fails",
+                                  "!IS.bad() && !IS.fail()")) {
+    M.setInvalid();
+  }
   return Entry;
 }
 
 void SPIRVDecoder::validate() const {
-  assert(OpCode != OpNop && "Invalid op code");
+  M.getErrorLog().checkError(OpCode != OpNop, SPIRVEC_InvalidModule,
+                             "Invalid op code", "OpCode != OpNop");
   assert(WordCount && "Invalid word count");
-  assert(!IS.bad() && "Bad iInput stream");
+  M.getErrorLog().checkError(!IS.bad(), SPIRVEC_InvalidModule,
+                             "Bad input stream", "!IS.bad()");
 }
 
 // Skip \param n words in SPIR-V binary stream.

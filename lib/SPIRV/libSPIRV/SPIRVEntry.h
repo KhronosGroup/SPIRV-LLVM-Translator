@@ -406,7 +406,7 @@ public:
   /// Checks the integrity of the object.
   virtual void validate() const {
     assert(Module && "Invalid module");
-    assert(OpCode != OpNop && "Invalid op code");
+    SPIRVCK(OpCode != OpNop, InvalidModule, "Invalid op code");
     assert((!hasId() || isValidId(Id)) && "Invalid Id");
     if (WordCount > 65535) {
       std::stringstream SS;

@@ -2531,7 +2531,11 @@ static SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
     M.setInvalid();
   }
 
-  assert(!IS.bad() && !IS.fail() && "SPIRV stream fails");
+  if (!M.getErrorLog().checkError(!IS.bad() && !IS.fail(),
+                                  SPIRVEC_InvalidModule, "SPIRV stream fails",
+                                  "!IS.bad() && !IS.fail()")) {
+    M.setInvalid();
+  }
   return Entry;
 }
 
