@@ -282,11 +282,9 @@ public:
   }
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);
-    auto NumOps = WordCount - 1;
-    if (hasId())
-      --NumOps;
-    if (hasType())
-      --NumOps;
+    SPIRVWord MinWC = 1 + (hasId() ? 1 : 0) + (hasType() ? 1 : 0);
+    SPIRVCK(WordCount >= MinWC, InvalidWordCount, "");
+    auto NumOps = WordCount - MinWC;
     Ops.resize(NumOps);
   }
 
