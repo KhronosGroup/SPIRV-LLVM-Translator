@@ -765,9 +765,10 @@ protected:
       assert((Op1Ty->getIntegerBitWidth() == Op2Ty->getIntegerBitWidth()) &&
              "Inconsistent BitWidth");
     } else if (isBinaryPtrOpCode(OpCode)) {
-      SPIRVCK((Op1Ty->isTypePointer() && Op2Ty->isTypePointer()),
-              InvalidInstruction,
-              "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
+      SPIRVCK(
+          (Op1Ty->isTypePointer() && Op2Ty->isTypePointer()),
+          InvalidInstruction,
+          "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
       if (!Op1Ty->isTypeUntypedPointerKHR() ||
           !Op2Ty->isTypeUntypedPointerKHR())
         SPIRVCK(

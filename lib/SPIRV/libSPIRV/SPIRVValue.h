@@ -252,6 +252,7 @@ public:
   SPIRVConstantBool() {}
 
 protected:
+  using SPIRVEntry::getErrorLog;
   void validate() const override {
     SPIRVConstantEmpty<OC>::validate();
     SPIRVCK(this->Type->isTypeBool(), InvalidInstruction, "Invalid type");
