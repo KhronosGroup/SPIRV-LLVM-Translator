@@ -753,8 +753,7 @@ void SPIRVMemberName::validate() const {
   assert(WordCount == getSizeInWords(Str) + FixedWC);
   SPIRVCK(get<SPIRVEntry>(Target) &&
               get<SPIRVEntry>(Target)->getOpCode() == OpTypeStruct,
-          InvalidInstruction,
-          "OpMemberName target is not an OpTypeStruct");
+          InvalidInstruction, "OpMemberName target is not an OpTypeStruct");
   assert(MemberNumber < get<SPIRVTypeStruct>(Target)->getStructMemberCount());
 }
 

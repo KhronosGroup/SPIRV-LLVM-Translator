@@ -951,8 +951,8 @@ protected:
     SPIRVInstruction::validate();
     assert(WordCount == 2);
     assert(OpCode == OC);
-    SPIRVCK(getTargetLabel() && (getTargetLabel()->isLabel() ||
-                                 getTargetLabel()->isForward()),
+    SPIRVCK(getTargetLabel() &&
+                (getTargetLabel()->isLabel() || getTargetLabel()->isForward()),
             InvalidInstruction, "OpBranch target is not a valid label");
   }
   SPIRVId TargetLabelId;
@@ -1082,8 +1082,8 @@ public:
     assert(Pairs.size() % 2 == 0);
     foreachPair([this](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB) {
       assert(IncomingV->isForward() || IncomingV->getType() == Type);
-      SPIRVCK(IncomingBB && (IncomingBB->isBasicBlock() ||
-                             IncomingBB->isForward()),
+      SPIRVCK(IncomingBB &&
+                  (IncomingBB->isBasicBlock() || IncomingBB->isForward()),
               InvalidInstruction, "OpPhi incoming block is not a basic block");
     });
     SPIRVInstruction::validate();
