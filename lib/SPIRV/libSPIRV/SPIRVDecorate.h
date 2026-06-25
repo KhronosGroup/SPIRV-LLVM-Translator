@@ -230,7 +230,7 @@ public:
   void setWordCount(SPIRVWord) override;
   void validate() const override {
     SPIRVDecorateGeneric::validate();
-    assert(WordCount == Literals.size() + FixedWC);
+    SPIRVCK(WordCount == Literals.size() + FixedWC, InvalidWordCount, "");
   }
 };
 
@@ -260,7 +260,7 @@ public:
   void setWordCount(SPIRVWord) override;
   void validate() const override {
     SPIRVDecorateGeneric::validate();
-    assert(WordCount == Literals.size() + FixedWC);
+    SPIRVCK(WordCount == Literals.size() + FixedWC, InvalidWordCount, "");
   }
 };
 
@@ -389,7 +389,7 @@ public:
 
   void validate() const override {
     SPIRVDecorateGeneric::validate();
-    assert(WordCount == Literals.size() + FixedWC);
+    SPIRVCK(WordCount == Literals.size() + FixedWC, InvalidWordCount, "");
   }
 
 protected:
@@ -425,7 +425,7 @@ protected:
   SPIRVDecorateVec Decorations;
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == WC);
+    SPIRVCK(WordCount == WC, InvalidWordCount, "");
   }
 };
 

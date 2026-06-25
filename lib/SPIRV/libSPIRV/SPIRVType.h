@@ -286,7 +286,7 @@ protected:
   }
 
   void decode(std::istream &I) override {
-    assert(WordCount == 3 || WordCount == 4);
+    SPIRVCK(WordCount == 3 || WordCount == 4, InvalidWordCount, "");
     auto Decoder = getDecoder(I);
     Decoder >> Id >> BitWidth;
     if (WordCount == 4)
@@ -661,7 +661,7 @@ protected:
                      Desc.MS, Desc.Sampled, Desc.Format, Acc)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC + Acc.size());
+    SPIRVCK(WordCount == FixedWC + Acc.size(), InvalidWordCount, "");
     assert(SampledType != SPIRVID_INVALID && "Invalid sampled type");
     assert(Desc.Dim <= 5);
     assert(Desc.Depth <= 2);
@@ -669,7 +669,7 @@ protected:
     assert(Desc.MS <= 1);
     assert(Desc.Sampled <= 2);
     assert(Desc.Format <= ImageFormatR64i);
-    assert(Acc.size() <= 1);
+    SPIRVCK(Acc.size() <= 1, InvalidWordCount, "");
   }
   void setWordCount(SPIRVWord TheWC) override {
     SPIRVEntry::setWordCount(TheWC);
@@ -697,7 +697,7 @@ protected:
   _SPIRV_DEF_ENCDEC1(Id)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC);
+    SPIRVCK(WordCount == FixedWC, InvalidWordCount, "");
   }
 };
 
@@ -724,7 +724,7 @@ protected:
   _SPIRV_DEF_ENCDEC2(Id, ImgTy)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC);
+    SPIRVCK(WordCount == FixedWC, InvalidWordCount, "");
     assert(ImgTy && ImgTy->isTypeImage());
   }
 };
@@ -743,7 +743,7 @@ protected:
   _SPIRV_DEF_ENCDEC1(Id)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC);
+    SPIRVCK(WordCount == FixedWC, InvalidWordCount, "");
   }
 };
 
@@ -1041,7 +1041,7 @@ protected:
   _SPIRV_DEF_ENCDEC2(Id, AccessKind)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC + (AccessKind ? 1 : 0));
+    SPIRVCK(WordCount == FixedWC + (AccessKind ? 1 : 0), InvalidWordCount, "");
   }
   void setWordCount(SPIRVWord TheWC) override {
     if (TheWC > FixedWC)
@@ -1087,7 +1087,7 @@ protected:
 
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == FixedWC);
+    SPIRVCK(WordCount == FixedWC, InvalidWordCount, "");
     assert(ImgTy && ImgTy->isTypeImage());
   }
 };

@@ -297,7 +297,8 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
 
 void SPIRVDecoder::validate() const {
   assert(OpCode != OpNop && "Invalid op code");
-  assert(WordCount && "Invalid word count");
+  M.getErrorLog().checkError(WordCount, SPIRVEC_InvalidWordCount,
+                             "Invalid word count", "WordCount");
   assert(!IS.bad() && "Bad iInput stream");
 }
 

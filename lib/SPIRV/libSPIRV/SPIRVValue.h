@@ -201,7 +201,7 @@ protected:
   }
   void validate() const override {
     SPIRVValue::validate();
-    assert(NumWords >= 1 && "Invalid constant size");
+    SPIRVCK(NumWords >= 1, InvalidWordCount, "Invalid constant size");
   }
   void encode(spv_ostream &O) const override {
     getEncoder(O) << Type << Id;
@@ -427,7 +427,7 @@ protected:
   void validate() const override {
     SPIRVValue::validate();
     assert(OpCode == OC);
-    assert(WordCount == WC);
+    SPIRVCK(WordCount == WC, InvalidWordCount, "");
     assert(Type->isTypeSampler());
   }
   _SPIRV_DEF_ENCDEC5(Type, Id, AddrMode, Normalized, FilterMode)
@@ -465,7 +465,7 @@ protected:
   void validate() const override {
     SPIRVValue::validate();
     assert(OpCode == OC);
-    assert(WordCount == WC);
+    SPIRVCK(WordCount == WC, InvalidWordCount, "");
     assert(Type->isTypePipeStorage());
   }
   _SPIRV_DEF_ENCDEC5(Type, Id, PacketSize, PacketAlign, Capacity)

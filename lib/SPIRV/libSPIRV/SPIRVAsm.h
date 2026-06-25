@@ -46,7 +46,7 @@ public:
 protected:
   void validate() const override {
     SPIRVEntry::validate();
-    assert(WordCount > FixedWC);
+    SPIRVCK(WordCount > FixedWC, InvalidWordCount, "");
     assert(OpCode == OC);
   }
   _SPIRV_DEF_ENCDEC2(Id, Target)
@@ -86,7 +86,7 @@ protected:
   _SPIRV_DEF_ENCDEC6(Type, Id, FunctionType, Target, Instructions, Constraints)
   void validate() const override {
     SPIRVValue::validate();
-    assert(WordCount > FixedWC);
+    SPIRVCK(WordCount > FixedWC, InvalidWordCount, "");
     assert(OpCode == OC);
   }
   SPIRVAsmTargetINTEL *Target = nullptr;
@@ -130,7 +130,7 @@ protected:
   _SPIRV_DEF_ENCDEC4(Type, Id, Asm, Args)
   void validate() const override {
     SPIRVInstruction::validate();
-    assert(WordCount >= FixedWC);
+    SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     assert(OpCode == OC);
     assert(getBasicBlock() && "Invalid BB");
     assert(getBasicBlock()->getModule() == Asm->getModule());

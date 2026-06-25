@@ -248,7 +248,7 @@ public:
   /// \return Expected number of operands. If the instruction has variable
   /// number of words, return the minimum.
   SPIRVWord getExpectedNumOperands() const {
-    assert(WordCount > 0 && "Word count not initialized");
+    SPIRVCK(WordCount > 0, InvalidWordCount, "Word count not initialized");
     auto Exp = WordCount - 1;
     if (hasId())
       --Exp;
@@ -517,7 +517,7 @@ protected:
   void validate() const override {
     SPIRVValue::validate();
     assert(isValid(StorageClass));
-    assert(Initializer.size() == 1 || Initializer.empty());
+    SPIRVCK(Initializer.size() == 1 || Initializer.empty(), InvalidWordCount, "");
     assert(getType()->isTypePointer());
   }
   void setWordCount(SPIRVWord TheWordCount) override {
@@ -588,7 +588,7 @@ public:
 protected:
   void validate() const override {
     SPIRVVariableBase::validate();
-    assert(DataType.size() == 1 || DataType.empty());
+    SPIRVCK(DataType.size() == 1 || DataType.empty(), InvalidWordCount, "");
   }
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);
@@ -949,7 +949,7 @@ protected:
   _SPIRV_DEF_ENCDEC1(TargetLabelId)
   void validate() const override {
     SPIRVInstruction::validate();
-    assert(WordCount == 2);
+    SPIRVCK(WordCount == 2, InvalidWordCount, "");
     assert(OpCode == OC);
     assert(getTargetLabel()->isLabel() || getTargetLabel()->isForward());
   }
@@ -999,8 +999,9 @@ protected:
   _SPIRV_DEF_ENCDEC4(ConditionId, TrueLabelId, FalseLabelId, BranchWeights)
   void validate() const override {
     SPIRVInstruction::validate();
-    assert(WordCount == FixedWC || WordCount == FixedWC + 2);
-    assert(WordCount == BranchWeights.size() + FixedWC);
+    SPIRVCK(WordCount == FixedWC || WordCount == FixedWC + 2, InvalidWordCount,
+            "");
+    SPIRVCK(WordCount == BranchWeights.size() + FixedWC, InvalidWordCount, "");
     assert(OpCode == OC);
     assert(getCondition()->isForward() ||
            getCondition()->getType()->isTypeBool());
@@ -1069,7 +1070,7 @@ public:
   }
   _SPIRV_DEF_ENCDEC3(Type, Id, Pairs)
   void validate() const override {
-    assert(WordCount == Pairs.size() + FixedWordCount);
+    SPIRVCK(WordCount == Pairs.size() + FixedWordCount, InvalidWordCount, "");
     assert(OpCode == OC);
     assert(Pairs.size() % 2 == 0);
     foreachPair([this](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB) {
@@ -1342,7 +1343,7 @@ public:
   }
   _SPIRV_DEF_ENCDEC3(Select, Default, Pairs)
   void validate() const override {
-    assert(WordCount == Pairs.size() + FixedWordCount);
+    SPIRVCK(WordCount == Pairs.size() + FixedWordCount, InvalidWordCount, "");
     assert(OpCode == OC);
     assert(Pairs.size() % getPairSize() == 0);
     foreachPair([=](LiteralTy Literals, SPIRVBasicBlock *BB) {
@@ -2568,7 +2569,7 @@ protected:
   _SPIRV_DEF_ENCDEC3(ExecScope, MemScope, MemSema)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == 4);
+    SPIRVCK(WordCount == 4, InvalidWordCount, "");
     SPIRVInstruction::validate();
   }
 
@@ -2683,7 +2684,7 @@ protected:
                      Stride, Event)
   void validate() const override {
     assert(OpCode == OC);
-    assert(WordCount == WC);
+    SPIRVCK(WordCount == WC, InvalidWordCount, "");
     SPIRVInstruction::validate();
   }
   SPIRVId ExecScope;

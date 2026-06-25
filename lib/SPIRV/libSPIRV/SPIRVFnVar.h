@@ -181,10 +181,10 @@ protected:
     size_t TypeOpCode = this->getType()->getOpCode();
     assert(TypeOpCode != OpTypeVoid && "Conditional copy type cannot be void");
     (void)(TypeOpCode);
-    assert(Constituents.size() % 2 == 0 &&
-           "Conditional copy requires condition-operand pairs");
-    assert(Constituents.size() >= 2 &&
-           "Conditional copy requires at least one condition-operand pair");
+    SPIRVCK(Constituents.size() % 2 == 0, InvalidWordCount,
+            "Conditional copy requires condition-operand pairs");
+    SPIRVCK(Constituents.size() >= 2, InvalidWordCount,
+            "Conditional copy requires at least one condition-operand pair");
   }
   std::vector<SPIRVId> Constituents;
 };

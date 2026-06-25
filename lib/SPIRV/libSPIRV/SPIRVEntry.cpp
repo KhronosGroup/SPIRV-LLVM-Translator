@@ -723,7 +723,8 @@ void SPIRVName::decode(std::istream &I) {
 }
 
 void SPIRVName::validate() const {
-  assert(WordCount == getSizeInWords(Str) + 2 && "Incorrect word count");
+  SPIRVCK(WordCount == getSizeInWords(Str) + 2, InvalidWordCount,
+          "Incorrect word count");
 }
 
 _SPIRV_IMP_ENCDEC2(SPIRVString, Id, Str)
@@ -739,7 +740,7 @@ void SPIRVLine::decode(std::istream &I) {
 
 void SPIRVLine::validate() const {
   assert(OpCode == OpLine);
-  assert(WordCount == 4);
+  SPIRVCK(WordCount == 4, InvalidWordCount, "");
   assert(get<SPIRVEntry>(FileName)->getOpCode() == OpString);
   assert(Line != SPIRVWORD_MAX);
   assert(Column != SPIRVWORD_MAX);
@@ -748,7 +749,7 @@ void SPIRVLine::validate() const {
 
 void SPIRVMemberName::validate() const {
   assert(OpCode == OpMemberName);
-  assert(WordCount == getSizeInWords(Str) + FixedWC);
+  SPIRVCK(WordCount == getSizeInWords(Str) + FixedWC, InvalidWordCount, "");
   assert(get<SPIRVEntry>(Target)->getOpCode() == OpTypeStruct);
   assert(MemberNumber < get<SPIRVTypeStruct>(Target)->getStructMemberCount());
 }
@@ -858,8 +859,8 @@ SPIRVType *SPIRVTypeStructContinuedINTEL::getMemberType(size_t I) const {
 }
 
 void SPIRVModuleProcessed::validate() const {
-  assert(WordCount == FixedWC + getSizeInWords(ProcessStr) &&
-         "Incorrect word count in OpModuleProcessed");
+  SPIRVCK(WordCount == FixedWC + getSizeInWords(ProcessStr), InvalidWordCount,
+          "Incorrect word count in OpModuleProcessed");
 }
 
 void SPIRVModuleProcessed::encode(spv_ostream &O) const {
