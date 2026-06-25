@@ -632,7 +632,11 @@ public:
   bool isOCLImage() const { return Desc.Sampled == 0 && Desc.Format == 0; }
   bool hasAccessQualifier() const { return !Acc.empty(); }
   SPIRVAccessQualifierKind getAccessQualifier() const {
-    assert(hasAccessQualifier());
+    // SEC-00717 G2: Acc is populated from decoded words; guard the Acc[0] read.
+    SPIRVCK(hasAccessQualifier(), InvalidWordCount,
+            "Image type has no access qualifier operand");
+    if (!hasAccessQualifier())
+      return AccessQualifierReadOnly;
     return Acc[0];
   }
   SPIRVCapVec getRequiredCapability() const override {

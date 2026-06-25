@@ -132,7 +132,12 @@ bool evaluateConstant(SPIRVModule *BM, SPIRVId Id, bool &Res,
         Res = !Val1;
       }
     } else {
-      assert(OpWords.size() == 3);
+      // SEC-00717 G2: OpWords come from a decoded OpSpecConstantOp; guard the
+      // OpWords[2] read below against a malformed (too-short) operand list.
+      if (OpWords.size() != 3) {
+        ErrMsg = "Invalid number of operands for binary OpSpecConstantOp.";
+        return false;
+      }
       bool Val2 = false;
       if (!evaluateConstant(BM, OpWords[2], Val2, ErrMsg)) {
         return false;

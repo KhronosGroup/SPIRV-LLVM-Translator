@@ -408,17 +408,21 @@ public:
     TheMemoryAccessMask = MemoryAccess[0];
     size_t MemAccessNumParam = 1;
     if (MemoryAccess[0] & MemoryAccessAlignedMask) {
-      assert(MemoryAccess.size() > 1 && "Alignment operand is missing");
+      // SEC-00717 G2: bounds-check stream-controlled MemoryAccess before index.
+      if (!(MemoryAccess.size() > 1))
+        return;
       Alignment = MemoryAccess[MemAccessNumParam++];
     }
     if (MemoryAccess[0] & MemoryAccessAliasScopeINTELMaskMask) {
-      assert(MemoryAccess.size() > MemAccessNumParam &&
-             "Aliasing operand is missing");
+      // SEC-00717 G2: bounds-check stream-controlled MemoryAccess before index.
+      if (!(MemoryAccess.size() > MemAccessNumParam))
+        return;
       AliasScopeInstID = MemoryAccess[MemAccessNumParam++];
     }
     if (MemoryAccess[0] & MemoryAccessNoAliasINTELMaskMask) {
-      assert(MemoryAccess.size() > MemAccessNumParam &&
-             "Aliasing operand is missing");
+      // SEC-00717 G2: bounds-check stream-controlled MemoryAccess before index.
+      if (!(MemoryAccess.size() > MemAccessNumParam))
+        return;
       NoAliasInstID = MemoryAccess[MemAccessNumParam++];
     }
 
@@ -428,8 +432,10 @@ public:
 
     size_t SecondMaskId = MemAccessNumParam++;
     if (MemoryAccess[SecondMaskId] & MemoryAccessAlignedMask) {
-      assert(MemoryAccess.size() > MemAccessNumParam &&
-             "Alignment operand is missing");
+      // SEC-00717 G2: bounds-check stream-controlled MemoryAccess before index.
+      // SPIRVMemoryAccess has no getErrorLog(); guard the OOB read directly.
+      if (!(MemoryAccess.size() > MemAccessNumParam))
+        return;
       SrcAlignment = MemoryAccess[MemAccessNumParam];
     }
   }
@@ -731,9 +737,9 @@ protected:
     if (getValueType(Op1)->isTypeVector()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      SPIRVCK(getValueType(Op1)->getVectorComponentCount() ==
+                  getValueType(Op2)->getVectorComponentCount(),
+              InvalidInstruction, "Inconsistent Vector component width");
     } else if (getValueType(Op1)->isTypeCooperativeMatrixKHR()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
@@ -750,8 +756,8 @@ protected:
              "Invalid type for binary instruction");
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
              "Invalid type for Binary instruction");
-      assert((Op1Ty->getBitWidth() == Op2Ty->getBitWidth()) &&
-             "Inconsistent BitWidth");
+      SPIRVCK(Op1Ty->getBitWidth() == Op2Ty->getBitWidth(), InvalidInstruction,
+              "Inconsistent BitWidth");
     } else if (isShiftOpCode(OpCode)) {
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
              "Invalid type for shift instruction");
@@ -761,8 +767,8 @@ protected:
     } else if (isBitwiseOpCode(OpCode)) {
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeInt()) &&
              "Invalid type for bitwise instruction");
-      assert((Op1Ty->getIntegerBitWidth() == Op2Ty->getIntegerBitWidth()) &&
-             "Inconsistent BitWidth");
+      SPIRVCK(Op1Ty->getIntegerBitWidth() == Op2Ty->getIntegerBitWidth(),
+              InvalidInstruction, "Inconsistent BitWidth");
     } else if (isBinaryPtrOpCode(OpCode)) {
       assert((Op1Ty->isTypePointer() && Op2Ty->isTypePointer()) &&
              "Invalid types for PtrEqual, PtrNotEqual, or PtrDiff instruction");
@@ -1071,7 +1077,8 @@ public:
   void validate() const override {
     assert(WordCount == Pairs.size() + FixedWordCount);
     assert(OpCode == OC);
-    assert(Pairs.size() % 2 == 0);
+    SPIRVCK(Pairs.size() % 2 == 0, InvalidWordCount,
+            "OpPhi requires an even number of (variable, parent) words");
     foreachPair([this](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB) {
       assert(IncomingV->isForward() || IncomingV->getType() == Type);
       assert(IncomingBB->isBasicBlock() || IncomingBB->isForward());
@@ -1123,9 +1130,9 @@ protected:
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
       ResTy = Type->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      SPIRVCK(getValueType(Op1)->getVectorComponentCount() ==
+                  getValueType(Op2)->getVectorComponentCount(),
+              InvalidInstruction, "Inconsistent Vector component width");
     } else {
       Op1Ty = getValueType(Op1);
       Op2Ty = getValueType(Op2);
@@ -1344,7 +1351,8 @@ public:
   void validate() const override {
     assert(WordCount == Pairs.size() + FixedWordCount);
     assert(OpCode == OC);
-    assert(Pairs.size() % getPairSize() == 0);
+    SPIRVCK(Pairs.size() % getPairSize() == 0, InvalidWordCount,
+            "OpSwitch literal/label words are not a whole number of pairs");
     foreachPair([=](LiteralTy Literals, SPIRVBasicBlock *BB) {
       assert(BB->isBasicBlock() || BB->isForward());
     });
@@ -1728,13 +1736,14 @@ protected:
       assert(getType() == getValueType(Op) && "Inconsistent type");
       assert((ResTy->isTypeInt() || ResTy->isTypeFloat()) &&
              "Invalid type for Generic Negate instruction");
-      assert((ResTy->getBitWidth() == OpTy->getBitWidth()) &&
-             "Invalid bitwidth for Generic Negate instruction");
-      assert((Type->isTypeVector()
-                  ? (Type->getVectorComponentCount() ==
-                     getValueType(Op)->getVectorComponentCount())
-                  : 1) &&
-             "Invalid vector component Width for Generic Negate instruction");
+      SPIRVCK(ResTy->getBitWidth() == OpTy->getBitWidth(), InvalidInstruction,
+              "Invalid bitwidth for Generic Negate instruction");
+      SPIRVCK((Type->isTypeVector()
+                   ? (Type->getVectorComponentCount() ==
+                      getValueType(Op)->getVectorComponentCount())
+                   : 1),
+              InvalidInstruction,
+              "Invalid vector component Width for Generic Negate instruction");
     }
   }
 };
@@ -2827,8 +2836,10 @@ public:
   VersionNumber getRequiredSPIRVVersion() const override {
     switch (OpCode) {
     case OpGroupNonUniformBroadcast: {
-      assert(Ops.size() == 3 && "Expecting (Execution, Value, Id) operands");
-      if (!isConstantOpCode(getOperand(2)->getOpCode())) {
+      // SEC-00717 G2: Ops is filled from the stream; guard getOperand(2) below.
+      SPIRVCK(Ops.size() == 3, InvalidWordCount,
+              "Expecting (Execution, Value, Id) operands");
+      if (Ops.size() == 3 && !isConstantOpCode(getOperand(2)->getOpCode())) {
         // Before version 1.5, Id must come from a constant instruction.
         return VersionNumber::SPIRV_1_5;
       }

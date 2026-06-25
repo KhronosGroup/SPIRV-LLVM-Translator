@@ -98,7 +98,13 @@ SPIRVDecorateGeneric::SPIRVDecorateGeneric(Op OC)
 Decoration SPIRVDecorateGeneric::getDecorateKind() const { return Dec; }
 
 SPIRVWord SPIRVDecorateGeneric::getLiteral(size_t I) const {
-  assert(I <= Literals.size() && "Out of bounds");
+  // SEC-00717 G2: Literals is sized from the decoded decoration words. The
+  // original assert used "<=" (off-by-one) which permitted Literals[size()].
+  // Use a strict "<" runtime bound and avoid the out-of-bounds read.
+  SPIRVCK(I < Literals.size(), InvalidWordCount,
+          "Decoration literal index out of bounds");
+  if (I >= Literals.size())
+    return 0;
   return Literals[I];
 }
 

@@ -196,8 +196,11 @@ bool isDebugLineEqual(const SPIRVExtInst &DL1, const SPIRVExtInst &DL2) {
   std::vector<SPIRVWord> DL2Args = DL2.getArguments();
 
   using namespace SPIRVDebug::Operand::DebugLine;
-  assert(DL1Args.size() == OperandCount && DL2Args.size() == OperandCount &&
-         "Invalid number of operands");
+  // SEC-00717 G2: operand counts come from decoded DebugLine ExtInst arguments.
+  // No getErrorLog() is reachable in this free function; guard the indexing
+  // below directly so a malformed count cannot cause an out-of-bounds read.
+  if (DL1Args.size() != OperandCount || DL2Args.size() != OperandCount)
+    return false;
   return DL1Args[SourceIdx] == DL2Args[SourceIdx] &&
          DL1Args[StartIdx] == DL2Args[StartIdx] &&
          DL1Args[EndIdx] == DL2Args[EndIdx] &&
@@ -513,7 +516,12 @@ std::set<SPIRVWord> SPIRVEntry::getDecorate(Decoration Kind,
   auto Range = Decorates.equal_range(Kind);
   std::set<SPIRVWord> Value;
   for (auto I = Range.first, E = Range.second; I != E; ++I) {
-    assert(Index < I->second->getLiteralCount() && "Invalid index");
+    // SEC-00717 G2: literal count derives from decoded decoration words; guard
+    // the getLiteral(Index) read against an out-of-bounds Index.
+    SPIRVCK(Index < I->second->getLiteralCount(), InvalidWordCount,
+            "Invalid decoration literal index");
+    if (Index >= I->second->getLiteralCount())
+      continue;
     Value.insert(I->second->getLiteral(Index));
   }
   return Value;
@@ -543,7 +551,12 @@ std::set<SPIRVId> SPIRVEntry::getDecorateId(Decoration Kind,
   auto Range = DecorateIds.equal_range(Kind);
   std::set<SPIRVId> Value;
   for (auto I = Range.first, E = Range.second; I != E; ++I) {
-    assert(Index < I->second->getLiteralCount() && "Invalid index");
+    // SEC-00717 G2: literal count derives from decoded decoration words; guard
+    // the getLiteral(Index) read against an out-of-bounds Index.
+    SPIRVCK(Index < I->second->getLiteralCount(), InvalidWordCount,
+            "Invalid decoration literal index");
+    if (Index >= I->second->getLiteralCount())
+      continue;
     Value.insert(I->second->getLiteral(Index));
   }
   return Value;
