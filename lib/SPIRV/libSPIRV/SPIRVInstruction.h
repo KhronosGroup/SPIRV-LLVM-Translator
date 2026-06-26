@@ -517,7 +517,8 @@ protected:
   void validate() const override {
     SPIRVValue::validate();
     assert(isValid(StorageClass));
-    SPIRVCK(Initializer.size() == 1 || Initializer.empty(), InvalidWordCount, "");
+    SPIRVCK(Initializer.size() == 1 || Initializer.empty(), InvalidWordCount,
+            "");
     assert(getType()->isTypePointer());
   }
   void setWordCount(SPIRVWord TheWordCount) override {
