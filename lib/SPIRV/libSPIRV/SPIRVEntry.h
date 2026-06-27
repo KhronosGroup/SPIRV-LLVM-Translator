@@ -269,7 +269,7 @@ public:
 
   bool exist(SPIRVId) const;
   template <class T> T *get(SPIRVId TheId) const {
-    // NOLINTNEXTLINE
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
     return static_cast<T *>(getEntry(TheId));
   }
   SPIRVEntry *getEntry(SPIRVId) const;
@@ -598,6 +598,7 @@ public:
       : SPIRVEntry(M, FixedWC + getSizeInWords(TheStr), OC, TheId),
         Str(TheStr) {}
   SPIRVString() : SPIRVEntry(OC) {}
+  static bool classof(const SPIRVEntry *E) { return E->getOpCode() == OC; }
   _SPIRV_DCL_ENCDEC
   const std::string &getStr() const { return Str; }
 
@@ -966,6 +967,15 @@ private:
   SPIRVCapabilityKind Kind;
 };
 
+// Checked downcast: asserts T::classof(E) to catch type confusion on malformed
+// SPIR-V inputs. Use instead of bcast<T> when T is a concrete leaf type and
+// E comes from an untrusted/decoded SPIR-V module.
+template <class T> T *opcodeCast(SPIRVEntry *E) {
+  assert(E && T::classof(E) && "SPIR-V type confusion: unexpected OpCode");
+  return static_cast<T *>(E);
+}
+
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
 template <class T> T *bcast(SPIRVEntry *E) { return static_cast<T *>(E); }
 
 template <spv::Op OC> bool isa(SPIRVEntry *E) {

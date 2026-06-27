@@ -54,6 +54,8 @@ public:
 
   SPIRVBasicBlock() : SPIRVValue(OpLabel), ParentF(NULL) { setAttr(); }
 
+  static bool classof(const SPIRVEntry *E) { return E->getOpCode() == OpLabel; }
+
   SPIRVDecoder getDecoder(std::istream &IS) override;
   SPIRVFunction *getParent() const { return ParentF; }
   size_t getNumInst() const { return InstVec.size(); }

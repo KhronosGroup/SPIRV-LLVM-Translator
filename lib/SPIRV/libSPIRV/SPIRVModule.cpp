@@ -2320,10 +2320,12 @@ spv_ostream &operator<<(spv_ostream &O, SPIRVModule &M) {
   O << MI.ConditionalEntryPointVec;
 
   for (auto &I : MI.EntryPointVec)
-    MI.get<SPIRVFunction>(I->getTargetId())->encodeExecutionModes(O);
+    opcodeCast<SPIRVFunction>(MI.getEntry(I->getTargetId()))
+        ->encodeExecutionModes(O);
 
   for (auto &I : MI.ConditionalEntryPointVec)
-    MI.get<SPIRVFunction>(I->getTargetId())->encodeExecutionModes(O);
+    opcodeCast<SPIRVFunction>(MI.getEntry(I->getTargetId()))
+        ->encodeExecutionModes(O);
 
   O << MI.StringVec;
 
