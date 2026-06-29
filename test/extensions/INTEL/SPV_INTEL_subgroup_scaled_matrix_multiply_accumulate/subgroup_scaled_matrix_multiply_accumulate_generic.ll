@@ -6,6 +6,9 @@
 ;     int K_Dim, int Matrix_A, int8 Matrix_B, int Matrix_C,
 ;     uchar Scale_A, uchar Scale_B);
 
+; TODO: add spirv-val once SPV_INTEL_subgroup_scaled_matrix_multiply_accumulate
+; is registered with Khronos and SPIRV-Tools recognizes its capability/opcode.
+
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_subgroup_matrix_multiply_accumulate,+SPV_INTEL_subgroup_scaled_matrix_multiply_accumulate
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
