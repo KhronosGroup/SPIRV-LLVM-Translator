@@ -41,6 +41,7 @@
 #define SPIRV_LIBSPIRV_SPIRVSTREAM_H
 
 #include "SPIRVDebug.h"
+#include "SPIRVError.h"
 #include "SPIRVExtInst.h"
 #include "SPIRVModule.h"
 #include <cctype>
@@ -152,6 +153,11 @@ const SPIRVDecoder &operator>>(const SPIRVDecoder &I, T *&P) {
   SPIRVId Id;
   I >> Id;
   P = static_cast<T *>(I.M.getEntry(Id));
+  if (!P) {
+    I.M.getErrorLog().checkError(false, SPIRVEC_InvalidModule,
+                                 "operand references an undefined Id");
+    I.M.setInvalid();
+  }
   return I;
 }
 
