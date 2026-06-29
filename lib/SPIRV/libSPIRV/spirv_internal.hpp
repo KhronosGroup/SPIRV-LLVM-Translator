@@ -158,7 +158,7 @@ enum InternalMatrixMultiplyAccumulateOperandsMask {
   // FP4 matrix operands
   IMatrixMultiplyAccumulateOperandsMatrixAPackedFloat4E2M1INTELMask = 0x40000,
   IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat4E2M1INTELMask = 0x80000,
-  // Scale factors for SPV_INTEL_subgroup_scaled_matrix_multiply_accumulate
+  // Scale factors for SPV_INTEL_subgroup_scaled_matrix_multiply_accumulate.
   IMatrixMultiplyAccumulateOperandsScaleAFloat8E8M0INTELMask = 0x100000,
   IMatrixMultiplyAccumulateOperandsScaleBFloat8E8M0INTELMask = 0x200000,
 };

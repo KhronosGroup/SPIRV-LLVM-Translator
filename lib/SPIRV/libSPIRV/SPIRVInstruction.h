@@ -4571,7 +4571,7 @@ protected:
     SPIRVInstTemplateBase::validate();
 
     // Check if FP4 or FP8 matrix operands are used
-    // Operands parameter is the last operand
+    // Operands parameter is the last operand.
     auto *NonConstThis =
         const_cast<SPIRVSubgroupMatrixMultiplyAccumulateINTELInst *>(this);
     const unsigned OperandsIdx = getOperandsLiteralIndex();
