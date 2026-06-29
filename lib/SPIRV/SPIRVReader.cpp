@@ -356,6 +356,11 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     // The length might be an OpSpecConstantOp, that needs to be specialized
     // and evaluated before the LLVM ArrayType can be constructed.
     auto *LenExpr = static_cast<const SPIRVTypeArray *>(T)->getLength();
+    if (!BM->getErrorLog().checkError(
+            LenExpr && isConstantOpCode(LenExpr->getOpCode()),
+            SPIRVEC_InvalidModule,
+            "OpTypeArray length must reference an integer constant"))
+      return nullptr;
     auto *LenValue = cast<ConstantInt>(transValue(LenExpr, nullptr, nullptr));
     return mapType(T, ArrayType::get(transType(T->getArrayElementType()),
                                      LenValue->getZExtValue()));

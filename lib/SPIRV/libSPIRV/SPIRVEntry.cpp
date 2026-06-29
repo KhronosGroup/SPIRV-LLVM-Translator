@@ -124,6 +124,30 @@ SPIRVValue *SPIRVEntry::getValue(SPIRVId TheId) const {
   return get<SPIRVValue>(TheId);
 }
 
+SPIRVValue *SPIRVEntry::getConstant(SPIRVId TheId) const {
+  SPIRVEntry *E = getEntry(TheId);
+  if (!E || !isConstantOpCode(E->getOpCode())) {
+    getErrorLog().checkError(false, SPIRVEC_InvalidModule,
+                             "operand must reference a constant");
+    if (Module)
+      Module->setInvalid();
+    return nullptr;
+  }
+  return static_cast<SPIRVValue *>(E);
+}
+
+SPIRVType *SPIRVEntry::getType(SPIRVId TheId) const {
+  SPIRVEntry *E = getEntry(TheId);
+  if (!E || !isTypeOpCode(E->getOpCode())) {
+    getErrorLog().checkError(false, SPIRVEC_InvalidModule,
+                             "operand must reference a type");
+    if (Module)
+      Module->setInvalid();
+    return nullptr;
+  }
+  return static_cast<SPIRVType *>(E);
+}
+
 SPIRVType *SPIRVEntry::getValueType(SPIRVId TheId) const {
   return get<SPIRVValue>(TheId)->getType();
 }
