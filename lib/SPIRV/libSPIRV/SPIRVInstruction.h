@@ -2025,6 +2025,8 @@ public:
   void setExtSetKindById() {
     assert(Module && "Invalid module");
     ExtSetKind = Module->getBuiltinSet(ExtSetId);
+    if (ExtSetKind == SPIRVEIS_Count)
+      Module->setInvalid();
     assert((ExtSetKind == SPIRVEIS_OpenCL || ExtSetKind == SPIRVEIS_Debug ||
             ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||

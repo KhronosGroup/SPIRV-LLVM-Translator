@@ -1001,7 +1001,8 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {
   auto Loc = IdToInstSetMap.find(SetId);
-  assert(Loc != IdToInstSetMap.end() && "Invalid builtin set id");
+  if (Loc == IdToInstSetMap.end())
+    return SPIRVEIS_Count;
   return Loc->second;
 }
 

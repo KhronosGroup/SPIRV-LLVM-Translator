@@ -54,9 +54,15 @@ SPIRVType *SPIRVType::getArrayElementType() const {
 uint64_t SPIRVType::getArrayLength() const {
   assert(OpCode == OpTypeArray && "Not array type");
   const SPIRVTypeArray *AsArray = static_cast<const SPIRVTypeArray *>(this);
-  assert(AsArray->getLength()->getOpCode() == OpConstant &&
-         "getArrayLength can only be called with constant array lengths");
-  return static_cast<SPIRVConstant *>(AsArray->getLength())->getZExtIntValue();
+  SPIRVValue *Len = AsArray->getLength();
+  if (!Len || !isConstantOpCode(Len->getOpCode())) {
+    getErrorLog().checkError(false, SPIRVEC_InvalidModule,
+                             "OpTypeArray length must reference a constant");
+    if (Module)
+      Module->setInvalid();
+    return 0;
+  }
+  return static_cast<SPIRVConstant *>(Len)->getZExtIntValue();
 }
 
 SPIRVWord SPIRVType::getBitWidth() const {
