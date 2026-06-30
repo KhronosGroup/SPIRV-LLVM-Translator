@@ -2,6 +2,9 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s
 
+; RUN: llvm-as %s -o %t.bc
+; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s --check-prefix=ERROR
+
 ; CHECK-DAG: Capability LongVectorEXT
 ; CHECK-DAG: Extension "SPV_EXT_long_vector"
 ; CHECK-DAG: TypeFloat [[#F32:]] 32
@@ -11,6 +14,14 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 define spir_func void @test_vec1(<1 x float> %v1) {
+entry:
+  ret void
+}
+
+; ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
+; ERROR-NEXT: SPV_EXT_long_vector or SPV_INTEL_vector_compute
+
+define spir_func void @test_no_ext(<1 x float> %v) {
 entry:
   ret void
 }
