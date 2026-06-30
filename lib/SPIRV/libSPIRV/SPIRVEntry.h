@@ -275,8 +275,6 @@ public:
   SPIRVEntry *getEntry(SPIRVId) const;
   SPIRVEntry *getOrCreate(SPIRVId TheId) const;
   SPIRVValue *getValue(SPIRVId TheId) const;
-  SPIRVValue *getConstant(SPIRVId TheId) const;
-  SPIRVType *getType(SPIRVId TheId) const;
   std::vector<SPIRVValue *> getValues(const std::vector<SPIRVId> &) const;
   std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *>) const;
   SPIRVType *getValueType(SPIRVId TheId) const;
