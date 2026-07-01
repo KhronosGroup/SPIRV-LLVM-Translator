@@ -256,8 +256,8 @@ public:
   /// For cl_intel_split_work_group_barrier built-ins:
   void visitCallSplitBarrierINTEL(CallInst *CI, StringRef DemangledName);
 
-  void visitCallLdexp(CallInst *CI, StringRef MangledName,
-                      StringRef DemangledName);
+  void visitCallScalarToVecArg(CallInst *CI, StringRef MangledName,
+                               StringRef DemangledName);
 
   /// For cl_intel_convert_bfloat16_as_ushort
   void visitCallConvertBFloat16AsUshort(CallInst *CI, StringRef DemangledName);
