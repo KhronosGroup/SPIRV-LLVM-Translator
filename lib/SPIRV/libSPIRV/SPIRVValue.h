@@ -210,6 +210,7 @@ protected:
   }
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVValue::setWordCount(WordCount);
+    SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     NumWords = WordCount - FixedWC;
   }
   void decode(std::istream &I) override {
