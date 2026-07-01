@@ -280,8 +280,14 @@ public:
     // instructions.
     updateModuleVersion();
   }
+  SPIRVWord getFixedWordCount() const override {
+    // OpCode word plus the optional result-type and
+    // result-id words. Operands beyond this are variable length.
+    return 1 + (hasType() ? 1 : 0) + (hasId() ? 1 : 0);
+  }
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);
+    SPIRVCK(WordCount >= getFixedWordCount(), InvalidWordCount, "");
     auto NumOps = WordCount - 1;
     if (hasId())
       --NumOps;
@@ -525,6 +531,7 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Initializer.resize(WordCount - FixedWC);
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   _SPIRV_DEF_ENCDEC4(Type, Id, StorageClass, Initializer)
 
   SPIRVStorageClassKind StorageClass;

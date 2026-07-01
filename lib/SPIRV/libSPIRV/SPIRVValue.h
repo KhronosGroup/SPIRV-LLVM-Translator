@@ -210,8 +210,10 @@ protected:
   }
   void setWordCount(SPIRVWord WordCount) override {
     SPIRVValue::setWordCount(WordCount);
+    SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     NumWords = WordCount - FixedWC;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   void decode(std::istream &I) override {
     getDecoder(I) >> Type >> Id;
     Words.resize(NumWords);
@@ -371,6 +373,8 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Elements.resize(WordCount - FixedWC);
   }
+
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
   void encode(spv_ostream &O) const override {
     getEncoder(O) << Type << Id << Elements;
