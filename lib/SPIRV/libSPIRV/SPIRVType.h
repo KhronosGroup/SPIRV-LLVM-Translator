@@ -45,6 +45,7 @@
 #define SPIRV_LIBSPIRV_SPIRVTYPE_H
 
 #include "SPIRVEntry.h"
+#include "SPIRVOpCode.h"
 #include "SPIRVStream.h"
 
 #include <cassert>
@@ -60,6 +61,10 @@ public:
       : SPIRVEntry(M, TheWordCount, TheOpCode, TheId) {}
   // Incomplete constructor
   SPIRVType(Op TheOpCode) : SPIRVEntry(TheOpCode) {}
+
+  static bool classof(const SPIRVEntry *E) {
+    return isTypeOpCode(E->getOpCode());
+  }
 
   SPIRVType *getArrayElementType() const;
   uint64_t getArrayLength() const;

@@ -96,6 +96,9 @@ public:
       : SPIRVValue(OpFunction), FuncType(NULL),
         FCtrlMask(FunctionControlMaskNone) {}
 
+  static bool classof(const SPIRVEntry *E) {
+    return E->getOpCode() == OpFunction;
+  }
   SPIRVDecoder getDecoder(std::istream &IS) override;
   SPIRVTypeFunction *getFunctionType() const { return FuncType; }
   SPIRVWord getFuncCtlMask() const { return FCtrlMask; }
