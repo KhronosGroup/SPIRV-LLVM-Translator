@@ -5,6 +5,13 @@
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
 ;
 ; Generated from:
 ; int helper(int (*f)(int), int arg) {
@@ -79,6 +86,36 @@
 ; CHECK-LLVM: store ptr addrspace(9) @bar, ptr %[[FP]]
 ; CHECK-LLVM: %[[FP_LOADED:.*]] = load ptr addrspace(9), ptr %[[FP]]
 ; CHECK-LLVM: call spir_func i32 @helper(ptr addrspace(9) %[[FP_LOADED]]
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#INT:]] 32
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FOO_TY:]] [[#INT]] [[#INT]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#HELPER_TY:]] [[#INT]] [[#PTR]] [[#INT]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FOO:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAR:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#ALLOCA1:]] [[#]] [[#PTR]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#ALLOCA2:]] [[#]] [[#]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#INT]] [[#]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#ALLOCA3:]] [[#]] [[#PTR]]
+; CHECK-SPIRV-UNTYPED: Store [[#ALLOCA3]] [[#FOO]]
+; CHECK-SPIRV-UNTYPED: Store [[#ALLOCA3]] [[#BAR]]
+; CHECK-SPIRV-UNTYPED: Load [[#PTR]] [[#LOADED:]] [[#ALLOCA3]]
+
+; CHECK-LLVM-UNTYPED: define spir_func i32 @helper(ptr %{{.*}},
+; CHECK-LLVM-UNTYPED: alloca ptr
+; CHECK-LLVM-UNTYPED: store ptr %
+; CHECK-LLVM-UNTYPED: load ptr, ptr %
+; CHECK-LLVM-UNTYPED: call spir_func i32 %
+; CHECK-LLVM-UNTYPED: define spir_kernel void @test
+; CHECK-LLVM-UNTYPED: %fp = alloca ptr
+; CHECK-LLVM-UNTYPED: store ptr addrspacecast (ptr addrspace(9) @foo to ptr), ptr %fp
+; CHECK-LLVM-UNTYPED: store ptr addrspacecast (ptr addrspace(9) @bar to ptr), ptr %fp
+; CHECK-LLVM-UNTYPED: load ptr, ptr %fp
+; CHECK-LLVM-UNTYPED: call spir_func i32 @helper(ptr %
 
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

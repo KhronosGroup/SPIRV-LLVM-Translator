@@ -6,6 +6,14 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix CHECK-LLVM
 
+; RUN: llvm-spirv %s -o %t.u.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers
+; RUN: FileCheck < %t.u.spt %s --check-prefix CHECK-SPIRV-UNTYPED
+
+; RUN: llvm-spirv %t.u.spt -o %t.u.spv -to-binary
+; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix CHECK-LLVM
+
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 
@@ -14,6 +22,20 @@
 ; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV: FunctionPointerCallINTEL
 ; CHECK-SPIRV-SAME: [[#TargetId]]
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+
+; CHECK-SPIRV-UNTYPED: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 5
+; CHECK-SPIRV-UNTYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
+; CHECK-SPIRV-UNTYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PtrTy:]]
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PtrTy]] [[#FnPtr:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrTy]] [[#Var:]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL
+; CHECK-SPIRV-UNTYPED-SAME: [[#TargetId]]
 
 ; CHECK-LLVM: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 

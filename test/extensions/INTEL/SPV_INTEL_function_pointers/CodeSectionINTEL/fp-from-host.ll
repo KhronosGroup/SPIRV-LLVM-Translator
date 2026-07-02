@@ -5,6 +5,13 @@
 ; RUN: llvm-spirv -r %t.spv -spirv-emit-function-ptr-addr-space -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv -r %t.u.spv -spirv-emit-function-ptr-addr-space -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
 ;
 ; Generated from:
 ; typedef int (*fp_t)(int);
@@ -31,6 +38,19 @@
 ;
 ; CHECK-LLVM: define spir_kernel void @test(ptr addrspace(1)
 ; CHECK-LLVM: %{{.*}} = call spir_func addrspace(9) i32 %{{.*}}(i32
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED: TypeInt [[#INT32:]] 32
+; CHECK-SPIRV-UNTYPED: TypeFunction [[#FOO_TY:]] [[#INT32]] [[#INT32]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FOO_PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED: ConvertUToPtr [[#FOO_PTR]] [[#FP:]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#INT32]] [[#]] [[#FP]]
+
+; CHECK-LLVM-UNTYPED: define spir_kernel void @test(ptr addrspace(1)
+; CHECK-LLVM-UNTYPED: %{{.*}} = call spir_func i32 %{{.*}}(i32
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"

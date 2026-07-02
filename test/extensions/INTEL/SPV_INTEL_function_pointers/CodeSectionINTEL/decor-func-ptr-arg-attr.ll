@@ -6,6 +6,14 @@
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix CHECK-LLVM
 
+; RUN: llvm-spirv %s -o %t.u.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers
+; RUN: FileCheck < %t.u.spt %s --check-prefix CHECK-SPIRV-UNTYPED
+
+; RUN: llvm-spirv %t.u.spt -o %t.u.spv -to-binary
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.u.rev.bc
+; RUN: llvm-dis %t.u.rev.bc -o %t.u.rev.ll
+; RUN: FileCheck < %t.u.rev.ll %s --check-prefix CHECK-LLVM-UNTYPED
+
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 
@@ -16,6 +24,23 @@
 ; CHECK-SPIRV-SAME: [[#TargetId]]
 
 ; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG:]] ArgumentAttributeINTEL 0 5
+; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 4
+; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 2
+; CHECK-SPIRV-UNTYPED-DAG: TypeVoid [[#VOID:]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#]] [[#]] [[#MULTI_PTR]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]]
+
+; CHECK-LLVM-UNTYPED: select i1 %_arg_, ptr addrspacecast (ptr addrspace(9) @inc_function to ptr), ptr null
+; CHECK-LLVM-UNTYPED: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 
 ; ModuleID = 'sycl_test.cpp'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
