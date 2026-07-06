@@ -674,6 +674,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "FloatConversionsFtoFINTEL");
   add(internal::CapabilityFloatConversionsFtoSINTEL,
       "FloatConversionsFtoSINTEL");
+  add(internal::CapabilitySubgroupScaledMatrixMultiplyAccumulateINTEL,
+      "SubgroupScaledMatrixMultiplyAccumulateINTEL");
   add(CapabilityRoundedDivideSqrtINTEL, "RoundedDivideSqrtINTEL");
 }
 SPIRV_DEF_NAMEMAP(Capability, SPIRVCapabilityNameMap)
