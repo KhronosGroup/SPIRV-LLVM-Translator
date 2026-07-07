@@ -41,3 +41,5 @@ _SPIRV_OP_INTERNAL(ClampConvertFToSINTEL,
                    internal::OpClampConvertFToSINTEL)
 _SPIRV_OP_INTERNAL(ClampStochasticRoundFToSINTEL,
                    internal::OpClampStochasticRoundFToSINTEL)
+_SPIRV_OP_INTERNAL(SubgroupScaledMatrixMultiplyAccumulateINTEL,
+                   internal::OpSubgroupScaledMatrixMultiplyAccumulateINTEL)
