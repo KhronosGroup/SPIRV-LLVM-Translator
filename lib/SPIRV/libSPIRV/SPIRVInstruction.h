@@ -4141,7 +4141,7 @@ protected:
     if (NonConstThis->getOperands().size() > OperandsIdx) {
       const SPIRVConstant *OperandsConst = static_cast<const SPIRVConstant *>(
           NonConstThis->getOperand(OperandsIdx));
-      uint64_t OperandsMask = OperandsConst->getZExtIntValue();
+      const uint64_t OperandsMask = OperandsConst->getZExtIntValue();
 
       // FP4 operand bits
       constexpr uint64_t FP4Mask =
