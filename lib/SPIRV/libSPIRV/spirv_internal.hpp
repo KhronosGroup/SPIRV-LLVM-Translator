@@ -79,6 +79,7 @@ enum InternalOp {
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
+  IOpSubgroupScaledMatrixMultiplyAccumulateINTEL = 6264,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
   IOpComplexFMulINTEL = 6415,
   IOpComplexFDivINTEL = 6416,
@@ -126,6 +127,7 @@ enum InternalCapability {
   ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
   ICapabilityInt16AtomicsINTEL = 6261,
   ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
+  ICapabilitySubgroupScaledMatrixMultiplyAccumulateINTEL = 6263,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityComplexFloatMulDivINTEL = 6414,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
@@ -184,6 +186,9 @@ enum InternalMatrixMultiplyAccumulateOperandsMask {
   // FP4 matrix operands
   IMatrixMultiplyAccumulateOperandsMatrixAPackedFloat4E2M1INTELMask = 0x40000,
   IMatrixMultiplyAccumulateOperandsMatrixBPackedFloat4E2M1INTELMask = 0x80000,
+  // Scale factors for SPV_INTEL_subgroup_scaled_matrix_multiply_accumulate.
+  IMatrixMultiplyAccumulateOperandsScaleAFloat8E8M0INTELMask = 0x100000,
+  IMatrixMultiplyAccumulateOperandsScaleBFloat8E8M0INTELMask = 0x200000,
 };
 
 #define _SPIRV_OP(x, y) constexpr x x##y = static_cast<x>(I##x##y);
@@ -264,6 +269,9 @@ _SPIRV_OP(Op, StochasticRoundFToFINTEL)
 _SPIRV_OP(Capability, FloatConversionsFtoSINTEL)
 _SPIRV_OP(Op, ClampConvertFToSINTEL)
 _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
+
+_SPIRV_OP(Capability, SubgroupScaledMatrixMultiplyAccumulateINTEL)
+_SPIRV_OP(Op, SubgroupScaledMatrixMultiplyAccumulateINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
