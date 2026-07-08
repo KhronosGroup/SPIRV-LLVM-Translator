@@ -25,8 +25,8 @@
 ; CHECK-SPIRV: FmaKHR [[#TYPE_VEC]] [[#]]
 ; CHECK-SPIRV: FmaKHR [[#TYPE_FLOAT]] [[#]]
 
-; CHECK-SPIRV-FMF: 4 Decorate [[#FMF_RES:]] FPFastMathMode 3
-; CHECK-SPIRV-FMF: FmaKHR {{[0-9]+}} [[#FMF_RES]]
+; CHECK-SPIRV-FMF: Decorate [[#FMF_RES:]] FPFastMathMode 3
+; CHECK-SPIRV-FMF: FmaKHR [[#]] [[#FMF_RES]]
 
 ; CHECK-SPIRV-NO-EXT-NOT: Capability FMAKHR
 ; CHECK-SPIRV-NO-EXT-NOT: Extension "SPV_KHR_fma"
