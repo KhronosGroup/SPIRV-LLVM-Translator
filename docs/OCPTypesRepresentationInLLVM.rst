@@ -41,7 +41,7 @@ Most conversions will be represented by standard SPIR-V conversion instructions 
 *OpConvertUToF*, *OpConvertFToU*, *OpSConvert*), which don't carry information about floating-point value's width and encoding.
 This document adds a new set of external function calls, each of which has a name that is formed from encoding a specific conversion
 that it performs. This name has a *__builtin_spirv_* prefix and a postfix indicating the extension (e.g., *EXT* from SPV_EXT_float8
-and SPV_EXT_ocp_microscaling_types, *INTEL* from SPV_INTEL_int4 and SPV_INTEL_fp_conversions). These calls will be translated to SPIR-V conversion
+and SPV_EXT_ocp_microscaling_types, *INTEL* from SPV_INTEL_int4, SPV_INTEL_float4 and SPV_INTEL_fp_conversions). These calls will be translated to SPIR-V conversion
 instructions operating over the appropriate types. These functions are expected to be mangled following Itanium C++ ABI. SPIR-V consumer
 will apply Itanium mangling during translation to LLVM IR as well.
 
@@ -93,6 +93,9 @@ SPV_EXT_ocp_microscaling_types Conversions
   __builtin_spirv_ConvertE2M1ToFP16EXT, __builtin_spirv_ConvertE2M1ToBF16EXT,
   __builtin_spirv_ConvertFP16ToE2M1EXT, __builtin_spirv_ConvertBF16ToE2M1EXT
 
+For backward compatibility the equivalent INTEL-postfix builtins (e.g. *__builtin_spirv_ConvertE2M1ToFP16INTEL*)
+are also accepted and map to SPV_INTEL_float4; new producers should use the EXT form above.
+
 SPV_INTEL_fp_conversions
 -------------------------
 
@@ -108,8 +111,8 @@ This extension provides conversions with specialized rounding modes for improved
 The result is decorated with *SaturatedToLargestFloat8NormalConversionEXT* (SPV_EXT_float8).
 
 ClampConvert*ToE2M1 builtins are not provided: fp4 (E2M1) saturation is unconditional,
-so they collapse into the plain *Convert\*ToE2M1EXT* form listed under
-SPV_EXT_ocp_microscaling_types.
+so they collapse into the plain *Convert\*ToE2M1EXT* / *Convert\*ToE2M1INTEL* form listed under
+SPV_EXT_ocp_microscaling_types / SPV_INTEL_float4.
 
 **Translated to OpClampConvertFToSINTEL (clamp rounding to signed integer):**
 

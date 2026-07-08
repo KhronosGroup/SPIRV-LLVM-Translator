@@ -252,6 +252,8 @@ public:
       return ExtensionID::SPV_EXT_float8;
     if (isTypeFloat(4, FPEncodingFloat4E2M1EXT))
       return ExtensionID::SPV_EXT_ocp_microscaling_types;
+    if (isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL))
+      return ExtensionID::SPV_INTEL_float4;
     return {};
   }
 
@@ -272,6 +274,8 @@ public:
       CV.push_back(CapabilityFloat8EXT);
     } else if (isTypeFloat(4, FPEncodingFloat4E2M1EXT)) {
       CV.push_back(CapabilityFloat4EXT);
+    } else if (isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL)) {
+      CV.push_back(internal::CapabilityFloat4E2M1INTEL);
     }
     return CV;
   }
@@ -303,7 +307,9 @@ protected:
         (BitWidth == 16 && FloatingPointEncoding == FPEncodingBFloat16KHR) ||
         (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E4M3EXT) ||
         (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E5M2EXT) ||
-        (BitWidth == 4 && FloatingPointEncoding == FPEncodingFloat4E2M1EXT);
+        (BitWidth == 4 && FloatingPointEncoding == FPEncodingFloat4E2M1EXT) ||
+        (BitWidth == 4 &&
+         FloatingPointEncoding == internal::FPEncodingFloat4E2M1INTEL);
     assert(ValidEncoding && "Invalid floating point encoding");
     (void)ValidEncoding;
   }
@@ -1224,7 +1230,8 @@ public:
     else if (CompType->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
              CompType->isTypeFloat(8, FPEncodingFloat8E5M2EXT))
       CV.push_back(CapabilityFloat8CooperativeMatrixEXT);
-    else if (CompType->isTypeFloat(4, FPEncodingFloat4E2M1EXT))
+    else if (CompType->isTypeFloat(4, FPEncodingFloat4E2M1EXT) ||
+             CompType->isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL))
       CV.push_back(internal::CapabilityFloat4E2M1CooperativeMatrixINTEL);
     return CV;
   }

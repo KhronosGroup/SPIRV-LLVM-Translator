@@ -102,6 +102,7 @@ enum InternalCapability {
   ICapabilitySigmoidINTEL = 6167,
   ICapabilityDeviceBarrierINTEL = 6185,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilityFloat4E2M1INTEL = 6212,
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
   ICapabilityFloatConversionsFtoFINTEL = 6215,
   ICapabilityFloatConversionsFtoSINTEL = 6216,
@@ -135,6 +136,11 @@ enum InternalJointMatrixLayout {
   ColumnMajor = 1,
   PackedA = 2,
   PackedB = 3
+};
+
+enum InternalFPEncoding {
+  FPEncodingFloat4E2M1INTEL = 6214,
+  FPEncodingMax = 0x7fffffff,
 };
 
 enum InternalBuiltIn {
@@ -208,6 +214,7 @@ _SPIRV_OP(Capability, AtomicBFloat16MinMaxINTEL)
 
 _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
+_SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
 
 _SPIRV_OP(Capability, FloatConversionsFtoFINTEL)
