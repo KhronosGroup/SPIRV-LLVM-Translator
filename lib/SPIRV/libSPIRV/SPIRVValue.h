@@ -174,6 +174,7 @@ public:
   double getDoubleValue() const { return getValue<double>(); }
   unsigned getNumWords() const { return NumWords; }
   const std::vector<SPIRVWord> &getSPIRVWords() { return Words; }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   constexpr static SPIRVWord FixedWC = 3;
@@ -213,7 +214,6 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     NumWords = WordCount - FixedWC;
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   void decode(std::istream &I) override {
     getDecoder(I) >> Type >> Id;
     Words.resize(NumWords);
@@ -360,6 +360,7 @@ public:
     for (auto &I : ContinuedInstructions)
       O << *I;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   void validate() const override {
@@ -373,8 +374,6 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Elements.resize(WordCount - FixedWC);
   }
-
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
   void encode(spv_ostream &O) const override {
     getEncoder(O) << Type << Id << Elements;

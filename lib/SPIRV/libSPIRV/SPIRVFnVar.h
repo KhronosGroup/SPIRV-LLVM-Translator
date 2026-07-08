@@ -250,6 +250,7 @@ public:
 
     return Res;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC4(Type, Id, Target, Features);
@@ -259,7 +260,6 @@ protected:
     Features.resize(WordCount - FixedWC);
     NumWords = WordCount - FixedWC;
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 private:
   unsigned NumWords;
@@ -416,6 +416,7 @@ public:
 
     return Res;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Type, Id, Capabilities);
@@ -437,7 +438,6 @@ protected:
     Capabilities.resize(WordCount - FixedWC);
     NumWords = WordCount - FixedWC;
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 private:
   unsigned NumWords;

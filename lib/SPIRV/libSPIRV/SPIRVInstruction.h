@@ -518,6 +518,7 @@ public:
       return std::vector<SPIRVEntry *>(1, V);
     return std::vector<SPIRVEntry *>();
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   void validate() const override {
@@ -531,7 +532,6 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Initializer.resize(WordCount - FixedWC);
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   _SPIRV_DEF_ENCDEC4(Type, Id, StorageClass, Initializer)
 
   SPIRVStorageClassKind StorageClass;

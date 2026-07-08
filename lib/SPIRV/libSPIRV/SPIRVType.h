@@ -655,6 +655,7 @@ public:
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     return std::vector<SPIRVEntry *>(1, get<SPIRVType>(SampledType));
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth, Desc.Arrayed,
@@ -676,7 +677,6 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     Acc.resize(WordCount - FixedWC);
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 private:
   SPIRVId SampledType;
@@ -875,6 +875,7 @@ public:
       Operands.push_back(getEntry(I));
     return Operands;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, ReturnType, ParamTypeIdVec)
@@ -883,7 +884,6 @@ protected:
     SPIRVCK(WordCount >= FixedWC, InvalidWordCount, "");
     ParamTypeIdVec.resize(WordCount - FixedWC);
   }
-  SPIRVWord getFixedWordCount() const override { return FixedWC; }
   void validate() const override {
     SPIRVEntry::validate();
     ReturnType->validate();
