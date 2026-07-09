@@ -4,8 +4,6 @@
 
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_EXT_long_vector,+SPV_INTEL_vector_compute -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --implicit-check-not="Capability LongVectorEXT" --implicit-check-not='Extension "SPV_EXT_long_vector"'
-; TODO: re-enable spirv-val once it can recognize that TypeVector is allowed to have any number of
-; components when SPV_INTEL_vector_compute is enabled.
 ; RUNx: spirv-val %t.spv
 
 ; CHECK-DAG: Capability VectorAnyINTEL
