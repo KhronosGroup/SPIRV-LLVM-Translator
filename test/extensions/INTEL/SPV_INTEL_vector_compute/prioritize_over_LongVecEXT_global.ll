@@ -4,7 +4,6 @@
 
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_EXT_long_vector,+SPV_INTEL_vector_compute -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --implicit-check-not="Capability LongVectorEXT" --implicit-check-not='Extension "SPV_EXT_long_vector"'
-; RUNx: spirv-val %t.spv
 
 ; CHECK-DAG: Capability VectorAnyINTEL
 ; CHECK-DAG: Extension "SPV_INTEL_vector_compute"
