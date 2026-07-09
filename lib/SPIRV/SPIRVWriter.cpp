@@ -6483,7 +6483,7 @@ bool LLVMToSPIRVBase::translate() {
   // Check before type translation so that SPIRVTypeVector can choose the
   // matching capability.
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
-    BM->setVectorComputeModule(hasVectorComputeMetadata(M));
+    BM->setVectorCompute(hasVectorComputeMetadata(M));
 
   if (!lowerBuiltinCallsToVariables(M))
     return false;

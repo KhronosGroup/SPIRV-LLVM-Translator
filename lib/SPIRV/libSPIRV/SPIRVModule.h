@@ -142,6 +142,8 @@ public:
                               const std::string &) = 0;
   void setInvalid() { IsValid = false; }
   bool isModuleValid() { return IsValid; }
+  void setVectorCompute(bool E) { IsVectorCompute = E; }
+  bool isVectorCompute() const { return IsVectorCompute; }
 
   // Module query functions
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
@@ -196,8 +198,6 @@ public:
   virtual void setAutoAddCapability(bool E) { AutoAddCapability = E; }
   virtual void setValidateCapability(bool E) { ValidateCapability = E; }
   virtual void setAutoAddExtensions(bool E) { AutoAddExtensions = E; }
-  virtual void setVectorComputeModule(bool E) { IsVectorComputeModule = E; }
-  bool isVectorComputeModule() const { return IsVectorComputeModule; }
   virtual void setGeneratorId(unsigned short) = 0;
   virtual void setGeneratorVer(unsigned short) = 0;
   virtual void resolveUnknownStructFields() = 0;
@@ -681,12 +681,12 @@ protected:
   bool AutoAddCapability;
   bool ValidateCapability;
   bool AutoAddExtensions = true;
-  bool IsVectorComputeModule = false;
   SPIRV::TranslatorOpts TranslationOpts;
   VersionNumber MaxVersion = VersionNumber::MaximumVersion;
 
 private:
   bool IsValid;
+  bool IsVectorCompute = false;
 };
 
 #ifdef _SPIRV_SUPPORT_TEXT_FMT
