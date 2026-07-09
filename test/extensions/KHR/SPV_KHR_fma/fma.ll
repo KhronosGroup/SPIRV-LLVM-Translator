@@ -6,7 +6,9 @@
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o - | llvm-dis -o %t.rev.ll
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix=CHECK-LLVM
-; RUN: llvm-spirv %s --spirv-ext=+SPV_KHR_fma -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-FMF
+; RUN: llvm-spirv %s --spirv-ext=+SPV_KHR_fma -o %t-fmf.spv
+; RUN: spirv-val %t-fmf.spv
+; RUN: llvm-spirv %t-fmf.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-FMF
 
 ; RUN: llvm-spirv %s -spirv-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV-NO-EXT
