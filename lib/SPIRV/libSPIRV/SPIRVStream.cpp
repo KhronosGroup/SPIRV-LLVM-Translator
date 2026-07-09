@@ -342,10 +342,7 @@ SPIRVDecoder::getContinuedInstructions(const spv::Op ContinuedOpCode) {
   getWordCountAndOpCode();
   while (OpCode == ContinuedOpCode) {
     SPIRVEntry *Entry = getEntry();
-    if (!M.getErrorLog().checkError(
-            Entry != nullptr, SPIRVEC_InvalidInstruction,
-            "Failed to decode entry! Invalid instruction!"))
-      break;
+    assert(Entry && "Failed to decode entry! Invalid instruction!");
     M.add(Entry);
     ContinuedInst.push_back(Entry);
     Pos = IS.tellg();
@@ -361,10 +358,7 @@ std::vector<SPIRVEntry *> SPIRVDecoder::getSourceContinuedInstructions() {
   getWordCountAndOpCode();
   while (OpCode == OpExtInst) {
     SPIRVEntry *Entry = getEntry();
-    if (!M.getErrorLog().checkError(
-            Entry != nullptr, SPIRVEC_InvalidInstruction,
-            "Failed to decode entry! Invalid instruction!"))
-      break;
+    assert(Entry && "Failed to decode entry! Invalid instruction!");
     SPIRVExtInst *Inst = static_cast<SPIRVExtInst *>(Entry);
     if (Inst->getExtOp() != SPIRVDebug::Instruction::SourceContinued) {
       IS.seekg(Pos); // restore position

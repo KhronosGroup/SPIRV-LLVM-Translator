@@ -132,7 +132,7 @@ protected:
     SPIRVInstruction::validate();
     assert(WordCount >= FixedWC);
     assert(OpCode == OC);
-    SPIRVCK(getBasicBlock(), InvalidInstruction, "Invalid BB");
+    assert(getBasicBlock() && "Invalid BB");
     assert(getBasicBlock()->getModule() == Asm->getModule());
   }
   SPIRVAsmINTEL *Asm = nullptr;

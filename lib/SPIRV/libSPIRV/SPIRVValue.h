@@ -106,7 +106,7 @@ public:
 
   void validate() const override {
     SPIRVEntry::validate();
-    SPIRVCK(!hasType() || Type, InvalidInstruction, "Invalid type");
+    assert((!hasType() || Type) && "Invalid type");
   }
 
   void setType(SPIRVType *Ty) {

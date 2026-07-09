@@ -951,9 +951,7 @@ protected:
     SPIRVInstruction::validate();
     assert(WordCount == 2);
     assert(OpCode == OC);
-    SPIRVCK(getTargetLabel() &&
-                (getTargetLabel()->isLabel() || getTargetLabel()->isForward()),
-            InvalidInstruction, "OpBranch target is not a valid label");
+    assert(getTargetLabel()->isLabel() || getTargetLabel()->isForward());
   }
   SPIRVId TargetLabelId;
 };
@@ -1006,14 +1004,8 @@ protected:
     assert(OpCode == OC);
     assert(getCondition()->isForward() ||
            getCondition()->getType()->isTypeBool());
-    SPIRVCK(getTrueLabel() &&
-                (getTrueLabel()->isForward() || getTrueLabel()->isLabel()),
-            InvalidInstruction,
-            "OpBranchConditional true label is not a valid label");
-    SPIRVCK(getFalseLabel() &&
-                (getFalseLabel()->isForward() || getFalseLabel()->isLabel()),
-            InvalidInstruction,
-            "OpBranchConditional false label is not a valid label");
+    assert(getTrueLabel()->isForward() || getTrueLabel()->isLabel());
+    assert(getFalseLabel()->isForward() || getFalseLabel()->isLabel());
     if (Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
       assert(TrueLabelId != FalseLabelId);
   }
@@ -1082,9 +1074,7 @@ public:
     assert(Pairs.size() % 2 == 0);
     foreachPair([this](SPIRVValue *IncomingV, SPIRVBasicBlock *IncomingBB) {
       assert(IncomingV->isForward() || IncomingV->getType() == Type);
-      SPIRVCK(IncomingBB &&
-                  (IncomingBB->isBasicBlock() || IncomingBB->isForward()),
-              InvalidInstruction, "OpPhi incoming block is not a basic block");
+      assert(IncomingBB->isBasicBlock() || IncomingBB->isForward());
     });
     SPIRVInstruction::validate();
   }
@@ -1356,8 +1346,7 @@ public:
     assert(OpCode == OC);
     assert(Pairs.size() % getPairSize() == 0);
     foreachPair([=](LiteralTy Literals, SPIRVBasicBlock *BB) {
-      SPIRVCK(BB && (BB->isBasicBlock() || BB->isForward()), InvalidInstruction,
-              "OpSwitch target is not a basic block");
+      assert(BB->isBasicBlock() || BB->isForward());
     });
     SPIRVInstruction::validate();
   }

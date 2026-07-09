@@ -142,7 +142,7 @@ public:
   void validate() const override {
     SPIRVValue::validate();
     validateFunctionControlMask(FCtrlMask);
-    SPIRVCK(FuncType, InvalidInstruction, "Invalid func type");
+    assert(FuncType && "Invalid func type");
   }
 
 private:

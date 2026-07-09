@@ -103,12 +103,7 @@ void SPIRVFunction::decode(std::istream &I) {
     switch (Decoder.OpCode) {
     case OpFunctionParameter: {
       auto *Param = static_cast<SPIRVFunctionParameter *>(Decoder.getEntry());
-      if (!getErrorLog().checkError(
-              Param != nullptr, SPIRVEC_InvalidInstruction,
-              "Invalid function parameter in input SPIR-V module")) {
-        Module->setInvalid();
-        return;
-      }
+      assert(Param);
       Module->add(Param);
       Param->setParent(this);
       Parameters.push_back(Param);
