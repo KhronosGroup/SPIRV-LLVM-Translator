@@ -244,8 +244,10 @@ SPIRVEntry *SPIRVDecoder::getEntry() {
   if (!M.getErrorLog().checkError(
           Entry != nullptr, SPIRVEC_InvalidInstruction,
           "input SPIR-V module has an invalid or unknown opcode " +
-              std::to_string(OpCode)))
+              std::to_string(OpCode))) {
+    M.setInvalid();
     return nullptr;
+  }
   Entry->setModule(&M);
   if (isModuleScopeAllowedOpCode(OpCode) && !Scope) {
   } else
