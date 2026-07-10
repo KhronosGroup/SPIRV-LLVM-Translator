@@ -100,7 +100,12 @@ bool SPIRVLowerMemmoveBase::expandMemMoveIntrinsicUses(Function &F) {
 
   for (User *U : make_early_inc_range(F.users())) {
     MemMoveInst *Inst = cast<MemMoveInst>(U);
-    if (!isa<ConstantInt>(Inst->getLength())) {
+    auto *Len = dyn_cast<ConstantInt>(Inst->getLength());
+    if (Len && Len->isZero()) {
+      // A zero-sized memmove is a no-op. Drop it instead of lowering to avoid
+      // emitting an invalid OpCopyMemorySized with a Size operand of 0.
+      Inst->eraseFromParent();
+    } else if (!isa<ConstantInt>(Inst->getLength())) {
       expandMemMoveAsLoop(Inst);
       Inst->eraseFromParent();
     } else {
