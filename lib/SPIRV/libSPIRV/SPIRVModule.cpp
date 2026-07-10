@@ -623,6 +623,9 @@ private:
   SPIRVIdToInstructionSetMap IdToInstSetMap;
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
+  // True while the module is being populated by decoding an existing SPIR-V
+  // module. Used to skip writer-only code paths.
+  bool IsReading = false;
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
   std::shared_ptr<const SPIRVLine> CurrentLine;
@@ -1055,6 +1058,9 @@ void SPIRVModuleImpl::setName(SPIRVEntry *E, const std::string &Name) {
   E->setName(Name);
   if (!E->hasId())
     return;
+  // NamedId is consumed only by the writer.
+  if (IsReading)
+    return;
   if (!Name.empty())
     NamedId.insert(E->getId());
   else
@@ -1298,7 +1304,9 @@ SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
   assert(Found && "Decorate target does not exist");
   if (!Dec->getOwner())
     DecorateVec.push_back(Dec);
-  addCapabilities(Dec->getRequiredCapability());
+  // Required capabilities are only auto-collected while building a module.
+  if (AutoAddCapability)
+    addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
 
@@ -2539,6 +2547,7 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
   MI.setAutoAddExtensions(false);
+  MI.IsReading = true;
   auto ReadSPIRVWord = [](std::istream &I) {
     uint32_t W;
     I >> skipcomment >> W;
@@ -2660,6 +2669,7 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
   MI.setAutoAddExtensions(false);
+  MI.IsReading = true;
 
   SPIRVWord Header[5] = {0};
   I.read(reinterpret_cast<char *>(&Header), sizeof(Header));
