@@ -5963,6 +5963,7 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
 
+  BM->setReadingModule();
   IS >> *BM;
   if (!BM->isModuleValid()) {
     BM->getError(ErrMsg);

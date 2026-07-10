@@ -196,6 +196,7 @@ public:
   virtual void setAutoAddCapability(bool E) { AutoAddCapability = E; }
   virtual void setValidateCapability(bool E) { ValidateCapability = E; }
   virtual void setAutoAddExtensions(bool E) { AutoAddExtensions = E; }
+  virtual void setReadingModule() {}
   virtual void setGeneratorId(unsigned short) = 0;
   virtual void setGeneratorVer(unsigned short) = 0;
   virtual void resolveUnknownStructFields() = 0;

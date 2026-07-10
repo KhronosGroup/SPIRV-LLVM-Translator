@@ -108,6 +108,8 @@ public:
     return CurrentLine.get() || !DebugInstVec.empty();
   }
 
+  void setReadingModule() override { IsReading = true; }
+
   // Error handling functions
   SPIRVErrorLog &getErrorLog() override { return ErrLog; }
   SPIRVErrorCode getError(std::string &ErrMsg) override {
@@ -2547,7 +2549,6 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
   MI.setAutoAddExtensions(false);
-  MI.IsReading = true;
   auto ReadSPIRVWord = [](std::istream &I) {
     uint32_t W;
     I >> skipcomment >> W;
@@ -2669,7 +2670,6 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   SPIRVModuleImpl &MI = *this;
   MI.setAutoAddCapability(false);
   MI.setAutoAddExtensions(false);
-  MI.IsReading = true;
 
   SPIRVWord Header[5] = {0};
   I.read(reinterpret_cast<char *>(&Header), sizeof(Header));
