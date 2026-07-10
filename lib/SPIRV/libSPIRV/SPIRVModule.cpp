@@ -625,7 +625,6 @@ private:
   SPIRVIdToInstructionSetMap IdToInstSetMap;
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
-  // Cached total byte size of the input stream.
   std::streamoff InputStreamSize = 0;
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
@@ -2455,8 +2454,7 @@ static void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
                               SPIRVWord WordCount) {
   if (!SPIRVUseTextFormat) {
     // Bounds-check against the total stream size.
-    std::streamoff RemainingBytes =
-        M.getInputStreamSize() - static_cast<std::streamoff>(IS.tellg());
+    std::streamoff RemainingBytes = M.getInputStreamSize() - IS.tellg();
 
     std::streamoff ExpectedBytes =
         static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
@@ -2699,12 +2697,10 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   MI.NextId = Header[3];
   MI.InstSchema = static_cast<SPIRVInstructionSchemaKind>(Header[4]);
 
-  // Cache the total stream size once so validateWordCount can bounds-check each
-  // instruction with a single tellg() instead of seeking to the end and back.
   if (!SPIRVUseTextFormat) {
     std::streampos HeaderEnd = I.tellg();
     I.seekg(0, std::ios::end);
-    MI.InputStreamSize = static_cast<std::streamoff>(I.tellg());
+    MI.InputStreamSize = I.tellg();
     I.clear();
     I.seekg(HeaderEnd);
   }
