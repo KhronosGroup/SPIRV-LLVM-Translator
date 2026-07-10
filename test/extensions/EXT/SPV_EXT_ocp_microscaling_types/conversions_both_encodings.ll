@@ -5,8 +5,6 @@
 ; builtin.
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_float4,+SPV_EXT_ocp_microscaling_types,+SPV_INTEL_int4
-; TODO: re-enable spirv-val once it can recognize Float4E2M1INTEL capability (6212).
-; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r --spirv-target-env=SPV-IR
