@@ -140,6 +140,8 @@ public:
                               const std::string &) = 0;
   void setInvalid() { IsValid = false; }
   bool isModuleValid() { return IsValid; }
+  void setVectorCompute(bool E) { IsVectorCompute = E; }
+  bool isVectorCompute() const { return IsVectorCompute; }
 
   // Module query functions
   virtual SPIRVAddressingModelKind getAddressingModel() = 0;
@@ -659,6 +661,7 @@ protected:
 
 private:
   bool IsValid;
+  bool IsVectorCompute = false;
 };
 
 
