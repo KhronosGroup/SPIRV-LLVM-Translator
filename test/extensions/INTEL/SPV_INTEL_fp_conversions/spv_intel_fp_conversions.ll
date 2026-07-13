@@ -5,6 +5,8 @@
 ; for scalar
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_EXT_float8,+SPV_EXT_ocp_microscaling_types,+SPV_INTEL_int4,+SPV_KHR_bfloat16,+SPV_INTEL_fp_conversions
+; TODO: re-enable spirv-val once it recognizes the FloatConversionsFtoFINTEL capability (6215)
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -o %t.spt --to-text
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.spv -o %t.rev.bc -r
