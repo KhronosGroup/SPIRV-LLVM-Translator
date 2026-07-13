@@ -920,6 +920,8 @@ public:
       return ExtensionID::SPV_INTEL_rounded_divide_sqrt;
     case internal::CapabilityDeviceBarrierINTEL:
       return ExtensionID::SPV_INTEL_device_barrier;
+    case CapabilityLongVectorEXT:
+      return ExtensionID::SPV_EXT_long_vector;
     default:
       return {};
     }
