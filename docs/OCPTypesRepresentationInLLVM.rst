@@ -93,7 +93,7 @@ SPV_EXT_ocp_microscaling_types Conversions
   __builtin_spirv_ConvertE2M1ToFP16EXT, __builtin_spirv_ConvertE2M1ToBF16EXT,
   __builtin_spirv_ConvertFP16ToE2M1EXT, __builtin_spirv_ConvertBF16ToE2M1EXT
 
-For backward compatibility the equivalent INTEL-postfix builtins (e.g. *__builtin_spirv_ConvertE2M1ToFP16INTEL*)
+For backward compatibility, the equivalent INTEL-postfix builtins (e.g. *__builtin_spirv_ConvertE2M1ToFP16INTEL*)
 are also accepted and map to SPV_INTEL_float4; new producers should use the EXT form above.
 
 SPV_INTEL_fp_conversions
