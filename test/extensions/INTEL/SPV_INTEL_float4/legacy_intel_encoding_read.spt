@@ -1,6 +1,6 @@
 ; Verify that SPIR-V using the Float4E2M1INTEL encoding (6214) from
 ; SPV_INTEL_float4 is consumed and round-trips back to the INTEL builtin,
-; independently of the Float4E2M1EXT encoding from SPV_EXT_ocp_microscaling_types.
+; rather than the Float4E2M1EXT encoding from SPV_EXT_ocp_microscaling_types.
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc

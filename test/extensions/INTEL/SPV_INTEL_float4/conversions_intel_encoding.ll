@@ -1,6 +1,6 @@
 ; Checks that FP4 (E2M1) conversion builtins with the INTEL postfix are
 ; translated using the SPV_INTEL_float4 extension: the Float4E2M1INTEL
-; encoding (6214) and capability, independently of the Float4E2M1EXT encoding
+; encoding (6214) and capability, rather than the Float4E2M1EXT encoding
 ; from SPV_EXT_ocp_microscaling_types. Round-trips back to the INTEL builtins.
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_float4,+SPV_INTEL_int4,+SPV_KHR_bfloat16
