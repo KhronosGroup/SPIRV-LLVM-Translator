@@ -1,7 +1,5 @@
-; Checks that Float4E2M1EXT works as a cooperative-matrix component type: an
-; fp16 cooperative matrix is converted to an FP4 (E2M1) cooperative matrix and
-; the conversion round-trips back to the __builtin_spirv_ConvertFP16ToE2M1EXT
-; builtin.
+; Checks that Float4E2M1EXT encoding is preserved through a round-trip
+; translation when it's used as a cooperative-matrix component type.
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_EXT_ocp_microscaling_types,+SPV_KHR_cooperative_matrix,+SPV_INTEL_int4
 ; TODO: re-enable spirv-val once it can recognize Float4E2M1CooperativeMatrixINTEL capability (6213).
