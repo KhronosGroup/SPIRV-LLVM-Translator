@@ -64,6 +64,23 @@ elseif(SPIRV-Tools-tools_FOUND)
   endif()
 
   set(SPIRV_TOOLS_BINDIR "${SPIRV_AS_PATH}")
+elseif(LLVM_INCLUDE_SPIRV_TOOLS_TESTS)
+  # Fall back to the in-tree SPIRV-Tools build (llvm/tools/spirv-tools),
+  # enabled via -DLLVM_INCLUDE_SPIRV_TOOLS_TESTS=ON. Its custom targets
+  # copy/symlink binaries into LLVM_RUNTIME_OUTPUT_INTDIR.
+  if(TARGET spirv-as)
+    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
+  endif()
+  if(TARGET spirv-dis)
+    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
+  endif()
+  if(TARGET spirv-link)
+    set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
+  endif()
+  if(TARGET spirv-val)
+    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
+  endif()
+  set(SPIRV_TOOLS_BINDIR "${LLVM_RUNTIME_OUTPUT_INTDIR}")
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_AS_FOUND)
@@ -128,6 +145,14 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
   endif()
 endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 
+
+if(LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
+  foreach(tool spirv-as spirv-dis spirv-link spirv-val)
+    if(TARGET ${tool})
+      list(APPEND LLVM_SPIRV_TEST_DEPS ${tool})
+    endif()
+  endforeach()
+endif()
 
 add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
