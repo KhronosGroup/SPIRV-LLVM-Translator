@@ -849,10 +849,13 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
       // generation.
       if (!BM->isAllowedToUseExtension(ExtensionID::SPV_EXT_float8) &&
           !BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_int4) &&
-          !BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_float4)) {
+          !BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_float4) &&
+          !BM->isAllowedToUseExtension(
+              ExtensionID::SPV_EXT_ocp_microscaling_types)) {
         std::string ErrorStr =
-            "One of the following extensions: SPV_EXT_float8, SPV_INTEL_float4"
-            "SPV_INTEL_int4 should be enabled to process "
+            "One of the following extensions: "
+            "SPV_EXT_float8, SPV_EXT_ocp_microscaling_types, "
+            "SPV_INTEL_float4, SPV_INTEL_int4 should be enabled to process "
             "conversion builtins";
         getErrorLog().checkError(false, SPIRVEC_RequiresExtension, F, ErrorStr);
       }
@@ -4512,8 +4515,9 @@ processMiniFPOrInt4Type(Type *LLVMTy, FPEncodingWrap Encoding,
   unsigned TyWidth = cast<IntegerType>(ScalarTy)->getBitWidth();
   unsigned VecSize = 0;
 
-  const bool IsPacked =
-      Encoding == FPEncodingWrap::E2M1 || Encoding == FPEncodingWrap::Integer;
+  const bool IsPacked = Encoding == FPEncodingWrap::E2M1 ||
+                        Encoding == FPEncodingWrap::E2M1INTEL ||
+                        Encoding == FPEncodingWrap::Integer;
   if (IsPacked &&
       (TyWidth == 8 || TyWidth == 16 || TyWidth == 32 || TyWidth == 64)) {
     // Int4 or FP4 packed in an integer: each N-bit integer holds N/4 values.
