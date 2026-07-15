@@ -68,18 +68,18 @@ elseif(LLVM_INCLUDE_SPIRV_TOOLS_TESTS)
   # Fall back to the in-tree SPIRV-Tools build (llvm/tools/spirv-tools),
   # enabled via -DLLVM_INCLUDE_SPIRV_TOOLS_TESTS=ON. Its custom targets
   # copy/symlink binaries into LLVM_RUNTIME_OUTPUT_INTDIR.
-  if(TARGET spirv-as)
-    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
-  endif()
-  if(TARGET spirv-dis)
-    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
-  endif()
-  if(TARGET spirv-link)
-    set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
-  endif()
-  if(TARGET spirv-val)
-    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
-  endif()
+  #
+  # llvm/CMakeLists.txt calls add_subdirectory(projects) -- which pulls in
+  # this project -- before add_subdirectory(tools), where spirv-tools
+  # defines the spirv-as/dis/link/val custom targets. So those targets do
+  # not exist yet at this point, and if(TARGET ...) would always be false.
+  # CMake resolves DEPENDS/add_dependencies target names against the
+  # global target table at generate time, so it is safe to just assume
+  # the targets will exist and reference them unconditionally.
+  set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
+  set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
+  set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
+  set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
   set(SPIRV_TOOLS_BINDIR "${LLVM_RUNTIME_OUTPUT_INTDIR}")
 endif()
 
@@ -147,11 +147,11 @@ endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 
 
 if(LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
-  foreach(tool spirv-as spirv-dis spirv-link spirv-val)
-    if(TARGET ${tool})
-      list(APPEND LLVM_SPIRV_TEST_DEPS ${tool})
-    endif()
-  endforeach()
+  # These targets are defined later, by llvm/tools/spirv-tools (processed
+  # after this project's add_subdirectory(projects) call), so if(TARGET)
+  # would always be false here. CMake still resolves DEPENDS against them
+  # correctly at generate time.
+  list(APPEND LLVM_SPIRV_TEST_DEPS spirv-as spirv-dis spirv-link spirv-val)
 endif()
 
 add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
