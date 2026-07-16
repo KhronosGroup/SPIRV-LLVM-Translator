@@ -71,7 +71,9 @@ enum InternalOp {
   IOpCooperativeMatrixLoadCheckedINTEL = 6193,
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
+  IOpClampConvertFToFINTEL = 6216, // old op, for backward compatibility
   IOpStochasticRoundFToFINTEL = 6217,
+  IOpClampStochasticRoundFToFINTEL = 6218, // old op, for backward compatibility
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpSubgroupScaledMatrixMultiplyAccumulateINTEL = 6264,
   IOpJointMatrixWorkItemLengthINTEL = 6410,
@@ -230,7 +232,9 @@ _SPIRV_OP(Capability, Float4E2M1INTEL)
 _SPIRV_OP(Capability, Float4E2M1CooperativeMatrixINTEL)
 
 _SPIRV_OP(Capability, FloatConversionsFtoFINTEL)
+_SPIRV_OP(Op, ClampConvertFToFINTEL)
 _SPIRV_OP(Op, StochasticRoundFToFINTEL)
+_SPIRV_OP(Op, ClampStochasticRoundFToFINTEL)
 _SPIRV_OP(Capability, FloatConversionsFtoSINTEL)
 _SPIRV_OP(Op, ClampConvertFToSINTEL)
 _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
