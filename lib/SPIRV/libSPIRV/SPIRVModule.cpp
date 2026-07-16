@@ -108,6 +108,8 @@ public:
     return CurrentLine.get() || !DebugInstVec.empty();
   }
 
+  void setReadingModule() override { IsReading = true; }
+
   // Error handling functions
   SPIRVErrorLog &getErrorLog() override { return ErrLog; }
   SPIRVErrorCode getError(std::string &ErrMsg) override {
@@ -623,6 +625,9 @@ private:
   SPIRVIdToInstructionSetMap IdToInstSetMap;
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
+  // True while the module is being populated by decoding an existing SPIR-V
+  // module. Used to skip writer-only code paths.
+  bool IsReading = false;
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
   std::shared_ptr<const SPIRVLine> CurrentLine;
@@ -1055,6 +1060,9 @@ void SPIRVModuleImpl::setName(SPIRVEntry *E, const std::string &Name) {
   E->setName(Name);
   if (!E->hasId())
     return;
+  // NamedId is consumed only by the writer.
+  if (IsReading)
+    return;
   if (!Name.empty())
     NamedId.insert(E->getId());
   else
@@ -1298,7 +1306,9 @@ SPIRVModuleImpl::addDecorate(SPIRVDecorateGeneric *Dec) {
   assert(Found && "Decorate target does not exist");
   if (!Dec->getOwner())
     DecorateVec.push_back(Dec);
-  addCapabilities(Dec->getRequiredCapability());
+  // Required capabilities are only auto-collected while building a module.
+  if (AutoAddCapability)
+    addCapabilities(Dec->getRequiredCapability());
   return Dec;
 }
 
