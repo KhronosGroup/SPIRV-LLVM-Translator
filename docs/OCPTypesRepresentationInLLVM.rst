@@ -145,26 +145,6 @@ decoration (clamp + stochastic rounding):**
   __builtin_spirv_ClampStochasticRoundFP16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundFP16ToE4M3INTEL,
   __builtin_spirv_ClampStochasticRoundBF16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundBF16ToE4M3INTEL
 
-The ``OpClampConvertFToFINTEL`` and ``OpClampStochasticRoundFToFINTEL`` instructions below belong to a
-previous revision of this extension. They are re-added **temporarily** for backward compatibility: the
-*Reader* still accepts them, while the *Writer* only emits the current revision above.
-
-**Translated to OpClampConvertFToFINTEL, the equivalent of OpFConvert decorated with
-SaturatedToLargestFloat8NormalConversionEXT (clamp rounding):**
-
-.. code-block:: C
-
-  __builtin_spirv_ClampConvertFP16ToE4M3INTEL, __builtin_spirv_ClampConvertBF16ToE4M3INTEL,
-  __builtin_spirv_ClampConvertFP16ToE5M2INTEL, __builtin_spirv_ClampConvertBF16ToE5M2INTEL
-
-**Translated to OpClampStochasticRoundFToFINTEL, the equivalent of OpStochasticRoundFToFINTEL decorated with
-SaturatedToLargestFloat8NormalConversionEXT (clamp + stochastic rounding):**
-
-.. code-block:: C
-
-  __builtin_spirv_ClampStochasticRoundFP16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundFP16ToE4M3INTEL,
-  __builtin_spirv_ClampStochasticRoundBF16ToE5M2INTEL, __builtin_spirv_ClampStochasticRoundBF16ToE4M3INTEL
-
 
 Example LLVM IR to SPIR-V translation:
 Input LLVM IR

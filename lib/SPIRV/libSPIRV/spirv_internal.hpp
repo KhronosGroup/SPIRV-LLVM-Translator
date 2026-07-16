@@ -68,9 +68,9 @@ enum InternalOp {
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
   IOpTypeTaskSequenceINTEL = 6199,
-  IOpClampConvertFToFINTEL = 6216,
+  IOpClampConvertFToFINTEL = 6216, // old op, for backward compatibility
   IOpStochasticRoundFToFINTEL = 6217,
-  IOpClampStochasticRoundFToFINTEL = 6218,
+  IOpClampStochasticRoundFToFINTEL = 6218, // old op, for backward compatibility
   IOpClampStochasticRoundFToSINTEL = 6219,
   IOpCooperativeMatrixLoadOffsetINTEL = 6239,
   IOpCooperativeMatrixStoreOffsetINTEL = 6240,
