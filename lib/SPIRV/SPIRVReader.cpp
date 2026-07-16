@@ -1103,12 +1103,17 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
       FPEncodingWrap SrcEnc = GetEncodingAndUpdateType(SPVSrcTy);
       FPEncodingWrap DstEnc = GetEncodingAndUpdateType(SPVDstTy);
-      bool IsSaturatedFP8 =
-          IsOldConvertFToFOp &&
-          (DstEnc == FPEncodingWrap::E4M3 || DstEnc == FPEncodingWrap::E5M2);
-      if (!IsSaturatedFP8 &&
-          BC->hasDecorate(
-              DecorationSaturatedToLargestFloat8NormalConversionEXT)) {
+      const bool HasSaturatedFP8Decor = BC->hasDecorate(
+          DecorationSaturatedToLargestFloat8NormalConversionEXT);
+      bool IsSaturatedFP8 = false;
+      if (IsOldConvertFToFOp) {
+        BM->getErrorLog().checkError(
+            !HasSaturatedFP8Decor, SPIRVEC_InvalidInstruction,
+            "SaturatedToLargestFloat8NormalConversionEXT is not valid on "
+            "OpClampConvertFToFINTEL or OpClampStochasticRoundFToFINTEL.\n");
+        IsSaturatedFP8 =
+            DstEnc == FPEncodingWrap::E4M3 || DstEnc == FPEncodingWrap::E5M2;
+      } else if (HasSaturatedFP8Decor) {
         BM->getErrorLog().checkError(
             (OC == OpFConvert || OC == OpConvertSToF || OC == OpConvertUToF ||
              OC == internal::OpStochasticRoundFToFINTEL) &&
