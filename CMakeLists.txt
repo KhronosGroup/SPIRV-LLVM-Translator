@@ -120,16 +120,30 @@ endif()
 
 set(LLVM_SPIRV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# first try locating SPIRV-Tools via pkgconfig (the old way)
-if (NOT (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_SPIRV_BUILD_EXTERNAL))
-  pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
+# True when tests should use the in-tree SPIRV-Tools build
+# (llvm/tools/spirv-tools) instead of a system install. Standalone
+# builds have no in-tree targets to fall back on. test/CMakeLists.txt
+# checks the same variable. Unrelated to SPIRV_TOOLS_FOUND below: this
+# picks the test suite's spirv-as/dis/link/val executables, that picks
+# the library llvm-spirv links for --spirv-tools-dis.
+if (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_SPIRV_BUILD_EXTERNAL)
+  set(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS TRUE)
+else()
+  set(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS FALSE)
 endif()
-if (NOT SPIRV_TOOLS_FOUND AND NOT (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_SPIRV_BUILD_EXTERNAL))
+
+# first try locating SPIRV-Tools via pkgconfig (the old way)
+pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
+if (NOT SPIRV_TOOLS_FOUND)
   # then try locating SPIRV-Tools via cmake (the new way)
   find_package(SPIRV-Tools)
-  find_package(SPIRV-Tools-tools)
-  if (SPIRV-Tools_FOUND AND SPIRV-Tools-tools_FOUND)
-    set(SPIRV_TOOLS_FOUND TRUE)
+  # Importing SPIRV-Tools-tools would collide with the in-tree
+  # spirv-as/dis/link/val custom targets ("Some (but not all) targets
+  # in this export set were already defined.").
+  if (NOT LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+    find_package(SPIRV-Tools-tools)
+  endif()
+  if (SPIRV-Tools_FOUND AND (SPIRV-Tools-tools_FOUND OR LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS))
     # check for the existance of library targets in the found packages
     if(TARGET SPIRV-Tools-shared)
       # use the shared libary target if present
@@ -143,6 +157,7 @@ if (NOT SPIRV_TOOLS_FOUND AND NOT (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_S
     endif()
     set(SPIRV_TOOLS_LDFLAGS ${SPIRV-Tools-library})
     get_target_property(SPIRV_TOOLS_INCLUDE_DIRS ${SPIRV-Tools-library} INTERFACE_INCLUDE_DIRECTORIES)
+    set(SPIRV_TOOLS_FOUND TRUE)
   endif()
 endif()
 

@@ -9,7 +9,29 @@ get_target_property(LLVM_SPIRV_DIR llvm-spirv BINARY_DIR)
 get_target_property(LLVM_SPIRV_LIB_DIR LLVMSPIRVLib BINARY_DIR)
 set(LLVM_SPIRV_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
+# Must match tools/llvm-spirv/CMakeLists.txt's LLVM_SPIRV_HAVE_SPIRV_TOOLS
+# condition, or tests could expect --spirv-tools-dis when it wasn't built.
+if (SPIRV_TOOLS_FOUND AND LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
+  set(SPIRV_ENABLE_LIBSPIRV_DIS ON)
+endif()
+
+# Checked first since it reflects explicit user intent and must win
+# over whatever system SPIRV-Tools happens to be discoverable.
+if(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+  # spirv-as/dis/link/val are defined later by
+  # add_subdirectory(tools) (spirv-tools), processed after this
+  # project's add_subdirectory(projects), so if(TARGET) would be
+  # false here. CMake still resolves the names against the global
+  # target table at generate time, so referencing them now is fine as
+  # long as LLVM_TOOL_SPIRV_TOOLS_BUILD (default ON) isn't disabled.
+  if(NOT DEFINED LLVM_TOOL_SPIRV_TOOLS_BUILD OR LLVM_TOOL_SPIRV_TOOLS_BUILD)
+    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
+    set(SPIRV_TOOLS_BINDIR "${LLVM_RUNTIME_OUTPUT_INTDIR}")
+  endif()
+elseif(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
   # we found SPIRV-Tools via pkgconfig
   find_program(SPIRV_TOOLS_SPIRV_AS NAMES spirv-as PATHS ${SPIRV_TOOLS_PREFIX}/bin)
   if(SPIRV_TOOLS_SPIRV_AS)
@@ -32,9 +54,6 @@ if(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
   endif()
 
   set(SPIRV_TOOLS_BINDIR "${SPIRV_TOOLS_PREFIX}/bin")
-  if (LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
-    set(SPIRV_ENABLE_LIBSPIRV_DIS ON)
-  endif()
 elseif(SPIRV-Tools-tools_FOUND)
   # we found SPIRV-Tools via cmake targets
 
@@ -64,28 +83,6 @@ elseif(SPIRV-Tools-tools_FOUND)
   endif()
 
   set(SPIRV_TOOLS_BINDIR "${SPIRV_AS_PATH}")
-elseif(LLVM_INCLUDE_SPIRV_TOOLS_TESTS)
-  # Fall back to the in-tree SPIRV-Tools build (llvm/tools/spirv-tools),
-  # enabled via -DLLVM_INCLUDE_SPIRV_TOOLS_TESTS=ON. Its custom targets
-  # copy/symlink binaries into LLVM_RUNTIME_OUTPUT_INTDIR.
-  #
-  # llvm/CMakeLists.txt calls add_subdirectory(projects) -- which pulls in
-  # this project -- before add_subdirectory(tools), where spirv-tools
-  # defines the spirv-as/dis/link/val custom targets. So those targets do
-  # not exist yet at this point, and if(TARGET ...) would always be false.
-  # CMake resolves DEPENDS/add_dependencies target names against the
-  # global target table at generate time, so referencing them here before
-  # they're defined is fine, as long as tools/spirv-tools actually gets
-  # traversed later. Check the same LLVM_TOOL_SPIRV_TOOLS_BUILD option that
-  # create_llvm_tool_options() generates (default ON) to honor the case
-  # where a user explicitly disables it.
-  if(NOT DEFINED LLVM_TOOL_SPIRV_TOOLS_BUILD OR LLVM_TOOL_SPIRV_TOOLS_BUILD)
-    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
-    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
-    set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
-    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
-    set(SPIRV_TOOLS_BINDIR "${LLVM_RUNTIME_OUTPUT_INTDIR}")
-  endif()
 endif()
 
 if(NOT SPIRV_TOOLS_SPIRV_AS_FOUND)
@@ -151,12 +148,8 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 
 
-if(LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
-  # These targets are defined later, by llvm/tools/spirv-tools (processed
-  # after this project's add_subdirectory(projects) call), so if(TARGET)
-  # would always be false here. CMake still resolves DEPENDS against them
-  # correctly at generate time, as long as spirv-tools is actually going
-  # to be traversed (see LLVM_TOOL_SPIRV_TOOLS_BUILD check above).
+if(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+  # See the forward-reference note above.
   if(NOT DEFINED LLVM_TOOL_SPIRV_TOOLS_BUILD OR LLVM_TOOL_SPIRV_TOOLS_BUILD)
     list(APPEND LLVM_SPIRV_TEST_DEPS spirv-as spirv-dis spirv-link spirv-val)
   endif()
