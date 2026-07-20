@@ -122,10 +122,10 @@ set(LLVM_SPIRV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # True when tests should use the in-tree SPIRV-Tools build
 # (llvm/tools/spirv-tools) instead of a system install. Standalone
-# builds have no in-tree targets to fall back on. test/CMakeLists.txt
-# checks the same variable. Unrelated to SPIRV_TOOLS_FOUND below: this
-# picks the test suite's spirv-as/dis/link/val executables, that picks
-# the library llvm-spirv links for --spirv-tools-dis.
+# builds have no in-tree targets to fall back on.
+# Unrelated to SPIRV_TOOLS_FOUND below: this picks the test suite's
+# spirv-as/dis/link/val executables, that picks the library llvm-spirv links for
+# --spirv-tools-dis.
 if (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_SPIRV_BUILD_EXTERNAL)
   set(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS TRUE)
 else()
