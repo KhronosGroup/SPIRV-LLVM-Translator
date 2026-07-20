@@ -144,6 +144,7 @@ if (NOT SPIRV_TOOLS_FOUND)
     find_package(SPIRV-Tools-tools)
   endif()
   if (SPIRV-Tools_FOUND AND (SPIRV-Tools-tools_FOUND OR LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS))
+    set(SPIRV_TOOLS_FOUND TRUE)
     # check for the existance of library targets in the found packages
     if(TARGET SPIRV-Tools-shared)
       # use the shared libary target if present
@@ -157,7 +158,6 @@ if (NOT SPIRV_TOOLS_FOUND)
     endif()
     set(SPIRV_TOOLS_LDFLAGS ${SPIRV-Tools-library})
     get_target_property(SPIRV_TOOLS_INCLUDE_DIRS ${SPIRV-Tools-library} INTERFACE_INCLUDE_DIRECTORIES)
-    set(SPIRV_TOOLS_FOUND TRUE)
   endif()
 endif()
 
