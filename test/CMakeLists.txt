@@ -18,9 +18,9 @@ endif()
 # Checked first since it reflects explicit user intent and must win
 # over whatever system SPIRV-Tools happens to be discoverable.
 if(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
-  # spirv-as/dis/link/val are defined later by
-  # add_subdirectory(tools) (spirv-tools), processed after this
-  # project's add_subdirectory(projects), so if(TARGET) would be
+  # spirv-as/dis/link/val are defined later by add_subdirectory(tools)
+  # (spirv-tools), which defines LLVM_TOOL_SPIRV_TOOLS_BUILD and is processed
+  # after this project's add_subdirectory(projects), so if(TARGET) would be
   # false here. CMake still resolves the names against the global
   # target table at generate time, so referencing them now is fine as
   # long as LLVM_TOOL_SPIRV_TOOLS_BUILD (default ON) isn't disabled.
