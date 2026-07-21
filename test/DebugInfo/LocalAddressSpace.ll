@@ -1,5 +1,5 @@
 ; XFAIL: *
-; ISSUE #
+; ISSUE #3899
 ; Source:
 ;__kernel void foo(void) {
 ;  __local int a;
