@@ -4,6 +4,12 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv %t.u.spv -to-text -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL_ID:]] "_ZTS6kernel"
 ; CHECK-SPIRV-DAG: Name [[#BAR:]] "_Z3barii"
@@ -20,6 +26,25 @@
 ; CHECK-SPIRV: Store [[#FPTR]] [[#SELECT]]
 ; CHECK-SPIRV: Load [[#FUNC_PTR_TYPE]] [[#LOAD:]] [[#FPTR]]
 ; CHECK-SPIRV: FunctionPointerCallINTEL [[#]] [[#]] [[#LOAD]]
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED: EntryPoint [[#]] [[#KERNEL_ID:]] "_ZTS6kernel"
+; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAR:]] "_Z3barii"
+; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAZ:]] "_Z3bazii"
+; CHECK-SPIRV-UNTYPED: TypeInt [[#INT32:]] 32
+; CHECK-SPIRV-UNTYPED: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]] [[#INT32]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FUNC_PTR_TYPE:]] 7
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BARPTR:]] [[#BAR]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BAZPTR:]] [[#BAZ]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#KERNEL_ID]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#FUNC_PTR_TYPE]] [[#FPTR:]] 7 [[#FUNC_PTR_TYPE]]
+; CHECK-SPIRV-UNTYPED: Select [[#FUNC_PTR_TYPE]] [[#SELECT:]] [[#]] [[#BARPTR]] [[#BAZPTR]]
+; CHECK-SPIRV-UNTYPED: Store [[#FPTR]] [[#SELECT]]
+; CHECK-SPIRV-UNTYPED: Load [[#FUNC_PTR_TYPE]] [[#LOAD:]] [[#FPTR]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#INT32]] [[#]] [[#LOAD]]
 
 ; CHECK-LLVM: define spir_kernel void @_ZTS6kernel
 ; CHECK-LLVM: %[[FPTR_ALLOCA:.*]] = alloca ptr

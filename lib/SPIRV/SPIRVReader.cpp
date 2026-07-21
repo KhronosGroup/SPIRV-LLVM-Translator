@@ -1516,10 +1516,11 @@ void SPIRVToLLVM::addMemAliasMetadata(Instruction *I, SPIRVId AliasListId,
 }
 
 void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
-    SPIRVValue *BV, CallInst *CI, SPIRVTypeFunction *CalledFnTy) {
+    SPIRVValue *BV, CallInst *CI, SPIRVFunctionPointerCallINTEL *Call) {
   std::vector<SPIRVDecorate const *> ArgumentAttributes =
       BV->getDecorations(internal::DecorationArgumentAttributeINTEL);
 
+  std::vector<SPIRVValue *> ArgValues = Call->getArgumentValues();
   for (const auto *Dec : ArgumentAttributes) {
     std::vector<SPIRVWord> Literals = Dec->getVecLiteral();
     SPIRVWord ArgNo = Literals[0];
@@ -1534,12 +1535,22 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
     }
     Attribute::AttrKind LlvmAttrKind = SPIRSPIRVFuncParamAttrMap::rmap(
         static_cast<SPIRVFuncParamAttrKind>(SpirvAttr));
-    auto LlvmAttr =
-        Attribute::isTypeAttrKind(LlvmAttrKind)
-            ? Attribute::get(CI->getContext(), LlvmAttrKind,
-                             transType(CalledFnTy->getParameterType(ArgNo)
-                                           ->getPointerElementType()))
-            : Attribute::get(CI->getContext(), LlvmAttrKind);
+    Attribute LlvmAttr;
+    if (Attribute::isTypeAttrKind(LlvmAttrKind)) {
+      // byval/sret need the argument's pointee type. Take it from the argument
+      // value so it works for both typed and untyped pointers.
+      SPIRVValue *Arg = ArgValues[ArgNo];
+      SPIRVType *PointeeTy = Arg->getType()->getPointerElementType();
+      if (Arg->isUntypedVariable()) {
+        if (SPIRVType *DT =
+                static_cast<SPIRVUntypedVariableKHR *>(Arg)->getDataType())
+          PointeeTy = DT;
+      }
+      LlvmAttr =
+          Attribute::get(CI->getContext(), LlvmAttrKind, transType(PointeeTy));
+    } else {
+      LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind);
+    }
     CI->addParamAttr(ArgNo, LlvmAttr);
   }
 }
@@ -2766,12 +2777,20 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVFunctionPointerCallINTEL *BC =
         static_cast<SPIRVFunctionPointerCallINTEL *>(BV);
     auto *V = transValue(BC->getCalledValue(), F, BB);
+    std::vector<Value *> Args = transValue(BC->getArgumentValues(), F, BB);
     auto *SpirvFnTy = BC->getCalledValue()->getType()->getPointerElementType();
-    auto *FnTy = cast<FunctionType>(transType(SpirvFnTy));
-    auto *Call = CallInst::Create(
-        FnTy, V, transValue(BC->getArgumentValues(), F, BB), BC->getName(), BB);
-    transFunctionPointerCallArgumentAttributes(
-        BV, Call, static_cast<SPIRVTypeFunction *>(SpirvFnTy));
+    auto *FnTy = dyn_cast<FunctionType>(transType(SpirvFnTy));
+    if (!FnTy) {
+      // An untyped function pointer has no pointee type, so rebuild the
+      // signature from the call's return and argument types.
+      SmallVector<Type *, 8> ArgTys;
+      for (Value *Arg : Args)
+        ArgTys.push_back(Arg->getType());
+      FnTy = FunctionType::get(transType(BC->getType()), ArgTys,
+                               /*isVarArg=*/false);
+    }
+    auto *Call = CallInst::Create(FnTy, V, Args, BC->getName(), BB);
+    transFunctionPointerCallArgumentAttributes(BV, Call, BC);
     // Assuming we are calling a regular device function
     Call->setCallingConv(CallingConv::SPIR_FUNC);
     // Don't set attributes, because at translation time we don't know which

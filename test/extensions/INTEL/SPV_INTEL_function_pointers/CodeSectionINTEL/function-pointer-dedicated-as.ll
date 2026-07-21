@@ -40,6 +40,14 @@
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM-AS
 
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space -o %t.u.spv
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-AS
+
 ; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrCodeTy:]] 5605 [[#]]
 ; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrPrivTy:]] 7 [[#PtrCodeTy]]
 ; CHECK-SPIRV-AS-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
@@ -53,6 +61,18 @@
 ; CHECK-LLVM-AS:  define spir_func i32 @foo(i32 %{{.*}}) addrspace(9)
 
 ; CHECK-LLVM-NO-AS-NOT: addrspace(9)
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrCodeTy:]] 5605
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrPrivTy:]] 7
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrPrivTy]] [[#Var:]] 7 [[#PtrCodeTy]]
+; CHECK-SPIRV-UNTYPED: Store [[#Var]] [[#FunPtr]]
+; CHECK-SPIRV-UNTYPED: Load [[#PtrCodeTy]] [[#Load:]] [[#Var]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#]] [[#Load]] [[#]]
 
 ; ModuleID = 'function-pointer-dedicated-as.bc'
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-G1"

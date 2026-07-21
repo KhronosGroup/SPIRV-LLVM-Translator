@@ -5,6 +5,13 @@
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
 
+; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv %t.u.spv -to-text -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
+
 ; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL_ID:]] "_ZTS6kernel"
 ; CHECK-SPIRV-DAG: Name [[#BAR:]] "_Z3barii"
 ; CHECK-SPIRV-DAG: Name [[#BAZ:]] "_Z3bazii"
@@ -27,6 +34,30 @@
 ; CHECK-LLVM: store ptr addrspace(9) %[[SELECT]], ptr %[[FPTR_ALLOCA]]
 ; CHECK-LLVM: %[[FPTR:.*]] = load ptr addrspace(9), ptr %[[FPTR_ALLOCA]]
 ; CHECK-LLVM: call spir_func addrspace(9) i32 %[[FPTR]](
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAR:]] "_Z3barii"
+; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAZ:]] "_Z3bazii"
+; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#INT32:]] 32
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PTR:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BARPTR:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAZPTR:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#FPTR:]]
+; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SELECT:]]
+; CHECK-SPIRV-UNTYPED: Store [[#FPTR]] [[#SELECT]]
+; CHECK-SPIRV-UNTYPED: Load [[#PTR]] [[#LOAD:]] [[#FPTR]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#]] [[#LOAD]]
+
+; CHECK-LLVM-UNTYPED: define spir_kernel void @_ZTS6kernel
+; CHECK-LLVM-UNTYPED: %fptr.alloca = alloca ptr
+; CHECK-LLVM-UNTYPED: select i1 %{{.*}}, ptr addrspacecast (ptr addrspace(9) @_Z3barii to ptr), ptr addrspacecast (ptr addrspace(9) @_Z3bazii to ptr)
+; CHECK-LLVM-UNTYPED: store ptr %{{.*}}, ptr %fptr.alloca
+; CHECK-LLVM-UNTYPED: %fptr = load ptr, ptr %fptr.alloca
+; CHECK-LLVM-UNTYPED: call spir_func i32 %fptr(
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"

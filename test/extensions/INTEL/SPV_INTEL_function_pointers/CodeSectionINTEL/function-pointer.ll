@@ -5,6 +5,13 @@
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
 ;
 ; Generated from:
 ; int foo(int arg) {
@@ -38,6 +45,25 @@
 ; CHECK-LLVM: store ptr addrspace(9) @foo, ptr %fp
 ; CHECK-LLVM: %0 = load ptr addrspace(9), ptr %fp
 ; CHECK-LLVM: %call = call spir_func addrspace(9) i32 %0(i32 %1)
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#INT:]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FOO_TY:]] [[#INT]] [[#INT]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#ALLOCA:]] [[#]] [[#PTR]]
+; CHECK-SPIRV-UNTYPED: Store [[#ALLOCA]] [[#FP]]
+; CHECK-SPIRV-UNTYPED: Load [[#PTR]] [[#LOADED:]] [[#ALLOCA]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#]] [[#LOADED]]
+
+; CHECK-LLVM-UNTYPED: define spir_kernel void @test
+; CHECK-LLVM-UNTYPED: %fp = alloca ptr
+; CHECK-LLVM-UNTYPED: store ptr addrspacecast (ptr addrspace(9) @foo to ptr), ptr %fp
+; CHECK-LLVM-UNTYPED: %{{.*}} = load ptr, ptr %fp
+; CHECK-LLVM-UNTYPED: %call = call spir_func i32 %{{.*}}(i32 %{{.*}})
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"

@@ -13,6 +13,12 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv %s -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv %t.u.spv -to-text -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV-DAG: TypeInt [[#I8:]] 8
 ; CHECK-SPIRV-DAG: TypeInt [[#I32:]] 32
@@ -24,6 +30,19 @@
 ; CHECK-SPIRV: Function [[#]] [[#FOO]] [[#]] [[#FOO_TY]]
 
 ; CHECK-SPIRV: Bitcast [[#DEST_TY_PTR]] [[#]] [[#FOO_PTR]]
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#I8:]] 8
+; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#I32:]] 32
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FOO_TY:]] [[#I8]] [[#I8]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#DEST_TY:]] [[#I32]] [[#I32]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#FOO_TY_PTR:]] 7
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FOO:]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#FOO]] [[#]] [[#FOO_TY]]
+; CHECK-SPIRV-UNTYPED: Bitcast [[#FOO_TY_PTR]] [[#]] [[#FOO_PTR]]
 
 ; CHECK-LLVM: bitcast ptr @foo to ptr
 

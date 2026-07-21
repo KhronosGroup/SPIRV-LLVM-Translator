@@ -5,6 +5,12 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
+; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM
 ;
 ; Generated from:
 ; int foo(int v) {
@@ -46,6 +52,25 @@
 ; CHECK-SPIRV: Store [[FOO_PTR_ALLOCA_ID]] [[BAR_PTR_ID]]
 ; CHECK-SPIRV: Load [[FOO_PTR_TYPE_ID]] [[LOADED_FOO_PTR:[0-9]+]] [[FOO_PTR_ALLOCA_ID]]
 ; CHECK-SPIRV: FunctionPointerCallINTEL {{[0-9]+}} {{[0-9]+}} [[LOADED_FOO_PTR]]
+;
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
+; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-UNTYPED: EntryPoint [[#]] [[#KERNEL_ID:]] "test"
+; CHECK-SPIRV-UNTYPED: TypeInt [[#TYPE_INT32_ID:]] 32
+; CHECK-SPIRV-UNTYPED: TypeFunction [[#FOO_TYPE_ID:]] [[#TYPE_INT32_ID]] [[#TYPE_INT32_ID]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FOO_PTR_TYPE_ID:]] 7
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#FOO_PTR_TYPE_ID]] [[#FOO_PTR_ID:]] [[#FOO_ID:]]
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#FOO_PTR_TYPE_ID]] [[#BAR_PTR_ID:]] [[#BAR_ID:]]
+; CHECK-SPIRV-UNTYPED: Function {{[0-9]+}} [[#FOO_ID]] {{[0-9]+}} [[#FOO_TYPE_ID]]
+; CHECK-SPIRV-UNTYPED: Function {{[0-9]+}} [[#BAR_ID]] {{[0-9]+}} [[#FOO_TYPE_ID]]
+; CHECK-SPIRV-UNTYPED: Function {{[0-9]+}} [[#KERNEL_ID]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#FOO_PTR_TYPE_ID]] [[#FOO_PTR_ALLOCA_ID:]] 7 [[#FOO_PTR_TYPE_ID]]
+; CHECK-SPIRV-UNTYPED: Store [[#FOO_PTR_ALLOCA_ID]] [[#FOO_PTR_ID]]
+; CHECK-SPIRV-UNTYPED: Store [[#FOO_PTR_ALLOCA_ID]] [[#BAR_PTR_ID]]
+; CHECK-SPIRV-UNTYPED: Load [[#FOO_PTR_TYPE_ID]] [[#LOADED_FOO_PTR:]] [[#FOO_PTR_ALLOCA_ID]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#TYPE_INT32_ID]] {{[0-9]+}} [[#LOADED_FOO_PTR]]
 ;
 ; CHECK-LLVM: define spir_kernel void @test
 ; CHECK-LLVM: %fp = alloca ptr
