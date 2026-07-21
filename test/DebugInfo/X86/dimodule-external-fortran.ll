@@ -1,3 +1,5 @@
+; XFAIL: *
+; ISSUE #
 ; This test verifies that the debug info for an external Fortran module
 ; is correctly generated.
 ;

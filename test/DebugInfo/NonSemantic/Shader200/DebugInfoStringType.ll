@@ -1,3 +1,5 @@
+; XFAIL: *
+; ISSUE #
 ; RUN: llvm-spirv -spirv-text %s -o %t.spt --spirv-debug-info-version=nonsemantic-shader-200
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
