@@ -2477,6 +2477,7 @@ public:
       addUnsignedArg(2);
       break;
     case OpGroupNonUniformRotateKHR:
+      addUnsignedArg(2);
       if (ArgTys.size() == 4)
         addUnsignedArg(3);
       break;
