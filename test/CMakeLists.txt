@@ -9,7 +9,29 @@ get_target_property(LLVM_SPIRV_DIR llvm-spirv BINARY_DIR)
 get_target_property(LLVM_SPIRV_LIB_DIR LLVMSPIRVLib BINARY_DIR)
 set(LLVM_SPIRV_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
+# Must match tools/llvm-spirv/CMakeLists.txt's LLVM_SPIRV_HAVE_SPIRV_TOOLS
+# condition, or tests could expect --spirv-tools-dis when it wasn't built.
+if (SPIRV_TOOLS_FOUND AND LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
+  set(SPIRV_ENABLE_LIBSPIRV_DIS ON)
+endif()
+
+# Checked first since it reflects explicit user intent and must win
+# over whatever system SPIRV-Tools happens to be discoverable.
+if(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+  # spirv-as/dis/link/val are defined later by add_subdirectory(tools)
+  # (spirv-tools), which defines LLVM_TOOL_SPIRV_TOOLS_BUILD and is processed
+  # after this project's add_subdirectory(projects), so if(TARGET) would be
+  # false here. CMake still resolves the names against the global
+  # target table at generate time, so referencing them now is fine as
+  # long as LLVM_TOOL_SPIRV_TOOLS_BUILD (default ON) isn't disabled.
+  if(NOT DEFINED LLVM_TOOL_SPIRV_TOOLS_BUILD OR LLVM_TOOL_SPIRV_TOOLS_BUILD)
+    set(SPIRV_TOOLS_SPIRV_AS_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_DIS_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_LINK_FOUND True)
+    set(SPIRV_TOOLS_SPIRV_VAL_FOUND True)
+    set(SPIRV_TOOLS_BINDIR "${LLVM_RUNTIME_OUTPUT_INTDIR}")
+  endif()
+elseif(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
   # we found SPIRV-Tools via pkgconfig
   find_program(SPIRV_TOOLS_SPIRV_AS NAMES spirv-as PATHS ${SPIRV_TOOLS_PREFIX}/bin)
   if(SPIRV_TOOLS_SPIRV_AS)
@@ -32,9 +54,6 @@ if(SPIRV_TOOLS_FOUND AND NOT SPIRV-Tools-tools_FOUND)
   endif()
 
   set(SPIRV_TOOLS_BINDIR "${SPIRV_TOOLS_PREFIX}/bin")
-  if (LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
-    set(SPIRV_ENABLE_LIBSPIRV_DIS ON)
-  endif()
 elseif(SPIRV-Tools-tools_FOUND)
   # we found SPIRV-Tools via cmake targets
 
@@ -128,6 +147,13 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
   endif()
 endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
 
+
+if(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+  # See the forward-reference note above.
+  if(NOT DEFINED LLVM_TOOL_SPIRV_TOOLS_BUILD OR LLVM_TOOL_SPIRV_TOOLS_BUILD)
+    list(APPEND LLVM_SPIRV_TEST_DEPS spirv-as spirv-dis spirv-link spirv-val)
+  endif()
+endif()
 
 add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
   ${CMAKE_CURRENT_BINARY_DIR}
