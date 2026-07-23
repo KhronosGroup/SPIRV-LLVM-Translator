@@ -323,6 +323,8 @@ const static char SubgroupImageMediaBlockINTELPrefix[] =
     "intel_sub_group_media_block";
 const static char SplitBarrierINTELPrefix[] = "intel_work_group_barrier_";
 const static char LDEXP[] = "ldexp";
+const static char POWN[] = "pown";
+const static char ROOTN[] = "rootn";
 #define _SPIRV_OP(x)                                                           \
   const static char ConvertBFloat16##x##AsUShort##x[] =                        \
       "intel_convert_bfloat16" #x "_as_ushort" #x;

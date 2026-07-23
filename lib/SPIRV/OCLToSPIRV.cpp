@@ -406,8 +406,10 @@ void OCLToSPIRVBase::visitCallInst(CallInst &CI) {
       visitSubgroupAVCBuiltinCall(&CI, DemangledName);
     return;
   }
-  if (DemangledName.find(kOCLBuiltinName::LDEXP) == 0) {
-    visitCallLdexp(&CI, MangledName, DemangledName);
+  if (DemangledName.find(kOCLBuiltinName::LDEXP) == 0 ||
+      DemangledName.find(kOCLBuiltinName::POWN) == 0 ||
+      DemangledName.find(kOCLBuiltinName::ROOTN) == 0) {
+    visitCallScalarToVecArg(&CI, MangledName, DemangledName);
     return;
   }
   if (DemangledName == kOCLBuiltinName::ConvertBFloat16AsUShort ||
@@ -1888,23 +1890,22 @@ void OCLToSPIRVBase::visitCallSplitBarrierINTEL(CallInst *CI,
       .appendArg(addInt32(mapOCLMemSemanticToSPIRV(MemFenceFlag, MemOrder)));
 }
 
-void OCLToSPIRVBase::visitCallLdexp(CallInst *CI, StringRef MangledName,
-                                    StringRef DemangledName) {
-  auto Args = getArguments(CI);
-  if (Args.size() == 2) {
-    Type *Type0 = Args[0]->getType();
-    Type *Type1 = Args[1]->getType();
-    // For OpenCL built-in math functions 'halfn ldexp(halfn x, int k)',
-    // 'floatn ldexp(floatn x, int k)' and 'doublen ldexp (doublen x, int k)',
-    // convert scalar arg to vector to keep consistency with SPIRV spec.
-    // Regarding to SPIRV OpenCL Extended Instruction set, k operand must have
-    // the same component count as Result Type and x operands
+void OCLToSPIRVBase::visitCallScalarToVecArg(CallInst *CI,
+                                             StringRef MangledName,
+                                             StringRef DemangledName) {
+  if (CI->arg_size() == 2) {
+    Type *Type0 = CI->getArgOperand(0)->getType();
+    Type *Type1 = CI->getArgOperand(1)->getType();
+    // For OpenCL built-in math functions with a floating point vector first
+    // operand and a scalar-or-vector integer second operand
+    // ('floatn ldexp(floatn x, int k)', 'floatn pown(floatn x, intn n)',
+    // 'floatn rootn(floatn x, intn n)' and their half/double variants),
+    // convert the scalar integer arg to a vector to keep consistency with the
+    // SPIRV spec. Regarding to SPIRV OpenCL Extended Instruction set, the
+    // integer operand must have the same component count as Result Type and
+    // the x operand.
     if (auto *FixedVecType0 = dyn_cast<FixedVectorType>(Type0)) {
-      auto ScalarTypeID = Type0->getScalarType()->getTypeID();
-      if ((ScalarTypeID == llvm::Type::FloatTyID ||
-           ScalarTypeID == llvm::Type::DoubleTyID ||
-           ScalarTypeID == llvm::Type::HalfTyID) &&
-          Type1->isIntegerTy()) {
+      if (Type0->getScalarType()->isFloatingPointTy() && Type1->isIntegerTy()) {
         IRBuilder<> IRB(CI);
         unsigned Width = FixedVecType0->getNumElements();
         CI->setOperand(1, IRB.CreateVectorSplat(Width, CI->getArgOperand(1)));
