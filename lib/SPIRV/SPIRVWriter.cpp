@@ -3285,12 +3285,18 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
 
   if (auto *BVF = dyn_cast_or_null<FPMathOperator>(V)) {
     auto Opcode = BVF->getOpcode();
+    bool IsSPV16Op = (Opcode == Instruction::FNeg ||
+                     Opcode == Instruction::FCmp || BV->isExtInst()) &&
+                    BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6);
+    bool IsFC2Op = (Opcode == Instruction::Call ||
+                    Opcode == Instruction::PHI ||
+                    Opcode == Instruction::Select) &&
+                   BM->isAllowedToUseExtension(
+                       ExtensionID::SPV_KHR_float_controls2);
     if (Opcode == Instruction::FAdd || Opcode == Instruction::FSub ||
         Opcode == Instruction::FMul || Opcode == Instruction::FDiv ||
         Opcode == Instruction::FRem || BV->getOpCode() == OpFmaKHR ||
-        ((Opcode == Instruction::FNeg || Opcode == Instruction::FCmp ||
-          BV->isExtInst()) &&
-         BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))) {
+        IsSPV16Op || IsFC2Op) {
       bool AllowFloatControls2 =
           BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2);
       bool AllowIntelFpFastMathMode =
@@ -3391,9 +3397,13 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
       }
       if (M != 0) {
         BV->setFPFastMathMode(M);
-        if (Opcode == Instruction::FNeg || Opcode == Instruction::FCmp ||
-            BV->isExtInst())
+        if (IsSPV16Op)
           BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+        if (IsFC2Op) {
+          BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+          BM->addCapability(CapabilityFloatControls2);
+          BM->addExtension(ExtensionID::SPV_KHR_float_controls2);
+        }
       }
     }
   }
