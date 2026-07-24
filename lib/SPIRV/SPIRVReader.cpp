@@ -1997,6 +1997,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       LPhi->addIncoming(Translated,
                         dyn_cast<BasicBlock>(transValue(IncomingBB, F, BB)));
     });
+    applyFPFastMathModeDecorations(BV, LPhi);
     return LPhi;
   }
 
@@ -2127,11 +2128,13 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
-    return mapValue(BV,
-                    Builder.CreateSelect(transValue(BS->getCondition(), F, BB),
-                                         transValue(BS->getTrueValue(), F, BB),
-                                         transValue(BS->getFalseValue(), F, BB),
-                                         BV->getName()));
+    auto *Sel = Builder.CreateSelect(transValue(BS->getCondition(), F, BB),
+                                     transValue(BS->getTrueValue(), F, BB),
+                                     transValue(BS->getFalseValue(), F, BB),
+                                     BV->getName());
+    if (auto *SelI = dyn_cast<Instruction>(Sel))
+      applyFPFastMathModeDecorations(BV, SelI);
+    return mapValue(BV, Sel);
   }
 
   case OpLine:
@@ -2755,6 +2758,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         Args, BC->getName(), BB);
     setCallingConv(Call);
     setAttrByCalledFunc(Call);
+    applyFPFastMathModeDecorations(BV, Call);
     return mapValue(BV, Call);
   }
 
