@@ -4571,8 +4571,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::sincos: {
     // llvm.sincos(x) returns {sin(x), cos(x)}, while OpenCLLIB::Sincos takes
     // (x, cos_ptr) and returns sin(x), storing cos(x) via the pointer.
-    // Create a temporary function variable for the cos output, call OpenCL sincos, load
-    // the cos value, then construct the result struct.
+    // Create a temporary function variable for the cos output, call OpenCL
+    // sincos, load the cos value, then construct the result struct.
     SPIRVType *CosTy = transType(II->getType()->getStructElementType(1));
     SPIRVType *CosPtrTy = BM->addPointerType(StorageClassFunction, CosTy);
     SPIRVBasicBlock *EntryBB = BB->getParent()->getBasicBlock(0);
