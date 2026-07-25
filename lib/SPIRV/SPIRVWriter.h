@@ -270,7 +270,7 @@ private:
                                                    Function *F);
 };
 
-class LLVMToSPIRVPass : public PassInfoMixin<LLVMToSPIRVPass> {
+class LLVMToSPIRVPass : public RequiredPassInfoMixin<LLVMToSPIRVPass> {
 public:
   LLVMToSPIRVPass(SPIRVModule *SMod) : SMod(SMod) {}
 
@@ -281,8 +281,6 @@ public:
     return PassInstance.runLLVMToSPIRV(M) ? llvm::PreservedAnalyses::none()
                                           : llvm::PreservedAnalyses::all();
   }
-
-  static bool isRequired() { return true; }
 
 private:
   SPIRVModule *SMod;
