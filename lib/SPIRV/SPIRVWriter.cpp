@@ -3288,7 +3288,7 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
     bool IsSPV16Op = (Opcode == Instruction::FNeg ||
                      Opcode == Instruction::FCmp || BV->isExtInst()) &&
                     BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6);
-    bool IsFC2Op = Opcode == Instruction::Call &&
+    bool IsFC2Op = BV->getOpCode() == OpFunctionCall &&
                    BM->isAllowedToUseExtension(
                        ExtensionID::SPV_KHR_float_controls2);
     if (Opcode == Instruction::FAdd || Opcode == Instruction::FSub ||
