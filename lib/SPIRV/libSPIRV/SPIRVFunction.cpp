@@ -148,6 +148,9 @@ bool SPIRVFunction::decodeBB(SPIRVDecoder &Decoder) {
 
     SPIRVEntry *Entry = Decoder.getEntry();
     if (!Entry) {
+      Module->getErrorLog().checkError(false, SPIRVEC_InvalidInstruction,
+                                       "failed to decode instruction in "
+                                       "basic block");
       Module->setInvalid();
       return false;
     }
