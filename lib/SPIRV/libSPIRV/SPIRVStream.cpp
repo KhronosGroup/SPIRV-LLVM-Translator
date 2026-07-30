@@ -377,3 +377,6 @@ std::vector<SPIRVEntry *> SPIRVDecoder::getSourceContinuedInstructions() {
 }
 
 } // namespace SPIRV
+
+// Intentionally empty change to exercise CI. This branch is a throwaway
+// probe and is not proposed for merge.
