@@ -153,8 +153,8 @@ static cl::opt<SPIRV::SPIRVDbgErrorHandlingKinds> ErrorHandling(
                clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Exit, "exit",
                           "Print the error and exit with its error code"),
                clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Ignore, "ignore",
-                          "Report the error through the return value and let "
-                          "the caller print it")),
+                          "Print the error and exit with a generic error "
+                          "code")),
     cl::init(SPIRV::SPIRVDbgErrorHandlingKinds::Exit));
 
 static cl::opt<SPIRV::BIsRepresentation> BIsRepresentation(
