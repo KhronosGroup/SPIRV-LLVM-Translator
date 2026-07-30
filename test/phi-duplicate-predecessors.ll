@@ -8,15 +8,15 @@
 ; RUN: FileCheck --input-file=%t.rev.ll %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: %[[Entry:[a-zA-Z0-9_]+]] = OpLabel
-; CHECK-SPIRV: OpBranchConditional %[[#NULL:]] %[[Label:[a-zA-Z0-9_]+]] %[[Label]]
+; CHECK-SPIRV: OpBranch %[[Label:[a-zA-Z0-9_]+]]
 ; CHECK-SPIRV: %[[Label]] = OpLabel
 ; CHECK-SPIRV: %{{.*}} = OpPhi %{{.*}} %{{.*}} %[[Entry]]
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @f()
 ; CHECK-LLVM:       [[Entry:[a-zA-Z0-9_]+]]:
-; CHECK-LLVM:       br i1 undef, label %[[Label:[a-zA-Z0-9_]+]], label %[[Label]]
+; CHECK-LLVM:       br label %[[Label:[a-zA-Z0-9_]+]]
 ; CHECK-LLVM:       [[Label]]:
-; CHECK-LLVM:       %[[PHI:[a-zA-Z0-9_]+]] = phi i64 [ 0, %[[Entry]] ], [ 0, %[[Entry]] ]
+; CHECK-LLVM:       %[[PHI:[a-zA-Z0-9_]+]] = phi i64 [ 0, %[[Entry]] ]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-G1"
 target triple = "spir64-unknown-unknown"
