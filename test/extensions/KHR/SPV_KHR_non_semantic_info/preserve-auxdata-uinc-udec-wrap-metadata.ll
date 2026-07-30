@@ -1,0 +1,82 @@
+; Test atomicrmw uinc_wrap/udec_wrap with AMDGPU metadata roundtrip.
+; The writer emits FunctionCall to __spirv_AtomicUIncWrap/__spirv_AtomicUDecWrap
+; with InstructionMetadata AuxData. The reader's OCL lowering converts them back
+; to atomicrmw uinc_wrap/udec_wrap, and metadata is restored from AuxData.
+
+; RUN: llvm-as < %s -o %t.bc
+
+; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.5 + extension)
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
+
+; Roundtrip with auxdata (SPIR-V 1.5 + extension): metadata restored.
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
+; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
+; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"
+
+; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.6, no explicit extension)
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
+
+; Roundtrip with auxdata (SPIR-V 1.6): metadata restored.
+; RUN: llvm-spirv %t.bc -o %t.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
+; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"
+
+; Negative: without --spirv-preserve-auxdata, no AuxData in SPIR-V output.
+; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NO-AUXDATA
+
+; Negative: --spirv-preserve-auxdata with extension explicitly disabled should error.
+; RUN: not llvm-spirv %t.bc -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 --spirv-ext=-SPV_KHR_non_semantic_info -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
+
+; CHECK-NO-AUXDATA-NOT: NonSemantic.AuxData
+; CHECK-NO-AUXDATA-NOT: amdgpu.no.fine.grained.memory
+; CHECK-NO-AUXDATA-NOT: amdgpu.no.remote.memory
+; CHECK-NO-AUXDATA-NOT: NonSemanticAuxDataInstructionMetadata
+
+; CHECK-EXT-DISABLED: RequiresExtension: Feature requires the following SPIR-V extension:
+; CHECK-EXT-DISABLED-NEXT: SPV_KHR_non_semantic_info
+
+; SPIR-V version checks.
+; CHECK-SPIRV-EXT: 119734787 65536
+; CHECK-SPIRV-EXT: Extension "SPV_KHR_non_semantic_info"
+; CHECK-SPIRV-NOEXT: 119734787 67072
+
+; CHECK-SPIRV-DAG: ExtInstImport [[#Import:]] "NonSemantic.AuxData"
+; CHECK-SPIRV-DAG: String [[#MD_NFG:]] "amdgpu.no.fine.grained.memory"
+; CHECK-SPIRV-DAG: String [[#MD_NRM:]] "amdgpu.no.remote.memory"
+; CHECK-SPIRV-DAG: TypeVoid [[#VoidT:]]
+; CHECK-SPIRV-DAG: Decorate [[#UIncFn:]] LinkageAttributes "__spirv_AtomicUIncWrap" Import
+; CHECK-SPIRV-DAG: Decorate [[#UDecFn:]] LinkageAttributes "__spirv_AtomicUDecWrap" Import
+
+; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes]] [[#MD_NRM]]
+; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UDecRes:]] [[#MD_NFG]]
+
+; CHECK-SPIRV: FunctionCall [[#]] [[#UIncRes]] [[#UIncFn]]
+; CHECK-SPIRV: FunctionCall [[#]] [[#UDecRes]] [[#UDecFn]]
+
+target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
+target triple = "spirv64-amd-amdhsa"
+
+@ui = common dso_local addrspace(1) global i32 0, align 4
+
+; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 seq_cst
+; CHECK-LLVM-SAME: !amdgpu.no.fine.grained.memory ![[#]]
+; CHECK-LLVM-SAME: !amdgpu.no.remote.memory ![[#]]
+define amdgpu_kernel void @test_uinc_wrap() {
+  %uinc = atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 seq_cst, !amdgpu.no.fine.grained.memory !0, !amdgpu.no.remote.memory !0
+  ret void
+}
+
+; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 seq_cst
+; CHECK-LLVM-SAME: !amdgpu.no.fine.grained.memory ![[#]]
+; CHECK-LLVM-NOT: !amdgpu.no.remote.memory
+define amdgpu_kernel void @test_udec_wrap() {
+  %udec = atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 seq_cst, !amdgpu.no.fine.grained.memory !0
+  ret void
+}
+
+!0 = !{}
