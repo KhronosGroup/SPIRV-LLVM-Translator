@@ -2596,13 +2596,12 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     // Starting with SPIR-V 1.6, the True Label and False Label of an
     // "OpBranchConditional" must not be the same, so emit an unconditional
     // branch.
-    if (SuccessorTrue != SuccessorFalse) {
-      return mapValue(
-          V, BM->addBranchConditionalInst(transValue(Branch->getCondition(), BB),
-                                          SuccessorTrue, SuccessorFalse, BB));
-    } else {
+    if (SuccessorTrue == SuccessorFalse)
       return mapValue(V, BM->addBranchInst(SuccessorTrue, BB));
-    }
+
+    return mapValue(
+        V, BM->addBranchConditionalInst(transValue(Branch->getCondition(), BB),
+                                        SuccessorTrue, SuccessorFalse, BB));
   }
 
   if (auto *Branch = dyn_cast<UncondBrInst>(V)) {
