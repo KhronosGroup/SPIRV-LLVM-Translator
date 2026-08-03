@@ -1369,13 +1369,13 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
 }
 
 void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
-                                                 Instruction *I) {
+                                                Instruction *I) {
   if (!BM->preserveAuxData())
     return;
   bool HasAny = false;
-  for (StringRef MDName : {"amdgpu.no.fine.grained.memory",
-                           "amdgpu.no.remote.memory",
-                           "amdgpu.ignore.denormal.mode"}) {
+  for (StringRef MDName :
+       {"amdgpu.no.fine.grained.memory", "amdgpu.no.remote.memory",
+        "amdgpu.ignore.denormal.mode"}) {
     if (!I->getMetadata(MDName))
       continue;
     if (!HasAny) {
@@ -2869,8 +2869,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       SPIRVFunction *BFunc = BM->addFunction(SpvFT);
       BFunc->setFunctionControlMask(FunctionControlMaskNone);
       BM->setName(BFunc, FuncName.str());
-      BFunc->addDecorate(new SPIRVDecorateLinkageAttr(
-          BFunc, FuncName.str(), LinkageTypeImport));
+      BFunc->addDecorate(new SPIRVDecorateLinkageAttr(BFunc, FuncName.str(),
+                                                      LinkageTypeImport));
       SPIRVValue *BV = mapValue(V, BM->addCallInst(BFunc, Ops, BB));
       transAMDGPUAtomicMetadata(BV, ARMW);
       return BV;

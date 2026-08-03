@@ -1257,8 +1257,8 @@ void SPIRVToOCLBase::visitCallSPIRVAtomicUIncDecWrap(CallInst *CI,
 
   AtomicOrdering Ordering = mapSPIRVMemSemToAtomicOrdering(MemSem);
   SyncScope::ID SSID = M->getTargetTriple().isAMDGCN()
-                            ? mapSPIRVScopeToAMDGPU(CI->getContext(), Scope)
-                            : mapSPIRVScopeToLLVM(CI->getContext(), Scope);
+                           ? mapSPIRVScopeToAMDGPU(CI->getContext(), Scope)
+                           : mapSPIRVScopeToLLVM(CI->getContext(), Scope);
 
   IRBuilder<> Builder(CI);
   auto *RMW = Builder.CreateAtomicRMW(Op, Ptr, Val, {}, Ordering, SSID);
