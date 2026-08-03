@@ -3286,11 +3286,11 @@ bool LLVMToSPIRVBase::transDecoration(Value *V, SPIRVValue *BV) {
   if (auto *BVF = dyn_cast_or_null<FPMathOperator>(V)) {
     auto Opcode = BVF->getOpcode();
     bool IsSPV16Op = (Opcode == Instruction::FNeg ||
-                     Opcode == Instruction::FCmp || BV->isExtInst()) &&
-                    BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6);
-    bool IsFC2Op = BV->getOpCode() == OpFunctionCall &&
-                   BM->isAllowedToUseExtension(
-                       ExtensionID::SPV_KHR_float_controls2);
+                      Opcode == Instruction::FCmp || BV->isExtInst()) &&
+                     BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6);
+    bool IsFC2Op =
+        BV->getOpCode() == OpFunctionCall &&
+        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_float_controls2);
     if (Opcode == Instruction::FAdd || Opcode == Instruction::FSub ||
         Opcode == Instruction::FMul || Opcode == Instruction::FDiv ||
         Opcode == Instruction::FRem || BV->getOpCode() == OpFmaKHR ||
