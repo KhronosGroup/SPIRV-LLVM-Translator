@@ -467,6 +467,9 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     if (UseTPT) {
       Type *StructTy = getOrCreateOpaqueStructType(M, transVCTypeName(PST));
       Ty = TypedPointerType::get(StructTy, SPIRAS_Global);
+    } else if (Context->supportsTypedPointers()) {
+      Type *StructTy = getOrCreateOpaqueStructType(M, transVCTypeName(PST));
+      Ty = PointerType::get(StructTy, SPIRAS_Global);
     } else {
       std::vector<unsigned> Params;
       if (PST->hasAccessQualifier()) {
