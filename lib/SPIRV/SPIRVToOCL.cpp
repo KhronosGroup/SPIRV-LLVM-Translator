@@ -1229,11 +1229,24 @@ static SyncScope::ID mapSPIRVScopeToLLVM(LLVMContext &Ctx, uint32_t Scope) {
   }
 }
 
+static SyncScope::ID mapSPIRVScopeToAMDGPU(LLVMContext &Ctx, uint32_t Scope) {
+  switch (Scope) {
+  case 4: // Invocation
+    return SyncScope::SingleThread;
+  case 3: // Subgroup
+    return Ctx.getOrInsertSyncScopeID("wavefront");
+  case 2: // Workgroup
+    return Ctx.getOrInsertSyncScopeID("workgroup");
+  case 1: // Device
+    return Ctx.getOrInsertSyncScopeID("agent");
+  case 0: // CrossDevice
+  default:
+    return SyncScope::System;
+  }
+}
+
 void SPIRVToOCLBase::visitCallSPIRVAtomicUIncDecWrap(CallInst *CI,
                                                      StringRef FuncName) {
-  // __spirv_AtomicUIncWrap(ptr, scope, memsem, val)
-  // __spirv_AtomicUDecWrap(ptr, scope, memsem, val)
-  // -> atomicrmw uinc_wrap/udec_wrap ptr, val ordering, syncscope
   auto Op = (FuncName == "__spirv_AtomicUIncWrap") ? AtomicRMWInst::UIncWrap
                                                    : AtomicRMWInst::UDecWrap;
 
@@ -1243,7 +1256,9 @@ void SPIRVToOCLBase::visitCallSPIRVAtomicUIncDecWrap(CallInst *CI,
   Value *Val = CI->getArgOperand(3);
 
   AtomicOrdering Ordering = mapSPIRVMemSemToAtomicOrdering(MemSem);
-  SyncScope::ID SSID = mapSPIRVScopeToLLVM(CI->getContext(), Scope);
+  SyncScope::ID SSID = M->getTargetTriple().isAMDGCN()
+                            ? mapSPIRVScopeToAMDGPU(CI->getContext(), Scope)
+                            : mapSPIRVScopeToLLVM(CI->getContext(), Scope);
 
   IRBuilder<> Builder(CI);
   auto *RMW = Builder.CreateAtomicRMW(Op, Ptr, Val, {}, Ordering, SSID);
