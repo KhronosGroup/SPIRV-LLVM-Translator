@@ -250,6 +250,8 @@ public:
     if (isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
         isTypeFloat(8, FPEncodingFloat8E5M2EXT))
       return ExtensionID::SPV_EXT_float8;
+    if (isTypeFloat(4, FPEncodingFloat4E2M1EXT))
+      return ExtensionID::SPV_EXT_ocp_microscaling_types;
     if (isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL))
       return ExtensionID::SPV_INTEL_float4;
     return {};
@@ -270,6 +272,8 @@ public:
     } else if (isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
                isTypeFloat(8, FPEncodingFloat8E5M2EXT)) {
       CV.push_back(CapabilityFloat8EXT);
+    } else if (isTypeFloat(4, FPEncodingFloat4E2M1EXT)) {
+      CV.push_back(CapabilityFloat4EXT);
     } else if (isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL)) {
       CV.push_back(internal::CapabilityFloat4E2M1INTEL);
     }
@@ -298,14 +302,16 @@ protected:
     assert((BitWidth == 4 || BitWidth == 8 || BitWidth == 16 ||
             BitWidth == 32 || BitWidth == 64) &&
            "Invalid bit width");
-    assert(
-        (FloatingPointEncoding == FPEncodingMax ||
-         (BitWidth == 16 && FloatingPointEncoding == FPEncodingBFloat16KHR) ||
-         (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E4M3EXT) ||
-         (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E5M2EXT) ||
-         (BitWidth == 4 &&
-          FloatingPointEncoding == internal::FPEncodingFloat4E2M1INTEL)) &&
-        "Invalid floating point encoding");
+    bool ValidEncoding =
+        FloatingPointEncoding == FPEncodingMax ||
+        (BitWidth == 16 && FloatingPointEncoding == FPEncodingBFloat16KHR) ||
+        (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E4M3EXT) ||
+        (BitWidth == 8 && FloatingPointEncoding == FPEncodingFloat8E5M2EXT) ||
+        (BitWidth == 4 && FloatingPointEncoding == FPEncodingFloat4E2M1EXT) ||
+        (BitWidth == 4 &&
+         FloatingPointEncoding == internal::FPEncodingFloat4E2M1INTEL);
+    assert(ValidEncoding && "Invalid floating point encoding");
+    (void)ValidEncoding;
   }
 
 private:
@@ -439,10 +445,17 @@ public:
     if (CompCount == 8 || CompCount == 16)
       V.push_back(CapabilityVector16);
 
-    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
-      if (CompCount == 1 || (CompCount > 4 && CompCount < 8) ||
-          (CompCount > 8 && CompCount < 16) || CompCount > 16)
+    if (CompCount == 1 || (CompCount > 4 && CompCount < 8) ||
+        (CompCount > 8 && CompCount < 16) || CompCount > 16) {
+      // A VectorCompute module keeps using CapabilityVectorAnyINTEL;
+      // otherwise use multi-vendor LongVectorEXT
+      if (!Module->isVectorCompute() &&
+          Module->isAllowedToUseExtension(ExtensionID::SPV_EXT_long_vector))
+        V.push_back(CapabilityLongVectorEXT);
+      else if (Module->isAllowedToUseExtension(
+                   ExtensionID::SPV_INTEL_vector_compute))
         V.push_back(CapabilityVectorAnyINTEL);
+    }
     return V;
   }
 
@@ -456,7 +469,8 @@ protected:
     SPIRVEntry::validate();
     CompType->validate();
 #ifndef NDEBUG
-    if (!(Module->isAllowedToUseExtension(
+    if (!Module->isAllowedToUseExtension(ExtensionID::SPV_EXT_long_vector) &&
+        !(Module->isAllowedToUseExtension(
             ExtensionID::SPV_INTEL_vector_compute))) {
       assert(CompCount == 2 || CompCount == 3 || CompCount == 4 ||
              CompCount == 8 || CompCount == 16);
@@ -655,6 +669,7 @@ public:
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     return std::vector<SPIRVEntry *>(1, get<SPIRVType>(SampledType));
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC9(Id, SampledType, Desc.Dim, Desc.Depth, Desc.Arrayed,
@@ -800,6 +815,8 @@ public:
     MemberTypeIdVec.resize(WordCount - FixedWC);
   }
 
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
+
   // TODO: Should we attach operands of continued instructions as well?
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVEntry *> Operands(MemberTypeIdVec.size());
@@ -872,6 +889,7 @@ public:
       Operands.push_back(getEntry(I));
     return Operands;
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   _SPIRV_DEF_ENCDEC3(Id, ReturnType, ParamTypeIdVec)
@@ -1224,7 +1242,8 @@ public:
     else if (CompType->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
              CompType->isTypeFloat(8, FPEncodingFloat8E5M2EXT))
       CV.push_back(CapabilityFloat8CooperativeMatrixEXT);
-    else if (CompType->isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL))
+    else if (CompType->isTypeFloat(4, FPEncodingFloat4E2M1EXT) ||
+             CompType->isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL))
       CV.push_back(internal::CapabilityFloat4E2M1CooperativeMatrixINTEL);
     return CV;
   }

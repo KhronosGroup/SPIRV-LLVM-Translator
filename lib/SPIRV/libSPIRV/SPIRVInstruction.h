@@ -280,8 +280,14 @@ public:
     // instructions.
     updateModuleVersion();
   }
+  SPIRVWord getFixedWordCount() const override {
+    // OpCode word plus the optional result-type and
+    // result-id words. Operands beyond this are variable length.
+    return 1 + (hasType() ? 1 : 0) + (hasId() ? 1 : 0);
+  }
   void setWordCount(SPIRVWord TheWordCount) override {
     SPIRVEntry::setWordCount(TheWordCount);
+    SPIRVCK(WordCount >= getFixedWordCount(), InvalidWordCount, "");
     auto NumOps = WordCount - 1;
     if (hasId())
       --NumOps;
@@ -512,6 +518,7 @@ public:
       return std::vector<SPIRVEntry *>(1, V);
     return std::vector<SPIRVEntry *>();
   }
+  SPIRVWord getFixedWordCount() const override { return FixedWC; }
 
 protected:
   void validate() const override {
@@ -4826,7 +4833,9 @@ public:
   typedef SPIRVInstTemplate<SPIRVFPConversionFtoFINTELInstBase,                \
                             internal::Op##x##INTEL, __VA_ARGS__>               \
       SPIRV##x##INTEL;
+_SPIRV_OP_FTOF(ClampConvertFToF, true, 4, false)
 _SPIRV_OP_FTOF(StochasticRoundFToF, true, 5, true)
+_SPIRV_OP_FTOF(ClampStochasticRoundFToF, true, 5, true)
 #undef _SPIRV_OP_FTOF
 
 class SPIRVFPConversionFtoSINTELInstBase : public SPIRVInstTemplateBase {
