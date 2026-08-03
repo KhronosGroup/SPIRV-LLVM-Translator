@@ -2835,6 +2835,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         replaceOperandWithAnnotationIntrinsicCallResult(F, Arg);
     setCallingConv(Call);
     setAttrByCalledFunc(Call);
+    applyFPFastMathModeDecorations(BV, Call);
     return mapValue(BV, Call);
   }
 
