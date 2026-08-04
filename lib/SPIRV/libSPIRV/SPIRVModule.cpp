@@ -1911,7 +1911,8 @@ class TopologicalSort {
             static_cast<SPIRVTypeForwardPointer *>(Op)->getPointerId());
         Op = FP;
       }
-      if (EntryStateMap[Op] == Visited)
+      auto It = EntryStateMap.find(Op);
+      if (It == EntryStateMap.end() || It->second == Visited)
         continue;
       if (visit(Op)) {
         // We've found a recursive data type, e.g. a structure having a member

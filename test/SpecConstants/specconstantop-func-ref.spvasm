@@ -1,0 +1,26 @@
+; Test that a SpecConstantOp referencing a forward-declared function does not
+; cause the function to be serialized twice by TopologicalSort.
+
+; RUN: llvm-spirv -to-binary -o %t.spv %s
+; RUN: llvm-spirv -r %t.spv -o %t.bc
+; RUN: llvm-dis %t.bc -o - | FileCheck %s
+
+; CHECK-COUNT-1: define {{.*}} @foo
+
+119734787 67072 65535 8 0
+2 Capability Kernel
+2 Capability Linkage
+3 MemoryModel 2 2
+3 Name 6 "foo"
+5 Decorate 6 LinkageAttributes "foo" Export
+
+4 TypeInt 2 32 0
+2 TypeVoid 3
+3 TypeFunction 4 3
+
+5 SpecConstantOp 2 5 124 6
+
+5 Function 3 6 0 4
+2 Label 7
+1 Return
+1 FunctionEnd
