@@ -120,13 +120,30 @@ endif()
 
 set(LLVM_SPIRV_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# True when tests should use the in-tree SPIRV-Tools build
+# (llvm/tools/spirv-tools) instead of a system install. Standalone
+# builds have no in-tree targets to fall back on.
+# Unrelated to SPIRV_TOOLS_FOUND below: this picks the test suite's
+# spirv-as/dis/link/val executables, that picks the library llvm-spirv links for
+# --spirv-tools-dis.
+if (LLVM_INCLUDE_SPIRV_TOOLS_TESTS AND NOT LLVM_SPIRV_BUILD_EXTERNAL)
+  set(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS TRUE)
+else()
+  set(LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS FALSE)
+endif()
+
 # first try locating SPIRV-Tools via pkgconfig (the old way)
 pkg_search_module(SPIRV_TOOLS SPIRV-Tools)
 if (NOT SPIRV_TOOLS_FOUND)
   # then try locating SPIRV-Tools via cmake (the new way)
   find_package(SPIRV-Tools)
-  find_package(SPIRV-Tools-tools)
-  if (SPIRV-Tools_FOUND AND SPIRV-Tools-tools_FOUND)
+  # Importing SPIRV-Tools-tools would collide with the in-tree
+  # spirv-as/dis/link/val custom targets ("Some (but not all) targets
+  # in this export set were already defined.").
+  if (NOT LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS)
+    find_package(SPIRV-Tools-tools)
+  endif()
+  if (SPIRV-Tools_FOUND AND (SPIRV-Tools-tools_FOUND OR LLVM_SPIRV_USE_INTREE_SPIRV_TOOLS))
     set(SPIRV_TOOLS_FOUND TRUE)
     # check for the existance of library targets in the found packages
     if(TARGET SPIRV-Tools-shared)
