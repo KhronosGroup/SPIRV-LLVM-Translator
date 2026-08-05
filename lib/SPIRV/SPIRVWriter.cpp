@@ -1368,6 +1368,30 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
   }
 }
 
+void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
+                                                Instruction *I) {
+  if (!BM->preserveAuxData())
+    return;
+  bool HasAny = false;
+  for (StringRef MDName :
+       {"amdgpu.no.fine.grained.memory", "amdgpu.no.remote.memory",
+        "amdgpu.ignore.denormal.mode"}) {
+    if (!I->getMetadata(MDName))
+      continue;
+    if (!HasAny) {
+      if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+        BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+      else
+        BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+      HasAny = true;
+    }
+    std::vector<SPIRVWord> Ops = {BV->getId(),
+                                  BM->getString(MDName.str())->getId()};
+    BM->addAuxData(NonSemanticAuxData::InstructionMetadata,
+                   transType(Type::getVoidTy(I->getContext())), Ops);
+  }
+}
+
 SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
                                               SPIRVType *ExpectedType) {
   // Constant expressions expect their pointer types to be i8* in opaque pointer
@@ -2832,10 +2856,30 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       // Implement FSub through FNegate and AtomicFAddExt
       Ops[3] = BM->addUnaryInst(OpFNegate, Ty, OpVals[3], BB)->getId();
       OC = OpAtomicFAddEXT;
+    } else if (Op == AtomicRMWInst::UIncWrap || Op == AtomicRMWInst::UDecWrap) {
+      StringRef FuncName = (Op == AtomicRMWInst::UIncWrap)
+                               ? "__spirv_AtomicUIncWrap"
+                               : "__spirv_AtomicUDecWrap";
+      SPIRVType *SpvValTy = Ty;
+      SPIRVType *SpvPtrTy = transType(ARMW->getPointerOperand()->getType());
+      SPIRVType *SpvI32Ty = transType(Type::getInt32Ty(M->getContext()));
+      std::vector<SPIRVType *> ParamTys = {SpvPtrTy, SpvI32Ty, SpvI32Ty,
+                                           SpvValTy};
+      SPIRVTypeFunction *SpvFT = BM->addFunctionType(SpvValTy, ParamTys);
+      SPIRVFunction *BFunc = BM->addFunction(SpvFT);
+      BFunc->setFunctionControlMask(FunctionControlMaskNone);
+      BM->setName(BFunc, FuncName.str());
+      BFunc->addDecorate(new SPIRVDecorateLinkageAttr(BFunc, FuncName.str(),
+                                                      LinkageTypeImport));
+      SPIRVValue *BV = mapValue(V, BM->addCallInst(BFunc, Ops, BB));
+      transAMDGPUAtomicMetadata(BV, ARMW);
+      return BV;
     } else
       OC = LLVMSPIRVAtomicRmwOpCodeMap::map(Op);
 
-    return mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    SPIRVValue *BV = mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    transAMDGPUAtomicMetadata(BV, ARMW);
+    return BV;
   }
 
   if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(V)) {
