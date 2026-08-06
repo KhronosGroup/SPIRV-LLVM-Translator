@@ -2564,8 +2564,6 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
     SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = 0\n");
     return W;
   };
-  // A reference, not a copy: setError() has to reach the module's own log so
-  // that getError() can report the reason to the caller.
   SPIRVErrorLog &ErrorLog = MI.getErrorLog();
   SPIRVWord Magic = ReadSPIRVWord(I);
 
