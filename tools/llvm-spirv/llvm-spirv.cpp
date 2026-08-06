@@ -153,8 +153,8 @@ static cl::opt<SPIRV::SPIRVDbgErrorHandlingKinds> ErrorHandling(
                clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Exit, "exit",
                           "Print the error and exit with its error code"),
                clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Ignore, "ignore",
-                          "Print the error and exit with a generic error "
-                          "code")),
+                          "Suppress the translator's own error message and "
+                          "exit through the tool's normal error path")),
     cl::init(SPIRV::SPIRVDbgErrorHandlingKinds::Exit));
 
 static cl::opt<SPIRV::BIsRepresentation> BIsRepresentation(
