@@ -1851,7 +1851,8 @@ public:
             ExtSetKind == SPIRVEIS_OpenCL_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
             ExtSetKind == SPIRVEIS_NonSemantic_Shader_DebugInfo_200 ||
-            ExtSetKind == SPIRVEIS_NonSemantic_AuxData) &&
+            ExtSetKind == SPIRVEIS_NonSemantic_AuxData ||
+            ExtSetKind == SPIRVEIS_NonSemantic_Unknown) &&
            "not supported");
   }
   void encode(spv_ostream &O) const override {
@@ -1868,6 +1869,9 @@ public:
       break;
     case SPIRVEIS_NonSemantic_AuxData:
       getEncoder(O) << ExtOpNonSemanticAuxData;
+      break;
+    case SPIRVEIS_NonSemantic_Unknown:
+      getEncoder(O) << ExtOp;
       break;
     default:
       assert(0 && "not supported");
@@ -1890,6 +1894,9 @@ public:
       break;
     case SPIRVEIS_NonSemantic_AuxData:
       getDecoder(I) >> ExtOpNonSemanticAuxData;
+      break;
+    case SPIRVEIS_NonSemantic_Unknown:
+      getDecoder(I) >> ExtOp;
       break;
     default:
       assert(0 && "not supported");
@@ -1947,9 +1954,11 @@ public:
   }
 
   std::optional<ExtensionID> getRequiredExtension() const override {
-    if (SPIRVBuiltinSetNameMap::map(ExtSetKind).find("NonSemantic.") == 0 &&
-        !Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
-      return ExtensionID::SPV_KHR_non_semantic_info;
+    if (ExtSetKind == SPIRVEIS_NonSemantic_Unknown ||
+        SPIRVBuiltinSetNameMap::map(ExtSetKind).find("NonSemantic.") == 0) {
+      if (!Module->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+        return ExtensionID::SPV_KHR_non_semantic_info;
+    }
     return {};
   }
 
