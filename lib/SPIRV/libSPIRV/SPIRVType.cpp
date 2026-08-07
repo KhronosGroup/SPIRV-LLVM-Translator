@@ -308,6 +308,37 @@ SPIRVValue *SPIRVTypeArray::getLength() const { return getValue(Length); }
 
 _SPIRV_IMP_ENCDEC3(SPIRVTypeArray, Id, ElemType, Length)
 
+void SPIRVTypeVectorIdEXT::validate() const {
+  SPIRVEntry::validate();
+  CompType->validate();
+  SPIRVErrorLog &SPVErrLog = getModule()->getErrorLog();
+  std::string InstName = OpCodeNameMap::map(OpCode);
+  // Component Type must be a scalar type.
+  SPVErrLog.checkError(CompType->isTypeBool() || CompType->isTypeInt() ||
+                           CompType->isTypeFloat(),
+                       SPIRVEC_InvalidInstruction,
+                       InstName + ": component type must be a scalar type\n");
+  SPIRVValue *Count = getComponentCount();
+  // Component Count must be a constant instruction with 32-bit int type
+  Op CountOC = Count->getOpCode();
+  SPVErrLog.checkError(
+      CountOC == OpConstant || CountOC == OpSpecConstant ||
+          CountOC == OpSpecConstantOp,
+      SPIRVEC_InvalidInstruction,
+      InstName + ": component count must be a constant instruction\n");
+  SPVErrLog.checkError(
+      Count->getType()->isTypeInt(32), SPIRVEC_InvalidInstruction,
+      InstName + ": component count must have scalar 32-bit integer type\n");
+  // Component size is treated as unsigned value and must be greater than zero
+  if (CountOC == OpConstant)
+    SPVErrLog.checkError(
+        static_cast<SPIRVConstant *>(Count)->getZExtIntValue() > 0,
+        SPIRVEC_InvalidInstruction,
+        InstName + ": component count must be greater than zero\n");
+}
+
+_SPIRV_IMP_ENCDEC3(SPIRVTypeVectorIdEXT, Id, CompType, ComponentCount)
+
 void SPIRVTypeForwardPointer::encode(spv_ostream &O) const {
   getEncoder(O) << PointerId << SC;
 }

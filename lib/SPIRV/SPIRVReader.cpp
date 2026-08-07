@@ -386,6 +386,18 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     return mapType(T,
                    FixedVectorType::get(transType(T->getVectorComponentType()),
                                         T->getVectorComponentCount()));
+  case OpTypeVectorIdEXT: {
+    // The component size might be a specialization constant, that needs to be
+    // specialized and evaluated before the FixedVectorType can be constructed
+    auto *VT = static_cast<const SPIRVTypeVectorIdEXT *>(T);
+    auto *CountValue = cast<ConstantInt>(
+        transValue(VT->getComponentCount(), nullptr, nullptr));
+    BM->getErrorLog().checkError(
+        !CountValue->isZero(), SPIRVEC_InvalidInstruction,
+        "TypeVectorIdEXT: component count must be greater than zero\n");
+    return mapType(T, FixedVectorType::get(transType(VT->getComponentType()),
+                                           CountValue->getZExtValue()));
+  }
   case OpTypeMatrix:
     return mapType(T, ArrayType::get(transType(T->getMatrixColumnType()),
                                      T->getMatrixColumnCount()));
