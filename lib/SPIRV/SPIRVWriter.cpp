@@ -6063,10 +6063,18 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     }
   }
 
-  return BM->addCallInst(
+  SPIRVValue *BV = BM->addCallInst(
       transFunctionDecl(Callee),
       transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
       BB);
+  // SPIRVRegularizeLLVM rewrites atomicrmw uinc_wrap/udec_wrap into a call to
+  // an imported helper and moves the amdgpu.* atomic hints onto that call, so
+  // there is no atomicrmw left to read them from by the time we get here.
+  StringRef CalleeName = Callee->getName();
+  if (CalleeName.starts_with(kSPIRVName::TranslateSPIRVAtomicUIncWrap) ||
+      CalleeName.starts_with(kSPIRVName::TranslateSPIRVAtomicUDecWrap))
+    transAMDGPUAtomicMetadata(BV, CI);
+  return BV;
 }
 
 SPIRVValue *LLVMToSPIRVBase::transIndirectCallInst(CallInst *CI,

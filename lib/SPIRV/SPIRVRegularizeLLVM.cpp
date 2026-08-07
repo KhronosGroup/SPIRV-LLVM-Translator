@@ -847,6 +847,10 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             CallInst *Call =
                 Builder.CreateCall(FC, {Ptr, MemoryScope, Sem, Val});
             Call->setCallingConv(CallingConv::SPIR_FUNC);
+            // Carry the instruction metadata (in particular the amdgpu.* atomic
+            // hints) onto the call, so that it can still be emitted as AuxData
+            // and restored on the atomicrmw rebuilt by the reverse translation.
+            Call->copyMetadata(*ARMW);
             Call->takeName(ARMW);
 
             ARMW->replaceAllUsesWith(Call);
