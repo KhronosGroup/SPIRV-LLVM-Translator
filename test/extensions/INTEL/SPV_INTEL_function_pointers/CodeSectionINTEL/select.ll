@@ -1,31 +1,41 @@
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_function_pointers -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
 
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
 ; RUN: llvm-spirv %t.u.spv -to-text -o %t.u.spt
-; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: FileCheck < %t.u.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
 
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV: Capability FunctionPointersINTEL
+; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
 ; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL_ID:]] "_ZTS6kernel"
 ; CHECK-SPIRV-DAG: Name [[#BAR:]] "_Z3barii"
 ; CHECK-SPIRV-DAG: Name [[#BAZ:]] "_Z3bazii"
-; CHECK-SPIRV: TypeInt [[#INT32:]] 32
-; CHECK-SPIRV: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]]
-; CHECK-SPIRV: TypePointer [[#FUNC_PTR_TYPE:]] [[#]] [[#FUNC_TYPE]]
-; CHECK-SPIRV: TypePointer [[#FUNC_PTR_ALLOCA_TYPE:]] [[#]] [[#FUNC_PTR_TYPE]]
-; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BARPTR:]] [[#BAR]]
-; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BAZPTR:]] [[#BAZ]]
+; CHECK-SPIRV-DAG: TypeInt [[#INT32:]] 32
+; CHECK-SPIRV-DAG: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]]
+; CHECK-SPIRV-TYPED: TypePointer [[#FUNC_PTR_TYPE:]] [[#]] [[#FUNC_TYPE]]
+; CHECK-SPIRV-TYPED: TypePointer [[#FUNC_PTR_ALLOCA_TYPE:]] [[#]] [[#FUNC_PTR_TYPE]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PTR:]]
+; CHECK-SPIRV-TYPED-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BARPTR:]] [[#BAR]]
+; CHECK-SPIRV-TYPED-DAG: ConstantFunctionPointerINTEL [[#FUNC_PTR_TYPE]] [[#BAZPTR:]] [[#BAZ]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BARPTR:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAZPTR:]]
 ; CHECK-SPIRV: Function [[#]] [[#KERNEL_ID]]
-; CHECK-SPIRV: Variable [[#FUNC_PTR_ALLOCA_TYPE]] [[#FPTR:]]
-; CHECK-SPIRV: Select [[#FUNC_PTR_TYPE]] [[#SELECT:]] [[#]] [[#BARPTR]] [[#BAZPTR]]
+; CHECK-SPIRV-TYPED: Variable [[#FUNC_PTR_ALLOCA_TYPE]] [[#FPTR:]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#FPTR:]]
+; CHECK-SPIRV-TYPED: Select [[#FUNC_PTR_TYPE]] [[#SELECT:]] [[#]] [[#BARPTR]] [[#BAZPTR]]
+; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SELECT:]]
 ; CHECK-SPIRV: Store [[#FPTR]] [[#SELECT]]
-; CHECK-SPIRV: Load [[#FUNC_PTR_TYPE]] [[#LOAD:]] [[#FPTR]]
+; CHECK-SPIRV-TYPED: Load [[#FUNC_PTR_TYPE]] [[#LOAD:]] [[#FPTR]]
+; CHECK-SPIRV-UNTYPED: Load [[#PTR]] [[#LOAD:]] [[#FPTR]]
 ; CHECK-SPIRV: FunctionPointerCallINTEL [[#]] [[#]] [[#LOAD]]
 
 ; CHECK-LLVM: define spir_kernel void @_ZTS6kernel
@@ -34,23 +44,6 @@
 ; CHECK-LLVM: store ptr addrspace(9) %[[SELECT]], ptr %[[FPTR_ALLOCA]]
 ; CHECK-LLVM: %[[FPTR:.*]] = load ptr addrspace(9), ptr %[[FPTR_ALLOCA]]
 ; CHECK-LLVM: call spir_func addrspace(9) i32 %[[FPTR]](
-
-; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
-; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
-; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
-; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
-; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAR:]] "_Z3barii"
-; CHECK-SPIRV-UNTYPED-DAG: Name [[#BAZ:]] "_Z3bazii"
-; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#INT32:]] 32
-; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FUNC_TYPE:]] [[#INT32]] [[#INT32]]
-; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PTR:]]
-; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BARPTR:]]
-; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAZPTR:]]
-; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#FPTR:]]
-; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SELECT:]]
-; CHECK-SPIRV-UNTYPED: Store [[#FPTR]] [[#SELECT]]
-; CHECK-SPIRV-UNTYPED: Load [[#PTR]] [[#LOAD:]] [[#FPTR]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#]] [[#LOAD]]
 
 ; CHECK-LLVM-UNTYPED: define spir_kernel void @_ZTS6kernel
 ; CHECK-LLVM-UNTYPED: %fptr.alloca = alloca ptr

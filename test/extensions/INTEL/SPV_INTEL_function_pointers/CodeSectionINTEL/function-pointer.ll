@@ -1,13 +1,13 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers -o %t.spt
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
+; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers -o %t.spv
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM
 
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spt
-; RUN: FileCheck < %t.u.spt %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: FileCheck < %t.u.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.u.spv
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
@@ -24,21 +24,23 @@
 ;   *data = fp(input);
 ; }
 ;
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
-; CHECK-SPIRV: EntryPoint [[#]] [[KERNEL_ID:[0-9]+]] "test"
-; CHECK-SPIRV: TypeInt [[TYPE_INT_ID:[0-9]+]]
-; CHECK-SPIRV: TypeFunction [[FOO_TYPE_ID:[0-9]+]] [[TYPE_INT_ID]] [[TYPE_INT_ID]]
-; CHECK-SPIRV: TypePointer [[FOO_PTR_ID:[0-9]+]] {{[0-9]+}} [[FOO_TYPE_ID]]
-; CHECK-SPIRV: TypePointer [[FOO_PTR_ALLOCA_ID:[0-9]+]] 7 [[FOO_PTR_ID]]
-; CHECK-SPIRV: ConstantFunctionPointerINTEL [[FOO_PTR_ID]] [[FOO_PTR:[0-9]+]] [[FOO_ID:[0-9]+]]
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-TYPED: EntryPoint [[#]] [[KERNEL_ID:[0-9]+]] "test"
+; CHECK-SPIRV-TYPED: TypeInt [[TYPE_INT_ID:[0-9]+]]
+; CHECK-SPIRV-TYPED: TypeFunction [[FOO_TYPE_ID:[0-9]+]] [[TYPE_INT_ID]] [[TYPE_INT_ID]]
+; CHECK-SPIRV-TYPED: TypePointer [[FOO_PTR_ID:[0-9]+]] {{[0-9]+}} [[FOO_TYPE_ID]]
+; CHECK-SPIRV-TYPED: TypePointer [[FOO_PTR_ALLOCA_ID:[0-9]+]] 7 [[FOO_PTR_ID]]
+; CHECK-SPIRV-TYPED: ConstantFunctionPointerINTEL [[FOO_PTR_ID]] [[FOO_PTR:[0-9]+]] [[FOO_ID:[0-9]+]]
 ;
-; CHECK-SPIRV: Function {{[0-9]+}} [[FOO_ID]] {{[0-9]+}} [[FOO_TYPE_ID]]
-; CHECK-SPIRV: Function {{[0-9]+}} [[KERNEL_ID]]
-; CHECK-SPIRV: Variable [[FOO_PTR_ALLOCA_ID]] [[FOO_PTR_ALLOCA:[0-9]+]]
-; CHECK-SPIRV: Store [[FOO_PTR_ALLOCA]] [[FOO_PTR]]
-; CHECK-SPIRV: Load [[FOO_PTR_ID]] [[LOADED_FOO_PTR:[0-9]+]] [[FOO_PTR_ALLOCA]]
-; CHECK-SPIRV: FunctionPointerCallINTEL 2 {{[0-9]+}} [[LOADED_FOO_PTR]]
+; CHECK-SPIRV-TYPED: Function {{[0-9]+}} [[FOO_ID]] {{[0-9]+}} [[FOO_TYPE_ID]]
+; CHECK-SPIRV-TYPED: Function {{[0-9]+}} [[KERNEL_ID]]
+; CHECK-SPIRV-TYPED: Variable [[FOO_PTR_ALLOCA_ID]] [[FOO_PTR_ALLOCA:[0-9]+]]
+; CHECK-SPIRV-TYPED: Store [[FOO_PTR_ALLOCA]] [[FOO_PTR]]
+; CHECK-SPIRV-TYPED: Load [[FOO_PTR_ID]] [[LOADED_FOO_PTR:[0-9]+]] [[FOO_PTR_ALLOCA]]
+; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL 2 {{[0-9]+}} [[LOADED_FOO_PTR]]
 ;
 ; CHECK-LLVM: define spir_kernel void @test
 ; CHECK-LLVM: %fp = alloca ptr addrspace(9)
@@ -46,10 +48,6 @@
 ; CHECK-LLVM: %0 = load ptr addrspace(9), ptr %fp
 ; CHECK-LLVM: %call = call spir_func addrspace(9) i32 %0(i32 %1)
 
-; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
-; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
-; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
-; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
 ; CHECK-SPIRV-UNTYPED-DAG: TypeInt [[#INT:]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeFunction [[#FOO_TY:]] [[#INT]] [[#INT]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]

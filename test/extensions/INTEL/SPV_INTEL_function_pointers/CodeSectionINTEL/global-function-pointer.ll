@@ -1,10 +1,10 @@
 ; RUN: llvm-as < %s | llvm-spirv -spirv-ext=+SPV_INTEL_function_pointers -o %t.spv
-; RUN: llvm-spirv %t.spv -spirv-ext=+SPV_INTEL_function_pointers -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %t.spv -spirv-ext=+SPV_INTEL_function_pointers -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-ADDR-SPACE
 
 ; RUN: llvm-as < %s | llvm-spirv -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -o %t.spv
-; RUN: llvm-spirv %t.spv -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.spv -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM-UNTYPED-ADDR-SPACE
 
@@ -14,19 +14,14 @@ target triple = "spir64"
 
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
-; CHECK-SPIRV: TypeFunction [[#FOO_TY:]] [[#]] [[#]]
-; CHECK-SPIRV: TypePointer [[#FOO_TY_PTR:]] [[#]] [[#FOO_TY]]
-; CHECK-SPIRV: ConstantFunctionPointerINTEL [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FOO:]]
-; CHECK-SPIRV: Function [[#]] [[#]] [[#]] [[#FOO_TY]]
-
-; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
-; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
 ; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+; CHECK-SPIRV-TYPED: TypeFunction [[#FOO_TY:]] [[#]] [[#]]
+; CHECK-SPIRV-TYPED: TypePointer [[#FOO_TY_PTR:]] [[#]] [[#FOO_TY]]
 ; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FOO_TY_PTR:]] [[#]]
 ; CHECK-SPIRV-UNTYPED: TypeFunction [[#FOO_TY:]] [[#]] [[#]]
-; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FOO:]]
+; CHECK-SPIRV: ConstantFunctionPointerINTEL [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FOO:]]
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#]] [[#]] [[#]] [[#FOO_TY_PTR]] [[#FOO_PTR]]
-; CHECK-SPIRV-UNTYPED: Function [[#]] [[#]] [[#]] [[#FOO_TY]]
+; CHECK-SPIRV: Function [[#]] [[#]] [[#]] [[#FOO_TY]]
 
 ; CHECK-LLVM: @two = internal addrspace(1) global ptr @_Z4barrii
 ; CHECK-LLVM: define spir_func i32 @_Z4barrii(i32 %[[#]], i32 %[[#]])

@@ -1,5 +1,5 @@
 ; RUN: llvm-spirv %s -o %t.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers
-; RUN: FileCheck < %t.spt %s --check-prefix CHECK-SPIRV
+; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED
 
 ; RUN: llvm-spirv %t.spt -o %t.spv -to-binary
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.rev.bc
@@ -7,28 +7,23 @@
 ; RUN: FileCheck < %t.rev.ll %s --check-prefix CHECK-LLVM
 
 ; RUN: llvm-spirv %s -o %t.u.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers
-; RUN: FileCheck < %t.u.spt %s --check-prefix CHECK-SPIRV-UNTYPED
+; RUN: FileCheck < %t.u.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
 
 ; RUN: llvm-spirv %t.u.spt -o %t.u.spv -to-binary
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.u.rev.bc
 ; RUN: llvm-dis %t.u.rev.bc -o %t.u.rev.ll
 ; RUN: FileCheck < %t.u.rev.ll %s --check-prefix CHECK-LLVM-UNTYPED
 
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
-
-; CHECK-SPIRV: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 5
-; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
-; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
-; CHECK-SPIRV: FunctionPointerCallINTEL
-; CHECK-SPIRV-SAME: [[#TargetId]]
-
-; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
-
-; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
-; CHECK-SPIRV-UNTYPED: Capability FunctionPointersINTEL
-; CHECK-SPIRV-UNTYPED: Extension "SPV_INTEL_function_pointers"
 ; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
+
+; CHECK-SPIRV-TYPED: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 5
+; CHECK-SPIRV-TYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
+; CHECK-SPIRV-TYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
+; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL
+; CHECK-SPIRV-TYPED-SAME: [[#TargetId]]
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG:]] ArgumentAttributeINTEL 0 5
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 4
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 2
@@ -39,6 +34,7 @@
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#]] [[#]] [[#MULTI_PTR]]
 ; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]]
 
+; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 ; CHECK-LLVM-UNTYPED: select i1 %_arg_, ptr addrspacecast (ptr addrspace(9) @inc_function to ptr), ptr null
 ; CHECK-LLVM-UNTYPED: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 

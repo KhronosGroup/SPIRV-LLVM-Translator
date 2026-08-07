@@ -2787,9 +2787,9 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         static_cast<SPIRVFunctionPointerCallINTEL *>(BV);
     auto *V = transValue(BC->getCalledValue(), F, BB);
     std::vector<Value *> Args = transValue(BC->getArgumentValues(), F, BB);
-    auto *SpirvFnTy = BC->getCalledValue()->getType()->getPointerElementType();
-    auto *FnTy = dyn_cast<FunctionType>(transType(SpirvFnTy));
-    if (!FnTy) {
+    SPIRVType *SpirvPtrTy = BC->getCalledValue()->getType();
+    FunctionType *FnTy = nullptr;
+    if (SpirvPtrTy->isTypeUntypedPointerKHR()) {
       // An untyped function pointer has no pointee type, so rebuild the
       // signature from the call's return and argument types.
       SmallVector<Type *, 8> ArgTys;
@@ -2797,6 +2797,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         ArgTys.push_back(Arg->getType());
       FnTy = FunctionType::get(transType(BC->getType()), ArgTys,
                                /*isVarArg=*/false);
+    } else {
+      FnTy = cast<FunctionType>(transType(SpirvPtrTy->getPointerElementType()));
     }
     auto *Call = CallInst::Create(FnTy, V, Args, BC->getName(), BB);
     transFunctionPointerCallArgumentAttributes(BV, Call, BC);
