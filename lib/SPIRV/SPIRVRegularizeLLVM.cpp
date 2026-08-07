@@ -793,6 +793,66 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           Cmpxchg->replaceAllUsesWith(V2);
           ToErase.push_back(Cmpxchg);
         }
+        if (auto *ARMW = dyn_cast<AtomicRMWInst>(&II)) {
+          AtomicRMWInst::BinOp AOp = ARMW->getOperation();
+          // Carrying these across the SPIR-V boundary as a call to an imported
+          // helper is an AMD extension: a consumer has to recognize the helper
+          // by name to make sense of the module. Restrict it to AMD targets;
+          // for anyone else the atomicrmw reaches the writer and is reported as
+          // unsupported, as it was before the helper existed.
+          if (M->getTargetTriple().getVendor() == Triple::AMD &&
+              (AOp == AtomicRMWInst::UIncWrap ||
+               AOp == AtomicRMWInst::UDecWrap)) {
+            // There is no SPIR-V opcode for uinc_wrap/udec_wrap. Transform:
+            // %1 = atomicrmw uinc_wrap ptr addrspace(1) %ptr, i32 %val seq_cst
+            // To a call to an imported helper, which the reverse translation
+            // turns back into the original atomicrmw:
+            // %1 = call spir_func i32
+            //   @__translate_spirv_atomic_uinc_wrap_p1_i32(
+            //     ptr addrspace(1) %ptr, i32 %scope, i32 %memsem, i32 %val)
+            //
+            // The name carries the address space and the value type because a
+            // module may need several mutually incompatible signatures, while
+            // SPIR-V resolves an imported function by its linkage name alone.
+            Value *Ptr = ARMW->getPointerOperand();
+            Value *Val = ARMW->getValOperand();
+            Type *MemType = Val->getType();
+
+            spv::Scope S =
+                toSPIRVScope(ARMW->getContext(), ARMW->getSyncScopeID());
+            Value *MemoryScope = getInt32(M, S);
+            auto Order =
+                static_cast<OCLMemOrderKind>(llvm::toCABI(ARMW->getOrdering()));
+            unsigned SCMask =
+                getAtomicPointerMemorySemanticsMask(Ptr, Ptr->getType());
+            Value *Sem = getInt32(M, OCLMemOrderMap::map(Order) | SCMask);
+
+            std::string FuncName =
+                AOp == AtomicRMWInst::UIncWrap
+                    ? kSPIRVName::TranslateSPIRVAtomicUIncWrap
+                    : kSPIRVName::TranslateSPIRVAtomicUDecWrap;
+            FuncName +=
+                "_p" +
+                std::to_string(Ptr->getType()->getPointerAddressSpace()) +
+                "_i" + std::to_string(MemType->getIntegerBitWidth());
+
+            Type *Int32Ty = Type::getInt32Ty(M->getContext());
+            FunctionType *FT = FunctionType::get(
+                MemType, {Ptr->getType(), Int32Ty, Int32Ty, MemType}, false);
+            FunctionCallee FC = M->getOrInsertFunction(FuncName, FT);
+            if (auto *Callee = dyn_cast<Function>(FC.getCallee()))
+              Callee->setCallingConv(CallingConv::SPIR_FUNC);
+
+            IRBuilder<> Builder(ARMW);
+            CallInst *Call =
+                Builder.CreateCall(FC, {Ptr, MemoryScope, Sem, Val});
+            Call->setCallingConv(CallingConv::SPIR_FUNC);
+            Call->takeName(ARMW);
+
+            ARMW->replaceAllUsesWith(Call);
+            ToErase.push_back(ARMW);
+          }
+        }
       }
     }
     for (Instruction *V : ToErase) {
