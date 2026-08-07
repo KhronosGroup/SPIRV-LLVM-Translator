@@ -1368,6 +1368,30 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
   }
 }
 
+void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
+                                                Instruction *I) {
+  if (!BM->preserveAuxData())
+    return;
+  bool HasAny = false;
+  for (StringRef MDName :
+       {"amdgpu.no.fine.grained.memory", "amdgpu.no.remote.memory",
+        "amdgpu.ignore.denormal.mode"}) {
+    if (!I->getMetadata(MDName))
+      continue;
+    if (!HasAny) {
+      if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+        BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+      else
+        BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+      HasAny = true;
+    }
+    std::vector<SPIRVWord> Ops = {BV->getId(),
+                                  BM->getString(MDName.str())->getId()};
+    BM->addAuxData(NonSemanticAuxData::InstructionMetadata,
+                   transType(Type::getVoidTy(I->getContext())), Ops);
+  }
+}
+
 SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
                                               SPIRVType *ExpectedType) {
   // Constant expressions expect their pointer types to be i8* in opaque pointer
@@ -2839,7 +2863,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     } else
       OC = LLVMSPIRVAtomicRmwOpCodeMap::map(Op);
 
-    return mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    SPIRVValue *BV = mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    transAMDGPUAtomicMetadata(BV, ARMW);
+    return BV;
   }
 
   if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(V)) {
