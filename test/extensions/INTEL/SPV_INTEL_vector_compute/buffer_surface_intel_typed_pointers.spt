@@ -1,0 +1,21 @@
+; RUN: llvm-spirv -r -spirv-text -opaque-pointers=0 %s -o %t.bc --spirv-target-env=SPV-IR
+; RUN: llvm-dis -opaque-pointers=0 %t.bc -o - | FileCheck %s
+
+; CHECK: %intel.buffer_ro_t = type opaque
+; CHECK: define spir_func void @test(%intel.buffer_ro_t addrspace(1)*
+
+119734787 65536 393230 7 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability VectorComputeINTEL
+8 Extension "SPV_INTEL_vector_compute"
+3 MemoryModel 1 2
+6 Decorate 4 LinkageAttributes "test" Export
+2 TypeVoid 1
+3 TypeBufferSurfaceINTEL 2 0
+4 TypeFunction 3 1 2
+5 Function 1 4 0 3
+3 FunctionParameter 2 5
+2 Label 6
+1 Return
+1 FunctionEnd
