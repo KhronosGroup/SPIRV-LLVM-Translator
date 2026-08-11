@@ -27,7 +27,6 @@
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG:]] ArgumentAttributeINTEL 0 5
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 4
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 2
-; CHECK-SPIRV-UNTYPED-DAG: TypeVoid [[#VOID:]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
 ; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]]
