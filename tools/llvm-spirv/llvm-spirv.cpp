@@ -655,8 +655,10 @@ bool parseSpecConstOpt(llvm::StringRef SpecConstStr,
                        SPIRV::TranslatorOpts &Opts) {
   std::ifstream IFS(InputFile, std::ios::binary);
   std::vector<SpecConstInfoTy> SpecConstInfo;
-  if (!getSpecConstInfo(IFS, SpecConstInfo))
+  if (!getSpecConstInfo(IFS, Opts, SpecConstInfo)) {
+    errs() << "Invalid SPIR-V binary\n";
     return true;
+  }
 
   SmallVector<StringRef, 8> Split;
   SpecConstStr.split(Split, ' ', -1, false);
@@ -1085,7 +1087,7 @@ int main(int Ac, char **Av) {
   if (SpecConstInfo) {
     std::ifstream IFS(InputFile, std::ios::binary);
     std::vector<SpecConstInfoTy> SpecConstInfo;
-    if (!getSpecConstInfo(IFS, SpecConstInfo)) {
+    if (!getSpecConstInfo(IFS, Opts, SpecConstInfo)) {
       std::cout << "Invalid SPIR-V binary";
       return -1;
     }

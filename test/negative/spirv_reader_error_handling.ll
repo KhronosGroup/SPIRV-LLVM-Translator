@@ -14,3 +14,25 @@
 ; ahead of the caller's own diagnostic.
 ; CHECK-NOT: {{.}}
 ; CHECK: Fails to load SPIR-V as LLVM Module: InvalidModule: Invalid SPIR-V module: invalid magic number
+;
+; The spec constant scan takes the same selection through TranslatorOpts: under
+; ignore the scan reports failure through its return value and the tool prints
+; its own diagnostic.
+; RUN: not llvm-spirv --spec-const-info --spirv-error-handling=ignore %t.spv 2>&1 \
+; RUN:   | FileCheck %s --check-prefix=CHECK-SPEC-IGNORE
+; CHECK-SPEC-IGNORE-NOT: InvalidModule
+; CHECK-SPEC-IGNORE: Invalid SPIR-V binary
+;
+; Under the default, exit, the process terminates inside the scan with the
+; error on stderr, before the tool's own diagnostic is reached.
+; RUN: not llvm-spirv --spec-const-info %t.spv 2>&1 \
+; RUN:   | FileCheck %s --check-prefix=CHECK-SPEC-EXIT
+; CHECK-SPEC-EXIT: InvalidModule: Invalid SPIR-V module: invalid magic number
+; CHECK-SPEC-EXIT-NOT: Invalid SPIR-V binary
+;
+; The -spec-const option runs the same scan; under ignore its failure must
+; still produce a diagnostic rather than a bare nonzero exit.
+; RUN: not llvm-spirv -r -spec-const=0:i32:1 --spirv-error-handling=ignore \
+; RUN:   %t.spv -o %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-SPECOPT-IGNORE
+; CHECK-SPECOPT-IGNORE-NOT: InvalidModule
+; CHECK-SPECOPT-IGNORE: Invalid SPIR-V binary

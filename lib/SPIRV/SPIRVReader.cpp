@@ -6106,9 +6106,8 @@ bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
   return true;
 }
 
-bool llvm::getSpecConstInfo(std::istream &IS,
-                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+static bool getSpecConstInfoImpl(std::istream &IS, SPIRVModule *BM,
+                                 std::vector<SpecConstInfoTy> &SpecConstInfo) {
   BM->setAutoAddExtensions(false);
   SPIRVDecoder D(IS, *BM);
   SPIRVWord Magic;
@@ -6185,6 +6184,18 @@ bool llvm::getSpecConstInfo(std::istream &IS,
     }
   }
   return !IS.bad();
+}
+
+bool llvm::getSpecConstInfo(std::istream &IS,
+                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  return getSpecConstInfoImpl(IS, BM.get(), SpecConstInfo);
+}
+
+bool llvm::getSpecConstInfo(std::istream &IS, const SPIRV::TranslatorOpts &Opts,
+                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
+  return getSpecConstInfoImpl(IS, BM.get(), SpecConstInfo);
 }
 
 // clang-format off
