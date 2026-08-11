@@ -1530,7 +1530,7 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
     SPIRVWord ArgNo = Literals[0];
     SPIRVWord SpirvAttr = Literals[1];
     if (ArgNo >= ArgValues.size())
-        continue; // Ignore a malformed ArgumentAttributeINTEL decoration.
+      continue; // Ignore a malformed ArgumentAttributeINTEL decoration.
     // There is no value to rmap SPIR-V FunctionParameterAttributeNoCapture, as
     // LLVM does not have Attribute::NoCapture anymore. Adding special handling
     // for this case.
