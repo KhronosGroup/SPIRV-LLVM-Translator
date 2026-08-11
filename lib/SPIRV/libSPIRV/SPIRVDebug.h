@@ -55,8 +55,9 @@ namespace SPIRV {
 // Include source file and line number in error message.
 extern bool SPIRVDbgErrorMsgIncludesSourceInfo;
 
-// Enable assert or exit on error. This global holds the default for translation
-// that does not go through TranslatorOpts.
+// Enable assert or exit on error. Supplies the default for SPIRVErrorLog
+// instances created without TranslatorOpts, e.g. by the no-options
+// getSpecConstInfo overload.
 extern SPIRVDbgErrorHandlingKinds SPIRVDbgError;
 
 // Enable debug output.
