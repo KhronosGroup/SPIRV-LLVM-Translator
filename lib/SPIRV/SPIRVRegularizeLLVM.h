@@ -76,9 +76,6 @@ public:
   /// simplification purposes.
   void lowerFunnelShift(llvm::IntrinsicInst *FSHIntrinsic);
 
-  void lowerUMulWithOverflow(llvm::IntrinsicInst *UMulIntrinsic);
-  void buildUMulWithOverflowFunc(llvm::Function *UMulFunc);
-
   // For some cases Clang emits VectorExtractDynamic as:
   // void @_Z28__spirv_VectorExtractDynamic(<Ty>* sret(<Ty>), jointMatrix, idx);
   // Instead of:

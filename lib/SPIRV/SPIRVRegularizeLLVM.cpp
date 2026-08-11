@@ -208,46 +208,6 @@ void SPIRVRegularizeLLVMBase::lowerFunnelShift(IntrinsicInst *FSHIntrinsic) {
   FSHIntrinsic->setCalledFunction(FSHFunc);
 }
 
-void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
-  if (!UMulFunc->empty())
-    return;
-
-  BasicBlock *EntryBB = BasicBlock::Create(M->getContext(), "entry", UMulFunc);
-  IRBuilder<> Builder(EntryBB);
-  // Build the actual unsigned multiplication logic with the overflow
-  // indication.
-  auto *FirstArg = UMulFunc->getArg(0);
-  auto *SecondArg = UMulFunc->getArg(1);
-
-  // Do unsigned multiplication Mul = A * B.
-  // Then check if unsigned division Div = Mul / A is not equal to B.
-  // If so, then overflow has happened.
-  auto *Mul = Builder.CreateNUWMul(FirstArg, SecondArg);
-  auto *Div = Builder.CreateUDiv(Mul, FirstArg);
-  auto *Overflow = Builder.CreateICmpNE(FirstArg, Div);
-
-  // umul.with.overflow intrinsic return a structure, where the first element
-  // is the multiplication result, and the second is an overflow bit.
-  auto *StructTy = UMulFunc->getReturnType();
-  auto *Agg = Builder.CreateInsertValue(PoisonValue::get(StructTy), Mul, {0});
-  auto *Res = Builder.CreateInsertValue(Agg, Overflow, {1});
-  Builder.CreateRet(Res);
-}
-
-void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
-    IntrinsicInst *UMulIntrinsic) {
-  // Get a separate function - otherwise, we'd have to rework the CFG of the
-  // current one. Then simply replace the intrinsic uses with a call to the new
-  // function.
-  FunctionType *UMulFuncTy = UMulIntrinsic->getFunctionType();
-  Type *FSHLRetTy = UMulFuncTy->getReturnType();
-  const std::string FuncName = lowerLLVMIntrinsicName(UMulIntrinsic);
-  Function *UMulFunc =
-      getOrCreateFunction(M, FSHLRetTy, UMulFuncTy->params(), FuncName);
-  buildUMulWithOverflowFunc(UMulFunc);
-  UMulIntrinsic->setCalledFunction(UMulFunc);
-}
-
 void SPIRVRegularizeLLVMBase::expandVEDWithSYCLTypeSRetArg(Function *F) {
   auto Attrs = F->getAttributes();
   StructType *SRetTy = cast<StructType>(Attrs.getParamStructRetType(0));
@@ -520,7 +480,7 @@ void regularizeWithOverflowInstrinsics(StringRef MangledName, CallInst *Call,
   Value *V1 = Builder.CreateExtractValue(L, {1});
   Value *V2 = Builder.CreateICmpNE(V1, ConstZero);
   Type *StructI32I1Ty =
-      StructType::create(Call->getContext(), {RetTy, V2->getType()});
+      StructType::get(Call->getContext(), {RetTy, V2->getType()});
   Value *Undef = PoisonValue::get(StructI32I1Ty);
   Value *V3 = Builder.CreateInsertValue(Undef, V0, {0});
   Value *V4 = Builder.CreateInsertValue(V3, V2, {1});
@@ -642,8 +602,6 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             else if (II->getIntrinsicID() == Intrinsic::fshl ||
                      II->getIntrinsicID() == Intrinsic::fshr)
               lowerFunnelShift(II);
-            else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
-              lowerUMulWithOverflow(II);
             else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
               std::string MangledName =
@@ -656,6 +614,14 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               BuiltinFuncMangleInfo Info;
               std::string MangledName =
                   mangleBuiltin("__spirv_ISubBorrow",
+                                {Call->getArgOperand(0)->getType(),
+                                 Call->getArgOperand(1)->getType()},
+                                &Info);
+              regularizeWithOverflowInstrinsics(MangledName, Call, M, ToErase);
+            } else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow) {
+              BuiltinFuncMangleInfo Info;
+              std::string MangledName =
+                  mangleBuiltin("__spirv_UMulExtended",
                                 {Call->getArgOperand(0)->getType(),
                                  Call->getArgOperand(1)->getType()},
                                 &Info);
