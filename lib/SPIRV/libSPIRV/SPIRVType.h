@@ -99,6 +99,7 @@ public:
   bool isTypeSampledImage() const;
   bool isTypeStruct() const;
   bool isTypeVector() const;
+  bool isTypeVectorIdEXT() const;
   bool isTypeCooperativeMatrixKHR() const;
   bool isTypeVectorInt() const;
   bool isTypeVectorFloat() const;

@@ -117,6 +117,8 @@ SPIRVWord SPIRVType::getVectorComponentCount() const {
 SPIRVType *SPIRVType::getVectorComponentType() const {
   if (OpCode == OpTypeVector)
     return static_cast<const SPIRVTypeVector *>(this)->getComponentType();
+  if (OpCode == OpTypeVectorIdEXT)
+    return static_cast<const SPIRVTypeVectorIdEXT *>(this)->getComponentType();
   if (OpCode == OpTypeCooperativeMatrixKHR)
     return static_cast<const SPIRVTypeCooperativeMatrixKHR *>(this)
         ->getCompType();
@@ -221,6 +223,9 @@ bool SPIRVType::isTypeStruct() const { return OpCode == OpTypeStruct; }
 
 bool SPIRVType::isTypeVector() const { return OpCode == OpTypeVector; }
 
+bool SPIRVType::isTypeVectorIdEXT() const {
+  return OpCode == OpTypeVectorIdEXT;
+}
 
 bool SPIRVType::isTypeCooperativeMatrixKHR() const {
   return OpCode == OpTypeCooperativeMatrixKHR;

@@ -2194,6 +2194,7 @@ protected:
     size_t TypeOpCode = this->getType()->getOpCode();
     switch (TypeOpCode) {
     case OpTypeVector:
+    case OpTypeVectorIdEXT:
       assert(Constituents.size() > 1 &&
              "There must be at least two Constituent operands in vector");
       break;
@@ -2226,6 +2227,7 @@ protected:
     assert(getValueType(Composite)->isTypeArray() ||
            getValueType(Composite)->isTypeStruct() ||
            getValueType(Composite)->isTypeVector() ||
+           getValueType(Composite)->isTypeVectorIdEXT() ||
            getValueType(Composite)->isTypeUntypedPointerKHR());
   }
 };
@@ -2253,6 +2255,7 @@ protected:
     assert(getValueType(Composite)->isTypeArray() ||
            getValueType(Composite)->isTypeStruct() ||
            getValueType(Composite)->isTypeVector() ||
+           getValueType(Composite)->isTypeVectorIdEXT() ||
            getValueType(Composite)->isTypeUntypedPointerKHR());
     assert(Type == getValueType(Composite));
   }
@@ -2460,7 +2463,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    assert(getValueType(VectorId)->isTypeVector() ||
+           getValueType(VectorId)->isTypeVectorIdEXT());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2497,7 +2501,8 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(VectorId)->isForward())
       return;
-    assert(getValueType(VectorId)->isTypeVector());
+    assert(getValueType(VectorId)->isTypeVector() ||
+           getValueType(VectorId)->isTypeVectorIdEXT());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2517,10 +2522,11 @@ protected:
     SPIRVInstruction::validate();
     [[maybe_unused]] SPIRVId Vector1 = Ops[0];
     assert(OpCode == OpVectorShuffle);
-    assert(Type->isTypeVector());
+    assert(Type->isTypeVector() || Type->isTypeVectorIdEXT());
     assert(Type->getVectorComponentType() ==
            getValueType(Vector1)->getVectorComponentType());
-    assert(Ops.size() - 2 == Type->getVectorComponentCount());
+    if (Type->isTypeVector())
+      assert(Ops.size() - 2 == Type->getVectorComponentCount());
   }
 };
 

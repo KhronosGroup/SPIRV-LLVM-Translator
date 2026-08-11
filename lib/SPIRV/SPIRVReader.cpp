@@ -1684,6 +1684,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
     switch (BV->getType()->getOpCode()) {
     case OpTypeVector:
+    case OpTypeVectorIdEXT:
       return mapValue(BV, ConstantVector::get(CV));
     case OpTypeMatrix:
     case OpTypeArray: {
@@ -2496,7 +2497,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       // For untyped access chains the Base Type operand already is the type
       // being indexed, so it has to be used as is.
       BaseTy = transType(BaseSPVTy);
-    } else if (BaseSPVTy->isTypeVector()) {
+    } else if (BaseSPVTy->isTypeVector() || BaseSPVTy->isTypeVectorIdEXT()) {
       auto *VecCompTy = BaseSPVTy->getVectorComponentType();
       if (VecCompTy->isTypePointer())
         BaseTy = transType(VecCompTy->getPointerElementType());
@@ -2590,6 +2591,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
 
     switch (static_cast<size_t>(BV->getType()->getOpCode())) {
+    case OpTypeVectorIdEXT:
     case OpTypeVector: {
       if (!HasRtValues)
         return mapValue(BV, ConstantVector::get(CV));
@@ -2658,7 +2660,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
-    if (CE->getComposite()->getType()->isTypeVector()) {
+    if (CE->getComposite()->getType()->isTypeVector() ||
+        CE->getComposite()->getType()->isTypeVectorIdEXT()) {
       assert(CE->getIndices().size() == 1 && "Invalid index");
       return mapValue(
           BV, Builder.CreateExtractElement(
@@ -2686,7 +2689,8 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
-    if (CI->getComposite()->getType()->isTypeVector()) {
+    if (CI->getComposite()->getType()->isTypeVector() ||
+        CI->getComposite()->getType()->isTypeVectorIdEXT()) {
       assert(CI->getIndices().size() == 1 && "Invalid index");
       return mapValue(
           BV, Builder.CreateInsertElement(
