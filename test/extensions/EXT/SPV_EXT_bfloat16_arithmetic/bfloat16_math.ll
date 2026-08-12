@@ -1,12 +1,12 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_bfloat16 --spirv-ext=+SPV_INTEL_bfloat16_arithmetic -o %t.spv
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_bfloat16 --spirv-ext=+SPV_EXT_bfloat16_arithmetic -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_KHR_bfloat16 2>&1 >/dev/null | FileCheck %s --check-prefix=CHECK-ERROR
-; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_bfloat16_arithmetic 2>&1 >/dev/null | FileCheck %s --check-prefix=CHECK-ERROR
+; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_EXT_bfloat16_arithmetic 2>&1 >/dev/null | FileCheck %s --check-prefix=CHECK-ERROR
 ; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
 
 source_filename = "bfloat16.cpp"
@@ -14,8 +14,8 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spirv64-unknown-unknown"
 
 ; CHECK-SPIRV: Capability BFloat16TypeKHR
-; CHECK-SPIRV: Capability BFloat16ArithmeticINTEL
-; CHECK-SPIRV: Extension "SPV_INTEL_bfloat16_arithmetic"
+; CHECK-SPIRV: Capability BFloat16ArithmeticEXT
+; CHECK-SPIRV: Extension "SPV_EXT_bfloat16_arithmetic"
 ; CHECK-SPIRV: Extension "SPV_KHR_bfloat16"
 ; CHECK-SPIRV: 4 TypeFloat [[BFLOAT:[0-9]+]] 16 0
 ; CHECK-SPIRV: 5 Function [[#]] [[#]] [[#]] [[#]]

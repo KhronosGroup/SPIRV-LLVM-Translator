@@ -1,0 +1,36 @@
+; RUN: llvm-spirv -to-binary %s -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s
+
+; The writer no longer emits SPV_INTEL_bfloat16_arithmetic (it emits
+; SPV_EXT_bfloat16_arithmetic instead), but the reader must still accept
+; modules produced by older tools that use the INTEL extension and
+; capability names.
+
+; CHECK: %r = fadd bfloat %a, %b
+
+119734787 65536 393230 9 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability BFloat16TypeKHR
+2 Capability BFloat16ArithmeticINTEL
+9 Extension "SPV_INTEL_bfloat16_arithmetic"
+6 Extension "SPV_KHR_bfloat16"
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 2 2
+3 Source 0 0
+4 Name 4 "test"
+3 Name 5 "a"
+3 Name 6 "b"
+3 Name 8 "r"
+6 Decorate 4 LinkageAttributes "test" Export
+4 TypeFloat 2 16 0
+5 TypeFunction 3 2 2 2
+5 Function 2 4 0 3
+3 FunctionParameter 2 5
+3 FunctionParameter 2 6
+2 Label 7
+5 FAdd 2 8 5 6
+2 ReturnValue 8
+1 FunctionEnd
