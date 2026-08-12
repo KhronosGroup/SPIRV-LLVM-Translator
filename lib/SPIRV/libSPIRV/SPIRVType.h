@@ -578,6 +578,10 @@ public:
     return V;
   }
 
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_EXT_long_vector;
+  }
+
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
     std::vector<SPIRVEntry *> Operands(2, CompType);
     Operands[1] = (SPIRVEntry *)getComponentCount();

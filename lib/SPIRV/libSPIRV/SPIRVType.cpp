@@ -144,6 +144,7 @@ SPIRVType *SPIRVType::getScalarType() const {
   case OpTypeArray:
     return getArrayElementType();
   case OpTypeVector:
+  case OpTypeVectorIdEXT:
     return getVectorComponentType();
   case OpTypeMatrix:
     return getMatrixColumnType()->getVectorComponentType();
@@ -163,8 +164,8 @@ bool SPIRVType::isTypeArray() const { return OpCode == OpTypeArray; }
 bool SPIRVType::isTypeBool() const { return OpCode == OpTypeBool; }
 
 bool SPIRVType::isTypeComposite() const {
-  return isTypeVector() || isTypeArray() || isTypeStruct() ||
-         isTypeCooperativeMatrixKHR();
+  return isTypeVector() || isTypeVectorIdEXT() || isTypeArray() ||
+         isTypeStruct() || isTypeCooperativeMatrixKHR();
 }
 
 bool SPIRVType::isTypeFloat(unsigned Bits,

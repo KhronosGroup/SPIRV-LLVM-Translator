@@ -577,6 +577,9 @@ std::string SPIRVToLLVM::transTypeToOCLTypeName(SPIRVType *T, bool IsSigned) {
   case OpTypeVector:
     return transTypeToOCLTypeName(T->getVectorComponentType()) +
            T->getVectorComponentCount();
+  case OpTypeVectorIdEXT:
+    return transTypeToOCLTypeName(T->getVectorComponentType()) +
+           cast<FixedVectorType>(transType(T))->getNumElements();
   case OpTypeMatrix:
     return transTypeToOCLTypeName(T->getMatrixColumnType()) +
            T->getMatrixColumnCount();
@@ -1104,7 +1107,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
 
       auto GetEncodingAndUpdateType =
           [GetFPEncoding](SPIRVType *&SPVTy) -> FPEncodingWrap {
-        if (SPVTy->isTypeVector()) {
+        if (SPVTy->isTypeVector() || SPVTy->isTypeVectorIdEXT()) {
           SPVTy = SPVTy->getVectorComponentType();
         } else if (SPVTy->isTypeCooperativeMatrixKHR()) {
           auto *MT = static_cast<SPIRVTypeCooperativeMatrixKHR *>(SPVTy);
@@ -1360,10 +1363,17 @@ Value *SPIRVToLLVM::transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F) {
   if (OP == OpLessOrGreater)
     OP = OpFOrdNotEqual;
 
-  if (BT->isTypeVectorOrScalarInt() || BT->isTypeVectorOrScalarBool() ||
-      BT->isTypePointer())
+  bool IsIntLike = BT->isTypeVectorOrScalarInt() ||
+                   BT->isTypeVectorOrScalarBool() || BT->isTypePointer();
+  bool IsFloatLike = BT->isTypeVectorOrScalarFloat();
+  if (BT->isTypeVectorIdEXT()) {
+    SPIRVType *CompTy = BT->getVectorComponentType();
+    IsIntLike |= CompTy->isTypeInt() || CompTy->isTypeBool();
+    IsFloatLike |= CompTy->isTypeFloat();
+  }
+  if (IsIntLike)
     Inst = Builder.CreateICmp(CmpMap::rmap(OP), Op0, Op1);
-  else if (BT->isTypeVectorOrScalarFloat())
+  else if (IsFloatLike)
     Inst = Builder.CreateFCmp(CmpMap::rmap(OP), Op0, Op1);
   assert(Inst && "not implemented");
   applyFPFastMathModeDecorations(BV, static_cast<Instruction *>(Inst));
@@ -3787,12 +3797,14 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
   if (isCmpOpCode(BI->getOpCode())) {
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
-    else if (BT->isTypeVectorBool())
+    else if (BT->isTypeVectorBool() ||
+             (BT->isTypeVectorIdEXT() &&
+              BT->getVectorComponentType()->isTypeBool()))
       RetTy = FixedVectorType::get(
           IntegerType::get(
               *Context,
               Args[0]->getType()->getVectorComponentType()->getBitWidth()),
-          BT->getVectorComponentCount());
+          cast<FixedVectorType>(transType(BT))->getNumElements());
     else
       llvm_unreachable("invalid compare instruction");
   }
@@ -4010,7 +4022,7 @@ Type *SPIRVToLLVM::getTypedPtrFromUntypedOperand(SPIRVValue *Val, Type *RetTy) {
         reinterpret_cast<SPIRVAccessChainBase *>(Val)->getBaseType();
     if (BaseTy->isTypeArray())
       Ty = transType(BaseTy->getArrayElementType());
-    else if (BaseTy->isTypeVector())
+    else if (BaseTy->isTypeVector() || BaseTy->isTypeVectorIdEXT())
       Ty = transType(BaseTy->getVectorComponentType());
     else
       Ty = transType(BaseTy);

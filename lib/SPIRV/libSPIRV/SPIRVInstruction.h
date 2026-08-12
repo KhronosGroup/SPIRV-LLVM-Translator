@@ -735,12 +735,16 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
       return;
-    if (getValueType(Op1)->isTypeVector()) {
+    if (getValueType(Op1)->isTypeVector() ||
+        getValueType(Op1)->isTypeVectorIdEXT()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
+      // is not a literal and only known after being translated.
+      if (getValueType(Op1)->isTypeVector())
+        assert(getValueType(Op1)->getVectorComponentCount() ==
+                   getValueType(Op2)->getVectorComponentCount() &&
+               "Inconsistent Vector component width");
     } else if (getValueType(Op1)->isTypeCooperativeMatrixKHR()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
@@ -1126,13 +1130,17 @@ protected:
     (void)Op1Ty;
     (void)Op2Ty;
     (void)ResTy;
-    if (getValueType(Op1)->isTypeVector()) {
+    if (getValueType(Op1)->isTypeVector() ||
+        getValueType(Op1)->isTypeVectorIdEXT()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
       ResTy = Type->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
+      // is not a literal and only known after being translated.
+      if (getValueType(Op1)->isTypeVector())
+        assert(getValueType(Op1)->getVectorComponentCount() ==
+                   getValueType(Op2)->getVectorComponentCount() &&
+               "Inconsistent Vector component width");
     } else {
       Op1Ty = getValueType(Op1);
       Op2Ty = getValueType(Op2);
@@ -1197,7 +1205,8 @@ protected:
         getValue(Op2)->isForward())
       return;
 
-    SPIRVType *ConTy = getValueType(Condition)->isTypeVector()
+    SPIRVType *ConTy = (getValueType(Condition)->isTypeVector() ||
+                        getValueType(Condition)->isTypeVectorIdEXT())
                            ? getValueType(Condition)->getVectorComponentType()
                            : getValueType(Condition);
     (void)ConTy;
@@ -1399,10 +1408,12 @@ public:
     if (getValue(Vector)->isForward() || getValue(Scalar)->isForward())
       return;
 
-    assert(getValueType(Vector)->isTypeVector() &&
+    assert((getValueType(Vector)->isTypeVector() ||
+            getValueType(Vector)->isTypeVectorIdEXT()) &&
            getValueType(Vector)->getVectorComponentType()->isTypeFloat() &&
            "First operand must be a vector of floating-point type");
-    assert(getValueType(getId())->isTypeVector() &&
+    assert((getValueType(getId())->isTypeVector() ||
+            getValueType(getId())->isTypeVectorIdEXT()) &&
            getValueType(getId())->getVectorComponentType()->isTypeFloat() &&
            "Result type must be a vector of floating-point type");
     assert(
@@ -1722,11 +1733,13 @@ protected:
       return;
     if (isGenericNegateOpCode(OpCode)) {
       SPIRVType *ResTy =
-          Type->isTypeVector() || Type->isTypeCooperativeMatrixKHR()
+          Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                  Type->isTypeCooperativeMatrixKHR()
               ? Type->getVectorComponentType()
               : Type;
       SPIRVType *OpTy =
-          Type->isTypeVector() || Type->isTypeCooperativeMatrixKHR()
+          Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                  Type->isTypeCooperativeMatrixKHR()
               ? getValueType(Op)->getVectorComponentType()
               : getValueType(Op);
 
@@ -3738,9 +3751,13 @@ protected:
     SPIRVUnaryInst<OC>::validate();
 
     SPIRVType *ResCompTy = this->getType();
+    // Capture whether types are id-based BEFORE reassignment to component type
+    bool ResIsId = ResCompTy->isTypeVectorIdEXT();
     SPIRVWord ResCompCount = 1;
     if (ResCompTy->isTypeVector()) {
       ResCompCount = ResCompTy->getVectorComponentCount();
+      ResCompTy = ResCompTy->getVectorComponentType();
+    } else if (ResCompTy->isTypeVectorIdEXT()) {
       ResCompTy = ResCompTy->getVectorComponentType();
     }
 
@@ -3752,9 +3769,12 @@ protected:
     SPIRVValue *Input = const_cast<SPVBf16ConvTy *>(this)->getOperand(0);
 
     SPIRVType *InCompTy = Input->getType();
+    bool InIsId = InCompTy->isTypeVectorIdEXT();
     SPIRVWord InCompCount = 1;
     if (InCompTy->isTypeVector()) {
       InCompCount = InCompTy->getVectorComponentCount();
+      InCompTy = InCompTy->getVectorComponentType();
+    } else if (InCompTy->isTypeVectorIdEXT()) {
       InCompTy = InCompTy->getVectorComponentType();
     }
 
@@ -3798,10 +3818,14 @@ protected:
                      "16-bit type\n");
     }
 
-    SPVErrLog.checkError(
-        ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
-        InstName + "\nInput type must have the same number of components as "
-                   "result type\n");
+    // Can't check component count for OpTypeVectorIdEXT as its value isn't a
+    // literal and isn't known unless it's translated/evaluated.
+    if (!ResIsId && !InIsId) {
+      SPVErrLog.checkError(
+          ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
+          InstName + "\nInput type must have the same number of components as "
+                     "result type\n");
+    }
   }
 };
 
@@ -3993,9 +4017,9 @@ class SPIRVMaskedGatherINTELInst
     std::string InstName = "MaskedGatherINTEL";
 
     SPIRVType *ResTy = this->getType();
-    SPVErrLog.checkError(ResTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+    SPVErrLog.checkError(ResTy->isTypeVector() || ResTy->isTypeVectorIdEXT(),
+                         SPIRVEC_InvalidInstruction,
                          InstName + "\nResult must be a vector type\n");
-    SPIRVWord ResCompCount = ResTy->getVectorComponentCount();
     SPIRVType *ResCompTy = ResTy->getVectorComponentType();
 
     SPIRVValue *PtrVec =
@@ -4004,7 +4028,6 @@ class SPIRVMaskedGatherINTELInst
     SPVErrLog.checkError(
         PtrVecTy->isTypeVectorPointer(), SPIRVEC_InvalidInstruction,
         InstName + "\nPtrVector must be a vector of pointers type\n");
-    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
     SPIRVType *PtrVecCompTy = PtrVecTy->getVectorComponentType();
     SPIRVType *PtrElemTy = PtrVecCompTy->getPointerElementType();
 
@@ -4022,29 +4045,38 @@ class SPIRVMaskedGatherINTELInst
     SPIRVValue *Mask =
         const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(2);
     SPIRVType *MaskTy = Mask->getType();
-    SPVErrLog.checkError(MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+    SPVErrLog.checkError(MaskTy->isTypeVector() || MaskTy->isTypeVectorIdEXT(),
+                         SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a vector type\n");
     SPIRVType *MaskCompTy = MaskTy->getVectorComponentType();
     SPVErrLog.checkError(MaskCompTy->isTypeBool(), SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a boolean vector type\n");
-    SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
 
     SPIRVValue *FillEmpty =
         const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(3);
     SPIRVType *FillEmptyTy = FillEmpty->getType();
-    SPVErrLog.checkError(FillEmptyTy->isTypeVector(),
+    SPVErrLog.checkError(FillEmptyTy->isTypeVector() ||
+                             FillEmptyTy->isTypeVectorIdEXT(),
                          SPIRVEC_InvalidInstruction,
                          InstName + "\nFillEmpty must be a vector type\n");
-    SPIRVWord FillEmptyCompCount = FillEmptyTy->getVectorComponentCount();
     SPIRVType *FillEmptyCompTy = FillEmptyTy->getVectorComponentType();
 
-    SPVErrLog.checkError(
-        ResCompCount == PtrVecCompCount &&
-            PtrVecCompCount == FillEmptyCompCount &&
-            FillEmptyCompCount == MaskCompCount,
-        SPIRVEC_InvalidInstruction,
-        InstName + "\nResult, PtrVector, Mask and FillEmpty vectors must have "
-                   "the same size\n");
+    // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
+    // is not a literal and only known after being translated.
+    if (ResTy->isTypeVector() && PtrVecTy->isTypeVector() &&
+        MaskTy->isTypeVector() && FillEmptyTy->isTypeVector()) {
+      SPIRVWord ResCompCount = ResTy->getVectorComponentCount();
+      SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
+      SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
+      SPIRVWord FillEmptyCompCount = FillEmptyTy->getVectorComponentCount();
+      SPVErrLog.checkError(
+          ResCompCount == PtrVecCompCount &&
+              PtrVecCompCount == FillEmptyCompCount &&
+              FillEmptyCompCount == MaskCompCount,
+          SPIRVEC_InvalidInstruction,
+          InstName + "\nResult, PtrVector, Mask and FillEmpty vectors must have "
+                     "the same size\n");
+    }
 
     SPVErrLog.checkError(
         ResCompTy == PtrElemTy && PtrElemTy == FillEmptyCompTy,
@@ -4065,9 +4097,9 @@ class SPIRVMaskedScatterINTELInst
         const_cast<SPIRVMaskedScatterINTELInst *>(this)->getOperand(0);
     SPIRVType *InputVecTy = InputVec->getType();
     SPVErrLog.checkError(
-        InputVecTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+        InputVecTy->isTypeVector() || InputVecTy->isTypeVectorIdEXT(),
+        SPIRVEC_InvalidInstruction,
         InstName + "\nInputVector must be a vector of pointers type\n");
-    SPIRVWord InputVecCompCount = InputVecTy->getVectorComponentCount();
     SPIRVType *InputVecCompTy = InputVecTy->getVectorComponentType();
 
     SPIRVValue *PtrVec =
@@ -4076,7 +4108,6 @@ class SPIRVMaskedScatterINTELInst
     SPVErrLog.checkError(
         PtrVecTy->isTypeVectorPointer(), SPIRVEC_InvalidInstruction,
         InstName + "\nPtrVector must be a vector of pointers type\n");
-    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
     SPIRVType *PtrVecCompTy = PtrVecTy->getVectorComponentType();
     SPIRVType *PtrElemTy = PtrVecCompTy->getPointerElementType();
 
@@ -4094,19 +4125,27 @@ class SPIRVMaskedScatterINTELInst
     SPIRVValue *Mask =
         const_cast<SPIRVMaskedScatterINTELInst *>(this)->getOperand(2);
     SPIRVType *MaskTy = Mask->getType();
-    SPVErrLog.checkError(MaskTy->isTypeVector(), SPIRVEC_InvalidInstruction,
+    SPVErrLog.checkError(MaskTy->isTypeVector() || MaskTy->isTypeVectorIdEXT(),
+                         SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a vector type\n");
     SPIRVType *MaskCompTy = MaskTy->getVectorComponentType();
     SPVErrLog.checkError(MaskCompTy->isTypeBool(), SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a boolean vector type\n");
-    SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
 
-    SPVErrLog.checkError(
-        InputVecCompCount == PtrVecCompCount &&
-            PtrVecCompCount == MaskCompCount,
-        SPIRVEC_InvalidInstruction,
-        InstName + "\nInputVector, PtrVector and Mask vectors must have "
-                   "the same size\n");
+    // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
+    // is not a literal and only known after being translated.
+    if (InputVecTy->isTypeVector() && PtrVecTy->isTypeVector() &&
+        MaskTy->isTypeVector()) {
+      SPIRVWord InputVecCompCount = InputVecTy->getVectorComponentCount();
+      SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
+      SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
+      SPVErrLog.checkError(
+          InputVecCompCount == PtrVecCompCount &&
+              PtrVecCompCount == MaskCompCount,
+          SPIRVEC_InvalidInstruction,
+          InstName + "\nInputVector, PtrVector and Mask vectors must have "
+                     "the same size\n");
+    }
 
     SPVErrLog.checkError(
         InputVecCompTy == PtrElemTy, SPIRVEC_InvalidInstruction,

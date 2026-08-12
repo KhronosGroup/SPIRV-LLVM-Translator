@@ -6,19 +6,6 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s
 
-; CHECK: define spir_func float @test_vec_extract_dynamic(<5 x float> %[[#V:]], i32 %[[#I:]])
-; CHECK: extractelement <5 x float> %[[#V]], i32 %[[#I]]
-
-; CHECK: define spir_func <5 x float> @test_vec_insert_dynamic(<5 x float> %[[#V:]], float %[[#S:]], i32 %[[#I:]])
-; CHECK: insertelement <5 x float> %[[#V]], float %[[#S]], i32 %[[#I]]
-
-; CHECK: define spir_func <5 x float> @test_vec_shuffle(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
-; CHECK: shufflevector <5 x float> %[[#A]], <5 x float> %[[#B]]
-
-; CHECK: define spir_func float @test_access_chain(i32 %[[#I:]])
-; CHECK: getelementptr <5 x float>, ptr %{{[0-9]+}}, i32 0, i32 %[[#I]]
-; CHECK: load float
-
                OpCapability Kernel
                OpCapability Addresses
                OpCapability Linkage
@@ -46,6 +33,8 @@
     %fnty_vs = OpTypeFunction %v5float %v5float %v5float
     %fnty_ac = OpTypeFunction %float %uint
 
+; CHECK: define spir_func float @test_vec_extract_dynamic(<5 x float> %[[#V:]], i32 %[[#I:]])
+; CHECK: extractelement <5 x float> %[[#V]], i32 %[[#I]]
      %fn_ved = OpFunction %float None %fnty_ved
       %ved_v = OpFunctionParameter %v5float_sc
       %ved_i = OpFunctionParameter %uint
@@ -54,6 +43,8 @@
                OpReturnValue %vedr
                OpFunctionEnd
 
+; CHECK: define spir_func <5 x float> @test_vec_insert_dynamic(<5 x float> %[[#V:]], float %[[#S:]], i32 %[[#I:]])
+; CHECK: insertelement <5 x float> %[[#V]], float %[[#S]], i32 %[[#I]]
      %fn_vid = OpFunction %v5float None %fnty_vid
       %vid_v = OpFunctionParameter %v5float
       %vid_s = OpFunctionParameter %float
@@ -63,6 +54,8 @@
                OpReturnValue %vidr
                OpFunctionEnd
 
+; CHECK: define spir_func <5 x float> @test_vec_shuffle(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
+; CHECK: shufflevector <5 x float> %[[#A]], <5 x float> %[[#B]]
       %fn_vs = OpFunction %v5float None %fnty_vs
        %vs_a = OpFunctionParameter %v5float
        %vs_b = OpFunctionParameter %v5float
@@ -71,6 +64,9 @@
                OpReturnValue %vsr
                OpFunctionEnd
 
+; CHECK: define spir_func float @test_access_chain(i32 %[[#I:]])
+; CHECK: getelementptr <5 x float>, ptr %[[#]], i32 0, i32 %[[#I]]
+; CHECK: load float
       %fn_ac = OpFunction %float None %fnty_ac
        %ac_i = OpFunctionParameter %uint
    %entry_ac = OpLabel

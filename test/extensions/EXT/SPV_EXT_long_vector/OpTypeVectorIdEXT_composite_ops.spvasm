@@ -7,21 +7,6 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s
 
-; CHECK: define spir_func <5 x float> @test_const_composite()
-; CHECK: ret <5 x float> splat (float 1.000000e+00)
-
-; CHECK: define spir_func <5 x float> @test_spec_composite()
-; CHECK: ret <5 x float> splat (float 2.000000e+00)
-
-; CHECK: define spir_func <5 x float> @test_composite_construct(float %[[#A:]])
-; CHECK: insertelement <5 x float> poison, float %[[#A]], i32 0
-
-; CHECK: define spir_func float @test_composite_extract(<5 x float> %[[#V:]])
-; CHECK: extractelement <5 x float> %[[#V]], i32 3
-
-; CHECK: define spir_func <5 x float> @test_composite_insert(<5 x float> %[[#V:]], float %[[#S:]])
-; CHECK: insertelement <5 x float> %[[#V]], float %[[#S]], i32 2
-
                OpCapability Kernel
                OpCapability Addresses
                OpCapability Linkage
@@ -51,16 +36,22 @@
     %fnty_ce = OpTypeFunction %float %v5float
     %fnty_ci = OpTypeFunction %v5float %v5float %float
 
+; CHECK: define spir_func <5 x float> @test_const_composite()
+; CHECK: ret <5 x float> splat (float 1.000000e+00)
       %fn_cc = OpFunction %v5float None %fnty_cc
    %entry_cc = OpLabel
                OpReturnValue %cc
                OpFunctionEnd
 
+; CHECK: define spir_func <5 x float> @test_spec_composite()
+; CHECK: ret <5 x float> splat (float 2.000000e+00)
       %fn_sc = OpFunction %v5float None %fnty_cc
    %entry_sc = OpLabel
                OpReturnValue %sc
                OpFunctionEnd
 
+; CHECK: define spir_func <5 x float> @test_composite_construct(float %[[#A:]])
+; CHECK: insertelement <5 x float> poison, float %[[#A]], i32 0
       %fn_ct = OpFunction %v5float None %fnty_ct
       %arg_a = OpFunctionParameter %float
    %entry_ct = OpLabel
@@ -68,6 +59,8 @@
                OpReturnValue %ctv
                OpFunctionEnd
 
+; CHECK: define spir_func float @test_composite_extract(<5 x float> %[[#V:]])
+; CHECK: extractelement <5 x float> %[[#V]], i32 3
       %fn_ce = OpFunction %float None %fnty_ce
       %arg_v = OpFunctionParameter %v5float
    %entry_ce = OpLabel
@@ -75,6 +68,8 @@
                OpReturnValue %ext
                OpFunctionEnd
 
+; CHECK: define spir_func <5 x float> @test_composite_insert(<5 x float> %[[#V:]], float %[[#S:]])
+; CHECK: insertelement <5 x float> %[[#V]], float %[[#S]], i32 2
       %fn_ci = OpFunction %v5float None %fnty_ci
      %arg_v2 = OpFunctionParameter %v5float
       %arg_s = OpFunctionParameter %float

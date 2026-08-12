@@ -1,0 +1,280 @@
+; Reverse-translation of OpTypeVectorIdEXT used as operand/result types of these
+; ops in general: binary (OpFAdd), select (OpSelect), unary (OpFNegate),
+; dot (OpDot), comparison (OpFOrdEqual, OpIEqual), conversions (OpFConvert,
+; OpConvertFToBF16INTEL, OpSConvert, OpUConvert), the vector/matrix multiply ops (OpVectorTimesScalar,
+; OpVectorTimesMatrix, OpMatrixTimesVector), and MaskedGather/ScatterINTEL. It also
+; checks the OpenCL type-name mangling (!kernel_arg_type metadata) of an
+; OpTypeVectorIdEXT kernel parameter.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s
+
+               OpCapability Kernel
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability GenericPointer
+               OpCapability Matrix
+               OpCapability LongVectorEXT
+               OpCapability Float8EXT
+               OpCapability MaskedGatherScatterINTEL
+               OpCapability Int16
+               OpCapability Int64
+               OpCapability BFloat16ConversionINTEL
+               OpExtension "SPV_EXT_long_vector"
+               OpExtension "SPV_EXT_float8"
+               OpExtension "SPV_INTEL_masked_gather_scatter"
+               OpExtension "SPV_INTEL_bfloat16_conversion"
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %test_gather_scatter "test_gather_scatter"
+               OpEntryPoint Kernel %test_mangling "test_mangling"
+               OpName %test_fadd "test_fadd"
+               OpName %test_select "test_select"
+               OpName %test_fnegate "test_fnegate"
+               OpName %test_dot "test_dot"
+               OpName %test_fordequal "test_fordequal"
+               OpName %test_iequal_sc "test_iequal_sc"
+               OpName %test_f32_to_e4m3 "test_f32_to_e4m3"
+               OpName %test_e4m3_to_f32 "test_e4m3_to_f32"
+               OpName %test_bf16 "test_bf16"
+               OpName %test_sconvert "test_sconvert"
+               OpName %test_uconvert "test_uconvert"
+               OpName %test_vts "test_vts"
+               OpName %test_vtm "test_vtm"
+               OpName %test_mtv "test_mtv"
+               OpName %test_mangling "test_mangling"
+               OpName %test_gather_scatter "test_gather_scatter"
+               OpName %arg0 "arg0"
+               OpName %arg1 "arg1"
+               OpDecorate %test_fadd LinkageAttributes "test_fadd" Export
+               OpDecorate %test_select LinkageAttributes "test_select" Export
+               OpDecorate %test_fnegate LinkageAttributes "test_fnegate" Export
+               OpDecorate %test_dot LinkageAttributes "test_dot" Export
+               OpDecorate %test_fordequal LinkageAttributes "test_fordequal" Export
+               OpDecorate %test_iequal_sc LinkageAttributes "test_iequal_sc" Export
+               OpDecorate %test_f32_to_e4m3 LinkageAttributes "test_f32_to_e4m3" Export
+               OpDecorate %test_e4m3_to_f32 LinkageAttributes "test_e4m3_to_f32" Export
+               OpDecorate %test_bf16 LinkageAttributes "test_bf16" Export
+               OpDecorate %test_sconvert LinkageAttributes "test_sconvert" Export
+               OpDecorate %test_uconvert LinkageAttributes "test_uconvert" Export
+               OpDecorate %test_vts LinkageAttributes "test_vts" Export
+               OpDecorate %test_vtm LinkageAttributes "test_vtm" Export
+               OpDecorate %test_mtv LinkageAttributes "test_mtv" Export
+               OpDecorate %arg0 Alignment 16
+               OpDecorate %arg1 Alignment 16
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+       %bool = OpTypeBool
+      %short = OpTypeInt 16 0
+       %long = OpTypeInt 64 0
+   %fp8_e4m3 = OpTypeFloat 8 Float8E4M3EXT
+     %uint_5 = OpConstant %uint 5
+     %uint_3 = OpConstant %uint 3
+   %count_sc = OpSpecConstant %uint 5
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+    %float_2 = OpConstant %float 2
+    %float_3 = OpConstant %float 3
+       %true = OpConstantTrue %bool
+      %false = OpConstantFalse %bool
+    %v5float = OpTypeVectorIdEXT %float %uint_5
+     %v3f_id = OpTypeVectorIdEXT %float %uint_3
+     %v5bool = OpTypeVectorIdEXT %bool %uint_5
+  %v5uint_sc = OpTypeVectorIdEXT %uint %count_sc
+  %v5bool_sc = OpTypeVectorIdEXT %bool %count_sc
+ %v5fp8_e4m3 = OpTypeVectorIdEXT %fp8_e4m3 %uint_5
+    %v5short = OpTypeVectorIdEXT %short %uint_5
+      %v5int = OpTypeVectorIdEXT %uint %uint_5
+     %v5long = OpTypeVectorIdEXT %long %uint_5
+       %col5 = OpTypeVector %float 5
+        %v3f = OpTypeVector %float 3
+        %mat = OpTypeMatrix %col5 3
+    %ptr_f32 = OpTypePointer Generic %float
+  %v5ptr_f32 = OpTypeVector %ptr_f32 5
+  %ptr_v5ptr = OpTypePointer Function %v5ptr_f32
+       %mask = OpConstantComposite %v5bool %true %false %true %true %true
+       %fill = OpConstantComposite %v5float %float_1 %float_0 %float_2 %float_0 %float_3
+   %mask_all = OpConstantComposite %v5bool %true %true %true %true %true
+  %fn_fadd_t = OpTypeFunction %v5float %v5float %v5float
+%fn_select_t = OpTypeFunction %v5float %v5bool %v5float %v5float
+%fn_fnegate_t = OpTypeFunction %v5float %v5float
+   %fn_dot_t = OpTypeFunction %float %v5float %v5float
+    %fnty_fe = OpTypeFunction %v5bool %v5float %v5float
+ %fnty_ie_sc = OpTypeFunction %v5bool_sc %v5uint_sc %v5uint_sc
+    %fnty_to = OpTypeFunction %v5fp8_e4m3 %v5float
+  %fnty_from = OpTypeFunction %v5float %v5fp8_e4m3
+  %fnty_bf16 = OpTypeFunction %v5short %v5float
+ %fnty_sconv = OpTypeFunction %v5long %v5int
+ %fnty_uconv = OpTypeFunction %v5int %v5short
+   %fnty_vts = OpTypeFunction %v5float %v5float %float
+   %fnty_vtm = OpTypeFunction %v3f %v5float %mat
+   %fnty_mtv = OpTypeFunction %col5 %mat %v3f_id
+%fnty_mangling = OpTypeFunction %void %v5float
+  %fnty_kern = OpTypeFunction %void
+
+; CHECK: define spir_func <5 x float> @test_fadd(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
+; CHECK: fadd <5 x float> %[[#A]], %[[#B]]
+  %test_fadd = OpFunction %v5float None %fn_fadd_t
+     %fadd_a = OpFunctionParameter %v5float
+     %fadd_b = OpFunctionParameter %v5float
+     %fadd_e = OpLabel
+     %fadd_r = OpFAdd %v5float %fadd_a %fadd_b
+               OpReturnValue %fadd_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x float> @test_select(<5 x i1> %[[#C:]], <5 x float> %[[#A:]], <5 x float> %[[#B:]])
+; CHECK: select <5 x i1> %[[#C]], <5 x float> %[[#A]], <5 x float> %[[#B]]
+%test_select = OpFunction %v5float None %fn_select_t
+      %sel_c = OpFunctionParameter %v5bool
+      %sel_a = OpFunctionParameter %v5float
+      %sel_b = OpFunctionParameter %v5float
+      %sel_e = OpLabel
+      %sel_r = OpSelect %v5float %sel_c %sel_a %sel_b
+               OpReturnValue %sel_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x float> @test_fnegate(<5 x float> %[[#V:]])
+; CHECK: fneg <5 x float> %[[#V]]
+%test_fnegate = OpFunction %v5float None %fn_fnegate_t
+      %neg_v = OpFunctionParameter %v5float
+      %neg_e = OpLabel
+      %neg_r = OpFNegate %v5float %neg_v
+               OpReturnValue %neg_r
+               OpFunctionEnd
+
+; CHECK: define spir_func float @test_dot(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
+; CHECK: call spir_func float @{{.*}}dot{{.*}}(<5 x float> %[[#A]], <5 x float> %[[#B]])
+   %test_dot = OpFunction %float None %fn_dot_t
+      %dot_a = OpFunctionParameter %v5float
+      %dot_b = OpFunctionParameter %v5float
+      %dot_e = OpLabel
+      %dot_r = OpDot %float %dot_a %dot_b
+               OpReturnValue %dot_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i1> @test_fordequal(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
+; CHECK: fcmp oeq <5 x float> %[[#A]], %[[#B]]
+%test_fordequal = OpFunction %v5bool None %fnty_fe
+       %fe_a = OpFunctionParameter %v5float
+       %fe_b = OpFunctionParameter %v5float
+       %fe_e = OpLabel
+       %fe_r = OpFOrdEqual %v5bool %fe_a %fe_b
+               OpReturnValue %fe_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i1> @test_iequal_sc(<5 x i32> %[[#A:]], <5 x i32> %[[#B:]])
+; CHECK: icmp eq <5 x i32> %[[#A]], %[[#B]]
+%test_iequal_sc = OpFunction %v5bool_sc None %fnty_ie_sc
+       %ie_a = OpFunctionParameter %v5uint_sc
+       %ie_b = OpFunctionParameter %v5uint_sc
+       %ie_e = OpLabel
+       %ie_r = OpIEqual %v5bool_sc %ie_a %ie_b
+               OpReturnValue %ie_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i8> @test_f32_to_e4m3(<5 x float> %[[#V:]])
+; CHECK: call spir_func <5 x i8> @{{.*}}__builtin_spirv_ConvertFP16ToE4M3EXT{{.*}}(<5 x float> %[[#V]])
+%test_f32_to_e4m3 = OpFunction %v5fp8_e4m3 None %fnty_to
+       %to_v = OpFunctionParameter %v5float
+       %to_e = OpLabel
+       %to_r = OpFConvert %v5fp8_e4m3 %to_v
+               OpReturnValue %to_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x float> @test_e4m3_to_f32(<5 x i8> %[[#V:]])
+; CHECK: call spir_func <5 x float> @{{.*}}__builtin_spirv_ConvertE4M3ToFP16EXT{{.*}}(<5 x i8> %[[#V]])
+%test_e4m3_to_f32 = OpFunction %v5float None %fnty_from
+     %from_v = OpFunctionParameter %v5fp8_e4m3
+     %from_e = OpLabel
+     %from_r = OpFConvert %v5float %from_v
+               OpReturnValue %from_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i16> @test_bf16(<5 x float> %[[#V:]])
+; CHECK: call spir_func <5 x i16> @{{.*}}convert_bfloat{{.*}}(<5 x float> %[[#V]])
+   %test_bf16 = OpFunction %v5short None %fnty_bf16
+       %bf_v = OpFunctionParameter %v5float
+       %bf_e = OpLabel
+       %bf_r = OpConvertFToBF16INTEL %v5short %bf_v
+               OpReturnValue %bf_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i64> @test_sconvert(<5 x i32> %[[#V:]])
+; CHECK: call spir_func <5 x i64> @{{.*}}convert_long{{.*}}(<5 x i32> %[[#V]])
+%test_sconvert = OpFunction %v5long None %fnty_sconv
+       %sc_v = OpFunctionParameter %v5int
+       %sc_e = OpLabel
+       %sc_r = OpSConvert %v5long %sc_v
+               OpReturnValue %sc_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x i32> @test_uconvert(<5 x i16> %[[#V:]])
+; CHECK: call spir_func <5 x i32> @{{.*}}convert_int{{.*}}(<5 x i16> %[[#V]])
+%test_uconvert = OpFunction %v5int None %fnty_uconv
+       %uc_v = OpFunctionParameter %v5short
+       %uc_e = OpLabel
+       %uc_r = OpUConvert %v5int %uc_v
+               OpReturnValue %uc_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x float> @test_vts(<5 x float> %[[#V:]], float %[[#S:]])
+; CHECK: insertelement <5 x float> poison, float %[[#S]], i64 0
+; CHECK: fmul <5 x float> %[[#V]],
+   %test_vts = OpFunction %v5float None %fnty_vts
+      %vts_v = OpFunctionParameter %v5float
+      %vts_s = OpFunctionParameter %float
+      %vts_e = OpLabel
+      %vts_r = OpVectorTimesScalar %v5float %vts_v %vts_s
+               OpReturnValue %vts_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <3 x float> @test_vtm(<5 x float> %[[#V:]], [3 x <5 x float>] %[[#M:]])
+; CHECK: extractelement <5 x float> %[[#V]], i32 0
+; CHECK: extractvalue [3 x <5 x float>] %[[#M]], 0
+; CHECK: fmul <3 x float>
+   %test_vtm = OpFunction %v3f None %fnty_vtm
+      %vtm_v = OpFunctionParameter %v5float
+      %vtm_m = OpFunctionParameter %mat
+      %vtm_e = OpLabel
+      %vtm_r = OpVectorTimesMatrix %v3f %vtm_v %vtm_m
+               OpReturnValue %vtm_r
+               OpFunctionEnd
+
+; CHECK: define spir_func <5 x float> @test_mtv([3 x <5 x float>] %[[#M:]], <3 x float> %[[#V:]])
+; CHECK: extractelement <3 x float> %[[#V]], i32 0
+; CHECK: extractvalue [3 x <5 x float>] %[[#M]], 0
+; CHECK: fmul <5 x float>
+   %test_mtv = OpFunction %col5 None %fnty_mtv
+      %mtv_m = OpFunctionParameter %mat
+      %mtv_v = OpFunctionParameter %v3f_id
+      %mtv_e = OpLabel
+      %mtv_r = OpMatrixTimesVector %col5 %mtv_m %mtv_v
+               OpReturnValue %mtv_r
+               OpFunctionEnd
+
+; CHECK: define spir_kernel void @test_gather_scatter()
+; CHECK: %[[#PTR0:]] = load <5 x ptr addrspace(4)>, ptr %arg0
+; CHECK: %[[#PTR1:]] = load <5 x ptr addrspace(4)>, ptr %arg1
+; CHECK: %[[RES:.*]] = call <5 x float> @llvm.masked.gather.v5f32.v5p4(<5 x ptr addrspace(4)> align 4 %[[#PTR0]],
+; CHECK: call void @llvm.masked.scatter.v5f32.v5p4(<5 x float> %[[RES]], <5 x ptr addrspace(4)> align 4 %[[#PTR1]], <5 x i1> splat (i1 true))
+%test_gather_scatter = OpFunction %void None %fnty_kern
+       %gs_e = OpLabel
+       %arg0 = OpVariable %ptr_v5ptr Function
+       %arg1 = OpVariable %ptr_v5ptr Function
+    %ptrvec0 = OpLoad %v5ptr_f32 %arg0 Aligned 16
+    %ptrvec1 = OpLoad %v5ptr_f32 %arg1 Aligned 16
+        %res = OpMaskedGatherINTEL %v5float %ptrvec0 4 %mask %fill
+               OpMaskedScatterINTEL %res %ptrvec1 4 %mask_all
+               OpReturn
+               OpFunctionEnd
+
+; The OpTypeVectorIdEXT kernel parameter mangles to the "float5" OpenCL type name.
+; CHECK: define spir_kernel void @test_mangling(<5 x float> %{{.*}}) {{.*}} !kernel_arg_type ![[#TYPE:]]
+; CHECK: ![[#TYPE]] = !{!"float5"}
+%test_mangling = OpFunction %void None %fnty_mangling
+   %mang_arg = OpFunctionParameter %v5float
+     %mang_e = OpLabel
+               OpReturn
+               OpFunctionEnd
