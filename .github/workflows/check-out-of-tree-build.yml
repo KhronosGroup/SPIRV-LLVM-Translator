@@ -64,7 +64,7 @@ jobs:
           # Use llvm-toolchain-plucky (Ubuntu 25.04 packages) instead of noble —
           # the noble snapshot has been stuck since 2026-08-11, while plucky is current.
           # Note: installing 25.04 packages on the 24.04 runner may cause dependency issues.
-          echo "deb https://apt.llvm.org/plucky/ llvm-toolchain-plucky main" | sudo tee -a /etc/apt/sources.list
+          echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           sudo apt-get -yq --no-install-suggests --no-install-recommends install \
             clang-${{ env.LLVM_VERSION }} \
