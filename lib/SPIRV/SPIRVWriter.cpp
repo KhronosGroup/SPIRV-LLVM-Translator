@@ -4434,7 +4434,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::fmuladd: {
     Type *Ty = II->getType();
     if (Ty->isBFloatTy())
-      BM->addCapability(CapabilityBFloat16ArithmeticEXT);
+      BM->addCapability(internal::CapabilityBFloat16ArithmeticEXT);
     break;
   }
   default:
@@ -6000,7 +6000,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     if (const auto *FirstArg = F->getArg(0)) {
       const auto *Type = FirstArg->getType();
       if (Type->isBFloatTy())
-        BM->addCapability(CapabilityBFloat16ArithmeticEXT);
+        BM->addCapability(internal::CapabilityBFloat16ArithmeticEXT);
     }
     if (DemangledName.find("__spirv_ocl_printf") != StringRef::npos) {
       auto *FormatStrPtr = cast<PointerType>(CI->getArgOperand(0)->getType());

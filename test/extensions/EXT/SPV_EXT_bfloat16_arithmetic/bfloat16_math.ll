@@ -9,6 +9,15 @@
 ; RUN: not llvm-spirv %t.bc --spirv-ext=+SPV_EXT_bfloat16_arithmetic 2>&1 >/dev/null | FileCheck %s --check-prefix=CHECK-ERROR
 ; CHECK-ERROR: RequiresExtension: Feature requires the following SPIR-V extension:
 
+; Enabling both SPV_INTEL_bfloat16_arithmetic and SPV_EXT_bfloat16_arithmetic
+; must still only produce the EXT extension and capability.
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_bfloat16 --spirv-ext=+SPV_INTEL_bfloat16_arithmetic --spirv-ext=+SPV_EXT_bfloat16_arithmetic -o %t.both.spv
+; RUN: llvm-spirv %t.both.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-BOTH-ENABLED
+; CHECK-BOTH-ENABLED: Capability BFloat16ArithmeticEXT
+; CHECK-BOTH-ENABLED: Extension "SPV_EXT_bfloat16_arithmetic"
+; CHECK-BOTH-ENABLED-NOT: BFloat16ArithmeticINTEL
+; CHECK-BOTH-ENABLED-NOT: SPV_INTEL_bfloat16_arithmetic
+
 source_filename = "bfloat16.cpp"
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spirv64-unknown-unknown"
