@@ -43,7 +43,7 @@
 ; CHECK-LLVM: call spir_func i32 @_Z28work_group_reduce_logical_ori(i32 0)
 ; CHECK-LLVM: call spir_func i32 @_Z29work_group_reduce_logical_xori(i32 0)
 ; CHECK-LLVM: call spir_func i32 @_Z21work_group_reduce_muli(i32 0)
-; CHECK-LLVM: call spir_func half @_Z21work_group_reduce_mulDh(half 0xH0000)
+; CHECK-LLVM: call spir_func half @_Z21work_group_reduce_mulDh(half 0.000000e+00)
 
 ; CHECK-LLVM-SPIRV: %call1 = call spir_func i32 @_Z26__spirv_GroupBitwiseAndKHR{{.*}}(i32 2, i32 0, i32 0)
 ; CHECK-LLVM-SPIRV: %call2 = call spir_func i32 @_Z25__spirv_GroupBitwiseOrKHR{{.*}}(i32 2, i32 0, i32 0)
@@ -52,7 +52,7 @@
 ; CHECK-LLVM-SPIRV: %call5 = call spir_func i1 @_Z25__spirv_GroupLogicalOrKHR{{.*}}(i32 2, i32 0, i1 false)
 ; CHECK-LLVM-SPIRV: %call6 = call spir_func i1 @_Z26__spirv_GroupLogicalXorKHR{{.*}}(i32 2, i32 0, i1 false)
 ; CHECK-LLVM-SPIRV: %call7 = call spir_func i32 @_Z20__spirv_GroupIMulKHR{{.*}}(i32 2, i32 0, i32 0)
-; CHECK-LLVM-SPIRV: %call8 = call spir_func half @_Z20__spirv_GroupFMulKHR{{.*}}(i32 2, i32 0, half 0xH0000)
+; CHECK-LLVM-SPIRV: %call8 = call spir_func half @_Z20__spirv_GroupFMulKHR{{.*}}(i32 2, i32 0, half 0.000000e+00)
 
 ; ModuleID = 'source.bc'
 source_filename = "group_operations.cpp"

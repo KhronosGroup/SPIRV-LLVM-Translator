@@ -53,6 +53,7 @@
 #include "SPIRVValue.h"
 
 #include "llvm/ADT/APInt.h"
+#include "llvm/ADT/STLExtras.h"
 
 #include <set>
 #include <unordered_map>
@@ -109,6 +110,8 @@ public:
 
   // Error handling functions
   SPIRVErrorLog &getErrorLog() override { return ErrLog; }
+  // Total size of the input stream, cached once by parseSPIRV.
+  std::streamoff getInputStreamSize() const { return InputStreamSize; }
   SPIRVErrorCode getError(std::string &ErrMsg) override {
     return ErrLog.getError(ErrMsg);
   }
@@ -548,6 +551,11 @@ public:
                                                   llvm::MDNode *MD) override;
   SPIRVInstruction *addAssumeTrueKHRInst(SPIRVValue *Condition,
                                          SPIRVBasicBlock *BB) override;
+  SPIRVValue *addPoisonKHR(SPIRVType *TheType) override;
+  SPIRVInstruction *addFreezeKHRInst(SPIRVType *TheType, SPIRVValue *Value,
+                                     SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addAbortKHRInst(SPIRVValue *Message,
+                                    SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addExpectKHRInst(SPIRVType *ResultTy, SPIRVValue *Value,
                                      SPIRVValue *ExpectedValue,
                                      SPIRVBasicBlock *BB) override;
@@ -617,6 +625,7 @@ private:
   SPIRVIdToInstructionSetMap IdToInstSetMap;
   SPIRVIdToBuiltinSetMap IdBuiltinMap;
   SPIRVIdSet NamedId;
+  std::streamoff InputStreamSize = 0;
   SPIRVStringVec StringVec;
   SPIRVMemberNameVec MemberNameVec;
   std::shared_ptr<const SPIRVLine> CurrentLine;
@@ -989,13 +998,23 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
   if (LocFwd != IdTypeForwardMap.end()) {
     return LocFwd->second;
   }
-  assert(false && "Id is not in map");
+  const_cast<SPIRVModuleImpl *>(this)->getErrorLog().checkError(
+      false, SPIRVEC_InvalidModule,
+      "input SPIR-V module references an id that is not defined: " +
+          std::to_string(Id));
   return nullptr;
 }
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {
   auto Loc = IdToInstSetMap.find(SetId);
-  assert(Loc != IdToInstSetMap.end() && "Invalid builtin set id");
+  if (Loc == IdToInstSetMap.end()) {
+    const_cast<SPIRVModuleImpl *>(this)->getErrorLog().checkError(
+        false, SPIRVEC_InvalidModule,
+        "input SPIR-V module references an unknown extended instruction set "
+        "id " +
+            std::to_string(SetId));
+    return SPIRVEIS_Count;
+  }
   return Loc->second;
 }
 
@@ -1026,8 +1045,16 @@ bool SPIRVModuleImpl::importBuiltinSet(const std::string &BuiltinSetName,
 bool SPIRVModuleImpl::importBuiltinSetWithId(const std::string &BuiltinSetName,
                                              SPIRVId BuiltinSetId) {
   SPIRVExtInstSetKind BuiltinSet = SPIRVEIS_Count;
-  SPIRVCKRT(SPIRVBuiltinSetNameMap::rfind(BuiltinSetName, &BuiltinSet),
-            InvalidBuiltinSetName, "Actual is " + BuiltinSetName);
+  if (!SPIRVBuiltinSetNameMap::rfind(BuiltinSetName, &BuiltinSet)) {
+    // Per the non-semantic principle, a consumer may safely ignore any
+    // "NonSemantic.*" extended instruction set it does not recognize.
+    // Accept the import and tag it with a sentinel kind.
+    if (BuiltinSetName.find("NonSemantic.") == 0) {
+      IdToInstSetMap[BuiltinSetId] = SPIRVEIS_NonSemantic_Unknown;
+      return true;
+    }
+    SPIRVCKRT(false, InvalidBuiltinSetName, "Actual is " + BuiltinSetName);
+  }
   IdToInstSetMap[BuiltinSetId] = BuiltinSet;
   ExtInstSetIds[BuiltinSet] = BuiltinSetId;
   return true;
@@ -1444,6 +1471,13 @@ SPIRVValue *SPIRVModuleImpl::addNullConstant(SPIRVType *Ty) {
 
 SPIRVValue *SPIRVModuleImpl::addCompositeConstant(
     SPIRVType *Ty, const std::vector<SPIRVValue *> &Elements) {
+  // Add an OpSpecConstantComposite instead if any of the elements is a
+  // SpecConstant.
+  if (llvm::any_of(Elements, [](SPIRVValue *V) {
+        return isSpecConstantOpCode(V->getOpCode());
+      }))
+    return addSpecConstantComposite(Ty, Elements);
+
   constexpr int MaxNumElements = MaxWordCount - SPIRVConstantComposite::FixedWC;
   const int NumElements = Elements.size();
 
@@ -2023,6 +2057,24 @@ SPIRVInstruction *SPIRVModuleImpl::addAssumeTrueKHRInst(SPIRVValue *Condition,
   return addInstruction(new SPIRVAssumeTrueKHR(Condition->getId(), BB), BB);
 }
 
+SPIRVInstruction *SPIRVModuleImpl::addAbortKHRInst(SPIRVValue *Message,
+                                                   SPIRVBasicBlock *BB) {
+  return addInstruction(new SPIRVAbortKHR(Message, BB), BB);
+}
+
+SPIRVValue *SPIRVModuleImpl::addPoisonKHR(SPIRVType *TheType) {
+  return addConstant(new SPIRVPoisonKHR(this, TheType, getId()));
+}
+
+SPIRVInstruction *SPIRVModuleImpl::addFreezeKHRInst(SPIRVType *TheType,
+                                                    SPIRVValue *Value,
+                                                    SPIRVBasicBlock *BB) {
+  return addInstruction(
+      SPIRVInstTemplateBase::create(OpFreezeKHR, TheType, getId(),
+                                    getVec(Value->getId()), BB, this),
+      BB);
+}
+
 SPIRVInstruction *SPIRVModuleImpl::addExpectKHRInst(SPIRVType *ResultTy,
                                                     SPIRVValue *Value,
                                                     SPIRVValue *ExpectedValue,
@@ -2411,11 +2463,8 @@ void SPIRVModuleImpl::addUnknownStructField(SPIRVTypeStruct *Struct, unsigned I,
 static void validateWordCount(SPIRVModuleImpl &M, std::istream &IS,
                               SPIRVWord WordCount) {
   if (!SPIRVUseTextFormat) {
-    std::streampos CurrentPos = IS.tellg();
-    IS.seekg(0, std::ios::end);
-    std::streamoff RemainingBytes = IS.tellg() - CurrentPos;
-    IS.clear();
-    IS.seekg(CurrentPos);
+    // Bounds-check against the total stream size.
+    std::streamoff RemainingBytes = M.getInputStreamSize() - IS.tellg();
 
     std::streamoff ExpectedBytes =
         static_cast<std::streamoff>((WordCount - 1) * sizeof(SPIRVWord));
@@ -2440,10 +2489,25 @@ static SPIRVEntry *parseAndCreateSPIRVEntry(SPIRVWord &WordCount, Op &OpCode,
   }
   validateWordCount(M, IS, WordCount);
   SPIRVEntry *Entry = SPIRVEntry::create(OpCode);
-  assert(Entry);
+  if (!M.getErrorLog().checkError(
+          Entry != nullptr, SPIRVEC_InvalidInstruction,
+          "input SPIR-V module has an invalid or unknown opcode " +
+              std::to_string(OpCode))) {
+    M.setInvalid();
+    return nullptr;
+  }
   Entry->setModule(&M);
   if (Scope && !isModuleScopeAllowedOpCode(OpCode)) {
     Entry->setScope(Scope);
+  }
+  // Reject a WordCount below the instruction's minimum before setWordCount().
+  if (!M.getErrorLog().checkError(WordCount >= Entry->getFixedWordCount(),
+                                  SPIRVEC_InvalidWordCount,
+                                  "WordCount is smaller than the instruction's "
+                                  "minimum word count")) {
+    M.setInvalid();
+    delete Entry;
+    return nullptr;
   }
   Entry->setWordCount(WordCount);
   if (OpCode != OpLine)
@@ -2657,6 +2721,14 @@ std::istream &SPIRVModuleImpl::parseSPIRV(std::istream &I) {
   MI.GeneratorVer = Header[2] & 0xFFFF;
   MI.NextId = Header[3];
   MI.InstSchema = static_cast<SPIRVInstructionSchemaKind>(Header[4]);
+
+  if (!SPIRVUseTextFormat) {
+    std::streampos HeaderEnd = I.tellg();
+    I.seekg(0, std::ios::end);
+    MI.InputStreamSize = I.tellg();
+    I.clear();
+    I.seekg(HeaderEnd);
+  }
 
   SPIRVEntry *Scope = nullptr;
   while (true) {

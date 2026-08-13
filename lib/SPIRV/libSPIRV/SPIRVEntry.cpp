@@ -95,8 +95,7 @@ SPIRVEntry *SPIRVEntry::create(Op OpCode) {
     return Loc->second();
 
   SPIRVDBG(spvdbgs() << "No factory for OpCode " << (unsigned)OpCode << '\n';)
-  assert(0 && "Not implemented");
-  return 0;
+  return nullptr;
 }
 
 std::unique_ptr<SPIRV::SPIRVEntry> SPIRVEntry::createUnique(Op OC) {
@@ -171,6 +170,7 @@ bool SPIRVEntry::isEndOfBlock() const {
   case OpReturn:
   case OpReturnValue:
   case OpUnreachable:
+  case OpAbortKHR:
     return true;
   default:
     return false;
@@ -537,6 +537,17 @@ std::vector<SPIRVDecorate const *> SPIRVEntry::getDecorations() const {
   return Decors;
 }
 
+std::vector<SPIRVDecorateGeneric const *>
+SPIRVEntry::getAllDecorations() const {
+  std::vector<SPIRVDecorateGeneric const *> Decors;
+  Decors.reserve(Decorates.size() + DecorateIds.size());
+  for (auto &DecoPair : Decorates)
+    Decors.push_back(DecoPair.second);
+  for (auto &DecoPair : DecorateIds)
+    Decors.push_back(DecoPair.second);
+  return Decors;
+}
+
 std::set<SPIRVId> SPIRVEntry::getDecorateId(Decoration Kind,
                                             size_t Index) const {
   auto Range = DecorateIds.equal_range(Kind);
@@ -639,7 +650,9 @@ void SPIRVEntryPoint::encode(spv_ostream &O) const {
 
 void SPIRVEntryPoint::decode(std::istream &I) {
   getDecoder(I) >> ExecModel >> Target >> Name;
-  Variables.resize(WordCount - FixedWC - getSizeInWords(Name) + 1);
+  SPIRVWord NameWC = getSizeInWords(Name);
+  SPIRVCK(WordCount >= FixedWC + NameWC - 1, InvalidWordCount, "");
+  Variables.resize(WordCount - FixedWC - NameWC + 1);
   getDecoder(I) >> Variables;
   Module->setName(getOrCreateTarget(), Name);
   Module->addEntryPoint(ExecModel, Target, Name, Variables);

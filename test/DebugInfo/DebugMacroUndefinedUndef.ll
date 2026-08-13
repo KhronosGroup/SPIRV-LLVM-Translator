@@ -6,8 +6,7 @@
 ; RUN: llvm-spirv --spirv-debug-info-version=ocl-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-OCL
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o - | FileCheck %s --check-prefix CHECK-SPIRV-OCL %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -16,8 +15,7 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-100 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-100
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o - | FileCheck %s --check-prefix CHECK-SPIRV-NON-SEMANTIC-100 %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -26,8 +24,7 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_KHR_non_semantic_info --spirv-debug-info-version=nonsemantic-shader-200 %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
-; RUN: spirv-dis %t.spv -o %t.spvasm
-; RUN: FileCheck %s --input-file %t.spvasm --check-prefix CHECK-SPIRV-NON-SEMANTIC-200
+; RUN: %if spirv-dis %{ spirv-dis %t.spv -o - | FileCheck %s --check-prefix CHECK-SPIRV-NON-SEMANTIC-200 %}
 
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o %t.rev.ll
@@ -51,8 +48,8 @@
 ; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[type:.*]] = OpTypeInt 32 0
 ; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[uint_1_reg:.*]] = OpConstant %[[type]] 1
 ; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[source_file:.*]] = OpString "./def.c"
-; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[debug_none:.*]] = OpExtInst %void %[[#]] 0
-; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[#]] = OpExtInst %void %[[#]] 33 %[[source_file]] %[[uint_1_reg]] %[[debug_none]]
+; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[debug_none:.*]] = OpExtInst %void %[[#]] {{(0|DebugInfoNone)}}
+; CHECK-SPIRV-NON-SEMANTIC-200-DAG: %[[#]] = OpExtInst %void %[[#]] {{(33|DebugMacroUndef)}} %[[source_file]] %[[uint_1_reg]] %[[debug_none]]
 
 target triple = "spir64-unknown-unknown"
 
