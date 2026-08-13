@@ -2035,6 +2035,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (Size)
       S = Builder.getInt64(Size);
     Value *Var = transValue(LTStart->getObject(), F, BB);
+    Var = Var->stripPointerCasts();
     CallInst *Start = Builder.CreateLifetimeStart(Var, S);
     return mapValue(BV, Start);
   }
