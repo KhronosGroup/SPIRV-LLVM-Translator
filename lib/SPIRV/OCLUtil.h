@@ -39,7 +39,7 @@
 #ifndef SPIRV_OCLUTIL_H
 #define SPIRV_OCLUTIL_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 #include "SPIRVInternal.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/IR/IRBuilder.h"
