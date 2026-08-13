@@ -112,7 +112,8 @@ jobs:
       run: |
         cat diff-to-inspect.txt | /usr/lib/llvm-${{ env.LLVM_VERSION }}/share/clang/clang-tidy-diff.py \
             -p1 -clang-tidy-binary clang-tidy-${{ env.LLVM_VERSION }} -quiet \
-            -path ${{ github.workspace}}/build
+            -path ${{ github.workspace }}/build \
+            -extra-arg=-I${{ github.workspace }}/include
 
     - name: Upload patch with clang-format fixes
       uses: actions/upload-artifact@v4
