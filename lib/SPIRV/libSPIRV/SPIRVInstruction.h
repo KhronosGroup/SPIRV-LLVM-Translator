@@ -4856,6 +4856,20 @@ _SPIRV_OP_FTOF(StochasticRoundFToF, true, 5, true)
 _SPIRV_OP_FTOF(ClampStochasticRoundFToF, true, 5, true)
 #undef _SPIRV_OP_FTOF
 
+class SPIRVSubgroupBitcastShuffleINTELInst : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(internal::CapabilitySubgroupBitcastShuffleINTEL);
+  }
+};
+
+typedef SPIRVInstTemplate<SPIRVSubgroupBitcastShuffleINTELInst,
+                          internal::OpSubgroupBitcastShuffleINTEL, true, 4>
+    SPIRVSubgroupBitcastShuffleINTEL;
+
 class SPIRVFPConversionFtoSINTELInstBase : public SPIRVInstTemplateBase {
 public:
   SPIRVCapVec getRequiredCapability() const override {

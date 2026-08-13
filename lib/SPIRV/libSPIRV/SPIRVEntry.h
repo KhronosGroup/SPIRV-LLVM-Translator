@@ -947,6 +947,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
+    case internal::ICapabilitySubgroupBitcastShuffleINTEL:
+      return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
     case internal::CapabilitySubgroupRequirementsINTEL:
       return ExtensionID::SPV_INTEL_subgroup_requirements;
     case CapabilityFPFastMathModeINTEL:
