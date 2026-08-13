@@ -9,9 +9,9 @@
 ; CHECK-SPIRV: 3 LifetimeStart [[tmp:[0-9]+]] 0
 ; CHECK-SPIRV: 3 LifetimeStop [[tmp]] 0
 
-; CHECK-LLVM: %[[tmp1:[0-9]+]] = bitcast ptr %{{[0-9]+}} to ptr
-; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[tmp1]])
-; CHECK-LLVM: call void @llvm.lifetime.end.p0(i64 -1, ptr %[[tmp1]])
+; CHECK-LLVM: %[[#Base:]] = alloca i32
+; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[#Base]])
+; CHECK-LLVM: call void @llvm.lifetime.end.p0(i64 -1, ptr %[[#Base]])
 ; CHECK-LLVM: declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture)
 ; CHECK-LLVM: declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture)
 
