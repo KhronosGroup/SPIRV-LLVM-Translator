@@ -117,6 +117,7 @@ public:
 
   SPIRVModuleImpl(const SPIRV::TranslatorOpts &Opts) : SPIRVModuleImpl() {
     TranslationOpts = Opts;
+    ErrLog.setErrorHandlingKind(Opts.getErrorHandlingKind());
   }
 
   ~SPIRVModuleImpl() override;
