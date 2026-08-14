@@ -9,12 +9,11 @@
 ; CHECK-SPIRV: 3 LifetimeStart [[tmp:[0-9]+]] 0
 ; CHECK-SPIRV: 3 LifetimeStop [[tmp]] 0
 
-; CHECK-LLVM: %[[tmp1:[0-9]+]] = bitcast ptr %{{[0-9]+}} to ptr
-; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[tmp1]])
-; CHECK-LLVM: call void @llvm.lifetime.end.p0(i64 -1, ptr %[[tmp1]])
+; CHECK-LLVM: %[[alloca:[0-9]+]] = alloca i32
+; CHECK-LLVM: call void @llvm.lifetime.start.p0(i64 -1, ptr %[[alloca]])
+; CHECK-LLVM: call void @llvm.lifetime.end.p0(i64 -1, ptr %[[alloca]])
 ; CHECK-LLVM: declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture)
 ; CHECK-LLVM: declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture)
-
 ; ModuleID = 'main'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
