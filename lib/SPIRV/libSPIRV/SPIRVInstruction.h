@@ -757,8 +757,13 @@ protected:
     (void)Op1Ty;
     (void)Op2Ty;
     if (isBinaryOpCode(OpCode)) {
-      assert(getValueType(Op1) == getValueType(Op2) &&
-             "Invalid type for binary instruction");
+      // can't check OpTypeVectorIdEXT's component count here;
+      // we can only check its value after being translated in the Reader
+      if (!getValueType(Op1)->isTypeVectorIdEXT() &&
+          !getValueType(Op2)->isTypeVectorIdEXT()) {
+        assert(getValueType(Op1) == getValueType(Op2) &&
+               "Invalid type for binary instruction");
+      }
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
              "Invalid type for Binary instruction");
       assert((Op1Ty->getBitWidth() == Op2Ty->getBitWidth()) &&
@@ -1745,7 +1750,11 @@ protected:
 
       (void)ResTy;
       (void)OpTy;
-      assert(getType() == getValueType(Op) && "Inconsistent type");
+      // See the binary-op note: the reader verifies id-based component counts.
+      if (!getType()->isTypeVectorIdEXT() &&
+          !getValueType(Op)->isTypeVectorIdEXT()) {
+        assert(getType() == getValueType(Op) && "Inconsistent type");
+      }
       assert((ResTy->isTypeInt() || ResTy->isTypeFloat()) &&
              "Invalid type for Generic Negate instruction");
       assert((ResTy->getBitWidth() == OpTy->getBitWidth()) &&
@@ -3380,8 +3389,13 @@ protected:
     (void)Vec1;
     (void)Vec2;
 
-    assert(getValueType(Vec1) == getValueType(Vec2) &&
-           "Input vectors must have the same type");
+    // getValueType(Vec1) == getValueType(Vec2) is pointer identity; for a
+    // long-vector-id (SPV_EXT_long_vector) two distinct type <id>s of equal
+    // count are valid, so the count is verified in the reader instead.
+    if (!getValueType(Vec1)->isTypeVectorIdEXT() &&
+        !getValueType(Vec2)->isTypeVectorIdEXT())
+      assert(getValueType(Vec1) == getValueType(Vec2) &&
+             "Input vectors must have the same type");
     assert(getType()->isTypeInt() && "Result type must be an integer type");
     assert(!getType()->isTypeVector() && "Result type must be scalar");
   }
@@ -3774,7 +3788,7 @@ protected:
     if (InCompTy->isTypeVector()) {
       InCompCount = InCompTy->getVectorComponentCount();
       InCompTy = InCompTy->getVectorComponentType();
-    } else if (InCompTy->isTypeVectorIdEXT()) {
+    } else if (InIsId) {
       InCompTy = InCompTy->getVectorComponentType();
     }
 
@@ -4186,8 +4200,15 @@ protected:
 
     SPIRVType *ResCompTy = this->getType();
     SPIRVWord ResCompCount = 1;
+    // A long-vector-id (SPV_EXT_long_vector) component count is an <id>, so
+    // getVectorComponentCount() can't read it; reduce to the component type
+    // here and let the reader verify the count from the translated
+    // FixedVectorType.
+    const bool ResIsId = ResCompTy->isTypeVectorIdEXT();
     if (ResCompTy->isTypeVector()) {
       ResCompCount = ResCompTy->getVectorComponentCount();
+      ResCompTy = ResCompTy->getVectorComponentType();
+    } else if (ResIsId) {
       ResCompTy = ResCompTy->getVectorComponentType();
     }
 
@@ -4200,8 +4221,11 @@ protected:
 
     SPIRVType *InCompTy = Input->getType();
     SPIRVWord InCompCount = 1;
+    const bool InIsId = InCompTy->isTypeVectorIdEXT();
     if (InCompTy->isTypeVector()) {
       InCompCount = InCompTy->getVectorComponentCount();
+      InCompTy = InCompTy->getVectorComponentType();
+    } else if (InIsId) {
       InCompTy = InCompTy->getVectorComponentType();
     }
 
@@ -4234,10 +4258,13 @@ protected:
                          InstName +
                              "\nInput value must be a scalar or vector of "
                              "floating-point 32-bit type\n");
-    SPVErrLog.checkError(
-        ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
-        InstName + "\nInput type must have the same number of components as "
-                   "result type\n");
+    // For a long-vector-id operand the count is verified in the reader
+    // (SPV_EXT_long_vector); getVectorComponentCount() left it defaulted to 1.
+    if (!ResIsId && !InIsId)
+      SPVErrLog.checkError(
+          ResCompCount == InCompCount, SPIRVEC_InvalidInstruction,
+          InstName + "\nInput type must have the same number of components as "
+                     "result type\n");
   }
 };
 
@@ -4740,8 +4767,9 @@ public:
 
     const SPIRVType *ResTy = this->getType();
     SPVErrLog.checkError(
-        ResTy->isTypeInt() || (ResTy->isTypeVector() &&
-                               ResTy->getVectorComponentType()->isTypeInt()),
+        ResTy->isTypeInt() ||
+            ((ResTy->isTypeVector() || ResTy->isTypeVectorIdEXT()) &&
+             ResTy->getVectorComponentType()->isTypeInt()),
         SPIRVEC_InvalidInstruction,
         InstName + "\nResult type must be an integer scalar or vector.\n");
 
@@ -4750,10 +4778,11 @@ public:
       SPIRVValue *Arg =
           const_cast<SPIRVTernaryBitwiseFunctionINTELInst *>(this)->getOperand(
               ArgI);
-      SPVErrLog.checkError(
-          Arg->getType() == ResTy, SPIRVEC_InvalidInstruction,
-          InstName + "\n" + ArgPlacement +
-              " argument must be the same as the result type.\n");
+      if (!ResTy->isTypeVectorIdEXT() && !Arg->getType()->isTypeVectorIdEXT())
+        SPVErrLog.checkError(
+            Arg->getType() == ResTy, SPIRVEC_InvalidInstruction,
+            InstName + "\n" + ArgPlacement +
+                " argument must be the same as the result type.\n");
     };
 
     CommonArgCheck(0, "First");

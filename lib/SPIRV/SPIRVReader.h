@@ -282,6 +282,7 @@ private:
   FastMathFlags translateFastMathFlags(SPIRVWord V) const;
   void parseFloatControls2ExecutionModeId(SPIRVFunction *BF, Function *F);
   void applyFPFastMathModeDecorations(const SPIRVValue *BV, Instruction *Inst);
+  void checkTypeVectorIdEXTComponentCount(SPIRVValue *BV);
 }; // class SPIRVToLLVM
 
 } // namespace SPIRV

@@ -1,0 +1,35 @@
+; Checks the reader rejects OpSDotKHR when its OpTypeVectorIdEXT input vectors have
+; different component counts. Without the fix the reader aborts on a Debug
+; type-identity assert (Release: silent wrong IR); the count is verified in the
+; reader from the translated FixedVectorTypes.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
+; RUN: not llvm-spirv -r %t.spv -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: SDotKHR: result and inputs must all have equal component count for vector types.
+
+               OpCapability Kernel
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability LongVectorEXT
+               OpCapability DotProductKHR
+               OpCapability DotProductInputAllKHR
+               OpExtension "SPV_EXT_long_vector"
+               OpExtension "SPV_KHR_integer_dot_product"
+               OpMemoryModel Physical64 OpenCL
+               OpName %f "f"
+               OpDecorate %f LinkageAttributes "f" Export
+       %uint = OpTypeInt 32 0
+         %u5 = OpConstant %uint 5
+         %u8 = OpConstant %uint 8
+        %v5u = OpTypeVectorIdEXT %uint %u5
+        %v8u = OpTypeVectorIdEXT %uint %u8
+       %fnty = OpTypeFunction %uint %v5u %v8u
+          %f = OpFunction %uint None %fnty
+          %a = OpFunctionParameter %v5u
+          %b = OpFunctionParameter %v8u
+          %e = OpLabel
+          %r = OpSDotKHR %uint %a %b
+               OpReturnValue %r
+               OpFunctionEnd

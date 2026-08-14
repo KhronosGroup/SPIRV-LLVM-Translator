@@ -1,0 +1,42 @@
+; Checks the reader rejects OpMaskedGatherINTEL when the OpTypeVectorIdEXT mask
+; count differs from the result/ptr/fill counts.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
+; RUN: not llvm-spirv -r %t.spv -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: MaskedGatherINTEL: result component count must match the number of components selected
+
+               OpCapability Addresses
+               OpCapability Kernel
+               OpCapability GenericPointer
+               OpCapability LongVectorEXT
+               OpCapability MaskedGatherScatterINTEL
+               OpExtension "SPV_EXT_long_vector"
+               OpExtension "SPV_INTEL_masked_gather_scatter"
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %fn "k"
+               OpName %fn "k"
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+       %bool = OpTypeBool
+         %u5 = OpConstant %uint 5
+         %u8 = OpConstant %uint 8
+         %f1 = OpConstant %float 1
+       %true = OpConstantTrue %bool
+    %v5float = OpTypeVectorIdEXT %float %u5
+     %v8bool = OpTypeVectorIdEXT %bool %u8
+    %ptr_f32 = OpTypePointer Generic %float
+     %v5ptr = OpTypeVector %ptr_f32 5
+  %ptr_v5ptr = OpTypePointer Function %v5ptr
+      %mask8 = OpConstantComposite %v8bool %true %true %true %true %true %true %true %true
+      %fill5 = OpConstantComposite %v5float %f1 %f1 %f1 %f1 %f1
+       %fnty = OpTypeFunction %void
+         %fn = OpFunction %void None %fnty
+      %entry = OpLabel
+         %pv = OpVariable %ptr_v5ptr Function
+          %p = OpLoad %v5ptr %pv
+        %res = OpMaskedGatherINTEL %v5float %p 4 %mask8 %fill5
+               OpReturn
+               OpFunctionEnd

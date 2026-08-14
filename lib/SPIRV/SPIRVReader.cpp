@@ -1010,6 +1010,144 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
   }
 }
 
+static bool isVectorBinaryOpWithoutVectorResult(Op OC) {
+  // these opcodes can have 2 vector operands but the result isn't vector type
+  return (OC >= OpSDotKHR && OC <= OpSUDotAccSatKHR) || OC == OpDot ||
+         (OC >= OpIAddCarry && OC <= OpSMulExtended);
+}
+
+// Check the component size of OpTypeVectorIdEXT as value ops. All instructions,
+// which have component count check for OpTypeVector (via
+// getVectorComponentCount() in their validate() method), will run the checks
+// here for OpTypeVectorIdEXT. Using a centralized helper instead of per
+// translation site for each of these ops because they're scattered in many
+// places which is hard to locate all and will lead to many code duplication.
+void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
+  if (!BV->isInst())
+    return;
+
+  auto CheckEqualVectorComponentCounts =
+      [this](const std::vector<SPIRVType *> &VecTypes,
+             const std::string &ErrMsg) {
+        if (none_of(VecTypes,
+                    [](SPIRVType *Ty) { return Ty->isTypeVectorIdEXT(); }))
+          return;
+        SmallVector<unsigned, 4> CompCounts;
+        for (SPIRVType *Ty : VecTypes) {
+          unsigned Count =
+              cast<FixedVectorType>(transType(Ty))->getNumElements();
+          CompCounts.push_back(Count);
+        }
+        BM->getErrorLog().checkError(all_equal(CompCounts),
+                                     SPIRVEC_InvalidInstruction, ErrMsg);
+      };
+
+  Op OC = BV->getOpCode();
+
+  if (isGenericNegateOpCode(OC) || OC == OpLogicalNot ||
+      OC == OpConvertFToBF16INTEL || OC == OpConvertBF16ToFINTEL ||
+      OC == OpRoundFToTF32INTEL) {
+    auto *BI = static_cast<SPIRVInstruction *>(BV);
+    SPIRVType *RetTy = BI->getType();
+    SPIRVType *InTy = BI->getOperands()[0]->getType();
+    CheckEqualVectorComponentCounts({RetTy, InTy},
+                                    std::string(OpCodeNameMap::map(OC)) +
+                                        ": result and input must have equal "
+                                        "component count for vector types.\n");
+    return;
+  }
+
+  if ((isBinaryOpCode(OC) && !isVectorBinaryOpWithoutVectorResult(OC)) ||
+      isCmpOpCode(OC) || isShiftOpCode(OC) || isBitwiseOpCode(OC) ||
+      (isLogicalOpCode(OC) && OC != OpLogicalNot)) {
+    auto *BI = static_cast<SPIRVInstruction *>(BV);
+    std::vector<SPIRVValue *> Operands = BI->getOperands();
+    SPIRVType *RetTy = BI->getType();
+    SPIRVType *InTy0 = Operands[0]->getType();
+    SPIRVType *InTy1 = Operands[1]->getType();
+    CheckEqualVectorComponentCounts(
+        {RetTy, InTy0, InTy1}, std::string(OpCodeNameMap::map(OC)) +
+                                   ": result and inputs must all have equal "
+                                   "component count for vector types.\n");
+    return;
+  }
+
+  if (isVectorBinaryOpWithoutVectorResult(OC)) {
+    // These ops have a scalar or struct result, so check operands only
+    auto *BI = static_cast<SPIRVInstruction *>(BV);
+    std::vector<SPIRVValue *> Operands = BI->getOperands();
+    SPIRVType *InTy0 = Operands[0]->getType();
+    SPIRVType *InTy1 = Operands[1]->getType();
+    CheckEqualVectorComponentCounts(
+        {InTy0, InTy1}, std::string(OpCodeNameMap::map(OC)) +
+                            ": result and inputs must all have equal "
+                            "component count for vector types.\n");
+    return;
+  }
+
+  // OpVectorShuffle: result component count must equal the number of selected
+  // component-index literals.
+  if (OC == OpVectorShuffle) {
+    SPIRVType *ResTy = BV->getType();
+    if (!ResTy->isTypeVectorIdEXT())
+      return;
+    unsigned ResCount =
+        cast<FixedVectorType>(transType(ResTy))->getNumElements();
+    unsigned NumSelected =
+        static_cast<SPIRVVectorShuffle *>(BV)->getComponents().size();
+    BM->getErrorLog().checkError(
+        ResCount == NumSelected, SPIRVEC_InvalidInstruction,
+        "VectorShuffle: result component count must match the number of "
+        "components selected\n");
+    return;
+  }
+
+  if (OC == OpBitwiseFunctionINTEL) {
+    auto *BFI = static_cast<SPIRVTernaryBitwiseFunctionINTELInst *>(BV);
+    std::vector<SPIRVValue *> Operands = BFI->getOperands();
+    SPIRVType *RetTy = BFI->getType();
+    SPIRVType *InTy0 = Operands[0]->getType();
+    SPIRVType *InTy1 = Operands[1]->getType();
+    SPIRVType *InTy2 = Operands[2]->getType();
+    CheckEqualVectorComponentCounts(
+        {RetTy, InTy0, InTy1, InTy2},
+        "BitwiseFunctionINTEL: result and inputs must all have equal component "
+        "count for vector types.\n");
+    return;
+  }
+
+  if (OC == internal::OpMaskedGatherINTEL) {
+    // Checking all vector operands (mirroring
+    // SPIRVMaskedGatherINTELInst::validate): Result, PtrVector(0), Mask(2),
+    // FillEmpty(3).
+    auto *MG = static_cast<SPIRVMaskedGatherINTELInst *>(BV);
+    SPIRVType *RetTy = MG->getType();
+    SPIRVType *PtrVecTy = MG->getOperand(0)->getType();
+    SPIRVType *MaskTy = MG->getOperand(2)->getType();
+    SPIRVType *FillEmptyTy = MG->getOperand(3)->getType();
+    CheckEqualVectorComponentCounts(
+        {RetTy, PtrVecTy, MaskTy, FillEmptyTy},
+        "MaskedGatherINTEL: result component count must match the number of "
+        "components selected\n");
+    return;
+  }
+
+  if (OC == internal::OpMaskedScatterINTEL) {
+    // Checking all vector operands (mirroring
+    // SPIRVMaskedScatterINTELInst::validate): InputVector(0), PtrVector(1),
+    // Mask(3)
+    auto *MS = static_cast<SPIRVMaskedScatterINTELInst *>(BV);
+    SPIRVType *InputVecTy = MS->getOperand(0)->getType();
+    SPIRVType *PtrVecTy = MS->getOperand(1)->getType();
+    SPIRVType *MaskTy = MS->getOperand(3)->getType();
+    CheckEqualVectorComponentCounts(
+        {InputVecTy, PtrVecTy, MaskTy},
+        "MaskedScatterINTEL: InputVector, PtrVector and Mask vectors must have "
+        "the same size\n");
+    return;
+  }
+}
+
 Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
                                bool CreatePlaceHolder) {
   SPIRVToLLVMValueMap::iterator Loc = ValueMap.find(BV);
@@ -1018,6 +1156,7 @@ Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
 
   SPIRVDBG(spvdbgs() << "[transValue] " << *BV << " -> ";)
   BV->validate();
+  checkTypeVectorIdEXTComponentCount(BV);
 
   auto *V = transValueWithoutDecoration(BV, F, BB, CreatePlaceHolder);
   if (!V) {

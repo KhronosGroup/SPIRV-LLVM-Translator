@@ -1,0 +1,38 @@
+; Checks the reader rejects a compare whose OpTypeVectorIdEXT operand counts differ
+; only after a spec-constant override. spirv-val accepts the module (defaults
+; make both counts 5), so this mismatch is one only the reader can catch.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK
+; RUN: not llvm-spirv -r -spec-const "43:i32:8" %t.spv -o %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+
+; CHECK: icmp eq <5 x i32>
+; CHECK-ERROR: IEqual: result and inputs must all have equal component count for vector types.
+
+               OpCapability Kernel
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability LongVectorEXT
+               OpExtension "SPV_EXT_long_vector"
+               OpMemoryModel Physical64 OpenCL
+               OpName %f "f"
+               OpDecorate %f LinkageAttributes "f" Export
+               OpDecorate %sc_a SpecId 42
+               OpDecorate %sc_b SpecId 43
+       %uint = OpTypeInt 32 0
+       %bool = OpTypeBool
+       %sc_a = OpSpecConstant %uint 5
+       %sc_b = OpSpecConstant %uint 5
+        %vau = OpTypeVectorIdEXT %uint %sc_a
+        %vbu = OpTypeVectorIdEXT %uint %sc_b
+        %vab = OpTypeVectorIdEXT %bool %sc_a
+       %fnty = OpTypeFunction %vab %vau %vbu
+          %f = OpFunction %vab None %fnty
+          %a = OpFunctionParameter %vau
+          %b = OpFunctionParameter %vbu
+          %e = OpLabel
+          %r = OpIEqual %vab %a %b
+               OpReturnValue %r
+               OpFunctionEnd

@@ -257,8 +257,8 @@
 ; CHECK: define spir_kernel void @test_gather_scatter()
 ; CHECK: %[[#PTR0:]] = load <5 x ptr addrspace(4)>, ptr %arg0
 ; CHECK: %[[#PTR1:]] = load <5 x ptr addrspace(4)>, ptr %arg1
-; CHECK: %[[RES:.*]] = call <5 x float> @llvm.masked.gather.v5f32.v5p4(<5 x ptr addrspace(4)> align 4 %[[#PTR0]],
-; CHECK: call void @llvm.masked.scatter.v5f32.v5p4(<5 x float> %[[RES]], <5 x ptr addrspace(4)> align 4 %[[#PTR1]], <5 x i1> splat (i1 true))
+; CHECK: %[[#RES:]] = call <5 x float> @llvm.masked.gather.v5f32.v5p4(<5 x ptr addrspace(4)> align 4 %[[#PTR0]],
+; CHECK: call void @llvm.masked.scatter.v5f32.v5p4(<5 x float> %[[#RES]], <5 x ptr addrspace(4)> align 4 %[[#PTR1]], <5 x i1> splat (i1 true))
 %test_gather_scatter = OpFunction %void None %fnty_kern
        %gs_e = OpLabel
        %arg0 = OpVariable %ptr_v5ptr Function
