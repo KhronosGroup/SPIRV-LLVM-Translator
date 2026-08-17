@@ -4,8 +4,9 @@
 
 ; The writer no longer emits SPV_INTEL_bfloat16_arithmetic (it emits
 ; SPV_EXT_bfloat16_arithmetic instead), but the reader must still accept
-; modules produced by older tools that use the INTEL extension and
-; capability names.
+; modules produced by older tools that declare the INTEL extension name.
+; The capability itself is a single enumerant shared by both extensions,
+; so no special-casing is needed for it.
 
 ; CHECK: %r = fadd bfloat %a, %b
 
@@ -14,7 +15,7 @@
 2 Capability Linkage
 2 Capability Kernel
 2 Capability BFloat16TypeKHR
-2 Capability BFloat16ArithmeticINTEL
+2 Capability BFloat16ArithmeticEXT
 9 Extension "SPV_INTEL_bfloat16_arithmetic"
 6 Extension "SPV_KHR_bfloat16"
 5 ExtInstImport 1 "OpenCL.std"
