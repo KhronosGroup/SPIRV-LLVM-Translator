@@ -739,8 +739,8 @@ protected:
         getValueType(Op1)->isTypeVectorIdEXT()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
-      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
-      // is not a literal and only known after being translated.
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its
+      // count is not a literal and only known after being translated.
       if (getValueType(Op1)->isTypeVector())
         assert(getValueType(Op1)->getVectorComponentCount() ==
                    getValueType(Op2)->getVectorComponentCount() &&
@@ -1140,8 +1140,8 @@ protected:
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
       ResTy = Type->getVectorComponentType();
-      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its count
-      // is not a literal and only known after being translated.
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its
+      // count is not a literal and only known after being translated.
       if (getValueType(Op1)->isTypeVector())
         assert(getValueType(Op1)->getVectorComponentCount() ==
                    getValueType(Op2)->getVectorComponentCount() &&
@@ -1737,16 +1737,14 @@ protected:
     if (getValue(Op)->isForward())
       return;
     if (isGenericNegateOpCode(OpCode)) {
-      SPIRVType *ResTy =
-          Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
-                  Type->isTypeCooperativeMatrixKHR()
-              ? Type->getVectorComponentType()
-              : Type;
-      SPIRVType *OpTy =
-          Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
-                  Type->isTypeCooperativeMatrixKHR()
-              ? getValueType(Op)->getVectorComponentType()
-              : getValueType(Op);
+      SPIRVType *ResTy = Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                                 Type->isTypeCooperativeMatrixKHR()
+                             ? Type->getVectorComponentType()
+                             : Type;
+      SPIRVType *OpTy = Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                                Type->isTypeCooperativeMatrixKHR()
+                            ? getValueType(Op)->getVectorComponentType()
+                            : getValueType(Op);
 
       (void)ResTy;
       (void)OpTy;
@@ -4088,8 +4086,9 @@ class SPIRVMaskedGatherINTELInst
               PtrVecCompCount == FillEmptyCompCount &&
               FillEmptyCompCount == MaskCompCount,
           SPIRVEC_InvalidInstruction,
-          InstName + "\nResult, PtrVector, Mask and FillEmpty vectors must have "
-                     "the same size\n");
+          InstName +
+              "\nResult, PtrVector, Mask and FillEmpty vectors must have "
+              "the same size\n");
     }
 
     SPVErrLog.checkError(
