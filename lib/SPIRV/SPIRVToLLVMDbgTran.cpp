@@ -1675,10 +1675,9 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
       Loc = LocalVar.second;
     DIBuilder &DIB = getDIBuilder(DebugInst);
     if (getDbgInst<SPIRVDebug::DebugInfoNone>(Ops[VariableIdx])) {
-      auto *Null =
-          ConstantPointerNull::get(PointerType::get(M->getContext(), 0));
+      auto *Poison = PoisonValue::get(PointerType::get(M->getContext(), 0));
       DbgRecord *DbgDeclare = DIB.insertDeclare(
-          Null, LocalVar.first, GetExpression(Ops[ExpressionIdx]), Loc, BB);
+          Poison, LocalVar.first, GetExpression(Ops[ExpressionIdx]), Loc, BB);
       return DbgDeclare;
     }
     return DIB.insertDeclare(GetValue(Ops[VariableIdx]), LocalVar.first,
