@@ -20,7 +20,7 @@ target triple = "spir"
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @_Z4foo8hhPh(i8 zeroext %a, i8 zeroext %b, ptr captures(none) %c) local_unnamed_addr #0 {
 entry:
-  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedcc(ptr sret(%[[STRUCT8]]) %{{.*}}, i8 %a, i8 %b)
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedhh(ptr sret(%[[STRUCT8]]) %{{.*}}, i8 %a, i8 %b)
   ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
   ; CHECK-SPIRV: CompositeExtract [[#]] [[#HI:]] [[#]] 1
   ; CHECK-SPIRV: INotEqual [[#]] [[#]] [[#HI]] [[#]]
@@ -37,7 +37,7 @@ entry:
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @_Z5foo32jjPj(i32 %a, i32 %b, ptr captures(none) %c) local_unnamed_addr #0 {
 entry:
-  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedii(ptr sret(%[[STRUCT32]]) %{{.*}}, i32 %b, i32 %a)
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedjj(ptr sret(%[[STRUCT32]]) %{{.*}}, i32 %b, i32 %a)
   ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
   %umul = tail call { i32, i1 } @llvm.umul.with.overflow.i32(i32 %b, i32 %a)
   %umul.val = extractvalue { i32, i1 } %umul, 0
@@ -49,7 +49,7 @@ entry:
 
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @umulo_v2i64(<2 x i64> %a, <2 x i64> %b, ptr %p) nounwind {
-  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedDv2_lS_(ptr sret(%[[STRUCTV2I64]]) %{{.*}}, <2 x i64> %a, <2 x i64> %b)
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedDv2_mS_(ptr sret(%[[STRUCTV2I64]]) %{{.*}}, <2 x i64> %a, <2 x i64> %b)
   ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
   %umul = call {<2 x i64>, <2 x i1>} @llvm.umul.with.overflow.v2i64(<2 x i64> %a, <2 x i64> %b)
   %umul.val = extractvalue {<2 x i64>, <2 x i1>} %umul, 0
