@@ -608,6 +608,29 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
     GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
   }
 }
+
+/// Spell an integer or fixed-vector-of-integer type the way LLVM does in
+/// intrinsic names, for use in the uinc_wrap/udec_wrap helper name: i32,
+/// v2i32.
+static std::string getAtomicWrapTypeSuffix(Type *Ty) {
+  std::string Suffix;
+  if (auto *VecTy = dyn_cast<FixedVectorType>(Ty))
+    Suffix = "v" + std::to_string(VecTy->getNumElements());
+  return Suffix + "i" +
+         std::to_string(Ty->getScalarType()->getIntegerBitWidth());
+}
+
+/// AMDGPU supports no atomic wider than 64 bits
+/// (AMDGPUTargetLowering sets setMaxAtomicSizeInBitsSupported(64)), and neither
+/// does the SPIR-V backend, whose AtomicExpandPass run rejects anything wider
+/// before the helper lowering gets a chance to see it. Round-tripping an
+/// over-limit atomicrmw through the helper would therefore hand the consumer
+/// something its own backend cannot lower, so apply the same limit here: an
+/// over-limit operand is left alone and reaches the writer, which reports it as
+/// unsupported, exactly as before the helper existed.
+static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
+  return M->getDataLayout().getTypeStoreSizeInBits(Ty) <= 64;
+}
 } // namespace
 
 /// Remove entities not representable by SPIR-V
@@ -802,7 +825,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           // unsupported, as it was before the helper existed.
           if (M->getTargetTriple().getVendor() == Triple::AMD &&
               (AOp == AtomicRMWInst::UIncWrap ||
-               AOp == AtomicRMWInst::UDecWrap)) {
+               AOp == AtomicRMWInst::UDecWrap) &&
+              isAtomicWrapSizeSupported(M, ARMW->getValOperand()->getType())) {
             // There is no SPIR-V opcode for uinc_wrap/udec_wrap. Transform:
             // %1 = atomicrmw uinc_wrap ptr addrspace(1) %ptr, i32 %val seq_cst
             // To a call to an imported helper, which the reverse translation
@@ -814,6 +838,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             // The name carries the address space and the value type because a
             // module may need several mutually incompatible signatures, while
             // SPIR-V resolves an imported function by its linkage name alone.
+            // The value may also be a fixed vector of integers, spelled the
+            // LLVM way: _p1_v2i32.
             Value *Ptr = ARMW->getPointerOperand();
             Value *Val = ARMW->getValOperand();
             Type *MemType = Val->getType();
@@ -833,8 +859,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
                     : kSPIRVName::TranslateSPIRVAtomicUDecWrap;
             FuncName +=
                 "_p" +
-                std::to_string(Ptr->getType()->getPointerAddressSpace()) +
-                "_i" + std::to_string(MemType->getIntegerBitWidth());
+                std::to_string(Ptr->getType()->getPointerAddressSpace()) + "_" +
+                getAtomicWrapTypeSuffix(MemType);
 
             Type *Int32Ty = Type::getInt32Ty(M->getContext());
             FunctionType *FT = FunctionType::get(
