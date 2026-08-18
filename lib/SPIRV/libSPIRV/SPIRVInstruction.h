@@ -2168,9 +2168,10 @@ protected:
   std::vector<SPIRVExtInst *> ContinuedInstructions;
 };
 
-// NonSemantic.AuxData InstructionMetadata records forward-reference their target
-// and are emitted as OpExtInstWithForwardRefsKHR, which shares the SPIRVExtInst
-// representation. The alias lets the opcode-table X-macro resolve SPIRV##x.
+// NonSemantic.AuxData InstructionMetadata records forward-reference their
+// target and are emitted as OpExtInstWithForwardRefsKHR, which shares the
+// SPIRVExtInst representation. The alias lets the opcode-table X-macro resolve
+// SPIRV##x.
 typedef SPIRVExtInst SPIRVExtInstWithForwardRefsKHR;
 
 class SPIRVCompositeConstruct : public SPIRVInstruction {
