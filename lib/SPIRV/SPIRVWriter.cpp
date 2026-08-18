@@ -1063,8 +1063,8 @@ SPIRVFunction *LLVMToSPIRVBase::transFunctionDecl(Function *F) {
 
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_maximum_registers))
     transFunctionMetadataAsExecutionMode(BF, F);
-  else
-    transFunctionMetadataAsUserSemanticDecoration(BF, F);
+
+  transFunctionMetadataAsUserSemanticDecoration(BF, F);
 
   transAuxDataInst(BF, F);
 
@@ -1207,32 +1207,32 @@ void LLVMToSPIRVBase::transFPGAFunctionMetadata(SPIRVFunction *BF,
 
 void LLVMToSPIRVBase::transFunctionMetadataAsExecutionMode(SPIRVFunction *BF,
                                                            Function *F) {
-  SmallVector<MDNode *, 1> RegisterAllocModeMDs;
-  F->getMetadata("RegisterAllocMode", RegisterAllocModeMDs);
+  SmallVector<MDNode *, 1> MaximumRegistersMDs;
+  F->getMetadata("MaximumRegisters", MaximumRegistersMDs);
 
-  for (unsigned I = 0; I < RegisterAllocModeMDs.size(); I++) {
-    auto *RegisterAllocMode = RegisterAllocModeMDs[I]->getOperand(0).get();
-    if (isa<MDString>(RegisterAllocMode)) {
-      StringRef Str = getMDOperandAsString(RegisterAllocModeMDs[I], 0);
+  for (unsigned I = 0; I < MaximumRegistersMDs.size(); I++) {
+    auto *MaximumRegisters = MaximumRegistersMDs[I]->getOperand(0).get();
+    if (isa<MDString>(MaximumRegisters)) {
+      StringRef Str = getMDOperandAsString(MaximumRegistersMDs[I], 0);
       NamedMaximumNumberOfRegisters NamedValue =
           SPIRVNamedMaximumNumberOfRegistersNameMap::rmap(Str.str());
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeNamedMaximumRegistersINTEL,
           NamedValue)));
-    } else if (isa<MDNode>(RegisterAllocMode)) {
-      auto *RegisterAllocNodeMDOp =
-          getMDOperandAsMDNode(RegisterAllocModeMDs[I], 0);
-      int Num = getMDOperandAsInt(RegisterAllocNodeMDOp, 0);
+    } else if (isa<MDNode>(MaximumRegisters)) {
+      auto *MaxRegNodeMDOp =
+          getMDOperandAsMDNode(MaximumRegistersMDs[I], 0);
+      int Num = getMDOperandAsInt(MaxRegNodeMDOp, 0);
       auto *Const =
           BM->addConstant(transType(Type::getInt32Ty(F->getContext())), Num);
       BF->addExecutionMode(BM->add(new SPIRVExecutionModeId(
           BF, ExecutionModeMaximumRegistersIdINTEL, Const->getId())));
     } else {
-      int64_t RegisterAllocVal =
-          mdconst::dyn_extract<ConstantInt>(RegisterAllocMode)->getZExtValue();
+      int64_t MaxRegVal =
+          mdconst::dyn_extract<ConstantInt>(MaximumRegisters)->getZExtValue();
       BF->addExecutionMode(BM->add(new SPIRVExecutionMode(
           OpExecutionMode, BF, ExecutionModeMaximumRegistersINTEL,
-          RegisterAllocVal)));
+          MaxRegVal)));
     }
   }
 }
@@ -1640,13 +1640,19 @@ SPIRVInstruction *LLVMToSPIRVBase::transBinaryInst(BinaryOperator *B,
 SPIRVInstruction *LLVMToSPIRVBase::transCmpInst(CmpInst *Cmp,
                                                 SPIRVBasicBlock *BB) {
   auto *Op0 = Cmp->getOperand(0);
-  SPIRVValue *TOp0 = transValue(Op0, BB);
-  SPIRVValue *TOp1 = transValue(Cmp->getOperand(1), BB);
+  auto *Op1 = Cmp->getOperand(1);
+  SPIRVValue *TOp0 = transValue(Op0, BB, true, FuncTransMode::Pointer);
+  SPIRVValue *TOp1 = transValue(Op1, BB, true, FuncTransMode::Pointer);
   if (Op0->getType()->isPointerTy()) {
     auto P = Cmp->getPredicate();
     if (BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4) &&
         (P == ICmpInst::ICMP_EQ || P == ICmpInst::ICMP_NE) &&
         Cmp->getOperand(1)->getType()->isPointerTy()) {
+      // OpPtrEqual/OpPtrNotEqual require both operands to be of the same
+      // pointer type. Bitcast the second operand to the first operand's
+      // type if they differ.
+      if (TOp1->getType() != TOp0->getType())
+        TOp1 = BM->addUnaryInst(OpBitcast, TOp0->getType(), TOp1, BB);
       Op OC = P == ICmpInst::ICMP_EQ ? OpPtrEqual : OpPtrNotEqual;
       return BM->addBinaryInst(OC, transType(Cmp->getType()), TOp0, TOp1, BB);
     }
@@ -2597,6 +2603,12 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                LoopControl, Parameters, SuccessorTrue);
       }
     }
+    // Starting with SPIR-V 1.6, the True Label and False Label of an
+    // "OpBranchConditional" must not be the same, so emit an unconditional
+    // branch - always valid, required for 1.6+
+    if (SuccessorTrue == SuccessorFalse)
+      return mapValue(V, BM->addBranchInst(SuccessorTrue, BB));
+
     return mapValue(
         V, BM->addBranchConditionalInst(transValue(Branch->getCondition(), BB),
                                         SuccessorTrue, SuccessorFalse, BB));
@@ -2651,8 +2663,16 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                                    FuncTransMode::Pointer);
       if (Val->getType() != Ty)
         Val = BM->addUnaryInst(OpBitcast, Ty, Val, BB);
-      IncomingPairs.push_back(Val);
-      IncomingPairs.push_back(transValue(Phi->getIncomingBlock(I), nullptr));
+      SPIRVValue *Block = transValue(Phi->getIncomingBlock(I), nullptr);
+      bool IsDuplicate = false;
+      for (size_t Idx = 1; Idx < IncomingPairs.size(); Idx += 2) {
+        if (IncomingPairs[Idx] == Block)
+          IsDuplicate = true;
+      }
+      if (!IsDuplicate) {
+        IncomingPairs.push_back(Val);
+        IncomingPairs.push_back(Block);
+      }
     }
     return mapValue(V, BM->addPhiInst(Ty, IncomingPairs, BB));
   }
@@ -3043,6 +3063,19 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
     case DecorationStableKernelArgumentINTEL:
     case DecorationRestrict: {
       Target->addDecorate(new SPIRVDecorate(DecoKind, Target));
+      break;
+    }
+    case DecorationUniformId: {
+      ErrLog.checkError(NumOperands == 2, SPIRVEC_InvalidLlvmModule,
+                        "UniformId requires exactly 1 extra operand");
+      auto *ScopeEO = mdconst::dyn_extract<ConstantInt>(DecoMD->getOperand(1));
+      ErrLog.checkError(ScopeEO, SPIRVEC_InvalidLlvmModule,
+                        "UniformId requires extra operand to be an integer");
+      SPIRVModule *BM = Target->getModule();
+      SPIRVValue *ScopeConst = BM->addIntegerConstant(BM->addIntegerType(32),
+                                                      ScopeEO->getZExtValue());
+      Target->addDecorate(
+          new SPIRVDecorateId(DecoKind, Target, ScopeConst->getId()));
       break;
     }
     case DecorationBufferLocationINTEL:
@@ -3440,7 +3473,8 @@ bool LLVMToSPIRVBase::transAlign(Value *V, SPIRVValue *BV) {
     return true;
   }
   if (auto *GV = dyn_cast<GlobalVariable>(V)) {
-    BM->setAlignment(BV, GV->getAlignment());
+    if (MaybeAlign Alignment = GV->getAlign())
+      BM->setAlignment(BV, Alignment->value());
     return true;
   }
   return true;
