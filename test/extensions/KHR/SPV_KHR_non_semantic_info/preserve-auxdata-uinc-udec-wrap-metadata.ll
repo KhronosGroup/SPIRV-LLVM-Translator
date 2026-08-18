@@ -57,6 +57,10 @@
 ; CHECK-SPIRV-EXT: Extension "SPV_KHR_non_semantic_info"
 ; CHECK-SPIRV-NOEXT: 119734787 67072
 
+; InstructionMetadata forward-references its target, so it is emitted as
+; OpExtInstWithForwardRefsKHR, which requires this extension in every version.
+; CHECK-SPIRV: Extension "SPV_KHR_relaxed_extended_instruction"
+
 ; CHECK-SPIRV-DAG: ExtInstImport [[#Import:]] "NonSemantic.AuxData"
 ; CHECK-SPIRV-DAG: String [[#MD_NFG:]] "amdgpu.no.fine.grained.memory"
 ; CHECK-SPIRV-DAG: String [[#MD_NRM:]] "amdgpu.no.remote.memory"
@@ -64,9 +68,9 @@
 ; CHECK-SPIRV-DAG: Decorate [[#UIncFn:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i32" Import
 ; CHECK-SPIRV-DAG: Decorate [[#UDecFn:]] LinkageAttributes "__translate_spirv_atomic_udec_wrap_p1_i32" Import
 
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes:]] [[#MD_NFG]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes]] [[#MD_NRM]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UDecRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UIncRes]] [[#MD_NRM]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#UDecRes:]] [[#MD_NFG]]
 
 ; CHECK-SPIRV: FunctionCall [[#]] [[#UIncRes]] [[#UIncFn]]
 ; CHECK-SPIRV: FunctionCall [[#]] [[#UDecRes]] [[#UDecFn]]

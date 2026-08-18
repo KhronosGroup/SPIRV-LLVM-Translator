@@ -60,6 +60,10 @@
 ; CHECK-SPIRV-EXT: Extension "SPV_KHR_non_semantic_info"
 ; CHECK-SPIRV-NOEXT: 119734787 67072
 
+; InstructionMetadata forward-references its target, so it is emitted as
+; OpExtInstWithForwardRefsKHR, which requires this extension in every version.
+; CHECK-SPIRV: Extension "SPV_KHR_relaxed_extended_instruction"
+
 ; CHECK-SPIRV: ExtInstImport [[#Import:]] "NonSemantic.AuxData"
 
 ; CHECK-SPIRV-DAG: String [[#MD_NFG:]] "amdgpu.no.fine.grained.memory"
@@ -69,12 +73,12 @@
 ; CHECK-SPIRV: TypeVoid [[#VoidT:]]
 
 ; InstructionMetadata records for the atomics.
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes:]] [[#MD_NFG]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes]] [[#MD_NRM]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes:]] [[#MD_NFG]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes]] [[#MD_NRM]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes]] [[#MD_IDN]]
-; CHECK-SPIRV-DAG: ExtInst [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#XchgRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes]] [[#MD_NRM]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes:]] [[#MD_NFG]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes]] [[#MD_NRM]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes]] [[#MD_IDN]]
+; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#XchgRes:]] [[#MD_NFG]]
 
 ; The atomic instructions themselves.
 ; CHECK-SPIRV: AtomicIAdd [[#]] [[#AddRes]]

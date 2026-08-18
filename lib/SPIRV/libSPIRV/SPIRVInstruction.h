@@ -2009,7 +2009,14 @@ public:
                SPIRVExtInstSetKind SetKind, SPIRVWord SetId, SPIRVWord InstId,
                const std::vector<SPIRVWord> &Args)
       : SPIRVFunctionCallGeneric(BM, ResId, TheType, Args), ExtSetKind(SetKind),
-        ExtSetId(SetId), ExtOp(InstId) {}
+        ExtSetId(SetId), ExtOp(InstId) {
+    // Instruction-metadata aux records forward-reference their target
+    // instruction's result <id>, so they must be emitted as
+    // OpExtInstWithForwardRefsKHR rather than OpExtInst.
+    if (SetKind == SPIRVEIS_NonSemantic_AuxData &&
+        InstId == NonSemanticAuxData::InstructionMetadata)
+      OpCode = OpExtInstWithForwardRefsKHR;
+  }
 
   SPIRVExtInst(SPIRVExtInstSetKind SetKind = SPIRVEIS_Count,
                unsigned ExtOC = SPIRVWORD_MAX)
@@ -2160,6 +2167,11 @@ protected:
   };
   std::vector<SPIRVExtInst *> ContinuedInstructions;
 };
+
+// NonSemantic.AuxData InstructionMetadata records forward-reference their target
+// and are emitted as OpExtInstWithForwardRefsKHR, which shares the SPIRVExtInst
+// representation. The alias lets the opcode-table X-macro resolve SPIRV##x.
+typedef SPIRVExtInst SPIRVExtInstWithForwardRefsKHR;
 
 class SPIRVCompositeConstruct : public SPIRVInstruction {
 public:
