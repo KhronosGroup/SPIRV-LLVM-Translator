@@ -4,31 +4,24 @@
 ; reader's OCL lowering converts them back
 ; to atomicrmw uinc_wrap/udec_wrap, and metadata is restored from AuxData.
 
-
-; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.5 + extension)
 ; RUN: llvm-spirv %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 
-; Roundtrip with auxdata (SPIR-V 1.5 + extension): metadata restored.
 ; RUN: llvm-spirv %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"
 
-; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.6, no explicit extension)
 ; RUN: llvm-spirv %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 
-; Roundtrip with auxdata (SPIR-V 1.6): metadata restored.
 ; RUN: llvm-spirv %s -o %t.spv --spirv-preserve-auxdata
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"
 
-; Negative: without --spirv-preserve-auxdata, no AuxData in SPIR-V output.
 ; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NO-AUXDATA
 
-; Without auxdata the module validates.
 ; RUN: llvm-spirv %s -o %t.noaux.spv
 ; RUN: spirv-val %t.noaux.spv
 
@@ -41,7 +34,6 @@
 
 ; CHECK-INVALID-FWD: has not been defined
 
-; Negative: --spirv-preserve-auxdata with extension explicitly disabled should error.
 ; RUN: not llvm-spirv %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 --spirv-ext=-SPV_KHR_non_semantic_info -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
 
 ; CHECK-NO-AUXDATA-NOT: NonSemantic.AuxData
@@ -52,7 +44,6 @@
 ; CHECK-EXT-DISABLED: RequiresExtension: Feature requires the following SPIR-V extension:
 ; CHECK-EXT-DISABLED-NEXT: SPV_KHR_non_semantic_info
 
-; SPIR-V version checks.
 ; CHECK-SPIRV-EXT: 119734787 65536
 ; CHECK-SPIRV-EXT: Extension "SPV_KHR_non_semantic_info"
 ; CHECK-SPIRV-NOEXT: 119734787 67072

@@ -1,32 +1,24 @@
 ; Test AMDGPU atomic metadata roundtrip via NonSemantic.AuxData InstructionMetadata.
 
-; RUN: llvm-as < %s -o %t.bc
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 
-; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.5 + extension)
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
-
-; Roundtrip with auxdata (SPIR-V 1.5 + extension): metadata restored.
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory|amdgpu.ignore.denormal.mode}}"
 
-; Forward: LLVM IR -> SPIR-V text (SPIR-V 1.6, no explicit extension)
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 
-; Roundtrip with auxdata (SPIR-V 1.6): metadata restored.
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.spv --spirv-preserve-auxdata
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory|amdgpu.ignore.denormal.mode}}"
 
-; Negative: without --spirv-preserve-auxdata, no AuxData in SPIR-V output.
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NO-AUXDATA
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-NO-AUXDATA
 
-; Default output, with the feature off, validates.
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.noaux.spv
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.noaux.spv
 ; RUN: spirv-val %t.noaux.spv
 
 ; The AuxData instructions go in the module-level section, but the Target
@@ -38,13 +30,12 @@
 ; passing is not silent: drop the "not" and the CHECK-INVALID prefix once
 ; SPIRV-Tools accepts the forward reference, or once the instructions are moved
 ; into the function body after their target.
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %t.bc -o %t.aux.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.aux.spv --spirv-preserve-auxdata
 ; RUN: not spirv-val %t.aux.spv 2>&1 | FileCheck %s --check-prefix=CHECK-INVALID
 
 ; CHECK-INVALID: has not been defined
 
-; Negative: --spirv-preserve-auxdata with extension explicitly disabled should error.
-; RUN: not llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,-SPV_KHR_non_semantic_info %t.bc -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
+; RUN: not llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,-SPV_KHR_non_semantic_info %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
 
 ; CHECK-NO-AUXDATA-NOT: NonSemantic.AuxData
 ; CHECK-NO-AUXDATA-NOT: amdgpu.no.fine.grained.memory
@@ -55,7 +46,6 @@
 ; CHECK-EXT-DISABLED: RequiresExtension: Feature requires the following SPIR-V extension:
 ; CHECK-EXT-DISABLED-NEXT: SPV_KHR_non_semantic_info
 
-; SPIR-V version checks.
 ; CHECK-SPIRV-EXT: 119734787 65536
 ; CHECK-SPIRV-EXT: Extension "SPV_KHR_non_semantic_info"
 ; CHECK-SPIRV-NOEXT: 119734787 67072
@@ -72,7 +62,6 @@
 
 ; CHECK-SPIRV: TypeVoid [[#VoidT:]]
 
-; InstructionMetadata records for the atomics.
 ; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes:]] [[#MD_NFG]]
 ; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#AddRes]] [[#MD_NRM]]
 ; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes:]] [[#MD_NFG]]
@@ -80,7 +69,6 @@
 ; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#FAddRes]] [[#MD_IDN]]
 ; CHECK-SPIRV-DAG: ExtInstWithForwardRefsKHR [[#VoidT]] [[#]] [[#Import]] NonSemanticAuxDataInstructionMetadata [[#XchgRes:]] [[#MD_NFG]]
 
-; The atomic instructions themselves.
 ; CHECK-SPIRV: AtomicIAdd [[#]] [[#AddRes]]
 ; CHECK-SPIRV: AtomicFAddEXT [[#]] [[#FAddRes]]
 ; CHECK-SPIRV: AtomicExchange [[#]] [[#XchgRes]]
