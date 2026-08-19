@@ -608,6 +608,7 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
     GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
   }
 }
+} // namespace
 
 /// Spell an integer or fixed-vector-of-integer type the way LLVM does in
 /// intrinsic names, for use in the uinc_wrap/udec_wrap helper name: i32,
@@ -631,7 +632,6 @@ static std::string getAtomicWrapTypeSuffix(Type *Ty) {
 static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
   return M->getDataLayout().getTypeStoreSizeInBits(Ty) <= 64;
 }
-} // namespace
 
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
