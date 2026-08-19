@@ -2763,6 +2763,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         Args, BC->getName(), BB);
     setCallingConv(Call);
     setAttrByCalledFunc(Call);
+    applyFPFastMathModeDecorations(BV, Call);
     return mapValue(BV, Call);
   }
 
@@ -4717,9 +4718,9 @@ void SPIRVToLLVM::transGlobalAnnotations() {
   }
 }
 
-static llvm::MDNode *
-transDecorationsToMetadataList(llvm::LLVMContext *Context,
-                               std::vector<SPIRVDecorate const *> Decorates) {
+static llvm::MDNode *transDecorationsToMetadataList(
+    llvm::LLVMContext *Context,
+    std::vector<SPIRVDecorateGeneric const *> Decorates) {
   SmallVector<Metadata *, 4> MDs;
   MDs.reserve(Decorates.size());
   for (const auto *Deco : Decorates) {
@@ -4767,6 +4768,15 @@ transDecorationsToMetadataList(llvm::LLVMContext *Context,
       OPs.push_back(StrMD);
       break;
     }
+    case DecorationUniformId: {
+      SPIRVId ScopeId = Deco->getVecLiteral()[0];
+      auto *ScopeConst =
+          static_cast<SPIRVConstant *>(Deco->getModule()->getValue(ScopeId));
+      auto *const ScopeMD = ConstantAsMetadata::get(ConstantInt::get(
+          Type::getInt32Ty(*Context), ScopeConst->getZExtIntValue()));
+      OPs.push_back(ScopeMD);
+      break;
+    }
     default: {
       for (const SPIRVWord Lit : Deco->getVecLiteral()) {
         auto *const LitMD = ConstantAsMetadata::get(
@@ -4786,7 +4796,8 @@ void SPIRVToLLVM::transDecorationsToMetadata(SPIRVValue *BV, Value *V) {
     return;
 
   auto SetDecorationsMetadata = [&](auto V) {
-    std::vector<SPIRVDecorate const *> Decorates = BV->getDecorations();
+    std::vector<SPIRVDecorateGeneric const *> Decorates =
+        BV->getAllDecorations();
     if (!Decorates.empty()) {
       MDNode *MDList = transDecorationsToMetadataList(Context, Decorates);
       V->setMetadata(SPIRV_MD_DECORATIONS, MDList);
@@ -4997,7 +5008,7 @@ void SPIRVToLLVM::transFunctionDecorationsToMetadata(SPIRVFunction *BF,
   addKernelArgumentMetadata(Context, SPIRV_MD_PARAMETER_DECORATIONS, BF, F,
                             [this](SPIRVFunctionParameter *Arg) {
                               return transDecorationsToMetadataList(
-                                  Context, Arg->getDecorations());
+                                  Context, Arg->getAllDecorations());
                             });
 }
 
@@ -5327,7 +5338,7 @@ bool SPIRVToLLVM::transOCLMetadata(SPIRVFunction *BF) {
   addKernelArgumentMetadata(Context, SPIRV_MD_PARAMETER_DECORATIONS, BF, F,
                             [this](SPIRVFunctionParameter *Arg) {
                               return transDecorationsToMetadataList(
-                                  Context, Arg->getDecorations());
+                                  Context, Arg->getAllDecorations());
                             });
   return true;
 }
@@ -6106,9 +6117,8 @@ bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
   return true;
 }
 
-bool llvm::getSpecConstInfo(std::istream &IS,
-                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+static bool getSpecConstInfoImpl(std::istream &IS, SPIRVModule *BM,
+                                 std::vector<SpecConstInfoTy> &SpecConstInfo) {
   BM->setAutoAddExtensions(false);
   SPIRVDecoder D(IS, *BM);
   SPIRVWord Magic;
@@ -6185,6 +6195,18 @@ bool llvm::getSpecConstInfo(std::istream &IS,
     }
   }
   return !IS.bad();
+}
+
+bool llvm::getSpecConstInfo(std::istream &IS,
+                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
+  return getSpecConstInfoImpl(IS, BM.get(), SpecConstInfo);
+}
+
+bool llvm::getSpecConstInfo(std::istream &IS, const SPIRV::TranslatorOpts &Opts,
+                            std::vector<SpecConstInfoTy> &SpecConstInfo) {
+  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
+  return getSpecConstInfoImpl(IS, BM.get(), SpecConstInfo);
 }
 
 // clang-format off
