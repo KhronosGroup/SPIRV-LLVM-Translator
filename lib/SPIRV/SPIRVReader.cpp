@@ -4207,6 +4207,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   // Old opcodes, for backward compatibility.
   case internal::OpClampConvertFToFINTEL:
   case internal::OpClampStochasticRoundFToFINTEL:
+  case internal::OpSubgroupBitcastShuffleINTEL:
     AddRetTypePostfix = true;
     break;
   default: {
@@ -4217,13 +4218,14 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   }
 
   bool IsRetSigned = true;
-  switch (OC) {
+  switch (static_cast<size_t>(OC)) {
   case OpConvertFToU:
   case OpSatConvertSToU:
   case OpUConvert:
   case OpUDotKHR:
   case OpUDotAccSatKHR:
   case OpReadClockKHR:
+  case internal::OpSubgroupBitcastShuffleINTEL:
     IsRetSigned = false;
     break;
   case OpImageRead:
