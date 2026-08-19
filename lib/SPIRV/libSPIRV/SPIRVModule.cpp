@@ -94,6 +94,7 @@ public:
   SPIRVModuleImpl(const SPIRV::TranslatorOpts &Opts) : SPIRVModuleImpl() {
     TranslationOpts = Opts;
     MaxVersion = Opts.getMaxVersion();
+    ErrLog.setErrorHandlingKind(Opts.getErrorHandlingKind());
   }
 
   ~SPIRVModuleImpl() override;
@@ -1007,7 +1008,14 @@ SPIRVEntry *SPIRVModuleImpl::getEntry(SPIRVId Id) const {
 
 SPIRVExtInstSetKind SPIRVModuleImpl::getBuiltinSet(SPIRVId SetId) const {
   auto Loc = IdToInstSetMap.find(SetId);
-  assert(Loc != IdToInstSetMap.end() && "Invalid builtin set id");
+  if (Loc == IdToInstSetMap.end()) {
+    const_cast<SPIRVModuleImpl *>(this)->getErrorLog().checkError(
+        false, SPIRVEC_InvalidModule,
+        "input SPIR-V module references an unknown extended instruction set "
+        "id " +
+            std::to_string(SetId));
+    return SPIRVEIS_Count;
+  }
   return Loc->second;
 }
 
@@ -2563,7 +2571,7 @@ std::istream &SPIRVModuleImpl::parseSPT(std::istream &I) {
     SPIRVDBG(spvdbgs() << "Read word: W = " << W << " V = 0\n");
     return W;
   };
-  SPIRVErrorLog ErrorLog = MI.getErrorLog();
+  SPIRVErrorLog &ErrorLog = MI.getErrorLog();
   SPIRVWord Magic = ReadSPIRVWord(I);
 
   if (!ErrorLog.checkError(!I.eof(), SPIRVEC_InvalidModule,
