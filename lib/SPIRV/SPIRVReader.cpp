@@ -1016,14 +1016,15 @@ static bool isVectorBinaryOpWithoutVectorResult(Op OC) {
          (OC >= OpIAddCarry && OC <= OpSMulExtended);
 }
 
-// Check the component size of OpTypeVectorIdEXT as value ops. All instructions,
-// which have component count check for OpTypeVector (via
-// getVectorComponentCount() in their validate() method), will run the checks
-// here for OpTypeVectorIdEXT. Using a centralized helper instead of per
-// translation site for each of these ops because they're scattered in many
-// places which is hard to locate all and will lead to many code duplication.
+// Evaluate and check component counts of OpTypeVectorIdEXT, for instructions
+// that already check it for OpTypeVector types. Not all instructions are
+// checked: for binary/compare/shift/bitwise/logical ops, we can rely on LLVM's
+// Builder.CreateBinOp/CreateICmp/CreateFCmp that assert operand types for
+// vector length. We don't want the Reader to do too much validation as there's
+// a concern for code size and compile time, so omitting some instructions as
+// tradeoff.
 void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
-  if (!BV->isInst())
+  if (!BV->isInst() || !BM->hasCapability(CapabilityLongVectorEXT))
     return;
 
   auto CheckEqualVectorComponentCounts =
@@ -1054,21 +1055,6 @@ void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
                                     std::string(OpCodeNameMap::map(OC)) +
                                         ": result and input must have equal "
                                         "component count for vector types.\n");
-    return;
-  }
-
-  if ((isBinaryOpCode(OC) && !isVectorBinaryOpWithoutVectorResult(OC)) ||
-      isCmpOpCode(OC) || isShiftOpCode(OC) || isBitwiseOpCode(OC) ||
-      (isLogicalOpCode(OC) && OC != OpLogicalNot)) {
-    auto *BI = static_cast<SPIRVInstruction *>(BV);
-    std::vector<SPIRVValue *> Operands = BI->getOperands();
-    SPIRVType *RetTy = BI->getType();
-    SPIRVType *InTy0 = Operands[0]->getType();
-    SPIRVType *InTy1 = Operands[1]->getType();
-    CheckEqualVectorComponentCounts(
-        {RetTy, InTy0, InTy1}, std::string(OpCodeNameMap::map(OC)) +
-                                   ": result and inputs must all have equal "
-                                   "component count for vector types.\n");
     return;
   }
 
