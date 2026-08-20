@@ -1,5 +1,4 @@
-; RUN: llvm-as < %s -o %t.bc
-; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
+; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
 ; CHECK: InvalidLlvmModule: Invalid LLVM module: Module-level inline assembly is not supported in SPIR-V
 
