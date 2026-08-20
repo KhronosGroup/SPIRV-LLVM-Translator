@@ -354,6 +354,14 @@ const static char TranslateOCLMemScope[] = "__translate_ocl_memory_scope";
 const static char TranslateSPIRVMemOrder[] = "__translate_spirv_memory_order";
 const static char TranslateSPIRVMemScope[] = "__translate_spirv_memory_scope";
 const static char TranslateSPIRVMemFence[] = "__translate_spirv_memory_fence";
+// atomicrmw uinc_wrap/udec_wrap have no SPIR-V opcode, so they are carried
+// across the SPIR-V boundary as calls to these imported helpers. They
+// deliberately avoid the kSPIRVName::Prefix namespace, which is reserved for
+// SPIR-V friendly IR names that map to an actual opcode.
+const static char TranslateSPIRVAtomicUIncWrap[] =
+    "__translate_spirv_atomic_uinc_wrap";
+const static char TranslateSPIRVAtomicUDecWrap[] =
+    "__translate_spirv_atomic_udec_wrap";
 const static char EntrypointPrefix[] = "__spirv_entry_";
 const static char ConvertHandleToImageINTEL[] = "ConvertHandleToImageINTEL";
 const static char ConvertHandleToSamplerINTEL[] = "ConvertHandleToSamplerINTEL";
