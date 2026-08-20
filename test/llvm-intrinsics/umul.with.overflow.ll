@@ -10,9 +10,9 @@
 ; RUN:   "--implicit-check-not=old_llvm.umul.with.overflow.{{.*}}"
 ; FIXME: LLVM_SPIRV_REVERSE_FAIL for llc compilation flow
 
-; CHECK-SPIRV: Name [[NAME_UMUL_FUNC_8:[0-9]+]] "spirv.llvm_umul_with_overflow_i8"
-; CHECK-SPIRV: Name [[NAME_UMUL_FUNC_32:[0-9]+]] "spirv.llvm_umul_with_overflow_i32"
-; CHECK-SPIRV: Name [[NAME_UMUL_FUNC_VEC_I64:[0-9]+]] "spirv.llvm_umul_with_overflow_v2i64"
+; CHECK-LLVM: %[[STRUCT8:.*]] = type { i8, i8 }
+; CHECK-LLVM: %[[STRUCT32:.*]] = type { i32, i32 }
+; CHECK-LLVM: %[[STRUCTV2I64:.*]] = type { <2 x i64>, <2 x i64> }
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
@@ -20,8 +20,10 @@ target triple = "spir"
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @_Z4foo8hhPh(i8 zeroext %a, i8 zeroext %b, ptr captures(none) %c) local_unnamed_addr #0 {
 entry:
-  ; CHECK-LLVM: call { i8, i1 } @llvm.umul.with.overflow.i8
-  ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[NAME_UMUL_FUNC_8]]
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedhh(ptr sret(%[[STRUCT8]]) %{{.*}}, i8 %a, i8 %b)
+  ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
+  ; CHECK-SPIRV: CompositeExtract [[#]] [[#HI:]] [[#]] 1
+  ; CHECK-SPIRV: INotEqual [[#]] [[#]] [[#HI]] [[#]]
   %umul = tail call { i8, i1 } @llvm.umul.with.overflow.i8(i8 %a, i8 %b)
   %cmp = extractvalue { i8, i1 } %umul, 1
   %umul.value = extractvalue { i8, i1 } %umul, 0
@@ -32,21 +34,11 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: Function [[#]] [[NAME_UMUL_FUNC_8]]
-; CHECK-SPIRV: FunctionParameter [[#]] [[VAR_A:[0-9]+]]
-; CHECK-SPIRV: FunctionParameter [[#]] [[VAR_B:[0-9]+]]
-; CHECK-SPIRV: IMul [[#]] [[MUL_RES:[0-9]+]] [[VAR_A]] [[VAR_B]]
-; CHECK-SPIRV: UDiv [[#]] [[DIV_RES:[0-9]+]] [[MUL_RES]] [[VAR_A]]
-; CHECK-SPIRV: INotEqual [[#]] [[CMP_RES:[0-9]+]] [[VAR_A]] [[DIV_RES]]
-; CHECK-SPIRV: CompositeInsert [[#]] [[INSERT_RES:[0-9]+]] [[MUL_RES]]
-; CHECK-SPIRV: CompositeInsert [[#]] [[INSERT_RES_1:[0-9]+]] [[CMP_RES]] [[INSERT_RES]]
-; CHECK-SPIRV: ReturnValue [[INSERT_RES_1]]
-
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @_Z5foo32jjPj(i32 %a, i32 %b, ptr captures(none) %c) local_unnamed_addr #0 {
 entry:
-  ; CHECK-LLVM: call { i32, i1 } @llvm.umul.with.overflow.i32
-  ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[NAME_UMUL_FUNC_32]]
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedjj(ptr sret(%[[STRUCT32]]) %{{.*}}, i32 %b, i32 %a)
+  ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
   %umul = tail call { i32, i1 } @llvm.umul.with.overflow.i32(i32 %b, i32 %a)
   %umul.val = extractvalue { i32, i1 } %umul, 0
   %umul.ov = extractvalue { i32, i1 } %umul, 1
@@ -57,8 +49,8 @@ entry:
 
 ; Function Attrs: nofree nounwind writeonly
 define dso_local spir_func void @umulo_v2i64(<2 x i64> %a, <2 x i64> %b, ptr %p) nounwind {
-  ; CHECK-LLVM: call { <2 x i64>, <2 x i1> } @llvm.umul.with.overflow.v2i64
-  ; CHECK-SPIRV: FunctionCall [[#]] [[#]] [[NAME_UMUL_FUNC_VEC_I64]]
+  ; CHECK-LLVM: call spir_func void @_Z20__spirv_UMulExtendedDv2_mS_(ptr sret(%[[STRUCTV2I64]]) %{{.*}}, <2 x i64> %a, <2 x i64> %b)
+  ; CHECK-SPIRV: UMulExtended [[#]] [[#]] [[#]] [[#]]
   %umul = call {<2 x i64>, <2 x i1>} @llvm.umul.with.overflow.v2i64(<2 x i64> %a, <2 x i64> %b)
   %umul.val = extractvalue {<2 x i64>, <2 x i1>} %umul, 0
   %umul.ov = extractvalue {<2 x i64>, <2 x i1>} %umul, 1
