@@ -1,0 +1,41 @@
+; Checks the reader rejects OpBitwiseFunctionINTEL whose OpTypeVectorIdEXT operand
+; and result counts differ only after a spec-constant override. spirv-val accepts
+; the module at defaults (distinct type ids, both count 5); the mismatch is one
+; only the reader sees. The OK run proves the pointer-identity operand check is
+; no longer used for id types (distinct equal-count ids are accepted).
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK
+; RUN: not llvm-spirv -r -spec-const "43:i32:8" %t.spv -o %t.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+
+; CHECK: call spir_func <5 x i32> @{{.*}}BitwiseFunctionINTEL{{.*}}(<5 x i32>
+; CHECK-ERROR: BitwiseFunctionINTEL: result and inputs must all have equal component count for vector types.
+
+               OpCapability Kernel
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability LongVectorEXT
+               OpCapability TernaryBitwiseFunctionINTEL
+               OpExtension "SPV_EXT_long_vector"
+               OpExtension "SPV_INTEL_ternary_bitwise_function"
+               OpMemoryModel Physical64 OpenCL
+               OpName %f "f"
+               OpDecorate %f LinkageAttributes "f" Export
+               OpDecorate %sc_a SpecId 42
+               OpDecorate %sc_b SpecId 43
+       %uint = OpTypeInt 32 0
+       %sc_a = OpSpecConstant %uint 5
+       %sc_b = OpSpecConstant %uint 5
+        %v5a = OpTypeVectorIdEXT %uint %sc_a
+        %v5b = OpTypeVectorIdEXT %uint %sc_b
+        %lut = OpConstant %uint 0
+       %fnty = OpTypeFunction %v5a %v5a %v5b
+          %f = OpFunction %v5a None %fnty
+         %pa = OpFunctionParameter %v5a
+         %pb = OpFunctionParameter %v5b
+          %e = OpLabel
+          %r = OpBitwiseFunctionINTEL %v5a %pa %pb %pa %lut
+               OpReturnValue %r
+               OpFunctionEnd
