@@ -10,7 +10,7 @@
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers -spirv-emit-function-ptr-addr-space -o %t.spt
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV-AS
+; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-AS
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers -spirv-emit-function-ptr-addr-space -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
@@ -18,7 +18,7 @@
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers -spirv-emit-function-ptr-addr-space -o %t.spt
-; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV-AS
+; RUN: FileCheck < %t.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-AS
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers -spirv-emit-function-ptr-addr-space -o %t.spv
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.spv -o %t.r.bc
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
@@ -40,13 +40,28 @@
 ; RUN: llvm-dis %t.r.bc -o %t.r.ll
 ; RUN: FileCheck < %t.r.ll %s --check-prefix=CHECK-LLVM-AS
 
+; RUN: llvm-as %s -o %t.bc
+; RUN: llvm-spirv %t.bc -spirv-text --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space -o %t.u.spt
+; RUN: FileCheck < %t.u.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space -o %t.u.spv
+; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.spv -o %t.ru.bc
+; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
+; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-AS
+
+; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
+; CHECK-SPIRV: Capability FunctionPointersINTEL
+; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
+; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
 ; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrCodeTy:]] 5605 [[#]]
 ; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrPrivTy:]] 7 [[#PtrCodeTy]]
-; CHECK-SPIRV-AS-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrCodeTy:]] 5605
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrPrivTy:]] 7
+; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
 ; CHECK-SPIRV-AS: Variable [[#PtrPrivTy]] [[#Var:]] 7
-; CHECK-SPIRV-AS: Store [[#Var]] [[#FunPtr]]
-; CHECK-SPIRV-AS: Load [[#PtrCodeTy]] [[#Load:]] [[#Var]]
-; CHECK-SPIRV-AS: FunctionPointerCallINTEL [[#]] [[#]] [[#Load]] [[#]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrPrivTy]] [[#Var:]] 7 [[#PtrCodeTy]]
+; CHECK-SPIRV: Store [[#Var]] [[#FunPtr]]
+; CHECK-SPIRV: Load [[#PtrCodeTy]] [[#Load:]] [[#Var]]
+; CHECK-SPIRV: FunctionPointerCallINTEL [[#]] [[#]] [[#Load]] [[#]]
 
 ; CHECK-SPIRV-NO-AS-NOT: TypePointer [[#]] 5605 [[#]]
 
