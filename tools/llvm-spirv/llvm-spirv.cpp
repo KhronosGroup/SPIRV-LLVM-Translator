@@ -935,9 +935,14 @@ int main(int Ac, char **Av) {
 
   if (SPIRVPreserveAuxData) {
     Opts.setPreserveAuxData(SPIRVPreserveAuxData);
-    if (!IsReverse)
+    if (!IsReverse) {
       Opts.setAllowedToUseExtension(
           SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+      // Instruction-metadata aux records forward-reference their target, so
+      // they are emitted as OpExtInstWithForwardRefsKHR.
+      Opts.setAllowedToUseExtension(
+          SPIRV::ExtensionID::SPV_KHR_relaxed_extended_instruction);
+    }
   }
 
   if (SPIRVAllowUnknownIntrinsics.getNumOccurrences() != 0) {

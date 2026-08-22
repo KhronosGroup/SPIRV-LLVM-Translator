@@ -872,6 +872,7 @@ void SPIRVModuleImpl::layoutEntry(SPIRVEntry *E) {
     if (!BV->getParent())
       addTo(VariableVec, E);
   } break;
+  case OpExtInstWithForwardRefsKHR:
   case OpExtInst: {
     SPIRVExtInst *EI = static_cast<SPIRVExtInst *>(E);
     if ((EI->getExtSetKind() == SPIRVEIS_Debug ||
@@ -1703,6 +1704,11 @@ SPIRVEntry *SPIRVModuleImpl::addDebugInfo(SPIRVWord InstId, SPIRVType *TheType,
 
 SPIRVEntry *SPIRVModuleImpl::addAuxData(SPIRVWord InstId, SPIRVType *TheType,
                                         const std::vector<SPIRVWord> &Args) {
+  // Instruction-metadata aux records forward-reference their target
+  // instruction's result <id> and are emitted as OpExtInstWithForwardRefsKHR,
+  // which requires SPV_KHR_relaxed_extended_instruction.
+  if (InstId == NonSemanticAuxData::InstructionMetadata)
+    addExtension(ExtensionID::SPV_KHR_relaxed_extended_instruction);
   return addEntry(new SPIRVExtInst(
       this, getId(), TheType, SPIRVEIS_NonSemantic_AuxData,
       getExtInstSetId(SPIRVEIS_NonSemantic_AuxData), InstId, Args));

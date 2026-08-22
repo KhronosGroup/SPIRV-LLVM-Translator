@@ -608,6 +608,29 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
     GEP->setMetadata(SPIRV_MD_DECORATIONS, MDList);
   }
 }
+
+/// Spell an integer or fixed-vector-of-integer type the way LLVM does in
+/// intrinsic names, for use in the uinc_wrap/udec_wrap helper name: i32,
+/// v2i32.
+static std::string getAtomicWrapTypeSuffix(Type *Ty) {
+  std::string Suffix;
+  if (auto *VecTy = dyn_cast<FixedVectorType>(Ty))
+    Suffix = "v" + std::to_string(VecTy->getNumElements());
+  return Suffix + "i" +
+         std::to_string(Ty->getScalarType()->getIntegerBitWidth());
+}
+
+/// AMDGPU supports no atomic wider than 64 bits
+/// (AMDGPUTargetLowering sets setMaxAtomicSizeInBitsSupported(64)), and neither
+/// does the SPIR-V backend, whose AtomicExpandPass run rejects anything wider
+/// before the helper lowering gets a chance to see it. Round-tripping an
+/// over-limit atomicrmw through the helper would therefore hand the consumer
+/// something its own backend cannot lower, so apply the same limit here: an
+/// over-limit operand is left alone and reaches the writer, which reports it as
+/// unsupported, exactly as before the helper existed.
+static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
+  return M->getDataLayout().getTypeStoreSizeInBits(Ty) <= 64;
+}
 } // namespace
 
 /// Remove entities not representable by SPIR-V
@@ -792,6 +815,73 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           auto *V2 = Builder.CreateInsertValue(V1, Cmp, 1, Cmpxchg->getName());
           Cmpxchg->replaceAllUsesWith(V2);
           ToErase.push_back(Cmpxchg);
+        }
+        if (auto *ARMW = dyn_cast<AtomicRMWInst>(&II)) {
+          AtomicRMWInst::BinOp AOp = ARMW->getOperation();
+          // Carrying these across the SPIR-V boundary as a call to an imported
+          // helper is an AMD extension: a consumer has to recognize the helper
+          // by name to make sense of the module. Restrict it to AMD targets;
+          // for anyone else the atomicrmw reaches the writer and is reported as
+          // unsupported, as it was before the helper existed.
+          if (M->getTargetTriple().getVendor() == Triple::AMD &&
+              (AOp == AtomicRMWInst::UIncWrap ||
+               AOp == AtomicRMWInst::UDecWrap) &&
+              isAtomicWrapSizeSupported(M, ARMW->getValOperand()->getType())) {
+            // There is no SPIR-V opcode for uinc_wrap/udec_wrap. Transform:
+            // %1 = atomicrmw uinc_wrap ptr addrspace(1) %ptr, i32 %val seq_cst
+            // To a call to an imported helper, which the reverse translation
+            // turns back into the original atomicrmw:
+            // %1 = call spir_func i32
+            //   @__translate_spirv_atomic_uinc_wrap_p1_i32(
+            //     ptr addrspace(1) %ptr, i32 %scope, i32 %memsem, i32 %val)
+            //
+            // The name carries the address space and the value type because a
+            // module may need several mutually incompatible signatures, while
+            // SPIR-V resolves an imported function by its linkage name alone.
+            // The value may also be a fixed vector of integers, spelled the
+            // LLVM way: _p1_v2i32.
+            Value *Ptr = ARMW->getPointerOperand();
+            Value *Val = ARMW->getValOperand();
+            Type *MemType = Val->getType();
+
+            spv::Scope S =
+                toSPIRVScope(ARMW->getContext(), ARMW->getSyncScopeID());
+            Value *MemoryScope = getInt32(M, S);
+            auto Order =
+                static_cast<OCLMemOrderKind>(llvm::toCABI(ARMW->getOrdering()));
+            unsigned SCMask =
+                getAtomicPointerMemorySemanticsMask(Ptr, Ptr->getType());
+            Value *Sem = getInt32(M, OCLMemOrderMap::map(Order) | SCMask);
+
+            std::string FuncName =
+                AOp == AtomicRMWInst::UIncWrap
+                    ? kSPIRVName::TranslateSPIRVAtomicUIncWrap
+                    : kSPIRVName::TranslateSPIRVAtomicUDecWrap;
+            FuncName +=
+                "_p" +
+                std::to_string(Ptr->getType()->getPointerAddressSpace()) + "_" +
+                getAtomicWrapTypeSuffix(MemType);
+
+            Type *Int32Ty = Type::getInt32Ty(M->getContext());
+            FunctionType *FT = FunctionType::get(
+                MemType, {Ptr->getType(), Int32Ty, Int32Ty, MemType}, false);
+            FunctionCallee FC = M->getOrInsertFunction(FuncName, FT);
+            if (auto *Callee = dyn_cast<Function>(FC.getCallee()))
+              Callee->setCallingConv(CallingConv::SPIR_FUNC);
+
+            IRBuilder<> Builder(ARMW);
+            CallInst *Call =
+                Builder.CreateCall(FC, {Ptr, MemoryScope, Sem, Val});
+            Call->setCallingConv(CallingConv::SPIR_FUNC);
+            // Carry the instruction metadata (in particular the amdgpu.* atomic
+            // hints) onto the call, so that it can still be emitted as AuxData
+            // and restored on the atomicrmw rebuilt by the reverse translation.
+            Call->copyMetadata(*ARMW);
+            Call->takeName(ARMW);
+
+            ARMW->replaceAllUsesWith(Call);
+            ToErase.push_back(ARMW);
+          }
         }
       }
     }

@@ -5670,6 +5670,24 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_NonSemantic_AuxData);
   if (!BC->getModule()->preserveAuxData())
     return;
+  auto Args = BC->getArguments();
+
+  // InstructionMetadata targets an instruction, not a global object, so it
+  // is handled separately before the GlobalObject-based switch below.
+  if (BC->getExtOp() == NonSemanticAuxData::InstructionMetadata) {
+    auto *Target = BC->getModule()->getValue(Args[0]);
+    Value *V = getTranslatedValue(Target);
+    if (auto *Inst = dyn_cast_or_null<Instruction>(V)) {
+      const std::string &MDName =
+          BC->getModule()->get<SPIRVString>(Args[1])->getStr();
+      Inst->setMetadata(MDName, MDNode::get(Inst->getContext(), {}));
+    } else {
+      LLVM_DEBUG(dbgs() << "InstructionMetadata target is not an Instruction; "
+                           "ignoring.\n");
+    }
+    return;
+  }
+
   switch (BC->getExtOp()) {
   case NonSemanticAuxData::FunctionAttribute:
   case NonSemanticAuxData::GlobalVariableAttribute:
@@ -5680,7 +5698,6 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   default:
     return;
   }
-  auto Args = BC->getArguments();
   // Arg 0 is common to all instructions in this set: it identifies the
   // global object the auxiliary data is attached to.
   auto *Arg0 = BC->getModule()->getValue(Args[0]);
