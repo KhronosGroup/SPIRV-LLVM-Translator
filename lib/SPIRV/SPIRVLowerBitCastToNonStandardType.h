@@ -35,7 +35,7 @@
 #ifndef SPIRV_SPIRVLOWERBITCASTTONONSTANDARDTYPE_H
 #define SPIRV_SPIRVLOWERBITCASTTONONSTANDARDTYPE_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"

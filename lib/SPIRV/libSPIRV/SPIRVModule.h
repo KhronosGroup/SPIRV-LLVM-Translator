@@ -40,7 +40,7 @@
 #ifndef SPIRV_LIBSPIRV_SPIRVMODULE_H
 #define SPIRV_LIBSPIRV_SPIRVMODULE_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 #include "SPIRVEntry.h"
 
 #include "llvm/IR/Metadata.h"

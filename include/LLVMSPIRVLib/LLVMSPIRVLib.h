@@ -41,7 +41,7 @@
 #ifndef SPIRV_H
 #define SPIRV_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 
 #include <cstdint>
 #include <iostream>

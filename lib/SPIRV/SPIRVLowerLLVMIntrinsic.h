@@ -36,7 +36,7 @@
 #ifndef SPIRV_SPIRVLOWERLLVMINTRINSIC_H
 #define SPIRV_SPIRVLOWERLLVMINTRINSIC_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/PassManager.h"
