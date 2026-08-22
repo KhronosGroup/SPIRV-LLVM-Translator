@@ -49,9 +49,6 @@ entry:
 ; CHECK-SPV-IR-DAG: ![[VolatileDecoId]] = !{i32 21}
 ; CHECK-SPV-IR-DAG: ![[KernelArgTypeQual]] = !{!"volatile restrict"}
 
-; The SPIR-V backend stopped deriving a Volatile decoration from
-; !kernel_arg_type_qual in llvm/llvm-project#215790, so its output carries only
-; the NoAlias decoration spelled out in !spirv.ParameterDecorations.
 ; CHECK-BACKEND: define spir_kernel void @k(ptr addrspace(1) noalias %a)
 ; CHECK-BACKEND-SAME: !kernel_arg_type_qual ![[BEKernelArgTypeQual:[0-9]+]]
 ; CHECK-BACKEND-SAME: !spirv.ParameterDecorations ![[BEParamDecoListId:[0-9]+]]
