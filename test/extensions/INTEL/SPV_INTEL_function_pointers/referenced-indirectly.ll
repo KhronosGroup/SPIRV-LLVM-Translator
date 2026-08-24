@@ -33,10 +33,12 @@
 ; CHECK-SPIRV: Name [[#FOO_ID:]] "foo"
 ; CHECK-SPIRV: Decorate [[#FOO_ID]] ReferencedIndirectlyINTEL
 ; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PtrTy:]]
-; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PtrTy]] [[#FnPtr:]]
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PtrTy]] [[#FnPtr:]] [[#FOO_ID]]
 ; CHECK-SPIRV: Function {{[0-9]+}} [[#FOO_ID]]
-; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrTy]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrTy]] [[#ALLOCA:]] [[#]] [[#PtrTy]]
+; CHECK-SPIRV-UNTYPED: Store [[#ALLOCA]] [[#FnPtr]]
+; CHECK-SPIRV-UNTYPED: Load [[#PtrTy]] [[#LOADED:]] [[#ALLOCA]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#]] [[#LOADED]]
 ;
 ; CHECK-LLVM: define spir_func i32 @foo(i32 %arg) #[[ATTRS:[0-9]+]]
 ; CHECK-LLVM: attributes #[[ATTRS]] = {{.*}} "referenced-indirectly"

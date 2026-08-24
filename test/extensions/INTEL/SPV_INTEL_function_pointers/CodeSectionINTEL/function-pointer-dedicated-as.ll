@@ -56,7 +56,8 @@
 ; CHECK-SPIRV-AS-DAG: TypePointer [[#PtrPrivTy:]] 7 [[#PtrCodeTy]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrCodeTy:]] 5605
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PtrPrivTy:]] 7
-; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]]
+; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#PtrCodeTy]] [[#FunPtr:]] [[#Foo:]]
+; CHECK-SPIRV: Function [[#]] [[#Foo]]
 ; CHECK-SPIRV-AS: Variable [[#PtrPrivTy]] [[#Var:]] 7
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrPrivTy]] [[#Var:]] 7 [[#PtrCodeTy]]
 ; CHECK-SPIRV: Store [[#Var]] [[#FunPtr]]

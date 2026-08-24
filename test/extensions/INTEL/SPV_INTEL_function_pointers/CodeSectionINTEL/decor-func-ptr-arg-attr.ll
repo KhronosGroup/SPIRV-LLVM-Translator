@@ -29,9 +29,11 @@
 ; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
-; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]]
-; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#]] [[#]] [[#MULTI_PTR]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]] [[#INC:]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#INC]]
+; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#VAR:]] [[#]] [[#MULTI_PTR]]
+; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SEL:]] [[#]] [[#FP]] [[#]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]] [[#SEL]] [[#VAR]]
 
 ; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 ; CHECK-LLVM-UNTYPED: select i1 %_arg_, ptr addrspacecast (ptr addrspace(9) @inc_function to ptr), ptr null

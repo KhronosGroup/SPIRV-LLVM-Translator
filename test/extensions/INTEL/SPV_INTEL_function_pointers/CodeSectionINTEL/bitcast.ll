@@ -31,7 +31,7 @@
 ; CHECK-SPIRV-DAG: TypeFunction [[#DEST_TY:]] [[#I32]] [[#I32]]
 ; CHECK-SPIRV-TYPED-DAG: TypePointer [[#DEST_TY_PTR:]] [[#]] [[#DEST_TY]]
 ; CHECK-SPIRV-TYPED-DAG: TypePointer [[#FOO_TY_PTR:]] [[#]] [[#FOO_TY]]
-; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] 7
 ; CHECK-SPIRV-TYPED: ConstantFunctionPointerINTEL [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FOO:]]
 ; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PTR]] [[#FOO_PTR:]] [[#FOO:]]
 ; CHECK-SPIRV: Function [[#]] [[#FOO]] [[#]] [[#FOO_TY]]

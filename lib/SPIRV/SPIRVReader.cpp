@@ -1543,20 +1543,29 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
         static_cast<SPIRVFuncParamAttrKind>(SpirvAttr));
     Attribute LlvmAttr;
     if (Attribute::isTypeAttrKind(LlvmAttrKind)) {
-      // byval/sret need the argument's pointee type. Take it from the argument
-      // value so it works for both typed and untyped pointers.
+      // Type attributes (byval/sret/...) need the argument's pointee type. Take
+      // it from the argument value so it works for both typed and untyped
+      // pointers.
       SPIRVValue *Arg = ArgValues[ArgNo];
       SPIRVType *ArgTy = Arg->getType();
       Type *PointeeTy = nullptr;
       if (ArgTy->isTypeUntypedPointerKHR()) {
-        if (auto *TPT = dyn_cast_or_null<TypedPointerType>(
-                getTypedPtrFromUntypedOperand(Arg, Type::getVoidTy(*Context))))
-          PointeeTy = TPT->getElementType();
-      }
-      // Fall back to the pointer's own pointee type for typed pointers, or
-      // when the pointee couldn't be inferred for an untyped pointer.
-      if (!PointeeTy)
+        // Try to infer the pointee type. Using void as RetTy since there's no
+        // reasonable heuristics to guess its type at all for arguments of any
+        // arbitrary functions. Error out if the pointee type can't be inferred,
+        // because there's no meaningful fallback in this case - these type
+        // attribtues needs the exact pointee type.
+        Type *TPT =
+            getTypedPtrFromUntypedOperand(Arg, Type::getVoidTy(*Context));
+        if (!BM->getErrorLog().checkError(
+                TPT != nullptr, SPIRVEC_InvalidModule,
+                "Cannot infer the pointee type of an untyped pointer "
+                "argument with type attribute of an indirect call"))
+          return;
+        PointeeTy = cast<TypedPointerType>(TPT)->getElementType();
+      } else {
         PointeeTy = transType(ArgTy->getPointerElementType());
+      }
       LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind, PointeeTy);
     } else {
       LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind);

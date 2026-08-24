@@ -23,10 +23,13 @@
 ; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
 ; CHECK-SPIRV: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#PtrTy:]]
-; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PtrTy]] [[#FnPtr:]]
+; CHECK-SPIRV-UNTYPED: ConstantFunctionPointerINTEL [[#PtrTy]] [[#FnPtr:]] [[#Inc:]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#Inc]]
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrTy]] [[#Var:]]
+; CHECK-SPIRV-UNTYPED: Select [[#PtrTy]] [[#Sel:]] [[#]] [[#FnPtr]] [[#]]
 ; CHECK-SPIRV: FunctionPointerCallINTEL
 ; CHECK-SPIRV-SAME: [[#TargetId]]
+; CHECK-SPIRV-UNTYPED-SAME: [[#Sel]] [[#Var]]
 
 ; CHECK-LLVM: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 

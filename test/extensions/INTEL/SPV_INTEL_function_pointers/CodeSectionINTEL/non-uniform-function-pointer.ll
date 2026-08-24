@@ -46,11 +46,13 @@
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
 ; CHECK-SPIRV-TYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FOO_PTR:]] [[#FOO:]]
 ; CHECK-SPIRV-TYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAR_PTR:]] [[#BAR:]]
-; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FOO_PTR:]]
-; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAR_PTR:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FOO_PTR:]] [[#FOO:]]
+; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#BAR_PTR:]] [[#BAR:]]
 ;
 ; CHECK-SPIRV-TYPED: Function [[#]] [[#FOO]] [[#]] [[#FOO_TY]]
 ; CHECK-SPIRV-TYPED: Function [[#]] [[#BAR]] [[#]] [[#FOO_TY]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#FOO]] [[#]] [[#FOO_TY]]
+; CHECK-SPIRV-UNTYPED: Function [[#]] [[#BAR]] [[#]] [[#FOO_TY]]
 ;
 ; CHECK-SPIRV: Function [[#]] [[#KERNEL_ID]]
 ; CHECK-SPIRV-TYPED: Variable [[#ALLOCA_TY]] [[#ALLOCA:]]

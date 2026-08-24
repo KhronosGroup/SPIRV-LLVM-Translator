@@ -38,7 +38,7 @@
 ; CHECK-SPIRV-TYPED-DAG: TypePointer [[#PTR:]] [[#]] [[#FOO_TY]]
 ; CHECK-SPIRV-TYPED-DAG: TypePointer [[#ALLOCA_TY:]] [[#]] [[#PTR]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
-; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]]
+; CHECK-SPIRV-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]] [[#FOO]]
 ; CHECK-SPIRV: Function [[#]] [[#FOO]]
 ; CHECK-SPIRV-TYPED: Variable [[#ALLOCA_TY]] [[#ALLOCA:]]
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#ALLOCA:]] [[#]] [[#PTR]]
