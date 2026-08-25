@@ -79,6 +79,12 @@ public:
   void lowerUMulWithOverflow(llvm::IntrinsicInst *UMulIntrinsic);
   void buildUMulWithOverflowFunc(llvm::Function *UMulFunc);
 
+  /// SPIR-V has no counterpart for @llvm.ptrmask.*, so it is replaced by the
+  /// expansion the LLVM Language Reference gives for it, which stays inside
+  /// the address space of the pointer operand.
+  void lowerPtrMask(llvm::IntrinsicInst *PtrMaskIntrinsic,
+                    std::vector<llvm::Instruction *> &ToErase);
+
   // For some cases Clang emits VectorExtractDynamic as:
   // void @_Z28__spirv_VectorExtractDynamic(<Ty>* sret(<Ty>), jointMatrix, idx);
   // Instead of:
