@@ -11,6 +11,15 @@
 ; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM
+
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC < %t.llc.rev.ll %}
+
+; TODO: reader currently crashes with output of llc with untyped pointers for this test
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -filetype=obj %s -o %t.llc.u.spv %}
+; RUNx: %if spirv-backend %{ llvm-spirv -r %t.llc.u.spv -o %t.llc.u.rev.bc %}
 ;
 ; Generated from:
 ; int foo(int v) {
@@ -64,6 +73,10 @@
 ; CHECK-LLVM: store ptr @bar, ptr %fp
 ; CHECK-LLVM: %[[FP:.*]] = load ptr, ptr %fp
 ; CHECK-LLVM: call spir_func i32 %[[FP]](i32 %{{.*}})
+
+; CHECK-LLVM-LLC: %fp = alloca ptr
+; CHECK-LLVM-LLC: %[[LD:.*]] = load ptr, ptr %{{.*}}
+; CHECK-LLVM-LLC: call spir_func i32 %[[LD]](i32 %{{.*}})
 
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

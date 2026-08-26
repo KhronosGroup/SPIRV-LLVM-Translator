@@ -12,6 +12,15 @@
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
 
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC < %t.llc.rev.ll %}
+
+; TODO: reader currently crashes with output of llc with untyped pointers for this test
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -filetype=obj %s -o %t.llc.u.spv %}
+; RUNx: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.u.spv -o %t.llc.u.rev.bc %}
+
 ; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
@@ -51,6 +60,10 @@
 ; CHECK-LLVM-UNTYPED: store ptr %{{.*}}, ptr %fptr.alloca
 ; CHECK-LLVM-UNTYPED: %fptr = load ptr, ptr %fptr.alloca
 ; CHECK-LLVM-UNTYPED: call spir_func i32 %fptr(
+
+; CHECK-LLVM-LLC: %[[SEL:.*]] = select i1 %{{.*}}, ptr addrspace(9) @_Z3barii, ptr addrspace(9) @_Z3bazii
+; CHECK-LLVM-LLC: %[[LD:.*]] = load ptr addrspace(9), ptr %{{.*}}
+; CHECK-LLVM-LLC: call spir_func addrspace(9) i32 %[[LD]](i32 10, i32 10)
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"

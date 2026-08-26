@@ -48,6 +48,16 @@
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-AS
 
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC,CHECK-LLVM-LLC-TYPED < %t.llc.rev.ll %}
+
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -filetype=obj %s -o %t.llc.u.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.u.spv -o %t.llc.u.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.u.rev.bc -o %t.llc.u.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC,CHECK-LLVM-LLC-UNTYPED < %t.llc.u.rev.ll %}
+
 ; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
@@ -69,6 +79,16 @@
 ; CHECK-LLVM-AS:  define spir_func i32 @foo(i32 %{{.*}}) addrspace(9)
 
 ; CHECK-LLVM-NO-AS-NOT: addrspace(9)
+
+; CHECK-LLVM-LLC: %fp = alloca ptr addrspace(9)
+; CHECK-LLVM-LLC-TYPED: %[[B1:.*]] = bitcast ptr %fp to ptr
+; CHECK-LLVM-LLC-TYPED: store ptr addrspace(9) @foo, ptr %[[B1]]
+; CHECK-LLVM-LLC-TYPED: %[[B2:.*]] = bitcast ptr %fp to ptr
+; CHECK-LLVM-LLC-TYPED: %[[LD:.*]] = load ptr addrspace(9), ptr %[[B2]]
+; CHECK-LLVM-LLC-TYPED: call spir_func addrspace(9) i32 %[[LD]](i32 %{{.*}})
+; CHECK-LLVM-LLC-UNTYPED: store ptr addrspace(9) @foo, ptr %fp
+; CHECK-LLVM-LLC-UNTYPED: %[[LD:.*]] = load ptr addrspace(9), ptr %fp
+; CHECK-LLVM-LLC-UNTYPED: call spir_func addrspace(9) i32 %[[LD]](i32 %{{.*}})
 
 ; ModuleID = 'function-pointer-dedicated-as.bc'
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-G1"

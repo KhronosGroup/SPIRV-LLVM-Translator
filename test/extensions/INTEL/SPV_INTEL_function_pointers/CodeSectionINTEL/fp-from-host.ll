@@ -12,6 +12,16 @@
 ; RUN: llvm-spirv -r %t.u.spv -spirv-emit-function-ptr-addr-space -o %t.ru.bc
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM-UNTYPED
+
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.spv -o %t.llc.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC < %t.llc.rev.ll %}
+
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -filetype=obj %s -o %t.llc.u.spv %}
+; RUN: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.u.spv -o %t.llc.u.rev.bc %}
+; RUN: %if spirv-backend %{ llvm-dis %t.llc.u.rev.bc -o %t.llc.u.rev.ll %}
+; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-LLVM-LLC < %t.llc.u.rev.ll %}
 ;
 ; Generated from:
 ; typedef int (*fp_t)(int);
@@ -44,9 +54,14 @@
 ; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#INT32]] [[#]] [[#FP]]
 ;
 ; CHECK-LLVM: define spir_kernel void @test(ptr addrspace(1)
-; CHECK-LLVM: %{{.*}} = call spir_func addrspace(9) i32 %{{.*}}(i32
+; CHECK-LLVM: %[[FP:.*]] = inttoptr i32 %{{.*}} to ptr addrspace(9)
+; CHECK-LLVM: %call = call spir_func addrspace(9) i32 %[[FP]](i32 %{{.*}})
 ; CHECK-LLVM-UNTYPED: define spir_kernel void @test(ptr addrspace(1)
-; CHECK-LLVM-UNTYPED: %{{.*}} = call spir_func i32 %{{.*}}(i32
+; CHECK-LLVM-UNTYPED: %[[FP:.*]] = inttoptr i32 %{{.*}} to ptr
+; CHECK-LLVM-UNTYPED: %call = call spir_func i32 %[[FP]](i32 %{{.*}})
+
+; CHECK-LLVM-LLC: %[[FP:.*]] = inttoptr i32 %{{.*}} to ptr addrspace(9)
+; CHECK-LLVM-LLC: call spir_func addrspace(9) i32 %[[FP]](i32 %{{.*}})
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"

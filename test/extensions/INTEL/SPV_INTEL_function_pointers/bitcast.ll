@@ -20,6 +20,13 @@
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
 ; RUN: FileCheck < %t.ru.ll %s --check-prefix=CHECK-LLVM
 
+; TODO: reader currently crashes with output of llc for this test with function pointers (for both typed and untyped pointers)
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
+; RUNx: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
+
+; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -filetype=obj %s -o %t.llc.u.spv %}
+; RUNx: %if spirv-backend %{ llvm-spirv -r %t.llc.u.spv -o %t.llc.u.rev.bc %}
+
 ; CHECK-SPIRV-UNTYPED: Capability UntypedPointersKHR
 ; CHECK-SPIRV: Capability FunctionPointersINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
