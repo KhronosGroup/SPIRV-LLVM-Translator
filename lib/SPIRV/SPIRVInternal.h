@@ -1009,6 +1009,9 @@ bool lowerBuiltinCallsToVariables(Module *M);
 //  depending on user specification
 bool lowerBuiltins(SPIRVModule *BM, Module *M);
 
+// Restore atomicrmw uinc_wrap/udec_wrap from their imported-helper calls.
+void lowerAtomicWrapCalls(Module *M);
+
 /// \brief Post-process OpenCL or SPIRV builtin function returning struct type.
 ///
 /// Some builtin functions are translated to SPIR-V instructions with
