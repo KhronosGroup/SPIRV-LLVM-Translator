@@ -49,7 +49,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/ErrorHandling.h" // report_fatal_error()
+#include "llvm/Support/ErrorHandling.h"               // report_fatal_error()
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
 
 #include <set>
@@ -852,7 +852,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             auto *Callee = dyn_cast<Function>(FC.getCallee());
             if (!Callee)
               report_fatal_error(Twine("Reserved atomic wrap helper name '") +
-                                 FuncName + "' is already used by another symbol");
+                                 FuncName +
+                                 "' is already used by another symbol");
             Callee->setCallingConv(CallingConv::SPIR_FUNC);
 
             IRBuilder<> Builder(ARMW);

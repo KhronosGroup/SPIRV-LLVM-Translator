@@ -4241,7 +4241,8 @@ bool SPIRVToLLVM::translate() {
   transGeneratorMD();
   if (!lowerBuiltins(BM, M))
     return false;
-  // Unconditional; emptied helper decls are cleaned up by eraseUselessFunctions.
+  // Unconditional; emptied helper decls are cleaned up by
+  // eraseUselessFunctions.
   lowerAtomicWrapCalls(M);
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
