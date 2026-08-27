@@ -1,11 +1,7 @@
-; atomicrmw uinc_wrap/udec_wrap also accept a fixed vector of integers. Verify
-; that a vector operand is carried across as a call to the imported helper and
-; reconstituted by the reverse translation, exactly like a scalar one, under a
-; symbol of its own: the _p<addrspace>_<type> suffix spells the value type the
-; LLVM way, so <2 x i32> becomes v2i32. The element width is what varies
-; between these cases, so all three must resolve to distinct declarations. The
-; scalar cases are covered by atomicrmw_uinc_udec_wrap.ll, the over-limit ones
-; by atomicrmw_uinc_udec_wrap_oversized.ll.
+; uinc_wrap/udec_wrap also accept a fixed vector of integers. Verify a vector
+; operand round-trips through its own helper, like a scalar: the _p<addrspace>_
+; <type> suffix spells the value type the LLVM way (<2 x i32> -> v2i32), so the
+; three differing element widths resolve to distinct declarations.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -o %t.spv

@@ -2823,8 +2823,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (AtomicRMWInst *ARMW = dyn_cast<AtomicRMWInst>(V)) {
     AtomicRMWInst::BinOp Op = ARMW->getOperation();
     // uinc_wrap/udec_wrap have no opcode. On AMD targets SPIRVRegularizeLLVM
-    // rewrites them into a call to an imported helper and they never reach
-    // here; on any other target they do, and are diagnosed as unsupported.
+    // rewrites them into a helper call so they never reach here; other targets
+    // reach here and are diagnosed as unsupported.
     bool SupportedAtomicInst =
         AtomicRMWInst::isFPOperation(Op)
             ? (Op == AtomicRMWInst::FAdd || Op == AtomicRMWInst::FSub ||

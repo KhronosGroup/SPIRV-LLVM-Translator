@@ -1,11 +1,9 @@
-; Translating uinc_wrap/udec_wrap into a call to an imported helper is an AMD
-; extension, because a consumer has to recognize the helper by name to make
-; sense of the module. On any other vendor the atomicrmw must instead reach the
-; writer and be reported as unsupported, exactly as it was before the helper
-; existed. The positive case is covered by atomicrmw_uinc_udec_wrap.ll.
+; Translating uinc_wrap/udec_wrap into an imported helper call is an AMD internal
+; spirv builtin. On any other vendor the atomicrmw must reach the writer and be
+; reported as unsupported (positive case: atomicrmw_uinc_udec_wrap.ll).
 ;
-; The writer stops at the first unsupported instruction, so each operation and
-; triple combination is translated from its own copy of the module.
+; The writer stops at the first unsupported instruction, so each operation/triple
+; combination is translated from its own copy of the module.
 
 ; RUN: sed -e 's/OP/uinc_wrap/' -e 's/TRIPLE/spirv64-unknown-unknown/' %s > %t.ll
 ; RUN: not llvm-spirv %t.ll -o %t.spv 2>&1 | FileCheck %s --check-prefix=CHECK-UINC

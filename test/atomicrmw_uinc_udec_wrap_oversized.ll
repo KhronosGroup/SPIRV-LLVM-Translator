@@ -1,11 +1,7 @@
-; AMDGPU supports no atomic wider than 64 bits, and neither does the LLVM
-; SPIR-V backend, whose AtomicExpandPass run rejects an over-limit atomicrmw
-; outright. Carrying uinc_wrap/udec_wrap across as an imported helper hides the
-; operand width from SPIR-V, so nothing downstream would catch such an atomic;
-; apply the same limit here instead. An over-limit operand must reach the
-; writer and be reported as unsupported, exactly as it was before the helper
-; existed. The supported vector widths are covered by
-; atomicrmw_uinc_udec_wrap_vector.ll.
+; Neither AMDGPU nor the LLVM SPIR-V backend supports atomics wider than 64 bits.
+; The helper hides the operand width from SPIR-V, so an over-limit atomicrmw is
+; left alone to reach the writer and be reported as unsupported rather than
+; round-tripped (supported widths: atomicrmw_uinc_udec_wrap_vector.ll).
 ;
 ; The writer stops at the first unsupported instruction, so each operation is
 ; translated from its own copy of the module.

@@ -1,15 +1,9 @@
-; SPIR-V has no core atomic opcode for LLVM's uinc_wrap/udec_wrap, so they are
-; translated to a call to an imported __translate_spirv_atomic_uinc_wrap /
-; __translate_spirv_atomic_udec_wrap function, and the reverse translation maps
-; that call back to the original atomicrmw.
-;
-; The helper name carries a _p<addrspace>_i<width> suffix, because a module may
-; need several mutually incompatible signatures while SPIR-V resolves an
-; imported function by its linkage name alone.
-;
-; The helper is an AMD extension, so this requires an AMD target triple; other
-; vendors keep reporting the atomicrmw as unsupported, which is covered by
-; atomicrmw_uinc_udec_wrap_non_amd.ll.
+; uinc_wrap/udec_wrap have no SPIR-V opcode; on an AMD triple they are carried
+; across as a call to an imported __translate_spirv_atomic_u{inc,dec}_wrap
+; helper and restored to the original atomicrmw on reverse translation. The name
+; carries a _p<addrspace>_i<width> suffix since SPIR-V resolves an import by
+; linkage name alone. This is an AMD internal spirv builtin; other vendors
+; report the atomicrmw as unsupported (atomicrmw_uinc_udec_wrap_non_amd.ll).
 
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: llvm-spirv -to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
@@ -17,32 +11,30 @@
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: spirv-val %t.spv
 
-; None of the helpers is defined in the module; all of them are imported. Each
-; distinct (address space, value type) combination gets its own declaration,
-; and every call site of a given combination shares that one declaration.
-; CHECK-SPIRV-DAG: Decorate [[UIncFn:[0-9]+]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i32" Import
-; CHECK-SPIRV-DAG: Decorate [[UDecFn:[0-9]+]] LinkageAttributes "__translate_spirv_atomic_udec_wrap_p1_i32" Import
-; CHECK-SPIRV-DAG: Decorate [[UIncFnLocal:[0-9]+]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p3_i32" Import
-; CHECK-SPIRV-DAG: Decorate [[UIncFn64:[0-9]+]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i64" Import
+; All helpers are imported; each distinct (address space, value type) gets its
+; own declaration.
+; CHECK-SPIRV-DAG: Decorate [[#UIncFn:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i32" Import
+; CHECK-SPIRV-DAG: Decorate [[#UDecFn:]] LinkageAttributes "__translate_spirv_atomic_udec_wrap_p1_i32" Import
+; CHECK-SPIRV-DAG: Decorate [[#UIncFnLocal:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p3_i32" Import
+; CHECK-SPIRV-DAG: Decorate [[#UIncFn64:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i64" Import
 
-; CHECK-SPIRV: TypeInt [[Int:[0-9]+]] 32 0
-; CHECK-SPIRV-DAG: TypeInt [[Long:[0-9]+]] 64 0
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_CrossDevice:[0-9]+]] 0{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_Device:[0-9]+]] 1{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_Workgroup:[0-9]+]] 2{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_Subgroup:[0-9]+]] 3{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Scope_Invocation:[0-9]+]] 4{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_Relaxed:[0-9]+]] 512{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_Acquire:[0-9]+]] 514{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_Release:[0-9]+]] 516{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_AcquireRelease:[0-9]+]] 520{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_SequentiallyConsistent:[0-9]+]] 528{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Int]] [[Value:[0-9]+]] 42{{ *$}}
-; The storage class contributes to the memory semantics, so an atomic on a
-; Workgroup pointer carries WorkgroupMemory (256) where a CrossWorkgroup one
-; carries CrossWorkgroupMemory (512).
-; CHECK-SPIRV-DAG: Constant [[Int]] [[MemSem_Relaxed_Local:[0-9]+]] 256{{ *$}}
-; CHECK-SPIRV-DAG: Constant [[Long]] [[Value64:[0-9]+]] 42 0{{ *$}}
+; CHECK-SPIRV: TypeInt [[#Int:]] 32 0
+; CHECK-SPIRV-DAG: TypeInt [[#Long:]] 64 0
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Scope_CrossDevice:]] 0{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Scope_Device:]] 1{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Scope_Workgroup:]] 2{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Scope_Subgroup:]] 3{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Scope_Invocation:]] 4{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_Relaxed:]] 512{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_Acquire:]] 514{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_Release:]] 516{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_AcquireRelease:]] 520{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_SequentiallyConsistent:]] 528{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#Value:]] 42{{ *$}}
+; The storage class contributes to the memory semantics: a Workgroup pointer
+; carries WorkgroupMemory (256), a CrossWorkgroup one CrossWorkgroupMemory (512).
+; CHECK-SPIRV-DAG: Constant [[#Int]] [[#MemSem_Relaxed_Local:]] 256{{ *$}}
+; CHECK-SPIRV-DAG: Constant [[#Long]] [[#Value64:]] 42 0{{ *$}}
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spirv64-amd-amdhsa"
@@ -53,7 +45,7 @@ target triple = "spirv64-amd-amdhsa"
 
 ; Memory orderings, on the default (system) sync scope.
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_Relaxed]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 monotonic
 define spir_func void @test_uinc_wrap_monotonic() {
 entry:
@@ -61,7 +53,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_Acquire]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Acquire]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 acquire
 define spir_func void @test_uinc_wrap_acquire() {
 entry:
@@ -69,7 +61,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_Release]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Release]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 release
 define spir_func void @test_uinc_wrap_release() {
 entry:
@@ -77,7 +69,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_AcquireRelease]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_AcquireRelease]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 acq_rel
 define spir_func void @test_uinc_wrap_acq_rel() {
 entry:
@@ -85,7 +77,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UDecFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_SequentiallyConsistent]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 seq_cst
 define spir_func void @test_udec_wrap_seq_cst() {
 entry:
@@ -96,7 +88,7 @@ entry:
 ; Sync scopes. The reverse translation picks the generic LLVM scope names for a
 ; non-AMDGCN target triple.
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UDecFn]] [[#]] [[Scope_Device]] [[MemSem_SequentiallyConsistent]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_Device]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 syncscope("device") seq_cst
 define spir_func void @test_udec_wrap_device_scope() {
 entry:
@@ -104,7 +96,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UDecFn]] [[#]] [[Scope_Workgroup]] [[MemSem_SequentiallyConsistent]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_Workgroup]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 syncscope("workgroup") seq_cst
 define spir_func void @test_udec_wrap_workgroup_scope() {
 entry:
@@ -112,7 +104,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UDecFn]] [[#]] [[Scope_Subgroup]] [[MemSem_SequentiallyConsistent]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_Subgroup]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 syncscope("subgroup") seq_cst
 define spir_func void @test_udec_wrap_subgroup_scope() {
 entry:
@@ -120,7 +112,7 @@ entry:
   ret void
 }
 
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UDecFn]] [[#]] [[Scope_Invocation]] [[MemSem_SequentiallyConsistent]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_Invocation]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 syncscope("singlethread") seq_cst
 define spir_func void @test_udec_wrap_singlethread_scope() {
 entry:
@@ -128,11 +120,8 @@ entry:
   ret void
 }
 
-; Two atomics of the same value type in different address spaces need two
-; incompatible signatures, so they must resolve to two distinct declarations.
-
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_Relaxed]] [[Value]]
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFnLocal]] [[#]] [[Scope_CrossDevice]] [[MemSem_Relaxed_Local]] [[Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed]] [[#Value]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFnLocal]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed_Local]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 monotonic
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(3) @lui, i32 42 monotonic
 define spir_func void @test_uinc_wrap_mixed_addrspace() {
@@ -142,11 +131,8 @@ entry:
   ret void
 }
 
-; Likewise for two atomics in the same address space with different value
-; widths: the i64 one must not reuse the i32 declaration.
-
-; CHECK-SPIRV: FunctionCall [[Int]] [[#]] [[UIncFn]] [[#]] [[Scope_CrossDevice]] [[MemSem_Relaxed]] [[Value]]
-; CHECK-SPIRV: FunctionCall [[Long]] [[#]] [[UIncFn64]] [[#]] [[Scope_CrossDevice]] [[MemSem_Relaxed]] [[Value64]]
+; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed]] [[#Value]]
+; CHECK-SPIRV: FunctionCall [[#Long]] [[#]] [[#UIncFn64]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed]] [[#Value64]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 monotonic
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ul, i64 42 monotonic
 define spir_func void @test_uinc_wrap_mixed_width() {

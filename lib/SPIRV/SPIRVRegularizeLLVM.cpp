@@ -49,6 +49,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/ErrorHandling.h" // report_fatal_error()
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
 
 #include <set>
@@ -610,9 +611,8 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
 }
 } // namespace
 
-/// Spell an integer or fixed-vector-of-integer type the way LLVM does in
-/// intrinsic names, for use in the uinc_wrap/udec_wrap helper name: i32,
-/// v2i32.
+/// Spell an integer or vector-of-integer type the LLVM way for the helper name
+/// suffix: i32, v2i32.
 static std::string getAtomicWrapTypeSuffix(Type *Ty) {
   std::string Suffix;
   if (auto *VecTy = dyn_cast<FixedVectorType>(Ty))
@@ -621,14 +621,9 @@ static std::string getAtomicWrapTypeSuffix(Type *Ty) {
          std::to_string(Ty->getScalarType()->getIntegerBitWidth());
 }
 
-/// AMDGPU supports no atomic wider than 64 bits
-/// (AMDGPUTargetLowering sets setMaxAtomicSizeInBitsSupported(64)), and neither
-/// does the SPIR-V backend, whose AtomicExpandPass run rejects anything wider
-/// before the helper lowering gets a chance to see it. Round-tripping an
-/// over-limit atomicrmw through the helper would therefore hand the consumer
-/// something its own backend cannot lower, so apply the same limit here: an
-/// over-limit operand is left alone and reaches the writer, which reports it as
-/// unsupported, exactly as before the helper existed.
+/// Neither AMDGPU nor the SPIR-V backend supports atomics wider than 64 bits,
+/// so an over-limit operand is left alone to reach the writer and be reported
+/// as unsupported rather than round-tripped through a helper.
 static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
   return M->getDataLayout().getTypeStoreSizeInBits(Ty) <= 64;
 }
@@ -817,29 +812,17 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           ToErase.push_back(Cmpxchg);
         }
         if (auto *ARMW = dyn_cast<AtomicRMWInst>(&II)) {
-          AtomicRMWInst::BinOp AOp = ARMW->getOperation();
-          // Carrying these across the SPIR-V boundary as a call to an imported
-          // helper is an AMD extension: a consumer has to recognize the helper
-          // by name to make sense of the module. Restrict it to AMD targets;
-          // for anyone else the atomicrmw reaches the writer and is reported as
-          // unsupported, as it was before the helper existed.
+          // For an AMD triple, uinc_wrap/udec_wrap become a call to an imported
+          // __translate_spirv_atomic_u{inc,dec}_wrap helper, restored to the
+          // original atomicrmw on reverse translation. Other vendors let it
+          // reach the writer and be reported as unsupported.
           if (M->getTargetTriple().getVendor() == Triple::AMD &&
-              (AOp == AtomicRMWInst::UIncWrap ||
-               AOp == AtomicRMWInst::UDecWrap) &&
+              (ARMW->getOperation() == AtomicRMWInst::UIncWrap ||
+               ARMW->getOperation() == AtomicRMWInst::UDecWrap) &&
               isAtomicWrapSizeSupported(M, ARMW->getValOperand()->getType())) {
-            // There is no SPIR-V opcode for uinc_wrap/udec_wrap. Transform:
-            // %1 = atomicrmw uinc_wrap ptr addrspace(1) %ptr, i32 %val seq_cst
-            // To a call to an imported helper, which the reverse translation
-            // turns back into the original atomicrmw:
-            // %1 = call spir_func i32
-            //   @__translate_spirv_atomic_uinc_wrap_p1_i32(
-            //     ptr addrspace(1) %ptr, i32 %scope, i32 %memsem, i32 %val)
-            //
-            // The name carries the address space and the value type because a
-            // module may need several mutually incompatible signatures, while
-            // SPIR-V resolves an imported function by its linkage name alone.
-            // The value may also be a fixed vector of integers, spelled the
-            // LLVM way: _p1_v2i32.
+            AtomicRMWInst::BinOp AOp = ARMW->getOperation();
+            // The name carries a _p<addrspace>_<type> suffix (e.g. _p1_i32,
+            // _p1_v2i32) since SPIR-V resolves an import by linkage name alone.
             Value *Ptr = ARMW->getPointerOperand();
             Value *Val = ARMW->getValOperand();
             Type *MemType = Val->getType();
@@ -866,14 +849,20 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             FunctionType *FT = FunctionType::get(
                 MemType, {Ptr->getType(), Int32Ty, Int32Ty, MemType}, false);
             FunctionCallee FC = M->getOrInsertFunction(FuncName, FT);
-            if (auto *Callee = dyn_cast<Function>(FC.getCallee()))
-              Callee->setCallingConv(CallingConv::SPIR_FUNC);
+            // The name is reserved, so it must resolve to our own function; a
+            // clash with any other symbol means we cannot lower correctly.
+            auto *Callee = dyn_cast<Function>(FC.getCallee());
+            if (!Callee)
+              report_fatal_error(Twine("Reserved atomic wrap helper name '") +
+                                 FuncName + "' is already used by another symbol");
+            Callee->setCallingConv(CallingConv::SPIR_FUNC);
 
             IRBuilder<> Builder(ARMW);
             CallInst *Call =
                 Builder.CreateCall(FC, {Ptr, MemoryScope, Sem, Val});
             Call->setCallingConv(CallingConv::SPIR_FUNC);
             Call->takeName(ARMW);
+            Call->copyMetadata(*ARMW);
 
             ARMW->replaceAllUsesWith(Call);
             ToErase.push_back(ARMW);
