@@ -813,9 +813,7 @@ bool SPIRVRegularizeLLVMBase::regularize() {
         }
         if (auto *ARMW = dyn_cast<AtomicRMWInst>(&II)) {
           // For an AMD triple, uinc_wrap/udec_wrap become a call to an imported
-          // __translate_spirv_atomic_u{inc,dec}_wrap helper, restored to the
-          // original atomicrmw on reverse translation. Other vendors let it
-          // reach the writer and be reported as unsupported.
+          // __translate_spirv_atomic_u{inc,dec}_wrap helper.
           if (M->getTargetTriple().getVendor() == Triple::AMD &&
               (ARMW->getOperation() == AtomicRMWInst::UIncWrap ||
                ARMW->getOperation() == AtomicRMWInst::UDecWrap) &&

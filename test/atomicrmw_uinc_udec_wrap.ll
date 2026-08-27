@@ -11,8 +11,6 @@
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: spirv-val %t.spv
 
-; All helpers are imported; each distinct (address space, value type) gets its
-; own declaration.
 ; CHECK-SPIRV-DAG: Decorate [[#UIncFn:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p1_i32" Import
 ; CHECK-SPIRV-DAG: Decorate [[#UDecFn:]] LinkageAttributes "__translate_spirv_atomic_udec_wrap_p1_i32" Import
 ; CHECK-SPIRV-DAG: Decorate [[#UIncFnLocal:]] LinkageAttributes "__translate_spirv_atomic_uinc_wrap_p3_i32" Import
@@ -42,8 +40,6 @@ target triple = "spirv64-amd-amdhsa"
 @ui = common dso_local addrspace(1) global i32 0, align 4
 @lui = common dso_local addrspace(3) global i32 0, align 4
 @ul = common dso_local addrspace(1) global i64 0, align 8
-
-; Memory orderings, on the default (system) sync scope.
 
 ; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UIncFn]] [[#]] [[#Scope_CrossDevice]] [[#MemSem_Relaxed]] [[#Value]]
 ; CHECK-LLVM: atomicrmw uinc_wrap ptr addrspace(1) @ui, i32 42 monotonic
@@ -85,8 +81,8 @@ entry:
   ret void
 }
 
-; Sync scopes. The reverse translation picks the generic LLVM scope names for a
-; non-AMDGCN target triple.
+; The reverse translation picks the generic LLVM scope names for a non-AMDGCN
+; target triple.
 
 ; CHECK-SPIRV: FunctionCall [[#Int]] [[#]] [[#UDecFn]] [[#]] [[#Scope_Device]] [[#MemSem_SequentiallyConsistent]] [[#Value]]
 ; CHECK-LLVM: atomicrmw udec_wrap ptr addrspace(1) @ui, i32 42 syncscope("device") seq_cst
