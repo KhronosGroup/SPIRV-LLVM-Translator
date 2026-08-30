@@ -40,7 +40,7 @@
 #ifndef SPIRVBUILTINHELPER_H
 #define SPIRVBUILTINHELPER_H
 
-#include "LLVMSPIRVLib.h"
+#include "LLVMSPIRVLib/LLVMSPIRVLib.h"
 #include "libSPIRV/SPIRVOpCode.h"
 #include "libSPIRV/SPIRVType.h"
 #include "llvm/ADT/SmallVector.h"

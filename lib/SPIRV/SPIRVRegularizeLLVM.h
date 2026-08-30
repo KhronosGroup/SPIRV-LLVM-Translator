@@ -35,7 +35,7 @@
 #ifndef SPIRV_SPIRVREGULARIZELLVM_H
 #define SPIRV_SPIRVREGULARIZELLVM_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 #include "SPIRVInternal.h"
 
 #include "llvm/IR/Instructions.h"

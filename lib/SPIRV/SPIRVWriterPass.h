@@ -15,7 +15,7 @@
 #ifndef SPIRV_SPIRVWRITERPASS_H
 #define SPIRV_SPIRVWRITERPASS_H
 
-#include "LLVMSPIRVOpts.h"
+#include "LLVMSPIRVLib/LLVMSPIRVOpts.h"
 #include "llvm/ADT/StringRef.h"
 
 namespace llvm {
