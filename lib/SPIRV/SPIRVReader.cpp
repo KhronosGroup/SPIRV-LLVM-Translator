@@ -390,8 +390,11 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     // The component size might be a specialization constant, that needs to be
     // specialized and evaluated before the FixedVectorType can be constructed
     auto *VT = static_cast<const SPIRVTypeVectorIdEXT *>(T);
-    auto *CountValue = cast<ConstantInt>(
+    auto *CountValue = dyn_cast<ConstantInt>(
         transValue(VT->getComponentCount(), nullptr, nullptr));
+    BM->getErrorLog().checkError(CountValue, SPIRVEC_InvalidInstruction,
+                                 "TypeVectorIdEXT: component count must "
+                                 "evaluate to a constant integer\n");
     BM->getErrorLog().checkError(
         !CountValue->isZero(), SPIRVEC_InvalidInstruction,
         "TypeVectorIdEXT: component count must be greater than zero\n");
@@ -1016,13 +1019,9 @@ static bool isVectorBinaryOpWithoutVectorResult(Op OC) {
          (OC >= OpIAddCarry && OC <= OpSMulExtended);
 }
 
-// Evaluate and check component counts of OpTypeVectorIdEXT, for instructions
-// that already check it for OpTypeVector types. Not all instructions are
-// checked: for binary/compare/shift/bitwise/logical ops, we can rely on LLVM's
-// Builder.CreateBinOp/CreateICmp/CreateFCmp that assert operand types for
-// vector length. We don't want the Reader to do too much validation as there's
-// a concern for code size and compile time, so omitting some instructions as
-// tradeoff.
+// Checks OpTypeVectorIdEXT component counts for instructions that mirror
+// OpTypeVector's validation. Binary/compare/shift/bitwise/logical ops are
+// skipped since LLVM's Builder already asserts on mismatched vector lengths.
 void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
   if (!BV->isInst() || !BM->hasCapability(CapabilityLongVectorEXT))
     return;
@@ -1045,9 +1044,7 @@ void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
 
   Op OC = BV->getOpCode();
 
-  if (isGenericNegateOpCode(OC) || OC == OpLogicalNot ||
-      OC == OpConvertFToBF16INTEL || OC == OpConvertBF16ToFINTEL ||
-      OC == OpRoundFToTF32INTEL) {
+  if (isGenericNegateOpCode(OC) || OC == OpLogicalNot) {
     auto *BI = static_cast<SPIRVInstruction *>(BV);
     SPIRVType *RetTy = BI->getType();
     SPIRVType *InTy = BI->getOperands()[0]->getType();
@@ -1085,51 +1082,6 @@ void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
         ResCount == NumSelected, SPIRVEC_InvalidInstruction,
         "VectorShuffle: result component count must match the number of "
         "components selected\n");
-    return;
-  }
-
-  if (OC == OpBitwiseFunctionINTEL) {
-    auto *BFI = static_cast<SPIRVTernaryBitwiseFunctionINTELInst *>(BV);
-    std::vector<SPIRVValue *> Operands = BFI->getOperands();
-    SPIRVType *RetTy = BFI->getType();
-    SPIRVType *InTy0 = Operands[0]->getType();
-    SPIRVType *InTy1 = Operands[1]->getType();
-    SPIRVType *InTy2 = Operands[2]->getType();
-    CheckEqualVectorComponentCounts(
-        {RetTy, InTy0, InTy1, InTy2},
-        "BitwiseFunctionINTEL: result and inputs must all have equal component "
-        "count for vector types.\n");
-    return;
-  }
-
-  if (OC == internal::OpMaskedGatherINTEL) {
-    // Checking all vector operands (mirroring
-    // SPIRVMaskedGatherINTELInst::validate): Result, PtrVector(0), Mask(2),
-    // FillEmpty(3).
-    auto *MG = static_cast<SPIRVMaskedGatherINTELInst *>(BV);
-    SPIRVType *RetTy = MG->getType();
-    SPIRVType *PtrVecTy = MG->getOperand(0)->getType();
-    SPIRVType *MaskTy = MG->getOperand(2)->getType();
-    SPIRVType *FillEmptyTy = MG->getOperand(3)->getType();
-    CheckEqualVectorComponentCounts(
-        {RetTy, PtrVecTy, MaskTy, FillEmptyTy},
-        "MaskedGatherINTEL: result component count must match the number of "
-        "components selected\n");
-    return;
-  }
-
-  if (OC == internal::OpMaskedScatterINTEL) {
-    // Checking all vector operands (mirroring
-    // SPIRVMaskedScatterINTELInst::validate): InputVector(0), PtrVector(1),
-    // Mask(3)
-    auto *MS = static_cast<SPIRVMaskedScatterINTELInst *>(BV);
-    SPIRVType *InputVecTy = MS->getOperand(0)->getType();
-    SPIRVType *PtrVecTy = MS->getOperand(1)->getType();
-    SPIRVType *MaskTy = MS->getOperand(3)->getType();
-    CheckEqualVectorComponentCounts(
-        {InputVecTy, PtrVecTy, MaskTy},
-        "MaskedScatterINTEL: InputVector, PtrVector and Mask vectors must have "
-        "the same size\n");
     return;
   }
 }

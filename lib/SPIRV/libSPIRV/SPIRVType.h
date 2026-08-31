@@ -583,8 +583,8 @@ public:
   }
 
   std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
-    std::vector<SPIRVEntry *> Operands(2, CompType);
-    Operands[1] = (SPIRVEntry *)getComponentCount();
+    std::vector<SPIRVEntry *> Operands{CompType,
+                                       (SPIRVEntry *)getComponentCount()};
     return Operands;
   }
 
