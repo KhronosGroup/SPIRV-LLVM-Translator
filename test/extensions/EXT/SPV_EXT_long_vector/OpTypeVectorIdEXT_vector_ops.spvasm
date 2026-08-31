@@ -1,5 +1,7 @@
 ; Checks reverse-translation of value-level ops on an OpTypeVectorIdEXT value:
 ; OpVectorExtractDynamic, OpVectorInsertDynamic, OpVectorShuffle, OpAccessChain.
+; OpVectorShuffle additionally mixes a plain OpTypeVector operand with an
+; OpTypeVectorIdEXT operand (both lower to the same LLVM vector type).
 
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
@@ -26,11 +28,12 @@
    %count_sc = OpSpecConstant %uint 5
     %v5float = OpTypeVectorIdEXT %float %uint_5
  %v5float_sc = OpTypeVectorIdEXT %float %count_sc
+  %pv5float = OpTypeVector %float 5
  %ptr_fn_v5f = OpTypePointer Function %v5float
  %ptr_fn_flt = OpTypePointer Function %float
    %fnty_ved = OpTypeFunction %float %v5float_sc %uint
    %fnty_vid = OpTypeFunction %v5float %v5float %float %uint
-    %fnty_vs = OpTypeFunction %v5float %v5float %v5float
+    %fnty_vs = OpTypeFunction %v5float %pv5float %v5float
     %fnty_ac = OpTypeFunction %float %uint
 
 ; CHECK: define spir_func float @test_vec_extract_dynamic(<5 x float> %[[#V:]], i32 %[[#I:]])
@@ -57,7 +60,7 @@
 ; CHECK: define spir_func <5 x float> @test_vec_shuffle(<5 x float> %[[#A:]], <5 x float> %[[#B:]])
 ; CHECK: shufflevector <5 x float> %[[#A]], <5 x float> %[[#B]]
       %fn_vs = OpFunction %v5float None %fnty_vs
-       %vs_a = OpFunctionParameter %v5float
+       %vs_a = OpFunctionParameter %pv5float
        %vs_b = OpFunctionParameter %v5float
    %entry_vs = OpLabel
         %vsr = OpVectorShuffle %v5float %vs_a %vs_b 0 1 2 5 6

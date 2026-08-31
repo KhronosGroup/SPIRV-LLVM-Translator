@@ -4020,6 +4020,7 @@ class SPIRVMaskedGatherINTELInst
     SPIRVType *ResTy = this->getType();
     SPVErrLog.checkError(ResTy->isTypeVector(), SPIRVEC_InvalidInstruction,
                          InstName + "\nResult must be a vector type\n");
+    SPIRVWord ResCompCount = ResTy->getVectorComponentCount();
     SPIRVType *ResCompTy = ResTy->getVectorComponentType();
 
     SPIRVValue *PtrVec =
@@ -4028,6 +4029,7 @@ class SPIRVMaskedGatherINTELInst
     SPVErrLog.checkError(
         PtrVecTy->isTypeVectorPointer(), SPIRVEC_InvalidInstruction,
         InstName + "\nPtrVector must be a vector of pointers type\n");
+    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
     SPIRVType *PtrVecCompTy = PtrVecTy->getVectorComponentType();
     SPIRVType *PtrElemTy = PtrVecCompTy->getPointerElementType();
 
@@ -4050,6 +4052,7 @@ class SPIRVMaskedGatherINTELInst
     SPIRVType *MaskCompTy = MaskTy->getVectorComponentType();
     SPVErrLog.checkError(MaskCompTy->isTypeBool(), SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a boolean vector type\n");
+    SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
 
     SPIRVValue *FillEmpty =
         const_cast<SPIRVMaskedGatherINTELInst *>(this)->getOperand(3);
@@ -4057,12 +4060,9 @@ class SPIRVMaskedGatherINTELInst
     SPVErrLog.checkError(FillEmptyTy->isTypeVector(),
                          SPIRVEC_InvalidInstruction,
                          InstName + "\nFillEmpty must be a vector type\n");
+    SPIRVWord FillEmptyCompCount = FillEmptyTy->getVectorComponentCount();
     SPIRVType *FillEmptyCompTy = FillEmptyTy->getVectorComponentType();
 
-    SPIRVWord ResCompCount = ResTy->getVectorComponentCount();
-    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
-    SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
-    SPIRVWord FillEmptyCompCount = FillEmptyTy->getVectorComponentCount();
     SPVErrLog.checkError(
         ResCompCount == PtrVecCompCount &&
             PtrVecCompCount == FillEmptyCompCount &&
@@ -4092,6 +4092,7 @@ class SPIRVMaskedScatterINTELInst
     SPVErrLog.checkError(
         InputVecTy->isTypeVector(), SPIRVEC_InvalidInstruction,
         InstName + "\nInputVector must be a vector of pointers type\n");
+    SPIRVWord InputVecCompCount = InputVecTy->getVectorComponentCount();
     SPIRVType *InputVecCompTy = InputVecTy->getVectorComponentType();
 
     SPIRVValue *PtrVec =
@@ -4100,6 +4101,7 @@ class SPIRVMaskedScatterINTELInst
     SPVErrLog.checkError(
         PtrVecTy->isTypeVectorPointer(), SPIRVEC_InvalidInstruction,
         InstName + "\nPtrVector must be a vector of pointers type\n");
+    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
     SPIRVType *PtrVecCompTy = PtrVecTy->getVectorComponentType();
     SPIRVType *PtrElemTy = PtrVecCompTy->getPointerElementType();
 
@@ -4122,10 +4124,8 @@ class SPIRVMaskedScatterINTELInst
     SPIRVType *MaskCompTy = MaskTy->getVectorComponentType();
     SPVErrLog.checkError(MaskCompTy->isTypeBool(), SPIRVEC_InvalidInstruction,
                          InstName + "\nMask must be a boolean vector type\n");
-
-    SPIRVWord InputVecCompCount = InputVecTy->getVectorComponentCount();
-    SPIRVWord PtrVecCompCount = PtrVecTy->getVectorComponentCount();
     SPIRVWord MaskCompCount = MaskTy->getVectorComponentCount();
+
     SPVErrLog.checkError(
         InputVecCompCount == PtrVecCompCount &&
             PtrVecCompCount == MaskCompCount,

@@ -1013,12 +1013,6 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
   }
 }
 
-static bool isVectorBinaryOpWithoutVectorResult(Op OC) {
-  // these opcodes can have 2 vector operands but the result isn't vector type
-  return (OC >= OpSDotKHR && OC <= OpSUDotAccSatKHR) || OC == OpDot ||
-         (OC >= OpIAddCarry && OC <= OpSMulExtended);
-}
-
 // Checks OpTypeVectorIdEXT component counts for instructions that mirror
 // OpTypeVector's validation. Binary/compare/shift/bitwise/logical ops are
 // skipped since LLVM's Builder already asserts on mismatched vector lengths.
@@ -1055,8 +1049,10 @@ void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
     return;
   }
 
-  if (isVectorBinaryOpWithoutVectorResult(OC)) {
-    // These ops have a scalar or struct result, so check operands only
+  // These ops can have 2 vector operands but a scalar or struct result, so
+  // check operands only.
+  if ((OC >= OpSDotKHR && OC <= OpSUDotAccSatKHR) || OC == OpDot ||
+      (OC >= OpIAddCarry && OC <= OpSMulExtended)) {
     auto *BI = static_cast<SPIRVInstruction *>(BV);
     std::vector<SPIRVValue *> Operands = BI->getOperands();
     SPIRVType *InTy0 = Operands[0]->getType();
