@@ -233,15 +233,18 @@ bool SPIRVType::isTypeCooperativeMatrixKHR() const {
 }
 
 bool SPIRVType::isTypeVectorBool() const {
-  return isTypeVector() && getVectorComponentType()->isTypeBool();
+  return (isTypeVector() || isTypeVectorIdEXT()) &&
+         getVectorComponentType()->isTypeBool();
 }
 
 bool SPIRVType::isTypeVectorInt() const {
-  return isTypeVector() && getVectorComponentType()->isTypeInt();
+  return (isTypeVector() || isTypeVectorIdEXT()) &&
+         getVectorComponentType()->isTypeInt();
 }
 
 bool SPIRVType::isTypeVectorFloat() const {
-  return isTypeVector() && getVectorComponentType()->isTypeFloat();
+  return (isTypeVector() || isTypeVectorIdEXT()) &&
+         getVectorComponentType()->isTypeFloat();
 }
 
 bool SPIRVType::isTypeIEEE754Float() const {

@@ -1,7 +1,5 @@
 ; Checks the reader rejects OpSDotKHR when its OpTypeVectorIdEXT input vectors have
-; different component counts. Without the fix the reader aborts on a Debug
-; type-identity assert (Release: silent wrong IR); the count is verified in the
-; reader from the translated FixedVectorTypes.
+; different component counts.
 
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.4 -o %t.spv %s

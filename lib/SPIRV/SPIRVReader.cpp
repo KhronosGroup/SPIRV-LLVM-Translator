@@ -392,12 +392,15 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     auto *VT = static_cast<const SPIRVTypeVectorIdEXT *>(T);
     auto *CountValue = dyn_cast<ConstantInt>(
         transValue(VT->getComponentCount(), nullptr, nullptr));
-    BM->getErrorLog().checkError(CountValue, SPIRVEC_InvalidInstruction,
-                                 "TypeVectorIdEXT: component count must "
-                                 "evaluate to a constant integer\n");
-    BM->getErrorLog().checkError(
-        !CountValue->isZero(), SPIRVEC_InvalidInstruction,
-        "TypeVectorIdEXT: component count must be greater than zero\n");
+    if (!BM->getErrorLog().checkError(
+            CountValue, SPIRVEC_InvalidInstruction,
+            "TypeVectorIdEXT: component count must evaluate to a constant "
+            "integer\n"))
+      return nullptr;
+    if (!BM->getErrorLog().checkError(
+            !CountValue->isZero(), SPIRVEC_InvalidInstruction,
+            "TypeVectorIdEXT: component count must be greater than zero\n"))
+      return nullptr;
     return mapType(T, FixedVectorType::get(transType(VT->getComponentType()),
                                            CountValue->getZExtValue()));
   }
@@ -1436,17 +1439,10 @@ Value *SPIRVToLLVM::transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F) {
   if (OP == OpLessOrGreater)
     OP = OpFOrdNotEqual;
 
-  bool IsIntLike = BT->isTypeVectorOrScalarInt() ||
-                   BT->isTypeVectorOrScalarBool() || BT->isTypePointer();
-  bool IsFloatLike = BT->isTypeVectorOrScalarFloat();
-  if (BT->isTypeVectorIdEXT()) {
-    SPIRVType *CompTy = BT->getVectorComponentType();
-    IsIntLike |= CompTy->isTypeInt() || CompTy->isTypeBool();
-    IsFloatLike |= CompTy->isTypeFloat();
-  }
-  if (IsIntLike)
+  if (BT->isTypeVectorOrScalarInt() || BT->isTypeVectorOrScalarBool() ||
+      BT->isTypePointer())
     Inst = Builder.CreateICmp(CmpMap::rmap(OP), Op0, Op1);
-  else if (IsFloatLike)
+  else if (BT->isTypeVectorOrScalarFloat())
     Inst = Builder.CreateFCmp(CmpMap::rmap(OP), Op0, Op1);
   assert(Inst && "not implemented");
   applyFPFastMathModeDecorations(BV, static_cast<Instruction *>(Inst));
@@ -3870,9 +3866,7 @@ void SPIRVToLLVM::transOCLBuiltinFromInstPreproc(
   if (isCmpOpCode(BI->getOpCode())) {
     if (BT->isTypeBool())
       RetTy = IntegerType::getInt32Ty(*Context);
-    else if (BT->isTypeVectorBool() ||
-             (BT->isTypeVectorIdEXT() &&
-              BT->getVectorComponentType()->isTypeBool()))
+    else if (BT->isTypeVectorBool())
       RetTy = FixedVectorType::get(
           IntegerType::get(
               *Context,

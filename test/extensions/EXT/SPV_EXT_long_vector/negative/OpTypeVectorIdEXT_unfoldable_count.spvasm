@@ -1,8 +1,6 @@
-; OpTypeVectorIdEXT: the component count is an OpSpecConstantOp with a 32-bit
-; integer result type, so it passes SPIRVTypeVectorIdEXT::validate(), but its
-; expression (UDiv by zero) does not fold to a constant integer in LLVM. The
-; reverse translator must reject it rather than cast the non-constant value to
-; ConstantInt (which would crash).
+; Checks an edge case when the component count is an OpSpecConstantOp with
+; udiv by 0. This is illegal arithmetic and LLVM can't fold it into a ConstantInt,
+; in this case the Reader must check and reject.
 
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.3 -o %t.spv %s

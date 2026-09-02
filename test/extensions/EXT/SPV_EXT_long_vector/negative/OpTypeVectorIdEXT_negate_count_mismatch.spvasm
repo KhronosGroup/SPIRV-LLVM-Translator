@@ -1,5 +1,5 @@
 ; Checks the reader rejects OpFNegate when its OpTypeVectorIdEXT result and operand
-; have different component counts.
+; have different component counts, when their types are OpTypeVectorIdEXT.
 
 ; REQUIRES: spirv-as
 ; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
