@@ -70,6 +70,7 @@
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/Analysis/LoopAnalysisManager.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -4225,6 +4226,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::fmuladd:
   case Intrinsic::memset:
   case Intrinsic::memcpy:
+  case Intrinsic::memcpy_inline:
   case Intrinsic::lifetime_start:
   case Intrinsic::lifetime_end:
   case Intrinsic::dbg_declare:
@@ -4240,6 +4242,10 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::debugtrap:
   case Intrinsic::uadd_with_overflow:
   case Intrinsic::usub_with_overflow:
+  case Intrinsic::sadd_with_overflow:
+  case Intrinsic::ssub_with_overflow:
+  case Intrinsic::smul_with_overflow:
+  case Intrinsic::objectsize:
   case Intrinsic::arithmetic_fence:
   case Intrinsic::masked_gather:
   case Intrinsic::masked_scatter:
@@ -5025,6 +5031,78 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
                              transValue(II->getArgOperand(0), BB),
                              transValue(II->getArgOperand(1), BB), BB);
   }
+  case Intrinsic::sadd_with_overflow:
+  case Intrinsic::ssub_with_overflow: {
+    // SPIR-V has OpIAddCarry / OpISubBorrow for the unsigned forms only, so
+    // compute the wrapped result with OpIAdd / OpISub and derive the overflow
+    // flag from the sign bits: an addition overflows when both operands share
+    // a sign that the result does not have, a subtraction when the operands
+    // have different signs and the result does not have the sign of the
+    // minuend. Both conditions are ((X ^ A) & (Y ^ B)) < 0 over the
+    // appropriate operand pairs.
+    bool IsAdd = IID == Intrinsic::sadd_with_overflow;
+    Value *LHSVal = II->getArgOperand(0);
+    Type *OpLLVMTy = LHSVal->getType();
+    SPIRVType *OpTy = transType(OpLLVMTy);
+    SPIRVValue *LHS = transValue(LHSVal, BB);
+    SPIRVValue *RHS = transValue(II->getArgOperand(1), BB);
+    SPIRVValue *Res =
+        BM->addBinaryInst(IsAdd ? OpIAdd : OpISub, OpTy, LHS, RHS, BB);
+    SPIRVValue *Xor1 =
+        BM->addBinaryInst(OpBitwiseXor, OpTy, LHS, IsAdd ? Res : RHS, BB);
+    SPIRVValue *Xor2 =
+        BM->addBinaryInst(OpBitwiseXor, OpTy, IsAdd ? RHS : LHS, Res, BB);
+    SPIRVValue *And = BM->addBinaryInst(OpBitwiseAnd, OpTy, Xor1, Xor2, BB);
+    SPIRVType *FlagTy =
+        transType(cast<StructType>(II->getType())->getElementType(1));
+    SPIRVValue *Zero = transValue(Constant::getNullValue(OpLLVMTy), BB);
+    SPIRVValue *Overflow = BM->addCmpInst(OpSLessThan, FlagTy, And, Zero, BB);
+    return BM->addCompositeConstructInst(transType(II->getType()),
+                                         {Res->getId(), Overflow->getId()}, BB);
+  }
+  case Intrinsic::smul_with_overflow: {
+    // OpSMulExtended produces the low and the high half of the full width
+    // signed product. The product fits into the operand width exactly when
+    // the high half is the sign extension of the low half.
+    Value *LHSVal = II->getArgOperand(0);
+    Type *OpLLVMTy = LHSVal->getType();
+    SPIRVType *OpTy = transType(OpLLVMTy);
+    SPIRVType *ExtTy = transType(StructType::get(OpLLVMTy, OpLLVMTy));
+    SPIRVValue *Ext =
+        BM->addBinaryInst(OpSMulExtended, ExtTy, transValue(LHSVal, BB),
+                          transValue(II->getArgOperand(1), BB), BB);
+    SPIRVValue *Low = BM->addCompositeExtractInst(OpTy, Ext, {0}, BB);
+    SPIRVValue *High = BM->addCompositeExtractInst(OpTy, Ext, {1}, BB);
+    SPIRVValue *ShiftAmount = transValue(
+        ConstantInt::get(OpLLVMTy, OpLLVMTy->getScalarSizeInBits() - 1), BB);
+    SPIRVValue *SignOfLow =
+        BM->addBinaryInst(OpShiftRightArithmetic, OpTy, Low, ShiftAmount, BB);
+    SPIRVType *FlagTy =
+        transType(cast<StructType>(II->getType())->getElementType(1));
+    SPIRVValue *Overflow =
+        BM->addCmpInst(OpINotEqual, FlagTy, High, SignOfLow, BB);
+    return BM->addCompositeConstructInst(transType(II->getType()),
+                                         {Low->getId(), Overflow->getId()}, BB);
+  }
+  case Intrinsic::objectsize: {
+    // llvm.objectsize never reads memory: it must fold to a constant. The
+    // dynamic form (fourth operand set) lets lowerObjectSizeCall() splice an
+    // instruction sequence in front of the call, which is not possible while
+    // the enclosing function is already being translated, so only the static
+    // form is handed to it. For the dynamic form fall back to the answer
+    // LangRef prescribes for an unknown object: -1 when min is false, 0 when
+    // min is true.
+    IntegerType *ResultTy = cast<IntegerType>(II->getType());
+    if (cast<ConstantInt>(II->getArgOperand(3))->isZero())
+      return transValue(lowerObjectSizeCall(II, M->getDataLayout(),
+                                            /*TLI=*/nullptr,
+                                            /*MustSucceed=*/true),
+                        BB);
+    bool MaxVal = cast<ConstantInt>(II->getArgOperand(1))->isZero();
+    return transValue(MaxVal ? Constant::getAllOnesValue(ResultTy)
+                             : Constant::getNullValue(ResultTy),
+                      BB);
+  }
   case Intrinsic::vector_reduce_add:
   case Intrinsic::vector_reduce_mul:
   case Intrinsic::vector_reduce_and:
@@ -5207,6 +5285,11 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
                                       MemAccess, BB);
   } break;
+  // llvm.memcpy.inline carries the extra guarantee that the copy is not
+  // turned into a call to an external function. OpCopyMemorySized is an
+  // instruction rather than a call, so the plain memcpy translation already
+  // satisfies it.
+  case Intrinsic::memcpy_inline:
   case Intrinsic::memcpy:
     // A zero-sized memcpy is a no-op. Emitting OpCopyMemorySized with a Size
     // operand of 0 is invalid SPIR-V, so drop the intrinsic entirely.
