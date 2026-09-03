@@ -2696,6 +2696,7 @@ public:
       break;
     case OpUDotKHR:
     case OpUDotAccSatKHR:
+    case OpUMulExtended:
       addUnsignedArg(-1);
       break;
     case OpSUDotKHR:
