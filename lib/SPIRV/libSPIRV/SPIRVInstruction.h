@@ -757,13 +757,8 @@ protected:
     (void)Op1Ty;
     (void)Op2Ty;
     if (isBinaryOpCode(OpCode)) {
-      // can't check OpTypeVectorIdEXT's component count here;
-      // we can only check its value after being translated in the Reader
-      if (!getValueType(Op1)->isTypeVectorIdEXT() &&
-          !getValueType(Op2)->isTypeVectorIdEXT()) {
-        assert(getValueType(Op1) == getValueType(Op2) &&
-               "Invalid type for binary instruction");
-      }
+      assert(getValueType(Op1) == getValueType(Op2) &&
+             "Invalid type for binary instruction");
       assert((Op1Ty->isTypeInt() || Op2Ty->isTypeFloat()) &&
              "Invalid type for Binary instruction");
       assert((Op1Ty->getBitWidth() == Op2Ty->getBitWidth()) &&
@@ -1748,11 +1743,7 @@ protected:
 
       (void)ResTy;
       (void)OpTy;
-      // See the binary-op note: the reader verifies id-based component counts.
-      if (!getType()->isTypeVectorIdEXT() &&
-          !getValueType(Op)->isTypeVectorIdEXT()) {
-        assert(getType() == getValueType(Op) && "Inconsistent type");
-      }
+      assert(getType() == getValueType(Op) && "Inconsistent type");
       assert((ResTy->isTypeInt() || ResTy->isTypeFloat()) &&
              "Invalid type for Generic Negate instruction");
       assert((ResTy->getBitWidth() == OpTy->getBitWidth()) &&
@@ -3387,13 +3378,8 @@ protected:
     (void)Vec1;
     (void)Vec2;
 
-    // getValueType(Vec1) == getValueType(Vec2) is pointer identity; for a
-    // long-vector-id (SPV_EXT_long_vector) two distinct type <id>s of equal
-    // count are valid, so the count is verified in the reader instead.
-    if (!getValueType(Vec1)->isTypeVectorIdEXT() &&
-        !getValueType(Vec2)->isTypeVectorIdEXT())
-      assert(getValueType(Vec1) == getValueType(Vec2) &&
-             "Input vectors must have the same type");
+    assert(getValueType(Vec1) == getValueType(Vec2) &&
+           "Input vectors must have the same type");
     assert(getType()->isTypeInt() && "Result type must be an integer type");
     assert(!getType()->isTypeVector() && "Result type must be scalar");
   }

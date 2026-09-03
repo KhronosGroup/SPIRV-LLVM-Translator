@@ -1016,75 +1016,6 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
   }
 }
 
-// Checks OpTypeVectorIdEXT component counts for instructions that mirror
-// OpTypeVector's validation. Binary/compare/shift/bitwise/logical ops are
-// skipped since LLVM's Builder already asserts on mismatched vector lengths.
-void SPIRVToLLVM::checkTypeVectorIdEXTComponentCount(SPIRVValue *BV) {
-  if (!BV->isInst() || !BM->hasCapability(CapabilityLongVectorEXT))
-    return;
-
-  auto CheckEqualVectorComponentCounts =
-      [this](const std::vector<SPIRVType *> &VecTypes,
-             const std::string &ErrMsg) {
-        if (none_of(VecTypes,
-                    [](SPIRVType *Ty) { return Ty->isTypeVectorIdEXT(); }))
-          return;
-        SmallVector<unsigned, 4> CompCounts;
-        for (SPIRVType *Ty : VecTypes) {
-          unsigned Count =
-              cast<FixedVectorType>(transType(Ty))->getNumElements();
-          CompCounts.push_back(Count);
-        }
-        BM->getErrorLog().checkError(all_equal(CompCounts),
-                                     SPIRVEC_InvalidInstruction, ErrMsg);
-      };
-
-  Op OC = BV->getOpCode();
-
-  if (isGenericNegateOpCode(OC) || OC == OpLogicalNot) {
-    auto *BI = static_cast<SPIRVInstruction *>(BV);
-    SPIRVType *RetTy = BI->getType();
-    SPIRVType *InTy = BI->getOperands()[0]->getType();
-    CheckEqualVectorComponentCounts({RetTy, InTy},
-                                    std::string(OpCodeNameMap::map(OC)) +
-                                        ": result and input must have equal "
-                                        "component count for vector types.\n");
-    return;
-  }
-
-  // These ops can have 2 vector operands but a scalar or struct result, so
-  // check operands only.
-  if ((OC >= OpSDotKHR && OC <= OpSUDotAccSatKHR) || OC == OpDot ||
-      (OC >= OpIAddCarry && OC <= OpSMulExtended)) {
-    auto *BI = static_cast<SPIRVInstruction *>(BV);
-    std::vector<SPIRVValue *> Operands = BI->getOperands();
-    SPIRVType *InTy0 = Operands[0]->getType();
-    SPIRVType *InTy1 = Operands[1]->getType();
-    CheckEqualVectorComponentCounts(
-        {InTy0, InTy1}, std::string(OpCodeNameMap::map(OC)) +
-                            ": result and inputs must all have equal "
-                            "component count for vector types.\n");
-    return;
-  }
-
-  // OpVectorShuffle: result component count must equal the number of selected
-  // component-index literals.
-  if (OC == OpVectorShuffle) {
-    SPIRVType *ResTy = BV->getType();
-    if (!ResTy->isTypeVectorIdEXT())
-      return;
-    unsigned ResCount =
-        cast<FixedVectorType>(transType(ResTy))->getNumElements();
-    unsigned NumSelected =
-        static_cast<SPIRVVectorShuffle *>(BV)->getComponents().size();
-    BM->getErrorLog().checkError(
-        ResCount == NumSelected, SPIRVEC_InvalidInstruction,
-        "VectorShuffle: result component count must match the number of "
-        "components selected\n");
-    return;
-  }
-}
-
 Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
                                bool CreatePlaceHolder) {
   SPIRVToLLVMValueMap::iterator Loc = ValueMap.find(BV);
@@ -1093,7 +1024,6 @@ Value *SPIRVToLLVM::transValue(SPIRVValue *BV, Function *F, BasicBlock *BB,
 
   SPIRVDBG(spvdbgs() << "[transValue] " << *BV << " -> ";)
   BV->validate();
-  checkTypeVectorIdEXTComponentCount(BV);
 
   auto *V = transValueWithoutDecoration(BV, F, BB, CreatePlaceHolder);
   if (!V) {
@@ -2795,6 +2725,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpVectorShuffle: {
     auto *VS = static_cast<SPIRVVectorShuffle *>(BV);
+    if (BV->getType()->isTypeVectorIdEXT()) {
+      unsigned ResCount =
+          cast<FixedVectorType>(transType(BV->getType()))->getNumElements();
+      if (!BM->getErrorLog().checkError(
+              ResCount == VS->getComponents().size(),
+              SPIRVEC_InvalidInstruction,
+              "VectorShuffle: result component count must match the number of "
+              "components selected\n"))
+        return nullptr;
+    }
     std::vector<Constant *> Components;
     IntegerType *Int32Ty = IntegerType::get(*Context, 32);
     for (auto I : VS->getComponents()) {
