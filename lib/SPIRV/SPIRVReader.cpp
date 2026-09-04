@@ -1541,35 +1541,13 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
     }
     Attribute::AttrKind LlvmAttrKind = SPIRSPIRVFuncParamAttrMap::rmap(
         static_cast<SPIRVFuncParamAttrKind>(SpirvAttr));
-    Attribute LlvmAttr;
-    if (Attribute::isTypeAttrKind(LlvmAttrKind)) {
-      // Type attributes (byval/sret/...) need the argument's pointee type. Take
-      // it from the argument value so it works for both typed and untyped
-      // pointers.
-      SPIRVValue *Arg = ArgValues[ArgNo];
-      SPIRVType *ArgTy = Arg->getType();
-      Type *PointeeTy = nullptr;
-      if (ArgTy->isTypeUntypedPointerKHR()) {
-        // Try to infer the pointee type. Using void as RetTy since there's no
-        // reasonable heuristics to guess its type at all for arguments of any
-        // arbitrary functions. Error out if the pointee type can't be inferred,
-        // because there's no meaningful fallback in this case - these type
-        // attribtues needs the exact pointee type.
-        Type *TPT =
-            getTypedPtrFromUntypedOperand(Arg, Type::getVoidTy(*Context));
-        if (!BM->getErrorLog().checkError(
-                TPT != nullptr, SPIRVEC_InvalidModule,
-                "Cannot infer the pointee type of an untyped pointer "
-                "argument with type attribute of an indirect call"))
-          return;
-        PointeeTy = cast<TypedPointerType>(TPT)->getElementType();
-      } else {
-        PointeeTy = transType(ArgTy->getPointerElementType());
-      }
-      LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind, PointeeTy);
-    } else {
-      LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind);
-    }
+    SPIRVValue *Arg = ArgValues[ArgNo];
+    // assume all byval/sret args are always emitted as typed pointers
+    auto LlvmAttr =
+        Attribute::isTypeAttrKind(LlvmAttrKind)
+            ? Attribute::get(CI->getContext(), LlvmAttrKind,
+                             transType(Arg->getType()->getPointerElementType()))
+            : Attribute::get(CI->getContext(), LlvmAttrKind);
     CI->addParamAttr(ArgNo, LlvmAttr);
   }
 }

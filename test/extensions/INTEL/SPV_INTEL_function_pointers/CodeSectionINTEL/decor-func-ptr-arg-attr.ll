@@ -40,11 +40,15 @@
 ; CHECK-SPIRV-UNTYPED: Function [[#]] [[#INC]]
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#VAR:]] [[#]] [[#MULTI_PTR]]
 ; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SEL:]] [[#]] [[#FP]] [[#]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]] [[#SEL]] [[#VAR]]
+; CHECK-SPIRV-UNTYPED: Bitcast [[#]] [[#BARG:]] [[#VAR]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]] [[#SEL]] [[#BARG]]
 
 ; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
+
+; CHECK-LLVM-UNTYPED: %[[AGG:.*]] = alloca %multi_ptr
 ; CHECK-LLVM-UNTYPED: select i1 %_arg_, ptr addrspacecast (ptr addrspace(9) @inc_function to ptr), ptr null
-; CHECK-LLVM-UNTYPED: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
+; CHECK-LLVM-UNTYPED: %[[BC:.*]] = bitcast ptr %[[AGG]] to ptr
+; CHECK-LLVM-UNTYPED: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %[[BC]])
 
 ; ModuleID = 'sycl_test.cpp'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"

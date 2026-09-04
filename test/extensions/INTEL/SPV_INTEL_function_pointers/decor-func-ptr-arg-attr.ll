@@ -12,7 +12,7 @@
 ; RUN: llvm-spirv %t.u.spt -o %t.u.spv -to-binary
 ; RUN: llvm-spirv -r %t.u.spv -o %t.ru.bc
 ; RUN: llvm-dis %t.ru.bc -o %t.ru.ll
-; RUN: FileCheck < %t.ru.ll %s --check-prefix CHECK-LLVM
+; RUN: FileCheck < %t.ru.ll %s --check-prefix CHECK-LLVM-UNTYPED
 
 ; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
 ; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
@@ -37,11 +37,16 @@
 ; CHECK-SPIRV-UNTYPED: Function [[#]] [[#Inc]]
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PtrTy]] [[#Var:]]
 ; CHECK-SPIRV-UNTYPED: Select [[#PtrTy]] [[#Sel:]] [[#]] [[#FnPtr]] [[#]]
+; CHECK-SPIRV-UNTYPED: Bitcast [[#]] [[#ByvalArg:]] [[#Var]]
 ; CHECK-SPIRV: FunctionPointerCallINTEL
 ; CHECK-SPIRV-SAME: [[#TargetId]]
-; CHECK-SPIRV-UNTYPED-SAME: [[#Sel]] [[#Var]]
+; CHECK-SPIRV-UNTYPED-SAME: [[#Sel]] [[#ByvalArg]]
 
 ; CHECK-LLVM: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
+
+; CHECK-LLVM-UNTYPED: %[[AGG:.*]] = alloca %multi_ptr
+; CHECK-LLVM-UNTYPED: %[[BC:.*]] = bitcast ptr %[[AGG]] to ptr
+; CHECK-LLVM-UNTYPED: call spir_func void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %[[BC]])
 
 ; CHECK-LLVM-LLC: %[[SEL:.*]] = select i1 %{{.*}}, ptr @inc_function, ptr %{{.*}}
 ; CHECK-LLVM-LLC: %[[FP:.*]] = bitcast ptr %[[SEL]] to ptr
