@@ -1122,6 +1122,8 @@ public:
     } else if (NameRef.starts_with("u_")) {
       addUnsignedArg(-1);
       NameRef = NameRef.drop_front(2);
+    } else if (NameRef.equals("__spirv_UMulExtended")) {
+      addUnsignedArg(-1);
     } else if (NameRef.equals("fclamp")) {
       NameRef = NameRef.drop_front(1);
     }
