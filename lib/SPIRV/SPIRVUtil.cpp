@@ -2398,6 +2398,8 @@ void lowerAtomicWrapCalls(Module *M) {
       auto Scope = cast<ConstantInt>(CI->getArgOperand(1))->getZExtValue();
       auto MemSem = cast<ConstantInt>(CI->getArgOperand(2))->getZExtValue();
       Value *Val = CI->getArgOperand(3);
+      bool IsVolatile = cast<ConstantInt>(CI->getArgOperand(4))->isOne();
+      bool IsElementwise = cast<ConstantInt>(CI->getArgOperand(5))->isOne();
 
       AtomicOrdering Ordering = mapSPIRVMemSemToAtomicOrdering(MemSem);
       SyncScope::ID SSID =
@@ -2405,6 +2407,8 @@ void lowerAtomicWrapCalls(Module *M) {
 
       IRBuilder<> Builder(CI);
       auto *RMW = Builder.CreateAtomicRMW(Op, Ptr, Val, {}, Ordering, SSID);
+      RMW->setVolatile(IsVolatile);
+      RMW->setElementwise(IsElementwise);
 
       RMW->copyMetadata(*CI);
 

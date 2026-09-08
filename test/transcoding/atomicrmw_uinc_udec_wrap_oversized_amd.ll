@@ -1,7 +1,4 @@
-; Neither AMDGPU nor the LLVM SPIR-V backend supports atomics wider than 64 bits.
-; The helper hides the operand width from SPIR-V, so an over-limit atomicrmw is
-; left alone to reach the writer and be reported as unsupported rather than
-; round-tripped (supported widths: atomicrmw_uinc_udec_wrap_vector.ll).
+; Check that the proper error is reported for atomics wider than 64 bits.
 ;
 ; The writer stops at the first unsupported instruction, so each operation is
 ; translated from its own copy of the module.

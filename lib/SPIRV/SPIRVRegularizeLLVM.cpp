@@ -49,7 +49,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/ErrorHandling.h"               // report_fatal_error()
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h" // expandMemSetAsLoop()
 
 #include <set>
@@ -844,21 +843,23 @@ bool SPIRVRegularizeLLVMBase::regularize() {
                 getAtomicWrapTypeSuffix(MemType);
 
             Type *Int32Ty = Type::getInt32Ty(M->getContext());
+            // Pass `volatile` and `elementwise` info as constant operands.
+            Type *BoolTy = Type::getInt1Ty(M->getContext());
+            Value *IsVolatile = ConstantInt::get(BoolTy, ARMW->isVolatile());
+            Value *IsElementwise =
+                ConstantInt::get(BoolTy, ARMW->isElementwise());
             FunctionType *FT = FunctionType::get(
-                MemType, {Ptr->getType(), Int32Ty, Int32Ty, MemType}, false);
+                MemType,
+                {Ptr->getType(), Int32Ty, Int32Ty, MemType, BoolTy, BoolTy},
+                false);
             FunctionCallee FC = M->getOrInsertFunction(FuncName, FT);
-            // The name is reserved, so it must resolve to our own function; a
-            // clash with any other symbol means we cannot lower correctly.
-            auto *Callee = dyn_cast<Function>(FC.getCallee());
-            if (!Callee)
-              report_fatal_error(Twine("Reserved atomic wrap helper name '") +
-                                 FuncName +
-                                 "' is already used by another symbol");
-            Callee->setCallingConv(CallingConv::SPIR_FUNC);
+            // The name is reserved, so it can only resolve to our own function.
+            cast<Function>(FC.getCallee())
+                ->setCallingConv(CallingConv::SPIR_FUNC);
 
             IRBuilder<> Builder(ARMW);
-            CallInst *Call =
-                Builder.CreateCall(FC, {Ptr, MemoryScope, Sem, Val});
+            CallInst *Call = Builder.CreateCall(
+                FC, {Ptr, MemoryScope, Sem, Val, IsVolatile, IsElementwise});
             Call->setCallingConv(CallingConv::SPIR_FUNC);
             Call->takeName(ARMW);
             Call->copyMetadata(*ARMW);

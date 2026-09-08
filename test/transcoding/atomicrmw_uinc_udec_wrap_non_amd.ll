@@ -1,6 +1,5 @@
-; Translating uinc_wrap/udec_wrap into an imported helper call is an AMD internal
-; spirv builtin. On any other vendor the atomicrmw must reach the writer and be
-; reported as unsupported (positive case: atomicrmw_uinc_udec_wrap.ll).
+; Check that translation for non-AMD triples reports an error when uinc_wrap or
+; udec_wrap is found.
 ;
 ; The writer stops at the first unsupported instruction, so each operation/triple
 ; combination is translated from its own copy of the module.
