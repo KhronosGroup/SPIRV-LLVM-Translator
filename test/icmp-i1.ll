@@ -42,15 +42,16 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-LOWER: xor <2 x i1> %vq, splat (i1 true)
 ; CHECK-LOWER: %vc0 = and <2 x i1> %vp,
 
-; CHECK-LLVM: %c0 = and i1 %p,
-; CHECK-LLVM: %c1 = and i1 %q,
-; CHECK-LLVM: %c2 = or i1 %p,
-; CHECK-LLVM: %c3 = or i1 %q,
-; CHECK-LLVM: %c4 = and i1 %q,
-; CHECK-LLVM: %c5 = and i1 %p,
-; CHECK-LLVM: %c6 = or i1 %q,
-; CHECK-LLVM: %c7 = or i1 %p,
-; CHECK-LLVM: %vc0 = and <2 x i1> %vp,
+; CHECK-LLVM: define spir_kernel void @test(i1 [[P:%[a-zA-Z0-9_.]+]], i1 [[Q:%[a-zA-Z0-9_.]+]], ptr addrspace(1) %{{[a-zA-Z0-9_.]+}}, <2 x i1> [[VP:%[a-zA-Z0-9_.]+]],
+; CHECK-LLVM: and i1 [[P]], {{.*}}
+; CHECK-LLVM: and i1 [[Q]], {{.*}}
+; CHECK-LLVM: or i1 [[P]], {{.*}}
+; CHECK-LLVM: or i1 [[Q]], {{.*}}
+; CHECK-LLVM: and i1 [[Q]], {{.*}}
+; CHECK-LLVM: and i1 [[P]], {{.*}}
+; CHECK-LLVM: or i1 [[Q]], {{.*}}
+; CHECK-LLVM: or i1 [[P]], {{.*}}
+; CHECK-LLVM: and <2 x i1> [[VP]],
 
 define spir_kernel void @test(i1 %p, i1 %q, ptr addrspace(1) %out, <2 x i1> %vp, <2 x i1> %vq, ptr addrspace(1) %vout) !dbg !4 {
 entry:
