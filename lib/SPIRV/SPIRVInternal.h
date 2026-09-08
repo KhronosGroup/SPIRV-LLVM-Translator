@@ -354,8 +354,8 @@ const static char TranslateOCLMemScope[] = "__translate_ocl_memory_scope";
 const static char TranslateSPIRVMemOrder[] = "__translate_spirv_memory_order";
 const static char TranslateSPIRVMemScope[] = "__translate_spirv_memory_scope";
 const static char TranslateSPIRVMemFence[] = "__translate_spirv_memory_fence";
-// uinc_wrap/udec_wrap have no SPIR-V opcode; they are carried across as calls
-// to these imported helpers.
+// uinc_wrap/udec_wrap have no SPIR-V opcode so they are lowered as calls
+// to these imported helpers for AMD targets.
 const static char TranslateSPIRVAtomicUIncWrap[] =
     "__translate_spirv_atomic_uinc_wrap";
 const static char TranslateSPIRVAtomicUDecWrap[] =
