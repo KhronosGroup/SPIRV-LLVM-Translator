@@ -36,22 +36,19 @@
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 ; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
 ;
-; CHECK-SPIRV-TYPED: EntryPoint [[#]] [[KERNEL_ID:[0-9]+]] "test"
-; CHECK-SPIRV-TYPED: TypeInt [[INT32_TYPE_ID:[0-9]+]] 32
-; CHECK-SPIRV-TYPED: TypePointer [[INT_PTR:[0-9]+]] 5 [[INT32_TYPE_ID]]
-; CHECK-SPIRV-TYPED: TypeFunction [[FOO_TYPE_ID:[0-9]+]] [[INT32_TYPE_ID]] [[INT32_TYPE_ID]]
-; CHECK-SPIRV-TYPED: TypePointer [[FOO_TYPE_PTR_ID:[0-9]+]] {{[0-9]+}} [[FOO_TYPE_ID]]
+; CHECK-SPIRV: EntryPoint [[#]] [[#KERNEL_ID:]] "test"
+; CHECK-SPIRV: TypeInt [[#INT32:]] 32
+; CHECK-SPIRV-TYPED: TypePointer [[#INT_PTR:]] 5 [[#INT32]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#INT_PTR:]] [[#]]
+; CHECK-SPIRV: TypeFunction [[#FOO_TY:]] [[#INT32]] [[#INT32]]
+; CHECK-SPIRV-TYPED: TypePointer [[#FOO_TY_PTR:]] [[#]] [[#FOO_TY]]
+; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FOO_TY_PTR:]] [[#]]
 ;
-; CHECK-SPIRV-TYPED: Function {{[0-9]+}} [[KERNEL_ID]]
-; CHECK-SPIRV-TYPED: FunctionParameter [[INT_PTR]] [[FP:[0-9]+]]
-; CHECK-SPIRV-TYPED: Load [[INT32_TYPE_ID]] [[FUNC_ADDR:[0-9]+]] [[FP]]
-; CHECK-SPIRV-TYPED: ConvertUToPtr [[FOO_TYPE_PTR_ID]] [[FOO_PTR:[0-9]+]] [[FUNC_ADDR]]
-; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL [[INT32_TYPE_ID]] {{[0-9]+}} [[FOO_PTR]]
-; CHECK-SPIRV-UNTYPED: TypeInt [[#INT32:]] 32
-; CHECK-SPIRV-UNTYPED: TypeFunction [[#FOO_TY:]] [[#INT32]] [[#INT32]]
-; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#FOO_PTR:]] [[#]]
-; CHECK-SPIRV-UNTYPED: ConvertUToPtr [[#FOO_PTR]] [[#FP:]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#INT32]] [[#]] [[#FP]]
+; CHECK-SPIRV: Function [[#]] [[#KERNEL_ID]]
+; CHECK-SPIRV: FunctionParameter [[#INT_PTR]] [[#FP:]]
+; CHECK-SPIRV: Load [[#INT32]] [[#FUNC_ADDR:]] [[#FP]]
+; CHECK-SPIRV: ConvertUToPtr [[#FOO_TY_PTR]] [[#FOO_PTR:]] [[#FUNC_ADDR]]
+; CHECK-SPIRV: FunctionPointerCallINTEL [[#INT32]] [[#]] [[#FOO_PTR]]
 ;
 ; CHECK-LLVM: define spir_kernel void @test(ptr addrspace(1)
 ; CHECK-LLVM: %[[FP:.*]] = inttoptr i32 %{{.*}} to ptr addrspace(9)

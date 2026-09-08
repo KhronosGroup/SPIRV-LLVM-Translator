@@ -26,14 +26,11 @@
 ; CHECK-SPIRV: Extension "SPV_INTEL_function_pointers"
 ; CHECK-SPIRV-UNTYPED: Extension "SPV_KHR_untyped_pointers"
 
-; CHECK-SPIRV-TYPED: Decorate [[#TargetId:]] ArgumentAttributeINTEL 0 5
-; CHECK-SPIRV-TYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 4
-; CHECK-SPIRV-TYPED: Decorate [[#TargetId]] ArgumentAttributeINTEL 0 2
+; CHECK-SPIRV-DAG: Decorate [[#TARGET:]] ArgumentAttributeINTEL 0 5
+; CHECK-SPIRV-DAG: Decorate [[#TARGET]] ArgumentAttributeINTEL 0 4
+; CHECK-SPIRV-DAG: Decorate [[#TARGET]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL
-; CHECK-SPIRV-TYPED-SAME: [[#TargetId]]
-; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG:]] ArgumentAttributeINTEL 0 5
-; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 4
-; CHECK-SPIRV-UNTYPED-DAG: Decorate [[#ARG]] ArgumentAttributeINTEL 0 2
+; CHECK-SPIRV-TYPED-SAME: [[#TARGET]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
 ; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]] [[#INC:]]
@@ -41,7 +38,7 @@
 ; CHECK-SPIRV-UNTYPED: UntypedVariableKHR [[#PTR]] [[#VAR:]] [[#]] [[#MULTI_PTR]]
 ; CHECK-SPIRV-UNTYPED: Select [[#PTR]] [[#SEL:]] [[#]] [[#FP]] [[#]]
 ; CHECK-SPIRV-UNTYPED: Bitcast [[#]] [[#BARG:]] [[#VAR]]
-; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#ARG]] [[#SEL]] [[#BARG]]
+; CHECK-SPIRV-UNTYPED: FunctionPointerCallINTEL [[#]] [[#TARGET]] [[#SEL]] [[#BARG]]
 
 ; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 

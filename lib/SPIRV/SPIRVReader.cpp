@@ -1542,12 +1542,21 @@ void SPIRVToLLVM::transFunctionPointerCallArgumentAttributes(
     Attribute::AttrKind LlvmAttrKind = SPIRSPIRVFuncParamAttrMap::rmap(
         static_cast<SPIRVFuncParamAttrKind>(SpirvAttr));
     SPIRVValue *Arg = ArgValues[ArgNo];
-    // assume all byval/sret args are always emitted as typed pointers
-    auto LlvmAttr =
-        Attribute::isTypeAttrKind(LlvmAttrKind)
-            ? Attribute::get(CI->getContext(), LlvmAttrKind,
-                             transType(Arg->getType()->getPointerElementType()))
-            : Attribute::get(CI->getContext(), LlvmAttrKind);
+    Attribute LlvmAttr;
+    if (Attribute::isTypeAttrKind(LlvmAttrKind)) {
+      // assume all byval/sret args are always emitted as typed pointers
+      if (!BM->getErrorLog().checkError(
+              !Arg->getType()->isTypeUntypedPointerKHR(), SPIRVEC_InvalidModule,
+              "FunctionPointerCallINTEL: type-attributed function arguments in "
+              "an indirect call should always be a typed "
+              "pointer argument for now"))
+        return;
+      LlvmAttr =
+          Attribute::get(CI->getContext(), LlvmAttrKind,
+                         transType(Arg->getType()->getPointerElementType()));
+    } else {
+      LlvmAttr = Attribute::get(CI->getContext(), LlvmAttrKind);
+    }
     CI->addParamAttr(ArgNo, LlvmAttr);
   }
 }
