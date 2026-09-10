@@ -645,12 +645,16 @@ protected:
     SPIRVInstruction::validate();
     if (getValue(Op1)->isForward() || getValue(Op2)->isForward())
       return;
-    if (getValueType(Op1)->isTypeVector()) {
+    if (getValueType(Op1)->isTypeVector() ||
+        getValueType(Op1)->isTypeVectorIdEXT()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its
+      // count is not a literal and only known after being translated.
+      if (getValueType(Op1)->isTypeVector())
+        assert(getValueType(Op1)->getVectorComponentCount() ==
+                   getValueType(Op2)->getVectorComponentCount() &&
+               "Inconsistent Vector component width");
     } else if (getValueType(Op1)->isTypeCooperativeMatrixKHR()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
@@ -984,13 +988,17 @@ protected:
     (void)Op1Ty;
     (void)Op2Ty;
     (void)ResTy;
-    if (getValueType(Op1)->isTypeVector()) {
+    if (getValueType(Op1)->isTypeVector() ||
+        getValueType(Op1)->isTypeVectorIdEXT()) {
       Op1Ty = getValueType(Op1)->getVectorComponentType();
       Op2Ty = getValueType(Op2)->getVectorComponentType();
       ResTy = Type->getVectorComponentType();
-      assert(getValueType(Op1)->getVectorComponentCount() ==
-                 getValueType(Op2)->getVectorComponentCount() &&
-             "Inconsistent Vector component width");
+      // getVectorComponentCount() won't work for OpTypeVectorIdEXT, as its
+      // count is not a literal and only known after being translated.
+      if (getValueType(Op1)->isTypeVector())
+        assert(getValueType(Op1)->getVectorComponentCount() ==
+                   getValueType(Op2)->getVectorComponentCount() &&
+               "Inconsistent Vector component width");
     } else {
       Op1Ty = getValueType(Op1);
       Op2Ty = getValueType(Op2);
@@ -1056,7 +1064,8 @@ protected:
         getValue(Op2)->isForward())
       return;
 
-    SPIRVType *ConTy = getValueType(Condition)->isTypeVector()
+    SPIRVType *ConTy = (getValueType(Condition)->isTypeVector() ||
+                        getValueType(Condition)->isTypeVectorIdEXT())
                            ? getValueType(Condition)->getVectorComponentType()
                            : getValueType(Condition);
     (void)ConTy;
@@ -1256,10 +1265,12 @@ public:
     if (getValue(Vector)->isForward() || getValue(Scalar)->isForward())
       return;
 
-    assert(getValueType(Vector)->isTypeVector() &&
+    assert((getValueType(Vector)->isTypeVector() ||
+            getValueType(Vector)->isTypeVectorIdEXT()) &&
            getValueType(Vector)->getVectorComponentType()->isTypeFloat() &&
            "First operand must be a vector of floating-point type");
-    assert(getValueType(getId())->isTypeVector() &&
+    assert((getValueType(getId())->isTypeVector() ||
+            getValueType(getId())->isTypeVectorIdEXT()) &&
            getValueType(getId())->getVectorComponentType()->isTypeFloat() &&
            "Result type must be a vector of floating-point type");
     assert(
@@ -1578,14 +1589,14 @@ protected:
     if (getValue(Op)->isForward())
       return;
     if (isGenericNegateOpCode(OpCode)) {
-      SPIRVType *ResTy =
-          Type->isTypeVector() || Type->isTypeCooperativeMatrixKHR()
-              ? Type->getVectorComponentType()
-              : Type;
-      SPIRVType *OpTy =
-          Type->isTypeVector() || Type->isTypeCooperativeMatrixKHR()
-              ? getValueType(Op)->getVectorComponentType()
-              : getValueType(Op);
+      SPIRVType *ResTy = Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                                 Type->isTypeCooperativeMatrixKHR()
+                             ? Type->getVectorComponentType()
+                             : Type;
+      SPIRVType *OpTy = Type->isTypeVector() || Type->isTypeVectorIdEXT() ||
+                                Type->isTypeCooperativeMatrixKHR()
+                            ? getValueType(Op)->getVectorComponentType()
+                            : getValueType(Op);
 
       (void)ResTy;
       (void)OpTy;
@@ -2008,6 +2019,7 @@ protected:
     size_t TypeOpCode = this->getType()->getOpCode();
     switch (TypeOpCode) {
     case OpTypeVector:
+    case OpTypeVectorIdEXT:
       assert(Constituents.size() > 1 &&
              "There must be at least two Constituent operands in vector");
       break;
@@ -2040,7 +2052,8 @@ protected:
     (void)Composite;
     assert(getValueType(Composite)->isTypeArray() ||
            getValueType(Composite)->isTypeStruct() ||
-           getValueType(Composite)->isTypeVector());
+           getValueType(Composite)->isTypeVector() ||
+           getValueType(Composite)->isTypeVectorIdEXT());
   }
 };
 
@@ -2066,7 +2079,8 @@ protected:
     (void)Composite;
     assert(getValueType(Composite)->isTypeArray() ||
            getValueType(Composite)->isTypeStruct() ||
-           getValueType(Composite)->isTypeVector());
+           getValueType(Composite)->isTypeVector() ||
+           getValueType(Composite)->isTypeVectorIdEXT());
     assert(Type == getValueType(Composite));
   }
 };
@@ -2272,7 +2286,8 @@ protected:
     if (getValue(VectorId)->isForward())
       return;
     assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+           getValueType(VectorId)->isTypeJointMatrixINTEL() ||
+           getValueType(VectorId)->isTypeVectorIdEXT());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2310,7 +2325,8 @@ protected:
     if (getValue(VectorId)->isForward())
       return;
     assert(getValueType(VectorId)->isTypeVector() ||
-           getValueType(VectorId)->isTypeJointMatrixINTEL());
+           getValueType(VectorId)->isTypeJointMatrixINTEL() ||
+           getValueType(VectorId)->isTypeVectorIdEXT());
   }
   SPIRVId VectorId;
   SPIRVId IndexId;
@@ -2330,10 +2346,11 @@ protected:
     SPIRVInstruction::validate();
     [[maybe_unused]] SPIRVId Vector1 = Ops[0];
     assert(OpCode == OpVectorShuffle);
-    assert(Type->isTypeVector());
+    assert(Type->isTypeVector() || Type->isTypeVectorIdEXT());
     assert(Type->getVectorComponentType() ==
            getValueType(Vector1)->getVectorComponentType());
-    assert(Ops.size() - 2 == Type->getVectorComponentCount());
+    if (Type->isTypeVector())
+      assert(Ops.size() - 2 == Type->getVectorComponentCount());
   }
 };
 
@@ -3137,7 +3154,8 @@ protected:
     assert(getValueType(Vec1) == getValueType(Vec2) &&
            "Input vectors must have the same type");
     assert(getType()->isTypeInt() && "Result type must be an integer type");
-    assert(!getType()->isTypeVector() && "Result type must be scalar");
+    assert(!getType()->isTypeVector() && !getType()->isTypeVectorIdEXT() &&
+           "Result type must be scalar");
   }
 
 private:
