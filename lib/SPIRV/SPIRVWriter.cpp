@@ -1406,6 +1406,16 @@ SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
   return BM->addUnaryInst(OpBitcast, ExpectedType, Trans, nullptr);
 }
 
+SPIRVValue *LLVMToSPIRVBase::transConstantConstituent(Constant *C,
+                                                      SPIRVType *ExpectedType) {
+  SPIRVValue *Trans = transConstantUse(C, ExpectedType);
+  // A variable is not a constant, so it cannot be a constituent of a constant
+  // composite directly. Wrap it so the composite refers to a constant.
+  return Trans->isVariable()
+             ? BM->addUnaryInst(OpBitcast, Trans->getType(), Trans, nullptr)
+             : Trans;
+}
+
 SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
   SPIRVType *ExpectedType = transScavengedType(V);
   if (isa<ConstantPointerNull>(V))
@@ -1445,10 +1455,10 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
       if (ConstFP->isNullValue())
         return BM->addNullConstant(ExpectedType);
       SPIRVType *InnerTy = ExpectedType->getScalarType();
-      SPIRVValue *ScalarVal =
-          transConstantUse(ConstantFP::get(V->getType()->getScalarType(),
-                                           ConstFP->getValueAPF()),
-                           InnerTy);
+      SPIRVValue *ScalarVal = transConstantConstituent(
+          ConstantFP::get(V->getType()->getScalarType(),
+                          ConstFP->getValueAPF()),
+          InnerTy);
       unsigned NumElts = cast<FixedVectorType>(V->getType())->getNumElements();
       std::vector<SPIRVValue *> BV(NumElts, ScalarVal);
       return BM->addCompositeConstant(ExpectedType, BV);
@@ -1462,7 +1472,8 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     SPIRVType *InnerTy = ExpectedType->getArrayElementType();
     std::vector<SPIRVValue *> BV;
     for (unsigned I = 0, E = ConstDA->getNumElements(); I != E; ++I)
-      BV.push_back(transConstantUse(ConstDA->getElementAsConstant(I), InnerTy));
+      BV.push_back(
+          transConstantConstituent(ConstDA->getElementAsConstant(I), InnerTy));
     return BM->addCompositeConstant(ExpectedType, BV);
   }
 
@@ -1470,7 +1481,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     SPIRVType *InnerTy = ExpectedType->getArrayElementType();
     std::vector<SPIRVValue *> BV;
     for (auto I = ConstA->op_begin(), E = ConstA->op_end(); I != E; ++I)
-      BV.push_back(transConstantUse(cast<Constant>(*I), InnerTy));
+      BV.push_back(transConstantConstituent(cast<Constant>(*I), InnerTy));
     return BM->addCompositeConstant(ExpectedType, BV);
   }
 
@@ -1478,7 +1489,8 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     SPIRVType *InnerTy = ExpectedType->getScalarType();
     std::vector<SPIRVValue *> BV;
     for (unsigned I = 0, E = ConstDV->getNumElements(); I != E; ++I)
-      BV.push_back(transConstantUse(ConstDV->getElementAsConstant(I), InnerTy));
+      BV.push_back(
+          transConstantConstituent(ConstDV->getElementAsConstant(I), InnerTy));
     return BM->addCompositeConstant(ExpectedType, BV);
   }
 
@@ -1486,7 +1498,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     SPIRVType *InnerTy = ExpectedType->getScalarType();
     std::vector<SPIRVValue *> BV;
     for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I)
-      BV.push_back(transConstantUse(cast<Constant>(*I), InnerTy));
+      BV.push_back(transConstantConstituent(cast<Constant>(*I), InnerTy));
     return BM->addCompositeConstant(ExpectedType, BV);
   }
 
@@ -1527,7 +1539,7 @@ SPIRVValue *LLVMToSPIRVBase::transConstant(Value *V) {
     std::vector<SPIRVValue *> BV;
     for (auto I = ConstV->op_begin(), E = ConstV->op_end(); I != E; ++I) {
       SPIRVType *InnerTy = ExpectedType->getStructMemberType(BV.size());
-      BV.push_back(transConstantUse(cast<Constant>(*I), InnerTy));
+      BV.push_back(transConstantConstituent(cast<Constant>(*I), InnerTy));
     }
     return BM->addCompositeConstant(ExpectedType, BV);
   }

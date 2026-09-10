@@ -153,9 +153,13 @@ public:
                                     ArrayRef<SPIRVTypeFloat *> FloatSPIRVTypes,
                                     SPIRVWord FlagsLiteral);
   SPIRVValue *transConstant(Value *V);
-  /// Translate a reference to a constant in a constant expression. This may
-  /// involve inserting extra bitcasts to correct type issues.
+  /// Translate a use of a constant where a pointer initializer is expected,
+  /// inserting bitcasts or access chains to reconcile the value's natural type
+  /// with ExpectedType. A variable may be referenced directly here.
   SPIRVValue *transConstantUse(Constant *V, SPIRVType *ExpectedType);
+  /// Translate a constituent of a constant composite. A variable is not a
+  /// constant, so it is wrapped so that the composite refers to a constant.
+  SPIRVValue *transConstantConstituent(Constant *V, SPIRVType *ExpectedType);
   SPIRVValue *transValue(Value *V, SPIRVBasicBlock *BB,
                          bool CreateForward = true,
                          FuncTransMode FuncTrans = FuncTransMode::Decl);
