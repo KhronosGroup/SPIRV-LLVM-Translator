@@ -64,16 +64,25 @@ struct TargetAddrSpaceMapping {
 constexpr TargetAddrSpaceMapping BuiltinAddrSpaceMaps[] = {
     {Triple::amdgpu,
      {
-         AMDGPUAS::PRIVATE_ADDRESS,    // SPIRAS_Private
-         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_Global
-         AMDGPUAS::CONSTANT_ADDRESS,   // SPIRAS_Constant
-         AMDGPUAS::LOCAL_ADDRESS,      // SPIRAS_Local
-         AMDGPUAS::FLAT_ADDRESS,       // SPIRAS_Generic
-         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_GlobalDevice
-         AMDGPUAS::GLOBAL_ADDRESS,     // SPIRAS_GlobalHost
+         AMDGPUAS::PRIVATE_ADDRESS,  // SPIRAS_Private
+         AMDGPUAS::GLOBAL_ADDRESS,   // SPIRAS_Global
+         AMDGPUAS::CONSTANT_ADDRESS, // SPIRAS_Constant
+         AMDGPUAS::LOCAL_ADDRESS,    // SPIRAS_Local
+         AMDGPUAS::FLAT_ADDRESS,     // SPIRAS_Generic
+         AMDGPUAS::GLOBAL_ADDRESS,   // SPIRAS_GlobalDevice
+         AMDGPUAS::GLOBAL_ADDRESS,   // SPIRAS_GlobalHost
+         // Keep identity (7, 8). For AMDGPU these are the buffer fat/resource
+         // pointers. Globals in these address spaces are rejected by the
+         // backend, so any StorageClassInput variable fails
+         // codegen under an AMDGPU triple. Kept for parity with the ROCm map
+         // (see
+         // https://github.com/ROCm/SPIRV-LLVM-Translator/blob/f8f6c81b476a33cf06b2e73c493eb8c99f5306af/lib/SPIRV/OCLUtil.h#L508)
          AMDGPUAS::BUFFER_FAT_POINTER, // SPIRAS_Input
          AMDGPUAS::BUFFER_RESOURCE,    // SPIRAS_Output
-         // TODO: FLAT clashes with BUFFER_STRIDED_POINTER; may need revisiting.
+         // SPIRAS_CodeSectionINTEL and BUFFER_STRIDED_POINTER share ID (9).
+         // Leaving SPIRAS_CodeSectionINTEL unmapped would land function
+         // pointers on a strided buffer pointer, which is incorrect. Land them
+         // on FLAT instead.
          AMDGPUAS::FLAT_ADDRESS, // SPIRAS_CodeSectionINTEL
      },
      AMDGPUAS::FLAT_ADDRESS},
@@ -81,7 +90,8 @@ constexpr TargetAddrSpaceMapping BuiltinAddrSpaceMaps[] = {
 } // namespace
 
 bool TranslatorOpts::deriveTargetAddrSpaces() {
-  // An explicit --spirv-addrspace-map wins.
+  // An already-installed map wins: an explicit --spirv-addrspace-map, or a
+  // prior derivation.
   if (getAddrSpaceMap())
     return true;
   Triple TT(Triple::normalize(getSPIRVTargetTriple()));
