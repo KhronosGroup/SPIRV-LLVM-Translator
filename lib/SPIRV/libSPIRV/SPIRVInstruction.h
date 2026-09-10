@@ -3381,7 +3381,8 @@ protected:
     assert(getValueType(Vec1) == getValueType(Vec2) &&
            "Input vectors must have the same type");
     assert(getType()->isTypeInt() && "Result type must be an integer type");
-    assert(!getType()->isTypeVector() && "Result type must be scalar");
+    assert(!getType()->isTypeVector() && !getType()->isTypeVectorIdEXT() &&
+           "Result type must be scalar");
   }
 
 private:

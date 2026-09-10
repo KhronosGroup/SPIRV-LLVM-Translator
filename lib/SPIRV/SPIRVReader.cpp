@@ -2735,6 +2735,22 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
               "components selected\n"))
         return nullptr;
     }
+    // Each component index must be within range (FFFFFFFF or in [0, N-1]
+    // where N is the total number of components of the logically concatenated
+    // 2 vectors). Check here for both OpTypeVector and OpTypeVectorIdEXT.
+    SPIRVType *V1Ty = VS->getVector1()->getType();
+    SPIRVType *V2Ty = VS->getVector2()->getType();
+    unsigned NumTotalComps =
+        cast<FixedVectorType>(transType(V1Ty))->getNumElements() +
+        cast<FixedVectorType>(transType(V2Ty))->getNumElements();
+    for (SPIRVWord Comp : VS->getComponents()) {
+      if (Comp == static_cast<SPIRVWord>(0xFFFFFFFF))
+        continue;
+      if (!BM->getErrorLog().checkError(
+              Comp < NumTotalComps, SPIRVEC_InvalidInstruction,
+              "VectorShuffle: selected component index is out of range\n"))
+        return nullptr;
+    }
     std::vector<Constant *> Components;
     IntegerType *Int32Ty = IntegerType::get(*Context, 32);
     for (auto I : VS->getComponents()) {

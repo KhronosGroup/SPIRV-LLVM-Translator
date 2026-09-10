@@ -60,7 +60,7 @@ uint64_t SPIRVType::getArrayLength() const {
 }
 
 SPIRVWord SPIRVType::getBitWidth() const {
-  if (isTypeVector())
+  if (isTypeVector() || isTypeVectorIdEXT())
     return getVectorComponentType()->getBitWidth();
   if (isTypeBool())
     return 1;
