@@ -2618,8 +2618,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     uint64_t TrueWeight = 0, FalseWeight = 0;
     if (extractBranchWeights(*Branch, TrueWeight, FalseWeight) &&
         (TrueWeight != 0 || FalseWeight != 0)) {
-      SmallVector<uint32_t> Fitted = downscaleWeights(
-          {TrueWeight, FalseWeight}, TrueWeight + FalseWeight);
+      SmallVector<uint32_t> Fitted =
+          downscaleWeights({TrueWeight, FalseWeight}, TrueWeight + FalseWeight);
       BranchWeights.assign(Fitted.begin(), Fitted.end());
     }
 
