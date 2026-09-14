@@ -2611,11 +2611,15 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (SuccessorTrue == SuccessorFalse)
       return mapValue(V, BM->addBranchInst(SuccessorTrue, BB));
 
+    // Scale by the sum, not the larger element, so the emitted sum can't
+    // overflow 32 bits; an all-zero pair is skipped since SPIR-V requires
+    // at least one weight to be non-zero.
     std::vector<SPIRVWord> BranchWeights;
     uint64_t TrueWeight = 0, FalseWeight = 0;
-    if (extractBranchWeights(*Branch, TrueWeight, FalseWeight)) {
-      SmallVector<uint32_t> Fitted =
-          downscaleWeights({TrueWeight, FalseWeight});
+    if (extractBranchWeights(*Branch, TrueWeight, FalseWeight) &&
+        (TrueWeight != 0 || FalseWeight != 0)) {
+      SmallVector<uint32_t> Fitted = downscaleWeights(
+          {TrueWeight, FalseWeight}, TrueWeight + FalseWeight);
       BranchWeights.assign(Fitted.begin(), Fitted.end());
     }
 
