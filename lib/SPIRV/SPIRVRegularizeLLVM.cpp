@@ -248,6 +248,27 @@ void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
   UMulIntrinsic->setCalledFunction(UMulFunc);
 }
 
+void SPIRVRegularizeLLVMBase::lowerPtrMask(
+    IntrinsicInst *PtrMaskIntrinsic, std::vector<Instruction *> &ToErase) {
+  // The LLVM Language Reference defines ptrmask(%ptr, %mask) to be equivalent
+  // to, with iPtrIdx the index type size of the pointer:
+  //   %intptr = ptrtoint ptr %ptr to iPtrIdx ; this may truncate
+  //   %masked = and iPtrIdx %intptr, %mask
+  //   %diff = sub iPtrIdx %masked, %intptr
+  //   %result = getelementptr i8, ptr %ptr, iPtrIdx %diff
+  // Emitting that expansion rather than an inttoptr of %masked keeps the
+  // result in the address space of the pointer operand.
+  IRBuilder<> Builder(PtrMaskIntrinsic);
+  Value *Ptr = PtrMaskIntrinsic->getArgOperand(0);
+  Value *Mask = PtrMaskIntrinsic->getArgOperand(1);
+  Value *IntPtr = Builder.CreatePtrToInt(Ptr, Mask->getType());
+  Value *Masked = Builder.CreateAnd(IntPtr, Mask);
+  Value *Diff = Builder.CreateSub(Masked, IntPtr);
+  Value *Result = Builder.CreateGEP(Builder.getInt8Ty(), Ptr, Diff);
+  PtrMaskIntrinsic->replaceAllUsesWith(Result);
+  ToErase.push_back(PtrMaskIntrinsic);
+}
+
 void SPIRVRegularizeLLVMBase::expandVEDWithSYCLTypeSRetArg(Function *F) {
   auto Attrs = F->getAttributes();
   StructType *SRetTy = cast<StructType>(Attrs.getParamStructRetType(0));
@@ -644,6 +665,8 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               lowerFunnelShift(II);
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
+            else if (II->getIntrinsicID() == Intrinsic::ptrmask)
+              lowerPtrMask(II, ToErase);
             else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
               std::string MangledName =
