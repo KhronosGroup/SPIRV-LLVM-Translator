@@ -1,0 +1,33 @@
+; OpTypeVectorIdEXT: Component Count must be a constant instruction. Here the
+; count is an OpUndef, which the reverse translator must reject rather than
+; attempt to evaluate as a constant.
+
+; RUN: not llvm-spirv -spirv-text -r %s -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: InvalidInstruction
+; CHECK: TypeVectorIdEXT: component count must be a constant instruction
+
+119734787 66304 458752 10 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+3 Source 3 102000
+4 Name 1 "test"
+
+6 Decorate 1 LinkageAttributes "test" Export
+4 TypeInt 3 32 0
+3 Undef 3 4
+2 TypeVoid 2
+3 TypeFloat 5 32
+4 TypeVectorIdEXT 6 5 4
+4 TypeFunction 7 2 6
+
+5 Function 2 1 0 7
+3 FunctionParameter 6 8
+
+2 Label 9
+1 Return
+
+1 FunctionEnd
