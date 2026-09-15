@@ -1,0 +1,87 @@
+; Checks reverse-translation of value-level ops on an OpTypeVectorIdEXT value:
+; OpVectorExtractDynamic, OpVectorInsertDynamic, OpVectorShuffle, OpAccessChain.
+; OpVectorShuffle additionally mixes a plain OpTypeVector operand with an
+; OpTypeVectorIdEXT operand (both lower to the same LLVM vector type).
+
+; RUN: llvm-spirv -spirv-text -r %s -o - | llvm-dis | FileCheck %s
+
+119734787 66304 458752 36 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+3 Source 3 102000
+9 Name 1 "test_vec_extract_dynamic"
+8 Name 2 "test_vec_insert_dynamic"
+7 Name 3 "test_vec_shuffle"
+7 Name 4 "test_access_chain"
+
+11 Decorate 1 LinkageAttributes "test_vec_extract_dynamic" Export
+10 Decorate 2 LinkageAttributes "test_vec_insert_dynamic" Export
+9 Decorate 3 LinkageAttributes "test_vec_shuffle" Export
+9 Decorate 4 LinkageAttributes "test_access_chain" Export
+4 TypeInt 5 32 0
+4 Constant 5 7 4
+4 SpecConstant 5 8 4
+3 TypeFloat 6 32
+4 TypeVectorIdEXT 9 6 7
+4 TypeVectorIdEXT 10 6 8
+4 TypeVector 11 6 4
+4 TypePointer 12 7 9
+4 TypePointer 13 7 6
+5 TypeFunction 14 6 10 5
+6 TypeFunction 15 9 9 6 5
+5 TypeFunction 16 9 11 9
+4 TypeFunction 17 6 5
+
+; CHECK: define spir_func float @test_vec_extract_dynamic(<4 x float> %[[#V:]], i32 %[[#I:]])
+; CHECK: extractelement <4 x float> %[[#V]], i32 %[[#I]]
+5 Function 6 1 0 14
+3 FunctionParameter 10 18
+3 FunctionParameter 5 19
+
+2 Label 20
+5 VectorExtractDynamic 6 21 18 19
+2 ReturnValue 21
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_vec_insert_dynamic(<4 x float> %[[#V:]], float %[[#S:]], i32 %[[#I:]])
+; CHECK: insertelement <4 x float> %[[#V]], float %[[#S]], i32 %[[#I]]
+5 Function 9 2 0 15
+3 FunctionParameter 9 22
+3 FunctionParameter 6 23
+3 FunctionParameter 5 24
+
+2 Label 25
+6 VectorInsertDynamic 9 26 22 23 24
+2 ReturnValue 26
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_vec_shuffle(<4 x float> %[[#A:]], <4 x float> %[[#B:]])
+; CHECK: shufflevector <4 x float> %[[#A]], <4 x float> %[[#B]]
+5 Function 9 3 0 16
+3 FunctionParameter 11 27
+3 FunctionParameter 9 28
+
+2 Label 29
+9 VectorShuffle 9 30 27 28 0 1 4 5
+2 ReturnValue 30
+
+1 FunctionEnd
+
+; CHECK: define spir_func float @test_access_chain(i32 %[[#I:]])
+; CHECK: getelementptr <4 x float>, <4 x float>* %[[#]], i32 0, i32 %[[#I]]
+; CHECK: load float
+5 Function 6 4 0 17
+3 FunctionParameter 5 31
+
+2 Label 32
+4 Variable 12 33 7
+5 AccessChain 13 34 33 31
+4 Load 6 35 34
+2 ReturnValue 35
+
+1 FunctionEnd
