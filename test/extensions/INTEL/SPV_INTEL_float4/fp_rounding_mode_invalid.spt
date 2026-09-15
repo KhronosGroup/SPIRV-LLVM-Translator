@@ -1,0 +1,35 @@
+; FPRoundingMode other than RTE on a conversion to Float4E2M1INTEL must be
+; rejected, not silently mistranslated.
+
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: not llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+
+; CHECK-ERROR: FPRoundingMode: only RTE is supported for this conversion.
+
+119734787 65536 393230 11 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Float16Buffer
+2 Capability Float4E2M1INTEL
+2 Capability Int4TypeINTEL
+6 Extension "SPV_INTEL_float4"
+5 Extension "SPV_INTEL_int4"
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 1 2
+3 Source 0 0
+3 Name 4 "f"
+4 Name 5 "entry"
+5 Decorate 4 LinkageAttributes "f" Export
+4 Decorate 9 FPRoundingMode 1
+3 TypeFloat 2 16
+4 Constant 2 7 15360
+4 TypeInt 6 4 0
+3 TypeFunction 3 6
+4 TypeFloat 8 4 6214
+5 Function 6 4 0 3
+2 Label 5
+4 FConvert 8 9 7
+4 Bitcast 6 10 9
+2 ReturnValue 10
+1 FunctionEnd
