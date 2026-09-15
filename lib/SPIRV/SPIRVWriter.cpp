@@ -4175,9 +4175,13 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::floor:
   case Intrinsic::fma:
   case Intrinsic::frexp:
+  case Intrinsic::llrint:
+  case Intrinsic::llround:
   case Intrinsic::log:
   case Intrinsic::log10:
   case Intrinsic::log2:
+  case Intrinsic::lrint:
+  case Intrinsic::lround:
   case Intrinsic::maximumnum:
   case Intrinsic::maximum:
   case Intrinsic::maxnum:
@@ -4533,12 +4537,23 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
                           BB);
   }
-  case Intrinsic::lround: {
+  case Intrinsic::lround:
+  case Intrinsic::llround:
+  case Intrinsic::lrint:
+  case Intrinsic::llrint: {
+    // There is no single OpenCL instruction rounding a floating-point value
+    // into an integer of a different width, so round in the source type first
+    // and convert the result afterwards. lround/llround round halfway cases
+    // away from zero, which is OpenCL 'round'; lrint/llrint round to nearest
+    // even, which is OpenCL 'rint'. The result type is signed, hence
+    // OpConvertFToS.
+    bool IsRint = IID == Intrinsic::lrint || IID == Intrinsic::llrint;
     SPIRVType *SourceTy = transType(II->getArgOperand(0)->getType());
     SPIRVType *DestTy = transType(II->getType());
-    SPIRVValue *Rounded = BM->addExtInst(
-        SourceTy, BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Round,
-        {transValue(II->getArgOperand(0), BB)}, BB);
+    SPIRVValue *Rounded =
+        BM->addExtInst(SourceTy, BM->getExtInstSetId(SPIRVEIS_OpenCL),
+                       IsRint ? OpenCLLIB::Rint : OpenCLLIB::Round,
+                       {transValue(II->getArgOperand(0), BB)}, BB);
     return BM->addUnaryInst(OpConvertFToS, DestTy, Rounded, BB);
   }
   case Intrinsic::frexp: {
