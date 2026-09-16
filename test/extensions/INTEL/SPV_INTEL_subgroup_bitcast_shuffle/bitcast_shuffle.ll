@@ -75,56 +75,56 @@
 ; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I32]]
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_16bit()
-; CHECK-LLVM: call spir_func i16 @{{.*SubgroupBitcastShuffleINTEL_Rushort.*}}(<2 x i8>
-; CHECK-LLVM: call spir_func <2 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar2.*}}(i16
+; CHECK-LLVM: call spir_func i16 @_Z43__spirv_SubgroupBitcastShuffleINTEL_RushortDv2_c(<2 x i8>
+; CHECK-LLVM: call spir_func <2 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar2s(i16
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_32bit()
-; CHECK-LLVM: call spir_func <2 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort2.*}}(<4 x i8>
-; CHECK-LLVM: call spir_func <4 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar4.*}}(<2 x i16>
-; CHECK-LLVM: call spir_func i32 @{{.*SubgroupBitcastShuffleINTEL_Ruint.*}}(<4 x i8>
-; CHECK-LLVM: call spir_func <4 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar4.*}}(i32
-; CHECK-LLVM: call spir_func i32 @{{.*SubgroupBitcastShuffleINTEL_Ruint.*}}(<2 x i16>
-; CHECK-LLVM: call spir_func <2 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort2.*}}(i32
+; CHECK-LLVM: call spir_func <2 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort2Dv4_c(<4 x i8>
+; CHECK-LLVM: call spir_func <4 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar4Dv2_s(<2 x i16>
+; CHECK-LLVM: call spir_func i32 @_Z41__spirv_SubgroupBitcastShuffleINTEL_RuintDv4_c(<4 x i8>
+; CHECK-LLVM: call spir_func <4 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar4i(i32
+; CHECK-LLVM: call spir_func i32 @_Z41__spirv_SubgroupBitcastShuffleINTEL_RuintDv2_s(<2 x i16>
+; CHECK-LLVM: call spir_func <2 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort2i(i32
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_64bit()
-; CHECK-LLVM: call spir_func <4 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort4.*}}(<8 x i8>
-; CHECK-LLVM: call spir_func <8 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar8.*}}(<4 x i16>
-; CHECK-LLVM: call spir_func <2 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint2.*}}(<8 x i8>
-; CHECK-LLVM: call spir_func <8 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar8.*}}(<2 x i32>
-; CHECK-LLVM: call spir_func i64 @{{.*SubgroupBitcastShuffleINTEL_Rulong.*}}(<8 x i8>
-; CHECK-LLVM: call spir_func <8 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar8.*}}(i64
-; CHECK-LLVM: call spir_func <2 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint2.*}}(<4 x i16>
-; CHECK-LLVM: call spir_func <4 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort4.*}}(<2 x i32>
-; CHECK-LLVM: call spir_func i64 @{{.*SubgroupBitcastShuffleINTEL_Rulong.*}}(<4 x i16>
-; CHECK-LLVM: call spir_func <4 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort4.*}}(i64
-; CHECK-LLVM: call spir_func i64 @{{.*SubgroupBitcastShuffleINTEL_Rulong.*}}(<2 x i32>
-; CHECK-LLVM: call spir_func <2 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint2.*}}(i64
+; CHECK-LLVM: call spir_func <4 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort4Dv8_c(<8 x i8>
+; CHECK-LLVM: call spir_func <8 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar8Dv4_s(<4 x i16>
+; CHECK-LLVM: call spir_func <2 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint2Dv8_c(<8 x i8>
+; CHECK-LLVM: call spir_func <8 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar8Dv2_i(<2 x i32>
+; CHECK-LLVM: call spir_func i64 @_Z42__spirv_SubgroupBitcastShuffleINTEL_RulongDv8_c(<8 x i8>
+; CHECK-LLVM: call spir_func <8 x i8> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruchar8l(i64
+; CHECK-LLVM: call spir_func <2 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint2Dv4_s(<4 x i16>
+; CHECK-LLVM: call spir_func <4 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort4Dv2_i(<2 x i32>
+; CHECK-LLVM: call spir_func i64 @_Z42__spirv_SubgroupBitcastShuffleINTEL_RulongDv4_s(<4 x i16>
+; CHECK-LLVM: call spir_func <4 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort4l(i64
+; CHECK-LLVM: call spir_func i64 @_Z42__spirv_SubgroupBitcastShuffleINTEL_RulongDv2_i(<2 x i32>
+; CHECK-LLVM: call spir_func <2 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint2l(i64
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_128bit()
-; CHECK-LLVM: call spir_func <8 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort8.*}}(<16 x i8>
-; CHECK-LLVM: call spir_func <16 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar16.*}}(<8 x i16>
-; CHECK-LLVM: call spir_func <4 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint4.*}}(<16 x i8>
-; CHECK-LLVM: call spir_func <16 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar16.*}}(<4 x i32>
-; CHECK-LLVM: call spir_func <2 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong2.*}}(<16 x i8>
-; CHECK-LLVM: call spir_func <16 x i8> @{{.*SubgroupBitcastShuffleINTEL_Ruchar16.*}}(<2 x i64>
-; CHECK-LLVM: call spir_func <4 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint4.*}}(<8 x i16>
-; CHECK-LLVM: call spir_func <8 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort8.*}}(<4 x i32>
-; CHECK-LLVM: call spir_func <2 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong2.*}}(<8 x i16>
-; CHECK-LLVM: call spir_func <8 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort8.*}}(<2 x i64>
-; CHECK-LLVM: call spir_func <2 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong2.*}}(<4 x i32>
-; CHECK-LLVM: call spir_func <4 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint4.*}}(<2 x i64>
+; CHECK-LLVM: call spir_func <8 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort8Dv16_c(<16 x i8>
+; CHECK-LLVM: call spir_func <16 x i8> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Ruchar16Dv8_s(<8 x i16>
+; CHECK-LLVM: call spir_func <4 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint4Dv16_c(<16 x i8>
+; CHECK-LLVM: call spir_func <16 x i8> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Ruchar16Dv4_i(<4 x i32>
+; CHECK-LLVM: call spir_func <2 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong2Dv16_c(<16 x i8>
+; CHECK-LLVM: call spir_func <16 x i8> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Ruchar16Dv2_l(<2 x i64>
+; CHECK-LLVM: call spir_func <4 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint4Dv8_s(<8 x i16>
+; CHECK-LLVM: call spir_func <8 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort8Dv4_i(<4 x i32>
+; CHECK-LLVM: call spir_func <2 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong2Dv8_s(<8 x i16>
+; CHECK-LLVM: call spir_func <8 x i16> @_Z44__spirv_SubgroupBitcastShuffleINTEL_Rushort8Dv2_l(<2 x i64>
+; CHECK-LLVM: call spir_func <2 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong2Dv4_i(<4 x i32>
+; CHECK-LLVM: call spir_func <4 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint4Dv2_l(<2 x i64>
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_256bit()
-; CHECK-LLVM: call spir_func <8 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint8.*}}(<16 x i16>
-; CHECK-LLVM: call spir_func <16 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort16.*}}(<8 x i32>
-; CHECK-LLVM: call spir_func <4 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong4.*}}(<16 x i16>
-; CHECK-LLVM: call spir_func <16 x i16> @{{.*SubgroupBitcastShuffleINTEL_Rushort16.*}}(<4 x i64>
-; CHECK-LLVM: call spir_func <4 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong4.*}}(<8 x i32>
-; CHECK-LLVM: call spir_func <8 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint8.*}}(<4 x i64>
+; CHECK-LLVM: call spir_func <8 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint8Dv16_s(<16 x i16>
+; CHECK-LLVM: call spir_func <16 x i16> @_Z45__spirv_SubgroupBitcastShuffleINTEL_Rushort16Dv8_i(<8 x i32>
+; CHECK-LLVM: call spir_func <4 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong4Dv16_s(<16 x i16>
+; CHECK-LLVM: call spir_func <16 x i16> @_Z45__spirv_SubgroupBitcastShuffleINTEL_Rushort16Dv4_l(<4 x i64>
+; CHECK-LLVM: call spir_func <4 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong4Dv8_i(<8 x i32>
+; CHECK-LLVM: call spir_func <8 x i32> @_Z42__spirv_SubgroupBitcastShuffleINTEL_Ruint8Dv4_l(<4 x i64>
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_512bit()
-; CHECK-LLVM: call spir_func <8 x i64> @{{.*SubgroupBitcastShuffleINTEL_Rulong8.*}}(<16 x i32>
-; CHECK-LLVM: call spir_func <16 x i32> @{{.*SubgroupBitcastShuffleINTEL_Ruint16.*}}(<8 x i64>
+; CHECK-LLVM: call spir_func <8 x i64> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Rulong8Dv16_i(<16 x i32>
+; CHECK-LLVM: call spir_func <16 x i32> @_Z43__spirv_SubgroupBitcastShuffleINTEL_Ruint16Dv8_l(<8 x i64>
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir"
