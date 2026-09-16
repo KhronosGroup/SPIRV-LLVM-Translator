@@ -12,6 +12,7 @@
 2 Capability Addresses
 2 Capability Linkage
 2 Capability Kernel
+2 Capability LongVectorEXT
 6 Extension "SPV_EXT_long_vector"
 3 MemoryModel 2 2
 3 Source 3 102000
