@@ -447,7 +447,7 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   case OpTypeBufferSurfaceINTEL: {
     auto *PST = static_cast<SPIRVTypeBufferSurfaceINTEL *>(T);
     Type *Ty = nullptr;
-    if (UseTPT) {
+    if (UseTPT && !UseTargetTypes) {
       Type *StructTy = getOrCreateOpaqueStructType(M, transVCTypeName(PST));
       Ty = TypedPointerType::get(StructTy, SPIRAS_Global);
     } else if (!UseTargetTypes) {
