@@ -1,0 +1,256 @@
+; Reverse-translation of OpTypeVectorIdEXT used as operand/result types of these
+; ops in general: binary (OpFAdd), select (OpSelect), unary (OpFNegate),
+; dot (OpDot), comparison (OpFOrdEqual, OpIEqual), conversions (OpFConvert,
+; OpSConvert, OpUConvert), and the vector/matrix multiply ops (OpVectorTimesScalar,
+; OpVectorTimesMatrix, OpMatrixTimesVector). It also
+; checks the OpenCL type-name mangling (!kernel_arg_type metadata) of an
+; OpTypeVectorIdEXT kernel parameter.
+
+; RUN: llvm-spirv -spirv-text -r %s -o - | llvm-dis | FileCheck %s
+
+119734787 66304 458752 101 0
+2 Capability Matrix
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability Int64
+2 Capability Int16
+2 Capability GenericPointer
+2 Capability Float8EXT
+2 Capability LongVectorEXT
+5 Extension "SPV_EXT_float8"
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+7 EntryPoint 6 1 "test_mangling"
+3 Source 3 102000
+5 Name 2 "test_fadd"
+5 Name 3 "test_select"
+6 Name 4 "test_fnegate"
+5 Name 5 "test_dot"
+6 Name 6 "test_fordequal"
+6 Name 7 "test_iequal_sc"
+7 Name 8 "test_f32_to_e4m3"
+7 Name 9 "test_e4m3_to_f32"
+6 Name 10 "test_sconvert"
+6 Name 11 "test_uconvert"
+5 Name 12 "test_vts"
+5 Name 13 "test_vtm"
+5 Name 14 "test_mtv"
+
+7 Decorate 2 LinkageAttributes "test_fadd" Export
+7 Decorate 3 LinkageAttributes "test_select" Export
+8 Decorate 4 LinkageAttributes "test_fnegate" Export
+7 Decorate 5 LinkageAttributes "test_dot" Export
+8 Decorate 6 LinkageAttributes "test_fordequal" Export
+8 Decorate 7 LinkageAttributes "test_iequal_sc" Export
+9 Decorate 8 LinkageAttributes "test_f32_to_e4m3" Export
+9 Decorate 9 LinkageAttributes "test_e4m3_to_f32" Export
+8 Decorate 10 LinkageAttributes "test_sconvert" Export
+8 Decorate 11 LinkageAttributes "test_uconvert" Export
+7 Decorate 12 LinkageAttributes "test_vts" Export
+7 Decorate 13 LinkageAttributes "test_vtm" Export
+7 Decorate 14 LinkageAttributes "test_mtv" Export
+4 TypeInt 16 32 0
+4 TypeInt 19 16 0
+4 TypeInt 20 64 0
+4 Constant 16 22 4
+4 Constant 16 23 3
+4 SpecConstant 16 24 4
+2 TypeVoid 15
+3 TypeFloat 17 32
+2 TypeBool 18
+4 TypeFloat 21 8 4214
+4 TypeVectorIdEXT 25 17 22
+4 TypeVectorIdEXT 26 17 23
+4 TypeVectorIdEXT 27 18 22
+4 TypeVectorIdEXT 28 16 24
+4 TypeVectorIdEXT 29 18 24
+4 TypeVectorIdEXT 30 21 22
+4 TypeVectorIdEXT 31 19 22
+4 TypeVectorIdEXT 32 16 22
+4 TypeVectorIdEXT 33 20 22
+4 TypeVector 34 17 4
+4 TypeVector 35 17 3
+4 TypeMatrix 36 34 3
+5 TypeFunction 37 25 25 25
+6 TypeFunction 38 25 27 25 25
+4 TypeFunction 39 25 25
+5 TypeFunction 40 17 25 25
+5 TypeFunction 41 27 25 25
+5 TypeFunction 42 29 28 28
+4 TypeFunction 43 30 25
+4 TypeFunction 44 25 30
+4 TypeFunction 45 33 32
+4 TypeFunction 46 32 31
+5 TypeFunction 47 25 25 17
+5 TypeFunction 48 35 25 36
+5 TypeFunction 49 34 36 26
+4 TypeFunction 50 15 25
+
+; CHECK: define spir_func <4 x float> @test_fadd(<4 x float> %[[#A:]], <4 x float> %[[#B:]])
+; CHECK: fadd <4 x float> %[[#A]], %[[#B]]
+5 Function 25 2 0 37
+3 FunctionParameter 25 51
+3 FunctionParameter 25 52
+
+2 Label 53
+5 FAdd 25 54 51 52
+2 ReturnValue 54
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_select(<4 x i1> %[[#C:]], <4 x float> %[[#A:]], <4 x float> %[[#B:]])
+; CHECK: select <4 x i1> %[[#C]], <4 x float> %[[#A]], <4 x float> %[[#B]]
+5 Function 25 3 0 38
+3 FunctionParameter 27 55
+3 FunctionParameter 25 56
+3 FunctionParameter 25 57
+
+2 Label 58
+6 Select 25 59 55 56 57
+2 ReturnValue 59
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_fnegate(<4 x float> %[[#V:]])
+; CHECK: fneg <4 x float> %[[#V]]
+5 Function 25 4 0 39
+3 FunctionParameter 25 60
+
+2 Label 61
+4 FNegate 25 62 60
+2 ReturnValue 62
+
+1 FunctionEnd
+
+; CHECK: define spir_func float @test_dot(<4 x float> %[[#A:]], <4 x float> %[[#B:]])
+; CHECK: call spir_func float @{{.*}}dot{{.*}}(<4 x float> %[[#A]], <4 x float> %[[#B]])
+5 Function 17 5 0 40
+3 FunctionParameter 25 63
+3 FunctionParameter 25 64
+
+2 Label 65
+5 Dot 17 66 63 64
+2 ReturnValue 66
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x i1> @test_fordequal(<4 x float> %[[#A:]], <4 x float> %[[#B:]])
+; CHECK: fcmp oeq <4 x float> %[[#A]], %[[#B]]
+5 Function 27 6 0 41
+3 FunctionParameter 25 67
+3 FunctionParameter 25 68
+
+2 Label 69
+5 FOrdEqual 27 70 67 68
+2 ReturnValue 70
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x i1> @test_iequal_sc(<4 x i32> %[[#A:]], <4 x i32> %[[#B:]])
+; CHECK: icmp eq <4 x i32> %[[#A]], %[[#B]]
+5 Function 29 7 0 42
+3 FunctionParameter 28 71
+3 FunctionParameter 28 72
+
+2 Label 73
+5 IEqual 29 74 71 72
+2 ReturnValue 74
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x i8> @test_f32_to_e4m3(<4 x float> %[[#V:]])
+; CHECK: call spir_func <4 x i8> @{{.*}}__builtin_spirv_ConvertFP16ToE4M3EXT{{.*}}(<4 x float> %[[#V]])
+5 Function 30 8 0 43
+3 FunctionParameter 25 75
+
+2 Label 76
+4 FConvert 30 77 75
+2 ReturnValue 77
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_e4m3_to_f32(<4 x i8> %[[#V:]])
+; CHECK: call spir_func <4 x float> @{{.*}}__builtin_spirv_ConvertE4M3ToFP16EXT{{.*}}(<4 x i8> %[[#V]])
+5 Function 25 9 0 44
+3 FunctionParameter 30 78
+
+2 Label 79
+4 FConvert 25 80 78
+2 ReturnValue 80
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x i64> @test_sconvert(<4 x i32> %[[#V:]])
+; CHECK: call spir_func <4 x i64> @{{.*}}convert_long{{.*}}(<4 x i32> %[[#V]])
+5 Function 33 10 0 45
+3 FunctionParameter 32 81
+
+2 Label 82
+4 SConvert 33 83 81
+2 ReturnValue 83
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x i32> @test_uconvert(<4 x i16> %[[#V:]])
+; CHECK: call spir_func <4 x i32> @{{.*}}convert_int{{.*}}(<4 x i16> %[[#V]])
+5 Function 32 11 0 46
+3 FunctionParameter 31 84
+
+2 Label 85
+4 UConvert 32 86 84
+2 ReturnValue 86
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_vts(<4 x float> %[[#V:]], float %[[#S:]])
+; CHECK: insertelement <4 x float> poison, float %[[#S]], i64 0
+; CHECK: fmul <4 x float> %[[#V]],
+5 Function 25 12 0 47
+3 FunctionParameter 25 87
+3 FunctionParameter 17 88
+
+2 Label 89
+5 VectorTimesScalar 25 90 87 88
+2 ReturnValue 90
+
+1 FunctionEnd
+
+; CHECK: define spir_func <3 x float> @test_vtm(<4 x float> %[[#V:]], [3 x <4 x float>] %[[#M:]])
+; CHECK: extractelement <4 x float> %[[#V]], i32 0
+; CHECK: extractvalue [3 x <4 x float>] %[[#M]], 0
+; CHECK: fmul <3 x float>
+5 Function 35 13 0 48
+3 FunctionParameter 25 91
+3 FunctionParameter 36 92
+
+2 Label 93
+5 VectorTimesMatrix 35 94 91 92
+2 ReturnValue 94
+
+1 FunctionEnd
+
+; CHECK: define spir_func <4 x float> @test_mtv([3 x <4 x float>] %[[#M:]], <3 x float> %[[#V:]])
+; CHECK: extractelement <3 x float> %[[#V]], i32 0
+; CHECK: extractvalue [3 x <4 x float>] %[[#M]], 0
+; CHECK: fmul <4 x float>
+5 Function 34 14 0 49
+3 FunctionParameter 36 95
+3 FunctionParameter 26 96
+
+2 Label 97
+5 MatrixTimesVector 34 98 95 96
+2 ReturnValue 98
+
+1 FunctionEnd
+
+; The OpTypeVectorIdEXT kernel parameter mangles to the "float4" OpenCL type name.
+; CHECK: define spir_kernel void @test_mangling(<4 x float> %{{.*}}) {{.*}} !kernel_arg_type ![[#TYPE:]]
+; CHECK: ![[#TYPE]] = !{!"float4"}
+5 Function 15 1 0 50
+3 FunctionParameter 25 99
+
+2 Label 100
+1 Return
+
+1 FunctionEnd

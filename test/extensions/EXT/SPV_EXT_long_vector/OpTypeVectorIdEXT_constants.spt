@@ -1,0 +1,92 @@
+; Checks correct reverse-translation of OpTypeVectorIdEXT with the following
+; constant instructions and scenarios:
+; 1. OpTypeVectorIdEXT + OpConstant
+; 2. OpTypeVectorIdEXT + OpSpecConstant (default + overriden value)
+; 3. OpTypeVectorIdEXT + OpSpecConstantOp (default + overriden value)
+; 4. OpConstantNull with OpTypeVectorIdEXT result type
+
+; Default spec-constant values are used when no override is provided.
+; RUN: llvm-spirv -spirv-text -r %s -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK,CHECK-DEFAULT
+
+; Use "-spec-const" to override spec-constant values.
+; RUN: llvm-spirv -spirv-text -r -spec-const "42:i32:9 7:i32:5" %s -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK,CHECK-OVERRIDE
+
+119734787 66304 458752 27 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability LongVectorEXT
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+3 Source 3 102000
+6 Name 1 "test_vec_const"
+5 Name 2 "test_vec_sc"
+6 Name 3 "test_vec_scop"
+6 Name 4 "test_vec_null"
+3 Name 5 "arg"
+3 Name 6 "arg"
+3 Name 7 "arg"
+
+8 Decorate 1 LinkageAttributes "test_vec_const" Export
+7 Decorate 2 LinkageAttributes "test_vec_sc" Export
+8 Decorate 3 LinkageAttributes "test_vec_scop" Export
+8 Decorate 4 LinkageAttributes "test_vec_null" Export
+4 Decorate 8 SpecId 42
+4 Decorate 9 SpecId 7
+4 TypeInt 11 32 0
+4 SpecConstant 11 8 7
+4 SpecConstant 11 9 3
+4 Constant 11 13 5
+6 SpecConstantOp 11 14 128 9 9
+2 TypeVoid 10
+3 TypeFloat 12 32
+4 TypeVectorIdEXT 15 12 13
+4 TypeVectorIdEXT 16 12 8
+4 TypeVectorIdEXT 17 12 14
+4 TypeFunction 19 10 15
+4 TypeFunction 20 10 16
+4 TypeFunction 21 10 17
+3 TypeFunction 22 15
+3 ConstantNull 15 18
+
+; Count is OpConstant 5.
+; CHECK: define spir_func void @test_vec_const(<5 x float> %arg)
+5 Function 10 1 0 19
+3 FunctionParameter 15 5
+
+2 Label 23
+1 Return
+
+1 FunctionEnd
+
+; Count is OpSpecConstant, default 7, overridden to 9.
+; CHECK-DEFAULT: define spir_func void @test_vec_sc(<7 x float> %arg)
+; CHECK-OVERRIDE: define spir_func void @test_vec_sc(<9 x float> %arg)
+5 Function 10 2 0 20
+3 FunctionParameter 16 6
+
+2 Label 24
+1 Return
+
+1 FunctionEnd
+
+; Count is OpSpecConstantOp IAdd base base; base default 3 (count 6), overridden to 5 (count 10).
+; CHECK-DEFAULT: define spir_func void @test_vec_scop(<6 x float> %arg)
+; CHECK-OVERRIDE: define spir_func void @test_vec_scop(<10 x float> %arg)
+5 Function 10 3 0 21
+3 FunctionParameter 17 7
+
+2 Label 25
+1 Return
+
+1 FunctionEnd
+
+; OpConstantNull with OpTypeVectorIdEXT result type
+; CHECK: define spir_func <5 x float> @test_vec_null()
+; CHECK: ret <5 x float> zeroinitializer
+5 Function 15 4 0 22
+
+2 Label 26
+2 ReturnValue 18
+
+1 FunctionEnd
