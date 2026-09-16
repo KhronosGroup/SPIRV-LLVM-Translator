@@ -17,6 +17,7 @@
 2 Capability Int16
 2 Capability GenericPointer
 2 Capability Float8EXT
+2 Capability LongVectorEXT
 5 Extension "SPV_EXT_float8"
 6 Extension "SPV_EXT_long_vector"
 3 MemoryModel 2 2
