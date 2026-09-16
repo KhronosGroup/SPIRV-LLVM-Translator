@@ -4204,10 +4204,10 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case internal::OpClampConvertFToSINTEL:
   case internal::OpStochasticRoundFToFINTEL:
   case internal::OpClampStochasticRoundFToSINTEL:
+  case internal::OpSubgroupBitcastShuffleINTEL:
   // Old opcodes, for backward compatibility.
   case internal::OpClampConvertFToFINTEL:
   case internal::OpClampStochasticRoundFToFINTEL:
-  case internal::OpSubgroupBitcastShuffleINTEL:
     AddRetTypePostfix = true;
     break;
   default: {

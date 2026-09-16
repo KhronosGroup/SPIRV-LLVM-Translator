@@ -33,46 +33,46 @@
 ; CHECK-SPIRV-DAG: TypeVector [[#TV16I32:]] [[#TI32]] 16
 ; CHECK-SPIRV-DAG: TypeVector [[#TV8I64:]] [[#TI64]] 8
 
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I16]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I32]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I64]] {{.*}} {{[0-9]+}}
-; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I32]] {{.*}} {{[0-9]+}}
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TI64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I8]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV2I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I16]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV4I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I32]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV8I64]]
+; CHECK-SPIRV: SubgroupBitcastShuffleINTEL [[#TV16I32]]
 
 ; CHECK-LLVM-LABEL: define spir_kernel void @test_16bit()
 ; CHECK-LLVM: call spir_func i16 @{{.*SubgroupBitcastShuffleINTEL_Rushort.*}}(<2 x i8>
