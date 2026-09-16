@@ -1,0 +1,33 @@
+; Checks the reader rejects OpVectorShuffle when the OpTypeVectorIdEXT result
+; component count differs from the number of selected components.
+
+; RUN: not llvm-spirv -spirv-text -r %s -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: VectorShuffle: result component count must match the number of components selected
+
+119734787 66304 458752 11 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability LongVectorEXT
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+3 Source 3 102000
+3 Name 1 "f"
+
+5 Decorate 1 LinkageAttributes "f" Export
+4 TypeInt 3 32 0
+4 Constant 3 4 5
+3 TypeFloat 2 32
+4 TypeVectorIdEXT 5 2 4
+5 TypeFunction 6 5 5 5
+
+5 Function 5 1 0 6
+3 FunctionParameter 5 7
+3 FunctionParameter 5 8
+
+2 Label 9
+8 VectorShuffle 5 10 7 8 0 1 2
+2 ReturnValue 10
+
+1 FunctionEnd

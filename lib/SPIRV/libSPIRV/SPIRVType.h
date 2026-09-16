@@ -98,6 +98,7 @@ public:
   bool isTypeSampledImage() const;
   bool isTypeStruct() const;
   bool isTypeVector() const;
+  bool isTypeVectorIdEXT() const;
   bool isTypeJointMatrixINTEL() const;
   bool isTypeCooperativeMatrixKHR() const;
   bool isTypeVectorInt() const;
@@ -497,6 +498,47 @@ protected:
 private:
   SPIRVType *ElemType; // Element Type
   SPIRVId Length;      // Array Length
+};
+
+class SPIRVTypeVectorIdEXT : public SPIRVType {
+public:
+  // Complete constructor
+  SPIRVTypeVectorIdEXT(SPIRVModule *M, SPIRVId TheId, SPIRVType *TheCompType,
+                       SPIRVId TheCompCount)
+      : SPIRVType(M, 4, OpTypeVectorIdEXT, TheId), CompType(TheCompType),
+        ComponentCount(TheCompCount) {
+    validate();
+  }
+  // Incomplete constructor
+  SPIRVTypeVectorIdEXT()
+      : SPIRVType(OpTypeVectorIdEXT), CompType(nullptr),
+        ComponentCount(SPIRVID_INVALID) {}
+
+  SPIRVType *getComponentType() const { return CompType; }
+  SPIRVValue *getComponentCount() const { return getValue(ComponentCount); }
+
+  SPIRVCapVec getRequiredCapability() const override {
+    SPIRVCapVec V(getComponentType()->getRequiredCapability());
+    V.push_back(CapabilityLongVectorEXT);
+    return V;
+  }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_EXT_long_vector;
+  }
+
+  std::vector<SPIRVEntry *> getNonLiteralOperands() const override {
+    std::vector<SPIRVEntry *> Operands{CompType,
+                                       (SPIRVEntry *)getComponentCount()};
+    return Operands;
+  }
+
+  _SPIRV_DCL_ENCDEC
+  void validate() const override;
+
+private:
+  SPIRVType *CompType;
+  SPIRVId ComponentCount;
 };
 
 class SPIRVTypeOpaque : public SPIRVType {
