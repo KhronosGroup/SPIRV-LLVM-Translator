@@ -1,0 +1,34 @@
+; OpTypeVectorIdEXT: Component Type must be a scalar type. Here the component
+; type is itself a vector, which the reverse translator must reject.
+
+; RUN: not llvm-spirv -spirv-text -r %s -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: InvalidInstruction
+; CHECK: TypeVectorIdEXT: component type must be a scalar type
+
+119734787 66304 458752 11 0
+2 Capability Addresses
+2 Capability Linkage
+2 Capability Kernel
+2 Capability LongVectorEXT
+6 Extension "SPV_EXT_long_vector"
+3 MemoryModel 2 2
+3 Source 3 102000
+4 Name 1 "test"
+
+6 Decorate 1 LinkageAttributes "test" Export
+4 TypeInt 3 32 0
+4 Constant 3 4 5
+2 TypeVoid 2
+3 TypeFloat 5 32
+4 TypeVector 6 5 4
+4 TypeVectorIdEXT 7 6 4
+4 TypeFunction 8 2 7
+
+5 Function 2 1 0 8
+3 FunctionParameter 7 9
+
+2 Label 10
+1 Return
+
+1 FunctionEnd
