@@ -1,38 +1,41 @@
-; A FPRoundingMode decoration on a conversion to Float4E2M1EXT must land on
-; the FConvert result, not on the bitcast inserted to bridge back to i4 --
-; regardless of which rounding mode is requested.
+; A FPRoundingMode decoration on a conversion to/from Float4E2M1EXT
+; must land on the FConvert result, not on the bitcast used to bridge
+; the mini-float value to its packed i4 LLVM representation.
+; Check that it round-trips through the real builtin rather than
+; the generic mangler.
 
 ; RUN: llvm-spirv %s -spirv-ext=+SPV_EXT_ocp_microscaling_types,+SPV_INTEL_int4 -o %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK: Decorate [[#CONV:]] FPRoundingMode 0
-; CHECK: FConvert [[#]] [[#CONV]] [[#]]
-; CHECK-NEXT: Bitcast [[#]] [[#]] [[#CONV]]
+; CHECK-DAG: Decorate [[#TOCONV:]] FPRoundingMode 0
+; CHECK-DAG: FConvert [[#]] [[#TOCONV]] [[#]]
+; CHECK-DAG: Bitcast [[#]] [[#]] [[#TOCONV]]
 
-; CHECK-LLVM: call spir_func i4 @_Z36__builtin_spirv_ConvertFP16ToE2M1EXTDh(half
-; CHECK-LLVM-SAME: !spirv.Decorations ![[#DECO:]]
+; CHECK-DAG: Decorate [[#FROMCONV:]] FPRoundingMode 0
+; CHECK-DAG: Bitcast [[#]] [[#FROMBC:]] [[#]]
+; CHECK-DAG: FConvert [[#]] [[#FROMCONV]] [[#FROMBC]]
+
+; CHECK-LLVM-DAG: call spir_func i4 @_Z36__builtin_spirv_ConvertFP16ToE2M1EXTDh(half {{.*}}, !spirv.Decorations ![[#DECO:]]
+; CHECK-LLVM-DAG: call spir_func half @_Z36__builtin_spirv_ConvertE2M1ToFP16EXTi(i4 {{.*}}, !spirv.Decorations ![[#DECO]]
 ; CHECK-LLVM: ![[#DECO]] = !{![[#RTE:]]}
 ; CHECK-LLVM: ![[#RTE]] = !{i32 39, i32 0}
 
-target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024"
 target triple = "spir64-unknown-unknown"
 
-declare dso_local spir_func i64 @_Z13get_global_idj(i32)
 declare dso_local spir_func i4 @_Z36__builtin_spirv_ConvertFP16ToE2M1EXTDh(half)
+declare dso_local spir_func half @_Z36__builtin_spirv_ConvertE2M1ToFP16EXTi(i4)
 
-define spir_kernel void @FP16_to_E2M1_rte_scalar(half addrspace(1)* %input, i8 addrspace(1)* %output) {
-  %gid = call i64 @_Z13get_global_idj(i32 0)
-  %inPtr = getelementptr half, half addrspace(1)* %input, i64 %gid
-  %val = load half, half addrspace(1)* %inPtr, align 2
+define spir_func i4 @to_e2m1(half %val) {
   %conv = call i4 @_Z36__builtin_spirv_ConvertFP16ToE2M1EXTDh(half %val), !spirv.Decorations !1
-  %v0 = insertelement <2 x i4> undef, i4 %conv, i32 0
-  %v1 = insertelement <2 x i4> %v0, i4 0, i32 1
-  %outPtr = getelementptr i8, i8 addrspace(1)* %output, i64 %gid
-  %cast = bitcast i8 addrspace(1)* %outPtr to <2 x i4> addrspace(1)*
-  store <2 x i4> %v1, <2 x i4> addrspace(1)* %cast, align 1
-  ret void
+  ret i4 %conv
+}
+
+define spir_func half @from_e2m1(i4 %val) {
+  %conv = call half @_Z36__builtin_spirv_ConvertE2M1ToFP16EXTi(i4 %val), !spirv.Decorations !1
+  ret half %conv
 }
 
 !1 = !{!2}
