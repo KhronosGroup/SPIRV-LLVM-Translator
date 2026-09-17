@@ -150,6 +150,15 @@ template <> void SPIRVMap<OCLScopeKind, Scope>::init() {
 }
 
 template <> void SPIRVMap<std::string, Scope>::init() {
+  // AMDGPU spellings alias the OpenCL ones below, so the map is many-to-one and
+  // rmap() is ambiguous: it yields whichever alias was added last, so these go
+  // first to leave the OpenCL names holding those slots. Use
+  // mapSPIRVScopeToLLVM() for the LLVM spelling, which depends on the triple.
+  add("agent", ScopeDevice);
+  add("wavefront", ScopeSubgroup);
+  // cluster is SCOPE_SE, between workgroup and agent. No SPIR-V equivalent, so
+  // widen to Device; Workgroup would narrow it.
+  add("cluster", ScopeDevice);
   add("work_item", ScopeInvocation);
   add("workgroup", ScopeWorkgroup);
   add("device", ScopeDevice);
