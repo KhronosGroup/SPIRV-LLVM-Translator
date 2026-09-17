@@ -68,6 +68,7 @@ enum InternalOp {
   IOpCooperativeMatrixStoreCheckedINTEL = 6194,
   IOpCooperativeMatrixConstructCheckedINTEL = 6195,
   IOpTypeTaskSequenceINTEL = 6199,
+  IOpSubgroupBitcastShuffleINTEL = 6208,
   IOpClampConvertFToFINTEL = 6216, // old op, for backward compatibility
   IOpStochasticRoundFToFINTEL = 6217,
   IOpClampStochasticRoundFToFINTEL = 6218, // old op, for backward compatibility
@@ -104,6 +105,7 @@ enum InternalCapability {
   ICapabilitySigmoidINTEL = 6167,
   ICapabilityDeviceBarrierINTEL = 6185,
   ICapabilityCooperativeMatrixCheckedInstructionsINTEL = 6192,
+  ICapabilitySubgroupBitcastShuffleINTEL = 6207,
   ICapabilityFloat4E2M1INTEL = 6212,
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
   ICapabilityFloatConversionsFtoFINTEL = 6215,
@@ -229,6 +231,9 @@ _SPIRV_OP(Op, ClampStochasticRoundFToSINTEL)
 
 _SPIRV_OP(Capability, SubgroupScaledMatrixMultiplyAccumulateINTEL)
 _SPIRV_OP(Op, SubgroupScaledMatrixMultiplyAccumulateINTEL)
+
+_SPIRV_OP(Capability, SubgroupBitcastShuffleINTEL)
+_SPIRV_OP(Op, SubgroupBitcastShuffleINTEL)
 #undef _SPIRV_OP
 
 constexpr SourceLanguage SourceLanguagePython =
