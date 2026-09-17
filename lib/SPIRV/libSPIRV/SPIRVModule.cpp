@@ -353,9 +353,9 @@ public:
 
   // Constant creation functions
   SPIRVInstruction *addBranchInst(SPIRVLabel *, SPIRVBasicBlock *) override;
-  SPIRVInstruction *addBranchConditionalInst(SPIRVValue *, SPIRVLabel *,
-                                             SPIRVLabel *,
-                                             SPIRVBasicBlock *) override;
+  SPIRVInstruction *addBranchConditionalInst(
+      SPIRVValue *, SPIRVLabel *, SPIRVLabel *, SPIRVBasicBlock *,
+      const std::vector<SPIRVWord> &BranchWeights = {}) override;
   SPIRVValue *addCompositeConstant(SPIRVType *,
                                    const std::vector<SPIRVValue *> &) override;
   SPIRVEntry *addCompositeConstantContinuedINTEL(
@@ -1832,7 +1832,12 @@ SPIRVInstruction *SPIRVModuleImpl::addBranchInst(SPIRVLabel *TargetLabel,
 
 SPIRVInstruction *SPIRVModuleImpl::addBranchConditionalInst(
     SPIRVValue *Condition, SPIRVLabel *TrueLabel, SPIRVLabel *FalseLabel,
-    SPIRVBasicBlock *BB) {
+    SPIRVBasicBlock *BB, const std::vector<SPIRVWord> &BranchWeights) {
+  if (BranchWeights.size() == 2)
+    return addInstruction(
+        new SPIRVBranchConditional(Condition, TrueLabel, FalseLabel, BB,
+                                   BranchWeights[0], BranchWeights[1]),
+        BB);
   return addInstruction(
       new SPIRVBranchConditional(Condition, TrueLabel, FalseLabel, BB), BB);
 }
