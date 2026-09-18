@@ -354,10 +354,8 @@ const static char TranslateOCLMemScope[] = "__translate_ocl_memory_scope";
 const static char TranslateSPIRVMemOrder[] = "__translate_spirv_memory_order";
 const static char TranslateSPIRVMemScope[] = "__translate_spirv_memory_scope";
 const static char TranslateSPIRVMemFence[] = "__translate_spirv_memory_fence";
-// atomicrmw uinc_wrap/udec_wrap have no SPIR-V opcode, so they are carried
-// across the SPIR-V boundary as calls to these imported helpers. They
-// deliberately avoid the kSPIRVName::Prefix namespace, which is reserved for
-// SPIR-V friendly IR names that map to an actual opcode.
+// uinc_wrap/udec_wrap have no SPIR-V opcode so they are lowered as calls
+// to these imported helpers for AMD targets.
 const static char TranslateSPIRVAtomicUIncWrap[] =
     "__translate_spirv_atomic_uinc_wrap";
 const static char TranslateSPIRVAtomicUDecWrap[] =
@@ -1010,6 +1008,9 @@ bool lowerBuiltinCallsToVariables(Module *M);
 //  Transform all builtins into variables or calls
 //  depending on user specification
 bool lowerBuiltins(SPIRVModule *BM, Module *M);
+
+// Restore atomicrmw uinc_wrap/udec_wrap from their imported-helper calls.
+void lowerAtomicWrapCalls(Module *M);
 
 /// \brief Post-process OpenCL or SPIRV builtin function returning struct type.
 ///

@@ -2847,8 +2847,8 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (AtomicRMWInst *ARMW = dyn_cast<AtomicRMWInst>(V)) {
     AtomicRMWInst::BinOp Op = ARMW->getOperation();
     // uinc_wrap/udec_wrap have no opcode. On AMD targets SPIRVRegularizeLLVM
-    // rewrites them into a call to an imported helper and they never reach
-    // here; on any other target they do, and are diagnosed as unsupported.
+    // rewrites them into a helper call so they never reach here; other targets
+    // reach here and are diagnosed as unsupported.
     bool SupportedAtomicInst =
         AtomicRMWInst::isFPOperation(Op)
             ? (Op == AtomicRMWInst::FAdd || Op == AtomicRMWInst::FSub ||
@@ -4584,13 +4584,14 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       BM->getErrorLog().checkError(BitWidth == 32, SPIRVEC_InvalidBitWidth,
                                    std::to_string(BitWidth));
     }
+    SPIRVBasicBlock *EntryBB = BB->getParent()->getBasicBlock(0);
     SPIRVValue *IntVal =
         BM->addVariable(ITy,
                         ITy->isTypeUntypedPointerKHR()
                             ? transType(II->getType()->getStructElementType(1))
                             : nullptr,
                         false, spv::internal::LinkageTypeInternal, nullptr, "",
-                        ITy->getStorageClass(), BB);
+                        ITy->getStorageClass(), EntryBB);
 
     std::vector<SPIRVValue *> Ops{transValue(II->getArgOperand(0), BB), IntVal};
 
@@ -6220,22 +6221,36 @@ LLVMToSPIRVBase::transValue(const std::vector<Value *> &Args,
   return BArgs;
 }
 
-std::vector<SPIRVWord>
-LLVMToSPIRVBase::transValue(const std::vector<Value *> &Args,
-                            SPIRVBasicBlock *BB, SPIRVEntry *Entry) {
-  std::vector<SPIRVWord> Operands;
-  for (size_t I = 0, E = Args.size(); I != E; ++I) {
-    Operands.push_back(Entry->isOperandLiteral(I)
-                           ? cast<ConstantInt>(Args[I])->getZExtValue()
-                           : transValue(Args[I], BB)->getId());
-  }
-  return Operands;
-}
-
 std::vector<SPIRVWord> LLVMToSPIRVBase::transArguments(CallInst *CI,
                                                        SPIRVBasicBlock *BB,
                                                        SPIRVEntry *Entry) {
-  return transValue(getArguments(CI), BB, Entry);
+  std::vector<Value *> Args = getArguments(CI);
+  const bool UseUntypedPtr =
+      BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers);
+  std::vector<SPIRVWord> Operands;
+  for (size_t I = 0, E = Args.size(); I != E; ++I) {
+    if (Entry->isOperandLiteral(I)) {
+      Operands.push_back(cast<ConstantInt>(Args[I])->getZExtValue());
+      continue;
+    }
+    SPIRVValue *ArgVal = transValue(Args[I], BB);
+    SPIRVType *ArgTy = ArgVal->getType();
+    // Preserve element type for byval/sret args at call site even when
+    // SPV_KHR_untyped_pointers is enabled, for the same reason as function
+    // parameters. A BitCast is inserted to convert untyped to typed pointer.
+    if (UseUntypedPtr && ArgTy->isTypeUntypedPointerKHR()) {
+      Type *PointeeTy = CI->getParamByValType(I);
+      if (!PointeeTy)
+        PointeeTy = CI->getParamStructRetType(I);
+      if (PointeeTy) {
+        SPIRVType *TypedPtrTy = BM->addPointerType(
+            ArgVal->getType()->getPointerStorageClass(), transType(PointeeTy));
+        ArgVal = BM->addUnaryInst(OpBitcast, TypedPtrTy, ArgVal, BB);
+      }
+    }
+    Operands.push_back(ArgVal->getId());
+  }
+  return Operands;
 }
 
 SPIRVWord LLVMToSPIRVBase::transFunctionControlMask(Function *F) {
@@ -6654,6 +6669,11 @@ static bool hasVectorComputeMetadata(Module *M) {
 
 bool LLVMToSPIRVBase::translate() {
   BM->setGeneratorVer(KTranslatorVer);
+
+  if (!BM->getErrorLog().checkError(
+          M->getModuleInlineAsm().empty(), SPIRVEC_InvalidLlvmModule,
+          "Module-level inline assembly is not supported in SPIR-V"))
+    return false;
 
   if (isEmptyLLVMModule(M))
     BM->addCapability(CapabilityLinkage);

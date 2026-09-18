@@ -609,12 +609,20 @@ public:
     return TranslationOpts.shouldEmitFunctionPtrAddrSpace();
   }
 
+  const SPIRV::TranslatorOpts &getTranslationOpts() const noexcept {
+    return TranslationOpts;
+  }
+
   unsigned mapAddrSpace(unsigned SPIRAS) const noexcept {
     return TranslationOpts.mapAddrSpace(SPIRAS);
   }
 
   const SPIRV::AddrSpaceMap *getAddrSpaceMap() const noexcept {
     return TranslationOpts.getAddrSpaceMap();
+  }
+
+  llvm::StringRef getTargetTripleOverride() const noexcept {
+    return TranslationOpts.getSPIRVTargetTriple();
   }
 
   unsigned getFunctionProgramAddrSpace() const noexcept {

@@ -291,6 +291,11 @@ public:
     return mapAddrSpace(SPIRAS_Private);
   }
 
+  /// Install the built-in address-space map and program address space for the
+  /// target triple. Returns false for an untabled non-SPIR triple, which has no
+  /// map and would otherwise emit a triple/layout-mismatched module.
+  bool deriveTargetAddrSpaces();
+
   void setBuiltinFormat(BuiltinFormat Value) noexcept {
     SPIRVBuiltinFormat = Value;
   }
@@ -298,6 +303,13 @@ public:
 
   void setUseLLVMTarget(bool Flag) noexcept { UseLLVMTarget = Flag; }
   bool getUseLLVMTarget() const noexcept { return UseLLVMTarget; }
+
+  void setSPIRVTargetTriple(std::string Triple) noexcept {
+    SPIRVTargetTriple = std::move(Triple);
+  }
+  llvm::StringRef getSPIRVTargetTriple() const noexcept {
+    return SPIRVTargetTriple;
+  }
 
   void setFnVarCategory(uint32_t Category) noexcept {
     FnVarCategory = Category;
@@ -428,6 +440,9 @@ private:
 
   // Convert LLVM to SPIR-V using the LLVM SPIR-V Backend target
   bool UseLLVMTarget = false;
+
+  // Override target triple during reverse-translation.
+  std::string SPIRVTargetTriple = "";
 };
 
 } // namespace SPIRV
