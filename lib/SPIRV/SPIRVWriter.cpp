@@ -1368,6 +1368,30 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
   }
 }
 
+void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
+                                                Instruction *I) {
+  if (!BM->preserveAuxData())
+    return;
+  bool HasAny = false;
+  for (StringRef MDName :
+       {"amdgpu.no.fine.grained.memory", "amdgpu.no.remote.memory",
+        "amdgpu.ignore.denormal.mode"}) {
+    if (!I->getMetadata(MDName))
+      continue;
+    if (!HasAny) {
+      if (!BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_6))
+        BM->addExtension(SPIRV::ExtensionID::SPV_KHR_non_semantic_info);
+      else
+        BM->setMinSPIRVVersion(VersionNumber::SPIRV_1_6);
+      HasAny = true;
+    }
+    std::vector<SPIRVWord> Ops = {BV->getId(),
+                                  BM->getString(MDName.str())->getId()};
+    BM->addAuxData(NonSemanticAuxData::InstructionMetadata,
+                   transType(Type::getVoidTy(I->getContext())), Ops);
+  }
+}
+
 SPIRVValue *LLVMToSPIRVBase::transConstantUse(Constant *C,
                                               SPIRVType *ExpectedType) {
   // Constant expressions expect their pointer types to be i8* in opaque pointer
@@ -2859,7 +2883,9 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     } else
       OC = LLVMSPIRVAtomicRmwOpCodeMap::map(Op);
 
-    return mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    SPIRVValue *BV = mapValue(V, BM->addInstTemplate(OC, Ops, BB, Ty));
+    transAMDGPUAtomicMetadata(BV, ARMW);
+    return BV;
   }
 
   if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(V)) {
@@ -6157,10 +6183,18 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     }
   }
 
-  return BM->addCallInst(
+  SPIRVValue *BV = BM->addCallInst(
       transFunctionDecl(Callee),
       transArguments(CI, BB, SPIRVEntry::createUnique(OpFunctionCall).get()),
       BB);
+  // SPIRVRegularizeLLVM rewrites atomicrmw uinc_wrap/udec_wrap into a call to
+  // an imported helper and moves the amdgpu.* atomic hints onto that call, so
+  // there is no atomicrmw left to read them from by the time we get here.
+  StringRef CalleeName = Callee->getName();
+  if (CalleeName.starts_with(kSPIRVName::TranslateSPIRVAtomicUIncWrap) ||
+      CalleeName.starts_with(kSPIRVName::TranslateSPIRVAtomicUDecWrap))
+    transAMDGPUAtomicMetadata(BV, CI);
+  return BV;
 }
 
 SPIRVValue *LLVMToSPIRVBase::transIndirectCallInst(CallInst *CI,
