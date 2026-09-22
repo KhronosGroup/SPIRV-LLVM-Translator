@@ -44,6 +44,8 @@
 #include "SPIRVLowerBitCastToNonStandardType.h"
 #include "SPIRVInternal.h"
 
+#include "llvm/ADT/PostOrderIterator.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/NoFolder.h"
 #include "llvm/Transforms/Utils/Local.h"
@@ -113,8 +115,9 @@ private:
 
 bool NonStdVectorLegalizer::run(Function &F) {
   SmallVector<Instruction *, 32> Replaced;
-  for (BasicBlock &BB : F) {
-    for (Instruction &I : BB) {
+  // Visit defining blocks before their users, regardless of block layout.
+  for (BasicBlock *BB : ReversePostOrderTraversal<Function *>(&F)) {
+    for (Instruction &I : *BB) {
       Builder.SetInsertPoint(&I);
       if (visit(I))
         Replaced.push_back(&I);
