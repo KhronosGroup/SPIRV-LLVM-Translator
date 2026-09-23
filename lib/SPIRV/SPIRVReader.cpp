@@ -81,8 +81,13 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/SaveAndRestore.h"
 
+#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
+#include "spirv-tools/libspirv.hpp"
+#endif
+
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -91,6 +96,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #define DEBUG_TYPE "spirv"
 
@@ -6115,6 +6121,37 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
   return TextReport;
 }
 
+#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
+static bool validateSPIRVBinary(std::istream &IS, std::string &Binary,
+                                std::string &ErrMsg) {
+  Binary.assign(std::istreambuf_iterator<char>(IS),
+                std::istreambuf_iterator<char>());
+  if (Binary.size() % sizeof(uint32_t) != 0) {
+    ErrMsg = "SPIR-V validation failed: input size is not a multiple of 4 "
+             "bytes";
+    return false;
+  }
+
+  std::vector<uint32_t> Words(Binary.size() / sizeof(uint32_t));
+  if (!Binary.empty())
+    std::memcpy(Words.data(), Binary.data(), Binary.size());
+
+  std::string ValidationError;
+  spvtools::SpirvTools Validator(SPV_ENV_UNIVERSAL_1_6);
+  Validator.SetMessageConsumer(
+      [&ValidationError](spv_message_level_t, const char *,
+                         const spv_position_t &,
+                         const char *Message) { ValidationError = Message; });
+  if (Validator.Validate(Words))
+    return true;
+
+  ErrMsg = "SPIR-V validation failed";
+  if (!ValidationError.empty())
+    ErrMsg += ": " + ValidationError;
+  return false;
+}
+#endif
+
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
@@ -6133,7 +6170,25 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
   std::unique_ptr<SPIRVModule> BM(
       SPIRVModule::createSPIRVModule(*EffectiveOpts));
 
+#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
+  if (EffectiveOpts->isSPIRVValidationEnabled()) {
+    std::string Binary;
+    if (!validateSPIRVBinary(IS, Binary, ErrMsg))
+      return nullptr;
+
+    std::istringstream ValidatedInput(Binary, std::ios::in | std::ios::binary);
+    ValidatedInput >> *BM;
+  } else {
+    IS >> *BM;
+  }
+#else
+  if (EffectiveOpts->isSPIRVValidationEnabled()) {
+    ErrMsg = "SPIR-V validation was requested, but this build lacks "
+             "SPIR-V Tools validation support";
+    return nullptr;
+  }
   IS >> *BM;
+#endif
   if (!BM->isModuleValid()) {
     BM->getError(ErrMsg);
     return nullptr;
