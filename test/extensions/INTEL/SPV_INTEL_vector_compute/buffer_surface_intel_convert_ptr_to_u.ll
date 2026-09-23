@@ -39,7 +39,7 @@ declare void @llvm.some.unknown.intrinsic.i32(i32)
 
 define spir_kernel void @test(%intel.buffer_rw_t addrspace(1)* %buf) #0 {
 entry:
-; LLVM: call spir_func i32 @_Z26__spirv_ConvertPtrToU_RintPU3AS1{{[0-9]+}}__spirv_BufferSurfaceINTEL{{[_0-9]*}}(target("spirv.BufferSurfaceINTEL", 2) %buf)
+; LLVM: call spir_func i32 @_Z26__spirv_ConvertPtrToU_RintPU3AS129__spirv_BufferSurfaceINTEL__2(target("spirv.BufferSurfaceINTEL", 2) %buf)
 ; LLVM-TYPED: ptrtoint %intel.buffer_rw_t addrspace(1)* %buf to i32
   %0 = ptrtoint %intel.buffer_rw_t addrspace(1)* %buf to i32
   call void @llvm.some.unknown.intrinsic.i32(i32 %0)
