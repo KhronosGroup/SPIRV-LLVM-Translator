@@ -1149,6 +1149,18 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       }
       if (IsFP4OrFP8Encoding(SrcEnc) || IsFP4OrFP8Encoding(DstEnc) ||
           SPVSrcTy->isTypeInt(4) || SPVDstTy->isTypeInt(4)) {
+        // The mini-float encodings are RTE-only, as are the Clamp*ToSINTEL
+        // opcodes regardless of destination (SPV_INTEL_fp_conversions).
+        // Plain Int4 conversions have no such restriction.
+        SPIRVFPRoundingModeKind RoundingKind;
+        if ((IsFP4OrFP8Encoding(SrcEnc) || IsFP4OrFP8Encoding(DstEnc) ||
+             OC == internal::OpClampConvertFToSINTEL ||
+             OC == internal::OpClampStochasticRoundFToSINTEL) &&
+            BC->hasFPRoundingMode(&RoundingKind))
+          BM->getErrorLog().checkError(
+              RoundingKind == FPRoundingModeRTE, SPIRVEC_InvalidInstruction,
+              "FPRoundingMode: only RTE is supported for this "
+              "conversion.\n");
         // The old opcodes share the encoding map with their surviving
         // equivalents: OpClampConvertFToFINTEL with OpFConvert and
         // OpClampStochasticRoundFToFINTEL with OpStochasticRoundFToFINTEL.
