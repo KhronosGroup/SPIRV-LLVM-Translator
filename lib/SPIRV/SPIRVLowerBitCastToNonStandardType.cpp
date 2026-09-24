@@ -127,8 +127,11 @@ bool NonStdVectorLegalizer::run(Function &F) {
   // Erase only what became fully dead. An instruction with a use the visitors
   // declined to rewrite must survive for the diagnostic below to catch it.
   for (Instruction *I : reverse(Replaced))
-    if (I->use_empty())
+    if (I->use_empty()) {
+      // Keep debug users of a split bitcast referring to its original operand.
+      salvageDebugInfo(*I);
       I->eraseFromParent();
+    }
   return !Replaced.empty();
 }
 
