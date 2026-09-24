@@ -4862,12 +4862,12 @@ public:
     return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
   }
   SPIRVCapVec getRequiredCapability() const override {
-    return getVec(internal::CapabilitySubgroupBitcastShuffleINTEL);
+    return getVec(CapabilitySubgroupBitcastShuffleINTEL);
   }
 };
 
 typedef SPIRVInstTemplate<SPIRVSubgroupBitcastShuffleINTELInst,
-                          internal::OpSubgroupBitcastShuffleINTEL, true, 4>
+                          OpSubgroupBitcastShuffleINTEL, true, 4>
     SPIRVSubgroupBitcastShuffleINTEL;
 
 class SPIRVFPConversionFtoSINTELInstBase : public SPIRVInstTemplateBase {
