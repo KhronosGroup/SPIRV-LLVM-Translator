@@ -364,7 +364,10 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
     return mapType(T, Type::getTokenTy(*Context));
   case OpTypePointer: {
     unsigned AS = SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
-    if (AS == SPIRAS_CodeSectionINTEL && !BM->shouldEmitFunctionPtrAddrSpace())
+    // AMDGPU function pointers use the code address space, not private memory.
+    if (AS == SPIRAS_CodeSectionINTEL &&
+        !BM->shouldEmitFunctionPtrAddrSpace() &&
+        !M->getTargetTriple().isAMDGCN())
       AS = SPIRAS_Private;
     if (BM->shouldEmitFunctionPtrAddrSpace() &&
         T->getPointerElementType()->getOpCode() == OpTypeFunction)
@@ -377,7 +380,10 @@ Type *SPIRVToLLVM::transType(SPIRVType *T, bool UseTPT) {
   }
   case OpTypeUntypedPointerKHR: {
     unsigned AS = SPIRSPIRVAddrSpaceMap::rmap(T->getPointerStorageClass());
-    if (AS == SPIRAS_CodeSectionINTEL && !BM->shouldEmitFunctionPtrAddrSpace())
+    // AMDGPU function pointers use the code address space, not private memory.
+    if (AS == SPIRAS_CodeSectionINTEL &&
+        !BM->shouldEmitFunctionPtrAddrSpace() &&
+        !M->getTargetTriple().isAMDGCN())
       AS = SPIRAS_Private;
     unsigned MappedAS = BM->mapAddrSpace(AS);
     return mapType(T, PointerType::get(*Context, MappedAS));
