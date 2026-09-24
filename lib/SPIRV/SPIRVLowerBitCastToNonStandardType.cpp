@@ -249,7 +249,9 @@ bool NonStdVectorLegalizer::visitBitCast(BitCastInst &BCI) {
   auto *DstHalfTy = getHalfTy(BCI.getType());
   Value *Src = BCI.getOperand(0);
   auto *SrcTy = dyn_cast<FixedVectorType>(Src->getType());
-  if (!DstHalfTy || !SrcTy || SrcTy->getNumElements() % 2 != 0)
+  // SPIR-V does not allow bitcasts to Boolean vectors, even with legal lengths.
+  if (!DstHalfTy || DstHalfTy->getElementType()->isIntegerTy(1) || !SrcTy ||
+      SrcTy->getNumElements() % 2 != 0)
     return false;
   unsigned HalfSrcSize = SrcTy->getNumElements() / 2;
   if (!isValidVectorSize(SrcTy->getNumElements()) ||
