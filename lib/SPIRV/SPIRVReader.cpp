@@ -93,6 +93,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -6122,6 +6123,28 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
 }
 
 #ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
+static std::optional<spv_target_env>
+getSPIRVToolsTargetEnv(VersionNumber Version) {
+  switch (Version) {
+  case VersionNumber::SPIRV_1_0:
+    return SPV_ENV_UNIVERSAL_1_0;
+  case VersionNumber::SPIRV_1_1:
+    return SPV_ENV_UNIVERSAL_1_1;
+  case VersionNumber::SPIRV_1_2:
+    return SPV_ENV_UNIVERSAL_1_2;
+  case VersionNumber::SPIRV_1_3:
+    return SPV_ENV_UNIVERSAL_1_3;
+  case VersionNumber::SPIRV_1_4:
+    return SPV_ENV_UNIVERSAL_1_4;
+  case VersionNumber::SPIRV_1_5:
+    return SPV_ENV_UNIVERSAL_1_5;
+  case VersionNumber::SPIRV_1_6:
+    return SPV_ENV_UNIVERSAL_1_6;
+  default:
+    return std::nullopt;
+  }
+}
+
 static bool validateSPIRVBinary(std::istream &IS, std::string &Binary,
                                 std::string &ErrMsg) {
   Binary.assign(std::istreambuf_iterator<char>(IS),
@@ -6136,8 +6159,20 @@ static bool validateSPIRVBinary(std::istream &IS, std::string &Binary,
   if (!Binary.empty())
     std::memcpy(Words.data(), Binary.data(), Binary.size());
 
+  if (Words.size() < 5) {
+    ErrMsg = "SPIR-V validation failed: incomplete SPIR-V header";
+    return false;
+  }
+
+  const auto TargetEnv =
+      getSPIRVToolsTargetEnv(static_cast<VersionNumber>(Words[1]));
+  if (!TargetEnv) {
+    ErrMsg = "SPIR-V validation failed: unsupported SPIR-V version";
+    return false;
+  }
+
   std::string ValidationError;
-  spvtools::SpirvTools Validator(SPV_ENV_UNIVERSAL_1_6);
+  spvtools::SpirvTools Validator(*TargetEnv);
   Validator.SetMessageConsumer(
       [&ValidationError](spv_message_level_t, const char *,
                          const spv_position_t &,
