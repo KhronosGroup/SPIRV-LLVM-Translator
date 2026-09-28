@@ -86,6 +86,9 @@ if(NOT SPIRV_TOOLS_SPIRV_VAL_FOUND)
   set(SPIRV_TOOLS_SPIRV_VAL_FOUND False)
 endif()
 
+add_subdirectory(tools)
+get_target_property(LLVM_SPIRV_TEST_TOOLS_DIR spirv-test-target-layout BINARY_DIR)
+
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py
@@ -136,6 +139,7 @@ add_lit_testsuite(check-llvm-spirv "Running the LLVM-SPIRV regression tests"
   DEPENDS
     ${LLVM_SPIRV_TEST_DEPS}
     llvm-spirv
+    spirv-test-target-layout
 )
 
 # to enable a custom test target on cmake below 3.11

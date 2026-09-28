@@ -61,6 +61,8 @@ if config.spirv_backend_found:
         tools.extend(['llc'])
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
+llvm_config.add_tool_substitutions(
+    ['spirv-test-target-layout'], [config.llvm_spirv_test_tools_dir] + tool_dirs)
 
 using_spirv_tools = False
 

@@ -18,7 +18,9 @@
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
 
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
-; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-AMDGCN
+; RUN:   -o %t.amdgcn.bc
+; RUN: spirv-test-target-layout %t.amdgcn.bc --triple=amdgcn-amd-amdhsa
+; RUN: llvm-dis %t.amdgcn.bc -o - | FileCheck %s --check-prefix=CHECK-AMDGCN
 
 ; RUN: llvm-spirv -r %t.spv \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
@@ -36,23 +38,26 @@
 ; Private (0) -> 5.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   --spirv-addrspace-map=0:5 \
-; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-OVERRIDE
+; RUN:   -o %t.override.bc
+; RUN: spirv-test-target-layout %t.override.bc --triple=amdgcn-amd-amdhsa --program-address-space=5
+; RUN: llvm-dis %t.override.bc -o - | FileCheck %s --check-prefix=CHECK-OVERRIDE
 
 ; Explicit --spirv-function-program-addrspace wins over the triple-pinned program
 ; AS; the derived map still applies.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   --spirv-function-program-addrspace=3 \
-; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-FPAS
+; RUN:   -o %t.fpas.bc
+; RUN: spirv-test-target-layout %t.fpas.bc --triple=amdgcn-amd-amdhsa --program-address-space=3
+; RUN: llvm-dis %t.fpas.bc -o - | FileCheck %s --check-prefix=CHECK-FPAS
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-G1"
 target triple = "spir64-unknown-unknown"
 
-; Datalayout follows the triple: -A is the alloca AS, -P the program
-; (function) AS.
+; The helper checks the complete LLVM-derived layout and explicit program AS
+; overrides. Check triples and translated pointer address spaces below.
 
 ; -A5: derived map put Private -> 5. No -P: the triple pins the program AS to
 ; flat (0), the default, so it is elided.
-; CHECK-AMDGCN: target datalayout = "e-m:e-p:64:64-p1:64:64-p2:32:32-p3:32:32-p4:64:64-p5:32:32-p6:32:32-{{.*}}-n32:64-S32-A5-G1-ni:7:8:9"
 ; CHECK-AMDGCN: target triple = "amdgcn-amd-amdhsa"
 
 ; SPIR map: neither -A nor -P.
@@ -61,11 +66,9 @@ target triple = "spir64-unknown-unknown"
 
 ; -P5: an explicit --spirv-addrspace-map skips the triple's program-AS pin, so
 ; it falls back to the mapped private AS.
-; CHECK-OVERRIDE: target datalayout = "e-m:e-p:64:64{{.*}}-A5-G1-ni:7:8:9-P5"
 ; CHECK-OVERRIDE: target triple = "amdgcn-amd-amdhsa"
 
 ; -P3: explicit --spirv-function-program-addrspace beat the triple pin.
-; CHECK-FPAS: target datalayout = "e-m:e-p:64:64{{.*}}-A5-G1-ni:7:8:9-P3"
 ; CHECK-FPAS: target triple = "amdgcn-amd-amdhsa"
 
 ; global: SPIR 1 -> AMDGPU 1 (unchanged), so addrspace(1) every case.
