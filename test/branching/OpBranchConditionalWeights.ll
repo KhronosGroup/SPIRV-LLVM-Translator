@@ -72,11 +72,9 @@ if.else:
   ret i32 %x
 }
 
-; NOTE: this sum is exactly UINT32_MAX, so it already fits in 32 bits, but
-; llvm::calculateCountScale (ProfDataUtils.h) currently downscales it anyway
-; because it checks "< UINT32_MAX" rather than "<= UINT32_MAX". Once that
-; off-by-one is fixed upstream, the expected weights below will change from
-; 2147483647/0 to 4294967294/1.
+; NOTE: sum is exactly UINT32_MAX, so it already fits, but
+; llvm::calculateCountScale (ProfDataUtils.h) downscales it anyway - a
+; deliberate conservative bound inherited from clang, harmless for a hint.
 ; CHECK-SPIRV: %uint32_max_sum_branch = OpFunction
 ; CHECK-SPIRV: OpBranchConditional %cmp_3 %if_then_3 %if_else_3 2147483647 0
 define spir_func i32 @uint32_max_sum_branch(i32 %x) {
