@@ -219,11 +219,6 @@ public:
   ///      atomic_*(atomic_op, ops, ..., order(sema), map(scope))
   virtual void visitCallSPIRVAtomicBuiltin(CallInst *CI, Op OC) = 0;
 
-  /// Transform __translate_spirv_atomic_uinc_wrap /
-  /// __translate_spirv_atomic_udec_wrap to
-  /// atomicrmw uinc_wrap/udec_wrap, propagating metadata from the call.
-  void visitCallSPIRVAtomicUIncDecWrap(CallInst *CI, StringRef FuncName);
-
   /// Transform __spirv_MemoryBarrier to:
   /// - OCL2.0: atomic_work_item_fence.__spirv_MemoryBarrier(scope, sema) =>
   ///       atomic_work_item_fence(flag(sema), order(sema), map(scope))

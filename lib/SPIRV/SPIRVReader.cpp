@@ -4327,9 +4327,6 @@ bool SPIRVToLLVM::translate() {
   transGeneratorMD();
   if (!lowerBuiltins(BM, M))
     return false;
-  // Only AMD targets emit these helpers, so only AMD targets reconstruct them.
-  if (M->getTargetTriple().getVendor() == Triple::AMD)
-    lowerAtomicWrapCalls(M);
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
     BM->getSourceLanguage(&SrcLangVer);
@@ -4342,6 +4339,12 @@ bool SPIRVToLLVM::translate() {
   for (SPIRVExtInst *EI : BM->getAuxDataInstVec()) {
     transAuxDataInst(EI);
   }
+
+  // Only AMD targets emit these helpers, so only AMD targets reconstruct them.
+  // Runs after AuxData: ValueMap still points at the helper calls, and
+  // copyMetadata carries their restored metadata to the atomicrmw.
+  if (M->getTargetTriple().getVendor() == Triple::AMD)
+    lowerAtomicWrapCalls(M);
 
   eraseUselessFunctions(M);
 

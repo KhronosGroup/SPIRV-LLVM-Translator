@@ -1,13 +1,13 @@
 ; Test atomicrmw uinc_wrap/udec_wrap with AMDGPU metadata roundtrip.
 ; The writer emits FunctionCall to __translate_spirv_atomic_uinc_wrap_* /
-; __translate_spirv_atomic_udec_wrap_* with InstructionMetadata AuxData. The
-; reader's OCL lowering converts them back
-; to atomicrmw uinc_wrap/udec_wrap, and metadata is restored from AuxData.
+; __translate_spirv_atomic_udec_wrap_* with InstructionMetadata AuxData. On AMD
+; targets the reader converts them back to atomicrmw uinc_wrap/udec_wrap, and
+; metadata is restored from AuxData.
 
 ; RUN: llvm-spirv %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
-; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"
@@ -15,7 +15,7 @@
 ; RUN: llvm-spirv %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-preserve-auxdata
-; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory}}"

@@ -87,13 +87,6 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   }
 
   auto MangledName = F->getName();
-  // The atomic uinc_wrap/udec_wrap helpers carry a _p<addrspace>_i<width>
-  // suffix, so match on the prefix rather than on the whole name.
-  if (MangledName.starts_with(kSPIRVName::TranslateSPIRVAtomicUIncWrap) ||
-      MangledName.starts_with(kSPIRVName::TranslateSPIRVAtomicUDecWrap)) {
-    visitCallSPIRVAtomicUIncDecWrap(&CI, MangledName);
-    return;
-  }
   StringRef DemangledName;
   Op OC = OpNop;
   SPIRVBuiltinVariableKind BuiltinKind = SPIRVBuiltinVariableKind::BuiltInMax;
@@ -1200,80 +1193,6 @@ SPIRVToOCLBase::getOCLPipeOpaqueType(SmallVector<std::string, 8> &Postfixes) {
           PipeAccess == AccessQualifierWriteOnly) &&
          "Invalid access qualifier");
   return PipeAccess ? kSPR2TypeName::PipeWO : kSPR2TypeName::PipeRO;
-}
-
-static AtomicOrdering mapSPIRVMemSemToAtomicOrdering(uint32_t MemSem) {
-  // Mask out storage-class bits, keep only ordering bits.
-  if (MemSem & 0x10)
-    return AtomicOrdering::SequentiallyConsistent;
-  if (MemSem & 0x08)
-    return AtomicOrdering::AcquireRelease;
-  if (MemSem & 0x04)
-    return AtomicOrdering::Release;
-  if (MemSem & 0x02)
-    return AtomicOrdering::Acquire;
-  return AtomicOrdering::Monotonic;
-}
-
-static SyncScope::ID mapSPIRVScopeToLLVM(LLVMContext &Ctx, uint32_t Scope) {
-  switch (Scope) {
-  case 4: // Invocation
-    return SyncScope::SingleThread;
-  case 3: // Subgroup
-    return Ctx.getOrInsertSyncScopeID("subgroup");
-  case 2: // Workgroup
-    return Ctx.getOrInsertSyncScopeID("workgroup");
-  case 1: // Device
-    return Ctx.getOrInsertSyncScopeID("device");
-  case 0: // CrossDevice
-  default:
-    return SyncScope::System;
-  }
-}
-
-static SyncScope::ID mapSPIRVScopeToAMDGPU(LLVMContext &Ctx, uint32_t Scope) {
-  switch (Scope) {
-  case 4: // Invocation
-    return SyncScope::SingleThread;
-  case 3: // Subgroup
-    return Ctx.getOrInsertSyncScopeID("wavefront");
-  case 2: // Workgroup
-    return Ctx.getOrInsertSyncScopeID("workgroup");
-  case 1: // Device
-    return Ctx.getOrInsertSyncScopeID("agent");
-  case 0: // CrossDevice
-  default:
-    return SyncScope::System;
-  }
-}
-
-void SPIRVToOCLBase::visitCallSPIRVAtomicUIncDecWrap(CallInst *CI,
-                                                     StringRef FuncName) {
-  auto Op = FuncName.starts_with(kSPIRVName::TranslateSPIRVAtomicUIncWrap)
-                ? AtomicRMWInst::UIncWrap
-                : AtomicRMWInst::UDecWrap;
-
-  Value *Ptr = CI->getArgOperand(0);
-  auto Scope = cast<ConstantInt>(CI->getArgOperand(1))->getZExtValue();
-  auto MemSem = cast<ConstantInt>(CI->getArgOperand(2))->getZExtValue();
-  Value *Val = CI->getArgOperand(3);
-
-  AtomicOrdering Ordering = mapSPIRVMemSemToAtomicOrdering(MemSem);
-  SyncScope::ID SSID = M->getTargetTriple().isAMDGCN()
-                           ? mapSPIRVScopeToAMDGPU(CI->getContext(), Scope)
-                           : mapSPIRVScopeToLLVM(CI->getContext(), Scope);
-
-  IRBuilder<> Builder(CI);
-  auto *RMW = Builder.CreateAtomicRMW(Op, Ptr, Val, {}, Ordering, SSID);
-
-  SmallVector<std::pair<unsigned, MDNode *>> MDs;
-  CI->getAllMetadata(MDs);
-  for (const auto &MD : MDs)
-    RMW->setMetadata(MD.first, MD.second);
-
-  CI->replaceAllUsesWith(RMW);
-  CI->dropAllReferences();
-  CI->eraseFromParent();
 }
 
 void SPIRVToOCLBase::translateOpaqueTypes() {
