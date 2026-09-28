@@ -1,5 +1,8 @@
 ; Test --spirv-target-triple that overrides the triple during reverse-translation.
 
+; LLVM supplies the reference layout for a module with no explicit layout.
+; RUN: echo "" | opt -S -passes=verify -mtriple=amdgcn-amd-amdhsa -o %t.layout.ll
+
 ; RUN: llvm-spirv %s -o %t.spv
 
 ; Default: triple derived from the (Physical64) addressing model.
@@ -9,8 +12,11 @@
 
 ; Override to an AMDGCN triple.
 ; RUN: llvm-spirv -r --spirv-target-triple=amdgcn-amd-amdhsa %t.spv -o %t.amdgcn.bc
-; RUN: spirv-test-target-layout %t.amdgcn.bc --triple=amdgcn-amd-amdhsa
-; RUN: llvm-dis %t.amdgcn.bc -o - | FileCheck %s --check-prefix=CHECK-AMDGCN
+; RUN: llvm-dis %t.amdgcn.bc -o %t.amdgcn.ll
+; RUN: cat %t.layout.ll %t.amdgcn.ll | FileCheck %s --check-prefix=LAYOUT
+; RUN: FileCheck %s --check-prefix=CHECK-AMDGCN < %t.amdgcn.ll
+; LAYOUT: target datalayout = "[[DL:[^"]+]]"
+; LAYOUT: target datalayout = "[[DL]]"
 ; CHECK-AMDGCN: target triple = "amdgcn-amd-amdhsa"
 
 ; Override to NVPTX triple: no address space map, rejected.

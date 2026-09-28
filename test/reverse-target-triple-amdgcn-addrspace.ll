@@ -13,14 +13,18 @@
 ;   GlobalDevice     5       1
 ;   GlobalHost       6       1
 
+; LLVM supplies the reference layout for a module with no explicit layout.
+; RUN: echo "" | opt -S -passes=verify -mtriple=amdgcn-amd-amdhsa -o %t.layout.ll
+
 ; SPV_INTEL_usm_storage_classes: keeps GlobalDevice/GlobalHost forward, so the
 ; reverse map is exercised for them.
 ; RUN: llvm-spirv %s --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
 
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   -o %t.amdgcn.bc
-; RUN: spirv-test-target-layout %t.amdgcn.bc --triple=amdgcn-amd-amdhsa
-; RUN: llvm-dis %t.amdgcn.bc -o - | FileCheck %s --check-prefix=CHECK-AMDGCN
+; RUN: llvm-dis %t.amdgcn.bc -o %t.amdgcn.ll
+; RUN: cat %t.layout.ll %t.amdgcn.ll | FileCheck %s --check-prefix=LAYOUT-AMDGCN
+; RUN: FileCheck %s --check-prefix=CHECK-AMDGCN < %t.amdgcn.ll
 
 ; RUN: llvm-spirv -r %t.spv \
 ; RUN:   -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-DEFAULT
@@ -39,25 +43,29 @@
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   --spirv-addrspace-map=0:5 \
 ; RUN:   -o %t.override.bc
-; RUN: spirv-test-target-layout %t.override.bc --triple=amdgcn-amd-amdhsa --program-address-space=5
-; RUN: llvm-dis %t.override.bc -o - | FileCheck %s --check-prefix=CHECK-OVERRIDE
+; RUN: llvm-dis %t.override.bc -o %t.override.ll
+; RUN: cat %t.layout.ll %t.override.ll | FileCheck %s --check-prefix=LAYOUT-OVERRIDE
+; RUN: FileCheck %s --check-prefix=CHECK-OVERRIDE < %t.override.ll
 
 ; Explicit --spirv-function-program-addrspace wins over the triple-pinned program
 ; AS; the derived map still applies.
 ; RUN: llvm-spirv -r %t.spv --spirv-target-triple=amdgcn-amd-amdhsa \
 ; RUN:   --spirv-function-program-addrspace=3 \
 ; RUN:   -o %t.fpas.bc
-; RUN: spirv-test-target-layout %t.fpas.bc --triple=amdgcn-amd-amdhsa --program-address-space=3
-; RUN: llvm-dis %t.fpas.bc -o - | FileCheck %s --check-prefix=CHECK-FPAS
+; RUN: llvm-dis %t.fpas.bc -o %t.fpas.ll
+; RUN: cat %t.layout.ll %t.fpas.ll | FileCheck %s --check-prefix=LAYOUT-FPAS
+; RUN: FileCheck %s --check-prefix=CHECK-FPAS < %t.fpas.ll
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-G1"
 target triple = "spir64-unknown-unknown"
 
-; The helper checks the complete LLVM-derived layout and explicit program AS
-; overrides. Check triples and translated pointer address spaces below.
+; Compare the complete LLVM-derived layout, retaining explicit program AS
+; override checks. Check triples and translated pointer address spaces below.
 
 ; -A5: derived map put Private -> 5. No -P: the triple pins the program AS to
 ; flat (0), the default, so it is elided.
+; LAYOUT-AMDGCN: target datalayout = "[[DL:[^"]+]]"
+; LAYOUT-AMDGCN: target datalayout = "[[DL]]"
 ; CHECK-AMDGCN: target triple = "amdgcn-amd-amdhsa"
 
 ; SPIR map: neither -A nor -P.
@@ -66,9 +74,13 @@ target triple = "spir64-unknown-unknown"
 
 ; -P5: an explicit --spirv-addrspace-map skips the triple's program-AS pin, so
 ; it falls back to the mapped private AS.
+; LAYOUT-OVERRIDE: target datalayout = "[[DL:[^"]+]]"
+; LAYOUT-OVERRIDE: target datalayout = "[[DL]]-P5"
 ; CHECK-OVERRIDE: target triple = "amdgcn-amd-amdhsa"
 
 ; -P3: explicit --spirv-function-program-addrspace beat the triple pin.
+; LAYOUT-FPAS: target datalayout = "[[DL:[^"]+]]"
+; LAYOUT-FPAS: target datalayout = "[[DL]]-P3"
 ; CHECK-FPAS: target triple = "amdgcn-amd-amdhsa"
 
 ; global: SPIR 1 -> AMDGPU 1 (unchanged), so addrspace(1) every case.

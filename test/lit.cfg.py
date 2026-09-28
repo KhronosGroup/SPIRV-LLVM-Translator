@@ -52,7 +52,7 @@ config.substitutions.append(('%PATH%', config.environment['PATH']))
 
 tool_dirs = [config.llvm_spirv_dir, config.llvm_tools_dir]
 
-tools = ['llvm-as', 'llvm-dis', 'llvm-spirv', 'not']
+tools = ['llvm-as', 'llvm-dis', 'llvm-spirv', 'not', 'opt']
 if not config.spirv_skip_debug_info_tests:
     tools.extend(['llc', 'llvm-dwarfdump', 'llvm-objdump', 'llvm-readelf', 'llvm-readobj'])
 if config.spirv_backend_found:
@@ -61,8 +61,6 @@ if config.spirv_backend_found:
         tools.extend(['llc'])
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
-llvm_config.add_tool_substitutions(
-    ['spirv-test-target-layout'], [config.llvm_spirv_test_tools_dir] + tool_dirs)
 
 using_spirv_tools = False
 
