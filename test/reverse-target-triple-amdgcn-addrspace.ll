@@ -48,7 +48,7 @@ target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:
 target triple = "spir64-unknown-unknown"
 
 ; Datalayout follows the triple: -A is the alloca AS, -P the program
-; (function) AS. Allow LLVM to add non-integral address spaces.
+; (function) AS.
 
 ; -A5: derived map put Private -> 5. No -P: the triple pins the program AS to
 ; flat (0), the default, so it is elided.
