@@ -1106,6 +1106,31 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     const bool IsOldConvertFToFOp =
         OC == internal::OpClampConvertFToFINTEL ||
         OC == internal::OpClampStochasticRoundFToFINTEL;
+    // SPV_INTEL_fp_conversions' own instructions: OpClampConvertFToSINTEL
+    // only supports RTE, and the StochasticRound* opcodes round
+    // stochastically by definition, so no explicit FPRoundingMode -- RTE
+    // included -- is valid on them. This depends only on the opcode, so
+    // check it before the type introspection below, which this doesn't
+    // need. Conversions reaching this point through any other opcode
+    // (plain OpFConvert/OpConvertSToF/etc., including to/from a
+    // mini-float encoding) have no such restriction here.
+    bool IsStochasticRound = OC == internal::OpStochasticRoundFToFINTEL ||
+                             OC == internal::OpClampStochasticRoundFToFINTEL ||
+                             OC == internal::OpClampStochasticRoundFToSINTEL;
+    SPIRVFPRoundingModeKind RoundingKind;
+    if ((OC == internal::OpClampConvertFToSINTEL || IsStochasticRound) &&
+        BC->hasFPRoundingMode(&RoundingKind)) {
+      if (IsStochasticRound)
+        BM->getErrorLog().checkError(
+            false, SPIRVEC_InvalidInstruction,
+            "FPRoundingMode: not supported on a stochastic-rounding "
+            "conversion.\n");
+      else
+        BM->getErrorLog().checkError(
+            RoundingKind == FPRoundingModeRTE, SPIRVEC_InvalidInstruction,
+            "FPRoundingMode: only RTE is supported for this "
+            "conversion.\n");
+    }
     {
       auto SPVOps = BC->getOperands();
       auto *SPVSrcTy = SPVOps[0]->getType();
@@ -1149,18 +1174,6 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
       }
       if (IsFP4OrFP8Encoding(SrcEnc) || IsFP4OrFP8Encoding(DstEnc) ||
           SPVSrcTy->isTypeInt(4) || SPVDstTy->isTypeInt(4)) {
-        // The mini-float encodings are RTE-only, as are the Clamp*ToSINTEL
-        // opcodes regardless of destination (SPV_INTEL_fp_conversions).
-        // Plain Int4 conversions have no such restriction.
-        SPIRVFPRoundingModeKind RoundingKind;
-        if ((IsFP4OrFP8Encoding(SrcEnc) || IsFP4OrFP8Encoding(DstEnc) ||
-             OC == internal::OpClampConvertFToSINTEL ||
-             OC == internal::OpClampStochasticRoundFToSINTEL) &&
-            BC->hasFPRoundingMode(&RoundingKind))
-          BM->getErrorLog().checkError(
-              RoundingKind == FPRoundingModeRTE, SPIRVEC_InvalidInstruction,
-              "FPRoundingMode: only RTE is supported for this "
-              "conversion.\n");
         // The old opcodes share the encoding map with their surviving
         // equivalents: OpClampConvertFToFINTEL with OpFConvert and
         // OpClampStochasticRoundFToFINTEL with OpStochasticRoundFToFINTEL.

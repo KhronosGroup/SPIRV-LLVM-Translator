@@ -1,10 +1,13 @@
-; FPRoundingMode other than RTE on a conversion to Float4E2M1EXT must be
-; rejected, not silently mistranslated.
+; A conversion to Float4E2M1EXT round-trips through the real builtin
+; regardless of rounding mode -- RTE-only is enforced for
+; SPV_INTEL_fp_conversions' own opcodes, not for a plain conversion to
+; a mini-float encoding.
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
-; RUN: not llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR
+; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-ERROR: FPRoundingMode: only RTE is supported for this conversion.
+; CHECK-LLVM: call spir_func i4 @_Z36__builtin_spirv_ConvertFP16ToE2M1EXTDh(half
 
 119734787 65536 393230 11 0
 2 Capability Addresses
