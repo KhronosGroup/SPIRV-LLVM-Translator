@@ -101,7 +101,6 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
     llvm-config
     llvm-dis
     not
-    opt
   )
   if(NOT SPIRV_SKIP_CLANG_BUILD)
     list(APPEND LLVM_SPIRV_TEST_DEPS
@@ -120,6 +119,11 @@ if(NOT LLVM_SPIRV_BUILD_EXTERNAL)
   if(SPIRV_BACKEND_FOUND AND SPIRV_SKIP_DEBUG_INFO_TESTS)
     list(APPEND LLVM_SPIRV_TEST_DEPS
       llc
+    )
+  endif()
+  if(LLVM_BUILD_SHARED_LIBS)
+    list(APPEND LLVM_SPIRV_TEST_DEPS
+      opt
     )
   endif()
 endif(NOT LLVM_SPIRV_BUILD_EXTERNAL)
