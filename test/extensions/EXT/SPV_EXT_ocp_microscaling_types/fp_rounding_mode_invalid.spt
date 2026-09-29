@@ -1,4 +1,4 @@
-; FPRoundingMode other than RTE on a conversion to Float4E2M1INTEL must be
+; FPRoundingMode other than RTE on a conversion to Float4E2M1EXT must be
 ; rejected, not silently mistranslated.
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
@@ -11,9 +11,9 @@
 2 Capability Linkage
 2 Capability Kernel
 2 Capability Float16Buffer
-2 Capability Float4E2M1INTEL
+2 Capability Float4EXT
 2 Capability Int4TypeINTEL
-6 Extension "SPV_INTEL_float4"
+9 Extension "SPV_EXT_ocp_microscaling_types"
 5 Extension "SPV_INTEL_int4"
 5 ExtInstImport 1 "OpenCL.std"
 3 MemoryModel 1 2
@@ -26,7 +26,7 @@
 4 Constant 2 7 15360
 4 TypeInt 6 4 0
 3 TypeFunction 3 6
-4 TypeFloat 8 4 6214
+4 TypeFloat 8 4 4225
 5 Function 6 4 0 3
 2 Label 5
 4 FConvert 8 9 7
