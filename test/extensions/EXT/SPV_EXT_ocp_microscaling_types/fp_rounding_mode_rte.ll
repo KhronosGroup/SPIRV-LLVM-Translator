@@ -5,7 +5,8 @@
 ; the generic mangler.
 
 ; RUN: llvm-spirv %s -spirv-ext=+SPV_EXT_ocp_microscaling_types,+SPV_INTEL_int4 -o %t.spv
-; RUN: spirv-val %t.spv
+; TODO: re-enable spirv-val once it recognizes capability Float4EXT
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
