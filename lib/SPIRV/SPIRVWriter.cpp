@@ -1375,7 +1375,7 @@ void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
   bool HasAny = false;
   for (StringRef MDName :
        {"amdgpu.no.fine.grained.memory", "amdgpu.no.remote.memory",
-        "amdgpu.ignore.denormal.mode"}) {
+        "atomic.ignore.denormal.mode"}) {
     if (!I->getMetadata(MDName))
       continue;
     if (!HasAny) {
