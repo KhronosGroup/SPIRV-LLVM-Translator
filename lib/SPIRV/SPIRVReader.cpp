@@ -5783,6 +5783,24 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     return;
   auto Args = BC->getArguments();
 
+  // Metadata Value operands start at Args[2].
+  auto TransMDValues = [&]() {
+    SmallVector<Metadata *> MetadataArgs;
+    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
+      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
+      // For metadata, the metadata values can be either values or strings.
+      if (Arg->getOpCode() == OpString) {
+        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
+        MetadataArgs.push_back(MDString::get(*Context, ArgAsStr->getStr()));
+      } else {
+        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
+        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
+        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
+      }
+    }
+    return MDNode::get(*Context, MetadataArgs);
+  };
+
   // InstructionMetadata targets an instruction, not a global object, so it
   // is handled separately before the GlobalObject-based switch below.
   if (BC->getExtOp() == NonSemanticAuxData::InstructionMetadata) {
@@ -5791,7 +5809,10 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     if (auto *Inst = dyn_cast_or_null<Instruction>(V)) {
       const std::string &MDName =
           BC->getModule()->get<SPIRVString>(Args[1])->getStr();
-      Inst->setMetadata(MDName, MDNode::get(Inst->getContext(), {}));
+      // If this metadata is already attached, skip it.
+      if (Inst->hasMetadata(MDName))
+        return;
+      Inst->setMetadata(MDName, TransMDValues());
     } else {
       LLVM_DEBUG(dbgs() << "InstructionMetadata target is not an Instruction; "
                            "ignoring.\n");
@@ -5859,22 +5880,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     // If this metadata was specially handled and added elsewhere, skip it.
     if (GO->hasMetadata(AttrOrMDName))
       return;
-    SmallVector<Metadata *> MetadataArgs;
-    // Process the metadata values.
-    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
-      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
-      // For metadata, the metadata values can be either values or strings.
-      if (Arg->getOpCode() == OpString) {
-        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
-        MetadataArgs.push_back(
-            MDString::get(GO->getContext(), ArgAsStr->getStr()));
-      } else {
-        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
-        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
-        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
-      }
-    }
-    GO->setMetadata(AttrOrMDName, MDNode::get(*Context, MetadataArgs));
+    GO->setMetadata(AttrOrMDName, TransMDValues());
     break;
   }
   case NonSemanticAuxData::Linkage: {

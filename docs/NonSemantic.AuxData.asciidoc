@@ -407,9 +407,10 @@ walks `Function::getAttributes().getFnAttrs()` (or
 `...Attribute` instruction per attribute, then walks
 `GlobalObject::getAllMetadata()` once and emits one `...Metadata`
 instruction per metadata attachment, in the order the LLVM data
-structures yield them. For instructions that carry metadata, the translator emits one
-*NonSemanticAuxDataInstructionMetadata* instruction per metadata
-attachment. The reverse path performs the inverse
+structures yield them. For instructions, the translator emits one
+*NonSemanticAuxDataInstructionMetadata* instruction per attachment of
+the specific metadata kinds it recognizes; other instruction metadata
+is not preserved. The reverse path performs the inverse
 operation, calling the LLVM API that adds an attribute or sets a
 metadata kind on the corresponding object.
 

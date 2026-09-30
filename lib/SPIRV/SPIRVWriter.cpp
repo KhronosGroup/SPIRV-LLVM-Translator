@@ -1370,7 +1370,11 @@ void LLVMToSPIRVBase::transAuxDataInst(SPIRVValue *BV, Value *V) {
 
 void LLVMToSPIRVBase::transAMDGPUAtomicMetadata(SPIRVValue *BV,
                                                 Instruction *I) {
-  if (!BM->preserveAuxData())
+  // Records forward-reference their target, which needs
+  // OpExtInstWithForwardRefsKHR; emit them only if that extension is allowed.
+  if (!BM->preserveAuxData() ||
+      !BM->isAllowedToUseExtension(
+          ExtensionID::SPV_KHR_relaxed_extended_instruction))
     return;
   bool HasAny = false;
   for (StringRef MDName :

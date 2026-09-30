@@ -1,17 +1,17 @@
 ; Test AMDGPU atomic metadata roundtrip via NonSemantic.AuxData InstructionMetadata.
 
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
-; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
+; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory|atomic.ignore.denormal.mode}}"
 
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.spv --spirv-preserve-auxdata
-; RUN: llvm-spirv -r --spirv-preserve-auxdata %t.spv -o %t.rev.bc
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -o %t.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
 ; RUN: llvm-dis %t.rev.without.bc -o - | FileCheck %s --implicit-check-not="{{amdgpu.no.fine.grained.memory|amdgpu.no.remote.memory|atomic.ignore.denormal.mode}}"
@@ -21,10 +21,21 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.noaux.spv
 ; RUN: spirv-val %t.noaux.spv
 
-; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.aux.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -o %t.aux.spv --spirv-preserve-auxdata
 ; RUN: spirv-val %t.aux.spv
 
-; RUN: not llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,-SPV_KHR_non_semantic_info %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
+; RUN: not llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction,-SPV_KHR_non_semantic_info %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - 2>&1 | FileCheck %s --check-prefix=CHECK-EXT-DISABLED
+
+; InstructionMetadata is emitted only if SPV_KHR_relaxed_extended_instruction is allowed.
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefix=CHECK-NO-RELAXED
+; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add %s -o %t.norelaxed.spv --spirv-preserve-auxdata
+; RUN: spirv-val %t.norelaxed.spv
+
+; CHECK-NO-RELAXED-NOT: SPV_KHR_relaxed_extended_instruction
+; CHECK-NO-RELAXED-NOT: amdgpu.no.fine.grained.memory
+; CHECK-NO-RELAXED-NOT: amdgpu.no.remote.memory
+; CHECK-NO-RELAXED-NOT: atomic.ignore.denormal.mode
+; CHECK-NO-RELAXED-NOT: NonSemanticAuxDataInstructionMetadata
 
 ; CHECK-NO-AUXDATA-NOT: NonSemantic.AuxData
 ; CHECK-NO-AUXDATA-NOT: amdgpu.no.fine.grained.memory
