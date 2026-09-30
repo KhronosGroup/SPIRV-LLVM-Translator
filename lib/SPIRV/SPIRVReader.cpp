@@ -1106,14 +1106,9 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     const bool IsOldConvertFToFOp =
         OC == internal::OpClampConvertFToFINTEL ||
         OC == internal::OpClampStochasticRoundFToFINTEL;
-    // SPV_INTEL_fp_conversions' own instructions: OpClampConvertFToSINTEL
-    // only supports RTE, and the StochasticRound* opcodes round
-    // stochastically by definition, so no explicit FPRoundingMode -- RTE
-    // included -- is valid on them. This depends only on the opcode, so
-    // check it before the type introspection below, which this doesn't
-    // need. Conversions reaching this point through any other opcode
-    // (plain OpFConvert/OpConvertSToF/etc., including to/from a
-    // mini-float encoding) have no such restriction here.
+    // OpClampConvertFToSINTEL only supports RTE; StochasticRound*
+    // opcodes accept no explicit FPRoundingMode.
+    // Nothing else is restricted here.
     bool IsStochasticRound = OC == internal::OpStochasticRoundFToFINTEL ||
                              OC == internal::OpClampStochasticRoundFToFINTEL ||
                              OC == internal::OpClampStochasticRoundFToSINTEL;

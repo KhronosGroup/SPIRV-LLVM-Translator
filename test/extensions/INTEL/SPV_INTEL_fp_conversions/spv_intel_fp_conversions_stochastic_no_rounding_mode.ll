@@ -1,5 +1,4 @@
-; OpClampStochasticRoundFToSINTEL rounds stochastically by definition, so
-; no explicit FPRoundingMode is valid on it -- RTE included.
+; OpClampStochasticRoundFToSINTEL accepts no explicit FPRoundingMode.
 
 ; RUN: llvm-spirv %s -o %t.spv --spirv-ext=+SPV_INTEL_int4,+SPV_INTEL_fp_conversions
 ; RUN: not llvm-spirv %t.spv -r -o %t.rev.bc 2>&1 | FileCheck %s --check-prefix=CHECK-ERROR

@@ -1,7 +1,5 @@
 ; A conversion to Float4E2M1EXT round-trips through the real builtin
-; regardless of rounding mode -- RTE-only is enforced for
-; SPV_INTEL_fp_conversions' own opcodes, not for a plain conversion to
-; a mini-float encoding.
+; regardless of rounding mode.
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: llvm-spirv %t.spv -r --spirv-target-env=SPV-IR -o %t.rev.bc
