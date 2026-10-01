@@ -1833,6 +1833,8 @@ SPIRVInstruction *SPIRVModuleImpl::addBranchInst(SPIRVLabel *TargetLabel,
 SPIRVInstruction *SPIRVModuleImpl::addBranchConditionalInst(
     SPIRVValue *Condition, SPIRVLabel *TrueLabel, SPIRVLabel *FalseLabel,
     SPIRVBasicBlock *BB, const std::vector<SPIRVWord> &BranchWeights) {
+  assert((BranchWeights.empty() || BranchWeights.size() == 2) &&
+         "SPIR-V allows either no Branch Weights or exactly two");
   if (BranchWeights.size() == 2)
     return addInstruction(
         new SPIRVBranchConditional(Condition, TrueLabel, FalseLabel, BB,
