@@ -6218,7 +6218,7 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
       SPIRVModule::createSPIRVModule(*EffectiveOpts));
 
 #ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
-  if (EffectiveOpts->isSPIRVValidationEnabled()) {
+  if (EffectiveOpts->isSPIRVValidationEnabled() && !SPIRVUseTextFormat) {
     std::string Binary;
     if (!validateSPIRVBinary(IS, Binary, ErrMsg))
       return nullptr;
