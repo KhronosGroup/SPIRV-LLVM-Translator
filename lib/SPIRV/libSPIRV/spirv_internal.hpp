@@ -108,7 +108,7 @@ enum InternalCapability {
   ICapabilityFloat4E2M1CooperativeMatrixINTEL = 6213,
   ICapabilityFloatConversionsFtoFINTEL = 6215,
   ICapabilityFloatConversionsFtoSINTEL = 6216,
-  ICapabilityBFloat16ArithmeticINTEL = 6226,
+  ICapabilityBFloat16ArithmeticEXT = 6226,
   ICapabilityCooperativeMatrixOffsetInstructionsINTEL = 6238,
   ICapabilityAtomicBFloat16AddINTEL = 6255,
   ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
@@ -290,8 +290,8 @@ constexpr Capability CapabilityTokenTypeINTEL =
     static_cast<Capability>(ICapTokenTypeINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
-constexpr Capability CapabilityBFloat16ArithmeticINTEL =
-    static_cast<Capability>(ICapabilityBFloat16ArithmeticINTEL);
+constexpr Capability CapabilityBFloat16ArithmeticEXT =
+    static_cast<Capability>(ICapabilityBFloat16ArithmeticEXT);
 
 constexpr ExecutionMode ExecutionModeNamedSubgroupSizeINTEL =
     static_cast<ExecutionMode>(IExecModeNamedSubgroupSizeINTEL);
