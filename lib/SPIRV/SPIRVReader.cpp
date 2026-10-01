@@ -2564,7 +2564,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       V = GEP;
     } else {
       auto *CT = cast<Constant>(Base);
-      V = ConstantExpr::getGetElementPtr(BaseTy, CT, Index, IsInbound);
+      ArrayRef<Constant *> ConstIndexList =
+          ArrayRef((Constant *const *)Index.data(), Index.size());
+      V = ConstantExpr::getGetElementPtr(M->getDataLayout(), BaseTy, CT,
+                                         ConstIndexList, IsInbound);
     }
     return mapValue(BV, V);
   }
