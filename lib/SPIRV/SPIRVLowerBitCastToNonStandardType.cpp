@@ -61,8 +61,6 @@ namespace SPIRV {
 
 using NFIRBuilder = IRBuilder<NoFolder>;
 
-namespace {
-
 static FixedVectorType *getHalfTy(Type *Ty) {
   auto *VecTy = dyn_cast<FixedVectorType>(Ty);
   if (!VecTy)
@@ -78,6 +76,8 @@ static Constant *getConstantLane(Constant *C, unsigned Idx) {
   Constant *Elem = C->getAggregateElement(Idx);
   return Elem ? Elem : PoisonValue::get(C->getType()->getScalarType());
 }
+
+namespace {
 
 /// Splits values of an unsupported vector length into two legal halves. Only
 /// the shapes SROA produces are handled; the rest is left to the diagnostic.
@@ -112,6 +112,8 @@ private:
   NFIRBuilder &Builder;
   DenseMap<Value *, HalfPair> Halves;
 };
+
+} // namespace
 
 bool NonStdVectorLegalizer::run(Function &F) {
   SmallVector<Instruction *, 32> Replaced;
@@ -288,8 +290,6 @@ bool NonStdVectorLegalizer::visitShuffleVector(ShuffleVectorInst &SVI) {
   SVI.replaceAllUsesWith(buildShuffleLanes(SVI, NumElems));
   return true;
 }
-
-} // namespace
 
 static Value *removeBitCasts(Value *OldValue, Type *NewTy, NFIRBuilder &Builder,
                              std::vector<Instruction *> &InstsToErase) {
