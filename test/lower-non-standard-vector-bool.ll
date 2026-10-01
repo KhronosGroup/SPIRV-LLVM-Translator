@@ -1,5 +1,4 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
+; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
 ; Splitting this bitcast would create bitcasts to <16 x i1>, which have a
 ; legal vector length but are not allowed by SPIR-V. Keep rejecting this case.

@@ -1,5 +1,4 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
+; RUN: llvm-spirv -s %s -o - | llvm-dis -o - | FileCheck %s
 
 target triple = "spirv64"
 

@@ -1,7 +1,6 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s \
+; RUN: llvm-spirv -s %s -o - | llvm-dis -o - | FileCheck %s \
 ; RUN:   --implicit-check-not="<32 x i8>"
-; RUN: llvm-spirv -s --spirv-ext=+SPV_EXT_long_vector %t.bc -o - \
+; RUN: llvm-spirv -s --spirv-ext=+SPV_EXT_long_vector %s -o - \
 ; RUN:   | llvm-dis -o - | FileCheck %s --check-prefix=LONG-VECTOR \
 ; RUN:   --implicit-check-not="<16 x i8>"
 

@@ -1,8 +1,7 @@
 ; A use the legalizer declines to rewrite must keep the oversized value alive so
 ; the residual check reports it, rather than being overwritten with poison.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv -s %t.bc -o %t.out.bc 2>&1 | FileCheck %s
+; RUN: not llvm-spirv -s %s -o %t.out.bc 2>&1 | FileCheck %s
 ; CHECK: LLVM ERROR: Unsupported vector type with 32 elements
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64-G1"
