@@ -91,6 +91,7 @@ void SPIRVLowerSaddIntrinsicsBase::replaceSaddOverflow(Function &F) {
       raw_string_ostream ErrStream(ErrMsg);
       Err.print("", ErrStream);
       SPIRVErrorLog EL;
+      EL.setErrorHandlingKind(Opts.getErrorHandlingKind());
       EL.checkError(false, SPIRVEC_InvalidLlvmModule, ErrMsg);
       return;
     }

@@ -35,6 +35,8 @@
 #ifndef SPIRV_SPIRVLOWERSADDINTRINSICS_H
 #define SPIRV_SPIRVLOWERSADDINTRINSICS_H
 
+#include "LLVMSPIRVOpts.h"
+
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
 
@@ -42,7 +44,8 @@ namespace SPIRV {
 
 class SPIRVLowerSaddIntrinsicsBase {
 public:
-  SPIRVLowerSaddIntrinsicsBase() : Context(nullptr), Mod(nullptr) {}
+  SPIRVLowerSaddIntrinsicsBase(const SPIRV::TranslatorOpts &Opts = {})
+      : Context(nullptr), Mod(nullptr), Opts(Opts) {}
 
   bool runLowerSaddIntrinsics(llvm::Module &M);
 
@@ -52,6 +55,7 @@ private:
 
   llvm::LLVMContext *Context;
   llvm::Module *Mod;
+  const SPIRV::TranslatorOpts Opts;
   bool TheModuleIsModified = false;
 };
 
@@ -59,6 +63,8 @@ class SPIRVLowerSaddIntrinsicsPass
     : public llvm::PassInfoMixin<SPIRVLowerSaddIntrinsicsPass>,
       public SPIRVLowerSaddIntrinsicsBase {
 public:
+  SPIRVLowerSaddIntrinsicsPass(const SPIRV::TranslatorOpts &Opts = {})
+      : SPIRVLowerSaddIntrinsicsBase(Opts) {}
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
 };
