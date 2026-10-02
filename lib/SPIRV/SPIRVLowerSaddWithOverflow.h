@@ -35,6 +35,8 @@
 #ifndef SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
 #define SPIRV_SPIRVLOWERSADDWITHOVERFLOW_H
 
+#include "LLVMSPIRVOpts.h"
+
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Pass.h"
@@ -44,7 +46,8 @@ namespace SPIRV {
 class SPIRVLowerSaddWithOverflowBase
     : public llvm::InstVisitor<SPIRVLowerSaddWithOverflowBase> {
 public:
-  SPIRVLowerSaddWithOverflowBase() : Context(nullptr), Mod(nullptr) {}
+  SPIRVLowerSaddWithOverflowBase(const SPIRV::TranslatorOpts &Opts = {})
+      : Context(nullptr), Mod(nullptr), Opts(Opts) {}
   virtual ~SPIRVLowerSaddWithOverflowBase() {}
   virtual void visitIntrinsicInst(llvm::CallInst &I);
 
@@ -53,6 +56,7 @@ public:
 private:
   llvm::LLVMContext *Context;
   llvm::Module *Mod;
+  const SPIRV::TranslatorOpts Opts;
   bool TheModuleIsModified = false;
 };
 
@@ -60,6 +64,8 @@ class SPIRVLowerSaddWithOverflowPass
     : public llvm::PassInfoMixin<SPIRVLowerSaddWithOverflowPass>,
       public SPIRVLowerSaddWithOverflowBase {
 public:
+  SPIRVLowerSaddWithOverflowPass(const SPIRV::TranslatorOpts &Opts = {})
+      : SPIRVLowerSaddWithOverflowBase(Opts) {}
   llvm::PreservedAnalyses run(llvm::Module &M,
                               llvm::ModuleAnalysisManager &MAM);
 
