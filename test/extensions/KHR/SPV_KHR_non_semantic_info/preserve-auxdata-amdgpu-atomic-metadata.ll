@@ -3,6 +3,7 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -spirv-text --spirv-preserve-auxdata --spirv-max-version=1.5 -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -o %t.spv --spirv-preserve-auxdata --spirv-max-version=1.5
+; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc
@@ -11,6 +12,7 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -spirv-text --spirv-preserve-auxdata -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 
 ; RUN: llvm-spirv --spirv-ext=+SPV_EXT_shader_atomic_float_add,+SPV_KHR_relaxed_extended_instruction %s -o %t.spv --spirv-preserve-auxdata
+; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-NOEXT
 ; RUN: llvm-spirv -r --spirv-preserve-auxdata --spirv-target-triple=spirv64-amd-amdhsa %t.spv -o %t.rev.bc
 ; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.without.bc

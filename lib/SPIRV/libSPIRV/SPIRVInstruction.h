@@ -2020,14 +2020,7 @@ public:
                SPIRVExtInstSetKind SetKind, SPIRVWord SetId, SPIRVWord InstId,
                const std::vector<SPIRVWord> &Args)
       : SPIRVFunctionCallGeneric(BM, ResId, TheType, Args), ExtSetKind(SetKind),
-        ExtSetId(SetId), ExtOp(InstId) {
-    // Instruction-metadata aux records forward-reference their target
-    // instruction's result <id>, so they must be emitted as
-    // OpExtInstWithForwardRefsKHR rather than OpExtInst.
-    if (SetKind == SPIRVEIS_NonSemantic_AuxData &&
-        InstId == NonSemanticAuxData::InstructionMetadata)
-      OpCode = OpExtInstWithForwardRefsKHR;
-  }
+        ExtSetId(SetId), ExtOp(InstId) {}
 
   SPIRVExtInst(SPIRVExtInstSetKind SetKind = SPIRVEIS_Count,
                unsigned ExtOC = SPIRVWORD_MAX)
@@ -2179,11 +2172,27 @@ protected:
   std::vector<SPIRVExtInst *> ContinuedInstructions;
 };
 
-// NonSemantic.AuxData InstructionMetadata records forward-reference their
-// target and are emitted as OpExtInstWithForwardRefsKHR, which shares the
-// SPIRVExtInst representation. The alias lets the opcode-table X-macro resolve
-// SPIRV##x.
-typedef SPIRVExtInst SPIRVExtInstWithForwardRefsKHR;
+// Same encoding as OpExtInst, but operands may forward-reference <id>s. Used
+// for NonSemantic.AuxData InstructionMetadata records.
+class SPIRVExtInstWithForwardRefsKHR : public SPIRVExtInst {
+public:
+  const static Op OC = OpExtInstWithForwardRefsKHR;
+  SPIRVExtInstWithForwardRefsKHR(SPIRVModule *BM, SPIRVId ResId,
+                                 SPIRVType *TheType,
+                                 SPIRVExtInstSetKind SetKind, SPIRVWord SetId,
+                                 SPIRVWord InstId,
+                                 const std::vector<SPIRVWord> &Args)
+      : SPIRVExtInst(BM, ResId, TheType, SetKind, SetId, InstId, Args) {
+    OpCode = OC;
+  }
+  SPIRVExtInstWithForwardRefsKHR() { OpCode = OC; }
+
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    if (auto Ext = SPIRVExtInst::getRequiredExtension())
+      Module->addExtension(*Ext);
+    return ExtensionID::SPV_KHR_relaxed_extended_instruction;
+  }
+};
 
 class SPIRVCompositeConstruct : public SPIRVInstruction {
 public:
