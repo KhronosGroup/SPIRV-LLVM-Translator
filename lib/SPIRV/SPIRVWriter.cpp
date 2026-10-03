@@ -4353,11 +4353,9 @@ static SPIRVWord getBuiltinIdForIntrinsic(Intrinsic::ID IID) {
   case Intrinsic::log2:
     return OpenCLLIB::Log2;
   case Intrinsic::maximumnum:
-  case Intrinsic::maximum:
   case Intrinsic::maxnum:
     return OpenCLLIB::Fmax;
   case Intrinsic::minimumnum:
-  case Intrinsic::minimum:
   case Intrinsic::minnum:
     return OpenCLLIB::Fmin;
   case Intrinsic::nearbyint:
@@ -4679,10 +4677,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::pow:
   case Intrinsic::powi:
   case Intrinsic::maximumnum:
-  case Intrinsic::maximum:
   case Intrinsic::maxnum:
   case Intrinsic::minimumnum:
-  case Intrinsic::minimum:
   case Intrinsic::minnum: {
     if (!checkTypeForSPIRVExtendedInstLowering(II, BM))
       break;
