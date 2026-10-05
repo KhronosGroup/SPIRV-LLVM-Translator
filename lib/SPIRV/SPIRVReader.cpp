@@ -57,6 +57,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVectorExtras.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/BinaryFormat/Dwarf.h"
@@ -2564,10 +2565,15 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       V = GEP;
     } else {
       auto *CT = cast<Constant>(Base);
-      ArrayRef<Constant *> ConstIndexList =
-          ArrayRef((Constant *const *)Index.data(), Index.size());
+      SmallVector<Constant *, 4> ConstIndexList =
+          map_to_vector(Index, [](Value *V) { return cast<Constant>(V); });
       V = ConstantExpr::getGetElementPtr(M->getDataLayout(), BaseTy, CT,
                                          ConstIndexList, IsInbound);
+      if (!BM->getErrorLog().checkError(
+              V != nullptr, SPIRVEC_InvalidInstruction,
+              "OpAccessChain cannot be represented as a "
+              "canonical constant ptradd"))
+        return nullptr;
     }
     return mapValue(BV, V);
   }
