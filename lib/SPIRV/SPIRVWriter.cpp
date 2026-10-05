@@ -766,6 +766,10 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
     return Loc->second;
 
   SPIRVType *TranslatedTy = nullptr;
+  if (!BM->isAllowedToUseExtension(
+          ExtensionID::SPV_INTEL_usm_storage_classes) &&
+      ((AddrSpc == SPIRAS_GlobalDevice) || (AddrSpc == SPIRAS_GlobalHost)))
+    return transPointerType(ET, SPIRAS_Global);
   if (AddrSpc == SPIRAS_CodeSectionINTEL &&
       !BM->shouldEmitFunctionPtrAddrSpace())
     return transPointerType(ET, SPIRAS_Private);
@@ -5207,8 +5211,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return nullptr;
     }
     uint64_t NumElements = static_cast<ConstantInt *>(Len)->getZExtValue();
-    // A zero-sized memset is a no-op. Emitting OpCopyMemorySized with a Size
-    // operand of 0 is invalid SPIR-V, so drop the intrinsic entirely.
+    // A zero-sized memset is a no-op. Emitting OpTypeArray with zero length
+    // is invalid SPIR-V, so drop the intrinsic entirely.
     if (NumElements == 0)
       return nullptr;
     auto *AT = ArrayType::get(Val->getType(), NumElements);
@@ -5226,20 +5230,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       std::vector<SPIRVValue *> Elts(TNumElts, transValue(Val, BB));
       Init = BM->addCompositeConstant(CompositeTy, Elts);
     }
-    SPIRVType *VarTy = transPointerType(AT, SPIRAS_Private);
-    SPIRVBasicBlock *EntryBB = BB->getParent()->getBasicBlock(0);
-    SPIRVValue *Var = BM->addVariable(VarTy, nullptr, /*isConstant*/ false,
-                                      spv::internal::LinkageTypeInternal, Init,
-                                      "", StorageClassFunction, EntryBB);
     std::vector<SPIRVWord> MemAccess = GetMemoryAccess(
         MSI, BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4));
-    if (!MemAccess.empty() && MemAccess[0] == MemoryAccessAlignedMask)
-      Var->setAlignment(MemAccess[1]);
-    SPIRVType *SourceTy = transPointerType(Val->getType(), SPIRAS_Private);
-    SPIRVValue *Source = BM->addUnaryInst(OpBitcast, SourceTy, Var, BB);
     SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
-    return BM->addCopyMemorySizedInst(Target, Source, CompositeTy->getLength(),
-                                      MemAccess, BB);
+    SPIRVType *StorePtrTy = transPointerType(
+        CompositeTy, MSI->getRawDest()->getType()->getPointerAddressSpace());
+    SPIRVValue *StorePtr = BM->addUnaryInst(OpBitcast, StorePtrTy, Target, BB);
+    return BM->addStoreInst(StorePtr, Init, MemAccess, BB);
   } break;
   case Intrinsic::memcpy:
     // A zero-sized memcpy is a no-op. Emitting OpCopyMemorySized with a Size
