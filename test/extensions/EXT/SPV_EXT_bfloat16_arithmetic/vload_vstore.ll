@@ -1,5 +1,5 @@
 ; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_bfloat16,+SPV_INTEL_bfloat16_arithmetic
+; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt --spirv-ext=+SPV_KHR_bfloat16,+SPV_EXT_bfloat16_arithmetic
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv -to-binary %t.spt -o %t.spv
 ; TODO: reenable the validation once the BFloat16 type is supported in ExtInst.
