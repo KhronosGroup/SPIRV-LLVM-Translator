@@ -662,6 +662,17 @@ public:
     WordLiterals.push_back(Z);
     updateModuleVersion();
   }
+  // Complete constructor for FPFastMathDefault.
+  SPIRVExecutionMode(Op OC, SPIRVEntry *TheTarget,
+                     SPIRVExecutionModeKind TheExecMode, SPIRVWord TargetType,
+                     SPIRVWord FastMathMode)
+      : SPIRVAnnotation(OC, TheTarget, 5), ExecMode(TheExecMode) {
+    assert(OC == OpExecutionModeId);
+    assert(TheExecMode == ExecutionModeFPFastMathDefault);
+    WordLiterals.push_back(TargetType);
+    WordLiterals.push_back(FastMathMode);
+    updateModuleVersion();
+  }
   // Complete constructor for VecTypeHint, SubgroupSize, SubgroupsPerWorkgroup
   SPIRVExecutionMode(Op OC, SPIRVEntry *TheTarget,
                      SPIRVExecutionModeKind TheExecMode, SPIRVWord Code)
@@ -722,6 +733,15 @@ public:
       : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode, X, Y, Z) {
     updateModuleVersion();
   }
+  // Complete constructor for FPFastMathDefault.
+  SPIRVExecutionModeId(SPIRVEntry *TheTarget,
+                       SPIRVExecutionModeKind TheExecMode, SPIRVWord TargetType,
+                       SPIRVWord FastMathMode)
+      : SPIRVExecutionMode(OpExecutionModeId, TheTarget, TheExecMode,
+                           TargetType, FastMathMode) {
+    assert(TheExecMode == ExecutionModeFPFastMathDefault);
+    updateModuleVersion();
+  }
   // Complete constructor for SubgroupsPerWorkgroupId
   SPIRVExecutionModeId(SPIRVEntry *TheTarget,
                        SPIRVExecutionModeKind TheExecMode, SPIRVWord Code)
@@ -764,9 +784,12 @@ public:
     auto IsOtherFP = [](auto EMK) {
       return EMK == ExecutionModeSignedZeroInfNanPreserve;
     };
+    auto IsFastMathDefault = [](auto EMK) {
+      return EMK == ExecutionModeFPFastMathDefault;
+    };
     auto IsFloatControl = [&](auto EMK) {
       return IsDenorm(EMK) || IsRoundingMode(EMK) || IsFPMode(EMK) ||
-             IsOtherFP(EMK);
+             IsOtherFP(EMK) || IsFastMathDefault(EMK);
     };
     auto IsMaxRegisters = [&](auto EMK) {
       return EMK == ExecutionModeMaximumRegistersINTEL ||
@@ -887,6 +910,9 @@ public:
     case CapabilityGroupNonUniformClustered:
       return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_3);
 
+    case CapabilityFloatControls2:
+      return static_cast<SPIRVWord>(VersionNumber::SPIRV_1_2);
+
     case CapabilityNamedBarrier:
     case CapabilitySubgroupDispatch:
     case CapabilityPipeStorage:
@@ -917,6 +943,8 @@ public:
       return ExtensionID::SPV_INTEL_device_barrier;
     case CapabilityLongVectorEXT:
       return ExtensionID::SPV_EXT_long_vector;
+    case CapabilityFloatControls2:
+      return ExtensionID::SPV_KHR_float_controls2;
     default:
       return {};
     }
