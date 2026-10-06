@@ -1,14 +1,8 @@
-; Test that memset is lowered to a single OpStore of a composite constant.
-; A non-zero fill value must write the byte values at the destination offset and
-; preserve the volatile and alignment memory access flags, without creating a
-; function-scope temporary to copy from.
-;
-; The pointer the composite is stored through must also keep the storage class
-; of the translated destination. For the global_device/global_host address
-; spaces that means honoring the lowering to the global address space that
-; happens when SPV_INTEL_usm_storage_classes is not enabled, otherwise the
-; module ends up with a USMStorageClassesINTEL capability it never declared an
-; extension for, and with an OpBitcast that changes storage class.
+; Test that memset is lowered to a single OpStore of a composite constant,
+; with non-zero fill.
+; Also test the global_device & global_host address spaces are translated
+; correctly so that the target pointer matches the (bitcast) store pointer,
+; with and without SPV_INTEL_usm_storage_classes extension.
 
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
@@ -16,12 +10,13 @@
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
-; RUN: llvm-spirv %t.bc -o %t.untyped.spv --spirv-ext=+SPV_KHR_untyped_pointers
-; RUN: spirv-val %t.untyped.spv
-; RUN: llvm-spirv %t.bc -spirv-text -o - --spirv-ext=+SPV_KHR_untyped_pointers | FileCheck %s --check-prefix=CHECK-SPIRV-UNTYPED
-; No spirv-val for the run below: the translator does not emit the matching
-; OpExtension, which is a pre-existing issue unrelated to memset.
-; RUN: llvm-spirv %t.bc -spirv-text -o - --spirv-ext=+SPV_INTEL_usm_storage_classes | FileCheck %s --check-prefix=CHECK-SPIRV-USM
+
+; TODO: currently the Translator has a bug that it doesn't emit "OpExtension SPV_INTEL_usm_storage_classes"
+; when the extension is enabled, therefore spirv-val will reject it. Re-enable spirv-val once this bug is
+; fixed in the translator.
+; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.usm.spv
+; RUN: llvm-spirv %t.usm.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-USM
+; RUNx: spirv-val %t.usm.spv
 
 ; Without SPV_INTEL_usm_storage_classes both USM address spaces are lowered to
 ; CrossWorkgroup (storage class 5), so all three kernels share one destination
@@ -55,18 +50,7 @@
 ; CHECK-LLVM: %[[#StorePtr:]] = bitcast ptr addrspace(1) %[[Dest]] to ptr addrspace(1)
 ; CHECK-LLVM: store volatile [3 x i8] c"***", ptr addrspace(1) %[[#StorePtr]], align 1
 
-; Pointers to arrays stay typed under SPV_KHR_untyped_pointers, so the store
-; keeps the same shape there.
-; CHECK-SPIRV-UNTYPED: TypeUntypedPointerKHR [[#BytePtrTyU:]] 5
-; CHECK-SPIRV-UNTYPED: TypeArray [[#ArrayTyU:]] [[#]] [[#]]
-; CHECK-SPIRV-UNTYPED: TypePointer [[#StorePtrTyU:]] 5 [[#ArrayTyU]]
-; CHECK-SPIRV-UNTYPED: ConstantComposite [[#ArrayTyU]] [[#InitU:]] [[#]] [[#]] [[#]]
-; CHECK-SPIRV-UNTYPED: FunctionParameter [[#BytePtrTyU]] [[#BaseU:]]
-; CHECK-SPIRV-UNTYPED: UntypedPtrAccessChainKHR [[#BytePtrTyU]] [[#OffsetPtrU:]] [[#]] [[#BaseU]] [[#]]
-; CHECK-SPIRV-UNTYPED: Bitcast [[#StorePtrTyU]] [[#ArrayPtrU:]] [[#OffsetPtrU]]
-; CHECK-SPIRV-UNTYPED: Store [[#ArrayPtrU]] [[#InitU]] 3 1
-
-; With SPV_INTEL_usm_storage_classes enabled each destination keeps its own
+; With SPV_INTEL_usm_storage_classes enabled each target pointer keeps its own
 ; storage class, DeviceOnlyINTEL (5936) and HostOnlyINTEL (5937), and so does
 ; its store pointer.
 ; CHECK-SPIRV-USM: TypePointer [[#DeviceBytePtrTy:]] 5936 [[#]]

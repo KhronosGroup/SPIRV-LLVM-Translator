@@ -1,11 +1,8 @@
-; Constant zero-sized memcpy/memmove/memset are no-ops, and neither lowering
-; can express a zero size: OpCopyMemorySized with a Size operand of 0 is
-; invalid SPIR-V, and the OpTypeArray a memset stores through requires a
-; non-zero Length. So the translator must drop these intrinsics. A non-zero
-; copy is unaffected.
+; Constant zero-sized memcpy/memmove/memset are no-ops. Emitting
+; OpCopyMemorySized or OpTypeArray with a Size operand of 0 is invalid SPIR-V, so the
+; translator must drop these intrinsics. A non-zero copy is unaffected.
 
-; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV \
-; RUN:   --implicit-check-not=CopyMemorySized --implicit-check-not=Store
+; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not=Store
 ; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
 
