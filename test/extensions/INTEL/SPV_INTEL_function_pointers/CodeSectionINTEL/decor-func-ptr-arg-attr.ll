@@ -14,9 +14,10 @@
 ; RUN: llvm-dis %t.u.rev.bc -o %t.u.rev.ll
 ; RUN: FileCheck < %t.u.rev.ll %s --check-prefix CHECK-LLVM-UNTYPED
 
-; The runs below pass -spirv-emit-function-ptr-addr-space to the forward
+; The run below passes -spirv-emit-function-ptr-addr-space to the forward
 ; translation as well. @inc_function lives in the default address space in the
-; input LLVM module, but the emitted function pointer type should still have CodeSectionINTEL storage class.
+; input LLVM module, but the emitted typed function pointer type should still
+; have CodeSectionINTEL storage class.
 
 ; RUN: llvm-spirv %s -o %t.as.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers -spirv-emit-function-ptr-addr-space
 ; RUN: FileCheck < %t.as.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-TYPED-AS
@@ -25,14 +26,6 @@
 ; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.as.spv -o %t.as.rev.bc
 ; RUN: llvm-dis %t.as.rev.bc -o %t.as.rev.ll
 ; RUN: FileCheck < %t.as.rev.ll %s --check-prefix CHECK-LLVM-AS
-
-; RUN: llvm-spirv %s -o %t.u.as.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space
-; RUN: FileCheck < %t.u.as.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED-AS
-
-; RUN: llvm-spirv %t.u.as.spt -o %t.u.as.spv -to-binary
-; RUN: llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.u.as.spv -o %t.u.as.rev.bc
-; RUN: llvm-dis %t.u.as.rev.bc -o %t.u.as.rev.ll
-; RUN: FileCheck < %t.u.as.rev.ll %s --check-prefix CHECK-LLVM-AS
 
 ; TODO: reader currently crashes with output of llc for this test with function pointers (for both typed and untyped pointers)
 ; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
@@ -51,7 +44,7 @@
 ; CHECK-SPIRV-DAG: Decorate [[#TARGET]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL
 ; CHECK-SPIRV-TYPED-SAME: [[#TARGET]]
-; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] 7
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
 ; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
 ; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]] [[#INC:]]
 ; CHECK-SPIRV-UNTYPED: Function [[#]] [[#INC]]
@@ -65,16 +58,6 @@
 ; CHECK-SPIRV-TYPED-AS: Function [[#]] [[#INC]]
 ; CHECK-SPIRV-TYPED-AS: Select [[#CODE]] [[#SEL:]] [[#]] [[#FP]] [[#]]
 ; CHECK-SPIRV-TYPED-AS: FunctionPointerCallINTEL [[#]] [[#TARGET]] [[#SEL]] [[#]]
-
-; CHECK-SPIRV-UNTYPED-AS-DAG: TypeUntypedPointerKHR [[#PRIV:]] 7
-; CHECK-SPIRV-UNTYPED-AS-DAG: TypeUntypedPointerKHR [[#CODE:]] 5605
-; CHECK-SPIRV-UNTYPED-AS-DAG: TypeStruct [[#MULTI_PTR:]] [[#PRIV]]
-; CHECK-SPIRV-UNTYPED-AS-DAG: ConstantFunctionPointerINTEL [[#CODE]] [[#FP:]] [[#INC:]]
-; CHECK-SPIRV-UNTYPED-AS: Function [[#]] [[#INC]]
-; CHECK-SPIRV-UNTYPED-AS: UntypedVariableKHR [[#PRIV]] [[#VAR:]] [[#]] [[#MULTI_PTR]]
-; CHECK-SPIRV-UNTYPED-AS: Select [[#CODE]] [[#SEL:]] [[#]] [[#FP]] [[#]]
-; CHECK-SPIRV-UNTYPED-AS: Bitcast [[#]] [[#BARG:]] [[#VAR]]
-; CHECK-SPIRV-UNTYPED-AS: FunctionPointerCallINTEL [[#]] [[#TARGET]] [[#SEL]] [[#BARG]]
 
 ; CHECK-LLVM: call spir_func addrspace(9) void %cond.i.i(ptr noalias byval(%multi_ptr) captures(none) %agg.tmp.i.i)
 

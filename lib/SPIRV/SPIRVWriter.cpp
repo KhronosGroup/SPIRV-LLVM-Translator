@@ -769,11 +769,12 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
   if (AddrSpc == SPIRAS_CodeSectionINTEL &&
       !BM->shouldEmitFunctionPtrAddrSpace())
     return transPointerType(ET, SPIRAS_Private);
-  // should always use CodeSectionINTEL storage class for function pointers when
-  // -spirv-emit-function-ptr-addr-space option is enabled, regardless of
-  // whether the function has explicit addrspace(9) in the module
+  // A typed function pointer must always emit CodeSectionINTEL storage class
+  // regardless of the function's address space in the module.
+  // On hold for untyped pointer case until ambiguity is resolved in the spec.
   if (AddrSpc != SPIRAS_CodeSectionINTEL && ET->getOpCode() == OpTypeFunction &&
-      BM->shouldEmitFunctionPtrAddrSpace())
+      BM->shouldEmitFunctionPtrAddrSpace() &&
+      !BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers))
     return transPointerType(ET, SPIRAS_CodeSectionINTEL);
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_untyped_pointers) &&
       !(ET->isTypeArray() || ET->isTypeVector() || ET->isSPIRVOpaqueType())) {
