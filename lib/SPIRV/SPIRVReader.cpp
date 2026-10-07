@@ -57,6 +57,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVectorExtras.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/BinaryFormat/Dwarf.h"
@@ -2564,7 +2565,15 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       V = GEP;
     } else {
       auto *CT = cast<Constant>(Base);
-      V = ConstantExpr::getGetElementPtr(BaseTy, CT, Index, IsInbound);
+      SmallVector<Constant *, 4> ConstIndexList =
+          map_to_vector(Index, [](Value *V) { return cast<Constant>(V); });
+      V = ConstantExpr::getGetElementPtr(M->getDataLayout(), BaseTy, CT,
+                                         ConstIndexList, IsInbound);
+      if (!BM->getErrorLog().checkError(
+              V != nullptr, SPIRVEC_InvalidInstruction,
+              "OpAccessChain cannot be represented as a "
+              "canonical constant ptradd"))
+        return nullptr;
     }
     return mapValue(BV, V);
   }
@@ -3240,7 +3249,19 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       auto *BI = static_cast<SPIRVInstruction *>(BV);
       Value *Inst = nullptr;
-      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion()) {
+      auto IsMiniFloatOrInt4 = [](SPIRVType *Ty) {
+        return Ty->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
+               Ty->isTypeFloat(8, FPEncodingFloat8E5M2EXT) ||
+               Ty->isTypeFloat(4, FPEncodingFloat4E2M1EXT) ||
+               Ty->isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL) ||
+               Ty->isTypeInt(4);
+      };
+      // Check both sides: the encoding may be on the source (e.g. an upcast
+      // out of Float4E2M1) rather than the result.
+      if ((BI->hasFPRoundingMode() || BI->isSaturatedConversion()) &&
+          !IsMiniFloatOrInt4(BI->getType()) &&
+          !IsMiniFloatOrInt4(
+              static_cast<SPIRVUnary *>(BI)->getOperand(0)->getType())) {
         Inst = transSPIRVBuiltinFromInst(BI, BB);
       } else if (BI->getType()->isTypeCooperativeMatrixKHR()) {
         // For cooperative matrix conversions generate __builtin_spirv
@@ -4315,9 +4336,6 @@ bool SPIRVToLLVM::translate() {
   transGeneratorMD();
   if (!lowerBuiltins(BM, M))
     return false;
-  // Only AMD targets emit these helpers, so only AMD targets reconstruct them.
-  if (M->getTargetTriple().getVendor() == Triple::AMD)
-    lowerAtomicWrapCalls(M);
   if (BM->getDesiredBIsRepresentation() == BIsRepresentation::SPIRVFriendlyIR) {
     SPIRVWord SrcLangVer = 0;
     BM->getSourceLanguage(&SrcLangVer);
@@ -4330,6 +4348,12 @@ bool SPIRVToLLVM::translate() {
   for (SPIRVExtInst *EI : BM->getAuxDataInstVec()) {
     transAuxDataInst(EI);
   }
+
+  // Only AMD targets emit these helpers, so only AMD targets reconstruct them.
+  // Runs after AuxData: ValueMap still points at the helper calls, and
+  // copyMetadata carries their restored metadata to the atomicrmw.
+  if (M->getTargetTriple().getVendor() == Triple::AMD)
+    lowerAtomicWrapCalls(M);
 
   eraseUselessFunctions(M);
 
@@ -5766,6 +5790,45 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_NonSemantic_AuxData);
   if (!BC->getModule()->preserveAuxData())
     return;
+  auto Args = BC->getArguments();
+
+  // Metadata Value operands start at Args[2].
+  auto TransMDValues = [&]() {
+    SmallVector<Metadata *> MetadataArgs;
+    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
+      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
+      // For metadata, the metadata values can be either values or strings.
+      if (Arg->getOpCode() == OpString) {
+        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
+        MetadataArgs.push_back(MDString::get(*Context, ArgAsStr->getStr()));
+      } else {
+        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
+        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
+        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
+      }
+    }
+    return MDNode::get(*Context, MetadataArgs);
+  };
+
+  // InstructionMetadata targets an instruction, not a global object, so it
+  // is handled separately before the GlobalObject-based switch below.
+  if (BC->getExtOp() == NonSemanticAuxData::InstructionMetadata) {
+    auto *Target = BC->getModule()->getValue(Args[0]);
+    Value *V = getTranslatedValue(Target);
+    if (auto *Inst = dyn_cast_or_null<Instruction>(V)) {
+      const std::string &MDName =
+          BC->getModule()->get<SPIRVString>(Args[1])->getStr();
+      // If this metadata is already attached, skip it.
+      if (Inst->hasMetadata(MDName))
+        return;
+      Inst->setMetadata(MDName, TransMDValues());
+    } else {
+      LLVM_DEBUG(dbgs() << "InstructionMetadata target is not an Instruction; "
+                           "ignoring.\n");
+    }
+    return;
+  }
+
   switch (BC->getExtOp()) {
   case NonSemanticAuxData::FunctionAttribute:
   case NonSemanticAuxData::GlobalVariableAttribute:
@@ -5776,7 +5839,6 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   default:
     return;
   }
-  auto Args = BC->getArguments();
   // Arg 0 is common to all instructions in this set: it identifies the
   // global object the auxiliary data is attached to.
   auto *Arg0 = BC->getModule()->getValue(Args[0]);
@@ -5827,22 +5889,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     // If this metadata was specially handled and added elsewhere, skip it.
     if (GO->hasMetadata(AttrOrMDName))
       return;
-    SmallVector<Metadata *> MetadataArgs;
-    // Process the metadata values.
-    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
-      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
-      // For metadata, the metadata values can be either values or strings.
-      if (Arg->getOpCode() == OpString) {
-        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
-        MetadataArgs.push_back(
-            MDString::get(GO->getContext(), ArgAsStr->getStr()));
-      } else {
-        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
-        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
-        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
-      }
-    }
-    GO->setMetadata(AttrOrMDName, MDNode::get(*Context, MetadataArgs));
+    GO->setMetadata(AttrOrMDName, TransMDValues());
     break;
   }
   case NonSemanticAuxData::Linkage: {
