@@ -57,6 +57,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVectorExtras.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/BinaryFormat/Dwarf.h"
@@ -2564,7 +2565,15 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       V = GEP;
     } else {
       auto *CT = cast<Constant>(Base);
-      V = ConstantExpr::getGetElementPtr(BaseTy, CT, Index, IsInbound);
+      SmallVector<Constant *, 4> ConstIndexList =
+          map_to_vector(Index, [](Value *V) { return cast<Constant>(V); });
+      V = ConstantExpr::getGetElementPtr(M->getDataLayout(), BaseTy, CT,
+                                         ConstIndexList, IsInbound);
+      if (!BM->getErrorLog().checkError(
+              V != nullptr, SPIRVEC_InvalidInstruction,
+              "OpAccessChain cannot be represented as a "
+              "canonical constant ptradd"))
+        return nullptr;
     }
     return mapValue(BV, V);
   }
@@ -3240,7 +3249,19 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     if (isCvtOpCode(OC) && OC != OpGenericCastToPtrExplicit) {
       auto *BI = static_cast<SPIRVInstruction *>(BV);
       Value *Inst = nullptr;
-      if (BI->hasFPRoundingMode() || BI->isSaturatedConversion()) {
+      auto IsMiniFloatOrInt4 = [](SPIRVType *Ty) {
+        return Ty->isTypeFloat(8, FPEncodingFloat8E4M3EXT) ||
+               Ty->isTypeFloat(8, FPEncodingFloat8E5M2EXT) ||
+               Ty->isTypeFloat(4, FPEncodingFloat4E2M1EXT) ||
+               Ty->isTypeFloat(4, internal::FPEncodingFloat4E2M1INTEL) ||
+               Ty->isTypeInt(4);
+      };
+      // Check both sides: the encoding may be on the source (e.g. an upcast
+      // out of Float4E2M1) rather than the result.
+      if ((BI->hasFPRoundingMode() || BI->isSaturatedConversion()) &&
+          !IsMiniFloatOrInt4(BI->getType()) &&
+          !IsMiniFloatOrInt4(
+              static_cast<SPIRVUnary *>(BI)->getOperand(0)->getType())) {
         Inst = transSPIRVBuiltinFromInst(BI, BB);
       } else if (BI->getType()->isTypeCooperativeMatrixKHR()) {
         // For cooperative matrix conversions generate __builtin_spirv
@@ -4328,6 +4349,12 @@ bool SPIRVToLLVM::translate() {
     transAuxDataInst(EI);
   }
 
+  // Only AMD targets emit these helpers, so only AMD targets reconstruct them.
+  // Runs after AuxData: ValueMap still points at the helper calls, and
+  // copyMetadata carries their restored metadata to the atomicrmw.
+  if (M->getTargetTriple().getVendor() == Triple::AMD)
+    lowerAtomicWrapCalls(M);
+
   eraseUselessFunctions(M);
 
   DbgTran->addDbgInfoVersion();
@@ -4337,49 +4364,58 @@ bool SPIRVToLLVM::translate() {
 }
 
 bool SPIRVToLLVM::transAddressingModel() {
-  // No -G: LLVM auto-injects -G1 for spir triples, and emitting our own
-  // would shift getDefaultGlobalsAddressSpace() away from AS 0 (the LLVM
-  // convention for llvm.global.annotations / llvm.metadata fields).
+  // The datalayout depends on the triple, so resolve triple first.
+  Triple OverrideTT;
+  StringRef Override = BM->getTargetTripleOverride();
+  if (!Override.empty()) {
+    OverrideTT = Triple(Triple::normalize(Override));
+    SPIRVCKRT(OverrideTT.getArch() != Triple::UnknownArch,
+              InvalidTargetTripleOverride, Override.str());
+  }
+
   auto AppendAddrSpaceModifiers = [this](std::string &DL) {
+    // A target datalayout may already pin these; only override on divergence.
+    DataLayout Base(DL);
     unsigned PrivateAS = BM->mapAddrSpace(SPIRAS_Private);
-    if (PrivateAS != SPIRAS_Private)
+    if (PrivateAS != Base.getAllocaAddrSpace())
       DL += "-A" + std::to_string(PrivateAS);
     unsigned ProgramAS = BM->getFunctionProgramAddrSpace();
-    if (ProgramAS != 0)
+    if (ProgramAS != Base.getProgramAddressSpace())
       DL += "-P" + std::to_string(ProgramAS);
   };
 
+  auto SetTripleAndDataLayout = [&](const char *SPIRTriple,
+                                    const char *SPIRDataLayout) {
+    Triple TT = Override.empty() ? Triple(SPIRTriple) : OverrideTT;
+    M->setTargetTriple(TT);
+    // A non-SPIR target sizes pointers per address space (AMDGPU: 32-bit
+    // local/private, 64-bit global/constant/flat); SPIR's uniform 64-bit
+    // layout would misreport them. No -G on the SPIR path: LLVM auto-injects
+    // -G1 for spir triples, and emitting our own would shift
+    // getDefaultGlobalsAddressSpace() away from AS 0 (the LLVM convention for
+    // llvm.global.annotations / llvm.metadata fields).
+    std::string DL = TT.isSPIR() || TT.isSPIRV() ? std::string(SPIRDataLayout)
+                                                 : TT.computeDataLayout();
+    AppendAddrSpaceModifiers(DL);
+    M->setDataLayout(DL);
+  };
+
   switch (BM->getAddressingModel()) {
-  case AddressingModelPhysical64: {
-    M->setTargetTriple(Triple(SPIR_TARGETTRIPLE64));
-    std::string DL = SPIR_DATALAYOUT64;
-    AppendAddrSpaceModifiers(DL);
-    M->setDataLayout(DL);
+  case AddressingModelPhysical64:
+    SetTripleAndDataLayout(SPIR_TARGETTRIPLE64, SPIR_DATALAYOUT64);
     break;
-  }
-  case AddressingModelPhysical32: {
-    M->setTargetTriple(Triple(SPIR_TARGETTRIPLE32));
-    std::string DL = SPIR_DATALAYOUT32;
-    AppendAddrSpaceModifiers(DL);
-    M->setDataLayout(DL);
+  case AddressingModelPhysical32:
+    SetTripleAndDataLayout(SPIR_TARGETTRIPLE32, SPIR_DATALAYOUT32);
     break;
-  }
   case AddressingModelLogical:
-    // Do not set target triple and data layout
+    // No datalayout; the override still names the target.
+    if (!Override.empty())
+      M->setTargetTriple(OverrideTT);
     break;
   default:
     SPIRVCKRT(0, InvalidAddressingModel,
               "Actual addressing mode is " +
                   std::to_string(BM->getAddressingModel()));
-  }
-
-  // Optional override replaces the triple.
-  StringRef Override = BM->getTargetTripleOverride();
-  if (!Override.empty()) {
-    Triple TT(Triple::normalize(Override));
-    SPIRVCKRT(TT.getArch() != Triple::UnknownArch, InvalidTargetTripleOverride,
-              Override.str());
-    M->setTargetTriple(TT);
   }
 
   return true;
@@ -5754,6 +5790,45 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   assert(BC->getExtSetKind() == SPIRV::SPIRVEIS_NonSemantic_AuxData);
   if (!BC->getModule()->preserveAuxData())
     return;
+  auto Args = BC->getArguments();
+
+  // Metadata Value operands start at Args[2].
+  auto TransMDValues = [&]() {
+    SmallVector<Metadata *> MetadataArgs;
+    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
+      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
+      // For metadata, the metadata values can be either values or strings.
+      if (Arg->getOpCode() == OpString) {
+        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
+        MetadataArgs.push_back(MDString::get(*Context, ArgAsStr->getStr()));
+      } else {
+        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
+        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
+        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
+      }
+    }
+    return MDNode::get(*Context, MetadataArgs);
+  };
+
+  // InstructionMetadata targets an instruction, not a global object, so it
+  // is handled separately before the GlobalObject-based switch below.
+  if (BC->getExtOp() == NonSemanticAuxData::InstructionMetadata) {
+    auto *Target = BC->getModule()->getValue(Args[0]);
+    Value *V = getTranslatedValue(Target);
+    if (auto *Inst = dyn_cast_or_null<Instruction>(V)) {
+      const std::string &MDName =
+          BC->getModule()->get<SPIRVString>(Args[1])->getStr();
+      // If this metadata is already attached, skip it.
+      if (Inst->hasMetadata(MDName))
+        return;
+      Inst->setMetadata(MDName, TransMDValues());
+    } else {
+      LLVM_DEBUG(dbgs() << "InstructionMetadata target is not an Instruction; "
+                           "ignoring.\n");
+    }
+    return;
+  }
+
   switch (BC->getExtOp()) {
   case NonSemanticAuxData::FunctionAttribute:
   case NonSemanticAuxData::GlobalVariableAttribute:
@@ -5764,7 +5839,6 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
   default:
     return;
   }
-  auto Args = BC->getArguments();
   // Arg 0 is common to all instructions in this set: it identifies the
   // global object the auxiliary data is attached to.
   auto *Arg0 = BC->getModule()->getValue(Args[0]);
@@ -5815,22 +5889,7 @@ void SPIRVToLLVM::transAuxDataInst(SPIRVExtInst *BC) {
     // If this metadata was specially handled and added elsewhere, skip it.
     if (GO->hasMetadata(AttrOrMDName))
       return;
-    SmallVector<Metadata *> MetadataArgs;
-    // Process the metadata values.
-    for (size_t CurArg = 2; CurArg < Args.size(); CurArg++) {
-      auto *Arg = BC->getModule()->get<SPIRVEntry>(Args[CurArg]);
-      // For metadata, the metadata values can be either values or strings.
-      if (Arg->getOpCode() == OpString) {
-        auto *ArgAsStr = static_cast<SPIRVString *>(Arg);
-        MetadataArgs.push_back(
-            MDString::get(GO->getContext(), ArgAsStr->getStr()));
-      } else {
-        auto *ArgAsVal = static_cast<SPIRVValue *>(Arg);
-        auto *TranslatedMD = transValue(ArgAsVal, nullptr, nullptr);
-        MetadataArgs.push_back(ValueAsMetadata::get(TranslatedMD));
-      }
-    }
-    GO->setMetadata(AttrOrMDName, MDNode::get(*Context, MetadataArgs));
+    GO->setMetadata(AttrOrMDName, TransMDValues());
     break;
   }
   case NonSemanticAuxData::Linkage: {
@@ -6106,7 +6165,20 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
-  std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule(Opts));
+  const SPIRV::TranslatorOpts *EffectiveOpts = &Opts;
+  SPIRV::TranslatorOpts AdjustedOpts;
+  if (!Opts.getSPIRVTargetTriple().empty()) {
+    AdjustedOpts = Opts;
+    if (!AdjustedOpts.deriveTargetAddrSpaces()) {
+      ErrMsg = ("No address space map for target triple '" +
+                Twine(Opts.getSPIRVTargetTriple()) + "'")
+                   .str();
+      return nullptr;
+    }
+    EffectiveOpts = &AdjustedOpts;
+  }
+  std::unique_ptr<SPIRVModule> BM(
+      SPIRVModule::createSPIRVModule(*EffectiveOpts));
 
   IS >> *BM;
   if (!BM->isModuleValid()) {
@@ -6190,7 +6262,10 @@ bool llvm::readSpirv(LLVMContext &C, const SPIRV::TranslatorOpts &Opts,
     return false;
   }
 
-  M = convertSpirvToLLVM(C, *BM, Opts, ErrMsg).release();
+  // readSpirvModule normalizes the target triple and derives the address
+  // space map and then builds the module. Take Opts from the module to
+  // avoid divergence.
+  M = convertSpirvToLLVM(C, *BM, BM->getTranslationOpts(), ErrMsg).release();
 
   if (!M)
     return false;
