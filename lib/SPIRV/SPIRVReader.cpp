@@ -1114,6 +1114,26 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     const bool IsOldConvertFToFOp =
         OC == internal::OpClampConvertFToFINTEL ||
         OC == internal::OpClampStochasticRoundFToFINTEL;
+    // OpClampConvertFToSINTEL only supports RTE; StochasticRound*
+    // opcodes accept no explicit FPRoundingMode.
+    // Nothing else is restricted here.
+    bool IsStochasticRound = OC == internal::OpStochasticRoundFToFINTEL ||
+                             OC == internal::OpClampStochasticRoundFToFINTEL ||
+                             OC == internal::OpClampStochasticRoundFToSINTEL;
+    SPIRVFPRoundingModeKind RoundingKind;
+    if ((OC == internal::OpClampConvertFToSINTEL || IsStochasticRound) &&
+        BC->hasFPRoundingMode(&RoundingKind)) {
+      if (IsStochasticRound)
+        BM->getErrorLog().checkError(
+            false, SPIRVEC_InvalidInstruction,
+            "FPRoundingMode: not supported on a stochastic-rounding "
+            "conversion.\n");
+      else
+        BM->getErrorLog().checkError(
+            RoundingKind == FPRoundingModeRTE, SPIRVEC_InvalidInstruction,
+            "FPRoundingMode: only RTE is supported for this "
+            "conversion.\n");
+    }
     {
       auto SPVOps = BC->getOperands();
       auto *SPVSrcTy = SPVOps[0]->getType();
