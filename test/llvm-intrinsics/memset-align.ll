@@ -23,7 +23,11 @@ entry:
 ; CHECK-SPIRV: Bitcast [[#]] [[#BytePtr:]] [[#Generic]]
 ; CHECK-SPIRV: Bitcast [[#]] [[#StorePtr:]] [[#BytePtr]]
 ; CHECK-SPIRV: Store [[#StorePtr]] [[#Init]] 2 16
-; CHECK-LLVM: store [16 x i8] zeroinitializer, ptr addrspace(4) %[[#]], align 16
+; CHECK-LLVM: %[[X:.+]] = alloca [2 x i64], align 16
+; CHECK-LLVM: %[[Generic:.+]] = addrspacecast ptr %[[X]] to ptr addrspace(4)
+; CHECK-LLVM: %[[#BytePtr:]] = bitcast ptr addrspace(4) %[[Generic]] to ptr addrspace(4)
+; CHECK-LLVM: %[[#ArrayPtr:]] = bitcast ptr addrspace(4) %[[#BytePtr]] to ptr addrspace(4)
+; CHECK-LLVM: store [16 x i8] zeroinitializer, ptr addrspace(4) %[[#ArrayPtr]], align 16
   call void @llvm.memset.p4.i64(ptr addrspace(4) align 16 %r.sroa.0.0.r.ascast.sroa_cast1, i8 0, i64 16, i1 false)
   ret void
 }

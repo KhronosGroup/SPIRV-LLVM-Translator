@@ -13,11 +13,12 @@ target triple = "spir64-unknown-unknown"
 ; Function Attrs: convergent noinline nounwind optnone
 define spir_kernel void @test_memset(ptr addrspace(1) %data, i32 %input) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !5 !kernel_arg_type !6 !kernel_arg_base_type !6 !kernel_arg_type_qual !7 {
 entry:
-; CHECK-LLVM: %[[BITCAST_RES:[[:alnum:].]+]] = bitcast ptr addrspace(1) %{{[[:alnum:].]+}} to ptr addrspace(1)
+; CHECK-LLVM: %[[B:.+]] = bitcast ptr addrspace(1) %data to ptr addrspace(1)
   %ptr = bitcast ptr addrspace(1) %data to ptr addrspace(1)
-; CHECK-LLVM: store [8 x i8] zeroinitializer, ptr addrspace(1) %[[#]], align 8
+; CHECK-LLVM: %[[#ArrayPtr:]] = bitcast ptr addrspace(1) %[[B]] to ptr addrspace(1)
+; CHECK-LLVM: store [8 x i8] zeroinitializer, ptr addrspace(1) %[[#ArrayPtr]], align 8
   call void @llvm.memset.p1.i64(ptr addrspace(1) align 8 %ptr, i8 0, i64 8, i1 false)
-; CHECK-LLVM: store i8 0, ptr addrspace(1) %[[BITCAST_RES]]
+; CHECK-LLVM: store i8 0, ptr addrspace(1) %[[B]]
   store i8 0, ptr addrspace(1) %ptr
   ret void
 }
