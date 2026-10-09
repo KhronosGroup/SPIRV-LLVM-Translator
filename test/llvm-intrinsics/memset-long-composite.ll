@@ -7,7 +7,8 @@
 ; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_long_composites %t.bc -o %t.spv
 ; RUN: llvm-spirv %t.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not=Variable --implicit-check-not=CopyMemorySized
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
-; TODO: re-enable spirv-val once it can recognize OpConstantCompositeContinuedINTEL
+; TODO: currently spirv-val falsely rejects OpConstantCompositeContinuedINTEL in the module.
+; Re-enable spirv-val once it's fixed. Tracker: https://github.com/KhronosGroup/SPIRV-Tools/issues/6954
 ; RUNx: spirv-val %t.spv
 
 ; CHECK-ERROR: InvalidWordCount: Can't encode instruction with word count greater than 65535:
