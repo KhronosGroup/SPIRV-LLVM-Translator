@@ -258,8 +258,7 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
         DebugInst->getExtSetKind() == SPIRVEIS_NonSemantic_Shader_DebugInfo_100
             ? CompilerVersion
             : getString(Ops[ProducerIdx]),
-        false, Flags, 0, StoragePath,
-        DICompileUnit::DebugEmissionKind::FullDebug, BuildIdentifier);
+        false, Flags, 0, StoragePath, getEmissionKind(), BuildIdentifier);
     if (InvalidSourceLang) {
       appendToSourceLangLiteral(CompileUnit, OriginalSourceLang);
     }
@@ -270,7 +269,8 @@ SPIRVToLLVMDbgTran::transCompilationUnit(const SPIRVExtInst *DebugInst,
   // info by default
   auto Producer = findModuleProducer();
   auto *CompileUnit = BuilderMap[DebugInst->getId()]->createCompileUnit(
-      SourceLang, getFile(Ops[SourceIdx]), Producer, false, Flags, 0);
+      SourceLang, getFile(Ops[SourceIdx]), Producer, false, Flags, 0, "",
+      getEmissionKind());
   if (InvalidSourceLang) {
     appendToSourceLangLiteral(CompileUnit, OriginalSourceLang);
   }
@@ -1906,6 +1906,72 @@ SPIRVToLLVMDbgTran::SplitFileName::SplitFileName(const std::string &FileName) {
     BaseName = FileName;
     Path = ".";
   }
+}
+
+DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::getEmissionKind() {
+  if (EmissionKind)
+    return *EmissionKind;
+
+  // No spec has an emission kind operand; it is carried in OpModuleProcessed.
+  // Disagreeing compilation units fall back to FullDebug to keep all info.
+  std::optional<DICompileUnit::DebugEmissionKind> Recorded;
+  for (const auto &I : BM->getModuleProcessedVec()) {
+    const std::string Processed = I->getProcessStr();
+    StringRef Str(Processed);
+    if (!Str.consume_front(SPIRVDebug::EmissionKindPrefix))
+      continue;
+    std::optional<DICompileUnit::DebugEmissionKind> Kind =
+        DICompileUnit::getEmissionKind(Str);
+    if (!Kind || (Recorded && *Recorded != *Kind)) {
+      Recorded = DICompileUnit::DebugEmissionKind::FullDebug;
+      break;
+    }
+    Recorded = Kind;
+  }
+
+  EmissionKind = Recorded ? *Recorded : deriveEmissionKind();
+  return *EmissionKind;
+}
+
+DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::deriveEmissionKind() {
+  // For producers that do not record the kind, e.g. the LLVM SPIR-V backend.
+  // Line tables describe only functions, scopes and lines, so any variable,
+  // data type, namespace, linkage name or unknown instruction means FullDebug.
+  // Code without any of these is ambiguous and derives as LineTablesOnly.
+  for (const SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    switch (EI->getExtOp()) {
+    case SPIRVDebug::DebugInfoNone:
+    case SPIRVDebug::CompilationUnit:
+    case SPIRVDebug::Source:
+    case SPIRVDebug::SourceContinued:
+    case SPIRVDebug::BuildIdentifier:
+    case SPIRVDebug::StoragePath:
+    case SPIRVDebug::EntryPoint:
+    case SPIRVDebug::TypeFunction:
+    case SPIRVDebug::FunctionDefinition:
+    case SPIRVDebug::LexicalBlockDiscriminator:
+    case SPIRVDebug::InlinedAt:
+    case SPIRVDebug::DebugLine:
+    case SPIRVDebug::DebugNoLine:
+      break;
+    case SPIRVDebug::Function:
+    case SPIRVDebug::FunctionDeclaration: // Same LinkageNameIdx as Function.
+      if (!getString(EI->getArguments()
+                         [SPIRVDebug::Operand::Function::LinkageNameIdx])
+               .empty())
+        return DICompileUnit::DebugEmissionKind::FullDebug;
+      break;
+    case SPIRVDebug::LexicalBlock:
+      // A named lexical block is a namespace.
+      if (EI->getArguments().size() >
+          SPIRVDebug::Operand::LexicalBlock::MinOperandCount)
+        return DICompileUnit::DebugEmissionKind::FullDebug;
+      break;
+    default:
+      return DICompileUnit::DebugEmissionKind::FullDebug;
+    }
+  }
+  return DICompileUnit::DebugEmissionKind::LineTablesOnly;
 }
 
 std::string SPIRVToLLVMDbgTran::findModuleProducer() {

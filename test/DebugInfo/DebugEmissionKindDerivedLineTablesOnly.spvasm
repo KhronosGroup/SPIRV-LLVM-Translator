@@ -1,0 +1,45 @@
+; Without a recorded emission kind, debug information that describes only
+; functions and lines is line-table-only.
+; Reduced from LLVM SPIR-V backend output for a kernel compiled with
+; -gline-tables-only.
+
+; REQUIRES: spirv-as
+
+; RUN: spirv-as %s --target-env spv1.4 -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s
+
+; CHECK: !DICompileUnit({{.*}}emissionKind: LineTablesOnly
+
+               OpCapability Kernel
+               OpCapability Addresses
+               OpCapability Linkage
+               OpExtension "SPV_KHR_non_semantic_info"
+         %ext = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %k "k"
+     %str_cu = OpString "<stdin>"
+      %str_k = OpString "k"
+  %str_empty = OpString ""
+    %str_src = OpString "test.cl"
+       %void = OpTypeVoid
+     %fnty_k = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_3 = OpConstant %uint 3
+     %uint_4 = OpConstant %uint 4
+   %uint_100 = OpConstant %uint 100
+   %uint_136 = OpConstant %uint 136
+     %src_cu = OpExtInst %void %ext DebugSource %str_cu
+         %cu = OpExtInst %void %ext DebugCompilationUnit %uint_100 %uint_4 %src_cu %uint_3
+     %dbg_ty = OpExtInst %void %ext DebugTypeFunction %uint_0 %void
+        %src = OpExtInst %void %ext DebugSource %str_src
+     %dbg_fn = OpExtInst %void %ext DebugFunction %str_k %dbg_ty %src %uint_1 %uint_0 %cu %str_empty %uint_136 %uint_1
+          %k = OpFunction %void None %fnty_k
+      %entry = OpLabel
+     %fndef = OpExtInst %void %ext DebugFunctionDefinition %dbg_fn %k
+      %scope = OpExtInst %void %ext DebugScope %dbg_fn
+       %line = OpExtInst %void %ext DebugLine %src %uint_1 %uint_1 %uint_1 %uint_1
+               OpReturn
+               OpFunctionEnd
