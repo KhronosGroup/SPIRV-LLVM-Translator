@@ -4054,7 +4054,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
       Func->addFnAttr(Attribute::NoUnwind);
     if (isGroupOpCode(OC) || isGroupNonUniformOpcode(OC) ||
         isIntelSubgroupOpCode(OC) || isSplitBarrierINTELOpCode(OC) ||
-        OC == OpControlBarrier)
+        OC == OpSubgroupBitcastShuffleINTEL || OC == OpControlBarrier)
       Func->addFnAttr(Attribute::Convergent);
   }
   CallInst *Call;
@@ -4236,6 +4236,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case internal::OpClampConvertFToSINTEL:
   case internal::OpStochasticRoundFToFINTEL:
   case internal::OpClampStochasticRoundFToSINTEL:
+  case OpSubgroupBitcastShuffleINTEL:
   // Old opcodes, for backward compatibility.
   case internal::OpClampConvertFToFINTEL:
   case internal::OpClampStochasticRoundFToFINTEL:
@@ -4249,13 +4250,14 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   }
 
   bool IsRetSigned = true;
-  switch (OC) {
+  switch (static_cast<size_t>(OC)) {
   case OpConvertFToU:
   case OpSatConvertSToU:
   case OpUConvert:
   case OpUDotKHR:
   case OpUDotAccSatKHR:
   case OpReadClockKHR:
+  case OpSubgroupBitcastShuffleINTEL:
     IsRetSigned = false;
     break;
   case OpImageRead:
