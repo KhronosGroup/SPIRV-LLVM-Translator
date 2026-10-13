@@ -641,6 +641,16 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   return 0;
 }
 
+// Lower global_device and global_host address spaces that were added in
+// SYCL as part of SYCL_INTEL_usm_address_spaces extension to just global
+// address space if device doesn't support SPV_INTEL_usm_storage_classes
+// extension
+bool LLVMToSPIRVBase::shouldLowerUSMAddrSpace(unsigned AddrSpc) const {
+  return !BM->isAllowedToUseExtension(
+             ExtensionID::SPV_INTEL_usm_storage_classes) &&
+         (AddrSpc == SPIRAS_GlobalDevice || AddrSpc == SPIRAS_GlobalHost);
+}
+
 SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
   Type *T = PointerType::get(ET->getContext(), AddrSpc);
   if (ET->isFunctionTy() &&
@@ -656,15 +666,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   auto *ST = dyn_cast<StructType>(ET);
-  // Lower global_device and global_host address spaces that were added in
-  // SYCL as part of SYCL_INTEL_usm_address_spaces extension to just global
-  // address space if device doesn't support SPV_INTEL_usm_storage_classes
-  // extension
-  if (!BM->isAllowedToUseExtension(
-          ExtensionID::SPV_INTEL_usm_storage_classes) &&
-      ((AddrSpc == SPIRAS_GlobalDevice) || (AddrSpc == SPIRAS_GlobalHost))) {
+  if (shouldLowerUSMAddrSpace(AddrSpc))
     return transPointerType(ET, SPIRAS_Global);
-  }
   // Lower function pointer address space to private if
   // spirv-emit-function-ptr-addr-space is not passed
   if (AddrSpc == SPIRAS_CodeSectionINTEL &&
@@ -766,9 +769,7 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(SPIRVType *ET, unsigned AddrSpc) {
     return Loc->second;
 
   SPIRVType *TranslatedTy = nullptr;
-  if (!BM->isAllowedToUseExtension(
-          ExtensionID::SPV_INTEL_usm_storage_classes) &&
-      ((AddrSpc == SPIRAS_GlobalDevice) || (AddrSpc == SPIRAS_GlobalHost)))
+  if (shouldLowerUSMAddrSpace(AddrSpc))
     return transPointerType(ET, SPIRAS_Global);
   if (AddrSpc == SPIRAS_CodeSectionINTEL &&
       !BM->shouldEmitFunctionPtrAddrSpace())

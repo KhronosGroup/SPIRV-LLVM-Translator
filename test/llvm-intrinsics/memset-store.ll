@@ -9,13 +9,14 @@
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV --implicit-check-not=Variable --implicit-check-not=CopyMemorySized --implicit-check-not="Capability USMStorageClassesINTEL"
 ; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-GLOBAL
 
 ; TODO: currently the Translator has a bug that it doesn't emit "OpExtension SPV_INTEL_usm_storage_classes"
 ; when the extension is enabled, therefore spirv-val will reject it. Re-enable spirv-val once this bug is
 ; fixed in the translator.
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.usm.spv
 ; RUN: llvm-spirv %t.usm.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-USM
+; RUN: llvm-spirv -r %t.usm.spv -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-USM
 ; RUNx: spirv-val %t.usm.spv
 
 ; Without SPV_INTEL_usm_storage_classes both USM address spaces are lowered to
@@ -50,6 +51,15 @@
 ; CHECK-LLVM: %[[#StorePtr:]] = bitcast ptr addrspace(1) %[[Dest]] to ptr addrspace(1)
 ; CHECK-LLVM: store volatile [3 x i8] c"***", ptr addrspace(1) %[[#StorePtr]], align 1
 
+; The global_device and global_host destinations were lowered to CrossWorkgroup,
+; so they come back as global (addrspace(1)) pointers.
+; CHECK-LLVM-GLOBAL: define spir_kernel void @fill_device(ptr addrspace(1) %dst)
+; CHECK-LLVM-GLOBAL: %[[#DeviceStorePtr:]] = bitcast ptr addrspace(1) %dst to ptr addrspace(1)
+; CHECK-LLVM-GLOBAL: store [8 x i8] zeroinitializer, ptr addrspace(1) %[[#DeviceStorePtr]], align 4
+; CHECK-LLVM-GLOBAL: define spir_kernel void @fill_host(ptr addrspace(1) %dst)
+; CHECK-LLVM-GLOBAL: %[[#HostStorePtr:]] = bitcast ptr addrspace(1) %dst to ptr addrspace(1)
+; CHECK-LLVM-GLOBAL: store [8 x i8] zeroinitializer, ptr addrspace(1) %[[#HostStorePtr]], align 4
+
 ; With SPV_INTEL_usm_storage_classes enabled each target pointer keeps its own
 ; storage class, DeviceOnlyINTEL (5936) and HostOnlyINTEL (5937), and so does
 ; its store pointer.
@@ -64,6 +74,13 @@
 ; CHECK-SPIRV-USM: FunctionParameter [[#HostBytePtrTy]] [[#HostE:]]
 ; CHECK-SPIRV-USM: Bitcast [[#HostStorePtrTy]] [[#HostStorePtrE:]] [[#HostE]]
 ; CHECK-SPIRV-USM: Store [[#HostStorePtrE]] [[#]] 2 4
+
+; CHECK-LLVM-USM: define spir_kernel void @fill_device(ptr addrspace(5) %dst)
+; CHECK-LLVM-USM: %[[#DeviceStorePtrE:]] = bitcast ptr addrspace(5) %dst to ptr addrspace(5)
+; CHECK-LLVM-USM: store [8 x i8] zeroinitializer, ptr addrspace(5) %[[#DeviceStorePtrE]], align 4
+; CHECK-LLVM-USM: define spir_kernel void @fill_host(ptr addrspace(6) %dst)
+; CHECK-LLVM-USM: %[[#HostStorePtrE:]] = bitcast ptr addrspace(6) %dst to ptr addrspace(6)
+; CHECK-LLVM-USM: store [8 x i8] zeroinitializer, ptr addrspace(6) %[[#HostStorePtrE]], align 4
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
