@@ -698,7 +698,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityInt4CooperativeMatrixINTEL, "Int4CooperativeMatrixINTEL");
   add(CapabilityFunctionVariantsINTEL, "FunctionVariantsINTEL");
   add(CapabilitySpecConditionalINTEL, "SpecConditionalINTEL");
-  add(internal::CapabilityBFloat16ArithmeticINTEL, "BFloat16ArithmeticINTEL");
+  add(internal::CapabilityBFloat16ArithmeticEXT, "BFloat16ArithmeticEXT");
   add(CapabilityFloat8EXT, "Float8EXT");
   add(CapabilityFloat8CooperativeMatrixEXT, "Float8CooperativeMatrixEXT");
   add(internal::CapabilitySigmoidINTEL, "SigmoidINTEL");
