@@ -1,5 +1,4 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
+; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
 ; CHECK: InvalidFunctionCall: Unexpected llvm intrinsic:
 ; CHECK-NEXT: i1 operands are not supported.

@@ -11,9 +11,8 @@
 ; With the following options:
 ; -emit-llvm -fno-discard-value-names -O2 -g0 -ftrapv -target spir
 
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s
 ; RUN: spirv-val %t.spv
 
 ; CHECK-DAG: TypeInt [[#I32:]] 32 0
