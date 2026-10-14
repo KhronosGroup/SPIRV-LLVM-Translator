@@ -1,7 +1,6 @@
 ; Check that the translator reports an error for a scalable vector type.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
+; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
 ; CHECK: InvalidModule: Invalid SPIR-V module: LLVM module contains scalable vector type, which doesn't have a counterpart in SPIR-V
 
