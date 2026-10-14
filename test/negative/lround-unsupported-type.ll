@@ -1,5 +1,4 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: not llvm-spirv %t.bc 2>&1 | FileCheck %s
+; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
 ; CHECK: InvalidFunctionCall
 ; CHECK: llvm.lround.i64.f128
