@@ -1,0 +1,13 @@
+; Check that the translator reports an error for a scalable vector type.
+
+; RUN: llvm-as %s -o %t.bc
+; RUN: not llvm-spirv %t.bc -o %t.spv 2>&1 | FileCheck %s
+
+; CHECK: InvalidModule: Invalid SPIR-V module: LLVM module contains scalable vector type, which doesn't have a counterpart in SPIR-V
+
+target triple = "spir64-unknown-unknown"
+
+define spir_kernel void @k() {
+  %a = alloca <vscale x 4 x i32>
+  ret void
+}
