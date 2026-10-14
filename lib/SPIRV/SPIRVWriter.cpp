@@ -4251,6 +4251,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::scmp:
   case Intrinsic::ucmp:
   case Intrinsic::nearbyint:
+  case Intrinsic::objectsize:
   case Intrinsic::pow:
   case Intrinsic::powi:
   case Intrinsic::rint:
