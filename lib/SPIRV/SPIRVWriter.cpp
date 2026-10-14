@@ -3079,8 +3079,7 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
       return;
     auto DecoKind = static_cast<Decoration>(DecoKindConst->getZExtValue());
     // May already be set from an SPV-IR builtin name postfix.
-    if ((DecoKind == DecorationSaturatedConversion ||
-         DecoKind == DecorationFPRoundingMode) &&
+    if (DecoKind == DecorationSaturatedConversion &&
         Target->hasDecorate(DecoKind))
       continue;
 
