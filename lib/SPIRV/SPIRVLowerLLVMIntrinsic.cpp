@@ -22,7 +22,6 @@
 //===----------------------------------------------------------------------===//
 //
 // This file implements lowering of:
-//   llvm.sadd.with.overflow.*
 //   llvm.bitreverse.*
 // into basic LLVM operations.
 //
@@ -30,7 +29,6 @@
 
 #include "SPIRVLowerLLVMIntrinsic.h"
 #include "LLVMBitreverse.h"
-#include "LLVMSaddWithOverflow.h"
 
 #include "LLVMSPIRVLib.h"
 #include "SPIRVError.h"
@@ -70,7 +68,6 @@ typedef struct {
 
 // clang-format off
 #define NO_REQUIRED_EXTENSION  ExtensionID::Last
-#define NO_FORBIDDEN_EXTENSION ExtensionID::Last
 
 const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMapEntries = {
 //  LLVM Intrinsic Name             Required Extension                                   Forbidden Extension                    Module with
@@ -116,11 +113,6 @@ const std::map<const StringRef, const LLVMIntrinsicMapValueType> LLVMIntrinsicMa
   { "llvm.bitreverse.v16i16",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreversev16i16}},
   { "llvm.bitreverse.v16i32",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreversev16i32}},
   { "llvm.bitreverse.v16i64",      {NO_REQUIRED_EXTENSION,                               ExtensionID::SPV_KHR_bit_instructions, LLVMBitreversev16i64}},
-
-  { "llvm.sadd.with.overflow.i8",  {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
-  { "llvm.sadd.with.overflow.i16", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
-  { "llvm.sadd.with.overflow.i32", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
-  { "llvm.sadd.with.overflow.i64", {NO_REQUIRED_EXTENSION,                               NO_FORBIDDEN_EXTENSION,                LLVMSaddWithOverflow}},
 };
 // clang-format on
 
