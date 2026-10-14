@@ -1,8 +1,7 @@
 ; A source pointer without an align attribute is 1-byte aligned.
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-max-version=1.3 -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-13
-; RUN: llvm-spirv %t.bc --spirv-max-version=1.4 -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-14
-; RUN: llvm-spirv %t.bc --spirv-max-version=1.4 -o %t.spv
+; RUN: llvm-spirv %s --spirv-max-version=1.3 -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-13
+; RUN: llvm-spirv %s --spirv-max-version=1.4 -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV-14
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
