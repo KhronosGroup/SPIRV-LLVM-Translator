@@ -1,7 +1,6 @@
 ; With two memory operand masks, the second applies to Source and must keep Volatile.
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-max-version=1.4 -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc --spirv-max-version=1.4 -o %t.spv
+; RUN: llvm-spirv %s --spirv-max-version=1.4 -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: spirv-val %t.spv
 
 ; Mask 3 = Volatile | Aligned.
