@@ -1,8 +1,7 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -spirv-allow-unknown-intrinsics -spirv-text -o - \
+; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv %s -spirv-allow-unknown-intrinsics -spirv-text -o - \
 ; RUN:   | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not=llvm.objectsize
-; RUN: llvm-spirv %t.bc -o %t.spv
 ; RUN: spirv-val %t.spv
 
 target triple = "spir64-unknown-unknown"
