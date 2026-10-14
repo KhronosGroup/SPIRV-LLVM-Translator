@@ -1,6 +1,5 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s
 ; RUN: spirv-val %t.spv
 
 ; CHECK: ExtInstImport [[#Ext:]] "OpenCL.std"
