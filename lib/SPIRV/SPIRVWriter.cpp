@@ -4504,8 +4504,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       Align AlignVal = *DestAlignVal;
       MemoryAccess[0] |= MemoryAccessAlignedMask;
       if (auto *MTI = dyn_cast<MemCpyInst>(MI)) {
-        MaybeAlign SourceAlignVal = MTI->getSourceAlign();
-        assert(SourceAlignVal && "Missed Source alignment!");
+        MaybeAlign SourceAlignVal = MTI->getSourceAlign().valueOrOne();
 
         // In a case when alignment of source differs from dest one
         // we either preserve both (allowed since SPIR-V 1.4), or the least
