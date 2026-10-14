@@ -6785,6 +6785,11 @@ bool LLVMToSPIRVBase::translate() {
 
   BM->resolveUnknownStructFields();
   DbgTran->transDebugMetadata();
+  // Global initializers and debug info can add functions out of order.
+  auto &Funcs = *BM->getFuncVec();
+  std::stable_partition(Funcs.begin(), Funcs.end(), [](SPIRVFunction *F) {
+    return F->getNumBasicBlock() == 0;
+  });
   return true;
 }
 
