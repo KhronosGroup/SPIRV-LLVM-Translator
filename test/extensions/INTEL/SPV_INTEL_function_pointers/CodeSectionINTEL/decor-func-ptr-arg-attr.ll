@@ -27,6 +27,9 @@
 ; RUN: llvm-dis %t.as.rev.bc -o %t.as.rev.ll
 ; RUN: FileCheck < %t.as.rev.ll %s --check-prefix CHECK-LLVM-AS
 
+; RUN: llvm-spirv %s -o %t.u.as.spt -spirv-text -spirv-ext=+SPV_INTEL_function_pointers,+SPV_KHR_untyped_pointers -spirv-emit-function-ptr-addr-space
+; RUN: FileCheck < %t.u.as.spt %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-UNTYPED
+
 ; TODO: reader currently crashes with output of llc for this test with function pointers (for both typed and untyped pointers)
 ; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown --spirv-ext=+SPV_INTEL_function_pointers -filetype=obj %s -o %t.llc.spv %}
 ; RUNx: %if spirv-backend %{ llvm-spirv -r -spirv-emit-function-ptr-addr-space %t.llc.spv -o %t.llc.rev.bc %}
@@ -44,7 +47,7 @@
 ; CHECK-SPIRV-DAG: Decorate [[#TARGET]] ArgumentAttributeINTEL 0 2
 ; CHECK-SPIRV-TYPED: FunctionPointerCallINTEL
 ; CHECK-SPIRV-TYPED-SAME: [[#TARGET]]
-; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] [[#]]
+; CHECK-SPIRV-UNTYPED-DAG: TypeUntypedPointerKHR [[#PTR:]] 7
 ; CHECK-SPIRV-UNTYPED-DAG: TypeStruct [[#MULTI_PTR:]] [[#PTR]]
 ; CHECK-SPIRV-UNTYPED-DAG: ConstantFunctionPointerINTEL [[#PTR]] [[#FP:]] [[#INC:]]
 ; CHECK-SPIRV-UNTYPED: Function [[#]] [[#INC]]
