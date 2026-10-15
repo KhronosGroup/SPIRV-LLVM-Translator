@@ -14,14 +14,18 @@ entry:
   %r.sroa.0 = alloca [2 x i64], i32 1, align 16
   %r.sroa.0.0.r.ascast.sroa_cast1 = addrspacecast ptr %r.sroa.0 to ptr addrspace(4)
 
-; CHECK-SPIRV: Decorate [[#]] Alignment 16
-; CHECK-SPIRV: Decorate [[#SrcVar:]] Alignment [[#SrcAlignment:]]
-; CHECK-SPIRV: Bitcast [[#]] [[#]] [[#]]
-; CHECK-SPIRV: Bitcast [[#]] [[#Src:]] [[#SrcVar]]
-; CHECK-SPIRV: CopyMemorySized [[#]] [[#Src]] [[#]] 2 [[#SrcAlignment]]
-; CHECK-LLVM: [[SrcVar:@[0-9]+]] = internal unnamed_addr addrspace(2) constant [16 x i8] zeroinitializer, align [[#SrcAlignment:]]
-; CHECK-LLVM: [[SrcOp:%[0-9]+]] = bitcast ptr addrspace(2) [[SrcVar]] to ptr addrspace(2)
-; CHECK-LLVM: call void @llvm.memcpy.p4.p2.i64(ptr addrspace(4) align 16 %0, ptr addrspace(2) align [[#SrcAlignment]] [[SrcOp]], i64 16, i1 false)
+; CHECK-SPIRV: Decorate [[#Var:]] Alignment 16
+; CHECK-SPIRV: ConstantNull [[#]] [[#Init:]]
+; CHECK-SPIRV: Variable [[#]] [[#Var]]
+; CHECK-SPIRV: PtrCastToGeneric [[#]] [[#Generic:]] [[#Var]]
+; CHECK-SPIRV: Bitcast [[#]] [[#BytePtr:]] [[#Generic]]
+; CHECK-SPIRV: Bitcast [[#]] [[#StorePtr:]] [[#BytePtr]]
+; CHECK-SPIRV: Store [[#StorePtr]] [[#Init]] 2 16
+; CHECK-LLVM: %[[X:.+]] = alloca [2 x i64], align 16
+; CHECK-LLVM: %[[Generic:.+]] = addrspacecast ptr %[[X]] to ptr addrspace(4)
+; CHECK-LLVM: %[[#BytePtr:]] = bitcast ptr addrspace(4) %[[Generic]] to ptr addrspace(4)
+; CHECK-LLVM: %[[#ArrayPtr:]] = bitcast ptr addrspace(4) %[[#BytePtr]] to ptr addrspace(4)
+; CHECK-LLVM: store [16 x i8] zeroinitializer, ptr addrspace(4) %[[#ArrayPtr]], align 16
   call void @llvm.memset.p4.i64(ptr addrspace(4) align 16 %r.sroa.0.0.r.ascast.sroa_cast1, i8 0, i64 16, i1 false)
   ret void
 }
