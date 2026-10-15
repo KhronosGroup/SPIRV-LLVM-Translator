@@ -506,6 +506,16 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
   return 0;
 }
 
+// Lower global_device and global_host address spaces that were added in
+// SYCL as part of SYCL_INTEL_usm_address_spaces extension to just global
+// address space if device doesn't support SPV_INTEL_usm_storage_classes
+// extension
+bool LLVMToSPIRVBase::shouldLowerUSMAddrSpace(unsigned AddrSpc) const {
+  return !BM->isAllowedToUseExtension(
+             ExtensionID::SPV_INTEL_usm_storage_classes) &&
+         (AddrSpc == SPIRAS_GlobalDevice || AddrSpc == SPIRAS_GlobalHost);
+}
+
 SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
   Type *T = PointerType::get(ET, AddrSpc);
   if (ET->isFunctionTy() &&
@@ -521,15 +531,8 @@ SPIRVType *LLVMToSPIRVBase::transPointerType(Type *ET, unsigned AddrSpc) {
   // A pointer to image or pipe type in LLVM is translated to a SPIRV
   // (non-pointer) image or pipe type.
   auto *ST = dyn_cast<StructType>(ET);
-  // Lower global_device and global_host address spaces that were added in
-  // SYCL as part of SYCL_INTEL_usm_address_spaces extension to just global
-  // address space if device doesn't support SPV_INTEL_usm_storage_classes
-  // extension
-  if (!BM->isAllowedToUseExtension(
-          ExtensionID::SPV_INTEL_usm_storage_classes) &&
-      ((AddrSpc == SPIRAS_GlobalDevice) || (AddrSpc == SPIRAS_GlobalHost))) {
+  if (shouldLowerUSMAddrSpace(AddrSpc))
     return transPointerType(ET, SPIRAS_Global);
-  }
   // Lower function pointer address space to private if
   // spirv-emit-function-ptr-addr-space is not passed
   if (AddrSpc == SPIRAS_CodeSectionINTEL &&
@@ -4073,8 +4076,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       return nullptr;
     }
     uint64_t NumElements = static_cast<ConstantInt *>(Len)->getZExtValue();
-    // A zero-sized memset is a no-op. Emitting OpCopyMemorySized with a Size
-    // operand of 0 is invalid SPIR-V, so drop the intrinsic entirely.
+    // A zero-sized memset is a no-op. Emitting OpTypeArray with zero length
+    // is invalid SPIR-V, so drop the intrinsic entirely.
     if (NumElements == 0)
       return nullptr;
     auto *AT = ArrayType::get(Val->getType(), NumElements);
@@ -4092,19 +4095,13 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       std::vector<SPIRVValue *> Elts(TNumElts, transValue(Val, BB));
       Init = BM->addCompositeConstant(CompositeTy, Elts);
     }
-    SPIRVType *VarTy = transPointerType(AT, SPIRV::SPIRAS_Constant);
-    SPIRVValue *Var = BM->addVariable(VarTy, /*isConstant*/ true,
-                                      spv::internal::LinkageTypeInternal, Init,
-                                      "", StorageClassUniformConstant, nullptr);
-    SPIRVType *SourceTy =
-        transPointerType(Val->getType(), SPIRV::SPIRAS_Constant);
-    SPIRVValue *Source = BM->addUnaryInst(OpBitcast, SourceTy, Var, BB);
+    std::vector<SPIRVWord> MemAccess = GetMemoryAccess(
+        MSI, BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4));
     SPIRVValue *Target = transValue(MSI->getRawDest(), BB);
-    return BM->addCopyMemorySizedInst(
-        Target, Source, CompositeTy->getLength(),
-        GetMemoryAccess(MSI,
-                        BM->isAllowedToUseVersion(VersionNumber::SPIRV_1_4)),
-        BB);
+    SPIRVType *StorePtrTy = transPointerType(
+        AT, MSI->getRawDest()->getType()->getPointerAddressSpace());
+    SPIRVValue *StorePtr = BM->addUnaryInst(OpBitcast, StorePtrTy, Target, BB);
+    return BM->addStoreInst(StorePtr, Init, MemAccess, BB);
   } break;
   case Intrinsic::memcpy:
     // A zero-sized memcpy is a no-op. Emitting OpCopyMemorySized with a Size
