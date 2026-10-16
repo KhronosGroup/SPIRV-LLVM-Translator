@@ -1794,6 +1794,16 @@ SPIRVValue *LLVMToSPIRVBase::transUnaryInst(UnaryInstruction *U,
 
   auto *Op = transValue(U->getOperand(0), BB, true, FuncTransMode::Pointer);
   SPIRVType *TransTy = transScavengedType(U);
+  // Address space casts require matching pointee types.
+  if (isa<AddrSpaceCastInst>(U) && TransTy->getOpCode() == OpTypePointer &&
+      Op->getType()->getOpCode() == OpTypePointer &&
+      Op->getType()->getPointerElementType() !=
+          TransTy->getPointerElementType())
+    Op = BM->addUnaryInst(
+        OpBitcast,
+        BM->addPointerType(Op->getType()->getPointerStorageClass(),
+                           TransTy->getPointerElementType()),
+        Op, BB);
   return BM->addUnaryInst(transBoolOpCode(Op, BOC), TransTy, Op, BB);
 }
 
