@@ -4477,7 +4477,9 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         if (AllowTwoMemAccessMasks) {
           if (*DestAlignVal != *SourceAlignVal) {
             MemoryAccess.push_back(DestAlignVal.valueOrOne().value());
-            MemoryAccess.push_back(MemoryAccessAlignedMask);
+            MemoryAccess.push_back(MemoryAccessAlignedMask |
+                                   (MI->isVolatile() ? MemoryAccessVolatileMask
+                                                     : MemoryAccessMaskNone));
             AlignVal = *SourceAlignVal;
           }
         } else {
