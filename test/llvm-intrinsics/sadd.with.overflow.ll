@@ -11,16 +11,20 @@
 ; With the following options:
 ; -emit-llvm -fno-discard-value-names -O2 -g0 -ftrapv -target spir
 
-; RUN: llvm-as < %s -o %t.bc
-; RUN: llvm-spirv -s %t.bc -o - | llvm-dis -o - | FileCheck %s
+; RUN: llvm-spirv %s -o %t.spv
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s
+; RUN: spirv-val %t.spv
 
-; CHECK: call { i32, i1 } @llvm_sadd_with_overflow_i32{{.*}} !nosanitize !2
-; CHECK-NOT: call { i32, i1 } @llvm.sadd.with.overflow.i32
+; CHECK-DAG: TypeInt [[#I32:]] 32 0
+; CHECK-DAG: TypeInt [[#I64:]] 64 0
 
-; CHECK: call { i64, i1 } @llvm_sadd_with_overflow_i64{{.*}} !nosanitize !2
-; CHECK-NOT: call { i64, i1 } @llvm.sadd.with.overflow.i64
+; CHECK: IAdd [[#I32]] [[#R32:]]
+; CHECK: SLessThan [[#]] [[#O32:]]
+; CHECK: CompositeConstruct [[#]] [[#]] [[#R32]] [[#O32]]
 
-; CHECK-NOT: call { i16, i1 } @llvm_sadd_with_overflow_i16
+; CHECK: IAdd [[#I64]] [[#R64:]]
+; CHECK: SLessThan [[#]] [[#O64:]]
+; CHECK: CompositeConstruct [[#]] [[#]] [[#R64]] [[#O64]]
 
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
