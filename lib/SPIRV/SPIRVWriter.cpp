@@ -5989,14 +5989,37 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
         return Ty->getScalarType();
       };
 
+      // The builtin name fixes the IEEE754 operand width.
+      auto MatchesEncoding = [&](FPEncodingWrap Enc, Type *Ty) {
+        Type *ScalarTy = GetScalarTy(Ty);
+        if (Enc == FPEncodingWrap::FP16)
+          return ScalarTy->isHalfTy();
+        if (Enc == FPEncodingWrap::FP32)
+          return ScalarTy->isFloatTy();
+        if (Enc == FPEncodingWrap::FP64)
+          return ScalarTy->isDoubleTy();
+        return true;
+      };
+      if (!BM->getErrorLog().checkError(
+              MatchesEncoding(FPDesc.SrcEncoding, LLVMSrcTy) &&
+                  MatchesEncoding(FPDesc.DstEncoding, LLVMDstTy),
+              SPIRVEC_InvalidInstruction, CI,
+              "Floating-point conversion builtin name does not match the "
+              "operand types"))
+        return nullptr;
+
       // FP types representable in LLVM IR, no need for special handling
       // Also, int4 matrices remain the same.
-      if (FPDesc.SrcEncoding == FPEncodingWrap::IEEE754 ||
+      if (FPDesc.SrcEncoding == FPEncodingWrap::FP64 ||
+          FPDesc.SrcEncoding == FPEncodingWrap::FP32 ||
+          FPDesc.SrcEncoding == FPEncodingWrap::FP16 ||
           FPDesc.SrcEncoding == FPEncodingWrap::BF16 ||
           (FPDesc.SrcEncoding == FPEncodingWrap::Integer &&
            isLLVMCooperativeMatrixType(LLVMDstTy)))
         SrcTy = transType(LLVMSrcTy);
-      if (FPDesc.DstEncoding == FPEncodingWrap::IEEE754 ||
+      if (FPDesc.DstEncoding == FPEncodingWrap::FP64 ||
+          FPDesc.DstEncoding == FPEncodingWrap::FP32 ||
+          FPDesc.DstEncoding == FPEncodingWrap::FP16 ||
           FPDesc.DstEncoding == FPEncodingWrap::BF16 ||
           (FPDesc.DstEncoding == FPEncodingWrap::Integer &&
            (isLLVMCooperativeMatrixType(LLVMDstTy) ||
@@ -6066,7 +6089,9 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
       }
 
       // Representable in LLVM FP types: bitcast is not needed.
-      if (FPDesc.DstEncoding == FPEncodingWrap::IEEE754 ||
+      if (FPDesc.DstEncoding == FPEncodingWrap::FP64 ||
+          FPDesc.DstEncoding == FPEncodingWrap::FP32 ||
+          FPDesc.DstEncoding == FPEncodingWrap::FP16 ||
           FPDesc.DstEncoding == FPEncodingWrap::BF16)
         return Conv;
       // Originally not-packed integer (no repacking, or cooperative matrix).

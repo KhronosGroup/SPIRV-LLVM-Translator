@@ -1,0 +1,33 @@
+; SPV_EXT_float8: FP64 <-> FP8 OpFConvert maps to the __builtin_spirv_*FP64*
+; builtins with a double operand or result.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s
+
+; CHECK: call spir_func i8 @_Z36__builtin_spirv_ConvertFP64ToE4M3EXTd(double
+; CHECK: call spir_func i8 @_Z36__builtin_spirv_ConvertFP64ToE5M2EXTd(double
+; CHECK: call spir_func double @_Z36__builtin_spirv_ConvertE4M3ToFP64EXTc(i8
+; CHECK: call spir_func double @_Z36__builtin_spirv_ConvertE5M2ToFP64EXTc(i8
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpCapability Float64
+               OpCapability Float8EXT
+               OpExtension "SPV_EXT_float8"
+               OpMemoryModel Physical32 OpenCL
+       %void = OpTypeVoid
+        %f64 = OpTypeFloat 64
+       %e4m3 = OpTypeFloat 8 Float8E4M3EXT
+       %e5m2 = OpTypeFloat 8 Float8E5M2EXT
+       %func = OpTypeFunction %void %f64
+          %f = OpFunction %void None %func
+          %d = OpFunctionParameter %f64
+          %b = OpLabel
+         %c0 = OpFConvert %e4m3 %d
+         %c1 = OpFConvert %e5m2 %d
+         %c2 = OpFConvert %f64 %c0
+         %c3 = OpFConvert %f64 %c1
+               OpReturn
+               OpFunctionEnd
