@@ -4229,6 +4229,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::umax:
   case Intrinsic::minimumnum:
   case Intrinsic::minimum:
+  case Intrinsic::objectsize:
   case Intrinsic::minnum:
   case Intrinsic::smin:
   case Intrinsic::umin:
