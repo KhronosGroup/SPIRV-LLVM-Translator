@@ -1,0 +1,23 @@
+119734787 65536 393230 8 0
+2 Capability Addresses
+2 Capability Kernel
+2 Capability Int64
+2 Capability PauseINTEL
+5 Extension "SPV_INTEL_pause"
+5 ExtInstImport 1 "OpenCL.std"
+3 MemoryModel 2 2
+5 EntryPoint 6 5 "kernel"
+4 TypeInt 3 64 0
+2 TypeVoid 2
+4 TypeFunction 4 2 3
+5 Function 2 5 0 4
+3 FunctionParameter 3 6
+2 Label 7
+2 PauseINTEL 6
+1 Return
+1 FunctionEnd
+
+; RUN: not llvm-spirv %s --to-binary -o %t.spv 2>&1 | FileCheck %s
+
+; CHECK: OpPauseINTEL
+; CHECK-NEXT: Clocks must be a 32-bit

@@ -4802,6 +4802,29 @@ _SPIRV_OP(PredicatedLoad, true, 6, true)
 _SPIRV_OP(PredicatedStore, false, 4, true)
 #undef _SPIRV_OP
 
+class SPIRVPauseINTELInst : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_pause;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityPauseINTEL);
+  }
+
+protected:
+  void validate() const override {
+    SPIRVInstruction::validate();
+    if (getValue(Ops[0])->isForward())
+      return;
+    SPIRVType *ClocksTy = getValueType(Ops[0]);
+    getModule()->getErrorLog().checkError(
+        ClocksTy->isTypeInt(32), SPIRVEC_InvalidInstruction,
+        "OpPauseINTEL\nClocks must be a 32-bit integer scalar\n");
+  }
+};
+typedef SPIRVInstTemplate<SPIRVPauseINTELInst, OpPauseINTEL, false, 2>
+    SPIRVPauseINTEL;
+
 template <Op OC> class SPIRVFSigmoidINTELInstBase : public SPIRVUnaryInst<OC> {
 public:
   SPIRVCapVec getRequiredCapability() const override {
