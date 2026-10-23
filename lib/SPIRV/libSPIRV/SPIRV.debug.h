@@ -11,6 +11,7 @@ namespace SPIRVDebug {
 
 const unsigned int DebugInfoVersion = 0x00010000;
 static const std::string ProducerPrefix = {"Debug info producer: "};
+static const std::string EmissionKindPrefix = {"Debug emission kind: "};
 static const std::string ChecksumKindPrefx = {"//__CSK_"};
 
 // clang-format off
