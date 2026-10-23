@@ -10,10 +10,20 @@
 ;
 ; "Fails to verify module: invalid linkage for intrinsic global variable".
 ;
+; The last two runs place functions and the Function storage class in
+; different address spaces. The function pointers in the lists must still
+; use the program address space, otherwise validation fails with:
+;
+; "Fails to verify module: wrong type for intrinsic global variable".
 ;
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_function_pointers -o %t.spv
 ; RUN: llvm-spirv -r %t.spv
+; RUN: llvm-spirv -r %t.spv --spirv-addrspace-map=0:4,1:1,2:2,3:3,4:0 --spirv-function-program-addrspace=0 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-P0
+; RUN: llvm-spirv -r %t.spv --spirv-function-program-addrspace=4 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-P4
+
+; CHECK-P0: @llvm.global_ctors = appending addrspace(1) global [1 x { i32, ptr, ptr addrspace(4) }] [{ i32, ptr, ptr addrspace(4) } { i32 65535, ptr @_GLOBAL__sub_I_test.cpp.ctor, ptr addrspace(4) null }]
+; CHECK-P4: @llvm.global_ctors = appending addrspace(1) global [1 x { i32, ptr addrspace(4), ptr }] [{ i32, ptr addrspace(4), ptr } { i32 65535, ptr addrspace(4) @_GLOBAL__sub_I_test.cpp.ctor, ptr null }]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"

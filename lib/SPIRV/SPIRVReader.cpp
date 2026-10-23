@@ -5010,7 +5010,35 @@ void SPIRVToLLVM::transGlobalCtorDtors(SPIRVVariableBase *BV) {
     return;
 
   Value *V = transValue(BV, nullptr, nullptr);
-  cast<GlobalValue>(V)->setLinkage(GlobalValue::AppendingLinkage);
+  auto *GV = cast<GlobalVariable>(V);
+  GV->setLinkage(GlobalValue::AppendingLinkage);
+
+  // The verifier requires the function pointer field to be in the program
+  // address space. The field type comes from SPIR-V and may use another one.
+  auto *FuncPtrTy =
+      PointerType::get(*Context, M->getDataLayout().getProgramAddressSpace());
+  auto *ArrTy = dyn_cast<ArrayType>(GV->getValueType());
+  auto *STy = ArrTy ? dyn_cast<StructType>(ArrTy->getElementType()) : nullptr;
+  if (!GV->hasInitializer() || !STy || STy->getNumElements() != 3 ||
+      !STy->getElementType(1)->isPointerTy() ||
+      STy->getElementType(1) == FuncPtrTy)
+    return;
+
+  auto *NewSTy = StructType::get(STy->getElementType(0), FuncPtrTy,
+                                 STy->getElementType(2));
+  SmallVector<Constant *, 2> ArrayElts;
+  for (unsigned I = 0, E = ArrTy->getNumElements(); I != E; ++I) {
+    Constant *Entry = GV->getInitializer()->getAggregateElement(I);
+    // Keep null entries null: an addrspacecast of null is not folded.
+    Constant *Func = Entry->getAggregateElement(1u);
+    Func = Func->isNullValue() ? ConstantPointerNull::get(FuncPtrTy)
+                               : ConstantExpr::getPointerCast(Func, FuncPtrTy);
+    ArrayElts.push_back(
+        ConstantStruct::get(NewSTy, {Entry->getAggregateElement(0u), Func,
+                                     Entry->getAggregateElement(2u)}));
+  }
+  GV->replaceInitializer(
+      ConstantArray::get(ArrayType::get(NewSTy, ArrayElts.size()), ArrayElts));
 }
 
 void SPIRVToLLVM::createCXXStructor(const char *ListName,
