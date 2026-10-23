@@ -4285,6 +4285,9 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::debugtrap:
   case Intrinsic::uadd_with_overflow:
   case Intrinsic::usub_with_overflow:
+  case Intrinsic::sadd_with_overflow:
+  case Intrinsic::ssub_with_overflow:
+  case Intrinsic::smul_with_overflow:
   case Intrinsic::arithmetic_fence:
   case Intrinsic::masked_gather:
   case Intrinsic::masked_scatter:
@@ -5065,6 +5068,51 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addBinaryInst(OpISubBorrow, transType(II->getType()),
                              transValue(II->getArgOperand(0), BB),
                              transValue(II->getArgOperand(1), BB), BB);
+  }
+  case Intrinsic::sadd_with_overflow:
+  case Intrinsic::ssub_with_overflow:
+  case Intrinsic::smul_with_overflow: {
+    Type *OpLLVMTy = II->getArgOperand(0)->getType();
+    if (!BM->getErrorLog().checkError(!OpLLVMTy->isIntOrIntVectorTy(1),
+                                      SPIRVEC_InvalidFunctionCall, II,
+                                      "i1 operands are not supported."))
+      return nullptr;
+    SPIRVType *OpTy = transType(OpLLVMTy);
+    SPIRVType *FlagTy =
+        transType(cast<StructType>(II->getType())->getElementType(1));
+    SPIRVValue *A = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *B = transValue(II->getArgOperand(1), BB);
+    SPIRVValue *Res = nullptr;
+    SPIRVValue *Overflow = nullptr;
+    if (IID == Intrinsic::smul_with_overflow) {
+      // Overflow iff the high half is not the sign extension of the low half.
+      SPIRVValue *Ext = BM->addBinaryInst(
+          OpSMulExtended, transType(StructType::get(OpLLVMTy, OpLLVMTy)), A, B,
+          BB);
+      Res = BM->addCompositeExtractInst(OpTy, Ext, {0}, BB);
+      SPIRVValue *High = BM->addCompositeExtractInst(OpTy, Ext, {1}, BB);
+      SPIRVValue *Sign = BM->addBinaryInst(
+          OpShiftRightArithmetic, OpTy, Res,
+          transValue(
+              ConstantInt::get(OpLLVMTy, OpLLVMTy->getScalarSizeInBits() - 1),
+              BB),
+          BB);
+      Overflow = BM->addCmpInst(OpINotEqual, FlagTy, High, Sign, BB);
+    } else {
+      // Overflow iff sign of (A^Res)&(B^Res) (add), (A^B)&(A^Res) (sub) is set.
+      bool IsAdd = IID == Intrinsic::sadd_with_overflow;
+      Res = BM->addBinaryInst(IsAdd ? OpIAdd : OpISub, OpTy, A, B, BB);
+      SPIRVValue *X1 =
+          BM->addBinaryInst(OpBitwiseXor, OpTy, A, IsAdd ? Res : B, BB);
+      SPIRVValue *X2 =
+          BM->addBinaryInst(OpBitwiseXor, OpTy, IsAdd ? B : A, Res, BB);
+      SPIRVValue *And = BM->addBinaryInst(OpBitwiseAnd, OpTy, X1, X2, BB);
+      Overflow =
+          BM->addCmpInst(OpSLessThan, FlagTy, And,
+                         transValue(Constant::getNullValue(OpLLVMTy), BB), BB);
+    }
+    return BM->addCompositeConstructInst(transType(II->getType()),
+                                         {Res->getId(), Overflow->getId()}, BB);
   }
   case Intrinsic::vector_reduce_add:
   case Intrinsic::vector_reduce_mul:
