@@ -700,6 +700,20 @@ bool SPIRVRegularizeLLVMBase::regularize() {
                      II->getIntrinsicID() == Intrinsic::maximum) {
               lowerFMinimumMaximum(II);
               ToErase.push_back(II);
+            } else if (II->getIntrinsicID() == Intrinsic::ptrmask) {
+              // Not a GEP: OpPtrAccessChain must stay within the object.
+              IRBuilder<> Builder(II);
+              Value *Ptr = II->getArgOperand(0);
+              Type *IntTy = M->getDataLayout().getIntPtrType(Ptr->getType());
+              Value *Mask = II->getArgOperand(1);
+              if (Mask->getType() != IntTy) // Keep bits above the mask width.
+                Mask = Builder.CreateNot(
+                    Builder.CreateZExt(Builder.CreateNot(Mask), IntTy));
+              Value *Int =
+                  Builder.CreateAnd(Builder.CreatePtrToInt(Ptr, IntTy), Mask);
+              II->replaceAllUsesWith(
+                  Builder.CreateIntToPtr(Int, Ptr->getType()));
+              ToErase.push_back(II);
             } else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
               std::string MangledName =
