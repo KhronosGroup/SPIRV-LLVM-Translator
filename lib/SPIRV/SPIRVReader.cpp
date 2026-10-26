@@ -1346,7 +1346,7 @@ Value *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV, BasicBlock *BB,
   Value *Op0 = transValue(BBN->getOperand(0), F, BB);
   Value *Op1 = transValue(BBN->getOperand(1), F, BB);
 
-  IRBuilder<> Builder(*Context);
+  IRBuilder<> Builder(*M);
   if (BB) {
     Builder.SetInsertPoint(BB);
   }
@@ -1370,7 +1370,7 @@ Value *SPIRVToLLVM::transCmpInst(SPIRVValue *BV, BasicBlock *BB, Function *F) {
   Value *Op0 = transValue(BC->getOperand(0), F, BB);
   Value *Op1 = transValue(BC->getOperand(1), F, BB);
 
-  IRBuilder<> Builder(*Context);
+  IRBuilder<> Builder(*M);
   if (BB) {
     Builder.SetInsertPoint(BB);
   }
@@ -2174,7 +2174,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpSelect: {
     SPIRVSelect *BS = static_cast<SPIRVSelect *>(BV);
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -2698,7 +2698,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpCompositeExtract: {
     SPIRVCompositeExtract *CE = static_cast<SPIRVCompositeExtract *>(BV);
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -2727,7 +2727,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpCompositeInsert: {
     auto *CI = static_cast<SPIRVCompositeInsert *>(BV);
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -2792,7 +2792,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
       else
         Components.push_back(ConstantInt::get(Int32Ty, I));
     }
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -2953,7 +2953,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
   }
 
   case OpSNegate: {
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -2993,7 +2993,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     //   r = srem(a, b)
     //   needs_fixing = ((a < 0) != (b < 0) && r != 0)
     //   result = needs_fixing ? r + b : r
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -3024,7 +3024,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpNot:
   case OpLogicalNot: {
-    IRBuilder<> Builder(*Context);
+    IRBuilder<> Builder(*M);
     if (BB) {
       Builder.SetInsertPoint(BB);
     }
@@ -4054,7 +4054,7 @@ Instruction *SPIRVToLLVM::transBuiltinFromInst(const std::string &FuncName,
       Func->addFnAttr(Attribute::NoUnwind);
     if (isGroupOpCode(OC) || isGroupNonUniformOpcode(OC) ||
         isIntelSubgroupOpCode(OC) || isSplitBarrierINTELOpCode(OC) ||
-        OC == OpControlBarrier)
+        OC == OpSubgroupBitcastShuffleINTEL || OC == OpControlBarrier)
       Func->addFnAttr(Attribute::Convergent);
   }
   CallInst *Call;
@@ -4236,6 +4236,7 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   case internal::OpClampConvertFToSINTEL:
   case internal::OpStochasticRoundFToFINTEL:
   case internal::OpClampStochasticRoundFToSINTEL:
+  case OpSubgroupBitcastShuffleINTEL:
   // Old opcodes, for backward compatibility.
   case internal::OpClampConvertFToFINTEL:
   case internal::OpClampStochasticRoundFToFINTEL:
@@ -4249,13 +4250,14 @@ Instruction *SPIRVToLLVM::transSPIRVBuiltinFromInst(SPIRVInstruction *BI,
   }
 
   bool IsRetSigned = true;
-  switch (OC) {
+  switch (static_cast<size_t>(OC)) {
   case OpConvertFToU:
   case OpSatConvertSToU:
   case OpUConvert:
   case OpUDotKHR:
   case OpUDotAccSatKHR:
   case OpReadClockKHR:
+  case OpSubgroupBitcastShuffleINTEL:
     IsRetSigned = false;
     break;
   case OpImageRead:
@@ -4899,13 +4901,18 @@ static llvm::MDNode *transDecorationsToMetadataList(
       OPs.push_back(StrMD);
       break;
     }
-    case DecorationUniformId: {
-      SPIRVId ScopeId = Deco->getVecLiteral()[0];
-      auto *ScopeConst =
-          static_cast<SPIRVConstant *>(Deco->getModule()->getValue(ScopeId));
-      auto *const ScopeMD = ConstantAsMetadata::get(ConstantInt::get(
-          Type::getInt32Ty(*Context), ScopeConst->getZExtIntValue()));
-      OPs.push_back(ScopeMD);
+    case DecorationUniformId:
+    case DecorationAlignmentId:
+    case DecorationMaxByteOffsetId: {
+      SPIRVId ValId = Deco->getVecLiteral()[0];
+      SPIRVValue *Val = Deco->getModule()->getValue(ValId);
+      if (Val->getOpCode() != OpConstant)
+        continue;
+      auto *ValConst = static_cast<SPIRVConstant *>(Val);
+      auto *const ValMD = ConstantAsMetadata::get(ConstantInt::get(
+          Type::getIntNTy(*Context, Val->getType()->getIntegerBitWidth()),
+          ValConst->getZExtIntValue()));
+      OPs.push_back(ValMD);
       break;
     }
     default: {
