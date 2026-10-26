@@ -1,8 +1,6 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
-; TODO: enable validation once casts between USM storage classes and Generic go
-; through CrossWorkgroup.
-; RUNx: spirv-val %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
@@ -25,11 +23,16 @@
 ; CHECK-SPIRV: Name [[DEVICE_ARG2:[0-9]+]] "arg_dev.addr"
 ; CHECK-SPIRV: Name [[GLOB_ARG4:[0-9]+]] "arg_glob.addr"
 ; CHECK-SPIRV: Name [[HOST_ARG2:[0-9]+]] "arg_host.addr"
-; CHECK-SPIRV-EXT: TypePointer [[DEVICE_TY:[0-9]+]] 5936 {{[0-9]+}}
-; CHECK-SPIRV-EXT: TypePointer [[HOST_TY:[0-9]+]] 5937 {{[0-9]+}}
+; CHECK-SPIRV-EXT-DAG: TypePointer [[DEVICE_TY:[0-9]+]] 5936 {{[0-9]+}}
+; CHECK-SPIRV-EXT-DAG: TypePointer [[HOST_TY:[0-9]+]] 5937 {{[0-9]+}}
+; CHECK-SPIRV-EXT-DAG: TypePointer [[CW_TY:[0-9]+]] 5 {{[0-9]+}}
 ; CHECK-SPIRV-NO-EXT: TypePointer [[GLOB_TY:[0-9]+]] 5 {{[0-9]+}}
-; CHECK-SPIRV-EXT: Load [[DEVICE_TY]] {{[0-9]+}} [[DEVICE]] {{[0-9]+}} {{[0-9]+}}
-; CHECK-SPIRV-EXT: Load [[HOST_TY]] {{[0-9]+}} [[HOST]] {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV-EXT: Load [[DEVICE_TY]] [[DLOAD:[0-9]+]] [[DEVICE]] {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV-EXT-NEXT: PtrCastToCrossWorkgroupINTEL [[CW_TY]] [[DCW:[0-9]+]] [[DLOAD]]
+; CHECK-SPIRV-EXT-NEXT: PtrCastToGeneric {{[0-9]+}} {{[0-9]+}} [[DCW]]
+; CHECK-SPIRV-EXT: Load [[HOST_TY]] [[HLOAD:[0-9]+]] [[HOST]] {{[0-9]+}} {{[0-9]+}}
+; CHECK-SPIRV-EXT-NEXT: PtrCastToCrossWorkgroupINTEL [[CW_TY]] [[HCW:[0-9]+]] [[HLOAD]]
+; CHECK-SPIRV-EXT-NEXT: PtrCastToGeneric {{[0-9]+}} {{[0-9]+}} [[HCW]]
 ; CHECK-SPIRV-NO-EXT: Load [[GLOB_TY]] {{[0-9]+}} [[DEVICE]] {{[0-9]+}} {{[0-9]+}}
 ; CHECK-SPIRV-NO-EXT: Load [[GLOB_TY]] {{[0-9]+}} [[HOST]] {{[0-9]+}} {{[0-9]+}}
 
@@ -85,7 +88,8 @@ entry:
 ; CHECK-LLVM-NO-USM: %[[DLOAD_NE:[0-9]+]] = load ptr addrspace(1), ptr %DEVICE, align 8
   %0 = load ptr addrspace(5), ptr %DEVICE, align 8, !tbaa !5
 
-; CHECK-LLVM: addrspacecast ptr addrspace(5) %[[DLOAD_E]] to ptr addrspace(4)
+; CHECK-LLVM: %[[DCW:[0-9]+]] = addrspacecast ptr addrspace(5) %[[DLOAD_E]] to ptr addrspace(1)
+; CHECK-LLVM: addrspacecast ptr addrspace(1) %[[DCW]] to ptr addrspace(4)
 ; CHECK-LLVM-NO-USM: addrspacecast ptr addrspace(1) %[[DLOAD_NE]] to ptr addrspace(4)
   %1 = addrspacecast ptr addrspace(5) %0 to ptr addrspace(4)
   call spir_func void @_Z3fooPi(ptr addrspace(4) %1)
@@ -94,7 +98,8 @@ entry:
 ; CHECK-LLVM-NO-USM: %[[HLOAD_NE:[0-9]+]] = load ptr addrspace(1), ptr %HOST, align 8
   %2 = load ptr addrspace(6), ptr %HOST, align 8, !tbaa !5
 
-; CHECK-LLVM: addrspacecast ptr addrspace(6) %[[HLOAD_E]] to ptr addrspace(4)
+; CHECK-LLVM: %[[HCW:[0-9]+]] = addrspacecast ptr addrspace(6) %[[HLOAD_E]] to ptr addrspace(1)
+; CHECK-LLVM: addrspacecast ptr addrspace(1) %[[HCW]] to ptr addrspace(4)
 ; CHECK-LLVM-NO-USM: addrspacecast ptr addrspace(1) %[[HLOAD_NE]] to ptr addrspace(4)
   %3 = addrspacecast ptr addrspace(6) %2 to ptr addrspace(4)
   call spir_func void @_Z3fooPi(ptr addrspace(4) %3)
@@ -187,6 +192,29 @@ entry:
 ; CHECK-LLVM-NO-USM-NOT: addrspacecast ptr addrspace(6) %{{[0-9]+}} to ptr addrspace(1)
   %1 = addrspacecast ptr addrspace(6) %0 to ptr addrspace(1)
   store ptr addrspace(1) %1, ptr %arg_glob.addr, align 4
+  ret void
+}
+
+; CHECK-SPIRV: FunctionParameter {{[0-9]+}} [[GEN_ARG:[0-9]+]]
+; CHECK-SPIRV-EXT: GenericCastToPtr [[CW_TY]] [[GCW1:[0-9]+]] [[GEN_ARG]]
+; CHECK-SPIRV-EXT-NEXT: CrossWorkgroupCastToPtrINTEL [[DEVICE_TY]] {{[0-9]+}} [[GCW1]]
+; CHECK-SPIRV-EXT: GenericCastToPtr [[CW_TY]] [[GCW2:[0-9]+]] [[GEN_ARG]]
+; CHECK-SPIRV-EXT-NEXT: CrossWorkgroupCastToPtrINTEL [[HOST_TY]] {{[0-9]+}} [[GCW2]]
+; CHECK-SPIRV-NO-EXT: GenericCastToPtr [[GLOB_TY]] {{[0-9]+}} [[GEN_ARG]]
+; CHECK-SPIRV-NO-EXT: GenericCastToPtr [[GLOB_TY]] {{[0-9]+}} [[GEN_ARG]]
+; Function Attrs: norecurse nounwind
+define spir_func void @_Z3genPv(ptr addrspace(4) %arg_gen) #3 {
+entry:
+; CHECK-LLVM: %[[GCW1:[0-9]+]] = addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(1)
+; CHECK-LLVM: addrspacecast ptr addrspace(1) %[[GCW1]] to ptr addrspace(5)
+; CHECK-LLVM-NO-USM: addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(1)
+  %dev = addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(5)
+; CHECK-LLVM: %[[GCW2:[0-9]+]] = addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(1)
+; CHECK-LLVM: addrspacecast ptr addrspace(1) %[[GCW2]] to ptr addrspace(6)
+; CHECK-LLVM-NO-USM: addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(1)
+  %host = addrspacecast ptr addrspace(4) %arg_gen to ptr addrspace(6)
+  store i8 0, ptr addrspace(5) %dev, align 1
+  store i8 0, ptr addrspace(6) %host, align 1
   ret void
 }
 
