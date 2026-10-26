@@ -1,5 +1,8 @@
 ; RUN: llvm-as %s -o %t.bc
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.spv
+; TODO: enable validation once casts between USM storage classes and Generic go
+; through CrossWorkgroup.
+; RUNx: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefixes=CHECK-SPIRV,CHECK-SPIRV-EXT
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
@@ -10,6 +13,7 @@
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM-NO-USM
 
 ; CHECK-SPIRV-EXT: Capability USMStorageClassesINTEL
+; CHECK-SPIRV-EXT: Extension "SPV_INTEL_usm_storage_classes"
 ; CHECK-SPIRV-NO-EXT-NO: Capability USMStorageClassesINTEL
 ; CHECK-SPIRV: Name [[DEVICE:[0-9]+]] "DEVICE"
 ; CHECK-SPIRV: Name [[HOST:[0-9]+]] "HOST"

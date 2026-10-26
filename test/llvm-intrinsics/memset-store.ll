@@ -11,13 +11,10 @@
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-GLOBAL
 
-; TODO: currently the Translator has a bug that it doesn't emit "OpExtension SPV_INTEL_usm_storage_classes"
-; when the extension is enabled, therefore spirv-val will reject it. Re-enable spirv-val once this bug is
-; fixed in the translator.
 ; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_INTEL_usm_storage_classes -o %t.usm.spv
 ; RUN: llvm-spirv %t.usm.spv --to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-USM
 ; RUN: llvm-spirv -r %t.usm.spv -o - | llvm-dis | FileCheck %s --check-prefixes=CHECK-LLVM,CHECK-LLVM-USM
-; RUNx: spirv-val %t.usm.spv
+; RUN: spirv-val %t.usm.spv
 
 ; Without SPV_INTEL_usm_storage_classes both USM address spaces are lowered to
 ; CrossWorkgroup (storage class 5), so all three kernels share one destination
