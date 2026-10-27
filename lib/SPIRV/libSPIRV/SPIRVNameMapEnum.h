@@ -558,6 +558,7 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityDemoteToHelperInvocation, "DemoteToHelperInvocation");
   add(CapabilityDemoteToHelperInvocationEXT, "DemoteToHelperInvocationEXT");
   add(CapabilityBindlessTextureNV, "BindlessTextureNV");
+  add(CapabilitySubgroupBitcastShuffleINTEL, "SubgroupBitcastShuffleINTEL");
   add(CapabilitySubgroupShuffleINTEL, "SubgroupShuffleINTEL");
   add(CapabilitySubgroupBufferBlockIOINTEL, "SubgroupBufferBlockIOINTEL");
   add(CapabilitySubgroupBufferPrefetchINTEL, "SubgroupBufferPrefetchINTEL");
