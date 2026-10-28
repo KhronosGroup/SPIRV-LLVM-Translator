@@ -48,6 +48,8 @@ on:
 env:
   LLVM_VERSION: 23
   SPIRV_TOOLS_INSTALL: ${{ github.workspace }}/spirv-tools-install
+  # Latest SPIRV-Tools release at the time of the LLVM 23 release.
+  SPIRV_TOOLS_TAG: v2026.3
 
 jobs:
   build_and_test:
@@ -75,15 +77,26 @@ jobs:
           # Linux systems in GitHub Actions already have older versions of clang
           # pre-installed. Make sure to override these with the relevant version.
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${{ env.LLVM_VERSION }} 1000
-      - name: Restore SPIRV-Tools cache
-        # The prebuild-spirv-tools workflow owns populating this cache.
-        # The primary key never matches (no one saves it); restore-keys
-        # pulls the most recent prebuild entry.
-        uses: actions/cache/restore@v5
+      - name: Cache SPIRV-Tools ${{ env.SPIRV_TOOLS_TAG }}
+        id: spirv-tools-cache
+        uses: actions/cache@v5
         with:
           path: ${{ env.SPIRV_TOOLS_INSTALL }}
-          key: spirv-tools-main-latest
-          restore-keys: spirv-tools-main-
+          key: spirv-tools-${{ env.SPIRV_TOOLS_TAG }}
+      - name: Build and install SPIRV-Tools ${{ env.SPIRV_TOOLS_TAG }}
+        if: steps.spirv-tools-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth=1 --branch ${{ env.SPIRV_TOOLS_TAG }} https://github.com/KhronosGroup/SPIRV-Tools SPIRV-Tools
+          python3 SPIRV-Tools/utils/git-sync-deps
+          cmake -S SPIRV-Tools -B SPIRV-Tools/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ env.SPIRV_TOOLS_INSTALL }} \
+            -DSPIRV_SKIP_TESTS=ON \
+            -G "Unix Makefiles"
+          make -C SPIRV-Tools/build install -j$(nproc)
+      - name: Check SPIRV-Tools version
+        run: |
+          ${{ env.SPIRV_TOOLS_INSTALL }}/bin/spirv-val --version | grep "^SPIRV-Tools ${{ env.SPIRV_TOOLS_TAG }} "
       - name:  Checkout the translator sources
         uses: actions/checkout@v5
         with:
