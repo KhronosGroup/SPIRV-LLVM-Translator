@@ -1000,6 +1000,9 @@ public:
   SPIRVValue *getCondition() const { return getValue(ConditionId); }
   SPIRVLabel *getTrueLabel() const { return get<SPIRVLabel>(TrueLabelId); }
   SPIRVLabel *getFalseLabel() const { return get<SPIRVLabel>(FalseLabelId); }
+  const std::vector<SPIRVWord> &getBranchWeights() const {
+    return BranchWeights;
+  }
 
 protected:
   void setWordCount(SPIRVWord TheWordCount) override {
@@ -4877,6 +4880,20 @@ _SPIRV_OP_FTOF(ClampConvertFToF, true, 4, false)
 _SPIRV_OP_FTOF(StochasticRoundFToF, true, 5, true)
 _SPIRV_OP_FTOF(ClampStochasticRoundFToF, true, 5, true)
 #undef _SPIRV_OP_FTOF
+
+class SPIRVSubgroupBitcastShuffleINTELInst : public SPIRVInstTemplateBase {
+public:
+  std::optional<ExtensionID> getRequiredExtension() const override {
+    return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
+  }
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilitySubgroupBitcastShuffleINTEL);
+  }
+};
+
+typedef SPIRVInstTemplate<SPIRVSubgroupBitcastShuffleINTELInst,
+                          OpSubgroupBitcastShuffleINTEL, true, 4>
+    SPIRVSubgroupBitcastShuffleINTEL;
 
 class SPIRVFPConversionFtoSINTELInstBase : public SPIRVInstTemplateBase {
 public:
