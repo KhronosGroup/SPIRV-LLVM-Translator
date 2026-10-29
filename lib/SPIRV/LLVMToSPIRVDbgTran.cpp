@@ -600,6 +600,12 @@ SPIRVEntry *LLVMToSPIRVDbgTran::transDbgCompileUnit(const DICompileUnit *CU) {
     transformToConstant(
         Ops, {SPIRVDebugInfoVersionIdx, DWARFVersionIdx, LanguageIdx});
 
+  // No DebugInfo spec version gives DebugCompilationUnit an emission kind
+  // operand, so record it the same way the producer is recorded below.
+  if (const char *EmissionKind =
+          DICompileUnit::emissionKindString(CU->getEmissionKind()))
+    BM->addModuleProcessed(SPIRVDebug::EmissionKindPrefix + EmissionKind);
+
   if (isNonSemanticDebugInfo()) {
     if (BM->getDebugInfoEIS() == SPIRVEIS_NonSemantic_Shader_DebugInfo_200) {
       Ops.push_back(BM->getString(CU->getProducer().str())->getId());
