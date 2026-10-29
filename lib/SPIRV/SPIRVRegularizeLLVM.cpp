@@ -664,6 +664,11 @@ static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
 
 /// Remove entities not representable by SPIR-V
 bool SPIRVRegularizeLLVMBase::regularize() {
+  // Drop the personality of functions without EH pads so it can be erased.
+  for (Function &F : *M)
+    if (F.hasPersonalityFn() &&
+        none_of(F, [](BasicBlock &BB) { return BB.isEHPad(); }))
+      F.setPersonalityFn(nullptr);
   eraseUselessFunctions(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
