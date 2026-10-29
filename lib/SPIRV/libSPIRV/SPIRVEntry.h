@@ -930,6 +930,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
+    case CapabilitySubgroupBitcastShuffleINTEL:
+      return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
     case internal::CapabilityBFloat16ArithmeticINTEL:
       return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
     case CapabilityRoundedDivideSqrtINTEL:
