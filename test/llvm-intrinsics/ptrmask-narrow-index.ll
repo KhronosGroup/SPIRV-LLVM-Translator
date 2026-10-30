@@ -8,7 +8,7 @@
 ; CHECK-LLVM: %[[#MASK:]] = xor i64 %[[#EXT]], -1
 ; CHECK-LLVM: %[[#INT:]] = ptrtoint ptr addrspace(1) %p to i64
 ; CHECK-LLVM: %[[#AND:]] = and i64 %[[#INT]], %[[#MASK]]
-; CHECK-LLVM: inttoptr i64 %[[#AND]] to ptr addrspace(1)
+; CHECK-LLVM: %r = inttoptr i64 %[[#AND]] to ptr addrspace(1)
 
 target datalayout = "e-p1:64:64:64:32"
 target triple = "spir64-unknown-unknown"

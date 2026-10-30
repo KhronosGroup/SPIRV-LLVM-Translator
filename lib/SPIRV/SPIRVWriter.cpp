@@ -4233,7 +4233,6 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::umax:
   case Intrinsic::minimumnum:
   case Intrinsic::minimum:
-  case Intrinsic::ptrmask:
   case Intrinsic::minnum:
   case Intrinsic::smin:
   case Intrinsic::umin:
@@ -4242,6 +4241,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::nearbyint:
   case Intrinsic::pow:
   case Intrinsic::powi:
+  case Intrinsic::ptrmask:
   case Intrinsic::rint:
   case Intrinsic::round:
   case Intrinsic::roundeven:

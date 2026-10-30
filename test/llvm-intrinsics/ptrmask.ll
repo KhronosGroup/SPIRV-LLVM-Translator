@@ -8,7 +8,6 @@
 
 target triple = "spir64-unknown-unknown"
 
-; Declared before use, so still used when SPIRVRegularizeLLVM visits it.
 declare ptr addrspace(1) @llvm.ptrmask.p1.i64(ptr addrspace(1), i64)
 
 ; CHECK-SPIRV-DAG: TypeInt [[#I8:]] 8 0
@@ -24,8 +23,8 @@ declare ptr addrspace(1) @llvm.ptrmask.p1.i64(ptr addrspace(1), i64)
 
 ; CHECK-LLVM: %[[#INT:]] = ptrtoint ptr addrspace(1) %p to i64
 ; CHECK-LLVM: %[[#AND:]] = and i64 %[[#INT]], -16
-; CHECK-LLVM: %[[#RES:]] = inttoptr i64 %[[#AND]] to ptr addrspace(1)
-; CHECK-LLVM: load i8, ptr addrspace(1) %[[#RES]]
+; CHECK-LLVM: %masked = inttoptr i64 %[[#AND]] to ptr addrspace(1)
+; CHECK-LLVM: load i8, ptr addrspace(1) %masked
 
 define spir_kernel void @align16(ptr addrspace(1) %p, ptr addrspace(1) %out) {
 entry:
