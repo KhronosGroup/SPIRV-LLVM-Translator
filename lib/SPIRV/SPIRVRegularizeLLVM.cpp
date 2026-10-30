@@ -269,6 +269,20 @@ void SPIRVRegularizeLLVMBase::lowerFMinimumMaximum(IntrinsicInst *II) {
   II->replaceAllUsesWith(Res);
 }
 
+void SPIRVRegularizeLLVMBase::lowerPtrMask(IntrinsicInst *II) {
+  IRBuilder<> Builder(II);
+  Value *Ptr = II->getArgOperand(0);
+  Type *IntTy = M->getDataLayout().getIntPtrType(Ptr->getType());
+  Value *Mask = II->getArgOperand(1);
+  if (Mask->getType() != IntTy) // Keep bits above the mask width.
+    Mask =
+        Builder.CreateNot(Builder.CreateZExt(Builder.CreateNot(Mask), IntTy));
+  Value *Int = Builder.CreateAnd(Builder.CreatePtrToInt(Ptr, IntTy), Mask);
+  Value *Res = Builder.CreateIntToPtr(Int, Ptr->getType());
+  Res->takeName(II);
+  II->replaceAllUsesWith(Res);
+}
+
 void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
     IntrinsicInst *UMulIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
@@ -699,6 +713,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             else if (II->getIntrinsicID() == Intrinsic::minimum ||
                      II->getIntrinsicID() == Intrinsic::maximum) {
               lowerFMinimumMaximum(II);
+              ToErase.push_back(II);
+            } else if (II->getIntrinsicID() == Intrinsic::ptrmask) {
+              lowerPtrMask(II);
               ToErase.push_back(II);
             } else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
