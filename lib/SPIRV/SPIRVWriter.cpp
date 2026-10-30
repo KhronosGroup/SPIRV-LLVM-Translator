@@ -3046,6 +3046,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
                            "First operand of decoration must be the kind"))
       return;
     auto DecoKind = static_cast<Decoration>(DecoKindConst->getZExtValue());
+    // May already be set from an SPV-IR builtin name postfix.
+    if (DecoKind == DecorationSaturatedConversion &&
+        Target->hasDecorate(DecoKind))
+      continue;
 
     const size_t NumOperands = DecoMD->getNumOperands();
     switch (static_cast<size_t>(DecoKind)) {
@@ -4269,6 +4273,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::fmuladd:
   case Intrinsic::memset:
   case Intrinsic::memcpy:
+  case Intrinsic::memcpy_inline:
   case Intrinsic::lifetime_start:
   case Intrinsic::lifetime_end:
   case Intrinsic::dbg_declare:
@@ -4439,13 +4444,7 @@ static bool allowsApproxFunction(IntrinsicInst *II) {
 
 namespace {
 bool checkMemUser(User *User) {
-  if (isa<LoadInst>(User) || isa<StoreInst>(User))
-    return true;
-  if (auto *III = dyn_cast<IntrinsicInst>(User)) {
-    if (III->getIntrinsicID() == Intrinsic::memcpy)
-      return true;
-  }
-  return false;
+  return isa<LoadInst>(User) || isa<StoreInst>(User) || isa<MemCpyInst>(User);
 }
 } // namespace
 
@@ -5247,6 +5246,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addStoreInst(StorePtr, Init, MemAccess, BB);
   } break;
   case Intrinsic::memcpy:
+  case Intrinsic::memcpy_inline:
     // A zero-sized memcpy is a no-op. Emitting OpCopyMemorySized with a Size
     // operand of 0 is invalid SPIR-V, so drop the intrinsic entirely.
     if (auto *CI = dyn_cast<ConstantInt>(II->getOperand(2)))
@@ -7763,6 +7763,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       SPIRVType *SPRetTy = nullptr;
       Type *RetTy = CI->getType();
       auto *F = CI->getCalledFunction();
+      if (OC == OpSelect)
+        BM->getErrorLog().checkError(
+            RetTy->isVectorTy() ||
+                !CI->getArgOperand(0)->getType()->isVectorTy(),
+            SPIRVEC_InvalidInstruction, CI,
+            "OpSelect with a vector condition requires a vector "
+            "result\n");
       if (!RetTy->isVoidTy()) {
         SPRetTy = transScavengedType(CI);
       } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {
@@ -8108,7 +8115,7 @@ bool runSpirvWriterPasses(Module *M, std::ostream *OS, std::string &ErrMsg,
   FunctionAnalysisManager FAM;
   ModuleAnalysisManager MAM;
 
-  PassBuilder PB;
+  PassBuilder PB(M->getContext());
   PB.registerModuleAnalyses(MAM);
   PB.registerCGSCCAnalyses(CGAM);
   PB.registerFunctionAnalyses(FAM);
