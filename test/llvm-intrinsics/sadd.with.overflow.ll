@@ -20,11 +20,13 @@
 
 ; CHECK: IAdd [[#I32]] [[#R32:]]
 ; CHECK: SLessThan [[#]] [[#O32:]]
-; CHECK: CompositeConstruct [[#]] [[#]] [[#R32]] [[#O32]]
+; CHECK: CompositeInsert [[#]] [[#S32:]] [[#R32]] [[#]] 0
+; CHECK-NEXT: CompositeInsert [[#]] [[#]] [[#O32]] [[#S32]] 1
 
 ; CHECK: IAdd [[#I64]] [[#R64:]]
 ; CHECK: SLessThan [[#]] [[#O64:]]
-; CHECK: CompositeConstruct [[#]] [[#]] [[#R64]] [[#O64]]
+; CHECK: CompositeInsert [[#]] [[#S64:]] [[#R64]] [[#]] 0
+; CHECK-NEXT: CompositeInsert [[#]] [[#]] [[#O64]] [[#S64]] 1
 
 
 target datalayout = "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"

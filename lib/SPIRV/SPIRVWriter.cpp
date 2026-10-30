@@ -5115,8 +5115,9 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           BM->addCmpInst(OpSLessThan, FlagTy, And,
                          transValue(Constant::getNullValue(OpLLVMTy), BB), BB);
     }
-    return BM->addCompositeConstructInst(transType(II->getType()),
-                                         {Res->getId(), Overflow->getId()}, BB);
+    SPIRVValue *Struct = BM->addCompositeInsertInst(
+        Res, BM->addUndef(transType(II->getType())), {0}, BB);
+    return BM->addCompositeInsertInst(Overflow, Struct, {1}, BB);
   }
   case Intrinsic::vector_reduce_add:
   case Intrinsic::vector_reduce_mul:

@@ -33,7 +33,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-NEXT: BitwiseXor [[#V4I32]] [[#X2:]] [[#B]] [[#R]]
 ; CHECK-SPIRV-NEXT: BitwiseAnd [[#V4I32]] [[#AND:]] [[#X1]] [[#X2]]
 ; CHECK-SPIRV-NEXT: SLessThan [[#V4BOOL]] [[#O:]] [[#AND]] [[#VZERO]]
-; CHECK-SPIRV-NEXT: CompositeConstruct [[#VSTRUCT]] [[#]] [[#R]] [[#O]]
+; CHECK-SPIRV-NEXT: CompositeInsert [[#VSTRUCT]] [[#S:]] [[#R]] [[#]] 0
+; CHECK-SPIRV-NEXT: CompositeInsert [[#VSTRUCT]] [[#]] [[#O]] [[#S]] 1
 
 ; CHECK-SPIRV: Function [[#]] [[#SSUB]]
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#I32]] [[#A:]]
@@ -45,7 +46,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-NEXT: BitwiseXor [[#I32]] [[#X2:]] [[#A]] [[#R]]
 ; CHECK-SPIRV-NEXT: BitwiseAnd [[#I32]] [[#AND:]] [[#X1]] [[#X2]]
 ; CHECK-SPIRV-NEXT: SLessThan [[#BOOL]] [[#O:]] [[#AND]] [[#ZERO]]
-; CHECK-SPIRV-NEXT: CompositeConstruct [[#STRUCT]] [[#]] [[#R]] [[#O]]
+; CHECK-SPIRV-NEXT: CompositeInsert [[#STRUCT]] [[#S:]] [[#R]] [[#]] 0
+; CHECK-SPIRV-NEXT: CompositeInsert [[#STRUCT]] [[#]] [[#O]] [[#S]] 1
 
 ; CHECK-SPIRV: Function [[#]] [[#SMUL]]
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#I32]] [[#A:]]
@@ -57,7 +59,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-NEXT: CompositeExtract [[#I32]] [[#HI:]] [[#M]] 1
 ; CHECK-SPIRV-NEXT: ShiftRightArithmetic [[#I32]] [[#SIGN:]] [[#LO]] [[#C31]]
 ; CHECK-SPIRV-NEXT: INotEqual [[#BOOL]] [[#O:]] [[#HI]] [[#SIGN]]
-; CHECK-SPIRV-NEXT: CompositeConstruct [[#STRUCT]] [[#]] [[#LO]] [[#O]]
+; CHECK-SPIRV-NEXT: CompositeInsert [[#STRUCT]] [[#S:]] [[#LO]] [[#]] 0
+; CHECK-SPIRV-NEXT: CompositeInsert [[#STRUCT]] [[#]] [[#O]] [[#S]] 1
 
 ; CHECK-SPIRV: Function [[#]] [[#VSMUL]]
 ; CHECK-SPIRV-NEXT: FunctionParameter [[#V4I32]] [[#A:]]
@@ -69,7 +72,8 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-SPIRV-NEXT: CompositeExtract [[#V4I32]] [[#HI:]] [[#M]] 1
 ; CHECK-SPIRV-NEXT: ShiftRightArithmetic [[#V4I32]] [[#SIGN:]] [[#LO]] [[#VC31]]
 ; CHECK-SPIRV-NEXT: INotEqual [[#V4BOOL]] [[#O:]] [[#HI]] [[#SIGN]]
-; CHECK-SPIRV-NEXT: CompositeConstruct [[#VSTRUCT]] [[#]] [[#LO]] [[#O]]
+; CHECK-SPIRV-NEXT: CompositeInsert [[#VSTRUCT]] [[#S:]] [[#LO]] [[#]] 0
+; CHECK-SPIRV-NEXT: CompositeInsert [[#VSTRUCT]] [[#]] [[#O]] [[#S]] 1
 
 ; CHECK-LLVM-LABEL: define spir_func {{.*}} @sadd_v4i32(
 ; CHECK-LLVM: %[[#R:]] = add <4 x i32> %a, %b
