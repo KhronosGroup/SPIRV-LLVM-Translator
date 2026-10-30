@@ -970,6 +970,8 @@ public:
       return ExtensionID::SPV_EXT_shader_image_int64;
     case CapabilityLongVectorEXT:
       return ExtensionID::SPV_EXT_long_vector;
+    case CapabilityUSMStorageClassesINTEL:
+      return ExtensionID::SPV_INTEL_usm_storage_classes;
     default:
       return {};
     }

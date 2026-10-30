@@ -1736,6 +1736,35 @@ SPIRVValue *LLVMToSPIRVBase::transUnaryInst(UnaryInstruction *U,
   if (auto *Cast = dyn_cast<AddrSpaceCastInst>(U)) {
     const auto SrcAddrSpace = Cast->getSrcTy()->getPointerAddressSpace();
     const auto DestAddrSpace = Cast->getDestTy()->getPointerAddressSpace();
+    if (BM->isAllowedToUseExtension(
+            ExtensionID::SPV_INTEL_usm_storage_classes)) {
+      auto IsUSMAddrSpace = [](unsigned AS) {
+        return AS == SPIRAS_GlobalDevice || AS == SPIRAS_GlobalHost;
+      };
+      const bool USMToGeneric =
+          IsUSMAddrSpace(SrcAddrSpace) && DestAddrSpace == SPIRAS_Generic;
+      const bool GenericToUSM =
+          SrcAddrSpace == SPIRAS_Generic && IsUSMAddrSpace(DestAddrSpace);
+      if (USMToGeneric || GenericToUSM) {
+        auto *DestTy = cast<TypedPointerType>(Scavenger->getScavengedType(U));
+        SPIRVType *CrossWorkGroupPtrTy = transType(
+            TypedPointerType::get(DestTy->getElementType(), SPIRAS_Global));
+        SPIRVValue *Op = transValue(U->getOperand(0), BB);
+        SPIRVInstruction *CastToCWG = nullptr;
+        if (USMToGeneric) {
+          // USM to Generic: must cast to CrossWorkGroup first, then to Generic
+          CastToCWG = BM->addUnaryInst(OpPtrCastToCrossWorkgroupINTEL,
+                                       CrossWorkGroupPtrTy, Op, BB);
+          return BM->addUnaryInst(OpPtrCastToGeneric, transType(DestTy),
+                                  CastToCWG, BB);
+        }
+        // Generic to USM: must cast to CrossWorkGroup first, then to USM
+        CastToCWG =
+            BM->addUnaryInst(OpGenericCastToPtr, CrossWorkGroupPtrTy, Op, BB);
+        return BM->addUnaryInst(OpCrossWorkgroupCastToPtrINTEL,
+                                transType(DestTy), CastToCWG, BB);
+      }
+    }
     if (DestAddrSpace == SPIRAS_Generic) {
       getErrorLog().checkError(
           SrcAddrSpace != SPIRAS_Constant, SPIRVEC_InvalidModule, U,
