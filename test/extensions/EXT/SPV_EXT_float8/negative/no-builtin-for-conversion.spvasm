@@ -1,0 +1,33 @@
+; SPV_EXT_float8: OpFConvert from Float8E4M3EXT to Float8E5M2EXT is valid
+; SPIR-V, but no __builtin_spirv_* conversion builtin exists for this pair of
+; encodings, so the reverse translator must reject it.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.4 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: not llvm-spirv -r %t.spv -o %t.bc 2>&1 | FileCheck %s
+
+; CHECK: InvalidInstruction
+; CHECK: Unsupported floating-point conversion: no builtin exists for the given source and result types.
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpCapability Int8
+               OpCapability Float8EXT
+               OpExtension "SPV_EXT_float8"
+               OpMemoryModel Physical32 OpenCL
+               OpDecorate %f LinkageAttributes "f" Export
+       %void = OpTypeVoid
+      %uchar = OpTypeInt 8 0
+       %e4m3 = OpTypeFloat 8 Float8E4M3EXT
+       %e5m2 = OpTypeFloat 8 Float8E5M2EXT
+       %func = OpTypeFunction %uchar %uchar
+          %f = OpFunction %uchar None %func
+          %x = OpFunctionParameter %uchar
+          %b = OpLabel
+          %a = OpBitcast %e4m3 %x
+          %c = OpFConvert %e5m2 %a
+          %r = OpBitcast %uchar %c
+               OpReturnValue %r
+               OpFunctionEnd

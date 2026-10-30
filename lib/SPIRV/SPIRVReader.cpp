@@ -1058,11 +1058,19 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     if (Ty->isTypeFloat()) {
       unsigned Enc =
           static_cast<SPIRVTypeFloat *>(Ty)->getFloatingPointEncoding();
-      return static_cast<FPEncodingWrap>(Enc);
+      if (Enc != FPEncoding::FPEncodingMax)
+        return static_cast<FPEncodingWrap>(Enc);
+      if (Ty->getFloatBitWidth() == 16)
+        return FPEncodingWrap::FP16;
+      if (Ty->getFloatBitWidth() == 32)
+        return FPEncodingWrap::FP32;
+      if (Ty->getFloatBitWidth() == 64)
+        return FPEncodingWrap::FP64;
+      return FPEncodingWrap::Unsupported;
     }
     if (Ty->isTypeInt())
       return FPEncodingWrap::Integer;
-    return FPEncodingWrap::IEEE754;
+    return FPEncodingWrap::Unsupported;
   };
 
   auto IsFP4OrFP8Encoding = [](FPEncodingWrap Encoding) -> bool {
@@ -1167,7 +1175,13 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
           LookupDstEnc = FPEncodingWrap::E2M1;
         FPConversionDesc FPDesc = {SrcEnc, LookupDstEnc, LookupOC,
                                    /*Saturate=*/IsSaturatedFP8};
-        auto Conv = SPIRV::FPConvertToEncodingMap::rmap(FPDesc);
+        StringRef Conv;
+        if (!BM->getErrorLog().checkError(
+                SPIRV::FPConvertToEncodingMap::rfind(FPDesc, &Conv),
+                SPIRVEC_InvalidInstruction,
+                "Unsupported floating-point conversion: no builtin exists for "
+                "the given source and result types.\n"))
+          return nullptr;
         std::vector<Value *> Ops = {Src};
         std::vector<Type *> OpsTys = {Src->getType()};
 
