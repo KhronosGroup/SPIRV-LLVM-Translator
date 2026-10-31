@@ -1,12 +1,12 @@
 ; RUN: llvm-spirv %s -o %t.spv
-; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %s -spirv-allow-unknown-intrinsics -spirv-text -o - \
-; RUN:   | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not=llvm.objectsize
+; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV --implicit-check-not=llvm.objectsize
 ; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s --check-prefix=CHECK-LLVM --implicit-check-not=llvm.objectsize
 
 target triple = "spir64-unknown-unknown"
 
-; Declared before use, so still used when SPIRVRegularizeLLVM visits it.
+; Declarations come first so they outlive the lowering and reach the writer.
 declare i64 @llvm.objectsize.i64.p0(ptr, i1, i1, i1)
 declare i64 @llvm.objectsize.i64.p1(ptr addrspace(1), i1, i1, i1)
 
@@ -25,6 +25,9 @@ declare i64 @llvm.objectsize.i64.p1(ptr addrspace(1), i1, i1, i1)
 ; CHECK-SPIRV: ULessThan [[#]] [[#OOB:]] [[#KNOWN]] [[#OFF]]
 ; CHECK-SPIRV: Select [[#I64]] [[#SIZE:]] [[#OOB]] [[#ZERO]] [[#REM]]
 ; CHECK-SPIRV: Store [[#]] [[#SIZE]]
+
+; CHECK-LLVM-LABEL: @known(
+; CHECK-LLVM: store i64 24,
 
 define spir_kernel void @known(ptr addrspace(1) %out) {
 entry:
