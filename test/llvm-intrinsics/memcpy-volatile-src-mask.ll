@@ -2,9 +2,11 @@
 ; RUN: llvm-spirv %s --spirv-max-version=1.4 -o %t.spv
 ; RUN: llvm-spirv --to-text %t.spv -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; Mask 3 = Volatile | Aligned.
 ; CHECK-SPIRV: CopyMemorySized [[#]] [[#]] [[#]] 3 8 3 4{{ *$}}
+; CHECK-LLVM: call void @llvm.memcpy.p1.p1.i64(ptr addrspace(1) align 8 %d, ptr addrspace(1) align 4 %s, i64 16, i1 true)
 
 target triple = "spir64-unknown-unknown"
 
