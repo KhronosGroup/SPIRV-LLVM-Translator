@@ -43,6 +43,7 @@
 #include "libSPIRV/SPIRVDebug.h"
 
 #include "llvm/ADT/StringExtras.h" // llvm::isDigit
+#include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
 #include "llvm/Demangle/Demangle.h"
 #include "llvm/IR/IntrinsicInst.h"
@@ -699,6 +700,10 @@ bool SPIRVRegularizeLLVMBase::regularize() {
             else if (II->getIntrinsicID() == Intrinsic::minimum ||
                      II->getIntrinsicID() == Intrinsic::maximum) {
               lowerFMinimumMaximum(II);
+              ToErase.push_back(II);
+            } else if (II->getIntrinsicID() == Intrinsic::objectsize) {
+              II->replaceAllUsesWith(lowerObjectSizeCall(
+                  II, M->getDataLayout(), nullptr, /*MustSucceed=*/true));
               ToErase.push_back(II);
             } else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
