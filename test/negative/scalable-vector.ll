@@ -2,7 +2,7 @@
 
 ; RUN: not llvm-spirv %s -o %t.spv 2>&1 | FileCheck %s
 
-; CHECK: InvalidModule: Invalid SPIR-V module: LLVM module contains scalable vector type, which doesn't have a counterpart in SPIR-V
+; CHECK: InvalidLlvmModule: Invalid LLVM module: LLVM module contains scalable vector type, which doesn't have a counterpart in SPIR-V
 
 target triple = "spir64-unknown-unknown"
 
