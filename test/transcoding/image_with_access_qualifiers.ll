@@ -15,7 +15,7 @@
 ; CHECK-LLVM: call spir_func <4 x float> @_Z11read_imagef14ocl_image1d_rw11ocl_sampleri(target("spirv.Image", void, 0, 0, 0, 0, 0, 0, 2)
 
 ; CHECK-SPIRV-DAG: 2 Capability ImageBasic
-; CHECK-SPIRV-DAG: 2 Capability ImageReadWrite
+; CHECK-SPIRV-DAG: 2 Capability {{ImageReadWrite *$}}
 ; CHECK-SPIRV-DAG: 2 Capability LiteralSampler
 ; CHECK-SPIRV-DAG: 2 TypeVoid [[TyVoid:[0-9]+]]
 ; CHECK-SPIRV-DAG: 10 TypeImage [[TyImageID:[0-9]+]] [[TyVoid]] 0 0 0 0 0 0 2 

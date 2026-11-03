@@ -108,7 +108,7 @@
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV: 2 Capability Kernel
+; CHECK-SPIRV: 2 Capability {{Kernel *$}}
 ; CHECK-SPIRV: 2 Capability ArbitraryPrecisionIntegersINTEL
 ; CHECK-SPIRV: 2 Capability ArbitraryPrecisionFixedPointINTEL
 ; CHECK-SPIRV: 12 Extension "SPV_INTEL_arbitrary_precision_fixed_point"

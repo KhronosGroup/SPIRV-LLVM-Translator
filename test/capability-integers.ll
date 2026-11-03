@@ -5,8 +5,8 @@
 ; RUN: spirv-val %t.spv
 
 ; CHECK-DAG: Capability Int8
-; CHECK-DAG: Capability Int16
-; CHECK-DAG: Capability Int64
+; CHECK-DAG: Capability {{Int16 *$}}
+; CHECK-DAG: Capability {{Int64 *$}}
 
 ; CHECK-DAG: TypeInt {{[0-9]+}} 8 0
 ; CHECK-DAG: TypeInt {{[0-9]+}} 16 0

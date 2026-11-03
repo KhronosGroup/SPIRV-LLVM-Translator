@@ -32,8 +32,8 @@ define i64 @getLargeConstantI64() {
   ret i64 34359738368
 }
 
-; CHECK: Capability Int64
-; CHECK: Capability Int16
+; CHECK: Capability {{Int64 *$}}
+; CHECK: Capability {{Int16 *$}}
 ; CHECK: Capability Int8
 ; CHECK: Name [[#I8_FUNC:]] "getConstantI8"
 ; CHECK: Name [[#I16_FUNC:]] "getConstantI16"

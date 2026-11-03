@@ -12,8 +12,8 @@
 ; RUN: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLVM < %t.llc.rev.ll %}
 
 ; CHECK-SPIRV-NOT: Capability Matrix
-; CHECK-SPIRV-NOT: Capability Shader
-; CHECK-SPIRV: Capability Kernel
+; CHECK-SPIRV-NOT: Capability {{Shader *$}}
+; CHECK-SPIRV: Capability {{Kernel *$}}
 
 ; CHECK-SPIRV-DAG: Decorate [[SC0:[0-9]+]] SpecId 0
 ; CHECK-SPIRV-DAG: Decorate [[SC1:[0-9]+]] SpecId 1

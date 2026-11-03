@@ -8,7 +8,7 @@
 ; requirements for SPIR-V 1.6.
 
 ; CHECK-NOT: Capability Matrix
-; CHECK-NOT: Capability Shader
+; CHECK-NOT: Capability {{Shader *$}}
 
                OpCapability Addresses
                OpCapability Kernel
