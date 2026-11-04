@@ -3682,8 +3682,17 @@ FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
     FMF.setAllowContract();
   static_assert(FPFastMathModeAllowReassocINTELMask ==
                 FPFastMathModeAllowReassocMask);
-  if (V & FPFastMathModeAllowReassocINTELMask)
-    FMF.setAllowReassoc();
+  if (V & FPFastMathModeAllowReassocINTELMask) {
+    // With SPV_INTEL_fp_fast_math_mode this bit is the direct counterpart of
+    // LLVM's reassoc flag. SPV_KHR_float_controls2 gives the same bit a
+    // narrower meaning: it permits only the transformations that follow from
+    // associativity, whereas LLVM's reassoc permits any algebraically
+    // equivalent rewrite. Under that extension the LLVM flag is carried by
+    // AllowTransform instead, see
+    // https://github.com/KhronosGroup/SPIRV-Registry/issues/326.
+    if (!BM->hasCapability(CapabilityFloatControls2))
+      FMF.setAllowReassoc();
+  }
   if (V & FPFastMathModeFastMask) {
     // There is no FPFastMathMode flag that represents LLVM approximate
     // functions flag `afn`. Even the FPFastMathMode Fast flag should not imply
@@ -3695,10 +3704,14 @@ FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
   }
   if (V & FPFastMathModeAllowTransformMask) {
     // AllowTransform requires the AllowContract and AllowReassoc bits to be
-    // set.
-    assert(FMF.allowContract() && FMF.allowReassoc() &&
+    // set. Test the incoming bits rather than the flags computed so far:
+    // under SPV_KHR_float_controls2 the AllowReassoc bit no longer sets
+    // FMF.allowReassoc(), so checking that flag would be wrong.
+    assert((V & FPFastMathModeAllowContractMask) &&
+           (V & FPFastMathModeAllowReassocMask) &&
            "The FPFastMathMode AllowTransform requires AllowContract and "
            "AllowReassoc to be set");
+    FMF.setAllowReassoc();
   }
 
   return FMF;
