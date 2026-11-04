@@ -1,0 +1,67 @@
+; REQUIRES: spirv-as, spirv-dis
+; RUN: spirv-as -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r -o %t.bc %t.spv
+; RUN: llvm-dis %t.bc -o - | FileCheck %s --check-prefix=LLVM
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 %t.bc -o - --spirv-text | FileCheck %s --check-prefix=SPIRV
+; RUN: llvm-spirv --spirv-ext=+SPV_KHR_float_controls2 %t.bc -o %t.back.spv
+; RUN: spirv-val %t.back.spv
+;
+; SPV_KHR_float_controls2 gives the AllowReassoc bit a narrower meaning than
+; SPV_INTEL_fp_fast_math_mode: it only permits transformations that follow from
+; associativity, while LLVM's reassoc flag permits any algebraically equivalent
+; rewrite (distribution, for example). The bit that actually matches LLVM's
+; flag is AllowTransform, which the spec requires to be set together with
+; AllowReassoc and AllowContract. See
+; https://github.com/KhronosGroup/SPIRV-Registry/issues/326
+;
+; Translation from SPIR-V, where only AllowTransform may set reassoc.
+; LLVM-LABEL: define spir_func float @reassoc_only
+; LLVM: fadd float %
+; LLVM-LABEL: define spir_func float @transform
+; LLVM: fadd reassoc contract float %
+;
+; Translating back to SPIR-V: the AllowReassoc-only instruction has no LLVM
+; flag to be re-created from, so it must not regain an FPFastMathMode
+; decoration, while the AllowTransform one must round-trip unchanged.
+; SPIRV-NOT: FPFastMathMode 131072
+; SPIRV: Decorate {{[0-9]+}} FPFastMathMode 458752
+; SPIRV-NOT: FPFastMathMode 131072
+;
+
+              OpCapability Addresses
+              OpCapability Linkage
+              OpCapability Kernel
+              OpCapability FloatControls2
+              OpExtension "SPV_KHR_float_controls2"
+         %1 = OpExtInstImport "OpenCL.std"
+              OpMemoryModel Physical64 OpenCL
+              OpSource Unknown 0
+              OpName %reassoc_only "reassoc_only"
+              OpName %transform "transform"
+              OpName %x "x"
+              OpName %y "y"
+              OpName %a "a"
+              OpName %b "b"
+              OpDecorate %reassoc_only LinkageAttributes "reassoc_only" Export
+              OpDecorate %transform LinkageAttributes "transform" Export
+; AllowReassoc alone: only associativity, which LLVM has no separate flag for.
+              OpDecorate %a FPFastMathMode AllowReassoc
+; AllowTransform | AllowReassoc | AllowContract: the LLVM reassoc contract pair.
+              OpDecorate %b FPFastMathMode AllowTransform|AllowReassoc|AllowContract
+      %float = OpTypeFloat 32
+          %2 = OpTypeFunction %float %float %float
+%reassoc_only = OpFunction %float None %2
+          %x = OpFunctionParameter %float
+          %y = OpFunctionParameter %float
+      %entry = OpLabel
+          %a = OpFAdd %float %x %y
+              OpReturnValue %a
+              OpFunctionEnd
+  %transform = OpFunction %float None %2
+          %p = OpFunctionParameter %float
+          %q = OpFunctionParameter %float
+     %entry2 = OpLabel
+          %b = OpFAdd %float %p %q
+              OpReturnValue %b
+              OpFunctionEnd
