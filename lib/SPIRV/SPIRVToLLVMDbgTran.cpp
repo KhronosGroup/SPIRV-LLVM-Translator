@@ -1913,8 +1913,11 @@ DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::getEmissionKind() {
   if (EmissionKind)
     return *EmissionKind;
 
-  // No spec has an emission kind operand; it is carried in OpModuleProcessed.
-  // Disagreeing compilation units fall back to FullDebug to keep all info.
+  // No spec has an emission kind operand; it is carried in OpModuleProcessed,
+  // which cannot reference a compilation unit, so one kind describes the whole
+  // module.
+  // Disagreeing compilation units therefore fall back to FullDebug, the only
+  // kind that keeps every consumer from dropping debug info that is present.
   std::optional<DICompileUnit::DebugEmissionKind> Recorded;
   for (const auto &I : BM->getModuleProcessedVec()) {
     const std::string Processed = I->getProcessStr();
