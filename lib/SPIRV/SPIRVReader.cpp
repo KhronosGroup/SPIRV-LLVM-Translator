@@ -5955,7 +5955,9 @@ void SPIRVToLLVM::transSourceLanguage() {
     addOCLVersionMetadata(Context, M, kSPIR2MD::SPIRVer, 2, 0);
 
   if (Lang == SourceLanguageOpenCL_C) {
-    addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
+    // A decoded major version of 0 is not a valid OpenCL version.
+    if (Major)
+      addOCLVersionMetadata(Context, M, kSPIR2MD::OCLVer, Major, Minor);
     return;
   }
   if (Lang == SourceLanguageCPP_for_OpenCL) {
