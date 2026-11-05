@@ -1915,8 +1915,7 @@ DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::getEmissionKind() {
 
   // No spec has an emission kind operand; it is carried in OpModuleProcessed,
   // which cannot reference a compilation unit, so one kind covers the module.
-  // Disagreeing units fall back to FullDebug, the only kind that never makes a
-  // consumer drop debug info that is present.
+  // Disagreeing units fall back to FullDebug, which never drops debug info.
   std::optional<DICompileUnit::DebugEmissionKind> Recorded;
   for (const auto &I : BM->getModuleProcessedVec()) {
     const std::string Processed = I->getProcessStr();
