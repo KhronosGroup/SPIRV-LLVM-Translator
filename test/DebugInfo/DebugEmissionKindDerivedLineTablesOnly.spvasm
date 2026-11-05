@@ -1,6 +1,5 @@
 ; Without a recorded emission kind, debug information that describes only
 ; functions and lines is line-table-only.
-; A function declaration with no linkage name does not change that.
 ; Reduced from LLVM SPIR-V backend output for a kernel compiled with
 ; -gline-tables-only.
 
