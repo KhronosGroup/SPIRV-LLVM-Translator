@@ -4814,6 +4814,9 @@ public:
 protected:
   void validate() const override {
     SPIRVInstruction::validate();
+    if (!getModule()->getErrorLog().checkError(
+            Ops.size() == 1, SPIRVEC_InvalidNumberOfOperands, "OpPauseINTEL\n"))
+      return;
     if (getValue(Ops[0])->isForward())
       return;
     SPIRVType *ClocksTy = getValueType(Ops[0]);

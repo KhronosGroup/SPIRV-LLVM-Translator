@@ -4,7 +4,6 @@
 2 Capability Int64
 2 Capability PauseINTEL
 5 Extension "SPV_INTEL_pause"
-5 ExtInstImport 1 "OpenCL.std"
 3 MemoryModel 2 2
 5 EntryPoint 6 5 "kernel"
 4 TypeInt 3 64 0
@@ -19,5 +18,4 @@
 
 ; RUN: not llvm-spirv %s --to-binary -o %t.spv 2>&1 | FileCheck %s
 
-; CHECK: OpPauseINTEL
-; CHECK-NEXT: Clocks must be a 32-bit
+; CHECK: Clocks must be a 32-bit integer scalar
