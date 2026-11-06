@@ -149,7 +149,7 @@
                OpFunctionEnd
 
 ; CHECK: define spir_func <4 x i8> @test_f32_to_e4m3(<4 x float> %[[#V:]])
-; CHECK: call spir_func <4 x i8> @{{.*}}__builtin_spirv_ConvertFP16ToE4M3EXT{{.*}}(<4 x float> %[[#V]])
+; CHECK: call spir_func <4 x i8> @{{.*}}__builtin_spirv_ConvertFP32ToE4M3EXT{{.*}}(<4 x float> %[[#V]])
 %test_f32_to_e4m3 = OpFunction %v4fp8_e4m3 None %fnty_to
        %to_v = OpFunctionParameter %v4float
        %to_e = OpLabel
@@ -158,7 +158,7 @@
                OpFunctionEnd
 
 ; CHECK: define spir_func <4 x float> @test_e4m3_to_f32(<4 x i8> %[[#V:]])
-; CHECK: call spir_func <4 x float> @{{.*}}__builtin_spirv_ConvertE4M3ToFP16EXT{{.*}}(<4 x i8> %[[#V]])
+; CHECK: call spir_func <4 x float> @{{.*}}__builtin_spirv_ConvertE4M3ToFP32EXT{{.*}}(<4 x i8> %[[#V]])
 %test_e4m3_to_f32 = OpFunction %v4float None %fnty_from
      %from_v = OpFunctionParameter %v4fp8_e4m3
      %from_e = OpLabel
