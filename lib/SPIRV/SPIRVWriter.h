@@ -210,12 +210,6 @@ private:
   std::vector<llvm::Instruction *> UnboundInst;
   std::unique_ptr<SPIRVTypeScavenger> Scavenger;
 
-  enum class FPContract { UNDEF, DISABLED, ENABLED };
-  DenseMap<Function *, FPContract> FPContractMap;
-  FPContract getFPContract(Function *F);
-  bool joinFPContract(Function *F, FPContract C);
-  void fpContractUpdateRecursive(Function *F, FPContract FPC);
-
   SPIRVType *mapType(Type *T, SPIRVType *BT);
   SPIRVValue *mapValue(Value *V, SPIRVValue *BV);
   SPIRVErrorLog &getErrorLog() { return BM->getErrorLog(); }

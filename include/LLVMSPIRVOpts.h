@@ -387,10 +387,11 @@ private:
   BIsRepresentation DesiredRepresentationOfBIs = BIsRepresentation::OpenCL12;
   // Controls floating point contraction.
   //
-  // - FPContractMode::On allows to choose a mode according to
-  //   presence of fused LLVM intrinsics
+  // - FPContractMode::On allows contraction only for llvm.fmuladd and
+  //   operations with the 'contract' flag
   //
-  // - FPContractMode::Off disables contratction for all entry points
+  // - FPContractMode::Off disables contraction for all entry points
+  //   (currently the same as FPContractMode::On)
   //
   // - FPContractMode::Fast allows *all* operations to be contracted
   //   for all entry points
