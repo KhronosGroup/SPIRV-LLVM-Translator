@@ -23,9 +23,9 @@
 ; RUN: llvm-spirv %t.rev.bc -spirv-text -o %t.spv.txt
 ; RUN: FileCheck < %t.spv.txt %s --check-prefix=CHECK-SPIRV
 
-; CHECK-SPIRV: 2 Capability Float16
+; CHECK-SPIRV: 2 Capability {{Float16 *$}}
 ; CHECK-SPIRV: 2 Capability ImageBasic
-; CHECK-SPIRV: 2 Capability ImageReadWrite
+; CHECK-SPIRV: 2 Capability {{ImageReadWrite *$}}
 ; CHECK-SPIRV: 2 Capability Pipes
 ; CHECK-SPIRV: 2 Capability DeviceEnqueue
 

@@ -14,7 +14,7 @@ target triple = "spir64-unknown-unknown"
 ; Function Attrs: nounwind
 define spir_func void @func_export(ptr addrspace(1) captures(none) %a) #0 {
 entry:
-; CHECK-DAG: {{[0-9]*}} Capability Int64
+; CHECK-DAG: {{[0-9]*}} Capability {{Int64 *$}}
   %call = tail call spir_func i64 @_Z13get_global_idj(i32 0) #3
   %cmp = icmp eq i64 %call, 0
   br i1 %cmp, label %if.then, label %if.end
@@ -30,8 +30,8 @@ if.end:                                           ; preds = %if.then, %entry
 ; Function Attrs: nounwind readnone
 declare spir_func i64 @_Z13get_global_idj(i32) #1
 
-; CHECK-DAG: {{[0-9]*}} Capability Kernel
-; CHECK-NOT: {{[0-9]*}} Capability Shader
+; CHECK-DAG: {{[0-9]*}} Capability {{Kernel *$}}
+; CHECK-NOT: {{[0-9]*}} Capability {{Shader *$}}
 ; CHECK-NOT: {{[0-9]*}} Capability Float64
 ; Function Attrs: nounwind
 define spir_kernel void @func_kernel(ptr addrspace(1) %a) #0 !kernel_arg_addr_space !1 !kernel_arg_access_qual !2 !kernel_arg_type !3 !kernel_arg_base_type !5 !kernel_arg_type_qual !4 {

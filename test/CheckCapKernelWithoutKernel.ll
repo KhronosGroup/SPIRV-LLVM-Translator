@@ -10,7 +10,7 @@ target triple = "spir64-unknown-unknown"
 
 @a = addrspace(2) constant i32 1, align 4
 
-; CHECK-DAG: {{[0-9]*}} Capability Kernel
+; CHECK-DAG: {{[0-9]*}} Capability {{Kernel *$}}
 
 !opencl.enable.FP_CONTRACT = !{}
 !opencl.spir.version = !{!0}

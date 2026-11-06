@@ -13,12 +13,12 @@
 ; RUN: llvm-spirv -to-text %t.noext.spv -o %t.noext.spt
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-SPIRV-NOEXT
 
-; CHECK-SPIRV: Capability Int16
+; CHECK-SPIRV: Capability {{Int16 *$}}
 ; CHECK-SPIRV: Capability AtomicInt16CompareExchangeINTEL
 ; CHECK-SPIRV-NOT: Capability Int16AtomicsINTEL
 ; CHECK-SPIRV: Extension "SPV_INTEL_16bit_atomics"
 
-; CHECK-SPIRV-NOEXT: Capability Int16
+; CHECK-SPIRV-NOEXT: Capability {{Int16 *$}}
 ; CHECK-SPIRV-NOEXT-NOT: Capability AtomicInt16CompareExchangeINTEL
 ; CHECK-SPIRV-NOEXT-NOT: Capability Int16AtomicsINTEL
 ; CHECK-SPIRV-NOEXT-NOT: Extension "SPV_INTEL_16bit_atomics"

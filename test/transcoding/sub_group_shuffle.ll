@@ -92,7 +92,7 @@
 ; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
 ; RUN: %if spirv-backend %{ FileCheck %s --check-prefixes=CHECK-COMMON,CHECK-LLVM < %t.llc.rev.ll %}
 
-; CHECK-SPIRV-DAG: {{[0-9]*}} Capability GroupNonUniformShuffle
+; CHECK-SPIRV-DAG: {{[0-9]*}} Capability {{GroupNonUniformShuffle *$}}
 
 ; CHECK-SPIRV-DAG: TypeInt   [[char:[0-9]+]]   8  0
 ; CHECK-SPIRV-DAG: TypeInt   [[short:[0-9]+]]  16 0
