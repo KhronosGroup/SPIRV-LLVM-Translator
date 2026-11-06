@@ -44,6 +44,7 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/DebugLoc.h"
 
+#include <optional>
 #include <unordered_map>
 
 namespace llvm {
@@ -225,6 +226,10 @@ private:
   SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
                                       const SPIRVWord,
                                       const SPIRVExtInstSetKind);
+  DICompileUnit::DebugEmissionKind getEmissionKind();
+  DICompileUnit::DebugEmissionKind deriveEmissionKind();
+  std::optional<DICompileUnit::DebugEmissionKind> EmissionKind;
+
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 
