@@ -2556,6 +2556,13 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
   if (auto *Switch = dyn_cast<SwitchInst>(V)) {
     std::vector<SPIRVSwitch::PairTy> Pairs;
     auto *Select = transValue(Switch->getCondition(), BB);
+    // OpSwitch takes an integer selector, while i1 is a boolean in SPIR-V:
+    // switch on the condition converted to a 32-bit integer
+    if (Select->getType()->isTypeBool()) {
+      SPIRVType *Int32Ty = transType(Type::getInt32Ty(Switch->getContext()));
+      Select = BM->addSelectInst(Select, BM->addConstant(Int32Ty, 1),
+                                 BM->addConstant(Int32Ty, 0), BB);
+    }
 
     for (auto I = Switch->case_begin(), E = Switch->case_end(); I != E; ++I) {
       SPIRVSwitch::LiteralTy Lit;
