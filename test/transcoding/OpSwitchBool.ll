@@ -1,43 +1,72 @@
-; A switch on an i1, which InstCombine can leave behind when it narrows a
-; switch's condition. OpSwitch takes an integer selector, so the boolean
-; condition is converted to a 32-bit integer.
+; Check that a switch on an i1 is lowered to a conditional branch, since
+; OpSwitch cannot take an OpTypeBool selector.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc -spirv-text -o %t.spt
+; RUN: llvm-spirv %s -spirv-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv %t.bc -o %t.spv
+; RUN: llvm-spirv %s -o %t.spv
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-SPIRV-DAG: TypeInt [[#I32:]] 32 0
-; CHECK-SPIRV-DAG: TypeBool [[#BOOL:]]
-; CHECK-SPIRV-DAG: Constant [[#I32]] [[#ONE:]] 1
-; CHECK-SPIRV-DAG: Constant [[#I32]] [[#ZERO:]] 0
-; CHECK-SPIRV: FunctionParameter [[#BOOL]] [[#COND:]]
-; CHECK-SPIRV: Select [[#I32]] [[#SEL:]] [[#COND]] [[#ONE]] [[#ZERO]]
-; CHECK-SPIRV: Switch [[#SEL]] [[#]] 0 [[#]] 1 [[#]]
-
-; CHECK-LLVM: %[[#SEL:]] = select i1 %c, i32 1, i32 0
-; CHECK-LLVM: switch i32 %[[#SEL]], label %{{.*}} [
-; CHECK-LLVM-NEXT: i32 0, label %{{.*}}
-; CHECK-LLVM-NEXT: i32 1, label %{{.*}}
+; CHECK-SPIRV-NOT: Switch
+; CHECK-SPIRV: TypeBool [[#BOOL:]]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024"
 target triple = "spir64-unknown-unknown"
 
-define spir_kernel void @test(ptr addrspace(1) %p, i1 %c) {
+; The default is also a case target, so the phi loses one of its two incoming
+; values from the entry block.
+; CHECK-SPIRV: FunctionParameter [[#BOOL]] [[#C1:]]
+; CHECK-SPIRV: BranchConditional [[#C1]] [[#]] [[#]]
+; CHECK-LLVM-LABEL: define spir_kernel void @both_cases
+; CHECK-LLVM: br i1 %c, label %true, label %false
+; CHECK-LLVM: phi i32 [ 1, %false ], [ 2, %entry ]
+define spir_kernel void @both_cases(ptr addrspace(1) %p, i1 %c) {
 entry:
-  switch i1 %c, label %default [
+  switch i1 %c, label %true [
     i1 false, label %false
     i1 true, label %true
   ]
 false:
-  store i32 1, ptr addrspace(1) %p
-  ret void
+  br label %true
 true:
-  store i32 2, ptr addrspace(1) %p
+  %r = phi i32 [ 2, %entry ], [ 2, %entry ], [ 1, %false ]
+  store i32 %r, ptr addrspace(1) %p
   ret void
+}
+
+; CHECK-SPIRV: FunctionParameter [[#BOOL]] [[#C2:]]
+; CHECK-SPIRV: BranchConditional [[#C2]] [[#]] [[#]]
+; CHECK-LLVM-LABEL: define spir_kernel void @false_case
+; CHECK-LLVM: br i1 %c, label %default, label %false
+define spir_kernel void @false_case(ptr addrspace(1) %p, i1 %c) {
+entry:
+  switch i1 %c, label %default [
+    i1 false, label %false
+  ]
+false:
+  store i32 1, ptr addrspace(1) %p
+  br label %default
 default:
   ret void
 }
+
+; The loop control (DontUnroll) on the latch is kept.
+; CHECK-SPIRV: FunctionParameter [[#BOOL]] [[#C3:]]
+; CHECK-SPIRV: LoopMerge [[#]] [[#]] 2
+; CHECK-SPIRV-NEXT: BranchConditional [[#C3]] [[#]] [[#]]
+; CHECK-SPIRV-NOT: Switch
+define spir_kernel void @loop_latch(ptr addrspace(1) %p, i1 %c) {
+entry:
+  br label %loop
+loop:
+  store i32 1, ptr addrspace(1) %p
+  switch i1 %c, label %exit [
+    i1 true, label %loop
+  ], !llvm.loop !0
+exit:
+  ret void
+}
+
+!0 = distinct !{!0, !1}
+!1 = !{!"llvm.loop.unroll.disable"}
