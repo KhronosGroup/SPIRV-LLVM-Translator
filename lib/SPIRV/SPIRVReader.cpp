@@ -5056,7 +5056,8 @@ void SPIRVToLLVM::createCXXStructor(const char *ListName,
 
   // Type of a structor entry: { i32, void ()*, i8* }
   Type *PriorityTy = Type::getInt32Ty(*Context);
-  PointerType *CtorTy = PointerType::getUnqual(*Context);
+  PointerType *CtorTy =
+      PointerType::get(*Context, M->getDataLayout().getProgramAddressSpace());
   PointerType *ComdatTy = PointerType::getUnqual(*Context);
   StructType *StructorTy = StructType::get(PriorityTy, CtorTy, ComdatTy);
 
@@ -5073,7 +5074,7 @@ void SPIRVToLLVM::createCXXStructor(const char *ListName,
     // SPIR-V does not specify an order between Initializers, so set default
     // priority.
     Elts.push_back(ConstantInt::get(PriorityTy, 65535));
-    Elts.push_back(ConstantExpr::getBitCast(F, CtorTy));
+    Elts.push_back(ConstantExpr::getPointerCast(F, CtorTy));
     Elts.push_back(ConstantPointerNull::get(ComdatTy));
     ArrayElts.push_back(ConstantStruct::get(StructorTy, Elts));
   }

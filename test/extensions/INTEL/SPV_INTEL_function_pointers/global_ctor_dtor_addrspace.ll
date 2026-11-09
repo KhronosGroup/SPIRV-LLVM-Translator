@@ -23,7 +23,9 @@
 ; RUN: llvm-spirv -r %t.spv --spirv-function-program-addrspace=4 -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-P4
 
 ; CHECK-P0: @llvm.global_ctors = appending addrspace(1) global [1 x { i32, ptr, ptr addrspace(4) }] [{ i32, ptr, ptr addrspace(4) } { i32 65535, ptr @_GLOBAL__sub_I_test.cpp.ctor, ptr addrspace(4) null }]
+; CHECK-P0: @llvm.global_dtors = appending addrspace(1) global [1 x { i32, ptr, ptr addrspace(4) }] [{ i32, ptr, ptr addrspace(4) } { i32 65535, ptr @_GLOBAL__sub_I_test.cpp.dtor, ptr addrspace(4) null }]
 ; CHECK-P4: @llvm.global_ctors = appending addrspace(1) global [1 x { i32, ptr addrspace(4), ptr }] [{ i32, ptr addrspace(4), ptr } { i32 65535, ptr addrspace(4) @_GLOBAL__sub_I_test.cpp.ctor, ptr null }]
+; CHECK-P4: @llvm.global_dtors = appending addrspace(1) global [1 x { i32, ptr addrspace(4), ptr }] [{ i32, ptr addrspace(4), ptr } { i32 65535, ptr addrspace(4) @_GLOBAL__sub_I_test.cpp.dtor, ptr null }]
 
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
 target triple = "spir64-unknown-unknown"
