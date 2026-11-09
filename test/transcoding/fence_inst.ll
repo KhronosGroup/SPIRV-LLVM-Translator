@@ -10,7 +10,9 @@
 ; RUN: %if spirv-backend %{ llc -O0 -mtriple=spirv64-unknown-unknown -filetype=obj %s -o %t.llc.spv %}
 ; RUN: %if spirv-backend %{ llvm-spirv -r %t.llc.spv -o %t.llc.rev.bc %}
 ; RUN: %if spirv-backend %{ llvm-dis %t.llc.rev.bc -o %t.llc.rev.ll %}
-; RUN: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLVM < %t.llc.rev.ll %}
+; TODO: enable when SPIR-V backend stops adding ImageMemory to fence semantics.
+; RUNx: %if spirv-backend %{ FileCheck %s --check-prefix=CHECK-LLVM < %t.llc.rev.ll %}
+
 
 ; CHECK-SPIRV: TypeInt [[#UINT:]] 32 0
 
@@ -18,10 +20,10 @@
 ; CHECK-SPIRV: Constant [[#UINT]] [[#CD:]] 0
 
 ; 0x2 Workgroup
-; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID1:]] 2818
-; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID2:]] 2820
-; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID3:]] 2824
-; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID4:]] 2832
+; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID1:]] 770
+; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID2:]] 772
+; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID3:]] 776
+; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#ID4:]] 784
 ; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#NUM4:]] 4
 ; CHECK-SPIRV-DAG: Constant [[#UINT]] [[#NUM2:]] 2
 
@@ -33,19 +35,19 @@
 
 
 ; CHECK-LLVM: define spir_kernel void @fence_test_kernel1{{.*}} #0 {{.*}}
-; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 7)
+; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 3)
 
 ; CHECK-LLVM: define spir_kernel void @fence_test_kernel2{{.*}} #0 {{.*}}
-; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 7)
+; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 3)
 
 ; CHECK-LLVM: define spir_kernel void @fence_test_kernel3{{.*}} #0 {{.*}}
-; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 7)
+; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 3)
 
 ; CHECK-LLVM: define spir_kernel void @fence_test_kernel4{{.*}} #0 {{.*}}
-; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 7)
+; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 3)
 
 ; CHECK-LLVM: define spir_kernel void @fence_test_kernel5{{.*}} #0 {{.*}}
-; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 7)
+; CHECK-LLVM-NEXT: call spir_func void @_Z9mem_fencej(i32 3)
 
 ; ModuleID = 'fence_inst.bc'
 target datalayout = "e-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-n8:16:32:64"
