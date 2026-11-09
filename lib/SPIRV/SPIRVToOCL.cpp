@@ -228,6 +228,10 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
     visitCallSPIRVDot(&CI, OC, DemangledName);
     return;
   }
+  if (OC == OpSMulExtended || OC == OpUMulExtended) {
+    visitCallSPIRVMulExtended(&CI, OC);
+    return;
+  }
   if (OCLSPIRVBuiltinMap::rfind(OC))
     visitCallSPIRVBuiltin(&CI, OC);
 }
@@ -1017,6 +1021,18 @@ void SPIRVToOCLBase::visitCallSPIRVDot(CallInst *CI, Op OC,
   auto Mutator = mutateCallInst(CI, Name.str());
   if (IsPacked)
     Mutator.removeArg(CI->arg_size() - 1);
+}
+
+void SPIRVToOCLBase::visitCallSPIRVMulExtended(CallInst *CI, Op OC) {
+  Type *ResTy = CI->getType();
+  Value *A = CI->getArgOperand(0);
+  Value *B = CI->getArgOperand(1);
+  mutateCallInst(CI, OC == OpUMulExtended ? "u_mul_hi" : "mul_hi")
+      .changeReturnType(A->getType(), [=](IRBuilder<> &Builder, CallInst *Hi) {
+        Value *Lo = Builder.CreateMul(A, B);
+        Value *Res = Builder.CreateInsertValue(PoisonValue::get(ResTy), Lo, 0);
+        return Builder.CreateInsertValue(Res, Hi, 1);
+      });
 }
 
 void SPIRVToOCLBase::visitCallSPIRVBuiltin(CallInst *CI, Op OC) {

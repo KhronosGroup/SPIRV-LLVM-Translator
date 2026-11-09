@@ -262,6 +262,10 @@ public:
   /// examples: __spirv_SDotKHR => dot, __spirv_SDotAccSatKHR => dot_acc_sat
   void visitCallSPIRVDot(CallInst *CI, Op OC, StringRef DemangledName);
 
+  /// Lower extended multiplication to mul for the low half and signed or
+  /// unsigned OpenCL mul_hi for the high half.
+  void visitCallSPIRVMulExtended(CallInst *CI, Op OC);
+
   static std::string translateOpaqueType(StringRef STName);
 
   void translateOpaqueTypes();

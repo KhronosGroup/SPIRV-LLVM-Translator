@@ -4,7 +4,9 @@
 ; RUN: FileCheck < %t.spvasm --check-prefix CHECK-SPIRV %s
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
-; RUN: llvm-dis %t.rev.bc -o - | FileCheck --check-prefix CHECK-LLVM %s
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck --check-prefix CHECK-OCL %s
+; RUN: llvm-spirv -r --spirv-target-env=CL2.0 %t.spv -o %t.rev.cl20.bc
+; RUN: llvm-dis %t.rev.cl20.bc -o - | FileCheck --check-prefix CHECK-OCL %s
 ; RUN: llvm-spirv -r --spirv-target-env=SPV-IR %t.spv -o %t.rev.spvir.bc
 ; RUN: llvm-dis %t.rev.spvir.bc -o - | FileCheck --check-prefix CHECK-LLVM %s
 ; FIXME: FILECHECK_FAIL during llvm-spirv -r in llc compilation flow
@@ -45,6 +47,12 @@ target triple = "spir64-unknown-unknown"
 ; CHECK-LLVM-DAG: [[vecstruct:%[a-z0-9_.]+]] = type { <4 x i32>, <4 x i32> }
 ; CHECK-LLVM-DAG: [[struct_anon:%[a-z0-9_.]+]] = type { i32, i32 }
 
+; CHECK-OCL-LABEL: @test_builtin_umulextcc(
+; CHECK-OCL: %[[#HI:]] = call spir_func i8 @_Z6mul_hihh(i8 %a, i8 %b)
+; CHECK-OCL: %[[#LO:]] = mul i8 %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %i8struct poison, i8 %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %i8struct %[[#RES]], i8 %[[#HI]], 1
+; CHECK-OCL: store %i8struct %[[#RES2]], ptr
 define spir_func void @test_builtin_umulextcc(i8 %a, i8 %b) {
   entry:
   %0 = alloca %i8struct
@@ -63,6 +71,12 @@ define spir_func void @test_builtin_umulextcc(i8 %a, i8 %b) {
 ; CHECK-LLVM:   %0 = alloca [[i8struct]], align 8
 ; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedhh(ptr sret([[i8struct]]) %0, i8 %a, i8 %b)
 ; CHECK-LLVM:   ret void
+; CHECK-OCL-LABEL: @test_builtin_umulextss(
+; CHECK-OCL: %[[#HI:]] = call spir_func i16 @_Z6mul_hitt(i16 %a, i16 %b)
+; CHECK-OCL: %[[#LO:]] = mul i16 %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %i16struct poison, i16 %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %i16struct %[[#RES]], i16 %[[#HI]], 1
+; CHECK-OCL: store %i16struct %[[#RES2]], ptr
 define spir_func void @test_builtin_umulextss(i16 %a, i16 %b) {
   entry:
   %0 = alloca %i16struct
@@ -81,6 +95,12 @@ define spir_func void @test_builtin_umulextss(i16 %a, i16 %b) {
 ; CHECK-LLVM:   %0 = alloca [[i16struct]], align 8
 ; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedtt(ptr sret([[i16struct]]) %0, i16 %a, i16 %b)
 ; CHECK-LLVM:   ret void
+; CHECK-OCL-LABEL: @test_builtin_umulextii(
+; CHECK-OCL: %[[#HI:]] = call spir_func i32 @_Z6mul_hijj(i32 %a, i32 %b)
+; CHECK-OCL: %[[#LO:]] = mul i32 %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %i32struct poison, i32 %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %i32struct %[[#RES]], i32 %[[#HI]], 1
+; CHECK-OCL: store %i32struct %[[#RES2]], ptr
 define spir_func void @test_builtin_umulextii(i32 %a, i32 %b) {
   entry:
   %0 = alloca %i32struct
@@ -99,6 +119,12 @@ define spir_func void @test_builtin_umulextii(i32 %a, i32 %b) {
 ; CHECK-LLVM:   %0 = alloca [[i32struct]], align 8
 ; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedjj(ptr sret([[i32struct]]) %0, i32 %a, i32 %b)
 ; CHECK-LLVM:   ret void
+; CHECK-OCL-LABEL: @test_builtin_umulextll(
+; CHECK-OCL: %[[#HI:]] = call spir_func i64 @_Z6mul_himm(i64 %a, i64 %b)
+; CHECK-OCL: %[[#LO:]] = mul i64 %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %i64struct poison, i64 %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %i64struct %[[#RES]], i64 %[[#HI]], 1
+; CHECK-OCL: store %i64struct %[[#RES2]], ptr
 define spir_func void @test_builtin_umulextll(i64 %a, i64 %b) {
   entry:
   %0 = alloca %i64struct
@@ -117,6 +143,12 @@ define spir_func void @test_builtin_umulextll(i64 %a, i64 %b) {
 ; CHECK-LLVM:   %0 = alloca [[i64struct]]
 ; CHECK-LLVM:   call spir_func void @_Z20__spirv_UMulExtendedmm(ptr sret([[i64struct]]) %0, i64 %a, i64 %b)
 ; CHECK-LLVM:   ret void
+; CHECK-OCL-LABEL: @test_builtin_umulextDv4_xS_(
+; CHECK-OCL: %[[#HI:]] = call spir_func <4 x i32> @_Z6mul_hiDv4_jS_(<4 x i32> %a, <4 x i32> %b)
+; CHECK-OCL: %[[#LO:]] = mul <4 x i32> %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %vecstruct poison, <4 x i32> %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %vecstruct %[[#RES]], <4 x i32> %[[#HI]], 1
+; CHECK-OCL: store %vecstruct %[[#RES2]], ptr
 define spir_func void @test_builtin_umulextDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
   entry:
   %0 = alloca %vecstruct
@@ -137,6 +169,12 @@ define spir_func void @test_builtin_umulextDv4_xS_(<4 x i32> %a, <4 x i32> %b) {
 ; CHECK-LLVM:   ret void
 
 
+; CHECK-OCL-LABEL: @test_builtin_umulext_anon(
+; CHECK-OCL: %[[#HI:]] = call spir_func i32 @_Z6mul_hijj(i32 %a, i32 %b)
+; CHECK-OCL: %[[#LO:]] = mul i32 %a, %b
+; CHECK-OCL: %[[#RES:]] = insertvalue %struct.anon poison, i32 %[[#LO]], 0
+; CHECK-OCL: %[[#RES2:]] = insertvalue %struct.anon %[[#RES]], i32 %[[#HI]], 1
+; CHECK-OCL: store %struct.anon %[[#RES2]], ptr
 define spir_func void @test_builtin_umulext_anon(i32 %a, i32 %b) {
   entry:
   %0 = alloca %struct.anon
