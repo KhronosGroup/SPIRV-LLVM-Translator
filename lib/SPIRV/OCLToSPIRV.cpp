@@ -809,6 +809,8 @@ void OCLToSPIRVBase::visitCallConvert(CallInst *CI, StringRef MangledName,
   if (isa<IntegerType>(SrcTy)) {
     bool Signed = isLastFuncParamSigned(MangledName);
     if (IsTargetInt) {
+      // FPRoundingMode only applies to conversions to or from floating-point.
+      Rounding = "";
       if (!Sat.empty() && TargetSigned != Signed) {
         OC = Signed ? OpSatConvertSToU : OpSatConvertUToS;
         Sat = "";
