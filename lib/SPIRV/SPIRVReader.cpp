@@ -2039,6 +2039,11 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         cast<BasicBlock>(transValue(BR->getTrueLabel(), F, BB)),
         cast<BasicBlock>(transValue(BR->getFalseLabel(), F, BB)),
         transValue(BR->getCondition(), F, BB), BB);
+    const std::vector<SPIRVWord> &Weights = BR->getBranchWeights();
+    if (Weights.size() == 2)
+      BC->setMetadata(
+          LLVMContext::MD_prof,
+          MDBuilder(*Context).createBranchWeights(Weights[0], Weights[1]));
     // Loop metadata will be translated in the end of function translation.
     return mapValue(BV, BC);
   }
