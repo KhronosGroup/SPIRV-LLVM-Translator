@@ -4654,8 +4654,10 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           Type *IntTy = nullptr;
 
           if (!PtrAnnFirstArg) {
-            GetElementPtrInst *GEP = cast<GetElementPtrInst>(
-                Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
+            GetElementPtrInst *GEP =
+                Builder.Insert(GetElementPtrInst::CreateInBounds(
+                    AllocatedTy, AL,
+                    {Builder.getInt32(0), Builder.getInt32(I)}));
 
             IntTy = GEP->getResultElementType()->isIntegerTy()
                         ? GEP->getType()

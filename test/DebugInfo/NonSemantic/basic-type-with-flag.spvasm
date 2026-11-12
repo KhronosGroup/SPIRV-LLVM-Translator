@@ -1,3 +1,5 @@
+; REQUIRES: spirv-as
+
 ; Generated from:
 ;
 ; struct A { int b; };
