@@ -1,12 +1,11 @@
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv %t.bc --spirv-ext=+SPV_KHR_expect_assume -o %t.spv
+; RUN: llvm-spirv %s --spirv-ext=+SPV_KHR_expect_assume -o %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
 ; RUN: llvm-dis < %t.rev.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; RUN: llvm-spirv %t.bc -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NO-EXT
-; RUN: llvm-spirv %t.bc -o %t.noext.spv
+; RUN: llvm-spirv %s -spirv-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV-NO-EXT
+; RUN: llvm-spirv %s -o %t.noext.spv
 ; RUN: spirv-val %t.noext.spv
 
 ; OpExpectKHR has no probability operand, the hint is kept only if the
