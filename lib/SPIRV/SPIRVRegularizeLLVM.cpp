@@ -634,8 +634,8 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       GEPTy = LI->getType();
     else if (auto *SI = dyn_cast<StoreInst>(Inst))
       GEPTy = SI->getValueOperand()->getType();
-    auto *GEP =
-        cast<Instruction>(Builder.CreateConstGEP1_32(GEPTy, PtrInstOp, 0));
+    auto *GEP = Builder.Insert(
+        GetElementPtrInst::Create(GEPTy, PtrInstOp, {Builder.getInt32(0)}));
     CreatedGeps.push_back(GEP);
     Inst->setOperand(TargetArgNo, GEP);
     MDs.push_back(MDNode::get(Inst->getContext(), OPs));
