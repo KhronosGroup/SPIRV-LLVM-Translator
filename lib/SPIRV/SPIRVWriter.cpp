@@ -5929,11 +5929,11 @@ SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
   }
 
   // A fence is not associated with a particular memory object, so make its
-  // memory semantics cover every storage class reachable in the OpenCL
-  // environment.
+  // memory semantics cover every pointer-addressable storage class in the
+  // OpenCL environment. Image ordering is requested explicitly via
+  // CLK_IMAGE_MEM_FENCE.
   MemorySemantics |= MemorySemanticsWorkgroupMemoryMask |
-                     MemorySemanticsCrossWorkgroupMemoryMask |
-                     MemorySemanticsImageMemoryMask;
+                     MemorySemanticsCrossWorkgroupMemoryMask;
 
   Module *M = FI->getParent()->getModule();
   spv::Scope S = toSPIRVScope(FI->getContext(), FI->getSyncScopeID());
