@@ -1,14 +1,16 @@
-;; Older versions of the translator emitted the ArgNumber operand of
-;; DebugLocalVariable as a literal instead of the <id> of an OpConstant, as
-;; required by NonSemantic.Shader.DebugInfo. Check that such modules can still
-;; be consumed and that the literal is interpreted as the argument number.
-;; Here the literal 1 coincides with the <id> of OpExtInstImport "OpenCL.std".
+;; Older versions of the translator emitted some NonSemantic.Shader.DebugInfo
+;; operands as literals instead of <id>s of OpConstant. Check that such modules
+;; can still be consumed and that the literals are interpreted as values:
+;; - DebugLocalVariable ArgNumber (before #3769)
+;; - DebugTypeComposite Tag (on llvm_release_160 before #3140)
+;; Both literals are 1, which is also the <id> of OpExtInstImport "OpenCL.std".
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-LLVM: DILocalVariable(name: "a", arg: 1,
+; CHECK-LLVM-DAG: DICompositeType(tag: DW_TAG_structure_type, name: "A"
+; CHECK-LLVM-DAG: DILocalVariable(name: "a", arg: 1,
 
 119734787 67072 393230 69 0 
 2 Capability Addresses 
@@ -70,7 +72,7 @@
 9 ExtInst 11 37 2 DebugCompilationUnit 35 24 30 36 
 9 ExtInst 11 41 2 DebugTypeBasic 38 39 40 17 
 13 ExtInst 11 46 2 DebugTypeMember 44 41 30 32 24 24 24 45 
-15 ExtInst 11 42 2 DebugTypeComposite 43 24 30 32 24 37 17 39 24 46 
+15 ExtInst 11 42 2 DebugTypeComposite 43 1 30 32 24 37 17 39 24 46 
 8 ExtInst 11 49 2 DebugTypePointer 42 48 24 
 8 ExtInst 11 50 2 DebugTypeFunction 24 41 49 
 15 ExtInst 11 55 2 DebugFunction 51 50 30 53 24 37 52 54 53 17 

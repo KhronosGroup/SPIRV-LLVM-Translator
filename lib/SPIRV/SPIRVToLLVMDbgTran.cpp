@@ -122,9 +122,19 @@ SPIRVToLLVMDbgTran::getConstantValueOrLiteral(const std::vector<SPIRVWord> &Ops,
   if (!isNonSemanticDebugInfo(Kind))
     return Ops[Idx];
 
-  SPIRVValue *SPVConst = BM->get<SPIRVValue>(Ops[Idx]);
-  assert(isConstantOpCode(SPVConst->getOpCode()) &&
-         "NonSemantic Debug instruction's parameters must be OpConstant");
+  // For backward compatibility: older versions of the translator emitted some
+  // NonSemantic operands as literals instead of <id>s of OpConstant (e.g.
+  // DebugLocalVariable ArgNumber before #3769; DebugTypeComposite Tag,
+  // DebugTypeVector ComponentCount and DebugOperation operands on
+  // llvm_release_160 before #3140), without bumping the generator version.
+  // Treat the operand as a literal if it doesn't refer to an integer constant.
+  SPIRVEntry *Entry = nullptr;
+  if (!BM->exist(Ops[Idx], &Entry) || !Entry ||
+      !isConstantOpCode(Entry->getOpCode()) ||
+      !static_cast<SPIRVValue *>(Entry)->getType()->isTypeInt())
+    return Ops[Idx];
+
+  SPIRVValue *SPVConst = static_cast<SPIRVValue *>(Entry);
   ConstantInt *Const =
       cast<ConstantInt>(SPIRVReader->transValue(SPVConst, nullptr, nullptr));
   return Const->getZExtValue();
@@ -1205,19 +1215,8 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
     Flags |= DINode::FlagObjectPointer;
 
   if (Ops.size() > ArgNumberIdx) {
-    // The NonSemantic.Shader.DebugInfo spec requires ArgNumber to be the <id>
-    // of an OpConstant, but older versions of this translator emitted it as a
-    // literal without bumping the generator version. To stay compatible with
-    // such modules, treat the operand as a literal when it does not refer to
-    // an integer OpConstant.
-    SPIRVWord ArgNo = Ops[ArgNumberIdx];
-    SPIRVEntry *ArgEntry = nullptr;
-    if (!isNonSemanticDebugInfo(DebugInst->getExtSetKind()) ||
-        (BM->exist(ArgNo, &ArgEntry) && ArgEntry &&
-         ArgEntry->getOpCode() == OpConstant &&
-         static_cast<SPIRVValue *>(ArgEntry)->getType()->isTypeInt()))
-      ArgNo = getConstantValueOrLiteral(Ops, ArgNumberIdx,
-                                        DebugInst->getExtSetKind());
+    SPIRVWord ArgNo = getConstantValueOrLiteral(Ops, ArgNumberIdx,
+                                                DebugInst->getExtSetKind());
     return getDIBuilder(DebugInst).createParameterVariable(
         Scope, Name, ArgNo, File, LineNo, Ty, true, Flags);
   }
