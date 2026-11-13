@@ -1,0 +1,37 @@
+; Do not emit !opencl.ocl.version when the decoded major version is 0.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=ZERO --implicit-check-not='!opencl.ocl.version'
+; RUN: sed -e 's/OpSource OpenCL_C 0$/OpSource OpenCL_C 102000/' %s | spirv-as --target-env spv1.3 - -o %t2.spv
+; RUN: llvm-spirv -r %t2.spv -o - | llvm-dis | FileCheck %s --check-prefix=VALID
+; Non-zero encodings that still decode to major 0 guard the Major check.
+; RUN: sed -e 's/OpSource OpenCL_C 0$/OpSource OpenCL_C 1/' %s | spirv-as --target-env spv1.3 - -o %t3.spv
+; RUN: llvm-spirv -r %t3.spv -o - | llvm-dis | FileCheck %s --check-prefix=EDGE --implicit-check-not='!opencl.ocl.version'
+; RUN: sed -e 's/OpSource OpenCL_C 0$/OpSource OpenCL_C 1000/' %s | spirv-as --target-env spv1.3 - -o %t4.spv
+; RUN: llvm-spirv -r %t4.spv -o - | llvm-dis | FileCheck %s --check-prefix=EDGE --implicit-check-not='!opencl.ocl.version'
+
+; ZERO: !spirv.Source = !{![[SRC:[0-9]+]]}
+; ZERO: !opencl.spir.version = !{![[SPIR:[0-9]+]]}
+; ZERO: ![[SRC]] = !{i32 3, i32 0}
+; ZERO: ![[SPIR]] = !{i32 1, i32 2}
+
+; VALID: !opencl.ocl.version = !{![[V:[0-9]+]]}
+; VALID: ![[V]] = !{i32 1, i32 2}
+
+; EDGE: !spirv.Source = !{![[SRC:[0-9]+]]}
+; EDGE: !opencl.spir.version = !{![[SPIR:[0-9]+]]}
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpMemoryModel Physical64 OpenCL
+               OpEntryPoint Kernel %foo "foo"
+               OpSource OpenCL_C 0
+       %void = OpTypeVoid
+         %fn = OpTypeFunction %void
+        %foo = OpFunction %void None %fn
+      %entry = OpLabel
+               OpReturn
+               OpFunctionEnd
