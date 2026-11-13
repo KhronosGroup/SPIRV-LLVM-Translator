@@ -1,0 +1,66 @@
+; REQUIRES: spirv-as
+
+; RUN: spirv-as %s --target-env spv1.0 -o %t.spv
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r -o %t.rev.bc %t.spv
+; RUN: llvm-dis %t.rev.bc -o - | FileCheck %s
+
+; Branch Weights operands of OpBranchConditional are translated to
+; !prof branch_weights metadata.
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpMemoryModel Physical64 OpenCL
+               OpName %weighted "weighted_branch"
+               OpName %one_zero "one_zero_weight_branch"
+               OpName %unweighted "unweighted_branch"
+               OpDecorate %weighted LinkageAttributes "weighted_branch" Export
+               OpDecorate %one_zero LinkageAttributes "one_zero_weight_branch" Export
+               OpDecorate %unweighted LinkageAttributes "unweighted_branch" Export
+       %bool = OpTypeBool
+       %uint = OpTypeInt 32 0
+    %uint_10 = OpConstant %uint 10
+       %fnty = OpTypeFunction %uint %uint
+
+; CHECK-LABEL: define spir_func i32 @weighted_branch
+; CHECK: br i1 %{{.*}}, label %{{.*}}, label %{{.*}}, !prof ![[#PROF:]]
+   %weighted = OpFunction %uint None %fnty
+         %x1 = OpFunctionParameter %uint
+     %entry1 = OpLabel
+       %cmp1 = OpSGreaterThan %bool %x1 %uint_10
+               OpBranchConditional %cmp1 %then1 %else1 2000 1
+      %then1 = OpLabel
+               OpReturnValue %x1
+      %else1 = OpLabel
+               OpReturnValue %uint_10
+               OpFunctionEnd
+
+; CHECK-LABEL: define spir_func i32 @one_zero_weight_branch
+; CHECK: br i1 %{{.*}}, label %{{.*}}, label %{{.*}}, !prof ![[#PROF2:]]
+   %one_zero = OpFunction %uint None %fnty
+         %x2 = OpFunctionParameter %uint
+     %entry2 = OpLabel
+       %cmp2 = OpSGreaterThan %bool %x2 %uint_10
+               OpBranchConditional %cmp2 %then2 %else2 0 5
+      %then2 = OpLabel
+               OpReturnValue %x2
+      %else2 = OpLabel
+               OpReturnValue %uint_10
+               OpFunctionEnd
+
+; CHECK-LABEL: define spir_func i32 @unweighted_branch
+; CHECK: br i1 %{{.*}}, label %{{.*}}, label %{{.*}}{{$}}
+ %unweighted = OpFunction %uint None %fnty
+         %x3 = OpFunctionParameter %uint
+     %entry3 = OpLabel
+       %cmp3 = OpSGreaterThan %bool %x3 %uint_10
+               OpBranchConditional %cmp3 %then3 %else3
+      %then3 = OpLabel
+               OpReturnValue %x3
+      %else3 = OpLabel
+               OpReturnValue %uint_10
+               OpFunctionEnd
+
+; CHECK: ![[#PROF]] = !{!"branch_weights", i32 2000, i32 1}
+; CHECK: ![[#PROF2]] = !{!"branch_weights", i32 0, i32 5}
