@@ -90,8 +90,8 @@ void SPIRVToOCLBase::visitCallInst(CallInst &CI) {
   StringRef DemangledName;
   Op OC = OpNop;
   SPIRVBuiltinVariableKind BuiltinKind = SPIRVBuiltinVariableKind::BuiltInMax;
-  if (!oclIsBuiltin(MangledName, DemangledName) ||
-      ((OC = getSPIRVFuncOC(DemangledName)) == OpNop &&
+  if (!oclIsBuiltin(MangledName, DemangledName, F) ||
+      ((OC = getSPIRVFuncOC(DemangledName, F)) == OpNop &&
        !getSPIRVBuiltin(DemangledName.str(), BuiltinKind)))
     return;
   LLVM_DEBUG(dbgs() << "DemangledName = " << DemangledName.str() << '\n'
