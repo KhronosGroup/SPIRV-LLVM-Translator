@@ -1205,8 +1205,19 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
     Flags |= DINode::FlagObjectPointer;
 
   if (Ops.size() > ArgNumberIdx) {
-    SPIRVWord ArgNo = getConstantValueOrLiteral(Ops, ArgNumberIdx,
-                                                DebugInst->getExtSetKind());
+    // The NonSemantic.Shader.DebugInfo spec requires ArgNumber to be the <id>
+    // of an OpConstant, but older versions of this translator emitted it as a
+    // literal without bumping the generator version. To stay compatible with
+    // such modules, treat the operand as a literal when it does not refer to
+    // an integer OpConstant.
+    SPIRVWord ArgNo = Ops[ArgNumberIdx];
+    SPIRVEntry *ArgEntry = nullptr;
+    if (!isNonSemanticDebugInfo(DebugInst->getExtSetKind()) ||
+        (BM->exist(ArgNo, &ArgEntry) && ArgEntry &&
+         ArgEntry->getOpCode() == OpConstant &&
+         static_cast<SPIRVValue *>(ArgEntry)->getType()->isTypeInt()))
+      ArgNo = getConstantValueOrLiteral(Ops, ArgNumberIdx,
+                                        DebugInst->getExtSetKind());
     return getDIBuilder(DebugInst).createParameterVariable(
         Scope, Name, ArgNo, File, LineNo, Ty, true, Flags);
   }
