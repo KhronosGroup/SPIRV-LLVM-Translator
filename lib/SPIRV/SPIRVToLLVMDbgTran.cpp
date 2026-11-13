@@ -122,12 +122,8 @@ SPIRVToLLVMDbgTran::getConstantValueOrLiteral(const std::vector<SPIRVWord> &Ops,
   if (!isNonSemanticDebugInfo(Kind))
     return Ops[Idx];
 
-  // For backward compatibility: older versions of the translator emitted some
-  // NonSemantic operands as literals instead of <id>s of OpConstant (e.g.
-  // DebugLocalVariable ArgNumber before #3769; DebugTypeComposite Tag,
-  // DebugTypeVector ComponentCount and DebugOperation operands on
-  // llvm_release_160 before #3140), without bumping the generator version.
-  // Treat the operand as a literal if it doesn't refer to an integer constant.
+  // For compatibility, accept a Literal operand even for NonSemantic
+  // instruction sets.
   SPIRVEntry *Entry = nullptr;
   if (!BM->exist(Ops[Idx], &Entry) || !Entry ||
       !isConstantOpCode(Entry->getOpCode()) ||

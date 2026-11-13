@@ -1,9 +1,5 @@
-;; Older versions of the translator emitted some NonSemantic.Shader.DebugInfo
-;; operands as literals instead of <id>s of OpConstant. Check that such modules
-;; can still be consumed and that the literals are interpreted as values:
-;; - DebugLocalVariable ArgNumber (before #3769)
-;; - DebugTypeComposite Tag (on llvm_release_160 before #3140)
-;; Both literals are 1, which is also the <id> of OpExtInstImport "OpenCL.std".
+;; Check that Literal operands are accepted for NonSemantic instruction sets
+;; for compatibility (DebugLocalVariable ArgNumber, DebugTypeComposite Tag).
 
 ; RUN: llvm-spirv %s -to-binary -o %t.spv
 ; RUN: llvm-spirv -r %t.spv -o %t.bc
