@@ -122,9 +122,15 @@ SPIRVToLLVMDbgTran::getConstantValueOrLiteral(const std::vector<SPIRVWord> &Ops,
   if (!isNonSemanticDebugInfo(Kind))
     return Ops[Idx];
 
-  SPIRVValue *SPVConst = BM->get<SPIRVValue>(Ops[Idx]);
-  assert(isConstantOpCode(SPVConst->getOpCode()) &&
-         "NonSemantic Debug instruction's parameters must be OpConstant");
+  // For compatibility, accept a Literal operand even for NonSemantic
+  // instruction sets.
+  SPIRVEntry *Entry = nullptr;
+  if (!BM->exist(Ops[Idx], &Entry) || !Entry ||
+      !isConstantOpCode(Entry->getOpCode()) ||
+      !static_cast<SPIRVValue *>(Entry)->getType()->isTypeInt())
+    return Ops[Idx];
+
+  SPIRVValue *SPVConst = static_cast<SPIRVValue *>(Entry);
   ConstantInt *Const =
       cast<ConstantInt>(SPIRVReader->transValue(SPVConst, nullptr, nullptr));
   return Const->getZExtValue();
