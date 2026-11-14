@@ -1240,11 +1240,10 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
     Flags |= DINode::FlagObjectPointer;
 
   if (Ops.size() > ArgNumberIdx) {
-    SPIRVWord ArgNo =
-        isArgNumberLiteral()
-            ? Ops[ArgNumberIdx]
-            : getConstantValueOrLiteral(Ops, ArgNumberIdx,
-                                        DebugInst->getExtSetKind());
+    SPIRVWord ArgNo = isArgNumberLiteral()
+                          ? Ops[ArgNumberIdx]
+                          : getConstantValueOrLiteral(
+                                Ops, ArgNumberIdx, DebugInst->getExtSetKind());
     return getDIBuilder(DebugInst).createParameterVariable(
         Scope, Name, ArgNo, File, LineNo, Ty, true, Flags);
   }
