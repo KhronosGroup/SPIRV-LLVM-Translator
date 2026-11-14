@@ -1222,6 +1222,8 @@ void OCLBuiltinFuncMangleInfo::init(StringRef UniqName) {
     NameRef = NameRef.drop_front(2);
   } else if (NameRef == "__spirv_UMulExtended") {
     addUnsignedArg(-1);
+  } else if (NameRef == "__spirv_PauseINTEL") {
+    addUnsignedArg(0);
   } else if (NameRef == "fclamp") {
     NameRef = NameRef.drop_front(1);
   }
