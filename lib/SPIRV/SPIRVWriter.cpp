@@ -2608,7 +2608,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
       BasicBlock *CurrentBB = Branch->getParent();
       const Loop *ContainingLoop = LI.getLoopFor(CurrentBB);
 
-      if (ContainingLoop) {
+      // OpLoopMerge must immediately precede an OpBranch or
+      // OpBranchConditional, so a header ending in a switch can't carry one.
+      // Dropping it only loses the loop control hint.
+      if (ContainingLoop && isa<UncondBrInst, CondBrInst>(
+                                ContainingLoop->getHeader()->getTerminator())) {
         // Check whether SuccessorFalse or SuccessorTrue is the loop header BB.
         // For example consider following LLVM IR:
         // br i1 %compare, label %for.body, label %for.end
@@ -2680,8 +2684,11 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
                              BB->getId(),                  // Continue Target
                              LoopControl, Parameters, Successor);
       } else {
+        // Like OpLoopMerge, OpLoopControlINTEL must precede a branch.
         if (BM->isAllowedToUseExtension(
-                ExtensionID::SPV_INTEL_unstructured_loop_controls)) {
+                ExtensionID::SPV_INTEL_unstructured_loop_controls) &&
+            isa<UncondBrInst, CondBrInst>(
+                Branch->getSuccessor(0)->getTerminator())) {
           // For unstructured loop we add a special loop control instruction.
           // Simple example of unstructured loop is an infinite loop, that has
           // no terminate instruction.
