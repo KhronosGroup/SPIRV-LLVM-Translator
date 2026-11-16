@@ -110,11 +110,6 @@ enum InternalCapability {
   ICapabilityFloatConversionsFtoSINTEL = 6216,
   ICapabilityBFloat16ArithmeticINTEL = 6226,
   ICapabilityCooperativeMatrixOffsetInstructionsINTEL = 6238,
-  ICapabilityAtomicBFloat16AddINTEL = 6255,
-  ICapabilityAtomicBFloat16MinMaxINTEL = 6256,
-  ICapabilityAtomicInt16CompareExchangeINTEL = 6260,
-  ICapabilityInt16AtomicsINTEL = 6261,
-  ICapabilityAtomicBFloat16LoadStoreINTEL = 6262,
   ICapabilitySubgroupScaledMatrixMultiplyAccumulateINTEL = 6263,
   ICapabilityCooperativeMatrixPrefetchINTEL = 6411,
   ICapabilityMaskedGatherScatterINTEL = 6427,
@@ -211,9 +206,6 @@ _SPIRV_OP(Op, ConvertHandleToImageINTEL)
 _SPIRV_OP(Op, ConvertHandleToSamplerINTEL)
 _SPIRV_OP(Op, ConvertHandleToSampledImageINTEL)
 
-_SPIRV_OP(Capability, AtomicBFloat16AddINTEL)
-_SPIRV_OP(Capability, AtomicBFloat16MinMaxINTEL)
-
 _SPIRV_OP(Capability, SigmoidINTEL)
 _SPIRV_OP(Op, FSigmoidINTEL)
 _SPIRV_OP(Capability, Float4E2M1INTEL)
@@ -295,13 +287,6 @@ constexpr Capability CapabilityBFloat16ArithmeticINTEL =
 
 constexpr ExecutionMode ExecutionModeNamedSubgroupSizeINTEL =
     static_cast<ExecutionMode>(IExecModeNamedSubgroupSizeINTEL);
-
-constexpr Capability CapabilityAtomicInt16CompareExchangeINTEL =
-    static_cast<Capability>(ICapabilityAtomicInt16CompareExchangeINTEL);
-constexpr Capability CapabilityInt16AtomicsINTEL =
-    static_cast<Capability>(ICapabilityInt16AtomicsINTEL);
-constexpr Capability CapabilityAtomicBFloat16LoadStoreINTEL =
-    static_cast<Capability>(ICapabilityAtomicBFloat16LoadStoreINTEL);
 
 } // namespace internal
 } // namespace spv

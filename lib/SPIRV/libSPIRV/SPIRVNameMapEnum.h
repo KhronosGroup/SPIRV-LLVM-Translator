@@ -635,9 +635,8 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
   add(CapabilityAtomicFloat16AddEXT, "AtomicFloat16AddEXT");
   add(CapabilityAtomicFloat16VectorNV, "AtomicFloat16VectorNV");
   add(CapabilityLongVectorEXT, "LongVectorEXT");
-  add(internal::CapabilityAtomicBFloat16AddINTEL, "AtomicBFloat16AddINTEL");
-  add(internal::CapabilityAtomicBFloat16MinMaxINTEL,
-      "AtomicBFloat16MinMaxINTEL");
+  add(CapabilityAtomicBFloat16AddINTEL, "AtomicBFloat16AddINTEL");
+  add(CapabilityAtomicBFloat16MinMaxINTEL, "AtomicBFloat16MinMaxINTEL");
   add(CapabilityDebugInfoModuleINTEL, "DebugInfoModuleINTEL");
   add(CapabilityBFloat16ConversionINTEL, "Bfloat16ConversionINTEL");
   add(CapabilitySplitBarrierINTEL, "SplitBarrierINTEL");
@@ -712,11 +711,10 @@ template <> inline void SPIRVMap<Capability, std::string>::init() {
       "FloatConversionsFtoFINTEL");
   add(internal::CapabilityFloatConversionsFtoSINTEL,
       "FloatConversionsFtoSINTEL");
-  add(internal::CapabilityAtomicInt16CompareExchangeINTEL,
+  add(CapabilityAtomicInt16CompareExchangeINTEL,
       "AtomicInt16CompareExchangeINTEL");
-  add(internal::CapabilityInt16AtomicsINTEL, "Int16AtomicsINTEL");
-  add(internal::CapabilityAtomicBFloat16LoadStoreINTEL,
-      "AtomicBFloat16LoadStoreINTEL");
+  add(CapabilityInt16AtomicsINTEL, "Int16AtomicsINTEL");
+  add(CapabilityAtomicBFloat16LoadStoreINTEL, "AtomicBFloat16LoadStoreINTEL");
   add(internal::CapabilitySubgroupScaledMatrixMultiplyAccumulateINTEL,
       "SubgroupScaledMatrixMultiplyAccumulateINTEL");
   add(CapabilityRoundedDivideSqrtINTEL, "RoundedDivideSqrtINTEL");

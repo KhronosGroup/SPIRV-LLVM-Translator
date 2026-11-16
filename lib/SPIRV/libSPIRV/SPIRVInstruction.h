@@ -3138,7 +3138,7 @@ public:
       if (getType()->isTypeInt(64))
         return {CapabilityInt64Atomics};
       if (isInt16Atomic())
-        return {internal::CapabilityInt16AtomicsINTEL};
+        return {CapabilityInt16AtomicsINTEL};
     }
     return {};
   }
@@ -3193,9 +3193,9 @@ public:
   SPIRVCapVec getRequiredCapability() const override {
     if (hasType()) {
       if (isBFloat16Atomic() && allowsBFloat16(OpCode))
-        return {internal::CapabilityAtomicBFloat16LoadStoreINTEL};
+        return {CapabilityAtomicBFloat16LoadStoreINTEL};
       if (isInt16Atomic())
-        return {internal::CapabilityAtomicInt16CompareExchangeINTEL};
+        return {CapabilityAtomicInt16CompareExchangeINTEL};
     }
     return SPIRVAtomicInstBase::getRequiredCapability();
   }
@@ -3213,11 +3213,10 @@ public:
       Module->addCapability(CapabilityInt64Atomics);
     } else if (ValueTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
       Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
-      Module->addCapability(internal::CapabilityAtomicBFloat16LoadStoreINTEL);
+      Module->addCapability(CapabilityAtomicBFloat16LoadStoreINTEL);
     } else if (ValueTy->isTypeInt(16)) {
       Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
-      Module->addCapability(
-          internal::CapabilityAtomicInt16CompareExchangeINTEL);
+      Module->addCapability(CapabilityAtomicInt16CompareExchangeINTEL);
     }
   }
 };
@@ -3242,7 +3241,7 @@ public:
         getType()->getVectorComponentType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16VectorNV};
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return {internal::CapabilityAtomicBFloat16AddINTEL};
+      return {CapabilityAtomicBFloat16AddINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16AddEXT};
     if (getType()->isTypeFloat(32))
@@ -3271,7 +3270,7 @@ public:
         getType()->getVectorComponentType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16VectorNV};
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return {internal::CapabilityAtomicBFloat16MinMaxINTEL};
+      return {CapabilityAtomicBFloat16MinMaxINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16MinMaxEXT};
     if (getType()->isTypeFloat(32))
