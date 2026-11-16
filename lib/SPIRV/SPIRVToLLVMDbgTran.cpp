@@ -122,9 +122,15 @@ SPIRVToLLVMDbgTran::getConstantValueOrLiteral(const std::vector<SPIRVWord> &Ops,
   if (!isNonSemanticDebugInfo(Kind))
     return Ops[Idx];
 
-  SPIRVValue *SPVConst = BM->get<SPIRVValue>(Ops[Idx]);
-  assert(isConstantOpCode(SPVConst->getOpCode()) &&
-         "NonSemantic Debug instruction's parameters must be OpConstant");
+  // For compatibility, accept a Literal operand even for NonSemantic
+  // instruction sets.
+  SPIRVEntry *Entry = nullptr;
+  if (!BM->exist(Ops[Idx], &Entry) || !Entry ||
+      !isConstantOpCode(Entry->getOpCode()) ||
+      !static_cast<SPIRVValue *>(Entry)->getType()->isTypeInt())
+    return Ops[Idx];
+
+  SPIRVValue *SPVConst = static_cast<SPIRVValue *>(Entry);
   ConstantInt *Const =
       cast<ConstantInt>(SPIRVReader->transValue(SPVConst, nullptr, nullptr));
   return Const->getZExtValue();
@@ -891,7 +897,8 @@ DINode *SPIRVToLLVMDbgTran::transLexicalBlock(const SPIRVExtInst *DebugInst) {
     return getDIBuilder(DebugInst).createNameSpace(ParentScope, Name,
                                                    InlinedNamespace);
   }
-  unsigned Column = Ops[ColumnIdx];
+  SPIRVWord Column =
+      getConstantValueOrLiteral(Ops, ColumnIdx, DebugInst->getExtSetKind());
   return getDIBuilder(DebugInst).createLexicalBlock(ParentScope, File, LineNo,
                                                     Column);
 }
@@ -1203,9 +1210,12 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
   if (SPIRVFlags & SPIRVDebug::FlagIsObjectPointer)
     Flags |= DINode::FlagObjectPointer;
 
-  if (Ops.size() > ArgNumberIdx)
+  if (Ops.size() > ArgNumberIdx) {
+    SPIRVWord ArgNo = getConstantValueOrLiteral(Ops, ArgNumberIdx,
+                                                DebugInst->getExtSetKind());
     return getDIBuilder(DebugInst).createParameterVariable(
-        Scope, Name, Ops[ArgNumberIdx], File, LineNo, Ty, true, Flags);
+        Scope, Name, ArgNo, File, LineNo, Ty, true, Flags);
+  }
   return getDIBuilder(DebugInst).createAutoVariable(Scope, Name, File, LineNo,
                                                     Ty, true, Flags);
 }
@@ -1682,8 +1692,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
       return DbgDeclare;
     }
     return DIB.insertDeclare(GetValue(Ops[VariableIdx]), LocalVar.first,
-                             GetExpression(Ops[ExpressionIdx]), Loc,
-                             BB);
+                             GetExpression(Ops[ExpressionIdx]), Loc, BB);
   }
   case SPIRVDebug::Value: {
     using namespace SPIRVDebug::Operand::DebugValue;

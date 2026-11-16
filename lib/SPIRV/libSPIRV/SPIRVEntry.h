@@ -277,7 +277,7 @@ public:
   SPIRVEntry *getOrCreate(SPIRVId TheId) const;
   SPIRVValue *getValue(SPIRVId TheId) const;
   std::vector<SPIRVValue *> getValues(const std::vector<SPIRVId> &) const;
-  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *>) const;
+  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *> &) const;
   SPIRVType *getValueType(SPIRVId TheId) const;
   std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId> &) const;
 
@@ -328,7 +328,9 @@ public:
   bool hasLinkageType() const;
   bool isAtomic() const { return isAtomicOpCode(OpCode); }
   bool isBasicBlock() const { return isLabel(); }
-  bool isExtInst() const { return OpCode == OpExtInst; }
+  bool isExtInst() const {
+    return OpCode == OpExtInst || OpCode == OpExtInstWithForwardRefsKHR;
+  }
   bool isExtInst(const SPIRVExtInstSetKind InstSet) const;
   bool isExtInst(const SPIRVExtInstSetKind InstSet,
                  const SPIRVWord ExtOp) const;
@@ -947,6 +949,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
+    case CapabilitySubgroupBitcastShuffleINTEL:
+      return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
     case internal::CapabilitySubgroupRequirementsINTEL:
       return ExtensionID::SPV_INTEL_subgroup_requirements;
     case CapabilityFPFastMathModeINTEL:

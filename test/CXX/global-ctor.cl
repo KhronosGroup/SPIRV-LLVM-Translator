@@ -3,6 +3,7 @@
 // RUN: spirv-val %t.spv
 // RUN: llvm-spirv %t.spv -to-text -o - | FileCheck %s --check-prefix=CHECK-SPIRV
 // RUN: llvm-spirv -r %t.spv -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
+// RUN: llvm-spirv -r %t.spv --spirv-function-program-addrspace=4 -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM-P4
 // RUN: not llvm-spirv %t.bc --spirv-max-version=1.0 2>&1 | FileCheck %s --check-prefix=CHECK-SPV10
 
 // RUN: llvm-spirv %t.bc -o %t.spv --spirv-ext=+SPV_KHR_untyped_pointers
@@ -30,5 +31,7 @@ void kernel work(global int *out) {
 
 // CHECK-LLVM: llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @[[CTORNAME:_GLOBAL__sub_I[^ ]+]], ptr null }
 // CHECK-LLVM: define spir_kernel void @[[CTORNAME]]
+
+// CHECK-LLVM-P4: llvm.global_ctors = appending global [1 x { i32, ptr addrspace(4), ptr }] [{ i32, ptr addrspace(4), ptr } { i32 65535, ptr addrspace(4) @[[CTORNAME:_GLOBAL__sub_I[^ ]+]], ptr null }
 
 // CHECK-SPV10: Feature requires SPIR-V 1.1 or greater: Initializer/Finalizer Execution Mode

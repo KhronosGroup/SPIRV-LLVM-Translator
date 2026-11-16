@@ -3,8 +3,7 @@
 ; expect such functions to be translated to SPIR-V FunctionCall.
 
 ; RUN: llvm-spirv %s -o %t.spv
-; TODO: re-enable validation
-; RUNx: spirv-val %t.spv
+; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv %t.spv -to-text -o %t.spt
 ; RUN: FileCheck < %t.spt %s -check-prefix=CHECK-SPIRV
 ; RUN: llvm-spirv %t.spv -r -o - | llvm-dis -o %t.rev.ll
@@ -13,12 +12,14 @@
 ; CHECK-SPIRV: Name [[#Func:]] "_Z18convert_float_func"
 ; CHECK-SPIRV: Name [[#Func1:]] "_Z20convert_uint_satfunc"
 ; CHECK-SPIRV: Name [[#Func2:]] "_Z21convert_float_rtzfunc"
+; CHECK-SPIRV-NOT: FPRoundingMode
 ; CHECK-SPIRV-DAG: TypeVoid [[#VoidTy:]]
 ; CHECK-SPIRV-DAG: TypeInt [[#CharTy:]] 8
 ; CHECK-SPIRV-DAG: TypeFloat [[#FloatTy:]] 32
 
 ; CHECK-SPIRV: Function [[#VoidTy]] [[#Func]]
 ; CHECK-SPIRV: SConvert [[#CharTy]] [[#ConvertId:]] [[#]]
+; CHECK-SPIRV: SatConvertSToU [[#]] [[#]] [[#]]
 ; CHECK-SPIRV: ConvertSToF [[#FloatTy]] [[#ConvertId:]] [[#]]
 ; CHECK-SPIRV: FunctionCall [[#VoidTy]] [[#]] [[#Func]] [[#ConvertId]]
 ; CHECK-SPIRV: FunctionCall [[#VoidTy]] [[#]] [[#Func1]] [[#]]
@@ -56,8 +57,10 @@ entry:
 ; We don't get the convert_char_rtei back, but that's fine because they are
 ; functionally equivalent anyway. The rounding information is lost when
 ; translating to SPIR-V.
-; CHECK-LLVM: call spir_func i8 @_Z12convert_chari(i32 %[[#]])
+; CHECK-LLVM: trunc i32 %[[#]] to i8
+; CHECK-LLVM: call spir_func i32 @_Z16convert_uint_sati(i32 %[[#]])
   call spir_func signext i8 @_Z16convert_char_rtei(i32 noundef %0) #1
+  call spir_func i32 @_Z20convert_uint_sat_rtei(i32 noundef %0) #1
 ; CHECK-LLVM: %[[Call:[a-z]+]] = sitofp i32 %[[#]] to float
 ; CHECK-LLVM: call spir_func void @_Z18convert_float_func(float %[[Call]])
 ; CHECK-LLVM: call spir_func void @_Z20convert_uint_satfunc(i32 %[[#]])
@@ -71,6 +74,9 @@ entry:
 
 ; Function Attrs: convergent nounwind willreturn memory(none)
 declare spir_func signext i8 @_Z16convert_char_rtei(i32 noundef) #1
+
+; Function Attrs: convergent nounwind willreturn memory(none)
+declare spir_func i32 @_Z20convert_uint_sat_rtei(i32 noundef) #1
 
 ; Function Attrs: convergent nounwind willreturn memory(none)
 declare spir_func float @_Z13convert_floati(i32 noundef) #1
