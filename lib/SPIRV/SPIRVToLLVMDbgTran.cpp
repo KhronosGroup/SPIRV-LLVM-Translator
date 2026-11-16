@@ -1931,6 +1931,13 @@ DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::getEmissionKind() {
     Recorded = Kind;
   }
 
+  // Linking modules after translation can leave a kind recorded by one of them
+  // covering debug information from another that records none, so a kind that
+  // the content contradicts must not hide what is present.
+  if (Recorded && *Recorded != DICompileUnit::DebugEmissionKind::FullDebug &&
+      deriveEmissionKind() == DICompileUnit::DebugEmissionKind::FullDebug)
+    Recorded = DICompileUnit::DebugEmissionKind::FullDebug;
+
   EmissionKind = Recorded ? *Recorded : deriveEmissionKind();
   return *EmissionKind;
 }
