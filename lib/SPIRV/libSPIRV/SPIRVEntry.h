@@ -962,6 +962,8 @@ public:
       return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
     case CapabilityRoundedDivideSqrtINTEL:
       return ExtensionID::SPV_INTEL_rounded_divide_sqrt;
+    case CapabilityPauseINTEL:
+      return ExtensionID::SPV_INTEL_pause;
     case internal::CapabilityDeviceBarrierINTEL:
       return ExtensionID::SPV_INTEL_device_barrier;
     case CapabilityFloatControls2:
