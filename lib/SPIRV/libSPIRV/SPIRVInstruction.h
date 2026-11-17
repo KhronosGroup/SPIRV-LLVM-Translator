@@ -3117,14 +3117,6 @@ public:
 
   bool isInt16Atomic() const { return hasType() && getType()->isTypeInt(16); }
 
-  std::optional<ExtensionID> getRequiredExtension() const override {
-    // The OpenCL SPIR-V environment permits only 32-bit atomics, widened to
-    // 64-bit by Int64Atomics, so any 16-bit atomic requires the extension.
-    if (isInt16Atomic() || (isBFloat16Atomic() && allowsBFloat16(OpCode)))
-      return ExtensionID::SPV_INTEL_16bit_atomics;
-    return SPIRVInstTemplateBase::getRequiredExtension();
-  }
-
   SPIRVCapVec getRequiredCapability() const override {
     // Most of the atomic instructions require a specific capability when
     // operating on 64-bit integers.
@@ -3212,10 +3204,8 @@ public:
     if (ValueTy->isTypeInt(64)) {
       Module->addCapability(CapabilityInt64Atomics);
     } else if (ValueTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
-      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
       Module->addCapability(CapabilityAtomicBFloat16LoadStoreINTEL);
     } else if (ValueTy->isTypeInt(16)) {
-      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
       Module->addCapability(CapabilityAtomicInt16CompareExchangeINTEL);
     }
   }
@@ -3228,8 +3218,6 @@ public:
     if (getType()->isTypeVector() &&
         getType()->getVectorComponentType()->isTypeFloat(16))
       return ExtensionID::SPV_NV_shader_atomic_fp16_vector;
-    if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     if (getType()->isTypeFloat(16))
       return ExtensionID::SPV_EXT_shader_atomic_float16_add;
     return ExtensionID::SPV_EXT_shader_atomic_float_add;
@@ -3259,8 +3247,6 @@ public:
     if (getType()->isTypeVector() &&
         getType()->getVectorComponentType()->isTypeFloat(16))
       return ExtensionID::SPV_NV_shader_atomic_fp16_vector;
-    if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      Module->addExtension(ExtensionID::SPV_INTEL_16bit_atomics);
     return ExtensionID::SPV_EXT_shader_atomic_float_min_max;
   }
 
