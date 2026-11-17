@@ -1,4 +1,4 @@
-; REQUIRES: spirv-as, spirv-dis
+; REQUIRES: spirv-as
 ; RUN: spirv-as -o %t.spv %s
 ; RUN: spirv-val %t.spv
 ; RUN: llvm-spirv -r -o %t.bc %t.spv
@@ -23,7 +23,10 @@
 ;
 ; Translating back to SPIR-V: the AllowReassoc-only instruction has no LLVM
 ; flag to be re-created from, so it must not regain an FPFastMathMode
-; decoration, while the AllowTransform one must round-trip unchanged.
+; decoration, while the AllowTransform one must round-trip unchanged. The three
+; checks below read the decoration word as a whole: 131072 is AllowReassoc
+; alone, and 458752 is AllowContract | AllowReassoc | AllowTransform, which is
+; what the writer emits for an LLVM `reassoc contract` pair.
 ; SPIRV-NOT: FPFastMathMode 131072
 ; SPIRV: Decorate {{[0-9]+}} FPFastMathMode 458752
 ; SPIRV-NOT: FPFastMathMode 131072

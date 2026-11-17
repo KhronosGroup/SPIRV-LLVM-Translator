@@ -3682,7 +3682,7 @@ FastMathFlags SPIRVToLLVM::translateFastMathFlags(SPIRVWord V) const {
     FMF.setAllowContract();
   static_assert(FPFastMathModeAllowReassocINTELMask ==
                 FPFastMathModeAllowReassocMask);
-  if (V & FPFastMathModeAllowReassocINTELMask) {
+  if (V & FPFastMathModeAllowReassocMask) {
     // With SPV_INTEL_fp_fast_math_mode this bit is the direct counterpart of
     // LLVM's reassoc flag. SPV_KHR_float_controls2 gives the same bit a
     // narrower meaning: it permits only the transformations that follow from
