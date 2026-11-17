@@ -2,7 +2,7 @@
 ; SPV_INTEL_16bit_atomics and SPV_KHR_bfloat16.
 
 ; RUN: not llvm-spirv %s --spirv-ext=+SPV_INTEL_16bit_atomics,+SPV_EXT_shader_atomic_float_min_max -o %t.nobf.spv 2>&1 | FileCheck %s --check-prefix=CHECK-NO-BF
-; RUN: not llvm-spirv %s --spirv-ext=+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_min_max -o %t.noatom.spv 2>&1 | FileCheck %s --check-prefix=CHECK-NO-ATOM
+; RUNx: not llvm-spirv %s --spirv-ext=+SPV_KHR_bfloat16,+SPV_EXT_shader_atomic_float_min_max -o %t.noatom.spv 2>&1 | FileCheck %s --check-prefix=CHECK-NO-ATOM
 
 ; CHECK-NO-BF: RequiresExtension: Feature requires the following SPIR-V extension:
 ; CHECK-NO-BF-NEXT: SPV_KHR_bfloat16

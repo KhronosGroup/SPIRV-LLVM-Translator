@@ -3129,7 +3129,9 @@ public:
     if (hasType()) {
       if (getType()->isTypeInt(64))
         return {CapabilityInt64Atomics};
-      if (isInt16Atomic())
+      if (Module->isAllowedToUseExtension(
+              ExtensionID::SPV_INTEL_16bit_atomics) &&
+          isInt16Atomic())
         return {CapabilityInt16AtomicsINTEL};
     }
     return {};
@@ -3149,7 +3151,8 @@ public:
     if (OpCode == OpAtomicCompareExchangeWeak)
       assert(this->getModule()->getSPIRVVersion() < VersionNumber::SPIRV_1_4 &&
              "OpAtomicCompareExchangeWeak is removed starting from SPIR-V 1.4");
-    if (isBFloat16Atomic())
+    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics) &&
+        isBFloat16Atomic())
       getModule()->getErrorLog().checkError(
           allowsBFloat16(OpCode), SPIRVEC_InvalidInstruction,
           OpCodeNameMap::map(OpCode) +
@@ -3183,7 +3186,8 @@ public:
 class SPIRVAtomicCompareExchangeInstructions : public SPIRVAtomicInstBase {
 public:
   SPIRVCapVec getRequiredCapability() const override {
-    if (hasType()) {
+    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics) &&
+        hasType()) {
       if (isBFloat16Atomic() && allowsBFloat16(OpCode))
         return {CapabilityAtomicBFloat16LoadStoreINTEL};
       if (isInt16Atomic())
@@ -3203,10 +3207,13 @@ public:
     SPIRVType *ValueTy = getOperand(ValueOperandIndex)->getType();
     if (ValueTy->isTypeInt(64)) {
       Module->addCapability(CapabilityInt64Atomics);
-    } else if (ValueTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
-      Module->addCapability(CapabilityAtomicBFloat16LoadStoreINTEL);
-    } else if (ValueTy->isTypeInt(16)) {
-      Module->addCapability(CapabilityAtomicInt16CompareExchangeINTEL);
+    } else if (Module->isAllowedToUseExtension(
+                   ExtensionID::SPV_INTEL_16bit_atomics)) {
+      if (ValueTy->isTypeFloat(16, FPEncodingBFloat16KHR)) {
+        Module->addCapability(CapabilityAtomicBFloat16LoadStoreINTEL);
+      } else if (ValueTy->isTypeInt(16)) {
+        Module->addCapability(CapabilityAtomicInt16CompareExchangeINTEL);
+      }
     }
   }
 };
@@ -3228,7 +3235,8 @@ public:
     if (getType()->isTypeVector() &&
         getType()->getVectorComponentType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16VectorNV};
-    if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
+    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics) &&
+        getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       return {CapabilityAtomicBFloat16AddINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16AddEXT};
@@ -3255,7 +3263,8 @@ public:
     if (getType()->isTypeVector() &&
         getType()->getVectorComponentType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16VectorNV};
-    if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
+    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics) &&
+        getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
       return {CapabilityAtomicBFloat16MinMaxINTEL};
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16MinMaxEXT};

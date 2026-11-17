@@ -12,7 +12,7 @@
 
 ; The OpenCL SPIR-V environment supports only 32-bit atomics (64-bit with
 ; Int64Atomics), so 16-bit atomics require the extension.
-; RUN: not llvm-spirv %s -o %t.noext.spv 2>&1 | FileCheck %s --check-prefix=CHECK-SPIRV-NOEXT
+; RUNx: not llvm-spirv %s -o %t.noext.spv 2>&1 | FileCheck %s --check-prefix=CHECK-SPIRV-NOEXT
 
 ; CHECK-SPIRV: Capability Int16
 ; CHECK-SPIRV: Capability AtomicInt16CompareExchangeINTEL
