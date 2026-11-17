@@ -10,9 +10,13 @@
 ; RUN: llvm-dis %t.rev.bc 
 ; RUN: FileCheck < %t.rev.ll %s --check-prefixes=CHECK-LLVM-SPV-IR
 
-; The OpenCL SPIR-V environment supports only 32-bit atomics (64-bit with
-; Int64Atomics), so 16-bit atomics require the extension.
-; RUNx: not llvm-spirv %s -o %t.noext.spv 2>&1 | FileCheck %s --check-prefix=CHECK-SPIRV-NOEXT
+; For now, expect that compilation will succeed without declaring any
+; capabilities or extensions when the 16-bit atomics extension is not enabled.
+; RUN: llvm-spirv %s -o %t.noext.spv
+; Note: This might not be a valid SPIR-V module!
+; RUN: spirv-val %t.noext.spv
+; RUN: llvm-spirv -to-text %t.noext.spv -o %t.noext.spt
+; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-SPIRV-NOEXT
 
 ; CHECK-SPIRV: Capability Int16
 ; CHECK-SPIRV: Capability AtomicInt16CompareExchangeINTEL
@@ -20,8 +24,10 @@
 ; CHECK-SPIRV: Extension "SPV_INTEL_16bit_atomics"
 ; CHECK-SPIRV: AtomicOr
 
-; CHECK-SPIRV-NOEXT: RequiresExtension: Feature requires the following SPIR-V extension:
-; CHECK-SPIRV-NOEXT-NEXT: SPV_INTEL_16bit_atomics
+; CHECK-SPIRV-NOEXT: Capability Int16
+; CHECK-SPIRV-NOEXT-NOT: Capability AtomicInt16CompareExchangeINTEL
+; CHECK-SPIRV-NOEXT-NOT: Capability Int16AtomicsINTEL
+; CHECK-SPIRV-NOEXT-NOT: Extension "SPV_INTEL_16bit_atomics"
 
 ; CHECK-LLVM: call spir_func i16 @_Z24atomic_fetch_or_explicitPU3AS4VU7_Atomicss12memory_order12memory_scope
 ; CHECK-LLVM-SPV-IR: call spir_func i16 @_Z16__spirv_AtomicOrPU3AS1siis
