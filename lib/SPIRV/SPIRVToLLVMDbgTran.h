@@ -199,6 +199,9 @@ private:
   std::unordered_map<SPIRVId, DISubprogram *> FuncMap;
   std::unordered_map<const SPIRVExtInst *, MDNode *> DebugInstCache;
   std::unordered_map<DIFile *, DIMacroFile *> MacroFileMap;
+  // Whether DebugLocalVariable ArgNumber operands are encoded as Literals
+  // rather than <id>s of OpConstant. Computed lazily for the whole module.
+  std::optional<bool> ArgNumberIsLiteral;
 
   struct SplitFileName {
     SplitFileName(const std::string &FileName);
@@ -225,6 +228,8 @@ private:
   SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
                                       const SPIRVWord,
                                       const SPIRVExtInstSetKind);
+  bool isIntegerConstant(const SPIRVId Id);
+  bool isArgNumberLiteral();
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 
