@@ -3238,8 +3238,7 @@ public:
     if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR)) {
       if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics))
         return {CapabilityAtomicBFloat16AddINTEL};
-      else
-        return {};
+      return {};
     }
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16AddEXT};
@@ -3266,9 +3265,11 @@ public:
     if (getType()->isTypeVector() &&
         getType()->getVectorComponentType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16VectorNV};
-    if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics) &&
-        getType()->isTypeFloat(16, FPEncodingBFloat16KHR))
-      return {CapabilityAtomicBFloat16MinMaxINTEL};
+    if (getType()->isTypeFloat(16, FPEncodingBFloat16KHR)) {
+      if (Module->isAllowedToUseExtension(ExtensionID::SPV_INTEL_16bit_atomics))        
+        return {CapabilityAtomicBFloat16MinMaxINTEL};
+      return {};
+    }
     if (getType()->isTypeFloat(16))
       return {CapabilityAtomicFloat16MinMaxEXT};
     if (getType()->isTypeFloat(32))
