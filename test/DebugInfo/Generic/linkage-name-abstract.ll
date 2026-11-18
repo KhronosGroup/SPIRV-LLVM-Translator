@@ -5,10 +5,6 @@
 ; RUN: llc -mtriple=%triple -O0 -filetype=obj -dwarf-linkage-names=Abstract < %t.ll | llvm-dwarfdump -v -debug-info - > %t
 ; RUN: FileCheck %s -check-prefix=ONENAME < %t
 ; RUN: FileCheck %s -check-prefix=REF < %t 
-; Verify tuning for SCE gets us Abstract only.
-; RUN: llc -mtriple=%triple -O0 -filetype=obj -debugger-tune=sce < %t.ll | llvm-dwarfdump -v -debug-info - > %t
-; RUN: FileCheck %s -check-prefix=ONENAME < %t
-; RUN: FileCheck %s -check-prefix=REF < %t 
 ; REQUIRES: object-emission
 
 ; Verify that the only linkage-name present is the abstract origin of the

@@ -145,10 +145,13 @@ if (NOT SPIRV_TOOLS_FOUND)
 endif()
 
 option(LLVM_SPIRV_ENABLE_LIBSPIRV_DIS "Enable --spirv-tools-dis support.")
+option(LLVM_SPIRV_ENABLE_LIBSPIRV_VAL
+       "Enable SPIR-V Tools validation before reading SPIR-V.")
 
-if (NOT SPIRV_TOOLS_FOUND AND LLVM_SPIRV_ENABLE_LIBSPIRV_DIS)
+if (NOT SPIRV_TOOLS_FOUND AND
+    (LLVM_SPIRV_ENABLE_LIBSPIRV_DIS OR LLVM_SPIRV_ENABLE_LIBSPIRV_VAL))
   message(STATUS "SPIRV-Tools not found; project will be built without "
-          "--spirv-tools-dis support.")
+          "SPIR-V Tools disassembly or validation support.")
 endif()
 
 
@@ -164,7 +167,7 @@ install(
     ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVOpts.h
     ${LLVM_SPIRV_INCLUDE_DIRS}/LLVMSPIRVExtensions.inc
   DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/LLVMSPIRVLib
+    include/LLVMSPIRVLib
 )
 
 configure_file(LLVMSPIRVLib.pc.in ${CMAKE_BINARY_DIR}/LLVMSPIRVLib.pc @ONLY)
@@ -172,5 +175,5 @@ install(
   FILES
     ${CMAKE_BINARY_DIR}/LLVMSPIRVLib.pc
   DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/lib${LLVM_LIBDIR_SUFFIX}/pkgconfig
+    lib${LLVM_LIBDIR_SUFFIX}/pkgconfig
 )

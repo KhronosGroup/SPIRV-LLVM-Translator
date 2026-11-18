@@ -122,12 +122,47 @@ SPIRVToLLVMDbgTran::getConstantValueOrLiteral(const std::vector<SPIRVWord> &Ops,
   if (!isNonSemanticDebugInfo(Kind))
     return Ops[Idx];
 
+  // For compatibility, accept a Literal operand even for NonSemantic
+  // instruction sets.
+  if (!isIntegerConstant(Ops[Idx]))
+    return Ops[Idx];
+
   SPIRVValue *SPVConst = BM->get<SPIRVValue>(Ops[Idx]);
-  assert(isConstantOpCode(SPVConst->getOpCode()) &&
-         "NonSemantic Debug instruction's parameters must be OpConstant");
   ConstantInt *Const =
       cast<ConstantInt>(SPIRVReader->transValue(SPVConst, nullptr, nullptr));
   return Const->getZExtValue();
+}
+
+bool SPIRVToLLVMDbgTran::isIntegerConstant(const SPIRVId Id) {
+  SPIRVEntry *Entry = nullptr;
+  return BM->exist(Id, &Entry) && Entry &&
+         isConstantOpCode(Entry->getOpCode()) &&
+         static_cast<SPIRVValue *>(Entry)->getType()->isTypeInt();
+}
+
+// Older versions of the translator emitted the DebugLocalVariable ArgNumber
+// operand as a Literal even for NonSemantic instruction sets. Such a Literal
+// may coincide with the <id> of an unrelated integer OpConstant, so the
+// per-operand fallback in getConstantValueOrLiteral is not sufficient. Detect
+// the encoding once for the whole module instead: if any ArgNumber operand is
+// not the <id> of an integer OpConstant, all of them are Literals.
+bool SPIRVToLLVMDbgTran::isArgNumberLiteral() {
+  if (ArgNumberIsLiteral)
+    return *ArgNumberIsLiteral;
+
+  using namespace SPIRVDebug::Operand::LocalVariable;
+  ArgNumberIsLiteral = false;
+  for (const SPIRVExtInst *EI : BM->getDebugInstVec()) {
+    if (EI->getExtOp() != SPIRVDebug::LocalVariable ||
+        !isNonSemanticDebugInfo(EI->getExtSetKind()))
+      continue;
+    const SPIRVWordVec &Ops = EI->getArguments();
+    if (Ops.size() > ArgNumberIdx && !isIntegerConstant(Ops[ArgNumberIdx])) {
+      ArgNumberIsLiteral = true;
+      break;
+    }
+  }
+  return *ArgNumberIsLiteral;
 }
 
 const std::string &SPIRVToLLVMDbgTran::getString(const SPIRVId Id) {
@@ -891,7 +926,8 @@ DINode *SPIRVToLLVMDbgTran::transLexicalBlock(const SPIRVExtInst *DebugInst) {
     return getDIBuilder(DebugInst).createNameSpace(ParentScope, Name,
                                                    InlinedNamespace);
   }
-  unsigned Column = Ops[ColumnIdx];
+  SPIRVWord Column =
+      getConstantValueOrLiteral(Ops, ColumnIdx, DebugInst->getExtSetKind());
   return getDIBuilder(DebugInst).createLexicalBlock(ParentScope, File, LineNo,
                                                     Column);
 }
@@ -1203,9 +1239,14 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
   if (SPIRVFlags & SPIRVDebug::FlagIsObjectPointer)
     Flags |= DINode::FlagObjectPointer;
 
-  if (Ops.size() > ArgNumberIdx)
+  if (Ops.size() > ArgNumberIdx) {
+    SPIRVWord ArgNo = isArgNumberLiteral()
+                          ? Ops[ArgNumberIdx]
+                          : getConstantValueOrLiteral(
+                                Ops, ArgNumberIdx, DebugInst->getExtSetKind());
     return getDIBuilder(DebugInst).createParameterVariable(
-        Scope, Name, Ops[ArgNumberIdx], File, LineNo, Ty, true, Flags);
+        Scope, Name, ArgNo, File, LineNo, Ty, true, Flags);
+  }
   return getDIBuilder(DebugInst).createAutoVariable(Scope, Name, File, LineNo,
                                                     Ty, true, Flags);
 }
@@ -1682,8 +1723,7 @@ SPIRVToLLVMDbgTran::transDebugIntrinsic(const SPIRVExtInst *DebugInst,
       return DbgDeclare;
     }
     return DIB.insertDeclare(GetValue(Ops[VariableIdx]), LocalVar.first,
-                             GetExpression(Ops[ExpressionIdx]), Loc,
-                             BB);
+                             GetExpression(Ops[ExpressionIdx]), Loc, BB);
   }
   case SPIRVDebug::Value: {
     using namespace SPIRVDebug::Operand::DebugValue;

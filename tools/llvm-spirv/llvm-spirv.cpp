@@ -59,7 +59,6 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MathExtras.h"
-#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/SourceMgr.h"
@@ -145,6 +144,18 @@ static cl::opt<SPIRV::ExtInst> ExtInst(
                           "OpenCL.std extended instruction set")),
     cl::init(SPIRV::ExtInst::None));
 
+static cl::opt<SPIRV::SPIRVDbgErrorHandlingKinds> ErrorHandling(
+    "spirv-error-handling",
+    cl::desc("Specify what happens when a module is rejected"),
+    cl::values(clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Abort, "abort",
+                          "Print the error and abort"),
+               clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Exit, "exit",
+                          "Print the error and exit with its error code"),
+               clEnumValN(SPIRV::SPIRVDbgErrorHandlingKinds::Ignore, "ignore",
+                          "Suppress the translator's own error message and "
+                          "exit through the tool's normal error path")),
+    cl::init(SPIRV::SPIRVDbgErrorHandlingKinds::Exit));
+
 static cl::opt<SPIRV::BIsRepresentation> BIsRepresentation(
     "spirv-target-env",
     cl::desc("Specify a representation of different SPIR-V Instructions which "
@@ -164,6 +175,10 @@ static cl::opt<bool> PreserveOCLKernelArgTypeMetadataThroughString(
 static cl::opt<bool>
     SPIRVToolsDis("spirv-tools-dis", cl::init(false),
                   cl::desc("Emit textual assembly using SPIRV-Tools"));
+
+static cl::opt<bool> SPIRVValidate(
+    "spirv-validate", cl::init(false),
+    cl::desc("Validate SPIR-V with SPIRV-Tools before reverse translation"));
 
 static cl::opt<bool> SPIRVEmitFunctionPtrAddrSpace(
     "spirv-emit-function-ptr-addr-space", cl::init(false),
@@ -285,6 +300,13 @@ static cl::opt<bool> SPIRVUseLLVMSPIRVBackendTarget(
              "it's available. Otherwise has no effect. Default behavior is to "
              "don't use the LLVM SPIR-V Backend target."),
     cl::init(false));
+
+static cl::opt<std::string> SPIRVTargetTriple(
+    "spirv-target-triple",
+    cl::desc("Override the target triple of the module produced by reverse "
+             "translation (-r). The data layout follows the triple. Default: "
+             "derived from the SPIR-V addressing model."),
+    cl::init(""));
 
 static cl::opt<uint32_t> FnVarCategory(
     "fnvar-category",
@@ -541,11 +563,13 @@ static int convertSPIRV() {
 static int regularizeLLVM(SPIRV::TranslatorOpts &Opts) {
   LLVMContext Context;
 
-  std::unique_ptr<MemoryBuffer> MB =
-      ExitOnErr(errorOrToExpected(MemoryBuffer::getFileOrSTDIN(InputFile)));
-  std::unique_ptr<Module> M =
-      ExitOnErr(getOwningLazyBitcodeModule(std::move(MB), Context,
-                                           /*ShouldLazyLoadMetadata=*/true));
+  SMDiagnostic GetIRErr;
+  std::unique_ptr<Module> M = getLazyIRFileModule(
+      InputFile, GetIRErr, Context, /*ShouldLazyLoadMetadata=*/true);
+  if (!M) {
+    ExitOnErr(
+        createStringError(inconvertibleErrorCode(), GetIRErr.getMessage()));
+  }
   ExitOnErr(M->materializeAll());
 
   if (OutputFile.empty()) {
@@ -643,8 +667,10 @@ bool parseSpecConstOpt(llvm::StringRef SpecConstStr,
                        SPIRV::TranslatorOpts &Opts) {
   std::ifstream IFS(InputFile, std::ios::binary);
   std::vector<SpecConstInfoTy> SpecConstInfo;
-  if (!getSpecConstInfo(IFS, SpecConstInfo))
+  if (!getSpecConstInfo(IFS, Opts, SpecConstInfo)) {
+    errs() << "Invalid SPIR-V binary\n";
     return true;
+  }
 
   SmallVector<StringRef, 8> Split;
   SpecConstStr.split(Split, ' ', -1, false);
@@ -897,7 +923,27 @@ int main(int Ac, char **Av) {
     }
   }
 
+  if (SPIRVTargetTriple.getNumOccurrences() != 0) {
+    if (!IsReverse) {
+      errs() << "Note: --spirv-target-triple option ignored as it only "
+                "affects translation from SPIR-V to LLVM IR";
+    } else {
+      Opts.setSPIRVTargetTriple(SPIRVTargetTriple);
+    }
+  }
+
   Opts.setFPContractMode(FPCMode);
+
+  Opts.setErrorHandlingKind(ErrorHandling);
+
+  if (SPIRVValidate) {
+    if (!IsReverse) {
+      errs() << "Note: --spirv-validate option ignored as it only affects "
+                "translation from SPIR-V to LLVM IR";
+    } else {
+      Opts.setSPIRVValidationEnabled(true);
+    }
+  }
 
   if (SPIRVBuiltinFormat.getNumOccurrences() != 0) {
     if (!IsReverse) {
@@ -1071,7 +1117,7 @@ int main(int Ac, char **Av) {
   if (SpecConstInfo) {
     std::ifstream IFS(InputFile, std::ios::binary);
     std::vector<SpecConstInfoTy> SpecConstInfo;
-    if (!getSpecConstInfo(IFS, SpecConstInfo)) {
+    if (!getSpecConstInfo(IFS, Opts, SpecConstInfo)) {
       std::cout << "Invalid SPIR-V binary";
       return -1;
     }

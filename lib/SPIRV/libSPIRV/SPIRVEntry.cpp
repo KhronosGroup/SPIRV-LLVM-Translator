@@ -267,7 +267,7 @@ SPIRVEntry::getValueTypes(const std::vector<SPIRVId> &IdVec) const {
 }
 
 std::vector<SPIRVId>
-SPIRVEntry::getIds(const std::vector<SPIRVValue *> ValueVec) const {
+SPIRVEntry::getIds(const std::vector<SPIRVValue *> &ValueVec) const {
   std::vector<SPIRVId> IdVec;
   for (auto *I : ValueVec)
     IdVec.push_back(I->getId());
@@ -533,6 +533,17 @@ std::vector<SPIRVDecorate const *> SPIRVEntry::getDecorations() const {
   std::vector<SPIRVDecorate const *> Decors;
   Decors.reserve(Decorates.size());
   for (auto &DecoPair : Decorates)
+    Decors.push_back(DecoPair.second);
+  return Decors;
+}
+
+std::vector<SPIRVDecorateGeneric const *>
+SPIRVEntry::getAllDecorations() const {
+  std::vector<SPIRVDecorateGeneric const *> Decors;
+  Decors.reserve(Decorates.size() + DecorateIds.size());
+  for (auto &DecoPair : Decorates)
+    Decors.push_back(DecoPair.second);
+  for (auto &DecoPair : DecorateIds)
     Decors.push_back(DecoPair.second);
   return Decors;
 }

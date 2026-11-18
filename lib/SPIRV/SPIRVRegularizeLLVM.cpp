@@ -234,6 +234,41 @@ void SPIRVRegularizeLLVMBase::buildUMulWithOverflowFunc(Function *UMulFunc) {
   Builder.CreateRet(Res);
 }
 
+void SPIRVRegularizeLLVMBase::lowerFMinimumMaximum(IntrinsicInst *II) {
+  // For llvm.minimum (llvm.maximum is symmetrical):
+  //   %m = call @llvm.minnum(%x, %y)
+  //   ; unless nsz: for non-NaN operands, the result has the sign of %x if
+  //   ; that is set (maximum: clear), and the sign of %y otherwise. This only
+  //   ; changes %m if it is a zero of the wrong sign.
+  //   %xsign = call @llvm.copysign(1.0, %x)
+  //   %xneg = fcmp olt %xsign, 0.0
+  //   %s = select %xneg, %x, %y
+  //   %m.s = call @llvm.copysign(%m, %s)
+  //   ; unless nnan
+  //   %uno = fcmp uno %x, %y
+  //   %res = select %uno, NaN, %m.s
+  bool IsMax = II->getIntrinsicID() == Intrinsic::maximum;
+  Value *X = II->getArgOperand(0);
+  Value *Y = II->getArgOperand(1);
+  Type *Ty = II->getType();
+  IRBuilder<> Builder(II);
+  Value *Res = Builder.CreateIntrinsic(
+      IsMax ? Intrinsic::maxnum : Intrinsic::minnum, {Ty}, {X, Y}, II);
+  if (!II->hasNoSignedZeros()) {
+    Value *XSign = Builder.CreateCopySign(ConstantFP::get(Ty, 1.0), X);
+    Value *XNeg = Builder.CreateFCmpOLT(XSign, ConstantFP::getZero(Ty));
+    Value *Sign = IsMax ? Builder.CreateSelect(XNeg, Y, X)
+                        : Builder.CreateSelect(XNeg, X, Y);
+    Res = Builder.CreateCopySign(Res, Sign);
+  }
+  if (!II->hasNoNaNs()) {
+    Value *Uno = Builder.CreateFCmpUNO(X, Y);
+    Res = Builder.CreateSelect(Uno, ConstantFP::getQNaN(Ty), Res);
+  }
+  Res->takeName(II);
+  II->replaceAllUsesWith(Res);
+}
+
 void SPIRVRegularizeLLVMBase::lowerUMulWithOverflow(
     IntrinsicInst *UMulIntrinsic) {
   // Get a separate function - otherwise, we'd have to rework the CFG of the
@@ -599,8 +634,8 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       GEPTy = LI->getType();
     else if (auto *SI = dyn_cast<StoreInst>(Inst))
       GEPTy = SI->getValueOperand()->getType();
-    auto *GEP =
-        cast<Instruction>(Builder.CreateConstGEP1_32(GEPTy, PtrInstOp, 0));
+    auto *GEP = Builder.Insert(
+        GetElementPtrInst::Create(GEPTy, PtrInstOp, {Builder.getInt32(0)}));
     CreatedGeps.push_back(GEP);
     Inst->setOperand(TargetArgNo, GEP);
     MDs.push_back(MDNode::get(Inst->getContext(), OPs));
@@ -610,8 +645,49 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
 }
 } // namespace
 
+/// Spell an integer or vector-of-integer type the LLVM way for the helper name
+/// suffix: i32, v2i32.
+static std::string getAtomicWrapTypeSuffix(Type *Ty) {
+  std::string Suffix;
+  if (auto *VecTy = dyn_cast<FixedVectorType>(Ty))
+    Suffix = "v" + std::to_string(VecTy->getNumElements());
+  return Suffix + "i" +
+         std::to_string(Ty->getScalarType()->getIntegerBitWidth());
+}
+
+/// Neither AMDGPU nor the SPIR-V backend supports atomics wider than 64 bits,
+/// so an over-limit operand is left alone to reach the writer and be reported
+/// as unsupported rather than round-tripped through a helper.
+static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
+  return M->getDataLayout().getTypeStoreSizeInBits(Ty) <= 64;
+}
+
 /// Remove entities not representable by SPIR-V
+// OpSwitch requires an integer selector, but i1 maps to OpTypeBool. Lower
+// boolean switches to branches.
+static void lowerBoolSwitch(SwitchInst *SI) {
+  BasicBlock *Dests[2] = {SI->getDefaultDest(), SI->getDefaultDest()};
+  for (auto Case : SI->cases())
+    Dests[Case.getCaseValue()->isOne()] = Case.getCaseSuccessor();
+  // Both values have a case, so the default is unreachable.
+  if (SI->getNumCases() == 2)
+    SI->getDefaultDest()->removePredecessor(SI->getParent());
+  Instruction *Br;
+  if (SI->getNumCases() == 0)
+    Br = UncondBrInst::Create(Dests[0], SI->getIterator());
+  else
+    Br = CondBrInst::Create(SI->getCondition(), Dests[1], Dests[0],
+                            SI->getIterator());
+  Br->copyMetadata(*SI, {LLVMContext::MD_dbg, LLVMContext::MD_loop});
+  SI->eraseFromParent();
+}
+
 bool SPIRVRegularizeLLVMBase::regularize() {
+  // Drop the personality of functions without EH pads so it can be erased.
+  for (Function &F : *M)
+    if (F.hasPersonalityFn() &&
+        none_of(F, [](BasicBlock &BB) { return BB.isEHPad(); }))
+      F.setPersonalityFn(nullptr);
   eraseUselessFunctions(M);
   expandSYCLTypeUsing(M);
   cleanupConversionToNonStdIntegers(M);
@@ -627,6 +703,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     // TODO: query intrinsic calls from their declarations
     std::vector<Instruction *> ToErase;
     for (BasicBlock &BB : *F) {
+      auto *SI = dyn_cast<SwitchInst>(BB.getTerminator());
+      if (SI && SI->getCondition()->getType()->isIntegerTy(1))
+        lowerBoolSwitch(SI);
       for (Instruction &II : BB) {
         if (auto *MD = II.getMetadata(SPIRV_MD_INTEL_CACHE_DECORATIONS))
           prepareCacheControlsTranslation(MD, &II);
@@ -644,7 +723,11 @@ bool SPIRVRegularizeLLVMBase::regularize() {
               lowerFunnelShift(II);
             else if (II->getIntrinsicID() == Intrinsic::umul_with_overflow)
               lowerUMulWithOverflow(II);
-            else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
+            else if (II->getIntrinsicID() == Intrinsic::minimum ||
+                     II->getIntrinsicID() == Intrinsic::maximum) {
+              lowerFMinimumMaximum(II);
+              ToErase.push_back(II);
+            } else if (II->getIntrinsicID() == Intrinsic::uadd_with_overflow) {
               BuiltinFuncMangleInfo Info;
               std::string MangledName =
                   mangleBuiltin("__spirv_IAddCarry",
@@ -792,6 +875,64 @@ bool SPIRVRegularizeLLVMBase::regularize() {
           auto *V2 = Builder.CreateInsertValue(V1, Cmp, 1, Cmpxchg->getName());
           Cmpxchg->replaceAllUsesWith(V2);
           ToErase.push_back(Cmpxchg);
+        }
+        if (auto *ARMW = dyn_cast<AtomicRMWInst>(&II)) {
+          // For an AMD triple, uinc_wrap/udec_wrap become a call to an imported
+          // __translate_spirv_atomic_u{inc,dec}_wrap helper.
+          if (M->getTargetTriple().getVendor() == Triple::AMD &&
+              (ARMW->getOperation() == AtomicRMWInst::UIncWrap ||
+               ARMW->getOperation() == AtomicRMWInst::UDecWrap) &&
+              isAtomicWrapSizeSupported(M, ARMW->getValOperand()->getType())) {
+            AtomicRMWInst::BinOp AOp = ARMW->getOperation();
+            // The name carries a _p<addrspace>_<type> suffix (e.g. _p1_i32,
+            // _p1_v2i32) since SPIR-V resolves an import by linkage name alone.
+            Value *Ptr = ARMW->getPointerOperand();
+            Value *Val = ARMW->getValOperand();
+            Type *MemType = Val->getType();
+
+            spv::Scope S =
+                toSPIRVScope(ARMW->getContext(), ARMW->getSyncScopeID());
+            Value *MemoryScope = getInt32(M, S);
+            auto Order =
+                static_cast<OCLMemOrderKind>(llvm::toCABI(ARMW->getOrdering()));
+            unsigned SCMask =
+                getAtomicPointerMemorySemanticsMask(Ptr, Ptr->getType());
+            Value *Sem = getInt32(M, OCLMemOrderMap::map(Order) | SCMask);
+
+            std::string FuncName =
+                AOp == AtomicRMWInst::UIncWrap
+                    ? kSPIRVName::TranslateSPIRVAtomicUIncWrap
+                    : kSPIRVName::TranslateSPIRVAtomicUDecWrap;
+            FuncName +=
+                "_p" +
+                std::to_string(Ptr->getType()->getPointerAddressSpace()) + "_" +
+                getAtomicWrapTypeSuffix(MemType);
+
+            Type *Int32Ty = Type::getInt32Ty(M->getContext());
+            // Pass `volatile` and `elementwise` info as constant operands.
+            Type *BoolTy = Type::getInt1Ty(M->getContext());
+            Value *IsVolatile = ConstantInt::get(BoolTy, ARMW->isVolatile());
+            Value *IsElementwise =
+                ConstantInt::get(BoolTy, ARMW->isElementwise());
+            FunctionType *FT = FunctionType::get(
+                MemType,
+                {Ptr->getType(), Int32Ty, Int32Ty, MemType, BoolTy, BoolTy},
+                false);
+            FunctionCallee FC = M->getOrInsertFunction(FuncName, FT);
+            // The name is reserved, so it can only resolve to our own function.
+            cast<Function>(FC.getCallee())
+                ->setCallingConv(CallingConv::SPIR_FUNC);
+
+            IRBuilder<> Builder(ARMW);
+            CallInst *Call = Builder.CreateCall(
+                FC, {Ptr, MemoryScope, Sem, Val, IsVolatile, IsElementwise});
+            Call->setCallingConv(CallingConv::SPIR_FUNC);
+            Call->takeName(ARMW);
+            Call->copyMetadata(*ARMW);
+
+            ARMW->replaceAllUsesWith(Call);
+            ToErase.push_back(ARMW);
+          }
         }
       }
     }

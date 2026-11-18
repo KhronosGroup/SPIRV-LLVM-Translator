@@ -60,6 +60,7 @@ class SPIRVEncoder;
 class SPIRVDecoder;
 class SPIRVType;
 class SPIRVValue;
+class SPIRVDecorateGeneric;
 class SPIRVDecorate;
 class SPIRVDecorateId;
 class SPIRVForward;
@@ -276,7 +277,7 @@ public:
   SPIRVEntry *getOrCreate(SPIRVId TheId) const;
   SPIRVValue *getValue(SPIRVId TheId) const;
   std::vector<SPIRVValue *> getValues(const std::vector<SPIRVId> &) const;
-  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *>) const;
+  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *> &) const;
   SPIRVType *getValueType(SPIRVId TheId) const;
   std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId> &) const;
 
@@ -319,6 +320,7 @@ public:
   std::set<SPIRVWord> getDecorate(Decoration Kind, size_t Index = 0) const;
   std::vector<SPIRVDecorate const *> getDecorations(Decoration Kind) const;
   std::vector<SPIRVDecorate const *> getDecorations() const;
+  std::vector<SPIRVDecorateGeneric const *> getAllDecorations() const;
   std::set<SPIRVId> getDecorateId(Decoration Kind, size_t Index = 0) const;
   std::vector<SPIRVDecorateId const *> getDecorationIds(Decoration Kind) const;
   bool hasId() const { return !(Attrib & SPIRVEA_NOID); }
@@ -326,7 +328,9 @@ public:
   bool hasLinkageType() const;
   bool isAtomic() const { return isAtomicOpCode(OpCode); }
   bool isBasicBlock() const { return isLabel(); }
-  bool isExtInst() const { return OpCode == OpExtInst; }
+  bool isExtInst() const {
+    return OpCode == OpExtInst || OpCode == OpExtInstWithForwardRefsKHR;
+  }
   bool isExtInst(const SPIRVExtInstSetKind InstSet) const;
   bool isExtInst(const SPIRVExtInstSetKind InstSet,
                  const SPIRVWord ExtOp) const;
@@ -945,6 +949,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
+    case CapabilitySubgroupBitcastShuffleINTEL:
+      return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
     case internal::CapabilitySubgroupRequirementsINTEL:
       return ExtensionID::SPV_INTEL_subgroup_requirements;
     case CapabilityFPFastMathModeINTEL:

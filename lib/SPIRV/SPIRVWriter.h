@@ -139,6 +139,7 @@ public:
   void transFunctionMetadataAsUserSemanticDecoration(SPIRVFunction *BF,
                                                      Function *F);
   void transAuxDataInst(SPIRVValue *BV, Value *V);
+  void transAMDGPUAtomicMetadata(SPIRVValue *BV, Instruction *I);
 
   bool transGlobalVariables();
 
@@ -165,6 +166,7 @@ public:
                               bool CreateForward = true,
                               FuncTransMode FuncTrans = FuncTransMode::Decl);
   void transGlobalIOPipeStorage(GlobalVariable *V, MDNode *IO);
+  bool shouldLowerUSMAddrSpace(unsigned AddrSpace) const;
 
   static SPIRVInstruction *applyRoundingModeConstraint(Value *V,
                                                        SPIRVInstruction *I);
@@ -220,8 +222,6 @@ private:
   llvm::IntegerType *getSizetType(unsigned AS = 0);
   std::vector<SPIRVValue *> transValue(const std::vector<Value *> &Values,
                                        SPIRVBasicBlock *BB);
-  std::vector<SPIRVWord> transValue(const std::vector<Value *> &Values,
-                                    SPIRVBasicBlock *BB, SPIRVEntry *Entry);
   SPIRVInstruction *transBinaryInst(BinaryOperator *B, SPIRVBasicBlock *BB);
   SPIRVInstruction *transCmpInst(CmpInst *Cmp, SPIRVBasicBlock *BB);
   SPIRVInstruction *transLifetimeIntrinsicInst(Op OC, IntrinsicInst *Intrinsic,
