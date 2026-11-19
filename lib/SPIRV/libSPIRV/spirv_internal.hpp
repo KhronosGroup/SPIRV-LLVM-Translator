@@ -69,7 +69,7 @@ enum InternalCapability {
   ICapTokenTypeINTEL = 6112,
   ICapBfloat16ConversionINTEL = 6115,
   ICapFPArithmeticFenceINTEL = 6144,
-  ICapabilityBFloat16ArithmeticINTEL = 6226,
+  ICapabilityBFloat16ArithmeticEXT = 6226,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
   ICapabilityHWThreadQueryINTEL = 6134,
@@ -161,8 +161,8 @@ constexpr Capability CapabilityRegisterLimitsINTEL =
 
 constexpr FunctionControlMask FunctionControlOptNoneINTELMask =
     static_cast<FunctionControlMask>(IFunctionControlOptNoneINTELMask);
-constexpr Capability CapabilityBFloat16ArithmeticINTEL =
-    static_cast<Capability>(ICapabilityBFloat16ArithmeticINTEL);
+constexpr Capability CapabilityBFloat16ArithmeticEXT =
+    static_cast<Capability>(ICapabilityBFloat16ArithmeticEXT);
 
 constexpr Decoration DecorationMathOpDSPModeINTEL =
     static_cast<Decoration>(IDecMathOpDSPModeINTEL);
