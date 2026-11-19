@@ -639,6 +639,14 @@ SPIRVType *LLVMToSPIRVBase::transType(Type *T) {
     return nullptr;
   }
 
+  if (isa<ScalableVectorType>(T)) {
+    BM->getErrorLog().checkError(
+        false, SPIRVEC_InvalidLlvmModule,
+        "LLVM module contains scalable vector type, which doesn't have a "
+        "counterpart in SPIR-V");
+    return nullptr;
+  }
+
   llvm_unreachable("Not implemented!");
   return 0;
 }
@@ -3046,6 +3054,10 @@ static void transMetadataDecorations(Metadata *MD, SPIRVValue *Target) {
                            "First operand of decoration must be the kind"))
       return;
     auto DecoKind = static_cast<Decoration>(DecoKindConst->getZExtValue());
+    // May already be set from an SPV-IR builtin name postfix.
+    if (DecoKind == DecorationSaturatedConversion &&
+        Target->hasDecorate(DecoKind))
+      continue;
 
     const size_t NumOperands = DecoMD->getNumOperands();
     switch (static_cast<size_t>(DecoKind)) {
@@ -4219,9 +4231,13 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::floor:
   case Intrinsic::fma:
   case Intrinsic::frexp:
+  case Intrinsic::llrint:
+  case Intrinsic::llround:
   case Intrinsic::log:
   case Intrinsic::log10:
   case Intrinsic::log2:
+  case Intrinsic::lrint:
+  case Intrinsic::lround:
   case Intrinsic::maximumnum:
   case Intrinsic::maximum:
   case Intrinsic::maxnum:
@@ -4285,6 +4301,10 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::debugtrap:
   case Intrinsic::uadd_with_overflow:
   case Intrinsic::usub_with_overflow:
+  case Intrinsic::smulh:
+  case Intrinsic::umulh:
+  case Intrinsic::smul_fix:
+  case Intrinsic::umul_fix:
   case Intrinsic::arithmetic_fence:
   case Intrinsic::masked_gather:
   case Intrinsic::masked_scatter:
@@ -4505,7 +4525,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::fmuladd: {
     Type *Ty = II->getType();
     if (Ty->isBFloatTy())
-      BM->addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
+      BM->addCapability(CapabilityBFloat16ArithmeticEXT);
     break;
   }
   default:
@@ -4570,12 +4590,24 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addExtInst(STy, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
                           BB);
   }
-  case Intrinsic::lround: {
+  case Intrinsic::lround:
+  case Intrinsic::llround:
+  case Intrinsic::lrint:
+  case Intrinsic::llrint: {
+    Type *FTy = II->getArgOperand(0)->getType()->getScalarType();
+    if (!BM->SPIRVCK(
+            (FTy->isHalfTy() || FTy->isFloatTy() || FTy->isDoubleTy()) &&
+                !II->getType()->isIntOrIntVectorTy(1),
+            InvalidFunctionCall, II->getCalledOperand()->getName().str()))
+      return nullptr;
+    // Round in the source type, then convert to the signed integer result.
+    bool IsRint = IID == Intrinsic::lrint || IID == Intrinsic::llrint;
     SPIRVType *SourceTy = transType(II->getArgOperand(0)->getType());
     SPIRVType *DestTy = transType(II->getType());
-    SPIRVValue *Rounded = BM->addExtInst(
-        SourceTy, BM->getExtInstSetId(SPIRVEIS_OpenCL), OpenCLLIB::Round,
-        {transValue(II->getArgOperand(0), BB)}, BB);
+    SPIRVValue *Rounded =
+        BM->addExtInst(SourceTy, BM->getExtInstSetId(SPIRVEIS_OpenCL),
+                       IsRint ? OpenCLLIB::Rint : OpenCLLIB::Round,
+                       {transValue(II->getArgOperand(0), BB)}, BB);
     return BM->addUnaryInst(OpConvertFToS, DestTy, Rounded, BB);
   }
   case Intrinsic::frexp: {
@@ -5055,6 +5087,43 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
       SatVal = BM->addSelectInst(IsNeg, IntMin, IntMax, BB);
     }
     return BM->addSelectInst(Overflow, SatVal, Shifted, BB);
+  }
+  case Intrinsic::smulh:
+  case Intrinsic::umulh:
+  case Intrinsic::smul_fix:
+  case Intrinsic::umul_fix: {
+    Type *ValTy = II->getType();
+    SPIRVType *Ty = transType(ValTy);
+    SPIRVValue *A = transValue(II->getArgOperand(0), BB);
+    SPIRVValue *B = transValue(II->getArgOperand(1), BB);
+    unsigned BitWidth = ValTy->getScalarSizeInBits();
+    bool IsMulH = IID == Intrinsic::smulh || IID == Intrinsic::umulh;
+    unsigned Scale =
+        IsMulH ? BitWidth
+               : cast<ConstantInt>(II->getArgOperand(2))->getZExtValue();
+    assert(Scale <= BitWidth && "Scale must not exceed the bit width");
+    if (BitWidth == 1)
+      return Scale == 0 ? BM->addBinaryInst(OpLogicalAnd, Ty, A, B, BB)
+                        : transValue(Constant::getNullValue(ValTy), BB);
+    if (Scale == 0)
+      return BM->addBinaryInst(OpIMul, Ty, A, B, BB);
+
+    // The result is bits [Scale, Scale + BitWidth) of the full product.
+    bool IsSigned = IID == Intrinsic::smulh || IID == Intrinsic::smul_fix;
+    Op MulOp = IsSigned ? OpSMulExtended : OpUMulExtended;
+    SPIRVValue *Mul = BM->addBinaryInst(
+        MulOp, transType(StructType::get(ValTy, ValTy)), A, B, BB);
+    SPIRVValue *Hi = BM->addCompositeExtractInst(Ty, Mul, {1}, BB);
+    if (Scale == BitWidth)
+      return Hi;
+    SPIRVValue *Lo = BM->addCompositeExtractInst(Ty, Mul, {0}, BB);
+    SPIRVValue *LoBits =
+        BM->addBinaryInst(OpShiftRightLogical, Ty, Lo,
+                          transValue(ConstantInt::get(ValTy, Scale), BB), BB);
+    SPIRVValue *HiBits = BM->addBinaryInst(
+        OpShiftLeftLogical, Ty, Hi,
+        transValue(ConstantInt::get(ValTy, BitWidth - Scale), BB), BB);
+    return BM->addBinaryInst(OpBitwiseOr, Ty, HiBits, LoBits, BB);
   }
   case Intrinsic::uadd_with_overflow: {
     return BM->addBinaryInst(OpIAddCarry, transType(II->getType()),
@@ -5860,11 +5929,11 @@ SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
   }
 
   // A fence is not associated with a particular memory object, so make its
-  // memory semantics cover every storage class reachable in the OpenCL
-  // environment.
+  // memory semantics cover every pointer-addressable storage class in the
+  // OpenCL environment. Image ordering is requested explicitly via
+  // CLK_IMAGE_MEM_FENCE.
   MemorySemantics |= MemorySemanticsWorkgroupMemoryMask |
-                     MemorySemanticsCrossWorkgroupMemoryMask |
-                     MemorySemanticsImageMemoryMask;
+                     MemorySemanticsCrossWorkgroupMemoryMask;
 
   Module *M = FI->getParent()->getModule();
   spv::Scope S = toSPIRVScope(FI->getContext(), FI->getSyncScopeID());
@@ -6082,7 +6151,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     if (const auto *FirstArg = F->getArg(0)) {
       const auto *Type = FirstArg->getType();
       if (Type->isBFloatTy())
-        BM->addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
+        BM->addCapability(CapabilityBFloat16ArithmeticEXT);
     }
     if (DemangledName.find("__spirv_ocl_printf") != StringRef::npos) {
       auto *FormatStrPtr = cast<PointerType>(CI->getArgOperand(0)->getType());
@@ -7734,6 +7803,13 @@ LLVMToSPIRVBase::transBuiltinToInstWithoutDecoration(Op OC, CallInst *CI,
       SPIRVType *SPRetTy = nullptr;
       Type *RetTy = CI->getType();
       auto *F = CI->getCalledFunction();
+      if (OC == OpSelect)
+        BM->getErrorLog().checkError(
+            RetTy->isVectorTy() ||
+                !CI->getArgOperand(0)->getType()->isVectorTy(),
+            SPIRVEC_InvalidInstruction, CI,
+            "OpSelect with a vector condition requires a vector "
+            "result\n");
       if (!RetTy->isVoidTy()) {
         SPRetTy = transScavengedType(CI);
       } else if (Args.size() > 0 && F->arg_begin()->hasStructRetAttr()) {

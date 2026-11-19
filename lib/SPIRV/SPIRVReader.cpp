@@ -50,6 +50,7 @@
 #include "SPIRVModule.h"
 #include "SPIRVToLLVMDbgTran.h"
 #include "SPIRVToOCL.h"
+#include "SPIRVToolsUtil.h"
 #include "SPIRVType.h"
 #include "SPIRVUtil.h"
 #include "SPIRVValue.h"
@@ -83,19 +84,13 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/SaveAndRestore.h"
 
-#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
-#include "spirv-tools/libspirv.hpp"
-#endif
-
 #include <algorithm>
 #include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -1115,6 +1110,15 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
     const bool IsOldConvertFToFOp =
         OC == internal::OpClampConvertFToFINTEL ||
         OC == internal::OpClampStochasticRoundFToFINTEL;
+    // These opcodes accept no explicit FPRoundingMode.
+    // Nothing else is restricted here.
+    if (OC == internal::OpClampConvertFToSINTEL ||
+        OC == internal::OpStochasticRoundFToFINTEL ||
+        OC == internal::OpClampStochasticRoundFToFINTEL ||
+        OC == internal::OpClampStochasticRoundFToSINTEL)
+      BM->getErrorLog().checkError(
+          !BC->hasFPRoundingMode(), SPIRVEC_InvalidInstruction,
+          "FPRoundingMode: not supported on this conversion.\n");
     {
       auto SPVOps = BC->getOperands();
       auto *SPVSrcTy = SPVOps[0]->getType();
@@ -1249,7 +1253,7 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
         if (BB) {
           Src = CastInst::CreatePointerCast(Src, IntTy, "", BB);
         } else {
-          Src = ConstantExpr::getPointerCast(dyn_cast<Constant>(Src), IntTy);
+          Src = ConstantExpr::getPointerCast(cast<Constant>(Src), IntTy);
         }
       } else {
         CO = Instruction::PtrToInt;
@@ -1403,10 +1407,9 @@ Value *SPIRVToLLVM::mapValue(SPIRVValue *BV, Value *V) {
   if (Loc != ValueMap.end()) {
     if (Loc->second == V)
       return V;
-    auto *LD = dyn_cast<LoadInst>(Loc->second);
-    auto *Placeholder = dyn_cast<GlobalVariable>(LD->getPointerOperand());
-    assert(LD && Placeholder &&
-           Placeholder->getName().starts_with(KPlaceholderPrefix) &&
+    auto *LD = cast<LoadInst>(Loc->second);
+    auto *Placeholder = cast<GlobalVariable>(LD->getPointerOperand());
+    assert(Placeholder->getName().starts_with(KPlaceholderPrefix) &&
            "A value is translated twice");
     // Replaces placeholders for PHI nodes
     LD->replaceAllUsesWith(V);
@@ -4651,8 +4654,10 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
           Type *IntTy = nullptr;
 
           if (!PtrAnnFirstArg) {
-            GetElementPtrInst *GEP = cast<GetElementPtrInst>(
-                Builder.CreateConstInBoundsGEP2_32(AllocatedTy, AL, 0, I));
+            GetElementPtrInst *GEP =
+                Builder.Insert(GetElementPtrInst::CreateInBounds(
+                    AllocatedTy, AL,
+                    {Builder.getInt32(0), Builder.getInt32(I)}));
 
             IntTy = GEP->getResultElementType()->isIntegerTy()
                         ? GEP->getType()
@@ -5010,7 +5015,35 @@ void SPIRVToLLVM::transGlobalCtorDtors(SPIRVVariableBase *BV) {
     return;
 
   Value *V = transValue(BV, nullptr, nullptr);
-  cast<GlobalValue>(V)->setLinkage(GlobalValue::AppendingLinkage);
+  auto *GV = cast<GlobalVariable>(V);
+  GV->setLinkage(GlobalValue::AppendingLinkage);
+
+  // The verifier requires the function pointer field to be in the program
+  // address space. The field type comes from SPIR-V and may use another one.
+  auto *FuncPtrTy =
+      PointerType::get(*Context, M->getDataLayout().getProgramAddressSpace());
+  auto *ArrTy = dyn_cast<ArrayType>(GV->getValueType());
+  auto *STy = ArrTy ? dyn_cast<StructType>(ArrTy->getElementType()) : nullptr;
+  if (!GV->hasInitializer() || !STy || STy->getNumElements() != 3 ||
+      !STy->getElementType(1)->isPointerTy() ||
+      STy->getElementType(1) == FuncPtrTy)
+    return;
+
+  auto *NewSTy = StructType::get(STy->getElementType(0), FuncPtrTy,
+                                 STy->getElementType(2));
+  SmallVector<Constant *, 2> ArrayElts;
+  for (unsigned I = 0, E = ArrTy->getNumElements(); I != E; ++I) {
+    Constant *Entry = GV->getInitializer()->getAggregateElement(I);
+    // Keep null entries null: an addrspacecast of null is not folded.
+    Constant *Func = Entry->getAggregateElement(1u);
+    Func = Func->isNullValue() ? ConstantPointerNull::get(FuncPtrTy)
+                               : ConstantExpr::getPointerCast(Func, FuncPtrTy);
+    ArrayElts.push_back(
+        ConstantStruct::get(NewSTy, {Entry->getAggregateElement(0u), Func,
+                                     Entry->getAggregateElement(2u)}));
+  }
+  GV->replaceInitializer(
+      ConstantArray::get(ArrayType::get(NewSTy, ArrayElts.size()), ArrayElts));
 }
 
 void SPIRVToLLVM::createCXXStructor(const char *ListName,
@@ -5025,7 +5058,8 @@ void SPIRVToLLVM::createCXXStructor(const char *ListName,
 
   // Type of a structor entry: { i32, void ()*, i8* }
   Type *PriorityTy = Type::getInt32Ty(*Context);
-  PointerType *CtorTy = PointerType::getUnqual(*Context);
+  PointerType *CtorTy =
+      PointerType::get(*Context, M->getDataLayout().getProgramAddressSpace());
   PointerType *ComdatTy = PointerType::getUnqual(*Context);
   StructType *StructorTy = StructType::get(PriorityTy, CtorTy, ComdatTy);
 
@@ -5042,7 +5076,7 @@ void SPIRVToLLVM::createCXXStructor(const char *ListName,
     // SPIR-V does not specify an order between Initializers, so set default
     // priority.
     Elts.push_back(ConstantInt::get(PriorityTy, 65535));
-    Elts.push_back(ConstantExpr::getBitCast(F, CtorTy));
+    Elts.push_back(ConstantExpr::getPointerCast(F, CtorTy));
     Elts.push_back(ConstantPointerNull::get(ComdatTy));
     ArrayElts.push_back(ConstantStruct::get(StructorTy, Elts));
   }
@@ -6180,71 +6214,6 @@ SPIRVModuleTextReport formatSpirvReport(const SPIRVModuleReport &Report) {
   return TextReport;
 }
 
-#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
-static std::optional<spv_target_env>
-getSPIRVToolsTargetEnv(VersionNumber Version) {
-  switch (Version) {
-  case VersionNumber::SPIRV_1_0:
-    return SPV_ENV_UNIVERSAL_1_0;
-  case VersionNumber::SPIRV_1_1:
-    return SPV_ENV_UNIVERSAL_1_1;
-  case VersionNumber::SPIRV_1_2:
-    return SPV_ENV_UNIVERSAL_1_2;
-  case VersionNumber::SPIRV_1_3:
-    return SPV_ENV_UNIVERSAL_1_3;
-  case VersionNumber::SPIRV_1_4:
-    return SPV_ENV_UNIVERSAL_1_4;
-  case VersionNumber::SPIRV_1_5:
-    return SPV_ENV_UNIVERSAL_1_5;
-  case VersionNumber::SPIRV_1_6:
-    return SPV_ENV_UNIVERSAL_1_6;
-  default:
-    return std::nullopt;
-  }
-}
-
-static bool validateSPIRVBinary(std::istream &IS, std::string &Binary,
-                                std::string &ErrMsg) {
-  Binary.assign(std::istreambuf_iterator<char>(IS),
-                std::istreambuf_iterator<char>());
-  if (Binary.size() % sizeof(uint32_t) != 0) {
-    ErrMsg = "SPIR-V validation failed: input size is not a multiple of 4 "
-             "bytes";
-    return false;
-  }
-
-  std::vector<uint32_t> Words(Binary.size() / sizeof(uint32_t));
-  if (!Binary.empty())
-    std::memcpy(Words.data(), Binary.data(), Binary.size());
-
-  if (Words.size() < 5) {
-    ErrMsg = "SPIR-V validation failed: incomplete SPIR-V header";
-    return false;
-  }
-
-  const auto TargetEnv =
-      getSPIRVToolsTargetEnv(static_cast<VersionNumber>(Words[1]));
-  if (!TargetEnv) {
-    ErrMsg = "SPIR-V validation failed: unsupported SPIR-V version";
-    return false;
-  }
-
-  std::string ValidationError;
-  spvtools::SpirvTools Validator(*TargetEnv);
-  Validator.SetMessageConsumer(
-      [&ValidationError](spv_message_level_t, const char *,
-                         const spv_position_t &,
-                         const char *Message) { ValidationError = Message; });
-  if (Validator.Validate(Words))
-    return true;
-
-  ErrMsg = "SPIR-V validation failed";
-  if (!ValidationError.empty())
-    ErrMsg += ": " + ValidationError;
-  return false;
-}
-#endif
-
 std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
                                              const SPIRV::TranslatorOpts &Opts,
                                              std::string &ErrMsg) {
@@ -6263,10 +6232,15 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
   std::unique_ptr<SPIRVModule> BM(
       SPIRVModule::createSPIRVModule(*EffectiveOpts));
 
-#ifdef LLVM_SPIRV_HAVE_SPIRV_TOOLS
-  if (EffectiveOpts->isSPIRVValidationEnabled() && !SPIRVUseTextFormat) {
+  const bool ValidateSPIRV = EffectiveOpts->isSPIRVValidationEnabled();
+  if (ValidateSPIRV && !isSPIRVValidationAvailable(ErrMsg))
+    return nullptr;
+
+  if (ValidateSPIRV && !SPIRVUseTextFormat) {
     std::string Binary;
-    if (!validateSPIRVBinary(IS, Binary, ErrMsg))
+    Binary.assign(std::istreambuf_iterator<char>(IS),
+                  std::istreambuf_iterator<char>());
+    if (!validateSPIRVBinary(Binary, ErrMsg))
       return nullptr;
 
     std::istringstream ValidatedInput(Binary, std::ios::in | std::ios::binary);
@@ -6274,14 +6248,6 @@ std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
   } else {
     IS >> *BM;
   }
-#else
-  if (EffectiveOpts->isSPIRVValidationEnabled()) {
-    ErrMsg = "SPIR-V validation was requested, but this build lacks "
-             "SPIR-V Tools validation support";
-    return nullptr;
-  }
-  IS >> *BM;
-#endif
   if (!BM->isModuleValid()) {
     BM->getError(ErrMsg);
     return nullptr;

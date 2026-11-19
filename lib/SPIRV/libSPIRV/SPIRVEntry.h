@@ -277,7 +277,7 @@ public:
   SPIRVEntry *getOrCreate(SPIRVId TheId) const;
   SPIRVValue *getValue(SPIRVId TheId) const;
   std::vector<SPIRVValue *> getValues(const std::vector<SPIRVId> &) const;
-  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *>) const;
+  std::vector<SPIRVId> getIds(const std::vector<SPIRVValue *> &) const;
   SPIRVType *getValueType(SPIRVId TheId) const;
   std::vector<SPIRVType *> getValueTypes(const std::vector<SPIRVId> &) const;
 
@@ -958,8 +958,8 @@ public:
     case CapabilityFunctionVariantsINTEL:
     case CapabilitySpecConditionalINTEL:
       return ExtensionID::SPV_INTEL_function_variants;
-    case internal::CapabilityBFloat16ArithmeticINTEL:
-      return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
+    case CapabilityBFloat16ArithmeticEXT:
+      return ExtensionID::SPV_EXT_bfloat16_arithmetic;
     case CapabilityRoundedDivideSqrtINTEL:
       return ExtensionID::SPV_INTEL_rounded_divide_sqrt;
     case internal::CapabilityDeviceBarrierINTEL:
