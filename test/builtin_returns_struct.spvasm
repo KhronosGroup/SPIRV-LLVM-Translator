@@ -1,7 +1,9 @@
 ; REQUIRES: spirv-as
+; Use OpenCL C source metadata so SPV-IR exercises struct-return lowering
+; with IsCpp=false, as the OpenCL output paths do.
 ; RUN: spirv-as --target-env spv1.0 -o %t.spv %s
 ; RUN: spirv-val %t.spv
-; RUN: llvm-spirv -r -o - %t.spv | llvm-dis | FileCheck %s
+; RUN: llvm-spirv -r --spirv-target-env=SPV-IR -o - %t.spv | llvm-dis | FileCheck %s
 
                OpCapability Kernel
                OpCapability Addresses
@@ -10,7 +12,7 @@
                OpCapability Linkage
           %1 = OpExtInstImport "OpenCL.std"
                OpMemoryModel Physical64 OpenCL
-               OpSource OpenCL_CPP 100000
+               OpSource OpenCL_C 200000
                OpName %a "a"
                OpName %p "p"
                OpName %foo "foo"
