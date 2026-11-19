@@ -1,0 +1,70 @@
+;; Translator versions up to 14 emit the DebugLocalVariable ArgNumber operand as
+;; a Literal. Check that such Literals are read as argument numbers even when a
+;; Literal coincides with the <id> of an integer OpConstant: here ArgNumber 2 is
+;; also the <id> of OpConstant 1. The module is not valid SPIR-V for that reason.
+
+; RUN: llvm-spirv %s -to-binary -o %t.spv
+; RUN: llvm-spirv -r %t.spv -o - | llvm-dis | FileCheck %s --check-prefix=CHECK-LLVM
+
+; CHECK-LLVM-DAG: DILocalVariable(name: "a", arg: 1,
+; CHECK-LLVM-DAG: DILocalVariable(name: "b", arg: 2,
+
+119734787 67072 393230 41 0 
+2 Capability Addresses 
+2 Capability Linkage 
+2 Capability Kernel 
+11 ExtInstImport 17 "NonSemantic.Shader.DebugInfo.100" 
+5 ExtInstImport 1 "OpenCL.std" 
+3 MemoryModel 2 2 
+4 String 14 "/foo.cl" 
+3 String 16 "0" 
+3 String 19 "" 
+3 String 26 "int" 
+3 String 30 "foo" 
+3 String 34 "a" 
+3 String 37 "b" 
+3 Source 0 0 
+3 Name 5 "foo" 
+3 Name 6 "a" 
+3 Name 7 "b" 
+4 Name 8 "entry" 
+3 Name 13 "r" 
+5 Decorate 5 LinkageAttributes "foo" Export 
+4 TypeInt 3 32 0 
+4 Constant 3 2 1 
+4 Constant 3 21 65536 
+4 Constant 3 22 0 
+4 Constant 3 23 3 
+4 Constant 3 27 32 
+4 Constant 3 28 4 
+4 Constant 3 31 8 
+5 TypeFunction 4 3 3 3 
+2 TypeVoid 9 
+
+5 ExtInst 9 10 17 DebugInfoNone 
+6 ExtInst 9 15 17 DebugSource 14 
+7 ExtInst 9 18 17 DebugBuildIdentifier 16 2 
+6 ExtInst 9 20 17 DebugStoragePath 19 
+9 ExtInst 9 24 17 DebugCompilationUnit 21 22 15 23 
+7 ExtInst 9 25 17 DebugTypeFunction 22 9 
+9 ExtInst 9 29 17 DebugTypeBasic 26 27 28 22 
+14 ExtInst 9 32 17 DebugFunction 30 25 15 23 22 24 19 31 22 
+13 ExtInst 9 35 17 DebugLocalVariable 34 29 15 23 22 32 22 1 
+5 ExtInst 9 36 17 DebugExpression 
+13 ExtInst 9 38 17 DebugLocalVariable 37 29 15 23 22 32 22 2 
+
+5 Function 3 5 0 4 
+3 FunctionParameter 3 6 
+3 FunctionParameter 3 7 
+
+2 Label 8 
+7 ExtInst 9 33 17 DebugFunctionDefinition 32 5 
+6 ExtInst 9 39 17 DebugScope 32 
+10 ExtInst 9 40 17 DebugLine 15 28 28 22 2 
+8 ExtInst 9 11 17 DebugValue 35 6 36 
+8 ExtInst 9 12 17 DebugValue 38 7 36 
+5 IAdd 3 13 6 7 
+2 ReturnValue 13 
+
+1 FunctionEnd 
+

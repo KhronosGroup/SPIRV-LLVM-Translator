@@ -6,9 +6,10 @@
 ; RUN: llvm-spirv -r %t.spv
 ; RUN: llvm-dis < %t.bc | FileCheck %s --check-prefix=CHECK-LLVM
 
-; CHECK-LLVM: DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+; CHECK-LLVM-DAG: DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+; CHECK-LLVM-DAG: DILocalVariable(name: "a", arg: 1,
 
-119734787 67072 393230 69 0 
+119734787 67072 393231 69 0 
 2 Capability Addresses 
 2 Capability Linkage 
 2 Capability Kernel 
