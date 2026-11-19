@@ -870,10 +870,11 @@ int main(int Ac, char **Av) {
       cl::init(SPIRV::FPContractMode::On),
       cl::values(
           clEnumValN(SPIRV::FPContractMode::On, "on",
-                     "choose a mode according to presence of llvm.fmuladd "
-                     "intrinsic or `contract' flag on fp operations"),
+                     "allow FP contraction only for llvm.fmuladd intrinsic "
+                     "and fp operations with `contract' flag"),
           clEnumValN(SPIRV::FPContractMode::Off, "off",
-                     "disable FP contraction for all entry points"),
+                     "disable FP contraction for all entry points (currently "
+                     "the same as `on')"),
           clEnumValN(
               SPIRV::FPContractMode::Fast, "fast",
               "allow all operations to be contracted for all entry points")));
