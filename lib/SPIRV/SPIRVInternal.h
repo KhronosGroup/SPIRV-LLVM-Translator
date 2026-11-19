@@ -68,7 +68,11 @@ namespace SPIRV {
 /// The LLVM/SPIR-V translator version used to fill the lower 16 bits of the
 /// generator's magic number in the generated SPIR-V module.
 /// This number should be bumped up whenever the generated SPIR-V changes.
-const static unsigned short KTranslatorVer = 14;
+const static unsigned short KTranslatorVer = 15;
+
+/// The first translator version that emits the NonSemantic DebugLocalVariable
+/// ArgNumber operand as an <id> of OpConstant rather than as a Literal.
+const static unsigned short KTranslatorVerArgNumberId = 15;
 
 class SPIRVOpaqueType;
 typedef SPIRVMap<std::string, Op, SPIRVOpaqueType> SPIRVOpaqueTypeOpCodeMap;
