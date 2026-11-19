@@ -4265,6 +4265,7 @@ bool LLVMToSPIRVBase::isKnownIntrinsic(Intrinsic::ID Id) {
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::expect:
+  case Intrinsic::expect_with_probability:
   case Intrinsic::experimental_noalias_scope_decl:
   case Intrinsic::experimental_constrained_fadd:
   case Intrinsic::experimental_constrained_fsub:
@@ -4834,12 +4835,20 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     return BM->addExtInst(Ty, BM->getExtInstSetId(SPIRVEIS_OpenCL), ExtOp, Ops,
                           BB);
   }
-  case Intrinsic::expect: {
+  case Intrinsic::expect:
+  case Intrinsic::expect_with_probability: {
     // llvm.expect translation is currently supported only within
     // SPV_KHR_expect_assume extension, replace it with a translated value of #0
     // operand otherwise, since it's an optimization hint
     SPIRVValue *Value = transValue(II->getArgOperand(0), BB);
-    if (BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_expect_assume)) {
+    // OpExpectKHR has no probability operand, keep the hint only if likely.
+    bool KeepHint = true;
+    if (IID == Intrinsic::expect_with_probability)
+      KeepHint = cast<ConstantFP>(II->getArgOperand(2))
+                     ->getValueAPF()
+                     .convertToDouble() > 0.5;
+    if (KeepHint &&
+        BM->isAllowedToUseExtension(ExtensionID::SPV_KHR_expect_assume)) {
       SPIRVType *Ty = transType(II->getType());
       SPIRVValue *ExpectedValue = transValue(II->getArgOperand(1), BB);
       return BM->addExpectKHRInst(Ty, Value, ExpectedValue, BB);
