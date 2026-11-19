@@ -932,8 +932,8 @@ public:
       return ExtensionID::SPV_INTEL_vector_compute;
     case CapabilitySubgroupBitcastShuffleINTEL:
       return ExtensionID::SPV_INTEL_subgroup_bitcast_shuffle;
-    case internal::CapabilityBFloat16ArithmeticINTEL:
-      return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
+    case CapabilityBFloat16ArithmeticEXT:
+      return ExtensionID::SPV_EXT_bfloat16_arithmetic;
     case CapabilityRoundedDivideSqrtINTEL:
       return ExtensionID::SPV_INTEL_rounded_divide_sqrt;
     case internal::CapabilityDeviceBarrierINTEL:
