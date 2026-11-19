@@ -896,8 +896,8 @@ public:
     case CapabilityVectorComputeINTEL:
     case CapabilityVectorAnyINTEL:
       return ExtensionID::SPV_INTEL_vector_compute;
-    case internal::CapabilityBFloat16ArithmeticINTEL:
-      return ExtensionID::SPV_INTEL_bfloat16_arithmetic;
+    case internal::CapabilityBFloat16ArithmeticEXT:
+      return ExtensionID::SPV_EXT_bfloat16_arithmetic;
     default:
       return {};
     }
