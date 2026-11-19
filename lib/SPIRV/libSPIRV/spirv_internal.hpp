@@ -61,7 +61,7 @@ enum InternalCapability {
   ICapOptNoneINTEL = 6094,
   ICapDebugInfoModuleINTEL = 6114,
   ICapBfloat16ConversionINTEL = 6115,
-  ICapabilityBFloat16ArithmeticINTEL = 6226,
+  ICapabilityBFloat16ArithmeticEXT = 6226,
   ICapabilitySigmoidINTEL = 6167,
   ICapabilityTensorFloat32RoundingINTEL = 6425,
   ICapabilityMaskedGatherScatterINTEL = 6427,
@@ -123,8 +123,8 @@ constexpr Capability CapabilityDebugInfoModuleINTEL =
     static_cast<Capability>(ICapDebugInfoModuleINTEL);
 constexpr Capability CapabilityGlobalVariableDecorationsINTEL =
     static_cast<Capability>(ICapGlobalVariableDecorationsINTEL);
-constexpr Capability CapabilityBFloat16ArithmeticINTEL =
-    static_cast<Capability>(ICapabilityBFloat16ArithmeticINTEL);
+constexpr Capability CapabilityBFloat16ArithmeticEXT =
+    static_cast<Capability>(ICapabilityBFloat16ArithmeticEXT);
 
 } // namespace internal
 } // namespace spv
