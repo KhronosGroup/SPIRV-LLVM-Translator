@@ -6753,6 +6753,29 @@ static bool hasVectorComputeMetadata(Module *M) {
          });
 }
 
+// A 16-bit float that appears in a function signature or that is produced by an
+// instruction is used outside of buffer storage, so it needs the Float16
+// capability on top of the Float16Buffer one that SPIRVTypeFloat always
+// declares. SPIRVTypeFloat adds Float16 by itself only when the module carries
+// the "cl_khr_fp16" source extension, which clang does not emit, so look at the
+// IR instead of relying on that metadata.
+static bool usesFloat16OutsideBufferStorage(Module *M) {
+  for (Function &F : *M) {
+    if (F.isDeclaration())
+      continue;
+    if (F.getReturnType()->getScalarType()->isHalfTy())
+      return true;
+    for (Argument &A : F.args())
+      if (A.getType()->getScalarType()->isHalfTy())
+        return true;
+    for (BasicBlock &BB : F)
+      for (Instruction &I : BB)
+        if (I.getType()->getScalarType()->isHalfTy() && !isa<LoadInst>(&I))
+          return true;
+  }
+  return false;
+}
+
 bool LLVMToSPIRVBase::translate() {
   BM->setGeneratorVer(KTranslatorVer);
 
@@ -6768,6 +6791,9 @@ bool LLVMToSPIRVBase::translate() {
   // matching capability.
   if (BM->isAllowedToUseExtension(ExtensionID::SPV_INTEL_vector_compute))
     BM->setVectorCompute(hasVectorComputeMetadata(M));
+
+  if (usesFloat16OutsideBufferStorage(M))
+    BM->addCapability(CapabilityFloat16);
 
   if (!lowerBuiltinCallsToVariables(M))
     return false;
