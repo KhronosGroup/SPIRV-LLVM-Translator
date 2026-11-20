@@ -10,9 +10,10 @@
 ; RUN: llvm-dis %t.rev.bc 
 ; RUN: FileCheck < %t.rev.ll %s --check-prefixes=CHECK-LLVM-SPV-IR
 
-; Check that without extension we don't use its capabilities - there is no
-; limitation on using i16 with atomic instruction in the core specification.
+; For now, expect that compilation will succeed without declaring any
+; capabilities or extensions when the 16-bit atomics extension is not enabled.
 ; RUN: llvm-spirv %s -o %t.noext.spv
+; Note: This might not be a valid SPIR-V module!
 ; RUN: spirv-val %t.noext.spv
 ; RUN: llvm-spirv -to-text %t.noext.spv -o %t.noext.spt
 ; RUN: FileCheck < %t.noext.spt %s --check-prefix=CHECK-SPIRV-NOEXT
