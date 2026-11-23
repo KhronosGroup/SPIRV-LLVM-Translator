@@ -15,11 +15,11 @@
 ; CHECK-SPIRV: Name [[#ARGC:]] "c"
 ; CHECK-SPIRV: Name [[#ARGD:]] "d"
 ; CHECK-SPIRV: Name [[#ARGE:]] "e"
-; CHECK-SPIRV: Decorate [[#ARGA]] RuntimeAlignedINTEL 1
-; CHECK-SPIRV-NOT: Decorate [[#ARGB]] RuntimeAlignedINTEL [[#]]
-; CHECK-SPIRV: Decorate [[#ARGC]] RuntimeAlignedINTEL 1
-; CHECK-SPIRV-NOT: Decorate [[#ARGD]] RuntimeAlignedINTEL [[#]]
-; CHECK-SPIRV-NOT: Decorate [[#ARGE]] RuntimeAlignedINTEL [[#]]
+; CHECK-SPIRV: Decorate [[#ARGA]] FuncParamAttr 5940
+; CHECK-SPIRV-NOT: Decorate [[#ARGB]] FuncParamAttr 5940
+; CHECK-SPIRV: Decorate [[#ARGC]] FuncParamAttr 5940
+; CHECK-SPIRV-NOT: Decorate [[#ARGD]] FuncParamAttr 5940
+; CHECK-SPIRV-NOT: Decorate [[#ARGE]] FuncParamAttr 5940
 
 ; CHECK-SPIRV: Function
 ; CHECK-SPIRV: FunctionParameter [[#]] [[#ARGA]]
