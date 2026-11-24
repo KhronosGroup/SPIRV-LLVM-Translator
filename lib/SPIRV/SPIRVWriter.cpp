@@ -6920,9 +6920,9 @@ void LLVMToSPIRVBase::setExecutionModeFPFastMathDefault(
 
   SPIRVConstant *Flags = BM->getLiteralAsConstant(FlagsLiteral);
   for (SPIRVTypeFloat *FloatSPIRVType : FloatSPIRVTypes) {
-    BF->addExecutionMode(
+    BF->addExecutionMode(BM->add(
         new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
-                                 FloatSPIRVType->getId(), Flags->getId()));
+                                 FloatSPIRVType->getId(), Flags->getId())));
   }
 
   BM->addCapability(CapabilityFloatControls2);
