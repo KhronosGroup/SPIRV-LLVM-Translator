@@ -4527,7 +4527,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
   case Intrinsic::fmuladd: {
     Type *Ty = II->getType();
     if (Ty->isBFloatTy())
-      BM->addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
+      BM->addCapability(CapabilityBFloat16ArithmeticEXT);
     break;
   }
   default:
@@ -5931,11 +5931,11 @@ SPIRVValue *LLVMToSPIRVBase::transFenceInst(FenceInst *FI,
   }
 
   // A fence is not associated with a particular memory object, so make its
-  // memory semantics cover every storage class reachable in the OpenCL
-  // environment.
+  // memory semantics cover every pointer-addressable storage class in the
+  // OpenCL environment. Image ordering is requested explicitly via
+  // CLK_IMAGE_MEM_FENCE.
   MemorySemantics |= MemorySemanticsWorkgroupMemoryMask |
-                     MemorySemanticsCrossWorkgroupMemoryMask |
-                     MemorySemanticsImageMemoryMask;
+                     MemorySemanticsCrossWorkgroupMemoryMask;
 
   Module *M = FI->getParent()->getModule();
   spv::Scope S = toSPIRVScope(FI->getContext(), FI->getSyncScopeID());
@@ -6153,7 +6153,7 @@ SPIRVValue *LLVMToSPIRVBase::transDirectCallInst(CallInst *CI,
     if (const auto *FirstArg = F->getArg(0)) {
       const auto *Type = FirstArg->getType();
       if (Type->isBFloatTy())
-        BM->addCapability(internal::CapabilityBFloat16ArithmeticINTEL);
+        BM->addCapability(CapabilityBFloat16ArithmeticEXT);
     }
     if (DemangledName.find("__spirv_ocl_printf") != StringRef::npos) {
       auto *FormatStrPtr = cast<PointerType>(CI->getArgOperand(0)->getType());
@@ -6922,9 +6922,9 @@ void LLVMToSPIRVBase::setExecutionModeFPFastMathDefault(
 
   SPIRVConstant *Flags = BM->getLiteralAsConstant(FlagsLiteral);
   for (SPIRVTypeFloat *FloatSPIRVType : FloatSPIRVTypes) {
-    BF->addExecutionMode(
+    BF->addExecutionMode(BM->add(
         new SPIRVExecutionModeId(BF, spv::ExecutionModeFPFastMathDefault,
-                                 FloatSPIRVType->getId(), Flags->getId()));
+                                 FloatSPIRVType->getId(), Flags->getId())));
   }
 
   BM->addCapability(CapabilityFloatControls2);
