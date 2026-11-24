@@ -9,6 +9,8 @@
 ; CHECK-LLVM-DAG: DILocalVariable(name: "a", arg: 1,
 ; CHECK-LLVM-DAG: DILocalVariable(name: "b", arg: 2,
 
+;; Generator word 393230 (0x0006000E): LLVM/SPIR-V Translator (6), version 14.
+;; With version 15 or later, ArgNumber would be read as an <id> instead.
 119734787 67072 393230 41 0 
 2 Capability Addresses 
 2 Capability Linkage 

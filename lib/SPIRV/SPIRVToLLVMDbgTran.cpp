@@ -1205,6 +1205,10 @@ DINode *SPIRVToLLVMDbgTran::transLocalVariable(const SPIRVExtInst *DebugInst) {
     Flags |= DINode::FlagObjectPointer;
 
   if (Ops.size() > ArgNumberIdx) {
+    // Older translator versions emit ArgNumber as a Literal even for
+    // NonSemantic instruction sets.
+    // Such a Literal may coincide with the <id> of an unrelated integer
+    // OpConstant, so the encoding is decided by the generator version.
     bool IsLiteral =
         BM->getGeneratorId() == SPIRVGEN_KhronosLLVMSPIRVTranslator &&
         BM->getGeneratorVer() < KTranslatorVerArgNumberId;
