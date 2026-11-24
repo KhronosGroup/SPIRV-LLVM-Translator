@@ -634,8 +634,8 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       GEPTy = LI->getType();
     else if (auto *SI = dyn_cast<StoreInst>(Inst))
       GEPTy = SI->getValueOperand()->getType();
-    auto *GEP =
-        cast<Instruction>(Builder.CreateConstGEP1_32(GEPTy, PtrInstOp, 0));
+    auto *GEP = Builder.Insert(
+        GetElementPtrInst::Create(GEPTy, PtrInstOp, {Builder.getInt32(0)}));
     CreatedGeps.push_back(GEP);
     Inst->setOperand(TargetArgNo, GEP);
     MDs.push_back(MDNode::get(Inst->getContext(), OPs));
@@ -663,6 +663,25 @@ static bool isAtomicWrapSizeSupported(Module *M, Type *Ty) {
 }
 
 /// Remove entities not representable by SPIR-V
+// OpSwitch requires an integer selector, but i1 maps to OpTypeBool. Lower
+// boolean switches to branches.
+static void lowerBoolSwitch(SwitchInst *SI) {
+  BasicBlock *Dests[2] = {SI->getDefaultDest(), SI->getDefaultDest()};
+  for (auto Case : SI->cases())
+    Dests[Case.getCaseValue()->isOne()] = Case.getCaseSuccessor();
+  // Both values have a case, so the default is unreachable.
+  if (SI->getNumCases() == 2)
+    SI->getDefaultDest()->removePredecessor(SI->getParent());
+  Instruction *Br;
+  if (SI->getNumCases() == 0)
+    Br = UncondBrInst::Create(Dests[0], SI->getIterator());
+  else
+    Br = CondBrInst::Create(SI->getCondition(), Dests[1], Dests[0],
+                            SI->getIterator());
+  Br->copyMetadata(*SI, {LLVMContext::MD_dbg, LLVMContext::MD_loop});
+  SI->eraseFromParent();
+}
+
 bool SPIRVRegularizeLLVMBase::regularize() {
   // Drop the personality of functions without EH pads so it can be erased.
   for (Function &F : *M)
@@ -684,6 +703,9 @@ bool SPIRVRegularizeLLVMBase::regularize() {
     // TODO: query intrinsic calls from their declarations
     std::vector<Instruction *> ToErase;
     for (BasicBlock &BB : *F) {
+      auto *SI = dyn_cast<SwitchInst>(BB.getTerminator());
+      if (SI && SI->getCondition()->getType()->isIntegerTy(1))
+        lowerBoolSwitch(SI);
       for (Instruction &II : BB) {
         if (auto *MD = II.getMetadata(SPIRV_MD_INTEL_CACHE_DECORATIONS))
           prepareCacheControlsTranslation(MD, &II);
