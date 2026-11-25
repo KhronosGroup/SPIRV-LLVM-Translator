@@ -1,9 +1,8 @@
 ; The decoration must stay on the pointer the builtin consumes, not on a copy
 ; that is then cast to the builtin's pointer parameter type.
 
-; RUN: llvm-as %s -o %t.bc
-; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_cache_controls,+SPV_INTEL_subgroups -spirv-text %t.bc -o - | FileCheck %s --check-prefix=CHECK-SPIRV
-; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_cache_controls,+SPV_INTEL_subgroups %t.bc -o %t.spv
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_cache_controls,+SPV_INTEL_subgroups -spirv-text %s -o - | FileCheck %s --check-prefix=CHECK-SPIRV
+; RUN: llvm-spirv --spirv-ext=+SPV_INTEL_cache_controls,+SPV_INTEL_subgroups %t.bc -o %s
 ; RUN: llvm-spirv -r %t.spv --spirv-target-env=SPV-IR -o - | llvm-dis -o - | FileCheck %s --check-prefix=CHECK-LLVM
 
 ; CHECK-SPIRV: Decorate [[#GEP:]] CacheControlLoadINTEL 0 0
