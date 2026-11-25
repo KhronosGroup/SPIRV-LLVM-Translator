@@ -108,6 +108,14 @@ using namespace llvm;
 using namespace SPIRV;
 using namespace OCLUtil;
 
+// SPIR-V encodes memory access alignments as 32-bit literals, but LLVM IR
+// allows up to 2^32 (e.g., InferAlignment gives accesses of null that
+// alignment). An access may understate its alignment, so clamp to the largest
+// power of two that fits.
+static SPIRVWord transMemoryAccessAlignment(Align A) {
+  return std::min(A, Align(1u << 31)).value();
+}
+
 namespace {
 
 static SPIRVWord convertFloatToSPIRVWord(float F) {
@@ -2402,7 +2410,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (ST->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
     MemoryAccess[0] |= MemoryAccessAlignedMask;
-    MemoryAccess.push_back(ST->getAlign().value());
+    MemoryAccess.push_back(transMemoryAccessAlignment(ST->getAlign()));
     if (ST->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
     if (MDNode *AliasingListMD = ST->getMetadata(LLVMContext::MD_alias_scope))
@@ -2431,7 +2439,7 @@ LLVMToSPIRVBase::transValueWithoutDecoration(Value *V, SPIRVBasicBlock *BB,
     if (LD->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
     MemoryAccess[0] |= MemoryAccessAlignedMask;
-    MemoryAccess.push_back(LD->getAlign().value());
+    MemoryAccess.push_back(transMemoryAccessAlignment(LD->getAlign()));
     if (LD->getMetadata(LLVMContext::MD_nontemporal))
       MemoryAccess[0] |= MemoryAccessNontemporalMask;
     if (MDNode *AliasingListMD = LD->getMetadata(LLVMContext::MD_alias_scope))
@@ -4498,7 +4506,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
         // value is guaranteed anyway.
         if (AllowTwoMemAccessMasks) {
           if (*DestAlignVal != *SourceAlignVal) {
-            MemoryAccess.push_back(DestAlignVal.valueOrOne().value());
+            MemoryAccess.push_back(transMemoryAccessAlignment(*DestAlignVal));
             MemoryAccess.push_back(MemoryAccessAlignedMask);
             AlignVal = *SourceAlignVal;
           }
@@ -4506,7 +4514,7 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
           AlignVal = std::min(*DestAlignVal, *SourceAlignVal);
         }
       }
-      MemoryAccess.push_back(AlignVal.value());
+      MemoryAccess.push_back(transMemoryAccessAlignment(AlignVal));
     }
     if (MI->isVolatile())
       MemoryAccess[0] |= MemoryAccessVolatileMask;
@@ -5527,7 +5535,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     SPIRVType *Ty = transScavengedType(II);
     auto *PtrVector = transValue(II->getArgOperand(0), BB);
-    uint32_t Alignment = II->getParamAlign(0).valueOrOne().value();
+    uint32_t Alignment =
+        transMemoryAccessAlignment(II->getParamAlign(0).valueOrOne());
     auto *Mask = transValue(II->getArgOperand(1), BB);
     auto *FillEmpty = transValue(II->getArgOperand(2), BB);
     std::vector<SPIRVWord> Ops = {PtrVector->getId(), Alignment, Mask->getId(),
@@ -5546,7 +5555,8 @@ SPIRVValue *LLVMToSPIRVBase::transIntrinsicInst(IntrinsicInst *II,
     }
     auto *InputVector = transValue(II->getArgOperand(0), BB);
     auto *PtrVector = transValue(II->getArgOperand(1), BB);
-    uint32_t Alignment = II->getParamAlign(1).valueOrOne().value();
+    uint32_t Alignment =
+        transMemoryAccessAlignment(II->getParamAlign(1).valueOrOne());
     auto *Mask = transValue(II->getArgOperand(2), BB);
     std::vector<SPIRVWord> Ops = {InputVector->getId(), PtrVector->getId(),
                                   Alignment, Mask->getId()};
