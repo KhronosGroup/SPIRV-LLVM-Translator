@@ -86,6 +86,9 @@ public:
   /// and NaNs (unless nnan).
   void lowerFMinimumMaximum(llvm::IntrinsicInst *II);
 
+  /// Expand @llvm.ptrmask.* into ptrtoint, and, inttoptr.
+  void lowerPtrMask(llvm::IntrinsicInst *II);
+
   // For some cases Clang emits VectorExtractDynamic as:
   // void @_Z28__spirv_VectorExtractDynamic(<Ty>* sret(<Ty>), jointMatrix, idx);
   // Instead of:
