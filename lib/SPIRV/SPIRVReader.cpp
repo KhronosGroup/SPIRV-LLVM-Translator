@@ -2638,16 +2638,37 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     switch (static_cast<size_t>(BV->getType()->getOpCode())) {
     case OpTypeVectorIdEXT:
     case OpTypeVector: {
-      if (!HasRtValues)
-        return mapValue(BV, ConstantVector::get(CV));
+      // A vector constituent provides as many consecutive components of the
+      // result as it has components itself.
+      if (!HasRtValues) {
+        std::vector<Constant *> Elems;
+        for (Constant *C : CV) {
+          if (auto *CVT = dyn_cast<FixedVectorType>(C->getType())) {
+            for (unsigned J = 0; J < CVT->getNumElements(); ++J)
+              Elems.push_back(C->getAggregateElement(J));
+          } else {
+            Elems.push_back(C);
+          }
+        }
+        return mapValue(BV, ConstantVector::get(Elems));
+      }
 
       auto *VT = cast<FixedVectorType>(transType(CC->getType()));
       Value *NewVec = ConstantVector::getSplat(
           VT->getElementCount(), PoisonValue::get(VT->getElementType()));
 
-      for (size_t I = 0; I < Constituents.size(); I++) {
-        NewVec = InsertElementInst::Create(NewVec, Constituents[I],
-                                           getInt32(M, I), "", BB);
+      unsigned Idx = 0;
+      for (Value *C : Constituents) {
+        if (auto *CVT = dyn_cast<FixedVectorType>(C->getType())) {
+          for (unsigned J = 0; J < CVT->getNumElements(); ++J) {
+            Value *Elem = ExtractElementInst::Create(C, getInt32(M, J), "", BB);
+            NewVec = InsertElementInst::Create(NewVec, Elem, getInt32(M, Idx++),
+                                               "", BB);
+          }
+        } else {
+          NewVec =
+              InsertElementInst::Create(NewVec, C, getInt32(M, Idx++), "", BB);
+        }
       }
       return mapValue(BV, NewVec);
     }

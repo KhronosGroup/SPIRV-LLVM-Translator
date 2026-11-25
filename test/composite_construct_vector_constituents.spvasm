@@ -1,0 +1,68 @@
+; OpCompositeConstruct of a vector from smaller vectors: each vector constituent
+; provides as many consecutive components as it has.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.0 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc
+; RUN: FileCheck < %t.rev.ll %s
+
+; CHECK-LABEL: define spir_func <4 x i32> @two_vectors(<2 x i32> %[[#A:]], <2 x i32> %[[#B:]])
+; CHECK: %[[#A0:]] = extractelement <2 x i32> %[[#A]], i32 0
+; CHECK: %[[#V0:]] = insertelement <4 x i32> poison, i32 %[[#A0]], i32 0
+; CHECK: %[[#A1:]] = extractelement <2 x i32> %[[#A]], i32 1
+; CHECK: %[[#V1:]] = insertelement <4 x i32> %[[#V0]], i32 %[[#A1]], i32 1
+; CHECK: %[[#B0:]] = extractelement <2 x i32> %[[#B]], i32 0
+; CHECK: %[[#V2:]] = insertelement <4 x i32> %[[#V1]], i32 %[[#B0]], i32 2
+; CHECK: %[[#B1:]] = extractelement <2 x i32> %[[#B]], i32 1
+; CHECK: %[[#V3:]] = insertelement <4 x i32> %[[#V2]], i32 %[[#B1]], i32 3
+; CHECK: ret <4 x i32> %[[#V3]]
+
+; CHECK-LABEL: define spir_func <3 x i32> @scalar_and_vector(i32 %[[#S:]], <2 x i32> %[[#C:]])
+; CHECK: %[[#W0:]] = insertelement <3 x i32> poison, i32 %[[#S]], i32 0
+; CHECK: %[[#C0:]] = extractelement <2 x i32> %[[#C]], i32 0
+; CHECK: %[[#W1:]] = insertelement <3 x i32> %[[#W0]], i32 %[[#C0]], i32 1
+; CHECK: %[[#C1:]] = extractelement <2 x i32> %[[#C]], i32 1
+; CHECK: %[[#W2:]] = insertelement <3 x i32> %[[#W1]], i32 %[[#C1]], i32 2
+; CHECK: ret <3 x i32> %[[#W2]]
+
+; CHECK-LABEL: define spir_func <4 x i32> @constant_vectors()
+; CHECK: ret <4 x i32> <i32 1, i32 2, i32 1, i32 2>
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpMemoryModel Physical64 OpenCL
+               OpDecorate %two_vectors LinkageAttributes "two_vectors" Export
+               OpDecorate %scalar_and_vector LinkageAttributes "scalar_and_vector" Export
+               OpDecorate %constant_vectors LinkageAttributes "constant_vectors" Export
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %v2uint = OpTypeVector %uint 2
+     %v3uint = OpTypeVector %uint 3
+     %v4uint = OpTypeVector %uint 4
+      %c_1_2 = OpConstantComposite %v2uint %uint_1 %uint_2
+     %fn_4_2 = OpTypeFunction %v4uint %v2uint %v2uint
+     %fn_3_s = OpTypeFunction %v3uint %uint %v2uint
+       %fn_4 = OpTypeFunction %v4uint
+%two_vectors = OpFunction %v4uint None %fn_4_2
+          %a = OpFunctionParameter %v2uint
+          %b = OpFunctionParameter %v2uint
+         %e1 = OpLabel
+         %r1 = OpCompositeConstruct %v4uint %a %b
+               OpReturnValue %r1
+               OpFunctionEnd
+%scalar_and_vector = OpFunction %v3uint None %fn_3_s
+          %s = OpFunctionParameter %uint
+          %c = OpFunctionParameter %v2uint
+         %e2 = OpLabel
+         %r2 = OpCompositeConstruct %v3uint %s %c
+               OpReturnValue %r2
+               OpFunctionEnd
+%constant_vectors = OpFunction %v4uint None %fn_4
+         %e3 = OpLabel
+         %r3 = OpCompositeConstruct %v4uint %c_1_2 %c_1_2
+               OpReturnValue %r3
+               OpFunctionEnd
