@@ -1,0 +1,30 @@
+; SPV_EXT_long_vector removes the two-constituent minimum of OpCompositeConstruct
+; for vectors: a single scalar gives a one-component vector.
+
+; REQUIRES: spirv-as
+; RUN: spirv-as --target-env spv1.3 -o %t.spv %s
+; RUN: spirv-val %t.spv
+; RUN: llvm-spirv -r %t.spv -o %t.rev.bc
+; RUN: llvm-dis %t.rev.bc
+; RUN: FileCheck < %t.rev.ll %s
+
+; CHECK-LABEL: define spir_func <1 x i32> @from_scalar(i32 %[[#S:]])
+; CHECK: %[[#R:]] = insertelement <1 x i32> poison, i32 %[[#S]], i32 0
+; CHECK: ret <1 x i32> %[[#R]]
+
+               OpCapability Addresses
+               OpCapability Linkage
+               OpCapability Kernel
+               OpCapability LongVectorEXT
+               OpExtension "SPV_EXT_long_vector"
+               OpMemoryModel Physical64 OpenCL
+               OpDecorate %from_scalar LinkageAttributes "from_scalar" Export
+       %uint = OpTypeInt 32 0
+     %v1uint = OpTypeVector %uint 1
+       %fn_1 = OpTypeFunction %v1uint %uint
+%from_scalar = OpFunction %v1uint None %fn_1
+          %s = OpFunctionParameter %uint
+         %e1 = OpLabel
+         %r1 = OpCompositeConstruct %v1uint %s
+               OpReturnValue %r1
+               OpFunctionEnd
