@@ -38,10 +38,12 @@
         %src = OpExtInst %void %ext DebugSource %str_src
    %dbg_decl = OpExtInst %void %ext DebugFunctionDeclaration %str_k %dbg_ty %src %uint_1 %uint_0 %cu %str_empty %uint_128
      %dbg_fn = OpExtInst %void %ext DebugFunction %str_k %dbg_ty %src %uint_1 %uint_0 %cu %str_empty %uint_136 %uint_1 %dbg_decl
+   %dbg_disc = OpExtInst %void %ext DebugLexicalBlockDiscriminator %src %uint_1 %dbg_fn
+     %inl_at = OpExtInst %void %ext DebugInlinedAt %uint_1 %dbg_fn
           %k = OpFunction %void None %fnty_k
       %entry = OpLabel
      %fndef = OpExtInst %void %ext DebugFunctionDefinition %dbg_fn %k
-      %scope = OpExtInst %void %ext DebugScope %dbg_fn
+      %scope = OpExtInst %void %ext DebugScope %dbg_fn %inl_at
        %line = OpExtInst %void %ext DebugLine %src %uint_1 %uint_1 %uint_1 %uint_1
                OpReturn
                OpFunctionEnd

@@ -1999,8 +1999,6 @@ DICompileUnit::DebugEmissionKind SPIRVToLLVMDbgTran::deriveEmissionKind() {
     case SPIRVDebug::FunctionDefinition:
     case SPIRVDebug::LexicalBlockDiscriminator:
     case SPIRVDebug::InlinedAt:
-    case SPIRVDebug::DebugLine:
-    case SPIRVDebug::DebugNoLine:
       break;
     case SPIRVDebug::Function:
     case SPIRVDebug::FunctionDeclaration: // Same LinkageNameIdx as Function.
