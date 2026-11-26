@@ -24,10 +24,13 @@
 
 ; CHECK-SPIRV: CompositeConstruct [[#FP16MatrixTy]] [[#M:]] [[#]]
 ; CHECK-SPIRV: FConvert [[#FP8MatrixTy]] [[#Conv:]] [[#M]]
-; CHECK-SPIRV: Bitcast [[#Int8MatrixTy]] [[#]] [[#Conv]]
+; CHECK-SPIRV: Bitcast [[#Int8MatrixTy]] [[#Cast:]] [[#Conv]]
+; CHECK-SPIRV: Bitcast [[#FP8MatrixTy]] [[#CastBack:]] [[#Cast]]
+; CHECK-SPIRV: FConvert [[#FP16MatrixTy]] [[#]] [[#CastBack]]
 
 ; CHECK-LLVM: %[[#M:]] = call spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z26__spirv_CompositeConstructDh(half 0.000000e+00)
-; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertFP16ToE4M3EXTPU3AS144__spirv_CooperativeMatrixKHR__half_3_12_12_2(target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) %[[#M]])
+; CHECK-LLVM: %[[#E:]] = call spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertFP16ToE4M3EXTPU3AS144__spirv_CooperativeMatrixKHR__half_3_12_12_2(target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) %[[#M]])
+; CHECK-LLVM: call spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTPU3AS144__spirv_CooperativeMatrixKHR__char_3_12_12_2(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) %[[#E]])
 
 ; ModuleID = 'test.bc'
 target datalayout = "e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-G1"
@@ -38,6 +41,7 @@ define spir_func void @int4_hf8() #0 {
 entry:
   %0 = call spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z26__spirv_CompositeConstructDh(half 0.0) #0
   %1 = call spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertFP16ToE4M3EXTPU3AS144__spirv_CooperativeMatrixKHR__half_3_12_12_2(target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) %0)
+  %2 = call spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTPU3AS144__spirv_CooperativeMatrixKHR__char_3_12_12_2(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) %1)
   ret void
 }
 
@@ -45,6 +49,8 @@ entry:
 declare spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z26__spirv_CompositeConstructDh(half) #0
 
 declare spir_func target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertFP16ToE4M3EXTPU3AS144__spirv_CooperativeMatrixKHR__half_3_12_12_2(target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2))
+
+declare spir_func target("spirv.CooperativeMatrixKHR", half, 3, 12, 12, 2) @_Z36__builtin_spirv_ConvertE4M3ToFP16EXTPU3AS144__spirv_CooperativeMatrixKHR__char_3_12_12_2(target("spirv.CooperativeMatrixKHR", i8, 3, 12, 12, 2))
 
 attributes #0 = { nounwind }
 
