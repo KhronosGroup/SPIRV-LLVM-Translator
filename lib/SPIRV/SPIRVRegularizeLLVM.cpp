@@ -651,6 +651,17 @@ void prepareCacheControlsTranslation(Metadata *MD, Instruction *Inst) {
       GEPTy = LI->getType();
     else if (auto *SI = dyn_cast<StoreInst>(Inst))
       GEPTy = SI->getValueOperand()->getType();
+    else if (auto *CI = dyn_cast<CallInst>(Inst)) {
+      // Use the pointee type of the callee's parameter, so the type scavenger
+      // does not have to cast the GEP to it: the decoration must stay on the
+      // pointer the call consumes.
+      SmallVector<Type *, 4> ParamTys;
+      if (CI->getCalledFunction() && getParameterTypes(CI, ParamTys) &&
+          TargetArgNo < ParamTys.size())
+        if (auto *PtrTy = dyn_cast<TypedPointerType>(ParamTys[TargetArgNo]))
+          if (PtrTy->getElementType()->isSized())
+            GEPTy = PtrTy->getElementType();
+    }
     auto *GEP = Builder.Insert(
         GetElementPtrInst::Create(GEPTy, PtrInstOp, {Builder.getInt32(0)}));
     CreatedGeps.push_back(GEP);
