@@ -72,14 +72,19 @@ void SPIRVLowerMemmoveBase::LowerMemMoveInst(MemMoveInst &I) {
   auto *AllocaTy =
       ArrayType::get(IntegerType::getInt8Ty(*Context), Length->getZExtValue());
   MaybeAlign SrcAlign = I.getSourceAlign();
+  // Cap the temporary's alignment at the largest power of two that fits in an
+  // Alignment decoration.
+  MaybeAlign TmpAlign = SrcAlign;
+  if (TmpAlign)
+    TmpAlign = std::min(*TmpAlign, Align(1u << 31));
 
   AllocaInst *Alloca;
   {
     IRBuilderBase::InsertPointGuard IG(Builder);
     Builder.SetInsertPointPastAllocas(I.getParent()->getParent());
     Alloca = Builder.CreateAlloca(AllocaTy);
-    if (SrcAlign.has_value())
-      Alloca->setAlignment(SrcAlign.value());
+    if (TmpAlign)
+      Alloca->setAlignment(*TmpAlign);
   }
 
   // FIXME: Do we need to pass the size of alloca here? From LangRef:
@@ -88,11 +93,11 @@ void SPIRVLowerMemmoveBase::LowerMemMoveInst(MemMoveInst &I) {
   //
   // https://llvm.org/docs/LangRef.html#llvm-lifetime-start-intrinsic
   Builder.CreateLifetimeStart(Alloca);
-  Builder.CreateMemCpy(Alloca, SrcAlign, I.getRawSource(), SrcAlign, Length,
+  Builder.CreateMemCpy(Alloca, TmpAlign, I.getRawSource(), SrcAlign, Length,
                        I.isVolatile());
 
   auto *SecondCpy =
-      Builder.CreateMemCpy(I.getRawDest(), I.getDestAlign(), Alloca, SrcAlign,
+      Builder.CreateMemCpy(I.getRawDest(), I.getDestAlign(), Alloca, TmpAlign,
                            Length, I.isVolatile());
   Builder.CreateLifetimeEnd(Alloca);
 
