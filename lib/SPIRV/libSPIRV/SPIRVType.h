@@ -795,6 +795,9 @@ public:
     validate();
   }
   SPIRVTypePipeStorage() : SPIRVType(OC) {}
+  SPIRVCapVec getRequiredCapability() const override {
+    return getVec(CapabilityPipeStorage);
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
@@ -965,6 +968,11 @@ public:
       : SPIRVType(TheOpCode), Opn(SPIRVID_INVALID) {}
 
   SPIRVValue *getOperand() { return getValue(Opn); }
+  SPIRVCapVec getRequiredCapability() const override {
+    if (isTypeReserveId())
+      return getVec(CapabilityPipes);
+    return SPIRVType::getRequiredCapability();
+  }
 
 protected:
   _SPIRV_DEF_ENCDEC1(Id)
