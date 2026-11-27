@@ -2235,7 +2235,9 @@ protected:
     switch (TypeOpCode) {
     case OpTypeVector:
     case OpTypeVectorIdEXT:
-      assert(Constituents.size() > 1 &&
+      // SPV_EXT_long_vector removes the two-constituent minimum.
+      assert((Constituents.size() > 1 ||
+              Module->hasCapability(CapabilityLongVectorEXT)) &&
              "There must be at least two Constituent operands in vector");
       break;
     case OpTypeArray:
