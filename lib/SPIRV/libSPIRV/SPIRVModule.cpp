@@ -655,6 +655,9 @@ private:
       PointerTypeMap;
   SmallDenseMap<std::pair<SPIRVType *, SPIRVWord>, SPIRVTypeVector *, 4>
       VectorTypeMap;
+  std::map<std::pair<SPIRVType *, std::vector<SPIRVValue *>>,
+           SPIRVTypeCooperativeMatrixKHR *>
+      CooperativeMatrixKHRTypeMap;
   std::unordered_map<unsigned, SPIRVConstant *> LiteralMap;
   std::vector<SPIRVExtInst *> DebugInstVec;
   std::vector<SPIRVExtInst *> AuxDataInstVec;
@@ -1203,8 +1206,13 @@ SPIRVTypeVector *SPIRVModuleImpl::addVectorType(SPIRVType *CompType,
 SPIRVTypeCooperativeMatrixKHR *
 SPIRVModuleImpl::addCooperativeMatrixKHRType(SPIRVType *CompType,
                                              std::vector<SPIRVValue *> Args) {
-  return addType(
-      new SPIRVTypeCooperativeMatrixKHR(this, getId(), CompType, Args));
+  auto Desc = std::make_pair(CompType, Args);
+  auto Loc = CooperativeMatrixKHRTypeMap.find(Desc);
+  if (Loc != CooperativeMatrixKHRTypeMap.end())
+    return Loc->second;
+  auto *Ty = new SPIRVTypeCooperativeMatrixKHR(this, getId(), CompType, Args);
+  CooperativeMatrixKHRTypeMap[Desc] = Ty;
+  return addType(Ty);
 }
 
 SPIRVTypeTaskSequenceINTEL *SPIRVModuleImpl::addTaskSequenceINTELType() {
