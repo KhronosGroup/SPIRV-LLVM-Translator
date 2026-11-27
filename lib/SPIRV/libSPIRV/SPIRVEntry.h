@@ -964,6 +964,12 @@ public:
       return ExtensionID::SPV_INTEL_rounded_divide_sqrt;
     case internal::CapabilityDeviceBarrierINTEL:
       return ExtensionID::SPV_INTEL_device_barrier;
+    case CapabilityAtomicInt16CompareExchangeINTEL:
+    case CapabilityInt16AtomicsINTEL:
+    case CapabilityAtomicBFloat16LoadStoreINTEL:
+    case CapabilityAtomicBFloat16AddINTEL:
+    case CapabilityAtomicBFloat16MinMaxINTEL:
+      return ExtensionID::SPV_INTEL_16bit_atomics;
     case CapabilityFloatControls2:
       return ExtensionID::SPV_KHR_float_controls2;
     case CapabilityInt64ImageEXT:
